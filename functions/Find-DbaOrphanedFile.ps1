@@ -37,6 +37,9 @@ function Find-DbaOrphanedFile {
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
+    .PARAMETER Recurse
+        If this switch is enabled, the command will search subdirectories of the Path parameter.
+
     .NOTES
         Tags: Orphan, Database, DatabaseFile
         Author: Sander Stad (@sqlstad), sqlstad.nl
@@ -68,6 +71,11 @@ function Find-DbaOrphanedFile {
         Finds the orphaned files in "E:\Dir1" and "E:Dir2" in addition to the default directories.
 
     .EXAMPLE
+        PS C:\> Find-DbaOrphanedFile -SqlInstance sql2014 -Path 'E:\Dir1' -Recurse
+
+        Finds the orphaned files in "E:\Dir1" and any of its subdirectories in addition to the default directories.
+
+    .EXAMPLE
         PS C:\> Find-DbaOrphanedFile -SqlInstance sql2014 -LocalOnly
 
         Returns only the local file paths for orphaned files.
@@ -92,33 +100,52 @@ function Find-DbaOrphanedFile {
         [string[]]$FileType,
         [switch]$LocalOnly,
         [switch]$RemoteOnly,
-        [switch]$EnableException
+        [switch]$EnableException,
+        [switch]$Recurse
     )
 
     begin {
         function Get-SQLDirTreeQuery {
-            param($PathList)
-            # use sysaltfiles in lower versions
+            param($SqlPathList,$UserPathList,[Switch]$Recurse)
 
-            $q1 = "CREATE TABLE #enum ( id int IDENTITY, fs_filename nvarchar(512), depth int, is_file int, parent nvarchar(512) ); DECLARE @dir nvarchar(512);"
+            $q1 = "CREATE TABLE #enum ( id int IDENTITY, fs_filename nvarchar(512), depth int, is_file int, parent nvarchar(512), parent_id int ); DECLARE @dir nvarchar(512);"
             $q2 = "SET @dir = 'dirname';
 
                 INSERT INTO #enum( fs_filename, depth, is_file )
-                EXEC xp_dirtree @dir, 1, 1;
+                EXEC xp_dirtree @dir, recurse, 1;
 
                 UPDATE #enum
                 SET parent = @dir,
-                fs_filename = ltrim(rtrim(fs_filename))
-                WHERE parent IS NULL;"
+                fs_filename = ltrim(rtrim(e.fs_filename)),
+                parent_id = (SELECT MAX(i.id) FROM #enum i WHERE i.id < e.id AND i.depth = e.depth-1 AND i.is_file = 0)
+                FROM #enum e
+                WHERE e.parent IS NULL;"
 
-            $query_files_sql = "SELECT e.fs_filename AS filename, e.parent
-                    FROM #enum AS e
-                    WHERE e.fs_filename NOT IN( 'xtp', '5', '`$FSLOG', '`$HKv2', 'filestream.hdr' )
-                    AND is_file = 1;"
+            $query_files_sql = "
+                WITH fullpaths AS (
+                    SELECT e.*
+                    , CONVERT(nvarchar(2000),e.parent+N'\'+e.fs_filename) AS fullpath
+                    FROM #enum e
+                    WHERE e.parent_id IS NULL
+                    UNION ALL
+                    SELECT e.*
+                    , CONVERT(nvarchar(2000),f.fullpath+N'\'+e.fs_filename) AS fullpath
+                    FROM fullpaths f
+                    INNER JOIN #enum e ON e.parent_id = f.id
+                )
+                SELECT DISTINCT f.fullpath
+                FROM fullpaths AS f
+                WHERE f.fs_filename NOT IN( 'xtp', '5', '`$FSLOG', '`$HKv2', 'filestream.hdr' )
+                AND f.is_file = 1;
+                "
 
             # build the query string based on how many directories they want to enumerate
             $sql = $q1
-            $sql += $($PathList | Where-Object { $_ -ne '' } | ForEach-Object { "$([System.Environment]::Newline)$($q2 -Replace 'dirname', $_)" })
+            $sql += $($SqlPathList | Where-Object { $_ -ne '' } | ForEach-Object { "$([System.Environment]::Newline)$($q2.Replace('dirname',$_).Replace('recurse','1'))" })
+            If ($UserPathList) {
+                $recurseVal = If ($Recurse) { '0' } Else { '1' }
+                $sql += $($UserPathList | Where-Object { $_ -ne '' } | ForEach-Object { "$([System.Environment]::Newline)$($q2.Replace('dirname',$_).Replace('recurse',$recurseVal))" })
+            }
             $sql += $query_files_sql
             Write-Message -Level Debug -Message $sql
             return $sql
@@ -129,6 +156,8 @@ function Find-DbaOrphanedFile {
                 [Parameter(Mandatory, Position = 1)]
                 [Microsoft.SqlServer.Management.Smo.SqlSmoObject]$smoserver
             )
+
+            # use sysaltfiles in lower versions
             if ($smoserver.versionMajor -eq 8) {
                 $sql = "select filename from sysaltfiles"
             } else {
@@ -197,16 +226,17 @@ function Find-DbaOrphanedFile {
             $paths += Get-SqlDefaultPaths $server log
             $paths += $server.MasterDBPath
             $paths += $server.MasterDBLogPath
-            $paths += $Path
-            $paths = $paths | ForEach-Object { "$_".TrimEnd("\") } | Sort-Object | Get-Unique
-            $sql = Get-SQLDirTreeQuery $paths
+            $sqlpaths = $paths | ForEach-Object { "$_".TrimEnd("\") } | Sort-Object | Get-Unique
+            If ($Path) {
+                $userpaths = $Path | ForEach-Object { $_.TrimEnd("\") } | Sort-Object -Unique
+            }
+            $sql = Get-SQLDirTreeQuery -SqlPathList $sqlpaths -UserPathList $userpaths -Recurse:$Recurse
             $datatable = $server.Databases['master'].ExecuteWithResults($sql).Tables[0]
 
             foreach ($row in $datatable) {
-                $fullpath = [IO.Path]::combine($row.parent, $row.filename)
                 $dirtreefiles += [pscustomobject]@{
-                    FullPath   = $fullpath
-                    Comparison = [IO.Path]::GetFullPath($(Format-Path $fullpath))
+                    FullPath   = $row.fullpath
+                    Comparison = [IO.Path]::GetFullPath($(Format-Path $row.fullpath))
                 }
             }
             $dirtreefiles = $dirtreefiles | Where-Object { $_ } | Sort-Object Comparison -Unique
