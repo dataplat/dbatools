@@ -4,11 +4,11 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
+        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
         [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Path', 'FileType', 'LocalOnly', 'RemoteOnly', 'EnableException', 'Recurse'
         $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
         It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
         }
     }
 }
@@ -21,16 +21,16 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $null = $server.Query("CREATE DATABASE $dbname")
             $result = Get-DbaDatabase -SqlInstance $script:instance2 -Database $dbname
             if ($result.count -eq 0) {
-                it "has failed setup" {
-                    Set-TestInconclusive -message "Setup failed"
+                It "has failed setup" {
+                    Set-TestInconclusive -Message "Setup failed"
                 }
                 throw "has failed setup"
             }
-			$guid = (New-Guid).Guid
-			$userdir = New-Item -Path "$HOME\$guid" -ItemType Container
-			New-Item -Path $userdir -ItemType File -Name 'file1.txt' | Out-Null
-			New-Item -Path "$userdir\subdir" -ItemType Container | Out-Null
-			New-Item -Path "$userdir\subdir" -ItemType File -Name 'file2.txt' | Out-Null
+            $guid = (New-Guid).Guid
+            $userdir = New-Item -Path "$HOME\$guid" -ItemType Container
+            New-Item -Path $userdir -ItemType File -Name 'file1.txt' | Out-Null
+            New-Item -Path "$userdir\subdir" -ItemType Container | Out-Null
+            New-Item -Path "$userdir\subdir" -ItemType File -Name 'file2.txt' | Out-Null
         }
         AfterAll {
             Get-DbaDatabase -SqlInstance $script:instance2 -Database $dbname | Remove-DbaDatabase -Confirm:$false
@@ -38,7 +38,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         $null = Detach-DbaDatabase -SqlInstance $script:instance2 -Database $dbname -Force
         $results = Find-DbaOrphanedFile -SqlInstance $script:instance2
         $userpathresults = Find-DbaOrphanedFile -SqlInstance $script:instance2 -Path $userdir -FileType 'txt'
-        $recurseresults  = Find-DbaOrphanedFile -SqlInstance $script:instance2 -Path $userdir -FileType 'txt' -Recurse
+        $recurseresults = Find-DbaOrphanedFile -SqlInstance $script:instance2 -Path $userdir -FileType 'txt' -Recurse
 
         It "Has the correct default properties" {
             $ExpectedStdProps = 'ComputerName,InstanceName,SqlInstance,Filename,RemoteFilename'.Split(',')
@@ -62,11 +62,11 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         }
 
         $results.FileName | Remove-Item
-		$userdir | Remove-Item -Recurse
+        $userdir | Remove-Item -Recurse
 
         $results = Find-DbaOrphanedFile -SqlInstance $script:instance2
         $userpathresults = Find-DbaOrphanedFile -SqlInstance $script:instance2 -Path $userdir -FileType 'txt'
-        $recurseresults  = Find-DbaOrphanedFile -SqlInstance $script:instance2 -Path $userdir -FileType 'txt' -Recurse
+        $recurseresults = Find-DbaOrphanedFile -SqlInstance $script:instance2 -Path $userdir -FileType 'txt' -Recurse
         It "Finds zero files after cleaning up" {
             $results.Count | Should Be 0
             $userpathresults.Count | Should Be 0
