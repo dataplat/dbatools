@@ -514,6 +514,7 @@ function Connect-DbaInstance {
                         $serverconn.AccessToken = $accesstoken
                     }
                     $null = $serverconn.Connect()
+                    Write-Message -Level Debug -Message "will build server with serverconn"
                     $server = New-Object Microsoft.SqlServer.Management.Smo.Server $serverconn
                     Write-Message -Level Debug -Message "server was build with server.Name = '$($server.Name)'"
                     # Make ComputerName easily available in the server object
@@ -591,6 +592,7 @@ function Connect-DbaInstance {
             Write-Message -Level Debug -Message "Input Object was anything else, so not full smo and we have to go on and build one"
             if ($instance.Type -like "SqlConnection") {
                 Write-Message -Level Debug -Message "instance.Type -like SqlConnection - so we build server with Smo.Server"
+                Write-Message -Level Debug -Message "will build server with instance.InputObject of type '$($instance.InputObject.GetType().Name)'"
                 $server = New-Object Microsoft.SqlServer.Management.Smo.Server($instance.InputObject)
                 Write-Message -Level Debug -Message "server was build with server.Name = '$($server.Name)'"
 
@@ -652,10 +654,12 @@ function Connect-DbaInstance {
                 $sqlconn = New-Object System.Data.SqlClient.SqlConnection $connstring
                 $serverconn = New-Object Microsoft.SqlServer.Management.Common.ServerConnection $sqlconn
                 $null = $serverconn.Connect()
+                Write-Message -Level Debug -Message "will build server with serverconn"
                 $server = New-Object Microsoft.SqlServer.Management.Smo.Server $serverconn
                 Write-Message -Level Debug -Message "server was build with server.Name = '$($server.Name)'"
             } elseif (-not $isAzure) {
                 Write-Message -Level Debug -Message "isConnectionString is false"
+                Write-Message -Level Debug -Message "will build server with instance.FullSmoName = '$($instance.FullSmoName)'"
                 $server = New-Object Microsoft.SqlServer.Management.Smo.Server($instance.FullSmoName)
                 Write-Message -Level Debug -Message "server was build with server.Name = '$($server.Name)'"
             }
