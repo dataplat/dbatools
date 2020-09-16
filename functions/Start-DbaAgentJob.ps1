@@ -112,7 +112,7 @@ function Start-DbaAgentJob {
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [string[]]$Job,
-        [string[]]$StepName,
+        [string]$StepName,
         [string[]]$ExcludeJob,
         [parameter(Mandatory, ValueFromPipeline, ParameterSetName = "Object")]
         [Microsoft.SqlServer.Management.Smo.Agent.Job[]]$InputObject,
