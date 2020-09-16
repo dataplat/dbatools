@@ -515,6 +515,7 @@ function Connect-DbaInstance {
                     }
                     $null = $serverconn.Connect()
                     $server = New-Object Microsoft.SqlServer.Management.Smo.Server $serverconn
+                    Write-Message -Level Debug -Message "server was build with server.Name = '$($server.Name)'"
                     # Make ComputerName easily available in the server object
                     Add-Member -InputObject $server -NotePropertyName IsAzure -NotePropertyValue $true -Force
                     Add-Member -InputObject $server -NotePropertyName ComputerName -NotePropertyValue $instance.ComputerName -Force
@@ -591,6 +592,7 @@ function Connect-DbaInstance {
             if ($instance.Type -like "SqlConnection") {
                 Write-Message -Level Debug -Message "instance.Type -like SqlConnection - so we build server with Smo.Server"
                 $server = New-Object Microsoft.SqlServer.Management.Smo.Server($instance.InputObject)
+                Write-Message -Level Debug -Message "server was build with server.Name = '$($server.Name)'"
 
                 if ($server.ConnectionContext.IsOpen -eq $false) {
                     Write-Message -Level Debug -Message "We connect to the server"
@@ -637,7 +639,7 @@ function Connect-DbaInstance {
                     if ([Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Cache["sqlinstance"] -notcontains $instance.FullSmoName.ToLowerInvariant()) {
                         [Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Cache["sqlinstance"] += $instance.FullSmoName.ToLowerInvariant()
                     }
-                    Write-Message -Level Debug -Message "We return server (from around line 641)"
+                    Write-Message -Level Debug -Message "We return server with server.Name = '$($server.Name)'"
                     $server
                     continue
                 }
@@ -651,9 +653,11 @@ function Connect-DbaInstance {
                 $serverconn = New-Object Microsoft.SqlServer.Management.Common.ServerConnection $sqlconn
                 $null = $serverconn.Connect()
                 $server = New-Object Microsoft.SqlServer.Management.Smo.Server $serverconn
+                Write-Message -Level Debug -Message "server was build with server.Name = '$($server.Name)'"
             } elseif (-not $isAzure) {
                 Write-Message -Level Debug -Message "isConnectionString is false"
                 $server = New-Object Microsoft.SqlServer.Management.Smo.Server($instance.FullSmoName)
+                Write-Message -Level Debug -Message "server was build with server.Name = '$($server.Name)'"
             }
 
             if ($AppendConnectionString) {
@@ -899,7 +903,7 @@ function Connect-DbaInstance {
                 Stop-Function -Message "Azure SQL Database not supported" -Continue
             }
 
-            Write-Message -Level Debug -Message "We're down at the end and return server"
+            Write-Message -Level Debug -Message "We return server with server.Name = '$($server.Name)'"
             $server
             continue
         }
