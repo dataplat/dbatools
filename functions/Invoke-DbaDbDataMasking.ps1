@@ -314,7 +314,7 @@ function Invoke-DbaDbDataMasking {
                     try {
                         Write-Message -Level Verbose -Message "Adding index on identity column [$($identityColumn)] in table [$($dbTable.Schema)].[$($dbTable.Name)]"
 
-                        $query = "CREATE NONCLUSTERED INDEX NIX_$($dbTable.Name)_Masking ON [$($dbTable.Schema)].[$($dbTable.Name)]([$($identityColumn)])"
+                        $query = "CREATE NONCLUSTERED INDEX [NIX__$($dbTable.Schema)_$($dbTable.Name)_Masking] ON [$($dbTable.Schema)].[$($dbTable.Name)]([$($identityColumn)])"
 
                         Invoke-DbaQuery -SqlInstance $server -SqlCredential $SqlCredential -Database $db.Name -Query $query
                     } catch {
@@ -939,7 +939,7 @@ function Invoke-DbaDbDataMasking {
                         try {
                             Write-Message -Level Verbose -Message "Removing index on identity column [$($identityColumn)] in table [$($dbTable.Schema)].[$($dbTable.Name)]"
 
-                            $query = "DROP INDEX [NIX_$($dbTable.Name)_Masking] ON [$($dbTable.Schema)].[$($dbTable.Name)]"
+                            $query = "DROP INDEX [NIX__$($dbTable.Schema)_$($dbTable.Name)_Masking] ON [$($dbTable.Schema)].[$($dbTable.Name)]"
 
                             Invoke-DbaQuery -SqlInstance $instance -SqlCredential $SqlCredential -Database $db.Name -Query $query
                         } catch {
