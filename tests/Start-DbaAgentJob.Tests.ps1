@@ -5,7 +5,7 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
         [array]$params = ([Management.Automation.CommandMetaData]$ExecutionContext.SessionState.InvokeCommand.GetCommand($CommandName, 'Function')).Parameters.Keys
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Job', 'ExcludeJob', 'InputObject', 'AllJobs', 'Wait', 'Parallel', 'WaitPeriod', 'SleepPeriod', 'EnableException'
+        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Job', 'StepName', 'ExcludeJob', 'InputObject', 'AllJobs', 'Wait', 'Parallel', 'WaitPeriod', 'SleepPeriod', 'EnableException'
 
         It "Should only contain our specific parameters" {
             Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params | Should -BeNullOrEmpty
@@ -16,11 +16,13 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     Context "Start a job" {
         BeforeAll {
-            $jobs = "dbatoolsci_job_$(Get-Random)", "dbatoolsci_job_$(Get-Random)"
-            $jobName1,$jobName2 = $jobs
+            $jobs = "dbatoolsci_job_$(Get-Random)", "dbatoolsci_job_$(Get-Random)", "dbatoolsci_job"
+            $jobName1,$jobName2,$jobName3 = $jobs
             foreach ($job in $jobs) {
                 $null = New-DbaAgentJob -SqlInstance $script:instance2, $script:instance3 -Job $job
                 $null = New-DbaAgentJobStep -SqlInstance $script:instance2, $script:instance3 -Job $job -StepName "step1_$(Get-Random)" -Subsystem TransactSql -Command "WAITFOR DELAY '00:05:00'"
+                $null = New-DbaAgentJobStep -SqlInstance $script:instance2 -Job $job -StepName "step2" -StepId 2 -Subsystem TransactSql -Command "WAITFOR DELAY '00:00:01'"
+                $null = New-DbaAgentJobStep -SqlInstance $script:instance2 -Job $job -StepName "step3" -StepId 3 -Subsystem TransactSql -Command "SELECT 1"
             }
 
             $results = Get-DbaAgentJob -SqlInstance $script:instance2 -Job $jobName1 | Start-DbaAgentJob
@@ -45,6 +47,12 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         It "returns on multiple server inputs" {
             $results2 = Start-DbaAgentJob -SqlInstance $script:instance2, $script:instance3 -Job $jobName2
             ($results2.SqlInstance).Count | Should -Be 2
+        }
+
+        It "starts job at specified step" {
+            $null = Start-DbaAgentJob -SqlInstance $script:instance2 -Job $jobName3 -StepName 'step3'
+            $results3 = Get-DbaAgentJobHistory -SqlInstance $script:instance2 -Job $jobName3
+            ($results3.SqlInstance).Count | Should -Be 2
         }
     }
 }

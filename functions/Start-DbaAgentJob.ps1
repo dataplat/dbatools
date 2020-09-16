@@ -19,6 +19,9 @@ function Start-DbaAgentJob {
     .PARAMETER Job
         The job(s) to process - this list is auto-populated from the server. If unspecified, all jobs will be processed.
 
+    .PARAMETER StepName
+        The job step name to start at, if other than default defined in the job definition.
+
     .PARAMETER ExcludeJob
         The job(s) to exclude - this list is auto-populated from the server.
 
@@ -109,6 +112,7 @@ function Start-DbaAgentJob {
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [string[]]$Job,
+        [string[]]$StepName,
         [string[]]$ExcludeJob,
         [parameter(Mandatory, ValueFromPipeline, ParameterSetName = "Object")]
         [Microsoft.SqlServer.Management.Smo.Agent.Job[]]$InputObject,
@@ -187,7 +191,13 @@ function Start-DbaAgentJob {
                 # Start the job
                 $lastrun = $currentjob.LastRunDate
                 Write-Message -Level Verbose -Message "Last run date was $lastrun"
-                $null = $currentjob.Start()
+                if ($StepName) {
+                    Write-Message -Level Verbose -Message "Starting job [$currentjob] at step [$StepName]"
+                    $null = $currentjob.Start($StepName)
+                } else {
+                    $null = $currentjob.Start()
+                }
+
 
                 # Wait and refresh so that it has a chance to change status
                 Start-Sleep -Milliseconds $SleepPeriod
