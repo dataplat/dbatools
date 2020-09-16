@@ -107,7 +107,7 @@ function Find-DbaOrphanedFile {
 
     begin {
         function Get-SQLDirTreeQuery {
-            param($SqlPathList,$UserPathList,$FileTypes,$SystemFiles,[Switch]$Recurse)
+            param($SqlPathList, $UserPathList, $FileTypes, $SystemFiles, [Switch]$Recurse)
 
             $q1 = "
                 CREATE TABLE #enum (
@@ -156,10 +156,10 @@ function Find-DbaOrphanedFile {
 
             # build the query string based on how many directories they want to enumerate
             $sql = $q1
-            $sql += $($SqlPathList | Where-Object { $_ -ne '' } | ForEach-Object { "$([System.Environment]::Newline)$($q2.Replace('dirname',$_).Replace('recurse','1'))" })
+            $sql += $($SqlPathList | Where-Object { $_ -ne '' } | ForEach-Object { "$([System.Environment]::Newline)$($q2.Replace('dirname',$_).Replace('recurse','1'))" } )
             If ($UserPathList) {
                 $recurseVal = If ($Recurse) { '0' } Else { '1' }
-                $sql += $($UserPathList | Where-Object { $_ -ne '' } | ForEach-Object { "$([System.Environment]::Newline)$($q2.Replace('dirname',$_).Replace('recurse',$recurseVal))" })
+                $sql += $($UserPathList | Where-Object { $_ -ne '' } | ForEach-Object { "$([System.Environment]::Newline)$($q2.Replace('dirname',$_).Replace('recurse',$recurseVal))" } )
             }
             $sql += $query_files_sql
             Write-Message -Level Debug -Message $sql
@@ -199,7 +199,7 @@ function Find-DbaOrphanedFile {
 
             return $dbfiletable.Tables.Filename | ForEach-Object {
                 [PSCustomObject]@{
-                    Filename = $_
+                    Filename       = $_
                     ComparisonPath = [IO.Path]::GetFullPath($(Format-Path $_))
                 }
             }
@@ -255,7 +255,7 @@ function Find-DbaOrphanedFile {
             $sql = Get-SQLDirTreeQuery -SqlPathList $sqlpaths -UserPathList $userpaths -FileTypes $fileTypeComparison -SystemFiles $systemfiles -Recurse:$Recurse
             $dirtreefiles = $server.Databases['master'].ExecuteWithResults($sql).Tables[0] | ForEach-Object {
                 [PSCustomObject]@{
-                    Fullpath = $_.fullpath
+                    Fullpath       = $_.fullpath
                     ComparisonPath = [IO.Path]::GetFullPath($(Format-Path $_.fullpath))
                 }
             }
@@ -263,28 +263,28 @@ function Find-DbaOrphanedFile {
             # Output files in the dirtree not known to SQL Server
             foreach ($file in $dirtreefiles | Where-Object { $_.ComparisonPath -notin $sqlfiles.ComparisonPath }) {
 
-                    $result = [PSCustomObject]@{
-                        Server         = $server.Name
-                        ComputerName   = $server.ComputerName
-                        InstanceName   = $server.ServiceName
-                        SqlInstance    = $server.DomainInstanceName
-                        Filename       = $file.Fullpath
-                        RemoteFilename = Join-AdminUnc -Servername $server.ComputerName -Filepath $file.Fullpath
-                    }
-
-                    if ($LocalOnly -eq $true) {
-                        $result | Select-Object -ExpandProperty Filename
-                        continue
-                    }
-
-                    if ($RemoteOnly -eq $true) {
-                        $result | Select-Object -ExpandProperty RemoteFilename
-                        continue
-                    }
-
-                    $result | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, Filename, RemoteFilename
-
+                $result = [PSCustomObject]@{
+                    Server         = $server.Name
+                    ComputerName   = $server.ComputerName
+                    InstanceName   = $server.ServiceName
+                    SqlInstance    = $server.DomainInstanceName
+                    Filename       = $file.Fullpath
+                    RemoteFilename = Join-AdminUnc -Servername $server.ComputerName -Filepath $file.Fullpath
                 }
+
+                if ($LocalOnly -eq $true) {
+                    $result | Select-Object -ExpandProperty Filename
+                    continue
+                }
+
+                if ($RemoteOnly -eq $true) {
+                    $result | Select-Object -ExpandProperty RemoteFilename
+                    continue
+                }
+
+                $result | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, Filename, RemoteFilename
+
+            }
 
         }
     }
