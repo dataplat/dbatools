@@ -296,6 +296,7 @@ function Invoke-DbaDbDataMasking {
 
                     $cleanupIdentityColumn = $false
 
+                    # Make sure there is an identity column present to speed things up
                     if (-not ($dbTable.Columns | Where-Object Identity -eq $true)) {
                         Write-Message -Level Verbose -Message "Adding identity column to table [$($dbTable.Schema)].[$($dbTable.Name)]"
                         $query = "ALTER TABLE [$($dbTable.Schema)].[$($dbTable.Name)] ADD MaskingID BIGINT IDENTITY(1, 1) NOT NULL;"
@@ -311,10 +312,22 @@ function Invoke-DbaDbDataMasking {
                         $identityColumn = $dbTable.Columns | Where-Object Identity | Select-Object -ExpandProperty Name
                     }
 
+                    # Check if the index for the identity column is already present
+                    $maskingIndexName = "NIX__$($dbTable.Schema)_$($dbTable.Name)_Masking"
+                    try {
+                        if ($dbTable.Indexes.Name -contains $maskingIndexName) {
+                            Write-Message -Level Verbose -Message "Masking index already exists in table [$($dbTable.Schema)].[$($dbTable.Name)]. Dropping it..."
+                            $dbTable.Indexes[$($maskingIndexName)].Drop()
+                        }
+                    } catch {
+                        Stop-Function -Message "Could not remove identity index to table [$($dbTable.Schema)].[$($dbTable.Name)]" -Continue
+                    }
+
+                    # Create the index for the identity column
                     try {
                         Write-Message -Level Verbose -Message "Adding index on identity column [$($identityColumn)] in table [$($dbTable.Schema)].[$($dbTable.Name)]"
 
-                        $query = "CREATE NONCLUSTERED INDEX [NIX__$($dbTable.Schema)_$($dbTable.Name)_Masking] ON [$($dbTable.Schema)].[$($dbTable.Name)]([$($identityColumn)])"
+                        $query = "CREATE NONCLUSTERED INDEX [$($maskingIndexName)] ON [$($dbTable.Schema)].[$($dbTable.Name)]([$($identityColumn)])"
 
                         Invoke-DbaQuery -SqlInstance $server -SqlCredential $SqlCredential -Database $db.Name -Query $query
                     } catch {
@@ -936,7 +949,16 @@ function Invoke-DbaDbDataMasking {
                             }
                         }
 
+                        # Clean up the masking index
                         try {
+                            if ($dbTable.Indexes.Name -contains $maskingIndexName) {
+                                $dbTable.Indexes[$($maskingIndexName)].Drop()
+                            }
+                        } catch {
+                            Stop-Function -Message "Could not remove identity index to table [$($dbTable.Schema)].[$($dbTable.Name)]" -Continue
+                        }
+
+                        <# try {
                             Write-Message -Level Verbose -Message "Removing index on identity column [$($identityColumn)] in table [$($dbTable.Schema)].[$($dbTable.Name)]"
 
                             $query = "DROP INDEX [NIX__$($dbTable.Schema)_$($dbTable.Name)_Masking] ON [$($dbTable.Schema)].[$($dbTable.Name)]"
@@ -944,8 +966,9 @@ function Invoke-DbaDbDataMasking {
                             Invoke-DbaQuery -SqlInstance $instance -SqlCredential $SqlCredential -Database $db.Name -Query $query
                         } catch {
                             Stop-Function -Message "Could not remove identity index to table [$($dbTable.Schema)].[$($dbTable.Name)]" -Continue
-                        }
+                        } #>
 
+                        # Clean up the identity column
                         if ($cleanupIdentityColumn) {
                             try {
                                 Write-Message -Level Verbose -Message "Removing identity column [$($identityColumn)] from table [$($dbTable.Schema)].[$($dbTable.Name)]"
@@ -959,6 +982,7 @@ function Invoke-DbaDbDataMasking {
                             }
                         }
 
+                        # Return the masking results
                         try {
                             [pscustomobject]@{
                                 ComputerName = $db.Parent.ComputerName
