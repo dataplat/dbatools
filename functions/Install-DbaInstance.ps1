@@ -187,42 +187,42 @@ function Install-DbaInstance {
         https://dbatools.io/Install-DbaInstance
 
     .Example
-        C:\PS> Install-DbaInstance -Version 2017 -Feature All
+        PS C:\> Install-DbaInstance -Version 2017 -Feature All
 
         Install a default SQL Server instance and run the installation enabling all features with default settings. Automatically generates configuration.ini
 
     .Example
-        C:\PS> Install-DbaInstance -SqlInstance sql2017\sqlexpress, server01 -Version 2017 -Feature Default
+        PS C:\> Install-DbaInstance -SqlInstance sql2017\sqlexpress, server01 -Version 2017 -Feature Default
 
         Install a named SQL Server instance named sqlexpress on sql2017, and a default instance on server01. Automatically generates configuration.ini.
         Default features will be installed.
 
     .Example
-        C:\PS> Install-DbaInstance -Version 2008R2 -SqlInstance sql2017 -ConfigurationFile C:\temp\configuration.ini
+        PS C:\> Install-DbaInstance -Version 2008R2 -SqlInstance sql2017 -ConfigurationFile C:\temp\configuration.ini
 
         Install a default named SQL Server instance on the remote machine, sql2017 and use the local configuration.ini
 
     .Example
-        C:\PS> Install-DbaInstance -Version 2017 -InstancePath G:\SQLServer -UpdateSourcePath '\\my\updates'
+        PS C:\> Install-DbaInstance -Version 2017 -InstancePath G:\SQLServer -UpdateSourcePath '\\my\updates'
 
         Run the installation locally with default settings apart from the application volume, this will be redirected to G:\SQLServer.
         The installation procedure would search for SQL Server updates in \\my\updates and slipstream them into the installation.
 
     .Example
-        C:\PS> $svcAcc = Get-Credential MyDomain\SvcSqlServer
-        C:\PS> Install-DbaInstance -Version 2016 -InstancePath D:\Root -DataPath E: -LogPath L: -PerformVolumeMaintenanceTasks -EngineCredential $svcAcc
+        PS C:\> $svcAcc = Get-Credential MyDomain\SvcSqlServer
+        PS C:\> Install-DbaInstance -Version 2016 -InstancePath D:\Root -DataPath E: -LogPath L: -PerformVolumeMaintenanceTasks -EngineCredential $svcAcc
 
         Install SQL Server 2016 instance into D:\Root drive, set default data folder as E: and default logs folder as L:.
         Perform volume maintenance tasks permission is granted. MyDomain\SvcSqlServer is used as a service account for SqlServer.
 
     .Example
-        C:\PS> $config = @{
-        >>    AGTSVCSTARTUPTYPE     = "Manual"
-        >>    SQLCOLLATION          = "Latin1_General_CI_AS"
-        >>    BROWSERSVCSTARTUPTYPE = "Manual"
-        >>    FILESTREAMLEVEL       = 1
+        PS C:\> $config = @{
+        >> AGTSVCSTARTUPTYPE = "Manual"
+        >> SQLCOLLATION = "Latin1_General_CI_AS"
+        >> BROWSERSVCSTARTUPTYPE = "Manual"
+        >> FILESTREAMLEVEL = 1
         >> }
-        C:\PS> Install-DbaInstance -SqlInstance localhost\v2017:1337 -Version 2017 -Configuration $config
+        PS C:\> Install-DbaInstance -SqlInstance localhost\v2017:1337 -Version 2017 -Configuration $config
 
         Run the installation locally with default settings overriding the value of specific configuration items.
         Instance name will be defined as 'v2017'; TCP port will be changed to 1337 after installation.
