@@ -14,40 +14,15 @@ The core team may close bug reports that do not follow our provided template.
 The information we ask for helps to better troubleshoot the report. We release frequently and often, this information helps to resolve the issue more efficiently.
 -->
 
-### Environmental information
-
-<!--
-🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨
-Please provide the output of the below script
-```powershell
-[pscustomobject]@{
->> 'PowerShell Version' = $PSVersionTable.PSVersion.ToString()
->> 'dbatools latest installed' = (Get-InstalledModule -Name dbatools).Version
->> 'Culture of OS' = (Get-Culture)
->> } | fl -force
-```
--->
-
-#### SQL Server:
-
-```sql
-/* REPLACE WITH output of @@VERSION */
-```
-
-```sql
-/* REPLACE WITH output of @@LANGUAGE */
-```
-
 ### Report
 
 <!--
-Things to consider:
+Things to consider/verify:
 - Errors received are not related to permissions?
-- Have you tried the same command using powershell.exe instead of a hosted powershell instance like ISE or VS Code?
-- If this refers to Copy-DbaDatabase can you replace the problem with Backup-DbaDatabase and Restore-DbaDatabase?
-- Copy-DbaDatabase will not work in every environment and every situation. Instead, we try to ensure Backup & Restore work in your environment.
+- Have you tried the command using `powershell.exe`?
+- If `Copy-DbaDatabase`, can you replicate the problem with `Backup-DbaDatabase` and `Restore-DbaDatabase`?
+- `Copy-DbaDatabase` will not work in every environment and every situation.
 -->
-
 
 #### Host used
 
@@ -56,21 +31,20 @@ Things to consider:
 - [ ] VS Code
 - [ ] Other (please specify)
 
-If anything other than powershell.exe was used, please confirm that you can duplicate the issue with powershell.exe
-
-- [ ] Still buggy in powershell.exe
-
 #### Errors Received
-
 <!--
 🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨
-Provide the full error stack, you can obtain this by duplicating the error and then immediately running this command: `$error[0] | select *`
+Run the command and paste the output of `$error[0] | select *` below
 -->
+
+```
+replace THIS text WITH the OUTPUT of -- $ERROR[0] | SELECT *
+```
 
 #### Steps to Reproduce
 
 <!--
-If you have confirmed this issue can be reproduced, please provide the exact steps (T-SQL, PowerShell, ext)
+Provide a list of steps to reproduce and any code required. Sanitize code if needed.
 -->
 
 #### Expected Behavior
@@ -84,3 +58,26 @@ What did you expect to happen?
 <!--
 What happened?
 -->
+
+### Environmental information
+
+🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨
+Please provide the output of the below script
+
+```powershell
+[pscustomobject]@{
+'PowerShell Version' = $PSVersionTable.PSVersion.ToString()
+'dbatools latest installed' = (Get-InstalledModule -Name dbatools).Version
+'Culture of OS' = (Get-Culture)
+} | fl -force
+```
+
+#### SQL Server:
+
+```sql
+/* REPLACE WITH output of @@VERSION */
+```
+
+```sql
+/* REPLACE WITH output of @@LANGUAGE */
+```
