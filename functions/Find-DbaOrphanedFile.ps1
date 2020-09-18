@@ -175,7 +175,7 @@ function Find-DbaOrphanedFile {
             )
 
             # use sysaltfiles in lower versions
-            if ($smoserver.versionMajor -eq 8) {
+            if ($smoserver.VersionMajor -eq 8) {
                 $sql = "select filename from sysaltfiles"
             } else {
                 $sql = "select physical_name as filename from sys.master_files"
@@ -200,8 +200,8 @@ function Find-DbaOrphanedFile {
 
             return $dbfiletable.Tables.Filename | ForEach-Object {
                 [PSCustomObject]@{
-                    Filename       = $_
-                    ComparisonPath = [IO.Path]::GetFullPath($(Format-Path $_))
+                    Filename       = $(Join-AdminUnc -Servername $smoserver.ComputerName -Filepath $_)
+                    ComparisonPath = ([IO.Path]::GetFullPath($(Format-Path $(Join-AdminUnc -Servername $smoserver.ComputerName -Filepath $_))))
                 }
             }
         }
@@ -238,19 +238,20 @@ function Find-DbaOrphanedFile {
             $sqlfiles = Get-SqlFileStructure $server
 
             # Get the parent directories of those files
-            $sqlpaths = $sqlfiles | ForEach-Object { Split-Path -Path $_.Filename -Parent }
+            $sqlpaths = $sqlfiles | Where-Object Filename | ForEach-Object { Split-Path -Path $_.Filename -Parent }
 
             # Include the default data and log directories from the instance
             Write-Message -Level Debug -Message "Adding paths"
-            $sqlpaths += $server.RootDirectory + "\DATA"
-            $sqlpaths += Get-SqlDefaultPaths $server data
-            $sqlpaths += Get-SqlDefaultPaths $server log
-            $sqlpaths += $server.MasterDBPath
-            $sqlpaths += $server.MasterDBLogPath
+            $sqlpaths += $(Join-AdminUnc -Servername $server.ComputerName -Filepath ($server.RootDirectory + "\DATA"))
+            $sqlpaths += $(Join-AdminUnc -Servername $server.ComputerName -Filepath (Get-SqlDefaultPaths $server data))
+            $sqlpaths += $(Join-AdminUnc -Servername $server.ComputerName -Filepath (Get-SqlDefaultPaths $server log))
+            $sqlpaths += $(Join-AdminUnc -Servername $server.ComputerName -Filepath $server.MasterDBPath)
+            $sqlpaths += $(Join-AdminUnc -Servername $server.ComputerName -Filepath $server.MasterDBLogPath)
 
             # Gather a list of files from the filesystem
             $sqlpaths = $sqlpaths | ForEach-Object { $_.TrimEnd("\") } | Sort-Object -Unique
             If ($Path) {
+                $Path = $Path | ForEach-Object { Join-AdminUnc -Servername $server.ComputerName -Filepath $_ }
                 $userpaths = $Path | ForEach-Object { $_.TrimEnd("\") } | Sort-Object -Unique
             }
             $sql = Get-SQLDirTreeQuery -SqlPathList $sqlpaths -UserPathList $userpaths -FileTypes $fileTypeComparison -SystemFiles $systemfiles -Recurse:$Recurse
@@ -269,7 +270,7 @@ function Find-DbaOrphanedFile {
                     ComputerName   = $server.ComputerName
                     InstanceName   = $server.ServiceName
                     SqlInstance    = $server.DomainInstanceName
-                    Filename       = $file.Fullpath
+                    Filename       = (Split-AdminUnc -Filepath $file.Fullpath).FilePath
                     RemoteFilename = Join-AdminUnc -Servername $server.ComputerName -Filepath $file.Fullpath
                 }
 
