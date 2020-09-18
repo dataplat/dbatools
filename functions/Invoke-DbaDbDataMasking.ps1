@@ -873,7 +873,6 @@ function Invoke-DbaDbDataMasking {
                                 Write-ProgressHelper @progressParams
 
                                 try {
-                                    $stringBuilder.ToString()
                                     Invoke-DbaQuery -SqlInstance $instance -SqlCredential $SqlCredential -Database $db.Name -Query $stringBuilder.ToString()
                                 } catch {
                                     Stop-Function -Message "Error updating $($tableobject.Schema).$($tableobject.Name): $_" -Target $stringBuilder -Continue -ErrorRecord $_
@@ -965,11 +964,16 @@ function Invoke-DbaDbDataMasking {
 
                         # Clean up the masking index
                         try {
+                            # Refresh the indexes to make sure to have the latest list
+                            $dbTable.Indexes.Refresh()
+
+                            # Check if the index is there
                             if ($dbTable.Indexes.Name -contains $maskingIndexName) {
+                                Write-Message -Level verbose -Message "Removing identity index from table [$($dbTable.Schema)].[$($dbTable.Name)]"
                                 $dbTable.Indexes[$($maskingIndexName)].Drop()
                             }
                         } catch {
-                            Stop-Function -Message "Could not remove identity index to table [$($dbTable.Schema)].[$($dbTable.Name)]" -Continue
+                            Stop-Function -Message "Could not remove identity index from table [$($dbTable.Schema)].[$($dbTable.Name)]" -Continue
                         }
 
                         <# try {
