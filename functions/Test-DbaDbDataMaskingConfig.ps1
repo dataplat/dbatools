@@ -280,15 +280,6 @@ function Test-DbaDbDataMaskingConfig {
                                 Error  = "The category is not valid with data type $($column.ColumnType)"
                             }
                         }
-
-                        <# if (-not $null -eq $column.Action.SubCategory -and $column.Action.SubCategory -notin $allo) {
-                            [PSCustomObject]@{
-                                Table  = $table.Name
-                                Column = $column.Name
-                                Value  = $column.Action.Category
-                                Error  = "The action subcategory '$($column.Action.SubCategory)' is not allowed"
-                            }
-                        } #>
                     }
 
                     # Number checks
@@ -304,15 +295,6 @@ function Test-DbaDbDataMaskingConfig {
                                     Error  = "The action does not contain all the required properties. Please check the action "
                                 }
                             }
-
-                            <# if ($compareResult.SideIndicator -contains "=>") {
-                                [PSCustomObject]@{
-                                    Table  = $table.Name
-                                    Column = $column.Name
-                                    Value  = ($compareResult | Where-Object SideIndicator -eq "=>").InputObject -join ","
-                                    Error  = "The action contains a property that is not in the required properties. Please check the column"
-                                }
-                            } #>
                         }
 
                         if ($column.ColumnType -notin $allowedNumberTypes) {
