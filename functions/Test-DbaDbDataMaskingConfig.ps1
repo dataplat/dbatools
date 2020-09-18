@@ -306,7 +306,7 @@ function Test-DbaDbDataMaskingConfig {
                             }
                         }
                     }
-                }# End column action
+                } # End column action
             } # End for each column
         } # End for each table
     }
