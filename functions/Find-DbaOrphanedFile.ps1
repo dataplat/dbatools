@@ -232,7 +232,7 @@ function Find-DbaOrphanedFile {
             }
 
             # Reset all the arrays
-            $sqlpaths = @(); $dirtreefiles = @{}
+            $sqlpaths = $userpaths = @(); $dirtreefiles = @{}
 
             # Gather a list of files known to SQL Server
             $sqlfiles = Get-SqlFileStructure $server
