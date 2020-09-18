@@ -976,16 +976,6 @@ function Invoke-DbaDbDataMasking {
                             Stop-Function -Message "Could not remove identity index from table [$($dbTable.Schema)].[$($dbTable.Name)]" -Continue
                         }
 
-                        <# try {
-                            Write-Message -Level Verbose -Message "Removing index on identity column [$($identityColumn)] in table [$($dbTable.Schema)].[$($dbTable.Name)]"
-
-                            $query = "DROP INDEX [NIX__$($dbTable.Schema)_$($dbTable.Name)_Masking] ON [$($dbTable.Schema)].[$($dbTable.Name)]"
-
-                            Invoke-DbaQuery -SqlInstance $instance -SqlCredential $SqlCredential -Database $db.Name -Query $query
-                        } catch {
-                            Stop-Function -Message "Could not remove identity index to table [$($dbTable.Schema)].[$($dbTable.Name)]" -Continue
-                        } #>
-
                         # Clean up the identity column
                         if ($cleanupIdentityColumn) {
                             try {
