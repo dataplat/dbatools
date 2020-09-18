@@ -290,7 +290,7 @@ function Invoke-DbaDbDataMasking {
 
                     $dbTable = $db.Tables | Where-Object { $_.Schema -eq $tableobject.Schema -and $_.Name -eq $tableobject.Name }
 
-                    $cleanupIdentityColumn = $false
+                    [bool]$cleanupIdentityColumn = $false
 
                     # Make sure there is an identity column present to speed things up
                     if (-not ($dbTable.Columns | Where-Object Identity -eq $true)) {
