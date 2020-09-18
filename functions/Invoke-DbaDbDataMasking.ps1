@@ -39,9 +39,6 @@ function Invoke-DbaDbDataMasking {
     .PARAMETER FilePath
         Configuration file that contains the which tables and columns need to be masked
 
-    .PARAMETER Query
-        If you would like to mask only a subset of a table, use the Query parameter, otherwise all data will be masked.
-
     .PARAMETER Locale
         Set the local to enable certain settings in the masking
 
@@ -142,7 +139,6 @@ function Invoke-DbaDbDataMasking {
         [string[]]$Column,
         [string[]]$ExcludeTable,
         [string[]]$ExcludeColumn,
-        [string]$Query,
         [int]$MaxValue,
         [int]$ModulusFactor = 10,
         [switch]$ExactLength,
@@ -334,15 +330,32 @@ function Invoke-DbaDbDataMasking {
                         Stop-Function -Message "Could not add identity index to table [$($dbTable.Schema)].[$($dbTable.Name)]" -Continue
                     }
 
-
                     try {
-                        if (-not (Test-Bound -ParameterName Query)) {
+                        if (-not $tableobject.Query) {
+                            # Get all the columns from the table
                             $columnString = "[" + (($dbTable.Columns | Where-Object DataType -in $supportedDataTypes | Select-Object Name -ExpandProperty Name) -join "],[") + "]"
-                            $columnString += ",[$($identityColumn)]"
-                            $query = "SELECT $($columnString) FROM [$($tableobject.Schema)].[$($tableobject.Name)]"
-                        }
-                        [array]$data = $db.Query($query)
 
+                            # Add the identifier column
+                            $columnString += ",[$($identityColumn)]"
+
+                            # Put it all together
+                            $query = "SELECT $($columnString) FROM [$($tableobject.Schema)].[$($tableobject.Name)]"
+                        } else {
+                            # Get the query from the table objects
+                            $query = ($tableobject.Query).ToLower()
+
+                            # Check if the query already contains the identifier column
+                            if (-not ($query | Select-String -Pattern $identityColumn)) {
+                                # Split up the query from the first "from"
+                                $queryParts = $Filterquery -split "from", 2
+
+                                # Put it all together again with the identifier
+                                $query = "$($queryParts[0].Trim()), $($identityColumn) FROM $($queryParts[1].Trim())"
+                            }
+                        }
+
+                        # Get the data
+                        [array]$data = $db.Query($query)
                     } catch {
                         Stop-Function -Message "Failure retrieving the data from table $($tableobject.Name)" -Target $Database -ErrorRecord $_ -Continue
                     }
@@ -860,6 +873,7 @@ function Invoke-DbaDbDataMasking {
                                 Write-ProgressHelper @progressParams
 
                                 try {
+                                    $stringBuilder.ToString()
                                     Invoke-DbaQuery -SqlInstance $instance -SqlCredential $SqlCredential -Database $db.Name -Query $stringBuilder.ToString()
                                 } catch {
                                     Stop-Function -Message "Error updating $($tableobject.Schema).$($tableobject.Name): $_" -Target $stringBuilder -Continue -ErrorRecord $_
