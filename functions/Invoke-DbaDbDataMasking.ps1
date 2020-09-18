@@ -331,7 +331,7 @@ function Invoke-DbaDbDataMasking {
                     }
 
                     try {
-                        if (-not $tableobject.Query) {
+                        if (-not $tableobject.FilterQuery) {
                             # Get all the columns from the table
                             $columnString = "[" + (($dbTable.Columns | Where-Object DataType -in $supportedDataTypes | Select-Object Name -ExpandProperty Name) -join "],[") + "]"
 
@@ -342,7 +342,7 @@ function Invoke-DbaDbDataMasking {
                             $query = "SELECT $($columnString) FROM [$($tableobject.Schema)].[$($tableobject.Name)]"
                         } else {
                             # Get the query from the table objects
-                            $query = ($tableobject.Query).ToLower()
+                            $query = ($tableobject.FilterQuery).ToLower()
 
                             # Check if the query already contains the identifier column
                             if (-not ($query | Select-String -Pattern $identityColumn)) {
