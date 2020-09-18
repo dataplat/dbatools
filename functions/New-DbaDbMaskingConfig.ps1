@@ -240,7 +240,7 @@ function New-DbaDbMaskingConfig {
 
             # Loop through the tables
             foreach ($tableobject in $tablecollection) {
-                Write-Message -Message "Processing table $($tableobject.Name)" -Level Verbose
+                Write-Message -Message "Processing table [$($tableobject.Schema)].[$($tableobject.Name)]" -Level Verbose
 
                 $hasUniqueIndex = $false
 
