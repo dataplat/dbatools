@@ -347,7 +347,7 @@ function Invoke-DbaDbDataMasking {
                             # Check if the query already contains the identifier column
                             if (-not ($query | Select-String -Pattern $identityColumn)) {
                                 # Split up the query from the first "from"
-                                $queryParts = $Filterquery -split "from", 2
+                                $queryParts = $query -split "from", 2
 
                                 # Put it all together again with the identifier
                                 $query = "$($queryParts[0].Trim()), $($identityColumn) FROM $($queryParts[1].Trim())"
@@ -357,14 +357,14 @@ function Invoke-DbaDbDataMasking {
                         # Get the data
                         [array]$data = $db.Query($query)
                     } catch {
-                        Stop-Function -Message "Failure retrieving the data from table $($tableobject.Name)" -Target $Database -ErrorRecord $_ -Continue
+                        Stop-Function -Message "Failure retrieving the data from table [$($tableobject.Schema)].[$($tableobject.Name)]" -Target $Database -ErrorRecord $_ -Continue
                     }
 
                     # Check if the table contains unique indexes
                     if ($tableobject.HasUniqueIndex) {
 
                         # Loop through the rows and generate a unique value for each row
-                        Write-Message -Level Verbose -Message "Generating unique values for $($tableobject.Name)"
+                        Write-Message -Level Verbose -Message "Generating unique values for [$($tableobject.Schema)].[$($tableobject.Name)]"
 
                         for ($i = 0; $i -lt $data.Count; $i++) {
 
