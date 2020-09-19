@@ -54,5 +54,10 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             $results3 = Get-DbaAgentJobHistory -SqlInstance $script:instance2 -Job $jobName3
             ($results3.SqlInstance).Count | Should -Be 2
         }
+
+        It "do not start job if the step does not exist" {
+            $results4 = Start-DbaAgentJob -SqlInstance $script:instance2 -Job $jobName3 -StepName 'stepdoesnoteexist'
+            ($results4.SqlInstance).Count | Should -Be 0
+        }
     }
 }

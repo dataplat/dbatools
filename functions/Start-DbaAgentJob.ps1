@@ -20,7 +20,7 @@ function Start-DbaAgentJob {
         The job(s) to process - this list is auto-populated from the server. If unspecified, all jobs will be processed.
 
     .PARAMETER StepName
-        The job step name to start at, if other than default defined in the job definition.
+        The step name to start the job at, will default to the step configured by the job.
 
     .PARAMETER ExcludeJob
         The job(s) to exclude - this list is auto-populated from the server.
@@ -192,8 +192,13 @@ function Start-DbaAgentJob {
                 $lastrun = $currentjob.LastRunDate
                 Write-Message -Level Verbose -Message "Last run date was $lastrun"
                 if ($StepName) {
-                    Write-Message -Level Verbose -Message "Starting job [$currentjob] at step [$StepName]"
-                    $null = $currentjob.Start($StepName)
+                    if ($currentjob.JobSteps.Name -contains $StepName) {
+                        Write-Message -Level Verbose -Message "Starting job [$currentjob] at step [$StepName]"
+                        $null = $currentjob.Start($StepName)
+                    } else {
+                        Write-Message -Level Verbose -Message "Job [$currentjob] does not contain step [$StepName]"
+                        continue
+                    }
                 } else {
                     $null = $currentjob.Start()
                 }
