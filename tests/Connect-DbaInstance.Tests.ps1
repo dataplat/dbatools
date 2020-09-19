@@ -78,6 +78,13 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $server.Databases.Name.Count -gt 0 | Should Be $true
         }
 
+        It "connects using a connection object" {
+            [System.Data.SqlClient.SqlConnection]$sqlconnection = "Data Source=$script:instance1;Initial Catalog=tempdb;Integrated Security=True;"
+            $server = Connect-DbaInstance -SqlInstance $sqlconnection
+            $server.ComputerName -eq ([DbaInstance]$script:instance1).ComputerName | Should Be $true
+            $server.Databases.Name.Count -gt 0 | Should Be $true
+        }
+
         It "sets connectioncontext parameters that are provided" {
             $params = @{
                 'BatchSeparator'           = 'GO'
