@@ -161,11 +161,11 @@ function Set-DbaTcpPort {
                 if ($Pscmdlet.ShouldProcess($computerName, "Restarting service for $wmiInstanceName")) {
                     try {
                         Write-Message -Level Verbose -Message "Trying Restart-DbaService with ComputerName = '$resolvedComputerName'"
-                        Restart-DbaService -ComputerName $resolvedComputerName -InstanceName $wmiInstanceName -Type Engine -Force -Credential $Credential
+                        $null = Restart-DbaService -ComputerName $resolvedComputerName -InstanceName $wmiInstanceName -Type Engine -Force -Credential $Credential
                     } catch {
                         try {
                             Write-Message -Level Verbose -Message "Fallback: Trying Restart-DbaService with ComputerName = '$computerName'"
-                            Restart-DbaService -ComputerName $computerName -InstanceName $wmiInstanceName -Type Engine -Force -Credential $Credential
+                            $null = Restart-DbaService -ComputerName $computerName -InstanceName $wmiInstanceName -Type Engine -Force -Credential $Credential
                         } catch {
                             Stop-Function -Message "Failure restarting service for $wmiInstanceName on $computerName" -Continue
                         }
