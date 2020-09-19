@@ -27,7 +27,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
                 throw "has failed setup"
             }
             $guid = (New-Guid).Guid
-            $userdir = New-Item -Path "C:\$guid" -ItemType Container
+            $userdir = New-Item -Path "\\$($server.Computername)\C$\$guid" -ItemType Container
             New-Item -Path $userdir -ItemType File -Name 'file1.txt' | Out-Null
             New-Item -Path "$userdir\subdir" -ItemType Container | Out-Null
             New-Item -Path "$userdir\subdir" -ItemType File -Name 'file2.txt' | Out-Null
@@ -61,7 +61,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $recurseresults.Count | Should Be 4
         }
 
-        $results.FileName | Remove-Item
+        $results.RemoteFileName | Remove-Item
         $userdir | Remove-Item -Recurse
 
         $results = Find-DbaOrphanedFile -SqlInstance $script:instance2
