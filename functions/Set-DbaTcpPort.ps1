@@ -171,6 +171,8 @@ function Set-DbaTcpPort {
                         }
                     }
                 }
+            } else {
+                Write-Message -Level Warning -Message "Setting port to $Port for $wmiInstanceName was successful, but restart of SQL Server service is required for the new value to be used"
             }
         }
     }
