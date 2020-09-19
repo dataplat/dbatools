@@ -18,11 +18,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         BeforeAll {
             $dbname = "dbatoolsci_orphanedfile"
             $server = Connect-DbaInstance -SqlInstance $script:instance2
-            $defaultDataPath = $(Split-AdminUnc -Filepath (Get-SqlDefaultPaths $server data)).FilePath # one file as local path
-            $defaultTlogPath = $(Join-AdminUnc -Servername $server.ComputerName -Filepath (Get-SqlDefaultPaths $server log))  # other file as UNC path
-            $createDbSql = "CREATE DATABASE [$dbname] ON PRIMARY (NAME = [$($dbname)_DATA], FILENAME = '$defaultDataPath\$($dbname)_DATA.mdf') LOG ON  (NAME = [$($dbname)_TLOG], FILENAME = '$defaultTlogPath\$($dbname)_TLOG.ldf')"
-            Write-Host $createDbSql #testing
-            $null = $server.Query($createDbSql)
+            $null = $server.Query("CREATE DATABASE $dbname")
             $result = Get-DbaDatabase -SqlInstance $script:instance2 -Database $dbname
             if ($result.count -eq 0) {
                 It "has failed setup" {
