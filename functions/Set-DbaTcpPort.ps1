@@ -141,13 +141,12 @@ function Set-DbaTcpPort {
         foreach ($instance in $SqlInstance) {
             $wmiInstanceName = $instance.InstanceName
             $computerName = $instance.ComputerName
+            $resolvedComputerName = (Resolve-DbaNetworkName -ComputerName $computerName).FullComputerName
 
             if ($Pscmdlet.ShouldProcess($computerName, "Setting port to $Port for $wmiInstanceName")) {
                 try {
-                    $computerName = $instance.ComputerName
-                    $resolved = Resolve-DbaNetworkName -ComputerName $computerName
-                    Write-Message -Level Verbose -Message "Trying Invoke-ManagedComputerCommand with ComputerName = '$($resolved.FullComputerName)'"
-                    Invoke-ManagedComputerCommand -ComputerName $resolved.FullComputerName -ScriptBlock $scriptblock -ArgumentList $instance.ComputerName, $wmiInstanceName, $port, $IpAddress, $instance.InputObject -Credential $Credential
+                    Write-Message -Level Verbose -Message "Trying Invoke-ManagedComputerCommand with ComputerName = '$resolvedComputerName'"
+                    Invoke-ManagedComputerCommand -ComputerName $resolvedComputerName -ScriptBlock $scriptblock -ArgumentList $instance.ComputerName, $wmiInstanceName, $port, $IpAddress, $instance.InputObject -Credential $Credential
                 } catch {
                     try {
                         Write-Message -Level Verbose -Message "Fallback: Trying Invoke-ManagedComputerCommand with ComputerName = '$computerName'"
@@ -161,8 +160,8 @@ function Set-DbaTcpPort {
             if ($Restart) {
                 if ($Pscmdlet.ShouldProcess($computerName, "Restarting service for $wmiInstanceName")) {
                     try {
-                        Write-Message -Level Verbose -Message "Trying Restart-DbaService with ComputerName = '$($resolved.FullComputerName)'"
-                        Restart-DbaService -ComputerName $resolved.FullComputerName -InstanceName $wmiInstanceName -Type Engine -Force -Credential $Credential
+                        Write-Message -Level Verbose -Message "Trying Restart-DbaService with ComputerName = '$resolvedComputerName'"
+                        Restart-DbaService -ComputerName $resolvedComputerName -InstanceName $wmiInstanceName -Type Engine -Force -Credential $Credential
                     } catch {
                         try {
                             Write-Message -Level Verbose -Message "Fallback: Trying Restart-DbaService with ComputerName = '$computerName'"
