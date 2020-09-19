@@ -74,7 +74,7 @@ function Set-DbaTcpPort {
         [parameter(Mandatory)]
         [ValidateRange(1, 65535)]
         [int]$Port,
-        [IpAddress[]]$IpAddress,
+        [IpAddress]$IpAddress,
         [switch]$Restart,
         [switch]$EnableException
     )
