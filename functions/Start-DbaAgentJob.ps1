@@ -105,6 +105,11 @@ function Start-DbaAgentJob {
         This is a parallel approach to submitting all jobs and waiting for them all to complete.
         Starts Job1, starts Job2, starts Job3 and waits for completion of Job1, Job2, and Job3.
 
+    .EXAMPLE
+        PS C:\> Start-DbaAgentJob -SqlInstance sql2016 -Job JobWith5Steps -StepName Step4
+
+        Starts the JobWith5Steps SQL Agent Job at step Step4.
+
     #>
     [CmdletBinding(SupportsShouldProcess, DefaultParameterSetName = "Default")]
     param (
