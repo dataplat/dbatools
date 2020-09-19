@@ -535,34 +535,6 @@ function Connect-DbaInstance {
                     Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
                 }
             }
-            #region Safely convert input into instance parameters
-            <#
-            This is a bit ugly, but:
-            In some cases functions would directly pass their own input through when the parameter on the calling function was typed as [object[]].
-            This would break the base parameter class, as it'd automatically be an array and the parameterclass is not designed to handle arrays (Shouldn't have to).
-
-            Note: Multiple servers in one call were never supported, those old functions were liable to break anyway and should be fixed soonest.
-            #>
-            Write-Message -Level Debug -Message "We have this input type: $($instance.GetType().FullName)"
-            if ($instance.GetType() -eq [Sqlcollaborative.Dbatools.Parameter.DbaInstanceParameter]) {
-                Write-Message -Level Debug -Message "GetType() -eq DbaInstanceParameter"
-                [DbaInstanceParameter]$instance = $instance
-                if ($instance.Type -like "SqlConnection") {
-                    Write-Message -Level Debug -Message ".Type -like SqlConnection"
-                    Write-Message -Level Debug -Message "We build instance as DbaInstanceParameter from Smo.Server with instance.InputObject"
-                    [DbaInstanceParameter]$instance = New-Object Microsoft.SqlServer.Management.Smo.Server($instance.InputObject)
-                }
-            } else {
-                Write-Message -Level Debug -Message "GetType() -new DbaInstanceParameter - and we should not be here"
-                [DbaInstanceParameter]$instance = [DbaInstanceParameter]($instance | Select-Object -First 1)
-
-                if ($instance.Count -gt 1) {
-                    Stop-Function -Message "More than on server was specified when calling Connect-SqlInstance from $((Get-PSCallStack)[1].Command)" -Continue -EnableException:$EnableException
-                }
-            }
-            #endregion Safely convert input into instance parameters
-
-            Write-Message -Level Debug -Message "Now we have this type in instance: '$($instance.Type)'"
 
             #region Input Object was a server object
             if ($instance.Type -like "Server" -or ($isAzure -and $instance.InputObject.ConnectionContext.IsOpen)) {
