@@ -21,24 +21,17 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $null = $server.Query("CREATE DATABASE $dbname")
             $result = Get-DbaDatabase -SqlInstance $script:instance2 -Database $dbname
             if ($result.count -eq 0) {
-                It "has failed setup" {
-                    Set-TestInconclusive -Message "Setup failed"
+                it "has failed setup" {
+                    Set-TestInconclusive -message "Setup failed"
                 }
                 throw "has failed setup"
             }
-            $guid = (New-Guid).Guid
-            $userdir = New-Item -Path "\\$($server.Computername)\C$\$guid" -ItemType Container
-            New-Item -Path $userdir -ItemType File -Name 'file1.txt' | Out-Null
-            New-Item -Path "$userdir\subdir" -ItemType Container | Out-Null
-            New-Item -Path "$userdir\subdir" -ItemType File -Name 'file2.txt' | Out-Null
         }
         AfterAll {
             Get-DbaDatabase -SqlInstance $script:instance2 -Database $dbname | Remove-DbaDatabase -Confirm:$false
         }
-        $null = Dismount-DbaDatabase -SqlInstance $script:instance2 -Database $dbname -Force
+        $null = Detach-DbaDatabase -SqlInstance $script:instance2 -Database $dbname -Force
         $results = Find-DbaOrphanedFile -SqlInstance $script:instance2
-        $userpathresults = Find-DbaOrphanedFile -SqlInstance $script:instance2 -Path $userdir.FullName -FileType 'txt'
-        $recurseresults = Find-DbaOrphanedFile -SqlInstance $script:instance2 -Path $userdir.FullName -FileType 'txt' -Recurse
 
         It "Has the correct default properties" {
             $ExpectedStdProps = 'ComputerName,InstanceName,SqlInstance,Filename,RemoteFilename'.Split(',')
@@ -53,24 +46,11 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $results.Count | Should Be 2
         }
 
-        It "Finds 3 files: including $userdir" {
-            $userpathresults.Count | Should Be 3
-        }
-
-        It "Finds 4 files: recursing $userdir" {
-            $recurseresults.Count | Should Be 4
-        }
-
-        $results.RemoteFileName | Remove-Item
-        $userdir | Remove-Item -Recurse
+        $results.FileName | Remove-Item
 
         $results = Find-DbaOrphanedFile -SqlInstance $script:instance2
-        $userpathresults = Find-DbaOrphanedFile -SqlInstance $script:instance2 -Path $userdir.FullName -FileType 'txt'
-        $recurseresults = Find-DbaOrphanedFile -SqlInstance $script:instance2 -Path $userdir.FullName -FileType 'txt' -Recurse
         It "Finds zero files after cleaning up" {
             $results.Count | Should Be 0
-            $userpathresults.Count | Should Be 0
-            $recurseresults.Count | Should Be 0
         }
     }
 }
