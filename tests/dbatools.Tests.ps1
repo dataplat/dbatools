@@ -312,3 +312,6 @@ $Script:Manifest = Test-ModuleManifest -Path $ManifestPath -ErrorAction Silently
     }
 }
 #>
+
+# Expose versions of imported modules
+Get-Module | Select-Object Name,Version | Sort-Object Name
