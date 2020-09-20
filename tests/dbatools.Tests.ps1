@@ -314,4 +314,4 @@ $Script:Manifest = Test-ModuleManifest -Path $ManifestPath -ErrorAction Silently
 #>
 
 # Expose versions of imported modules
-Get-Module | Select-Object Name,Version | Sort-Object Name
+Get-Module | Select-Object Name,Version | Sort-Object Name | Out-String | Write-Host
