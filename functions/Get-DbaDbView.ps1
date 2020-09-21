@@ -127,8 +127,7 @@ function Get-DbaDbView {
         }
 
         foreach ($db in $InputObject) {
-
-            $db.Views.Refresh($true) # This will ensure the list of views is up-to-date
+            write-message -level verbose "processing $db"
             if ($fqtns) {
                 $views = @()
                 foreach ($fqtn in $fqtns) {
@@ -143,7 +142,7 @@ function Get-DbaDbView {
                     $vw = $db.Views | Where-Object { $_.Name -in $fqtn.View -and $fqtn.Schema -in ($_.Schema, $null) -and $fqtn.Database -in ($_.Parent.Name, $null) }
 
                     if (-not $vw) {
-                        Write-Message -Level Verbose -Message "Could not find view $($fqtn.Name) in $db on $server"
+                        Write-Message -Level Verbose -Message "Could not find view $($fqtn.View) in $db on $($db.Parent.DomainInstanceName)"
                     }
                     $views += $vw
                 }
@@ -157,7 +156,7 @@ function Get-DbaDbView {
             }
 
             if (-not $views) {
-                Write-Message -Message "No views exist in the $db database on $instance" -Target $db -Level Verbose
+                Write-Message -Message "No views exist in the $db database on $($db.Parent.DomainInstanceName)" -Target $db -Level Verbose
                 continue
             }
             if (Test-Bound -ParameterName ExcludeSystemView) {
@@ -167,9 +166,9 @@ function Get-DbaDbView {
             $defaults = 'ComputerName', 'InstanceName', 'SqlInstance', 'Database', 'Schema', 'CreateDate', 'DateLastModified', 'Name'
             foreach ($sqlview in $views) {
 
-                Add-Member -Force -InputObject $sqlview -MemberType NoteProperty -Name ComputerName -value $sqlview.Parent.ComputerName
-                Add-Member -Force -InputObject $sqlview -MemberType NoteProperty -Name InstanceName -value $sqlview.Parent.InstanceName
-                Add-Member -Force -InputObject $sqlview -MemberType NoteProperty -Name SqlInstance -value $sqlview.Parent.SqlInstance
+                Add-Member -Force -InputObject $sqlview -MemberType NoteProperty -Name ComputerName -value $db.Parent.ComputerName
+                Add-Member -Force -InputObject $sqlview -MemberType NoteProperty -Name InstanceName -value $db.Parent.InstanceName
+                Add-Member -Force -InputObject $sqlview -MemberType NoteProperty -Name SqlInstance -value $db.Parent.DomainInstanceName
                 Add-Member -Force -InputObject $sqlview -MemberType NoteProperty -Name Database -value $db.Name
 
                 Select-DefaultView -InputObject $sqlview -Property $defaults
