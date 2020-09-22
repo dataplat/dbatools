@@ -127,7 +127,7 @@ function Get-DbaDbView {
         }
 
         foreach ($db in $InputObject) {
-            write-message -level verbose "processing $db"
+            Write-Message -Level Verbose -Message "processing $db"
             if ($fqtns) {
                 $views = @()
                 foreach ($fqtn in $fqtns) {
