@@ -514,7 +514,7 @@ function Connect-DbaInstance {
                         $serverconn.AccessToken = $accesstoken
                     }
                     $null = $serverconn.Connect()
-                    Write-Message -Level Debug -Message "will build server with serverconn"
+                    Write-Message -Level Debug -Message "will build server with [Microsoft.SqlServer.Management.Common.ServerConnection]serverconn (serverconn.ServerInstance = '$($serverconn.ServerInstance)')"
                     $server = New-Object Microsoft.SqlServer.Management.Smo.Server $serverconn
                     Write-Message -Level Debug -Message "server was build with server.Name = '$($server.Name)'"
                     # Make ComputerName easily available in the server object
@@ -535,40 +535,12 @@ function Connect-DbaInstance {
                     Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
                 }
             }
-            #region Safely convert input into instance parameters
-            <#
-            This is a bit ugly, but:
-            In some cases functions would directly pass their own input through when the parameter on the calling function was typed as [object[]].
-            This would break the base parameter class, as it'd automatically be an array and the parameterclass is not designed to handle arrays (Shouldn't have to).
-
-            Note: Multiple servers in one call were never supported, those old functions were liable to break anyway and should be fixed soonest.
-            #>
-            Write-Message -Level Debug -Message "We have this input type: $($instance.GetType().FullName)"
-            if ($instance.GetType() -eq [Sqlcollaborative.Dbatools.Parameter.DbaInstanceParameter]) {
-                Write-Message -Level Debug -Message "GetType() -eq DbaInstanceParameter"
-                [DbaInstanceParameter]$instance = $instance
-                if ($instance.Type -like "SqlConnection") {
-                    Write-Message -Level Debug -Message ".Type -like SqlConnection"
-                    Write-Message -Level Debug -Message "We build instance as DbaInstanceParameter from Smo.Server with instance.InputObject"
-                    [DbaInstanceParameter]$instance = New-Object Microsoft.SqlServer.Management.Smo.Server($instance.InputObject)
-                }
-            } else {
-                Write-Message -Level Debug -Message "GetType() -new DbaInstanceParameter - and we should not be here"
-                [DbaInstanceParameter]$instance = [DbaInstanceParameter]($instance | Select-Object -First 1)
-
-                if ($instance.Count -gt 1) {
-                    Stop-Function -Message "More than on server was specified when calling Connect-SqlInstance from $((Get-PSCallStack)[1].Command)" -Continue -EnableException:$EnableException
-                }
-            }
-            #endregion Safely convert input into instance parameters
-
-            Write-Message -Level Debug -Message "Now we have this type in instance: '$($instance.Type)'"
 
             #region Input Object was a server object
             if ($instance.Type -like "Server" -or ($isAzure -and $instance.InputObject.ConnectionContext.IsOpen)) {
                 Write-Message -Level Debug -Message "instance.Type -like Server (or Azure) - so we have already the full smo"
                 if ($instance.InputObject.ConnectionContext.IsOpen -eq $false) {
-                    Write-Message -Level Debug -Message "We connect to the instance"
+                    Write-Message -Level Debug -Message "We connect to the instance with instance.InputObject.ConnectionContext.Connect()"
                     $instance.InputObject.ConnectionContext.Connect()
                 }
                 if ($SqlConnectionOnly) {
@@ -591,13 +563,13 @@ function Connect-DbaInstance {
             #region Input Object was anything else
             Write-Message -Level Debug -Message "Input Object was anything else, so not full smo and we have to go on and build one"
             if ($instance.Type -like "SqlConnection") {
-                Write-Message -Level Debug -Message "instance.Type -like SqlConnection - so we build server with Smo.Server"
-                Write-Message -Level Debug -Message "will build server with instance.InputObject of type '$($instance.InputObject.GetType().Name)'"
+                Write-Message -Level Debug -Message "instance.Type -like SqlConnection"
+                Write-Message -Level Debug -Message "will build server with [System.Data.SqlClient.SqlConnection]instance.InputObject (instance.InputObject.DataSource = '$($instance.InputObject.DataSource)')   "
                 $server = New-Object Microsoft.SqlServer.Management.Smo.Server($instance.InputObject)
                 Write-Message -Level Debug -Message "server was build with server.Name = '$($server.Name)'"
 
                 if ($server.ConnectionContext.IsOpen -eq $false) {
-                    Write-Message -Level Debug -Message "We connect to the server"
+                    Write-Message -Level Debug -Message "We connect to the server with server.ConnectionContext.Connect()"
                     $server.ConnectionContext.Connect()
                 }
                 if ($SqlConnectionOnly) {
@@ -654,7 +626,7 @@ function Connect-DbaInstance {
                 $sqlconn = New-Object System.Data.SqlClient.SqlConnection $connstring
                 $serverconn = New-Object Microsoft.SqlServer.Management.Common.ServerConnection $sqlconn
                 $null = $serverconn.Connect()
-                Write-Message -Level Debug -Message "will build server with serverconn"
+                Write-Message -Level Debug -Message "will build server with [Microsoft.SqlServer.Management.Common.ServerConnection]serverconn (serverconn.ServerInstance = '$($serverconn.ServerInstance)')"
                 $server = New-Object Microsoft.SqlServer.Management.Smo.Server $serverconn
                 Write-Message -Level Debug -Message "server was build with server.Name = '$($server.Name)'"
             } elseif (-not $isAzure) {
@@ -774,16 +746,17 @@ function Connect-DbaInstance {
                         # When the Connect method is called, the connection is not automatically released.
                         # The Disconnect method must be called explicitly to release the connection to the connection pool.
                         # https://docs.microsoft.com/en-us/sql/relational-databases/server-management-objects-smo/create-program/disconnecting-from-an-instance-of-sql-server
-                        Write-Message -Level Debug -Message "We try nonpooled connection"
+                        Write-Message -Level Debug -Message "We try nonpooled connection with server.ConnectionContext.Connect()"
                         $server.ConnectionContext.Connect()
                     } elseif ($authtype -eq "Windows Authentication with Credential") {
+                        Write-Message -Level Debug -Message "We have authtype -eq Windows Authentication with Credential"
                         # Make it connect in a natural way, hard to explain.
                         # See https://docs.microsoft.com/en-us/sql/relational-databases/server-management-objects-smo/create-program/connecting-to-an-instance-of-sql-server
                         $null = $server.Information.Version
                         if ($server.ConnectionContext.IsOpen -eq $false) {
                             # Sometimes, however, the above may not connect as promised. Force it.
                             # See https://github.com/sqlcollaborative/dbatools/pull/4426
-                            Write-Message -Level Debug -Message "We try connection - authtype -eq Windows Authentication with Credential"
+                            Write-Message -Level Debug -Message "We try connection with server.ConnectionContext.Connect()"
                             $server.ConnectionContext.Connect()
                         }
                     } else {
@@ -791,7 +764,7 @@ function Connect-DbaInstance {
                             # SqlConnectionObject.Open() enables connection pooling does not support
                             # alternative Windows Credentials and passes default credentials
                             # See https://github.com/sqlcollaborative/dbatools/pull/3809
-                            Write-Message -Level Debug -Message "We try connection - the else path"
+                            Write-Message -Level Debug -Message "We try connection with server.ConnectionContext.SqlConnectionObject.Open()"
                             $server.ConnectionContext.SqlConnectionObject.Open()
                         }
                     }
