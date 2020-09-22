@@ -75,11 +75,17 @@ function Export-DbaXECsv {
                 } else {
                     $xelpath = $InputObject.RemoteTargetFile
                 }
-
-                if ($xelpath -notmatch ".xel") {
+                
+                #this is funny, TargetFile usually is more a path than a real file
+                #Even if the filename property is set to a fixed filepath with a xel
+                #extension, the produced files have something appended to it to make
+                #sure max_file_size and max_rollover_files are respected.
+                #so, even if file ends with .xel, we need to pick up <filename>*.xel
+                if (-not($xelpath.EndsWith(".xel"))) {
                     $xelpath = "$xelpath*.xel"
+                } else {
+                    $xelpath = "$($xelpath.Substring(0, $xelpath.Length-4))*.xel"
                 }
-
                 try {
                     Get-ChildItem -Path $xelpath -ErrorAction Stop
                 } catch {
@@ -118,11 +124,10 @@ function Export-DbaXECsv {
                 Stop-Function -Continue -Message "$currentfile cannot be accessed from $($env:COMPUTERNAME). Does $whoami have access?"
             }
 
-            $FilePath = Get-ExportFilePath -Path $PSBoundParameters.Path -FilePath $PSBoundParameters.FilePath -Type sql -ServerName $instance
-
+            $FilePath = Get-ExportFilePath -Path $PSBoundParameters.Path -FilePath $PSBoundParameters.FilePath -Type csv -ServerName $instance
             $adapter = New-Object XESmartTarget.Core.Utils.XELFileCSVAdapter
             $adapter.InputFile = $currentfile
-            $adapter.OutputFile = (Join-Path $outDir $FilePath)
+            $adapter.OutputFile = $FilePath
 
             try {
                 $adapter.Convert()
