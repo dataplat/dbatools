@@ -5,7 +5,7 @@ function Disable-DbaTraceFlag {
 
     .DESCRIPTION
         The function will disable a Trace Flag that is currently running globally on the SQL Server instance(s) listed.
-        These are not persisted after a restart, use Set-DbaStartupParameter to set them to persist after restarts.er
+        These are not persisted after a restart, use Set-DbaStartupParameter to set them to persist after restarts.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.
