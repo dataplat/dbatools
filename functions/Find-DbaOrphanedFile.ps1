@@ -150,8 +150,8 @@ function Find-DbaOrphanedFile {
                 )
                 SELECT DISTINCT f.fullpath
                 FROM fullpaths AS f
-                WHERE f.fs_filename NOT IN( 'xtp', '5', '`$FSLOG', '`$HKv2', 'filestream.hdr', '"+ $($SystemFiles -join "','") + "' )
-                AND f.fs_fileextension IN('"+ $($FileTypes -join "','") + "')
+                WHERE f.fs_filename NOT IN( 'xtp', '5', '`$FSLOG', '`$HKv2', 'filestream.hdr', '" + $($SystemFiles -join "','") + "' )
+                AND f.fs_fileextension IN('" + $($FileTypes -join "','") + "')
                 AND f.is_file = 1;
                 "
 
@@ -232,7 +232,7 @@ function Find-DbaOrphanedFile {
             }
 
             # Reset all the arrays
-            $sqlpaths = $userpaths = @(); $dirtreefiles = @{}
+            $sqlpaths = $userpaths = @(); $dirtreefiles = @{ }
 
             # Gather a list of files known to SQL Server
             $sqlfiles = Get-SqlFileStructure $server

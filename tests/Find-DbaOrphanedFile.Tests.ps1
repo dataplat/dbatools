@@ -21,7 +21,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $null = $server.Query("CREATE DATABASE $dbname")
             $result = Get-DbaDatabase -SqlInstance $script:instance2 -Database $dbname
             if ($result.count -eq 0) {
-                it "has failed setup" {
+                It "has failed setup" {
                     Set-TestInconclusive -message "Setup failed"
                 }
                 throw "has failed setup"
