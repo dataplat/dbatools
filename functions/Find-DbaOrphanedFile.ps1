@@ -38,7 +38,8 @@ function Find-DbaOrphanedFile {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .PARAMETER Recurse
-        If this switch is enabled, the command will search subdirectories of the Path parameter.
+		If this switch is enabled, the command will search subdirectories of the Path parameter.
+		The Recurse switch has no effect on versions earlier than SQL Server 2005.
 
     .NOTES
         Tags: Orphan, Database, DatabaseFile
@@ -136,24 +137,30 @@ function Find-DbaOrphanedFile {
                 WHERE e.parent IS NULL;
                 "
 
-            $query_files_sql = "
-                WITH fullpaths AS (
-                    SELECT e.*
-                    , CONVERT(nvarchar(2000),e.parent+N'\'+e.fs_filename) AS fullpath
-                    FROM #enum e
-                    WHERE e.parent_id IS NULL
-                    UNION ALL
-                    SELECT e.*
-                    , CONVERT(nvarchar(2000),f.fullpath+N'\'+e.fs_filename) AS fullpath
-                    FROM fullpaths f
-                    INNER JOIN #enum e ON e.parent_id = f.id
-                )
-                SELECT DISTINCT f.fullpath
-                FROM fullpaths AS f
-                WHERE f.fs_filename NOT IN( 'xtp', '5', '`$FSLOG', '`$HKv2', 'filestream.hdr', '" + $($SystemFiles -join "','") + "' )
-                AND f.fs_fileextension IN('" + $($FileTypes -join "','") + "')
-                AND f.is_file = 1;
-                "
+			$query_files_sql = "
+				SELECT f.parent+N'\'+f.fs_filename AS fullpath
+				FROM #enum AS f"
+
+			$query_files_sql_cte = "
+				WITH fullpaths AS (
+					SELECT e.*
+					, CONVERT(nvarchar(2000),e.parent+N'\'+e.fs_filename) AS fullpath
+					FROM #enum e
+					WHERE e.parent_id IS NULL
+					UNION ALL
+					SELECT e.*
+					, CONVERT(nvarchar(2000),f.fullpath+N'\'+e.fs_filename) AS fullpath
+					FROM fullpaths f
+					INNER JOIN #enum e ON e.parent_id = f.id
+				)
+				SELECT DISTINCT f.fullpath
+				FROM fullpaths AS f"
+
+			$query_files_sql_where = "
+				WHERE f.fs_filename NOT IN ( 'xtp', '5', '`$FSLOG', '`$HKv2', 'filestream.hdr', '" + $($SystemFiles -join "','") + "' )
+				AND f.fs_fileextension IN ('" + $($FileTypes -join "','") + "')
+				AND f.is_file = 1;
+				"
 
             # build the query string based on how many directories they want to enumerate
             $sql = $q1
@@ -162,7 +169,8 @@ function Find-DbaOrphanedFile {
                 $recurseVal = If ($Recurse) { '0' } Else { '1' }
                 $sql += $($UserPathList | Where-Object { $_ -ne '' } | ForEach-Object { "$([System.Environment]::Newline)$($q2.Replace('dirname',$_).Replace('recurse',$recurseVal))" } )
             }
-            $sql += $query_files_sql
+            $sql += If ($Recurse) { $query_files_sql_cte } Else { $query_files_sql }
+            $sql += $query_files_sql_where
             Write-Message -Level Debug -Message $sql
             return $sql
         }
@@ -186,7 +194,7 @@ function Find-DbaOrphanedFile {
             $dbfiletable.Tables[0].TableName = "data"
 
             # Add support for Full Text Catalogs in Sql Server 2005 and below
-            if ($server.VersionMajor -lt 10) {
+            if ($smoserver.VersionMajor -lt 10) {
                 $databaselist = $smoserver.Databases | Select-Object -Property Name, IsFullTextEnabled
                 foreach ($db in $databaselist | Where-Object IsFullTextEnabled) {
                     $database = $db.Name
@@ -233,6 +241,9 @@ function Find-DbaOrphanedFile {
 
             # Reset all the arrays
             $sqlpaths = $userpaths = @(); $dirtreefiles = @{ }
+
+			# Turn off recursion for SQL Server 2000
+			If ($server.VersionMajor -lt 9) { $Recurse = $false }
 
             # Gather a list of files known to SQL Server
             $sqlfiles = Get-SqlFileStructure $server
