@@ -39,9 +39,6 @@ function Invoke-DbaDbDataMasking {
     .PARAMETER FilePath
         Configuration file that contains the which tables and columns need to be masked
 
-    .PARAMETER Query
-        If you would like to mask only a subset of a table, use the Query parameter, otherwise all data will be masked.
-
     .PARAMETER Locale
         Set the local to enable certain settings in the masking
 
@@ -142,7 +139,6 @@ function Invoke-DbaDbDataMasking {
         [string[]]$Column,
         [string[]]$ExcludeTable,
         [string[]]$ExcludeColumn,
-        [string]$Query,
         [int]$MaxValue,
         [int]$ModulusFactor = 10,
         [switch]$ExactLength,
@@ -294,8 +290,9 @@ function Invoke-DbaDbDataMasking {
 
                     $dbTable = $db.Tables | Where-Object { $_.Schema -eq $tableobject.Schema -and $_.Name -eq $tableobject.Name }
 
-                    $cleanupIdentityColumn = $false
+                    [bool]$cleanupIdentityColumn = $false
 
+                    # Make sure there is an identity column present to speed things up
                     if (-not ($dbTable.Columns | Where-Object Identity -eq $true)) {
                         Write-Message -Level Verbose -Message "Adding identity column to table [$($dbTable.Schema)].[$($dbTable.Name)]"
                         $query = "ALTER TABLE [$($dbTable.Schema)].[$($dbTable.Name)] ADD MaskingID BIGINT IDENTITY(1, 1) NOT NULL;"
@@ -311,34 +308,63 @@ function Invoke-DbaDbDataMasking {
                         $identityColumn = $dbTable.Columns | Where-Object Identity | Select-Object -ExpandProperty Name
                     }
 
+                    # Check if the index for the identity column is already present
+                    $maskingIndexName = "NIX__$($dbTable.Schema)_$($dbTable.Name)_Masking"
+                    try {
+                        if ($dbTable.Indexes.Name -contains $maskingIndexName) {
+                            Write-Message -Level Verbose -Message "Masking index already exists in table [$($dbTable.Schema)].[$($dbTable.Name)]. Dropping it..."
+                            $dbTable.Indexes[$($maskingIndexName)].Drop()
+                        }
+                    } catch {
+                        Stop-Function -Message "Could not remove identity index to table [$($dbTable.Schema)].[$($dbTable.Name)]" -Continue
+                    }
+
+                    # Create the index for the identity column
                     try {
                         Write-Message -Level Verbose -Message "Adding index on identity column [$($identityColumn)] in table [$($dbTable.Schema)].[$($dbTable.Name)]"
 
-                        $query = "CREATE NONCLUSTERED INDEX NIX_$($dbTable.Name)_Masking ON [$($dbTable.Schema)].[$($dbTable.Name)]([$($identityColumn)])"
+                        $query = "CREATE NONCLUSTERED INDEX [$($maskingIndexName)] ON [$($dbTable.Schema)].[$($dbTable.Name)]([$($identityColumn)])"
 
                         Invoke-DbaQuery -SqlInstance $server -SqlCredential $SqlCredential -Database $db.Name -Query $query
                     } catch {
                         Stop-Function -Message "Could not add identity index to table [$($dbTable.Schema)].[$($dbTable.Name)]" -Continue
                     }
 
-
                     try {
-                        if (-not (Test-Bound -ParameterName Query)) {
+                        if (-not $tableobject.FilterQuery) {
+                            # Get all the columns from the table
                             $columnString = "[" + (($dbTable.Columns | Where-Object DataType -in $supportedDataTypes | Select-Object Name -ExpandProperty Name) -join "],[") + "]"
-                            $columnString += ",[$($identityColumn)]"
-                            $query = "SELECT $($columnString) FROM [$($tableobject.Schema)].[$($tableobject.Name)]"
-                        }
-                        [array]$data = $db.Query($query)
 
+                            # Add the identifier column
+                            $columnString += ",[$($identityColumn)]"
+
+                            # Put it all together
+                            $query = "SELECT $($columnString) FROM [$($tableobject.Schema)].[$($tableobject.Name)]"
+                        } else {
+                            # Get the query from the table objects
+                            $query = ($tableobject.FilterQuery).ToLower()
+
+                            # Check if the query already contains the identifier column
+                            if (-not ($query | Select-String -Pattern $identityColumn)) {
+                                # Split up the query from the first "from"
+                                $queryParts = $query -split "from", 2
+
+                                # Put it all together again with the identifier
+                                $query = "$($queryParts[0].Trim()), $($identityColumn) FROM $($queryParts[1].Trim())"
+                            }
+                        }
+
+                        # Get the data
+                        [array]$data = $db.Query($query)
                     } catch {
-                        Stop-Function -Message "Failure retrieving the data from table $($tableobject.Name)" -Target $Database -ErrorRecord $_ -Continue
+                        Stop-Function -Message "Failure retrieving the data from table [$($tableobject.Schema)].[$($tableobject.Name)]" -Target $Database -ErrorRecord $_ -Continue
                     }
 
                     # Check if the table contains unique indexes
                     if ($tableobject.HasUniqueIndex) {
 
                         # Loop through the rows and generate a unique value for each row
-                        Write-Message -Level Verbose -Message "Generating unique values for $($tableobject.Name)"
+                        Write-Message -Level Verbose -Message "Generating unique values for [$($tableobject.Schema)].[$($tableobject.Name)]"
 
                         for ($i = 0; $i -lt $data.Count; $i++) {
 
@@ -936,16 +962,21 @@ function Invoke-DbaDbDataMasking {
                             }
                         }
 
+                        # Clean up the masking index
                         try {
-                            Write-Message -Level Verbose -Message "Removing index on identity column [$($identityColumn)] in table [$($dbTable.Schema)].[$($dbTable.Name)]"
+                            # Refresh the indexes to make sure to have the latest list
+                            $dbTable.Indexes.Refresh()
 
-                            $query = "DROP INDEX [NIX_$($dbTable.Name)_Masking] ON [$($dbTable.Schema)].[$($dbTable.Name)]"
-
-                            Invoke-DbaQuery -SqlInstance $instance -SqlCredential $SqlCredential -Database $db.Name -Query $query
+                            # Check if the index is there
+                            if ($dbTable.Indexes.Name -contains $maskingIndexName) {
+                                Write-Message -Level verbose -Message "Removing identity index from table [$($dbTable.Schema)].[$($dbTable.Name)]"
+                                $dbTable.Indexes[$($maskingIndexName)].Drop()
+                            }
                         } catch {
-                            Stop-Function -Message "Could not remove identity index to table [$($dbTable.Schema)].[$($dbTable.Name)]" -Continue
+                            Stop-Function -Message "Could not remove identity index from table [$($dbTable.Schema)].[$($dbTable.Name)]" -Continue
                         }
 
+                        # Clean up the identity column
                         if ($cleanupIdentityColumn) {
                             try {
                                 Write-Message -Level Verbose -Message "Removing identity column [$($identityColumn)] from table [$($dbTable.Schema)].[$($dbTable.Name)]"
@@ -959,6 +990,7 @@ function Invoke-DbaDbDataMasking {
                             }
                         }
 
+                        # Return the masking results
                         try {
                             [pscustomobject]@{
                                 ComputerName = $db.Parent.ComputerName

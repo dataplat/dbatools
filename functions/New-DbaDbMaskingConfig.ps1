@@ -240,7 +240,7 @@ function New-DbaDbMaskingConfig {
 
             # Loop through the tables
             foreach ($tableobject in $tablecollection) {
-                Write-Message -Message "Processing table $($tableobject.Name)" -Level Verbose
+                Write-Message -Message "Processing table [$($tableobject.Schema)].[$($tableobject.Name)]" -Level Verbose
 
                 $hasUniqueIndex = $false
 
@@ -580,6 +580,7 @@ function New-DbaDbMaskingConfig {
                         Schema         = $tableobject.Schema
                         Columns        = $columns
                         HasUniqueIndex = $hasUniqueIndex
+                        FilterQuery    = $null
                     }
                 } else {
                     Write-Message -Message "No columns match for masking in table $($tableobject.Name)" -Level Verbose
@@ -603,7 +604,6 @@ function New-DbaDbMaskingConfig {
                 try {
                     $filenamepart = $server.Name.Replace('\', '$').Replace('TCP:', '').Replace(',', '.')
                     $temppath = Join-Path -Path $Path -ChildPath "$($filenamepart).$($db.Name).DataMaskingConfig.json"
-                    #$temppath = "$Path\$($filenamepart).$($db.Name).DataMaskingConfig.json"
 
                     if (-not $script:isWindows) {
                         $temppath = $temppath.Replace("\", "/")
