@@ -18,20 +18,34 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         BeforeAll {
             $dbname = "dbatoolsci_orphanedfile"
             $server = Connect-DbaInstance -SqlInstance $script:instance2
-            $null = $server.Query("CREATE DATABASE $dbname")
+            $defaultDataPath = $(Split-AdminUnc -Filepath (Get-SqlDefaultPaths $server data)).FilePath # one file as local path
+            $defaultTlogPath = $(Join-AdminUnc -Servername $server.ComputerName -Filepath (Get-SqlDefaultPaths $server log))  # other file as UNC path
+            $createDbSql = "
+            CREATE DATABASE [$dbname] ON
+            PRIMARY (NAME = [$($dbname)_DATA], FILENAME = '$defaultDataPath\$($dbname)_DATA.mdf')
+            LOG ON  (NAME = [$($dbname)_TLOG], FILENAME = '$defaultTlogPath\$($dbname)_TLOG.ldf')
+            "
+            $null = $server.Query($createDbSql)
             $result = Get-DbaDatabase -SqlInstance $script:instance2 -Database $dbname
             if ($result.count -eq 0) {
                 It "has failed setup" {
-                    Set-TestInconclusive -message "Setup failed"
+                    Set-TestInconclusive -Message "Setup failed"
                 }
                 throw "has failed setup"
             }
+            $guid = (New-Guid).Guid
+            $userdir = New-Item -Path "\\$($server.Computername)\C$\$guid" -ItemType Container
+            New-Item -Path $userdir -ItemType File -Name 'file1.txt' | Out-Null
+            New-Item -Path "$userdir\subdir" -ItemType Container | Out-Null
+            New-Item -Path "$userdir\subdir" -ItemType File -Name 'file2.txt' | Out-Null
         }
         AfterAll {
             Get-DbaDatabase -SqlInstance $script:instance2 -Database $dbname | Remove-DbaDatabase -Confirm:$false
         }
-        $null = Detach-DbaDatabase -SqlInstance $script:instance2 -Database $dbname -Force
+        $null = Dismount-DbaDatabase -SqlInstance $script:instance2 -Database $dbname -Force
         $results = Find-DbaOrphanedFile -SqlInstance $script:instance2
+        $userpathresults = Find-DbaOrphanedFile -SqlInstance $script:instance2 -Path $userdir.FullName -FileType 'txt'
+        $recurseresults = Find-DbaOrphanedFile -SqlInstance $script:instance2 -Path $userdir.FullName -FileType 'txt' -Recurse
 
         It "Has the correct default properties" {
             $ExpectedStdProps = 'ComputerName,InstanceName,SqlInstance,Filename,RemoteFilename'.Split(',')
@@ -46,11 +60,24 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $results.Count | Should Be 2
         }
 
-        $results.FileName | Remove-Item
+        It "Finds 3 files: including $userdir" {
+            $userpathresults.Count | Should Be 3
+        }
+
+        It "Finds 4 files: recursing $userdir" {
+            $recurseresults.Count | Should Be 4
+        }
+
+        $results.RemoteFileName | Remove-Item
+        $userdir | Remove-Item -Recurse
 
         $results = Find-DbaOrphanedFile -SqlInstance $script:instance2
+        $userpathresults = Find-DbaOrphanedFile -SqlInstance $script:instance2 -Path $userdir.FullName -FileType 'txt'
+        $recurseresults = Find-DbaOrphanedFile -SqlInstance $script:instance2 -Path $userdir.FullName -FileType 'txt' -Recurse
         It "Finds zero files after cleaning up" {
             $results.Count | Should Be 0
+            $userpathresults.Count | Should Be 0
+            $recurseresults.Count | Should Be 0
         }
     }
 }
