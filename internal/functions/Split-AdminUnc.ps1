@@ -5,30 +5,30 @@ function Split-AdminUnc {
     #>
     [CmdletBinding()]
     param (
-        [Parameter(Mandatory,ValueFromPipeline)]
+        [Parameter(Mandatory, ValueFromPipeline)]
         [ValidateNotNullOrEmpty()]
         [string]$Filepath
-	)
+    )
 
-	BEGIN {}
+    BEGIN { }
 
-	PROCESS {
-		if (!$Filepath) { return }
+    PROCESS {
+        if (!$Filepath) { return }
 
-		if ($Filepath -match '^[A-Z]:\\') {
-			[PSCustomObject]@{
-				ServerName = $null
-				FilePath   = $Filepath
-			}
-		}
+        if ($Filepath -match '^[A-Z]:\\') {
+            [PSCustomObject]@{
+                ServerName = $null
+                FilePath   = $Filepath
+            }
+        }
 
-		if ($Filepath -match '^\\\\(.*?)\\([A-Z])\$\\(.*)$') {
-			[PSCustomObject]@{
-				ServerName = $matches[1]
-				FilePath   = $matches[2] + ':\' + $matches[3]
-			}
-		}
-	}
+        if ($Filepath -match '^\\\\(.*?)\\([A-Z])\$\\(.*)$') {
+            [PSCustomObject]@{
+                ServerName = $matches[1]
+                FilePath   = $matches[2] + ':\' + $matches[3]
+            }
+        }
+    }
 
-	END {}
+    END { }
 }
