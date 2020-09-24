@@ -137,11 +137,11 @@ function Find-DbaOrphanedFile {
                 WHERE e.parent IS NULL;
                 "
 
-			$query_files_sql = "
+            $query_files_sql = "
 				SELECT f.parent+N'\'+f.fs_filename AS fullpath
 				FROM #enum AS f"
 
-			$query_files_sql_cte = "
+            $query_files_sql_cte = "
 				WITH fullpaths AS (
 					SELECT e.*
 					, CONVERT(nvarchar(2000),e.parent+N'\'+e.fs_filename) AS fullpath
@@ -156,7 +156,7 @@ function Find-DbaOrphanedFile {
 				SELECT DISTINCT f.fullpath
 				FROM fullpaths AS f"
 
-			$query_files_sql_where = "
+            $query_files_sql_where = "
 				WHERE f.fs_filename NOT IN ( 'xtp', '5', '`$FSLOG', '`$HKv2', 'filestream.hdr', '" + $($SystemFiles -join "','") + "' )
 				AND f.fs_fileextension IN ('" + $($FileTypes -join "','") + "')
 				AND f.is_file = 1;
@@ -242,8 +242,8 @@ function Find-DbaOrphanedFile {
             # Reset all the arrays
             $sqlpaths = $userpaths = @(); $dirtreefiles = @{ }
 
-			# Turn off recursion for SQL Server 2000
-			If ($server.VersionMajor -lt 9) { $Recurse = $false }
+            # Turn off recursion for SQL Server 2000
+            If ($server.VersionMajor -lt 9) { $Recurse = $false }
 
             # Gather a list of files known to SQL Server
             $sqlfiles = Get-SqlFileStructure $server
@@ -269,7 +269,7 @@ function Find-DbaOrphanedFile {
             $dirtreefiles = $server.Databases['master'].ExecuteWithResults($sql).Tables[0] | ForEach-Object {
                 [PSCustomObject]@{
                     Fullpath       = $_.fullpath
-					ComparisonPath = ([IO.Path]::GetFullPath($(Format-Path $(Join-AdminUnc -Servername $server.ComputerName -Filepath $_.fullpath))))
+                    ComparisonPath = ([IO.Path]::GetFullPath($(Format-Path $(Join-AdminUnc -Servername $server.ComputerName -Filepath $_.fullpath))))
                 }
             }
 
