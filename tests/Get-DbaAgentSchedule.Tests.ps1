@@ -15,7 +15,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 
 Describe "$commandname Integration Tests" -Tags "UnitTests" {
     BeforeAll {
-        Write-Message -Level Warning -Message "BeforeAll start: Get-DbaAgentSchedule.Tests.ps1 testing with instance1=$($script:instance2) and instance2=$($script:instance2)"
+        Write-Message -Level Warning -Message "BeforeAll start: Get-DbaAgentSchedule.Tests.ps1 testing with instance1=$($script:instance1) and instance2=$($script:instance2)"
         $server1 = Connect-DbaInstance -SqlInstance $script:instance1
         $server2 = Connect-DbaInstance -SqlInstance $script:instance2
 
@@ -105,10 +105,10 @@ Describe "$commandname Integration Tests" -Tags "UnitTests" {
 
         $null = New-DbaAgentSchedule @ScheduleParams -Force
 
-        Write-Message -Level Warning -Message "BeforeAll end: Get-DbaAgentSchedule.Tests.ps1 testing with instance1=$($script:instance2) and instance2=$($script:instance2)"
+        Write-Message -Level Warning -Message "BeforeAll end: Get-DbaAgentSchedule.Tests.ps1 testing with instance1=$($script:instance1) and instance2=$($script:instance2)"
     }
     AfterAll {
-        Write-Message -Level Warning -Message "AfterAll start: Get-DbaAgentSchedule.Tests.ps1 testing with instance1=$($script:instance2) and instance2=$($script:instance2)"
+        Write-Message -Level Warning -Message "AfterAll start: Get-DbaAgentSchedule.Tests.ps1 testing with instance1=$($script:instance1) and instance2=$($script:instance2)"
 
         $schedules = Get-DbaAgentSchedule -SqlInstance $script:instance2 -Schedule dbatoolsci_WeeklyTest, dbatoolsci_MonthlyTest, Issue_6636_Once, Issue_6636_Once_Copy, Issue_6636_Hour, Issue_6636_Hour_Copy, Issue_6636_Minute, Issue_6636_Minute_Copy, Issue_6636_Second, Issue_6636_Second_Copy, Issue_6636_OneTime, Issue_6636_OneTime_Copy, Issue_6636_AutoStart, Issue_6636_AutoStart_Copy, Issue_6636_OnIdle, Issue_6636_OnIdle_Copy
 
@@ -126,7 +126,7 @@ Describe "$commandname Integration Tests" -Tags "UnitTests" {
             Write-Message -Level Warning -Message "The schedules from $script:instance1 were returned as null"
         }
 
-        Write-Message -Level Warning -Message "AfterAll end: Get-DbaAgentSchedule.Tests.ps1 testing with instance1=$($script:instance2) and instance2=$($script:instance2)"
+        Write-Message -Level Warning -Message "AfterAll end: Get-DbaAgentSchedule.Tests.ps1 testing with instance1=$($script:instance1) and instance2=$($script:instance2)"
     }
 
     Context "Gets the list of Schedules" {
