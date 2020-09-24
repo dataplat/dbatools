@@ -176,9 +176,9 @@ function Find-DbaOrphanedFile {
 
             # use sysaltfiles in lower versions
             if ($smoserver.VersionMajor -eq 8) {
-                $sql = "select filename from sysaltfiles"
+                $sql = "SELECT filename FROM sysaltfiles"
             } else {
-                $sql = "select physical_name as filename from sys.master_files"
+                $sql = "SELECT physical_name AS filename FROM sys.master_files"
             }
 
             $dbfiletable = $smoserver.ConnectionContext.ExecuteWithResults($sql)
@@ -200,7 +200,7 @@ function Find-DbaOrphanedFile {
 
             return $dbfiletable.Tables.Filename | ForEach-Object {
                 [PSCustomObject]@{
-                    Filename       = $(Join-AdminUnc -Servername $smoserver.ComputerName -Filepath $_)
+                    Filename       = $_
                     ComparisonPath = ([IO.Path]::GetFullPath($(Format-Path $(Join-AdminUnc -Servername $smoserver.ComputerName -Filepath $_))))
                 }
             }
@@ -237,28 +237,28 @@ function Find-DbaOrphanedFile {
             # Gather a list of files known to SQL Server
             $sqlfiles = Get-SqlFileStructure $server
 
-            # Get the parent directories of those files
-            $sqlpaths = $sqlfiles | Where-Object Filename | ForEach-Object { Split-Path -Path $_.Filename -Parent }
+            # Get the parent directories of those files in local path format
+            $sqlpaths = $sqlfiles | Where-Object Filename | ForEach-Object { Split-Path -Path $_.Filename -Parent } | Split-AdminUNC | Select-Object -ExpandProperty FilePath
 
-            # Include the default data and log directories from the instance
+            # Include the default data and log directories from the instance in local path format
             Write-Message -Level Debug -Message "Adding paths"
-            $sqlpaths += $(Join-AdminUnc -Servername $server.ComputerName -Filepath ($server.RootDirectory + "\DATA"))
-            $sqlpaths += $(Join-AdminUnc -Servername $server.ComputerName -Filepath (Get-SqlDefaultPaths $server data))
-            $sqlpaths += $(Join-AdminUnc -Servername $server.ComputerName -Filepath (Get-SqlDefaultPaths $server log))
-            $sqlpaths += $(Join-AdminUnc -Servername $server.ComputerName -Filepath $server.MasterDBPath)
-            $sqlpaths += $(Join-AdminUnc -Servername $server.ComputerName -Filepath $server.MasterDBLogPath)
+            $sqlpaths += $(Split-AdminUnc -Filepath ($server.RootDirectory + "\DATA") ).FilePath
+            $sqlpaths += $(Split-AdminUnc -Filepath (Get-SqlDefaultPaths $server data)).FilePath
+            $sqlpaths += $(Split-AdminUnc -Filepath (Get-SqlDefaultPaths $server log) ).FilePath
+            $sqlpaths += $(Split-AdminUnc -Filepath $server.MasterDBPath              ).FilePath
+            $sqlpaths += $(Split-AdminUnc -Filepath $server.MasterDBLogPath           ).FilePath
 
             # Gather a list of files from the filesystem
             $sqlpaths = $sqlpaths | ForEach-Object { $_.TrimEnd("\") } | Sort-Object -Unique
             If ($Path) {
-                $Path = $Path | ForEach-Object { Join-AdminUnc -Servername $server.ComputerName -Filepath $_ }
+                $Path = $Path | ForEach-Object { (Split-AdminUnc  -Filepath $_).FilePath }
                 $userpaths = $Path | ForEach-Object { $_.TrimEnd("\") } | Sort-Object -Unique
             }
             $sql = Get-SQLDirTreeQuery -SqlPathList $sqlpaths -UserPathList $userpaths -FileTypes $fileTypeComparison -SystemFiles $systemfiles -Recurse:$Recurse
             $dirtreefiles = $server.Databases['master'].ExecuteWithResults($sql).Tables[0] | ForEach-Object {
                 [PSCustomObject]@{
                     Fullpath       = $_.fullpath
-                    ComparisonPath = [IO.Path]::GetFullPath($(Format-Path $_.fullpath))
+					ComparisonPath = ([IO.Path]::GetFullPath($(Format-Path $(Join-AdminUnc -Servername $server.ComputerName -Filepath $_.fullpath))))
                 }
             }
 
