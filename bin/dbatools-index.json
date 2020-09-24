@@ -26505,14 +26505,6 @@
                            ""
                        ],
                        [
-                           "Query",
-                           "If you would like to mask only a subset of a table, use the Query parameter, otherwise all data will be masked.",
-                           "",
-                           false,
-                           "false",
-                           ""
-                       ],
-                       [
                            "MaxValue",
                            "Force a max length of strings instead of relying on datatype maxes. Note if a string datatype has a lower MaxValue, that will be used instead.\nUseful for adhoc updates and testing, otherwise, the config file should be used.",
                            "",
@@ -26601,7 +26593,7 @@
                            ""
                        ]
                    ],
-        "Syntax":  "Invoke-DbaDbDataMasking [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cString[]\u003e] [-FilePath] \u003cObject\u003e [[-Locale] \u003cString\u003e] [[-CharacterString] \u003cString\u003e] [[-Table] \u003cString[]\u003e] [[-Column] \u003cString[]\u003e] [[-ExcludeTable] \u003cString[]\u003e] [[-ExcludeColumn] \u003cString[]\u003e] [[-Query] \u003cString\u003e] [[-MaxValue] \u003cInt32\u003e] [[-ModulusFactor] \u003cInt32\u003e] [-ExactLength] [[-ConnectionTimeout] \u003cInt32\u003e] [[-CommandTimeout] \u003cInt32\u003e] [[-BatchSize] \u003cInt32\u003e] [[-DictionaryFilePath] \u003cString[]\u003e] [[-DictionaryExportPath] \u003cString\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Invoke-DbaDbDataMasking [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cString[]\u003e] [-FilePath] \u003cObject\u003e [[-Locale] \u003cString\u003e] [[-CharacterString] \u003cString\u003e] [[-Table] \u003cString[]\u003e] [[-Column] \u003cString[]\u003e] [[-ExcludeTable] \u003cString[]\u003e] [[-ExcludeColumn] \u003cString[]\u003e] [[-MaxValue] \u003cInt32\u003e] [[-ModulusFactor] \u003cInt32\u003e] [-ExactLength] [[-ConnectionTimeout] \u003cInt32\u003e] [[-CommandTimeout] \u003cInt32\u003e] [[-BatchSize] \u003cInt32\u003e] [[-DictionaryFilePath] \u003cString[]\u003e] [[-DictionaryExportPath] \u003cString\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Invoke-DbaDbDbccCheckConstraint",

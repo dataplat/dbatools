@@ -2357,7 +2357,7 @@ function Connect-DbaInstance {
                         $serverconn.AccessToken = $accesstoken
                     }
                     $null = $serverconn.Connect()
-                    Write-Message -Level Debug -Message "will build server with serverconn"
+                    Write-Message -Level Debug -Message "will build server with [Microsoft.SqlServer.Management.Common.ServerConnection]serverconn (serverconn.ServerInstance = '$($serverconn.ServerInstance)')"
                     $server = New-Object Microsoft.SqlServer.Management.Smo.Server $serverconn
                     Write-Message -Level Debug -Message "server was build with server.Name = '$($server.Name)'"
                     # Make ComputerName easily available in the server object
@@ -2374,34 +2374,12 @@ function Connect-DbaInstance {
                     Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
                 }
             }
-            #region Safely convert input into instance parameters
-            
-            Write-Message -Level Debug -Message "We have this input type: $($instance.GetType().FullName)"
-            if ($instance.GetType() -eq [Sqlcollaborative.Dbatools.Parameter.DbaInstanceParameter]) {
-                Write-Message -Level Debug -Message "GetType() -eq DbaInstanceParameter"
-                [DbaInstanceParameter]$instance = $instance
-                if ($instance.Type -like "SqlConnection") {
-                    Write-Message -Level Debug -Message ".Type -like SqlConnection"
-                    Write-Message -Level Debug -Message "We build instance as DbaInstanceParameter from Smo.Server with instance.InputObject"
-                    [DbaInstanceParameter]$instance = New-Object Microsoft.SqlServer.Management.Smo.Server($instance.InputObject)
-                }
-            } else {
-                Write-Message -Level Debug -Message "GetType() -new DbaInstanceParameter - and we should not be here"
-                [DbaInstanceParameter]$instance = [DbaInstanceParameter]($instance | Select-Object -First 1)
-
-                if ($instance.Count -gt 1) {
-                    Stop-Function -Message "More than on server was specified when calling Connect-SqlInstance from $((Get-PSCallStack)[1].Command)" -Continue -EnableException:$EnableException
-                }
-            }
-            #endregion Safely convert input into instance parameters
-
-            Write-Message -Level Debug -Message "Now we have this type in instance: '$($instance.Type)'"
 
             #region Input Object was a server object
             if ($instance.Type -like "Server" -or ($isAzure -and $instance.InputObject.ConnectionContext.IsOpen)) {
                 Write-Message -Level Debug -Message "instance.Type -like Server (or Azure) - so we have already the full smo"
                 if ($instance.InputObject.ConnectionContext.IsOpen -eq $false) {
-                    Write-Message -Level Debug -Message "We connect to the instance"
+                    Write-Message -Level Debug -Message "We connect to the instance with instance.InputObject.ConnectionContext.Connect()"
                     $instance.InputObject.ConnectionContext.Connect()
                 }
                 if ($SqlConnectionOnly) {
@@ -2424,13 +2402,13 @@ function Connect-DbaInstance {
             #region Input Object was anything else
             Write-Message -Level Debug -Message "Input Object was anything else, so not full smo and we have to go on and build one"
             if ($instance.Type -like "SqlConnection") {
-                Write-Message -Level Debug -Message "instance.Type -like SqlConnection - so we build server with Smo.Server"
-                Write-Message -Level Debug -Message "will build server with instance.InputObject of type '$($instance.InputObject.GetType().Name)'"
+                Write-Message -Level Debug -Message "instance.Type -like SqlConnection"
+                Write-Message -Level Debug -Message "will build server with [System.Data.SqlClient.SqlConnection]instance.InputObject (instance.InputObject.DataSource = '$($instance.InputObject.DataSource)')   "
                 $server = New-Object Microsoft.SqlServer.Management.Smo.Server($instance.InputObject)
                 Write-Message -Level Debug -Message "server was build with server.Name = '$($server.Name)'"
 
                 if ($server.ConnectionContext.IsOpen -eq $false) {
-                    Write-Message -Level Debug -Message "We connect to the server"
+                    Write-Message -Level Debug -Message "We connect to the server with server.ConnectionContext.Connect()"
                     $server.ConnectionContext.Connect()
                 }
                 if ($SqlConnectionOnly) {
@@ -2487,7 +2465,7 @@ function Connect-DbaInstance {
                 $sqlconn = New-Object System.Data.SqlClient.SqlConnection $connstring
                 $serverconn = New-Object Microsoft.SqlServer.Management.Common.ServerConnection $sqlconn
                 $null = $serverconn.Connect()
-                Write-Message -Level Debug -Message "will build server with serverconn"
+                Write-Message -Level Debug -Message "will build server with [Microsoft.SqlServer.Management.Common.ServerConnection]serverconn (serverconn.ServerInstance = '$($serverconn.ServerInstance)')"
                 $server = New-Object Microsoft.SqlServer.Management.Smo.Server $serverconn
                 Write-Message -Level Debug -Message "server was build with server.Name = '$($server.Name)'"
             } elseif (-not $isAzure) {
@@ -2607,16 +2585,17 @@ function Connect-DbaInstance {
                         # When the Connect method is called, the connection is not automatically released.
                         # The Disconnect method must be called explicitly to release the connection to the connection pool.
                         # https://docs.microsoft.com/en-us/sql/relational-databases/server-management-objects-smo/create-program/disconnecting-from-an-instance-of-sql-server
-                        Write-Message -Level Debug -Message "We try nonpooled connection"
+                        Write-Message -Level Debug -Message "We try nonpooled connection with server.ConnectionContext.Connect()"
                         $server.ConnectionContext.Connect()
                     } elseif ($authtype -eq "Windows Authentication with Credential") {
+                        Write-Message -Level Debug -Message "We have authtype -eq Windows Authentication with Credential"
                         # Make it connect in a natural way, hard to explain.
                         # See https://docs.microsoft.com/en-us/sql/relational-databases/server-management-objects-smo/create-program/connecting-to-an-instance-of-sql-server
                         $null = $server.Information.Version
                         if ($server.ConnectionContext.IsOpen -eq $false) {
                             # Sometimes, however, the above may not connect as promised. Force it.
                             # See https://github.com/sqlcollaborative/dbatools/pull/4426
-                            Write-Message -Level Debug -Message "We try connection - authtype -eq Windows Authentication with Credential"
+                            Write-Message -Level Debug -Message "We try connection with server.ConnectionContext.Connect()"
                             $server.ConnectionContext.Connect()
                         }
                     } else {
@@ -2624,7 +2603,7 @@ function Connect-DbaInstance {
                             # SqlConnectionObject.Open() enables connection pooling does not support
                             # alternative Windows Credentials and passes default credentials
                             # See https://github.com/sqlcollaborative/dbatools/pull/3809
-                            Write-Message -Level Debug -Message "We try connection - the else path"
+                            Write-Message -Level Debug -Message "We try connection with server.ConnectionContext.SqlConnectionObject.Open()"
                             $server.ConnectionContext.SqlConnectionObject.Open()
                         }
                     }
@@ -14879,11 +14858,17 @@ function Export-DbaXECsv {
                 } else {
                     $xelpath = $InputObject.RemoteTargetFile
                 }
-
-                if ($xelpath -notmatch ".xel") {
+                
+                #this is funny, TargetFile usually is more a path than a real file
+                #Even if the filename property is set to a fixed filepath with a xel
+                #extension, the produced files have something appended to it to make
+                #sure max_file_size and max_rollover_files are respected.
+                #so, even if file ends with .xel, we need to pick up <filename>*.xel
+                if (-not($xelpath.EndsWith(".xel"))) {
                     $xelpath = "$xelpath*.xel"
+                } else {
+                    $xelpath = "$($xelpath.Substring(0, $xelpath.Length-4))*.xel"
                 }
-
                 try {
                     Get-ChildItem -Path $xelpath -ErrorAction Stop
                 } catch {
@@ -14922,11 +14907,10 @@ function Export-DbaXECsv {
                 Stop-Function -Continue -Message "$currentfile cannot be accessed from $($env:COMPUTERNAME). Does $whoami have access?"
             }
 
-            $FilePath = Get-ExportFilePath -Path $PSBoundParameters.Path -FilePath $PSBoundParameters.FilePath -Type sql -ServerName $instance
-
+            $FilePath = Get-ExportFilePath -Path $PSBoundParameters.Path -FilePath $PSBoundParameters.FilePath -Type csv -ServerName $instance
             $adapter = New-Object XESmartTarget.Core.Utils.XELFileCSVAdapter
             $adapter.InputFile = $currentfile
-            $adapter.OutputFile = (Join-Path $outDir $FilePath)
+            $adapter.OutputFile = $FilePath
 
             try {
                 $adapter.Convert()
@@ -26816,24 +26800,18 @@ function Get-DbaEndpoint {
                 Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
-            # the next block is the best we can do for docker machines that don't usually resolve in DNS
-            # if this code block is placed after Get-DbaEndpoint, everything fails. Not sure why, yet.
-            if ($server.NetName -and $server.HostPlatform -eq "Linux" -and $instance.ComputerName -notmatch '\.') {
-                Add-Member -InputObject $instance -NotePropertyName ComputerName -NotePropertyValue $server.NetName -Force
-            }
-
             # Not sure why minimumversion isnt working
             if ($server.VersionMajor -lt 9) {
-                Stop-Function -Message "SQL Server version 9 required - $instance not supported." -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+                Stop-Function -Message "SQL Server version 9 required - $server not supported." -Category ConnectionError -ErrorRecord $_ -Target $server -Continue
             }
 
             $endpoints = $server.Endpoints
 
-            if ($endpoint) {
-                $endpoints = $endpoints | Where-Object Name -in $endpoint
+            if ($Endpoint) {
+                $endpoints = $endpoints | Where-Object Name -In $Endpoint
             }
             if ($Type) {
-                $endpoints = $endpoints | Where-Object EndpointType -in $Type
+                $endpoints = $endpoints | Where-Object EndpointType -In $Type
             }
 
             foreach ($end in $endpoints) {
@@ -26841,16 +26819,18 @@ function Get-DbaEndpoint {
                 if ($end.Protocol.Tcp.ListenerPort) {
                     if ($end.Protocol.Tcp.ListenerIPAddress -ne [System.Net.IPAddress]'0.0.0.0') {
                         $dns = $end.Protocol.Tcp.ListenerIPAddress
-                    } elseif ($instance.ComputerName -match '\.' -or $server.HostPlatform -eq "Linux" ) {
-                        $dns = $instance.ComputerName
+                    } elseif ($server.HostPlatform -eq "Linux" -and $server.NetName) {
+                        $dns = $server.NetName
+                    } elseif ($server.ComputerName -match '\.') {
+                        $dns = $server.ComputerName
                     } else {
                         try {
-                            $dns = [System.Net.Dns]::GetHostEntry($instance.ComputerName).HostName
+                            $dns = [System.Net.Dns]::GetHostEntry($server.ComputerName).HostName
                         } catch {
                             try {
-                                $dns = [System.Net.Dns]::GetHostAddresses($instance.ComputerName)
+                                $dns = [System.Net.Dns]::GetHostAddresses($server.ComputerName)
                             } catch {
-                                $dns = $instance.ComputerName
+                                $dns = $server.ComputerName
                             }
                         }
                     }
@@ -42798,7 +42778,6 @@ function Invoke-DbaDbDataMasking {
         [string[]]$Column,
         [string[]]$ExcludeTable,
         [string[]]$ExcludeColumn,
-        [string]$Query,
         [int]$MaxValue,
         [int]$ModulusFactor = 10,
         [switch]$ExactLength,
@@ -42950,8 +42929,9 @@ function Invoke-DbaDbDataMasking {
 
                     $dbTable = $db.Tables | Where-Object { $_.Schema -eq $tableobject.Schema -and $_.Name -eq $tableobject.Name }
 
-                    $cleanupIdentityColumn = $false
+                    [bool]$cleanupIdentityColumn = $false
 
+                    # Make sure there is an identity column present to speed things up
                     if (-not ($dbTable.Columns | Where-Object Identity -eq $true)) {
                         Write-Message -Level Verbose -Message "Adding identity column to table [$($dbTable.Schema)].[$($dbTable.Name)]"
                         $query = "ALTER TABLE [$($dbTable.Schema)].[$($dbTable.Name)] ADD MaskingID BIGINT IDENTITY(1, 1) NOT NULL;"
@@ -42967,34 +42947,63 @@ function Invoke-DbaDbDataMasking {
                         $identityColumn = $dbTable.Columns | Where-Object Identity | Select-Object -ExpandProperty Name
                     }
 
+                    # Check if the index for the identity column is already present
+                    $maskingIndexName = "NIX__$($dbTable.Schema)_$($dbTable.Name)_Masking"
+                    try {
+                        if ($dbTable.Indexes.Name -contains $maskingIndexName) {
+                            Write-Message -Level Verbose -Message "Masking index already exists in table [$($dbTable.Schema)].[$($dbTable.Name)]. Dropping it..."
+                            $dbTable.Indexes[$($maskingIndexName)].Drop()
+                        }
+                    } catch {
+                        Stop-Function -Message "Could not remove identity index to table [$($dbTable.Schema)].[$($dbTable.Name)]" -Continue
+                    }
+
+                    # Create the index for the identity column
                     try {
                         Write-Message -Level Verbose -Message "Adding index on identity column [$($identityColumn)] in table [$($dbTable.Schema)].[$($dbTable.Name)]"
 
-                        $query = "CREATE NONCLUSTERED INDEX NIX_$($dbTable.Name)_Masking ON [$($dbTable.Schema)].[$($dbTable.Name)]([$($identityColumn)])"
+                        $query = "CREATE NONCLUSTERED INDEX [$($maskingIndexName)] ON [$($dbTable.Schema)].[$($dbTable.Name)]([$($identityColumn)])"
 
                         Invoke-DbaQuery -SqlInstance $server -SqlCredential $SqlCredential -Database $db.Name -Query $query
                     } catch {
                         Stop-Function -Message "Could not add identity index to table [$($dbTable.Schema)].[$($dbTable.Name)]" -Continue
                     }
 
-
                     try {
-                        if (-not (Test-Bound -ParameterName Query)) {
+                        if (-not $tableobject.FilterQuery) {
+                            # Get all the columns from the table
                             $columnString = "[" + (($dbTable.Columns | Where-Object DataType -in $supportedDataTypes | Select-Object Name -ExpandProperty Name) -join "],[") + "]"
-                            $columnString += ",[$($identityColumn)]"
-                            $query = "SELECT $($columnString) FROM [$($tableobject.Schema)].[$($tableobject.Name)]"
-                        }
-                        [array]$data = $db.Query($query)
 
+                            # Add the identifier column
+                            $columnString += ",[$($identityColumn)]"
+
+                            # Put it all together
+                            $query = "SELECT $($columnString) FROM [$($tableobject.Schema)].[$($tableobject.Name)]"
+                        } else {
+                            # Get the query from the table objects
+                            $query = ($tableobject.FilterQuery).ToLower()
+
+                            # Check if the query already contains the identifier column
+                            if (-not ($query | Select-String -Pattern $identityColumn)) {
+                                # Split up the query from the first "from"
+                                $queryParts = $query -split "from", 2
+
+                                # Put it all together again with the identifier
+                                $query = "$($queryParts[0].Trim()), $($identityColumn) FROM $($queryParts[1].Trim())"
+                            }
+                        }
+
+                        # Get the data
+                        [array]$data = $db.Query($query)
                     } catch {
-                        Stop-Function -Message "Failure retrieving the data from table $($tableobject.Name)" -Target $Database -ErrorRecord $_ -Continue
+                        Stop-Function -Message "Failure retrieving the data from table [$($tableobject.Schema)].[$($tableobject.Name)]" -Target $Database -ErrorRecord $_ -Continue
                     }
 
                     # Check if the table contains unique indexes
                     if ($tableobject.HasUniqueIndex) {
 
                         # Loop through the rows and generate a unique value for each row
-                        Write-Message -Level Verbose -Message "Generating unique values for $($tableobject.Name)"
+                        Write-Message -Level Verbose -Message "Generating unique values for [$($tableobject.Schema)].[$($tableobject.Name)]"
 
                         for ($i = 0; $i -lt $data.Count; $i++) {
 
@@ -43592,16 +43601,21 @@ function Invoke-DbaDbDataMasking {
                             }
                         }
 
+                        # Clean up the masking index
                         try {
-                            Write-Message -Level Verbose -Message "Removing index on identity column [$($identityColumn)] in table [$($dbTable.Schema)].[$($dbTable.Name)]"
+                            # Refresh the indexes to make sure to have the latest list
+                            $dbTable.Indexes.Refresh()
 
-                            $query = "DROP INDEX [NIX_$($dbTable.Name)_Masking] ON [$($dbTable.Schema)].[$($dbTable.Name)]"
-
-                            Invoke-DbaQuery -SqlInstance $instance -SqlCredential $SqlCredential -Database $db.Name -Query $query
+                            # Check if the index is there
+                            if ($dbTable.Indexes.Name -contains $maskingIndexName) {
+                                Write-Message -Level verbose -Message "Removing identity index from table [$($dbTable.Schema)].[$($dbTable.Name)]"
+                                $dbTable.Indexes[$($maskingIndexName)].Drop()
+                            }
                         } catch {
-                            Stop-Function -Message "Could not remove identity index to table [$($dbTable.Schema)].[$($dbTable.Name)]" -Continue
+                            Stop-Function -Message "Could not remove identity index from table [$($dbTable.Schema)].[$($dbTable.Name)]" -Continue
                         }
 
+                        # Clean up the identity column
                         if ($cleanupIdentityColumn) {
                             try {
                                 Write-Message -Level Verbose -Message "Removing identity column [$($identityColumn)] from table [$($dbTable.Schema)].[$($dbTable.Name)]"
@@ -43615,6 +43629,7 @@ function Invoke-DbaDbDataMasking {
                             }
                         }
 
+                        # Return the masking results
                         try {
                             [pscustomobject]@{
                                 ComputerName = $db.Parent.ComputerName
@@ -53048,7 +53063,7 @@ function New-DbaDbMaskingConfig {
 
             # Loop through the tables
             foreach ($tableobject in $tablecollection) {
-                Write-Message -Message "Processing table $($tableobject.Name)" -Level Verbose
+                Write-Message -Message "Processing table [$($tableobject.Schema)].[$($tableobject.Name)]" -Level Verbose
 
                 $hasUniqueIndex = $false
 
@@ -53388,6 +53403,7 @@ function New-DbaDbMaskingConfig {
                         Schema         = $tableobject.Schema
                         Columns        = $columns
                         HasUniqueIndex = $hasUniqueIndex
+                        FilterQuery    = $null
                     }
                 } else {
                     Write-Message -Message "No columns match for masking in table $($tableobject.Name)" -Level Verbose
@@ -53411,7 +53427,6 @@ function New-DbaDbMaskingConfig {
                 try {
                     $filenamepart = $server.Name.Replace('\', '$').Replace('TCP:', '').Replace(',', '.')
                     $temppath = Join-Path -Path $Path -ChildPath "$($filenamepart).$($db.Name).DataMaskingConfig.json"
-                    #$temppath = "$Path\$($filenamepart).$($db.Name).DataMaskingConfig.json"
 
                     if (-not $script:isWindows) {
                         $temppath = $temppath.Replace("\", "/")
@@ -71335,8 +71350,6 @@ function Test-DbaDbDataMaskingConfig {
                                 Error  = "The category is not valid with data type $($column.ColumnType)"
                             }
                         }
-
-                        
                     }
 
                     # Number checks
@@ -71352,8 +71365,6 @@ function Test-DbaDbDataMaskingConfig {
                                     Error  = "The action does not contain all the required properties. Please check the action "
                                 }
                             }
-
-                            
                         }
 
                         if ($column.ColumnType -notin $allowedNumberTypes) {
@@ -71365,7 +71376,7 @@ function Test-DbaDbDataMaskingConfig {
                             }
                         }
                     }
-                }# End column action
+                } # End column action
             } # End for each column
         } # End for each table
     }
