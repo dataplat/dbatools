@@ -38,8 +38,8 @@ function Find-DbaOrphanedFile {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .PARAMETER Recurse
-		If this switch is enabled, the command will search subdirectories of the Path parameter.
-		The Recurse switch has no effect on versions earlier than SQL Server 2005.
+        If this switch is enabled, the command will search subdirectories of the Path parameter.
+        The Recurse switch has no effect on versions earlier than SQL Server 2005.
 
     .NOTES
         Tags: Orphan, Database, DatabaseFile
@@ -138,29 +138,29 @@ function Find-DbaOrphanedFile {
                 "
 
             $query_files_sql = "
-				SELECT f.parent+N'\'+f.fs_filename AS fullpath
-				FROM #enum AS f"
+                SELECT f.parent+N'\'+f.fs_filename AS fullpath
+                FROM #enum AS f"
 
             $query_files_sql_cte = "
-				WITH fullpaths AS (
-					SELECT e.*
-					, CONVERT(nvarchar(2000),e.parent+N'\'+e.fs_filename) AS fullpath
-					FROM #enum e
-					WHERE e.parent_id IS NULL
-					UNION ALL
-					SELECT e.*
-					, CONVERT(nvarchar(2000),f.fullpath+N'\'+e.fs_filename) AS fullpath
-					FROM fullpaths f
-					INNER JOIN #enum e ON e.parent_id = f.id
-				)
-				SELECT DISTINCT f.fullpath
-				FROM fullpaths AS f"
+                WITH fullpaths AS (
+                    SELECT e.*
+                    , CONVERT(nvarchar(2000),e.parent+N'\'+e.fs_filename) AS fullpath
+                    FROM #enum e
+                    WHERE e.parent_id IS NULL
+                    UNION ALL
+                    SELECT e.*
+                    , CONVERT(nvarchar(2000),f.fullpath+N'\'+e.fs_filename) AS fullpath
+                    FROM fullpaths f
+                    INNER JOIN #enum e ON e.parent_id = f.id
+                )
+                SELECT DISTINCT f.fullpath
+                FROM fullpaths AS f"
 
             $query_files_sql_where = "
-				WHERE f.fs_filename NOT IN ( 'xtp', '5', '`$FSLOG', '`$HKv2', 'filestream.hdr', '" + $($SystemFiles -join "','") + "' )
-				AND f.fs_fileextension IN ('" + $($FileTypes -join "','") + "')
-				AND f.is_file = 1;
-				"
+                WHERE f.fs_filename NOT IN ( 'xtp', '5', '`$FSLOG', '`$HKv2', 'filestream.hdr', '" + $($SystemFiles -join "','") + "' )
+                AND f.fs_fileextension IN ('" + $($FileTypes -join "','") + "')
+                AND f.is_file = 1;
+                "
 
             # build the query string based on how many directories they want to enumerate
             $sql = $q1
