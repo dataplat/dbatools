@@ -68,7 +68,7 @@ function Convert-DbaIndexToTable {
                     [int]$length = $uddt.Length
                 } else {
                     [string]$dataType = $columnObject.DataType.SqlDataType.ToString().ToLower()
-                    [int]$length = $columnObject.DataType.Length
+                    [int]$length = $columnObject.DataType.MaximumLength
                 }
 
                 # Based on the data type create a different column statement
@@ -76,17 +76,17 @@ function Convert-DbaIndexToTable {
                     { $_ -in "bigint", "date", "datetime", "datetime2", "smallint", "time", "tinyint" } {
                         $columnStatements += "[$($columnObject.Name)] [$dataType]"
                     }
-                    { $_ -in "char", "nchar", "nvarchar", "varchar" } {
+                    { $_ -like "*char*" } {
                         $columnStatements += "[$($columnObject.Name)] [$dataType]($length)"
                     }
                     default {
                         $columnStatements += "[$($columnObject.Name)] [$dataType]"
                     }
                 }
-
-                # Add the id in there
-                $columnStatements += "[MaskID] [bigint]"
             }
+
+            # Add the id in there
+            $columnStatements += "[MaskID] [bigint]"
 
             # The query
             if ($columns.Count -ge 1) {
@@ -94,11 +94,13 @@ function Convert-DbaIndexToTable {
                 $columnNames += "MaskID"
 
                 $tableStatements += [PSCustomObject]@{
-                    Schema          = "$($tableObject.Schema)"
-                    Table           = "$($tableObject.Name)"
-                    Columns         = $columnNames
-                    TempTableName   = "#$($tableObject.Schema)_$($tableObject.Name)"
-                    CreateStatement = "CREATE TABLE #$($tableObject.Schema)_$($tableObject.Name)($($columnStatements -join ","));"
+                    Schema               = "$($tableObject.Schema)"
+                    Table                = "$($tableObject.Name)"
+                    Columns              = $columnNames
+                    TempTableName        = "$($tableObject.Schema)_$($tableObject.Name)"
+                    CreateStatement      = "CREATE TABLE $($tableObject.Schema)_$($tableObject.Name)($($columnStatements -join ","));"
+                    UniqueIndexName      = "UIX_$($tableobject.Schema)_$($tableobject.Name)"
+                    UniqueIndexStatement = "CREATE UNIQUE NONCLUSTERED INDEX [UIX_$($tableobject.Schema)_$($tableobject.Name)] ON $($tableObject.Schema)_$($tableObject.Name)([$($columnNames -join '],[')] ASC);"
                 }
             }
         }
