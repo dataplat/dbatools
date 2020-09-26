@@ -292,6 +292,7 @@ function Invoke-DbaAdvancedInstall {
     # change port after the installation
     if ($Port) {
         $null = Set-DbaTcpPort -SqlInstance "$($ComputerName)\$($InstanceName)" -Credential $Credential -Port $Port -EnableException:$EnableException -Confirm:$false
+        $null = Restart-DbaService -ComputerName $computerName -InstanceName $InstanceName -Credential $Credential -Type Engine -Force -EnableException:$EnableException -Confirm:$false
     }
     # restart if necessary
     try {
