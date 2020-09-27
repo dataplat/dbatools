@@ -7,23 +7,24 @@ function Get-DbaAgBackupHistory {
         Returns backup history details for some or all databases on a SQL Server Availability Group.
 
         You can even get detailed information (including file path) for latest full, differential and log files.
-
-### Discuss this:
-        Backups taken with the CopyOnly option will NOT be returned, unless the IncludeCopyOnly switch is present or the target includes an Availability Group listener or a database in an Availability Group
+        For detailed examples of the various parameters see the documentation of Get-DbaDbBackupHistory.
 
         Reference: http://www.sqlhub.com/2011/07/find-your-backup-history-in-sql-server.html
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.
 
+        If you pass in one availability group listener, all replicas are automatically determined and queried.
+        If you pass in a list of individual replicas, they will be queried. This enables you to use custom ports for the replicas.
+
     .PARAMETER SqlCredential
         Credential object used to connect to the SQL Server instance as a different user. This can be a Windows or SQL Server account. Windows users are determined by the existence of a backslash, so if you are intending to use an alternative Windows connection instead of a SQL login, ensure it contains a backslash.
 
     .PARAMETER AvailabilityGroup
-        Specify the availability groups to process.
+        Specify the availability group to process.
 
     .PARAMETER Database
-        Specifies one or more database(s) to process. If unspecified, all databases will be processed.
+        Specifies one or more database(s) to process. If unspecified, all databases of the availability group will be processed.
 
     .PARAMETER ExcludeDatabase
         Specifies one or more database(s) to exclude from processing.
@@ -84,70 +85,33 @@ function Get-DbaAgBackupHistory {
         https://dbatools.io/Get-DbaAgBackupHistory
 
     .EXAMPLE
-        PS C:\> Get-DbaAgBackupHistory -SqlInstance SqlInstance2014a
+        PS C:\> Get-DbaAgBackupHistory -SqlInstance AgListener -AvailabilityGroup AgTest1
 
-        Returns server name, database, username, backup type, date for all database backups still in msdb history on SqlInstance2014a. This may return many rows; consider using filters that are included in other examples.
-
-    .EXAMPLE
-        PS C:\> $cred = Get-Credential sqladmin
-        Get-DbaAgBackupHistory -SqlInstance SqlInstance2014a -SqlCredential $cred
-
-        Does the same as above but connect to SqlInstance2014a as SQL user "sqladmin"
+        Returns information for all database backups still in msdb history on all replicas of availability group AgTest1 using the listener AgListener to determine all replicas.
 
     .EXAMPLE
-        PS C:\> Get-DbaAgBackupHistory -SqlInstance SqlInstance2014a -Database db1, db2 -Since '2016-07-01 10:47:00'
+        PS C:\> Get-DbaAgBackupHistory -SqlInstance Replica1, Replica2, Replica3 -AvailabilityGroup AgTest1
 
-        Returns backup information only for databases db1 and db2 on SqlInstance2014a since July 1, 2016 at 10:47 AM.
-
-    .EXAMPLE
-        PS C:\> Get-DbaAgBackupHistory -SqlInstance sql2014 -Database AdventureWorks2014, pubs -Force | Format-Table
-
-        Returns information only for AdventureWorks2014 and pubs and formats the results as a table.
+        Returns information for all database backups still in msdb history on the given replicas of availability group AgTest1.
 
     .EXAMPLE
-        PS C:\> Get-DbaAgBackupHistory -SqlInstance sql2014 -Database AdventureWorks2014 -Last
+        PS C:\> Get-DbaAgBackupHistory -SqlInstance 'Replica1:14331', 'Replica2:14332', 'Replica3:14333' -AvailabilityGroup AgTest1
 
-        Returns information about the most recent full, differential and log backups for AdventureWorks2014 on sql2014.
-
-    .EXAMPLE
-        PS C:\> Get-DbaAgBackupHistory -SqlInstance sql2014 -Database AdventureWorks2014 -Last -DeviceType Disk
-
-        Returns information about the most recent full, differential and log backups for AdventureWorks2014 on sql2014, but only for backups to disk.
+        Returns information for all database backups still in msdb history on the given replicas of availability group AgTest1 using custom ports.
 
     .EXAMPLE
-        PS C:\> Get-DbaAgBackupHistory -SqlInstance sql2014 -Database AdventureWorks2014 -Last -DeviceType 148,107
+        PS C:\> $ListOfReplicas | Get-DbaAgBackupHistory -AvailabilityGroup AgTest1
 
-        Returns information about the most recent full, differential and log backups for AdventureWorks2014 on sql2014, but only for backups with device_type 148 and 107.
-
-    .EXAMPLE
-        PS C:\> Get-DbaAgBackupHistory -SqlInstance sql2014 -Database AdventureWorks2014 -LastFull
-
-        Returns information about the most recent full backup for AdventureWorks2014 on sql2014.
+        Returns information for all database backups still in msdb history on the replicas in $ListOfReplicas of availability group AgTest1.
 
     .EXAMPLE
-        PS C:\> Get-DbaAgBackupHistory -SqlInstance sql2014 -Database AdventureWorks2014 -Type Full
+        PS C:\> $serverWithAllAgs = Connect-DbaInstance -SqlInstance MyServer
+        $allAgResults = foreach ( $ag in $serverWithAllAgs.AvailabilityGroups ) {
+            Get-DbaAgBackupHistory -SqlInstance $ag.AvailabilityReplicas.Name -AvailabilityGroup $ag.Name
+        }
+        $allAgResults | Format-Table
 
-        Returns information about all Full backups for AdventureWorks2014 on sql2014.
-
-    .EXAMPLE
-        PS C:\> Get-DbaRegServer -SqlInstance sql2016 | Get-DbaAgBackupHistory
-
-        Returns database backup information for every database on every server listed in the Central Management Server on sql2016.
-
-    .EXAMPLE
-        PS C:\> Get-DbaAgBackupHistory -SqlInstance SqlInstance2014a, sql2016 -Force
-
-        Returns detailed backup history for all databases on SqlInstance2014a and sql2016.
-
-    .EXAMPLE
-        PS C:\> Get-DbaAgBackupHistory -SqlInstance sql2016 -Database db1 -RecoveryFork 38e5e84a-3557-4643-a5d5-eed607bef9c6 -Last
-
-        If db1 has multiple recovery forks, specifying the RecoveryFork GUID will restrict the search to that fork.
-
-    .EXAMPLE
-        PS C:\> Get-DbaAgBackupHistory -SqlInstance AgListener -Last
-
-        Will query all replicas in the Availability Group with AgListener and return the backup chain (Full, Diff and Log) to restore to the most rececnt point in time
+        Returns information for all database on all replicas for all availability groups on sql instance MyServer.
 
     #>
     [CmdletBinding(DefaultParameterSetName = "Default")]
@@ -156,7 +120,8 @@ function Get-DbaAgBackupHistory {
         [DbaInstanceParameter[]]
         $SqlInstance,
         [PsCredential]$SqlCredential,
-        [string[]]$AvailabilityGroup,
+        [parameter(Mandatory)]
+        [string]$AvailabilityGroup,
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
         [switch]$IncludeCopyOnly,
@@ -181,6 +146,7 @@ function Get-DbaAgBackupHistory {
     begin {
         Write-Message -Level System -Message "Active Parameter set: $($PSCmdlet.ParameterSetName)."
         Write-Message -Level System -Message "Bound parameters: $($PSBoundParameters.Keys -join ", ")"
+        $serverList = @()
     }
 
     process {
@@ -190,88 +156,66 @@ function Get-DbaAgBackupHistory {
             } catch {
                 Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
-            $AgResults = @()
-            $ProcessedAgDatabases = @()
-            if ($server.AvailabilityGroups.Count -gt 0) {
-                $agShortInstance = $instance.FullName.split('.')[0]
-                if ($agShortInstance -in ($server.AvailabilityGroups.AvailabilityGroupListeners).Name) {
-                    # We have a listener passed in, just query the dbs specified or all in the AG
-                    $null = $PSBoundParameters.Remove('SqlInstance')
-                    $null = $PSBoundParameters.Remove('IncludeCopyOnly')
-                    Write-Message -Level Verbose -Message "Fetching history from replicas on $($AvailabilityGroupBase.AvailabilityReplicas.name)"
-                    $AvailabilityGroupBase = ($server.AvailabilityGroups | Where-Object { $_.AvailabilityGroupListeners.name -eq $agShortInstance })
-                    $AgLoopResults = Get-DbaDbBackupHistory -SqlInstance $AvailabilityGroupBase.AvailabilityReplicas.name @PSBoundParameters -IncludeCopyOnly
-                    $AvailabilityGroupName = $AvailabilityGroupBase.name
-                    Foreach ($agr in $AgLoopResults) {
-                        $agr.AvailabilityGroupName = $AvailabilityGroupName
-                    }
-                    if ($Last) {
-                        Write-Message -Level Verbose -Message "Filtering Ag backups for Last"
-                        $AgResults = $AgLoopResults | Select-DbaBackupInformation -ServerName $AvailabilityGroupName
-                    } elseif ($LastFull) {
-                        Foreach ($AgDb in ( $AgLoopResults.Database | Select-Object -Unique)) {
-                            $AgResults += $AgLoopResults | Where-Object { $_.Database -eq $AgDb } | Sort-Object -Property FirstLsn | Select-Object -Last 1
-                        }
-                    } elseif ($LastDiff) {
-                        Foreach ($AgDb in ( $AgLoopResults.Database | Select-Object -Unique)) {
-                            $AgResults += $AgLoopResults | Where-Object { $_.Database -eq $AgDb } | Sort-Object -Property FirstLsn | Select-Object -Last 1
-                        }
-                    } elseif ($LastLog) {
-                        Foreach ($AgDb in ( $AgLoopResults.Database | Select-Object -Unique)) {
-                            $AgResults += $AgLoopResults | Where-Object { $_.Database -eq $AgDb } | Sort-Object -Property FirstLsn | Select-Object -Last 1
-                        }
-                    } else {
-                        $AgResults += $AgLoopResults
-                    }
-                    # Results are already in the correct format so drop to output
-                    $agresults
-                    ### Discuss: What if more than one SqlInstance is passed in?
-                    # We're done at this point so exit function
-                    return
-                }
+
+            # Only work on instances with availability groups
+            if ($server.AvailabilityGroups.Count -eq 0) {
+                Stop-Function -Message "Instance $instance has no availability groups, so skipping." -Target $instance -Continue
             }
 
-            $databases = @()
-            if ($null -ne $Database) {
-                foreach ($db in $Database) {
-                    $databases += [PSCustomObject]@{ name = $db }
-                }
-            } else {
-                $databases = $server.Databases
-            }
-            if ($ExcludeDatabase) {
-                $databases = $databases | Where-Object Name -NotIn $ExcludeDatabase
-            }
-            if ($server.AvailabilityGroups.Count -gt 0) {
-                $adbs = $databases | Where-Object Name -In $server.AvailabilityGroups.AvailabilityDatabases.Name
-                $adbs = $adbs | Where-Object Name -NotIn $ProcessedAgDatabases
-                ForEach ($adb in $adbs) {
-                    Write-Message -Level Verbose -Message "Fetching history from replicas for db $($adb.name)"
-                    if ($adb.GetType().name -ne 'Database') {
-                        $adb = Get-DbaDatabase -SqlInstance $server -Database $adb.name
-                    }
-                    $AvailabilityGroupBase = $adb.parent.AvailabilityGroups[$adb.AvailabilityGroupName]
-                    $AvailabilityGroupListener = $AvailabilityGroupBase.AvailabilityGroupListeners.Name
-                    if ($null -eq $AvailabilityGroupListener) {
-                        Write-Message -Level Verbose -Message "AvailabilityGroup $($AvailabilityGroupBase.Name) has no listener, so skipping fetching history from replicas for db $($adb.name)"
-                        continue
-                    }
-                    $null = $PSBoundParameters.Remove('SqlInstance')
-                    $null = $PSBoundParameters.Remove('Database')
-                    $AgLoopResults = Get-DbaAgBackupHistory -SqlInstance $AvailabilityGroupListener -Database $adb.Name @PSBoundParameters
-                    $AvailabilityGroupName = $AvailabilityGroupBase.name
-                    Foreach ($agr in $AgLoopResults) {
-                        $agr.AvailabilityGroupName = $AvailabilityGroupName
-                    }
-                    # Results already in the right format, drop straight to output
-                    $AgLoopResults
-                    # Remove database from collection as it is now done with
-                    $databases = $databases | Where-Object Name -NE $adb.name
-                }
+            # Only work on instances with the specific availability group
+            if ($AvailabilityGroup -notin $server.AvailabilityGroups.Name) {
+                Stop-Function -Message "Instance $instance has no availability group named '$AvailabilityGroup', so skipping." -Target $instance -Continue
             }
 
-            $null = $PSBoundParameters.Remove('SqlInstance')
-            Get-DbaDbBackupHistory -SqlInstance $server @PSBoundParameters
+            Write-Message -Level Verbose -Message "Added $server to serverList"
+            $serverList += $server
+        }
+    }
+
+    end {
+        if ($serverList.Count -eq 0) {
+            Stop-Function -Message "No instances with availability group named '$AvailabilityGroup' found, so finishing without results."
+        }
+
+        if ($serverList.Count -eq 1) {
+            Write-Message -Level Verbose -Message "We have one server, so it should be a listener"
+            $server = $serverList[0]
+
+            $replicaNames = $server.AvailabilityGroups.Where( { $_.Name -in $AvailabilityGroup }).AvailabilityReplicas.Name
+            Write-Message -Level Verbose -Message "We have found these replicas: $replicaNames"
+
+            $serverList = $replicaNames
+        }
+
+        Write-Message -Level Verbose -Message "We have more than one server, so query them all and aggregate"
+        $null = $PSBoundParameters.Remove('SqlInstance')
+        $null = $PSBoundParameters.Remove('AvailabilityGroup')
+        $AgResults = Get-DbaDbBackupHistory -SqlInstance $serverList @PSBoundParameters
+        Foreach ($agr in $AgResults) {
+            $agr.AvailabilityGroupName = $AvailabilityGroup
+        }
+
+        if ($Last) {
+            Write-Message -Level Verbose -Message "Filtering Ag backups for Last"
+            $AgResults | Select-DbaBackupInformation -ServerName $AvailabilityGroup
+        } elseif ($LastFull) {
+            Write-Message -Level Verbose -Message "Filtering Ag backups for LastFull"
+            Foreach ($AgDb in ( $AgLoopResults.Database | Select-Object -Unique)) {
+                $AgResults | Where-Object { $_.Database -eq $AgDb } | Sort-Object -Property FirstLsn | Select-Object -Last 1
+            }
+        } elseif ($LastDiff) {
+            Write-Message -Level Verbose -Message "Filtering Ag backups for LastDiff"
+            Foreach ($AgDb in ( $AgLoopResults.Database | Select-Object -Unique)) {
+                $AgResults | Where-Object { $_.Database -eq $AgDb } | Sort-Object -Property FirstLsn | Select-Object -Last 1
+            }
+        } elseif ($LastLog) {
+            Write-Message -Level Verbose -Message "Filtering Ag backups for LastLog"
+            Foreach ($AgDb in ( $AgLoopResults.Database | Select-Object -Unique)) {
+                $AgResults | Where-Object { $_.Database -eq $AgDb } | Sort-Object -Property FirstLsn | Select-Object -Last 1
+            }
+        } else {
+            Write-Message -Level Verbose -Message "Output Ag backups without filtering"
+            $AgResults
         }
     }
 }
