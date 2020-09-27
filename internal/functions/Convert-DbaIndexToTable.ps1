@@ -86,12 +86,12 @@ function Convert-DbaIndexToTable {
             }
 
             # Add the id in there
-            $columnStatements += "[MaskID] [bigint]"
+            $columnStatements += "[RowNr] [bigint]"
 
             # The query
             if ($columns.Count -ge 1) {
                 [array]$columnNames = $columns.Name
-                $columnNames += "MaskID"
+                $columnNames += "RowNr"
 
                 $tableStatements += [PSCustomObject]@{
                     Schema               = "$($tableObject.Schema)"
@@ -100,7 +100,7 @@ function Convert-DbaIndexToTable {
                     TempTableName        = "$($tableObject.Schema)_$($tableObject.Name)"
                     CreateStatement      = "CREATE TABLE $($tableObject.Schema)_$($tableObject.Name)($($columnStatements -join ","));"
                     UniqueIndexName      = "UIX_$($tableobject.Schema)_$($tableobject.Name)"
-                    UniqueIndexStatement = "CREATE UNIQUE NONCLUSTERED INDEX [UIX_$($tableobject.Schema)_$($tableobject.Name)] ON $($tableObject.Schema)_$($tableObject.Name)([$($columnNames -join '],[')] ASC);"
+                    UniqueIndexStatement = "CREATE UNIQUE NONCLUSTERED INDEX [UIX_$($tableobject.Schema)_$($tableobject.Name)_RowNr] ON $($tableObject.Schema)_$($tableObject.Name)([RowNr] ASC);"
                 }
             }
         }
