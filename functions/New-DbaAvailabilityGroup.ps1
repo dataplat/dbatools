@@ -312,6 +312,11 @@ function New-DbaAvailabilityGroup {
             }
         }
 
+        if ($IPAddress -and $Dhcp) {
+            Stop-Function -Message "You cannot specify both an IP address and the Dhcp switch for the listener."
+            return
+        }
+
         try {
             $server = Connect-SqlInstance -SqlInstance $Primary -SqlCredential $PrimarySqlCredential
         } catch {
@@ -561,16 +566,12 @@ function New-DbaAvailabilityGroup {
         Write-ProgressHelper -StepNumber ($stepCounter++) -Message $progressmsg
 
         if ($IPAddress) {
-            if ($Pscmdlet.ShouldProcess($Primary, "Adding static IP listener for $Name to the Primary replica")) {
-                $null = Add-DbaAgListener -InputObject $ag -IPAddress $IPAddress -SubnetMask $SubnetMask -Port $Port -Dhcp:$Dhcp
+            if ($Pscmdlet.ShouldProcess($Primary, "Adding static IP listener for $Name to the primary replica")) {
+                $null = Add-DbaAgListener -InputObject $ag -IPAddress $IPAddress -SubnetMask $SubnetMask -Port $Port
             }
         } elseif ($Dhcp) {
-            if ($Pscmdlet.ShouldProcess($Primary, "Adding DHCP listener for $Name to all replicas")) {
-                $null = Add-DbaAgListener -InputObject $ag -Port $Port -Dhcp:$Dhcp
-                foreach ($second in $secondaries) {
-                    $secag = Get-DbaAvailabilityGroup -SqlInstance $second -AvailabilityGroup $Name
-                    $null = Add-DbaAgListener -InputObject $secag -Port $Port -Dhcp:$Dhcp
-                }
+            if ($Pscmdlet.ShouldProcess($Primary, "Adding DHCP listener for $Name to the primary replica")) {
+                $null = Add-DbaAgListener -InputObject $ag -Port $Port -Dhcp
             }
         }
 
