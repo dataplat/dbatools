@@ -588,55 +588,6 @@ function New-DbaAvailabilityGroup {
         }
 
         Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Granting permissions on availability group, this may take a moment"
-
-        # Grant permissions, but first, get all necessary service accounts
-        $primaryserviceaccount = $server.ServiceAccount.Trim()
-        $saname = ([DbaInstanceParameter]($server.DomainInstanceName)).ComputerName
-
-        if ($primaryserviceaccount) {
-            if ($primaryserviceaccount.StartsWith("NT ")) {
-                $primaryserviceaccount = "$saname`$"
-            }
-            if ($primaryserviceaccount.StartsWith("$saname")) {
-                $primaryserviceaccount = "$saname`$"
-            }
-            if ($primaryserviceaccount.StartsWith(".")) {
-                $primaryserviceaccount = "$saname`$"
-            }
-        }
-
-        if (-not $primaryserviceaccount) {
-            $primaryserviceaccount = "$saname`$"
-        }
-
-        $serviceAccounts = @($primaryserviceaccount)
-
-        foreach ($second in $secondaries) {
-            # If service account is empty, add the computer account instead
-            $secondaryserviceaccount = $second.ServiceAccount.Trim()
-            $saname = ([DbaInstanceParameter]($second.DomainInstanceName)).ComputerName
-
-            if ($secondaryserviceaccount) {
-                if ($secondaryserviceaccount.StartsWith("NT ")) {
-                    $secondaryserviceaccount = "$saname`$"
-                }
-                if ($secondaryserviceaccount.StartsWith("$saname")) {
-                    $secondaryserviceaccount = "$saname`$"
-                }
-                if ($secondaryserviceaccount.StartsWith(".")) {
-                    $secondaryserviceaccount = "$saname`$"
-                }
-            }
-
-            if (-not $secondaryserviceaccount) {
-                $secondaryserviceaccount = "$saname`$"
-            }
-
-            $serviceAccounts += $secondaryserviceaccount
-        }
-
-        $serviceAccounts = $serviceAccounts | Select-Object -Unique
-
         if ($SeedingMode -eq 'Automatic') {
             try {
                 if ($Pscmdlet.ShouldProcess($server.Name, "Seeding mode is automatic. Adding CreateAnyDatabase permissions to availability group.")) {
