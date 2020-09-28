@@ -100,7 +100,7 @@ function Convert-DbaIndexToTable {
                     TempTableName        = "$($tableObject.Schema)_$($tableObject.Name)"
                     CreateStatement      = "CREATE TABLE $($tableObject.Schema)_$($tableObject.Name)($($columnStatements -join ","));"
                     UniqueIndexName      = "UIX_$($tableobject.Schema)_$($tableobject.Name)"
-                    UniqueIndexStatement = "CREATE UNIQUE NONCLUSTERED INDEX [UIX_$($tableobject.Schema)_$($tableobject.Name)_RowNr] ON $($tableObject.Schema)_$($tableObject.Name)([RowNr] ASC);"
+                    UniqueIndexStatement = "CREATE UNIQUE NONCLUSTERED INDEX [UIX_$($tableobject.Schema)_$($tableobject.Name)] ON $($tableObject.Schema)_$($tableObject.Name)([$($columnNames -join '],[')] ASC);"
                 }
             }
         }
