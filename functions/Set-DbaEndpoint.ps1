@@ -67,7 +67,7 @@ function Set-DbaEndpoint {
     param (
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [string[]]$EndPoint,
+        [string[]]$Endpoint,
         [string]$Owner,
         [ValidateSet('DatabaseMirroring', 'ServiceBroker', 'Soap', 'TSql')]
         [string]$Type,
@@ -82,7 +82,7 @@ function Set-DbaEndpoint {
             return
         }
         foreach ($instance in $SqlInstance) {
-            $InputObject += Get-DbaEndpoint -SqlInstance $instance -SqlCredential $SqlCredential -EndPoint $Endpoint
+            $InputObject += Get-DbaEndpoint -SqlInstance $instance -SqlCredential $SqlCredential -Endpoint $Endpoint
         }
 
         $props = "Owner", "Type"

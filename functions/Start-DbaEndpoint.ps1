@@ -66,7 +66,7 @@ function Start-DbaEndpoint {
     param (
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [string[]]$EndPoint,
+        [string[]]$Endpoint,
         [switch]$AllEndpoints,
         [parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.Endpoint[]]$InputObject,
@@ -78,7 +78,7 @@ function Start-DbaEndpoint {
             return
         }
         foreach ($instance in $SqlInstance) {
-            $InputObject += Get-DbaEndpoint -SqlInstance $instance -SqlCredential $SqlCredential -EndPoint $Endpoint
+            $InputObject += Get-DbaEndpoint -SqlInstance $instance -SqlCredential $SqlCredential -Endpoint $Endpoint
         }
 
         foreach ($ep in $InputObject) {

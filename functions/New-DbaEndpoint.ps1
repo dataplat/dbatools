@@ -103,6 +103,7 @@ function New-DbaEndpoint {
         [parameter(Mandatory, ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
+        [Alias("Endpoint")]
         [string]$Name,
         [ValidateSet('DatabaseMirroring', 'ServiceBroker', 'Soap', 'TSql')]
         [string]$Type = 'DatabaseMirroring',
