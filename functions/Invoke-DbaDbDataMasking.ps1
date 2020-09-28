@@ -71,6 +71,9 @@ function Invoke-DbaDbDataMasking {
     .PARAMETER BatchSize
         Size of the batch to use to write the masked data back to the database
 
+    .PARAMETER Retry
+        The amount of retries to generate a unique row for a table. Default is 1000.
+
     .PARAMETER DictionaryFilePath
         Import the dictionary to be used in in the database masking
 
@@ -145,6 +148,7 @@ function Invoke-DbaDbDataMasking {
         [int]$ConnectionTimeout = 0,
         [int]$CommandTimeout = 300,
         [int]$BatchSize = 1000,
+        [int]$Retry = 1000,
         [string[]]$DictionaryFilePath,
         [string]$DictionaryExportPath,
         [switch]$EnableException
@@ -407,6 +411,7 @@ function Invoke-DbaDbDataMasking {
                         }
 
                         # Create a unique row
+                        $retryCount = 0
                         for ($i = 0; $i -lt $data.Count; $i++) {
                             $insertQuery = "INSERT INTO [$($indexToTable.TempTableName)]([$($indexToTable.Columns -join '],[')]) VALUES("
                             $insertFailed = $false
@@ -417,7 +422,7 @@ function Invoke-DbaDbDataMasking {
                             foreach ($indexColumn in $indexToTable.Columns) {
                                 $columnMaskInfo = $tableobject.Columns | Where-Object Name -eq $indexColumn
 
-                                if ($indexColumn -eq "MaskID") {
+                                if ($indexColumn -eq "RowNr") {
                                     $newValue = $i + 1
                                 } elseif ($columnMaskInfo) {
                                     # make sure min is good
@@ -500,7 +505,7 @@ function Invoke-DbaDbDataMasking {
                                     $insertValue = Convert-DbaMaskingValue -Value $newValue -DataType $columnMaskInfo.ColumnType -Nullable:$columnMaskInfo.Nullable
 
                                     $insertValues += $insertValue.NewValue
-                                } elseif ($indexColumn -eq "MaskID") {
+                                } elseif ($indexColumn -eq "RowNr") {
                                     $insertValues += $newValue
                                 } else {
                                     $insertValues += "NULL"
@@ -521,12 +526,17 @@ function Invoke-DbaDbDataMasking {
 
                             # Try to insert the value as long it's failed
                             while ($insertFailed) {
+                                if ($retryCount -eq $Retry) {
+                                    Stop-Function -Message "Could not create a unique row after $retryCount tries. Stopping..."
+                                    return
+                                }
+
                                 $insertQuery = "INSERT INTO [$($indexToTable.TempTableName)]([$($indexToTable.Columns -join '],[')]) VALUES("
 
                                 foreach ($indexColumn in $indexToTable.Columns) {
                                     $columnMaskInfo = $tableobject.Columns | Where-Object Name -eq $indexColumn
 
-                                    if ($indexColumn -eq "MaskID") {
+                                    if ($indexColumn -eq "RowNr") {
                                         $newValue = $i + 1
                                     } elseif ($columnMaskInfo) {
                                         # make sure min is good
@@ -609,7 +619,7 @@ function Invoke-DbaDbDataMasking {
                                         $insertValue = Convert-DbaMaskingValue -Value $newValue -DataType $columnMaskInfo.ColumnType -Nullable:$columnMaskInfo.Nullable
 
                                         $insertValues += $insertValue.NewValue
-                                    } elseif ($indexColumn -eq "MaskID") {
+                                    } elseif ($indexColumn -eq "RowNr") {
                                         $insertValues += $newValue
                                     } else {
                                         $insertValues += "NULL"
@@ -625,14 +635,16 @@ function Invoke-DbaDbDataMasking {
                                     $insertFailed = $false
                                 } catch {
                                     Write-PSFMessage -Level Verbose -Message "Could not insert value"
+                                    $insertQuery
                                     $insertFailed = $true
+                                    $retryCount++
                                 }
                             }
                         }
 
                         try {
                             Write-Message -Level Verbose -Message "Creating masking index for [$($indexToTable.TempTableName)]"
-                            $query = "CREATE NONCLUSTERED INDEX [NIX_$($indexToTable.TempTableName)_MaskID] ON [$($indexToTable.TempTableName)]([MaskID])"
+                            $query = "CREATE NONCLUSTERED INDEX [NIX_$($indexToTable.TempTableName)_MaskID] ON [$($indexToTable.TempTableName)]([RowNr])"
                             $server.Databases['tempdb'].Query($query)
                         } catch {
                             Stop-Function -Message "Could not add masking index for [$($indexToTable.TempTableName)]" -ErrorRecord $_
