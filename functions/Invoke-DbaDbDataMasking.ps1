@@ -765,8 +765,18 @@ function Invoke-DbaDbDataMasking {
                         foreach ($columnobject in $tablecolumns) {
                             $batchCounter = 1
 
-                            # Check if column is does not contain an action
-                            if ($columnobject.Name -notin $columnsWithActions.Name) {
+                            if ($columnobject.StaticValue) {
+                                $newValue = $columnobject.StaticValue
+
+                                if ($null -eq $newValue -and -not $columnobject.Nullable) {
+                                    Write-PSFMessage -Message "Column '$($columnobject.Name)' static value cannot null when column is set not to be nullable."
+                                } else {
+                                    $newValue = Convert-DbaMaskingValue -Value $newValue -DataType $columnobject.ColumnType -Nullable $columnobject.Nullable
+                                    $null = $stringBuilder.AppendLine("UPDATE [$($tableobject.Schema)].[$($tableobject.Name)] SET [$($columnObject.Name)] = $newValue")
+                                    $batchRowCounter++
+                                }
+                            } elseif ($columnobject.Name -notin $columnsWithActions.Name) {
+                                # Column does not have an action
                                 foreach ($row in $data) {
                                     if ((($batchRowCounter++) % 100) -eq 0) {
 
@@ -796,7 +806,9 @@ function Invoke-DbaDbDataMasking {
                                         Stop-Function -Message "Unsupported masking sub type '$($columnobject.SubType)' for column $($columnobject.Name)" -Target $columnobject -Continue
                                     }
 
-                                    if ($columnobject.KeepNull -and (($row.($columnobject.Name)).GetType().Name -eq 'DBNull')) {
+                                    if ($columnobject.MaskingType -eq 'Static') {
+                                        $newValue
+                                    } elseif ($columnobject.KeepNull -and (($row.($columnobject.Name)).GetType().Name -eq 'DBNull')) {
                                         $newValue = $null
                                     } elseif (-not $columnobject.KeepNull -and $columnobject.Nullable -and (($nullmod++) % $ModulusFactor -eq 0)) {
                                         $newValue = $null
