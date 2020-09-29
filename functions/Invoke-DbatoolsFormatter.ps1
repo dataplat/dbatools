@@ -37,9 +37,21 @@ function Invoke-DbatoolsFormatter {
         [switch]$EnableException
     )
     begin {
-        $HasInvokeFormatter = $null -ne (Get-Command Invoke-Formatter -ErrorAction SilentlyContinue).Version
+        $invokeFormatterVersion = (Get-Command Invoke-Formatter -ErrorAction SilentlyContinue).Version
+        $HasInvokeFormatter = $null -ne $invokeFormatterVersion
         if (!($HasInvokeFormatter)) {
-            Stop-Function -Message "You need a recent version of PSScriptAnalyzer installed"
+            Stop-Function -Message "You need PSScriptAnalyzer version 1.18.2 installed"
+            Write-Message -Level Warning "     Install-Module -Name PSScriptAnalyzer -RequiredVersion '1.18.2'"
+        } else {
+            if ($invokeFormatterVersion -ne '1.18.2') {
+                Remove-Module PSScriptAnalyzer
+                try {
+                    Import-Module PSScriptAnalyzer -RequiredVersion '1.18.2' -ErrorAction Stop
+                } catch {
+                    Stop-Function -Message "Please install PSScriptAnalyzer 1.18.2"
+                    Write-Message -Level Warning "     Install-Module -Name PSScriptAnalyzer -RequiredVersion '1.18.2'"
+                }
+            }
         }
         $CBHRex = [regex]'(?smi)\s+\<\#[^#]*\#\>'
         $CBHStartRex = [regex]'(?<spaces>[ ]+)\<\#'
