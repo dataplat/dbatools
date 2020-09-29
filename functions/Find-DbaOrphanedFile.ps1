@@ -113,7 +113,6 @@ function Find-DbaOrphanedFile {
                 CREATE TABLE #enum (
                   id int IDENTITY
                 , fs_filename nvarchar(512)
-                , fs_fileextension AS PARSENAME(fs_filename,1)
                 , depth int
                 , is_file int
                 , parent nvarchar(512)
