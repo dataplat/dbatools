@@ -280,7 +280,7 @@ function Invoke-DbaDbDataMasking {
 
                 #region for each table
                 foreach ($tableobject in $tables.Tables) {
-                    $uniqueValues = @()
+                    $uniqueDataTableName = $null
                     $uniqueValueColumns = @()
                     $stringBuilder = [System.Text.StringBuilder]''
 
@@ -384,6 +384,8 @@ function Invoke-DbaDbDataMasking {
 
                         # Check if the temporary table already exists
                         $server.Databases['tempdb'].Tables.Refresh()
+                        $uniqueDataTableName = $indexToTable.TempTableName
+
                         if ($server.Databases['tempdb'].Tables.Name -contains $indexToTable.TempTableName) {
                             Write-Message -Level Verbose -Message "Table '$($indexToTable.TempTableName)' already exists. Dropping it.."
                             try {
@@ -510,6 +512,8 @@ function Invoke-DbaDbDataMasking {
                                 } else {
                                     $insertValues += "NULL"
                                 }
+
+                                $uniqueValueColumns += $columnMaskInfo.Name
                             }
 
                             # Join all the values to the insert query
@@ -682,7 +686,7 @@ function Invoke-DbaDbDataMasking {
                         $columnsWithActions = @()
                         $columnsWithActions += $tableobject.Columns | Where-Object Action -ne $null
 
-                        # Go through the composites
+                        # Go through the actions
                         if ($columnsWithActions.Count -ge 1) {
                             foreach ($columnObject in $columnsWithActions) {
                                 [bool]$validAction = $true
@@ -763,7 +767,7 @@ function Invoke-DbaDbDataMasking {
 
                         # Loop through each of the rows and change them
                         foreach ($columnobject in $tablecolumns) {
-                            $batchCounter = 1
+                            $batchCounter, $rowNumber = 1
 
                             if ($columnobject.StaticValue) {
                                 $newValue = $columnobject.StaticValue
@@ -814,12 +818,15 @@ function Invoke-DbaDbDataMasking {
                                         $newValue = $null
                                     } elseif ($tableobject.HasUniqueIndex -and $columnobject.Name -in $uniqueValueColumns) {
 
-                                        if ($uniqueValues.Count -lt 1) {
-                                            Stop-Function -Message "Could not find any unique values in dictionary" -Target $tableobject
+                                        $query = "SELECT * FROM $($uniqueDataTableName) Where RowNr = $rowNumber"
+                                        $uniqueData = Invoke-DbaQuery -SqlInstance $server -SqlCredential $SqlCredential -Database 'tempdb' -Query $query
+
+                                        if ($null = $uniqueData) {
+                                            Stop-Function -Message "Could not find any unique values" -Target $tableobject
                                             return
                                         }
 
-                                        $newValue = $uniqueValues[$rowNumber].$($columnobject.Name)
+                                        $newValue = $uniqueData.$($columnobject.Name)
 
                                     } elseif ($columnobject.Deterministic -and $dictionary.ContainsKey($row.$($columnobject.Name) )) {
                                         $newValue = $dictionary.Item($row.$($columnobject.Name))
@@ -1105,9 +1112,6 @@ function Invoke-DbaDbDataMasking {
                             Stop-Function -Message "Error updating $($tableobject.Schema).$($tableobject.Name).`n$updatequery" -Target $updatequery -Continue -ErrorRecord $_
                         }
                     }
-
-                    # Empty the unique values array
-                    $uniqueValues = $null
                 }
                 #endregion for each table
 
