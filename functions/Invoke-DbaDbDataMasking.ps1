@@ -817,8 +817,7 @@ function Invoke-DbaDbDataMasking {
                                     } elseif (-not $columnobject.KeepNull -and $columnobject.Nullable -and (($nullmod++) % $ModulusFactor -eq 0)) {
                                         $newValue = $null
                                     } elseif ($tableobject.HasUniqueIndex -and $columnobject.Name -in $uniqueValueColumns) {
-
-                                        $query = "SELECT * FROM $($uniqueDataTableName) Where RowNr = $rowNumber"
+                                        $query = "SELECT * FROM $($uniqueDataTableName) Where [RowNr] = $rowNumber"
                                         $uniqueData = Invoke-DbaQuery -SqlInstance $server -SqlCredential $SqlCredential -Database 'tempdb' -Query $query
 
                                         if ($null = $uniqueData) {
@@ -827,7 +826,6 @@ function Invoke-DbaDbDataMasking {
                                         }
 
                                         $newValue = $uniqueData.$($columnobject.Name)
-
                                     } elseif ($columnobject.Deterministic -and $dictionary.ContainsKey($row.$($columnobject.Name) )) {
                                         $newValue = $dictionary.Item($row.$($columnobject.Name))
                                     } else {
@@ -924,12 +922,16 @@ function Invoke-DbaDbDataMasking {
                                     $newValue = Convert-DbaMaskingValue -Value $newValue -DataType $columnobject.ColumnType -Nullable $columnobject.Nullable
                                     $updates += "[$($columnobject.Name)] = $newValue"
 
+                                    # Check if this value is determinisic
                                     if ($columnobject.Deterministic -and -not $dictionary.ContainsKey($row.$($columnobject.Name) )) {
                                         $dictionary.Add($row.$($columnobject.Name), $newValue)
                                     }
 
-
+                                    # Setup the query
                                     $null = $stringBuilder.AppendLine("UPDATE [$($tableobject.Schema)].[$($tableobject.Name)] SET $($updates -join ', ') WHERE [$($identityColumn)] = $($row.$($identityColumn)); ")
+
+                                    # Increase the row number
+                                    $rowNumber++
                                 }
 
                                 if ($batchRowCounter -eq $BatchSize) {
@@ -957,9 +959,6 @@ function Invoke-DbaDbDataMasking {
                                     $null = $stringBuilder.Clear()
                                     $batchRowCounter = 0
                                 }
-
-                                # Increase the row number
-                                $rowNumber++
                             }
 
                             if ($stringBuilder.Length -ge 1) {
@@ -1110,6 +1109,16 @@ function Invoke-DbaDbDataMasking {
                             }
                         } catch {
                             Stop-Function -Message "Error updating $($tableobject.Schema).$($tableobject.Name).`n$updatequery" -Target $updatequery -Continue -ErrorRecord $_
+                        }
+                    }
+
+                    # Cleanup
+                    if ($uniqueDataTableName) {
+                        $query = "DROP TABLE $($uniqueDataTableName);"
+                        try {
+                            Invoke-DbaQuery -SqlInstance $server -SqlCredential $SqlCredential -Database 'tempdb' -Query $query
+                        } catch {
+                            Stop-Function -Message "Could not clean up unique values table" -Target $uniqueDataTableName -ErrorRecord $_
                         }
                     }
                 }
