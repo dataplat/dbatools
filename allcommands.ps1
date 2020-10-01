@@ -2252,6 +2252,8 @@ function Connect-DbaInstance {
         Write-Message -Level Debug -Message "Starting process block"
         foreach ($instance in $SqlInstance) {
             Write-Message -Level Debug -Message "Starting loop for '$instance': ComputerName = '$($instance.ComputerName)', InstanceName = '$($instance.InstanceName)', IsLocalHost = '$($instance.IsLocalHost)', Type = '$($instance.Type)'"
+            $connstring = ''
+            $isConnectionString = $false
             if ($instance.IsConnectionString) {
                 $connstring = $instance.InputObject
                 $isConnectionString = $true
@@ -2273,12 +2275,22 @@ function Connect-DbaInstance {
 
             # Gracefully handle Azure connections
             if ($connstring -match $AzureDomain -or $instance.ComputerName -match $AzureDomain -or $instance.InputObject.ComputerName -match $AzureDomain) {
+                Write-Message -Level Debug -Message "We are about to connect to Azure"
                 # so far, this is not evaluating
                 if ($instance.InputObject.ConnectionContext.IsOpen) {
-                    $currentdb = $instance.InputObject.ConnectionContext.ExecuteScalar("select db_name()")
-                    if (($Database -and ($Database -eq $currentdb))) {
+                    Write-Message -Level Debug -Message "Connection is already open, test if database has to be changed"
+                    if ('' -eq $Database) {
+                        Write-Message -Level Debug -Message "No database specified, so return instance.InputObject"
                         $instance.InputObject
                         continue
+                    }
+                    $currentdb = $instance.InputObject.ConnectionContext.ExecuteScalar("select db_name()")
+                    if ($currentdb -eq $Database) {
+                        Write-Message -Level Debug -Message "Same database specified, so return instance.InputObject"
+                        $instance.InputObject
+                        continue
+                    } else {
+                        Write-Message -Level Debug -Message "Different databases: Database = '$Database', currentdb = '$currentdb', so we build a new connection"
                     }
                 }
                 $isAzure = $true
@@ -2295,11 +2307,14 @@ function Connect-DbaInstance {
                 }
                 # Build connection string
                 if ($connstring) {
+                    Write-Message -Level Debug -Message "We have a connect string so we use it"
                     $azureconnstring = $connstring
                 } else {
                     if ($Tenant) {
+                        Write-Message -Level Debug -Message "We have a Tenant and build the connect string"
                         $azureconnstring = New-DbaConnectionString -SqlInstance $instance -AccessToken None -Database $Database
                     } else {
+                        Write-Message -Level Debug -Message "We have to build a connect string, using these parameters: $($boundparams.Keys)"
                         $azureconnstring = New-DbaConnectionString @boundparams
                     }
                 }
@@ -26299,8 +26314,7 @@ function Get-DbaDbView {
         }
 
         foreach ($db in $InputObject) {
-
-            $db.Views.Refresh($true) # This will ensure the list of views is up-to-date
+            Write-Message -Level Verbose -Message "processing $db"
             if ($fqtns) {
                 $views = @()
                 foreach ($fqtn in $fqtns) {
@@ -26315,7 +26329,7 @@ function Get-DbaDbView {
                     $vw = $db.Views | Where-Object { $_.Name -in $fqtn.View -and $fqtn.Schema -in ($_.Schema, $null) -and $fqtn.Database -in ($_.Parent.Name, $null) }
 
                     if (-not $vw) {
-                        Write-Message -Level Verbose -Message "Could not find view $($fqtn.Name) in $db on $server"
+                        Write-Message -Level Verbose -Message "Could not find view $($fqtn.View) in $db on $($db.Parent.DomainInstanceName)"
                     }
                     $views += $vw
                 }
@@ -26329,7 +26343,7 @@ function Get-DbaDbView {
             }
 
             if (-not $views) {
-                Write-Message -Message "No views exist in the $db database on $instance" -Target $db -Level Verbose
+                Write-Message -Message "No views exist in the $db database on $($db.Parent.DomainInstanceName)" -Target $db -Level Verbose
                 continue
             }
             if (Test-Bound -ParameterName ExcludeSystemView) {
@@ -26339,9 +26353,9 @@ function Get-DbaDbView {
             $defaults = 'ComputerName', 'InstanceName', 'SqlInstance', 'Database', 'Schema', 'CreateDate', 'DateLastModified', 'Name'
             foreach ($sqlview in $views) {
 
-                Add-Member -Force -InputObject $sqlview -MemberType NoteProperty -Name ComputerName -value $sqlview.Parent.ComputerName
-                Add-Member -Force -InputObject $sqlview -MemberType NoteProperty -Name InstanceName -value $sqlview.Parent.InstanceName
-                Add-Member -Force -InputObject $sqlview -MemberType NoteProperty -Name SqlInstance -value $sqlview.Parent.SqlInstance
+                Add-Member -Force -InputObject $sqlview -MemberType NoteProperty -Name ComputerName -value $db.Parent.ComputerName
+                Add-Member -Force -InputObject $sqlview -MemberType NoteProperty -Name InstanceName -value $db.Parent.InstanceName
+                Add-Member -Force -InputObject $sqlview -MemberType NoteProperty -Name SqlInstance -value $db.Parent.DomainInstanceName
                 Add-Member -Force -InputObject $sqlview -MemberType NoteProperty -Name Database -value $db.Name
 
                 Select-DefaultView -InputObject $sqlview -Property $defaults
@@ -65939,8 +65953,7 @@ function Set-DbaExtendedProtection {
                     ExtendedProtection = "$extendedProtection - $(switch ($extendedProtection) { 0 { "Off" } 1 { "Allowed" } 2 { "Required" } })"
                 }
             }
-
-            if ($PScmdlet.ShouldProcess("local", "Connecting to $instance to modify the ExtendedProtection value in $regRoot for $($instance.InstanceName)")) {
+            if (Test-ShouldProcess -Context $PSCmdlet -Target "local" -Action "Connecting to $instance to modify the ExtendedProtection value in $regRoot for $($instance.InstanceName)") {
                 try {
                     Invoke-Command2 -ComputerName $resolved.FullComputerName -Credential $Credential -ArgumentList $regRoot, $vsname, $instancename -ScriptBlock $scriptblock -ErrorAction Stop | Select-Object -Property * -ExcludeProperty PSComputerName, RunspaceId, PSShowComputerName
                     Write-Message -Level Critical -Message "ExtendedProtection was successfully set on $($resolved.FullComputerName) for the $instancename instance. The change takes effect immediately for new connections." -Target $instance
@@ -82177,6 +82190,18 @@ function Test-PSRemoting {
     } #process
 
 } #close function
+
+#.ExternalHelp dbatools-Help.xml
+function Test-ShouldProcess {
+    
+    param (
+        $Context,
+        [string]$Target,
+        [string]$Action
+    )
+
+    $Context.ShouldProcess($Target, $Action)
+}
 
 #.ExternalHelp dbatools-Help.xml
 function Test-SqlAgent {
