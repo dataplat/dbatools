@@ -203,13 +203,21 @@ function Set-DbaTempDbConfig {
 
             $logfile = Get-DbaDbFile -SqlInstance $server -Database tempdb | Where-Object Type -eq 1 | Select-Object LogicalName, PhysicalName, @{L = "SizeMb"; E = { $_.Size.Megabyte } }
 
-            if ($LogFileSize) {
+            if ($LogPath -or $LogFileSize) {
                 $Filename = Split-Path $logfile.PhysicalName -Leaf
                 $LogicalName = $logfile.LogicalName
-                $NewPath = "$LogPath\$Filename"
+                
+                if ($logPath) {
+                    $NewPath = "$LogPath\$Filename"     
+                } else {
+                    Split-Path $logfile.PhysicalName
+                }
+                
+                if (-not($LogFileSize)) {
+                    $LogFileSize = $logfile.SizeMb
+                }
+
                 $sql += "ALTER DATABASE tempdb MODIFY FILE(name=$LogicalName,filename='$NewPath',size=$LogFileSize MB,filegrowth=$LogFileGrowth);"
-            } else {
-                $LogFileSize = $logfile.SizeMb
             }
 
             Write-Message -Message "SQL Statement to resize tempdb." -Level Verbose
