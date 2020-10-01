@@ -6387,7 +6387,7 @@
     },
     {
         "Name":  "Disable-DbaTraceFlag",
-        "Description":  "The function will disable a Trace Flag that is currently running globally on the SQL Server instance(s) listed",
+        "Description":  "The function will disable a Trace Flag that is currently running globally on the SQL Server instance(s) listed.\nThese are not persisted after a restart, use Set-DbaStartupParameter to set them to persist after restarts.",
         "Tags":  [
                      "TraceFlag",
                      "DBCC"
@@ -6861,7 +6861,7 @@
     },
     {
         "Name":  "Enable-DbaTraceFlag",
-        "Description":  "The function will set one or multiple trace flags on the SQL Server instance(s) listed",
+        "Description":  "The function will set one or multiple trace flags on the SQL Server instance(s) listed.\nThese are not persisted after a restart, use Set-DbaStartupParameter to set them to persist after restarts.",
         "Tags":  [
                      "TraceFlag",
                      "DBCC"
@@ -6872,7 +6872,7 @@
         "CommandName":  "Enable-DbaTraceFlag",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Enable-DbaTraceFlag",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eEnable-DbaTraceFlag -SqlInstance sql2016 -TraceFlag 3226\nEnable the trace flag 3226 on SQL Server instance sql2016\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eEnable-DbaTraceFlag -SqlInstance sql2016 -TraceFlag 1117, 1118\nEnable multiple trace flags on SQL Server instance sql2016\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eDisable-DbaTraceFlag -SqlInstance sql2016_1, sql2016_2 -TraceFlag 6532,7314\nDisable more than 1 globally running trace flags on more than 1 SQL Server instances sql2016_1 and sql2016_2",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eEnable-DbaTraceFlag -SqlInstance sql2016 -TraceFlag 3226\nEnable the trace flag 3226 on SQL Server instance sql2016\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eEnable-DbaTraceFlag -SqlInstance sql2016 -TraceFlag 1117, 1118\nEnable multiple trace flags on SQL Server instance sql2016",
         "Params":  [
                        [
                            "SqlInstance",
@@ -10029,7 +10029,7 @@
         "CommandName":  "Find-DbaOrphanedFile",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Find-DbaOrphanedFile",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eFind-DbaOrphanedFile -SqlInstance sqlserver2014a\nConnects to sqlserver2014a, authenticating with Windows credentials, and searches for orphaned files. Returns server name, local filename, and unc path to file.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eFind-DbaOrphanedFile -SqlInstance sqlserver2014a -SqlCredential $cred\nConnects to sqlserver2014a, authenticating with SQL Server authentication, and searches for orphaned files. Returns server name, local filename, and unc path to file.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eFind-DbaOrphanedFile -SqlInstance sql2014 -Path \u0027E:\\Dir1\u0027, \u0027E:\\Dir2\u0027\nFinds the orphaned files in \"E:\\Dir1\" and \"E:Dir2\" in addition to the default directories.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eFind-DbaOrphanedFile -SqlInstance sql2014 -LocalOnly\nReturns only the local file paths for orphaned files.\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eFind-DbaOrphanedFile -SqlInstance sql2014 -RemoteOnly\nReturns only the remote file path for orphaned files.\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eFind-DbaOrphanedFile -SqlInstance sql2014, sql2016 -FileType fsf, mld\nFinds the orphaned ending with \".fsf\" and \".mld\" in addition to the default filetypes \".mdf\", \".ldf\", \".ndf\" for both the servers sql2014 and sql2016.",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eFind-DbaOrphanedFile -SqlInstance sqlserver2014a\nConnects to sqlserver2014a, authenticating with Windows credentials, and searches for orphaned files. Returns server name, local filename, and unc path to file.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eFind-DbaOrphanedFile -SqlInstance sqlserver2014a -SqlCredential $cred\nConnects to sqlserver2014a, authenticating with SQL Server authentication, and searches for orphaned files. Returns server name, local filename, and unc path to file.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eFind-DbaOrphanedFile -SqlInstance sql2014 -Path \u0027E:\\Dir1\u0027, \u0027E:\\Dir2\u0027\nFinds the orphaned files in \"E:\\Dir1\" and \"E:Dir2\" in addition to the default directories.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eFind-DbaOrphanedFile -SqlInstance sql2014 -Path \u0027E:\\Dir1\u0027 -Recurse\nFinds the orphaned files in \"E:\\Dir1\" and any of its subdirectories in addition to the default directories.\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eFind-DbaOrphanedFile -SqlInstance sql2014 -LocalOnly\nReturns only the local file paths for orphaned files.\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eFind-DbaOrphanedFile -SqlInstance sql2014 -RemoteOnly\nReturns only the remote file path for orphaned files.\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003eFind-DbaOrphanedFile -SqlInstance sql2014, sql2016 -FileType fsf, mld\nFinds the orphaned ending with \".fsf\" and \".mld\" in addition to the default filetypes \".mdf\", \".ldf\", \".ndf\" for both the servers sql2014 and sql2016.",
         "Params":  [
                        [
                            "SqlInstance",
@@ -10086,9 +10086,17 @@
                            false,
                            "false",
                            "False"
+                       ],
+                       [
+                           "Recurse",
+                           "If this switch is enabled, the command will search subdirectories of the Path parameter.",
+                           "",
+                           false,
+                           "false",
+                           "False"
                        ]
                    ],
-        "Syntax":  "Find-DbaOrphanedFile [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Path] \u003cString[]\u003e] [[-FileType] \u003cString[]\u003e] [-LocalOnly] [-RemoteOnly] [-EnableException] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Find-DbaOrphanedFile -SqlInstance \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-Path \u003cString[]\u003e] [-FileType \u003cString[]\u003e] [-LocalOnly] [-EnableException] [-Recurse] [\u003cCommonParameters\u003e]\nFind-DbaOrphanedFile -SqlInstance \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-Path \u003cString[]\u003e] [-FileType \u003cString[]\u003e] [-RemoteOnly] [-EnableException] [-Recurse] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Find-DbaSimilarTable",
@@ -30746,7 +30754,7 @@
                        ],
                        [
                            "FrequencyType",
-                           "A value indicating when a job is to be executed.\nAllowed values: Once, Daily, Weekly, Monthly, MonthlyRelative, AgentStart or IdleComputer\nIf force is used the default will be \"Once\".",
+                           "A value indicating when a job is to be executed.\nAllowed values: \u0027Once\u0027, \u0027OneTime\u0027, \u0027Daily\u0027, \u0027Weekly\u0027, \u0027Monthly\u0027, \u0027MonthlyRelative\u0027, \u0027AgentStart\u0027, \u0027AutoStart\u0027, \u0027IdleComputer\u0027, \u0027OnIdle\u0027\nThe following synonyms provide flexibility to the allowed values for this function parameter:\r\nOnce=OneTime\r\nAgentStart=AutoStart\r\nIdleComputer=OnIdle\nIf force is used the default will be \"Once\".",
                            "",
                            false,
                            "false",
@@ -30762,7 +30770,7 @@
                        ],
                        [
                            "FrequencySubdayType",
-                           "Specifies the units for the subday FrequencyInterval.\nAllowed values: Time, Seconds, Minutes, or Hours",
+                           "Specifies the units for the subday FrequencyInterval.\nAllowed values: \u0027Once\u0027, \u0027Time\u0027, \u0027Seconds\u0027, \u0027Second\u0027, \u0027Minutes\u0027, \u0027Minute\u0027, \u0027Hours\u0027, \u0027Hour\u0027\nThe following synonyms provide flexibility to the allowed values for this function parameter:\r\nOnce=Time\r\nSeconds=Second\r\nMinutes=Minute\r\nHours=Hour",
                            "",
                            false,
                            "false",
@@ -34411,7 +34419,7 @@
                        [
                            "Name",
                            "The name of the endpoint. If a name is not specified, one will be auto-generated.",
-                           "",
+                           "Endpoint",
                            false,
                            "false",
                            ""
@@ -36662,13 +36670,13 @@
     },
     {
         "Name":  "Remove-DbaAgentSchedule",
-        "Description":  "Remove-DbaAgentJobSchedule removes a job in the SQL Server Agent.",
+        "Description":  "Remove-DbaAgentSchedule removes a job in the SQL Server Agent.",
         "Tags":  [
                      "Agent",
                      "Job",
                      "Schedule"
                  ],
-        "Synopsis":  "Remove-DbaAgentJobSchedule removes a job schedule.",
+        "Synopsis":  "Remove-DbaAgentSchedule removes a job schedule.",
         "Alias":  "",
         "Author":  "Sander Stad (@sqlstad), sqlstad.nl",
         "CommandName":  "Remove-DbaAgentSchedule",
@@ -38570,7 +38578,7 @@
                            ""
                        ],
                        [
-                           "EndPoint",
+                           "Endpoint",
                            "Only remove specific endpoints.",
                            "",
                            false,
@@ -38618,7 +38626,7 @@
                            ""
                        ]
                    ],
-        "Syntax":  "Remove-DbaEndpoint [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-EndPoint] \u003cString[]\u003e] [-AllEndpoints] [[-InputObject] \u003cEndpoint[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Remove-DbaEndpoint [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Endpoint] \u003cString[]\u003e] [-AllEndpoints] [[-InputObject] \u003cEndpoint[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Remove-DbaLogin",
@@ -44139,7 +44147,7 @@
                            ""
                        ],
                        [
-                           "EndPoint",
+                           "Endpoint",
                            "Only set specific endpoint properties.",
                            "",
                            false,
@@ -44203,7 +44211,7 @@
                            ""
                        ]
                    ],
-        "Syntax":  "Set-DbaEndpoint [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-EndPoint] \u003cString[]\u003e] [[-Owner] \u003cString\u003e] [[-Type] \u003cString\u003e] [-AllEndpoints] [[-InputObject] \u003cEndpoint[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Set-DbaEndpoint [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Endpoint] \u003cString[]\u003e] [[-Owner] \u003cString\u003e] [[-Type] \u003cString\u003e] [-AllEndpoints] [[-InputObject] \u003cEndpoint[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Set-DbaErrorLogConfig",
@@ -45264,7 +45272,7 @@
     },
     {
         "Name":  "Set-DbaTcpPort",
-        "Description":  "This function changes the TCP port used by the specified SQL Server.",
+        "Description":  "This function changes the TCP port used by the specified SQL Server.\n\nBe aware that the Database Engine begins listening on a new port only when restarted. So you have to restart the Database Engine that the new settings become effective.",
         "Tags":  [
                      "Service",
                      "Port",
@@ -45289,7 +45297,7 @@
                        ],
                        [
                            "Credential",
-                           "Credential object used to connect to the Windows server itself as a different user (like SQL Configuration Manager)",
+                           "Credential object used to connect to the Windows server itself as a different user (like SQL Configuration Manager).",
                            "",
                            false,
                            "false",
@@ -45305,7 +45313,7 @@
                        ],
                        [
                            "IpAddress",
-                           "Which IpAddress should the portchange , if omitted allip (0.0.0.0) will be changed with the new port number.",
+                           "Ip address to which the change should apply, if omitted allip (0.0.0.0) will be changed with the new port number.",
                            "",
                            false,
                            "false",
@@ -45807,7 +45815,7 @@
         "CommandName":  "Start-DbaAgentJob",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Start-DbaAgentJob",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eStart-DbaAgentJob -SqlInstance localhost\nStarts all running SQL Agent Jobs on the local SQL Server instance\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaAgentJob -SqlInstance sql2016 -Job cdc.DBWithCDC_capture | Start-DbaAgentJob\nStarts the cdc.DBWithCDC_capture SQL Agent Job on sql2016\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eStart-DbaAgentJob -SqlInstance sql2016 -Job cdc.DBWithCDC_capture\nStarts the cdc.DBWithCDC_capture SQL Agent Job on sql2016\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003e$servers | Find-DbaAgentJob -IsFailed | Start-DbaAgentJob\nRestarts all failed jobs on all servers in the $servers collection\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eStart-DbaAgentJob -SqlInstance sql2016 -AllJobs\nStart all the jobs\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eStart-DbaAgentJob -SqlInstance sql2016 -Job @(\u0027Job1\u0027, \u0027Job2\u0027, \u0027Job3\u0027) -Wait\nThis is a serialized approach to submitting jobs and waiting for each job to continue the next.\r\nStarts Job1, waits for completion of Job1\r\nStarts Job2, waits for completion of Job2\r\nStarts Job3, Waits for completion of Job3\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003eStart-DbaAgentJob -SqlInstance sql2016 -Job @(\u0027Job1\u0027, \u0027Job2\u0027, \u0027Job3\u0027) -Wait -Parallel\nThis is a parallel approach to submitting all jobs and waiting for them all to complete.\r\nStarts Job1, starts Job2, starts Job3 and waits for completion of Job1, Job2, and Job3.",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eStart-DbaAgentJob -SqlInstance localhost\nStarts all running SQL Agent Jobs on the local SQL Server instance\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaAgentJob -SqlInstance sql2016 -Job cdc.DBWithCDC_capture | Start-DbaAgentJob\nStarts the cdc.DBWithCDC_capture SQL Agent Job on sql2016\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eStart-DbaAgentJob -SqlInstance sql2016 -Job cdc.DBWithCDC_capture\nStarts the cdc.DBWithCDC_capture SQL Agent Job on sql2016\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003e$servers | Find-DbaAgentJob -IsFailed | Start-DbaAgentJob\nRestarts all failed jobs on all servers in the $servers collection\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eStart-DbaAgentJob -SqlInstance sql2016 -AllJobs\nStart all the jobs\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eStart-DbaAgentJob -SqlInstance sql2016 -Job @(\u0027Job1\u0027, \u0027Job2\u0027, \u0027Job3\u0027) -Wait\nThis is a serialized approach to submitting jobs and waiting for each job to continue the next.\r\nStarts Job1, waits for completion of Job1\r\nStarts Job2, waits for completion of Job2\r\nStarts Job3, Waits for completion of Job3\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003eStart-DbaAgentJob -SqlInstance sql2016 -Job @(\u0027Job1\u0027, \u0027Job2\u0027, \u0027Job3\u0027) -Wait -Parallel\nThis is a parallel approach to submitting all jobs and waiting for them all to complete.\r\nStarts Job1, starts Job2, starts Job3 and waits for completion of Job1, Job2, and Job3.\n-------------------------- EXAMPLE 8 --------------------------\nPS C:\\\u003eStart-DbaAgentJob -SqlInstance sql2016 -Job JobWith5Steps -StepName Step4\nStarts the JobWith5Steps SQL Agent Job at step Step4.",
         "Params":  [
                        [
                            "SqlInstance",
@@ -45828,6 +45836,14 @@
                        [
                            "Job",
                            "The job(s) to process - this list is auto-populated from the server. If unspecified, all jobs will be processed.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "StepName",
+                           "The step name to start the job at, will default to the step configured by the job.",
                            "",
                            false,
                            "false",
@@ -45914,7 +45930,7 @@
                            ""
                        ]
                    ],
-        "Syntax":  "Start-DbaAgentJob [-SqlCredential \u003cPSCredential\u003e] [-Job \u003cString[]\u003e] [-ExcludeJob \u003cString[]\u003e] [-AllJobs] [-Wait] [-Parallel] [-WaitPeriod \u003cInt32\u003e] [-SleepPeriod \u003cInt32\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\nStart-DbaAgentJob -SqlInstance \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-Job \u003cString[]\u003e] [-ExcludeJob \u003cString[]\u003e] [-AllJobs] [-Wait] [-Parallel] [-WaitPeriod \u003cInt32\u003e] [-SleepPeriod \u003cInt32\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\nStart-DbaAgentJob [-SqlCredential \u003cPSCredential\u003e] [-Job \u003cString[]\u003e] [-ExcludeJob \u003cString[]\u003e] -InputObject \u003cJob[]\u003e [-AllJobs] [-Wait] [-Parallel] [-WaitPeriod \u003cInt32\u003e] [-SleepPeriod \u003cInt32\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Start-DbaAgentJob [-SqlCredential \u003cPSCredential\u003e] [-Job \u003cString[]\u003e] [-StepName \u003cString\u003e] [-ExcludeJob \u003cString[]\u003e] [-AllJobs] [-Wait] [-Parallel] [-WaitPeriod \u003cInt32\u003e] [-SleepPeriod \u003cInt32\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\nStart-DbaAgentJob -SqlInstance \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-Job \u003cString[]\u003e] [-StepName \u003cString\u003e] [-ExcludeJob \u003cString[]\u003e] [-AllJobs] [-Wait] [-Parallel] [-WaitPeriod \u003cInt32\u003e] [-SleepPeriod \u003cInt32\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\nStart-DbaAgentJob [-SqlCredential \u003cPSCredential\u003e] [-Job \u003cString[]\u003e] [-StepName \u003cString\u003e] [-ExcludeJob \u003cString[]\u003e] -InputObject \u003cJob[]\u003e [-AllJobs] [-Wait] [-Parallel] [-WaitPeriod \u003cInt32\u003e] [-SleepPeriod \u003cInt32\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Start-DbaEndpoint",
@@ -45945,7 +45961,7 @@
                            ""
                        ],
                        [
-                           "EndPoint",
+                           "Endpoint",
                            "Only start specific endpoints.",
                            "",
                            false,
@@ -45993,7 +46009,7 @@
                            ""
                        ]
                    ],
-        "Syntax":  "Start-DbaEndpoint [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-EndPoint] \u003cString[]\u003e] [-AllEndpoints] [[-InputObject] \u003cEndpoint[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Start-DbaEndpoint [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Endpoint] \u003cString[]\u003e] [-AllEndpoints] [[-InputObject] \u003cEndpoint[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Start-DbaMigration",
@@ -46781,7 +46797,7 @@
                            ""
                        ],
                        [
-                           "EndPoint",
+                           "Endpoint",
                            "Only stop specific endpoints.",
                            "",
                            false,
@@ -46829,7 +46845,7 @@
                            ""
                        ]
                    ],
-        "Syntax":  "Stop-DbaEndpoint [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-EndPoint] \u003cString[]\u003e] [-AllEndpoints] [[-InputObject] \u003cEndpoint[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Stop-DbaEndpoint [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Endpoint] \u003cString[]\u003e] [-AllEndpoints] [[-InputObject] \u003cEndpoint[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Stop-DbaPfDataCollectorSet",

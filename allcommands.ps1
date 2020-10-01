@@ -10766,6 +10766,7 @@ function Disable-DbaTraceFlag {
     }
 }
 
+
 #.ExternalHelp dbatools-Help.xml
 function Dismount-DbaDatabase {
     
@@ -17188,53 +17189,84 @@ function Find-DbaLoginInGroup {
 #.ExternalHelp dbatools-Help.xml
 function Find-DbaOrphanedFile {
     
-    [CmdletBinding()]
+
+    [CmdletBinding(DefaultParameterSetName = 'LocalOnly')]
+
     param (
-        [parameter(Mandatory, ValueFromPipeline)]
+        [Parameter(Mandatory, ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
         [pscredential]$SqlCredential,
         [string[]]$Path,
         [string[]]$FileType,
-        [switch]$LocalOnly,
-        [switch]$RemoteOnly,
-        [switch]$EnableException
+        [Parameter(ParameterSetName = 'LocalOnly')][switch]$LocalOnly,
+        [Parameter(ParameterSetName = 'RemoteOnly')][switch]$RemoteOnly,
+        [switch]$EnableException,
+        [switch]$Recurse
     )
 
     begin {
         function Get-SQLDirTreeQuery {
-            param($PathList)
-            # use sysaltfiles in lower versions
+            param([object[]]$SqlPathList, [object[]]$UserPathList, $FileTypes, $SystemFiles, [Switch]$Recurse)
 
-            $q1 = "CREATE TABLE #enum ( id int IDENTITY, fs_filename nvarchar(512), depth int, is_file int, parent nvarchar(512) ); DECLARE @dir nvarchar(512);"
-            $q2 = "SET @dir = 'dirname';
+            $q1 = "
+                CREATE TABLE #enum (
+                  id int IDENTITY
+                , fs_filename nvarchar(512)
+                , depth int
+                , is_file int
+                , parent nvarchar(512)
+                , parent_id int
+                );
+                DECLARE @dir nvarchar(512);
+                "
+
+            $q2 = "
+                SET @dir = 'dirname';
 
                 INSERT INTO #enum( fs_filename, depth, is_file )
-                EXEC xp_dirtree @dir, 1, 1;
+                EXEC xp_dirtree @dir, recurse, 1;
 
                 UPDATE #enum
                 SET parent = @dir,
-                fs_filename = ltrim(rtrim(fs_filename))
-                WHERE parent IS NULL;"
+                fs_filename = ltrim(rtrim(e.fs_filename)),
+                parent_id = (SELECT MAX(i.id) FROM #enum i WHERE i.id < e.id AND i.depth = e.depth-1 AND i.is_file = 0)
+                FROM #enum e
+                WHERE e.parent IS NULL;
+                "
 
-            $query_files_sql = "SELECT e.fs_filename AS filename, e.parent
-                    FROM #enum AS e
-                    WHERE e.fs_filename NOT IN( 'xtp', '5', '`$FSLOG', '`$HKv2', 'filestream.hdr' )
-                    AND is_file = 1;"
+            $query_files_sql = "
+                SELECT e.fs_filename AS filename, e.parent
+                FROM #enum AS e
+                WHERE e.fs_filename NOT IN( 'xtp', '5', '`$FSLOG', '`$HKv2', 'filestream.hdr', '" + $($SystemFiles -join "','") + "' )
+                AND CASE
+                    WHEN e.fs_filename LIKE '%.%'
+                    THEN REVERSE(LEFT(REVERSE(e.fs_filename), CHARINDEX('.', REVERSE(e.fs_filename)) - 1))
+                    ELSE ''
+                    END IN('" + $($FileTypes -join "','") + "')
+                AND e.is_file = 1;
+                "
 
             # build the query string based on how many directories they want to enumerate
             $sql = $q1
-            $sql += $($PathList | Where-Object { $_ -ne '' } | ForEach-Object { "$([System.Environment]::Newline)$($q2 -Replace 'dirname', $_)" })
+            $sql += $($SqlPathList | Where-Object { $_ -ne '' } | ForEach-Object { "$([System.Environment]::Newline)$($q2.Replace('dirname',$_).Replace('recurse','1'))" } )
+            If ($UserPathList) {
+                $recurseVal = If ($Recurse) { '0' } Else { '1' }
+                $sql += $($UserPathList | Where-Object { $_ -ne '' } | ForEach-Object { "$([System.Environment]::Newline)$($q2.Replace('dirname',$_).Replace('recurse',$recurseVal))" } )
+            }
             $sql += $query_files_sql
             Write-Message -Level Debug -Message $sql
             return $sql
         }
+
         function Get-SqlFileStructure {
             param
             (
                 [Parameter(Mandatory, Position = 1)]
                 [Microsoft.SqlServer.Management.Smo.SqlSmoObject]$smoserver
             )
-            if ($smoserver.versionMajor -eq 8) {
+
+            # use sysaltfiles in lower versions
+            if ($smoserver.VersionMajor -eq 8) {
                 $sql = "select filename from sysaltfiles"
             } else {
                 $sql = "select physical_name as filename from sys.master_files"
@@ -17246,20 +17278,17 @@ function Find-DbaOrphanedFile {
 
             # Add support for Full Text Catalogs in Sql Server 2005 and below
             if ($server.VersionMajor -lt 10) {
-                $databaselist = $smoserver.Databases | Select-Object -property  Name, IsFullTextEnabled
-                foreach ($db in $databaselist) {
-                    if ($db.IsFullTextEnabled -eq $false) {
-                        continue
-                    }
-                    $database = $db.name
+                $databaselist = $smoserver.Databases | Select-Object -Property Name, IsFullTextEnabled
+                foreach ($db in $databaselist | Where-Object IsFullTextEnabled) {
+                    $database = $db.Name
                     $fttable = $null = $smoserver.Databases[$database].ExecuteWithResults('sp_help_fulltext_catalogs')
-                    foreach ($ftc in $fttable.Tables[0].rows) {
-                        $null = $ftfiletable.Rows.add($ftc.Path)
+                    foreach ($ftc in $fttable.Tables[0].Rows) {
+                        $null = $ftfiletable.Rows.Add($ftc.Path)
                     }
                 }
             }
-
             $null = $dbfiletable.Tables.Add($ftfiletable)
+
             return $dbfiletable.Tables.Filename
         }
 
@@ -17272,51 +17301,59 @@ function Find-DbaOrphanedFile {
             return $path
         }
 
-        $FileType += "mdf", "ldf", "ndf"
         $systemfiles = "distmdl.ldf", "distmdl.mdf", "mssqlsystemresource.ldf", "mssqlsystemresource.mdf", "model_msdbdata.mdf", "model_msdblog.ldf", "model_replicatedmaster.mdf", "model_replicatedmaster.ldf"
 
-        $FileTypeComparison = $FileType | ForEach-Object { $_.ToLowerInvariant() } | Where-Object { $_ } | Sort-Object | Get-Unique
+        $FileType += "mdf", "ldf", "ndf"
+        $fileTypeComparison = $FileType | ForEach-Object { $_.ToLowerInvariant() } | Where-Object { $_ } | Sort-Object -Unique
     }
 
     process {
         foreach ($instance in $SqlInstance) {
+
+            # Connect to the instance
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
             } catch {
                 Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
+
             # Reset all the arrays
-            $dirtreefiles = $valid = $paths = $matching = @()
+            $sqlpaths = $userpaths = $matching = $valid = @()
+            $dirtreefiles = @{ }
 
-            $filestructure = Get-SqlFileStructure $server
+            # Gather a list of files known to SQL Server
+            $sqlfiles = Get-SqlFileStructure $server
 
-            # Get any paths associated with current data and log files
-            foreach ($file in $filestructure) {
-                $paths += Split-Path -Path $file -Parent
+            # Get the parent directories of those files
+            $sqlfiles | ForEach-Object {
+                $sqlpaths += Split-Path -Path $_ -Parent
             }
 
-            # Get the default data and log directories from the instance
+            # Include the default data and log directories from the instance
             Write-Message -Level Debug -Message "Adding paths"
-            $paths += $server.RootDirectory + "\DATA"
-            $paths += Get-SqlDefaultPaths $server data
-            $paths += Get-SqlDefaultPaths $server log
-            $paths += $server.MasterDBPath
-            $paths += $server.MasterDBLogPath
-            $paths += $Path
-            $paths = $paths | ForEach-Object { "$_".TrimEnd("\") } | Sort-Object | Get-Unique
-            $sql = Get-SQLDirTreeQuery $paths
-            $datatable = $server.Databases['master'].ExecuteWithResults($sql).Tables[0]
+            $sqlpaths += "$($server.RootDirectory)\DATA"
+            $sqlpaths += Get-SqlDefaultPaths $server data
+            $sqlpaths += Get-SqlDefaultPaths $server log
+            $sqlpaths += $server.MasterDBPath
+            $sqlpaths += $server.MasterDBLogPath
 
-            foreach ($row in $datatable) {
-                $fullpath = [IO.Path]::combine($row.parent, $row.filename)
-                $dirtreefiles += [pscustomobject]@{
+            # Gather a list of files from the filesystem
+            $sqlpaths = $sqlpaths | ForEach-Object { $_.TrimEnd("\") } | Sort-Object -Unique
+            if ($Path) {
+                $userpaths = $Path | ForEach-Object { $_.TrimEnd("\") } | Sort-Object -Unique
+            }
+            $sql = Get-SQLDirTreeQuery -SqlPathList $sqlpaths -UserPathList $userpaths -FileTypes $fileTypeComparison -SystemFiles $systemfiles -Recurse:$Recurse
+            $dirtreefiles = $server.Databases['master'].ExecuteWithResults($sql).Tables[0] | ForEach-Object {
+                $fullpath = [IO.Path]::combine($_.parent, $_.filename)
+                [PSCustomObject]@{
                     FullPath   = $fullpath
                     Comparison = [IO.Path]::GetFullPath($(Format-Path $fullpath))
                 }
             }
+            # Output files in the dirtree not known to SQL Server
             $dirtreefiles = $dirtreefiles | Where-Object { $_ } | Sort-Object Comparison -Unique
 
-            foreach ($file in $filestructure) {
+            foreach ($file in $sqlfiles) {
                 $valid += [IO.Path]::GetFullPath($(Format-Path $file))
             }
 
@@ -17333,9 +17370,8 @@ function Find-DbaOrphanedFile {
 
             $dirtreematcher = @{ }
             foreach ($el in $dirtreefiles) {
-                $dirtreematcher[$el.Comparison] = $el.Fullpath
+                $dirtreematcher[$el.Comparison] = $el.FullPath
             }
-
             foreach ($file in $matching) {
                 if ($file -notin $valid) {
                     $fullpath = $dirtreematcher[$file]
@@ -41153,6 +41189,12 @@ function Invoke-DbaAdvancedInstall {
     # change port after the installation
     if ($Port) {
         $null = Set-DbaTcpPort -SqlInstance "$($ComputerName)\$($InstanceName)" -Credential $Credential -Port $Port -EnableException:$EnableException -Confirm:$false
+        try {
+            $null = Restart-DbaService -ComputerName $ComputerName -InstanceName $InstanceName -Credential $Credential -Type Engine -Force -EnableException:$EnableException -Confirm:$false
+        } catch {
+            $output.Notes += "Port for $($ComputerName)\$($InstanceName) has been changed, but instance restart failed ($_). Restart of instance is necessary for the new settings to become effective."
+        }
+
     }
     # restart if necessary
     try {
@@ -49826,11 +49868,11 @@ function New-DbaAgentSchedule {
         [object[]]$Job,
         [object]$Schedule,
         [switch]$Disabled,
-        [ValidateSet('Once', 'Daily', 'Weekly', 'Monthly', 'MonthlyRelative', 'AgentStart', 'IdleComputer')]
+        [ValidateSet('Once', 'OneTime', 'Daily', 'Weekly', 'Monthly', 'MonthlyRelative', 'AgentStart', 'AutoStart', 'IdleComputer', 'OnIdle')]
         [object]$FrequencyType,
         [ValidateSet('EveryDay', 'Weekdays', 'Weekend', 'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31)]
         [object[]]$FrequencyInterval,
-        [ValidateSet('Time', 'Seconds', 'Minutes', 'Hours')]
+        [ValidateSet('Once', 'Time', 'Seconds', 'Second', 'Minutes', 'Minute', 'Hours', 'Hour')]
         [object]$FrequencySubdayType,
         [int]$FrequencySubdayInterval,
         [ValidateSet('Unused', 'First', 'Second', 'Third', 'Fourth', 'Last')]
@@ -49860,12 +49902,15 @@ function New-DbaAgentSchedule {
             [int]$FrequencyType =
             switch ($FrequencyType) {
                 "Once" { 1 }
+                "OneTime" { 1 }
                 "Daily" { 4 }
                 "Weekly" { 8 }
                 "Monthly" { 16 }
                 "MonthlyRelative" { 32 }
                 "AgentStart" { 64 }
+                "AutoStart" { 64 }
                 "IdleComputer" { 128 }
+                "OnIdle" { 128 }
                 default { 1 }
             }
         }
@@ -49874,10 +49919,14 @@ function New-DbaAgentSchedule {
         if (!$FrequencySubdayType -or $FrequencySubdayType) {
             [int]$FrequencySubdayType =
             switch ($FrequencySubdayType) {
+                "Once" { 1 }
                 "Time" { 1 }
                 "Seconds" { 2 }
+                "Second" { 2 }
                 "Minutes" { 4 }
+                "Minute" { 4 }
                 "Hours" { 8 }
+                "Hour" { 8 }
                 default { 1 }
             }
         }
@@ -50409,6 +50458,11 @@ function New-DbaAvailabilityGroup {
             }
         }
 
+        if ($IPAddress -and $Dhcp) {
+            Stop-Function -Message "You cannot specify both an IP address and the Dhcp switch for the listener."
+            return
+        }
+
         try {
             $server = Connect-SqlInstance -SqlInstance $Primary -SqlCredential $PrimarySqlCredential
         } catch {
@@ -50658,16 +50712,12 @@ function New-DbaAvailabilityGroup {
         Write-ProgressHelper -StepNumber ($stepCounter++) -Message $progressmsg
 
         if ($IPAddress) {
-            if ($Pscmdlet.ShouldProcess($Primary, "Adding static IP listener for $Name to the Primary replica")) {
-                $null = Add-DbaAgListener -InputObject $ag -IPAddress $IPAddress -SubnetMask $SubnetMask -Port $Port -Dhcp:$Dhcp
+            if ($Pscmdlet.ShouldProcess($Primary, "Adding static IP listener for $Name to the primary replica")) {
+                $null = Add-DbaAgListener -InputObject $ag -IPAddress $IPAddress -SubnetMask $SubnetMask -Port $Port
             }
         } elseif ($Dhcp) {
-            if ($Pscmdlet.ShouldProcess($Primary, "Adding DHCP listener for $Name to all replicas")) {
-                $null = Add-DbaAgListener -InputObject $ag -Port $Port -Dhcp:$Dhcp
-                foreach ($second in $secondaries) {
-                    $secag = Get-DbaAvailabilityGroup -SqlInstance $second -AvailabilityGroup $Name
-                    $null = Add-DbaAgListener -InputObject $secag -Port $Port -Dhcp:$Dhcp
-                }
+            if ($Pscmdlet.ShouldProcess($Primary, "Adding DHCP listener for $Name to the primary replica")) {
+                $null = Add-DbaAgListener -InputObject $ag -Port $Port -Dhcp
             }
         }
 
@@ -50685,55 +50735,6 @@ function New-DbaAvailabilityGroup {
         }
 
         Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Granting permissions on availability group, this may take a moment"
-
-        # Grant permissions, but first, get all necessary service accounts
-        $primaryserviceaccount = $server.ServiceAccount.Trim()
-        $saname = ([DbaInstanceParameter]($server.DomainInstanceName)).ComputerName
-
-        if ($primaryserviceaccount) {
-            if ($primaryserviceaccount.StartsWith("NT ")) {
-                $primaryserviceaccount = "$saname`$"
-            }
-            if ($primaryserviceaccount.StartsWith("$saname")) {
-                $primaryserviceaccount = "$saname`$"
-            }
-            if ($primaryserviceaccount.StartsWith(".")) {
-                $primaryserviceaccount = "$saname`$"
-            }
-        }
-
-        if (-not $primaryserviceaccount) {
-            $primaryserviceaccount = "$saname`$"
-        }
-
-        $serviceAccounts = @($primaryserviceaccount)
-
-        foreach ($second in $secondaries) {
-            # If service account is empty, add the computer account instead
-            $secondaryserviceaccount = $second.ServiceAccount.Trim()
-            $saname = ([DbaInstanceParameter]($second.DomainInstanceName)).ComputerName
-
-            if ($secondaryserviceaccount) {
-                if ($secondaryserviceaccount.StartsWith("NT ")) {
-                    $secondaryserviceaccount = "$saname`$"
-                }
-                if ($secondaryserviceaccount.StartsWith("$saname")) {
-                    $secondaryserviceaccount = "$saname`$"
-                }
-                if ($secondaryserviceaccount.StartsWith(".")) {
-                    $secondaryserviceaccount = "$saname`$"
-                }
-            }
-
-            if (-not $secondaryserviceaccount) {
-                $secondaryserviceaccount = "$saname`$"
-            }
-
-            $serviceAccounts += $secondaryserviceaccount
-        }
-
-        $serviceAccounts = $serviceAccounts | Select-Object -Unique
-
         if ($SeedingMode -eq 'Automatic') {
             try {
                 if ($Pscmdlet.ShouldProcess($server.Name, "Seeding mode is automatic. Adding CreateAnyDatabase permissions to availability group.")) {
@@ -52838,7 +52839,7 @@ function New-DbaDbMailAccount {
     process {
         foreach ($instance in $SqlInstance) {
             try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 11
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 10
             } catch {
                 Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
@@ -52895,7 +52896,7 @@ function New-DbaDbMailProfile {
     process {
         foreach ($instance in $SqlInstance) {
             try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 11
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 10
             } catch {
                 Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
@@ -54446,6 +54447,7 @@ function New-DbaEndpoint {
         [parameter(Mandatory, ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
+        [Alias("Endpoint")]
         [string]$Name,
         [ValidateSet('DatabaseMirroring', 'ServiceBroker', 'Soap', 'TSql')]
         [string]$Type = 'DatabaseMirroring',
@@ -54646,6 +54648,7 @@ function New-DbaLogin {
             }
 
             foreach ($loginItem in $loginCollection) {
+                $usedTsql = $false
                 #check if $loginItem is an SMO Login object
                 if ($loginItem.GetType().Name -eq 'Login') {
                     #Get all the necessary fields
@@ -54709,7 +54712,7 @@ function New-DbaLogin {
                     else { $loginType = 'WindowsUser' }
                 }
 
-                if (($server.LoginMode -ne [Microsoft.SqlServer.Management.Smo.ServerLoginMode]::Mixed) -and ($loginType -eq 'SqlLogin')) {
+                if ((-not $server.IsAzure) -and ($server.LoginMode -ne [Microsoft.SqlServer.Management.Smo.ServerLoginMode]::Mixed) -and ($loginType -eq 'SqlLogin')) {
                     Write-Message -Level Warning -Message "$instance does not have Mixed Mode enabled. [$loginName] is an SQL Login. Enable mixed mode authentication after the migration completes to use this type of login."
                 }
 
@@ -54874,6 +54877,7 @@ function New-DbaLogin {
                                 $null = $server.Query($sql)
                                 $newLogin = $server.logins[$loginName]
                                 Write-Message -Level Verbose -Message "Successfully added $loginName to $instance."
+                                $usedTsql = $true
                             } catch {
                                 Stop-Function -Message "Failed to add $loginName to $instance." -Category InvalidOperation -ErrorRecord $_ -Target $instance -Continue
                             }
@@ -54890,6 +54894,7 @@ function New-DbaLogin {
                                     $sql = "ALTER LOGIN [$loginName] DISABLE"
                                     $null = $server.Query($sql)
                                     Write-Message -Level Verbose -Message "Login $loginName has been disabled on $instance."
+                                    $usedTsql = $true
                                 } catch {
                                     Stop-Function -Message "Failed to disable $loginName on $instance." -Category InvalidOperation -ErrorRecord $_ -Target $instance -Continue
                                 }
@@ -54907,12 +54912,17 @@ function New-DbaLogin {
                                     $sql = "DENY CONNECT SQL TO [{0}]" -f $newLogin.Name
                                     $null = $server.Query($sql)
                                     Write-Message -Level Verbose -Message "Login $loginName has been denied from logging in on $instance."
+                                    $usedTsql = $true
                                 } catch {
                                     Stop-Function -Message "Failed to set deny windows login priviledge $loginName on $instance." -Category InvalidOperation -ErrorRecord $_ -Target $instance -Continue
                                 }
                             }
                         }
                         #Display results
+                        # If we ever used T-SQL, the smo is some times not up to date and should be refreshed
+                        if ($usedTsql) {
+                            $server.Logins.Refresh()
+                        }
                         Get-DbaLogin -SqlInstance $server -Login $loginName
                     } catch {
                         Stop-Function -Message "Failed to create login $loginName on $instance." -Target $credential -InnerErrorRecord $_ -Continue
@@ -56946,7 +56956,7 @@ function Remove-DbaAgentSchedule {
                 Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
-            if (-not $InputObject -and (-not $Schedule -or $ScheduleUid)) {
+            if (-not ($InputObject -or $Schedule -or $ScheduleUid)) {
                 Stop-Function -Message "Please enter the schedule or schedule uid"
             }
 
@@ -57040,6 +57050,7 @@ function Remove-DbaAgentSchedule {
         Write-Message -Message "Finished removing jobs schedule(s)." -Level Verbose
     }
 }
+
 
 #.ExternalHelp dbatools-Help.xml
 function Remove-DbaAgListener {
@@ -58992,7 +59003,7 @@ function Remove-DbaEndpoint {
     param (
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [string[]]$EndPoint,
+        [string[]]$Endpoint,
         [switch]$AllEndpoints,
         [parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.Endpoint[]]$InputObject,
@@ -59004,7 +59015,7 @@ function Remove-DbaEndpoint {
             return
         }
         foreach ($instance in $SqlInstance) {
-            $InputObject += Get-DbaEndpoint -SqlInstance $instance -SqlCredential $SqlCredential -EndPoint $Endpoint
+            $InputObject += Get-DbaEndpoint -SqlInstance $instance -SqlCredential $SqlCredential -Endpoint $Endpoint
         }
 
         foreach ($ep in $InputObject) {
@@ -65727,7 +65738,7 @@ function Set-DbaEndpoint {
     param (
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [string[]]$EndPoint,
+        [string[]]$Endpoint,
         [string]$Owner,
         [ValidateSet('DatabaseMirroring', 'ServiceBroker', 'Soap', 'TSql')]
         [string]$Type,
@@ -65742,7 +65753,7 @@ function Set-DbaEndpoint {
             return
         }
         foreach ($instance in $SqlInstance) {
-            $InputObject += Get-DbaEndpoint -SqlInstance $instance -SqlCredential $SqlCredential -EndPoint $Endpoint
+            $InputObject += Get-DbaEndpoint -SqlInstance $instance -SqlCredential $SqlCredential -Endpoint $Endpoint
         }
 
         $props = "Owner", "Type"
@@ -67389,15 +67400,16 @@ function Set-DbaTcpPort {
         foreach ($instance in $SqlInstance) {
             $wmiInstanceName = $instance.InstanceName
             $computerName = $instance.ComputerName
+            $resolvedComputerName = (Resolve-DbaNetworkName -ComputerName $computerName).FullComputerName
 
             if ($Pscmdlet.ShouldProcess($computerName, "Setting port to $Port for $wmiInstanceName")) {
                 try {
-                    $computerName = $instance.ComputerName
-                    $resolved = Resolve-DbaNetworkName -ComputerName $computerName
-                    Invoke-ManagedComputerCommand -ComputerName $resolved.FullComputerName -ScriptBlock $scriptblock -ArgumentList $instance.ComputerName, $wmiInstanceName, $port, $IpAddress, $instance.InputObject -Credential $Credential
+                    Write-Message -Level Verbose -Message "Trying Invoke-ManagedComputerCommand with ComputerName = '$resolvedComputerName'"
+                    Invoke-ManagedComputerCommand -ComputerName $resolvedComputerName -ScriptBlock $scriptblock -ArgumentList $computerName, $wmiInstanceName, $port, $IpAddress, $instance.InputObject -Credential $Credential
                 } catch {
                     try {
-                        Invoke-ManagedComputerCommand -ComputerName $instance.ComputerName -ScriptBlock $scriptblock -ArgumentList $instance.ComputerName, $wmiInstanceName, $port, $IpAddress, $instance.InputObject -Credential $Credential
+                        Write-Message -Level Verbose -Message "Fallback: Trying Invoke-ManagedComputerCommand with ComputerName = '$computerName'"
+                        Invoke-ManagedComputerCommand -ComputerName $computerName -ScriptBlock $scriptblock -ArgumentList $computerName, $wmiInstanceName, $port, $IpAddress, $instance.InputObject -Credential $Credential
                     } catch {
                         Stop-Function -Message "Failure setting port to $Port for $wmiInstanceName on $computerName" -Continue
                     }
@@ -67928,6 +67940,7 @@ function Start-DbaAgentJob {
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [string[]]$Job,
+        [string]$StepName,
         [string[]]$ExcludeJob,
         [parameter(Mandatory, ValueFromPipeline, ParameterSetName = "Object")]
         [Microsoft.SqlServer.Management.Smo.Agent.Job[]]$InputObject,
@@ -68006,7 +68019,18 @@ function Start-DbaAgentJob {
                 # Start the job
                 $lastrun = $currentjob.LastRunDate
                 Write-Message -Level Verbose -Message "Last run date was $lastrun"
-                $null = $currentjob.Start()
+                if ($StepName) {
+                    if ($currentjob.JobSteps.Name -contains $StepName) {
+                        Write-Message -Level Verbose -Message "Starting job [$currentjob] at step [$StepName]"
+                        $null = $currentjob.Start($StepName)
+                    } else {
+                        Write-Message -Level Verbose -Message "Job [$currentjob] does not contain step [$StepName]"
+                        continue
+                    }
+                } else {
+                    $null = $currentjob.Start()
+                }
+
 
                 # Wait and refresh so that it has a chance to change status
                 Start-Sleep -Milliseconds $SleepPeriod
@@ -68060,7 +68084,7 @@ function Start-DbaEndpoint {
     param (
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [string[]]$EndPoint,
+        [string[]]$Endpoint,
         [switch]$AllEndpoints,
         [parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.Endpoint[]]$InputObject,
@@ -68072,7 +68096,7 @@ function Start-DbaEndpoint {
             return
         }
         foreach ($instance in $SqlInstance) {
-            $InputObject += Get-DbaEndpoint -SqlInstance $instance -SqlCredential $SqlCredential -EndPoint $Endpoint
+            $InputObject += Get-DbaEndpoint -SqlInstance $instance -SqlCredential $SqlCredential -Endpoint $Endpoint
         }
 
         foreach ($ep in $InputObject) {
@@ -68805,7 +68829,7 @@ function Stop-DbaEndpoint {
     param (
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [string[]]$EndPoint,
+        [string[]]$Endpoint,
         [switch]$AllEndpoints,
         [parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.Endpoint[]]$InputObject,
@@ -68817,7 +68841,7 @@ function Stop-DbaEndpoint {
             return
         }
         foreach ($instance in $SqlInstance) {
-            $InputObject += Get-DbaEndpoint -SqlInstance $instance -SqlCredential $SqlCredential -EndPoint $Endpoint
+            $InputObject += Get-DbaEndpoint -SqlInstance $instance -SqlCredential $SqlCredential -Endpoint $Endpoint
         }
 
         foreach ($ep in $InputObject) {
