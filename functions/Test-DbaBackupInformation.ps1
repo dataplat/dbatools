@@ -99,13 +99,14 @@ function Test-DbaBackupInformation {
     end {
         $RegisteredFileCheck = Get-DbaDbPhysicalFile -SqlInstance $RestoreInstance
 
-        $Databases = $InternalHistory.Database | Select-Object -Unique
+        $Databases = $InternalHistory.Database.ToUpper() | Select-Object -Unique
         foreach ($Database in $Databases) {
             $VerificationErrors = 0
             Write-Message -Message "Testing restore for $Database" -Level Verbose
             #Test we're only restoring backups from one database, or hilarity will ensure
             $DbHistory = $InternalHistory | Where-Object { $_.Database -eq $Database }
-            if (( $DbHistory | Select-Object -Property @{ Name = "test"; expression = { $_.OriginalDatabase.ToUpper() } }).Count -gt 1) {
+            if (( $DbHistory | Select-Object -Property @{ Name = "test"; expression = { $_.OriginalDatabase.ToUpper() } } -unique ).Count -gt 1) {
+                #if (( $DbHistory | Select-Object -Property $OriginalDatabase).Count -gt 1) {
                 Write-Message -Message "Trying to restore $Database from multiple sources databases" -Level Warning
                 $VerificationErrors++
             }

@@ -1,0 +1,878 @@
+<Objs Version="1.1.0.1" xmlns="http://schemas.microsoft.com/powershell/2004/04">
+  <Obj RefId="0">
+    <TN RefId="0">
+      <T>Sqlcollaborative.Dbatools.Database.BackupHistory</T>
+      <T>System.Object</T>
+    </TN>
+    <ToString>Sqlcollaborative.Dbatools.Database.BackupHistory</ToString>
+    <Props>
+      <S N="ComputerName">CGE100LAP-42</S>
+      <S N="InstanceName"></S>
+      <S N="SqlInstance">CGE100LAP-42\SQLEXPRESS2016</S>
+      <S N="Database">RestoreTimeClean</S>
+      <S N="UserName">ADS\COM3MOORESM</S>
+      <DT N="Start">2017-08-01T11:09:25</DT>
+      <DT N="End">2017-08-01T11:09:25</DT>
+      <Obj N="Duration" RefId="1">
+        <TN RefId="1">
+          <T>Sqlcollaborative.Dbatools.Utility.DbaTimeSpan</T>
+          <T>System.Object</T>
+        </TN>
+        <ToString>00:00:00</ToString>
+        <Props>
+          <I32 N="Days">0</I32>
+          <I32 N="Hours">0</I32>
+          <I32 N="Milliseconds">0</I32>
+          <I32 N="Minutes">0</I32>
+          <I32 N="Seconds">0</I32>
+          <I64 N="Ticks">0</I64>
+          <Db N="TotalDays">0</Db>
+          <Db N="TotalHours">0</Db>
+          <Db N="TotalMilliseconds">0</Db>
+          <Db N="TotalMinutes">0</Db>
+          <Db N="TotalSeconds">0</Db>
+        </Props>
+      </Obj>
+      <Obj N="Path" RefId="2">
+        <TN RefId="2">
+          <T>System.String[]</T>
+          <T>System.Array</T>
+          <T>System.Object</T>
+        </TN>
+        <LST>
+          <S>C:\dbatools\RestoreTimeClean\RestoreTimeClean.bak</S>
+        </LST>
+      </Obj>
+      <Nil N="TotalSize" />
+      <S N="Type">Database</S>
+      <S N="BackupSetId">95383afa-d1dc-4a95-92c2-06b2ba1277db</S>
+      <S N="DeviceType">Disk</S>
+      <Nil N="Software" />
+      <Obj N="FullName" RefId="3">
+        <TNRef RefId="2" />
+        <LST>
+          <S>C:\dbatools\RestoreTimeClean\RestoreTimeClean.bak</S>
+        </LST>
+      </Obj>
+      <Obj N="FileList" RefId="4">
+        <TN RefId="3">
+          <T>System.Object[]</T>
+          <T>System.Array</T>
+          <T>System.Object</T>
+        </TN>
+        <LST>
+          <Obj RefId="5">
+            <TN RefId="4">
+              <T>Selected.System.Management.Automation.PSCustomObject</T>
+              <T>System.Management.Automation.PSCustomObject</T>
+              <T>System.Object</T>
+            </TN>
+            <MS>
+              <S N="Type">D</S>
+              <S N="LogicalName">RestoreTimeClean</S>
+              <S N="PhysicalName">C:\Program Files\Microsoft SQL Server\MSSQL13.SQLEXPRESS2016\MSSQL\DATA\RestoreTimeClean.mdf</S>
+            </MS>
+          </Obj>
+          <Obj RefId="6">
+            <TNRef RefId="4" />
+            <MS>
+              <S N="Type">L</S>
+              <S N="LogicalName">RestoreTimeClean_log</S>
+              <S N="PhysicalName">C:\Program Files\Microsoft SQL Server\MSSQL13.SQLEXPRESS2016\MSSQL\data\RestoreTimeClean_log.ldf</S>
+            </MS>
+          </Obj>
+        </LST>
+      </Obj>
+      <I32 N="Position">1</I32>
+      <Obj N="FirstLsn" RefId="7">
+        <TN RefId="5">
+          <T>System.Numerics.BigInteger</T>
+          <T>System.ValueType</T>
+          <T>System.Object</T>
+        </TN>
+        <ToString>34000000006900179</ToString>
+        <Props>
+          <B N="IsPowerOfTwo">false</B>
+          <B N="IsZero">false</B>
+          <B N="IsOne">false</B>
+          <B N="IsEven">false</B>
+          <I32 N="Sign">1</I32>
+        </Props>
+      </Obj>
+      <Obj N="DatabaseBackupLsn" RefId="8">
+        <TNRef RefId="5" />
+        <ToString>0</ToString>
+        <Props>
+          <B N="IsPowerOfTwo">false</B>
+          <B N="IsZero">true</B>
+          <B N="IsOne">false</B>
+          <B N="IsEven">true</B>
+          <I32 N="Sign">0</I32>
+        </Props>
+      </Obj>
+      <Obj N="CheckpointLsn" RefId="9">
+        <TNRef RefId="5" />
+        <ToString>34000000006900179</ToString>
+        <Props>
+          <B N="IsPowerOfTwo">false</B>
+          <B N="IsZero">false</B>
+          <B N="IsOne">false</B>
+          <B N="IsEven">false</B>
+          <I32 N="Sign">1</I32>
+        </Props>
+      </Obj>
+      <Obj N="LastLsn" RefId="10">
+        <TNRef RefId="5" />
+        <ToString>34000000014400001</ToString>
+        <Props>
+          <B N="IsPowerOfTwo">false</B>
+          <B N="IsZero">false</B>
+          <B N="IsOne">false</B>
+          <B N="IsEven">false</B>
+          <I32 N="Sign">1</I32>
+        </Props>
+      </Obj>
+      <I32 N="SoftwareVersionMajor">13</I32>
+      <B N="IsCopyOnly">false</B>
+      <G N="LastRecoveryForkGUID">00000000-0000-0000-0000-000000000000</G>
+    </Props>
+    <MS>
+      <S N="OriginalDatabase">RestoreTimeClean</S>
+      <Ref N="OriginalFileList" RefId="4" />
+      <Ref N="OriginalFullName" RefId="3" />
+      <B N="IsVerified">false</B>
+    </MS>
+  </Obj>
+  <Obj RefId="11">
+    <TNRef RefId="0" />
+    <ToString>Sqlcollaborative.Dbatools.Database.BackupHistory</ToString>
+    <Props>
+      <S N="ComputerName">CGE100LAP-42</S>
+      <S N="InstanceName"></S>
+      <S N="SqlInstance">CGE100LAP-42\SQLEXPRESS2016</S>
+      <S N="Database">RestoreTimeClean</S>
+      <S N="UserName">ADS\COM3MOORESM</S>
+      <DT N="Start">2017-08-01T11:10:15</DT>
+      <DT N="End">2017-08-01T11:10:15</DT>
+      <Obj N="Duration" RefId="12">
+        <TNRef RefId="1" />
+        <ToString>00:00:00</ToString>
+        <Props>
+          <I32 N="Days">0</I32>
+          <I32 N="Hours">0</I32>
+          <I32 N="Milliseconds">0</I32>
+          <I32 N="Minutes">0</I32>
+          <I32 N="Seconds">0</I32>
+          <I64 N="Ticks">0</I64>
+          <Db N="TotalDays">0</Db>
+          <Db N="TotalHours">0</Db>
+          <Db N="TotalMilliseconds">0</Db>
+          <Db N="TotalMinutes">0</Db>
+          <Db N="TotalSeconds">0</Db>
+        </Props>
+      </Obj>
+      <Obj N="Path" RefId="13">
+        <TNRef RefId="2" />
+        <LST>
+          <S>C:\dbatools\RestoreTimeClean\RestoreTimeClean_1.trn</S>
+        </LST>
+      </Obj>
+      <Nil N="TotalSize" />
+      <S N="Type">Transaction Log</S>
+      <S N="BackupSetId">293a6268-a873-4eea-8b03-e9d002459d91</S>
+      <S N="DeviceType">Disk</S>
+      <Nil N="Software" />
+      <Obj N="FullName" RefId="14">
+        <TNRef RefId="2" />
+        <LST>
+          <S>C:\dbatools\RestoreTimeClean\RestoreTimeClean_1.trn</S>
+        </LST>
+      </Obj>
+      <Obj N="FileList" RefId="15">
+        <TNRef RefId="3" />
+        <LST>
+          <Obj RefId="16">
+            <TNRef RefId="4" />
+            <MS>
+              <S N="Type">D</S>
+              <S N="LogicalName">RestoreTimeClean</S>
+              <S N="PhysicalName">C:\Program Files\Microsoft SQL Server\MSSQL13.SQLEXPRESS2016\MSSQL\DATA\RestoreTimeClean.mdf</S>
+            </MS>
+          </Obj>
+          <Obj RefId="17">
+            <TNRef RefId="4" />
+            <MS>
+              <S N="Type">L</S>
+              <S N="LogicalName">RestoreTimeClean_log</S>
+              <S N="PhysicalName">C:\Program Files\Microsoft SQL Server\MSSQL13.SQLEXPRESS2016\MSSQL\data\RestoreTimeClean_log.ldf</S>
+            </MS>
+          </Obj>
+        </LST>
+      </Obj>
+      <I32 N="Position">1</I32>
+      <Obj N="FirstLsn" RefId="18">
+        <TNRef RefId="5" />
+        <ToString>34000000006900179</ToString>
+        <Props>
+          <B N="IsPowerOfTwo">false</B>
+          <B N="IsZero">false</B>
+          <B N="IsOne">false</B>
+          <B N="IsEven">false</B>
+          <I32 N="Sign">1</I32>
+        </Props>
+      </Obj>
+      <Obj N="DatabaseBackupLsn" RefId="19">
+        <TNRef RefId="5" />
+        <ToString>34000000006900179</ToString>
+        <Props>
+          <B N="IsPowerOfTwo">false</B>
+          <B N="IsZero">false</B>
+          <B N="IsOne">false</B>
+          <B N="IsEven">false</B>
+          <I32 N="Sign">1</I32>
+        </Props>
+      </Obj>
+      <Obj N="CheckpointLsn" RefId="20">
+        <TNRef RefId="5" />
+        <ToString>34000000006900179</ToString>
+        <Props>
+          <B N="IsPowerOfTwo">false</B>
+          <B N="IsZero">false</B>
+          <B N="IsOne">false</B>
+          <B N="IsEven">false</B>
+          <I32 N="Sign">1</I32>
+        </Props>
+      </Obj>
+      <Obj N="LastLsn" RefId="21">
+        <TNRef RefId="5" />
+        <ToString>34000000016800001</ToString>
+        <Props>
+          <B N="IsPowerOfTwo">false</B>
+          <B N="IsZero">false</B>
+          <B N="IsOne">false</B>
+          <B N="IsEven">false</B>
+          <I32 N="Sign">1</I32>
+        </Props>
+      </Obj>
+      <I32 N="SoftwareVersionMajor">13</I32>
+      <B N="IsCopyOnly">false</B>
+      <G N="LastRecoveryForkGUID">00000000-0000-0000-0000-000000000000</G>
+    </Props>
+    <MS>
+      <S N="OriginalDatabase">RestoreTimeClean</S>
+      <Ref N="OriginalFileList" RefId="15" />
+      <Ref N="OriginalFullName" RefId="14" />
+      <B N="IsVerified">false</B>
+    </MS>
+  </Obj>
+  <Obj RefId="22">
+    <TNRef RefId="0" />
+    <ToString>Sqlcollaborative.Dbatools.Database.BackupHistory</ToString>
+    <Props>
+      <S N="ComputerName">CGE100LAP-42</S>
+      <S N="InstanceName"></S>
+      <S N="SqlInstance">CGE100LAP-42\SQLEXPRESS2016</S>
+      <S N="Database">RestoreTimeClean</S>
+      <S N="UserName">ADS\COM3MOORESM</S>
+      <DT N="Start">2017-08-01T11:11:05</DT>
+      <DT N="End">2017-08-01T11:11:05</DT>
+      <Obj N="Duration" RefId="23">
+        <TNRef RefId="1" />
+        <ToString>00:00:00</ToString>
+        <Props>
+          <I32 N="Days">0</I32>
+          <I32 N="Hours">0</I32>
+          <I32 N="Milliseconds">0</I32>
+          <I32 N="Minutes">0</I32>
+          <I32 N="Seconds">0</I32>
+          <I64 N="Ticks">0</I64>
+          <Db N="TotalDays">0</Db>
+          <Db N="TotalHours">0</Db>
+          <Db N="TotalMilliseconds">0</Db>
+          <Db N="TotalMinutes">0</Db>
+          <Db N="TotalSeconds">0</Db>
+        </Props>
+      </Obj>
+      <Obj N="Path" RefId="24">
+        <TNRef RefId="2" />
+        <LST>
+          <S>C:\dbatools\RestoreTimeClean\RestoreTimeClean_2.trn</S>
+        </LST>
+      </Obj>
+      <Nil N="TotalSize" />
+      <S N="Type">Transaction Log</S>
+      <S N="BackupSetId">0c0e1500-f405-46a1-bda5-701d400fe690</S>
+      <S N="DeviceType">Disk</S>
+      <Nil N="Software" />
+      <Obj N="FullName" RefId="25">
+        <TNRef RefId="2" />
+        <LST>
+          <S>C:\dbatools\RestoreTimeClean\RestoreTimeClean_2.trn</S>
+        </LST>
+      </Obj>
+      <Obj N="FileList" RefId="26">
+        <TNRef RefId="3" />
+        <LST>
+          <Obj RefId="27">
+            <TNRef RefId="4" />
+            <MS>
+              <S N="Type">D</S>
+              <S N="LogicalName">RestoreTimeClean</S>
+              <S N="PhysicalName">C:\Program Files\Microsoft SQL Server\MSSQL13.SQLEXPRESS2016\MSSQL\DATA\RestoreTimeClean.mdf</S>
+            </MS>
+          </Obj>
+          <Obj RefId="28">
+            <TNRef RefId="4" />
+            <MS>
+              <S N="Type">L</S>
+              <S N="LogicalName">RestoreTimeClean_log</S>
+              <S N="PhysicalName">C:\Program Files\Microsoft SQL Server\MSSQL13.SQLEXPRESS2016\MSSQL\data\RestoreTimeClean_log.ldf</S>
+            </MS>
+          </Obj>
+        </LST>
+      </Obj>
+      <I32 N="Position">1</I32>
+      <Obj N="FirstLsn" RefId="29">
+        <TNRef RefId="5" />
+        <ToString>34000000016800001</ToString>
+        <Props>
+          <B N="IsPowerOfTwo">false</B>
+          <B N="IsZero">false</B>
+          <B N="IsOne">false</B>
+          <B N="IsEven">false</B>
+          <I32 N="Sign">1</I32>
+        </Props>
+      </Obj>
+      <Obj N="DatabaseBackupLsn" RefId="30">
+        <TNRef RefId="5" />
+        <ToString>34000000006900179</ToString>
+        <Props>
+          <B N="IsPowerOfTwo">false</B>
+          <B N="IsZero">false</B>
+          <B N="IsOne">false</B>
+          <B N="IsEven">false</B>
+          <I32 N="Sign">1</I32>
+        </Props>
+      </Obj>
+      <Obj N="CheckpointLsn" RefId="31">
+        <TNRef RefId="5" />
+        <ToString>34000000017000002</ToString>
+        <Props>
+          <B N="IsPowerOfTwo">false</B>
+          <B N="IsZero">false</B>
+          <B N="IsOne">false</B>
+          <B N="IsEven">true</B>
+          <I32 N="Sign">1</I32>
+        </Props>
+      </Obj>
+      <Obj N="LastLsn" RefId="32">
+        <TNRef RefId="5" />
+        <ToString>34000000019700001</ToString>
+        <Props>
+          <B N="IsPowerOfTwo">false</B>
+          <B N="IsZero">false</B>
+          <B N="IsOne">false</B>
+          <B N="IsEven">false</B>
+          <I32 N="Sign">1</I32>
+        </Props>
+      </Obj>
+      <I32 N="SoftwareVersionMajor">13</I32>
+      <B N="IsCopyOnly">false</B>
+      <G N="LastRecoveryForkGUID">00000000-0000-0000-0000-000000000000</G>
+    </Props>
+    <MS>
+      <S N="OriginalDatabase">RestoreTimeClean</S>
+      <Ref N="OriginalFileList" RefId="26" />
+      <Ref N="OriginalFullName" RefId="25" />
+      <B N="IsVerified">false</B>
+    </MS>
+  </Obj>
+  <Obj RefId="33">
+    <TNRef RefId="0" />
+    <ToString>Sqlcollaborative.Dbatools.Database.BackupHistory</ToString>
+    <Props>
+      <S N="ComputerName">CGE100LAP-42</S>
+      <S N="InstanceName"></S>
+      <S N="SqlInstance">CGE100LAP-42\SQLEXPRESS2016</S>
+      <S N="Database">RestoreTimeClean</S>
+      <S N="UserName">ADS\COM3MOORESM</S>
+      <DT N="Start">2017-08-01T11:11:55</DT>
+      <DT N="End">2017-08-01T11:11:55</DT>
+      <Obj N="Duration" RefId="34">
+        <TNRef RefId="1" />
+        <ToString>00:00:00</ToString>
+        <Props>
+          <I32 N="Days">0</I32>
+          <I32 N="Hours">0</I32>
+          <I32 N="Milliseconds">0</I32>
+          <I32 N="Minutes">0</I32>
+          <I32 N="Seconds">0</I32>
+          <I64 N="Ticks">0</I64>
+          <Db N="TotalDays">0</Db>
+          <Db N="TotalHours">0</Db>
+          <Db N="TotalMilliseconds">0</Db>
+          <Db N="TotalMinutes">0</Db>
+          <Db N="TotalSeconds">0</Db>
+        </Props>
+      </Obj>
+      <Obj N="Path" RefId="35">
+        <TNRef RefId="2" />
+        <LST>
+          <S>C:\dbatools\RestoreTimeClean\RestoreTimeClean_3.trn</S>
+        </LST>
+      </Obj>
+      <Nil N="TotalSize" />
+      <S N="Type">Transaction Log</S>
+      <S N="BackupSetId">ba177689-2085-4955-ac54-5631ee943f22</S>
+      <S N="DeviceType">Disk</S>
+      <Nil N="Software" />
+      <Obj N="FullName" RefId="36">
+        <TNRef RefId="2" />
+        <LST>
+          <S>C:\dbatools\RestoreTimeClean\RestoreTimeClean_3.trn</S>
+        </LST>
+      </Obj>
+      <Obj N="FileList" RefId="37">
+        <TNRef RefId="3" />
+        <LST>
+          <Obj RefId="38">
+            <TNRef RefId="4" />
+            <MS>
+              <S N="Type">D</S>
+              <S N="LogicalName">RestoreTimeClean</S>
+              <S N="PhysicalName">C:\Program Files\Microsoft SQL Server\MSSQL13.SQLEXPRESS2016\MSSQL\DATA\RestoreTimeClean.mdf</S>
+            </MS>
+          </Obj>
+          <Obj RefId="39">
+            <TNRef RefId="4" />
+            <MS>
+              <S N="Type">L</S>
+              <S N="LogicalName">RestoreTimeClean_log</S>
+              <S N="PhysicalName">C:\Program Files\Microsoft SQL Server\MSSQL13.SQLEXPRESS2016\MSSQL\data\RestoreTimeClean_log.ldf</S>
+            </MS>
+          </Obj>
+        </LST>
+      </Obj>
+      <I32 N="Position">1</I32>
+      <Obj N="FirstLsn" RefId="40">
+        <TNRef RefId="5" />
+        <ToString>34000000019700001</ToString>
+        <Props>
+          <B N="IsPowerOfTwo">false</B>
+          <B N="IsZero">false</B>
+          <B N="IsOne">false</B>
+          <B N="IsEven">false</B>
+          <I32 N="Sign">1</I32>
+        </Props>
+      </Obj>
+      <Obj N="DatabaseBackupLsn" RefId="41">
+        <TNRef RefId="5" />
+        <ToString>34000000006900179</ToString>
+        <Props>
+          <B N="IsPowerOfTwo">false</B>
+          <B N="IsZero">false</B>
+          <B N="IsOne">false</B>
+          <B N="IsEven">false</B>
+          <I32 N="Sign">1</I32>
+        </Props>
+      </Obj>
+      <Obj N="CheckpointLsn" RefId="42">
+        <TNRef RefId="5" />
+        <ToString>34000000019900002</ToString>
+        <Props>
+          <B N="IsPowerOfTwo">false</B>
+          <B N="IsZero">false</B>
+          <B N="IsOne">false</B>
+          <B N="IsEven">true</B>
+          <I32 N="Sign">1</I32>
+        </Props>
+      </Obj>
+      <Obj N="LastLsn" RefId="43">
+        <TNRef RefId="5" />
+        <ToString>34000000021300001</ToString>
+        <Props>
+          <B N="IsPowerOfTwo">false</B>
+          <B N="IsZero">false</B>
+          <B N="IsOne">false</B>
+          <B N="IsEven">false</B>
+          <I32 N="Sign">1</I32>
+        </Props>
+      </Obj>
+      <I32 N="SoftwareVersionMajor">13</I32>
+      <B N="IsCopyOnly">false</B>
+      <G N="LastRecoveryForkGUID">00000000-0000-0000-0000-000000000000</G>
+    </Props>
+    <MS>
+      <S N="OriginalDatabase">RestoreTimeClean</S>
+      <Ref N="OriginalFileList" RefId="37" />
+      <Ref N="OriginalFullName" RefId="36" />
+      <B N="IsVerified">false</B>
+    </MS>
+  </Obj>
+  <Obj RefId="44">
+    <TNRef RefId="0" />
+    <ToString>Sqlcollaborative.Dbatools.Database.BackupHistory</ToString>
+    <Props>
+      <S N="ComputerName">CGE100LAP-42</S>
+      <S N="InstanceName"></S>
+      <S N="SqlInstance">CGE100LAP-42\SQLEXPRESS2016</S>
+      <S N="Database">RestoreTimeClean</S>
+      <S N="UserName">ADS\COM3MOORESM</S>
+      <DT N="Start">2017-08-01T11:12:45</DT>
+      <DT N="End">2017-08-01T11:12:45</DT>
+      <Obj N="Duration" RefId="45">
+        <TNRef RefId="1" />
+        <ToString>00:00:00</ToString>
+        <Props>
+          <I32 N="Days">0</I32>
+          <I32 N="Hours">0</I32>
+          <I32 N="Milliseconds">0</I32>
+          <I32 N="Minutes">0</I32>
+          <I32 N="Seconds">0</I32>
+          <I64 N="Ticks">0</I64>
+          <Db N="TotalDays">0</Db>
+          <Db N="TotalHours">0</Db>
+          <Db N="TotalMilliseconds">0</Db>
+          <Db N="TotalMinutes">0</Db>
+          <Db N="TotalSeconds">0</Db>
+        </Props>
+      </Obj>
+      <Obj N="Path" RefId="46">
+        <TNRef RefId="2" />
+        <LST>
+          <S>C:\dbatools\RestoreTimeClean\RestoreTimeClean_21.trn</S>
+        </LST>
+      </Obj>
+      <Nil N="TotalSize" />
+      <S N="Type">Transaction Log</S>
+      <S N="BackupSetId">16237419-48a6-47e0-920e-290325c1e9d4</S>
+      <S N="DeviceType">Disk</S>
+      <Nil N="Software" />
+      <Obj N="FullName" RefId="47">
+        <TNRef RefId="2" />
+        <LST>
+          <S>C:\dbatools\RestoreTimeClean\RestoreTimeClean_21.trn</S>
+        </LST>
+      </Obj>
+      <Obj N="FileList" RefId="48">
+        <TNRef RefId="3" />
+        <LST>
+          <Obj RefId="49">
+            <TNRef RefId="4" />
+            <MS>
+              <S N="Type">D</S>
+              <S N="LogicalName">RestoreTimeClean</S>
+              <S N="PhysicalName">C:\Program Files\Microsoft SQL Server\MSSQL13.SQLEXPRESS2016\MSSQL\DATA\RestoreTimeClean.mdf</S>
+            </MS>
+          </Obj>
+          <Obj RefId="50">
+            <TNRef RefId="4" />
+            <MS>
+              <S N="Type">L</S>
+              <S N="LogicalName">RestoreTimeClean_log</S>
+              <S N="PhysicalName">C:\Program Files\Microsoft SQL Server\MSSQL13.SQLEXPRESS2016\MSSQL\data\RestoreTimeClean_log.ldf</S>
+            </MS>
+          </Obj>
+        </LST>
+      </Obj>
+      <I32 N="Position">1</I32>
+      <Obj N="FirstLsn" RefId="51">
+        <TNRef RefId="5" />
+        <ToString>34000000021300001</ToString>
+        <Props>
+          <B N="IsPowerOfTwo">false</B>
+          <B N="IsZero">false</B>
+          <B N="IsOne">false</B>
+          <B N="IsEven">false</B>
+          <I32 N="Sign">1</I32>
+        </Props>
+      </Obj>
+      <Obj N="DatabaseBackupLsn" RefId="52">
+        <TNRef RefId="5" />
+        <ToString>34000000006900179</ToString>
+        <Props>
+          <B N="IsPowerOfTwo">false</B>
+          <B N="IsZero">false</B>
+          <B N="IsOne">false</B>
+          <B N="IsEven">false</B>
+          <I32 N="Sign">1</I32>
+        </Props>
+      </Obj>
+      <Obj N="CheckpointLsn" RefId="53">
+        <TNRef RefId="5" />
+        <ToString>34000000021500002</ToString>
+        <Props>
+          <B N="IsPowerOfTwo">false</B>
+          <B N="IsZero">false</B>
+          <B N="IsOne">false</B>
+          <B N="IsEven">true</B>
+          <I32 N="Sign">1</I32>
+        </Props>
+      </Obj>
+      <Obj N="LastLsn" RefId="54">
+        <TNRef RefId="5" />
+        <ToString>34000000022900001</ToString>
+        <Props>
+          <B N="IsPowerOfTwo">false</B>
+          <B N="IsZero">false</B>
+          <B N="IsOne">false</B>
+          <B N="IsEven">false</B>
+          <I32 N="Sign">1</I32>
+        </Props>
+      </Obj>
+      <I32 N="SoftwareVersionMajor">13</I32>
+      <B N="IsCopyOnly">false</B>
+      <G N="LastRecoveryForkGUID">00000000-0000-0000-0000-000000000000</G>
+    </Props>
+    <MS>
+      <S N="OriginalDatabase">RestoreTimeClean</S>
+      <Ref N="OriginalFileList" RefId="48" />
+      <Ref N="OriginalFullName" RefId="47" />
+      <B N="IsVerified">false</B>
+    </MS>
+  </Obj>
+  <Obj RefId="55">
+    <TNRef RefId="0" />
+    <ToString>Sqlcollaborative.Dbatools.Database.BackupHistory</ToString>
+    <Props>
+      <S N="ComputerName">CGE100LAP-42</S>
+      <S N="InstanceName"></S>
+      <S N="SqlInstance">CGE100LAP-42\SQLEXPRESS2016</S>
+      <S N="Database">restoretimeclean</S>
+      <S N="UserName">ADS\COM3MOORESM</S>
+      <DT N="Start">2017-08-01T11:13:36</DT>
+      <DT N="End">2017-08-01T11:13:36</DT>
+      <Obj N="Duration" RefId="56">
+        <TNRef RefId="1" />
+        <ToString>00:00:00</ToString>
+        <Props>
+          <I32 N="Days">0</I32>
+          <I32 N="Hours">0</I32>
+          <I32 N="Milliseconds">0</I32>
+          <I32 N="Minutes">0</I32>
+          <I32 N="Seconds">0</I32>
+          <I64 N="Ticks">0</I64>
+          <Db N="TotalDays">0</Db>
+          <Db N="TotalHours">0</Db>
+          <Db N="TotalMilliseconds">0</Db>
+          <Db N="TotalMinutes">0</Db>
+          <Db N="TotalSeconds">0</Db>
+        </Props>
+      </Obj>
+      <Obj N="Path" RefId="57">
+        <TNRef RefId="2" />
+        <LST>
+          <S>C:\dbatools\RestoreTimeClean\RestoreTimeClean_22.trn</S>
+        </LST>
+      </Obj>
+      <Nil N="TotalSize" />
+      <S N="Type">Transaction Log</S>
+      <S N="BackupSetId">5577b1b4-df72-4978-b4ae-d7de24ee68ce</S>
+      <S N="DeviceType">Disk</S>
+      <Nil N="Software" />
+      <Obj N="FullName" RefId="58">
+        <TNRef RefId="2" />
+        <LST>
+          <S>C:\dbatools\RestoreTimeClean\RestoreTimeClean_22.trn</S>
+        </LST>
+      </Obj>
+      <Obj N="FileList" RefId="59">
+        <TNRef RefId="3" />
+        <LST>
+          <Obj RefId="60">
+            <TNRef RefId="4" />
+            <MS>
+              <S N="Type">D</S>
+              <S N="LogicalName">RestoreTimeClean</S>
+              <S N="PhysicalName">C:\Program Files\Microsoft SQL Server\MSSQL13.SQLEXPRESS2016\MSSQL\DATA\RestoreTimeClean.mdf</S>
+            </MS>
+          </Obj>
+          <Obj RefId="61">
+            <TNRef RefId="4" />
+            <MS>
+              <S N="Type">L</S>
+              <S N="LogicalName">RestoreTimeClean_log</S>
+              <S N="PhysicalName">C:\Program Files\Microsoft SQL Server\MSSQL13.SQLEXPRESS2016\MSSQL\data\RestoreTimeClean_log.ldf</S>
+            </MS>
+          </Obj>
+        </LST>
+      </Obj>
+      <I32 N="Position">1</I32>
+      <Obj N="FirstLsn" RefId="62">
+        <TNRef RefId="5" />
+        <ToString>34000000022900001</ToString>
+        <Props>
+          <B N="IsPowerOfTwo">false</B>
+          <B N="IsZero">false</B>
+          <B N="IsOne">false</B>
+          <B N="IsEven">false</B>
+          <I32 N="Sign">1</I32>
+        </Props>
+      </Obj>
+      <Obj N="DatabaseBackupLsn" RefId="63">
+        <TNRef RefId="5" />
+        <ToString>34000000006900179</ToString>
+        <Props>
+          <B N="IsPowerOfTwo">false</B>
+          <B N="IsZero">false</B>
+          <B N="IsOne">false</B>
+          <B N="IsEven">false</B>
+          <I32 N="Sign">1</I32>
+        </Props>
+      </Obj>
+      <Obj N="CheckpointLsn" RefId="64">
+        <TNRef RefId="5" />
+        <ToString>34000000023100002</ToString>
+        <Props>
+          <B N="IsPowerOfTwo">false</B>
+          <B N="IsZero">false</B>
+          <B N="IsOne">false</B>
+          <B N="IsEven">true</B>
+          <I32 N="Sign">1</I32>
+        </Props>
+      </Obj>
+      <Obj N="LastLsn" RefId="65">
+        <TNRef RefId="5" />
+        <ToString>34000000024500001</ToString>
+        <Props>
+          <B N="IsPowerOfTwo">false</B>
+          <B N="IsZero">false</B>
+          <B N="IsOne">false</B>
+          <B N="IsEven">false</B>
+          <I32 N="Sign">1</I32>
+        </Props>
+      </Obj>
+      <I32 N="SoftwareVersionMajor">13</I32>
+      <B N="IsCopyOnly">false</B>
+      <G N="LastRecoveryForkGUID">00000000-0000-0000-0000-000000000000</G>
+    </Props>
+    <MS>
+      <S N="OriginalDatabase">restoretimeclean</S>
+      <Ref N="OriginalFileList" RefId="59" />
+      <Ref N="OriginalFullName" RefId="58" />
+      <B N="IsVerified">false</B>
+    </MS>
+  </Obj>
+  <Obj RefId="66">
+    <TNRef RefId="0" />
+    <ToString>Sqlcollaborative.Dbatools.Database.BackupHistory</ToString>
+    <Props>
+      <S N="ComputerName">CGE100LAP-42</S>
+      <S N="InstanceName"></S>
+      <S N="SqlInstance">CGE100LAP-42\SQLEXPRESS2016</S>
+      <S N="Database">restoretimeclean</S>
+      <S N="UserName">ADS\COM3MOORESM</S>
+      <DT N="Start">2017-08-01T11:14:26</DT>
+      <DT N="End">2017-08-01T11:14:26</DT>
+      <Obj N="Duration" RefId="67">
+        <TNRef RefId="1" />
+        <ToString>00:00:00</ToString>
+        <Props>
+          <I32 N="Days">0</I32>
+          <I32 N="Hours">0</I32>
+          <I32 N="Milliseconds">0</I32>
+          <I32 N="Minutes">0</I32>
+          <I32 N="Seconds">0</I32>
+          <I64 N="Ticks">0</I64>
+          <Db N="TotalDays">0</Db>
+          <Db N="TotalHours">0</Db>
+          <Db N="TotalMilliseconds">0</Db>
+          <Db N="TotalMinutes">0</Db>
+          <Db N="TotalSeconds">0</Db>
+        </Props>
+      </Obj>
+      <Obj N="Path" RefId="68">
+        <TNRef RefId="2" />
+        <LST>
+          <S>C:\dbatools\RestoreTimeClean\RestoreTimeClean_23.trn</S>
+        </LST>
+      </Obj>
+      <Nil N="TotalSize" />
+      <S N="Type">Transaction Log</S>
+      <S N="BackupSetId">01e79d9c-d181-4050-bb47-a6c4fceaca1b</S>
+      <S N="DeviceType">Disk</S>
+      <Nil N="Software" />
+      <Obj N="FullName" RefId="69">
+        <TNRef RefId="2" />
+        <LST>
+          <S>C:\dbatools\RestoreTimeClean\RestoreTimeClean_23.trn</S>
+        </LST>
+      </Obj>
+      <Obj N="FileList" RefId="70">
+        <TNRef RefId="3" />
+        <LST>
+          <Obj RefId="71">
+            <TNRef RefId="4" />
+            <MS>
+              <S N="Type">D</S>
+              <S N="LogicalName">RestoreTimeClean</S>
+              <S N="PhysicalName">C:\Program Files\Microsoft SQL Server\MSSQL13.SQLEXPRESS2016\MSSQL\DATA\RestoreTimeClean.mdf</S>
+            </MS>
+          </Obj>
+          <Obj RefId="72">
+            <TNRef RefId="4" />
+            <MS>
+              <S N="Type">L</S>
+              <S N="LogicalName">RestoreTimeClean_log</S>
+              <S N="PhysicalName">C:\Program Files\Microsoft SQL Server\MSSQL13.SQLEXPRESS2016\MSSQL\data\RestoreTimeClean_log.ldf</S>
+            </MS>
+          </Obj>
+        </LST>
+      </Obj>
+      <I32 N="Position">1</I32>
+      <Obj N="FirstLsn" RefId="73">
+        <TNRef RefId="5" />
+        <ToString>34000000024500001</ToString>
+        <Props>
+          <B N="IsPowerOfTwo">false</B>
+          <B N="IsZero">false</B>
+          <B N="IsOne">false</B>
+          <B N="IsEven">false</B>
+          <I32 N="Sign">1</I32>
+        </Props>
+      </Obj>
+      <Obj N="DatabaseBackupLsn" RefId="74">
+        <TNRef RefId="5" />
+        <ToString>34000000006900179</ToString>
+        <Props>
+          <B N="IsPowerOfTwo">false</B>
+          <B N="IsZero">false</B>
+          <B N="IsOne">false</B>
+          <B N="IsEven">false</B>
+          <I32 N="Sign">1</I32>
+        </Props>
+      </Obj>
+      <Obj N="CheckpointLsn" RefId="75">
+        <TNRef RefId="5" />
+        <ToString>34000000024700002</ToString>
+        <Props>
+          <B N="IsPowerOfTwo">false</B>
+          <B N="IsZero">false</B>
+          <B N="IsOne">false</B>
+          <B N="IsEven">true</B>
+          <I32 N="Sign">1</I32>
+        </Props>
+      </Obj>
+      <Obj N="LastLsn" RefId="76">
+        <TNRef RefId="5" />
+        <ToString>34000000026100001</ToString>
+        <Props>
+          <B N="IsPowerOfTwo">false</B>
+          <B N="IsZero">false</B>
+          <B N="IsOne">false</B>
+          <B N="IsEven">false</B>
+          <I32 N="Sign">1</I32>
+        </Props>
+      </Obj>
+      <I32 N="SoftwareVersionMajor">13</I32>
+      <B N="IsCopyOnly">false</B>
+      <G N="LastRecoveryForkGUID">00000000-0000-0000-0000-000000000000</G>
+    </Props>
+    <MS>
+      <S N="OriginalDatabase">restoretimeclean</S>
+      <Ref N="OriginalFileList" RefId="70" />
+      <Ref N="OriginalFullName" RefId="69" />
+      <B N="IsVerified">false</B>
+    </MS>
+  </Obj>
+</Objs>
