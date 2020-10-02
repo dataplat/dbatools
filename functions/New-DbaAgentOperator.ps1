@@ -13,7 +13,7 @@ function New-DbaAgentOperator {
 
         For MFA support, please use Connect-DbaInstance.
 
-    .PARAMETER OperatorName
+    .PARAMETER Operator
         Name of the operator in SQL Agent.
 
     .PARAMETER EmailAddress
@@ -25,7 +25,7 @@ function New-DbaAgentOperator {
     .PARAMETER PagerAddress
         The pager email address the SQL Agent will use to send alerts to the oeprator.
 
-    .PARAMETER PagerDays
+    .PARAMETER PagerDay
         Defines what days the pager portion of the operator will be used. The default is 'Everyday'. Valid parameters
         are 'EveryDay', 'Weekdays', 'Weekend', 'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', and
         'Saturday'.
@@ -75,7 +75,7 @@ function New-DbaAgentOperator {
         https://dbatools.io/New-DbaAgentOperator
 
     .EXAMPLE
-        PS:> New-DbaAgentOperator $instance localhost -OperatorName "DBA" -OperatorEmail "operator@operator.com" -$PagerDays "Everday" -Force
+        PS:\> New-DbaAgentOperator -SqlInstance sql01 -Operator DBA -OperatorEmail operator@operator.com -PagerDay Everyday
 
         This sets a new operator named DBA with the above email address with default values to alerts everyday
         for all hours of the day.
@@ -87,12 +87,12 @@ function New-DbaAgentOperator {
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [parameter(Mandatory)]
-        [string]$OperatorName,
+        [string]$Operator,
         [string]$EmailAddress,
         [string]$NetSendAddress,
         [string]$PagerAddress,
         [ValidateSet('EveryDay', 'Weekdays', 'Weekend', 'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday')]
-        [string]$PagerDays,
+        [string]$PagerDay,
         [string]$SaturdayStartTime,
         [string]$SaturdayEndTime,
         [string]$SundayStartTime,
@@ -124,7 +124,7 @@ function New-DbaAgentOperator {
             [int]$Interval = 0
 
             # Loop through the array
-            foreach ($Item in $PagerDays) {
+            foreach ($Item in $PagerDay) {
                 switch ($Item) {
                     "Sunday" { $Interval += 1 }
                     "Monday" { $Interval += 2 }
@@ -156,7 +156,7 @@ function New-DbaAgentOperator {
             if (-not $SaturdayStartTime -and $Force) {
                 $SaturdayStartTime = '000000'
                 Write-Message -Message "Saturday Start time was not set. Force is being used. Setting it to $SaturdayStartTime" -Level Verbose
-            } elseif (-not $SaturdayStartTime -and $PagerDays -in ('Everyday', 'Saturday', 'Weekends')) {
+            } elseif (-not $SaturdayStartTime -and $PagerDay -in ('Everyday', 'Saturday', 'Weekends')) {
                 Stop-Function -Message "Please enter Saturday start time or use -Force to use defaults." -Target $instance
                 return
             } elseif ($SaturdayStartTime -notmatch $RegexTime) {
@@ -168,7 +168,7 @@ function New-DbaAgentOperator {
             if (-not $SaturdayEndTime -and $Force) {
                 $SaturdayEndTime = '235959'
                 Write-Message -Message "Saturday End time was not set. Force is being used. Setting it to $SaturdayEndTime" -Level Verbose
-            } elseif (-not $SaturdayEndTime -and $PagerDays -in ('Everyday', 'Saturday', 'Weekends')) {
+            } elseif (-not $SaturdayEndTime -and $PagerDay -in ('Everyday', 'Saturday', 'Weekends')) {
                 Stop-Function -Message "Please enter a Saturday end time or use -Force to use defaults." -Target $instance
                 return
             } elseif ($SaturdayEndTime -notmatch $RegexTime) {
@@ -180,7 +180,7 @@ function New-DbaAgentOperator {
             if (-not $SundayStartTime -and $Force) {
                 $SundayStartTime = '000000'
                 Write-Message -Message "Sunday Start time was not set. Force is being used. Setting it to $SundayStartTime" -Level Verbose
-            } elseif (-not $SundayStartTime -and $PagerDays -in ('Everyday', 'Sunday', 'Weekends')) {
+            } elseif (-not $SundayStartTime -and $PagerDay -in ('Everyday', 'Sunday', 'Weekends')) {
                 Stop-Function -Message "Please enter a Sunday start time or use -Force to use defaults." -Target $instance
                 return
             } elseif ($SundayStartTime -notmatch $RegexTime) {
@@ -192,7 +192,7 @@ function New-DbaAgentOperator {
             if (-not $SundayEndTime -and $Force) {
                 $SundayEndTime = '235959'
                 Write-Message -Message "Sunday End time was not set. Force is being used. Setting it to $SundayEndTime" -Level Verbose
-            } elseif (-not $SundayEndTime -and $PagerDays -in ('Everyday', 'Sunday', 'Weekends')) {
+            } elseif (-not $SundayEndTime -and $PagerDay -in ('Everyday', 'Sunday', 'Weekends')) {
                 Stop-Function -Message "Please enter a Sunday End Time or use -Force to use defaults." -Target $instance
                 return
             } elseif ($SundayEndTime -notmatch $RegexTime) {
@@ -204,7 +204,7 @@ function New-DbaAgentOperator {
             if (-not $WeekdayStartTime -and $Force) {
                 $WeekdayStartTime = '000000'
                 Write-Message -Message "Weekday Start time was not set. Force is being used. Setting it to $WeekdayStartTime" -Level Verbose
-            } elseif (-not $WeekdayStartTime -and $PagerDays -in ('Everyday', 'Weekdays', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday')) {
+            } elseif (-not $WeekdayStartTime -and $PagerDay -in ('Everyday', 'Weekdays', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday')) {
                 Stop-Function -Message "Please enter Weekday Start Time or use -Force to use defaults." -Target $instance
                 return
             } elseif ($WeekdayStartTime -notmatch $RegexTime) {
@@ -216,7 +216,7 @@ function New-DbaAgentOperator {
             if (-not $WeekdayEndTime -and $Force) {
                 $WeekdayEndTime = '235959'
                 Write-Message -Message "Weekday End time was not set. Force is being used. Setting it to $WeekdayEndTime" -Level Verbose
-            } elseif (-not $WeekdayEndTime -and $PagerDays -in ('Everyday', 'Weekdays', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday')) {
+            } elseif (-not $WeekdayEndTime -and $PagerDay -in ('Everyday', 'Weekdays', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday')) {
                 Stop-Function -Message "Please enter a Weekday End Time or use -Force to use defaults." -Target $instance
                 return
             } elseif ($WeekdayEndTime -notmatch $RegexTime) {
@@ -253,7 +253,7 @@ function New-DbaAgentOperator {
 
             $failsafe = $server.JobServer.AlertSystem | Select-Object FailSafeOperator
 
-            if ((Get-DbaAgentOperator -SqlInstance $instance -Operator $OperatorName).Count -ne 0) {
+            if ((Get-DbaAgentOperator -SqlInstance $instance -Operator $Operator).Count -ne 0) {
                 if ($force -eq $false) {
                     if ($Pscmdlet.ShouldProcess($instance, "Operator $operatorName exists at on $instance. Use -Force to drop and and create it.")) {
                         Write-Message -Level Verbose -Message "Operator $operatorName exists at $instance. Use -Force to drop and create."
@@ -278,9 +278,9 @@ function New-DbaAgentOperator {
 
             if ($Pscmdlet.ShouldProcess($instance, "Creating Operator $operatorName")) {
                 try {
-                    $operator = New-Object ('Microsoft.SqlServer.Management.Smo.Agent.Operator') ($server.JobServer, $OperatorName)
+                    $operator = New-Object ('Microsoft.SqlServer.Management.Smo.Agent.Operator') ($server.JobServer, $Operator)
 
-                    $operator.Name = $OperatorName
+                    $operator.Name = $Operator
                     $operator.EmailAddress = $EmailAddress
                     $operator.NetSendAddress = $NetSendAddress
                     $operator.PagerAddress = $PagerAddress
@@ -301,7 +301,7 @@ function New-DbaAgentOperator {
                     }
 
                     Write-Message -Level Verbose -Message "Creating Operator $operatorName"
-                    Get-DbaAgentOperator -SqlInstance $instance -Operator $OperatorName
+                    Get-DbaAgentOperator -SqlInstance $instance -Operator $Operator
                 } catch {
                     Stop-Function -Message "Issue creating operator." -Category InvalidOperation -ErrorRecord $_ -Target $instance
                 }
