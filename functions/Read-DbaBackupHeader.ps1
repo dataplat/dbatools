@@ -28,6 +28,9 @@ function Read-DbaBackupHeader {
     .PARAMETER AzureCredential
         Name of the SQL Server credential that should be used for Azure storage access.
 
+    .PARAMETER BackupPassword
+        Takes in a SecureString of the Media Password for any protected media passed in
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message. This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
@@ -86,6 +89,12 @@ function Read-DbaBackupHeader {
 
         Gets the backup header information from the SQL Server backup file stored at https://dbatoolsaz.blob.core.windows.net/azbackups/restoretime/restoretime_201705131850.bak on Azure
 
+    .EXAMPLE
+        PS C:\> $sqlPasswd = ConvertTo-SecureString 'dbatools' -AsPlainText -Force
+        PS C:\> Get-ChildItem \\nas\sql\*.bak | Read-DbaBackupHeader -SqlInstance sql2016 -BackupPassword $sqlPasswd
+
+        Gets a list of all .bak files on the \\nas\sql share and reads the headers using the server named "sql2016" using the media password 'dbatools'. This means that the server, sql2016, must have read access to the \\nas\sql share.
+
     #>
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingPlainTextForPassword", 'AzureCredential', Justification = "For Parameter AzureCredential")]
     [CmdletBinding()]
@@ -93,6 +102,7 @@ function Read-DbaBackupHeader {
         [parameter(Mandatory)]
         [DbaInstance]$SqlInstance,
         [PsCredential]$SqlCredential,
+        [securestring]$BackupPassword,
         [parameter(Mandatory, ValueFromPipeline)]
         [object[]]$Path,
         [switch]$Simple,
@@ -121,7 +131,8 @@ function Read-DbaBackupHeader {
                 $SqlInstance,
                 $Path,
                 $DeviceType,
-                $AzureCredential
+                $AzureCredential,
+                $BackupPassword
             )
             #Copy existing connection to create an independent TSQL session
             $server = New-Object Microsoft.SqlServer.Management.Smo.Server $SqlInstance.ConnectionContext.Copy()
@@ -130,9 +141,13 @@ function Read-DbaBackupHeader {
             if ($DeviceType -eq 'URL') {
                 $restore.CredentialName = $AzureCredential
             }
+            if (-not [string]::IsNullOrEmpty($BackupPassword)) {
+                $restore.SetMediaPassword($BackupPassword)
+            }
 
             $device = New-Object Microsoft.SqlServer.Management.Smo.BackupDeviceItem $Path, $DeviceType
             $restore.Devices.Add($device)
+
             $dataTable = $restore.ReadBackupHeader($server)
             $null = $dataTable.Columns.Add("FileList", [object])
             $null = $dataTable.Columns.Add("SqlVersion")
@@ -213,6 +228,7 @@ function Read-DbaBackupHeader {
                     Path            = $file
                     AzureCredential = $AzureCredential
                     DeviceType      = $deviceType
+                    BackupPassword  = $BackupPassword
                 }
                 Write-Message -Level Verbose -Message "Scanning file $file."
                 #Create new runspace thread

@@ -197,6 +197,8 @@ function Restore-DbaDatabase {
     .PARAMETER StopAfterDate
         By default the restore will stop at the first occurence of StopMark found in the chain, passing a datetime where will cause it to stop the first StopMark atfer that datetime
 
+    .PARAMETER BackupPassword
+        Takes in a SecureString of the Media Password for any protected media passed in
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -375,6 +377,7 @@ function Restore-DbaDatabase {
         [parameter(ParameterSetName = "Restore")][parameter(ParameterSetName = "RestorePage")][int]$MaxTransferSize,
         [parameter(ParameterSetName = "Restore")][parameter(ParameterSetName = "RestorePage")][int]$BlockSize,
         [parameter(ParameterSetName = "Restore")][parameter(ParameterSetName = "RestorePage")][int]$BufferCount,
+        [parameter(ParameterSetName = "Restore")][parameter(ParameterSetName = "RestorePage")][SecureString]$BackupPassword,
         [parameter(ParameterSetName = "Restore")][switch]$DirectoryRecurse,
         [switch]$EnableException,
         [parameter(ParameterSetName = "Restore")][string]$StandbyDirectory,
@@ -586,7 +589,7 @@ function Restore-DbaDatabase {
                 if ($BackupHistory.GetType().ToString() -eq 'Sqlcollaborative.Dbatools.Database.BackupHistory') {
                     $BackupHistory = @($BackupHistory)
                 }
-                $BackupHistory += Get-DbaBackupInformation -SqlInstance $RestoreInstance -SqlCredential $SqlCredential -Path $files -DirectoryRecurse:$DirectoryRecurse -MaintenanceSolution:$MaintenanceSolutionBackup -IgnoreDiffBackup:$IgnoreDiffBackup -IgnoreLogBackup:$IgnoreLogBackup -AzureCredential $AzureCredential
+                $BackupHistory += Get-DbaBackupInformation -SqlInstance $RestoreInstance -SqlCredential $SqlCredential -Path $files -DirectoryRecurse:$DirectoryRecurse -MaintenanceSolution:$MaintenanceSolutionBackup -IgnoreDiffBackup:$IgnoreDiffBackup -IgnoreLogBackup:$IgnoreLogBackup -AzureCredential $AzureCredential -BackupPassword $BackupPassword
             }
             if ($PSCmdlet.ParameterSetName -eq "RestorePage") {
                 if (-not (Test-DbaPath -SqlInstance $RestoreInstance -Path $PageRestoreTailFolder)) {
@@ -714,7 +717,7 @@ function Restore-DbaDatabase {
                 $TailBackup = Backup-DbaDatabase -SqlInstance $RestoreInstance -Database $DatabaseName -Type Log -BackupDirectory $PageRestoreTailFolder -Norecovery -CopyOnly
             }
             try {
-                $FilteredBackupHistory | Where-Object { $_.IsVerified -eq $true } | Invoke-DbaAdvancedRestore -SqlInstance $RestoreInstance -WithReplace:$WithReplace -RestoreTime $RestoreTime -StandbyDirectory $StandbyDirectory -NoRecovery:$NoRecovery -Continue:$Continue -OutputScriptOnly:$OutputScriptOnly -BlockSize $BlockSize -MaxTransferSize $MaxTransferSize -BufferCount $Buffercount -KeepCDC:$KeepCDC -VerifyOnly:$VerifyOnly -PageRestore $PageRestore -EnableException -AzureCredential $AzureCredential -KeepReplication:$KeepReplication -StopMark:$StopMark -StopAfterDate:$StopAfterDate -StopBefore:$StopBefore
+                $FilteredBackupHistory | Where-Object { $_.IsVerified -eq $true } | Invoke-DbaAdvancedRestore -SqlInstance $RestoreInstance -WithReplace:$WithReplace -RestoreTime $RestoreTime -StandbyDirectory $StandbyDirectory -NoRecovery:$NoRecovery -Continue:$Continue -OutputScriptOnly:$OutputScriptOnly -BlockSize $BlockSize -MaxTransferSize $MaxTransferSize -BufferCount $Buffercount -KeepCDC:$KeepCDC -VerifyOnly:$VerifyOnly -PageRestore $PageRestore -EnableException -AzureCredential $AzureCredential -BackupPassword $BackupPassword -KeepReplication:$KeepReplication -StopMark:$StopMark -StopAfterDate:$StopAfterDate -StopBefore:$StopBefore
             } catch {
                 Stop-Function -Message "Failure" -ErrorRecord $_ -Continue -Target $RestoreInstance
             }

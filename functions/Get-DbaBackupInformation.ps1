@@ -74,6 +74,9 @@ function Get-DbaBackupInformation {
     .PARAMETER Import
         When specified along with a path the command will import a previously exported BackupHistory object from an xml file.
 
+    .PARAMETER BackupPassword
+        Takes in a SecureString of the Media Password for any protected media passed in
+
     .PARAMETER EnableException
         Replaces user friendly yellow warnings with bloody red exceptions of doom!
         Use this if you want the function to throw terminating errors you want to catch.
@@ -151,6 +154,7 @@ function Get-DbaBackupInformation {
         [switch]$IgnoreDiffBackup,
         [string]$ExportPath,
         [string]$AzureCredential,
+        [SecureString]$BackupPassword,
         [parameter(ParameterSetName = "Import")]
         [switch]$Import,
         [switch][Alias('Anonymize')]$Anonymise,
@@ -285,7 +289,7 @@ function Get-DbaBackupInformation {
 
             if ($Files.Count -gt 0) {
                 Write-Message -Level Verbose -Message "Reading backup headers of $($Files.Count) files"
-                $FileDetails = Read-DbaBackupHeader -SqlInstance $server -Path $Files -AzureCredential $AzureCredential
+                $FileDetails = Read-DbaBackupHeader -SqlInstance $server -Path $Files -AzureCredential $AzureCredential -BackupPassword $BackupPassword
             }
 
             $groupDetails = $FileDetails | Group-Object -Property BackupSetGUID

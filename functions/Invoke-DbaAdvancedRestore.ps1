@@ -95,6 +95,9 @@ function Invoke-DbaAdvancedRestore {
         Replaces user friendly yellow warnings with bloody red exceptions of doom!
         Use this if you want the function to throw terminating errors you want to catch.
 
+    .PARAMETER BackupPassword
+        Takes in a SecureString of the Media Password for any protected media passed in
+
     .NOTES
         Tags: Restore, Backup
         Author: Stuart Moore (@napalmgram - http://stuart-moore.com)
@@ -144,7 +147,8 @@ function Invoke-DbaAdvancedRestore {
         [switch]$StopBefore,
         [string]$StopMark,
         [datetime]$StopAfterDate,
-        [switch]$EnableException
+        [switch]$EnableException,
+        [SecureString]$BackupPassword
     )
     begin {
         try {
@@ -225,6 +229,9 @@ function Invoke-DbaAdvancedRestore {
                     Write-Message -Level Verbose -Message "Setting standby on last file $($restore.StandbyFile)"
                 } else {
                     $restore.NoRecovery = $False
+                }
+                if (-not [string]::IsNullOrEmpty($BackupPassword)) {
+                    $restore.SetMediaPassword($BackupPassword)
                 }
                 if (-not [string]::IsNullOrEmpty($StopMark)) {
                     if ($StopBefore -eq $True) {
