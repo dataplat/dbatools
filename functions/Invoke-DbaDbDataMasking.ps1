@@ -801,8 +801,8 @@ function Invoke-DbaDbDataMasking {
                                 if ($null -eq $newValue -and -not $columnobject.Nullable) {
                                     Write-PSFMessage -Message "Column '$($columnobject.Name)' static value cannot null when column is set not to be nullable."
                                 } else {
-                                    $newValue = Convert-DbaMaskingValue -Value $newValue -DataType $columnobject.ColumnType -Nullable $columnobject.Nullable
-                                    $null = $stringBuilder.AppendLine("UPDATE [$($tableobject.Schema)].[$($tableobject.Name)] SET [$($columnObject.Name)] = $newValue")
+                                    $convertedValue = Convert-DbaMaskingValue -Value $newValue -DataType $columnobject.ColumnType -Nullable:$columnobject.Nullable
+                                    $null = $stringBuilder.AppendLine("UPDATE [$($tableobject.Schema)].[$($tableobject.Name)] SET [$($columnObject.Name)] = $($convertedValue.NewValue)")
                                     $batchRowCounter++
                                 }
                             } elseif ($columnobject.Name -notin $columnsWithActions.Name) {
