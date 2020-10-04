@@ -143,12 +143,12 @@ function Invoke-DbaDbDataMasking {
         [string[]]$ExcludeTable,
         [string[]]$ExcludeColumn,
         [int]$MaxValue,
-        [int]$ModulusFactor = 10,
+        [int]$ModulusFactor,
         [switch]$ExactLength,
-        [int]$ConnectionTimeout = 0,
-        [int]$CommandTimeout = 300,
-        [int]$BatchSize = 1000,
-        [int]$Retry = 1000,
+        [int]$ConnectionTimeout,
+        [int]$CommandTimeout,
+        [int]$BatchSize,
+        [int]$Retry,
         [string[]]$DictionaryFilePath,
         [string]$DictionaryExportPath,
         [switch]$EnableException
@@ -175,6 +175,32 @@ function Invoke-DbaDbDataMasking {
         $supportedFakerSubTypes = Get-DbaRandomizedType | Select-Object Subtype -ExpandProperty Subtype -Unique
 
         $supportedFakerSubTypes += "Date"
+
+        # Set defaults
+        if (-not $ModulusFactor) {
+            $ModulusFactor = 10
+            Write-Message -Level Verbose -Message "Modulus factor set to $ModulusFactor"
+        }
+
+        if (-not $ConnectionTimeout) {
+            $ConnectionTimeout = 0
+            Write-Message -Level Verbose -Message "Connection time-out set to $ConnectionTimeout"
+        }
+
+        if (-not $CommandTimeout) {
+            $CommandTimeout = 300
+            Write-Message -Level Verbose -Message "Command time-out set to $CommandTimeout"
+        }
+
+        if (-not $BatchSize) {
+            $BatchSize = 1000
+            Write-Message -Level Verbose -Message "Batch size set to $BatchSize"
+        }
+
+        if (-not $Retry) {
+            $Retry = 1000
+            Write-Message -Level Verbose -Message "Retry count set to $Retry"
+        }
 
         # Import the dictionary files
         if ($DictionaryFilePath.Count -ge 1) {
@@ -684,7 +710,7 @@ function Invoke-DbaDbDataMasking {
                         $rowNumber = $stepcounter = $batchRowCounter = $batchCounter = 0
 
                         $columnsWithActions = @()
-                        $columnsWithActions += $tableobject.Columns | Where-Object { $_.Action -ne $null }
+                        $columnsWithActions += $tableobject.Columns | Where-Object { $null -ne $_.Action }
 
                         # Go through the actions
                         if ($columnsWithActions.Count -ge 1) {
@@ -986,7 +1012,7 @@ function Invoke-DbaDbDataMasking {
                         $null = $stringBuilder.Clear()
 
                         $columnsWithComposites = @()
-                        $columnsWithComposites += $tableobject.Columns | Where-Object Composite -ne $null
+                        $columnsWithComposites += $tableobject.Columns | Where-Object { $null -ne $_.Composite }
 
                         # Check for both special actions
                         if (($columnsWithComposites.Count -ge 1) -and ($columnsWithActions.Count -ge 1)) {
