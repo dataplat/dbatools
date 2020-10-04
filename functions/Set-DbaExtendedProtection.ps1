@@ -145,8 +145,7 @@ function Set-DbaExtendedProtection {
                     ExtendedProtection = "$extendedProtection - $(switch ($extendedProtection) { 0 { "Off" } 1 { "Allowed" } 2 { "Required" } })"
                 }
             }
-
-            if ($PScmdlet.ShouldProcess("local", "Connecting to $instance to modify the ExtendedProtection value in $regRoot for $($instance.InstanceName)")) {
+            if (Test-ShouldProcess -Context $PSCmdlet -Target "local" -Action "Connecting to $instance to modify the ExtendedProtection value in $regRoot for $($instance.InstanceName)") {
                 try {
                     Invoke-Command2 -ComputerName $resolved.FullComputerName -Credential $Credential -ArgumentList $regRoot, $vsname, $instancename -ScriptBlock $scriptblock -ErrorAction Stop | Select-Object -Property * -ExcludeProperty PSComputerName, RunspaceId, PSShowComputerName
                     Write-Message -Level Critical -Message "ExtendedProtection was successfully set on $($resolved.FullComputerName) for the $instancename instance. The change takes effect immediately for new connections." -Target $instance

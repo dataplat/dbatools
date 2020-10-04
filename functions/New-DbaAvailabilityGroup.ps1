@@ -312,6 +312,11 @@ function New-DbaAvailabilityGroup {
             }
         }
 
+        if ($IPAddress -and $Dhcp) {
+            Stop-Function -Message "You cannot specify both an IP address and the Dhcp switch for the listener."
+            return
+        }
+
         try {
             $server = Connect-SqlInstance -SqlInstance $Primary -SqlCredential $PrimarySqlCredential
         } catch {
@@ -561,16 +566,12 @@ function New-DbaAvailabilityGroup {
         Write-ProgressHelper -StepNumber ($stepCounter++) -Message $progressmsg
 
         if ($IPAddress) {
-            if ($Pscmdlet.ShouldProcess($Primary, "Adding static IP listener for $Name to the Primary replica")) {
-                $null = Add-DbaAgListener -InputObject $ag -IPAddress $IPAddress -SubnetMask $SubnetMask -Port $Port -Dhcp:$Dhcp
+            if ($Pscmdlet.ShouldProcess($Primary, "Adding static IP listener for $Name to the primary replica")) {
+                $null = Add-DbaAgListener -InputObject $ag -IPAddress $IPAddress -SubnetMask $SubnetMask -Port $Port
             }
         } elseif ($Dhcp) {
-            if ($Pscmdlet.ShouldProcess($Primary, "Adding DHCP listener for $Name to all replicas")) {
-                $null = Add-DbaAgListener -InputObject $ag -Port $Port -Dhcp:$Dhcp
-                foreach ($second in $secondaries) {
-                    $secag = Get-DbaAvailabilityGroup -SqlInstance $second -AvailabilityGroup $Name
-                    $null = Add-DbaAgListener -InputObject $secag -Port $Port -Dhcp:$Dhcp
-                }
+            if ($Pscmdlet.ShouldProcess($Primary, "Adding DHCP listener for $Name to the primary replica")) {
+                $null = Add-DbaAgListener -InputObject $ag -Port $Port -Dhcp
             }
         }
 
@@ -588,55 +589,6 @@ function New-DbaAvailabilityGroup {
         }
 
         Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Granting permissions on availability group, this may take a moment"
-
-        # Grant permissions, but first, get all necessary service accounts
-        $primaryserviceaccount = $server.ServiceAccount.Trim()
-        $saname = ([DbaInstanceParameter]($server.DomainInstanceName)).ComputerName
-
-        if ($primaryserviceaccount) {
-            if ($primaryserviceaccount.StartsWith("NT ")) {
-                $primaryserviceaccount = "$saname`$"
-            }
-            if ($primaryserviceaccount.StartsWith("$saname")) {
-                $primaryserviceaccount = "$saname`$"
-            }
-            if ($primaryserviceaccount.StartsWith(".")) {
-                $primaryserviceaccount = "$saname`$"
-            }
-        }
-
-        if (-not $primaryserviceaccount) {
-            $primaryserviceaccount = "$saname`$"
-        }
-
-        $serviceAccounts = @($primaryserviceaccount)
-
-        foreach ($second in $secondaries) {
-            # If service account is empty, add the computer account instead
-            $secondaryserviceaccount = $second.ServiceAccount.Trim()
-            $saname = ([DbaInstanceParameter]($second.DomainInstanceName)).ComputerName
-
-            if ($secondaryserviceaccount) {
-                if ($secondaryserviceaccount.StartsWith("NT ")) {
-                    $secondaryserviceaccount = "$saname`$"
-                }
-                if ($secondaryserviceaccount.StartsWith("$saname")) {
-                    $secondaryserviceaccount = "$saname`$"
-                }
-                if ($secondaryserviceaccount.StartsWith(".")) {
-                    $secondaryserviceaccount = "$saname`$"
-                }
-            }
-
-            if (-not $secondaryserviceaccount) {
-                $secondaryserviceaccount = "$saname`$"
-            }
-
-            $serviceAccounts += $secondaryserviceaccount
-        }
-
-        $serviceAccounts = $serviceAccounts | Select-Object -Unique
-
         if ($SeedingMode -eq 'Automatic') {
             try {
                 if ($Pscmdlet.ShouldProcess($server.Name, "Seeding mode is automatic. Adding CreateAnyDatabase permissions to availability group.")) {

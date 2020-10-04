@@ -1,10 +1,10 @@
 function Remove-DbaAgentSchedule {
     <#
     .SYNOPSIS
-        Remove-DbaAgentJobSchedule removes a job schedule.
+        Remove-DbaAgentSchedule removes a job schedule.
 
     .DESCRIPTION
-        Remove-DbaAgentJobSchedule removes a job in the SQL Server Agent.
+        Remove-DbaAgentSchedule removes a job in the SQL Server Agent.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
@@ -116,7 +116,7 @@ function Remove-DbaAgentSchedule {
                 Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
-            if (-not $InputObject -and (-not $Schedule -or $ScheduleUid)) {
+            if (-not ($InputObject -or $Schedule -or $ScheduleUid)) {
                 Stop-Function -Message "Please enter the schedule or schedule uid"
             }
 

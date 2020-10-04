@@ -223,6 +223,7 @@ function New-DbaLogin {
             }
 
             foreach ($loginItem in $loginCollection) {
+                $usedTsql = $false
                 #check if $loginItem is an SMO Login object
                 if ($loginItem.GetType().Name -eq 'Login') {
                     #Get all the necessary fields
@@ -286,7 +287,7 @@ function New-DbaLogin {
                     else { $loginType = 'WindowsUser' }
                 }
 
-                if (($server.LoginMode -ne [Microsoft.SqlServer.Management.Smo.ServerLoginMode]::Mixed) -and ($loginType -eq 'SqlLogin')) {
+                if ((-not $server.IsAzure) -and ($server.LoginMode -ne [Microsoft.SqlServer.Management.Smo.ServerLoginMode]::Mixed) -and ($loginType -eq 'SqlLogin')) {
                     Write-Message -Level Warning -Message "$instance does not have Mixed Mode enabled. [$loginName] is an SQL Login. Enable mixed mode authentication after the migration completes to use this type of login."
                 }
 
@@ -451,6 +452,7 @@ function New-DbaLogin {
                                 $null = $server.Query($sql)
                                 $newLogin = $server.logins[$loginName]
                                 Write-Message -Level Verbose -Message "Successfully added $loginName to $instance."
+                                $usedTsql = $true
                             } catch {
                                 Stop-Function -Message "Failed to add $loginName to $instance." -Category InvalidOperation -ErrorRecord $_ -Target $instance -Continue
                             }
@@ -467,6 +469,7 @@ function New-DbaLogin {
                                     $sql = "ALTER LOGIN [$loginName] DISABLE"
                                     $null = $server.Query($sql)
                                     Write-Message -Level Verbose -Message "Login $loginName has been disabled on $instance."
+                                    $usedTsql = $true
                                 } catch {
                                     Stop-Function -Message "Failed to disable $loginName on $instance." -Category InvalidOperation -ErrorRecord $_ -Target $instance -Continue
                                 }
@@ -484,12 +487,17 @@ function New-DbaLogin {
                                     $sql = "DENY CONNECT SQL TO [{0}]" -f $newLogin.Name
                                     $null = $server.Query($sql)
                                     Write-Message -Level Verbose -Message "Login $loginName has been denied from logging in on $instance."
+                                    $usedTsql = $true
                                 } catch {
                                     Stop-Function -Message "Failed to set deny windows login priviledge $loginName on $instance." -Category InvalidOperation -ErrorRecord $_ -Target $instance -Continue
                                 }
                             }
                         }
                         #Display results
+                        # If we ever used T-SQL, the smo is some times not up to date and should be refreshed
+                        if ($usedTsql) {
+                            $server.Logins.Refresh()
+                        }
                         Get-DbaLogin -SqlInstance $server -Login $loginName
                     } catch {
                         Stop-Function -Message "Failed to create login $loginName on $instance." -Target $credential -InnerErrorRecord $_ -Continue
