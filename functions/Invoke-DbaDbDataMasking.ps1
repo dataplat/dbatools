@@ -298,7 +298,7 @@ function Invoke-DbaDbDataMasking {
                     [bool]$cleanupIdentityColumn = $false
 
                     # Make sure there is an identity column present to speed things up
-                    if (-not ($dbTable.Columns | Where-Object Identity -eq $true)) {
+                    if (-not ($dbTable.Columns | Where-Object { $_.Identity -eq $true })) {
                         Write-Message -Level Verbose -Message "Adding identity column to table [$($dbTable.Schema)].[$($dbTable.Name)]"
                         $query = "ALTER TABLE [$($dbTable.Schema)].[$($dbTable.Name)] ADD MaskingID BIGINT IDENTITY(1, 1) NOT NULL;"
 
@@ -310,7 +310,7 @@ function Invoke-DbaDbDataMasking {
 
                         $dbTable.Columns.Refresh()
                     } else {
-                        $identityColumn = $dbTable.Columns | Where-Object Identity | Select-Object -ExpandProperty Name
+                        $identityColumn = $dbTable.Columns | Where-Object { $_.Identity } | Select-Object -ExpandProperty Name
                     }
 
                     # Check if the index for the identity column is already present
@@ -338,7 +338,7 @@ function Invoke-DbaDbDataMasking {
                     try {
                         if (-not $tableobject.FilterQuery) {
                             # Get all the columns from the table
-                            $columnString = "[" + (($dbTable.Columns | Where-Object DataType -in $supportedDataTypes | Select-Object Name -ExpandProperty Name) -join "],[") + "]"
+                            $columnString = "[" + (($dbTable.Columns | Where-Object { $_.DataType -in $supportedDataTypes } | Select-Object Name -ExpandProperty Name) -join "],[") + "]"
 
                             # Add the identifier column
                             $columnString += ",[$($identityColumn)]"
@@ -422,7 +422,7 @@ function Invoke-DbaDbDataMasking {
                             [array]$paramArray = @()
 
                             foreach ($indexColumn in $indexToTable.Columns) {
-                                $columnMaskInfo = $tableobject.Columns | Where-Object Name -eq $indexColumn
+                                $columnMaskInfo = $tableobject.Columns | Where-Object { $_.Name -eq $indexColumn }
 
                                 if ($indexColumn -eq "RowNr") {
                                     $newValue = $i + 1
@@ -538,7 +538,7 @@ function Invoke-DbaDbDataMasking {
                                 $insertQuery = "INSERT INTO [$($indexToTable.TempTableName)]([$($indexToTable.Columns -join '],[')]) VALUES("
 
                                 foreach ($indexColumn in $indexToTable.Columns) {
-                                    $columnMaskInfo = $tableobject.Columns | Where-Object Name -eq $indexColumn
+                                    $columnMaskInfo = $tableobject.Columns | Where-Object { $_.Name -eq $indexColumn }
 
                                     if ($indexColumn -eq "RowNr") {
                                         $newValue = $i + 1
@@ -661,7 +661,7 @@ function Invoke-DbaDbDataMasking {
                     $tablecolumns = $tableobject.Columns
 
                     if ($Column) {
-                        $tablecolumns = $tablecolumns | Where-Object Name -in $Column
+                        $tablecolumns = $tablecolumns | Where-Object { $_.Name -in $Column }
                     }
 
                     if ($ExcludeColumn) {
@@ -669,7 +669,7 @@ function Invoke-DbaDbDataMasking {
                             Stop-Function -Message "Column present in -ExcludeColumn cannot be excluded because it's part of an unique index" -Target $ExcludeColumn -Continue
                         }
 
-                        $tablecolumns = $tablecolumns | Where-Object Name -notin $ExcludeColumn
+                        $tablecolumns = $tablecolumns | Where-Object { $_.Name -notin $ExcludeColumn }
                     }
 
                     if (-not $tablecolumns) {
@@ -684,7 +684,7 @@ function Invoke-DbaDbDataMasking {
                         $rowNumber = $stepcounter = $batchRowCounter = $batchCounter = 0
 
                         $columnsWithActions = @()
-                        $columnsWithActions += $tableobject.Columns | Where-Object Action -ne $null
+                        $columnsWithActions += $tableobject.Columns | Where-Object { $_.Action -ne $null }
 
                         # Go through the actions
                         if ($columnsWithActions.Count -ge 1) {
@@ -1114,12 +1114,12 @@ function Invoke-DbaDbDataMasking {
 
                     # Cleanup
                     if ($uniqueDataTableName) {
-                        Write-Message -Message "Cleaning up unique temporary table '$($uniqueDataTableName)'" -Level verbose
-                        $query = "DROP TABLE $($uniqueDataTableName);"
+                        Write-Message -Message "Cleaning up unique temporary table '$uniqueDataTableName'" -Level verbose
+                        $query = "DROP TABLE [$($uniqueDataTableName)];"
                         try {
-                            #Invoke-DbaQuery -SqlInstance $server -SqlCredential $SqlCredential -Database 'tempdb' -Query $query
+                            Invoke-DbaQuery -SqlInstance $server -SqlCredential $SqlCredential -Database 'tempdb' -Query $query
                         } catch {
-                            Stop-Function -Message "Could not clean up unique values table" -Target $uniqueDataTableName -ErrorRecord $_
+                            Stop-Function -Message "Could not clean up unique values table '$uniqueDataTableName'" -Target $uniqueDataTableName -ErrorRecord $_
                         }
                     }
                 }
