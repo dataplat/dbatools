@@ -61,18 +61,29 @@ function Convert-DbaMaskingValue {
 
     param(
         [Parameter(ValueFromPipeline)]
-        [string[]]$Value,
+        [AllowEmptyString()]
+        [object[]]$Value,
         [string]$DataType,
-        [switch]$Nullable
+        [switch]$Nullable,
+        [switch]$EnableException
     )
 
     begin {
-        if (-not $Value) {
-            Stop-Function -Message "Please enter a value" -Target $Value
+        if (-not $Nullable -and -not $Value) {
+            Stop-Function -Message "Please enter a value" -Target $Value -Continue
         }
 
-        if (-not $DataType) {
-            Stop-Function -Message "Please enter a data type" -Target $DataType
+        if (-not $Nullable -and -not $DataType) {
+            Stop-Function -Message "Please enter a data type" -Target $DataType -Continue
+        }
+
+        if ($Value.Count -eq 0 -and $Nullable) {
+            [PSCustomObject]@{
+                OriginalValue = '$null'
+                NewValue      = 'NULL'
+                DataType      = $DataType
+                ErrorMessage  = $null
+            }
         }
     }
 
@@ -86,7 +97,8 @@ function Convert-DbaMaskingValue {
             [string]$newValue = $null
             [string]$errorMessage = $null
 
-            if ( $null -eq $item -and $Nullable) {
+            if ($null -eq $item -or -not $item) {
+                $originalValue = '$null'
                 $newValue = "NULL"
             } else {
                 switch ($DataType.ToLower()) {
