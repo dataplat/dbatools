@@ -58,6 +58,12 @@ function Get-DbaLastBackup {
 
         Returns a gridview displaying Server, Database, RecoveryModel, LastFullBackup, LastDiffBackup, LastLogBackup, SinceFull, SinceDiff, SinceLog, Status, DatabaseCreated, DaysSinceDbCreated.
 
+    .EXAMPLE
+        PS C:\> $MyInstances | Get-DbaLastBackup | Where-Object -FilterScript { $_.LastFullBackup.Date -lt (Get-Date).AddDays(-3) } | Format-Table -Property SqlInstance, Database, LastFullBackup
+
+        Returns all databases on the given instances without a full backup in the last three days.
+        Note that the property LastFullBackup is a custom object, with the subproperty Date of type datetime and therefore suitable for comparison with dates.
+
     #>
     [CmdletBinding()]
     param (

@@ -1,18 +1,18 @@
 function Add-DbaAgReplica {
     <#
     .SYNOPSIS
-        Adds a replica to an availability group on a SQL Server instance.
+        Adds a replica to an availability group on one or more SQL Server instances.
 
     .DESCRIPTION
-        Adds a replica to an availability group on a SQL Server instance.
+        Adds a replica to an availability group on one or more SQL Server instances.
 
-        Automatically creates a database mirroring endpoint if required.
+        Automatically creates database mirroring endpoints if required.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. Server version must be SQL Server version 2012 or higher.
 
     .PARAMETER SqlCredential
-        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+        Login to the target instances using alternative credentials. Accepts PowerShell credentials (Get-Credential).
 
         Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
 
@@ -20,6 +20,8 @@ function Add-DbaAgReplica {
 
     .PARAMETER Name
         The name of the replica. Defaults to the SQL Server instance name.
+
+        This parameter is only supported if the replica is added to just one instance.
 
     .PARAMETER AvailabilityMode
         Sets the availability mode of the availability group replica. Options are: AsynchronousCommit and SynchronousCommit. SynchronousCommit is default.
@@ -35,6 +37,13 @@ function Add-DbaAgReplica {
 
         If an endpoint must be created, the name "hadr_endpoint" will be used. If an alternative is preferred, use Endpoint.
 
+    .PARAMETER EndpointUrl
+        By default, the property Fqdn of Get-DbaEndpoint is used as EndpointUrl.
+
+        Use EndpointUrl if a different URL is required due to special network configurations.
+        EndpointUrl has to be an array of strings in format 'TCP://system-address:port', one entry for every instance.
+        See details at: https://docs.microsoft.com/en-us/sql/database-engine/availability-groups/windows/specify-endpoint-url-adding-or-modifying-availability-replica
+
     .PARAMETER Passthru
         Don't create the replica, just pass thru an object that can be further customized before creation.
 
@@ -42,13 +51,20 @@ function Add-DbaAgReplica {
         Enables piping from Get-DbaAvailabilityGroup.
 
     .PARAMETER ConnectionModeInPrimaryRole
-        Specifies the connection intent modes of an Availability Replica in primary role. AllowAllConnections by default.
+        Specifies the connection intent mode of an Availability Replica in primary role. AllowAllConnections by default.
 
     .PARAMETER ConnectionModeInSecondaryRole
-        Specifies the connection modes of an Availability Replica in secondary role. AllowAllConnections by default.
+        Specifies the connection intent mode of an Availability Replica in secondary role. AllowAllConnections by default.
+
+    .PARAMETER ReadOnlyRoutingList
+        Sets the read only routing ordered list of replica server names to use when redirecting read-only connections through this availability replica.
+
+        This parameter is only supported if the replica is added to just one instance.
 
     .PARAMETER ReadonlyRoutingConnectionUrl
         Sets the read only routing connection url for the availability replica.
+
+        This parameter is only supported if the replica is added to just one instance.
 
     .PARAMETER SeedingMode
         Specifies how the secondary replica will be initially seeded.
@@ -92,9 +108,15 @@ function Add-DbaAgReplica {
         PS C:\> Get-DbaAvailabilityGroup -SqlInstance sql2017a -AvailabilityGroup SharePoint | Add-DbaAgReplica -SqlInstance sql2017b -FailoverMode Manual
 
         Adds sql2017b to the SharePoint availability group on sql2017a with a manual failover mode.
+
+    .EXAMPLE
+        PS C:\> Get-DbaAvailabilityGroup -SqlInstance sql2017a -AvailabilityGroup SharePoint | Add-DbaAgReplica -SqlInstance sql2017b -EndpointUrl 'TCP://sql2017b.specialnet.local:5022'
+
+        Adds sql2017b to the SharePoint availability group on sql2017a with a custom endpoint URL.
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'Low')]
     param (
+        [parameter(Mandatory)]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [string]$Name,
@@ -110,7 +132,9 @@ function Add-DbaAgReplica {
         [ValidateSet('Automatic', 'Manual')]
         [string]$SeedingMode,
         [string]$Endpoint,
+        [string[]]$EndpointUrl,
         [switch]$Passthru,
+        [string[]]$ReadOnlyRoutingList,
         [string]$ReadonlyRoutingConnectionUrl,
         [string]$Certificate,
         [parameter(ValueFromPipeline, Mandatory)]
@@ -118,8 +142,21 @@ function Add-DbaAgReplica {
         [switch]$EnableException
     )
     process {
-        if (Test-Bound -Not SqlInstance, InputObject) {
-            Stop-Function -Message "You must supply either -SqlInstance or an Input Object"
+        if ($EndpointUrl) {
+            if ($EndpointUrl.Count -ne $SqlInstance.Count) {
+                Stop-Function -Message "The number of elements in EndpointUrl is not correct"
+                return
+            }
+            foreach ($epUrl in $EndpointUrl) {
+                if ($epUrl -notmatch 'TCP://.+:\d+') {
+                    Stop-Function -Message "EndpointUrl '$epUrl' not in correct format 'TCP://system-address:port'"
+                    return
+                }
+            }
+        }
+
+        if ($ReadonlyRoutingConnectionUrl -and ($ReadonlyRoutingConnectionUrl -notmatch 'TCP://.+:\d+')) {
+            Stop-Function -Message "ReadonlyRoutingConnectionUrl not in correct format 'TCP://system-address:port'"
             return
         }
 
@@ -138,13 +175,12 @@ function Add-DbaAgReplica {
             }
 
             $ep = Get-DbaEndpoint -SqlInstance $server -Type DatabaseMirroring
-
             if (-not $ep) {
+                if (-not $Endpoint) {
+                    $Endpoint = "hadr_endpoint"
+                }
                 if ($Pscmdlet.ShouldProcess($server.Name, "Adding endpoint named $Endpoint to $instance")) {
-                    if (-not $Endpoint) {
-                        $Endpoint = "hadr_endpoint"
-                    }
-                    $ep = New-DbaEndpoint -SqlInstance $server -Name hadr_endpoint -Type DatabaseMirroring -EndpointEncryption Supported -EncryptionAlgorithm Aes -Certificate $Certificate
+                    $ep = New-DbaEndpoint -SqlInstance $server -Name $Endpoint -Type DatabaseMirroring -EndpointEncryption Supported -EncryptionAlgorithm Aes -Certificate $Certificate
                     $null = $ep | Start-DbaEndpoint
                 }
             }
@@ -156,7 +192,12 @@ function Add-DbaAgReplica {
             if ($Pscmdlet.ShouldProcess($server.Name, "Creating a replica for $($InputObject.Name) named $Name")) {
                 try {
                     $replica = New-Object Microsoft.SqlServer.Management.Smo.AvailabilityReplica -ArgumentList $InputObject, $Name
-                    $replica.EndpointUrl = $ep.Fqdn
+                    if ($EndpointUrl) {
+                        $epUrl, $EndpointUrl = $EndpointUrl
+                        $replica.EndpointUrl = $epUrl
+                    } else {
+                        $replica.EndpointUrl = $ep.Fqdn
+                    }
                     $replica.FailoverMode = [Microsoft.SqlServer.Management.Smo.AvailabilityReplicaFailoverMode]::$FailoverMode
                     $replica.AvailabilityMode = [Microsoft.SqlServer.Management.Smo.AvailabilityReplicaAvailabilityMode]::$AvailabilityMode
                     if ($server.EngineEdition -ne "Standard") {
@@ -165,7 +206,11 @@ function Add-DbaAgReplica {
                     }
                     $replica.BackupPriority = $BackupPriority
 
-                    if ($ReadonlyRoutingConnectionUrl) {
+                    if ($ReadonlyRoutingList -and $server.VersionMajor -ge 13) {
+                        $replica.ReadonlyRoutingList = $ReadonlyRoutingList
+                    }
+
+                    if ($ReadonlyRoutingConnectionUrl -and $server.VersionMajor -ge 13) {
                         $replica.ReadonlyRoutingConnectionUrl = $ReadonlyRoutingConnectionUrl
                     }
 
@@ -211,11 +256,11 @@ function Add-DbaAgReplica {
                         $null = Join-DbaAvailabilityGroup -SqlInstance $instance -SqlCredential $SqlCredential -AvailabilityGroup $InputObject.Name
                         $agreplica.Alter()
                     }
-                    Add-Member -Force -InputObject $agreplica -MemberType NoteProperty -Name ComputerName -value $agreplica.Parent.ComputerName
-                    Add-Member -Force -InputObject $agreplica -MemberType NoteProperty -Name InstanceName -value $agreplica.Parent.InstanceName
-                    Add-Member -Force -InputObject $agreplica -MemberType NoteProperty -Name SqlInstance -value $agreplica.Parent.SqlInstance
-                    Add-Member -Force -InputObject $agreplica -MemberType NoteProperty -Name AvailabilityGroup -value $agreplica.Parent.Name
-                    Add-Member -Force -InputObject $agreplica -MemberType NoteProperty -Name Replica -value $agreplica.Name # backwards compat
+                    Add-Member -Force -InputObject $agreplica -MemberType NoteProperty -Name ComputerName -Value $agreplica.Parent.ComputerName
+                    Add-Member -Force -InputObject $agreplica -MemberType NoteProperty -Name InstanceName -Value $agreplica.Parent.InstanceName
+                    Add-Member -Force -InputObject $agreplica -MemberType NoteProperty -Name SqlInstance -Value $agreplica.Parent.SqlInstance
+                    Add-Member -Force -InputObject $agreplica -MemberType NoteProperty -Name AvailabilityGroup -Value $agreplica.Parent.Name
+                    Add-Member -Force -InputObject $agreplica -MemberType NoteProperty -Name Replica -Value $agreplica.Name # backwards compat
 
                     Select-DefaultView -InputObject $agreplica -Property $defaults
                 } catch {

@@ -19,7 +19,9 @@ function New-DbaAvailabilityGroup {
         * Grants CreateAnyDatabase permissions if seeding mode is automatic
         * Returns Availability Group object from primary
 
-        NOTE: If a backup / restore is performed, the backups will be left intact on the network share.
+        NOTES:
+        - If a backup / restore is performed, the backups will be left intact on the network share.
+        - If you're using SQL Server on Linux and a fully qualified domain name is required, please use the FQDN to create a proper Endpoint
 
         Thanks for this, Thomas Stringer! https://blogs.technet.microsoft.com/heyscriptingguy/2013/04/29/set-up-an-alwayson-availability-group-with-powershell/
 
@@ -107,6 +109,14 @@ function New-DbaAvailabilityGroup {
 
         If an endpoint must be created, the name "hadr_endpoint" will be used. If an alternative is preferred, use Endpoint.
 
+    .PARAMETER EndpointUrl
+        By default, the property Fqdn of Get-DbaEndpoint is used as EndpointUrl.
+
+        Use EndpointUrl if different URLs are required due to special network configurations.
+        EndpointUrl has to be an array of strings in format 'TCP://system-address:port', one entry for every instance.
+        First entry for the primary instance, following entries for secondary instances in the order they show up in Secondary.
+        See details regarding the format at: https://docs.microsoft.com/en-us/sql/database-engine/availability-groups/windows/specify-endpoint-url-adding-or-modifying-availability-replica
+
     .PARAMETER ConnectionModeInPrimaryRole
         Specifies the connection intent modes of an Availability Replica in primary role. AllowAllConnections by default.
 
@@ -193,6 +203,11 @@ function New-DbaAvailabilityGroup {
         Creates a new availability group with a primary replica on sql1 and a secondary on sql2. Automatically adds the database pubs.
 
     .EXAMPLE
+        PS C:\> New-DbaAvailabilityGroup -Primary sql1 -Secondary sql2 -Name ag1 -Database pubs -EndpointUrl 'TCP://sql1.specialnet.local:5022', 'TCP://sql2.specialnet.local:5022'
+
+        Creates a new availability group with a primary replica on sql1 and a secondary on sql2 with custom endpoint urls. Automatically adds the database pubs.
+
+    .EXAMPLE
         PS C:\> $cred = Get-Credential sqladmin
         PS C:\> $params = @{
         >> Primary = "sql1"
@@ -252,6 +267,7 @@ function New-DbaAvailabilityGroup {
         [ValidateSet('Automatic', 'Manual')]
         [string]$SeedingMode = 'Manual',
         [string]$Endpoint,
+        [string[]]$EndpointUrl,
         [string]$ReadonlyRoutingConnectionUrl,
         [string]$Certificate,
         # network
@@ -273,6 +289,19 @@ function New-DbaAvailabilityGroup {
             return
         }
 
+        if ($EndpointUrl) {
+            if ($EndpointUrl.Count -ne (1 + $Secondary.Count)) {
+                Stop-Function -Message "The number of elements in EndpointUrl is not correct"
+                return
+            }
+            foreach ($epUrl in $EndpointUrl) {
+                if ($epUrl -notmatch 'TCP://.+:\d+') {
+                    Stop-Function -Message "EndpointUrl '$epUrl' not in correct format 'TCP://system-address:port'"
+                    return
+                }
+            }
+        }
+
         if ($ConnectionModeInSecondaryRole) {
             $ConnectionModeInSecondaryRole =
             switch ($ConnectionModeInSecondaryRole) {
@@ -281,6 +310,11 @@ function New-DbaAvailabilityGroup {
                 "Yes" { "AllowAllConnections" }
                 default { $ConnectionModeInSecondaryRole }
             }
+        }
+
+        if ($IPAddress -and $Dhcp) {
+            Stop-Function -Message "You cannot specify both an IP address and the Dhcp switch for the listener."
+            return
         }
 
         try {
@@ -450,6 +484,11 @@ function New-DbaAvailabilityGroup {
                     Certificate                   = $Certificate
                 }
 
+                if ($EndpointUrl) {
+                    $epUrl, $EndpointUrl = $EndpointUrl
+                    $replicaparams += @{EndpointUrl = $epUrl }
+                }
+
                 if ($server.VersionMajor -ge 13) {
                     $replicaparams += @{SeedingMode = $SeedingMode }
                 }
@@ -494,6 +533,11 @@ function New-DbaAvailabilityGroup {
             if ($Pscmdlet.ShouldProcess($second.Name, "Adding replica to availability group named $Name")) {
                 try {
                     # Add replicas
+                    if ($EndpointUrl) {
+                        $epUrl, $EndpointUrl = $EndpointUrl
+                        $replicaparams['EndpointUrl'] = $epUrl
+                    }
+
                     $null = Add-DbaAgReplica @replicaparams -EnableException -SqlInstance $second
                 } catch {
                     Stop-Function -Message "Failure" -ErrorRecord $_ -Target $second -Continue
@@ -522,16 +566,12 @@ function New-DbaAvailabilityGroup {
         Write-ProgressHelper -StepNumber ($stepCounter++) -Message $progressmsg
 
         if ($IPAddress) {
-            if ($Pscmdlet.ShouldProcess($Primary, "Adding static IP listener for $Name to the Primary replica")) {
-                $null = Add-DbaAgListener -InputObject $ag -IPAddress $IPAddress -SubnetMask $SubnetMask -Port $Port -Dhcp:$Dhcp
+            if ($Pscmdlet.ShouldProcess($Primary, "Adding static IP listener for $Name to the primary replica")) {
+                $null = Add-DbaAgListener -InputObject $ag -IPAddress $IPAddress -SubnetMask $SubnetMask -Port $Port
             }
         } elseif ($Dhcp) {
-            if ($Pscmdlet.ShouldProcess($Primary, "Adding DHCP listener for $Name to all replicas")) {
-                $null = Add-DbaAgListener -InputObject $ag -Port $Port -Dhcp:$Dhcp
-                foreach ($second in $secondaries) {
-                    $secag = Get-DbaAvailabilityGroup -SqlInstance $second -AvailabilityGroup $Name
-                    $null = Add-DbaAgListener -InputObject $secag -Port $Port -Dhcp:$Dhcp
-                }
+            if ($Pscmdlet.ShouldProcess($Primary, "Adding DHCP listener for $Name to the primary replica")) {
+                $null = Add-DbaAgListener -InputObject $ag -Port $Port -Dhcp
             }
         }
 
@@ -549,55 +589,6 @@ function New-DbaAvailabilityGroup {
         }
 
         Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Granting permissions on availability group, this may take a moment"
-
-        # Grant permissions, but first, get all necessary service accounts
-        $primaryserviceaccount = $server.ServiceAccount.Trim()
-        $saname = ([DbaInstanceParameter]($server.DomainInstanceName)).ComputerName
-
-        if ($primaryserviceaccount) {
-            if ($primaryserviceaccount.StartsWith("NT ")) {
-                $primaryserviceaccount = "$saname`$"
-            }
-            if ($primaryserviceaccount.StartsWith("$saname")) {
-                $primaryserviceaccount = "$saname`$"
-            }
-            if ($primaryserviceaccount.StartsWith(".")) {
-                $primaryserviceaccount = "$saname`$"
-            }
-        }
-
-        if (-not $primaryserviceaccount) {
-            $primaryserviceaccount = "$saname`$"
-        }
-
-        $serviceAccounts = @($primaryserviceaccount)
-
-        foreach ($second in $secondaries) {
-            # If service account is empty, add the computer account instead
-            $secondaryserviceaccount = $second.ServiceAccount.Trim()
-            $saname = ([DbaInstanceParameter]($second.DomainInstanceName)).ComputerName
-
-            if ($secondaryserviceaccount) {
-                if ($secondaryserviceaccount.StartsWith("NT ")) {
-                    $secondaryserviceaccount = "$saname`$"
-                }
-                if ($secondaryserviceaccount.StartsWith("$saname")) {
-                    $secondaryserviceaccount = "$saname`$"
-                }
-                if ($secondaryserviceaccount.StartsWith(".")) {
-                    $secondaryserviceaccount = "$saname`$"
-                }
-            }
-
-            if (-not $secondaryserviceaccount) {
-                $secondaryserviceaccount = "$saname`$"
-            }
-
-            $serviceAccounts += $secondaryserviceaccount
-        }
-
-        $serviceAccounts = $serviceAccounts | Select-Object -Unique
-
         if ($SeedingMode -eq 'Automatic') {
             try {
                 if ($Pscmdlet.ShouldProcess($server.Name, "Seeding mode is automatic. Adding CreateAnyDatabase permissions to availability group.")) {

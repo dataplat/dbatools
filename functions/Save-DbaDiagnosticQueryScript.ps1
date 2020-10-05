@@ -69,11 +69,12 @@ function Save-DbaDiagnosticQueryScript {
     $DropboxLinkFilter = "*dropbox.com*"
     $LinkTitleFilter = "*Diagnostic Information Queries*"
     $ExcludeSpreadsheet = "*Results Spreadsheet*"
+    $FileTypeFilter = "*.sql*"
 
     Write-Message -Level Verbose -Message "Downloading Glenn Berry Resources Page"
     $page = Get-WebData -uri $glennberryResources
 
-    $glenberrysql += ($page.Links | Where-Object { $_.href -like $DropboxLinkFilter -and $_.outerHTML -like $LinkTitleFilter -and $_.outerHTML -notlike $ExcludeSpreadsheet } | ForEach-Object {
+    $glenberrysql += ($page.Links | Where-Object { $_.href -like $DropboxLinkFilter -and $_.outerHTML -like $LinkTitleFilter -and $_.outerHTML -notlike $ExcludeSpreadsheet -and $_.outerHTML -like $FileTypeFilter } | ForEach-Object {
             [pscustomobject]@{
                 URL        = $_.href
                 SQLVersion = $_.outerHTML -replace "<.+`">", "" -replace "</a>", "" -replace " Diagnostic Information Queries", "" -replace "SQL Server ", "" -replace ' ', ''

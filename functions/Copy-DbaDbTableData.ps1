@@ -275,7 +275,7 @@ function Copy-DbaDbTableData {
                     if ($dbObject.Count -eq 1) {
                         $InputObject += $dbObject
                     } else {
-                        Stop-Function -Message "The table $tbl matches $($dbObject.Count) objects. Unable to determine which object to copy" -Continue
+                        Stop-Function -Message "The object $sourceDataObject matches $($dbObject.Count) objects. Unable to determine which object to copy" -Continue
                     }
                 }
             } catch {

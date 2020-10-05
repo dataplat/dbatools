@@ -9,7 +9,7 @@ function Set-DbaNetworkCertificate {
         This command also grants read permissions for the service account on the certificate's private key.
 
         References:
-        http://sqlmag.com/sql-server/7-steps-ssl-encryption
+        https://www.itprotoday.com/sql-server/7-steps-ssl-encryption
         https://azurebi.jppp.org/2016/01/23/using-lets-encrypt-certificates-for-secure-sql-server-connections/
         https://blogs.msdn.microsoft.com/sqlserverfaq/2016/09/26/creating-and-registering-ssl-certificates/
 

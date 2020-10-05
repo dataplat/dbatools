@@ -128,6 +128,11 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             $interResults = Get-DbaDbBackupHistory -SqlInstance $server -Database $dbname | Sort-Object -Property End
             # create a fork restoring from the second backup sorted by date
             $null = $interResults[1] | Restore-DbaDatabase -SqlInstance $server -WithReplace
+            
+            #Sleep here because "End" has only second resolution (no ms there).
+            #If we're too fast Sort-Object -Property End doesn't always work, as we want $allHistory[0] to be the last backup indeed
+            Start-Sleep -Seconds 1
+
             $null = Backup-DbaDatabase -SqlInstance $server -Database $dbname -Type Full -BackupDirectory $DestBackupDir
 
             $allHistory = Get-DbaDbBackupHistory -SqlInstance $server -Database $dbname | Sort-Object -Property End -Descending

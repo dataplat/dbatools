@@ -255,31 +255,31 @@
     },
     {
         "Name":  "Add-DbaAgReplica",
-        "Description":  "Adds a replica to an availability group on a SQL Server instance.\n\nAutomatically creates a database mirroring endpoint if required.",
+        "Description":  "Adds a replica to an availability group on one or more SQL Server instances.\n\nAutomatically creates database mirroring endpoints if required.",
         "Tags":  [
                      "AvailabilityGroup",
                      "HA",
                      "AG"
                  ],
-        "Synopsis":  "Adds a replica to an availability group on a SQL Server instance.",
+        "Synopsis":  "Adds a replica to an availability group on one or more SQL Server instances.",
         "Alias":  "",
         "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "CommandName":  "Add-DbaAgReplica",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Add-DbaAgReplica",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaAvailabilityGroup -SqlInstance sql2017a -AvailabilityGroup SharePoint | Add-DbaAgReplica -SqlInstance sql2017b\nAdds sql2017b to the SharePoint availability group on sql2017a\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaAvailabilityGroup -SqlInstance sql2017a -AvailabilityGroup SharePoint | Add-DbaAgReplica -SqlInstance sql2017b -FailoverMode Manual\nAdds sql2017b to the SharePoint availability group on sql2017a with a manual failover mode.",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaAvailabilityGroup -SqlInstance sql2017a -AvailabilityGroup SharePoint | Add-DbaAgReplica -SqlInstance sql2017b\nAdds sql2017b to the SharePoint availability group on sql2017a\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaAvailabilityGroup -SqlInstance sql2017a -AvailabilityGroup SharePoint | Add-DbaAgReplica -SqlInstance sql2017b -FailoverMode Manual\nAdds sql2017b to the SharePoint availability group on sql2017a with a manual failover mode.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaAvailabilityGroup -SqlInstance sql2017a -AvailabilityGroup SharePoint | Add-DbaAgReplica -SqlInstance sql2017b -EndpointUrl \u0027TCP://sql2017b.specialnet.local:5022\u0027\nAdds sql2017b to the SharePoint availability group on sql2017a with a custom endpoint URL.",
         "Params":  [
                        [
                            "SqlInstance",
                            "The target SQL Server instance or instances. Server version must be SQL Server version 2012 or higher.",
                            "",
-                           false,
+                           true,
                            "false",
                            ""
                        ],
                        [
                            "SqlCredential",
-                           "Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).\nWindows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.\nFor MFA support, please use Connect-DbaInstance.",
+                           "Login to the target instances using alternative credentials. Accepts PowerShell credentials (Get-Credential).\nWindows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.\nFor MFA support, please use Connect-DbaInstance.",
                            "",
                            false,
                            "false",
@@ -287,7 +287,7 @@
                        ],
                        [
                            "Name",
-                           "The name of the replica. Defaults to the SQL Server instance name.",
+                           "The name of the replica. Defaults to the SQL Server instance name.\nThis parameter is only supported if the replica is added to just one instance.",
                            "",
                            false,
                            "false",
@@ -319,7 +319,7 @@
                        ],
                        [
                            "ConnectionModeInPrimaryRole",
-                           "Specifies the connection intent modes of an Availability Replica in primary role. AllowAllConnections by default.",
+                           "Specifies the connection intent mode of an Availability Replica in primary role. AllowAllConnections by default.",
                            "",
                            false,
                            "false",
@@ -327,7 +327,7 @@
                        ],
                        [
                            "ConnectionModeInSecondaryRole",
-                           "Specifies the connection modes of an Availability Replica in secondary role. AllowAllConnections by default.",
+                           "Specifies the connection intent mode of an Availability Replica in secondary role. AllowAllConnections by default.",
                            "",
                            false,
                            "false",
@@ -350,6 +350,14 @@
                            ""
                        ],
                        [
+                           "EndpointUrl",
+                           "By default, the property Fqdn of Get-DbaEndpoint is used as EndpointUrl.\nUse EndpointUrl if a different URL is required due to special network configurations.\r\nEndpointUrl has to be an array of strings in format \u0027TCP://system-address:port\u0027, one entry for every instance.\r\nSee details at: https://docs.microsoft.com/en-us/sql/database-engine/availability-groups/windows/specify-endpoint-url-adding-or-modifying-availability-replica",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
                            "Passthru",
                            "Don\u0027t create the replica, just pass thru an object that can be further customized before creation.",
                            "",
@@ -358,8 +366,16 @@
                            "False"
                        ],
                        [
+                           "ReadOnlyRoutingList",
+                           "Sets the read only routing ordered list of replica server names to use when redirecting read-only connections through this availability replica.\nThis parameter is only supported if the replica is added to just one instance.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
                            "ReadonlyRoutingConnectionUrl",
-                           "Sets the read only routing connection url for the availability replica.",
+                           "Sets the read only routing connection url for the availability replica.\nThis parameter is only supported if the replica is added to just one instance.",
                            "",
                            false,
                            "false",
@@ -406,7 +422,7 @@
                            ""
                        ]
                    ],
-        "Syntax":  "Add-DbaAgReplica [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Name] \u003cString\u003e] [[-AvailabilityMode] \u003cString\u003e] [[-FailoverMode] \u003cString\u003e] [[-BackupPriority] \u003cInt32\u003e] [[-ConnectionModeInPrimaryRole] \u003cString\u003e] [[-ConnectionModeInSecondaryRole] \u003cString\u003e] [[-SeedingMode] \u003cString\u003e] [[-Endpoint] \u003cString\u003e] [-Passthru] [[-ReadonlyRoutingConnectionUrl] \u003cString\u003e] [[-Certificate] \u003cString\u003e] [-InputObject] \u003cAvailabilityGroup\u003e [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Add-DbaAgReplica [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Name] \u003cString\u003e] [[-AvailabilityMode] \u003cString\u003e] [[-FailoverMode] \u003cString\u003e] [[-BackupPriority] \u003cInt32\u003e] [[-ConnectionModeInPrimaryRole] \u003cString\u003e] [[-ConnectionModeInSecondaryRole] \u003cString\u003e] [[-SeedingMode] \u003cString\u003e] [[-Endpoint] \u003cString\u003e] [[-EndpointUrl] \u003cString[]\u003e] [-Passthru] [[-ReadOnlyRoutingList] \u003cString[]\u003e] [[-ReadonlyRoutingConnectionUrl] \u003cString\u003e] [[-Certificate] \u003cString\u003e] [-InputObject] \u003cAvailabilityGroup\u003e [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Add-DbaComputerCertificate",
@@ -1131,7 +1147,7 @@
                      "Backup",
                      "Restore"
                  ],
-        "Synopsis":  "Backup one or more SQL Sever databases from a single SQL Server SqlInstance.",
+        "Synopsis":  "Backup one or more SQL Server databases from a single SQL Server SqlInstance.",
         "Alias":  "",
         "Author":  "Stuart Moore (@napalmgram), stuart-moore.com",
         "CommandName":  "Backup-DbaDatabase",
@@ -4117,7 +4133,7 @@
     },
     {
         "Name":  "Copy-DbaDbTableData",
-        "Description":  "Copies data between SQL Server tables using SQL Bulk Copy.\nThe same can be achieved also doing\n$sourcetable = Invoke-DbaQuery -SqlInstance instance1 ... -As DataTable\nWrite-DbaDbTableData -SqlInstance ... -InputObject $sourcetable\nbut it will force buffering the contents on the table in memory (high RAM usage for large tables).\nWith this function, a streaming copy will be done in the most speedy and least resource-intensive way.",
+        "Description":  "Copies data between SQL Server tables using SQL Bulk Copy.\nThe same can be achieved also using Invoke-DbaQuery and Write-DbaDbTableData but it will buffer the contents of that table in memory of the machine running the commands.\nThis function prevents that by streaming a copy of the data in the most speedy and least resource-intensive way.",
         "Tags":  "Migration",
         "Synopsis":  "Copies data between SQL Server tables.",
         "Alias":  "",
@@ -4125,7 +4141,7 @@
         "CommandName":  "Copy-DbaDbTableData",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Copy-DbaDbTableData",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eCopy-DbaDbTableData -SqlInstance sql1 -Destination sql2 -Database dbatools_from -Table dbo.test_table\nCopies all the data from table dbo.test_table in database dbatools_from on sql1 to table test_table in database dbatools_from on sql2.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eCopy-DbaDbTableData -SqlInstance sql1 -Destination sql2 -Database dbatools_from -DestinationDatabase dbatools_dest -Table [Schema].[test table]\nCopies all the data from table [Schema].[test table] in database dbatools_from on sql1 to table [Schema].[test table] in database dbatools_dest on sql2\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaDbTable -SqlInstance sql1 -Database tempdb -Table tb1, tb2 | Copy-DbaDbTableData -DestinationTable tb3\nCopies all data from tables tb1 and tb2 in tempdb on sql1 to tb3 in tempdb on sql1\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaDbTable -SqlInstance sql1 -Database tempdb -Table tb1, tb2 | Copy-DbaDbTableData -Destination sql2\nCopies data from tbl1 in tempdb on sql1 to tbl1 in tempdb on sql2\r\nthen\r\nCopies data from tbl2 in tempdb on sql1 to tbl2 in tempdb on sql2\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eCopy-DbaDbTableData -SqlInstance sql1 -Destination sql2 -Database dbatools_from -Table test_table -KeepIdentity -Truncate\nCopies all the data in table test_table from sql1 to sql2, using the database dbatools_from, keeping identity columns and truncating the destination\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003e$params = @{\n\u003e\u003e SqlInstance = \u0027sql1\u0027\r\n\u003e\u003e Destination = \u0027sql2\u0027\r\n\u003e\u003e Database = \u0027dbatools_from\u0027\r\n\u003e\u003e DestinationDatabase = \u0027dbatools_dest\u0027\r\n\u003e\u003e Table = \u0027[Schema].[Table]\u0027\r\n\u003e\u003e DestinationTable = \u0027[dbo].[Table.Copy]\u0027\r\n\u003e\u003e KeepIdentity = $true\r\n\u003e\u003e KeepNulls = $true\r\n\u003e\u003e Truncate = $true\r\n\u003e\u003e BatchSize = 10000\r\n\u003e\u003e }\r\n\u003e\u003e\r\nPS C:\\\u003e Copy-DbaDbTableData @params\nCopies all the data from table [Schema].[Table] in database dbatools_from on sql1 to table [dbo].[Table.Copy] in database dbatools_dest on sql2\r\nKeeps identity columns and Nulls, truncates the destination and processes in BatchSize of 10000.\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003e$params = @{\n\u003e\u003e SqlInstance = \u0027server1\u0027\r\n\u003e\u003e Destination = \u0027server1\u0027\r\n\u003e\u003e Database = \u0027AdventureWorks2017\u0027\r\n\u003e\u003e DestinationDatabase = \u0027AdventureWorks2017\u0027\r\n\u003e\u003e Table = \u0027[Person].[EmailPromotion]\u0027\r\n\u003e\u003e BatchSize = 10000\r\n\u003e\u003e Query = \"SELECT * FROM [Person].[Person] where EmailPromotion = 1\"\r\n\u003e\u003e }\r\n\u003e\u003e\r\nPS C:\\\u003e Copy-DbaDbTableData @params\nCopies data returned from the query on server1 into the AdventureWorks2017 on server1.\r\nCopy is processed in BatchSize of 10000 rows. Presuming the Person.EmailPromotion exists already.",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eCopy-DbaDbTableData -SqlInstance sql1 -Destination sql2 -Database dbatools_from -Table dbo.test_table\nCopies all the data from table dbo.test_table (2-part name) in database dbatools_from on sql1 to table test_table in database dbatools_from on sql2.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eCopy-DbaDbTableData -SqlInstance sql1 -Destination sql2 -Database dbatools_from -DestinationDatabase dbatools_dest -Table [Schema].[test table]\nCopies all the data from table [Schema].[test table] (2-part name) in database dbatools_from on sql1 to table [Schema].[test table] in database dbatools_dest on sql2\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaDbTable -SqlInstance sql1 -Database tempdb -Table tb1, tb2 | Copy-DbaDbTableData -DestinationTable tb3\nCopies all data from tables tb1 and tb2 in tempdb on sql1 to tb3 in tempdb on sql1\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaDbTable -SqlInstance sql1 -Database tempdb -Table tb1, tb2 | Copy-DbaDbTableData -Destination sql2\nCopies data from tb1 and tb2 in tempdb on sql1 to the same table in tempdb on sql2\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eCopy-DbaDbTableData -SqlInstance sql1 -Destination sql2 -Database dbatools_from -Table test_table -KeepIdentity -Truncate\nCopies all the data in table test_table from sql1 to sql2, using the database dbatools_from, keeping identity columns and truncating the destination\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003e$params = @{\n\u003e\u003e SqlInstance = \u0027sql1\u0027\r\n\u003e\u003e Destination = \u0027sql2\u0027\r\n\u003e\u003e Database = \u0027dbatools_from\u0027\r\n\u003e\u003e DestinationDatabase = \u0027dbatools_dest\u0027\r\n\u003e\u003e Table = \u0027[Schema].[Table]\u0027\r\n\u003e\u003e DestinationTable = \u0027[dbo].[Table.Copy]\u0027\r\n\u003e\u003e KeepIdentity = $true\r\n\u003e\u003e KeepNulls = $true\r\n\u003e\u003e Truncate = $true\r\n\u003e\u003e BatchSize = 10000\r\n\u003e\u003e }\r\n\u003e\u003e\r\nPS C:\\\u003e Copy-DbaDbTableData @params\nCopies all the data from table [Schema].[Table] (2-part name) in database dbatools_from on sql1 to table [dbo].[Table.Copy] in database dbatools_dest on sql2\r\nKeeps identity columns and Nulls, truncates the destination and processes in BatchSize of 10000.\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003e$params = @{\n\u003e\u003e SqlInstance = \u0027server1\u0027\r\n\u003e\u003e Destination = \u0027server1\u0027\r\n\u003e\u003e Database = \u0027AdventureWorks2017\u0027\r\n\u003e\u003e DestinationDatabase = \u0027AdventureWorks2017\u0027\r\n\u003e\u003e Table = \u0027[AdventureWorks2017].[Person].[EmailPromotion]\u0027\r\n\u003e\u003e BatchSize = 10000\r\n\u003e\u003e Query = \"SELECT * FROM [OtherDb].[Person].[Person] where EmailPromotion = 1\"\r\n\u003e\u003e }\r\n\u003e\u003e\r\nPS C:\\\u003e Copy-DbaDbTableData @params\nCopies data returned from the query on server1 into the AdventureWorks2017 on server1, using a 4-part name for the -Table parameter.\r\nSee the -Query param documentation for more details.\r\nCopy is processed in BatchSize of 10000 rows.\n-------------------------- EXAMPLE 8 --------------------------\nPS C:\\\u003eCopy-DbaDbTableData -SqlInstance sql1 -Database tempdb -View [tempdb].[dbo].[vw1] -DestinationTable [SampleDb].[SampleSchema].[SampleTable] -AutoCreateTable\nCopies all data from [tempdb].[dbo].[vw1] (3-part name) view on instance sql1 to an auto-created table [SampleDb].[SampleSchema].[SampleTable] on instance sql1",
         "Params":  [
                        [
                            "SqlInstance",
@@ -4177,7 +4193,15 @@
                        ],
                        [
                            "Table",
-                           "Define a specific table you would like to use as source. You can specify a three-part name like db.sch.tbl.\r\nIf the object has special characters please wrap them in square brackets [ ].\r\nThis dbo.First.Table will try to find table named \u0027Table\u0027 on schema \u0027First\u0027 and database \u0027dbo\u0027.\r\nThe correct way to find table named \u0027First.Table\u0027 on schema \u0027dbo\u0027 is passing dbo.[First.Table]",
+                           "Specify a table to use as a source. You can specify a 2 or 3 part name.\r\nIf the object has special characters please wrap them in square brackets.\nNote: Cannot specify a view if a table value is provided",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "View",
+                           "Specify a view to use as a source. You can specify a 2 or 3 part name (see examples).\r\nIf the object has special characters please wrap them in square brackets.\nNote: Cannot specify a table if a view value is provided",
                            "",
                            false,
                            "false",
@@ -4185,7 +4209,7 @@
                        ],
                        [
                            "Query",
-                           "If you want to copy only a portion of a table or selected tables, specify the query.\r\nEnsure to select all required columns. Calculated Columns or columns with default values may be excluded.\r\nThe tablename should be a full three-part name in form [Database].[Schema].[Table]",
+                           "Define a query to use as a source. Note: 3 or 4 part object names may be used (see examples)\r\nEnsure to select all required columns.\r\nCalculated Columns or columns with default values may be excluded.\nNote: The workflow in the command requires that a valid -Table or -View parameter value be specified.",
                            "",
                            false,
                            "false",
@@ -4201,7 +4225,7 @@
                        ],
                        [
                            "BatchSize",
-                           "The BatchSize for the import defaults to 5000.",
+                           "The BatchSize for the import defaults to 50000.",
                            "",
                            false,
                            "false",
@@ -4209,7 +4233,7 @@
                        ],
                        [
                            "NotifyAfter",
-                           "Sets the option to show the notification after so many rows of import",
+                           "Sets the option to show the notification after so many rows of import. The default is 5000 rows.",
                            "",
                            false,
                            "false",
@@ -4273,7 +4297,7 @@
                        ],
                        [
                            "bulkCopyTimeOut",
-                           "Value in seconds for the BulkCopy operations timeout. The default is 30 seconds.",
+                           "Value in seconds for the BulkCopy operations timeout. The default is 5000 seconds.",
                            "",
                            false,
                            "false",
@@ -4312,7 +4336,7 @@
                            ""
                        ]
                    ],
-        "Syntax":  "Copy-DbaDbTableData [[-SqlInstance] \u003cDbaInstanceParameter\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Destination] \u003cDbaInstanceParameter[]\u003e] [[-DestinationSqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cString\u003e] [[-DestinationDatabase] \u003cString\u003e] [[-Table] \u003cString[]\u003e] [[-Query] \u003cString\u003e] [-AutoCreateTable] [[-BatchSize] \u003cInt32\u003e] [[-NotifyAfter] \u003cInt32\u003e] [[-DestinationTable] \u003cString\u003e] [-NoTableLock] [-CheckConstraints] [-FireTriggers] [-KeepIdentity] [-KeepNulls] [-Truncate] [[-bulkCopyTimeOut] \u003cInt32\u003e] [[-InputObject] \u003cTable[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Copy-DbaDbTableData [[-SqlInstance] \u003cDbaInstanceParameter\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Destination] \u003cDbaInstanceParameter[]\u003e] [[-DestinationSqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cString\u003e] [[-DestinationDatabase] \u003cString\u003e] [[-Table] \u003cString[]\u003e] [[-View] \u003cString[]\u003e] [[-Query] \u003cString\u003e] [-AutoCreateTable] [[-BatchSize] \u003cInt32\u003e] [[-NotifyAfter] \u003cInt32\u003e] [[-DestinationTable] \u003cString\u003e] [-NoTableLock] [-CheckConstraints] [-FireTriggers] [-KeepIdentity] [-KeepNulls] [-Truncate] [[-bulkCopyTimeOut] \u003cInt32\u003e] [[-InputObject] \u003cTableViewBase[]\u003e] [-EnableException] [-WhatIf] [-Confirm] \r\n[\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Copy-DbaDbViewData",
@@ -4324,7 +4348,7 @@
         "CommandName":  "Copy-DbaDbViewData",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Copy-DbaDbViewData",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eCopy-DbaDbViewData -SqlInstance sql1 -Destination sql2 -Database dbatools_from -View dbo.test_view\nCopies all the data from view dbo.test_view in database dbatools_from on sql1 to view test_view in database dbatools_from on sql2.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eCopy-DbaDbViewData -SqlInstance sql1 -Destination sql2 -Database dbatools_from -DestinationDatabase dbatools_dest -DestinationTable [Schema].[test table]\nCopies all the data from view [Schema].[test view] in database dbatools_from on sql1 to table [Schema].[test table] in database dbatools_dest on sql2\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaDbView -SqlInstance sql1 -Database tempdb -View vw1, vw2 | Copy-DbaDbViewData -DestinationTable tb3\nCopies all data from Views vw1 and vw2 in tempdb on sql1 to tb3 in tempdb on sql1\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaDbView -SqlInstance sql1 -Database tempdb -View vw1, vw2 | Copy-DbaDbViewData -Destination sql2\nCopies data from tbl1 in tempdb on sql1 to tbl1 in tempdb on sql2\r\nthen\r\nCopies data from tbl2 in tempdb on sql1 to tbl2 in tempdb on sql2\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eCopy-DbaDbViewData -SqlInstance sql1 -Destination sql2 -Database dbatools_from -View test_view -KeepIdentity -Truncate\nCopies all the data in view test_view from sql1 to sql2, using the database dbatools_from, keeping identity columns and truncating the destination\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003e$params = @{\n\u003e\u003e SqlInstance = \u0027sql1\u0027\r\n\u003e\u003e Destination = \u0027sql2\u0027\r\n\u003e\u003e Database = \u0027dbatools_from\u0027\r\n\u003e\u003e DestinationDatabase = \u0027dbatools_dest\u0027\r\n\u003e\u003e View = \u0027[Schema].[View]\u0027\r\n\u003e\u003e DestinationTable = \u0027[dbo].[View.Copy]\u0027\r\n\u003e\u003e KeepIdentity = $true\r\n\u003e\u003e KeepNulls = $true\r\n\u003e\u003e Truncate = $true\r\n\u003e\u003e BatchSize = 10000\r\n\u003e\u003e }\r\n\u003e\u003e\r\nPS C:\\\u003e Copy-DbaDbViewData @params\nCopies all the data from view [Schema].[View] in database dbatools_from on sql1 to table [dbo].[Table.Copy] in database dbatools_dest on sql2\r\nKeeps identity columns and Nulls, truncates the destination and processes in BatchSize of 10000.\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003e$params = @{\n\u003e\u003e SqlInstance = \u0027server1\u0027\r\n\u003e\u003e Destination = \u0027server1\u0027\r\n\u003e\u003e Database = \u0027AdventureWorks2017\u0027\r\n\u003e\u003e DestinationDatabase = \u0027AdventureWorks2017\u0027\r\n\u003e\u003e View = \u0027[Person].[EmailPromotion]\u0027\r\n\u003e\u003e BatchSize = 10000\r\n\u003e\u003e Query = \"SELECT * FROM [Person].[Person] where EmailPromotion = 1\"\r\n\u003e\u003e }\r\n\u003e\u003e\r\nPS C:\\\u003e Copy-DbaDbViewData @params\nCopies data returned from the query on server1 into the AdventureWorks2017 on server1.\r\nCopy is processed in BatchSize of 10000 rows. Presuming the Person.EmailPromotion exists already.",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eCopy-DbaDbViewData -SqlInstance sql1 -Destination sql2 -Database dbatools_from -View dbo.test_view\nCopies all the data from view dbo.test_view (2-part name) in database dbatools_from on sql1 to view test_view in database dbatools_from on sql2.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eCopy-DbaDbViewData -SqlInstance sql1 -Destination sql2 -Database dbatools_from -DestinationDatabase dbatools_dest -DestinationTable [Schema].[test table]\nCopies all the data from view [Schema].[test view] (2-part name) in database dbatools_from on sql1 to table [Schema].[test table] in database dbatools_dest on sql2\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaDbView -SqlInstance sql1 -Database tempdb -View vw1, vw2 | Copy-DbaDbViewData -DestinationTable tb3\nCopies all data from Views vw1 and vw2 in tempdb on sql1 to tb3 in tempdb on sql1\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaDbView -SqlInstance sql1 -Database tempdb -View vw1, vw2 | Copy-DbaDbViewData -Destination sql2\nCopies data from tbl1 in tempdb on sql1 to tbl1 in tempdb on sql2\r\nthen\r\nCopies data from tbl2 in tempdb on sql1 to tbl2 in tempdb on sql2\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eCopy-DbaDbViewData -SqlInstance sql1 -Destination sql2 -Database dbatools_from -View test_view -KeepIdentity -Truncate\nCopies all the data in view test_view from sql1 to sql2, using the database dbatools_from, keeping identity columns and truncating the destination\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003e$params = @{\n\u003e\u003e SqlInstance = \u0027sql1\u0027\r\n\u003e\u003e Destination = \u0027sql2\u0027\r\n\u003e\u003e Database = \u0027dbatools_from\u0027\r\n\u003e\u003e DestinationDatabase = \u0027dbatools_dest\u0027\r\n\u003e\u003e View = \u0027[Schema].[View]\u0027\r\n\u003e\u003e DestinationTable = \u0027[dbo].[View.Copy]\u0027\r\n\u003e\u003e KeepIdentity = $true\r\n\u003e\u003e KeepNulls = $true\r\n\u003e\u003e Truncate = $true\r\n\u003e\u003e BatchSize = 10000\r\n\u003e\u003e }\r\n\u003e\u003e\r\nPS C:\\\u003e Copy-DbaDbViewData @params\nCopies all the data from view [Schema].[View] in database dbatools_from on sql1 to table [dbo].[Table.Copy] in database dbatools_dest on sql2\r\nKeeps identity columns and Nulls, truncates the destination and processes in BatchSize of 10000.\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003e$params = @{\n\u003e\u003e SqlInstance = \u0027server1\u0027\r\n\u003e\u003e Destination = \u0027server1\u0027\r\n\u003e\u003e Database = \u0027AdventureWorks2017\u0027\r\n\u003e\u003e DestinationDatabase = \u0027AdventureWorks2017\u0027\r\n\u003e\u003e View = \u0027[AdventureWorks2017].[Person].[EmailPromotion]\u0027\r\n\u003e\u003e BatchSize = 10000\r\n\u003e\u003e Query = \"SELECT * FROM [OtherDb].[Person].[Person] where EmailPromotion = 1\"\r\n\u003e\u003e }\r\n\u003e\u003e\r\nPS C:\\\u003e Copy-DbaDbViewData @params\nCopies data returned from the query on server1 into the AdventureWorks2017 on server1.\r\nThis query uses a 3-part name to reference the object in the query value, it will try to find the view named \"Person\" in the schema \"Person\" and database \"OtherDb\".\r\nCopy is processed in BatchSize of 10000 rows. See the -Query param documentation for more details.",
         "Params":  [
                        [
                            "SqlInstance",
@@ -4376,7 +4400,7 @@
                        ],
                        [
                            "View",
-                           "Define a specific view you would like to use as source. You can specify a three-part name like db.sch.vw.\r\nIf the object has special characters please wrap them in square brackets [ ].\r\nThis dbo.First.View will try to find view named \u0027View\u0027 on schema \u0027First\u0027 and database \u0027dbo\u0027.\r\nThe correct way to find view named \u0027First.View\u0027 on schema \u0027dbo\u0027 is passing dbo.[First.View]",
+                           "Specify a view to use as a source. You can specify a 2 or 3 part name (see examples).\nIf the object has special characters please wrap them in square brackets.",
                            "",
                            false,
                            "false",
@@ -4384,7 +4408,7 @@
                        ],
                        [
                            "Query",
-                           "If you want to copy only a portion of a view or selected views, specify the query.\r\nEnsure to select all required columns. Calculated Columns or columns with default values may be excluded.\r\nThe tablename should be a full three-part name in form [Database].[Schema].[Table]",
+                           "Define a query to use as a source. Note: 3 or 4 part object names may be used (see examples)\r\nEnsure to select all required columns.\r\nCalculated Columns or columns with default values may be excluded.\nNote: The workflow in the command requires that a valid -Table or -View parameter value be specified.",
                            "",
                            false,
                            "false",
@@ -4400,7 +4424,7 @@
                        ],
                        [
                            "BatchSize",
-                           "The BatchSize for the import defaults to 5000.",
+                           "The BatchSize for the import defaults to 50000.",
                            "",
                            false,
                            "false",
@@ -4408,7 +4432,7 @@
                        ],
                        [
                            "NotifyAfter",
-                           "Sets the option to show the notification after so many rows of import",
+                           "Sets the option to show the notification after so many rows of import. The default is 5000 rows.",
                            "",
                            false,
                            "false",
@@ -4472,7 +4496,7 @@
                        ],
                        [
                            "bulkCopyTimeOut",
-                           "Value in seconds for the BulkCopy operations timeout. The default is 30 seconds.",
+                           "Value in seconds for the BulkCopy operations timeout. The default is 5000 seconds.",
                            "",
                            false,
                            "false",
@@ -4511,7 +4535,7 @@
                            ""
                        ]
                    ],
-        "Syntax":  "Copy-DbaDbViewData [[-SqlInstance] \u003cDbaInstanceParameter\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Destination] \u003cDbaInstanceParameter[]\u003e] [[-DestinationSqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cString\u003e] [[-DestinationDatabase] \u003cString\u003e] [[-View] \u003cString[]\u003e] [[-Query] \u003cString\u003e] [-AutoCreateTable] [[-BatchSize] \u003cInt32\u003e] [[-NotifyAfter] \u003cInt32\u003e] [[-DestinationTable] \u003cString\u003e] [-NoTableLock] [-CheckConstraints] [-FireTriggers] [-KeepIdentity] [-KeepNulls] [-Truncate] [[-bulkCopyTimeOut] \u003cInt32\u003e] [[-InputObject] \u003cView[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Copy-DbaDbViewData [[-SqlInstance] \u003cDbaInstanceParameter\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Destination] \u003cDbaInstanceParameter[]\u003e] [[-DestinationSqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cString\u003e] [[-DestinationDatabase] \u003cString\u003e] [[-View] \u003cString[]\u003e] [[-Query] \u003cString\u003e] [-AutoCreateTable] [[-BatchSize] \u003cInt32\u003e] [[-NotifyAfter] \u003cInt32\u003e] [[-DestinationTable] \u003cString\u003e] [-NoTableLock] [-CheckConstraints] [-FireTriggers] [-KeepIdentity] [-KeepNulls] [-Truncate] [[-bulkCopyTimeOut] \u003cInt32\u003e] [[-InputObject] \u003cTableViewBase[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Copy-DbaEndpoint",
@@ -6363,7 +6387,7 @@
     },
     {
         "Name":  "Disable-DbaTraceFlag",
-        "Description":  "The function will disable a Trace Flag that is currently running globally on the SQL Server instance(s) listed",
+        "Description":  "The function will disable a Trace Flag that is currently running globally on the SQL Server instance(s) listed.\nThese are not persisted after a restart, use Set-DbaStartupParameter to set them to persist after restarts.",
         "Tags":  [
                      "TraceFlag",
                      "DBCC"
@@ -6837,7 +6861,7 @@
     },
     {
         "Name":  "Enable-DbaTraceFlag",
-        "Description":  "The function will set one or multiple trace flags on the SQL Server instance(s) listed",
+        "Description":  "The function will set one or multiple trace flags on the SQL Server instance(s) listed.\nThese are not persisted after a restart, use Set-DbaStartupParameter to set them to persist after restarts.",
         "Tags":  [
                      "TraceFlag",
                      "DBCC"
@@ -6848,7 +6872,7 @@
         "CommandName":  "Enable-DbaTraceFlag",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Enable-DbaTraceFlag",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eEnable-DbaTraceFlag -SqlInstance sql2016 -TraceFlag 3226\nEnable the trace flag 3226 on SQL Server instance sql2016\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eEnable-DbaTraceFlag -SqlInstance sql2016 -TraceFlag 1117, 1118\nEnable multiple trace flags on SQL Server instance sql2016\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eDisable-DbaTraceFlag -SqlInstance sql2016_1, sql2016_2 -TraceFlag 6532,7314\nDisable more than 1 globally running trace flags on more than 1 SQL Server instances sql2016_1 and sql2016_2",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eEnable-DbaTraceFlag -SqlInstance sql2016 -TraceFlag 3226\nEnable the trace flag 3226 on SQL Server instance sql2016\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eEnable-DbaTraceFlag -SqlInstance sql2016 -TraceFlag 1117, 1118\nEnable multiple trace flags on SQL Server instance sql2016",
         "Params":  [
                        [
                            "SqlInstance",
@@ -10005,7 +10029,7 @@
         "CommandName":  "Find-DbaOrphanedFile",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Find-DbaOrphanedFile",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eFind-DbaOrphanedFile -SqlInstance sqlserver2014a\nConnects to sqlserver2014a, authenticating with Windows credentials, and searches for orphaned files. Returns server name, local filename, and unc path to file.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eFind-DbaOrphanedFile -SqlInstance sqlserver2014a -SqlCredential $cred\nConnects to sqlserver2014a, authenticating with SQL Server authentication, and searches for orphaned files. Returns server name, local filename, and unc path to file.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eFind-DbaOrphanedFile -SqlInstance sql2014 -Path \u0027E:\\Dir1\u0027, \u0027E:\\Dir2\u0027\nFinds the orphaned files in \"E:\\Dir1\" and \"E:Dir2\" in addition to the default directories.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eFind-DbaOrphanedFile -SqlInstance sql2014 -LocalOnly\nReturns only the local file paths for orphaned files.\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eFind-DbaOrphanedFile -SqlInstance sql2014 -RemoteOnly\nReturns only the remote file path for orphaned files.\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eFind-DbaOrphanedFile -SqlInstance sql2014, sql2016 -FileType fsf, mld\nFinds the orphaned ending with \".fsf\" and \".mld\" in addition to the default filetypes \".mdf\", \".ldf\", \".ndf\" for both the servers sql2014 and sql2016.",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eFind-DbaOrphanedFile -SqlInstance sqlserver2014a\nConnects to sqlserver2014a, authenticating with Windows credentials, and searches for orphaned files. Returns server name, local filename, and unc path to file.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eFind-DbaOrphanedFile -SqlInstance sqlserver2014a -SqlCredential $cred\nConnects to sqlserver2014a, authenticating with SQL Server authentication, and searches for orphaned files. Returns server name, local filename, and unc path to file.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eFind-DbaOrphanedFile -SqlInstance sql2014 -Path \u0027E:\\Dir1\u0027, \u0027E:\\Dir2\u0027\nFinds the orphaned files in \"E:\\Dir1\" and \"E:Dir2\" in addition to the default directories.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eFind-DbaOrphanedFile -SqlInstance sql2014 -Path \u0027E:\\Dir1\u0027 -Recurse\nFinds the orphaned files in \"E:\\Dir1\" and any of its subdirectories in addition to the default directories.\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eFind-DbaOrphanedFile -SqlInstance sql2014 -LocalOnly\nReturns only the local file paths for orphaned files.\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eFind-DbaOrphanedFile -SqlInstance sql2014 -RemoteOnly\nReturns only the remote file path for orphaned files.\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003eFind-DbaOrphanedFile -SqlInstance sql2014, sql2016 -FileType fsf, mld\nFinds the orphaned ending with \".fsf\" and \".mld\" in addition to the default filetypes \".mdf\", \".ldf\", \".ndf\" for both the servers sql2014 and sql2016.",
         "Params":  [
                        [
                            "SqlInstance",
@@ -10062,9 +10086,17 @@
                            false,
                            "false",
                            "False"
+                       ],
+                       [
+                           "Recurse",
+                           "If this switch is enabled, the command will search subdirectories of the Path parameter.",
+                           "",
+                           false,
+                           "false",
+                           "False"
                        ]
                    ],
-        "Syntax":  "Find-DbaOrphanedFile [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Path] \u003cString[]\u003e] [[-FileType] \u003cString[]\u003e] [-LocalOnly] [-RemoteOnly] [-EnableException] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Find-DbaOrphanedFile -SqlInstance \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-Path \u003cString[]\u003e] [-FileType \u003cString[]\u003e] [-LocalOnly] [-EnableException] [-Recurse] [\u003cCommonParameters\u003e]\nFind-DbaOrphanedFile -SqlInstance \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-Path \u003cString[]\u003e] [-FileType \u003cString[]\u003e] [-RemoteOnly] [-EnableException] [-Recurse] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Find-DbaSimilarTable",
@@ -10586,6 +10618,176 @@
                        ]
                    ],
         "Syntax":  "Format-DbaBackupInformation [-BackupHistory] \u003cObject[]\u003e [[-ReplaceDatabaseName] \u003cObject\u003e] [-ReplaceDbNameInFile] [[-DataFileDirectory] \u003cString\u003e] [[-LogFileDirectory] \u003cString\u003e] [[-DestinationFileStreamDirectory] \u003cString\u003e] [[-DatabaseNamePrefix] \u003cString\u003e] [[-DatabaseFilePrefix] \u003cString\u003e] [[-DatabaseFileSuffix] \u003cString\u003e] [[-RebaseBackupFolder] \u003cString\u003e] [-Continue] [[-FileMapping] \u003cHashtable\u003e] [[-PathSep] \u003cString\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
+    },
+    {
+        "Name":  "Get-DbaAgBackupHistory",
+        "Description":  "Returns backup history details for some or all databases on a SQL Server Availability Group.\n\nYou can even get detailed information (including file path) for latest full, differential and log files.\n\n### Discuss this:\nBackups taken with the CopyOnly option will NOT be returned, unless the IncludeCopyOnly switch is present or the target includes an Availability Group listener or a database in an Availability Group\n\nReference: http://www.sqlhub.com/2011/07/find-your-backup-history-in-sql-server.html",
+        "Tags":  [
+                     "DisasterRecovery",
+                     "Backup"
+                 ],
+        "Synopsis":  "Returns backup history details for databases on a SQL Server Availability Group.",
+        "Alias":  "",
+        "Author":  "Chrissy LeMaire (@cl) | Stuart Moore (@napalmgram), Andreas Jordan",
+        "CommandName":  "Get-DbaAgBackupHistory",
+        "Availability":  "Windows, Linux, macOS",
+        "Links":  "https://dbatools.io/Get-DbaAgBackupHistory",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaAgBackupHistory -SqlInstance SqlInstance2014a\nReturns server name, database, username, backup type, date for all database backups still in msdb history on SqlInstance2014a. This may return many rows; consider using filters that are included in \r\nother examples.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003e$cred = Get-Credential sqladmin\nGet-DbaAgBackupHistory -SqlInstance SqlInstance2014a -SqlCredential $cred\nDoes the same as above but connect to SqlInstance2014a as SQL user \"sqladmin\"\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaAgBackupHistory -SqlInstance SqlInstance2014a -Database db1, db2 -Since \u00272016-07-01 10:47:00\u0027\nReturns backup information only for databases db1 and db2 on SqlInstance2014a since July 1, 2016 at 10:47 AM.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaAgBackupHistory -SqlInstance sql2014 -Database AdventureWorks2014, pubs -Force | Format-Table\nReturns information only for AdventureWorks2014 and pubs and formats the results as a table.\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eGet-DbaAgBackupHistory -SqlInstance sql2014 -Database AdventureWorks2014 -Last\nReturns information about the most recent full, differential and log backups for AdventureWorks2014 on sql2014.\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eGet-DbaAgBackupHistory -SqlInstance sql2014 -Database AdventureWorks2014 -Last -DeviceType Disk\nReturns information about the most recent full, differential and log backups for AdventureWorks2014 on sql2014, but only for backups to disk.\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003eGet-DbaAgBackupHistory -SqlInstance sql2014 -Database AdventureWorks2014 -Last -DeviceType 148,107\nReturns information about the most recent full, differential and log backups for AdventureWorks2014 on sql2014, but only for backups with device_type 148 and 107.\n-------------------------- EXAMPLE 8 --------------------------\nPS C:\\\u003eGet-DbaAgBackupHistory -SqlInstance sql2014 -Database AdventureWorks2014 -LastFull\nReturns information about the most recent full backup for AdventureWorks2014 on sql2014.\n-------------------------- EXAMPLE 9 --------------------------\nPS C:\\\u003eGet-DbaAgBackupHistory -SqlInstance sql2014 -Database AdventureWorks2014 -Type Full\nReturns information about all Full backups for AdventureWorks2014 on sql2014.\n-------------------------- EXAMPLE 10 --------------------------\nPS C:\\\u003eGet-DbaRegServer -SqlInstance sql2016 | Get-DbaAgBackupHistory\nReturns database backup information for every database on every server listed in the Central Management Server on sql2016.\n-------------------------- EXAMPLE 11 --------------------------\nPS C:\\\u003eGet-DbaAgBackupHistory -SqlInstance SqlInstance2014a, sql2016 -Force\nReturns detailed backup history for all databases on SqlInstance2014a and sql2016.\n-------------------------- EXAMPLE 12 --------------------------\nPS C:\\\u003eGet-DbaAgBackupHistory -SqlInstance sql2016 -Database db1 -RecoveryFork 38e5e84a-3557-4643-a5d5-eed607bef9c6 -Last\nIf db1 has multiple recovery forks, specifying the RecoveryFork GUID will restrict the search to that fork.\n-------------------------- EXAMPLE 13 --------------------------\nPS C:\\\u003eGet-DbaAgBackupHistory -SqlInstance AgListener -Last\nWill query all replicas in the Availability Group with AgListener and return the backup chain (Full, Diff and Log) to restore to the most rececnt point in time",
+        "Params":  [
+                       [
+                           "SqlInstance",
+                           "The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.",
+                           "",
+                           true,
+                           "true (ByValue)",
+                           ""
+                       ],
+                       [
+                           "SqlCredential",
+                           "Credential object used to connect to the SQL Server instance as a different user. This can be a Windows or SQL Server account. Windows users are determined by the existence of a backslash, so if you \r\nare intending to use an alternative Windows connection instead of a SQL login, ensure it contains a backslash.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "AvailabilityGroup",
+                           "Specify the availability groups to process.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Database",
+                           "Specifies one or more database(s) to process. If unspecified, all databases will be processed.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "ExcludeDatabase",
+                           "Specifies one or more database(s) to exclude from processing.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "IncludeCopyOnly",
+                           "By default Get-DbaAgBackupHistory will ignore backups taken with the CopyOnly option. This switch will include them.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "Force",
+                           "If this switch is enabled, a large amount of information is returned, similar to what SQL Server itself returns.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "Since",
+                           "Specifies a DateTime object to use as the starting point for the search for backups.",
+                           "",
+                           false,
+                           "false",
+                           "(Get-Date \u002701/01/1970\u0027)"
+                       ],
+                       [
+                           "RecoveryFork",
+                           "Specifies the Recovery Fork you want backup history for",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Last",
+                           "If this switch is enabled, the most recent full chain of full, diff and log backup sets is returned.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "LastFull",
+                           "If this switch is enabled, the most recent full backup set is returned.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "LastDiff",
+                           "If this switch is enabled, the most recent differential backup set is returned.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "LastLog",
+                           "If this switch is enabled, the most recent log backup is returned.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "DeviceType",
+                           "Specifies a filter for backup sets based on DeviceType. Valid options are \u0027Disk\u0027,\u0027Permanent Disk Device\u0027, \u0027Tape\u0027, \u0027Permanent Tape Device\u0027,\u0027Pipe\u0027,\u0027Permanent Pipe Device\u0027,\u0027Virtual Device\u0027,\u0027URL\u0027, in \r\naddition to custom integers for your own DeviceType.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Raw",
+                           "If this switch is enabled, one object per backup file is returned. Otherwise, media sets (striped backups across multiple files) will be grouped into a single return object.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "LastLsn",
+                           "Specifies a minimum LSN to use in filtering backup history. Only backups with an LSN greater than this value will be returned, which helps speed the retrieval process.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "IncludeMirror",
+                           "By default mirrors of backups are not returned, this switch will cause them to be returned",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "Type",
+                           "Specifies one or more types of backups to return. Valid options are \u0027Full\u0027, \u0027Log\u0027, \u0027Differential\u0027, \u0027File\u0027, \u0027Differential File\u0027, \u0027Partial Full\u0027, and \u0027Partial Differential\u0027. Otherwise, all types of \r\nbackups will be returned unless one of the -Last* switches is enabled.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ]
+                   ],
+        "Syntax":  "Get-DbaAgBackupHistory -SqlInstance \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-AvailabilityGroup \u003cString[]\u003e] [-Database \u003cObject[]\u003e] [-ExcludeDatabase \u003cObject[]\u003e] [-IncludeCopyOnly] [-Since \u003cDateTime\u003e] [-RecoveryFork \u003cString\u003e] [-Last] [-LastFull] [-LastDiff] [-LastLog] [-DeviceType \u003cString[]\u003e] [-Raw] [-LastLsn \u003cBigInteger\u003e] [-IncludeMirror] [-Type \u003cString[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]\nGet-DbaAgBackupHistory -SqlInstance \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-AvailabilityGroup \u003cString[]\u003e] [-Database \u003cObject[]\u003e] [-ExcludeDatabase \u003cObject[]\u003e] [-IncludeCopyOnly] [-Force] [-Since \u003cDateTime\u003e] [-RecoveryFork \u003cString\u003e] [-Last] [-LastFull] [-LastDiff] [-LastLog] [-DeviceType \u003cString[]\u003e] [-Raw] [-LastLsn \u003cBigInteger\u003e] [-IncludeMirror] [-Type \u003cString[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Get-DbaAgDatabase",
@@ -11955,7 +12157,7 @@
                        ],
                        [
                            "Update",
-                           "Looks online for the most up to date reference, replacing the local one.",
+                           "Adding this switch will look online for the most up to date reference, optionally replacing the local one.",
                            "",
                            false,
                            "false",
@@ -12861,7 +13063,7 @@
     },
     {
         "Name":  "Get-DbaDbBackupHistory",
-        "Description":  "Returns backup history details for some or all databases on a SQL Server.\n\nYou can even get detailed information (including file path) for latest full, differential and log files.\n\nBackups taken with the CopyOnly option will NOT be returned, unless the IncludeCopyOnly switch is present or the target includes an Availability Group listener or a database in an Availability Group\n\nIf an Availability Group listener is specified as the target, then all nodes in the Group will be queried to return backup history\n\nIf a Sql Instance is specified and one of the target databases is in an Availability Group then the nodes hosting that AG will be queried as well, if the Availability Group has a listener.\n\nReference: http://www.sqlhub.com/2011/07/find-your-backup-history-in-sql-server.html",
+        "Description":  "Returns backup history details for some or all databases on a SQL Server.\n\nYou can even get detailed information (including file path) for latest full, differential and log files.\n\nBackups taken with the CopyOnly option will NOT be returned, unless the IncludeCopyOnly switch is present.\n\nReference: http://www.sqlhub.com/2011/07/find-your-backup-history-in-sql-server.html",
         "Tags":  [
                      "DisasterRecovery",
                      "Backup"
@@ -12872,7 +13074,7 @@
         "CommandName":  "Get-DbaDbBackupHistory",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Get-DbaDbBackupHistory",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaDbBackupHistory -SqlInstance SqlInstance2014a\nReturns server name, database, username, backup type, date for all database backups still in msdb history on SqlInstance2014a. This may return many rows; consider using filters that are included in \r\nother examples.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003e$cred = Get-Credential sqladmin\nGet-DbaDbBackupHistory -SqlInstance SqlInstance2014a -SqlCredential $cred\nDoes the same as above but connect to SqlInstance2014a as SQL user \"sqladmin\"\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaDbBackupHistory -SqlInstance SqlInstance2014a -Database db1, db2 -Since \u00272016-07-01 10:47:00\u0027\nReturns backup information only for databases db1 and db2 on SqlInstance2014a since July 1, 2016 at 10:47 AM.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaDbBackupHistory -SqlInstance sql2014 -Database AdventureWorks2014, pubs -Force | Format-Table\nReturns information only for AdventureWorks2014 and pubs and formats the results as a table.\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eGet-DbaDbBackupHistory -SqlInstance sql2014 -Database AdventureWorks2014 -Last\nReturns information about the most recent full, differential and log backups for AdventureWorks2014 on sql2014.\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eGet-DbaDbBackupHistory -SqlInstance sql2014 -Database AdventureWorks2014 -Last -DeviceType Disk\nReturns information about the most recent full, differential and log backups for AdventureWorks2014 on sql2014, but only for backups to disk.\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003eGet-DbaDbBackupHistory -SqlInstance sql2014 -Database AdventureWorks2014 -Last -DeviceType 148,107\nReturns information about the most recent full, differential and log backups for AdventureWorks2014 on sql2014, but only for backups with device_type 148 and 107.\n-------------------------- EXAMPLE 8 --------------------------\nPS C:\\\u003eGet-DbaDbBackupHistory -SqlInstance sql2014 -Database AdventureWorks2014 -LastFull\nReturns information about the most recent full backup for AdventureWorks2014 on sql2014.\n-------------------------- EXAMPLE 9 --------------------------\nPS C:\\\u003eGet-DbaDbBackupHistory -SqlInstance sql2014 -Database AdventureWorks2014 -Type Full\nReturns information about all Full backups for AdventureWorks2014 on sql2014.\n-------------------------- EXAMPLE 10 --------------------------\nPS C:\\\u003eGet-DbaRegServer -SqlInstance sql2016 | Get-DbaDbBackupHistory\nReturns database backup information for every database on every server listed in the Central Management Server on sql2016.\n-------------------------- EXAMPLE 11 --------------------------\nPS C:\\\u003eGet-DbaDbBackupHistory -SqlInstance SqlInstance2014a, sql2016 -Force\nReturns detailed backup history for all databases on SqlInstance2014a and sql2016.\n-------------------------- EXAMPLE 12 --------------------------\nPS C:\\\u003eGet-DbaDbBackupHistory -SqlInstance sql2016 -Database db1 -RecoveryFork 38e5e84a-3557-4643-a5d5-eed607bef9c6 -Last\nIf db1 has multiple recovery forks, specifying the RecoveryFork GUID will restrict the search to that fork.\n-------------------------- EXAMPLE 13 --------------------------\nPS C:\\\u003eGet-DbaDbBackupHistory -SqlInstance AgListener -Last\nWill query all replicas in the Availability Group with AgListener and return the backup chain (Full, Diff and Log) to restore to the most rececnt point in time",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaDbBackupHistory -SqlInstance SqlInstance2014a\nReturns server name, database, username, backup type, date for all database backups still in msdb history on SqlInstance2014a. This may return many rows; consider using filters that are included in \r\nother examples.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003e$cred = Get-Credential sqladmin\nGet-DbaDbBackupHistory -SqlInstance SqlInstance2014a -SqlCredential $cred\nDoes the same as above but connect to SqlInstance2014a as SQL user \"sqladmin\"\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaDbBackupHistory -SqlInstance SqlInstance2014a -Database db1, db2 -Since \u00272016-07-01 10:47:00\u0027\nReturns backup information only for databases db1 and db2 on SqlInstance2014a since July 1, 2016 at 10:47 AM.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaDbBackupHistory -SqlInstance sql2014 -Database AdventureWorks2014, pubs -Force | Format-Table\nReturns information only for AdventureWorks2014 and pubs and formats the results as a table.\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eGet-DbaDbBackupHistory -SqlInstance sql2014 -Database AdventureWorks2014 -Last\nReturns information about the most recent full, differential and log backups for AdventureWorks2014 on sql2014.\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eGet-DbaDbBackupHistory -SqlInstance sql2014 -Database AdventureWorks2014 -Last -DeviceType Disk\nReturns information about the most recent full, differential and log backups for AdventureWorks2014 on sql2014, but only for backups to disk.\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003eGet-DbaDbBackupHistory -SqlInstance sql2014 -Database AdventureWorks2014 -Last -DeviceType 148,107\nReturns information about the most recent full, differential and log backups for AdventureWorks2014 on sql2014, but only for backups with device_type 148 and 107.\n-------------------------- EXAMPLE 8 --------------------------\nPS C:\\\u003eGet-DbaDbBackupHistory -SqlInstance sql2014 -Database AdventureWorks2014 -LastFull\nReturns information about the most recent full backup for AdventureWorks2014 on sql2014.\n-------------------------- EXAMPLE 9 --------------------------\nPS C:\\\u003eGet-DbaDbBackupHistory -SqlInstance sql2014 -Database AdventureWorks2014 -Type Full\nReturns information about all Full backups for AdventureWorks2014 on sql2014.\n-------------------------- EXAMPLE 10 --------------------------\nPS C:\\\u003eGet-DbaRegServer -SqlInstance sql2016 | Get-DbaDbBackupHistory\nReturns database backup information for every database on every server listed in the Central Management Server on sql2016.\n-------------------------- EXAMPLE 11 --------------------------\nPS C:\\\u003eGet-DbaDbBackupHistory -SqlInstance SqlInstance2014a, sql2016 -Force\nReturns detailed backup history for all databases on SqlInstance2014a and sql2016.\n-------------------------- EXAMPLE 12 --------------------------\nPS C:\\\u003eGet-DbaDbBackupHistory -SqlInstance sql2016 -Database db1 -RecoveryFork 38e5e84a-3557-4643-a5d5-eed607bef9c6 -Last\nIf db1 has multiple recovery forks, specifying the RecoveryFork GUID will restrict the search to that fork.",
         "Params":  [
                        [
                            "SqlInstance",
@@ -12908,7 +13110,7 @@
                        ],
                        [
                            "IncludeCopyOnly",
-                           "By default Get-DbaDbBackupHistory will ignore backups taken with the CopyOnly option. This switch will include them",
+                           "By default Get-DbaDbBackupHistory will ignore backups taken with the CopyOnly option. This switch will include them.",
                            "",
                            false,
                            "false",
@@ -12932,7 +13134,7 @@
                        ],
                        [
                            "RecoveryFork",
-                           "Specifies the Recovery Fork you want backup history for",
+                           "Specifies the Recovery Fork you want backup history for.",
                            "",
                            false,
                            "false",
@@ -12996,7 +13198,7 @@
                        ],
                        [
                            "IncludeMirror",
-                           "By default mirrors of backups are not returned, this switch will cause them to be returned",
+                           "By default mirrors of backups are not returned, this switch will cause them to be returned.",
                            "",
                            false,
                            "false",
@@ -13012,7 +13214,7 @@
                        ],
                        [
                            "AgCheck",
-                           "Internal parameter used for getting history from AvailabilityGroups. If set, this will disable Availability Group support",
+                           "Deprecated. The functionality to also get the history from all replicas if SqlInstance is part on an availability group has been moved to Get-DbaAgBackupHistory.",
                            "",
                            false,
                            "false",
@@ -17898,7 +18100,7 @@
         "CommandName":  "Get-DbaLastBackup",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Get-DbaLastBackup",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaLastBackup -SqlInstance ServerA\\sql987\nReturns a custom object displaying Server, Database, RecoveryModel, LastFullBackup, LastDiffBackup, LastLogBackup, SinceFull, SinceDiff, SinceLog, Status, DatabaseCreated, DaysSinceDbCreated\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaLastBackup -SqlInstance ServerA\\sql987\nReturns a custom object with Server name, Database name, and the date the last time backups were performed.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaLastBackup -SqlInstance ServerA\\sql987 | Select-Object *\nReturns a custom object with Server name, Database name, and the date the last time backups were performed, and also recoverymodel and calculations on how long ago backups were taken and what the \r\nstatus is.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaLastBackup -SqlInstance ServerA\\sql987 | Select-Object * | Out-Gridview\nReturns a gridview displaying Server, Database, RecoveryModel, LastFullBackup, LastDiffBackup, LastLogBackup, SinceFull, SinceDiff, SinceLog, Status, DatabaseCreated, DaysSinceDbCreated.",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaLastBackup -SqlInstance ServerA\\sql987\nReturns a custom object displaying Server, Database, RecoveryModel, LastFullBackup, LastDiffBackup, LastLogBackup, SinceFull, SinceDiff, SinceLog, Status, DatabaseCreated, DaysSinceDbCreated\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaLastBackup -SqlInstance ServerA\\sql987\nReturns a custom object with Server name, Database name, and the date the last time backups were performed.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaLastBackup -SqlInstance ServerA\\sql987 | Select-Object *\nReturns a custom object with Server name, Database name, and the date the last time backups were performed, and also recoverymodel and calculations on how long ago backups were taken and what the \r\nstatus is.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaLastBackup -SqlInstance ServerA\\sql987 | Select-Object * | Out-Gridview\nReturns a gridview displaying Server, Database, RecoveryModel, LastFullBackup, LastDiffBackup, LastLogBackup, SinceFull, SinceDiff, SinceLog, Status, DatabaseCreated, DaysSinceDbCreated.\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003e$MyInstances | Get-DbaLastBackup | Where-Object -FilterScript { $_.LastFullBackup.Date -lt (Get-Date).AddDays(-3) } | Format-Table -Property SqlInstance, Database, LastFullBackup\nReturns all databases on the given instances without a full backup in the last three days.\r\nNote that the property LastFullBackup is a custom object, with the subproperty Date of type datetime and therefore suitable for comparison with dates.",
         "Params":  [
                        [
                            "SqlInstance",
@@ -24498,7 +24700,7 @@
         "CommandName":  "Install-DbaInstance",
         "Availability":  "Windows only",
         "Links":  "https://dbatools.io/Install-DbaInstance",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nC:\\PS\u003eInstall-DbaInstance -Version 2017 -Feature All\nInstall a default SQL Server instance and run the installation enabling all features with default settings. Automatically generates configuration.ini\n-------------------------- EXAMPLE 2 --------------------------\nC:\\PS\u003eInstall-DbaInstance -SqlInstance sql2017\\sqlexpress, server01 -Version 2017 -Feature Default\nInstall a named SQL Server instance named sqlexpress on sql2017, and a default instance on server01. Automatically generates configuration.ini.\r\nDefault features will be installed.\n-------------------------- EXAMPLE 3 --------------------------\nC:\\PS\u003eInstall-DbaInstance -Version 2008R2 -SqlInstance sql2017 -ConfigurationFile C:\\temp\\configuration.ini\nInstall a default named SQL Server instance on the remote machine, sql2017 and use the local configuration.ini\n-------------------------- EXAMPLE 4 --------------------------\nC:\\PS\u003eInstall-DbaInstance -Version 2017 -InstancePath G:\\SQLServer -UpdateSourcePath \u0027\\\\my\\updates\u0027\nRun the installation locally with default settings apart from the application volume, this will be redirected to G:\\SQLServer.\r\nThe installation procedure would search for SQL Server updates in \\\\my\\updates and slipstream them into the installation.\n-------------------------- EXAMPLE 5 --------------------------\nC:\\PS\u003e$svcAcc = Get-Credential MyDomain\\SvcSqlServer\nC:\\PS\u003e Install-DbaInstance -Version 2016 -InstancePath D:\\Root -DataPath E: -LogPath L: -PerformVolumeMaintenanceTasks -EngineCredential $svcAcc\nInstall SQL Server 2016 instance into D:\\Root drive, set default data folder as E: and default logs folder as L:.\r\nPerform volume maintenance tasks permission is granted. MyDomain\\SvcSqlServer is used as a service account for SqlServer.\n-------------------------- EXAMPLE 6 --------------------------\nC:\\PS\u003e$config = @{\n\u003e\u003e    AGTSVCSTARTUPTYPE     = \"Manual\"\r\n\u003e\u003e    SQLCOLLATION          = \"Latin1_General_CI_AS\"\r\n\u003e\u003e    BROWSERSVCSTARTUPTYPE = \"Manual\"\r\n\u003e\u003e    FILESTREAMLEVEL       = 1\r\n\u003e\u003e }\r\nC:\\PS\u003e Install-DbaInstance -SqlInstance localhost\\v2017:1337 -Version 2017 -Configuration $config\nRun the installation locally with default settings overriding the value of specific configuration items.\r\nInstance name will be defined as \u0027v2017\u0027; TCP port will be changed to 1337 after installation.",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eInstall-DbaInstance -Version 2017 -Feature All\nInstall a default SQL Server instance and run the installation enabling all features with default settings. Automatically generates configuration.ini\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eInstall-DbaInstance -SqlInstance sql2017\\sqlexpress, server01 -Version 2017 -Feature Default\nInstall a named SQL Server instance named sqlexpress on sql2017, and a default instance on server01. Automatically generates configuration.ini.\r\nDefault features will be installed.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eInstall-DbaInstance -Version 2008R2 -SqlInstance sql2017 -ConfigurationFile C:\\temp\\configuration.ini\nInstall a default named SQL Server instance on the remote machine, sql2017 and use the local configuration.ini\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eInstall-DbaInstance -Version 2017 -InstancePath G:\\SQLServer -UpdateSourcePath \u0027\\\\my\\updates\u0027\nRun the installation locally with default settings apart from the application volume, this will be redirected to G:\\SQLServer.\r\nThe installation procedure would search for SQL Server updates in \\\\my\\updates and slipstream them into the installation.\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003e$svcAcc = Get-Credential MyDomain\\SvcSqlServer\nPS C:\\\u003e Install-DbaInstance -Version 2016 -InstancePath D:\\Root -DataPath E: -LogPath L: -PerformVolumeMaintenanceTasks -EngineCredential $svcAcc\nInstall SQL Server 2016 instance into D:\\Root drive, set default data folder as E: and default logs folder as L:.\r\nPerform volume maintenance tasks permission is granted. MyDomain\\SvcSqlServer is used as a service account for SqlServer.\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003e$config = @{\n\u003e\u003e AGTSVCSTARTUPTYPE = \"Manual\"\r\n\u003e\u003e SQLCOLLATION = \"Latin1_General_CI_AS\"\r\n\u003e\u003e BROWSERSVCSTARTUPTYPE = \"Manual\"\r\n\u003e\u003e FILESTREAMLEVEL = 1\r\n\u003e\u003e }\r\nPS C:\\\u003e Install-DbaInstance -SqlInstance localhost\\v2017:1337 -Version 2017 -Configuration $config\nRun the installation locally with default settings overriding the value of specific configuration items.\r\nInstance name will be defined as \u0027v2017\u0027; TCP port will be changed to 1337 after installation.",
         "Params":  [
                        [
                            "SqlInstance",
@@ -26311,14 +26513,6 @@
                            ""
                        ],
                        [
-                           "Query",
-                           "If you would like to mask only a subset of a table, use the Query parameter, otherwise all data will be masked.",
-                           "",
-                           false,
-                           "false",
-                           ""
-                       ],
-                       [
                            "MaxValue",
                            "Force a max length of strings instead of relying on datatype maxes. Note if a string datatype has a lower MaxValue, that will be used instead.\nUseful for adhoc updates and testing, otherwise, the config file should be used.",
                            "",
@@ -26407,7 +26601,7 @@
                            ""
                        ]
                    ],
-        "Syntax":  "Invoke-DbaDbDataMasking [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cString[]\u003e] [-FilePath] \u003cObject\u003e [[-Locale] \u003cString\u003e] [[-CharacterString] \u003cString\u003e] [[-Table] \u003cString[]\u003e] [[-Column] \u003cString[]\u003e] [[-ExcludeTable] \u003cString[]\u003e] [[-ExcludeColumn] \u003cString[]\u003e] [[-Query] \u003cString\u003e] [[-MaxValue] \u003cInt32\u003e] [[-ModulusFactor] \u003cInt32\u003e] [-ExactLength] [[-ConnectionTimeout] \u003cInt32\u003e] [[-CommandTimeout] \u003cInt32\u003e] [[-BatchSize] \u003cInt32\u003e] [[-DictionaryFilePath] \u003cString[]\u003e] [[-DictionaryExportPath] \u003cString\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Invoke-DbaDbDataMasking [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cString[]\u003e] [-FilePath] \u003cObject\u003e [[-Locale] \u003cString\u003e] [[-CharacterString] \u003cString\u003e] [[-Table] \u003cString[]\u003e] [[-Column] \u003cString[]\u003e] [[-ExcludeTable] \u003cString[]\u003e] [[-ExcludeColumn] \u003cString[]\u003e] [[-MaxValue] \u003cInt32\u003e] [[-ModulusFactor] \u003cInt32\u003e] [-ExactLength] [[-ConnectionTimeout] \u003cInt32\u003e] [[-CommandTimeout] \u003cInt32\u003e] [[-BatchSize] \u003cInt32\u003e] [[-DictionaryFilePath] \u003cString[]\u003e] [[-DictionaryExportPath] \u003cString\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Invoke-DbaDbDbccCheckConstraint",
@@ -26688,7 +26882,7 @@
     },
     {
         "Name":  "Invoke-DbaDbDecryptObject",
-        "Description":  "When a procedure or a function is created with encryption and you lost the code you\u0027re in trouble.\nYou cannot alter the object or view the definition.\nWith this command you can search for the object and decrypt the it.\n\nThe command will output the results to the console.\nThere is an option to export all the results to a folder creating .sql files.\n\nMake sure the instance allowed dedicated administrator connections (DAC).\nThe binary versions of the objects can only be retrieved using a DAC connection.\nYou can check the DAC connection with:\n\u0027Get-DbaSpConfigure -SqlInstance [yourinstance] -ConfigName RemoteDacConnectionsEnabled\u0027\nIt should say 1 in the ConfiguredValue.\n\nTo change the configurations you can use the Set-DbaSpConfigure command:\n\u0027Set-DbaSpConfigure -SqlInstance [yourinstance] -ConfigName RemoteDacConnectionsEnabled -Value 1\u0027\nIn some cases you may need to reboot the instance.",
+        "Description":  "SQL Server provides an option to encrypt the code used in various types of objects.\nIf the original code is no longer available for an encrypted object it won\u0027t be possible to view the definition.\nWith this command the dedicated admin connection (DAC) can be used to search for the object and decrypt it.\n\nThe command will output the results to the console by default.\nThere is an option to export all the results to a folder creating .sql files.\n\nTo connect to a remote SQL instance the remote dedicated administrator connection option will need to be configured.\nThe binary versions of the objects can only be retrieved using a DAC connection.\nYou can check the remote DAC connection with:\n\u0027Get-DbaSpConfigure -SqlInstance [yourinstance] -ConfigName RemoteDacConnectionsEnabled\u0027\nIt should say 1 in the ConfiguredValue.\n\nThe local DAC connection is enabled by default.\n\nTo change the configurations you can use the Set-DbaSpConfigure command:\n\u0027Set-DbaSpConfigure -SqlInstance [yourinstance] -ConfigName RemoteDacConnectionsEnabled -Value 1\u0027\nIn some cases you may need to reboot the instance.",
         "Tags":  [
                      "Encryption",
                      "Decrypt",
@@ -26720,7 +26914,7 @@
                        ],
                        [
                            "Database",
-                           "Database to look through for the object.",
+                           "Database to search for the object.",
                            "",
                            true,
                            "false",
@@ -26736,7 +26930,7 @@
                        ],
                        [
                            "EncodingType",
-                           "The encoding that\u0027s used to decrypt and encrypt values.",
+                           "The encoding type used to decrypt and encrypt values.",
                            "",
                            false,
                            "false",
@@ -26744,7 +26938,7 @@
                        ],
                        [
                            "ExportDestination",
-                           "Used for exporting the results to.\r\nThe destiation will use the instance name, database name and object type i.e.: C:\\temp\\decrypt\\SQLDB1\\DB1\\StoredProcedure",
+                           "Location to output the decrypted object definitions.\r\nThe destination will use the instance name, database name and object type i.e.: C:\\temp\\decrypt\\SQLDB1\\DB1\\StoredProcedure",
                            "",
                            false,
                            "false",
@@ -27891,7 +28085,7 @@
     },
     {
         "Name":  "Invoke-DbaDbShrink",
-        "Description":  "Shrinks all files in a database. Databases should be shrunk only when completely necessary.\n\nMany awesome SQL people have written about why you should not shrink your data files. Paul Randal and Kalen Delaney wrote great posts about this topic:\n\nhttp://www.sqlskills.com/blogs/paul/why-you-should-not-shrink-your-data-files\nhttp://sqlmag.com/sql-server/shrinking-data-files\n\nHowever, there are some cases where a database will need to be shrunk. In the event that you must shrink your database:\n\n1. Ensure you have plenty of space for your T-Log to grow\n2. Understand that shrinks require a lot of CPU and disk resources\n3. Consider running DBCC INDEXDEFRAG or ALTER INDEX ... REORGANIZE after the shrink is complete.",
+        "Description":  "Shrinks all files in a database. Databases should be shrunk only when completely necessary.\n\nMany awesome SQL people have written about why you should not shrink your data files. Paul Randal and Kalen Delaney wrote great posts about this topic:\n\nhttp://www.sqlskills.com/blogs/paul/why-you-should-not-shrink-your-data-files\nhttps://www.itprotoday.com/sql-server/shrinking-data-files\n\nHowever, there are some cases where a database will need to be shrunk. In the event that you must shrink your database:\n\n1. Ensure you have plenty of space for your T-Log to grow\n2. Understand that shrinks require a lot of CPU and disk resources\n3. Consider running DBCC INDEXDEFRAG or ALTER INDEX ... REORGANIZE after the shrink is complete.",
         "Tags":  [
                      "Shrink",
                      "Database"
@@ -30560,7 +30754,7 @@
                        ],
                        [
                            "FrequencyType",
-                           "A value indicating when a job is to be executed.\nAllowed values: Once, Daily, Weekly, Monthly, MonthlyRelative, AgentStart or IdleComputer\nIf force is used the default will be \"Once\".",
+                           "A value indicating when a job is to be executed.\nAllowed values: \u0027Once\u0027, \u0027OneTime\u0027, \u0027Daily\u0027, \u0027Weekly\u0027, \u0027Monthly\u0027, \u0027MonthlyRelative\u0027, \u0027AgentStart\u0027, \u0027AutoStart\u0027, \u0027IdleComputer\u0027, \u0027OnIdle\u0027\nThe following synonyms provide flexibility to the allowed values for this function parameter:\r\nOnce=OneTime\r\nAgentStart=AutoStart\r\nIdleComputer=OnIdle\nIf force is used the default will be \"Once\".",
                            "",
                            false,
                            "false",
@@ -30576,7 +30770,7 @@
                        ],
                        [
                            "FrequencySubdayType",
-                           "Specifies the units for the subday FrequencyInterval.\nAllowed values: Time, Seconds, Minutes, or Hours",
+                           "Specifies the units for the subday FrequencyInterval.\nAllowed values: \u0027Once\u0027, \u0027Time\u0027, \u0027Seconds\u0027, \u0027Second\u0027, \u0027Minutes\u0027, \u0027Minute\u0027, \u0027Hours\u0027, \u0027Hour\u0027\nThe following synonyms provide flexibility to the allowed values for this function parameter:\r\nOnce=Time\r\nSeconds=Second\r\nMinutes=Minute\r\nHours=Hour",
                            "",
                            false,
                            "false",
@@ -30675,7 +30869,7 @@
     },
     {
         "Name":  "New-DbaAvailabilityGroup",
-        "Description":  "Automates the creation of availability groups.\n\n* Checks prerequisites\n* Creates Availability Group and adds primary replica\n* Grants cluster permissions if necessary\n* Adds secondary replica if supplied\n* Adds databases if supplied\n    * Performs backup/restore if seeding mode is manual\n    * Performs backup to NUL if seeding mode is automatic\n* Adds listener to primary if supplied\n* Joins secondaries to availability group\n* Grants endpoint connect permissions to service accounts\n* Grants CreateAnyDatabase permissions if seeding mode is automatic\n* Returns Availability Group object from primary\n\nNOTE: If a backup / restore is performed, the backups will be left intact on the network share.\n\nThanks for this, Thomas Stringer! https://blogs.technet.microsoft.com/heyscriptingguy/2013/04/29/set-up-an-alwayson-availability-group-with-powershell/",
+        "Description":  "Automates the creation of availability groups.\n\n* Checks prerequisites\n* Creates Availability Group and adds primary replica\n* Grants cluster permissions if necessary\n* Adds secondary replica if supplied\n* Adds databases if supplied\n    * Performs backup/restore if seeding mode is manual\n    * Performs backup to NUL if seeding mode is automatic\n* Adds listener to primary if supplied\n* Joins secondaries to availability group\n* Grants endpoint connect permissions to service accounts\n* Grants CreateAnyDatabase permissions if seeding mode is automatic\n* Returns Availability Group object from primary\n\nNOTES:\n- If a backup / restore is performed, the backups will be left intact on the network share.\n- If you\u0027re using SQL Server on Linux and a fully qualified domain name is required, please use the FQDN to create a proper Endpoint\n\nThanks for this, Thomas Stringer! https://blogs.technet.microsoft.com/heyscriptingguy/2013/04/29/set-up-an-alwayson-availability-group-with-powershell/",
         "Tags":  [
                      "AvailabilityGroup",
                      "HA",
@@ -30687,7 +30881,7 @@
         "CommandName":  "New-DbaAvailabilityGroup",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/New-DbaAvailabilityGroup",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eNew-DbaAvailabilityGroup -Primary sql2016a -Name SharePoint\nCreates a new availability group on sql2016a named SharePoint\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eNew-DbaAvailabilityGroup -Primary sql2016a -Name SharePoint -Secondary sql2016b\nCreates a new availability group on sql2016a named SharePoint with a secondary replica, sql2016b\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eNew-DbaAvailabilityGroup -Primary sql2016std -Name BAG1 -Basic -Confirm:$false\nCreates a basic availability group named BAG1 on sql2016std and does not confirm when setting up\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eNew-DbaAvailabilityGroup -Primary sql2016b -Name AG1 -ClusterType Wsfc -Dhcp -Database db1 -UseLastBackup\nCreates an availability group on sql2016b with the name ag1. Uses the last backups available to add the database db1 to the AG.\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eNew-DbaAvailabilityGroup -Primary sql2017 -Name SharePoint -ClusterType None -FailoverMode Manual\nCreates a new availability group on sql2017 named SharePoint with a cluster type of none and a failover mode of manual\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eNew-DbaAvailabilityGroup -Primary sql1 -Secondary sql2 -Name ag1 -Database pubs -ClusterType None -SeedingMode Automatic -FailoverMode Manual\nCreates a new availability group with a primary replica on sql1 and a secondary on sql2. Automatically adds the database pubs.\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003e$cred = Get-Credential sqladmin\nPS C:\\\u003e $params = @{\r\n\u003e\u003e Primary = \"sql1\"\r\n\u003e\u003e PrimarySqlCredential = $cred\r\n\u003e\u003e Secondary = \"sql2\"\r\n\u003e\u003e SecondarySqlCredential = $cred\r\n\u003e\u003e Name = \"test-ag\"\r\n\u003e\u003e Database = \"pubs\"\r\n\u003e\u003e ClusterType = \"None\"\r\n\u003e\u003e SeedingMode = \"Automatic\"\r\n\u003e\u003e FailoverMode = \"Manual\"\r\n\u003e\u003e Confirm = $false\r\n\u003e\u003e }\r\nPS C:\\\u003e New-DbaAvailabilityGroup @params\nThis exact command was used to create an availability group on docker!",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eNew-DbaAvailabilityGroup -Primary sql2016a -Name SharePoint\nCreates a new availability group on sql2016a named SharePoint\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eNew-DbaAvailabilityGroup -Primary sql2016a -Name SharePoint -Secondary sql2016b\nCreates a new availability group on sql2016a named SharePoint with a secondary replica, sql2016b\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eNew-DbaAvailabilityGroup -Primary sql2016std -Name BAG1 -Basic -Confirm:$false\nCreates a basic availability group named BAG1 on sql2016std and does not confirm when setting up\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eNew-DbaAvailabilityGroup -Primary sql2016b -Name AG1 -ClusterType Wsfc -Dhcp -Database db1 -UseLastBackup\nCreates an availability group on sql2016b with the name ag1. Uses the last backups available to add the database db1 to the AG.\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eNew-DbaAvailabilityGroup -Primary sql2017 -Name SharePoint -ClusterType None -FailoverMode Manual\nCreates a new availability group on sql2017 named SharePoint with a cluster type of none and a failover mode of manual\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eNew-DbaAvailabilityGroup -Primary sql1 -Secondary sql2 -Name ag1 -Database pubs -ClusterType None -SeedingMode Automatic -FailoverMode Manual\nCreates a new availability group with a primary replica on sql1 and a secondary on sql2. Automatically adds the database pubs.\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003eNew-DbaAvailabilityGroup -Primary sql1 -Secondary sql2 -Name ag1 -Database pubs -EndpointUrl \u0027TCP://sql1.specialnet.local:5022\u0027, \u0027TCP://sql2.specialnet.local:5022\u0027\nCreates a new availability group with a primary replica on sql1 and a secondary on sql2 with custom endpoint urls. Automatically adds the database pubs.\n-------------------------- EXAMPLE 8 --------------------------\nPS C:\\\u003e$cred = Get-Credential sqladmin\nPS C:\\\u003e $params = @{\r\n\u003e\u003e Primary = \"sql1\"\r\n\u003e\u003e PrimarySqlCredential = $cred\r\n\u003e\u003e Secondary = \"sql2\"\r\n\u003e\u003e SecondarySqlCredential = $cred\r\n\u003e\u003e Name = \"test-ag\"\r\n\u003e\u003e Database = \"pubs\"\r\n\u003e\u003e ClusterType = \"None\"\r\n\u003e\u003e SeedingMode = \"Automatic\"\r\n\u003e\u003e FailoverMode = \"Manual\"\r\n\u003e\u003e Confirm = $false\r\n\u003e\u003e }\r\nPS C:\\\u003e New-DbaAvailabilityGroup @params\nThis exact command was used to create an availability group on docker!",
         "Params":  [
                        [
                            "Primary",
@@ -30811,7 +31005,7 @@
                        ],
                        [
                            "UseLastBackup",
-                           "Use the last full backup of database.",
+                           "Use the last full and log backup of database. A log backup must be the last backup.",
                            "",
                            false,
                            "false",
@@ -30876,6 +31070,14 @@
                        [
                            "Endpoint",
                            "By default, this command will attempt to find a DatabaseMirror endpoint. If one does not exist, it will create it.\nIf an endpoint must be created, the name \"hadr_endpoint\" will be used. If an alternative is preferred, use Endpoint.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "EndpointUrl",
+                           "By default, the property Fqdn of Get-DbaEndpoint is used as EndpointUrl.\nUse EndpointUrl if different URLs are required due to special network configurations.\r\nEndpointUrl has to be an array of strings in format \u0027TCP://system-address:port\u0027, one entry for every instance.\r\nFirst entry for the primary instance, following entries for secondary instances in the order they show up in Secondary.\r\nSee details regarding the format at: https://docs.microsoft.com/en-us/sql/database-engine/availability-groups/windows/specify-endpoint-url-adding-or-modifying-availability-replica",
                            "",
                            false,
                            "false",
@@ -30954,7 +31156,7 @@
                            ""
                        ]
                    ],
-        "Syntax":  "New-DbaAvailabilityGroup [[-Primary] \u003cDbaInstanceParameter\u003e] [[-PrimarySqlCredential] \u003cPSCredential\u003e] [[-Secondary] \u003cDbaInstanceParameter[]\u003e] [[-SecondarySqlCredential] \u003cPSCredential\u003e] [-Name] \u003cString\u003e [-DtcSupport] [[-ClusterType] \u003cString\u003e] [[-AutomatedBackupPreference] \u003cString\u003e] [[-FailureConditionLevel] \u003cString\u003e] [[-HealthCheckTimeout] \u003cInt32\u003e] [-Basic] [-DatabaseHealthTrigger] [-Passthru] [[-Database] \u003cString[]\u003e] [[-SharedPath] \u003cString\u003e] [-UseLastBackup] [-Force] [[-AvailabilityMode] \u003cString\u003e] [[-FailoverMode] \u003cString\u003e] [[-BackupPriority] \u003cInt32\u003e] [[-ConnectionModeInPrimaryRole] \u003cString\u003e] \r\n[[-ConnectionModeInSecondaryRole] \u003cString\u003e] [[-SeedingMode] \u003cString\u003e] [[-Endpoint] \u003cString\u003e] [[-ReadonlyRoutingConnectionUrl] \u003cString\u003e] [[-Certificate] \u003cString\u003e] [[-IPAddress] \u003cIPAddress[]\u003e] [[-SubnetMask] \u003cIPAddress\u003e] [[-Port] \u003cInt32\u003e] [-Dhcp] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Syntax":  "New-DbaAvailabilityGroup [[-Primary] \u003cDbaInstanceParameter\u003e] [[-PrimarySqlCredential] \u003cPSCredential\u003e] [[-Secondary] \u003cDbaInstanceParameter[]\u003e] [[-SecondarySqlCredential] \u003cPSCredential\u003e] [-Name] \u003cString\u003e [-DtcSupport] [[-ClusterType] \u003cString\u003e] [[-AutomatedBackupPreference] \u003cString\u003e] [[-FailureConditionLevel] \u003cString\u003e] [[-HealthCheckTimeout] \u003cInt32\u003e] [-Basic] [-DatabaseHealthTrigger] [-Passthru] [[-Database] \u003cString[]\u003e] [[-SharedPath] \u003cString\u003e] [-UseLastBackup] [-Force] [[-AvailabilityMode] \u003cString\u003e] [[-FailoverMode] \u003cString\u003e] [[-BackupPriority] \u003cInt32\u003e] [[-ConnectionModeInPrimaryRole] \u003cString\u003e] \r\n[[-ConnectionModeInSecondaryRole] \u003cString\u003e] [[-SeedingMode] \u003cString\u003e] [[-Endpoint] \u003cString\u003e] [[-EndpointUrl] \u003cString[]\u003e] [[-ReadonlyRoutingConnectionUrl] \u003cString\u003e] [[-Certificate] \u003cString\u003e] [[-IPAddress] \u003cIPAddress[]\u003e] [[-SubnetMask] \u003cIPAddress\u003e] [[-Port] \u003cInt32\u003e] [-Dhcp] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "New-DbaAzAccessToken",
@@ -31257,7 +31459,7 @@
     },
     {
         "Name":  "New-DbaComputerCertificate",
-        "Description":  "Creates a new computer certificate - self-signed or signed by an Active Directory CA, using the Web Server certificate.\n\nBy default, a key with a length of 1024 and a friendly name of the machines FQDN is generated.\n\nThis command was originally intended to help automate the process so that SSL certificates can be available for enforcing encryption on connections.\n\nIt makes a lot of assumptions - namely, that your account is allowed to auto-enroll and that you have permission to do everything it needs to do ;)\n\nReferences:\nhttp://sqlmag.com/sql-server/7-steps-ssl-encryption\nhttps://azurebi.jppp.org/2016/01/23/using-lets-encrypt-certificates-for-secure-sql-server-connections/\nhttps://blogs.msdn.microsoft.com/sqlserverfaq/2016/09/26/creating-and-registering-ssl-certificates/\n\nThe certificate is generated using AD\u0027s webserver SSL template on the client machine and pushed to the remote machine.",
+        "Description":  "Creates a new computer certificate - self-signed or signed by an Active Directory CA, using the Web Server certificate.\n\nBy default, a key with a length of 1024 and a friendly name of the machines FQDN is generated.\n\nThis command was originally intended to help automate the process so that SSL certificates can be available for enforcing encryption on connections.\n\nIt makes a lot of assumptions - namely, that your account is allowed to auto-enroll and that you have permission to do everything it needs to do ;)\n\nReferences:\nhttps://www.itprotoday.com/sql-server/7-steps-ssl-encryption\nhttps://azurebi.jppp.org/2016/01/23/using-lets-encrypt-certificates-for-secure-sql-server-connections/\nhttps://blogs.msdn.microsoft.com/sqlserverfaq/2016/09/26/creating-and-registering-ssl-certificates/\n\nThe certificate is generated using AD\u0027s webserver SSL template on the client machine and pushed to the remote machine.",
         "Tags":  "Certificate",
         "Synopsis":  "Creates a new computer certificate useful for Forcing Encryption",
         "Alias":  "",
@@ -34196,7 +34398,7 @@
         "CommandName":  "New-DbaEndpoint",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/New-DbaEndpoint",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eNew-DbaEndpoint -SqlInstance localhost\\sql2017 -Type DatabaseMirroring\nCreates a database mirroring endpoint on localhost\\sql2017 which using the default port\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eNew-DbaEndpoint -SqlInstance localhost\\sql2017 -Type DatabaseMirroring -Port 5055\nCreates a database mirroring endpoint on localhost\\sql2017 which uses alternative port 5055",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eNew-DbaEndpoint -SqlInstance localhost\\sql2017 -Type DatabaseMirroring\nCreates a database mirroring endpoint on localhost\\sql2017 which using the default port\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eNew-DbaEndpoint -SqlInstance localhost\\sql2017 -Type DatabaseMirroring -Port 5055\nCreates a database mirroring endpoint on localhost\\sql2017 which uses alternative port 5055\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eNew-DbaEndpoint -SqlInstance localhost\\sql2017 -Type DatabaseMirroring -IPAddress 192.168.0.15 -Port 5055\nCreates a database mirroring endpoint on localhost\\sql2017 which binds only on ipaddress 192.168.0.15 and port 5055",
         "Params":  [
                        [
                            "SqlInstance",
@@ -34217,7 +34419,7 @@
                        [
                            "Name",
                            "The name of the endpoint. If a name is not specified, one will be auto-generated.",
-                           "",
+                           "Endpoint",
                            false,
                            "false",
                            ""
@@ -34271,6 +34473,14 @@
                            ""
                        ],
                        [
+                           "IPAddress",
+                           "Specifies the IP address that the endpoint will listen on. The default is ALL. This means that the listener will accept a connection on any valid IP address.\nCurrently only IPv4 is supported by this command.",
+                           "",
+                           false,
+                           "false",
+                           "0.0.0.0"
+                       ],
+                       [
                            "Port",
                            "Port for TCP. If one is not provided, it will be auto-generated.",
                            "",
@@ -34280,7 +34490,7 @@
                        ],
                        [
                            "SslPort",
-                           "Port for SSL",
+                           "Port for SSL.",
                            "",
                            false,
                            "false",
@@ -34319,7 +34529,7 @@
                            ""
                        ]
                    ],
-        "Syntax":  "New-DbaEndpoint [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Name] \u003cString\u003e] [[-Type] \u003cString\u003e] [[-Protocol] \u003cString\u003e] [[-Role] \u003cString\u003e] [[-EndpointEncryption] \u003cString\u003e] [[-EncryptionAlgorithm] \u003cString\u003e] [[-Certificate] \u003cString\u003e] [[-Port] \u003cInt32\u003e] [[-SslPort] \u003cInt32\u003e] [[-Owner] \u003cString\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Syntax":  "New-DbaEndpoint [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Name] \u003cString\u003e] [[-Type] \u003cString\u003e] [[-Protocol] \u003cString\u003e] [[-Role] \u003cString\u003e] [[-EndpointEncryption] \u003cString\u003e] [[-EncryptionAlgorithm] \u003cString\u003e] [[-Certificate] \u003cString\u003e] [[-IPAddress] \u003cIPAddress\u003e] [[-Port] \u003cInt32\u003e] [[-SslPort] \u003cInt32\u003e] [[-Owner] \u003cString\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "New-DbaLogin",
@@ -36460,13 +36670,13 @@
     },
     {
         "Name":  "Remove-DbaAgentSchedule",
-        "Description":  "Remove-DbaAgentJobSchedule removes a job in the SQL Server Agent.",
+        "Description":  "Remove-DbaAgentSchedule removes a job in the SQL Server Agent.",
         "Tags":  [
                      "Agent",
                      "Job",
                      "Schedule"
                  ],
-        "Synopsis":  "Remove-DbaAgentJobSchedule removes a job schedule.",
+        "Synopsis":  "Remove-DbaAgentSchedule removes a job schedule.",
         "Alias":  "",
         "Author":  "Sander Stad (@sqlstad), sqlstad.nl",
         "CommandName":  "Remove-DbaAgentSchedule",
@@ -38368,7 +38578,7 @@
                            ""
                        ],
                        [
-                           "EndPoint",
+                           "Endpoint",
                            "Only remove specific endpoints.",
                            "",
                            false,
@@ -38416,7 +38626,7 @@
                            ""
                        ]
                    ],
-        "Syntax":  "Remove-DbaEndpoint [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-EndPoint] \u003cString[]\u003e] [-AllEndpoints] [[-InputObject] \u003cEndpoint[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Remove-DbaEndpoint [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Endpoint] \u003cString[]\u003e] [-AllEndpoints] [[-InputObject] \u003cEndpoint[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Remove-DbaLogin",
@@ -41676,7 +41886,7 @@
     },
     {
         "Name":  "Set-DbaAgentJobOwner",
-        "Description":  "This function alters SQL Agent Job ownership to match a specified login if their current owner does not match the target login. By default, the target login will be \u0027sa\u0027,\nbut the the user may specify a different login for ownership. This be applied to all jobs or only to a select collection of jobs.\n\nBest practice reference: http://sqlmag.com/blog/sql-server-tip-assign-ownership-jobs-sysadmin-account\n\nIf the \u0027sa\u0027 account was renamed, the new name will be used.",
+        "Description":  "This function alters SQL Agent Job ownership to match a specified login if their current owner does not match the target login. By default, the target login will be \u0027sa\u0027,\nbut the the user may specify a different login for ownership. This be applied to all jobs or only to a select collection of jobs.\n\nBest practice reference: https://www.itprotoday.com/sql-server-tip-assign-ownership-jobs-sysadmin-account\n\nIf the \u0027sa\u0027 account was renamed, the new name will be used.",
         "Tags":  [
                      "Agent",
                      "Job"
@@ -43937,7 +44147,7 @@
                            ""
                        ],
                        [
-                           "EndPoint",
+                           "Endpoint",
                            "Only set specific endpoint properties.",
                            "",
                            false,
@@ -44001,7 +44211,7 @@
                            ""
                        ]
                    ],
-        "Syntax":  "Set-DbaEndpoint [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-EndPoint] \u003cString[]\u003e] [[-Owner] \u003cString\u003e] [[-Type] \u003cString\u003e] [-AllEndpoints] [[-InputObject] \u003cEndpoint[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Set-DbaEndpoint [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Endpoint] \u003cString[]\u003e] [[-Owner] \u003cString\u003e] [[-Type] \u003cString\u003e] [-AllEndpoints] [[-InputObject] \u003cEndpoint[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Set-DbaErrorLogConfig",
@@ -44484,7 +44694,7 @@
     },
     {
         "Name":  "Set-DbaNetworkCertificate",
-        "Description":  "Sets the network certificate for SQL Server instance. This setting is found in Configuration Manager.\n\nThis command also grants read permissions for the service account on the certificate\u0027s private key.\n\nReferences:\nhttp://sqlmag.com/sql-server/7-steps-ssl-encryption\nhttps://azurebi.jppp.org/2016/01/23/using-lets-encrypt-certificates-for-secure-sql-server-connections/\nhttps://blogs.msdn.microsoft.com/sqlserverfaq/2016/09/26/creating-and-registering-ssl-certificates/",
+        "Description":  "Sets the network certificate for SQL Server instance. This setting is found in Configuration Manager.\n\nThis command also grants read permissions for the service account on the certificate\u0027s private key.\n\nReferences:\nhttps://www.itprotoday.com/sql-server/7-steps-ssl-encryption\nhttps://azurebi.jppp.org/2016/01/23/using-lets-encrypt-certificates-for-secure-sql-server-connections/\nhttps://blogs.msdn.microsoft.com/sqlserverfaq/2016/09/26/creating-and-registering-ssl-certificates/",
         "Tags":  "Certificate",
         "Synopsis":  "Sets the network certificate for SQL Server instance",
         "Alias":  "",
@@ -45062,7 +45272,7 @@
     },
     {
         "Name":  "Set-DbaTcpPort",
-        "Description":  "This function changes the TCP port used by the specified SQL Server.",
+        "Description":  "This function changes the TCP port used by the specified SQL Server.\n\nBe aware that the Database Engine begins listening on a new port only when restarted. So you have to restart the Database Engine that the new settings become effective.",
         "Tags":  [
                      "Service",
                      "Port",
@@ -45087,7 +45297,7 @@
                        ],
                        [
                            "Credential",
-                           "Credential object used to connect to the Windows server itself as a different user (like SQL Configuration Manager)",
+                           "Credential object used to connect to the Windows server itself as a different user (like SQL Configuration Manager).",
                            "",
                            false,
                            "false",
@@ -45103,7 +45313,7 @@
                        ],
                        [
                            "IpAddress",
-                           "Which IpAddress should the portchange , if omitted allip (0.0.0.0) will be changed with the new port number.",
+                           "Ip address to which the change should apply, if omitted allip (0.0.0.0) will be changed with the new port number.",
                            "",
                            false,
                            "false",
@@ -45605,7 +45815,7 @@
         "CommandName":  "Start-DbaAgentJob",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Start-DbaAgentJob",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eStart-DbaAgentJob -SqlInstance localhost\nStarts all running SQL Agent Jobs on the local SQL Server instance\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaAgentJob -SqlInstance sql2016 -Job cdc.DBWithCDC_capture | Start-DbaAgentJob\nStarts the cdc.DBWithCDC_capture SQL Agent Job on sql2016\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eStart-DbaAgentJob -SqlInstance sql2016 -Job cdc.DBWithCDC_capture\nStarts the cdc.DBWithCDC_capture SQL Agent Job on sql2016\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003e$servers | Find-DbaAgentJob -IsFailed | Start-DbaAgentJob\nRestarts all failed jobs on all servers in the $servers collection\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eStart-DbaAgentJob -SqlInstance sql2016 -AllJobs\nStart all the jobs\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eStart-DbaAgentJob -SqlInstance sql2016 -Job @(\u0027Job1\u0027, \u0027Job2\u0027, \u0027Job3\u0027) -Wait\nThis is a serialized approach to submitting jobs and waiting for each job to continue the next.\r\nStarts Job1, waits for completion of Job1\r\nStarts Job2, waits for completion of Job2\r\nStarts Job3, Waits for completion of Job3\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003eStart-DbaAgentJob -SqlInstance sql2016 -Job @(\u0027Job1\u0027, \u0027Job2\u0027, \u0027Job3\u0027) -Wait -Parallel\nThis is a parallel approach to submitting all jobs and waiting for them all to complete.\r\nStarts Job1, starts Job2, starts Job3 and waits for completion of Job1, Job2, and Job3.",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eStart-DbaAgentJob -SqlInstance localhost\nStarts all running SQL Agent Jobs on the local SQL Server instance\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaAgentJob -SqlInstance sql2016 -Job cdc.DBWithCDC_capture | Start-DbaAgentJob\nStarts the cdc.DBWithCDC_capture SQL Agent Job on sql2016\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eStart-DbaAgentJob -SqlInstance sql2016 -Job cdc.DBWithCDC_capture\nStarts the cdc.DBWithCDC_capture SQL Agent Job on sql2016\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003e$servers | Find-DbaAgentJob -IsFailed | Start-DbaAgentJob\nRestarts all failed jobs on all servers in the $servers collection\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eStart-DbaAgentJob -SqlInstance sql2016 -AllJobs\nStart all the jobs\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eStart-DbaAgentJob -SqlInstance sql2016 -Job @(\u0027Job1\u0027, \u0027Job2\u0027, \u0027Job3\u0027) -Wait\nThis is a serialized approach to submitting jobs and waiting for each job to continue the next.\r\nStarts Job1, waits for completion of Job1\r\nStarts Job2, waits for completion of Job2\r\nStarts Job3, Waits for completion of Job3\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003eStart-DbaAgentJob -SqlInstance sql2016 -Job @(\u0027Job1\u0027, \u0027Job2\u0027, \u0027Job3\u0027) -Wait -Parallel\nThis is a parallel approach to submitting all jobs and waiting for them all to complete.\r\nStarts Job1, starts Job2, starts Job3 and waits for completion of Job1, Job2, and Job3.\n-------------------------- EXAMPLE 8 --------------------------\nPS C:\\\u003eStart-DbaAgentJob -SqlInstance sql2016 -Job JobWith5Steps -StepName Step4\nStarts the JobWith5Steps SQL Agent Job at step Step4.",
         "Params":  [
                        [
                            "SqlInstance",
@@ -45626,6 +45836,14 @@
                        [
                            "Job",
                            "The job(s) to process - this list is auto-populated from the server. If unspecified, all jobs will be processed.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "StepName",
+                           "The step name to start the job at, will default to the step configured by the job.",
                            "",
                            false,
                            "false",
@@ -45712,7 +45930,7 @@
                            ""
                        ]
                    ],
-        "Syntax":  "Start-DbaAgentJob [-SqlCredential \u003cPSCredential\u003e] [-Job \u003cString[]\u003e] [-ExcludeJob \u003cString[]\u003e] [-AllJobs] [-Wait] [-Parallel] [-WaitPeriod \u003cInt32\u003e] [-SleepPeriod \u003cInt32\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\nStart-DbaAgentJob -SqlInstance \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-Job \u003cString[]\u003e] [-ExcludeJob \u003cString[]\u003e] [-AllJobs] [-Wait] [-Parallel] [-WaitPeriod \u003cInt32\u003e] [-SleepPeriod \u003cInt32\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\nStart-DbaAgentJob [-SqlCredential \u003cPSCredential\u003e] [-Job \u003cString[]\u003e] [-ExcludeJob \u003cString[]\u003e] -InputObject \u003cJob[]\u003e [-AllJobs] [-Wait] [-Parallel] [-WaitPeriod \u003cInt32\u003e] [-SleepPeriod \u003cInt32\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Start-DbaAgentJob [-SqlCredential \u003cPSCredential\u003e] [-Job \u003cString[]\u003e] [-StepName \u003cString\u003e] [-ExcludeJob \u003cString[]\u003e] [-AllJobs] [-Wait] [-Parallel] [-WaitPeriod \u003cInt32\u003e] [-SleepPeriod \u003cInt32\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\nStart-DbaAgentJob -SqlInstance \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-Job \u003cString[]\u003e] [-StepName \u003cString\u003e] [-ExcludeJob \u003cString[]\u003e] [-AllJobs] [-Wait] [-Parallel] [-WaitPeriod \u003cInt32\u003e] [-SleepPeriod \u003cInt32\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\nStart-DbaAgentJob [-SqlCredential \u003cPSCredential\u003e] [-Job \u003cString[]\u003e] [-StepName \u003cString\u003e] [-ExcludeJob \u003cString[]\u003e] -InputObject \u003cJob[]\u003e [-AllJobs] [-Wait] [-Parallel] [-WaitPeriod \u003cInt32\u003e] [-SleepPeriod \u003cInt32\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Start-DbaEndpoint",
@@ -45743,7 +45961,7 @@
                            ""
                        ],
                        [
-                           "EndPoint",
+                           "Endpoint",
                            "Only start specific endpoints.",
                            "",
                            false,
@@ -45791,7 +46009,7 @@
                            ""
                        ]
                    ],
-        "Syntax":  "Start-DbaEndpoint [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-EndPoint] \u003cString[]\u003e] [-AllEndpoints] [[-InputObject] \u003cEndpoint[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Start-DbaEndpoint [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Endpoint] \u003cString[]\u003e] [-AllEndpoints] [[-InputObject] \u003cEndpoint[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Start-DbaMigration",
@@ -46579,7 +46797,7 @@
                            ""
                        ],
                        [
-                           "EndPoint",
+                           "Endpoint",
                            "Only stop specific endpoints.",
                            "",
                            false,
@@ -46627,7 +46845,7 @@
                            ""
                        ]
                    ],
-        "Syntax":  "Stop-DbaEndpoint [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-EndPoint] \u003cString[]\u003e] [-AllEndpoints] [[-InputObject] \u003cEndpoint[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Stop-DbaEndpoint [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Endpoint] \u003cString[]\u003e] [-AllEndpoints] [[-InputObject] \u003cEndpoint[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Stop-DbaPfDataCollectorSet",
@@ -47423,7 +47641,7 @@
     },
     {
         "Name":  "Test-DbaAgentJobOwner",
-        "Description":  "This function checks all SQL Agent Jobs on an instance against a SQL login to validate if that login owns those SQL Agent Jobs or not. By default, the function checks against \u0027sa\u0027 for ownership, but the user can pass a specific login if they use something else.\n\nOnly SQL Agent Jobs that do not match this ownership will be displayed.\nBest practice reference: http://sqlmag.com/blog/sql-server-tip-assign-ownership-jobs-sysadmin-account",
+        "Description":  "This function checks all SQL Agent Jobs on an instance against a SQL login to validate if that login owns those SQL Agent Jobs or not. By default, the function checks against \u0027sa\u0027 for ownership, but the user can pass a specific login if they use something else.\n\nOnly SQL Agent Jobs that do not match this ownership will be displayed.\nBest practice reference: https://www.itprotoday.com/sql-server-tip-assign-ownership-jobs-sysadmin-account",
         "Tags":  [
                      "Agent",
                      "Job",
@@ -49886,6 +50104,29 @@
                        ]
                    ],
         "Syntax":  "Unregister-DbatoolsConfig [-ConfigurationItem \u003cConfig[]\u003e] [-FullName \u003cString[]\u003e] [-Scope {UserDefault | UserMandatory | SystemDefault | SystemMandatory | FileUserLocal | FileUserShared | FileSystem}] [\u003cCommonParameters\u003e]\nUnregister-DbatoolsConfig -Module \u003cString\u003e [-Name \u003cString\u003e] [-Scope {UserDefault | UserMandatory | SystemDefault | SystemMandatory | FileUserLocal | FileUserShared | FileSystem}] [\u003cCommonParameters\u003e]"
+    },
+    {
+        "Name":  "Update-DbaBuildReference",
+        "Description":  "This function updates the local json files containing all the infos about SQL builds.\nIt uses the setting \u0027assets.sqlbuildreference\u0027 to fetch it.\nTo see your current setting, use Get-DbatoolsConfigValue -Name \u0027assets.sqlbuildreference\u0027",
+        "Tags":  "SqlBuild",
+        "Synopsis":  "Updates the local reference looking online for the most up to date.",
+        "Alias":  "",
+        "Author":  "Simone Bizzotto (@niphold) | Friedrich Weinmann (@FredWeinmann)",
+        "CommandName":  "Update-DbaBuildReference",
+        "Availability":  "Windows, Linux, macOS",
+        "Links":  "https://dbatools.io/Update-DbaBuildReference",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eUpdate-DbaBuildReference\nLooks online if there is a newer version of the build reference",
+        "Params":  [
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ]
+                   ],
+        "Syntax":  "Update-DbaBuildReference [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Update-DbaInstance",

@@ -29,7 +29,12 @@ function New-DbaAgentSchedule {
     .PARAMETER FrequencyType
         A value indicating when a job is to be executed.
 
-        Allowed values: Once, Daily, Weekly, Monthly, MonthlyRelative, AgentStart or IdleComputer
+        Allowed values: 'Once', 'OneTime', 'Daily', 'Weekly', 'Monthly', 'MonthlyRelative', 'AgentStart', 'AutoStart', 'IdleComputer', 'OnIdle'
+
+        The following synonyms provide flexibility to the allowed values for this function parameter:
+        Once=OneTime
+        AgentStart=AutoStart
+        IdleComputer=OnIdle
 
         If force is used the default will be "Once".
 
@@ -46,7 +51,13 @@ function New-DbaAgentSchedule {
     .PARAMETER FrequencySubdayType
         Specifies the units for the subday FrequencyInterval.
 
-        Allowed values: Time, Seconds, Minutes, or Hours
+        Allowed values: 'Once', 'Time', 'Seconds', 'Second', 'Minutes', 'Minute', 'Hours', 'Hour'
+
+        The following synonyms provide flexibility to the allowed values for this function parameter:
+        Once=Time
+        Seconds=Second
+        Minutes=Minute
+        Hours=Hour
 
     .PARAMETER FrequencySubdayInterval
         The number of subday type periods to occur between each execution of a job.
@@ -132,11 +143,11 @@ function New-DbaAgentSchedule {
         [object[]]$Job,
         [object]$Schedule,
         [switch]$Disabled,
-        [ValidateSet('Once', 'Daily', 'Weekly', 'Monthly', 'MonthlyRelative', 'AgentStart', 'IdleComputer')]
+        [ValidateSet('Once', 'OneTime', 'Daily', 'Weekly', 'Monthly', 'MonthlyRelative', 'AgentStart', 'AutoStart', 'IdleComputer', 'OnIdle')]
         [object]$FrequencyType,
         [ValidateSet('EveryDay', 'Weekdays', 'Weekend', 'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31)]
         [object[]]$FrequencyInterval,
-        [ValidateSet('Time', 'Seconds', 'Minutes', 'Hours')]
+        [ValidateSet('Once', 'Time', 'Seconds', 'Second', 'Minutes', 'Minute', 'Hours', 'Hour')]
         [object]$FrequencySubdayType,
         [int]$FrequencySubdayInterval,
         [ValidateSet('Unused', 'First', 'Second', 'Third', 'Fourth', 'Last')]
@@ -166,12 +177,15 @@ function New-DbaAgentSchedule {
             [int]$FrequencyType =
             switch ($FrequencyType) {
                 "Once" { 1 }
+                "OneTime" { 1 }
                 "Daily" { 4 }
                 "Weekly" { 8 }
                 "Monthly" { 16 }
                 "MonthlyRelative" { 32 }
                 "AgentStart" { 64 }
+                "AutoStart" { 64 }
                 "IdleComputer" { 128 }
+                "OnIdle" { 128 }
                 default { 1 }
             }
         }
@@ -180,10 +194,14 @@ function New-DbaAgentSchedule {
         if (!$FrequencySubdayType -or $FrequencySubdayType) {
             [int]$FrequencySubdayType =
             switch ($FrequencySubdayType) {
+                "Once" { 1 }
                 "Time" { 1 }
                 "Seconds" { 2 }
+                "Second" { 2 }
                 "Minutes" { 4 }
+                "Minute" { 4 }
                 "Hours" { 8 }
+                "Hour" { 8 }
                 default { 1 }
             }
         }
@@ -280,7 +298,6 @@ function New-DbaAgentSchedule {
 
             # Loop through the array
             foreach ($item in $FrequencyInterval) {
-                $FrequencyInterval
                 switch ($item) {
                     { [int]$_ -ge 1 -and [int]$_ -le 31 } { $interval = [int]$item }
                 }
