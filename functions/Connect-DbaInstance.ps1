@@ -39,7 +39,7 @@ function Connect-DbaInstance {
         A string to separate groups of SQL statements being executed. By default, this is "GO".
 
     .PARAMETER ClientName
-        By default, this command sets the client's ApplicationName property to "dbatools PowerShell module - dbatools.io - custom connection" if you're doing anything that requires profiling, you can look for this client name. Using -ClientName allows you to set your own custom client application name.
+        By default, this command sets the client's ApplicationName property to "dbatools PowerShell module - dbatools.io". If you're doing anything that requires profiling, you can look for this client name. Using -ClientName allows you to set your own custom client application name.
 
     .PARAMETER ConnectTimeout
         The length of time (in seconds) to wait for a connection to the server before terminating the attempt and generating an error.
