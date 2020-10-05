@@ -32,3 +32,5 @@ _NCrunch_*
 *.crunch.xml
 *.ncrunchsolution*
 nCrunchTemp_*
+
+debug.log
