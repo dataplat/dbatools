@@ -1,5 +1,64 @@
 function Convert-DbaMaskingValue {
 
+    <#
+    .SYNOPSIS
+        Convert a value to a TSQL format that be used in queries
+
+    .DESCRIPTION
+        The command will take a value and with the data type return it in a format
+        that can be used in queries.
+
+        For instance, a value "this is text" with data type 'varchar' will be returned as
+        'this is text' with the single quotes
+
+        It returns an object with the following properties
+        - OriginalValue
+        - NewValue
+        -DataType
+        -ErrorMessage
+
+    .PARAMETER Value
+        The value to be converted
+
+    .PARAMETER DataType
+        Data type the value needs to be converted to
+
+    .PARAMETER Nullable
+        It's possible to send a null value. It will then be converted to 'NULL' for SQL Server
+
+    .PARAMETER WhatIf
+        If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
+
+    .PARAMETER Confirm
+        If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
+
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+
+    .NOTES
+        Tags: Masking, DataMasking
+        Author: Sander Stad (@sqlstad, sqlstad.nl)
+
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
+
+    .LINK
+        https://dbatools.io/Invoke-DbaDbDataMasking
+
+    .EXAMPLE
+        Convert-DbaMaskingValue -Value "please convert this" -DataType varchar
+
+        Will convert ""please convert this" to "'please convert this'"
+
+    .EXAMPLE
+        Convert-DbaMaskingValue -Value $null -DataType varchar -Nullable
+
+        Will convert null to "NULL"
+    #>
+
     param(
         [Parameter(ValueFromPipeline)]
         [string[]]$Value,
