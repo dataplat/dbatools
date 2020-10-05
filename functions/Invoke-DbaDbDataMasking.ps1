@@ -302,7 +302,8 @@ function Invoke-DbaDbDataMasking {
 
                 $db = $server.Databases[$($dbName)]
 
-                $stepcounter = $nullmod = 0
+                #$stepcounter = $nullmod = 0
+                $nullmod = 0
 
                 #region for each table
                 foreach ($tableobject in $tables.Tables) {
@@ -445,7 +446,7 @@ function Invoke-DbaDbDataMasking {
                             $insertFailed = $false
                             $insertValues = @()
 
-                            [array]$paramArray = @()
+                            #[array]$paramArray = @()
 
                             foreach ($indexColumn in $indexToTable.Columns) {
                                 $columnMaskInfo = $tableobject.Columns | Where-Object { $_.Name -eq $indexColumn }
@@ -707,7 +708,8 @@ function Invoke-DbaDbDataMasking {
                         $elapsed = [System.Diagnostics.Stopwatch]::StartNew()
 
                         $totalBatches = [System.Math]::Ceiling($data.Count / $BatchSize)
-                        $rowNumber = $stepcounter = $batchRowCounter = $batchCounter = 0
+                        #$rowNumber = $stepcounter = $batchRowCounter = $batchCounter = 0
+                        $rowNumber = $batchRowCounter = $batchCounter = 0
 
                         $columnsWithActions = @()
                         $columnsWithActions += $tableobject.Columns | Where-Object { $null -ne $_.Action }
