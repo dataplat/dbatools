@@ -495,124 +495,36 @@ function Connect-DbaInstance {
                     $server.ConnectionContext.ConnectionString = $instance.InputObject
                 } else {
                     Write-Message -Level Verbose -Message "We have to build server object from instance object and other parameters, do some checks and then return the server object"
-
-                    # TODO: Update New-DbaConnectionString and then use this command
-                    if ($false) {
-                        Write-Message -Level Debug -Message "We use the syntax from the Azure part"
-
-                        Write-Message -Level Debug -Message "will build an empty server object"
-                        [Microsoft.SqlServer.Management.Smo.Server]$server = New-Object -TypeName Microsoft.SqlServer.Management.Smo.Server -ArgumentList $instance.FullSmoName
-
-                        # Use available command to build the proper connection string
-                        # but first, clean up passed params so that they match
-                        $boundparams = $PSBoundParameters
-                        [object[]]$ConnectionStringCmdParams = (Get-Command New-DbaConnectionString).Parameters.Keys
-                        [object[]]$InstanceCmdParams = (Get-Command Connect-DbaInstance).Parameters.Keys
-                        foreach ($param in $InstanceCmdParams) {
-                            if ($param -notin $ConnectionStringCmdParams <# -and $param -ne "SqlCredential" #>) {
-                                $null = $boundparams.Remove($param)
-                            }
-                        }
-                        # Build connection string
-                        Write-Message -Level Debug -Message "We have to build a connect string, using these parameters: $($boundparams.Keys)"
-                        $server.ConnectionContext.ConnectionString = New-DbaConnectionString @boundparams
-
-                    } else {
-                        Write-Message -Level Debug -Message "We use the syntax from the non-Azure part"
-
-                        Write-Message -Level Debug -Message "will build server with instance.FullSmoName = '$($instance.FullSmoName)'"
-                        [Microsoft.SqlServer.Management.Smo.Server]$server = New-Object -TypeName Microsoft.SqlServer.Management.Smo.Server -ArgumentList $instance.FullSmoName
-
-                        $server.ConnectionContext.ApplicationName = $ClientName
-                        if (Test-Bound -ParameterName 'BatchSeparator') {
-                            $server.ConnectionContext.BatchSeparator = $BatchSeparator
-                        }
-                        if (Test-Bound -ParameterName 'ConnectTimeout') {
-                            $server.ConnectionContext.ConnectTimeout = $ConnectTimeout
-                        }
-                        if (Test-Bound -ParameterName 'Database') {
-                            $server.ConnectionContext.DatabaseName = $Database
-                        }
-                        if (Test-Bound -ParameterName 'EncryptConnection') {
-                            $server.ConnectionContext.EncryptConnection = $true
-                        }
-                        if (Test-Bound -ParameterName 'LockTimeout') {
-                            $server.ConnectionContext.LockTimeout = $LockTimeout
-                        }
-                        if (Test-Bound -ParameterName 'MaxPoolSize') {
-                            $server.ConnectionContext.MaxPoolSize = $MaxPoolSize
-                        }
-                        if (Test-Bound -ParameterName 'MinPoolSize') {
-                            $server.ConnectionContext.MinPoolSize = $MinPoolSize
-                        }
-                        if (Test-Bound -ParameterName 'MultipleActiveResultSets') {
-                            $server.ConnectionContext.MultipleActiveResultSets = $true
-                        }
-                        if (Test-Bound -ParameterName 'NetworkProtocol') {
-                            $server.ConnectionContext.NetworkProtocol = $NetworkProtocol
-                        }
-                        if (Test-Bound -ParameterName 'NonPooledConnection') {
-                            $server.ConnectionContext.NonPooledConnection = $true
-                        }
-                        if (Test-Bound -ParameterName 'PacketSize') {
-                            $server.ConnectionContext.PacketSize = $PacketSize
-                        }
-                        if (Test-Bound -ParameterName 'PooledConnectionLifetime') {
-                            $server.ConnectionContext.PooledConnectionLifetime = $PooledConnectionLifetime
-                        }
-                        if (Test-Bound -ParameterName 'StatementTimeout') {
-                            $server.ConnectionContext.StatementTimeout = $StatementTimeout
-                        }
-                        if (Test-Bound -ParameterName 'SqlExecutionModes') {
-                            $server.ConnectionContext.SqlExecutionModes = $SqlExecutionModes
-                        }
-                        if (Test-Bound -ParameterName 'TrustServerCertificate') {
-                            $server.ConnectionContext.TrustServerCertificate = $TrustServerCertificate
-                        }
-                        if (Test-Bound -ParameterName 'WorkstationId') {
-                            $server.ConnectionContext.WorkstationId = $WorkstationId
-                        }
-                        if (Test-Bound -ParameterName 'ApplicationIntent') {
-                            $server.ConnectionContext.ApplicationIntent = $ApplicationIntent
-                        }
-                        # TODO: New style, have to test the next three if
-                        if (Test-Bound -ParameterName 'MultiSubnetFailover') {
-                            $server.ConnectionContext.ConnectionString = "$($server.ConnectionContext.ConnectionString);MultiSubnetFailover=True"
-                        }
-                        if (Test-Bound -ParameterName 'FailoverPartner') {
-                            $server.ConnectionContext.ConnectionString = "$($server.ConnectionContext.ConnectionString);Failover Partner=$FailoverPartner"
-                        }
-                        if (Test-Bound -ParameterName 'AppendConnectionString') {
-                            $server.ConnectionContext.ConnectionString = "$($server.ConnectionContext.ConnectionString);$AppendConnectionString"
-                        }
-                        # parse out sql credential to figure out if it's Windows or SQL Login
-                        # TODO: Test the different possibilities
-                        if ($null -ne $SqlCredential.UserName) {
-                            $username = ($SqlCredential.UserName).TrimStart("\")
-                            # support both ad\username and username@ad
-                            if ($username -like "*\*" -or $username -like "*@*") {
-                                if ($username -like "*\*") {
-                                    $domain, $login = $username.Split("\")
-                                    $authtype = "Windows Authentication with Credential"
-                                    if ($domain) {
-                                        $formatteduser = "$login@$domain"
-                                    } else {
-                                        $formatteduser = $username.Split("\")[1]
-                                    }
-                                } else {
-                                    $formatteduser = $SqlCredential.UserName
-                                }
-                                $server.ConnectionContext.LoginSecure = $true
-                                $server.ConnectionContext.ConnectAsUser = $true
-                                $server.ConnectionContext.ConnectAsUserName = $formatteduser
-                                $server.ConnectionContext.ConnectAsUserPassword = $SqlCredential.GetNetworkCredential().Password
-                            } else {
-                                $authtype = "SQL Authentication"
-                                $server.ConnectionContext.LoginSecure = $false
-                                $server.ConnectionContext.set_Login($username)
-                                $server.ConnectionContext.set_SecurePassword($SqlCredential.Password)
-                            }
-                        }
+                    [Microsoft.SqlServer.Management.Smo.Server]$server = New-Object -TypeName Microsoft.SqlServer.Management.Smo.Server -ArgumentList $instance.FullSmoName
+                    # Remove all bound paramaters that are not needed in building the connection string
+                    $boundparams = @{} + $PSBoundParameters    # @{} is important to get a second object and not just a new reference
+                    $boundparams.Remove('AuthenticationType')  # include later in New-DbaConnectionString
+                    $boundparams.Remove('AzureDomain')         # include later in New-DbaConnectionString
+                    $boundparams.Remove('AzureUnsupported')
+                    $boundparams.Remove('BatchSeparator')
+                    $boundparams.Remove('LockTimeout')
+                    $boundparams.Remove('MinimumVersion')
+                    $boundparams.Remove('SqlConnectionOnly')
+                    $boundparams.Remove('SqlExecutionModes')
+                    $boundparams.Remove('StatementTimeout')
+                    $boundparams.Remove('Store')
+                    $boundparams.Remove('Tenant')
+                    $boundparams.Remove('Thumbprint')
+                    # Build connection string by New-DbaConnectionString with the remaining bound parameters
+                    $server.ConnectionContext.ConnectionString = New-DbaConnectionString @boundparams
+                    # Set properties of ConnectionContext that are not part of the connection string
+                    if (Test-Bound -ParameterName 'BatchSeparator') {
+                        Write-Message -Level Verbose -Message "Setting BatchSeparator"
+                        $server.ConnectionContext.BatchSeparator = $BatchSeparator
+                    }
+                    if (Test-Bound -ParameterName 'LockTimeout') {
+                        $server.ConnectionContext.LockTimeout = $LockTimeout
+                    }
+                    if (Test-Bound -ParameterName 'SqlExecutionModes') {
+                        $server.ConnectionContext.SqlExecutionModes = $SqlExecutionModes
+                    }
+                    if (Test-Bound -ParameterName 'StatementTimeout') {
+                        $server.ConnectionContext.StatementTimeout = $StatementTimeout
                     }
                 }
 
@@ -626,19 +538,7 @@ function Connect-DbaInstance {
                     try {
                         $server.ConnectionContext.Connect()
                     } catch {
-                        # TODO: Try to reduce this and let Stop-Function do the work
-                        Write-Message -Level Debug -Message "Connect was not successful"
-                        $originalException = $_.Exception
-                        try {
-                            $message = $originalException.InnerException.InnerException.ToString()
-                        } catch {
-                            $message = $originalException.ToString()
-                        }
-                        $message = ($message -Split '-->')[0]
-                        $message = ($message -Split 'at System.Data.SqlClient')[0]
-                        $message = ($message -Split 'at System.Data.ProviderBase')[0]
-
-                        Stop-Function -Message "Can't connect to $instance" -ErrorRecord $_ -Continue
+                        Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
                     }
                 }
                 Write-Message -Level Debug -Message "We have a connected server object"
