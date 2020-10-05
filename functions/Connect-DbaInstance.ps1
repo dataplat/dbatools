@@ -409,6 +409,8 @@ function Connect-DbaInstance {
         Write-Message -Level Debug -Message "Starting process block"
         foreach ($instance in $SqlInstance) {
             Write-Message -Level Debug -Message "Starting loop for '$instance': ComputerName = '$($instance.ComputerName)', InstanceName = '$($instance.InstanceName)', IsLocalHost = '$($instance.IsLocalHost)', Type = '$($instance.Type)'"
+            $connstring = ''
+            $isConnectionString = $false
             if ($instance.IsConnectionString) {
                 $connstring = $instance.InputObject
                 $isConnectionString = $true
@@ -430,12 +432,22 @@ function Connect-DbaInstance {
 
             # Gracefully handle Azure connections
             if ($connstring -match $AzureDomain -or $instance.ComputerName -match $AzureDomain -or $instance.InputObject.ComputerName -match $AzureDomain) {
+                Write-Message -Level Debug -Message "We are about to connect to Azure"
                 # so far, this is not evaluating
                 if ($instance.InputObject.ConnectionContext.IsOpen) {
-                    $currentdb = $instance.InputObject.ConnectionContext.ExecuteScalar("select db_name()")
-                    if (($Database -and ($Database -eq $currentdb))) {
+                    Write-Message -Level Debug -Message "Connection is already open, test if database has to be changed"
+                    if ('' -eq $Database) {
+                        Write-Message -Level Debug -Message "No database specified, so return instance.InputObject"
                         $instance.InputObject
                         continue
+                    }
+                    $currentdb = $instance.InputObject.ConnectionContext.ExecuteScalar("select db_name()")
+                    if ($currentdb -eq $Database) {
+                        Write-Message -Level Debug -Message "Same database specified, so return instance.InputObject"
+                        $instance.InputObject
+                        continue
+                    } else {
+                        Write-Message -Level Debug -Message "Different databases: Database = '$Database', currentdb = '$currentdb', so we build a new connection"
                     }
                 }
                 $isAzure = $true
@@ -452,11 +464,14 @@ function Connect-DbaInstance {
                 }
                 # Build connection string
                 if ($connstring) {
+                    Write-Message -Level Debug -Message "We have a connect string so we use it"
                     $azureconnstring = $connstring
                 } else {
                     if ($Tenant) {
+                        Write-Message -Level Debug -Message "We have a Tenant and build the connect string"
                         $azureconnstring = New-DbaConnectionString -SqlInstance $instance -AccessToken None -Database $Database
                     } else {
+                        Write-Message -Level Debug -Message "We have to build a connect string, using these parameters: $($boundparams.Keys)"
                         $azureconnstring = New-DbaConnectionString @boundparams
                     }
                 }
