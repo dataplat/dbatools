@@ -309,7 +309,7 @@ function Connect-DbaInstance {
             Write-Message -Level Verbose -Message "Determining if current workstation is an Azure VM"
             # Do an Azure check - this will occur just once
             try {
-                $azurevmcheck = Invoke-RestMethod -Headers @{"Metadata" = "true" } -URI http://169.254.169.254/metadata/instance?api-version=2018-10-01 -Method GET -TimeoutSec 2 -ErrorAction Stop
+                $azurevmcheck = Invoke-RestMethod -Headers @{"Metadata" = "true" } -Uri http://169.254.169.254/metadata/instance?api-version=2018-10-01 -Method GET -TimeoutSec 2 -ErrorAction Stop
                 if ($azurevmcheck.compute.azEnvironment) {
                     $azurevm = $true
                     $null = Set-DbatoolsConfig -FullName azure.vm -Value $true -PassThru | Register-DbatoolsConfig
