@@ -206,13 +206,13 @@ function Set-DbaTempDbConfig {
             if ($LogPath -or $LogFileSize) {
                 $Filename = Split-Path $logfile.PhysicalName -Leaf
                 $LogicalName = $logfile.LogicalName
-                
+
                 if ($LogPath) {
-                    $NewPath = "$LogPath\$Filename"     
+                    $NewPath = "$LogPath\$Filename"
                 } else {
                     $NewPath = $logfile.PhysicalName
                 }
-                
+
                 if (-not($LogFileSize)) {
                     $LogFileSize = $logfile.SizeMb
                 }
