@@ -26526,7 +26526,7 @@
                            "",
                            false,
                            "false",
-                           "10"
+                           "0"
                        ],
                        [
                            "ExactLength",
@@ -26550,7 +26550,7 @@
                            "",
                            false,
                            "false",
-                           "300"
+                           "0"
                        ],
                        [
                            "BatchSize",
@@ -26558,7 +26558,15 @@
                            "",
                            false,
                            "false",
-                           "1000"
+                           "0"
+                       ],
+                       [
+                           "Retry",
+                           "The amount of retries to generate a unique row for a table. Default is 1000.",
+                           "",
+                           false,
+                           "false",
+                           "0"
                        ],
                        [
                            "DictionaryFilePath",
@@ -26601,7 +26609,7 @@
                            ""
                        ]
                    ],
-        "Syntax":  "Invoke-DbaDbDataMasking [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cString[]\u003e] [-FilePath] \u003cObject\u003e [[-Locale] \u003cString\u003e] [[-CharacterString] \u003cString\u003e] [[-Table] \u003cString[]\u003e] [[-Column] \u003cString[]\u003e] [[-ExcludeTable] \u003cString[]\u003e] [[-ExcludeColumn] \u003cString[]\u003e] [[-MaxValue] \u003cInt32\u003e] [[-ModulusFactor] \u003cInt32\u003e] [-ExactLength] [[-ConnectionTimeout] \u003cInt32\u003e] [[-CommandTimeout] \u003cInt32\u003e] [[-BatchSize] \u003cInt32\u003e] [[-DictionaryFilePath] \u003cString[]\u003e] [[-DictionaryExportPath] \u003cString\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Invoke-DbaDbDataMasking [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cString[]\u003e] [-FilePath] \u003cObject\u003e [[-Locale] \u003cString\u003e] [[-CharacterString] \u003cString\u003e] [[-Table] \u003cString[]\u003e] [[-Column] \u003cString[]\u003e] [[-ExcludeTable] \u003cString[]\u003e] [[-ExcludeColumn] \u003cString[]\u003e] [[-MaxValue] \u003cInt32\u003e] [[-ModulusFactor] \u003cInt32\u003e] [-ExactLength] [[-ConnectionTimeout] \u003cInt32\u003e] [[-CommandTimeout] \u003cInt32\u003e] [[-BatchSize] \u003cInt32\u003e] [[-Retry] \u003cInt32\u003e] [[-DictionaryFilePath] \u003cString[]\u003e] [[-DictionaryExportPath] \u003cString\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Invoke-DbaDbDbccCheckConstraint",
@@ -48759,15 +48767,15 @@
     },
     {
         "Name":  "Test-DbaDiskSpeed",
-        "Description":  "Tests how disks are performing.\n\nThis command uses a query from Rich Benner\nhttps://github.com/RichBenner/PersonalCode/blob/master/Disk_Speed_Check.sql",
+        "Description":  "Obtains I/O statistics based on the DMV sys.dm_io_virtual_file_stats:\n\nhttps://docs.microsoft.com/en-us/sql/relational-databases/system-dynamic-management-views/sys-dm-io-virtual-file-stats-transact-sql\n\nThis command uses a query from Rich Benner\nhttps://github.com/RichBenner/PersonalCode/blob/master/Disk_Speed_Check.sql\n\n...and also based on further adaptations referenced at https://github.com/sqlcollaborative/dbatools/issues/6551#issue-623216718",
         "Tags":  "Performance",
-        "Synopsis":  "Tests how disks are performing.",
+        "Synopsis":  "Obtains I/O statistics based on the DMV sys.dm_io_virtual_file_stats:\n\nhttps://docs.microsoft.com/en-us/sql/relational-databases/system-dynamic-management-views/sys-dm-io-virtual-file-stats-transact-sql",
         "Alias":  "",
         "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "CommandName":  "Test-DbaDiskSpeed",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Test-DbaDiskSpeed",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eTest-DbaDiskSpeed -SqlInstance sql2008, sqlserver2012\nTests how disks are performing on sql2008 and sqlserver2012.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eTest-DbaDiskSpeed -SqlInstance sql2008 -Database tempdb\nTests how disks storing tempdb files on sql2008 are performing.",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eTest-DbaDiskSpeed -SqlInstance sql2008, sqlserver2012\nTests how disks are performing on sql2008 and sqlserver2012.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eTest-DbaDiskSpeed -SqlInstance sql2008 -Database tempdb\nTests how disks storing tempdb files on sql2008 are performing.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eTest-DbaDiskSpeed -SqlInstance sql2008 -AggregateBy \"File\" -Database tempdb\nReturns the statistics aggregated to the file level. This is the default aggregation level if the -AggregateBy param is omitted. The -Database or -ExcludeDatabase params can be used to filter for \r\nspecific databases.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eTest-DbaDiskSpeed -SqlInstance sql2008 -AggregateBy \"Database\"\nReturns the statistics aggregated to the database/disk level. The -Database or -ExcludeDatabase params can be used to filter for specific databases.\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eTest-DbaDiskSpeed -SqlInstance sql2008 -AggregateBy \"Disk\"\nReturns the statistics aggregated to the disk level. The -Database or -ExcludeDatabase params can be used to filter for specific databases.\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003e$results = @(instance1, instance2) | Test-DbaDiskSpeed\nReturns the statistics for instance1 and instance2 as part of a pipeline command\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003e$databases = @(\u0027master\u0027, \u0027model\u0027)\n$results = Test-DbaDiskSpeed -SqlInstance sql2019 -Database $databases\nReturns the statistics for more than one database specified.\n-------------------------- EXAMPLE 8 --------------------------\nPS C:\\\u003e$excludedDatabases = @(\u0027master\u0027, \u0027model\u0027)\n$results = Test-DbaDiskSpeed -SqlInstance sql2019 -ExcludeDatabase $excludedDatabases\nReturns the statistics for databases other than the exclusions specified.",
         "Params":  [
                        [
                            "SqlInstance",
@@ -48802,6 +48810,14 @@
                            ""
                        ],
                        [
+                           "AggregateBy",
+                           "Specify the level of aggregation for the statistics. The available options are \u0027File\u0027 (the default), \u0027Database\u0027, and \u0027Disk\u0027.",
+                           "",
+                           false,
+                           "false",
+                           "File"
+                       ],
+                       [
                            "EnableException",
                            "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
                            "",
@@ -48810,7 +48826,7 @@
                            "False"
                        ]
                    ],
-        "Syntax":  "Test-DbaDiskSpeed [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cObject[]\u003e] [[-ExcludeDatabase] \u003cObject[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Test-DbaDiskSpeed [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cObject[]\u003e] [[-ExcludeDatabase] \u003cObject[]\u003e] [[-AggregateBy] \u003cString\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Test-DbaEndpoint",
