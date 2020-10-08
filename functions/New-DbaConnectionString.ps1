@@ -326,8 +326,8 @@ function New-DbaConnectionString {
                             }
                             $connStringBuilder['User ID'] = $username
                             $connStringBuilder['Password'] = $SqlCredential.GetNetworkCredential().Password
-                            if (Test-Azure -SqlInstance $instance) {
-                                Write-Message -Level Debug -Message "We connect to Azure, so adding Authentication=Active Directory Password"
+                            if ((Test-Azure -SqlInstance $instance) -and ($username -like "*@*")) {
+                                Write-Message -Level Debug -Message "We connect to Azure with Azure AD account, so adding Authentication=Active Directory Password"
                                 $connStringBuilder['Authentication'] = 'Active Directory Password'
                             }
                         } else {
