@@ -514,7 +514,6 @@ function Connect-DbaInstance {
                     $server.ConnectionContext.ConnectionString = New-DbaConnectionString @boundparams
                     # Set properties of ConnectionContext that are not part of the connection string
                     if (Test-Bound -ParameterName 'BatchSeparator') {
-                        Write-Message -Level Verbose -Message "Setting BatchSeparator"
                         $server.ConnectionContext.BatchSeparator = $BatchSeparator
                     }
                     if (Test-Bound -ParameterName 'LockTimeout') {
@@ -570,7 +569,7 @@ function Connect-DbaInstance {
                     Write-Message -Level Debug -Message "We return the server object"
                     $server
 
-                    # TODO: Do we need this every time? How dows it work exactly?
+                    # TODO: Do we need this every time? How does it work exactly?
                     # Register the connected instance, so that the TEPP updater knows it's been connected to and starts building the cache
                     [Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::SetInstance($instance.FullSmoName.ToLowerInvariant(), $server.ConnectionContext.Copy(), ($server.ConnectionContext.FixedServerRoles -match "SysAdmin"))
 
