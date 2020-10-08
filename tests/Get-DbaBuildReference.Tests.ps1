@@ -142,7 +142,7 @@ Describe "$CommandName Unit Test" -Tags Unittest {
     Context "Retired KBs" {
         It 'Handles retired KBs' {
             $result = Get-DbaBuildReference -Build '13.0.5479'
-            $result.Warning | Should -Be 'This version has been officially retired by Microsoft' 
+            $result.Warning | Should -Be 'This version has been officially retired by Microsoft'
         }
     }
 
