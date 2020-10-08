@@ -202,12 +202,12 @@ function Export-DbaExecutionPlan {
 
             if (Test-Bound 'SinceCreation') {
                 Write-Message -Level Verbose -Message "Adding creation time"
-                $whereArray += " creation_time >= '" + $SinceCreation.ToString("yyyy-MM-dd HH:mm:ss") + "' "
+                $whereArray += " creation_time >= CONVERT(datetime,'$($SinceCreation.ToString("yyyy-MM-ddTHH:mm:ss", [System.Globalization.CultureInfo]::InvariantCulture))',126) "
             }
 
             if (Test-Bound 'SinceLastExecution') {
                 Write-Message -Level Verbose -Message "Adding last execution time"
-                $whereArray += " last_execution_time >= '" + $SinceLastExecution.ToString("yyyy-MM-dd HH:mm:ss") + "' "
+                $whereArray += " last_execution_time >= CONVERT(datetime,'$($SinceLastExecution.ToString("yyyy-MM-ddTHH:mm:ss", [System.Globalization.CultureInfo]::InvariantCulture))',126) "
             }
 
             if (Test-Bound 'ExcludeDatabase') {

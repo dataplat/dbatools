@@ -101,7 +101,7 @@ function Get-DbaDbMailLog {
                 $wherearray = @()
 
                 if ($Since) {
-                    $wherearray += "log_date >= '$($Since.ToString("yyyy-MM-ddTHH:mm:ss"))'"
+                    $wherearray += "log_date >= CONVERT(datetime,'$($Since.ToString("yyyy-MM-ddTHH:mm:ss", [System.Globalization.CultureInfo]::InvariantCulture))',126)"
                 }
 
                 if ($Type) {
