@@ -1,7 +1,7 @@
 function New-DbaAgentOperator {
     <#
     .SYNOPSIS
-        New-DbaAgentOperator creates a new operator on an instance.
+        Creates a new operator on an instance.
 
     .DESCRIPTION
         If the operator already exists on the destination, it will not be created unless -Force is used.
@@ -56,7 +56,7 @@ function New-DbaAgentOperator {
         The default is NotifyEmail.
 
     .PARAMETER Force
-        If this switch is enabled, the Operator will be dropped and recreated on Destination.
+        If this switch is enabled, the Operator will be dropped and recreated on instance.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -118,7 +118,7 @@ function New-DbaAgentOperator {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $serverSqlCredential
             } catch {
-                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+                Stop-Function -Message "Failed" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
             [int]$Interval = 0
