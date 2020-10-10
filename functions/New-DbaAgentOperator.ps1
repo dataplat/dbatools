@@ -6,7 +6,10 @@ function New-DbaAgentOperator {
     .DESCRIPTION
         If the operator already exists on the destination, it will not be created unless -Force is used.
 
-    .PARAMETER SourceSqlCredential
+    .PARAMETER SqlInstance
+        The target SQL Server instance or instances. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
+
+    .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
 
         Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
@@ -54,6 +57,12 @@ function New-DbaAgentOperator {
     .PARAMETER FailsafeNotificationMethod
         Deinfes the notifcation method for notifiy the failsafe oeprator.  Value must be NofityMail or NotifyPager.
         The default is NotifyEmail.
+
+    .PARAMETER WhatIf
+        Shows what would happen if the command were to run. No actions are actually performed.
+
+    .PARAMETER Confirm
+        Prompts you for confirmation before executing any changing operations within the command.
 
     .PARAMETER Force
         If this switch is enabled, the Operator will be dropped and recreated on instance.
