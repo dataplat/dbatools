@@ -525,7 +525,22 @@ function Get-DbaRandomizedValue {
                     } elseif ($randSubType -in 'string', 'string2') {
                         $script:faker.Random.String2([int]$Min, [int]$Max, $CharacterString)
                     } elseif ($randSubType -eq 'shuffle') {
-                        $script:faker.Random.Shuffle($Value)
+                        $commaIndex = $value.IndexOf(",")
+                        $dotIndex = $value.IndexOf(".")
+
+                        $Value = (($Value -replace ',', '') -replace '\.', '')
+
+                        $newValue = ($script:faker.Random.Shuffle($Value) -join '')
+
+                        if ($commaIndex -ne -1) {
+                            $newValue = $newValue.Insert($commaIndex, ',')
+                        }
+
+                        if ($dotIndex -ne -1) {
+                            $newValue = $newValue.Insert($dotIndex, '.')
+                        }
+
+                        $newValue
                     } else {
                         $script:faker.Random.$RandomizerSubType()
                     }
