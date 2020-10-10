@@ -123,141 +123,143 @@ function New-DbaAgentOperator {
             Stop-Function -Message "You must specify either an EmailAddress, NetSendAddress, or a PagerAddress to be able to create an operator."
             return
         }
+
+
+        [int]$Interval = 0
+
+        # Loop through the array
+        foreach ($Item in $PagerDay) {
+            switch ($Item) {
+                "Sunday" { $Interval += 1 }
+                "Monday" { $Interval += 2 }
+                "Tuesday" { $Interval += 4 }
+                "Wednesday" { $Interval += 8 }
+                "Thursday" { $Interval += 16 }
+                "Friday" { $Interval += 32 }
+                "Saturday" { $Interval += 64 }
+                "Weekdays" { $Interval = 62 }
+                "Weekend" { $Interval = 65 }
+                "EveryDay" { $Interval = 127 }
+                1 { $Interval += 1 }
+                2 { $Interval += 2 }
+                4 { $Interval += 4 }
+                8 { $Interval += 8 }
+                16 { $Interval += 16 }
+                32 { $Interval += 32 }
+                64 { $Interval += 64 }
+                62 { $Interval = 62 }
+                65 { $Interval = 65 }
+                127 { $Interval = 127 }
+                default { $Interval = 0 }
+            }
+        }
+
+        $RegexTime = '^(?:(?:([01]?\d|2[0-3]))?([0-5]?\d))?([0-5]?\d)$'
+
+        # Check the start time
+        if (-not $SaturdayStartTime -and $Force) {
+            $SaturdayStartTime = '000000'
+            Write-Message -Message "Saturday Start time was not set. Force is being used. Setting it to $SaturdayStartTime" -Level Verbose
+        } elseif (-not $SaturdayStartTime -and $PagerDay -in ('Everyday', 'Saturday', 'Weekends')) {
+            Stop-Function -Message "Please enter Saturday start time or use -Force to use defaults."
+            return
+        } elseif ($SaturdayStartTime -notmatch $RegexTime) {
+            Stop-Function -Message "Start time $SaturdayStartTime needs to match between '000000' and '235959'"
+            return
+        }
+
+        # Check the end time
+        if (-not $SaturdayEndTime -and $Force) {
+            $SaturdayEndTime = '235959'
+            Write-Message -Message "Saturday End time was not set. Force is being used. Setting it to $SaturdayEndTime" -Level Verbose
+        } elseif (-not $SaturdayEndTime -and $PagerDay -in ('Everyday', 'Saturday', 'Weekends')) {
+            Stop-Function -Message "Please enter a Saturday end time or use -Force to use defaults."
+            return
+        } elseif ($SaturdayEndTime -notmatch $RegexTime) {
+            Stop-Function -Message "End time $SaturdayEndTime needs to match between '000000' and '235959'"
+            return
+        }
+
+        # Check the start time
+        if (-not $SundayStartTime -and $Force) {
+            $SundayStartTime = '000000'
+            Write-Message -Message "Sunday Start time was not set. Force is being used. Setting it to $SundayStartTime" -Level Verbose
+        } elseif (-not $SundayStartTime -and $PagerDay -in ('Everyday', 'Sunday', 'Weekends')) {
+            Stop-Function -Message "Please enter a Sunday start time or use -Force to use defaults."
+            return
+        } elseif ($SundayStartTime -notmatch $RegexTime) {
+            Stop-Function -Message "Start time $SundayStartTime needs to match between '000000' and '235959'"
+            return
+        }
+
+        # Check the end time                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  `1"
+        if (-not $SundayEndTime -and $Force) {
+            $SundayEndTime = '235959'
+            Write-Message -Message "Sunday End time was not set. Force is being used. Setting it to $SundayEndTime" -Level Verbose
+        } elseif (-not $SundayEndTime -and $PagerDay -in ('Everyday', 'Sunday', 'Weekends')) {
+            Stop-Function -Message "Please enter a Sunday End Time or use -Force to use defaults."
+            return
+        } elseif ($SundayEndTime -notmatch $RegexTime) {
+            Stop-Function -Message "Sunday End time $SundayEndTime needs to match between '000000' and '235959'"
+            return
+        }
+
+        # Check the start time
+        if (-not $WeekdayStartTime -and $Force) {
+            $WeekdayStartTime = '000000'
+            Write-Message -Message "Weekday Start time was not set. Force is being used. Setting it to $WeekdayStartTime" -Level Verbose
+        } elseif (-not $WeekdayStartTime -and $PagerDay -in ('Everyday', 'Weekdays', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday')) {
+            Stop-Function -Message "Please enter Weekday Start Time or use -Force to use defaults."
+            return
+        } elseif ($WeekdayStartTime -notmatch $RegexTime) {
+            Stop-Function -Message "Weekday Start time $WeekdayStartTime needs to match between '000000' and '235959'"
+            return
+        }
+
+        # Check the end time
+        if (-not $WeekdayEndTime -and $Force) {
+            $WeekdayEndTime = '235959'
+            Write-Message -Message "Weekday End time was not set. Force is being used. Setting it to $WeekdayEndTime" -Level Verbose
+        } elseif (-not $WeekdayEndTime -and $PagerDay -in ('Everyday', 'Weekdays', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday')) {
+            Stop-Function -Message "Please enter a Weekday End Time or use -Force to use defaults."
+            return
+        } elseif ($WeekdayEndTime -notmatch $RegexTime) {
+            Stop-Function -Message "Weekday End time $WeekdayEndTime needs to match between '000000' and '235959'"
+            return
+        }
+
+        if ($IsFailsafeOperator -and ($FailsafeNotificationMethod -notin ('NofityMail', 'NotifyPager'))) {
+            Stop-Function -Message "You must specify a notifiation method for the failsafe operator."
+            return
+        }
+
+        #Format times
+        if ($SaturdayStartTime) {
+            $SaturdayStartTime = $SaturdayStartTime.Insert(4, ':').Insert(2, ':')
+        }
+        if ($SaturdayEndTime) {
+            $SaturdayEndTime = $SaturdayEndTime.Insert(4, ':').Insert(2, ':')
+        }
+
+        if ($SundayStartTime) {
+            $SundayStartTime = $SundayStartTime.Insert(4, ':').Insert(2, ':')
+        }
+        if ($SundayEndTime) {
+            $SundayEndTime = $SundayEndTime.Insert(4, ':').Insert(2, ':')
+        }
+
+        if ($WeekdayStartTime) {
+            $WeekdayStartTime = $WeekdayStartTime.Insert(4, ':').Insert(2, ':')
+        }
+        if ($WeekdayEndTime) {
+            $WeekdayEndTime = $WeekdayEndTime.Insert(4, ':').Insert(2, ':')
+        }
+
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $serverSqlCredential
             } catch {
                 Stop-Function -Message "Failed" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
-            }
-
-            [int]$Interval = 0
-
-            # Loop through the array
-            foreach ($Item in $PagerDay) {
-                switch ($Item) {
-                    "Sunday" { $Interval += 1 }
-                    "Monday" { $Interval += 2 }
-                    "Tuesday" { $Interval += 4 }
-                    "Wednesday" { $Interval += 8 }
-                    "Thursday" { $Interval += 16 }
-                    "Friday" { $Interval += 32 }
-                    "Saturday" { $Interval += 64 }
-                    "Weekdays" { $Interval = 62 }
-                    "Weekend" { $Interval = 65 }
-                    "EveryDay" { $Interval = 127 }
-                    1 { $Interval += 1 }
-                    2 { $Interval += 2 }
-                    4 { $Interval += 4 }
-                    8 { $Interval += 8 }
-                    16 { $Interval += 16 }
-                    32 { $Interval += 32 }
-                    64 { $Interval += 64 }
-                    62 { $Interval = 62 }
-                    65 { $Interval = 65 }
-                    127 { $Interval = 127 }
-                    default { $Interval = 0 }
-                }
-            }
-
-            $RegexTime = '^(?:(?:([01]?\d|2[0-3]))?([0-5]?\d))?([0-5]?\d)$'
-
-            # Check the start time
-            if (-not $SaturdayStartTime -and $Force) {
-                $SaturdayStartTime = '000000'
-                Write-Message -Message "Saturday Start time was not set. Force is being used. Setting it to $SaturdayStartTime" -Level Verbose
-            } elseif (-not $SaturdayStartTime -and $PagerDay -in ('Everyday', 'Saturday', 'Weekends')) {
-                Stop-Function -Message "Please enter Saturday start time or use -Force to use defaults." -Target $instance
-                return
-            } elseif ($SaturdayStartTime -notmatch $RegexTime) {
-                Stop-Function -Message "Start time $SaturdayStartTime needs to match between '000000' and '235959'" -Target $instance
-                return
-            }
-
-            # Check the end time
-            if (-not $SaturdayEndTime -and $Force) {
-                $SaturdayEndTime = '235959'
-                Write-Message -Message "Saturday End time was not set. Force is being used. Setting it to $SaturdayEndTime" -Level Verbose
-            } elseif (-not $SaturdayEndTime -and $PagerDay -in ('Everyday', 'Saturday', 'Weekends')) {
-                Stop-Function -Message "Please enter a Saturday end time or use -Force to use defaults." -Target $instance
-                return
-            } elseif ($SaturdayEndTime -notmatch $RegexTime) {
-                Stop-Function -Message "End time $SaturdayEndTime needs to match between '000000' and '235959'" -Target $instance
-                return
-            }
-
-            # Check the start time
-            if (-not $SundayStartTime -and $Force) {
-                $SundayStartTime = '000000'
-                Write-Message -Message "Sunday Start time was not set. Force is being used. Setting it to $SundayStartTime" -Level Verbose
-            } elseif (-not $SundayStartTime -and $PagerDay -in ('Everyday', 'Sunday', 'Weekends')) {
-                Stop-Function -Message "Please enter a Sunday start time or use -Force to use defaults." -Target $instance
-                return
-            } elseif ($SundayStartTime -notmatch $RegexTime) {
-                Stop-Function -Message "Start time $SundayStartTime needs to match between '000000' and '235959'" -Target $instance
-                return
-            }
-
-            # Check the end time                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  `1"
-            if (-not $SundayEndTime -and $Force) {
-                $SundayEndTime = '235959'
-                Write-Message -Message "Sunday End time was not set. Force is being used. Setting it to $SundayEndTime" -Level Verbose
-            } elseif (-not $SundayEndTime -and $PagerDay -in ('Everyday', 'Sunday', 'Weekends')) {
-                Stop-Function -Message "Please enter a Sunday End Time or use -Force to use defaults." -Target $instance
-                return
-            } elseif ($SundayEndTime -notmatch $RegexTime) {
-                Stop-Function -Message "Sunday End time $SundayEndTime needs to match between '000000' and '235959'" -Target $instance
-                return
-            }
-
-            # Check the start time
-            if (-not $WeekdayStartTime -and $Force) {
-                $WeekdayStartTime = '000000'
-                Write-Message -Message "Weekday Start time was not set. Force is being used. Setting it to $WeekdayStartTime" -Level Verbose
-            } elseif (-not $WeekdayStartTime -and $PagerDay -in ('Everyday', 'Weekdays', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday')) {
-                Stop-Function -Message "Please enter Weekday Start Time or use -Force to use defaults." -Target $instance
-                return
-            } elseif ($WeekdayStartTime -notmatch $RegexTime) {
-                Stop-Function -Message "Weekday Start time $WeekdayStartTime needs to match between '000000' and '235959'" -Target $instance
-                return
-            }
-
-            # Check the end time
-            if (-not $WeekdayEndTime -and $Force) {
-                $WeekdayEndTime = '235959'
-                Write-Message -Message "Weekday End time was not set. Force is being used. Setting it to $WeekdayEndTime" -Level Verbose
-            } elseif (-not $WeekdayEndTime -and $PagerDay -in ('Everyday', 'Weekdays', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday')) {
-                Stop-Function -Message "Please enter a Weekday End Time or use -Force to use defaults." -Target $instance
-                return
-            } elseif ($WeekdayEndTime -notmatch $RegexTime) {
-                Stop-Function -Message "Weekday End time $WeekdayEndTime needs to match between '000000' and '235959'" -Target $instance
-                return
-            }
-
-            if ($IsFailsafeOperator -and ($FailsafeNotificationMethod -notin ('NofityMail', 'NotifyPager'))) {
-                Stop-Function -Message "You must specify a notifiation method for the failsafe operator."
-                return
-            }
-
-            #Format times
-            if ($SaturdayStartTime) {
-                $SaturdayStartTime = $SaturdayStartTime.Insert(4, ':').Insert(2, ':')
-            }
-            if ($SaturdayEndTime) {
-                $SaturdayEndTime = $SaturdayEndTime.Insert(4, ':').Insert(2, ':')
-            }
-
-            if ($SundayStartTime) {
-                $SundayStartTime = $SundayStartTime.Insert(4, ':').Insert(2, ':')
-            }
-            if ($SundayEndTime) {
-                $SundayEndTime = $SundayEndTime.Insert(4, ':').Insert(2, ':')
-            }
-
-            if ($WeekdayStartTime) {
-                $WeekdayStartTime = $WeekdayStartTime.Insert(4, ':').Insert(2, ':')
-            }
-            if ($WeekdayEndTime) {
-                $WeekdayEndTime = $WeekdayEndTime.Insert(4, ':').Insert(2, ':')
             }
 
             $failsafe = $server.JobServer.AlertSystem | Select-Object FailSafeOperator
