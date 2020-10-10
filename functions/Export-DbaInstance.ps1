@@ -144,7 +144,7 @@ function Export-DbaInstance {
         [ValidateSet('Databases', 'Logins', 'AgentServer', 'Credentials', 'LinkedServers', 'SpConfigure', 'CentralManagementServer', 'DatabaseMail', 'SysDbUserObjects', 'SystemTriggers', 'BackupDevices', 'Audits', 'Endpoints', 'ExtendedEvents', 'PolicyManagement', 'ResourceGovernor', 'ServerAuditSpecifications', 'CustomErrors', 'ServerRoles', 'AvailabilityGroups', 'ReplicationSettings')]
         [string[]]$Exclude,
         [string]$BatchSeparator = 'GO',
-        [switch]$Append,
+        [switch]$Append = $true,
         [Microsoft.SqlServer.Management.Smo.ScriptingOptions]$ScriptingOption,
         [switch]$NoPrefix = $false,
         [switch]$ExcludePassword,
