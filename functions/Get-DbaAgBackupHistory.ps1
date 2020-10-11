@@ -200,17 +200,17 @@ function Get-DbaAgBackupHistory {
             $AgResults | Select-DbaBackupInformation -ServerName $AvailabilityGroup
         } elseif ($LastFull) {
             Write-Message -Level Verbose -Message "Filtering Ag backups for LastFull"
-            Foreach ($AgDb in ( $AgLoopResults.Database | Select-Object -Unique)) {
+            Foreach ($AgDb in ( $AgResults.Database | Select-Object -Unique)) {
                 $AgResults | Where-Object { $_.Database -eq $AgDb } | Sort-Object -Property FirstLsn | Select-Object -Last 1
             }
         } elseif ($LastDiff) {
             Write-Message -Level Verbose -Message "Filtering Ag backups for LastDiff"
-            Foreach ($AgDb in ( $AgLoopResults.Database | Select-Object -Unique)) {
+            Foreach ($AgDb in ( $AgResults.Database | Select-Object -Unique)) {
                 $AgResults | Where-Object { $_.Database -eq $AgDb } | Sort-Object -Property FirstLsn | Select-Object -Last 1
             }
         } elseif ($LastLog) {
             Write-Message -Level Verbose -Message "Filtering Ag backups for LastLog"
-            Foreach ($AgDb in ( $AgLoopResults.Database | Select-Object -Unique)) {
+            Foreach ($AgDb in ( $AgResults.Database | Select-Object -Unique)) {
                 $AgResults | Where-Object { $_.Database -eq $AgDb } | Sort-Object -Property FirstLsn | Select-Object -Last 1
             }
         } else {
