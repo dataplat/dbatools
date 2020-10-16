@@ -190,6 +190,7 @@ function Get-DbaAgBackupHistory {
         Write-Message -Level Verbose -Message "We have more than one server, so query them all and aggregate"
         $null = $PSBoundParameters.Remove('SqlInstance')
         $null = $PSBoundParameters.Remove('AvailabilityGroup')
+        $null = $PSBoundParameters.Remove('Last')
         $AgResults = Get-DbaDbBackupHistory -SqlInstance $serverList @PSBoundParameters
         Foreach ($agr in $AgResults) {
             $agr.AvailabilityGroupName = $AvailabilityGroup
