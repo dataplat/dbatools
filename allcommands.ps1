@@ -12841,6 +12841,16 @@ function Export-DbaInstance {
                 }
             }
 
+            if ($Exclude -notcontains 'Logins') {
+                $fileCounter++
+                Write-Message -Level Verbose -Message "Exporting logins"
+                Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Exporting logins"
+                Export-DbaLogin -SqlInstance $server -FilePath "$exportPath\$fileCounter-logins.sql" -Append:$Append -ExcludePassword:$ExcludePassword -NoPrefix:$NoPrefix -WarningAction SilentlyContinue
+                if (-not (Test-Path "$exportPath\$fileCounter-logins.sql")) {
+                    $fileCounter--
+                }
+            }
+
             if ($Exclude -notcontains 'DatabaseMail') {
                 $fileCounter++
                 Write-Message -Level Verbose -Message "Exporting database mail"
@@ -12913,16 +12923,6 @@ function Export-DbaInstance {
                 Get-DbaDbBackupHistory -SqlInstance $server -Last | Restore-DbaDatabase -SqlInstance $server -NoRecovery:$NoRecovery -WithReplace -OutputScriptOnly -WarningAction SilentlyContinue | Out-File -FilePath "$exportPath\$fileCounter-databases.sql" -Append:$Append
                 Get-ChildItem -ErrorAction Ignore -Path "$exportPath\$fileCounter-databases.sql"
                 if (-not (Test-Path "$exportPath\$fileCounter-databases.sql")) {
-                    $fileCounter--
-                }
-            }
-
-            if ($Exclude -notcontains 'Logins') {
-                $fileCounter++
-                Write-Message -Level Verbose -Message "Exporting logins"
-                Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Exporting logins"
-                Export-DbaLogin -SqlInstance $server -FilePath "$exportPath\$fileCounter-logins.sql" -Append:$Append -ExcludePassword:$ExcludePassword -NoPrefix:$NoPrefix -WarningAction SilentlyContinue
-                if (-not (Test-Path "$exportPath\$fileCounter-logins.sql")) {
                     $fileCounter--
                 }
             }
@@ -20418,9 +20418,15 @@ function Get-DbaBuildReference {
                 $Detected.KB = $el.KBList
                 if (($Build -and $el.Version -eq $Build) -or ($Kb -and $el.KBList -eq $currentKb)) {
                     $Detected.MatchType = 'Exact'
+                    if ($el.Retired) {
+                        $Detected.Warning = "This version has been officially retired by Microsoft"
+                    }
                     break
                 } elseif ($MajorVersion -and $Detected.SP -contains $ServicePack -and (!$CumulativeUpdate -or ($el.CU -and $el.CU -eq $CumulativeUpdate))) {
                     $Detected.MatchType = 'Exact'
+                    if ($el.Retired) {
+                        $Detected.Warning = "This version has been officially retired by Microsoft"
+                    }
                     break
                 }
             }
@@ -70113,6 +70119,7 @@ function Test-DbaBuild {
                             VersionObject = $el.VersionObject
                             SP            = $lastsp
                             CU            = $el.CU
+                            Retired       = $el.Retired
                         }
                     }
                 }
@@ -70131,7 +70138,7 @@ function Test-DbaBuild {
                         $targetedBuild = $SPsAndCUs | Where-Object SP -eq $targetSPName | Select-Object -First 1
                     }
                     if ($ParsedMaxBehind.ContainsKey('CU')) {
-                        [string[]]$AllCUs = ($SPsAndCUs | Where-Object VersionObject -gt $targetedBuild.VersionObject).CU | Select-Object -Unique
+                        [string[]]$AllCUs = ($SPsAndCUs | Where-Object VersionObject -gt $targetedBuild.VersionObject | Where-Object Retired -ne $true).CU | Select-Object -Unique
                         if ($AllCUs.Length -gt 0) {
                             #CU after the targeted build available
                             $targetCU = $AllCUs.Length - $ParsedMaxBehind['CU'] - 1
