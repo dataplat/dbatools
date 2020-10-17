@@ -173,13 +173,13 @@ function Get-DbaRandomizedValue {
         }
 
         if (-not $Min) {
-            if ($DataType.ToLower() -ne "date" -and $RandomizerType.ToLower() -ne "date") {
+            if ($DataType.ToLower() -notlike "date*" -and $RandomizerType.ToLower() -notlike "date*") {
                 $Min = 1
             }
         }
 
         if (-not $Max) {
-            if ($DataType.ToLower() -ne "date" -and $RandomizerType.ToLower() -ne "date") {
+            if ($DataType.ToLower() -notlike "date*" -and $RandomizerType.ToLower() -notlike "date*") {
                 $Max = 255
             }
         }
