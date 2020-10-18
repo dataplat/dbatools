@@ -485,10 +485,8 @@ function Connect-DbaInstance {
                     [Microsoft.SqlServer.Management.Smo.Server]$server = New-Object -TypeName Microsoft.SqlServer.Management.Smo.Server -ArgumentList $instance.InputObject
                 } elseif ($instance.Type -like "RegisteredServer") {
                     Write-Message -Level Verbose -Message "RegisteredServer object passed in, will build empty server object, set connection string from instance.InputObject.ConnectionString, do some checks and then return the server object"
-                    # TODO: Test if instance.FullSmoName can be used
                     [Microsoft.SqlServer.Management.Smo.Server]$server = New-Object -TypeName Microsoft.SqlServer.Management.Smo.Server -ArgumentList $instance.FullSmoName
                     $server.ConnectionContext.ConnectionString = $instance.InputObject.ConnectionString
-                    # TODO: Do we have to test for existance of instance.InputObject.ConnectionString or is this guaranteed by [DbaInstanceParameter]?
                 } elseif ($instance.IsConnectionString) {
                     Write-Message -Level Verbose -Message "Connection string is passed in, will build empty server object, set connection string from instance.InputObject, do some checks and then return the server object"
                     [Microsoft.SqlServer.Management.Smo.Server]$server = New-Object -TypeName Microsoft.SqlServer.Management.Smo.Server -ArgumentList $instance.FullSmoName
