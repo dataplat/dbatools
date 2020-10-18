@@ -1,212 +1,279 @@
 function Resolve-DbaNetworkName {
-	<#
-		.SYNOPSIS
-			Returns information about the network connection of the target computer including NetBIOS name, IP Address, domain name and fully qualified domain name (FQDN).
+    <#
+    .SYNOPSIS
+        Returns information about the network connection of the target computer including NetBIOS name, IP Address, domain name and fully qualified domain name (FQDN).
 
-		.DESCRIPTION
-			Retrieves the IPAddress, ComputerName from one computer.
-			The object can be used to take action against its name or IPAddress.
+    .DESCRIPTION
+        Retrieves the IPAddress, ComputerName from one computer.
+        The object can be used to take action against its name or IPAddress.
 
-			First ICMP is used to test the connection, and get the connected IPAddress.
+        First ICMP is used to test the connection, and get the connected IPAddress.
 
-			Multiple protocols (e.g. WMI, CIM, etc) are attempted before giving up.
+        Multiple protocols (e.g. WMI, CIM, etc) are attempted before giving up.
 
-		.PARAMETER ComputerName
-			The Server that you're connecting to.
-			This can be the name of a computer, a SMO object, an IP address or a SQL Instance.
+        Important: Remember that FQDN doesn't always match "ComputerName dot Domain" as AD intends.
+        There are network setup (google "disjoint domain") where AD and DNS do not match.
+        "Full computer name" (as reported by sysdm.cpl) is the only match between the two,
+        and it matches the "DNSHostName"  property of the computer object stored in AD.
+        This means that the notation of FQDN that matches "ComputerName dot Domain" is incorrect
+        in those scenarios.
+        In other words, the "suffix" of the FQDN CAN be different from the AD Domain.
 
-		.PARAMETER Credential
-			Credential object used to connect to the SQL Server as a different user
+        This cmdlet has been providing good results since its inception but for lack of useful
+        names some doubts may arise.
+        Let this clear the doubts:
+        - InputName: whatever has been passed in
+        - ComputerName: hostname only
+        - IPAddress: IP Address
+        - DNSHostName: hostname only, coming strictly from DNS (as reported from the calling computer)
+        - DNSDomain: domain only, coming strictly from DNS (as reported from the calling computer)
+        - Domain: domain only, coming strictly from AD (i.e. the domain the ComputerName is joined to)
+        - DNSHostEntry: Fully name as returned by DNS [System.Net.Dns]::GetHostEntry
+        - FQDN: "legacy" notation of ComputerName "dot" Domain (coming from AD)
+        - FullComputerName: Full name as configured from within the Computer (i.e. the only secure match between AD and DNS)
 
-		.PARAMETER Turbo
-			Resolves without accessing the serer itself. Faster but may be less accurate.
+        So, if you need to use something, go with FullComputerName, always, as it is the most correct in every scenario.
 
-		.PARAMETER Silent
-			Use this switch to disable any kind of verbose messages.
+    .PARAMETER ComputerName
+        The target SQL Server instance or instances.
+        This can be the name of a computer, a SMO object, an IP address or a SQL Instance.
 
-		.NOTES
-			Tags: Network, Resolve
-			Original Author: Klaas Vandenberghe ( @PowerDBAKlaas )
+    .PARAMETER Credential
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
 
-			Website: https://dbatools.io
-			Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-			License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
 
-		.LINK
-			https://dbatools.io/Resolve-DbaNetworkName
+        For MFA support, please use Connect-DbaInstance.
 
-		.EXAMPLE
-			Resolve-DbaNetworkName -ComputerName ServerA
+    .PARAMETER Turbo
+        Resolves without accessing the server itself. Faster but may be less accurate because it relies on DNS only,
+        so it may fail spectacularly for disjoin-domain setups. Also, everyone has its own DNS (i.e. results may vary
+        changing the computer where the function runs)
 
-			Returns a custom object displaying InputName, ComputerName, IPAddress, DNSHostName, Domain, FQDN for ServerA
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-		.EXAMPLE
-			Resolve-DbaNetworkName -SqlInstance sql2016\sqlexpress
+    .NOTES
+        Tags: Network, Resolve
+        Author: Klaas Vandenberghe (@PowerDBAKlaas) | Simone Bizzotto (@niphold)
 
-			Returns a custom object displaying InputName, ComputerName, IPAddress, DNSHostName, Domain, FQDN for the SQL instance sql2016\sqlexpress
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-		.EXAMPLE
-			Resolve-DbaNetworkName -SqlInstance sql2016\sqlexpress, sql2014
+    .LINK
+        https://dbatools.io/Resolve-DbaNetworkName
 
-			Returns a custom object displaying InputName, ComputerName, IPAddress, DNSHostName, Domain, FQDN for the SQL instance sql2016\sqlexpress and sql2014
+    .EXAMPLE
+        PS C:\> Resolve-DbaNetworkName -ComputerName sql2014
 
-			Get-DbaRegisteredServerName -SqlInstance sql2014 | Resolve-DbaNetworkName
+        Returns a custom object displaying InputName, ComputerName, IPAddress, DNSHostName, DNSDomain, Domain, DNSHostEntry, FQDN, DNSHostEntry for sql2014
 
-			Returns a custom object displaying InputName, ComputerName, IPAddress, DNSHostName, Domain, FQDN for all SQL Servers returned by Get-DbaRegisteredServerName
-	#>
-	[CmdletBinding()]
-	param (
-		[parameter(ValueFromPipeline)]
-		[Alias('cn', 'host', 'ServerInstance', 'Server', 'SqlInstance')]
-		[DbaInstanceParameter[]]$ComputerName = $env:COMPUTERNAME,
-		[PSCredential] $Credential,
-		[Alias('FastParrot')]
-		[switch]$Turbo,
-		[switch]$Silent
-	)
+    .EXAMPLE
+        PS C:\> Resolve-DbaNetworkName -ComputerName sql2016, sql2014
 
-	process {
-		foreach ($Computer in $ComputerName) {
-			$conn = $ipaddress = $null
+        Returns a custom object displaying InputName, ComputerName, IPAddress, DNSHostName, DNSDomain, Domain, DNSHostEntry, FQDN, DNSHostEntry for sql2016 and sql2014
 
-			$OGComputer = $Computer
-			
-			if ($Computer.IsLocalhost) {
-				$Computer = $env:COMPUTERNAME
-			}
-			else {
-				$Computer = $Computer.ComputerName
-			}
-			
-			if ($Turbo) {
-				try {
-					Write-Message -Level Verbose -Message "Resolving $Computer using .NET.Dns GetHostEntry"
-					$ipaddress = ([System.Net.Dns]::GetHostEntry($Computer)).AddressList[0].IPAddressToString
-					Write-Message -Level Verbose -Message "Resolving $ipaddress using .NET.Dns GetHostByAddress"
-					$fqdn = [System.Net.Dns]::GetHostByAddress($ipaddress).HostName
-				}
-				catch {
-					try {
-						Write-Message -Level Verbose -Message "Resolving $Computer and IP using .NET.Dns GetHostEntry"
-						$resolved = [System.Net.Dns]::GetHostEntry($Computer)
-						$ipaddress = $resolved.AddressList[0].IPAddressToString
-						$fqdn = $resolved.HostName
-					}
-					catch {
-						Stop-Function -Message "DNS name not found" -Continue -InnerErrorRecord $_
-					}
-				}
-				
-				if ($fqdn -notmatch "\.") {
-					if ($computer -match "\.") {
-						$dnsdomain = $computer.ComputerName.Substring($computer.ComputerName.IndexOf(".") + 1)
-						$fqdn = "$resolved.$dnsdomain"
-					}
-					else {
-						$dnsdomain = $env:USERDNSDOMAIN.ToLower()
-						if ($dnsdomain -match "\.") {
-							$fqdn = "$fqdn.$dnsdomain"
-						}
-					}
-				}
-				
-				$hostname = $fqdn.Split(".")[0]
+    .EXAMPLE
+        PS C:\> Get-DbaRegServer -SqlInstance sql2014 | Resolve-DbaNetworkName
 
-				[PSCustomObject]@{
-					InputName    = $OGComputer
-					ComputerName = $hostname.ToUpper()
-					IPAddress    = $ipaddress
-					DNSHostname  = $hostname
-					Domain       = $fqdn.Replace("$hostname.", "")
-					DNSHostEntry = $fqdn
-					FQDN         = $fqdn
-				}
-				return
-			}
+        Returns a custom object displaying InputName, ComputerName, IPAddress, DNSHostName, DNSDomain, Domain, DNSHostEntry, FQDN, DNSHostEntry for all SQL Servers returned by Get-DbaRegServer
 
-			Write-Message -Level Verbose -Message "Connecting to $Computer"
+    .EXAMPLE
+        PS C:\> Get-DbaRegServer -SqlInstance sql2014, sql2016\sqlexpress | Resolve-DbaNetworkName
 
-			try {
-				$ipaddress = ((Test-Connection -ComputerName $Computer -Count 1 -ErrorAction Stop).Ipv4Address).IPAddressToString
-			}
-			catch {
-								try {
-										if ($env:USERDNSDOMAIN) {
-												$ipaddress = ((Test-Connection -ComputerName "$Computer.$env:USERDNSDOMAIN" -Count 1 -ErrorAction SilentlyContinue).Ipv4Address).IPAddressToString
-												$Computer = "$Computer.$env:USERDNSDOMAIN"
-										}
-								}
-								catch {
-										$Computer = $OGComputer
-										$ipaddress = ([System.Net.Dns]::GetHostEntry($Computer)).AddressList[0].IPAddressToString
-								}
-			}
+        Returns a custom object displaying InputName, ComputerName, IPAddress, DNSHostName, DNSDomain, Domain, DNSHostEntry, FQDN, DNSHostEntry for all SQL Servers returned by Get-DbaRegServer
 
-			if ($ipaddress) {
-				Write-Message -Level Verbose -Message "IP Address from $Computer is $ipaddress"
-			}
-			else {
-				Write-Message -Level Verbose -Message "No IP Address returned from $Computer"
-				Write-Message -Level Verbose -Message "Using .NET.Dns to resolve IP Address"
-				return (Resolve-DbaNetworkName -ComputerName $Computer -Turbo)
-			}
+    #>
+    [CmdletBinding()]
+    param (
+        [parameter(ValueFromPipeline)]
+        [DbaInstanceParameter[]]$ComputerName = $env:COMPUTERNAME,
+        [PSCredential]$Credential,
+        [Alias('FastParrot')]
+        [switch]$Turbo,
+        [switch]$EnableException
+    )
+    begin {
+        Function Get-ComputerDomainName {
+            Param (
+                $FQDN,
+                $ComputerName
+            )
+            # deduce the domain name based on resolved name + original request
+            if ($fqdn -notmatch "\.") {
+                if ($ComputerName -match "\.") {
+                    return $ComputerName.Substring($ComputerName.IndexOf(".") + 1)
+                } else {
+                    return "$env:USERDNSDOMAIN".ToLowerInvariant()
+                }
+            } else {
+                return $fqdn.Substring($fqdn.IndexOf(".") + 1)
+            }
+        }
+    }
+    process {
+        if ((Get-DbatoolsConfigValue -FullName commands.resolve-dbanetworkname.bypass)) {
+            foreach ($computer in $ComputerName) {
+                [pscustomobject]@{
+                    InputName        = $computer
+                    ComputerName     = $computer
+                    IPAddress        = $computer
+                    DNSHostname      = $computer
+                    DNSDomain        = $computer # (Get-ComputerDomainName -ComputerName $computer)
+                    Domain           = $computer # (Get-ComputerDomainName -ComputerName $computer)
+                    DNSHostEntry     = $computer
+                    FQDN             = $computer
+                    FullComputerName = $computer
+                }
+                continue
+            }
+            return
+        }
 
-			if ($PSVersionTable.PSVersion.Major -gt 2) {
-                Write-Message -Level Verbose -Message "Your PowerShell Version is $($PSVersionTable.PSVersion.Major)"
-				try {
-					Write-Message -Level Verbose -Message "Getting computer information from $Computer"
-					if (Test-Bound "Credential") {
-						$conn = Get-DbaCmObject -ClassName win32_ComputerSystem -Computer $Computer -Credential $Credential -Silent
-					}
-					else {
-						$conn = Get-DbaCmObject -ClassName win32_ComputerSystem -Computer $Computer -Silent
-					}
-				}
-				catch {
-					Write-Message -Level Verbose -Message "Unable to get computer information from $Computer"
-				}
+        if (-not (Test-Windows -NoWarn)) {
+            Write-Message -Level Verbose -Message "Non-Windows client detected. Turbo (DNS resolution only) set to $true"
+            $Turbo = $true
+        }
 
-				if (!$conn) {
-					Write-Message -Level Verbose -Message "No WMI/CIM from $Computer. Getting HostName via .NET.Dns"
-					try {
-						$fqdn = ([System.Net.Dns]::GetHostEntry($Computer)).HostName
-						$hostname = $fqdn.Split(".")[0]
+        foreach ($computer in $ComputerName) {
+            if ($computer.IsLocalhost) {
+                $cName = $env:COMPUTERNAME
+            } else {
+                $cName = $computer.ComputerName
+            }
 
-						$conn = [PSCustomObject]@{
-							Name        = $Computer
-							DNSHostname = $hostname
-							Domain      = $fqdn.Replace("$hostname.", "")
-						}
-					}
-					catch {
-						Stop-Function -Message "No .NET.Dns information from $Computer" -InnerErrorRecord $_ -Continue
-					}
-				}
-			}
+            # resolve IP address
+            try {
+                Write-Message -Level VeryVerbose -Message "Resolving $cName using .NET.Dns GetHostEntry"
+                $resolved = [System.Net.Dns]::GetHostEntry($cName)
+                $ipaddresses = $resolved.AddressList | Sort-Object -Property AddressFamily # prioritize IPv4
+                $ipaddress = $ipaddresses[0].IPAddressToString
+            } catch {
+                Stop-Function -Message "DNS name $cName not found" -Continue -ErrorRecord $_
+            }
 
-			try {
-				Write-Message -Level Verbose -Message "Resolving $($conn.DNSHostname) using .NET.Dns GetHostEntry"
-				$hostentry = ([System.Net.Dns]::GetHostEntry($conn.DNSHostname)).HostName
-			}
-			catch {
-				Stop-Function -Message ".NET.Dns GetHostEntry failed for $($conn.DNSHostname)" -InnerErrorRecord $_
-			}
+            # try to resolve IP into a hostname
+            try {
+                Write-Message -Level VeryVerbose -Message "Resolving $ipaddress using .NET.Dns GetHostByAddress"
+                $fqdn = [System.Net.Dns]::GetHostByAddress($ipaddress).HostName
+            } catch {
+                Write-Message -Level Debug -Message "Failed to resolve $ipaddress using .NET.Dns GetHostByAddress"
+                $fqdn = $resolved.HostName
+            }
 
-			$fqdn = "$($conn.DNSHostname).$($conn.Domain)"
-			if ($fqdn -eq ".") {
-				Write-Message -Level Verbose -Message "No full FQDN found. Setting to null"
-				$fqdn = $null
-			}
+            $dnsDomain = Get-ComputerDomainName -FQDN $fqdn -ComputerName $cName
+            # augment fqdn if needed
+            if ($fqdn -notmatch "\." -and $dnsDomain) {
+                $fqdn = "$fqdn.$dnsdomain"
+            }
+            $hostname = $fqdn.Split(".")[0]
 
-			[PSCustomObject]@{
-				InputName    = $OGComputer
-				ComputerName = $conn.Name
-				IPAddress    = $ipaddress
-				DNSHostName  = $conn.DNSHostname
-				Domain       = $conn.Domain
-				DNSHostEntry = $hostentry
-				FQDN         = $fqdn
-			}
-		}
-	}
+            # create an output object with some preliminary data gathered so far
+            $result = [PSCustomObject]@{
+                InputName        = $computer
+                ComputerName     = $hostname.ToUpper()
+                IPAddress        = $ipaddress
+                DNSHostname      = $hostname
+                DNSDomain        = $dnsdomain
+                Domain           = $dnsdomain
+                DNSHostEntry     = $fqdn
+                FQDN             = $fqdn
+                FullComputerName = $cName
+            }
+            if ($Turbo) {
+                # that's a finish line for a Turbo mode
+                $result
+                continue
+            }
+
+            # finding out which IP to use by pinging all of them. The first to respond is the one.
+            $ping = New-Object System.Net.NetworkInformation.Ping
+            $timeout = 1000 #milliseconds
+            foreach ($ip in $ipaddresses) {
+                $reply = $ping.Send($ip, $timeout)
+                if ($reply.Status -eq 'Success') {
+                    $ipaddress = $ip.IPAddressToString
+                    break
+                }
+            }
+            $result.IPAddress = $ipaddress
+
+            # re-try DNS reverse zone lookup if the IP to use is not the first one
+            if ($ipaddresses[0].IPAddressToString -ne $ipaddress) {
+                try {
+                    Write-Message -Level VeryVerbose -Message "Resolving $ipaddress using .NET.Dns GetHostByAddress"
+                    $fqdn = [System.Net.Dns]::GetHostByAddress($ipaddress).HostName
+                    # re-adjust DNS domain again
+                    $dnsDomain = Get-ComputerDomainName -FQDN $fqdn -ComputerName $cName
+                    # augment fqdn if needed
+                    if ($fqdn -notmatch "\." -and $dnsDomain) {
+                        $fqdn = "$fqdn.$dnsdomain"
+                    }
+                    $hostname = $fqdn.Split(".")[0]
+
+                    # update result fields accordingly
+                    $result.ComputerName = $hostname.ToUpper()
+                    $result.DNSHostname = $hostname
+                    $result.DNSDomain = $dnsdomain
+                    $result.Domain = $dnsdomain
+                    $result.DNSHostEntry = $fqdn
+                    $result.FQDN = $fqdn
+                } catch {
+                    Write-Message -Level VeryVerbose -Message "Failed to obtain a new name from $ipaddress, re-using $fqdn"
+                }
+            }
+
+
+            Write-Message -Level Debug -Message "Getting domain name from the remote host $fqdn"
+            try {
+                $ScBlock = {
+                    return [System.Net.NetworkInformation.IPGlobalProperties]::GetIPGlobalProperties().DomainName
+                }
+                $cParams = @{
+                    ComputerName = $cName
+                }
+                if ($Credential) { $cParams.Credential = $Credential }
+
+                $conn = Get-DbaCmObject @cParams -ClassName win32_ComputerSystem -EnableException
+                if ($conn) {
+                    # update results accordingly
+                    $result.ComputerName = $conn.Name
+                    $dnsHostname = $conn.DNSHostname
+                    $dnsDomain = $conn.Domain
+                    $result.FQDN = "$dnsHostname.$dnsDomain".TrimEnd('.')
+                    $result.DNSHostName = $dnsHostname
+                    $result.Domain = $dnsDomain
+                }
+                try {
+                    Write-Message -Level Debug -Message "Getting DNS domain from the remote host $($cParams.ComputerName)"
+                    $dnsSuffix = Invoke-Command2 @cParams -ScriptBlock $ScBlock -ErrorAction Stop -Raw
+                    $result.DNSDomain = $dnsSuffix
+                    if ($dnsSuffix) {
+                        $fullComputerName = $result.DNSHostName + "." + $dnsSuffix
+                    } else {
+                        $fullComputerName = $result.DNSHostName
+                    }
+                    $result.FullComputerName = $fullComputerName
+                } catch {
+                    Write-Message -Level Verbose -Message "Unable to get DNS domain information from $($cParams.ComputerName)"
+                }
+            } catch {
+                Write-Message -Level Verbose -Message "Unable to get domain name from $($cParams.ComputerName)"
+            }
+
+            # getting a DNS host entry for the full name
+            try {
+                Write-Message -Level VeryVerbose -Message "Resolving $($result.FullComputerName) using .NET.Dns GetHostEntry"
+                $result.DNSHostEntry = ([System.Net.Dns]::GetHostEntry($result.FullComputerName)).HostName
+            } catch {
+                Write-Message -Level Verbose -Message ".NET.Dns GetHostEntry failed for $($result.FullComputerName)"
+            }
+
+            # returning the final result
+            $result
+        }
+    }
 }

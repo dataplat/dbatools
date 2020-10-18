@@ -20,11 +20,7 @@ namespace Sqlcollaborative.Dbatools.Utility
         {
             get
             {
-                return (Byte / (double)1024);
-            }
-            set
-            {
-
+                return (Byte / 1024d);
             }
         }
 
@@ -35,11 +31,7 @@ namespace Sqlcollaborative.Dbatools.Utility
         {
             get
             {
-                return (Byte / (double)1048576);
-            }
-            set
-            {
-
+                return (Byte / 1048576d);
             }
         }
 
@@ -50,11 +42,7 @@ namespace Sqlcollaborative.Dbatools.Utility
         {
             get
             {
-                return (Byte / (double)1073741824);
-            }
-            set
-            {
-
+                return (Byte / 1073741824d);
             }
         }
 
@@ -65,28 +53,41 @@ namespace Sqlcollaborative.Dbatools.Utility
         {
             get
             {
-                return (Byte / (double)1099511627776);
-            }
-            set
-            {
-
+                return (Byte / 1099511627776d);
             }
         }
 
         /// <summary>
         /// Number if digits behind the dot.
         /// </summary>
-        public int Digits
+        public int? Digits
         {
             get
             {
-                return _digits;
+                return _digits ?? UtilityHost.SizeDigits;
             }
-            set {
-                _digits = value < 0 ? 0 : value;
+            set
+            {
+                _digits = value == null ? null : (value.Value <= 0 ? 0 : value);
             }
         }
-        private int _digits = 2;
+        private int? _digits;
+
+        /// <summary>
+        /// How the size object should be displayed.
+        /// </summary>
+        public SizeStyle? Style
+        {
+            get
+            {
+                return _style ?? UtilityHost.SizeStyle;
+            }
+            set
+            {
+                _style = value;
+            }
+        }
+        private SizeStyle? _style;
 
         /// <summary>
         /// Shows the default string representation of size
@@ -95,30 +96,45 @@ namespace Sqlcollaborative.Dbatools.Utility
         public override string ToString()
         {
             string format = "{0:N" + Digits + "} {1}";
-
-            if (Terabyte > 1)
+            switch (Style)
             {
-                return (String.Format(format, Terabyte, "TB"));
+                case SizeStyle.Plain:
+                    return Byte.ToString();
+                case SizeStyle.Byte:
+                    return (String.Format("{0} {1}", Byte, "B"));
+                case SizeStyle.Kilobyte:
+                    return (String.Format(format, Kilobyte, "KB"));
+                case SizeStyle.Megabyte:
+                    return (String.Format(format, Megabyte, "MB"));
+                case SizeStyle.Gigabyte:
+                    return (String.Format(format, Gigabyte, "GB"));
+                case SizeStyle.Terabyte:
+                    return (String.Format(format, Terabyte, "TB"));
+                default:
+                    if (Terabyte > 1)
+                    {
+                        return (String.Format(format, Terabyte, "TB"));
+                    }
+                    if (Gigabyte > 1)
+                    {
+                        return (String.Format(format, Gigabyte, "GB"));
+                    }
+                    if (Megabyte > 1)
+                    {
+                        return (String.Format(format, Megabyte, "MB"));
+                    }
+                    if (Kilobyte > 1)
+                    {
+                        return (String.Format(format, Kilobyte, "KB"));
+                    }
+                    if (Byte > -1)
+                    {
+                        return (String.Format("{0} {1}", Byte, "B"));
+                    }
+                    if (Byte == -1)
+                        return "Unlimited";
+                    return "";
             }
-            if (Gigabyte > 1)
-            {
-                return (String.Format(format, Gigabyte, "GB"));
-            }
-            if (Megabyte > 1)
-            {
-                return (String.Format(format, Megabyte, "MB"));
-            }
-            if (Kilobyte > 1)
-            {
-                return (String.Format(format, Kilobyte, "KB"));
-            }
-            if (Byte > -1)
-            {
-                return (String.Format("{0} {1}", Byte, "B"));
-            }
-            if (Byte == -1)
-                return "Unlimited";
-            return "";
         }
 
         /// <summary>
@@ -128,15 +144,15 @@ namespace Sqlcollaborative.Dbatools.Utility
         /// <returns>True if equal, false elsewise</returns>
         public override bool Equals(object obj)
         {
-            return ((obj != null) && (obj is Size) && (Byte == ((Size)obj).Byte));
+            var size = obj as Size;
+            return (size != null  && (Byte == size.Byte));
         }
 
-        /// <summary>
-        /// Meaningless, but required
-        /// </summary>
-        /// <returns>Some meaningless output</returns>
+        /// <inheritdoc cref="Int64.GetHashCode"/>
+        /// <remarks>The hashcode of the underlying size</remarks>
         public override int GetHashCode()
         {
+            // ReSharper disable once NonReadonlyMemberInGetHashCode
             return Byte.GetHashCode();
         }
 
@@ -157,37 +173,27 @@ namespace Sqlcollaborative.Dbatools.Utility
             this.Byte = Byte;
         }
 
-        /// <summary>
-        /// Some more interface implementation. Used to sort the object
-        /// </summary>
-        /// <param name="obj">The object to compare to</param>
-        /// <returns>Something</returns>
+        /// <inheritdoc cref="IComparable{Size}.CompareTo"/>
+        /// <remarks>For sorting</remarks>
         public int CompareTo(Size obj)
         {
-            if (Byte == obj.Byte) { return 0; }
-            if (Byte < obj.Byte) { return -1; }
-
-            return 1;
+            return Byte.CompareTo(obj.Byte);
         }
 
-        /// <summary>
-        /// Some more interface implementation. Used to sort the object
-        /// </summary>
-        /// <param name="obj">The object to compare to</param>
-        /// <returns>Something</returns>
-        public int CompareTo(Object obj)
+        /// <inheritdoc cref="IComparable.CompareTo"/>
+        /// <remarks>For sorting</remarks>
+        /// <exception cref="ArgumentException">If you compare with something invalid.</exception>
+        public int CompareTo(object obj)
         {
-            try
+            var size = obj as Size;
+            if (size != null)
             {
-                if (Byte == ((Size)obj).Byte) { return 0; }
-                if (Byte < ((Size)obj).Byte) { return -1; }
-
-                return 1;
+                return CompareTo(size);
             }
-            catch { return 0; }
+            throw new ArgumentException(String.Format("Cannot compare a {0} to a {1}", typeof(Size).FullName, obj.GetType().FullName));
         }
 
-        #region Operators
+        #region MathOperators
         /// <summary>
         /// Adds two sizes
         /// </summary>
@@ -211,12 +217,68 @@ namespace Sqlcollaborative.Dbatools.Utility
         }
 
         /// <summary>
+        /// Multiplies two sizes with each other
+        /// </summary>
+        /// <param name="a">The size to multiply</param>
+        /// <param name="b">The size to multiply with</param>
+        /// <returns>A multiplied size.</returns>
+        public static Size operator *(Size a, double b)
+        {
+            return new Size((long)(a.Byte * b));
+        }
+
+        /// <summary>
+        /// Divides one size by another. 
+        /// </summary>
+        /// <param name="a">The size to divide</param>
+        /// <param name="b">The size to divide with</param>
+        /// <returns>Divided size (note: Cut off)</returns>
+        public static Size operator /(Size a, double b)
+        {
+            return new Size((long)((double)a.Byte / b));
+        }
+
+        /// <summary>
+        /// Multiplies two sizes with each other
+        /// </summary>
+        /// <param name="a">The size to multiply</param>
+        /// <param name="b">The size to multiply with</param>
+        /// <returns>A multiplied size.</returns>
+        public static Size operator *(Size a, Size b)
+        {
+            return new Size(a.Byte * b.Byte);
+        }
+
+        /// <summary>
+        /// Divides one size by another.
+        /// </summary>
+        /// <param name="a">The size to divide</param>
+        /// <param name="b">The size to divide with</param>
+        /// <returns>Divided size (note: Cut off)</returns>
+        public static Size operator /(Size a, Size b)
+        {
+            return new Size((long)((double)a.Byte / (double)b.Byte));
+        }
+
+        #endregion
+        #region ImplicitCasts
+
+        /// <summary>
         /// Implicitly converts int to size
         /// </summary>
         /// <param name="a">The number to convert</param>
         public static implicit operator Size(int a)
         {
             return new Size(a);
+        }
+
+        /// <summary>
+        /// Implicitly converts int to size
+        /// </summary>
+        /// <param name="a">The number to convert</param>
+        public static implicit operator Size(decimal a)
+        {
+            return new Size((long)a);
         }
 
         /// <summary>

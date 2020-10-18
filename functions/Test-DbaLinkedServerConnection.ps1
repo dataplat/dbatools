@@ -1,120 +1,100 @@
-﻿function Test-DbaLinkedServerConnection
-{
-<#
-.SYNOPSIS
-Test all linked servers from the sql servers passed
+function Test-DbaLinkedServerConnection {
+    <#
+    .SYNOPSIS
+        Test all linked servers from the sql servers passed
 
-.DESCRIPTION
-Test each linked server on the instance
+    .DESCRIPTION
+        Test each linked server on the instance
 
-.PARAMETER SqlInstance
-The SQL Server that you're connecting to.
+    .PARAMETER SqlInstance
+        The target SQL Server instance or instances.
 
-.PARAMETER SqlCredential
-Credential object used to connect to the SQL Server as a different user
+    .PARAMETER SqlCredential
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
 
-.PARAMETER Silent 
-Use this switch to disable any kind of verbose messages
-	
-.NOTES
-Author: Thomas LaRock ( https://thomaslarock.com )
-	
-dbatools PowerShell module (https://dbatools.io)
-Copyright (C) 2017 Chrissy LeMaire
-This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
-This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
-You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
-	
-.LINK
-https://dbatools.io/Test-DbaLinkedServerConnection
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
 
-.EXAMPLE
-Test-DbaLinkedServerConnection -SqlInstance DEV01
+        For MFA support, please use Connect-DbaInstance.
 
-Test all Linked Servers for the SQL Server instance DEV01
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
 
-.EXAMPLE
-Test-DbaLinkedServerConnection -SqlInstance sql2016 | Out-File C:\temp\results.txt
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-Test all Linked Servers for the SQL Server instance sql2016 and output results to file
+    .NOTES
+        Tags: LinkedServer
+        Author: Thomas LaRock ( https://thomaslarock.com )
 
-.EXAMPLE
-Test-DbaLinkedServerConnection -SqlInstance sql2016, sql2014, sql2012
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-Test all Linked Servers for the SQL Server instances sql2016, sql2014 and sql2012
+    .LINK
+        https://dbatools.io/Test-DbaLinkedServerConnection
 
-.EXAMPLE
-$servers = "sql2016","sql2014","sql2012"
-$servers | Test-DbaLinkedServerConnection -SqlCredential (Get-Credential sqladmin)
+    .EXAMPLE
+        PS C:\> Test-DbaLinkedServerConnection -SqlInstance DEV01
 
-Test all Linked Servers for the SQL Server instances sql2016, sql2014 and sql2012 using SQL login credentials
-	
-.EXAMPLE
-$servers | Get-DbaLinkedServer | Test-DbaLinkedServerConnection
+        Test all Linked Servers for the SQL Server instance DEV01
 
-Test all Linked Servers for the SQL Server instances sql2016, sql2014 and sql2012
+    .EXAMPLE
+        PS C:\> Test-DbaLinkedServerConnection -SqlInstance sql2016 | Out-File C:\temp\results.txt
 
-#>
+        Test all Linked Servers for the SQL Server instance sql2016 and output results to file
+
+    .EXAMPLE
+        PS C:\> Test-DbaLinkedServerConnection -SqlInstance sql2016, sql2014, sql2012
+
+        Test all Linked Servers for the SQL Server instances sql2016, sql2014 and sql2012
+
+    .EXAMPLE
+        PS C:\> $servers = "sql2016","sql2014","sql2012"
+        PS C:\> $servers | Test-DbaLinkedServerConnection -SqlCredential sqladmin
+
+        Test all Linked Servers for the SQL Server instances sql2016, sql2014 and sql2012 using SQL login credentials
+
+    .EXAMPLE
+        PS C:\> $servers = "sql2016","sql2014","sql2012"
+        PS C:\> $servers | Get-DbaLinkedServer | Test-DbaLinkedServerConnection
+
+        Test all Linked Servers for the SQL Server instances sql2016, sql2014 and sql2012
+
+    #>
     [CmdletBinding()]
     param (
         [Parameter(Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer")]
-        [object[]]
-        $SqlInstance,
-        
-        [System.Management.Automation.PSCredential]
-        $SqlCredential,
-        
-        [switch]
-        $Silent
+        [DbaInstance[]]$SqlInstance,
+        [PSCredential]$SqlCredential,
+        [switch]$EnableException
     )
-    
-    begin
-    {
-        
-    }
-    
-    process
-    {
-        foreach ($instance in $SqlInstance)
-        {
-            if ($Instance.LinkedLive) { $LinkedServerCollection = $Instance.LinkedServer }
-            else
-            {
-                try
-                {
-                    Write-Message -Level Verbose -Message "Connecting to $instance"
-                    $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
-                    $LinkedServerCollection = $server.LinkedServers
+
+    process {
+        foreach ($instance in $SqlInstance) {
+            if ($instance.LinkedLive) {
+                $linkedServerCollection = $instance.LinkedServer
+            } else {
+                try {
+                    $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
+                } catch {
+                    Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
                 }
-                catch
-                {
-                    Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
-                }
+                $linkedServerCollection = $server.LinkedServers
             }
-            
-            foreach ($ls in $LinkedServerCollection)
-            {
+
+            foreach ($ls in $linkedServerCollection) {
                 Write-Message -Level Verbose -Message "Testing linked server $($ls.name) on server $($ls.parent.name)"
-                try
-                {
+                try {
                     $null = $ls.TestConnection()
                     $result = "Success"
                     $connectivity = $true
-                }
-                catch
-                {
+                } catch {
                     $result = $_.Exception.InnerException.InnerException.Message
                     $connectivity = $false
                 }
-                
-                New-Object Sqlcollaborative.Dbatools.Validation.LinkedServerResult($ls.parent.NetName, $ls.parent.ServiceName, $ls.parent.DomainInstanceName, $ls.Name, $ls.DataSource, $connectivity, $result)
+
+                New-Object Sqlcollaborative.Dbatools.Validation.LinkedServerResult($ls.parent.ComputerName, $ls.parent.ServiceName, $ls.parent.DomainInstanceName, $ls.Name, $ls.DataSource, $connectivity, $result)
             }
         }
-    }
-    
-    end
-    {
-        
     }
 }

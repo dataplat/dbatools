@@ -1,170 +1,174 @@
 function Copy-DbaEndpoint {
-	<#
-		.SYNOPSIS
-			Copy-DbaEndpoint migrates server endpoints from one SQL Server to another.
+    <#
+    .SYNOPSIS
+        Copy-DbaEndpoint migrates server endpoints from one SQL Server to another.
 
-		.DESCRIPTION
-			By default, all endpoints are copied. The -Endpoints parameter is auto-populated for command-line completion and can be used to copy only specific endpoints.
+    .DESCRIPTION
+        By default, all endpoints are copied.
 
-			If the endpoint already exists on the destination, it will be skipped unless -Force is used.
+        If the endpoint already exists on the destination, it will be skipped unless -Force is used.
 
-		.PARAMETER Source
-			Source SQL Server.You must have sysadmin access and server version must be SQL Server version 2000 or greater.
+    .PARAMETER Source
+        Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2000 or higher.
 
-		.PARAMETER SourceSqlCredential
-			Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
+    .PARAMETER SourceSqlCredential
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
 
-			$scred = Get-Credential, then pass $scred object to the -SourceSqlCredential parameter.
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
 
-			Windows Authentication will be used if DestinationSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
-			To connect as a different Windows user, run PowerShell as that user.
+        For MFA support, please use Connect-DbaInstance.
 
-		.PARAMETER Destination
-			Destination Sql Server. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
+    .PARAMETER Destination
+        Destination SQL Server. You must have sysadmin access and the server must be SQL Server 2000 or higher.
 
-		.PARAMETER DestinationSqlCredential
-			Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
+    .PARAMETER DestinationSqlCredential
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
 
-			$dcred = Get-Credential, then pass this $dcred to the -DestinationSqlCredential parameter.
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
 
-			Windows Authentication will be used if DestinationSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
-			To connect as a different Windows user, run PowerShell as that user.
+        For MFA support, please use Connect-DbaInstance.
 
-		.PARAMETER Endpoint
-			The endpoint(s) to process - this list is auto-populated from the server. If unspecified, all endpoints will be processed.
+    .PARAMETER Endpoint
+        The endpoint(s) to process. This list is auto-populated from the server. If unspecified, all endpoints will be processed.
 
-		.PARAMETER ExcludeEndpoint
-			The endpoint(s) to exclude - this list is auto-populated from the server
+    .PARAMETER ExcludeEndpoint
+        The endpoint(s) to exclude. This list is auto-populated from the server.
 
-		.PARAMETER WhatIf
-			Shows what would happen if the command were to run. No actions are actually performed.
+    .PARAMETER WhatIf
+        If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
 
-		.PARAMETER Confirm
-			Prompts you for confirmation before executing any changing operations within the command.
+    .PARAMETER Confirm
+        If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
-		.PARAMETER Force
-			Drops and recreates the endpoint if it exists
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-		.PARAMETER Silent
-			Use this switch to disable any kind of verbose messages
+    .PARAMETER Force
+        If this switch is enabled, existing endpoints on Destination with matching names from Source will be dropped.
 
-		.NOTES
-			Tags: Migration, Endpoint
-			Author: Chrissy LeMaire (@cl), netnerds.net
-			Requires: sysadmin access on SQL Servers
+    .NOTES
+        Tags: Migration, Endpoint
+        Author: Chrissy LeMaire (@cl), netnerds.net
 
-			Website: https://dbatools.io
-			Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-			License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-		.LINK
-			https://dbatools.io/Copy-DbaEndpoint
+        Requires: sysadmin access on SQL Servers
 
-		.EXAMPLE
-			Copy-DbaEndpoint -Source sqlserver2014a -Destination sqlcluster
+    .LINK
+        https://dbatools.io/Copy-DbaEndpoint
 
-			Copies all server endpoints from sqlserver2014a to sqlcluster, using Windows credentials. If endpoints with the same name exist on sqlcluster, they will be skipped.
+    .EXAMPLE
+        PS C:\> Copy-DbaEndpoint -Source sqlserver2014a -Destination sqlcluster
 
-		.EXAMPLE
-			Copy-DbaEndpoint -Source sqlserver2014a -SourceSqlCredential $cred -Destination sqlcluster -Endpoint tg_noDbDrop -Force
+        Copies all server endpoints from sqlserver2014a to sqlcluster, using Windows credentials. If endpoints with the same name exist on sqlcluster, they will be skipped.
 
-			Copies a single endpoint, the tg_noDbDrop endpoint from sqlserver2014a to sqlcluster, using SQL credentials for sqlserver2014a and Windows credentials for sqlcluster. If an endpoint with the same name exists on sqlcluster, it will be dropped and recreated because -Force was used.
+    .EXAMPLE
+        PS C:\> Copy-DbaEndpoint -Source sqlserver2014a -SourceSqlCredential $cred -Destination sqlcluster -Endpoint tg_noDbDrop -Force
 
-		.EXAMPLE
-			Copy-DbaEndpoint -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force
+        Copies only the tg_noDbDrop endpoint from sqlserver2014a to sqlcluster using SQL credentials for sqlserver2014a and Windows credentials for sqlcluster. If an endpoint with the same name exists on sqlcluster, it will be dropped and recreated because -Force was used.
 
-			Shows what would happen if the command were executed using force.
-	#>
-	[CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
-	param (
-		[parameter(Mandatory = $true)]
-		[DbaInstanceParameter]$Source,
-		[PSCredential]
-		$SourceSqlCredential,
-		[parameter(Mandatory = $true)]
-		[DbaInstanceParameter]$Destination,
-		[PSCredential]
-		$DestinationSqlCredential,
-		[object[]]$Endpoint,
-		[object[]]$ExcludeEndpoint,
-		[switch]$Force,
-		[switch]$Silent
-	)
+    .EXAMPLE
+        PS C:\> Copy-DbaEndpoint -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force
 
-	begin {
+        Shows what would happen if the command were executed using force.
 
-		$sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
-		$destServer = Connect-SqlInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
+    #>
+    [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess, ConfirmImpact = "Medium")]
+    param (
+        [parameter(Mandatory)]
+        [DbaInstanceParameter]$Source,
+        [PSCredential]
+        $SourceSqlCredential,
+        [parameter(Mandatory)]
+        [DbaInstanceParameter[]]$Destination,
+        [PSCredential]
+        $DestinationSqlCredential,
+        [object[]]$Endpoint,
+        [object[]]$ExcludeEndpoint,
+        [switch]$Force,
+        [switch]$EnableException
+    )
 
-		$source = $sourceServer.DomainInstanceName
-		$destination = $destServer.DomainInstanceName
+    begin {
+        try {
+            $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential -MinimumVersion 9
+        } catch {
+            Stop-Function -Message "Error occurred while establishing connection to $Source" -Category ConnectionError -ErrorRecord $_ -Target $Source
+            return
+        }
+        $serverEndpoints = $sourceServer.Endpoints | Where-Object IsSystemObject -eq $false
 
-		if ($sourceServer.VersionMajor -lt 9 -or $destServer.VersionMajor -lt 9) {
-			throw "Server Endpoints are only supported in SQL Server 2008 and above. Quitting."
-		}
-	}
-	process {
+        if ($Force) { $ConfirmPreference = 'none' }
+    }
+    process {
+        if (Test-FunctionInterrupt) { return }
+        foreach ($destinstance in $Destination) {
+            try {
+                $destServer = Connect-SqlInstance -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential -MinimumVersion 9
+            } catch {
+                Stop-Function -Message "Error occurred while establishing connection to $destinstance" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
+            }
+            $destEndpoints = $destServer.Endpoints
 
-		$serverEndpoints = $sourceServer.Endpoints | Where-Object IsSystemObject -eq $false
-		$destEndpoints = $destServer.Endpoints
+            foreach ($currentEndpoint in $serverEndpoints) {
+                $endpointName = $currentEndpoint.Name
 
-		foreach ($currentEndpoint in $serverEndpoints) {
-			$endpointName = $currentEndpoint.Name
+                $copyEndpointStatus = [pscustomobject]@{
+                    SourceServer      = $sourceServer.Name
+                    DestinationServer = $destServer.Name
+                    Name              = $endpointName
+                    Type              = "Endpoint"
+                    Status            = $null
+                    Notes             = $null
+                    DateTime          = [DbaDateTime](Get-Date)
+                }
 
-			$copyEndpointStatus = [pscustomobject]@{
-				SourceServer        = $sourceServer.Name
-				DestinationServer   = $destServer.Name
-				Name                = $endpointName
-				Status              = $null
-				DateTime            = [DbaDateTime](Get-Date)
-			}
+                if ($Endpoint -and $Endpoint -notcontains $endpointName -or $ExcludeEndpoint -contains $endpointName) {
+                    continue
+                }
 
-			if ($Endpoint -and $Endpoint -notcontains $endpointName -or $ExcludeEndpoint -contains $endpointName) {
-				continue
-			}
+                if ($destEndpoints.Name -contains $endpointName) {
+                    if ($force -eq $false) {
+                        $copyEndpointStatus.Status = "Skipped"
+                        $copyEndpointStatus.Notes = "Already exists on destination"
+                        $copyEndpointStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 
-			if ($destEndpoints.Name -contains $endpointName) {
-				if ($force -eq $false) {
-					$copyEndpointStatus.Status = "Skipped"
-					$copyEndpointStatus
+                        Write-Message -Level Verbose -Message "Server endpoint $endpointName exists at destination. Use -Force to drop and migrate."
+                        continue
+                    } else {
+                        if ($Pscmdlet.ShouldProcess($destinstance, "Dropping server endpoint $endpointName and recreating.")) {
+                            try {
+                                Write-Message -Level Verbose -Message "Dropping server endpoint $endpointName."
+                                $destServer.Endpoints[$endpointName].Drop()
+                            } catch {
+                                $copyEndpointStatus.Status = "Failed"
+                                $copyEndpointStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 
-					Write-Message -Level Warning -Message "Server endpoint $endpointName exists at destination. Use -Force to drop and migrate."
-					continue
-				}
-				else {
-					if ($Pscmdlet.ShouldProcess($destination, "Dropping server endpoint $endpointName and recreating")) {
-						try {
-							Write-Message -Level Verbose -Message "Dropping server endpoint $endpointName"
-							$destServer.Endpoints[$endpointName].Drop()
-						}
-						catch {
-							$copyEndpointStatus.Status = "Failed"
-							$copyEndpointStatus
+                                Stop-Function -Message "Issue dropping server endpoint." -Target $endpointName -ErrorRecord $_ -Continue
+                            }
+                        }
+                    }
+                }
 
-							Stop-Function -Message "Issue dropping server endpoint" -Target $endpointName -InnerErrorRecord $_ -Continue
-						}
-					}
-				}
-			}
+                if ($Pscmdlet.ShouldProcess($destinstance, "Creating server endpoint $endpointName.")) {
+                    try {
+                        Write-Message -Level Verbose -Message "Copying server endpoint $endpointName."
+                        $destServer.Query($currentEndpoint.Script()) | Out-Null
 
-			if ($Pscmdlet.ShouldProcess($destination, "Creating server endpoint $endpointName")) {
-				try {
-					Write-Message -Level Verbose -Message "Copying server endpoint $endpointName"
-					$destServer.Query($currentEndpoint.Script()) | Out-Null
+                        $copyEndpointStatus.Status = "Successful"
+                        $copyEndpointStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                    } catch {
+                        $copyEndpointStatus.Status = "Failed"
+                        $copyEndpointStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 
-					$copyEndpointStatus.Status = "Successful"
-					$copyEndpointStatus
-				}
-				catch {
-					$copyEndpointStatus.Status = "Failed"
-					$copyEndpointStatus
-
-					Stop-Function -Message "Issue creating server endpoint" -Target $endpointName -InnerErrorRecord $_
-				}
-			}
-		}
-	}
-	end {
-		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Copy-SqlEndpoint
-	}
+                        Stop-Function -Message "Issue creating server endpoint." -Target $endpointName -ErrorRecord $_
+                    }
+                }
+            }
+        }
+    }
 }

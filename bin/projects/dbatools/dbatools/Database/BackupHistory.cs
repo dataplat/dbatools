@@ -25,6 +25,11 @@ namespace Sqlcollaborative.Dbatools.Database
         public string SqlInstance;
 
         /// <summary>
+        /// The full Instance name as seen from outside
+        /// </summary>
+        public string AvailabilityGroupName;
+
+        /// <summary>
         /// The Database that was backed up
         /// </summary>
         public string Database;
@@ -58,6 +63,16 @@ namespace Sqlcollaborative.Dbatools.Database
         /// What is the total size of the backup
         /// </summary>
         public Size TotalSize;
+
+        /// <summary>
+        /// What is the total compressesed size of the backup
+        /// </summary>
+        public Size CompressedBackupSize;
+
+        /// <summary>
+        /// What is the ratio of total size to compressed size of the backup
+        /// </summary>
+        public double CompressionRatio;
 
         /// <summary>
         /// The kind of backup this was
@@ -118,7 +133,7 @@ namespace Sqlcollaborative.Dbatools.Database
         /// The primary version number of the Sql Server
         /// </summary>
         public int SoftwareVersionMajor;
-        
+
         /// <summary>
         /// Was the backup performed with the CopyOnlyOption
         /// </summary>
@@ -128,5 +143,26 @@ namespace Sqlcollaborative.Dbatools.Database
         /// Recovery Fork backup was takeon
         /// </summary>
         public Guid LastRecoveryForkGUID;
+
+        /// <summary>
+        /// Recovery Model of the database when backup was taken
+        /// </summary>
+        public string RecoveryModel;
+
+        /// <summary>
+        /// Key Algorithm used to encrypt backup
+        /// </summary>
+        public string KeyAlgorithm;
+
+        /// <summary>
+        /// Thumbprint of the certificate or key used to encrypt the backup
+        /// </summary>
+        public string EncryptorThumbprint;
+
+        /// <summary>
+        /// Type of encryptor used to encrypt backup (Key or Certificate)
+        /// </summary>
+        public string EncryptorType;
+
     }
 }

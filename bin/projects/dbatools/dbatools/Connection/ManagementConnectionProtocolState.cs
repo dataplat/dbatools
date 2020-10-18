@@ -18,11 +18,11 @@
         /// <summary>
         /// Connecting using the relevant protocol failed last it was tried
         /// </summary>
-        Error = 3,
+        Error = 4,
 
         /// <summary>
         /// The relevant protocol has been disabled and should not be used
         /// </summary>
-        Disabled = 4
+        Disabled = 8
     }
 }

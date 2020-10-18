@@ -1,242 +1,191 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 
-Function Test-DbaConnection {
-<#
+function Test-DbaConnection {
+    <#
     .SYNOPSIS
-        Exported function. Tests a the connection to a single instance and shows the output.
-    
+        Tests the connection to a single instance.
+
     .DESCRIPTION
-        Tests a the connection to a single instance and shows the output.
-    
+        Tests the ability to connect to an SQL Server instance outputting information about the server and instance.
+
     .PARAMETER SqlInstance
-        The SQL Server Instance to test connection against
-    
+        The SQL Server Instance to test connection
+
+    .PARAMETER Credential
+        Credential object used to connect to the Computer as a different user
+
     .PARAMETER SqlCredential
-        Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
-        
-        $scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
-        
-        Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials. To connect as a different Windows user, run PowerShell as that user.
-    
-    .PARAMETER Silent
-        Replaces user friendly yellow warnings with bloody red exceptions of doom!
-        Use this if you want the function to throw terminating errors you want to catch.
-    
-    .EXAMPLE
-        Test-DbaConnection sql01
-        
-        Sample output:
-        
-        Local PowerShell Enviornment
-        
-        Windows    : 10.0.10240.0
-        PowerShell : 5.0.10240.16384
-        CLR        : 4.0.30319.42000
-        SMO        : 13.0.0.0
-        DomainUser : True
-        RunAsAdmin : False
-        
-        SQL Server Connection Information
-        
-        ServerName         : sql01
-        BaseName           : sql01
-        InstanceName       : (Default)
-        AuthType           : Windows Authentication (Trusted)
-        ConnectingAsUser   : ad\dba
-        ConnectSuccess     : True
-        SqlServerVersion   : 12.0.2370
-        AddlConnectInfo    : N/A
-        RemoteServer       : True
-        IPAddress          : 10.0.1.4
-        NetBIOSname        : SQLSERVER2014A
-        RemotingAccessible : True
-        Pingable           : True
-        DefaultSQLPortOpen : True
-        RemotingPortOpen   : True
-    
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
+
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+
     .NOTES
-        Tags: CIM
-        Original Author: Chrissy LeMaire
-        dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
-        Copyright (C) 2016 Chrissy LeMaire
-        This program is free software: you can redistribute it and/or modify
-        it under the terms of the GNU General Public License as published by
-        the Free Software Foundation, either version 3 of the License, or
-        (at your option) any later version.
-        This program is distributed in the hope that it will be useful,
-        but WITHOUT ANY WARRANTY; without even the implied warranty of
-        MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-        GNU General Public License for more details.
-        You should have received a copy of the GNU General Public License
-        along with this program.  If not, see <http://www.gnu.org/licenses/>.
-#>    
+        Tags: CIM, Test, Connection
+        Author: Chrissy LeMaire (@cl), netnerds.net
+
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
+
+    .LINK
+        https://dbatools.io/Test-DbaConnection
+
+    .EXAMPLE
+        PS C:\> Test-DbaConnection SQL2016
+        ```
+        ComputerName         : SQL2016
+        InstanceName         : MSSQLSERVER
+        SqlInstance          : sql2016
+        SqlVersion           : 13.0.4001
+        ConnectingAsUser     : BASE\ctrlb
+        ConnectSuccess       : True
+        AuthType             : Windows Authentication
+        AuthScheme           : KERBEROS
+        TcpPort              : 1433
+        IPAddress            : 10.2.1.5
+        NetBiosName          : sql2016.base.local
+        IsPingable           : True
+        PSRemotingAccessible : True
+        DomainName           : base.local
+        LocalWindows         : 10.0.15063.0
+        LocalPowerShell      : 5.1.15063.502
+        LocalCLR             : 4.0.30319.42000
+        LocalSMOVersion      : 13.0.0.0
+        LocalDomainUser      : True
+        LocalRunAsAdmin      : False
+        ```
+
+        Test connection to SQL2016 and outputs information collected
+    #>
     [CmdletBinding()]
     param (
-        [Parameter(Mandatory = $true)]
-        [Alias("ServerInstance", "SqlServer")]
-        [DbaInstanceParameter]
-        $SqlInstance,
-        
-        [System.Management.Automation.PSCredential]
-        $SqlCredential,
-        
-        [switch]
-        $Silent
+        [parameter(ValueFromPipeline)]
+        [DbaInstanceParameter[]]$SqlInstance,
+        [PSCredential]$Credential,
+        [PSCredential]$SqlCredential,
+        [switch]$EnableException
     )
-    
-    Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Test-SqlConnection
-    
-    
-    # Get local enviornment
-    Write-Message -Level Verbose -Message "Getting local enivornment information"
-    $localinfo = [pscustomobject]@{
-        Windows = [environment]::OSVersion.Version.ToString()
-        PowerShell = $PSVersionTable.PSversion.ToString()
-        CLR = $PSVersionTable.CLRVersion.ToString()
-        SMO = ((([AppDomain]::CurrentDomain.GetAssemblies() | Where-Object { $_.Fullname -like "Microsoft.SqlServer.SMO,*" }).FullName -Split ", ")[1]).TrimStart("Version=")
-        DomainUser = $env:computername -ne $env:USERDOMAIN
-        RunAsAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")
-    }
-    
-    $serverinfo = @{ } | Select-Object ServerName, BaseName, InstanceName, AuthType, ConnectingAsUser, ConnectSuccess, SqlServerVersion, AddlConnectInfo, RemoteServer, IPAddress, NetBIOSname, RemotingAccessible, Pingable, DefaultSQLPortOpen, RemotingPortOpen
-    
-    $serverinfo.ServerName = $SqlInstance.FullSmoName
-    
-    $baseaddress = $SqlInstance.ComputerName
-    $instance = $SqlInstance.InstanceName
-    if ([string]::IsNullOrEmpty($instance)) { $instance = "(Default)" }
-    
-    if ($baseaddress -eq "." -or $baseaddress -eq $env:COMPUTERNAME) {
-        $ipaddr = "."
-        $hostname = $env:COMPUTERNAME
-        $baseaddress = $env:COMPUTERNAME
-    }
-    
-    $serverinfo.BaseName = $baseaddress
-    $remote = [dbavalidate]::IsLocalHost($env:COMPUTERNAME)
-    $serverinfo.InstanceName = $instance
-    $serverinfo.RemoteServer = $remote
-    
-    Write-Message -Level Verbose -Message "Resolving IP address"
-    try {
-        $hostentry = [System.Net.Dns]::GetHostEntry($baseaddress)
-        $ipaddr = ($hostentry.AddressList | Where-Object { $_ -notlike '169.*' } | Select-Object -First 1).IPAddressToString
-    }
-    catch { $ipaddr = "Unable to resolve" }
-    
-    $serverinfo.IPAddress = $ipaddr
-    
-    Write-Message -Level Verbose -Message "Resolving NetBIOS name"
-    try {
-        $hostname = (Get-DbaCmObject -ClassName Win32_NetworkAdapterConfiguration -ComputerName $ipaddr -Silent | Where-Object IPEnabled).PSComputerName
-                
-        if ([string]::IsNullOrEmpty($hostname)) { $hostname = (nbtstat -A $ipaddr | Where-Object { $_ -match '\<00\>  UNIQUE' } | ForEach-Object { $_.SubString(4, 14) }).Trim() }
-    }
-    catch { $hostname = "Unknown" }
-    
-    $serverinfo.NetBIOSname = $hostname
-    
-    
-    if ($remote -eq $true) {
-        # Test for WinRM #Test-WinRM neh
-        Write-Message -Level Verbose -Message "Checking remote acccess"
-        winrm id -r:$hostname 2>$null | Out-Null
-        if ($LastExitCode -eq 0) { $remoting = $true }
-        else { $remoting = $false }
-        
-        $serverinfo.RemotingAccessible = $remoting
-        
-        Write-Message -Level Verbose -Message "Testing raw socket connection to PowerShell remoting port"
-        $tcp = New-Object System.Net.Sockets.TcpClient
-        try {
-            $tcp.Connect($baseaddress, 135)
-            $tcp.Close()
-            $tcp.Dispose()
-            $remotingport = $true
-        }
-        catch { $remotingport = $false }
-        
-        $serverinfo.RemotingPortOpen = $remotingport
-    }
-    
-    # Test Connection first using Test-Connection which requires ICMP access then failback to tcp if pings are blocked
-    Write-Message -Level Verbose -Message "Testing ping to $baseaddress"
-    $serverinfo.Pingable = Test-Connection -ComputerName $baseaddress -Count 1 -Quiet
-    
-    # SQL Server connection
-    if ($instance -eq "(Default)") {
-        Write-Message -Level Verbose -Message "Testing raw socket connection to default SQL port"
-        $tcp = New-Object System.Net.Sockets.TcpClient
-        try {
-            $tcp.Connect($baseaddress, 1433)
-            $tcp.Close()
-            $tcp.Dispose()
-            $sqlport = $true
-        }
-        catch { $sqlport = $false }
-        $serverinfo.DefaultSQLPortOpen = $sqlport
-    }
-    else { $serverinfo.DefaultSQLPortOpen = "N/A" }
-    
-    $server = New-Object Microsoft.SqlServer.Management.Smo.Server $SqlInstance.FullSmoName
-    
-    try {
-        if ($null -ne $SqlCredential) {
-            $username = ($SqlCredential.username).TrimStart("\")
-            
+    process {
+        foreach ($instance in $SqlInstance) {
+            # Get local environment
+            Write-Message -Level Verbose -Message "Getting local environment information"
+            $localInfo = [pscustomobject]@{
+                Windows    = [environment]::OSVersion.Version.ToString()
+                Edition    = $PSVersionTable.PSEdition
+                PowerShell = $PSVersionTable.PSVersion.ToString()
+                CLR        = [string]$PSVersionTable.CLRVersion
+                SMO        = ((([AppDomain]::CurrentDomain.GetAssemblies() | Where-Object { $_.FullName -like "Microsoft.SqlServer.SMO,*" }).FullName -Split ", ")[1]).TrimStart("Version=")
+                DomainUser = $env:computername -ne $env:USERDOMAIN
+                RunAsAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")
+            }
+
+            try {
+                <# gather following properties #>
+                <#
+                    InputName        :
+                    ComputerName     :
+                    IPAddress        :
+                    DNSHostName      :
+                    DNSDomain        :
+                    Domain           :
+                    DNSHostEntry     :
+                    FQDN             :
+                    FullComputerName :
+                #>
+                $resolved = Resolve-DbaNetworkName -ComputerName $instance.ComputerName -Credential $Credential -EnableException
+            } catch {
+                Stop-Function -Message "Unable to resolve server information" -Category ConnectionError -Target $instance -ErrorRecord $_ -Continue
+            }
+
+            # Test for WinRM #Test-WinRM
+            Write-Message -Level Verbose -Message "Checking remote access"
+            try {
+                $null = Invoke-Command2 -ComputerName $instance.ComputerName -Credential $Credential -ScriptBlock { Get-ChildItem } -ErrorAction Stop
+                $remoting = $true
+            } catch {
+                $remoting = $_
+            }
+
+            # Test Connection first using Ping class which requires ICMP access then fail back to tcp if pings are blocked
+            Write-Message -Level Verbose -Message "Testing ping to $($instance.ComputerName)"
+            $ping = New-Object System.Net.NetworkInformation.Ping
+            $timeout = 1000 #milliseconds
+
+            try {
+                $reply = $ping.Send($instance.ComputerName, $timeout)
+                $pingable = $reply.Status -eq 'Success'
+            } catch {
+                $pingable = $false
+            }
+
+            try {
+                $server = Connect-SqlInstance -SqlInstance $instance.InputObject -SqlCredential $SqlCredential
+                $connectSuccess = $true
+                $instanceName = $server.InstanceName
+                if (-not $instanceName) {
+                    $instanceName = $instance.InstanceName
+                }
+            } catch {
+                $connectSuccess = $false
+                $instanceName = $instance.InputObject
+                Stop-Function -Message "Issue connection to SQL Server on $instance" -Category ConnectionError -Target $instance -ErrorRecord $_ -Continue
+            }
+
+            $username = $server.ConnectionContext.TrueLogin
             if ($username -like "*\*") {
-                $username = $username.Split("\")[1]
-                $authtype = "Windows Authentication with Credential"
-                $server.ConnectionContext.LoginSecure = $true
-                $server.ConnectionContext.ConnectAsUser = $true
-                $server.ConnectionContext.ConnectAsUserName = $username
-                $server.ConnectionContext.ConnectAsUserPassword = ($SqlCredential).GetNetworkCredential().Password
+                $authType = "Windows Authentication"
+            } else {
+                $authType = "SQL Authentication"
             }
-            else {
-                $authtype = "SQL Authentication"
-                $server.ConnectionContext.LoginSecure = $false
-                $server.ConnectionContext.set_Login($username)
-                $server.ConnectionContext.set_SecurePassword($SqlCredential.Password)
+
+            # TCP Port
+            try {
+                $tcpport = (Get-DbaTcpPort -SqlInstance $server -Credential $Credential -EnableException).Port
+            } catch {
+                $tcpport = $_
+            }
+
+            # Auth Scheme
+            $authwarning = $null
+            try {
+                $authscheme = (Test-DbaConnectionAuthScheme -SqlInstance $instance.InputObject -SqlCredential $SqlCredential -WarningVariable authwarning -WarningAction SilentlyContinue -EnableException).AuthScheme
+            } catch {
+                $authscheme = $_
+            }
+
+            if ($authwarning) {
+                #$authscheme = "N/A"
+            }
+
+            [pscustomobject]@{
+                ComputerName         = $resolved.ComputerName
+                InstanceName         = $instanceName
+                SqlInstance          = $instance.FullSmoName
+                SqlVersion           = $server.Version
+                ConnectingAsUser     = $username
+                ConnectSuccess       = $connectSuccess
+                AuthType             = $authType
+                AuthScheme           = $authscheme
+                TcpPort              = $tcpport
+                IPAddress            = $resolved.IPAddress
+                NetBiosName          = $resolved.FullComputerName
+                IsPingable           = $pingable
+                PSRemotingAccessible = $remoting
+                DomainName           = $resolved.Domain
+                LocalWindows         = $localInfo.Windows
+                LocalPowerShell      = $localInfo.PowerShell
+                LocalCLR             = $localInfo.CLR
+                LocalSMOVersion      = $localInfo.SMO
+                LocalDomainUser      = $localInfo.DomainUser
+                LocalRunAsAdmin      = $localInfo.RunAsAdmin
+                LocalEdition         = $localInfo.Edition
             }
         }
-        else {
-            $authtype = "Windows Authentication (Trusted)"
-            $username = "$env:USERDOMAIN\$env:username"
-        }
     }
-    catch {
-        Write-Message -Level Warning -Message $_ -ErrorRecord $_
-        
-        $authtype = "Windows Authentication (Trusted)"
-        $username = "$env:USERDOMAIN\$env:username"
-    }
-    
-    $serverinfo.ConnectingAsUser = $username
-    $serverinfo.AuthType = $authtype
-    
-    
-    Write-Message -Level Verbose -Message "Attempting to connect to $SqlInstance as $username "
-    try {
-        $server.ConnectionContext.ConnectTimeout = 10
-        $server.ConnectionContext.Connect()
-        $connectSuccess = $true
-        $version = $server.Version.ToString()
-        $addlinfo = "N/A"
-        $server.ConnectionContext.Disconnect()
-    }
-    catch {
-        $connectSuccess = $false
-        $version = "N/A"
-        $addlinfo = $_.Exception
-    }
-    
-    $serverinfo.ConnectSuccess = $connectSuccess
-    $serverinfo.SqlServerVersion = $version
-    $serverinfo.AddlConnectInfo = $addlinfo
-    
-    Write-Message -Level Verbose -Message "Local PowerShell Environment" -Target $localinfo
-    $localinfo | Select-Object Windows, PowerShell, CLR, SMO, DomainUser, RunAsAdmin
-    
-    Write-Message -Level Verbose -Message "SQL Server Connection Information" -Target $serverinfo
-    $serverinfo | Select-Object ServerName, BaseName, InstanceName, AuthType, ConnectingAsUser, ConnectSuccess, SqlServerVersion, AddlConnectInfo, RemoteServer, IPAddress, NetBIOSname, RemotingAccessible, Pingable, DefaultSQLPortOpen, RemotingPortOpen
 }

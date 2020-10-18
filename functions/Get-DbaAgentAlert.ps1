@@ -1,82 +1,116 @@
-FUNCTION Get-DbaAgentAlert {
-<#
-	.SYNOPSIS
-	Returns all SQL Agent alerts on a SQL Server Agent.
+function Get-DbaAgentAlert {
+    <#
+    .SYNOPSIS
+        Returns SQL Agent alerts on a SQL Server Agent.
 
-	.DESCRIPTION
-	This function returns SQL Agent alerts.
+    .DESCRIPTION
+        This function returns SQL Agent alerts.
 
-	.PARAMETER SqlInstance
-	SqlInstance name or SMO object representing the SQL Server to connect to.
-	This can be a collection and receive pipeline input.
+    .PARAMETER SqlInstance
+        The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.
 
-	.PARAMETER SqlCredential
-	PSCredential object to connect as. If not specified, current Windows login will be used.
+    .PARAMETER SqlCredential
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
 
-	.NOTES
-	Author: Klaas Vandenberghe ( @PowerDBAKlaas )
-	Tags: Agent, SMO
-	Website: https://dbatools.io
-	Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-	License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
 
-	.PARAMETER Silent
-	Use this switch to disable any kind of verbose messages
+        For MFA support, please use Connect-DbaInstance.
 
-	.LINK
-	https://dbatools.io/Get-DbaAgentAlert
+    .PARAMETER Alert
+        The name of the alerts to return. If null, will get all alerts from the server. Note - this parameter accepts wildcards.
 
-	.EXAMPLE
-	Get-DbaAgentAlert -SqlInstance ServerA,ServerB\instanceB
-	Returns all SQL Agent alerts on serverA and serverB\instanceB
+    .PARAMETER ExcludeAlert
+        The name of the alerts to exclude. If not provided, no alerts will be excluded. Note - this parameter accepts wildcards.
 
-	.EXAMPLE
-	'serverA','serverB\instanceB' | Get-DbaAgentAlert
-	Returns all SQL Agent alerts  on serverA and serverB\instanceB
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-#>
-	[CmdletBinding()]
-	param (
-		[parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
-		[Alias("ServerInstance", "Instance", "SqlServer")]
-		[DbaInstanceParameter[]]$SqlInstance,
-		[PSCredential]
-		$SqlCredential,
-		[switch]$Silent
-	)
-	
-	process {
-		foreach ($instance in $SqlInstance) {
-			try {
-				Write-Message -Level Verbose -Message "Connecting to $instance"
-				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
-			}
-			catch {
-				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
-			}
-			
-			Write-Message -Level Verbose -Message "Getting Edition from $server"
-			Write-Message -Level Verbose -Message "$server is a $($server.Edition)"
-			
-			if ($server.Edition -like 'Express*') {
-				Stop-Function -Message "There is no SQL Agent on $server, it's a $($server.Edition)" -Continue
-			}
-			
-			$defaults = "ComputerName", "SqlInstance", "InstanceName", "Name", "ID", "JobName", "AlertType", "CategoryName", "Severity", "IsEnabled", "DelayBetweenResponses", "LastRaised", "OccurrenceCount"
-			
-			$alerts = $server.Jobserver.Alerts
-			
-			foreach ($alert in $alerts) {
-				$lastraised = [dbadatetime]$alert.LastOccurrenceDate
-				
-				Add-Member -Force -InputObject $alert -MemberType NoteProperty -Name ComputerName -value $server.NetName
-				Add-Member -Force -InputObject $alert -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
-				Add-Member -Force -InputObject $alert -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
-				Add-Member -Force -InputObject $alert -MemberType NoteProperty Notifications -value $alert.EnumNotifications()
-				Add-Member -Force -InputObject $alert -MemberType NoteProperty LastRaised -value $lastraised
-				
-				Select-DefaultView -InputObject $alert -Property $defaults
-			}
-		}
-	}
+    .NOTES
+        Tags: Agent, SMO
+        Author: Klaas Vandenberghe (@PowerDBAKlaas)
+
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
+
+    .LINK
+        https://dbatools.io/Get-DbaAgentAlert
+
+    .EXAMPLE
+        PS C:\> Get-DbaAgentAlert -SqlInstance ServerA,ServerB\instanceB
+
+        Returns all SQL Agent alerts on serverA and serverB\instanceB
+
+    .EXAMPLE
+        PS C:\> Get-DbaAgentAlert -SqlInstance ServerA,ServerB\instanceB -Alert MyAlert*
+
+        Returns SQL Agent alert on serverA and serverB\instanceB whose names match 'MyAlert*'
+
+    .EXAMPLE
+        PS C:\> 'serverA','serverB\instanceB' | Get-DbaAgentAlert
+
+        Returns all SQL Agent alerts  on serverA and serverB\instanceB
+
+    #>
+    [CmdletBinding()]
+    param (
+        [parameter(Mandatory, ValueFromPipeline)]
+        [DbaInstanceParameter[]]$SqlInstance,
+        [PSCredential]
+        $SqlCredential,
+        [string[]]$Alert,
+        [string[]]$ExcludeAlert,
+        [switch]$EnableException
+    )
+
+    process {
+        foreach ($instance in $SqlInstance) {
+            try {
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
+            } catch {
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+            }
+
+            Write-Message -Level Verbose -Message "Getting Edition from $server"
+            Write-Message -Level Verbose -Message "$server is a $($server.Edition)"
+
+            if ($server.Edition -like 'Express*') {
+                Stop-Function -Message "There is no SQL Agent on $server, it's a $($server.Edition)" -Continue
+            }
+
+            $defaults = "ComputerName", "SqlInstance", "InstanceName", "Name", "ID", "JobName", "AlertType", "CategoryName", "Severity", "IsEnabled", "DelayBetweenResponses", "LastRaised", "OccurrenceCount"
+
+            $alerts = $server.Jobserver.Alerts
+
+            if (Test-Bound 'Alert') {
+                $tempAlerts = @();
+
+                foreach ($a in $Alert) {
+                    $tempAlerts += $alerts | where Name -like $a;
+                }
+
+                $alerts = $tempAlerts;
+            }
+
+            if (Test-Bound 'ExcludeAlert') {
+                foreach ($e in $ExcludeAlert) {
+                    $alerts = $alerts | where Name -notlike $e;
+                }
+            }
+
+            foreach ($alrt in $alerts) {
+                $lastraised = [dbadatetime]$alrt.LastOccurrenceDate
+
+                Add-Member -Force -InputObject $alrt -MemberType NoteProperty -Name ComputerName -value $server.ComputerName
+                Add-Member -Force -InputObject $alrt -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
+                Add-Member -Force -InputObject $alrt -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
+                Add-Member -Force -InputObject $alrt -MemberType NoteProperty Notifications -value $alrt.EnumNotifications()
+                Add-Member -Force -InputObject $alrt -MemberType NoteProperty LastRaised -value $lastraised
+
+                Select-DefaultView -InputObject $alrt -Property $defaults
+            }
+        }
+    }
 }

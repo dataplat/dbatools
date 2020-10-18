@@ -1,0 +1,62 @@
+﻿<event_sessions xmlns="http://schemas.microsoft.com/sqlserver/2008/07/extendedeventconfig">
+   <event_session name="Deprecated Feature Usage" maxMemory="4" eventRetentionMode="allowSingleEventLoss" trackCausality="true" dispatchLatency="30" maxEventSize="0" memoryPartitionMode="none">
+    <templateCategory>
+      <!-- _locID_text="templateCategory" _locComment = "" -->Features</templateCategory>
+    <templateName>
+      <!-- _locID_text = "templateName" _locComment = "" -->Deprecated Feature Usage</templateName>
+    <templateDescription>
+      <!-- _locID_text = "templateDescription" _locComment = "" -->Tracks deprecated feature usage.</templateDescription>
+      <event package="sqlserver" name="deprecation_announcement">
+         <action package="sqlserver" name="client_app_name" />
+         <action package="sqlserver" name="client_hostname" />
+         <action package="sqlserver" name="database_id" />
+         <action package="sqlserver" name="nt_username" />
+         <action package="sqlserver" name="session_id" />
+         <action package="sqlserver" name="session_nt_username" />
+         <action package="sqlserver" name="sql_text" />
+         <action package="sqlserver" name="username" />
+         <predicate>
+            <and>
+               <leaf>
+                  <comparator name="greater_than_uint64" package="package0" />
+                  <global name="database_id" package="sqlserver" />
+                  <value>4</value>
+               </leaf>
+               <leaf>
+                  <comparator name="not_equal_i_sql_unicode_string" package="sqlserver" />
+                  <global name="client_app_name" package="sqlserver" />
+                  <value><![CDATA[Microsoft SQL Server Management Studio - Transact-SQL IntelliSense]]></value>
+               </leaf>
+            </and>
+         </predicate>
+      </event>
+      <event package="sqlserver" name="deprecation_final_support">
+         <action package="sqlserver" name="client_app_name" />
+         <action package="sqlserver" name="client_hostname" />
+         <action package="sqlserver" name="database_id" />
+         <action package="sqlserver" name="nt_username" />
+         <action package="sqlserver" name="session_id" />
+         <action package="sqlserver" name="session_nt_username" />
+         <action package="sqlserver" name="sql_text" />
+         <action package="sqlserver" name="username" />
+         <predicate>
+            <and>
+               <leaf>
+                  <comparator name="greater_than_uint64" package="package0" />
+                  <global name="database_id" package="sqlserver" />
+                  <value>4</value>
+               </leaf>
+               <leaf>
+                  <comparator name="not_equal_i_sql_unicode_string" package="sqlserver" />
+                  <global name="client_app_name" package="sqlserver" />
+                  <value><![CDATA[Microsoft SQL Server Management Studio - Transact-SQL IntelliSense]]></value>
+               </leaf>
+            </and>
+         </predicate>
+      </event>
+      <target package="package0" name="event_file">
+         <parameter name="filename" value="Deprecated Feature Usage" />
+         <parameter name="max_rollover_files" value="25" />
+      </target>
+   </event_session>
+</event_sessions>

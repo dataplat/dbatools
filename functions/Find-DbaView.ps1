@@ -1,82 +1,87 @@
 function Find-DbaView {
-<#
-.SYNOPSIS
-Returns all views that contain a specific case-insensitive string or regex pattern.
+    <#
+    .SYNOPSIS
+        Returns all views that contain a specific case-insensitive string or regex pattern.
 
-.DESCRIPTION
-This function can either run against specific databases or all databases searching all user or user and system views.
+    .DESCRIPTION
+        This function can either run against specific databases or all databases searching all user or user and system views.
 
-.PARAMETER SqlInstance
-SQLServer name or SMO object representing the SQL Server to connect to. This can be a collection and receive pipeline input
+    .PARAMETER SqlInstance
+        The target SQL Server instance or instances. This can be a collection and receive pipeline input
 
-.PARAMETER SqlCredential
-PSCredential object to connect as. If not specified, current Windows login will be used.
+    .PARAMETER SqlCredential
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
 
-.PARAMETER Database
-The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
 
-.PARAMETER ExcludeDatabase
-The database(s) to exclude - this list is auto-populated from the server
+        For MFA support, please use Connect-DbaInstance.
 
-.PARAMETER Pattern
-String pattern that you want to search for in the view textbody
+    .PARAMETER Database
+        The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
 
-.PARAMETER IncludeSystemObjects
-By default, system views are ignored but you can include them within the search using this parameter.
+    .PARAMETER ExcludeDatabase
+        The database(s) to exclude - this list is auto-populated from the server
 
-Warning - this will likely make it super slow if you run it on all databases.
+    .PARAMETER Pattern
+        String pattern that you want to search for in the view text body
 
-.PARAMETER IncludeSystemDatabases
-By default system databases are ignored but you can include them within the search using this parameter
+    .PARAMETER IncludeSystemObjects
+        By default, system views are ignored but you can include them within the search using this parameter.
 
-.PARAMETER Silent
-Use this switch to disable any kind of verbose messages
+        Warning - this will likely make it super slow if you run it on all databases.
 
-.NOTES
-Original Author: Cláudio Silva (@ClaudioESSilva)
+    .PARAMETER IncludeSystemDatabases
+        By default system databases are ignored but you can include them within the search using this parameter
 
-Website: https://dbatools.io
-Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-.LINK
-https://dbatools.io/Find-DbaView
+    .NOTES
+        Tags: View
+        Author: Claudio Silva  (@ClaudioESSilva)
 
-.EXAMPLE
-Find-DbaView -SqlInstance DEV01 -Pattern whatever
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-Searches all user databases views for "whatever" in the textbody
+    .LINK
+        https://dbatools.io/Find-DbaView
 
-.EXAMPLE
-Find-DbaView -SqlInstance sql2016 -Pattern '\w+@\w+\.\w+'
+    .EXAMPLE
+        PS C:\> Find-DbaView -SqlInstance DEV01 -Pattern whatever
 
-Searches all databases for all views that contain a valid email pattern in the textbody
+        Searches all user databases views for "whatever" in the text body
 
-.EXAMPLE
-Find-DbaView -SqlInstance DEV01 -Database MyDB -Pattern 'some string' -Verbose
+    .EXAMPLE
+        PS C:\> Find-DbaView -SqlInstance sql2016 -Pattern '\w+@\w+\.\w+'
 
-Searches in "mydb" database views for "some string" in the textbody
+        Searches all databases for all views that contain a valid email pattern in the text body
 
-.EXAMPLE
-Find-DbaView -SqlInstance sql2016 -Database MyDB -Pattern RUNTIME -IncludeSystemObjects
+    .EXAMPLE
+        PS C:\> Find-DbaView -SqlInstance DEV01 -Database MyDB -Pattern 'some string' -Verbose
 
-Searches in "mydb" database views for "runtime" in the textbody
+        Searches in "mydb" database views for "some string" in the text body
 
-#>
+    .EXAMPLE
+        PS C:\> Find-DbaView -SqlInstance sql2016 -Database MyDB -Pattern RUNTIME -IncludeSystemObjects
+
+        Searches in "mydb" database views for "runtime" in the text body
+
+    #>
     [CmdletBinding()]
-    Param (
-        [parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
-        [Alias("ServerInstance", "SqlServer", "SqlServers")]
+    param (
+        [parameter(Mandatory, ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [Alias("Databases")]
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
-        [parameter(Mandatory = $true)]
+        [parameter(Mandatory)]
         [string]$Pattern,
         [switch]$IncludeSystemObjects,
         [switch]$IncludeSystemDatabases,
-        [switch]$Silent
+        [switch]$EnableException
     )
 
     begin {
@@ -87,10 +92,8 @@ Searches in "mydb" database views for "runtime" in the textbody
     process {
         foreach ($Instance in $SqlInstance) {
             try {
-                Write-Message -Level Verbose -Message "Connecting to $Instance"
                 $server = Connect-SqlInstance -SqlInstance $Instance -SqlCredential $SqlCredential
-            }
-            catch {
+            } catch {
                 Write-Message -Level Warning -Message "Failed to connect to: $Instance"
                 continue
             }
@@ -102,8 +105,7 @@ Searches in "mydb" database views for "runtime" in the textbody
 
             if ($IncludeSystemDatabases) {
                 $dbs = $server.Databases | Where-Object { $_.Status -eq "normal" }
-            }
-            else {
+            } else {
                 $dbs = $server.Databases | Where-Object { $_.Status -eq "normal" -and $_.IsSystemObject -eq $false }
             }
 
@@ -136,13 +138,13 @@ Searches in "mydb" database views for "runtime" in the textbody
 
                         Write-Message -Level Verbose -Message "Looking in View: $viewSchema.$view TextBody for $pattern"
                         if ($row.TextBody -match $Pattern) {
-                            $vw = $db.Views | Where-Object {$_.Schema -eq $viewSchema -and $_.Name -eq $view}
+                            $vw = $db.Views | Where-Object { $_.Schema -eq $viewSchema -and $_.Name -eq $view }
 
                             $viewText = $vw.TextBody.split("`n`r")
                             $vwTextFound = $viewText | Select-String -Pattern $Pattern | ForEach-Object { "(LineNumber: $($_.LineNumber)) $($_.ToString().Trim())" }
 
                             [PSCustomObject]@{
-                                ComputerName   = $server.NetName
+                                ComputerName   = $server.ComputerName
                                 SqlInstance    = $server.ServiceName
                                 Database       = $db.Name
                                 Schema         = $vw.Schema
@@ -157,13 +159,12 @@ Searches in "mydb" database views for "runtime" in the textbody
                             } | Select-DefaultView -ExcludeProperty View, ViewFullText
                         }
                     }
-                }
-                else {
+                } else {
                     $Views = $db.Views
 
                     foreach ($vw in $Views) {
                         $totalcount++; $vwcount++; $everyservervwcount++
-                        
+
                         $viewSchema = $row.ViewSchema
                         $view = $vw.Name
 
@@ -174,7 +175,7 @@ Searches in "mydb" database views for "runtime" in the textbody
                             $vwTextFound = $viewText | Select-String -Pattern $Pattern | ForEach-Object { "(LineNumber: $($_.LineNumber)) $($_.ToString().Trim())" }
 
                             [PSCustomObject]@{
-                                ComputerName   = $server.NetName
+                                ComputerName   = $server.ComputerName
                                 SqlInstance    = $server.ServiceName
                                 Database       = $db.Name
                                 Schema         = $vw.Schema

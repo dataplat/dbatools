@@ -1,0 +1,392 @@
+﻿<Objs Version="1.1.0.1" xmlns="http://schemas.microsoft.com/powershell/2004/04">
+  <Obj RefId="0">
+    <TN RefId="0">
+      <T>Deserialized.Selected.System.Management.Automation.PSCustomObject</T>
+      <T>Deserialized.System.Management.Automation.PSCustomObject</T>
+      <T>Deserialized.System.Object</T>
+    </TN>
+    <MS>
+      <S N="Name">15 Second IO Error</S>
+      <S N="Source">Jes Borland</S>
+      <I32 N="Compatibility">2012</I32>
+      <Nil N="VeryHighLoad" />
+    </MS>
+  </Obj>
+  <Obj RefId="1">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="Name">Activity Detail Tracking</S>
+      <S N="Source">Microsoft</S>
+      <I32 N="Compatibility">2012</I32>
+      <Nil N="VeryHighLoad" />
+    </MS>
+  </Obj>
+  <Obj RefId="2">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="Name">Activity Tracking</S>
+      <S N="Source">Microsoft</S>
+      <I32 N="Compatibility">2014</I32>
+      <Nil N="VeryHighLoad" />
+    </MS>
+  </Obj>
+  <Obj RefId="3">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="Name">Capture SELECT</S>
+      <S N="Source">Jes Borland</S>
+      <I32 N="Compatibility">2012</I32>
+      <Nil N="VeryHighLoad" />
+    </MS>
+  </Obj>
+  <Obj RefId="4">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="Name">Connection Detail Tracking</S>
+      <S N="Source">Microsoft</S>
+      <I32 N="Compatibility">2012</I32>
+      <Nil N="VeryHighLoad" />
+    </MS>
+  </Obj>
+  <Obj RefId="5">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="Name">Connection Tracking</S>
+      <S N="Source">Microsoft</S>
+      <I32 N="Compatibility">2012</I32>
+      <Nil N="VeryHighLoad" />
+    </MS>
+  </Obj>
+  <Obj RefId="6">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="Name">Count Query Locks</S>
+      <S N="Source">Microsoft</S>
+      <I32 N="Compatibility">2012</I32>
+      <Nil N="VeryHighLoad" />
+    </MS>
+  </Obj>
+  <Obj RefId="7">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="Name">Database File I/O</S>
+      <S N="Source">Jes Borland</S>
+      <I32 N="Compatibility">2012</I32>
+      <Nil N="VeryHighLoad" />
+    </MS>
+  </Obj>
+  <Obj RefId="8">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="Name">Database Health 2014</S>
+      <S N="Source">Ola Hallengren</S>
+      <I32 N="Compatibility">2014</I32>
+      <Nil N="VeryHighLoad" />
+    </MS>
+  </Obj>
+  <Obj RefId="9">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="Name">Deadlock Graphs</S>
+      <S N="Source">Jes Borland</S>
+      <I32 N="Compatibility">2014</I32>
+      <Nil N="VeryHighLoad" />
+    </MS>
+  </Obj>
+  <Obj RefId="10">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="Name">Default Profiler Trace</S>
+      <S N="Source">Chrissy LeMaire</S>
+      <I32 N="Compatibility">2012</I32>
+      <Nil N="VeryHighLoad" />
+    </MS>
+  </Obj>
+  <Obj RefId="11">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="Name">Deprecated Feature Usage</S>
+      <S N="Source">Christian Gräfe</S>
+      <I32 N="Compatibility">2012</I32>
+      <Nil N="VeryHighLoad" />
+    </MS>
+  </Obj>
+  <Obj RefId="12">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="Name">Execution Plans</S>
+      <S N="Source">Jes Borland</S>
+      <I32 N="Compatibility">2012</I32>
+      <B N="VeryHighLoad">true</B>
+    </MS>
+  </Obj>
+  <Obj RefId="13">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="Name">Function Executions</S>
+      <S N="Source">Jes Borland</S>
+      <I32 N="Compatibility">2012</I32>
+      <Nil N="VeryHighLoad" />
+    </MS>
+  </Obj>
+  <Obj RefId="14">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="Name">Index Page Splits</S>
+      <S N="Source">Jes Borland</S>
+      <I32 N="Compatibility">2012</I32>
+      <Nil N="VeryHighLoad" />
+    </MS>
+  </Obj>
+  <Obj RefId="15">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="Name">Log File IO Detail Tracking</S>
+      <S N="Source">Microsoft</S>
+      <I32 N="Compatibility">2012</I32>
+      <Nil N="VeryHighLoad" />
+    </MS>
+  </Obj>
+  <Obj RefId="16">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="Name">Log File IO Tracking</S>
+      <S N="Source">Microsoft</S>
+      <I32 N="Compatibility">2012</I32>
+      <Nil N="VeryHighLoad" />
+    </MS>
+  </Obj>
+  <Obj RefId="17">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="Name">Profiler SP Counts</S>
+      <S N="Source">Microsoft</S>
+      <I32 N="Compatibility">2012</I32>
+      <Nil N="VeryHighLoad" />
+    </MS>
+  </Obj>
+  <Obj RefId="18">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="Name">Profiler Standard</S>
+      <S N="Source">Microsoft</S>
+      <I32 N="Compatibility">2012</I32>
+      <Nil N="VeryHighLoad" />
+    </MS>
+  </Obj>
+  <Obj RefId="19">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="Name">Profiler TSQL Duration</S>
+      <S N="Source">Microsoft</S>
+      <I32 N="Compatibility">2012</I32>
+      <Nil N="VeryHighLoad" />
+    </MS>
+  </Obj>
+  <Obj RefId="20">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="Name">Profiler TSQL Locks</S>
+      <S N="Source">Microsoft</S>
+      <I32 N="Compatibility">2012</I32>
+      <Nil N="VeryHighLoad" />
+    </MS>
+  </Obj>
+  <Obj RefId="21">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="Name">Profiler TSQL Replay</S>
+      <S N="Source">Microsoft</S>
+      <I32 N="Compatibility">2012</I32>
+      <Nil N="VeryHighLoad" />
+    </MS>
+  </Obj>
+  <Obj RefId="22">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="Name">Profiler TSQL SPs</S>
+      <S N="Source">Microsoft</S>
+      <I32 N="Compatibility">2012</I32>
+      <Nil N="VeryHighLoad" />
+    </MS>
+  </Obj>
+  <Obj RefId="23">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="Name">Profiler TSQL</S>
+      <S N="Source">Microsoft</S>
+      <I32 N="Compatibility">2012</I32>
+      <Nil N="VeryHighLoad" />
+    </MS>
+  </Obj>
+  <Obj RefId="24">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="Name">Profiler Tuning</S>
+      <S N="Source">Microsoft</S>
+      <I32 N="Compatibility">2012</I32>
+      <Nil N="VeryHighLoad" />
+    </MS>
+  </Obj>
+  <Obj RefId="25">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="Name">Queries and Resources</S>
+      <S N="Source">Jes Borland</S>
+      <I32 N="Compatibility">2012</I32>
+      <Nil N="VeryHighLoad" />
+    </MS>
+  </Obj>
+  <Obj RefId="26">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="Name">Query Batch Detail Sampling</S>
+      <S N="Source">Microsoft</S>
+      <I32 N="Compatibility">2012</I32>
+      <B N="VeryHighLoad">true</B>
+    </MS>
+  </Obj>
+  <Obj RefId="27">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="Name">Query Batch Sampling</S>
+      <S N="Source">Microsoft</S>
+      <I32 N="Compatibility">2012</I32>
+      <Nil N="VeryHighLoad" />
+    </MS>
+  </Obj>
+  <Obj RefId="28">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="Name">Query Batch Tracking</S>
+      <S N="Source">Microsoft</S>
+      <I32 N="Compatibility">2012</I32>
+      <B N="VeryHighLoad">true</B>
+    </MS>
+  </Obj>
+  <Obj RefId="29">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="Name">Query Detail Sampling</S>
+      <S N="Source">Microsoft</S>
+      <I32 N="Compatibility">2012</I32>
+      <Nil N="VeryHighLoad" />
+    </MS>
+  </Obj>
+  <Obj RefId="30">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="Name">Query Detail Tracking</S>
+      <S N="Source">Microsoft</S>
+      <I32 N="Compatibility">2012</I32>
+      <B N="VeryHighLoad">true</B>
+    </MS>
+  </Obj>
+  <Obj RefId="31">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="Name">Query Timeouts</S>
+      <S N="Source">Christian Gräfe</S>
+      <I32 N="Compatibility">2012</I32>
+      <Nil N="VeryHighLoad" />
+    </MS>
+  </Obj>
+  <Obj RefId="32">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="Name">Query Wait Statistics Detail</S>
+      <S N="Source">Microsoft</S>
+      <I32 N="Compatibility">2012</I32>
+      <Nil N="VeryHighLoad" />
+    </MS>
+  </Obj>
+  <Obj RefId="33">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="Name">Query Wait Statistics</S>
+      <S N="Source">Jes Borland</S>
+      <I32 N="Compatibility">2014</I32>
+      <Nil N="VeryHighLoad" />
+    </MS>
+  </Obj>
+  <Obj RefId="34">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="Name">Stored Procedure Parameters</S>
+      <S N="Source">Jes Borland</S>
+      <I32 N="Compatibility">2012</I32>
+      <Nil N="VeryHighLoad" />
+    </MS>
+  </Obj>
+  <Obj RefId="35">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="Name">Blocked Process Report</S>
+      <S N="Source">Erin Stellato</S>
+      <I32 N="Compatibility">2012</I32>
+      <Nil N="VeryHighLoad" />
+    </MS>
+  </Obj>
+  <Obj RefId="36">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="Name">Database Health 2012</S>
+      <S N="Source">Ola Hallengren</S>
+      <I32 N="Compatibility">2012</I32>
+      <Nil N="VeryHighLoad" />
+    </MS>
+  </Obj>
+  <Obj RefId="37">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="Name">Long Running Queries</S>
+      <S N="Source">Peter Schott</S>
+      <I32 N="Compatibility">2012</I32>
+      <Nil N="VeryHighLoad" />
+    </MS>
+  </Obj><Obj RefId="38">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="Name">Overly Complex Queries</S>
+      <S N="Source">Pétur Grétarsson</S>
+      <I32 N="Compatibility">2012</I32>
+      <Nil N="VeryHighLoad" />
+    </MS>
+  </Obj>
+  <Obj RefId="39">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="Name">Database Health 2016 and Above</S>
+      <S N="Source">Ola Hallengren</S>
+      <I32 N="Compatibility">2016</I32>
+      <Nil N="VeryHighLoad" />
+    </MS>
+  </Obj>
+    <Obj RefId="40">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="Name">AlwaysOn Health Enhanced</S>
+      <S N="Source">Jonathan Kehayias</S>
+      <I32 N="Compatibility">2014</I32>
+      <Nil N="VeryHighLoad" />
+    </MS>
+  </Obj>
+    <Obj RefId="41">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="Name">Login Tracker</S>
+      <S N="Source">Chrissy LeMaire</S>
+      <I32 N="Compatibility">2012</I32>
+      <Nil N="VeryHighLoad" />
+    </MS>
+  </Obj>
+    <Obj RefId="42">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="Name">Failing Queries</S>
+      <S N="Source">Sander Stad</S>
+      <I32 N="Compatibility">2012</I32>
+      <Nil N="VeryHighLoad" />
+    </MS>
+  </Obj>
+</Objs>

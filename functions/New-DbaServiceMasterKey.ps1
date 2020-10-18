@@ -1,63 +1,71 @@
-﻿function New-DbaServiceMasterKey {
-<#
-.SYNOPSIS
-Creates a new service master key
+function New-DbaServiceMasterKey {
+    <#
+    .SYNOPSIS
+        Creates a new service master key.
 
-.DESCRIPTION
-Creates a new service master key in the master database
+    .DESCRIPTION
+        Creates a new service master key in the master database.
 
-.PARAMETER SqlInstance
-The target SQL Server instances
+    .PARAMETER SqlInstance
+        The target SQL Server instance or instances.
 
-.PARAMETER SqlCredential
-Allows you to login to SQL Server using alternative credentials.
+    .PARAMETER SqlCredential
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
 
-.PARAMETER Password
-Secure string used to create the key.
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
 
-.PARAMETER WhatIf 
-Shows what would happen if the command were to run. No actions are actually performed. 
+        For MFA support, please use Connect-DbaInstance.
 
-.PARAMETER Confirm 
-Prompts you for confirmation before executing any changing operations within the command. 
+    .PARAMETER SecurePassword
+        Secure string used to create the key.
 
-.PARAMETER Silent 
-Use this switch to disable any kind of verbose messages
+    .PARAMETER Credential
+        Enables easy creation of a secure password.
 
-.NOTES
-Tags: Certificate
+    .PARAMETER WhatIf
+        Shows what would happen if the command were to run. No actions are actually performed.
 
-Website: https://dbatools.io
-Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+    .PARAMETER Confirm
+        Prompts you for confirmation before executing any changing operations within the command.
 
-.EXAMPLE
-New-DbaServiceMasterKey -SqlInstance Server1
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-You will be prompted to securely enter your Service Key Password twice, then a master key will be created in the master database on server1 if it does not exist.
+    .NOTES
+        Tags: Certificate
+        Author: Chrissy LeMaire (@cl), netnerds.net
 
-#>
-	[CmdletBinding(SupportsShouldProcess)]
-	param (
-		[parameter(Mandatory, ValueFromPipeline)]
-		[Alias("ServerInstance", "SqlServer")]
-		[DbaInstanceParameter[]]$SqlInstance,
-		[PSCredential]$SqlCredential,
-		[Security.SecureString]$Password,
-		[switch]$Silent
-	)
-		
-	process {
-		foreach ($instance in $SqlInstance) {
-			if (Test-Bound -ParameterName Password -Not) {
-				$password = Read-Host -AsSecureString -Prompt "You must enter Service Key password for $instance"
-				$password2 = Read-Host -AsSecureString -Prompt "Type the password again"
-				
-				if (([System.Runtime.InteropServices.marshal]::PtrToStringAuto([System.Runtime.InteropServices.marshal]::SecureStringToBSTR($password))) -ne ([System.Runtime.InteropServices.marshal]::PtrToStringAuto([System.Runtime.InteropServices.marshal]::SecureStringToBSTR($password2)))) {
-					Stop-Function -Message "Passwords do not match" -Continue
-				}
-			}
-			New-DbaDatabaseMasterKey -SqlInstance $instance -Database master -Password $password
-		}
-	}
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
+
+    .LINK
+        https://dbatools.io/New-DbaServiceMasterKey
+
+    .EXAMPLE
+        PS C:\> New-DbaServiceMasterKey -SqlInstance Server1
+
+        You will be prompted to securely enter your Service Key password, then a master key will be created in the master database on server1 if it does not exist.
+
+    #>
+    [CmdletBinding(SupportsShouldProcess)]
+    param (
+        [parameter(Mandatory, ValueFromPipeline)]
+        [DbaInstanceParameter[]]$SqlInstance,
+        [PSCredential]$SqlCredential,
+        [PSCredential]$Credential,
+        [Alias("Password")]
+        [Security.SecureString]$SecurePassword,
+        [switch]$EnableException
+    )
+
+    process {
+        foreach ($instance in $SqlInstance) {
+            if ($PSCmdlet.ShouldProcess("$instance", "Creating New MasterKey")) {
+                New-DbaDbMasterKey -SqlInstance $instance -Database master -SecurePassword $SecurePassword -Credential $Credential
+            }
+        }
+    }
 }

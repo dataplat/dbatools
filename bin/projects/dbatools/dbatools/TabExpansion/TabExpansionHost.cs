@@ -38,6 +38,21 @@ namespace Sqlcollaborative.Dbatools.TabExpansion
         /// Scripts that build the cache and are not suitable for synchronous execution
         /// </summary>
         public static List<ScriptBlock> TeppGatherScriptsSlow = new List<ScriptBlock>();
+
+        /// <summary>
+        /// A list of all commands imported into dbatools
+        /// </summary>
+        public static List<FunctionInfo> DbatoolsCommands = new List<FunctionInfo>();
+
+        /// <summary>
+        /// List of completion sets that should be processed into Tepp Assignments. Only populate this list on first import.
+        /// </summary>
+        public static List<TabCompletionSet> TabCompletionSets = new List<TabCompletionSet>();
+
+        /// <summary>
+        /// Maps a TEPP scriptblock to a command and parameter
+        /// </summary>
+        public static Dictionary<string, Dictionary<string, ScriptContainer>> TeppAssignment = new Dictionary<string, Dictionary<string, ScriptContainer>>();
         #endregion State information
 
         #region Utility methods
@@ -71,6 +86,67 @@ namespace Sqlcollaborative.Dbatools.TabExpansion
                 }
             }
         }
+
+        /// <summary>
+        /// Returns the assigned scriptblock for a given parameter
+        /// </summary>
+        /// <param name="Command">The command that should be completed</param>
+        /// <param name="Parameter">The parameter completion is provided for</param>
+        /// <returns>Either the relevant script container or null</returns>
+        public static ScriptContainer GetTeppScript(string Command, string Parameter)
+        {
+            if (TeppAssignment.ContainsKey(Command) && TeppAssignment[Command].ContainsKey(Parameter))
+                return TeppAssignment[Command][Parameter];
+            return null;
+        }
+
+        /// <summary>
+        /// Assigns a registered script to the parameter of a command
+        /// </summary>
+        /// <param name="Command">The command for which to complete</param>
+        /// <param name="Parameter">The parameter for which to complete</param>
+        /// <param name="Script">To name of the script with which to complete</param>
+        public static void SetTeppScript(string Command, string Parameter, string Script)
+        {
+            if (!Scripts.ContainsKey(Script))
+                return;
+
+            if (!TeppAssignment.ContainsKey(Command))
+                TeppAssignment[Command] = new Dictionary<string, ScriptContainer>();
+
+            TeppAssignment[Command][Parameter] = Scripts[Script];
+        }
+
+        /// <summary>
+        /// Adds a completion set to the list of items to process
+        /// </summary>
+        /// <param name="Command">The command to complete for (accepts wildcard matching)</param>
+        /// <param name="Parameter">The parameter to complete for (accepts wildcard matching)</param>
+        /// <param name="Script">The script to register</param>
+        public static void AddTabCompletionSet(string Command, string Parameter, string Script)
+        {
+            // Only import on the first import
+            if (!dbaSystem.SystemHost.ModuleImported)
+                TabCompletionSets.Add(new TabCompletionSet(Command, Parameter, Script));
+        }
+
+        /// <summary>
+        /// Processes the content of TabCompletionSets and Scripts into TappAssignments based on the DbatoolsCommands list.
+        /// </summary>
+        public static void CalculateTabExpansion()
+        {
+            foreach (FunctionInfo info in DbatoolsCommands)
+            {
+                try
+                {
+                    foreach (ParameterMetadata paramInfo in info.Parameters.Values)
+                        foreach (TabCompletionSet set in TabCompletionSets)
+                            if (set.Applies(info.Name, paramInfo.Name))
+                                SetTeppScript(info.Name, paramInfo.Name, set.Script);
+                }
+                catch { }
+            }
+        }
         #endregion Utility methods
 
         #region Configuration
@@ -97,77 +173,7 @@ namespace Sqlcollaborative.Dbatools.TabExpansion
         /// <summary>
         /// After this timespan of no requests to a server, the updates to its cache are disabled.
         /// </summary>
-        public static TimeSpan TeppUpdateTimeout = new TimeSpan(0, 30, 0);
+        public static TimeSpan TeppUpdateTimeout = new TimeSpan(0, 0, 30);
         #endregion Configuration
-
-        #region Updater
-        private static ScriptBlock TeppUpdateScript;
-
-        private static PowerShell TeppUdater;
-
-        /// <summary>
-        /// Setting this to true should cause the script running in the runspace to selfterminate, allowing a graceful selftermination.
-        /// </summary>
-        public static bool TeppUdaterStopper
-        {
-            get { return _TeppUdaterStopper; }
-        }
-        private static bool _TeppUdaterStopper;
-
-        /// <summary>
-        /// Set the script to use as part of the TEPP updater
-        /// </summary>
-        /// <param name="Script">The script to use</param>
-        public static void SetScript(ScriptBlock Script)
-        {
-            TeppUpdateScript = Script;
-        }
-
-        /// <summary>
-        /// Starts the TEPP Updater.
-        /// </summary>
-        public static void Start()
-        {
-            if (TeppUdater == null)
-            {
-                _TeppUdaterStopper = false;
-                TeppUdater = PowerShell.Create();
-                TeppUdater.AddScript(TeppUpdateScript.ToString());
-                TeppUdater.BeginInvoke();
-            }
-        }
-
-        /// <summary>
-        /// Gracefully stops the TEPP Updater
-        /// </summary>
-        public static void Stop()
-        {
-            _TeppUdaterStopper = true;
-
-            int i = 0;
-
-            // Wait up to 30 seconds for the running script to notice and kill itself
-            while ((TeppUdater.Runspace.RunspaceAvailability != RunspaceAvailability.Available) && (i < 300))
-            {
-                i++;
-                Thread.Sleep(100);
-            }
-
-            Kill();
-        }
-
-        /// <summary>
-        /// Very ungracefully kills the TEPP Updater. Use only in the most dire emergency.
-        /// </summary>
-        public static void Kill()
-        {
-            if (TeppUdater != null)
-            {
-                TeppUdater.Runspace.Close();
-                TeppUdater.Dispose();
-                TeppUdater = null;
-            }
-        }
-        #endregion Updater
     }
 }

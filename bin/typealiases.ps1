@@ -1,23 +1,34 @@
-﻿
-try { [psobject].Assembly.GetType("System.Management.Automation.TypeAccelerators")::add("DbaCmConnectionParameter", "Sqlcollaborative.Dbatools.Parameter.DbaCmConnectionParameter") }
-catch { }
-try { [psobject].Assembly.GetType("System.Management.Automation.TypeAccelerators")::add("DbaInstanceParameter", "Sqlcollaborative.Dbatools.Parameter.DbaInstanceParameter") }
-catch { }
-try { [psobject].Assembly.GetType("System.Management.Automation.TypeAccelerators")::add("dbargx", "Sqlcollaborative.Dbatools.Utility.RegexHelper") }
-catch { }
-try { [psobject].Assembly.GetType("System.Management.Automation.TypeAccelerators")::add("dbatime", "Sqlcollaborative.Dbatools.Utility.DbaTime") }
-catch { }
-try { [psobject].Assembly.GetType("System.Management.Automation.TypeAccelerators")::add("dbadatetime", "Sqlcollaborative.Dbatools.Utility.DbaDateTime") }
-catch { }
-try { [psobject].Assembly.GetType("System.Management.Automation.TypeAccelerators")::add("dbadate", "Sqlcollaborative.Dbatools.Utility.DbaDate") }
-catch { }
-try { [psobject].Assembly.GetType("System.Management.Automation.TypeAccelerators")::add("dbatimespan", "Sqlcollaborative.Dbatools.Utility.DbaTimeSpan") }
-catch { }
-try { [psobject].Assembly.GetType("System.Management.Automation.TypeAccelerators")::add("prettytimespan", "Sqlcollaborative.Dbatools.Utility.DbaTimeSpanPretty") }
-catch { }
-try { [psobject].Assembly.GetType("System.Management.Automation.TypeAccelerators")::add("dbasize", "Sqlcollaborative.Dbatools.Utility.Size") }
-catch { }
-try { [psobject].Assembly.GetType("System.Management.Automation.TypeAccelerators")::add("dbavalidate", "Sqlcollaborative.Dbatools.Utility.Validation") }
-catch { }
-try { [psobject].Assembly.GetType("System.Management.Automation.TypeAccelerators")::add("DbaMode", "Sqlcollaborative.Dbatools.General.ExecutionMode") }
-catch { }
+# Obtain a reference to the TypeAccelerators type
+$TAType = [psobject].Assembly.GetType("System.Management.Automation.TypeAccelerators")
+
+# Define our type aliases
+$TypeAliasTable = @{
+    DbaInstance              = "Sqlcollaborative.Dbatools.Parameter.DbaInstanceParameter"
+    DbaCmConnectionParameter = "Sqlcollaborative.Dbatools.Parameter.DbaCmConnectionParameter"
+    DbaInstanceParameter     = "Sqlcollaborative.Dbatools.Parameter.DbaInstanceParameter"
+    dbargx                   = "Sqlcollaborative.Dbatools.Utility.RegexHelper"
+    dbatime                  = "Sqlcollaborative.Dbatools.Utility.DbaTime"
+    dbadatetime              = "Sqlcollaborative.Dbatools.Utility.DbaDateTime"
+    dbadate                  = "Sqlcollaborative.Dbatools.Utility.DbaDate"
+    dbatimespan              = "Sqlcollaborative.Dbatools.Utility.DbaTimeSpan"
+    prettytimespan           = "Sqlcollaborative.Dbatools.Utility.DbaTimeSpanPretty"
+    dbasize                  = "Sqlcollaborative.Dbatools.Utility.Size"
+    dbavalidate              = "Sqlcollaborative.Dbatools.Utility.Validation"
+    DbaMode                  = "Sqlcollaborative.Dbatools.General.ExecutionMode"
+    DbaCredential            = "Sqlcollaborative.Dbatools.Parameter.DbaCredentialparameter"
+    DbaCredentialParameter   = "Sqlcollaborative.Dbatools.Parameter.DbaCredentialparameter"
+    DbaDatabaseSmo           = "SqlCollaborative.Dbatools.Parameter.DbaDatabaseSmoParameter"
+    DbaDatabaseSmoParameter  = "SqlCollaborative.Dbatools.Parameter.DbaDatabaseSmoParameter"
+    DbaDatabase              = "SqlCollaborative.Dbatools.Parameter.DbaDatabaseParameter"
+    DbaDatabaseParameter     = "SqlCollaborative.Dbatools.Parameter.DbaDatabaseParameter"
+    DbaValidatePattern       = "Sqlcollaborative.Dbatools.Utility.DbaValidatePatternAttribute"
+    DbaValidateScript        = "Sqlcollaborative.Dbatools.Utility.DbaValidateScriptAttribute"
+}
+
+# Add all type aliases
+foreach ($TypeAlias in $TypeAliasTable.Keys) {
+    try {
+        $TAType::Add($TypeAlias, $TypeAliasTable[$TypeAlias])
+    } catch {
+    }
+}

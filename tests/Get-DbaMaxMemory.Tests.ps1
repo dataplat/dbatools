@@ -1,52 +1,51 @@
-$commandname = $MyInvocation.MyCommand.Name.Replace(".ps1","")
-Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
+$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
+
+Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+    Context "Validate parameters" {
+        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
+        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'EnableException'
+        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
+        It "Should only contain our specific parameters" {
+            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        }
+    }
+}
 
 Describe "$commandname Unit Test" -Tags Unittest {
     InModuleScope dbatools {
-        Context 'Validate input arguments' {
-            It 'SqlServer parameter is empty' {
-                Mock Connect-SqlInstance { throw System.Data.SqlClient.SqlException }
-                { Get-DbaMaxMemory -SqlInstance '' -WarningAction Stop 3> $null } | Should Throw
-            }
-            
-            It 'SqlServer parameter host cannot be found' {
-                Mock Connect-SqlInstance { throw System.Data.SqlClient.SqlException }
-                { Get-DbaMaxMemory -SqlInstance 'ABC' -WarningAction Stop 3> $null } | Should Throw
-            }
-        }
-        
         Context 'Validate functionality ' {
-            It 'Server name reported correctly the installed memory' {
+            It 'Server SqlInstance reported correctly' {
                 Mock Connect-SqlInstance {
                     return @{
-                        Name = 'ABC'
+                        DomainInstanceName = 'ABC'
                     }
                 }
-                
-                (Get-DbaMaxMemory -SqlInstance 'ABC').Server | Should be 'ABC'
+
+                (Get-DbaMaxMemory -SqlInstance 'ABC').SqlInstance | Should be 'ABC'
             }
-            
-            It 'Server under-report by 1MB the memory installed on the host' {
+
+            It 'Server under-report by 1 the memory installed on the host' {
                 Mock Connect-SqlInstance {
                     return @{
                         PhysicalMemory = 1023
                     }
                 }
-                
-                (Get-DbaMaxMemory -SqlInstance 'ABC').TotalMB | Should be 1024
+
+                (Get-DbaMaxMemory -SqlInstance 'ABC').Total | Should be 1024
             }
-            
+
             It 'Server reports correctly the memory installed on the host' {
                 Mock Connect-SqlInstance {
                     return @{
                         PhysicalMemory = 1024
                     }
                 }
-                
-                (Get-DbaMaxMemory -SqlInstance 'ABC').TotalMB | Should be 1024
+
+                (Get-DbaMaxMemory -SqlInstance 'ABC').Total | Should be 1024
             }
-            
+
             It 'Memory allocated to SQL Server instance reported' {
                 Mock Connect-SqlInstance {
                     return @{
@@ -57,9 +56,23 @@ Describe "$commandname Unit Test" -Tags Unittest {
                         }
                     }
                 }
-                
-                (Get-DbaMaxMemory -SqlInstance 'ABC').SqlMaxMB | Should be 2147483647
+
+                (Get-DbaMaxMemory -SqlInstance 'ABC').MaxValue | Should be 2147483647
             }
+        }
+    }
+}
+
+Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
+    Context "Connects to multiple instances" {
+        It 'Returns multiple objects' {
+            $results = Get-DbaMaxMemory -SqlInstance $script:instance1, $script:instance2
+            $results.Count | Should BeGreaterThan 1 # and ultimately not throw an exception
+        }
+        It 'Returns the right amount of ' {
+            $null = Set-DbaMaxMemory -SqlInstance $script:instance1, $script:instance2 -Max 1024
+            $results = Get-DbaMaxMemory -SqlInstance $script:instance1
+            $results.MaxValue | Should Be 1024
         }
     }
 }

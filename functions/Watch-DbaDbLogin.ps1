@@ -1,214 +1,159 @@
 function Watch-DbaDbLogin {
     <#
-.SYNOPSIS
-Tracks SQL Server logins: which host they came from, what database they're using, and what program is being used to log in.
+    .SYNOPSIS
+        Tracks SQL Server logins: which host they came from, what database they're using, and what program is being used to log in.
 
-.DESCRIPTION
-Watch-DbaDbLogin uses SQL Server process enumeration to track logins in a SQL Server table. This is helpful when you
-need to migrate a SQL Server, and update connection strings, but have inadequate documentation on which servers/applications
-are logging into your SQL instance.
+    .DESCRIPTION
+        Watch-DbaDbLogin uses SQL Server DMV's to track logins into a SQL Server table. This is helpful when you need to migrate a SQL Server and update connection strings, but have inadequate documentation on which servers/applications are logging into your SQL instance.
 
-Running this script every 5 minutes for a week should give you a sufficient idea about database and login usage.
+        Running this script every 5 minutes for a week should give you a sufficient idea about database and login usage.
 
-.PARAMETER SqlInstance
-The SQL Server that stores the Watch database
+    .PARAMETER SqlInstance
+        The SQL Server that stores the Watch database.
 
-.PARAMETER SqlCms
-A list of servers to watch is required. If you would like to gather that list from a Central Management Server, use -SqlCms servername.
+    .PARAMETER SqlCms
+        Specifies a Central Management Server to query for a list of servers to watch.
 
-.PARAMETER SqlCmsGroups
-This is an auto-populated array that contains your Central Management Server top-level groups. You can use one or many.
-If -SqlCmsGroups is not specified, the Watch-DbaDbLogin script will run against all servers in your Central Management Server.
+    .PARAMETER ServersFromFile
+        Specifies a file containing a list of servers to watch. This file must contain one server name per line.
 
-.PARAMETER ServersFromFile
-A list of servers to watch is required. You can use a file formatted as such:
-sqlserver1
-sqlserver2
+    .PARAMETER Database
+        The name of the Watch database.
 
-.PARAMETER Database
-The Watch database. By default, this is DatabaseLogins.
+    .PARAMETER Table
+        The name of the Watch table. By default, this is DbaTools-WatchDbLogins.
 
-.PARAMETER Table
-The Watch table. By default, this is DbLogins.
+    .PARAMETER SqlCredential
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
 
-.PARAMETER SqlCredential
-Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
 
-$cred = Get-Credential, this pass this $cred to the param.
+        For MFA support, please use Connect-DbaInstance.
 
-Windows Authentication will be used if DestinationSqlCredential is not specified. To connect as a different Windows user, run PowerShell as that user.
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-.NOTES
-Tags: Logins
-Author: Chrissy LeMaire (@cl), netnerds.net
-Requires: sysadmin access on all SQL Servers for
-the most accurate results
+    .NOTES
+        Tags: Login
+        Author: Chrissy LeMaire (@cl), netnerds.net
 
-Website: https://dbatools.io
-Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
+        Requires: sysadmin access on all SQL Servers for the most accurate results
 
-.LINK
-https://dbatools.io/Watch-DbaDbLogin
+    .LINK
+        https://dbatools.io/Watch-DbaDbLogin
 
-.EXAMPLE
-Watch-DbaDbLogin -SqlInstance sqlserver -SqlCms SqlCms1
+    .EXAMPLE
+        PS C:\> Watch-DbaDbLogin -SqlInstance sqlserver -SqlCms SqlCms1
 
-In the above example, a list of servers is generated using all database instances within the Central Management Server "SqlCms1". Using this list, the script then enumerates all the processes and gathers login information, and saves it to the table "Dblogins" within the "DatabaseLogins" database on the SQL Server "sqlserver".
+        A list of all database instances within the Central Management Server SqlCms1 is generated. Using this list, the script enumerates all the processes and gathers login information and saves it to the table Dblogins in the DatabaseLogins database on SQL Server sqlserver.
 
-.EXAMPLE
-Watch-DbaDbLogin -SqlInstance sqlcluster -Database CentralAudit -ServersFromFile .\sqlservers.txt
+    .EXAMPLE
+        PS C:\> Watch-DbaDbLogin -SqlInstance sqlcluster -Database CentralAudit -ServersFromFile .\sqlservers.txt
 
-In the above example, a list of servers is gathered from the file sqlservers.txt in the current directory. Using this list, the script then enumerates all the processes and gathers login information, and saves it to the table "Dblogins" within the "CentralAudit" database on the SQL Server "sqlcluster".
+        A list of servers is gathered from the file sqlservers.txt in the current directory. Using this list, the script enumerates all the processes and gathers login information and saves it to the table Dblogins in the CentralAudit database on SQL Server sqlcluster.
 
-.EXAMPLE
-Watch-DbaDbLogin -SqlInstance sqlserver -SqlCms SqlCms1 -SqlCmsGroups SQL2014Clusters -SqlCredential $cred
+    .EXAMPLE
+        PS C:\> Watch-DbaDbLogin -SqlInstance sqlserver -SqlCms SqlCms1 -SqlCredential $cred
 
-In the above example, a list of servers is generated using database instance names within the "SQL2014Clusters" group on the Central Management Server "SqlCms1". Using this list, the script then enumerates all the processes and gathers login information, and saves it to the table "Dblogins" within the "DatabaseLogins" database on "sqlserver".
+        A list of servers is generated using database instance names within the SQL2014Clusters group on the Central Management Server SqlCms1. Using this list, the script enumerates all the processes and gathers login information and saves it to the table Dblogins in the DatabaseLogins database on sqlserver.
 
-#>
+    #>
     [CmdletBinding(DefaultParameterSetName = "Default")]
-    Param (
-        [parameter(Mandatory = $true)]
-        [Alias("ServerInstance", "SqlServer")]
-        [DbaInstanceParameter]$SqlInstance,
-        [string]$Database = "DatabaseLogins",
-        [string]$Table = "DbLogins",
+    param (
+        [parameter(Mandatory)]
+        [DbaInstance]$SqlInstance,
+        [object]$Database,
+        [string]$Table = "DbaTools-WatchDbLogins",
         [PSCredential]$SqlCredential,
+
         # Central Management Server
-
         [string]$SqlCms,
-        # File with one server per line
 
-		[string]$ServersFromFile
+        # File with one server per line
+        [string]$ServersFromFile,
+        [switch]$EnableException
     )
 
     process {
-        if ([string]::IsNullOrEmpty($SqlCms) -and [string]::IsNullOrEmpty($ServersFromFile)) {
-            throw "You must specify a server list source using -SqlCms or -ServersFromFile"
+        if (Test-Bound 'SqlCms', 'ServersFromFile' -Not) {
+            Stop-Function -Message "You must specify a server list source using -SqlCms or -ServersFromFile"
+            return
         }
 
-        <#
-			Setup datatable & bulk copy
-		#>
-
-        if ($sqlcredential.UserName) {
-            $username = $sqlcredential.Username
-            $password = $SqlCredential.GetNetworkCredential().Password
-            $connectionstring = "Data Source=$SqlInstance;Initial Catalog=$Database;User Id=$username;Password=$password;"
+        try {
+            $serverDest = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
+        } catch {
+            Stop-Function -Message "Error occurred while establishing connection to $SqlInstance" -Category ConnectionError -ErrorRecord $_ -Target $SqlInstance -Continue
         }
-        else { $connectionstring = "Data Source=$SqlInstance;Integrated Security=true;Initial Catalog=$Database;" }
-
-
-        $bulkcopy = New-Object ("Data.SqlClient.Sqlbulkcopy") $connectionstring
-        $bulkcopy.DestinationTableName = $Table
-
-        $datatable = New-Object "System.Data.DataTable"
-        $null = $datatable.Columns.Add("SQLServer")
-        $null = $datatable.Columns.Add("Loginname")
-        $null = $datatable.Columns.Add("Host")
-        $null = $datatable.Columns.Add("Dbname")
-        $null = $datatable.Columns.Add("Program")
 
         $systemdbs = "master", "msdb", "model", "tempdb"
         $excludedPrograms = "Microsoft SQL Server Management Studio - Query", "SQL Management"
 
         <#
-			Get servers to query from Central Management Server or File
-		#>
-        $servers = @()
+            Get servers to query from Central Management Server or File
+        #>
         if ($SqlCms) {
-            $server = New-Object Microsoft.SqlServer.Management.Smo.Server $SqlCms
-            $sqlconnection = $server.ConnectionContext.SqlConnectionObject
-
-            try { $cmstore = New-Object Microsoft.SqlServer.Management.RegisteredServers.RegisteredServersStore($sqlconnection) }
-            catch { throw "Cannot access Central Management Server" }
-
-            if ($SqlCmsGroups) {
-                foreach ($groupname in $SqlCmsGroups) {
-                    $CMS = $cmstore.ServerGroups["DatabaseEngineServerGroup"].ServerGroups[$groupname]
-                    $servers += ($cms.GetDescendantRegisteredServers()).servername
-                }
-            }
-            else {
-                $CMS = $cmstore.ServerGroups["DatabaseEngineServerGroup"]
-                $servers = ($cms.GetDescendantRegisteredServers()).servername
-                if ($servers -notcontains $SqlCms) { $servers += $SqlCms }
+            try {
+                $servers = Get-DbaRegServer -SqlInstance $SqlCms -SqlCredential $SqlCredential -EnableException
+            } catch {
+                Stop-Function -Message "The CMS server, $SqlCms, was not accessible." -Target $SqlCms -ErrorRecord $_
+                return
             }
         }
-
-        If ($ServersFromFile) {
-            $servers = Get-Content $ServersFromFile
+        if (Test-Bound 'ServersFromFile') {
+            if (Test-Path $ServersFromFile) {
+                $servers = Get-Content $ServersFromFile
+            } else {
+                Stop-Function -Message "$ServersFromFile was not found." -Target $ServersFromFile
+                return
+            }
         }
 
         <#
-			Process each server
-		#>
-
-        foreach ($servername in $servers) {
-            Write-Output "Attempting to connect to $servername"
-            try { $server = Connect-SqlInstance -SqlInstance $servername -SqlCredential $SqlCredential }
-            catch { Write-Error "Can't connect to $servername. Skipping."; continue }
-
-            if (!(Test-SqlSa $server)) { Write-Warning "Not a sysadmin on $servername, resultset would be underwhelming. Skipping."; continue }
-
-
-            $procs = $server.EnumProcesses() | Where-Object { $_.Host -ne $sourceserver.ComputerNamePhysicalNetBIOS -and ![string]::IsNullOrEmpty($_.Host) }
-            $procs = $procs | Where-Object { $systemdbs -notcontains $_.Database -and $excludedPrograms -notcontains $_.Program } | Select-Object Login, Host, Database, Program
-
-            foreach ($p in $procs) {
-                $row = $datatable.NewRow()
-                $row.itemarray = $server.name, $p.Login, $p.Host, $p.Database, $p.Program
-                $datatable.Rows.Add($row)
+            Process each server
+        #>
+        foreach ($instance in $servers) {
+            try {
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
+            } catch {
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
-            $server.ConnectionContext.Disconnect()
-            Write-Output "Added process information for $servername to datatable."
-        }
 
-        <#
-			Write to $Table in $Database on $SqlInstance
-		#>
-
-        try {
-            $bulkcopy.WriteToServer($datatable)
-            if ($datatable.rows.count -eq 0) {
-                Write-Warning "Nothing done."
+            if (!(Test-SqlSa $server)) {
+                Write-Message -Level Warning -Message "Not a sysadmin on $instance, resultset would be underwhelming. Skipping.";
+                continue
             }
-            $bulkcopy.Close()
-            Write-Output "Updated $Table in $Database on $SqlInstance with $($datatable.rows.count) rows."
+
+            $sql = "
+            SELECT
+                s.login_time AS [LoginTime]
+                , s.login_name AS [Login]
+                , ISNULL(s.host_name,N'') AS [Host]
+                , ISNULL(s.program_name,N'') AS [Program]
+                , ISNULL(r.database_id,N'') AS [DatabaseId]
+                , ISNULL(DB_NAME(r.database_id),N'') AS [Database]
+                , CAST(~s.is_user_process AS bit) AS [IsSystem]
+                , CaptureTime = (SELECT GETDATE())
+            FROM sys.dm_exec_sessions AS s
+            LEFT OUTER JOIN sys.dm_exec_requests AS r
+                ON r.session_id = s.session_id"
+            Write-Message -Level Debug -Message $sql
+
+            $procs = $server.Query($sql) | Where-Object { $_.Host -ne $instance.ComputerName -and ![string]::IsNullOrEmpty($_.Host) }
+            $procs = $procs | Where-Object { $systemdbs -notcontains $_.Database -and $excludedPrograms -notcontains $_.Program }
+
+            if ($procs.Count -gt 0) {
+                $procs | Select-Object @{Label = "ComputerName"; Expression = { $server.ComputerName } }, @{Label = "InstanceName"; Expression = { $server.ServiceName } }, @{Label = "SqlInstance"; Expression = { $server.DomainInstanceName } }, LoginTime, Login, Host, Program, DatabaseId, Database, IsSystem, CaptureTime | ConvertTo-DbaDataTable | Write-DbaDbTableData -SqlInstance $serverDest -Database $Database -Table $Table -AutoCreateTable
+
+                Write-Message -Level Output -Message "Added process information for $instance to datatable."
+            } else {
+                Write-Message -Level Verbose -Message "No data returned for $instance."
+            }
         }
-        catch { Write-Error "Could not update $Table in $Database on $SqlInstance. Do the database and table exist and do you have access?" }
-
     }
-
-    end {
-        Write-Output "Script completed"
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Watch-SqlDbLogin
-    }
-    <#
-	---- SQL database and table ----
-
-		CREATE DATABASE DatabaseLogins
-		GO
-		USE DatabaseLogins
-		GO
-			CREATE TABLE [dbo].[DbLogins](
-			[SQLServer] varchar(128),
-			[LoginName] varchar(128),
-			[Host] varchar(128),
-			[DbName] varchar(128),
-			[Program] varchar(256),
-			[Timestamp] datetime default getdate(),
-		)
-	-- Create Unique Clustered Index with IGNORE_DUPE_KEY=ON to avoid duplicates
-		CREATE UNIQUE CLUSTERED INDEX [ClusteredIndex-Combo] ON [dbo].[DbLogins]
-			(
-			[SQLServer] ASC,
-			[LoginName] ASC,
-			[Host] ASC,
-			[DbName] ASC,
-			[Program] ASC
-		) WITH (IGNORE_DUP_KEY = ON)
-		GO
-	#>
 }

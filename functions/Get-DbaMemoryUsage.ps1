@@ -1,215 +1,213 @@
-Function Get-DbaMemoryUsage {
-<#
-.SYNOPSIS
-Get amount of memory in use by *all* SQL Server components and instances
+function Get-DbaMemoryUsage {
+    <#
+    .SYNOPSIS
+        Get amount of memory in use by *all* SQL Server components and instances
 
-.DESCRIPTION
-Retrieves the amount of memory per performance counter. Default output includes columns Server, counter instance, counter, number of pages, memory in KB, memory in MB
-SSAS and SSIS are included.
-	
-SSRS does not have memory counters, only memory shrinks and memory pressure state.
+    .DESCRIPTION
+        Retrieves the amount of memory per performance counter. Default output includes columns Server, counter instance, counter, number of pages, memory in KB, memory in MB
+        SSAS and SSIS are included.
 
-This function requires local admin role on the targeted computers.
+        SSRS does not have memory counters, only memory shrinks and memory pressure state.
 
-.PARAMETER ComputerName
-The Windows Server that you are connecting to. Note that this will return all instances, but Out-GridView makes it easy to filter to specific instances.
+        This function requires local admin role on the targeted computers.
 
-.PARAMETER Credential
-Credential object used to connect to the SQL Server as a different user
+    .PARAMETER ComputerName
+        The Windows Server that you are connecting to. Note that this will return all instances, but Out-GridView makes it easy to filter to specific instances.
 
-.PARAMETER Simple
-Shows concise information including Server name, Database name, and the date the last time backups were performed
+    .PARAMETER Credential
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
 
-.PARAMETER Silent 
-Use this switch to disable any kind of verbose messages
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
 
-.NOTES
-Tags: Memory
-Author: Klaas Vandenberghe ( @PowerDBAKlaas )
+        For MFA support, please use Connect-DbaInstance.
 
-dbatools PowerShell module (https://dbatools.io)
-Copyright (C) 2016 Chrissy LeMaire
-This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
-This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
-You should have received a copy of the GNU General Public License along with this program. If not, see http://www.gnu.org/licenses/.
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-SSIS Counters: https://msdn.microsoft.com/en-us/library/ms137622.aspx
+    .NOTES
+        Tags: Memory
+        Author: Klaas Vandenberghe (@PowerDBAKlaas)
 
-.LINK
- https://dbatools.io/Get-DbaMemoryUsage
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-.EXAMPLE
-Get-DbaMemoryUsage -ComputerName ServerA
+        SSIS Counters: https://msdn.microsoft.com/en-us/library/ms137622.aspx
 
-Returns a custom object displaying Server, counter instance, counter, number of pages, memory in KB, memory in MB
+    .LINK
+        https://dbatools.io/Get-DbaMemoryUsage
 
-.EXAMPLE
-Get-DbaMemoryUsage -ComputerName ServerA\sql987 -Simple
+    .EXAMPLE
+        PS C:\> Get-DbaMemoryUsage -ComputerName sql2017
 
-Returns a custom object with Server, counter instance, counter, number of pages, memory in KB, memory in MB
+        Returns a custom object displaying Server, counter instance, counter, number of pages, memory
 
-.EXAMPLE
-Get-DbaMemoryUsage -ComputerName ServerA\sql987 | Out-Gridview
+    .EXAMPLE
+        PS C:\> Get-DbaMemoryUsage -ComputerName sql2017\sqlexpress -SqlCredential sqladmin | Where-Object { $_.Memory.Megabyte -gt 100 }
 
-Returns a gridview displaying Server, counter instance, counter, number of pages, memory in KB, memory in MB
+        Logs into the sql2017\sqlexpress as sqladmin using SQL Authentication then returns results only where memory exceeds 100 MB
 
-#>
-	[CmdletBinding()]
-	Param (
-		[parameter(ValueFromPipeline)]
-		[Alias("Host", "cn", "Server")]
-		[dbainstanceparameter[]]$ComputerName = $env:COMPUTERNAME,
-		[PSCredential]$Credential,
-		[switch]$Simple,
-		[switch]$Silent
-	)
-	
-	begin {
-		if ($Simple) {
-			$Memcounters = '(Total Server Memory |Target Server Memory |Connection Memory |Lock Memory |SQL Cache Memory |Optimizer Memory |Granted Workspace Memory |Cursor memory usage|Maximum Workspace)'
-			$Plancounters = 'total\)\\cache pages'
-			$BufManpagecounters = 'Total pages'
-			$SSAScounters = '(\\memory usage)'
-			$SSIScounters = '(memory)'
-		}
-		else {
-			$Memcounters = '(Total Server Memory |Target Server Memory |Connection Memory |Lock Memory |SQL Cache Memory |Optimizer Memory |Granted Workspace Memory |Cursor memory usage|Maximum Workspace)'
-			$Plancounters = '(cache pages|procedure plan|ad hoc sql plan|prepared SQL Plan)'
-			$BufManpagecounters = '(Free pages|Reserved pages|Stolen pages|Total pages|Database pages|target pages|extension .* pages)'
-			$SSAScounters = '(\\memory )'
-			$SSIScounters = '(memory)'
-		}
-		
-		$scriptblock = {
-			Write-Verbose "Searching for Memory Manager Counters on $Computer"
-			try {
-				$availablecounters = (Get-Counter -ListSet '*sql*:Memory Manager*' -ErrorAction SilentlyContinue).paths
-				(Get-Counter -Counter $availablecounters -ErrorAction SilentlyContinue).countersamples |
-				Where-Object { $_.Path -match $Memcounters } |
-				ForEach-Object {
-					$instance = (($_.Path.split("\")[-2]).replace("mssql`$", "")).split(':')[0]
-					if ($instance -eq 'sqlserver') { $instance = 'mssqlserver' }
-					[PSCustomObject]@{
-						ComputerName = $env:computername
-						SqlInstance = $instance
-						CounterInstance = (($_.Path.split("\")[-2]).replace("mssql`$", "")).split(':')[1]
-						Counter = $_.Path.split("\")[-1]
-						Pages = $null
-						MemKB = $_.cookedvalue
-						MemMB = $_.cookedvalue / 1024
-					}
-				}
-			}
-			catch {
-				Write-Verbose "No Memory Manager Counters on $Computer"
-			}
-			
-			Write-Verbose "Searching for Plan Cache Counters on $Computer"
-			try {
-				$availablecounters = (Get-Counter -ListSet '*sql*:Plan Cache*' -ErrorAction SilentlyContinue).paths
-				(Get-Counter -Counter $availablecounters -ErrorAction SilentlyContinue).countersamples |
-				Where-Object { $_.Path -match $Plancounters } |
-				ForEach-Object {
-					$instance = (($_.Path.split("\")[-2]).replace("mssql`$", "")).split(':')[0]
-					if ($instance -eq 'sqlserver') { $instance = 'mssqlserver' }
-					[PSCustomObject]@{
-						ComputerName = $env:computername
-						SqlInstance = $instance
-						CounterInstance = (($_.Path.split("\")[-2]).replace("mssql`$", "")).split(':')[1]
-						Counter = $_.Path.split("\")[-1]
-						Pages = $_.cookedvalue
-						MemKB = $_.cookedvalue * 8192 / 1024
-						MemMB = $_.cookedvalue * 8192 / 1048576
-					}
-				}
-			}
-			catch {
-				Write-Verbose "No Plan Cache Counters on $Computer"
-			}
-			
-			Write-Verbose "Searching for Buffer Manager Counters on $Computer"
-			try {
-				$availablecounters = (Get-Counter -ListSet "*Buffer Manager*" -ErrorAction SilentlyContinue).paths
-				(Get-Counter -Counter $availablecounters -ErrorAction SilentlyContinue).countersamples |
-				Where-Object { $_.Path -match $BufManpagecounters } |
-				ForEach-Object {
-					$instance = (($_.Path.split("\")[-2]).replace("mssql`$", "")).split(':')[0]
-					if ($instance -eq 'sqlserver') { $instance = 'mssqlserver' }
-					[PSCustomObject]@{
-						ComputerName = $env:computername
-						SqlInstance = $instance
-						CounterInstance = (($_.Path.split("\")[-2]).replace("mssql`$", "")).split(':')[1]
-						Counter = $_.Path.split("\")[-1]
-						Pages = $_.cookedvalue
-						MemKB = $_.cookedvalue * 8192 / 1024.0
-						MemMB = $_.cookedvalue * 8192 /1048576.0
-					}
-				}
-			}
-			catch {
-				Write-Verbose "No Buffer Manager Counters on $Computer"
-			}
-			
-			Write-Verbose "Searching for SSAS Counters on $Computer"
-			try {
-				$availablecounters = (Get-Counter -ListSet "MSAS*:Memory" -ErrorAction SilentlyContinue).paths
-				(Get-Counter -Counter $availablecounters -ErrorAction SilentlyContinue).countersamples |
-				Where-Object { $_.Path -match $SSAScounters } |
-				ForEach-Object {
-					$instance = (($_.Path.split("\")[-2]).replace("mssql`$", "")).split(':')[0]
-					if ($instance -eq 'sqlserver') { $instance = 'mssqlserver' }
-					[PSCustomObject]@{
-						ComputerName = $env:COMPUTERNAME
-						SqlInstance = $instance
-						CounterInstance = (($_.Path.split("\")[-2]).replace("mssql`$", "")).split(':')[1]
-						Counter = $_.Path.split("\")[-1]
-						Pages = $null
-						MemKB = $_.cookedvalue
-						MemMB = $_.cookedvalue / 1024
-					}
-				}
-			}
-			catch {
-				Write-Verbose "No SSAS Counters on $Computer"
-			}
-			
-			Write-Verbose "Searching for SSIS Counters on $Computer"
-			try {
-				$availablecounters = (Get-Counter -ListSet "*SSIS*" -ErrorAction SilentlyContinue).paths
-				(Get-Counter -Counter $availablecounters -ErrorAction SilentlyContinue).countersamples |
-				Where-Object { $_.Path -match $SSIScounters } |
-				ForEach-Object {
-					$instance = (($_.Path.split("\")[-2]).replace("mssql`$", "")).split(':')[0]
-					if ($instance -eq 'sqlserver') { $instance = 'mssqlserver' }
-					[PSCustomObject]@{
-						ComputerName = $env:computername
-						SqlInstance = $instance
-						CounterInstance = (($_.Path.split("\")[-2]).replace("mssql`$", "")).split(':')[1]
-						Counter = $_.Path.split("\")[-1]
-						Pages = $null
-						MemKB = $_.cookedvalue / 1024
-						MemMB = $_.cookedvalue / 1024 / 1024
-					}
-				}
-			}
-			catch {
-				Write-Verbose "No SSIS Counters on $Computer"
-			}
-		}
-	}
-	
-	process {
-		foreach ($Computer in $ComputerName.ComputerName) {
-			$reply = Resolve-DbaNetworkName -ComputerName $computer -Credential $Credential -ErrorAction SilentlyContinue
-			if ($reply.ComputerName) {
-				$Computer = $reply.ComputerName
-				Write-Verbose "Connecting to $Computer"
-				Invoke-Command2 -ComputerName $Computer -Credential $Credential -ScriptBlock $scriptblock
-			}
-			else {
-				Write-Message -Level Warning -Message "Can't resolve $Computer."
-				Continue
-			}
-		}
-	}
+    .EXAMPLE
+        PS C:\> $servers | Get-DbaMemoryUsage | Out-Gridview
+
+        Gets results from an array of $servers then diplays them in a gridview.
+    #>
+    [CmdletBinding()]
+    param (
+        [parameter(ValueFromPipeline)]
+        [Alias("Host", "cn", "Server")]
+        [DbaInstanceParameter[]]$ComputerName = $env:COMPUTERNAME,
+        [PSCredential]$Credential,
+        [switch]$EnableException
+    )
+    begin {
+        if ($Simple) {
+            $Memcounters = '(Total Server Memory |Target Server Memory |Connection Memory |Lock Memory |SQL Cache Memory |Optimizer Memory |Granted Workspace Memory |Cursor memory usage|Maximum Workspace)'
+            $Plancounters = 'total\)\\cache pages'
+            $BufManpagecounters = 'Total pages'
+            $SSAScounters = '(\\memory usage)'
+            $SSIScounters = '(memory)'
+        } else {
+            $Memcounters = '(Total Server Memory |Target Server Memory |Connection Memory |Lock Memory |SQL Cache Memory |Optimizer Memory |Granted Workspace Memory |Cursor memory usage|Maximum Workspace)'
+            $Plancounters = '(cache pages|procedure plan|ad hoc sql plan|prepared SQL Plan)'
+            $BufManpagecounters = '(Free pages|Reserved pages|Stolen pages|Total pages|Database pages|target pages|extension .* pages)'
+            $SSAScounters = '(\\memory )'
+            $SSIScounters = '(memory)'
+        }
+
+        $scriptBlock = {
+            param ($Memcounters,
+                $Plancounters,
+                $BufManpagecounters,
+                $SSAScounters,
+                $SSIScounters)
+            <# DO NOT use Write-Message as this is inside of a script block #>
+            Write-Verbose -Message "Searching for Memory Manager Counters on $Computer"
+            try {
+                $availablecounters = (Get-Counter -ListSet '*sql*:Memory Manager*' -ErrorAction SilentlyContinue).paths
+                (Get-Counter -Counter $availablecounters -ErrorAction SilentlyContinue).countersamples | Where-Object { $_.Path -match $Memcounters } | ForEach-Object {
+                    $instance = (($_.Path.split("\")[-2]).replace("mssql`$", "")).split(':')[0]
+                    if ($instance -eq 'sqlserver') { $instance = 'mssqlserver' }
+                    [PSCustomObject]@{
+                        ComputerName    = $env:computername
+                        SqlInstance     = $instance
+                        CounterInstance = (($_.Path.split("\")[-2]).replace("mssql`$", "")).split(':')[1]
+                        Counter         = $_.Path.split("\")[-1]
+                        Pages           = $null
+                        Memory          = $_.cookedvalue / 1024
+                    }
+                }
+            } catch {
+                <# DO NOT use Write-Message as this is inside of a script block #>
+                Write-Verbose -Message "No Memory Manager Counters on $Computer"
+            }
+            <# DO NOT use Write-Message as this is inside of a script block #>
+            Write-Verbose -Message "Searching for Plan Cache Counters on $Computer"
+            try {
+                $availablecounters = (Get-Counter -ListSet '*sql*:Plan Cache*' -ErrorAction SilentlyContinue).paths
+                (Get-Counter -Counter $availablecounters -ErrorAction SilentlyContinue).countersamples | Where-Object { $_.Path -match $Plancounters } | ForEach-Object {
+                    $instance = (($_.Path.split("\")[-2]).replace("mssql`$", "")).split(':')[0]
+                    if ($instance -eq 'sqlserver') { $instance = 'mssqlserver' }
+                    [PSCustomObject]@{
+                        ComputerName    = $env:computername
+                        SqlInstance     = $instance
+                        CounterInstance = (($_.Path.split("\")[-2]).replace("mssql`$", "")).split(':')[1]
+                        Counter         = $_.Path.split("\")[-1]
+                        Pages           = $_.cookedvalue
+                        Memory          = $_.cookedvalue * 8192 / 1048576
+                    }
+                }
+            } catch {
+                <# DO NOT use Write-Message as this is inside of a script block #>
+                Write-Verbose -Message "No Plan Cache Counters on $Computer"
+            }
+            <# DO NOT use Write-Message as this is inside of a script block #>
+            Write-Verbose -Message "Searching for Buffer Manager Counters on $Computer"
+            try {
+                $availablecounters = (Get-Counter -ListSet "*Buffer Manager*" -ErrorAction SilentlyContinue).paths
+                (Get-Counter -Counter $availablecounters -ErrorAction SilentlyContinue).countersamples | Where-Object { $_.Path -match $BufManpagecounters } | ForEach-Object {
+                    $instance = (($_.Path.split("\")[-2]).replace("mssql`$", "")).split(':')[0]
+                    if ($instance -eq 'sqlserver') { $instance = 'mssqlserver' }
+                    [PSCustomObject]@{
+                        ComputerName    = $env:computername
+                        SqlInstance     = $instance
+                        CounterInstance = (($_.Path.split("\")[-2]).replace("mssql`$", "")).split(':')[1]
+                        Counter         = $_.Path.split("\")[-1]
+                        Pages           = $_.cookedvalue
+                        Memory          = $_.cookedvalue * 8192 / 1048576.0
+                    }
+                }
+            } catch {
+                <# DO NOT use Write-Message as this is inside of a script block #>
+                Write-Verbose -Message "No Buffer Manager Counters on $Computer"
+            }
+            <# DO NOT use Write-Message as this is inside of a script block #>
+            Write-Verbose -Message "Searching for SSAS Counters on $Computer"
+            try {
+                $availablecounters = (Get-Counter -ListSet "MSAS*:Memory" -ErrorAction SilentlyContinue).paths
+                (Get-Counter -Counter $availablecounters -ErrorAction SilentlyContinue).countersamples | Where-Object { $_.Path -match $SSAScounters } | ForEach-Object {
+                    $instance = (($_.Path.split("\")[-2]).replace("mssql`$", "")).split(':')[0]
+                    if ($instance -eq 'sqlserver') { $instance = 'mssqlserver' }
+                    [PSCustomObject]@{
+                        ComputerName    = $env:COMPUTERNAME
+                        SqlInstance     = $instance
+                        CounterInstance = (($_.Path.split("\")[-2]).replace("mssql`$", "")).split(':')[1]
+                        Counter         = $_.Path.split("\")[-1]
+                        Pages           = $null
+                        Memory          = $_.cookedvalue / 1024
+                    }
+                }
+            } catch {
+                <# DO NOT use Write-Message as this is inside of a script block #>
+                Write-Verbose -Message "No SSAS Counters on $Computer"
+            }
+            <# DO NOT use Write-Message as this is inside of a script block #>
+            Write-Verbose -Message "Searching for SSIS Counters on $Computer"
+            try {
+                $availablecounters = (Get-Counter -ListSet "*SSIS*" -ErrorAction SilentlyContinue).paths
+                (Get-Counter -Counter $availablecounters -ErrorAction SilentlyContinue).countersamples | Where-Object { $_.Path -match $SSIScounters } | ForEach-Object {
+                    $instance = (($_.Path.split("\")[-2]).replace("mssql`$", "")).split(':')[0]
+                    if ($instance -eq 'sqlserver') { $instance = 'mssqlserver' }
+                    [PSCustomObject]@{
+                        ComputerName    = $env:computername
+                        SqlInstance     = $instance
+                        CounterInstance = (($_.Path.split("\")[-2]).replace("mssql`$", "")).split(':')[1]
+                        Counter         = $_.Path.split("\")[-1]
+                        Pages           = $null
+                        Memory          = $_.cookedvalue / 1024 / 1024
+                    }
+                }
+            } catch {
+                <# DO NOT use Write-Message as this is inside of a script block #>
+                Write-Verbose -Message "No SSIS Counters on $Computer"
+            }
+        }
+    }
+    process {
+        foreach ($Computer in $ComputerName.ComputerName) {
+            $reply = Resolve-DbaNetworkName -ComputerName $computer -Credential $Credential -ErrorAction SilentlyContinue
+            if ($reply.FullComputerName) {
+                $Computer = $reply.FullComputerName
+                try {
+                    foreach ($result in (Invoke-Command2 -ComputerName $Computer -Credential $Credential -ScriptBlock $scriptBlock -argumentlist $Memcounters, $Plancounters, $BufManpagecounters, $SSAScounters, $SSIScounters)) {
+                        [PSCustomObject]@{
+                            ComputerName    = $result.ComputerName
+                            SqlInstance     = $result.SqlInstance
+                            CounterInstance = $result.CounterInstance
+                            Counter         = $result.Counter
+                            Pages           = $result.Pages
+                            Memory          = [dbasize]($result.Memory * 1024 * 1024)
+                        }
+                    }
+                } catch {
+                    Stop-Function -Message "Failure" -ErrorRecord $_ -Target $computer -Continue
+                }
+            } else {
+                Write-Message -Level Warning -Message "Can't resolve $Computer."
+                Continue
+            }
+        }
+    }
 }

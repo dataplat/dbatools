@@ -1,11 +1,23 @@
-$commandname = $MyInvocation.MyCommand.Name.Replace(".ps1","")
+$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
+. "$PSScriptRoot\..\internal\functions\Get-DirectoryRestoreFile.ps1"
 
-Describe "$commandname Unit Tests" -Tag 'UnitTests' {
+Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+    Context "Validate parameters" {
+        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
+        [object[]]$knownParameters = 'Path', 'Recurse', 'EnableException'
+        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
+        It "Should only contain our specific parameters" {
+            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        }
+    }
+}
+
+Describe "$CommandName Integration Tests" -Tag 'IntegrationTests' {
     Context "Test Path handling" {
         It "Should throw on an invalid Path" {
-            { Get-DirectoryRestoreFile -Path TestDrive:\foo\bar\does\not\exist\ -Silent } | Should Throw
+            { Get-DirectoryRestoreFile -Path TestDrive:\foo\bar\does\not\exist\ -EnableException } | Should Throw
         }
     }
     Context "Returning Files from one folder" {
@@ -53,7 +65,7 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
             ($results2 | Where-Object {$_.Fullname -like '*\backups\*.trn'}).count | Should be 3
         }
         It "Should  contain log2b.trn" {
-            ($results2 | Where-Object {$_.Fullname -like '*\backups\*log2b.trn'}).count | Should be 1          
+            ($results2 | Where-Object {$_.Fullname -like '*\backups\*log2b.trn'}).count | Should be 1
         }
     }
 }

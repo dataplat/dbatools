@@ -1,68 +1,72 @@
-﻿function Remove-DbaCmConnection {
+function Remove-DbaCmConnection {
     <#
     .SYNOPSIS
-    Removes connection objects from the connection cache used for remote computer management.
+        Removes connection objects from the connection cache used for remote computer management.
 
     .DESCRIPTION
-    Removes connection objects from the connection cache used for remote computer management.
+        Removes connection objects from the connection cache used for remote computer management.
 
     .PARAMETER ComputerName
-    The computer whose connection to remove.
-    Accepts both text as well as the output of Get-DbaCmConnection.
+        The target computer. Accepts both text as well as the output of Get-DbaCmConnection.
 
-    .PARAMETER Silent
-    Replaces user friendly yellow warnings with bloody red exceptions of doom!
-    Use this if you want the function to throw terminating errors you want to catch.
-	
-	.NOTES
-	Original Author: Fred Winmann (@FredWeinmann)
-	Tags: ComputerManagement
-	
-	Website: https://dbatools.io
-	Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-	License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+    .PARAMETER WhatIf
+        If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
 
-	.LINK
-	https://dbatools.io/Remove-DbaCmConnection
+    .PARAMETER Confirm
+        If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
+
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+
+    .NOTES
+        Tags: ComputerManagement, CIM
+        Author: Friedrich Weinmann (@FredWeinmann)
+
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
+
+    .LINK
+        https://dbatools.io/Remove-DbaCmConnection
 
     .EXAMPLE
-    Remove-DbaCmConnection -ComputerName sql2014
+        PS C:\> Remove-DbaCmConnection -ComputerName sql2014
 
-    Removes the cached connection to the server sql2014 from the cache.
+        Removes the cached connection to the server sql2014 from the cache.
 
     .EXAMPLE
-    Get-DbaCmConnection | Remove-DbaCmConnection
+        PS C:\> Get-DbaCmConnection | Remove-DbaCmConnection
 
-    Clears the entire connection cache.
+        Clears the entire connection cache.
     #>
-    [CmdletBinding()]
+    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High')]
     param (
-        [Parameter(ValueFromPipeline = $true, Mandatory = $true)]
-        [Sqlcollaborative.Dbatools.Parameter.DbaCmConnectionParameter[]]
-        $ComputerName,
-
-        [switch]
-        $Silent
+        [Parameter(ValueFromPipeline, Mandatory)]
+        [Sqlcollaborative.Dbatools.Parameter.DbaCmConnectionParameter[]]$ComputerName,
+        [switch]$EnableException
     )
 
-    BEGIN {
+    begin {
         Write-Message -Level InternalComment -Message "Starting"
         Write-Message -Level Verbose -Message "Bound parameters: $($PSBoundParameters.Keys -join ", ")"
     }
-    PROCESS {
+    process {
         foreach ($connectionObject in $ComputerName) {
             if (-not $connectionObject.Success) { Stop-Function -Message "Failed to interpret computername input: $($connectionObject.InputObject)" -Category InvalidArgument -Target $connectionObject.InputObject -Continue }
             Write-Message -Level VeryVerbose -Message "Removing from connection cache: $($connectionObject.Connection.ComputerName)" -Target $connectionObject.Connection.ComputerName
-            if ([Sqlcollaborative.Dbatools.Connection.ConnectionHost]::Connections.ContainsKey($connectionObject.Connection.ComputerName)) {
-                $null = [Sqlcollaborative.Dbatools.Connection.ConnectionHost]::Connections.Remove($connectionObject.Connection.ComputerName)
-                Write-Message -Level Verbose -Message "Successfully removed $($connectionObject.Connection.ComputerName)" -Target $connectionObject.Connection.ComputerName
-            }
-            else {
-                Write-Message -Level Verbose -Message "Not found: $($connectionObject.Connection.ComputerName)" -Target $connectionObject.Connection.ComputerName
+            if ($Pscmdlet.ShouldProcess($($connectionObject.Connection.ComputerName), "Removing Connection")) {
+                if ([Sqlcollaborative.Dbatools.Connection.ConnectionHost]::Connections.ContainsKey($connectionObject.Connection.ComputerName)) {
+                    $null = [Sqlcollaborative.Dbatools.Connection.ConnectionHost]::Connections.Remove($connectionObject.Connection.ComputerName)
+                    Write-Message -Level Verbose -Message "Successfully removed $($connectionObject.Connection.ComputerName)" -Target $connectionObject.Connection.ComputerName
+                } else {
+                    Write-Message -Level Verbose -Message "Not found: $($connectionObject.Connection.ComputerName)" -Target $connectionObject.Connection.ComputerName
+                }
             }
         }
     }
-    END {
+    end {
         Write-Message -Level InternalComment -Message "Ending"
     }
 }

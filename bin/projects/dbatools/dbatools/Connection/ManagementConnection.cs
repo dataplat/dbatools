@@ -217,16 +217,32 @@ namespace Sqlcollaborative.Dbatools.Connection
             _overrideExplicitCredential = 0;
             _disableCimPersistence = 0;
             _enableCredentialFailover = 0;
+            OverrideConnectionPolicy = false;
         }
 
         #endregion Configuration
 
         #region Connection Stats
+        /// <summary>
+        /// Whether this connection adhers to the global connection lockdowns or not
+        /// </summary>
+        public bool OverrideConnectionPolicy = false;
 
         /// <summary>
         /// Did the last connection attempt using CimRM work?
         /// </summary>
-        public ManagementConnectionProtocolState CimRM = ManagementConnectionProtocolState.Unknown;
+        public ManagementConnectionProtocolState CimRM
+        {
+            get
+            {
+                if (!OverrideConnectionPolicy && ConnectionHost.DisableConnectionCimRM)
+                    return ManagementConnectionProtocolState.Disabled;
+                else
+                    return _CimRM;
+            }
+            set { _CimRM = value; }
+        }
+        private ManagementConnectionProtocolState _CimRM = ManagementConnectionProtocolState.Unknown;
 
         /// <summary>
         /// When was the last connection attempt using CimRM?
@@ -236,7 +252,18 @@ namespace Sqlcollaborative.Dbatools.Connection
         /// <summary>
         /// Did the last connection attempt using CimDCOM work?
         /// </summary>
-        public ManagementConnectionProtocolState CimDCOM = ManagementConnectionProtocolState.Unknown;
+        public ManagementConnectionProtocolState CimDCOM
+        {
+            get
+            {
+                if (!OverrideConnectionPolicy && ConnectionHost.DisableConnectionCimDCOM)
+                    return ManagementConnectionProtocolState.Disabled;
+                else
+                    return _CimDCOM;
+            }
+            set { _CimDCOM = value; }
+        }
+        private ManagementConnectionProtocolState _CimDCOM = ManagementConnectionProtocolState.Unknown;
 
         /// <summary>
         /// When was the last connection attempt using CimRM?
@@ -246,7 +273,18 @@ namespace Sqlcollaborative.Dbatools.Connection
         /// <summary>
         /// Did the last connection attempt using Wmi work?
         /// </summary>
-        public ManagementConnectionProtocolState Wmi = ManagementConnectionProtocolState.Unknown;
+        public ManagementConnectionProtocolState Wmi
+        {
+            get
+            {
+                if (!OverrideConnectionPolicy && ConnectionHost.DisableConnectionWMI)
+                    return ManagementConnectionProtocolState.Disabled;
+                else
+                    return _Wmi;
+            }
+            set { _Wmi = value; }
+        }
+        private ManagementConnectionProtocolState _Wmi = ManagementConnectionProtocolState.Unknown;
 
         /// <summary>
         /// When was the last connection attempt using CimRM?
@@ -256,7 +294,18 @@ namespace Sqlcollaborative.Dbatools.Connection
         /// <summary>
         /// Did the last connection attempt using PowerShellRemoting work?
         /// </summary>
-        public ManagementConnectionProtocolState PowerShellRemoting = ManagementConnectionProtocolState.Unknown;
+        public ManagementConnectionProtocolState PowerShellRemoting
+        {
+            get
+            {
+                if (!OverrideConnectionPolicy && ConnectionHost.DisableConnectionPowerShellRemoting)
+                    return ManagementConnectionProtocolState.Disabled;
+                else
+                    return _PowerShellRemoting;
+            }
+            set { _PowerShellRemoting = value; }
+        }
+        private ManagementConnectionProtocolState _PowerShellRemoting = ManagementConnectionProtocolState.Unknown;
 
         /// <summary>
         /// When was the last connection attempt using CimRM?
@@ -577,7 +626,7 @@ namespace Sqlcollaborative.Dbatools.Connection
 
             // Do not try to use disabled protocols
 
-            throw new PSInvalidOperationException("No connectiontypes left to try.");
+            throw new PSInvalidOperationException("Multiple protocol connections were attempted, but no successful connections could be established with the specified computer.");
         }
 
         /// <summary>
@@ -795,34 +844,9 @@ namespace Sqlcollaborative.Dbatools.Connection
             CimSession tempSession;
             IEnumerable<CimInstance> result;
 
-            try
-            {
-                tempSession = GetCimWinRMSession(Credential);
-                result = tempSession.EnumerateInstances(Namespace, Class);
-                result.GetEnumerator().MoveNext();
-            }
-            catch (Exception e)
-            {
-                bool testBadCredential = false;
-                try
-                {
-                    string tempMessageId = ((CimException) e).MessageId;
-                    if (tempMessageId == "HRESULT 0x8007052e")
-                        testBadCredential = true;
-                    else if (tempMessageId == "HRESULT 0x80070005")
-                        testBadCredential = true;
-                }
-                catch
-                {
-                }
-
-                if (testBadCredential)
-                {
-                    throw new UnauthorizedAccessException("Invalid credentials!", e);
-                }
-                throw;
-            }
-
+            tempSession = GetCimWinRMSession(Credential);
+            result = tempSession.EnumerateInstances(Namespace, Class);
+            
             if (DisableCimPersistence)
             {
                 try
@@ -1028,33 +1052,8 @@ namespace Sqlcollaborative.Dbatools.Connection
             CimSession tempSession;
             IEnumerable<CimInstance> result = new List<CimInstance>();
 
-            try
-            {
-                tempSession = GetCimDComSession(Credential);
-                result = tempSession.EnumerateInstances(Namespace, Class);
-                result.GetEnumerator().MoveNext();
-            }
-            catch (Exception e)
-            {
-                bool testBadCredential = false;
-                try
-                {
-                    string tempMessageId = ((CimException) e).MessageId;
-                    if (tempMessageId == "HRESULT 0x8007052e")
-                        testBadCredential = true;
-                    else if (tempMessageId == "HRESULT 0x80070005")
-                        testBadCredential = true;
-                }
-                catch
-                {
-                }
-
-                if (testBadCredential)
-                {
-                    throw new UnauthorizedAccessException("Invalid credentials!", e);
-                }
-                throw;
-            }
+            tempSession = GetCimDComSession(Credential);
+            result = tempSession.EnumerateInstances(Namespace, Class);
 
             if (DisableCimPersistence)
             {
@@ -1089,33 +1088,9 @@ namespace Sqlcollaborative.Dbatools.Connection
             CimSession tempSession;
             IEnumerable<CimInstance> result = new List<CimInstance>();
 
-            try
-            {
-                tempSession = GetCimDComSession(Credential);
-                result = tempSession.QueryInstances(Namespace, Dialect, Query);
-                result.GetEnumerator().MoveNext();
-            }
-            catch (Exception e)
-            {
-                bool testBadCredential = false;
-                try
-                {
-                    string tempMessageId = ((CimException) e).MessageId;
-                    if (tempMessageId == "HRESULT 0x8007052e")
-                        testBadCredential = true;
-                    else if (tempMessageId == "HRESULT 0x80070005")
-                        testBadCredential = true;
-                }
-                catch
-                {
-                }
-
-                if (testBadCredential)
-                {
-                    throw new UnauthorizedAccessException("Invalid credentials!", e);
-                }
-                throw;
-            }
+            tempSession = GetCimDComSession(Credential);
+            result = tempSession.QueryInstances(Namespace, Dialect, Query);
+            result.GetEnumerator().MoveNext();
 
             if (DisableCimPersistence)
             {

@@ -1,0 +1,48 @@
+﻿<event_sessions xmlns="http://schemas.microsoft.com/sqlserver/2008/07/extendedeventconfig">
+   <event_session name="15 Second IO Error" maxMemory="4" eventRetentionMode="allowSingleEventLoss" trackCausality="false" dispatchLatency="30" maxEventSize="0" memoryPartitionMode="none">
+    <templateCategory>
+      <!-- _locID_text="templateCategory" _locComment = "" -->Everyday Extended Events</templateCategory>
+    <templateName>
+      <!-- _locID_text = "templateName" _locComment = "" -->15 Second IO Error</templateName>
+    <templateDescription>
+      <!-- _locID_text = "templateDescription" _locComment = "" -->Captures query for reads > 15 seconds and writes > 15 seconds.</templateDescription>
+      <event package="sqlserver" name="file_read_completed">
+         <action package="sqlserver" name="client_app_name" />
+         <action package="sqlserver" name="client_hostname" />
+         <action package="sqlserver" name="database_id" />
+         <action package="sqlserver" name="database_name" />
+         <action package="sqlserver" name="is_system" />
+         <action package="sqlserver" name="session_id" />
+         <action package="sqlserver" name="sql_text" />
+         <parameter name="collect_io_data" value="1" />
+         <parameter name="collect_path" value="1" />
+         <predicate>
+            <leaf>
+               <comparator name="greater_than_uint64" package="package0" />
+               <event name="file_read_completed" package="sqlserver" field="duration" />
+               <value>15000</value>
+            </leaf>
+         </predicate>
+      </event>
+      <event package="sqlserver" name="file_write_completed">
+         <action package="sqlserver" name="client_app_name" />
+         <action package="sqlserver" name="client_hostname" />
+         <action package="sqlserver" name="database_id" />
+         <action package="sqlserver" name="database_name" />
+         <action package="sqlserver" name="is_system" />
+         <action package="sqlserver" name="session_id" />
+         <action package="sqlserver" name="sql_text" />
+         <parameter name="collect_path" value="1" />
+         <predicate>
+            <leaf>
+               <comparator name="greater_than_uint64" package="package0" />
+               <event name="file_write_completed" package="sqlserver" field="duration" />
+               <value>15000</value>
+            </leaf>
+         </predicate>
+      </event>
+      <target package="package0" name="event_file">
+         <parameter name="filename" value="15_second_io_error" />
+      </target>
+   </event_session>
+</event_sessions>

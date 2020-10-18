@@ -1,76 +1,123 @@
-FUNCTION Get-DbaEndpoint
-{
-<#
-.SYNOPSIS
-Gets SQL Endpoint(s) information for each instance(s) of SQL Server.
+function Get-DbaEndpoint {
+    <#
+    .SYNOPSIS
+        Returns endpoint objects from a SQL Server instance.
 
-.DESCRIPTION
- The Get-DbaEndpoint command gets SQL Endpoint(s) information for each instance(s) of SQL Server.
-	
-.PARAMETER SqlInstance
-SQL Server name or SMO object representing the SQL Server to connect to. This can be a collection and receive pipeline input to allow the function
-to be executed against multiple SQL Server instances.
+    .DESCRIPTION
+        Returns endpoint objects from a SQL Server instance.
 
-.PARAMETER SqlCredential
-SqlCredential object to connect as. If not specified, current Windows login will be used.
+    .PARAMETER SqlInstance
+        The target SQL Server instance or instances.
 
-.PARAMETER Silent
-Use this switch to disable any kind of verbose messages.
+    .PARAMETER SqlCredential
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
 
-.NOTES
-Author: Garry Bargsley (@gbargsley), http://blog.garrybargsley.com
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
 
-dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
-Copyright (C) 2016 Chrissy LeMaire
-This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
-This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
-You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <http://www.gnu.org/licenses/>.	
+        For MFA support, please use Connect-DbaInstance.
 
-.LINK
-https://dbatools.io/Get-DbaEndpoint
+    .PARAMETER Endpoint
+        Return only specific endpoints.
 
-.EXAMPLE
-Get-DbaEndpoint -SqlInstance localhost
-Returns all Endpoint(s) on the local default SQL Server instance
+    .PARAMETER Type
+        Return only specific types of endpoints. Options include: DatabaseMirroring, ServiceBroker, Soap, and TSql.
 
-.EXAMPLE
-Get-DbaEndpoint -SqlInstance localhost, sql2016
-Returns all Endpoint(s) for the local and sql2016 SQL Server instances
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-#>
-	[CmdletBinding()]
-	Param (
-		[parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
-		[DbaInstanceParameter]$SqlInstance,
-		[PSCredential]$SqlCredential,
-		[switch]$Silent
-	)
-	
-	PROCESS
-	{
-		foreach ($instance in $SqlInstance)
-		{
-			Write-Verbose "Attempting to connect to $instance"
-			try
-			{
-				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
-			}
-			catch
-			{
-				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
-			}
-			
-			
-			foreach ($endpoint in $server.Endpoints)
-			{
-				Add-Member -Force -InputObject $endpoint -MemberType NoteProperty -Name ComputerName -value $endpoint.Parent.NetName
-				Add-Member -Force -InputObject $endpoint -MemberType NoteProperty -Name InstanceName -value $endpoint.Parent.ServiceName
-				Add-Member -Force -InputObject $endpoint -MemberType NoteProperty -Name SqlInstance -value $endpoint.Parent.DomainInstanceName
-				
-				Select-DefaultView -InputObject $endpoint -Property ComputerName, InstanceName, SqlInstance, ID, Name, EndpointType, Owner, IsAdminEndpoint, IsSystemObject
-			}
-		}
-	}
+    .NOTES
+        Tags: Endpoint
+        Author: Garry Bargsley (@gbargsley), http://blog.garrybargsley.com
+
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
+
+    .LINK
+        https://dbatools.io/Get-DbaEndpoint
+
+    .EXAMPLE
+        PS C:\> Get-DbaEndpoint -SqlInstance localhost
+
+        Returns all endpoints on the local default SQL Server instance
+
+    .EXAMPLE
+        PS C:\> Get-DbaEndpoint -SqlInstance localhost, sql2016
+
+        Returns all endpoints for the local and sql2016 SQL Server instances
+    #>
+    [CmdletBinding()]
+    param (
+        [parameter(Mandatory, ValueFromPipeline)]
+        [DbaInstanceParameter[]]$SqlInstance,
+        [PSCredential]$SqlCredential,
+        [string[]]$Endpoint,
+        [ValidateSet('DatabaseMirroring', 'ServiceBroker', 'Soap', 'TSql')]
+        [string[]]$Type,
+        [switch]$EnableException
+    )
+    process {
+        foreach ($instance in $SqlInstance) {
+            try {
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
+            } catch {
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+            }
+
+            # Not sure why minimumversion isnt working
+            if ($server.VersionMajor -lt 9) {
+                Stop-Function -Message "SQL Server version 9 required - $server not supported." -Category ConnectionError -ErrorRecord $_ -Target $server -Continue
+            }
+
+            $endpoints = $server.Endpoints
+
+            if ($Endpoint) {
+                $endpoints = $endpoints | Where-Object Name -In $Endpoint
+            }
+            if ($Type) {
+                $endpoints = $endpoints | Where-Object EndpointType -In $Type
+            }
+
+            foreach ($end in $endpoints) {
+                Write-Message -Level Verbose -Message "Getting endpoint $($end.Name) on $($server.Name)"
+                if ($end.Protocol.Tcp.ListenerPort) {
+                    if ($end.Protocol.Tcp.ListenerIPAddress -ne [System.Net.IPAddress]'0.0.0.0') {
+                        $dns = $end.Protocol.Tcp.ListenerIPAddress
+                    } elseif ($server.HostPlatform -eq "Linux" -and $server.NetName) {
+                        $dns = $server.NetName
+                    } elseif ($server.ComputerName -match '\.') {
+                        $dns = $server.ComputerName
+                    } else {
+                        try {
+                            $dns = [System.Net.Dns]::GetHostEntry($server.ComputerName).HostName
+                        } catch {
+                            try {
+                                $dns = [System.Net.Dns]::GetHostAddresses($server.ComputerName)
+                            } catch {
+                                $dns = $server.ComputerName
+                            }
+                        }
+                    }
+
+                    $fqdn = "TCP://" + $dns + ":" + $end.Protocol.Tcp.ListenerPort
+                } else {
+                    $fqdn = $null
+                }
+
+                Add-Member -Force -InputObject $end -MemberType NoteProperty -Name ComputerName -Value $server.ComputerName
+                Add-Member -Force -InputObject $end -MemberType NoteProperty -Name InstanceName -Value $server.ServiceName
+                Add-Member -Force -InputObject $end -MemberType NoteProperty -Name SqlInstance -Value $server.DomainInstanceName
+                Add-Member -Force -InputObject $end -MemberType NoteProperty -Name Fqdn -Value $fqdn
+                Add-Member -Force -InputObject $end -MemberType NoteProperty -Name IPAddress -Value $end.Protocol.Tcp.ListenerIPAddress
+                Add-Member -Force -InputObject $end -MemberType NoteProperty -Name Port -Value $end.Protocol.Tcp.ListenerPort
+                if ($end.Protocol.Tcp.ListenerPort) {
+                    Select-DefaultView -InputObject $end -Property ComputerName, InstanceName, SqlInstance, ID, Name, IPAddress, Port, EndpointState, EndpointType, Owner, IsAdminEndpoint, Fqdn, IsSystemObject
+                } else {
+                    Select-DefaultView -InputObject $end -Property ComputerName, InstanceName, SqlInstance, ID, Name, EndpointState, EndpointType, Owner, IsAdminEndpoint, Fqdn, IsSystemObject
+                }
+            }
+        }
+    }
 }
