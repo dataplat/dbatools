@@ -49,14 +49,20 @@ function Remove-DbaDbData {
         Removes all data from the dbname database on the local default SQL Server instance
 
     .EXAMPLE
-        PS C:\> Get-DbaDatabase -SqlInstance mssql1 -Database AdventureWorks2017 | Remove-DbaDbData
-
-        Removes all data from AdventureWorks2017 on the mssql1 SQL Server Instance, uses piped input from Get-DbaDatabase.
-
-    .EXAMPLE
         PS C:\> Remove-DbaDbData -SqlInstance mssql1 -ExcludeDatabase DBA -Confirm:$False
 
         Removes all data from all databases on mssql1 except the DBA Database. Doesn't prompt for confirmation.
+
+    .EXAMPLE
+        PS C:\> $svr = Connect-DbaInstance -SqlInstance mssql1
+        PS C:\> $svr | Remove-DbaDbData -Database AdventureWorks2017
+
+        Removes all data from AdventureWorks2017 on the mssql1 SQL Server Instance, uses piped input from Connect-DbaInstance.
+
+    .EXAMPLE
+        PS C:\> Get-DbaDatabase -SqlInstance mssql1 -Database AdventureWorks2017 | Remove-DbaDbData
+
+        Removes all data from AdventureWorks2017 on the mssql1 SQL Server Instance, uses piped input from Get-DbaDatabase.
 
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High')]
@@ -107,9 +113,8 @@ function Remove-DbaDbData {
 
             foreach ($db in $dbDatabases) {
                 if ($Pscmdlet.ShouldProcess($db.Name, "Removing all data on $($db.Parent.Name)")) {
-                    write-host "working on $($db.Name)"
+                    Write-Message -Level Verbose -Message "Truncating tables in $db on instance $instance"
                     $instance = $db.Parent
-
                     try {
 
                         # Collect up the objects we need to drop and recreate
@@ -144,7 +149,7 @@ function Remove-DbaDbData {
                             Invoke-DbaQuery -SqlInstance $instance -Database $db.Name -File "$Path\$($db.Name)_Create.Sql"
                         }
                     } catch {
-                        Write-Message -Level warning -Message "Issue truncating tables in $sdb on instance $instance"
+                        Write-Message -Level warning -Message "Issue truncating tables in $db on instance $instance"
                         Invoke-DbaQuery -SqlInstance $instance -Database $db.Name -File "$Path\$($db.Name)_Create.Sql"
                     }
                     if ($objects) {
