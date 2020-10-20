@@ -1,16 +1,20 @@
 function Remove-DbaDbData {
     <#
     .SYNOPSIS
-        Removes all the date from a database(s) for each instance(s) of SQL Server.
+        Removes all the data from a database(s) for each instance(s) of SQL Server.
 
     .DESCRIPTION
         This command truncates all the tables in a database. If there are foreign keys and/or views they are scripted out, then dropped before the truncate, and recreated after.
 
     .PARAMETER SqlInstance
-        The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.
+        The target SQL Server instance or instances.
 
     .PARAMETER SqlCredential
-        Login to the target instance using alternate Windows or SQL Login Authentication. Accepts credential objects (Get-Credential).
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
         The database(s) to process. This list is auto-populated from the server. If unspecified, all user databases will be processed.
@@ -81,6 +85,8 @@ function Remove-DbaDbData {
         $null = Test-ExportDirectory -Path $Path
     }
     process {
+        if (Test-FunctionInterrupt) { return }
+
         if (-not $InputObject -and -not $SqlInstance) {
             Stop-Function -Message "You must pipe in a database or a server, or specify a SqlInstance"
             return
@@ -95,11 +101,11 @@ function Remove-DbaDbData {
             switch ($inputType) {
                 'Sqlcollaborative.Dbatools.Parameter.DbaInstanceParameter' {
                     Write-Message -Level Verbose -Message "Processing DbaInstanceParameter through InputObject"
-                    $dbDatabases = Get-DbaDatabase -SqlInstance $input -SqlCredential $sqlcredential -Database $Database -ExcludeDatabase $ExcludeDatabase -ExcludeSystem
+                    $dbDatabases = Get-DbaDatabase -SqlInstance $input -SqlCredential $SqlCredential -Database $Database -ExcludeDatabase $ExcludeDatabase -ExcludeSystem
                 }
                 'Microsoft.SqlServer.Management.Smo.Server' {
                     Write-Message -Level Verbose -Message "Processing Server through InputObject"
-                    $dbDatabases = Get-DbaDatabase -SqlInstance $input -SqlCredential $sqlcredential -Database $Database -ExcludeDatabase $ExcludeDatabase -ExcludeSystem
+                    $dbDatabases = Get-DbaDatabase -SqlInstance $input -SqlCredential $SqlCredential -Database $Database -ExcludeDatabase $ExcludeDatabase -ExcludeSystem
                 }
                 'Microsoft.SqlServer.Management.Smo.Database' {
                     Write-Message -Level Verbose -Message "Processing Database through InputObject"
@@ -130,9 +136,9 @@ function Remove-DbaDbData {
                         $null = $objects | Export-DbaScript -FilePath "$Path\$($db.Name)_Create.Sql" -ScriptingOptionsObject $createOptions
 
                         # Script out the drop statements for objects
-                        $options = New-DbaScriptingOption
-                        $options.ScriptDrops = $true
-                        $null = $objects | Export-DbaScript -FilePath "$Path\$($db.Name)_Drop.Sql" -ScriptingOptionsObject $options
+                        $dropOptions = New-DbaScriptingOption
+                        $dropOptions.ScriptDrops = $true
+                        $null = $objects | Export-DbaScript -FilePath "$Path\$($db.Name)_Drop.Sql" -ScriptingOptionsObject $dropOptions
                     } catch {
                         Stop-Function -Message "Issue scripting out the drop\create scripts for objects in $db on instance $instance" -ErrorRecord $_
                         return
