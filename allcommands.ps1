@@ -617,11 +617,11 @@ function Add-DbaDbRoleMember {
             switch ($inputType) {
                 'Sqlcollaborative.Dbatools.Parameter.DbaInstanceParameter' {
                     Write-Message -Level Verbose -Message "Processing DbaInstanceParameter through InputObject"
-                    $dbRoles = Get-DbaDBRole -SqlInstance $input -SqlCredential $sqlcredential -Database $Database -Role $Role
+                    $dbRoles = Get-DbaDBRole -SqlInstance $input -SqlCredential $SqlCredential -Database $Database -Role $Role
                 }
                 'Microsoft.SqlServer.Management.Smo.Server' {
                     Write-Message -Level Verbose -Message "Processing Server through InputObject"
-                    $dbRoles = Get-DbaDBRole -SqlInstance $input -SqlCredential $sqlcredential -Database $Database -Role $Role
+                    $dbRoles = Get-DbaDBRole -SqlInstance $input -SqlCredential $SqlCredential -Database $Database -Role $Role
                 }
                 'Microsoft.SqlServer.Management.Smo.Database' {
                     Write-Message -Level Verbose -Message "Processing Database through InputObject"
@@ -1879,7 +1879,7 @@ function Backup-DbaServiceMasterKey {
     process {
         foreach ($instance in $SqlInstance) {
             try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             } catch {
                 Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
@@ -10660,7 +10660,7 @@ function Disable-DbaStartupProcedure {
             foreach ($instance in $SqlInstance) {
                 Write-Message -Level Verbose -Message "Getting startup procedures for $instance"
                 try {
-                    $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
+                    $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
                 } catch {
                     Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $server -Continue
                 }
@@ -10804,7 +10804,7 @@ function Dismount-DbaDatabase {
     process {
         foreach ($instance in $SqlInstance) {
             try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             } catch {
                 Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
@@ -11297,7 +11297,7 @@ function Enable-DbaStartupProcedure {
     process {
         foreach ($instance in $SqlInstance) {
             try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $server -Continue
             }
@@ -11820,7 +11820,7 @@ function Export-DbaCredential {
         if (Test-Bound -ParameterName SqlInstance) {
             foreach ($instance in $SqlInstance) {
                 try {
-                    $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential -MinimumVersion 9
+                    $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
 
                     $serverCreds = $server.Credentials
                     if (Test-Bound -ParameterName Identity) {
@@ -12268,11 +12268,11 @@ function Export-DbaDbRole {
             switch ($inputType) {
                 'Sqlcollaborative.Dbatools.Parameter.DbaInstanceParameter' {
                     Write-Message -Level Verbose -Message "Processing DbaInstanceParameter through InputObject"
-                    $databaseRoles = Get-DbaDbRole -SqlInstance $input -SqlCredential $sqlcredential -Database $Database -ExcludeDatabase $ExcludeDatabase -Role $Role -ExcludeRole $ExcludeRole -ExcludeFixedRole:$ExcludeFixedRole
+                    $databaseRoles = Get-DbaDbRole -SqlInstance $input -SqlCredential $SqlCredential -Database $Database -ExcludeDatabase $ExcludeDatabase -Role $Role -ExcludeRole $ExcludeRole -ExcludeFixedRole:$ExcludeFixedRole
                 }
                 'Microsoft.SqlServer.Management.Smo.Server' {
                     Write-Message -Level Verbose -Message "Processing Server through InputObject"
-                    $databaseRoles = Get-DbaDbRole -SqlInstance $input -SqlCredential $sqlcredential -Database $Database -ExcludeDatabase $ExcludeDatabase -Role $Role -ExcludeRole $ExcludeRole -ExcludeFixedRole:$ExcludeFixedRole
+                    $databaseRoles = Get-DbaDbRole -SqlInstance $input -SqlCredential $SqlCredential -Database $Database -ExcludeDatabase $ExcludeDatabase -Role $Role -ExcludeRole $ExcludeRole -ExcludeFixedRole:$ExcludeFixedRole
                 }
                 'Microsoft.SqlServer.Management.Smo.Database' {
                     Write-Message -Level Verbose -Message "Processing Database through InputObject"
@@ -12686,12 +12686,12 @@ function Export-DbaExecutionPlan {
 
             if (Test-Bound 'SinceCreation') {
                 Write-Message -Level Verbose -Message "Adding creation time"
-                $whereArray += " creation_time >= '" + $SinceCreation.ToString("yyyy-MM-dd HH:mm:ss") + "' "
+                $whereArray += " creation_time >= CONVERT(datetime,'$($SinceCreation.ToString("yyyy-MM-ddTHH:mm:ss", [System.Globalization.CultureInfo]::InvariantCulture))',126) "
             }
 
             if (Test-Bound 'SinceLastExecution') {
                 Write-Message -Level Verbose -Message "Adding last execution time"
-                $whereArray += " last_execution_time >= '" + $SinceLastExecution.ToString("yyyy-MM-dd HH:mm:ss") + "' "
+                $whereArray += " last_execution_time >= CONVERT(datetime,'$($SinceLastExecution.ToString("yyyy-MM-ddTHH:mm:ss", [System.Globalization.CultureInfo]::InvariantCulture))',126) "
             }
 
             if (Test-Bound 'ExcludeDatabase') {
@@ -13086,7 +13086,7 @@ function Export-DbaLinkedServer {
         if (Test-FunctionInterrupt) { return }
         foreach ($instance in $SqlInstance) {
             try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential -MinimumVersion 9
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
                 $InputObject += $server.LinkedServers
             } catch {
                 Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
@@ -13101,7 +13101,7 @@ function Export-DbaLinkedServer {
                 continue
             }
 
-            if (!(Test-SqlSa -SqlInstance $instance -SqlCredential $sqlcredential)) {
+            if (!(Test-SqlSa -SqlInstance $instance -SqlCredential $SqlCredential)) {
                 Stop-Function -Message "Not a sysadmin on $instance. Quitting." -Target $instance -Continue
             }
 
@@ -13220,11 +13220,11 @@ function Export-DbaLogin {
             switch ($inputType) {
                 'Sqlcollaborative.Dbatools.Parameter.DbaInstanceParameter' {
                     Write-Message -Level Verbose -Message "Processing Server through InputObject"
-                    $server = Connect-SqlInstance -SqlInstance $input -SqlCredential $sqlcredential
+                    $server = Connect-SqlInstance -SqlInstance $input -SqlCredential $SqlCredential
                 }
                 'Microsoft.SqlServer.Management.Smo.Server' {
                     Write-Message -Level Verbose -Message "Processing Server through InputObject"
-                    $server = Connect-SqlInstance -SqlInstance $input -SqlCredential $sqlcredential
+                    $server = Connect-SqlInstance -SqlInstance $input -SqlCredential $SqlCredential
                 }
                 'Microsoft.SqlServer.Management.Smo.Database' {
                     Write-Message -Level Verbose -Message "Processing Database through InputObject"
@@ -13736,7 +13736,7 @@ function Export-DbaRepServerSetting {
     process {
         if (Test-FunctionInterrupt) { return }
         foreach ($instance in $SqlInstance) {
-            $InputObject += Get-DbaRepServer -SqlInstance $instance -SqlCredential $sqlcredential
+            $InputObject += Get-DbaRepServer -SqlInstance $instance -SqlCredential $SqlCredential
         }
 
         foreach ($repserver in $InputObject) {
@@ -14086,11 +14086,11 @@ function Export-DbaServerRole {
             switch ($inputType) {
                 'Sqlcollaborative.Dbatools.Parameter.DbaInstanceParameter' {
                     Write-Message -Level Verbose -Message "Processing DbaInstanceParameter through InputObject"
-                    $serverRoles = Get-DbaServerRole -SqlInstance $input -SqlCredential $sqlcredential  -ServerRole $ServerRole -ExcludeServerRole $ExcludeServerRole -ExcludeFixedRole:$ExcludeFixedRole
+                    $serverRoles = Get-DbaServerRole -SqlInstance $input -SqlCredential $SqlCredential  -ServerRole $ServerRole -ExcludeServerRole $ExcludeServerRole -ExcludeFixedRole:$ExcludeFixedRole
                 }
                 'Microsoft.SqlServer.Management.Smo.Server' {
                     Write-Message -Level Verbose -Message "Processing Server through InputObject"
-                    $serverRoles = Get-DbaServerRole -SqlInstance $input -SqlCredential $sqlcredential -ServerRole $ServerRole -ExcludeServerRole $ExcludeServerRole -ExcludeFixedRole:$ExcludeFixedRole
+                    $serverRoles = Get-DbaServerRole -SqlInstance $input -SqlCredential $SqlCredential -ServerRole $ServerRole -ExcludeServerRole $ExcludeServerRole -ExcludeFixedRole:$ExcludeFixedRole
                 }
                 'Microsoft.SqlServer.Management.Smo.ServerRole' {
                     Write-Message -Level Verbose -Message "Processing ServerRole through InputObject"
@@ -14224,7 +14224,7 @@ function Export-DbaSpConfigure {
         if (Test-FunctionInterrupt) { return }
         foreach ($instance in $SqlInstance) {
             try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential -MinimumVersion 9
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
             } catch {
                 Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
@@ -15129,7 +15129,7 @@ function Find-DbaAgentJob {
             Write-Message -Level Verbose -Message "Running Scan on: $instance"
 
             try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             } catch {
                 Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
@@ -17327,7 +17327,7 @@ function Find-DbaOrphanedFile {
 
             # Connect to the instance
             try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             } catch {
                 Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
@@ -18534,7 +18534,8 @@ function Get-DbaAgBackupHistory {
         [DbaInstanceParameter[]]
         $SqlInstance,
         [PsCredential]$SqlCredential,
-        [string[]]$AvailabilityGroup,
+        [parameter(Mandatory)]
+        [string]$AvailabilityGroup,
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
         [switch]$IncludeCopyOnly,
@@ -18559,6 +18560,7 @@ function Get-DbaAgBackupHistory {
     begin {
         Write-Message -Level System -Message "Active Parameter set: $($PSCmdlet.ParameterSetName)."
         Write-Message -Level System -Message "Bound parameters: $($PSBoundParameters.Keys -join ", ")"
+        $serverList = @()
     }
 
     process {
@@ -18568,88 +18570,67 @@ function Get-DbaAgBackupHistory {
             } catch {
                 Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
-            $AgResults = @()
-            $ProcessedAgDatabases = @()
-            if ($server.AvailabilityGroups.Count -gt 0) {
-                $agShortInstance = $instance.FullName.split('.')[0]
-                if ($agShortInstance -in ($server.AvailabilityGroups.AvailabilityGroupListeners).Name) {
-                    # We have a listener passed in, just query the dbs specified or all in the AG
-                    $null = $PSBoundParameters.Remove('SqlInstance')
-                    $null = $PSBoundParameters.Remove('IncludeCopyOnly')
-                    Write-Message -Level Verbose -Message "Fetching history from replicas on $($AvailabilityGroupBase.AvailabilityReplicas.name)"
-                    $AvailabilityGroupBase = ($server.AvailabilityGroups | Where-Object { $_.AvailabilityGroupListeners.name -eq $agShortInstance })
-                    $AgLoopResults = Get-DbaDbBackupHistory -SqlInstance $AvailabilityGroupBase.AvailabilityReplicas.name @PSBoundParameters -IncludeCopyOnly
-                    $AvailabilityGroupName = $AvailabilityGroupBase.name
-                    Foreach ($agr in $AgLoopResults) {
-                        $agr.AvailabilityGroupName = $AvailabilityGroupName
-                    }
-                    if ($Last) {
-                        Write-Message -Level Verbose -Message "Filtering Ag backups for Last"
-                        $AgResults = $AgLoopResults | Select-DbaBackupInformation -ServerName $AvailabilityGroupName
-                    } elseif ($LastFull) {
-                        Foreach ($AgDb in ( $AgLoopResults.Database | Select-Object -Unique)) {
-                            $AgResults += $AgLoopResults | Where-Object { $_.Database -eq $AgDb } | Sort-Object -Property FirstLsn | Select-Object -Last 1
-                        }
-                    } elseif ($LastDiff) {
-                        Foreach ($AgDb in ( $AgLoopResults.Database | Select-Object -Unique)) {
-                            $AgResults += $AgLoopResults | Where-Object { $_.Database -eq $AgDb } | Sort-Object -Property FirstLsn | Select-Object -Last 1
-                        }
-                    } elseif ($LastLog) {
-                        Foreach ($AgDb in ( $AgLoopResults.Database | Select-Object -Unique)) {
-                            $AgResults += $AgLoopResults | Where-Object { $_.Database -eq $AgDb } | Sort-Object -Property FirstLsn | Select-Object -Last 1
-                        }
-                    } else {
-                        $AgResults += $AgLoopResults
-                    }
-                    # Results are already in the correct format so drop to output
-                    $agresults
-                    ### Discuss: What if more than one SqlInstance is passed in?
-                    # We're done at this point so exit function
-                    return
-                }
+
+            # Only work on instances with availability groups
+            if ($server.AvailabilityGroups.Count -eq 0) {
+                Stop-Function -Message "Instance $instance has no availability groups, so skipping." -Target $instance -Continue
             }
 
-            $databases = @()
-            if ($null -ne $Database) {
-                foreach ($db in $Database) {
-                    $databases += [PSCustomObject]@{ name = $db }
-                }
-            } else {
-                $databases = $server.Databases
-            }
-            if ($ExcludeDatabase) {
-                $databases = $databases | Where-Object Name -NotIn $ExcludeDatabase
-            }
-            if ($server.AvailabilityGroups.Count -gt 0) {
-                $adbs = $databases | Where-Object Name -In $server.AvailabilityGroups.AvailabilityDatabases.Name
-                $adbs = $adbs | Where-Object Name -NotIn $ProcessedAgDatabases
-                ForEach ($adb in $adbs) {
-                    Write-Message -Level Verbose -Message "Fetching history from replicas for db $($adb.name)"
-                    if ($adb.GetType().name -ne 'Database') {
-                        $adb = Get-DbaDatabase -SqlInstance $server -Database $adb.name
-                    }
-                    $AvailabilityGroupBase = $adb.parent.AvailabilityGroups[$adb.AvailabilityGroupName]
-                    $AvailabilityGroupListener = $AvailabilityGroupBase.AvailabilityGroupListeners.Name
-                    if ($null -eq $AvailabilityGroupListener) {
-                        Write-Message -Level Verbose -Message "AvailabilityGroup $($AvailabilityGroupBase.Name) has no listener, so skipping fetching history from replicas for db $($adb.name)"
-                        continue
-                    }
-                    $null = $PSBoundParameters.Remove('SqlInstance')
-                    $null = $PSBoundParameters.Remove('Database')
-                    $AgLoopResults = Get-DbaAgBackupHistory -SqlInstance $AvailabilityGroupListener -Database $adb.Name @PSBoundParameters
-                    $AvailabilityGroupName = $AvailabilityGroupBase.name
-                    Foreach ($agr in $AgLoopResults) {
-                        $agr.AvailabilityGroupName = $AvailabilityGroupName
-                    }
-                    # Results already in the right format, drop straight to output
-                    $AgLoopResults
-                    # Remove database from collection as it is now done with
-                    $databases = $databases | Where-Object Name -NE $adb.name
-                }
+            # Only work on instances with the specific availability group
+            if ($AvailabilityGroup -notin $server.AvailabilityGroups.Name) {
+                Stop-Function -Message "Instance $instance has no availability group named '$AvailabilityGroup', so skipping." -Target $instance -Continue
             }
 
-            $null = $PSBoundParameters.Remove('SqlInstance')
-            Get-DbaDbBackupHistory -SqlInstance $server @PSBoundParameters
+            Write-Message -Level Verbose -Message "Added $server to serverList"
+            $serverList += $server
+        }
+    }
+
+    end {
+        if ($serverList.Count -eq 0) {
+            Stop-Function -Message "No instances with availability group named '$AvailabilityGroup' found, so finishing without results."
+        }
+
+        if ($serverList.Count -eq 1) {
+            Write-Message -Level Verbose -Message "We have one server, so it should be a listener"
+            $server = $serverList[0]
+
+            $replicaNames = $server.AvailabilityGroups.Where( { $_.Name -in $AvailabilityGroup }).AvailabilityReplicas.Name
+            Write-Message -Level Verbose -Message "We have found these replicas: $replicaNames"
+
+            $serverList = $replicaNames
+        }
+
+        Write-Message -Level Verbose -Message "We have more than one server, so query them all and aggregate"
+        $null = $PSBoundParameters.Remove('SqlInstance')
+        $null = $PSBoundParameters.Remove('AvailabilityGroup')
+        $null = $PSBoundParameters.Remove('Last')
+        $AgResults = Get-DbaDbBackupHistory -SqlInstance $serverList @PSBoundParameters
+        Foreach ($agr in $AgResults) {
+            $agr.AvailabilityGroupName = $AvailabilityGroup
+        }
+
+        if ($Last) {
+            Write-Message -Level Verbose -Message "Filtering Ag backups for Last"
+            $AgResults | Select-DbaBackupInformation -ServerName $AvailabilityGroup
+        } elseif ($LastFull) {
+            Write-Message -Level Verbose -Message "Filtering Ag backups for LastFull"
+            Foreach ($AgDb in ( $AgResults.Database | Select-Object -Unique)) {
+                $AgResults | Where-Object { $_.Database -eq $AgDb } | Sort-Object -Property FirstLsn | Select-Object -Last 1
+            }
+        } elseif ($LastDiff) {
+            Write-Message -Level Verbose -Message "Filtering Ag backups for LastDiff"
+            Foreach ($AgDb in ( $AgResults.Database | Select-Object -Unique)) {
+                $AgResults | Where-Object { $_.Database -eq $AgDb } | Sort-Object -Property FirstLsn | Select-Object -Last 1
+            }
+        } elseif ($LastLog) {
+            Write-Message -Level Verbose -Message "Filtering Ag backups for LastLog"
+            Foreach ($AgDb in ( $AgResults.Database | Select-Object -Unique)) {
+                $AgResults | Where-Object { $_.Database -eq $AgDb } | Sort-Object -Property FirstLsn | Select-Object -Last 1
+            }
+        } else {
+            Write-Message -Level Verbose -Message "Output Ag backups without filtering"
+            $AgResults
         }
     }
 }
@@ -19678,7 +19659,7 @@ function Get-DbaAgHadr {
     process {
         foreach ($instance in $SqlInstance) {
             try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             } catch {
                 Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
@@ -21518,7 +21499,7 @@ function Get-DbaCpuUsage {
     process {
         foreach ($instance in $SqlInstance) {
             try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             } catch {
                 Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
@@ -21689,7 +21670,7 @@ function Get-DbaDatabase {
 
         foreach ($instance in $SqlInstance) {
             try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             } catch {
                 Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
@@ -22102,7 +22083,7 @@ function Get-DbaDbBackupHistory {
             if ($last) {
                 foreach ($db in $databases) {
                     if ($since) {
-                        $sinceSqlFilter = "AND backupset.backup_finish_date >= CONVERT(datetime,'$($Since.ToString("yyyy-MM-ddTHH:mm:ss"))',126)"
+                        $sinceSqlFilter = "AND backupset.backup_finish_date >= CONVERT(datetime,'$($Since.ToString("yyyy-MM-ddTHH:mm:ss", [System.Globalization.CultureInfo]::InvariantCulture))',126)"
                     }
                     if ($RecoveryFork) {
                         $recoveryForkSqlFilter = "AND backupset.last_recovery_fork_guid ='$RecoveryFork'"
@@ -22182,7 +22163,7 @@ function Get-DbaDbBackupHistory {
                 foreach ($db in $databases) {
                     Write-Message -Level Verbose -Message "Processing $($db.name)" -Target $db
                     if ($since) {
-                        $sinceSqlFilter = "AND backupset.backup_finish_date >= CONVERT(datetime,'$($Since.ToString("yyyy-MM-ddTHH:mm:ss"))',126)"
+                        $sinceSqlFilter = "AND backupset.backup_finish_date >= CONVERT(datetime,'$($Since.ToString("yyyy-MM-ddTHH:mm:ss", [System.Globalization.CultureInfo]::InvariantCulture))',126)"
                     }
                     if ($RecoveryFork) {
                         $recoveryForkSqlFilter = "AND backupset.last_recovery_fork_guid ='$RecoveryFork'"
@@ -22225,7 +22206,7 @@ function Get-DbaDbBackupHistory {
                         $devTypeFilterWhere = "AND mediafamily.device_type $deviceTypeFilterRight"
                     }
                     if ($since) {
-                        $sinceSqlFilter = "AND backupset.backup_finish_date >= CONVERT(datetime,'$($Since.ToString("yyyy-MM-ddTHH:mm:ss"))',126)"
+                        $sinceSqlFilter = "AND backupset.backup_finish_date >= CONVERT(datetime,'$($Since.ToString("yyyy-MM-ddTHH:mm:ss", [System.Globalization.CultureInfo]::InvariantCulture))',126)"
                     }
                     # recap for future editors (as this has been discussed over and over):
                     #   - original editors (from hereon referred as "we") rank over backupset.last_lsn desc, backupset.backup_finish_date desc for a good reason: DST
@@ -22417,7 +22398,7 @@ function Get-DbaDbBackupHistory {
                 }
 
                 if ($null -ne $Since) {
-                    $whereArray += "backupset.backup_finish_date >= '$($Since.ToString("yyyy-MM-ddTHH:mm:ss"))'"
+                    $whereArray += "backupset.backup_finish_date >= CONVERT(datetime,'$($Since.ToString("yyyy-MM-ddTHH:mm:ss", [System.Globalization.CultureInfo]::InvariantCulture))',126)"
                 }
 
                 if ($deviceTypeFilter) {
@@ -23136,7 +23117,7 @@ function Get-DbaDbCheckConstraint {
     process {
         foreach ($instance in $SqlInstance) {
             try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             } catch {
                 Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
@@ -24056,7 +24037,7 @@ function Get-DbaDbForeignKey {
     process {
         foreach ($instance in $SqlInstance) {
             try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             } catch {
                 Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
@@ -24588,7 +24569,7 @@ function Get-DbaDbMailHistory {
                 $wherearray = @()
 
                 if ($Since) {
-                    $wherearray += "send_request_date >= '$($Since.ToString("yyyy-MM-ddTHH:mm:ss"))'"
+                    $wherearray += "send_request_date >= CONVERT(datetime,'$($Since.ToString("yyyy-MM-ddTHH:mm:ss", [System.Globalization.CultureInfo]::InvariantCulture))',126)"
                 }
 
                 if ($Status) {
@@ -24661,7 +24642,7 @@ function Get-DbaDbMailLog {
                 $wherearray = @()
 
                 if ($Since) {
-                    $wherearray += "log_date >= '$($Since.ToString("yyyy-MM-ddTHH:mm:ss"))'"
+                    $wherearray += "log_date >= CONVERT(datetime,'$($Since.ToString("yyyy-MM-ddTHH:mm:ss", [System.Globalization.CultureInfo]::InvariantCulture))',126)"
                 }
 
                 if ($Type) {
@@ -25227,7 +25208,7 @@ function Get-DbaDbPartitionFunction {
     process {
         foreach ($instance in $SqlInstance) {
             try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             } catch {
                 Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
@@ -25284,7 +25265,7 @@ function Get-DbaDbPartitionScheme {
     process {
         foreach ($instance in $SqlInstance) {
             try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             } catch {
                 Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
@@ -25441,12 +25422,6 @@ function Get-DbaDbRestoreHistory {
         [switch]$EnableException
     )
 
-    begin {
-        if ($Since -ne $null) {
-            $Since = $Since.ToString("yyyy-MM-ddTHH:mm:ss")
-        }
-    }
-
     process {
         foreach ($instance in $SqlInstance) {
             try {
@@ -25515,7 +25490,7 @@ function Get-DbaDbRestoreHistory {
                 }
 
                 if ($null -ne $Since) {
-                    $wherearray += "rsh.restore_date >= '$since'"
+                    $wherearray += "rsh.restore_date >= CONVERT(datetime,'$($Since.ToString("yyyy-MM-ddTHH:mm:ss", [System.Globalization.CultureInfo]::InvariantCulture))',126)"
                 }
 
 
@@ -25647,11 +25622,11 @@ function Get-DbaDbRoleMember {
             switch ($inputType) {
                 'Sqlcollaborative.Dbatools.Parameter.DbaInstanceParameter' {
                     Write-Message -Level Verbose -Message "Processing DbaInstanceParameter through InputObject"
-                    $dbRoles = Get-DbaDBRole -SqlInstance $input -SqlCredential $sqlcredential -Database $Database -ExcludeDatabase $ExcludeDatabase -Role $Role -ExcludeRole $ExcludeRole -ExcludeFixedRole:$ExcludeFixedRole
+                    $dbRoles = Get-DbaDBRole -SqlInstance $input -SqlCredential $SqlCredential -Database $Database -ExcludeDatabase $ExcludeDatabase -Role $Role -ExcludeRole $ExcludeRole -ExcludeFixedRole:$ExcludeFixedRole
                 }
                 'Microsoft.SqlServer.Management.Smo.Server' {
                     Write-Message -Level Verbose -Message "Processing Server through InputObject"
-                    $dbRoles = Get-DbaDBRole -SqlInstance $input -SqlCredential $sqlcredential -Database $Database -ExcludeDatabase $ExcludeDatabase -Role $Role -ExcludeRole $ExcludeRole -ExcludeFixedRole:$ExcludeFixedRole
+                    $dbRoles = Get-DbaDBRole -SqlInstance $input -SqlCredential $SqlCredential -Database $Database -ExcludeDatabase $ExcludeDatabase -Role $Role -ExcludeRole $ExcludeRole -ExcludeFixedRole:$ExcludeFixedRole
                 }
                 'Microsoft.SqlServer.Management.Smo.Database' {
                     Write-Message -Level Verbose -Message "Processing Database through InputObject"
@@ -26176,7 +26151,7 @@ function Get-DbaDbUdf {
     process {
         foreach ($instance in $SqlInstance) {
             try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             } catch {
                 Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
@@ -26233,7 +26208,7 @@ function Get-DbaDbUser {
     process {
         foreach ($instance in $SqlInstance) {
             try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             } catch {
                 Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
@@ -26387,7 +26362,7 @@ function Get-DbaDbVirtualLogFile {
     process {
         foreach ($instance in $SqlInstance) {
             try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             } catch {
                 Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
@@ -27150,12 +27125,12 @@ function Get-DbaExecutionPlan {
 
                 if ($null -ne $SinceCreation) {
                     Write-Message -Level Verbose -Message "Adding creation time"
-                    $whereArray += " creation_time >= '" + $SinceCreation.ToString("yyyy-MM-dd HH:mm:ss") + "' "
+                    $whereArray += " creation_time >= CONVERT(datetime,'$($SinceCreation.ToString("yyyy-MM-ddTHH:mm:ss", [System.Globalization.CultureInfo]::InvariantCulture))',126) "
                 }
 
                 if ($null -ne $SinceLastExecution) {
                     Write-Message -Level Verbose -Message "Adding last exectuion time"
-                    $whereArray += " last_execution_time >= '" + $SinceLastExecution.ToString("yyyy-MM-dd HH:mm:ss") + "' "
+                    $whereArray += " last_execution_time >= CONVERT(datetime,'$($SinceLastExecution.ToString("yyyy-MM-ddTHH:mm:ss", [System.Globalization.CultureInfo]::InvariantCulture))',126) "
                 }
 
                 if ($ExcludeDatabase) {
@@ -27473,7 +27448,7 @@ function Get-DbaFile {
             #Variable marked as unused by PSScriptAnalyzer
             #$paths = @()
             try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             } catch {
                 Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
@@ -27579,7 +27554,7 @@ function Get-DbaFilestream {
         
         try {
             Write-Message -Level Verbose -Message "Connecting to $instance."
-            $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential -MinimumVersion 10
+            $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 10
         } catch {
             Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
         }
@@ -29075,7 +29050,7 @@ function Get-DbaInstanceTrigger {
     process {
         foreach ($Instance in $SqlInstance) {
             try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             } catch {
                 Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
@@ -29108,7 +29083,7 @@ function Get-DbaInstanceUserOption {
     process {
         foreach ($instance in $SqlInstance) {
             try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             } catch {
                 Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
@@ -29456,7 +29431,7 @@ function Get-DbaLastBackup {
     process {
         foreach ($instance in $SqlInstance) {
             try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential -MinimumVersion 9
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
             } catch {
                 Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
@@ -29724,7 +29699,7 @@ function Get-DbaLinkedServer {
     process {
         foreach ($Instance in $SqlInstance) {
             try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             } catch {
                 Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
@@ -30246,7 +30221,7 @@ function Get-DbaMaxMemory {
     process {
         foreach ($instance in $SqlInstance) {
             try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             } catch {
                 Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
@@ -31520,7 +31495,7 @@ function Get-DbaPermission {
         foreach ($instance in $SqlInstance) {
 
             try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential -MinimumVersion 9
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
             } catch {
                 Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
@@ -32081,7 +32056,7 @@ function Get-DbaPlanCache {
     process {
         foreach ($instance in $SqlInstance) {
             try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             } catch {
                 Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
@@ -33013,13 +32988,13 @@ function Get-DbaRandomizedValue {
         }
 
         if (-not $Min) {
-            if ($DataType.ToLower() -ne "date" -and $RandomizerType.ToLower() -ne "date") {
+            if ($DataType.ToLower() -notlike "date*" -and $RandomizerType.ToLower() -notlike "date*") {
                 $Min = 1
             }
         }
 
         if (-not $Max) {
-            if ($DataType.ToLower() -ne "date" -and $RandomizerType.ToLower() -ne "date") {
+            if ($DataType.ToLower() -notlike "date*" -and $RandomizerType.ToLower() -notlike "date*") {
                 $Max = 255
             }
         }
@@ -33053,23 +33028,23 @@ function Get-DbaRandomizedValue {
                 }
                 'date' {
                     if ($Min -or $Max) {
-                        ($script:faker.Date.Between($Min, $Max)).ToString("yyyy-MM-dd")
+                        ($script:faker.Date.Between($Min, $Max)).ToString("yyyy-MM-dd", [System.Globalization.CultureInfo]::InvariantCulture)
                     } else {
-                        ($script:faker.Date.Past()).ToString("yyyy-MM-dd")
+                        ($script:faker.Date.Past()).ToString("yyyy-MM-dd", [System.Globalization.CultureInfo]::InvariantCulture)
                     }
                 }
                 'datetime' {
                     if ($Min -or $Max) {
-                        ($script:faker.Date.Between($Min, $Max)).ToString("yyyy-MM-dd HH:mm:ss.fff")
+                        ($script:faker.Date.Between($Min, $Max)).ToString("yyyy-MM-dd HH:mm:ss.fff", [System.Globalization.CultureInfo]::InvariantCulture)
                     } else {
-                        ($script:faker.Date.Past()).ToString("yyyy-MM-dd HH:mm:ss.fff")
+                        ($script:faker.Date.Past()).ToString("yyyy-MM-dd HH:mm:ss.fff", [System.Globalization.CultureInfo]::InvariantCulture)
                     }
                 }
                 'datetime2' {
                     if ($Min -or $Max) {
-                        ($script:faker.Date.Between($Min, $Max)).ToString("yyyy-MM-dd HH:mm:ss.fffffff")
+                        ($script:faker.Date.Between($Min, $Max)).ToString("yyyy-MM-dd HH:mm:ss.fffffff", [System.Globalization.CultureInfo]::InvariantCulture)
                     } else {
-                        ($script:faker.Date.Past()).ToString("yyyy-MM-dd HH:mm:ss.fffffff")
+                        ($script:faker.Date.Past()).ToString("yyyy-MM-dd HH:mm:ss.fffffff", [System.Globalization.CultureInfo]::InvariantCulture)
                     }
                 }
                 { $psitem -in 'decimal', 'float', 'money', 'numeric', 'real' } {
@@ -33091,9 +33066,9 @@ function Get-DbaRandomizedValue {
                 }
                 'smalldatetime' {
                     if ($Min -or $Max) {
-                        ($script:faker.Date.Between($Min, $Max)).ToString("yyyy-MM-dd HH:mm:ss")
+                        ($script:faker.Date.Between($Min, $Max)).ToString("yyyy-MM-dd HH:mm:ss", [System.Globalization.CultureInfo]::InvariantCulture)
                     } else {
-                        ($script:faker.Date.Past()).ToString("yyyy-MM-dd HH:mm:ss")
+                        ($script:faker.Date.Past()).ToString("yyyy-MM-dd HH:mm:ss", [System.Globalization.CultureInfo]::InvariantCulture)
                     }
                 }
                 'smallint' {
@@ -33197,7 +33172,7 @@ function Get-DbaRandomizedValue {
                         if ($Min -gt $Max) {
                             Stop-Function -Message "The minimum value for the date cannot be later than maximum value" -Continue -Target $Min
                         } else {
-                            ($script:faker.Date.Between($Min, $Max)).ToString("yyyy-MM-dd HH:mm:ss.fffffff")
+                            ($script:faker.Date.Between($Min, $Max)).ToString("yyyy-MM-dd HH:mm:ss.fffffff", [System.Globalization.CultureInfo]::InvariantCulture)
                         }
                     } elseif ($randSubType -eq 'past') {
                         if ($Max) {
@@ -33207,9 +33182,9 @@ function Get-DbaRandomizedValue {
                                 $yearsToGoBack = 1
                             }
 
-                            $script:faker.Date.Past($yearsToGoBack, $Max).ToString("yyyy-MM-dd HH:mm:ss.fffffff")
+                            $script:faker.Date.Past($yearsToGoBack, $Max).ToString("yyyy-MM-dd HH:mm:ss.fffffff", [System.Globalization.CultureInfo]::InvariantCulture)
                         } else {
-                            $script:faker.Date.Past().ToString("yyyy-MM-dd HH:mm:ss.fffffff")
+                            $script:faker.Date.Past().ToString("yyyy-MM-dd HH:mm:ss.fffffff", [System.Globalization.CultureInfo]::InvariantCulture)
                         }
                     } elseif ($randSubType -eq 'future') {
                         if ($Min) {
@@ -33219,13 +33194,13 @@ function Get-DbaRandomizedValue {
                                 $yearsToGoForward = 1
                             }
 
-                            $script:faker.Date.Future($yearsToGoForward, $Min).ToString("yyyy-MM-dd HH:mm:ss.fffffff")
+                            $script:faker.Date.Future($yearsToGoForward, $Min).ToString("yyyy-MM-dd HH:mm:ss.fffffff", [System.Globalization.CultureInfo]::InvariantCulture)
                         } else {
-                            $script:faker.Date.Future().ToString("yyyy-MM-dd HH:mm:ss.fffffff")
+                            $script:faker.Date.Future().ToString("yyyy-MM-dd HH:mm:ss.fffffff", [System.Globalization.CultureInfo]::InvariantCulture)
                         }
 
                     } elseif ($randSubType -eq 'recent') {
-                        $script:faker.Date.Recent().ToString("yyyy-MM-dd HH:mm:ss.fffffff")
+                        $script:faker.Date.Recent().ToString("yyyy-MM-dd HH:mm:ss.fffffff", [System.Globalization.CultureInfo]::InvariantCulture)
                     } elseif ($randSubType -eq 'random') {
                         if ($Min -or $Max) {
                             if (-not $Min) {
@@ -33236,9 +33211,9 @@ function Get-DbaRandomizedValue {
                                 $Max = (Get-Date).AddYears(1)
                             }
 
-                            ($script:faker.Date.Between($Min, $Max)).ToString("yyyy-MM-dd HH:mm:ss.fffffff")
+                            ($script:faker.Date.Between($Min, $Max)).ToString("yyyy-MM-dd HH:mm:ss.fffffff", [System.Globalization.CultureInfo]::InvariantCulture)
                         } else {
-                            ($script:faker.Date.Past()).ToString("yyyy-MM-dd HH:mm:ss.fffffff")
+                            ($script:faker.Date.Past()).ToString("yyyy-MM-dd HH:mm:ss.fffffff", [System.Globalization.CultureInfo]::InvariantCulture)
                         }
                     } else {
                         $script:faker.Date.$RandomizerSubType()
@@ -33962,7 +33937,7 @@ function Get-DbaRepServer {
         if (Test-FunctionInterrupt) { return }
         foreach ($instance in $SqlInstance) {
             try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
                 New-Object Microsoft.SqlServer.Replication.ReplicationServer $server.ConnectionContext.SqlConnectionObject
             } catch {
                 Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
@@ -33985,7 +33960,7 @@ function Get-DbaResourceGovernor {
     process {
         foreach ($instance in $SqlInstance) {
             try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential -MinimumVersion 10
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 10
             } catch {
                 Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
@@ -34659,7 +34634,7 @@ function Get-DbaSpConfigure {
     process {
         foreach ($instance in $SqlInstance) {
             try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             } catch {
                 Stop-Function -Message "Failed to process Instance $Instance" -ErrorRecord $_ -Target $instance -Continue
             }
@@ -35346,7 +35321,7 @@ function Get-DbaStartupProcedure {
     process {
         foreach ($instance in $SqlInstance) {
             try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
@@ -36239,7 +36214,7 @@ function Get-DbaUptime {
             }
 
             try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             } catch {
                 Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
@@ -38448,7 +38423,7 @@ function Grant-DbaAgPermission {
 
         foreach ($instance in $SqlInstance) {
             try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             } catch {
                 Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
@@ -38723,7 +38698,7 @@ function Import-DbaCsv {
                 $elapsed = [System.Diagnostics.Stopwatch]::StartNew()
                 # Open Connection to SQL Server
                 try {
-                    $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential -StatementTimeout 0 -MinimumVersion 9
+                    $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -StatementTimeout 0 -MinimumVersion 9
                     $sqlconn = $server.ConnectionContext.SqlConnectionObject
                     if ($sqlconn.State -ne 'Open') {
                         $sqlconn.Open()
@@ -40737,7 +40712,7 @@ function Install-DbaSqlWatch {
         foreach ($instance in $SqlInstance) {
             if ($PSCmdlet.ShouldProcess($instance, "Installing SqlWatch on $Database")) {
                 try {
-                    $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
+                    $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
                 } catch {
                     Stop-Function -Message "Failure." -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
                 }
@@ -40952,7 +40927,7 @@ function Install-DbaWhoIsActive {
 
         foreach ($instance in $SqlInstance) {
             try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             } catch {
                 Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
@@ -45898,7 +45873,7 @@ function Invoke-DbaDbLogShipRecovery {
 
                             Write-ProgressHelper -Activity $activity -StepNumber ($stepCounter++) -Message "Starting copy job"
                             try {
-                                $null = Start-DbaAgentJob -SqlInstance $instance -SqlCredential $sqlcredential -Job $ls.copyjob
+                                $null = Start-DbaAgentJob -SqlInstance $instance -SqlCredential $SqlCredential -Job $ls.copyjob
                             } catch {
                                 $recoverResult = "Failed"
                                 $comment = "Something went wrong starting the copy job $($ls.copyjob)"
@@ -45911,14 +45886,14 @@ function Invoke-DbaDbLogShipRecovery {
                                 Write-Message -Message "Waiting for the copy action to complete.." -Level Verbose
 
                                 # Get the job status
-                                $jobStatus = Get-DbaAgentJob -SqlInstance $instance -SqlCredential $sqlcredential -Job $ls.copyjob
+                                $jobStatus = Get-DbaAgentJob -SqlInstance $instance -SqlCredential $SqlCredential -Job $ls.copyjob
 
                                 while ($jobStatus.CurrentRunStatus -ne 'Idle') {
                                     # Sleep for while to let the files be copied
                                     Start-Sleep -Seconds $Delay
 
                                     # Get the job status
-                                    $jobStatus = Get-DbaAgentJob -SqlInstance $instance -SqlCredential $sqlcredential -Job $ls.copyjob
+                                    $jobStatus = Get-DbaAgentJob -SqlInstance $instance -SqlCredential $SqlCredential -Job $ls.copyjob
                                 }
 
                                 # Check the lat outcome of the job
@@ -45941,7 +45916,7 @@ function Invoke-DbaDbLogShipRecovery {
                             if ($PSCmdlet.ShouldProcess($server.name, "Disabling copy job $($ls.copyjob)")) {
                                 try {
                                     Write-Message -Message "Disabling copy job $($ls.copyjob)" -Level Verbose
-                                    $null = Set-DbaAgentJob -SqlInstance $instance -SqlCredential $sqlcredential -Job $ls.copyjob -Disabled
+                                    $null = Set-DbaAgentJob -SqlInstance $instance -SqlCredential $SqlCredential -Job $ls.copyjob -Disabled
                                 } catch {
                                     $recoverResult = "Failed"
                                     $comment = "Something went wrong disabling the copy job."
@@ -45957,7 +45932,7 @@ function Invoke-DbaDbLogShipRecovery {
                             if ($PSCmdlet.ShouldProcess($server.name, ("Starting restore job " + $ls.restorejob))) {
                                 Write-Message -Message "Starting restore job $($ls.restorejob)" -Level Verbose
                                 try {
-                                    $null = Start-DbaAgentJob -SqlInstance $instance -SqlCredential $sqlcredential -Job $ls.restorejob
+                                    $null = Start-DbaAgentJob -SqlInstance $instance -SqlCredential $SqlCredential -Job $ls.restorejob
                                 } catch {
                                     $comment = "Something went wrong starting the restore job."
                                     Stop-Function -Message "Something went wrong starting the restore job.`n$($_)" -ErrorRecord $_ -Target $server.name
@@ -45966,14 +45941,14 @@ function Invoke-DbaDbLogShipRecovery {
                                 Write-Message -Message "Waiting for the restore action to complete.." -Level Verbose
 
                                 # Get the job status
-                                $jobStatus = Get-DbaAgentJob -SqlInstance $instance -SqlCredential $sqlcredential -Job $ls.restorejob
+                                $jobStatus = Get-DbaAgentJob -SqlInstance $instance -SqlCredential $SqlCredential -Job $ls.restorejob
 
                                 while ($jobStatus.CurrentRunStatus -ne 'Idle') {
                                     # Sleep for while to let the files be copied
                                     Start-Sleep -Seconds $Delay
 
                                     # Get the job status
-                                    $jobStatus = Get-DbaAgentJob -SqlInstance $instance -SqlCredential $sqlcredential -Job $ls.restorejob
+                                    $jobStatus = Get-DbaAgentJob -SqlInstance $instance -SqlCredential $SqlCredential -Job $ls.restorejob
                                 }
 
                                 # Check the lat outcome of the job
@@ -45992,7 +45967,7 @@ function Invoke-DbaDbLogShipRecovery {
                             if ($PSCmdlet.ShouldProcess($server.name, "Disabling restore job $($ls.restorejob)")) {
                                 try {
                                     Write-Message -Message ("Disabling restore job " + $ls.restorejob) -Level Verbose
-                                    $null = Set-DbaAgentJob -SqlInstance $instance -SqlCredential $sqlcredential -Job $ls.restorejob -Disabled
+                                    $null = Set-DbaAgentJob -SqlInstance $instance -SqlCredential $SqlCredential -Job $ls.restorejob -Disabled
                                 } catch {
                                     $recoverResult = "Failed"
                                     $comment = "Something went wrong disabling the restore job."
@@ -46432,7 +46407,7 @@ function Invoke-DbaDbPiiScan {
 
             # Try to connect to the server
             try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential -MinimumVersion 9
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
             } catch {
                 Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
@@ -47213,7 +47188,7 @@ function Invoke-DbaDiagnosticQuery {
         foreach ($instance in $SqlInstance) {
             $counter = 0
             try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             } catch {
                 Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
@@ -48631,7 +48606,7 @@ function Join-DbaAvailabilityGroup {
 
         foreach ($instance in $SqlInstance) {
             try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             } catch {
                 Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
@@ -48760,7 +48735,7 @@ function Measure-DbaDbVirtualLogFile {
     process {
         foreach ($instance in $SqlInstance) {
             try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             } catch {
                 Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
@@ -49058,7 +49033,7 @@ function Mount-DbaDatabase {
     process {
         foreach ($instance in $SqlInstance) {
             try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             } catch {
                 Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
@@ -52283,7 +52258,7 @@ function New-DbaDatabase {
 
         foreach ($instance in $SqlInstance) {
             try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             } catch {
                 Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
@@ -54539,7 +54514,7 @@ function New-DbaDiagnosticAdsNotebook {
             }
         }
 
-        $diagnosticScriptPath = Get-ChildItem -Path "$($script:PSModuleRoot)\bin\diagnosticquery\" -Filter "SQLServerDiagnosticQueries_$($TargetVersion)_??????.sql" | Select-Object -First 1
+        $diagnosticScriptPath = Get-ChildItem -Path "$($script:PSModuleRoot)\bin\diagnosticquery\" -Filter "SQLServerDiagnosticQueries_$($TargetVersion).sql" | Select-Object -First 1
 
         if (-not $diagnosticScriptPath) {
             Stop-Function -Message "No diagnostic queries available for `$TargetVersion = $TargetVersion"
@@ -54829,7 +54804,7 @@ function New-DbaLogin {
         }
         foreach ($instance in $SqlInstance) {
             try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             } catch {
                 Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
@@ -57691,7 +57666,7 @@ function Remove-DbaDatabase {
 
         foreach ($instance in $SqlInstance) {
             try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             } catch {
                 Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
@@ -58230,7 +58205,7 @@ function Remove-DbaDbBackupRestoreHistory {
         }
         foreach ($instance in $SqlInstance) {
             try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             } catch {
                 Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
@@ -58827,11 +58802,11 @@ function Remove-DbaDbRole {
             switch ($inputType) {
                 'Sqlcollaborative.Dbatools.Parameter.DbaInstanceParameter' {
                     Write-Message -Level Verbose -Message "Processing DbaInstanceParameter through InputObject"
-                    $dbRoles = Get-DbaDBRole -SqlInstance $input -SqlCredential $sqlcredential -Database $Database -ExcludeDatabase $ExcludeDatabase -Role $Role -ExcludeRole $ExcludeRole -ExcludeFixedRole:$True
+                    $dbRoles = Get-DbaDBRole -SqlInstance $input -SqlCredential $SqlCredential -Database $Database -ExcludeDatabase $ExcludeDatabase -Role $Role -ExcludeRole $ExcludeRole -ExcludeFixedRole:$True
                 }
                 'Microsoft.SqlServer.Management.Smo.Server' {
                     Write-Message -Level Verbose -Message "Processing Server through InputObject"
-                    $dbRoles = Get-DbaDBRole -SqlInstance $input -SqlCredential $sqlcredential -Database $Database -ExcludeDatabase $ExcludeDatabase -Role $Role -ExcludeRole $ExcludeRole -ExcludeFixedRole:$True
+                    $dbRoles = Get-DbaDBRole -SqlInstance $input -SqlCredential $SqlCredential -Database $Database -ExcludeDatabase $ExcludeDatabase -Role $Role -ExcludeRole $ExcludeRole -ExcludeFixedRole:$True
                 }
                 'Microsoft.SqlServer.Management.Smo.Database' {
                     Write-Message -Level Verbose -Message "Processing Database through InputObject"
@@ -58903,11 +58878,11 @@ function Remove-DbaDbRoleMember {
             switch ($inputType) {
                 'Sqlcollaborative.Dbatools.Parameter.DbaInstanceParameter' {
                     Write-Message -Level Verbose -Message "Processing DbaInstanceParameter through InputObject"
-                    $dbRoles = Get-DbaDBRole -SqlInstance $input -SqlCredential $sqlcredential -Database $Database -Role $Role
+                    $dbRoles = Get-DbaDBRole -SqlInstance $input -SqlCredential $SqlCredential -Database $Database -Role $Role
                 }
                 'Microsoft.SqlServer.Management.Smo.Server' {
                     Write-Message -Level Verbose -Message "Processing Server through InputObject"
-                    $dbRoles = Get-DbaDBRole -SqlInstance $input -SqlCredential $sqlcredential -Database $Database -Role $Role
+                    $dbRoles = Get-DbaDBRole -SqlInstance $input -SqlCredential $SqlCredential -Database $Database -Role $Role
                 }
                 'Microsoft.SqlServer.Management.Smo.Database' {
                     Write-Message -Level Verbose -Message "Processing Database through InputObject"
@@ -59247,7 +59222,7 @@ function Remove-DbaLogin {
 
         foreach ($instance in $SqlInstance) {
             try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             } catch {
                 Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
@@ -60641,7 +60616,7 @@ function Rename-DbaLogin {
     process {
         foreach ($instance in $SqlInstance) {
             try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             } catch {
                 Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
@@ -62450,7 +62425,7 @@ function Revoke-DbaAgPermission {
         foreach ($instance in $SqlInstance) {
             if ($perm -contains "CreateAnyDatabase") {
                 try {
-                    $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
+                    $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
                 } catch {
                     Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
                 }
@@ -63486,7 +63461,7 @@ function Set-DbaAgentJobOwner {
     process {
         foreach ($instance in $SqlInstance) {
             try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             } catch {
                 Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
@@ -71916,7 +71891,7 @@ function Test-DbaDbRecoveryModel {
     process {
         foreach ($instance in $SqlInstance) {
             try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential -MinimumVersion 9
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
             } catch {
                 Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
@@ -73349,7 +73324,7 @@ function Test-DbaLoginPassword {
     process {
         foreach ($instance in $SqlInstance) {
             try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential -MinimumVersion 10
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 10
                 Write-Message -Message "Connected to: $instance." -Level Verbose
             } catch {
                 Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
@@ -73946,7 +73921,7 @@ function Test-DbaOptimizeForAdHoc {
 
         foreach ($instance in $SqlInstance) {
             try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential -MinimumVersion 10
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 10
             } catch {
                 Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
@@ -74727,7 +74702,7 @@ function Test-DbaWindowsLogin {
     process {
         foreach ($instance in $SqlInstance) {
             try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
                 Write-Message -Message "Connected to: $instance." -Level Verbose
             } catch {
                 Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
@@ -76836,7 +76811,7 @@ function Convert-DbaMaskingValue {
                     }
                     { $_ -eq 'datetime' } {
                         if ($item -match "(\d{4})-(\d{2})-(\d{2})") {
-                            $item = ([datetime]$item).Tostring("yyyy-MM-dd HH:mm:ss.fff")
+                            $item = ([datetime]$item).Tostring("yyyy-MM-dd HH:mm:ss.fff", [System.Globalization.CultureInfo]::InvariantCulture)
                             $newValue = "'$item'"
                         } else {
                             $errorMessage = "Value '$($item)' is not valid DATE or DATETIME format (yyyy-MM-dd)"
@@ -76844,7 +76819,7 @@ function Convert-DbaMaskingValue {
                     }
                     { $_ -eq 'datetime2' } {
                         if ($item -match "(\d{4})-(\d{2})-(\d{2})") {
-                            $item = ([datetime]$item).Tostring("yyyy-MM-dd HH:mm:ss.fffffff")
+                            $item = ([datetime]$item).Tostring("yyyy-MM-dd HH:mm:ss.fffffff", [System.Globalization.CultureInfo]::InvariantCulture)
                             $newValue = "'$item'"
                         } else {
                             $errorMessage = "Value '$($item)' is not valid DATE or DATETIME format (yyyy-MM-dd)"
@@ -76852,7 +76827,7 @@ function Convert-DbaMaskingValue {
                     }
                     { $_ -eq 'date' } {
                         if ($item -match "(\d{4})-(\d{2})-(\d{2})") {
-                            $item = ([datetime]$item).Tostring("yyyy-MM-dd")
+                            $item = ([datetime]$item).Tostring("yyyy-MM-dd", [System.Globalization.CultureInfo]::InvariantCulture)
                             $newValue = "'$item'"
                         } else {
                             $errorMessage = "Value '$($item)' is not valid DATE or DATETIME format (yyyy-MM-dd)"
@@ -76860,7 +76835,7 @@ function Convert-DbaMaskingValue {
                     }
                     { $_ -like 'smalldatetime' } {
                         if ($item -match "(\d{4})-(\d{2})-(\d{2})") {
-                            $item = ([datetime]$item).Tostring("yyyy-MM-dd HH:mm:ss")
+                            $item = ([datetime]$item).Tostring("yyyy-MM-dd HH:mm:ss", [System.Globalization.CultureInfo]::InvariantCulture)
                             $newValue = "'$item'"
                         } else {
                             $errorMessage = "Value '$($item)' is not valid DATE or DATETIME format (yyyy-MM-dd)"
@@ -82612,10 +82587,10 @@ Function Test-ExportDirectory ($Path) {
 function Test-HostOSLinux {
     param (
         [object]$SqlInstance,
-        [object]$sqlcredential
+        [object]$SqlCredential
     )
 
-    $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $sqlcredential
+    $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
     $server.ConnectionContext.ExecuteScalar("SELECT @@VERSION") -match "Linux"
 }
 
