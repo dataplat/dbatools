@@ -108,11 +108,11 @@ function Remove-DbaDbRole {
             switch ($inputType) {
                 'Sqlcollaborative.Dbatools.Parameter.DbaInstanceParameter' {
                     Write-Message -Level Verbose -Message "Processing DbaInstanceParameter through InputObject"
-                    $dbRoles = Get-DbaDBRole -SqlInstance $input -SqlCredential $sqlcredential -Database $Database -ExcludeDatabase $ExcludeDatabase -Role $Role -ExcludeRole $ExcludeRole -ExcludeFixedRole:$True
+                    $dbRoles = Get-DbaDBRole -SqlInstance $input -SqlCredential $SqlCredential -Database $Database -ExcludeDatabase $ExcludeDatabase -Role $Role -ExcludeRole $ExcludeRole -ExcludeFixedRole:$True
                 }
                 'Microsoft.SqlServer.Management.Smo.Server' {
                     Write-Message -Level Verbose -Message "Processing Server through InputObject"
-                    $dbRoles = Get-DbaDBRole -SqlInstance $input -SqlCredential $sqlcredential -Database $Database -ExcludeDatabase $ExcludeDatabase -Role $Role -ExcludeRole $ExcludeRole -ExcludeFixedRole:$True
+                    $dbRoles = Get-DbaDBRole -SqlInstance $input -SqlCredential $SqlCredential -Database $Database -ExcludeDatabase $ExcludeDatabase -Role $Role -ExcludeRole $ExcludeRole -ExcludeFixedRole:$True
                 }
                 'Microsoft.SqlServer.Management.Smo.Database' {
                     Write-Message -Level Verbose -Message "Processing Database through InputObject"

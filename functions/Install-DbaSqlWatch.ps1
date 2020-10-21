@@ -186,7 +186,7 @@ function Install-DbaSqlWatch {
         foreach ($instance in $SqlInstance) {
             if ($PSCmdlet.ShouldProcess($instance, "Installing SqlWatch on $Database")) {
                 try {
-                    $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
+                    $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
                 } catch {
                     Stop-Function -Message "Failure." -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
                 }
