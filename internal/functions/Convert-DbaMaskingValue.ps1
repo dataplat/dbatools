@@ -122,7 +122,7 @@ function Convert-DbaMaskingValue {
                     }
                     { $_ -eq 'datetime' } {
                         if ($item -match "(\d{4})-(\d{2})-(\d{2})") {
-                            $item = ([datetime]$item).Tostring("yyyy-MM-dd HH:mm:ss.fff")
+                            $item = ([datetime]$item).Tostring("yyyy-MM-dd HH:mm:ss.fff", [System.Globalization.CultureInfo]::InvariantCulture)
                             $newValue = "'$item'"
                         } else {
                             $errorMessage = "Value '$($item)' is not valid DATE or DATETIME format (yyyy-MM-dd)"
@@ -130,7 +130,7 @@ function Convert-DbaMaskingValue {
                     }
                     { $_ -eq 'datetime2' } {
                         if ($item -match "(\d{4})-(\d{2})-(\d{2})") {
-                            $item = ([datetime]$item).Tostring("yyyy-MM-dd HH:mm:ss.fffffff")
+                            $item = ([datetime]$item).Tostring("yyyy-MM-dd HH:mm:ss.fffffff", [System.Globalization.CultureInfo]::InvariantCulture)
                             $newValue = "'$item'"
                         } else {
                             $errorMessage = "Value '$($item)' is not valid DATE or DATETIME format (yyyy-MM-dd)"
@@ -138,7 +138,7 @@ function Convert-DbaMaskingValue {
                     }
                     { $_ -eq 'date' } {
                         if ($item -match "(\d{4})-(\d{2})-(\d{2})") {
-                            $item = ([datetime]$item).Tostring("yyyy-MM-dd")
+                            $item = ([datetime]$item).Tostring("yyyy-MM-dd", [System.Globalization.CultureInfo]::InvariantCulture)
                             $newValue = "'$item'"
                         } else {
                             $errorMessage = "Value '$($item)' is not valid DATE or DATETIME format (yyyy-MM-dd)"
@@ -146,7 +146,7 @@ function Convert-DbaMaskingValue {
                     }
                     { $_ -like 'smalldatetime' } {
                         if ($item -match "(\d{4})-(\d{2})-(\d{2})") {
-                            $item = ([datetime]$item).Tostring("yyyy-MM-dd HH:mm:ss")
+                            $item = ([datetime]$item).Tostring("yyyy-MM-dd HH:mm:ss", [System.Globalization.CultureInfo]::InvariantCulture)
                             $newValue = "'$item'"
                         } else {
                             $errorMessage = "Value '$($item)' is not valid DATE or DATETIME format (yyyy-MM-dd)"
