@@ -25,6 +25,10 @@ function Remove-DbaDbData {
     .PARAMETER InputObject
         Enables piped input from Get-DbaDatabase
 
+    .PARAMETER Path
+        Specifies the directory where the file or files will be exported.
+        Will default to Path.DbatoolsExport Configuration entry
+
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
 
