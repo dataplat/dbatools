@@ -973,32 +973,31 @@ function Invoke-DbaDbDataMasking {
                                     $updateQuery = "UPDATE [$($tableobject.Schema)].[$($tableobject.Name)] SET $($updates -join ', ') WHERE [$($identityColumn)] = $($row.$($identityColumn)); "
                                     $null = $stringBuilder.AppendLine($updateQuery)
 
-                                }
+                                    if ($batchRowCounter -eq $BatchSize) {
+                                        if ($batchCounter -ne $totalBatches) {
+                                            $batchCounter++
+                                        }
 
-                                if ($batchRowCounter -eq $BatchSize) {
-                                    if ($batchCounter -ne $totalBatches) {
-                                        $batchCounter++
+                                        $progressParams = @{
+                                            StepNumber = $batchCounter
+                                            TotalSteps = $totalBatches
+                                            Activity   = "Masking $($data.Count) rows in $($tableobject.Schema).$($tableobject.Name) in $($dbName) on $instance"
+                                            Message    = "Executing Batch $batchCounter/$totalBatches"
+                                        }
+
+                                        Write-ProgressHelper @progressParams
+
+                                        Write-Message -Level Verbose -Message "Executing batch $batchCounter/$totalBatches"
+
+                                        try {
+                                            Invoke-DbaQuery -SqlInstance $instance -SqlCredential $SqlCredential -Database $db.Name -Query $stringBuilder.ToString()
+                                        } catch {
+                                            Stop-Function -Message "Error updating $($tableobject.Schema).$($tableobject.Name): $_" -Target $stringBuilder -Continue -ErrorRecord $_
+                                        }
+
+                                        $null = $stringBuilder.Clear()
+                                        $batchRowCounter = 0
                                     }
-
-                                    $progressParams = @{
-                                        StepNumber = $batchCounter
-                                        TotalSteps = $totalBatches
-                                        Activity   = "Masking $($data.Count) rows in $($tableobject.Schema).$($tableobject.Name) in $($dbName) on $instance"
-                                        Message    = "Executing Batch $batchCounter/$totalBatches"
-                                    }
-
-                                    Write-ProgressHelper @progressParams
-
-                                    Write-Message -Level Verbose -Message "Executing batch $batchCounter/$totalBatches"
-
-                                    try {
-                                        Invoke-DbaQuery -SqlInstance $instance -SqlCredential $SqlCredential -Database $db.Name -Query $stringBuilder.ToString()
-                                    } catch {
-                                        Stop-Function -Message "Error updating $($tableobject.Schema).$($tableobject.Name): $_" -Target $stringBuilder -Continue -ErrorRecord $_
-                                    }
-
-                                    $null = $stringBuilder.Clear()
-                                    $batchRowCounter = 0
                                 }
 
                                 if ($stringBuilder.Length -ge 1) {
