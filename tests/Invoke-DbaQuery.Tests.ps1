@@ -60,7 +60,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         foreach ($result in $results) {
             $result.TestColumn | Should -Be 'hello'
         }
-        'tempdb' | Should -Bein $results.dbname
+        'tempdb' | Should -BeIn $results.dbname
     }
     It "stops when piped databases and -Database" {
         $dbs = Get-DbaDatabase -SqlInstance $script:instance2, $script:instance3
@@ -68,24 +68,24 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     }
     It "supports reading files" {
         $testPath = "TestDrive:\dbasqlquerytest.txt"
-        Set-Content $testPath -value "Select 'hello' as TestColumn, DB_NAME() as dbname"
+        Set-Content $testPath -Value "Select 'hello' as TestColumn, DB_NAME() as dbname"
         $results = Invoke-DbaQuery -SqlInstance $script:instance2 -Database tempdb -File $testPath
         foreach ($result in $results) {
             $result.TestColumn | Should -Be 'hello'
         }
-        'tempdb' | Should -Bein $results.dbname
+        'tempdb' | Should -BeIn $results.dbname
     }
     It "supports reading entire directories, just *.sql" {
         $testPath = "TestDrive:\"
-        Set-Content "$testPath\dbasqlquerytest.sql" -value "Select 'hello' as TestColumn, DB_NAME() as dbname"
-        Set-Content "$testPath\dbasqlquerytest2.sql" -value "Select 'hello2' as TestColumn, DB_NAME() as dbname"
-        Set-Content "$testPath\dbasqlquerytest2.txt" -value "Select 'hello3' as TestColumn, DB_NAME() as dbname"
+        Set-Content "$testPath\dbasqlquerytest.sql" -Value "Select 'hello' as TestColumn, DB_NAME() as dbname"
+        Set-Content "$testPath\dbasqlquerytest2.sql" -Value "Select 'hello2' as TestColumn, DB_NAME() as dbname"
+        Set-Content "$testPath\dbasqlquerytest2.txt" -Value "Select 'hello3' as TestColumn, DB_NAME() as dbname"
         $pathinfo = Get-Item $testpath
         $results = Invoke-DbaQuery -SqlInstance $script:instance2 -Database tempdb -File $pathinfo
-        'hello' | Should -Bein $results.TestColumn
-        'hello2' | Should -Bein $results.TestColumn
-        'hello3' | Should -Not -Bein $results.TestColumn
-        'tempdb' | Should -Bein $results.dbname
+        'hello' | Should -BeIn $results.TestColumn
+        'hello2' | Should -BeIn $results.TestColumn
+        'hello3' | Should -Not -BeIn $results.TestColumn
+        'tempdb' | Should -BeIn $results.dbname
 
     }
     It "supports http files" {
@@ -103,7 +103,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         $null = Invoke-DbaQuery -SqlInstance $script:instance2, $script:instance3 -Database tempdb -Query $cleanup
         $CloudQuery = 'https://raw.githubusercontent.com/sqlcollaborative/appveyor-lab/master/sql2016-startup/ola/CommandLog.sql'
         $null = Invoke-DbaQuery -SqlInstance $script:instance2 -Database tempdb -File $CloudQuery
-        $smoobj = Get-DbaDbTable -SqlInstance $script:instance2 -Database tempdb | Where-Object Name -eq 'CommandLog'
+        $smoobj = Get-DbaDbTable -SqlInstance $script:instance2 -Database tempdb | Where-Object Name -EQ 'CommandLog'
         $null = Invoke-DbaQuery -SqlInstance $script:instance3 -Database tempdb -SqlObject $smoobj
         $check = "SELECT name FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[CommandLog]') AND type in (N'U')"
         $results = Invoke-DbaQuery -SqlInstance $script:instance3 -Database tempdb -Query $check
@@ -194,7 +194,13 @@ SELECT @@servername as dbname
         foreach ($result in $results) {
             $result.TestColumn | Should -Be 'hello'
         }
-        'tempdb' | Should -Bein $results.dbname
-
+        'tempdb' | Should -BeIn $results.dbname
+    }
+    It "supports multiple datasets also as PSObjects (see #6921)" {
+        $results = Invoke-DbaQuery -SqlInstance $script:instance2 -Database tempdb -Query "select 1 as 'a'; select 2 as 'b', 3 as 'c';" -As PSObject
+        $results.Count | Should -Be 2
+        $results[0].a | Should -Be 1
+        $results[1].b | Should -Be 2
+        $results[1].c | Should -Be 3
     }
 }

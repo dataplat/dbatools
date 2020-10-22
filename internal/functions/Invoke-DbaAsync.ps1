@@ -286,10 +286,9 @@ function Invoke-DbaAsync {
                 'PSObject' {
                     if ($ds.Tables.Count -gt 1) {
                         foreach ($table in $ds.Tables) {
-                            $rows = foreach ($row in $table.Rows) {
+                            foreach ($row in $table.Rows) {
                                 [DBNullScrubber]::DataRowToPSObject($row)
                             }
-                            , $rows
                         }
                     } elseif ($ds.Tables.Count -ne 0) {
                         #Scrub DBNulls - Provides convenient results you can use comparisons with
