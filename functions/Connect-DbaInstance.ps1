@@ -320,168 +320,6 @@ function Connect-DbaInstance {
                 $null = Set-DbatoolsConfig -FullName azure.vm -Value $false -PassThru | Register-DbatoolsConfig
             }
         }
-        function Get-SqlConnectionInfoObject {
-            Param (
-                [string]$ServerName
-            )
-            # This function is created, because it might be needed in more than one place
-            $connInfo = New-Object Microsoft.SqlServer.Management.Common.SqlConnectionInfo $ServerName
-            # I will list all properties of SqlConnectionInfo and set them if value is provided
-
-            #AccessToken            Property   Microsoft.SqlServer.Management.Common.IRenewableToken AccessToken {get;set;}
-            # TODO: Can we use this with Azure?
-
-            #AdditionalParameters   Property   string AdditionalParameters {get;set;}
-            if ($AppendConnectionString) {
-                Write-Message -Level Debug -Message "AdditionalParameters will be appended by '$AppendConnectionString'"
-                $connInfo.AdditionalParameters += ";$AppendConnectionString"
-            }
-            if ($FailoverPartner) {
-                Write-Message -Level Debug -Message "AdditionalParameters will be appended by '$AppendConnectionString'"
-                $connInfo.AdditionalParameters += ";FailoverPartner=$FailoverPartner"
-            }
-            if ($MultiSubnetFailover) {
-                Write-Message -Level Debug -Message "AdditionalParameters will be appended by '$AppendConnectionString'"
-                $connInfo.AdditionalParameters += ';MultiSubnetFailover=True'
-            }
-
-            #ApplicationIntent      Property   string ApplicationIntent {get;set;}
-            if ($ApplicationIntent) {
-                Write-Message -Level Debug -Message "ApplicationIntent will be set to '$ApplicationIntent'"
-                $connInfo.ApplicationIntent = $ApplicationIntent
-            }
-
-            #ApplicationName        Property   string ApplicationName {get;set;}
-            if ($ClientName) {
-                Write-Message -Level Debug -Message "ApplicationName will be set to '$ClientName'"
-                $connInfo.ApplicationName = $ClientName
-            }
-
-            #Authentication         Property   Microsoft.SqlServer.Management.Common.SqlConnectionInfo+AuthenticationMethod Authentication {get;set;}
-            # Maybe later set upon $AuthenticationType
-            #[Microsoft.SqlServer.Management.Common.SqlConnectionInfo+AuthenticationMethod]::ActiveDirectoryIntegrated
-            #[Microsoft.SqlServer.Management.Common.SqlConnectionInfo+AuthenticationMethod]::ActiveDirectoryInteractive
-            #[Microsoft.SqlServer.Management.Common.SqlConnectionInfo+AuthenticationMethod]::ActiveDirectoryPassword
-            #[Microsoft.SqlServer.Management.Common.SqlConnectionInfo+AuthenticationMethod]::NotSpecified
-            #[Microsoft.SqlServer.Management.Common.SqlConnectionInfo+AuthenticationMethod]::SqlPassword
-
-            #ConnectionProtocol     Property   Microsoft.SqlServer.Management.Common.NetworkProtocol ConnectionProtocol {get;set;}
-            if ($NetworkProtocol) {
-                Write-Message -Level Debug -Message "ConnectionProtocol will be set to '$NetworkProtocol'"
-                $connInfo.ConnectionProtocol = $NetworkProtocol
-            }
-
-            #ConnectionString       Property   string ConnectionString {get;}
-            # Only a getter, not a setter - so don't touch
-
-            #ConnectionTimeout      Property   int ConnectionTimeout {get;set;}
-            if ($ConnectTimeout) {
-                Write-Message -Level Debug -Message "ConnectionTimeout will be set to '$ConnectTimeout'"
-                $connInfo.ConnectionTimeout = $ConnectTimeout
-            }
-
-            #DatabaseName           Property   string DatabaseName {get;set;}
-            if ($Database) {
-                Write-Message -Level Debug -Message "Database will be set to '$Database'"
-                $connInfo.DatabaseName = $Database
-            }
-
-            #EncryptConnection      Property   bool EncryptConnection {get;set;}
-            if ($EncryptConnection) {
-                Write-Message -Level Debug -Message "EncryptConnection will be set to '$EncryptConnection'"
-                $connInfo.EncryptConnection = $EncryptConnection
-            }
-
-            #MaxPoolSize            Property   int MaxPoolSize {get;set;}
-            if ($MaxPoolSize) {
-                Write-Message -Level Debug -Message "MaxPoolSize will be set to '$MaxPoolSize'"
-                $connInfo.MaxPoolSize = $MaxPoolSize
-            }
-
-            #MinPoolSize            Property   int MinPoolSize {get;set;}
-            if ($MinPoolSize) {
-                Write-Message -Level Debug -Message "MinPoolSize will be set to '$MinPoolSize'"
-                $connInfo.MinPoolSize = $MinPoolSize
-            }
-
-            #PacketSize             Property   int PacketSize {get;set;}
-            if ($PacketSize) {
-                Write-Message -Level Debug -Message "PacketSize will be set to '$PacketSize'"
-                $connInfo.PacketSize = $PacketSize
-            }
-
-            #Password               Property   string Password {get;set;}
-            # We will use SecurePassword
-
-            #PoolConnectionLifeTime Property   int PoolConnectionLifeTime {get;set;}
-            if ($PooledConnectionLifetime) {
-                Write-Message -Level Debug -Message "PoolConnectionLifeTime will be set to '$PooledConnectionLifetime'"
-                $connInfo.PoolConnectionLifeTime = $PooledConnectionLifetime
-            }
-
-            #Pooled                 Property   System.Data.SqlTypes.SqlBoolean Pooled {get;set;}
-            # TODO: Do we need or want the else path or is it the default and we better don't touch it?
-            if ($NonPooledConnection) {
-                Write-Message -Level Debug -Message "Pooled will be set to '$false'"
-                $connInfo.Pooled = $false
-            } else {
-                Write-Message -Level Debug -Message "Pooled will be set to '$true'"
-                $connInfo.Pooled = $true
-            }
-
-            #QueryTimeout           Property   int QueryTimeout {get;set;}
-            if ($StatementTimeout) {
-                Write-Message -Level Debug -Message "QueryTimeout will be set to '$StatementTimeout'"
-                $connInfo.QueryTimeout = $StatementTimeout
-            }
-
-            #SecurePassword         Property   securestring SecurePassword {get;set;}
-            if ($SqlCredential) {
-                Write-Message -Level Debug -Message "SecurePassword will be set"
-                $connInfo.SecurePassword = $SqlCredential.Password
-            }
-
-            #ServerCaseSensitivity  Property   Microsoft.SqlServer.Management.Common.ServerCaseSensitivity ServerCaseSensitivity {get;set;}
-
-            #ServerName             Property   string ServerName {get;set;}
-            # Was already set by the constructor.
-            # TODO: Or do we want to set it here?
-
-            #ServerType             Property   Microsoft.SqlServer.Management.Common.ConnectionType ServerType {get;}
-            # Only a getter, not a setter - so don't touch
-
-            #ServerVersion          Property   Microsoft.SqlServer.Management.Common.ServerVersion ServerVersion {get;set;}
-            # We can set that? No, we don't want to...
-
-            #TrustServerCertificate Property   bool TrustServerCertificate {get;set;}
-            if ($TrustServerCertificate) {
-                Write-Message -Level Debug -Message "TrustServerCertificate will be set to '$TrustServerCertificate'"
-                $connInfo.TrustServerCertificate = $TrustServerCertificate
-            }
-
-            #UseIntegratedSecurity  Property   bool UseIntegratedSecurity {get;set;}
-            if ($SqlCredential) {
-                Write-Message -Level Debug -Message "UseIntegratedSecurity will be set to '$false'"
-                $connInfo.UseIntegratedSecurity = $false
-            } else {
-                Write-Message -Level Debug -Message "UseIntegratedSecurity will be set to '$true'"
-                $connInfo.UseIntegratedSecurity = $true
-            }
-
-            #UserName               Property   string UserName {get;set;}
-            if ($SqlCredential) {
-                Write-Message -Level Debug -Message "UserName will be set to '$($SqlCredential.UserName)'"
-                $connInfo.UserName = $SqlCredential.UserName
-            }
-
-            #WorkstationId          Property   string WorkstationId {get;set;}
-            if ($WorkstationId) {
-                Write-Message -Level Debug -Message "WorkstationId will be set to '$WorkstationId'"
-                $connInfo.WorkstationId = $WorkstationId
-            }
-
-            $connInfo
-        }
         function Test-Azure {
             Param (
                 [DbaInstanceParameter[]]$SqlInstance
@@ -592,52 +430,64 @@ function Connect-DbaInstance {
             #>
             if (Get-DbatoolsConfigValue -FullName sql.connection.experimental) {
                 <#
-                General decision tree:
-                We look at $instance as an item of $SqlInstance and in the first place at the type of the object.
-                Possible types are:
-                * A full dbatools style smo server object ([Microsoft.SqlServer.Management.Smo.Server]).
-                  -> Test if other parameters are also used:
-                     - If only Database is used, clone connection context and build a new server object
-                     - If other parameters are used, build a new server object from a connection info object and use only the data source from the original
-                       DISCUSSION: Should we copy other properties as well? SqlCredential?
-                  -> Connect if not connected.
-                  # This is the default path when reusing a smo object once created by Connect-DbaInstance.
-                * A smo server object, but without the additional parameters of dbatools.
-                  -> Test if other parameters are also used:
-                     - Fail if any other parameter is used.
-                  -> Connect if not connected.
-                  -> Add additional parameters of dbatools (ComputerName, etc.).
-                  # This is only used when someone created the smo server object outside of dbatools.
-                  # This guarantees the availability of the additional parameters of dbatools.
-                * A smo connection object ([System.Data.SqlClient.SqlConnection]).
-                  -> Test if other parameters are also used:
-                     - Fail if any other parameter is used.
-                  -> Build smo server object with [System.Data.SqlClient.SqlConnection].
-                  -> Connect.
-                  -> Add additional parameters of dbatools (ComputerName, etc.).
-                  # This is probably rarely used. We have to find use cases and users for this.
-                * A connection string.
-                  Current implementation:
-                  -> Build [System.Data.SqlClient.SqlConnection] with connection string.
-                  -> Build [Microsoft.SqlServer.Management.Common.ServerConnection] with [System.Data.SqlClient.SqlConnection].
-                  -> Build smo server object with [Microsoft.SqlServer.Management.Common.ServerConnection].
-                  -> Connect.
-                  -> Add additional parameters of dbatools (ComputerName, etc.).
-                  # We've seen problems here because the connections don't go back to the connection pool if not explicitly closed.
-                  Proposed implementation:
-                  -> Build empty smo server object.
-                  -> Set $server.ConnectionContext.ConnectionString to the connection string.
-                  -> Connect.
-                  -> Add additional parameters of dbatools (ComputerName, etc.).
-                 * Just a normal [DbaInstanceParameter]:
-                  -> Build smo server object with $instance.FullSmoName
-                  -> Configure $server.ConnectionContext with given parameters.
-                  -> Connect.
-                  -> Add additional parameters of dbatools (ComputerName, etc.).
+                Best practice:
+                * Create a smo server object by submitting the name of the instance as a string to SqlInstance and additional parameters to configure the connection
+                * Reuse the smo server object in all following calls as SqlInstance
+                * When reusing the smo server object, only the following additial parameters are allowed with Connect-DbaInstance:
+                  - Database (command clones ConnectionContext and returns new smo server object)
+                  - AzureUnsupported (command failes if target is Azure)
+                  - MinimumVersion (command failes if target version is too old)
+                  - SqlConnectionOnly (command returns only the ConnectionContext.SqlConnectionObject)
+                TODO: Try to identify all commands that use additional parameters and rewrite the command or add support for that parameter to Connect-DbaInstance
+                Commands found:
+                - Get-DbaDbExtentDiff (NonPooled)
+                - Import-DbaCsv (StatementTimeout)
+                - Install-DbaMaintenanceSolution (NonPooled)
+                - Invoke-DbaQuery (ApplicationIntent)
+
+                Additional possibilities as input to SqlInstance:
+                * A smo connection object [System.Data.SqlClient.SqlConnection] (InputObject is used to build smo server object)
+                * A smo registered server object [Microsoft.SqlServer.Management.RegisteredServers.RegisteredServer] (FullSmoName und InputObject.ConnectionString are used to build smo server object)
+                * A connections string [String] (FullSmoName und InputObject are used to build smo server object)
+                Limitations of these additional possibilities:
+                * All additional parameters are ignored
+                  TODO: Should we test and throw a warning? Or should we try to merge some or all additional parameters into the connections string?
+                * Currently, connection pooling does not work with connections that are build from connection strings
+                  TODO: Test with original smo libraries and open an issue
+
+                * All parameters that configure the connection and where they can be set (here just for documentation and future development):
+                  - AppendConnectionString      SqlConnectionInfo.AdditionalParameters
+                  - ApplicationIntent           SqlConnectionInfo.ApplicationIntent          SqlConnectionStringBuilder['ApplicationIntent']
+                  - AuthenticationType          SqlConnectionInfo.Authentication (TODO)      SqlConnectionStringBuilder['Authentication']
+                  - BatchSeparator                                                                                                                     ConnectionContext.BatchSeparator
+                  - ClientName                  SqlConnectionInfo.ApplicationName            SqlConnectionStringBuilder['Application Name']
+                  - ConnectTimeout              SqlConnectionInfo.ConnectionTimeout          SqlConnectionStringBuilder['Connect Timeout']
+                  - Database                    SqlConnectionInfo.DatabaseName               SqlConnectionStringBuilder['Initial Catalog']
+                  - EncryptConnection           SqlConnectionInfo.EncryptConnection          SqlConnectionStringBuilder['Encrypt']
+                  - FailoverPartner             SqlConnectionInfo.AdditionalParameters       SqlConnectionStringBuilder['Failover Partner']
+                  - LockTimeout                                                                                                                        ConnectionContext.LockTimeout
+                  - MaxPoolSize                 SqlConnectionInfo.MaxPoolSize                SqlConnectionStringBuilder['Max Pool Size']
+                  - MinPoolSize                 SqlConnectionInfo.MinPoolSize                SqlConnectionStringBuilder['Min Pool Size']
+                  - MultipleActiveResultSets                                                 SqlConnectionStringBuilder['MultipleActiveResultSets']    ConnectionContext.MultipleActiveResultSets
+                  - MultiSubnetFailover         SqlConnectionInfo.AdditionalParameters       SqlConnectionStringBuilder['MultiSubnetFailover']
+                  - NetworkProtocol             SqlConnectionInfo.ConnectionProtocol
+                  - NonPooledConnection         SqlConnectionInfo.Pooled                     SqlConnectionStringBuilder['Pooling']
+                  - PacketSize                  SqlConnectionInfo.PacketSize                 SqlConnectionStringBuilder['Packet Size']
+                  - PooledConnectionLifetime    SqlConnectionInfo.PoolConnectionLifeTime     SqlConnectionStringBuilder['Load Balance Timeout']
+                  - SqlInstance                 SqlConnectionInfo.ServerName                 SqlConnectionStringBuilder['Data Source']
+                  - SqlCredential               SqlConnectionInfo.SecurePassword             SqlConnectionStringBuilder['Password']
+                                                SqlConnectionInfo.UserName                   SqlConnectionStringBuilder['User ID']
+                                                SqlConnectionInfo.UseIntegratedSecurity      SqlConnectionStringBuilder['Integrated Security']
+                  - SqlExecutionModes                                                                                                                  ConnectionContext.SqlExecutionModes
+                  - StatementTimeout            SqlConnectionInfo.QueryTimeout
+                  - TrustServerCertificate      SqlConnectionInfo.TrustServerCertificate     SqlConnectionStringBuilder['TrustServerCertificate']
+                  - WorkstationId               SqlConnectionInfo.WorkstationId              SqlConnectionStringBuilder['Workstation Id']
 
                 Some additional tests:
-                * Is $SqlConnectionOnly set? Then return $server.ConnectionContext.SqlConnectionObject.
+                * Is $AzureUnsupported set? Test for Azure.
                 * Is $MinimumVersion set? Test for that.
+                * Is $SqlConnectionOnly set? Then return $server.ConnectionContext.SqlConnectionObject.
+                * Does the server object have the additional properties? Add them when necessary.
 
                 Some general decisions:
                 * We try to treat connections to Azure as normal connections.
@@ -646,46 +496,244 @@ function Connect-DbaInstance {
                 #>
                 Write-Message -Level Debug -Message "sql.connection.experimental is used"
 
-                if ($instance.Type -like "Server") {
-                    $inputObjectType = 'Server'
+                # Analyse input object and extract necessary parts
+                if ($instance.Type -like 'Server') {
                     Write-Message -Level Verbose -Message "Server object passed in, will do some checks and then return the original object"
-                    if (Test-Bound -ParameterName 'ApplicationIntent', 'BatchSeparator', 'ClientName', 'ConnectTimeout', 'EncryptConnection', 'LockTimeout', 'MaxPoolSize', 'MinPoolSize', 'NetworkProtocol', 'NonPooledConnection', 'PacketSize', 'PooledConnectionLifetime', 'SqlExecutionModes', 'StatementTimeout', 'TrustServerCertificate', 'WorkstationId', 'AuthenticationType', 'FailoverPartner', 'MultipleActiveResultSets', 'MultiSubnetFailover', 'AppendConnectionString') {
-                        Write-Message -Level Verbose -Message "Additional parameters are passed in, so we have to build a new server object"
+                    $inputObjectType = 'Server'
+                    $inputObject = $instance.InputObject
+                } elseif ($instance.Type -like 'SqlConnection') {
+                    Write-Message -Level Verbose -Message "SqlConnection object passed in, will build server object from instance.InputObject, do some checks and then return the server object"
+                    $inputObjectType = 'SqlConnection'
+                    $inputObject = $instance.InputObject
+                } elseif ($instance.Type -like 'RegisteredServer') {
+                    Write-Message -Level Verbose -Message "RegisteredServer object passed in, will build empty server object, set connection string from instance.InputObject.ConnectionString, do some checks and then return the server object"
+                    $inputObjectType = 'RegisteredServer'
+                    $inputObject = $instance.InputObject
+                    $serverName = $instance.FullSmoName
+                    $connectionString = $instance.InputObject.ConnectionString
+                } elseif ($instance.IsConnectionString) {
+                    Write-Message -Level Verbose -Message "Connection string is passed in, will build empty server object, set connection string from instance.InputObject, do some checks and then return the server object"
+                    $inputObjectType = 'ConnectionString'
+                    $serverName = $instance.FullSmoName
+                    $connectionString = $instance.InputObject
+                } else {
+                    Write-Message -Level Verbose -Message "String is passed in, will build server object from instance object and other parameters, do some checks and then return the server object"
+                    $inputObjectType = 'String'
+                    $serverName = $instance.FullSmoName
+                }
 
-                        # TODO: Find a nice way to code this
-                        Write-Message -Level Verbose -Message "But at the moment - we just ignore them"
-                        [Microsoft.SqlServer.Management.Smo.Server]$server = $instance.InputObject
+                # Check for ignored parameters
+                $ignoredParameters = 'ApplicationIntent', 'BatchSeparator', 'ClientName', 'ConnectTimeout', 'EncryptConnection', 'LockTimeout', 'MaxPoolSize', 'MinPoolSize', 'NetworkProtocol', 'NonPooledConnection', 'PacketSize', 'PooledConnectionLifetime', 'SqlExecutionModes', 'StatementTimeout', 'TrustServerCertificate', 'WorkstationId', 'AuthenticationType', 'FailoverPartner', 'MultipleActiveResultSets', 'MultiSubnetFailover', 'AppendConnectionString'
+                if ($inputObjectType -eq 'Server') {
+                    if (Test-Bound -ParameterName $ignoredParameters) {
+                        Write-Message -Level Warning -Message "Additional parameters are passed in, but they will be ignored"
+                    }
+                } elseif ($inputObjectType -in 'SqlConnection', 'RegisteredServer', 'ConnectionString' ) {
+                    if (Test-Bound -ParameterName $ignoredParameters, 'Database') {
+                        Write-Message -Level Warning -Message "Additional parameters are passed in, but they will be ignored"
+                    }
+                }
+                # TODO: Test for SqlCredential as well?
 
-                    } elseif (Test-Bound -ParameterName 'Database') {
+                # Create smo server object
+                if ($inputObjectType -eq 'Server') {
+                    if ($Database) {
                         Write-Message -Level Verbose -Message "Parameter Database passed in, so we clone the connection context"
                         # TODO: Do we have to check if its the same database?
-                        $connContext = $instance.InputObject.ConnectionContext.Copy().GetDatabaseConnection($Database)
-                        [Microsoft.SqlServer.Management.Smo.Server]$server = New-Object -TypeName Microsoft.SqlServer.Management.Smo.Server -ArgumentList $connContext
+                        $server = New-Object -TypeName Microsoft.SqlServer.Management.Smo.Server -ArgumentList $inputObject.ConnectionContext.Copy().GetDatabaseConnection($Database)
                     } else {
-                        [Microsoft.SqlServer.Management.Smo.Server]$server = $instance.InputObject
+                        $server = $inputObject
                     }
-                } elseif ($instance.Type -like "SqlConnection") {
-                    $inputObjectType = 'SqlConnection'
-                    Write-Message -Level Verbose -Message "SqlConnection object passed in, will build server object from instance.InputObject, do some checks and then return the server object"
-                    [Microsoft.SqlServer.Management.Smo.Server]$server = New-Object -TypeName Microsoft.SqlServer.Management.Smo.Server -ArgumentList $instance.InputObject
-                } elseif ($instance.Type -like "RegisteredServer") {
-                    $inputObjectType = 'RegisteredServer'
-                    Write-Message -Level Verbose -Message "RegisteredServer object passed in, will build empty server object, set connection string from instance.InputObject.ConnectionString, do some checks and then return the server object"
-                    [Microsoft.SqlServer.Management.Smo.Server]$server = New-Object -TypeName Microsoft.SqlServer.Management.Smo.Server -ArgumentList $instance.FullSmoName
-                    $server.ConnectionContext.ConnectionString = $instance.InputObject.ConnectionString
-                } elseif ($instance.IsConnectionString) {
-                    $inputObjectType = 'ConnectionString'
-                    Write-Message -Level Verbose -Message "Connection string is passed in, will build empty server object, set connection string from instance.InputObject, do some checks and then return the server object"
-                    [Microsoft.SqlServer.Management.Smo.Server]$server = New-Object -TypeName Microsoft.SqlServer.Management.Smo.Server -ArgumentList $instance.FullSmoName
-                    $server.ConnectionContext.ConnectionString = $instance.InputObject
-                } else {
-                    $inputObjectType = 'String'
-                    Write-Message -Level Verbose -Message "We have to build server object from instance object and other parameters, do some checks and then return the server object"
-                    $connInfo = Get-SqlConnectionInfoObject -ServerName $instance.FullSmoName
-                    $srvConn = New-Object -TypeName Microsoft.SqlServer.Management.Common.ServerConnection -ArgumentList $connInfo
-                    [Microsoft.SqlServer.Management.Smo.Server]$server = New-Object -TypeName Microsoft.SqlServer.Management.Smo.Server -ArgumentList $srvConn
+                } elseif ($inputObjectType -eq 'SqlConnection') {
+                    $server = New-Object -TypeName Microsoft.SqlServer.Management.Smo.Server -ArgumentList $inputObject
+                } elseif ($inputObjectType -in 'RegisteredServer', 'ConnectionString') {
+                    $server = New-Object -TypeName Microsoft.SqlServer.Management.Smo.Server -ArgumentList $serverName
+                    $server.ConnectionContext.ConnectionString = $connectionString
+                } elseif ($inputObjectType -eq 'String') {
+                    # Best way to get connection pooling to work is to use SqlConnectionInfo -> ServerConnection -> Server
+                    $connInfo = New-Object -TypeName Microsoft.SqlServer.Management.Common.SqlConnectionInfo -ArgumentList $serverName
 
-                    # Set properties of ConnectionContext that are not part of the connection info object
+                    # Process SqlCredential to set username
+                    if ($SqlCredential) {
+                        $username = ($SqlCredential.UserName).TrimStart("\")
+                        # support both ad\username and username@ad
+                        if ($username -like "*\*") {
+                            $domain, $login = $username.Split("\")
+                            $username = "$login@$domain"
+                        }
+                    }
+
+                    # I will list all properties of SqlConnectionInfo and set them if value is provided
+
+                    #AccessToken            Property   Microsoft.SqlServer.Management.Common.IRenewableToken AccessToken {get;set;}
+                    # TODO: Can we use this with Azure?
+
+                    #AdditionalParameters   Property   string AdditionalParameters {get;set;}
+                    if ($AppendConnectionString) {
+                        Write-Message -Level Debug -Message "AdditionalParameters will be appended by '$AppendConnectionString'"
+                        $connInfo.AdditionalParameters += ";$AppendConnectionString"
+                    }
+                    if ($FailoverPartner) {
+                        Write-Message -Level Debug -Message "AdditionalParameters will be appended by '$AppendConnectionString'"
+                        $connInfo.AdditionalParameters += ";FailoverPartner=$FailoverPartner"
+                    }
+                    if ($MultiSubnetFailover) {
+                        Write-Message -Level Debug -Message "AdditionalParameters will be appended by '$AppendConnectionString'"
+                        $connInfo.AdditionalParameters += ';MultiSubnetFailover=True'
+                    }
+
+                    #ApplicationIntent      Property   string ApplicationIntent {get;set;}
+                    if ($ApplicationIntent) {
+                        Write-Message -Level Debug -Message "ApplicationIntent will be set to '$ApplicationIntent'"
+                        $connInfo.ApplicationIntent = $ApplicationIntent
+                    }
+
+                    #ApplicationName        Property   string ApplicationName {get;set;}
+                    if ($ClientName) {
+                        Write-Message -Level Debug -Message "ApplicationName will be set to '$ClientName'"
+                        $connInfo.ApplicationName = $ClientName
+                    }
+
+                    #Authentication         Property   Microsoft.SqlServer.Management.Common.SqlConnectionInfo+AuthenticationMethod Authentication {get;set;}
+                    #[Microsoft.SqlServer.Management.Common.SqlConnectionInfo+AuthenticationMethod]::ActiveDirectoryIntegrated
+                    #[Microsoft.SqlServer.Management.Common.SqlConnectionInfo+AuthenticationMethod]::ActiveDirectoryInteractive
+                    #[Microsoft.SqlServer.Management.Common.SqlConnectionInfo+AuthenticationMethod]::ActiveDirectoryPassword
+                    #[Microsoft.SqlServer.Management.Common.SqlConnectionInfo+AuthenticationMethod]::NotSpecified
+                    #[Microsoft.SqlServer.Management.Common.SqlConnectionInfo+AuthenticationMethod]::SqlPassword
+                    if ($AuthenticationType -eq 'AD Universal with MFA Support') {
+                        # Azure AD with Multi-Factor Authentication
+                        # TODO: This is not tested
+                        Write-Message -Level Debug -Message "Authentication will be set to 'ActiveDirectoryInteractive'"
+                        $connInfo.Authentication = [Microsoft.SqlServer.Management.Common.SqlConnectionInfo+AuthenticationMethod]::ActiveDirectoryInteractive
+                    } elseif ((Test-Azure -SqlInstance $instance) -and $SqlCredential -and ($username -like "*@*")) {
+                        # Azure AD account with password
+                        Write-Message -Level Debug -Message "Authentication will be set to 'ActiveDirectoryPassword'"
+                        $connInfo.Authentication = [Microsoft.SqlServer.Management.Common.SqlConnectionInfo+AuthenticationMethod]::ActiveDirectoryPassword
+                    } elseif ((Test-Azure -SqlInstance $instance) -and (-not $SqlCredential)) {
+                        # Azure AD integrated security
+                        Write-Message -Level Debug -Message "Authentication will be set to 'ActiveDirectoryIntegrated'"
+                        $connInfo.Authentication = [Microsoft.SqlServer.Management.Common.SqlConnectionInfo+AuthenticationMethod]::ActiveDirectoryIntegrated
+                    }
+
+                    #ConnectionProtocol     Property   Microsoft.SqlServer.Management.Common.NetworkProtocol ConnectionProtocol {get;set;}
+                    if ($NetworkProtocol) {
+                        Write-Message -Level Debug -Message "ConnectionProtocol will be set to '$NetworkProtocol'"
+                        $connInfo.ConnectionProtocol = $NetworkProtocol
+                    }
+
+                    #ConnectionString       Property   string ConnectionString {get;}
+                    # Only a getter, not a setter - so don't touch
+
+                    #ConnectionTimeout      Property   int ConnectionTimeout {get;set;}
+                    if ($ConnectTimeout) {
+                        Write-Message -Level Debug -Message "ConnectionTimeout will be set to '$ConnectTimeout'"
+                        $connInfo.ConnectionTimeout = $ConnectTimeout
+                    }
+
+                    #DatabaseName           Property   string DatabaseName {get;set;}
+                    if ($Database) {
+                        Write-Message -Level Debug -Message "Database will be set to '$Database'"
+                        $connInfo.DatabaseName = $Database
+                    }
+
+                    #EncryptConnection      Property   bool EncryptConnection {get;set;}
+                    if ($EncryptConnection) {
+                        Write-Message -Level Debug -Message "EncryptConnection will be set to '$EncryptConnection'"
+                        $connInfo.EncryptConnection = $EncryptConnection
+                    }
+
+                    #MaxPoolSize            Property   int MaxPoolSize {get;set;}
+                    if ($MaxPoolSize) {
+                        Write-Message -Level Debug -Message "MaxPoolSize will be set to '$MaxPoolSize'"
+                        $connInfo.MaxPoolSize = $MaxPoolSize
+                    }
+
+                    #MinPoolSize            Property   int MinPoolSize {get;set;}
+                    if ($MinPoolSize) {
+                        Write-Message -Level Debug -Message "MinPoolSize will be set to '$MinPoolSize'"
+                        $connInfo.MinPoolSize = $MinPoolSize
+                    }
+
+                    #PacketSize             Property   int PacketSize {get;set;}
+                    if ($PacketSize) {
+                        Write-Message -Level Debug -Message "PacketSize will be set to '$PacketSize'"
+                        $connInfo.PacketSize = $PacketSize
+                    }
+
+                    #Password               Property   string Password {get;set;}
+                    # We will use SecurePassword
+
+                    #PoolConnectionLifeTime Property   int PoolConnectionLifeTime {get;set;}
+                    if ($PooledConnectionLifetime) {
+                        Write-Message -Level Debug -Message "PoolConnectionLifeTime will be set to '$PooledConnectionLifetime'"
+                        $connInfo.PoolConnectionLifeTime = $PooledConnectionLifetime
+                    }
+
+                    #Pooled                 Property   System.Data.SqlTypes.SqlBoolean Pooled {get;set;}
+                    # TODO: Do we need or want the else path or is it the default and we better don't touch it?
+                    if ($NonPooledConnection) {
+                        Write-Message -Level Debug -Message "Pooled will be set to '$false'"
+                        $connInfo.Pooled = $false
+                    } else {
+                        Write-Message -Level Debug -Message "Pooled will be set to '$true'"
+                        $connInfo.Pooled = $true
+                    }
+
+                    #QueryTimeout           Property   int QueryTimeout {get;set;}
+                    if ($StatementTimeout) {
+                        Write-Message -Level Debug -Message "QueryTimeout will be set to '$StatementTimeout'"
+                        $connInfo.QueryTimeout = $StatementTimeout
+                    }
+
+                    #SecurePassword         Property   securestring SecurePassword {get;set;}
+                    if ($SqlCredential) {
+                        Write-Message -Level Debug -Message "SecurePassword will be set"
+                        $connInfo.SecurePassword = $SqlCredential.Password
+                    }
+
+                    #ServerCaseSensitivity  Property   Microsoft.SqlServer.Management.Common.ServerCaseSensitivity ServerCaseSensitivity {get;set;}
+
+                    #ServerName             Property   string ServerName {get;set;}
+                    # Was already set by the constructor.
+                    # TODO: Or do we want to set it here?
+
+                    #ServerType             Property   Microsoft.SqlServer.Management.Common.ConnectionType ServerType {get;}
+                    # Only a getter, not a setter - so don't touch
+
+                    #ServerVersion          Property   Microsoft.SqlServer.Management.Common.ServerVersion ServerVersion {get;set;}
+                    # We can set that? No, we don't want to...
+
+                    #TrustServerCertificate Property   bool TrustServerCertificate {get;set;}
+                    if ($TrustServerCertificate) {
+                        Write-Message -Level Debug -Message "TrustServerCertificate will be set to '$TrustServerCertificate'"
+                        $connInfo.TrustServerCertificate = $TrustServerCertificate
+                    }
+
+                    #UseIntegratedSecurity  Property   bool UseIntegratedSecurity {get;set;}
+                    if ($SqlCredential) {
+                        Write-Message -Level Debug -Message "UseIntegratedSecurity will be set to '$false'"
+                        $connInfo.UseIntegratedSecurity = $false
+                    } else {
+                        Write-Message -Level Debug -Message "UseIntegratedSecurity will be set to '$true'"
+                        $connInfo.UseIntegratedSecurity = $true
+                    }
+
+                    #UserName               Property   string UserName {get;set;}
+                    if ($SqlCredential) {
+                        Write-Message -Level Debug -Message "UserName will be set to '$username'"
+                        $connInfo.UserName = $username
+                    }
+
+                    #WorkstationId          Property   string WorkstationId {get;set;}
+                    if ($WorkstationId) {
+                        Write-Message -Level Debug -Message "WorkstationId will be set to '$WorkstationId'"
+                        $connInfo.WorkstationId = $WorkstationId
+                    }
+
+                    $srvConn = New-Object -TypeName Microsoft.SqlServer.Management.Common.ServerConnection -ArgumentList $connInfo
+                    $server = New-Object -TypeName Microsoft.SqlServer.Management.Smo.Server -ArgumentList $srvConn
+
+                    # Set properties of ConnectionContext that are not part of SqlConnectionInfo
                     if (Test-Bound -ParameterName 'BatchSeparator') {
                         $server.ConnectionContext.BatchSeparator = $BatchSeparator
                     }
@@ -704,6 +752,7 @@ function Connect-DbaInstance {
                 Write-Message -Level Debug -Message "The masked server.ConnectionContext.ConnectionString is $maskedConnString"
 
                 if ($server.ConnectionContext.IsOpen -eq $false) {
+                    # TODO: IsOpen is always $false - why? Is there a better way to test and avoid unnessasary Open() calls?
                     Write-Message -Level Debug -Message "We connect to the instance with server.ConnectionContext.SqlConnectionObject.Open()"
                     try {
                         # Don't use $server.ConnectionContext.Connect() - this would create a non pooled connection
@@ -715,45 +764,45 @@ function Connect-DbaInstance {
                 }
                 Write-Message -Level Debug -Message "We have a connected server object"
 
+                if ($AzureUnsupported -and $server.DatabaseEngineType -eq "SqlAzureDatabase") {
+                    Stop-Function -Message "Azure SQL Database not supported" -Continue
+                }
+
                 if ($MinimumVersion -and $server.VersionMajor) {
                     if ($server.VersionMajor -lt $MinimumVersion) {
                         Stop-Function -Message "SQL Server version $MinimumVersion required - $server not supported." -Continue
                     }
                 }
 
-                if ($AzureUnsupported -and $server.DatabaseEngineType -eq "SqlAzureDatabase") {
-                    Stop-Function -Message "Azure SQL Database not supported" -Continue
-                }
-
                 if ($SqlConnectionOnly) {
                     Write-Message -Level Debug -Message "We return only SqlConnection in server.ConnectionContext.SqlConnectionObject"
                     $server.ConnectionContext.SqlConnectionObject
                     continue
-                } else {
-                    if (-not $server.ComputerName) {
-                        Add-Member -InputObject $server -NotePropertyName IsAzure -NotePropertyValue (Test-Azure -SqlInstance $instance) -Force
-                        Add-Member -InputObject $server -NotePropertyName ComputerName -NotePropertyValue $instance.ComputerName -Force
-                        Add-Member -InputObject $server -NotePropertyName DbaInstanceName -NotePropertyValue $instance.InstanceName -Force
-                        Add-Member -InputObject $server -NotePropertyName NetPort -NotePropertyValue $instance.Port -Force
-                        Add-Member -InputObject $server -NotePropertyName ConnectedAs -NotePropertyValue $server.ConnectionContext.TrueLogin -Force
-                        Write-Message -Level Debug -Message "We added IsAzure = '$($server.IsAzure)', ComputerName = instance.ComputerName = '$($server.ComputerName)', DbaInstanceName = instance.InstanceName = '$($server.DbaInstanceName)', NetPort = instance.Port = '$($server.NetPort)', ConnectedAs = server.ConnectionContext.TrueLogin = '$($server.ConnectedAs)'"
-                    }
-
-                    Write-Message -Level Debug -Message "We return the server object"
-                    $server
-
-                    # TODO: Do we need this every time? How does it work exactly?
-                    # Register the connected instance, so that the TEPP updater knows it's been connected to and starts building the cache
-                    [Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::SetInstance($instance.FullSmoName.ToLowerInvariant(), $server.ConnectionContext.Copy(), ($server.ConnectionContext.FixedServerRoles -match "SysAdmin"))
-
-                    # Update cache for instance names
-                    if ([Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Cache["sqlinstance"] -notcontains $instance.FullSmoName.ToLowerInvariant()) {
-                        [Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Cache["sqlinstance"] += $instance.FullSmoName.ToLowerInvariant()
-                    }
-
-                    Write-Message -Level Debug -Message "We are finished with this instance"
-                    continue
                 }
+
+                if (-not $server.ComputerName) {
+                    Add-Member -InputObject $server -NotePropertyName IsAzure -NotePropertyValue (Test-Azure -SqlInstance $instance) -Force
+                    Add-Member -InputObject $server -NotePropertyName ComputerName -NotePropertyValue $instance.ComputerName -Force
+                    Add-Member -InputObject $server -NotePropertyName DbaInstanceName -NotePropertyValue $instance.InstanceName -Force
+                    Add-Member -InputObject $server -NotePropertyName NetPort -NotePropertyValue $instance.Port -Force
+                    Add-Member -InputObject $server -NotePropertyName ConnectedAs -NotePropertyValue $server.ConnectionContext.TrueLogin -Force
+                    Write-Message -Level Debug -Message "We added IsAzure = '$($server.IsAzure)', ComputerName = instance.ComputerName = '$($server.ComputerName)', DbaInstanceName = instance.InstanceName = '$($server.DbaInstanceName)', NetPort = instance.Port = '$($server.NetPort)', ConnectedAs = server.ConnectionContext.TrueLogin = '$($server.ConnectedAs)'"
+                }
+
+                Write-Message -Level Debug -Message "We return the server object"
+                $server
+
+                # TODO: Do we need this every time? How does it work exactly?
+                # Register the connected instance, so that the TEPP updater knows it's been connected to and starts building the cache
+                [Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::SetInstance($instance.FullSmoName.ToLowerInvariant(), $server.ConnectionContext.Copy(), ($server.ConnectionContext.FixedServerRoles -match "SysAdmin"))
+
+                # Update cache for instance names
+                if ([Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Cache["sqlinstance"] -notcontains $instance.FullSmoName.ToLowerInvariant()) {
+                    [Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Cache["sqlinstance"] += $instance.FullSmoName.ToLowerInvariant()
+                }
+
+                Write-Message -Level Debug -Message "We are finished with this instance"
+                continue
             }
             <#
             This is the end of the experimental code path.
