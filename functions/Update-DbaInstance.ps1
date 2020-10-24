@@ -86,6 +86,11 @@ function Update-DbaInstance {
         A list of extra arguments to pass to the execution file. Accepts one or more strings containing command line parameters.
         Example: ... -ArgumentList "/SkipRules=RebootRequiredCheck", "/Q"
 
+    .PARAMETER Download
+        Download missing KBs to the first folder specified in the -Path parameter.
+        Files would be first downloaded to the local machine (TEMP folder), and then distributed onto remote machines if needed.
+        If the Path is a network Path, the files would be downloaded straight to the network folder and executed from there.
+
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
 
@@ -191,6 +196,7 @@ function Update-DbaInstance {
         [string]$Authentication = @('CredSSP', 'Default')[$null -eq $Credential],
         [string]$ExtractPath,
         [string[]]$ArgumentList,
+        [switch]$Download,
         [switch]$EnableException
 
     )
@@ -310,6 +316,7 @@ function Update-DbaInstance {
         $resolvedComputers = $resolvedComputers | Sort-Object -Unique
         #Process planned actions and gather installation actions
         $installActions = @()
+        $downloads = @()
         :computers foreach ($resolvedName in $resolvedComputers) {
             $activity = "Preparing to update SQL Server on $resolvedName"
             ## Find the current version on the computer
@@ -395,6 +402,8 @@ function Update-DbaInstance {
                     }
                     if ($installer) {
                         $detail.Installer = $installer.FullName
+                    } elseif ($Download) {
+                        $downloads += [PSCustomObject]@{ KB = $detail.KB; Architecture = $detail.Architecture }
                     } else {
                         Stop-Function -Message "Could not find installer for the SQL$($detail.MajorVersion) update KB$($detail.KB)" -Continue
                     }
@@ -420,6 +429,73 @@ function Update-DbaInstance {
             }
             Write-Progress -Activity $activity -Completed
         }
+        # Download and distribute updates if needed
+        $downloadedKbs = @()
+        foreach ($kbItem in $downloads | Select-Object -Unique -Property KB, Architecture) {
+            if ($pathIsNetwork) {
+                $downloadPath = $Path[0]
+            } else {
+                $downloadPath = [System.IO.Path]::GetTempPath()
+            }
+            try {
+                $downloadedKbs += [PSCustomObject]@{
+                    FileItem     = Save-DbaKbUpdate -Name $kbItem.KB -Path $downloadPath -Architecture $kbItem.Architecture -EnableException
+                    KB           = $kbItem.KB
+                    Architecture = $kbItem.Architecture
+                }
+            } catch {
+                Stop-Function -Message "Could not download installer for KB$($kbItem.KB)($($kbItem.Architecture)): $_" -Continue
+            }
+        }
+        # if path is not on the network, upload the patch to each remote computer
+        if (-Not $pathIsNetwork -and $downloadedKbs) {
+            # find unique KB/Architecture combos without an Installer
+            $groupedRequirements = $installActions | ForEach-Object {
+                foreach ($action in $_.Actions | Where-Object { -Not $_.Installer }) {
+                    [PSCustomObject]@{ComputerName = $_.ComputerName; KB = $action.KB; Architecture = $action.Architecture }
+                }
+            } | Group-Object -Property KB, Architecture
+            # For each such combo copy the file to the remote (or local) server
+            foreach ($groupKB in $groupedRequirements) {
+                $fileItem = ($downloadedKbs | Where-Object { $_.KB -eq $groupKB.Values[0] -and $_.Architecture -eq $groupKB.Values[1] }).FileItem
+                $filePath = Join-Path $Path $fileItem.Name
+                foreach ($groupItem in $groupKB.Group) {
+                    if (([DbaInstanceParameter]$groupItem.ComputerName).IsLocalHost) {
+                        try {
+                            Move-Item -Path $fileItem.FullName -Destination $Path[0] -ErrorAction Stop
+                        } catch {
+                            Stop-Function -Message "Could not move installer $($fileItem.FullName) locally to $($Path[0]): $_" -Continue
+                        }
+                    } else {
+                        $sessionSplat = @{
+                            ComputerName = $groupItem.ComputerName
+                        }
+                        if ($Credential) { $sessionSplat.Credential = $Credential }
+                        try {
+                            $session = New-PSSession @sessionSplat
+                            $null = Send-File -Path $fileItem.FullName -Destination $Path[0] -Session $session
+                        } catch {
+                            Stop-Function -Message "Could not move installer $($fileItem.FullName) to $($Path[0]) on $($groupItem.ComputerName): $_" -Continue
+                        } finally {
+                            if ($session) {
+                                $session | Remove-PSSession
+                                $session = $null
+                            }
+                        }
+                    }
+                    # Update appropriate action
+                    $installAction = $installActions | Where-Object ComputerName -eq $groupItem.ComputerName
+                    $action = $installAction.Actions | Where-Object { $_.KB -eq $groupItem.KB -and $_.Architecture -eq $groupItem.Architecture }
+                    $action.Installer = $filePath
+                }
+
+            }
+            # finally, remove temp files
+            foreach ($downloadedKb in $downloadedKbs) {
+                $null = Remove-Item $downloadedKb.FileItem.FullName -Force
+            }
+        }
+
         # Declare the installation script
         $installScript = {
             $updateSplat = @{
