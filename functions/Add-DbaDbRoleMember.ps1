@@ -148,7 +148,7 @@ function Add-DbaDbRoleMember {
                             }
                         }
                     } else {
-                        Write-Message -Level 'Verbose' -Message "User $username does not exist in $db on $instance"
+                        Write-Message -Level 'Warning' -Message "User $username does not exist in $db on $instance"
                     }
                 }
             }
