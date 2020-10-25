@@ -359,7 +359,8 @@ function Copy-DbaLogin {
                         LoginRenameHashtable = $LoginRenameHashtable
                     }
                     if ($Login.DefaultDatabase -notin $destServer.Databases.Name) {
-                        Write-Message -Level Warning -Message "Database $($Login.DefaultDatabase) does not exist on $destServer, switching DefaultDatabase to 'master' for $($Login.Name)"
+                        $copyLoginStatus.Notes = "Database $($Login.DefaultDatabase) does not exist on $destServer, switching DefaultDatabase to 'master' for $($Login.Name)"
+                        Write-Message -Level Warning -Message $copyLoginStatus.Notes
                         $splatNewLogin.DefaultDatabase = 'master'
                     }
                     $destLogin = New-DbaLogin @splatNewLogin -EnableException:$true
