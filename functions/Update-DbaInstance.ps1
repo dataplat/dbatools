@@ -319,12 +319,11 @@ function Update-DbaInstance {
             $newpath = Join-Path "\\$servername\" $Path.replace(':', '$')
             return $newpath
         }
-        function Start-FileTransfer {
+        function Copy-UncFile {
             <#
 
                 SYNOPSIS
-                Internal function. Uses BITS to transfer a file to
-                another server over admin UNC paths.
+                Internal function. Uses PSDrive to copy file to the remote system.
 
                 #>
             param (
@@ -363,13 +362,29 @@ function Update-DbaInstance {
                 }
             }
         }
+        function Test-NetworkPath {
+            <#
+
+            SYNOPSIS
+            Internal function. Tests if a path is a network path
+
+            #>
+            param (
+                [Parameter(ValueFromPipeline)]
+                [string]$Path
+            )
+            begin { $pathList = @() }
+            process { $pathList += $Path -like '\\*' }
+            end { return $pathList -contains $true }
+        }
     }
+
     process {
         if (Test-FunctionInterrupt) { return }
 
         #Resolve all the provided names
         $resolvedComputers = @()
-        $pathIsNetwork = $Path | ForEach-Object -Begin { $o = @() } -Process { $o += $_ -like '\\*' } -End { $o -contains $true }
+        $pathIsNetwork = $Path | Test-NetworkPath
         foreach ($computer in $ComputerName) {
             $null = Test-ElevationRequirement -ComputerName $computer -Continue
             if (!$computer.IsLocalHost -and -not $notifiedCredentials -and -not $Credential -and $pathIsNetwork) {
@@ -499,8 +514,9 @@ function Update-DbaInstance {
         }
         # Download and distribute updates if needed
         $downloadedKbs = @()
+        $mainPathIsNetwork = $Path[0] | Test-NetworkPath
         foreach ($kbItem in $downloads | Select-Object -Unique -Property KB, Architecture) {
-            if ($pathIsNetwork) {
+            if ($mainPathIsNetwork) {
                 $downloadPath = $Path[0]
             } else {
                 $downloadPath = [System.IO.Path]::GetTempPath()
@@ -516,22 +532,25 @@ function Update-DbaInstance {
             }
         }
         # if path is not on the network, upload the patch to each remote computer
-        if (-Not $pathIsNetwork -and $downloadedKbs) {
+        if ($downloadedKbs) {
             # find unique KB/Architecture combos without an Installer
             $groupedRequirements = $installActions | ForEach-Object {
                 foreach ($action in $_.Actions | Where-Object { -Not $_.Installer }) {
                     [PSCustomObject]@{ComputerName = $_.ComputerName; KB = $action.KB; Architecture = $action.Architecture }
                 }
             } | Group-Object -Property KB, Architecture
-            # For each such combo copy the file to the remote (or local) server
+            # for each such combo, .Installer paths need to be updated and, potentially, files copied
             foreach ($groupKB in $groupedRequirements) {
                 $fileItem = ($downloadedKbs | Where-Object { $_.KB -eq $groupKB.Values[0] -and $_.Architecture -eq $groupKB.Values[1] }).FileItem
-                $filePath = Join-Path $Path $fileItem.Name
+                $filePath = Join-Path $Path[0] $fileItem.Name
                 foreach ($groupItem in $groupKB.Group) {
-                    try {
-                        $null = Start-FileTransfer -ComputerName $groupItem.ComputerName -Path $fileItem.FullName -Destination $Path[0] -Credential $Credential
-                    } catch {
-                        Stop-Function -Message "Could not move installer $($fileItem.FullName) to $($Path[0]) on $($groupItem.ComputerName): $_" -Continue
+                    if (-Not $mainPathIsNetwork) {
+                        # For each KB, copy the file to the remote (or local) server
+                        try {
+                            $null = Copy-UncFile -ComputerName $groupItem.ComputerName -Path $fileItem.FullName -Destination $Path[0] -Credential $Credential
+                        } catch {
+                            Stop-Function -Message "Could not move installer $($fileItem.FullName) to $($Path[0]) on $($groupItem.ComputerName): $_" -Continue
+                        }
                     }
                     # Update appropriate action
                     $installAction = $installActions | Where-Object ComputerName -eq $groupItem.ComputerName
