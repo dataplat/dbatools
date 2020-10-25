@@ -525,7 +525,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
             }
             #Mock some of the file-related calls
             Mock -CommandName Remove-Item -ModuleName dbatools -MockWith { }
-            Mock -CommandName Start-BitsTransfer -ModuleName dbatools -MockWith { }
+            Mock -CommandName Copy-Item -ModuleName dbatools -MockWith { }
             Mock -CommandName Find-SqlInstanceUpdate -ModuleName dbatools -MockWith { }
             Mock -CommandName Save-DbaKbUpdate -ModuleName dbatools -MockWith {
                 [pscustomobject]@{

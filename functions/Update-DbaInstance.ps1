@@ -352,13 +352,10 @@ function Update-DbaInstance {
                     PSProvider = 'FileSystem'
                 }
                 if ($Credential) { $driveSplat.Credential = $Credential }
-                $null = New-PSDrive @driveSplat
+                $null = New-PSDrive @driveSplat -ErrorAction Stop
                 $remoteFolder = 'UpdateCopy:\'
             }
             try {
-                Start-BitsTransfer -Source $Path -Destination $remoteFolder -ErrorAction Stop
-            } catch {
-                Write-Message -Level Verbose -Message "Start-BitsTransfer did not succeed. Now attempting with Copy-Item - no progress bar will be shown."
                 Copy-Item -Path $Path -Destination $remoteFolder -ErrorAction Stop
             } finally {
                 if (-Not ([DbaInstanceParameter]$groupItem.ComputerName).IsLocalHost) {
