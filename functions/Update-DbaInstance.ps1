@@ -295,6 +295,77 @@ function Update-DbaInstance {
                 Write-Message -Level Warning -Message "Update failed: $($_.Notes -join ' | ')"
             }
         }
+        function Join-AdminUnc {
+            <#
+                .SYNOPSIS
+                Internal function. Parses a path to make it an admin UNC.
+            #>
+            [CmdletBinding()]
+            param (
+                [Parameter(Mandatory)]
+                [ValidateNotNullOrEmpty()]
+                [DbaInstanceParameter]$ComputerName,
+
+                [Parameter(Mandatory)]
+                [ValidateNotNullOrEmpty()]
+                [string]$Path
+
+            )
+            if ($Path.StartsWith("\\")) {
+                return $filepath
+            }
+
+            $servername = $ComputerName.ComputerName
+            $newpath = Join-Path "\\$servername\" $Path.replace(':', '$')
+            return $newpath
+        }
+        function Start-FileTransfer {
+            <#
+
+                SYNOPSIS
+                Internal function. Uses BITS to transfer a file to
+                another server over admin UNC paths.
+
+                #>
+            param (
+                [Parameter(Mandatory)]
+                [ValidateNotNullOrEmpty()]
+                [DbaInstanceParameter]$ComputerName,
+
+                [Parameter(Mandatory)]
+                [ValidateNotNullOrEmpty()]
+                [string]$Path,
+
+                [Parameter(Mandatory)]
+                [ValidateNotNullOrEmpty()]
+                [string]$Destination,
+
+                [PSCredential]$Credential
+            )
+            if (([DbaInstanceParameter]$groupItem.ComputerName).IsLocalHost) {
+                $remoteFolder = $Destination
+            } else {
+                $uncFileName = Join-AdminUnc -ComputerName $ComputerName -Path $Destination
+                $driveSplat = @{
+                    Name       = 'UpdateCopy'
+                    Root       = $uncFileName
+                    PSProvider = 'FileSystem'
+                }
+                if ($Credential) { $driveSplat.Credential = $Credential }
+                $null = New-PSDrive @driveSplat
+                $remoteFolder = 'UpdateCopy:\'
+            }
+            try {
+                Start-BitsTransfer -Source $Path -Destination $remoteFolder -ErrorAction Stop
+            } catch {
+                Write-Message -Level Verbose -Message "Start-BitsTransfer did not succeed. Now attempting with Copy-Item - no progress bar will be shown."
+                Copy-Item -Path $Path -Destination $remoteFolder -ErrorAction Stop
+            } finally {
+                if (-Not ([DbaInstanceParameter]$groupItem.ComputerName).IsLocalHost) {
+                    $null = Remove-PSDrive -Name UpdateCopy -Force
+                }
+            }
+        }
     }
     process {
         if (Test-FunctionInterrupt) { return }
@@ -460,28 +531,10 @@ function Update-DbaInstance {
                 $fileItem = ($downloadedKbs | Where-Object { $_.KB -eq $groupKB.Values[0] -and $_.Architecture -eq $groupKB.Values[1] }).FileItem
                 $filePath = Join-Path $Path $fileItem.Name
                 foreach ($groupItem in $groupKB.Group) {
-                    if (([DbaInstanceParameter]$groupItem.ComputerName).IsLocalHost) {
-                        try {
-                            Copy-Item -Path $fileItem.FullName -Destination $Path[0] -ErrorAction Stop
-                        } catch {
-                            Stop-Function -Message "Could not move installer $($fileItem.FullName) locally to $($Path[0]): $_" -Continue
-                        }
-                    } else {
-                        $sessionSplat = @{
-                            ComputerName = $groupItem.ComputerName
-                        }
-                        if ($Credential) { $sessionSplat.Credential = $Credential }
-                        try {
-                            $session = New-PSSession @sessionSplat
-                            $null = Send-File -Path $fileItem.FullName -Destination $Path[0] -Session $session
-                        } catch {
-                            Stop-Function -Message "Could not move installer $($fileItem.FullName) to $($Path[0]) on $($groupItem.ComputerName): $_" -Continue
-                        } finally {
-                            if ($session) {
-                                $session | Remove-PSSession
-                                $session = $null
-                            }
-                        }
+                    try {
+                        $null = Start-FileTransfer -ComputerName $groupItem.ComputerName -Path $fileItem.FullName -Destination $Path[0] -Credential $Credential
+                    } catch {
+                        Stop-Function -Message "Could not move installer $($fileItem.FullName) to $($Path[0]) on $($groupItem.ComputerName): $_" -Continue
                     }
                     # Update appropriate action
                     $installAction = $installActions | Where-Object ComputerName -eq $groupItem.ComputerName
