@@ -550,9 +550,6 @@ function Connect-DbaInstance {
                     $server = New-Object -TypeName Microsoft.SqlServer.Management.Smo.Server -ArgumentList $serverName
                     $server.ConnectionContext.ConnectionString = $connectionString
                 } elseif ($inputObjectType -eq 'String') {
-                    # Best way to get connection pooling to work is to use SqlConnectionInfo -> ServerConnection -> Server
-                    $connInfo = New-Object -TypeName Microsoft.SqlServer.Management.Common.SqlConnectionInfo -ArgumentList $serverName
-
                     # Process SqlCredential to set username
                     if ($SqlCredential) {
                         $username = ($SqlCredential.UserName).TrimStart("\")
@@ -562,6 +559,36 @@ function Connect-DbaInstance {
                             $username = "$login@$domain"
                         }
                     }
+
+                    # Identify authentication method
+                    if ($AuthenticationType -ne 'Auto') {
+                        $authType = $AuthenticationType
+                    } else {
+                        if (Test-Azure -SqlInstance $instance) {
+                            $authType = 'azure '
+                        } else {
+                            $authType = 'local '
+                        }
+                        if ($SqlCredential) {
+                            # support both ad\username and username@ad
+                            $username = ($SqlCredential.UserName).TrimStart("\")
+                            if ($username -like "*\*") {
+                                $domain, $login = $username.Split("\")
+                                $username = "$login@$domain"
+                            }
+                            if ($username -like '*@*') {
+                                $authType += 'ad'
+                            } else {
+                                $authType += 'sql'
+                            }
+                        } else {
+                            $authType += 'integrated'
+                        }
+                    }
+                    Write-Message -Level Verbose -Message "authentication method is '$authType'"
+
+                    # Best way to get connection pooling to work is to use SqlConnectionInfo -> ServerConnection -> Server
+                    $connInfo = New-Object -TypeName Microsoft.SqlServer.Management.Common.SqlConnectionInfo -ArgumentList $serverName
 
                     # I will list all properties of SqlConnectionInfo and set them if value is provided
 
@@ -600,19 +627,20 @@ function Connect-DbaInstance {
                     #[Microsoft.SqlServer.Management.Common.SqlConnectionInfo+AuthenticationMethod]::ActiveDirectoryPassword
                     #[Microsoft.SqlServer.Management.Common.SqlConnectionInfo+AuthenticationMethod]::NotSpecified
                     #[Microsoft.SqlServer.Management.Common.SqlConnectionInfo+AuthenticationMethod]::SqlPassword
-                    if ($AuthenticationType -eq 'AD Universal with MFA Support') {
+                    if ($authType -eq 'AD Universal with MFA Support') {
                         # Azure AD with Multi-Factor Authentication
                         # TODO: This is not tested
                         Write-Message -Level Debug -Message "Authentication will be set to 'ActiveDirectoryInteractive'"
                         $connInfo.Authentication = [Microsoft.SqlServer.Management.Common.SqlConnectionInfo+AuthenticationMethod]::ActiveDirectoryInteractive
-                    } elseif ((Test-Azure -SqlInstance $instance) -and $SqlCredential -and ($username -like "*@*")) {
+                    } elseif ($authType -eq 'azure integrated') {
+                        # Azure AD integrated security
+                        # TODO: This is not tested
+                        Write-Message -Level Debug -Message "Authentication will be set to 'ActiveDirectoryIntegrated'"
+                        $connInfo.Authentication = [Microsoft.SqlServer.Management.Common.SqlConnectionInfo+AuthenticationMethod]::ActiveDirectoryIntegrated
+                    } elseif ($authType -eq 'azure ad') {
                         # Azure AD account with password
                         Write-Message -Level Debug -Message "Authentication will be set to 'ActiveDirectoryPassword'"
                         $connInfo.Authentication = [Microsoft.SqlServer.Management.Common.SqlConnectionInfo+AuthenticationMethod]::ActiveDirectoryPassword
-                    } elseif ((Test-Azure -SqlInstance $instance) -and (-not $SqlCredential)) {
-                        # Azure AD integrated security
-                        Write-Message -Level Debug -Message "Authentication will be set to 'ActiveDirectoryIntegrated'"
-                        $connInfo.Authentication = [Microsoft.SqlServer.Management.Common.SqlConnectionInfo+AuthenticationMethod]::ActiveDirectoryIntegrated
                     }
 
                     #ConnectionProtocol     Property   Microsoft.SqlServer.Management.Common.NetworkProtocol ConnectionProtocol {get;set;}
@@ -686,7 +714,7 @@ function Connect-DbaInstance {
                     }
 
                     #SecurePassword         Property   securestring SecurePassword {get;set;}
-                    if ($SqlCredential) {
+                    if ($authType -in 'azure ad', 'azure sql', 'local sql') {
                         Write-Message -Level Debug -Message "SecurePassword will be set"
                         $connInfo.SecurePassword = $SqlCredential.Password
                     }
@@ -710,16 +738,10 @@ function Connect-DbaInstance {
                     }
 
                     #UseIntegratedSecurity  Property   bool UseIntegratedSecurity {get;set;}
-                    if ($SqlCredential) {
-                        Write-Message -Level Debug -Message "UseIntegratedSecurity will be set to '$false'"
-                        $connInfo.UseIntegratedSecurity = $false
-                    } else {
-                        Write-Message -Level Debug -Message "UseIntegratedSecurity will be set to '$true'"
-                        $connInfo.UseIntegratedSecurity = $true
-                    }
+                    # TODO: Do we have to set this?
 
                     #UserName               Property   string UserName {get;set;}
-                    if ($SqlCredential) {
+                    if ($authType -in 'azure ad', 'azure sql', 'local sql') {
                         Write-Message -Level Debug -Message "UserName will be set to '$username'"
                         $connInfo.UserName = $username
                     }
@@ -731,6 +753,19 @@ function Connect-DbaInstance {
                     }
 
                     $srvConn = New-Object -TypeName Microsoft.SqlServer.Management.Common.ServerConnection -ArgumentList $connInfo
+
+                    if ($authType -eq 'local ad') {
+                        Write-Message -Level Debug -Message "ConnectAsUser will be set to '$true'"
+                        $srvConn.ConnectAsUser = $true
+
+                        Write-Message -Level Debug -Message "ConnectAsUserName will be set to '$username'"
+                        $srvConn.ConnectAsUserName = $username
+
+                        Write-Message -Level Debug -Message "ConnectAsUserPassword will be set"
+                        $srvConn.ConnectAsUserPassword = $SqlCredential.GetNetworkCredential().Password
+                    }
+                    Write-Message -Level Debug -Message "TrueLogin is '$($srvConn.TrueLogin)'"
+
                     $server = New-Object -TypeName Microsoft.SqlServer.Management.Smo.Server -ArgumentList $srvConn
 
                     # Set properties of ConnectionContext that are not part of SqlConnectionInfo
