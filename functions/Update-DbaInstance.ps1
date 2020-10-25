@@ -169,6 +169,12 @@ function Update-DbaInstance {
         Additional command line parameters would be passed to the executable.
         Binary files for the update will be searched among all files and folders recursively in \\network\share.
 
+    .EXAMPLE
+        PS C:\> Update-DbaInstance -ComputerName SQL1 -Version CU3 -Download -Path \\network\share -Confirm:$false
+
+        Downloads an appropriate CU KB to \\network\share and installs it onto SQL1.
+        Does not prompt for confirmation.
+
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High', DefaultParameterSetName = 'Version')]
     Param (
