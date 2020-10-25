@@ -559,9 +559,11 @@ function Update-DbaInstance {
                 }
 
             }
-            # finally, remove temp files
-            foreach ($downloadedKb in $downloadedKbs) {
-                $null = Remove-Item $downloadedKb.FileItem.FullName -Force
+            if (-Not $mainPathIsNetwork) {
+                # remove temp files
+                foreach ($downloadedKb in $downloadedKbs) {
+                    $null = Remove-Item $downloadedKb.FileItem.FullName -Force
+                }
             }
         }
 
