@@ -462,7 +462,7 @@ function Update-DbaInstance {
                 foreach ($groupItem in $groupKB.Group) {
                     if (([DbaInstanceParameter]$groupItem.ComputerName).IsLocalHost) {
                         try {
-                            Move-Item -Path $fileItem.FullName -Destination $Path[0] -ErrorAction Stop
+                            Copy-Item -Path $fileItem.FullName -Destination $Path[0] -ErrorAction Stop
                         } catch {
                             Stop-Function -Message "Could not move installer $($fileItem.FullName) locally to $($Path[0]): $_" -Continue
                         }
