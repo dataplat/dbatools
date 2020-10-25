@@ -550,16 +550,6 @@ function Connect-DbaInstance {
                     $server = New-Object -TypeName Microsoft.SqlServer.Management.Smo.Server -ArgumentList $serverName
                     $server.ConnectionContext.ConnectionString = $connectionString
                 } elseif ($inputObjectType -eq 'String') {
-                    # Process SqlCredential to set username
-                    if ($SqlCredential) {
-                        $username = ($SqlCredential.UserName).TrimStart("\")
-                        # support both ad\username and username@ad
-                        if ($username -like "*\*") {
-                            $domain, $login = $username.Split("\")
-                            $username = "$login@$domain"
-                        }
-                    }
-
                     # Identify authentication method
                     if ($AuthenticationType -ne 'Auto') {
                         $authType = $AuthenticationType
