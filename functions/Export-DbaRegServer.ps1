@@ -82,12 +82,6 @@ function Export-DbaRegServer {
         [object[]]$InputObject,
         [string]$Path = (Get-DbatoolsConfigValue -FullName 'Path.DbatoolsExport'),
         [Alias("OutFile", "FileName")]
-        [ValidateScript( {
-                if ($_.FullName -notmatch "\.xml$|\.regsrvr$") {
-                    throw "The FilePath specified must end with either .xml or .regsrvr"
-                }
-                return $true
-            })]
         [System.IO.FileInfo]$FilePath,
         [ValidateSet("None", "PersistLoginName", "PersistLoginNameAndPassword")]
         [string]$CredentialPersistenceType = "None",
@@ -103,10 +97,16 @@ function Export-DbaRegServer {
         # ValidateScript in the above param block relies on the order of the params specified by the user,
         # so the creation of the file path and $Overwrite are evaluated here
         if ($PSBoundParameters.ContainsKey("FilePath")) {
+            if ($FilePath.FullName -notmatch "\.xml$|\.regsrvr$") {
+                Stop-Function -Message "The FilePath specified must end with either .xml or .regsrvr"
+                return
+            }
+
             if (-not (Test-Path $FilePath) ) {
                 New-Item -Path $FilePath.DirectoryName -ItemType "directory" -Force | Out-Null # make sure the parent dir exists
             } elseif (-not $Overwrite.IsPresent) {
-                throw [System.Management.Automation.RuntimeException] "Use the -Overwrite parameter if the file $FilePath should be overwritten."
+                Stop-Function -Message "Use the -Overwrite parameter if the file $FilePath should be overwritten."
+                return
             }
         }
     }

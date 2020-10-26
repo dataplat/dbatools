@@ -86,7 +86,8 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
 
     It "Try to create an invalid file using FilePath" {
         $outputFileName = "C:\temp\dbatoolsci-regsrvr-export-$random.txt"
-        { Export-DbaRegServer -SqlInstance $script:instance2 -FilePath $outputFileName } | Should -Throw -ErrorId "ParameterArgumentValidationError,Export-DbaRegServer"
+        $results = Export-DbaRegServer -SqlInstance $script:instance2 -FilePath $outputFileName
+        $results.length | Should -Be 0
     }
 
     It "Create an xml file using the FilePath alias FileName in a directory that does not yet exist" {
@@ -103,7 +104,8 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         $results.FullName | Should -Be $outputFileName
 
         # test without -Overwrite
-        { Export-DbaRegServer -SqlInstance $script:instance2 -FilePath $outputFileName } | Should -Throw -ErrorId "RuntimeException"
+        $invalidResults = Export-DbaRegServer -SqlInstance $script:instance2 -FilePath $outputFileName
+        $invalidResults.length | Should -Be 0
 
         # test with -Overwrite
         $resultsOverwrite = Export-DbaRegServer -SqlInstance $script:instance2 -FilePath $outputFileName -Overwrite
