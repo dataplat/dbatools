@@ -552,6 +552,10 @@ function Connect-DbaInstance {
                 } elseif ($inputObjectType -eq 'String') {
                     # Identify authentication method
                     if ($AuthenticationType -ne 'Auto') {
+                        # Only possibility at the moment: 'AD Universal with MFA Support'
+                        # $username will not be set
+                        # Will probably not work at all
+                        # TODO: We need a setup to test that
                         $authType = $AuthenticationType
                     } else {
                         if (Test-Azure -SqlInstance $instance) {
