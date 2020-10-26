@@ -479,7 +479,7 @@ function Connect-DbaInstance {
                                                 SqlConnectionInfo.UserName                   SqlConnectionStringBuilder['User ID']
                                                 SqlConnectionInfo.UseIntegratedSecurity      SqlConnectionStringBuilder['Integrated Security']
                   - SqlExecutionModes                                                                                                                  ConnectionContext.SqlExecutionModes
-                  - StatementTimeout            SqlConnectionInfo.QueryTimeout
+                  - StatementTimeout            (SqlConnectionInfo.QueryTimeout - TODO: different?)                                                    ConnectionContext.StatementTimeout
                   - TrustServerCertificate      SqlConnectionInfo.TrustServerCertificate     SqlConnectionStringBuilder['TrustServerCertificate']
                   - WorkstationId               SqlConnectionInfo.WorkstationId              SqlConnectionStringBuilder['Workstation Id']
 
@@ -702,10 +702,12 @@ function Connect-DbaInstance {
                     }
 
                     #QueryTimeout           Property   int QueryTimeout {get;set;}
+                    <# TODO: What is the difference between QueryTimeout and StatementTimeout?
                     if ($StatementTimeout) {
                         Write-Message -Level Debug -Message "QueryTimeout will be set to '$StatementTimeout'"
                         $connInfo.QueryTimeout = $StatementTimeout
                     }
+                    #>
 
                     #SecurePassword         Property   securestring SecurePassword {get;set;}
                     if ($authType -in 'azure ad', 'azure sql', 'local sql') {
@@ -774,6 +776,9 @@ function Connect-DbaInstance {
                     }
                     if (Test-Bound -ParameterName 'SqlExecutionModes') {
                         $server.ConnectionContext.SqlExecutionModes = $SqlExecutionModes
+                    }
+                    if (Test-Bound -ParameterName 'StatementTimeout') {
+                        $server.ConnectionContext.StatementTimeout = $StatementTimeout
                     }
                 }
 
