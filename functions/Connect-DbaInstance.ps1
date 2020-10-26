@@ -428,7 +428,7 @@ function Connect-DbaInstance {
             and within this function leads to the following code path being used.
             All the sub paths inside the following if clause will end with a continue, so the normal code path is not used.
             #>
-            if ($true -or (Get-DbatoolsConfigValue -FullName sql.connection.experimental)) {
+            if (Get-DbatoolsConfigValue -FullName sql.connection.experimental) {
                 <#
                 Best practice:
                 * Create a smo server object by submitting the name of the instance as a string to SqlInstance and additional parameters to configure the connection
