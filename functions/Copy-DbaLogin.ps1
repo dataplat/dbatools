@@ -352,7 +352,18 @@ function Copy-DbaLogin {
 
                 Write-Message -Level Verbose -Message "Attempting to add $newUserName to $destinstance."
                 try {
-                    $destLogin = New-DbaLogin -SqlInstance $destServer -InputObject $Login -NewSid:$NewSid -LoginRenameHashtable:$LoginRenameHashtable -EnableException:$true
+                    $splatNewLogin = @{
+                        SqlInstance          = $destServer
+                        InputObject          = $Login
+                        NewSid               = $NewSid
+                        LoginRenameHashtable = $LoginRenameHashtable
+                    }
+                    if ($Login.DefaultDatabase -notin $destServer.Databases.Name) {
+                        $copyLoginStatus.Notes = "Database $($Login.DefaultDatabase) does not exist on $destServer, switching DefaultDatabase to 'master' for $($Login.Name)"
+                        Write-Message -Level Warning -Message $copyLoginStatus.Notes
+                        $splatNewLogin.DefaultDatabase = 'master'
+                    }
+                    $destLogin = New-DbaLogin @splatNewLogin -EnableException:$true
                     $copyLoginStatus.Status = "Successful"
                 } catch {
                     $copyLoginStatus.Status = "Failed"
