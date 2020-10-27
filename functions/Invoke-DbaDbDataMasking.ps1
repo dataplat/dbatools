@@ -333,7 +333,11 @@ function Invoke-DbaDbDataMasking {
                         Write-Message -Level Verbose -Message "Adding identity column to table [$($dbTable.Schema)].[$($dbTable.Name)]"
                         $query = "ALTER TABLE [$($dbTable.Schema)].[$($dbTable.Name)] ADD MaskingID BIGINT IDENTITY(1, 1) NOT NULL;"
 
-                        Invoke-DbaQuery -SqlInstance $server -SqlCredential $SqlCredential -Database $db.Name -Query $query
+                        try {
+                            Invoke-DbaQuery -SqlInstance $server -SqlCredential $SqlCredential -Database $db.Name -Query $query
+                        } catch {
+                            Stop-Function -Message "Could not alter the table to add the masking id" -Target $db -Continue
+                        }
 
                         $cleanupIdentityColumn = $true
 
@@ -817,8 +821,13 @@ function Invoke-DbaDbDataMasking {
                                         } elseif (-not $columnobject.KeepNull -and $columnobject.Nullable -and (($nullmod++) % $ModulusFactor -eq 0)) {
                                             $newValue = $null
                                         } elseif ($tableobject.HasUniqueIndex -and $columnobject.Name -in $uniqueValueColumns) {
-                                            $query = "SELECT $($columnobject.Name) FROM $($uniqueDataTableName) Where [RowNr] = $rowNumber"
-                                            $uniqueData = Invoke-DbaQuery -SqlInstance $server -SqlCredential $SqlCredential -Database tempdb -Query $query
+                                            $query = "SELECT $($columnobject.Name) FROM $($uniqueDataTableName) WHERE [RowNr] = $rowNumber"
+
+                                            try {
+                                                $uniqueData = Invoke-DbaQuery -SqlInstance $server -SqlCredential $SqlCredential -Database tempdb -Query $query
+                                            } catch {
+                                                Stop-Function -Message "Something went wrong getting the unique data" -Target $query -ErrorRecord $_
+                                            }
 
                                             if ($null -eq $uniqueData) {
                                                 Stop-Function -Message "Could not find any unique values" -Target $tableobject
@@ -936,7 +945,8 @@ function Invoke-DbaDbDataMasking {
                                         }
 
                                         # Setup the query
-                                        $updateQuery = "UPDATE [$($tableobject.Schema)].[$($tableobject.Name)] SET $($updates -join ', ') WHERE [$($identityColumn)] = $($row.$($identityColumn)); "
+                                        $lookupValue = Convert-DbaMaskingValue -Value $($row.$($identityColumn)) -DataType varchar -Nullable:$columnobject.Nullable
+                                        $updateQuery = "UPDATE [$($tableobject.Schema)].[$($tableobject.Name)] SET $($updates -join ', ') WHERE [$($identityColumn)] = $($lookupValue.NewValue); "
                                         $null = $stringBuilder.AppendLine($updateQuery)
 
                                         # Increase the batch row number to keep track of the batches
@@ -961,7 +971,6 @@ function Invoke-DbaDbDataMasking {
 
                                                 Invoke-DbaQuery -SqlInstance $instance -SqlCredential $SqlCredential -Database $db.Name -Query $stringBuilder.ToString()
                                             } catch {
-                                                $stringBuilder.ToString()
                                                 Stop-Function -Message "Error updating $($tableobject.Schema).$($tableobject.Name): $_" -Target $stringBuilder -Continue -ErrorRecord $_
                                             }
 
@@ -1176,7 +1185,6 @@ function Invoke-DbaDbDataMasking {
                                 $query = "ALTER TABLE [$($dbTable.Schema)].[$($dbTable.Name)] DROP COLUMN [$($identityColumn)]"
 
                                 Invoke-DbaQuery -SqlInstance $instance -SqlCredential $SqlCredential -Database $db.Name -Query $query
-
                             } catch {
                                 Stop-Function -Message "Could not remove identity column from table [$($dbTable.Schema)].[$($dbTable.Name)]" -Continue
                             }
