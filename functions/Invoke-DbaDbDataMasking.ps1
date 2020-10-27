@@ -945,8 +945,7 @@ function Invoke-DbaDbDataMasking {
                                         }
 
                                         # Setup the query
-                                        $lookupValue = Convert-DbaMaskingValue -Value $($row.$($identityColumn)) -DataType varchar -Nullable:$columnobject.Nullable
-                                        $updateQuery = "UPDATE [$($tableobject.Schema)].[$($tableobject.Name)] SET $($updates -join ', ') WHERE [$($identityColumn)] = $($lookupValue.NewValue); "
+                                        $updateQuery = "UPDATE [$($tableobject.Schema)].[$($tableobject.Name)] SET $($updates -join ', ') WHERE [$($identityColumn)] = $($row.$($identityColumn)); "
                                         $null = $stringBuilder.AppendLine($updateQuery)
 
                                         # Increase the batch row number to keep track of the batches
@@ -968,9 +967,11 @@ function Invoke-DbaDbDataMasking {
                                                 Write-ProgressHelper @progressParams
 
                                                 Write-Message -Level Verbose -Message "Executing batch $batchNr/$totalBatches"
-
+                                                $stringBuilder.ToString()
                                                 Invoke-DbaQuery -SqlInstance $instance -SqlCredential $SqlCredential -Database $db.Name -Query $stringBuilder.ToString()
                                             } catch {
+                                                $stringBuilder.ToString()
+                                                return
                                                 Stop-Function -Message "Error updating $($tableobject.Schema).$($tableobject.Name): $_" -Target $stringBuilder -Continue -ErrorRecord $_
                                             }
 
@@ -995,9 +996,11 @@ function Invoke-DbaDbDataMasking {
                                             Write-ProgressHelper @progressParams
 
                                             Write-Message -Level Verbose -Message "Executing batch $batchNr/$totalBatches"
-
+                                            $stringBuilder.ToString()
                                             Invoke-DbaQuery -SqlInstance $instance -SqlCredential $SqlCredential -Database $db.Name -Query $stringBuilder.ToString()
                                         } catch {
+                                            $stringBuilder.ToString()
+                                            return
                                             Stop-Function -Message "Error updating $($tableobject.Schema).$($tableobject.Name): $_" -Target $stringBuilder -Continue -ErrorRecord $_
                                         }
                                     }
