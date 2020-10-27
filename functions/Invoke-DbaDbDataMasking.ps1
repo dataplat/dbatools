@@ -730,9 +730,6 @@ function Invoke-DbaDbDataMasking {
 
                         $totalBatches = [System.Math]::Ceiling($data.Count / $BatchSize)
 
-                        # Set the counters
-                        $rowNumber = $batchRowCounter = $batchCounter = 0
-
                         # Firgure out if the columns has actions
                         $columnsWithActions = @()
                         $columnsWithActions += $tableobject.Columns | Where-Object { $null -ne $_.Action }
@@ -751,7 +748,8 @@ function Invoke-DbaDbDataMasking {
                             # Only start generating values if the column is not using Actions or Composites
                             if (($columnobject.Name -notin $columnsWithActions.Name) -and ($columnobject.Name -notin $columnsWithComposites.Name)) {
 
-                                $batchCounter = 0
+                                # Set the counters
+                                $rowNumber = $batchRowNr = $batchNr = 0
 
                                 if ($columnobject.StaticValue) {
                                     $newValue = $columnobject.StaticValue
@@ -761,18 +759,19 @@ function Invoke-DbaDbDataMasking {
                                     } else {
                                         $convertedValue = Convert-DbaMaskingValue -Value $newValue -DataType $columnobject.ColumnType -Nullable:$columnobject.Nullable
                                         $null = $stringBuilder.AppendLine("UPDATE [$($tableobject.Schema)].[$($tableobject.Name)] SET [$($columnObject.Name)] = $($convertedValue.NewValue)")
-                                        $batchRowCounter++
+                                        $batchRowNr++
                                     }
                                 } else {
                                     Write-Message -Level Verbose -Message "Processing column [$($columnObject.Name)]"
                                     # Column does not have an action
                                     foreach ($row in $data) {
+                                        # Start counting the rows
                                         $rowNumber++
 
-                                        if ((($batchRowCounter++) % 100) -eq 0) {
+                                        if ((($batchRowNr) % 100) -eq 0) {
 
                                             $progressParams = @{
-                                                StepNumber = $batchCounter
+                                                StepNumber = $batchNr
                                                 TotalSteps = $totalBatches
                                                 Activity   = "Masking $($data.Count) rows in $($tableobject.Schema).$($tableobject.Name) in $($dbName) on $instance"
                                                 Message    = "Generating Updates"
@@ -798,7 +797,7 @@ function Invoke-DbaDbDataMasking {
                                         }
 
                                         # Check for value being in deterministic masking table
-                                        $lookupValue = Convert-DbaMaskingValue -Value $row.$($columnobject.Name) -DataType varchar
+                                        $lookupValue = Convert-DbaMaskingValue -Value $row.($columnobject.Name) -DataType varchar -Nullable:$columnobject.Nullable
 
                                         $query = "SELECT [NewValue] FROM dbo.DeterministicValues WHERE [ValueKey] = $($lookupValue.NewValue)"
 
@@ -920,15 +919,15 @@ function Invoke-DbaDbDataMasking {
                                             }
                                         }
 
+                                        # Convert the values so they can used in TSQL
                                         $convertedValue = Convert-DbaMaskingValue -Value $newValue -DataType $columnobject.ColumnType -Nullable:$columnobject.Nullable
                                         $updates += "[$($columnobject.Name)] = $($convertedValue.NewValue)"
 
                                         # Check if this value is determinisic
                                         if ($columnobject.Deterministic -and ($null -eq $lookupResult.NewValue)) {
-                                            $previous = Convert-DbaMaskingValue -Value $row.$($columnobject.Name) -DataType varchar
-                                            $new = Convert-DbaMaskingValue -Value $newValue -DataType varchar
+                                            $previous = Convert-DbaMaskingValue -Value $row.($columnobject.Name) -DataType varchar -Nullable:$columnobject.Nullable
 
-                                            $query = "INSERT INTO dbo.DeterministicValues (ValueKey, NewValue) VALUES ($($previous.NewValue), $($new.NewValue));"
+                                            $query = "INSERT INTO dbo.DeterministicValues (ValueKey, NewValue) VALUES ($($previous.NewValue), $($convertedValue.NewValue));"
                                             try {
                                                 $null = $server.Databases['tempdb'].Query($query)
                                             } catch {
@@ -939,50 +938,55 @@ function Invoke-DbaDbDataMasking {
                                         # Setup the query
                                         $updateQuery = "UPDATE [$($tableobject.Schema)].[$($tableobject.Name)] SET $($updates -join ', ') WHERE [$($identityColumn)] = $($row.$($identityColumn)); "
                                         $null = $stringBuilder.AppendLine($updateQuery)
-                                        $batchRowCounter++
 
-                                        if ($batchRowCounter -eq $BatchSize) {
-                                            if ($batchCounter -ne $totalBatches) {
-                                                $batchCounter++
+                                        # Increase the batch row number to keep track of the batches
+                                        $batchRowNr++
+
+                                        if ($batchRowNr -eq $BatchSize) {
+                                            if ($batchNr -lt $totalBatches) {
+                                                $batchNr++
                                             }
-
-                                            $progressParams = @{
-                                                StepNumber = $batchCounter
-                                                TotalSteps = $totalBatches
-                                                Activity   = "Masking $($data.Count) rows in $($tableobject.Schema).$($tableobject.Name).$($columnobject.Name) in $($dbName) on $instance"
-                                                Message    = "Executing Batch $batchCounter/$totalBatches"
-                                            }
-
-                                            Write-ProgressHelper @progressParams
-
-                                            Write-Message -Level Verbose -Message "Executing batch $batchCounter/$totalBatches"
 
                                             try {
+                                                $progressParams = @{
+                                                    StepNumber = $batchNr
+                                                    TotalSteps = $totalBatches
+                                                    Activity   = "Masking $($data.Count) rows in $($tableobject.Schema).$($tableobject.Name).$($columnobject.Name) in $($dbName) on $instance"
+                                                    Message    = "Executing Batch $batchNr/$totalBatches"
+                                                }
+
+                                                Write-ProgressHelper @progressParams
+
+                                                Write-Message -Level Verbose -Message "Executing batch $batchNr/$totalBatches"
+
                                                 Invoke-DbaQuery -SqlInstance $instance -SqlCredential $SqlCredential -Database $db.Name -Query $stringBuilder.ToString()
                                             } catch {
+                                                $stringBuilder.ToString()
                                                 Stop-Function -Message "Error updating $($tableobject.Schema).$($tableobject.Name): $_" -Target $stringBuilder -Continue -ErrorRecord $_
                                             }
 
                                             $null = $stringBuilder.Clear()
-                                            $batchRowCounter = 0
+                                            $batchRowNr = 0
                                         }
                                     }
 
                                     if ($stringBuilder.Length -ge 1) {
-                                        if ($batchCounter -ne $totalBatches) {
-                                            $batchCounter++
+                                        if ($batchNr -lt $totalBatches) {
+                                            $batchNr++
                                         }
-
-                                        $progressParams = @{
-                                            StepNumber = $batchCounter
-                                            TotalSteps = $totalBatches
-                                            Activity   = "Masking $($data.Count) rows in $($tableobject.Schema).$($tableobject.Name) in $($dbName) on $instance"
-                                            Message    = "Executing Batch $batchCounter/$totalBatches"
-                                        }
-
-                                        Write-ProgressHelper @progressParams
 
                                         try {
+                                            $progressParams = @{
+                                                StepNumber = $batchNr
+                                                TotalSteps = $totalBatches
+                                                Activity   = "Masking $($data.Count) rows in $($tableobject.Schema).$($tableobject.Name) in $($dbName) on $instance"
+                                                Message    = "Executing Batch $batchNr/$totalBatches"
+                                            }
+
+                                            Write-ProgressHelper @progressParams
+
+                                            Write-Message -Level Verbose -Message "Executing batch $batchNr/$totalBatches"
+
                                             Invoke-DbaQuery -SqlInstance $instance -SqlCredential $SqlCredential -Database $db.Name -Query $stringBuilder.ToString()
                                         } catch {
                                             Stop-Function -Message "Error updating $($tableobject.Schema).$($tableobject.Name): $_" -Target $stringBuilder -Continue -ErrorRecord $_
