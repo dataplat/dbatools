@@ -1,5 +1,5 @@
 {
-    "LastUpdated": "2020-09-29T00:00:00",
+    "LastUpdated": "2020-10-08T00:00:00",
     "Data": [
         {
             "Version": "8.0.47",
@@ -3988,6 +3988,12 @@
             "KBList": "4505830"
         },
         {
+            "CU": "CU9",
+            "Version": "13.0.5479",
+            "KBList": "4515435",
+            "Retired": true
+        },
+        {
             "CU": "CU10",
             "Version": "13.0.5492",
             "KBList": "4524334"
@@ -4246,6 +4252,17 @@
             "CU": "CU6",
             "Version": "15.0.4053",
             "KBList": "4563110"
+        },
+        {
+            "CU": "CU7",
+            "Version": "15.0.4063",
+            "KBList": "4570012",
+            "Retired": true
+        },
+        {
+            "CU": "CU8",
+            "Version": "15.0.4073",
+            "KBList": "4577194"
         }
     ]
 }

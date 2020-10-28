@@ -106,7 +106,7 @@
         "CountryCode": "All",
         "Pattern": "(6(?:011|5\\d{2})\\d{12})|(6(?:011|5\\d{2})[-| ]\\d{4}[-| ]\\d{4}[-| ]\\d{4})",
         "Description": "",
-        "MaskingType": "",
+        "MaskingType": "Finance",
         "MaskingSubType": "CreditCardNumber"
     },
     {
