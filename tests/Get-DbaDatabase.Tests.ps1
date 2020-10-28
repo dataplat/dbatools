@@ -22,7 +22,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         }
     }
 
-    Context "Check that temppb database is in Simple recovery mode" {
+    Context "Check that tempdb database is in Simple recovery mode" {
         $results = Get-DbaDatabase -SqlInstance $script:instance1 -Database tempdb
         It "tempdb's recovery mode is Simple" {
             $results.RecoveryModel | Should Be "Simple"

@@ -69,14 +69,14 @@ function New-DbaDirectory {
 
     foreach ($instance in $SqlInstance) {
         try {
-            $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
+            $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
         } catch {
             Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
         }
 
         $Path = $Path.Replace("'", "''")
 
-        $exists = Test-DbaPath -SqlInstance $sqlinstance -SqlCredential $SqlCredential -Path $Path
+        $exists = Test-DbaPath -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Path $Path
 
         if ($exists) {
             Stop-Function -Message "$Path already exists" -Target $server -Continue
@@ -87,16 +87,16 @@ function New-DbaDirectory {
         if ($Pscmdlet.ShouldProcess($path, "Creating a new path on $($server.name)")) {
             try {
                 $null = $server.Query($sql)
-                $Created = $true
+                $created = $true
             } catch {
-                $Created = $false
+                $created = $false
                 Stop-Function -Message "Failure" -ErrorRecord $_
             }
 
             [pscustomobject]@{
                 Server  = $SqlInstance
                 Path    = $Path
-                Created = $Created
+                Created = $created
             }
         }
     }

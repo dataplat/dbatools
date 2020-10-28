@@ -71,7 +71,7 @@ function Remove-DbaComputerCertificate {
 
     begin {
         #region Scriptblock for remoting
-        $scriptblock = {
+        $scriptBlock = {
             param (
                 $Thumbprint,
                 $Store,
@@ -160,7 +160,7 @@ function Remove-DbaComputerCertificate {
             foreach ($thumb in $Thumbprint) {
                 if ($PScmdlet.ShouldProcess("local", "Connecting to $computer to remove cert from Cert:\$Store\$Folder")) {
                     try {
-                        Invoke-Command2 -ComputerName $computer -Credential $Credential -ArgumentList $thumb, $Store, $Folder -ScriptBlock $scriptblock -ErrorAction Stop
+                        Invoke-Command2 -ComputerName $computer -Credential $Credential -ArgumentList $thumb, $Store, $Folder -ScriptBlock $scriptBlock -ErrorAction Stop
                     } catch {
                         Stop-Function -Message $_ -ErrorRecord $_ -Target $computer -Continue
                     }

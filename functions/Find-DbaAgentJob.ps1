@@ -154,7 +154,7 @@ function Find-DbaAgentJob {
             Write-Message -Level Verbose -Message "Running Scan on: $instance"
 
             try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             } catch {
                 Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
@@ -198,16 +198,16 @@ function Find-DbaAgentJob {
 
             if ($IsDisabled) {
                 Write-Message -Level Verbose -Message "Finding job/s that are disabled"
-                $output += $jobs | Where-Object IsEnabled -eq $false
+                $output = $jobs | Where-Object IsEnabled -eq $false
             }
 
             if ($IsNotScheduled) {
                 Write-Message -Level Verbose -Message "Finding job/s that have no schedule defined"
-                $output += $jobs | Where-Object HasSchedule -eq $false
+                $output = $jobs | Where-Object HasSchedule -eq $false
             }
             if ($IsNoEmailNotification) {
                 Write-Message -Level Verbose -Message "Finding job/s that have no email operator defined"
-                $output += $jobs | Where-Object { [string]::IsNullOrEmpty($_.OperatorToEmail) -eq $true }
+                $output = $jobs | Where-Object { [string]::IsNullOrEmpty($_.OperatorToEmail) -eq $true }
             }
 
             if ($Owner) {

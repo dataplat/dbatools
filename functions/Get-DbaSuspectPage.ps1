@@ -56,7 +56,7 @@ function Get-DbaSuspectPage {
     )
 
     process {
-        foreach ($instance in $sqlinstance) {
+        foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
             } catch {
@@ -69,7 +69,7 @@ function Get-DbaSuspectPage {
             file_id,
             page_id,
             CASE event_type
-            WHEN 1 THEN '823 or 824 or Torn Page'
+            WHEN 1 THEN '823 or 824'
             WHEN 2 THEN 'Bad Checksum'
             WHEN 3 THEN 'Torn Page'
             WHEN 4 THEN 'Restored'

@@ -97,10 +97,10 @@ function Get-DbaExecutionPlan {
 
     process {
 
-        foreach ($instance in $sqlinstance) {
+        foreach ($instance in $SqlInstance) {
             try {
                 try {
-                    $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential -MinimumVersion 9
+                    $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
                 } catch {
                     Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
                 }
@@ -129,35 +129,35 @@ function Get-DbaExecutionPlan {
                     $where = " WHERE "
                 }
 
-                $wherearray = @()
+                $whereArray = @()
 
                 if ($Database) {
-                    $dblist = $Database -join "','"
-                    $wherearray += " DB_NAME(deqp.dbid) in ('$dblist') "
+                    $dbList = $Database -join "','"
+                    $whereArray += " DB_NAME(deqp.dbid) in ('$dbList') "
                 }
 
                 if ($null -ne $SinceCreation) {
                     Write-Message -Level Verbose -Message "Adding creation time"
-                    $wherearray += " creation_time >= '" + $SinceCreation.ToString("yyyy-MM-dd HH:mm:ss") + "' "
+                    $whereArray += " creation_time >= CONVERT(datetime,'$($SinceCreation.ToString("yyyy-MM-ddTHH:mm:ss", [System.Globalization.CultureInfo]::InvariantCulture))',126) "
                 }
 
                 if ($null -ne $SinceLastExecution) {
                     Write-Message -Level Verbose -Message "Adding last exectuion time"
-                    $wherearray += " last_execution_time >= '" + $SinceLastExecution.ToString("yyyy-MM-dd HH:mm:ss") + "' "
+                    $whereArray += " last_execution_time >= CONVERT(datetime,'$($SinceLastExecution.ToString("yyyy-MM-ddTHH:mm:ss", [System.Globalization.CultureInfo]::InvariantCulture))',126) "
                 }
 
                 if ($ExcludeDatabase) {
-                    $dblist = $ExcludeDatabase -join "','"
-                    $wherearray += " DB_NAME(deqp.dbid) not in ('$dblist') "
+                    $dbList = $ExcludeDatabase -join "','"
+                    $whereArray += " DB_NAME(deqp.dbid) not in ('$dbList') "
                 }
 
                 if ($ExcludeEmptyQueryPlan) {
-                    $wherearray += " detqp.query_plan is not null"
+                    $whereArray += " detqp.query_plan is not null"
                 }
 
                 if ($where.length -gt 0) {
-                    $wherearray = $wherearray -join " and "
-                    $where = "$where $wherearray"
+                    $whereArray = $whereArray -join " and "
+                    $where = "$where $whereArray"
                 }
 
                 $sql = "$select $from $where"
@@ -168,8 +168,8 @@ function Get-DbaExecutionPlan {
                 } else {
                     foreach ($row in $server.Query($sql)) {
                         $simple = ([xml]$row.SingleStatementPlan).ShowPlanXML.BatchSequence.Batch.Statements.StmtSimple
-                        $sqlhandle = "0x"; $row.sqlhandle | ForEach-Object { $sqlhandle += ("{0:X}" -f $_).PadLeft(2, "0") }
-                        $planhandle = "0x"; $row.planhandle | ForEach-Object { $planhandle += ("{0:X}" -f $_).PadLeft(2, "0") }
+                        $sqlHandle = "0x"; $row.sqlhandle | ForEach-Object { $sqlHandle += ("{0:X}" -f $_).PadLeft(2, "0") }
+                        $planHandle = "0x"; $row.planhandle | ForEach-Object { $planHandle += ("{0:X}" -f $_).PadLeft(2, "0") }
                         $planWarnings = $simple.QueryPlan.Warnings.PlanAffectingConvert;
 
                         [pscustomobject]@{
@@ -179,8 +179,8 @@ function Get-DbaExecutionPlan {
                             DatabaseName                      = $row.DatabaseName
                             ObjectName                        = $row.ObjectName
                             QueryPosition                     = $row.QueryPosition
-                            SqlHandle                         = $SqlHandle
-                            PlanHandle                        = $PlanHandle
+                            SqlHandle                         = $sqlHandle
+                            PlanHandle                        = $planHandle
                             CreationTime                      = $row.CreationTime
                             LastExecutionTime                 = $row.LastExecutionTime
                             StatementCondition                = ([xml]$row.SingleStatementPlan).ShowPlanXML.BatchSequence.Batch.Statements.StmtCond

@@ -38,6 +38,9 @@ function Get-DbaRandomizedValue {
     .PARAMETER Symbol
         Use a symbol in front of the value i.e. $100,12
 
+    .PARAMETER Separator
+        Some masking types support separators
+
     .PARAMETER Value
         This is the value that needs to be used for several possible transformations.
         One example is the subtype "Shuffling" where the value will be shuffled.
@@ -104,6 +107,7 @@ function Get-DbaRandomizedValue {
         [string]$CharacterString = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789',
         [string]$Format,
         [string]$Symbol,
+        [string]$Separator,
         [string]$Value,
         [string]$Locale = 'en',
         [switch]$EnableException
@@ -169,13 +173,13 @@ function Get-DbaRandomizedValue {
         }
 
         if (-not $Min) {
-            if ($DataType.ToLower() -ne "date" -and $RandomizerType.ToLower() -ne "date") {
+            if ($DataType.ToLower() -notlike "date*" -and $RandomizerType.ToLower() -notlike "date*") {
                 $Min = 1
             }
         }
 
         if (-not $Max) {
-            if ($DataType.ToLower() -ne "date" -and $RandomizerType.ToLower() -ne "date") {
+            if ($DataType.ToLower() -notlike "date*" -and $RandomizerType.ToLower() -notlike "date*") {
                 $Max = 255
             }
         }
@@ -209,23 +213,23 @@ function Get-DbaRandomizedValue {
                 }
                 'date' {
                     if ($Min -or $Max) {
-                        ($script:faker.Date.Between($Min, $Max)).ToString("yyyy-MM-dd")
+                        ($script:faker.Date.Between($Min, $Max)).ToString("yyyy-MM-dd", [System.Globalization.CultureInfo]::InvariantCulture)
                     } else {
-                        ($script:faker.Date.Past()).ToString("yyyy-MM-dd")
+                        ($script:faker.Date.Past()).ToString("yyyy-MM-dd", [System.Globalization.CultureInfo]::InvariantCulture)
                     }
                 }
                 'datetime' {
                     if ($Min -or $Max) {
-                        ($script:faker.Date.Between($Min, $Max)).ToString("yyyy-MM-dd HH:mm:ss.fff")
+                        ($script:faker.Date.Between($Min, $Max)).ToString("yyyy-MM-dd HH:mm:ss.fff", [System.Globalization.CultureInfo]::InvariantCulture)
                     } else {
-                        ($script:faker.Date.Past()).ToString("yyyy-MM-dd HH:mm:ss.fff")
+                        ($script:faker.Date.Past()).ToString("yyyy-MM-dd HH:mm:ss.fff", [System.Globalization.CultureInfo]::InvariantCulture)
                     }
                 }
                 'datetime2' {
                     if ($Min -or $Max) {
-                        ($script:faker.Date.Between($Min, $Max)).ToString("yyyy-MM-dd HH:mm:ss.fffffff")
+                        ($script:faker.Date.Between($Min, $Max)).ToString("yyyy-MM-dd HH:mm:ss.fffffff", [System.Globalization.CultureInfo]::InvariantCulture)
                     } else {
-                        ($script:faker.Date.Past()).ToString("yyyy-MM-dd HH:mm:ss.fffffff")
+                        ($script:faker.Date.Past()).ToString("yyyy-MM-dd HH:mm:ss.fffffff", [System.Globalization.CultureInfo]::InvariantCulture)
                     }
                 }
                 { $psitem -in 'decimal', 'float', 'money', 'numeric', 'real' } {
@@ -247,9 +251,9 @@ function Get-DbaRandomizedValue {
                 }
                 'smalldatetime' {
                     if ($Min -or $Max) {
-                        ($script:faker.Date.Between($Min, $Max)).ToString("yyyy-MM-dd HH:mm:ss")
+                        ($script:faker.Date.Between($Min, $Max)).ToString("yyyy-MM-dd HH:mm:ss", [System.Globalization.CultureInfo]::InvariantCulture)
                     } else {
-                        ($script:faker.Date.Past()).ToString("yyyy-MM-dd HH:mm:ss")
+                        ($script:faker.Date.Past()).ToString("yyyy-MM-dd HH:mm:ss", [System.Globalization.CultureInfo]::InvariantCulture)
                     }
                 }
                 'smallint' {
@@ -353,7 +357,7 @@ function Get-DbaRandomizedValue {
                         if ($Min -gt $Max) {
                             Stop-Function -Message "The minimum value for the date cannot be later than maximum value" -Continue -Target $Min
                         } else {
-                            ($script:faker.Date.Between($Min, $Max)).ToString("yyyy-MM-dd HH:mm:ss.fffffff")
+                            ($script:faker.Date.Between($Min, $Max)).ToString("yyyy-MM-dd HH:mm:ss.fffffff", [System.Globalization.CultureInfo]::InvariantCulture)
                         }
                     } elseif ($randSubType -eq 'past') {
                         if ($Max) {
@@ -363,9 +367,9 @@ function Get-DbaRandomizedValue {
                                 $yearsToGoBack = 1
                             }
 
-                            $script:faker.Date.Past($yearsToGoBack, $Max).ToString("yyyy-MM-dd HH:mm:ss.fffffff")
+                            $script:faker.Date.Past($yearsToGoBack, $Max).ToString("yyyy-MM-dd HH:mm:ss.fffffff", [System.Globalization.CultureInfo]::InvariantCulture)
                         } else {
-                            $script:faker.Date.Past().ToString("yyyy-MM-dd HH:mm:ss.fffffff")
+                            $script:faker.Date.Past().ToString("yyyy-MM-dd HH:mm:ss.fffffff", [System.Globalization.CultureInfo]::InvariantCulture)
                         }
                     } elseif ($randSubType -eq 'future') {
                         if ($Min) {
@@ -375,13 +379,13 @@ function Get-DbaRandomizedValue {
                                 $yearsToGoForward = 1
                             }
 
-                            $script:faker.Date.Future($yearsToGoForward, $Min).ToString("yyyy-MM-dd HH:mm:ss.fffffff")
+                            $script:faker.Date.Future($yearsToGoForward, $Min).ToString("yyyy-MM-dd HH:mm:ss.fffffff", [System.Globalization.CultureInfo]::InvariantCulture)
                         } else {
-                            $script:faker.Date.Future().ToString("yyyy-MM-dd HH:mm:ss.fffffff")
+                            $script:faker.Date.Future().ToString("yyyy-MM-dd HH:mm:ss.fffffff", [System.Globalization.CultureInfo]::InvariantCulture)
                         }
 
                     } elseif ($randSubType -eq 'recent') {
-                        $script:faker.Date.Recent().ToString("yyyy-MM-dd HH:mm:ss.fffffff")
+                        $script:faker.Date.Recent().ToString("yyyy-MM-dd HH:mm:ss.fffffff", [System.Globalization.CultureInfo]::InvariantCulture)
                     } elseif ($randSubType -eq 'random') {
                         if ($Min -or $Max) {
                             if (-not $Min) {
@@ -392,9 +396,9 @@ function Get-DbaRandomizedValue {
                                 $Max = (Get-Date).AddYears(1)
                             }
 
-                            ($script:faker.Date.Between($Min, $Max)).ToString("yyyy-MM-dd HH:mm:ss.fffffff")
+                            ($script:faker.Date.Between($Min, $Max)).ToString("yyyy-MM-dd HH:mm:ss.fffffff", [System.Globalization.CultureInfo]::InvariantCulture)
                         } else {
-                            ($script:faker.Date.Past()).ToString("yyyy-MM-dd HH:mm:ss.fffffff")
+                            ($script:faker.Date.Past()).ToString("yyyy-MM-dd HH:mm:ss.fffffff", [System.Globalization.CultureInfo]::InvariantCulture)
                         }
                     } else {
                         $script:faker.Date.$RandomizerSubType()
@@ -418,6 +422,31 @@ function Get-DbaRandomizedValue {
                 'internet' {
                     if ($randSubType -eq 'password') {
                         $script:faker.Internet.Password($Max)
+                    } elseif ($randSubType -eq 'mac') {
+                        if ($Separator) {
+                            $script:faker.Internet.Mac($Separator)
+                        } else {
+                            if (-not $Format -or $Format -eq "##:##:##:##:##:##") {
+                                $script:faker.Internet.Mac()
+                            } elseif ($Format -eq "############") {
+                                $script:faker.Internet.Mac("")
+                            } else {
+                                $newMacArray = $Format.ToCharArray()
+
+                                $macAddress = $script:faker.Internet.Mac("")
+                                $macArray = $macAddress.ToCharArray()
+
+                                $macIndex = 0
+                                for ($i = 0; $i -lt $formatArray.Count; $i++) {
+                                    if ($newMacArray[$i] -eq "#") {
+                                        $newMacArray[$i] = $macArray[$macIndex]
+                                        $macIndex++
+                                    }
+                                }
+
+                                $newMacArray -join ""
+                            }
+                        }
                     } else {
                         $script:faker.Internet.$RandomizerSubType()
                     }
@@ -496,7 +525,22 @@ function Get-DbaRandomizedValue {
                     } elseif ($randSubType -in 'string', 'string2') {
                         $script:faker.Random.String2([int]$Min, [int]$Max, $CharacterString)
                     } elseif ($randSubType -eq 'shuffle') {
-                        $script:faker.Random.Shuffle($Value)
+                        $commaIndex = $value.IndexOf(",")
+                        $dotIndex = $value.IndexOf(".")
+
+                        $Value = (($Value -replace ',', '') -replace '\.', '')
+
+                        $newValue = ($script:faker.Random.Shuffle($Value) -join '')
+
+                        if ($commaIndex -ne -1) {
+                            $newValue = $newValue.Insert($commaIndex, ',')
+                        }
+
+                        if ($dotIndex -ne -1) {
+                            $newValue = $newValue.Insert($dotIndex, '.')
+                        }
+
+                        $newValue
                     } else {
                         $script:faker.Random.$RandomizerSubType()
                     }

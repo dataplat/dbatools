@@ -92,7 +92,7 @@ function Disable-DbaStartupProcedure {
             foreach ($instance in $SqlInstance) {
                 Write-Message -Level Verbose -Message "Getting startup procedures for $instance"
                 try {
-                    $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
+                    $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
                 } catch {
                     Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $server -Continue
                 }

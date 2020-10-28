@@ -19,6 +19,9 @@ function Start-DbaAgentJob {
     .PARAMETER Job
         The job(s) to process - this list is auto-populated from the server. If unspecified, all jobs will be processed.
 
+    .PARAMETER StepName
+        The step name to start the job at, will default to the step configured by the job.
+
     .PARAMETER ExcludeJob
         The job(s) to exclude - this list is auto-populated from the server.
 
@@ -30,6 +33,10 @@ function Start-DbaAgentJob {
 
     .PARAMETER WaitPeriod
         Wait period in seconds to use when -Wait is used
+
+    .PARAMETER Parallel
+        Works in conjunction with the Wait switch.  Be default, when passing the Wait switch, each job is started one at a time and waits for completion
+        before starting the next job.  The Parallel switch will change the behavior to start all jobs at once, and wait for all jobs to complete .
 
     .PARAMETER SleepPeriod
         Period in milliseconds to wait after a job has started
@@ -84,6 +91,25 @@ function Start-DbaAgentJob {
 
         Start all the jobs
 
+    .EXAMPLE
+        PS C:\> Start-DbaAgentJob -SqlInstance sql2016 -Job @('Job1', 'Job2', 'Job3') -Wait
+
+        This is a serialized approach to submitting jobs and waiting for each job to continue the next.
+        Starts Job1, waits for completion of Job1
+        Starts Job2, waits for completion of Job2
+        Starts Job3, Waits for completion of Job3
+
+    .EXAMPLE
+        PS C:\> Start-DbaAgentJob -SqlInstance sql2016 -Job @('Job1', 'Job2', 'Job3') -Wait -Parallel
+
+        This is a parallel approach to submitting all jobs and waiting for them all to complete.
+        Starts Job1, starts Job2, starts Job3 and waits for completion of Job1, Job2, and Job3.
+
+    .EXAMPLE
+        PS C:\> Start-DbaAgentJob -SqlInstance sql2016 -Job JobWith5Steps -StepName Step4
+
+        Starts the JobWith5Steps SQL Agent Job at step Step4.
+
     #>
     [CmdletBinding(SupportsShouldProcess, DefaultParameterSetName = "Default")]
     param (
@@ -91,21 +117,49 @@ function Start-DbaAgentJob {
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [string[]]$Job,
+        [string]$StepName,
         [string[]]$ExcludeJob,
         [parameter(Mandatory, ValueFromPipeline, ParameterSetName = "Object")]
         [Microsoft.SqlServer.Management.Smo.Agent.Job[]]$InputObject,
         [switch]$AllJobs,
         [switch]$Wait,
+        [switch]$Parallel,
         [int]$WaitPeriod = 3,
         [int]$SleepPeriod = 300,
         [switch]$EnableException
     )
+    begin {
+        [ScriptBlock]$waitBlock = {
+            param(
+                [Microsoft.SqlServer.Management.Smo.Agent.Job]$currentjob,
+                [switch]$Wait,
+                [int]$WaitPeriod
+            )
+            [string]$server = $currentjob.Parent.Parent.Name
+            [string]$currentStep = $currentjob.CurrentRunStep
+            [int]$currentStepId = $currentstep.Split('()')[0].Trim()
+            [string]$currentStepName = $currentstep.Split('()')[1]
+            [string]$currentRunStatus = $currentjob.CurrentRunStatus
+            [int]$jobStepsCount = $currentjob.JobSteps.Count
+            [int]$currentStepRetryAttempts = $currentjob.CurrentRunRetryAttempt
+            [int]$currentStepRetries = $currentjob.JobSteps[$currentStepName].RetryAttempts
+            Write-Message -Level Verbose -Message "Server: $server - $currentjob is $currentRunStatus, currently on Job Step '$currentStepName' ($currentStepId of $jobStepsCount), and has tried $currentStepRetryAttempts of $currentStepRetries retry attempts"
+            if (($Wait) -and ($WaitPeriod) ) { Start-Sleep -Seconds $WaitPeriod }
+            $currentjob.Refresh()
+        }
+    }
     process {
         if ((Test-Bound -not -ParameterName AllJobs) -and (Test-Bound -not -ParameterName Job) -and (Test-Bound -not -ParameterName InputObject)) {
-            Stop-Function -Message "Please use one of the job parameters, either -Job or -AllJobs. Or pipe in a list of jobs." -Target $instance
+            Stop-Function -Message "Please use one of the job parameters, either -Job or -AllJobs. Or pipe in a list of jobs."
             return
         }
-        # Loop through each of the instances
+
+        if ((-not $Wait) -and ($Parallel)) {
+            Stop-Function -Message "Please use the -Wait(:`$true) switch when using -Parallel(:`$true)."
+            return
+        }
+
+        # Loop through each of the instances and store agent jobs
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
@@ -120,16 +174,16 @@ function Start-DbaAgentJob {
 
             # If a specific job needs to be added
             if (-not $AllJobs -and $Job) {
-                $InputObject = $server.JobServer.Jobs | Where-Object Name -In $Job
+                $InputObject += $server.JobServer.Jobs | Where-Object Name -In $Job
             }
 
             # If a job needs to be excluded
             if ($ExcludeJob) {
-                $InputObject = $InputObject | Where-Object Name -NotIn $ExcludeJob
+                $InputObject += $InputObject | Where-Object Name -NotIn $ExcludeJob
             }
         }
 
-        # Loop through each of the jobs
+        # Loop through each of the jobs and start them.  Optionally wait for each job to finish before continuing to the next.
         foreach ($currentjob in $InputObject) {
             $server = $currentjob.Parent.Parent
             $status = $currentjob.CurrentRunStatus
@@ -142,7 +196,18 @@ function Start-DbaAgentJob {
                 # Start the job
                 $lastrun = $currentjob.LastRunDate
                 Write-Message -Level Verbose -Message "Last run date was $lastrun"
-                $null = $currentjob.Start()
+                if ($StepName) {
+                    if ($currentjob.JobSteps.Name -contains $StepName) {
+                        Write-Message -Level Verbose -Message "Starting job [$currentjob] at step [$StepName]"
+                        $null = $currentjob.Start($StepName)
+                    } else {
+                        Write-Message -Level Verbose -Message "Job [$currentjob] does not contain step [$StepName]"
+                        continue
+                    }
+                } else {
+                    $null = $currentjob.Start()
+                }
+
 
                 # Wait and refresh so that it has a chance to change status
                 Start-Sleep -Milliseconds $SleepPeriod
@@ -164,25 +229,27 @@ function Start-DbaAgentJob {
                     }
                 }
 
-                # Wait for the job
-                if (Test-Bound -ParameterName Wait) {
+                if (($Wait) -and (-not $Parallel)) {
+                    # Wait for each job in a serialized fashion.
                     while ($currentjob.CurrentRunStatus -ne 'Idle') {
-                        $currentRunStatus = $currentjob.CurrentRunStatus
-                        $currentStep = $currentjob.CurrentRunStep
-                        $jobStepsCount = $currentjob.JobSteps.Count
-                        $currentStepRetryAttempts = $currentjob.CurrentRunRetryAttempt
-                        if (-not $currentStepRetryAttempts) { $currentStepRetryAttempts = "0" }
-                        $currentStepRetries = $currentjob.RetryAttempts
-                        if (-not $currentStepRetries) { $currentStepRetries = "Unknown" }
-                        Write-Message -Level Verbose -Message "$currentjob is $currentRunStatus, currently on Job Step $currentStep / $jobStepsCount, and has tried $currentStepRetryAttempts / $currentStepRetries retry attempts"
-                        Start-Sleep -Seconds $WaitPeriod
-                        $currentjob.Refresh()
+                        Invoke-Command -ScriptBlock $waitBlock -ArgumentList @($currentjob, $true, $WaitPeriod)
                     }
-                    Get-DbaAgentJob -SqlInstance $server -Job $currentjob.Name
-                } else {
-                    Get-DbaAgentJob -SqlInstance $server -Job $currentjob.Name
+                    Get-DbaAgentJob -SqlInstance $server -Job $($currentjob.Name)
+                } elseif (-not $Parallel) {
+                    Get-DbaAgentJob -SqlInstance $server -Job $($currentjob.Name)
                 }
             }
+        }
+
+        # Wait for each job to be done in parallel
+        if ($Parallel) {
+            while ($InputObject.CurrentRunStatus -contains 'Executing') {
+                foreach ($currentjob in $InputObject) {
+                    Invoke-Command -ScriptBlock $waitBlock -ArgumentList @($currentjob)
+                }
+                Start-Sleep -Seconds $WaitPeriod
+            }
+            Get-DbaAgentJob -SqlInstance $($InputObject.Parent.Parent | Select-Object -Unique) -Job $($InputObject.Name | Select-Object -Unique);
         }
     }
 }

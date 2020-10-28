@@ -140,7 +140,7 @@ function Set-DbaDbQueryStoreOption {
         [switch]$EnableException
     )
     begin {
-        $ExcludeDatabase += 'master', 'tempdb'
+        $ExcludeDatabase += 'master', 'tempdb', "model"
     }
 
     process {

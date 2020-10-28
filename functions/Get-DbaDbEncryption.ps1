@@ -105,7 +105,7 @@ function Get-DbaDbEncryption {
                 Write-Message -Level Verbose -Message "Processing $db"
 
                 if ($db.EncryptionEnabled -eq $true) {
-                    [PSCustomObject]@{
+                    $returnCertificate = [PSCustomObject]@{
                         ComputerName             = $server.ComputerName
                         InstanceName             = $server.ServiceName
                         SqlInstance              = $server.DomainInstanceName
@@ -121,6 +121,25 @@ function Get-DbaDbEncryption {
                         ExpirationDate           = $null
                     }
 
+                    if ($db.DatabaseEncryptionKey.EncryptionType -eq 'ServerCertificate') {
+                        $serverCertificate = $server.Databases['master'].Certificates | Where-Object {
+                            (Compare-Object -ReferenceObject $db.DatabaseEncryptionKey.Thumbprint -DifferenceObject $_.Thumbprint -SyncWindow 0).Length -eq 0
+                        }
+
+                        if (-not $serverCertificate) {
+                            Stop-Function -Message "Could not locate TDE server certificate $($db.DatabaseEncryptionKey.Name)" -Target $instance -Continue
+                        }
+
+                        $returnCertificate.Name = $serverCertificate.Name
+                        $returnCertificate.LastBackup = $serverCertificate.LastBackupDate
+                        $returnCertificate.PrivateKeyEncryptionType = $serverCertificate.PrivateKeyEncryptionType
+                        $returnCertificate.Owner = $serverCertificate.Owner
+                        $returnCertificate.Object = $serverCertificate
+                        $returnCertificate.ExpirationDate = $serverCertificate.ExpirationDate
+                        $returnCertificate.EncryptionAlgorithm = $db.DatabaseEncryptionKey.Properties | Where-Object( { $psitem.name -eq 'EncryptionAlgorithm' }).value
+                    }
+
+                    $returnCertificate
                 }
 
                 foreach ($cert in $db.Certificates) {

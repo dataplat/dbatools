@@ -195,7 +195,19 @@ function New-DbaDbMaskingConfig {
             }
         }
 
-        $supportedDataTypes = 'bit', 'bigint', 'bool', 'char', 'date', 'datetime', 'datetime2', 'decimal', 'int', 'money', 'nchar', 'ntext', 'nvarchar', 'smalldatetime', 'smallint', 'text', 'time', 'uniqueidentifier', 'userdefineddatatype', 'varchar'
+        $supportedDataTypes = @(
+            'bit', 'bigint', 'bool',
+            'char', 'date',
+            'datetime', 'datetime2', 'decimal',
+            'float',
+            'int',
+            'money',
+            'nchar', 'ntext', 'nvarchar',
+            'smalldatetime', 'smallint',
+            'text', 'time', 'tinyint',
+            'uniqueidentifier', 'userdefineddatatype',
+            'varchar'
+        )
 
         $maskingconfig = @()
     }
@@ -228,7 +240,7 @@ function New-DbaDbMaskingConfig {
 
             # Loop through the tables
             foreach ($tableobject in $tablecollection) {
-                Write-Message -Message "Processing table $($tableobject.Name)" -Level Verbose
+                Write-Message -Message "Processing table [$($tableobject.Schema)].[$($tableobject.Name)]" -Level Verbose
 
                 $hasUniqueIndex = $false
 
@@ -485,10 +497,13 @@ function New-DbaDbMaskingConfig {
                             MaskingType     = $result.MaskingType
                             SubType         = $result.MaskingSubType
                             Format          = $null
+                            Separator       = $null
                             Deterministic   = $false
                             Nullable        = $columnobject.Nullable
                             KeepNull        = $true
                             Composite       = $null
+                            Action          = $null
+                            StaticValue     = $null
                         }
                     } else {
                         $type = "Random"
@@ -549,10 +564,13 @@ function New-DbaDbMaskingConfig {
                             MaskingType     = $type
                             SubType         = $subType
                             Format          = $null
+                            Separator       = $null
                             Deterministic   = $false
                             Nullable        = $columnobject.Nullable
                             KeepNull        = $true
                             Composite       = $null
+                            Action          = $null
+                            StaticValue     = $null
                         }
                     }
                 }
@@ -564,6 +582,7 @@ function New-DbaDbMaskingConfig {
                         Schema         = $tableobject.Schema
                         Columns        = $columns
                         HasUniqueIndex = $hasUniqueIndex
+                        FilterQuery    = $null
                     }
                 } else {
                     Write-Message -Message "No columns match for masking in table $($tableobject.Name)" -Level Verbose
@@ -587,7 +606,6 @@ function New-DbaDbMaskingConfig {
                 try {
                     $filenamepart = $server.Name.Replace('\', '$').Replace('TCP:', '').Replace(',', '.')
                     $temppath = Join-Path -Path $Path -ChildPath "$($filenamepart).$($db.Name).DataMaskingConfig.json"
-                    #$temppath = "$Path\$($filenamepart).$($db.Name).DataMaskingConfig.json"
 
                     if (-not $script:isWindows) {
                         $temppath = $temppath.Replace("\", "/")

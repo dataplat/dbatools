@@ -130,10 +130,11 @@ function Start-DbaXESession {
                 $name = "XE Session Stop - $session"
                 if ($Pscmdlet.ShouldProcess("$Server", "Making New XEvent StopJob for $session")) {
                     # Setup the schedule time
-                    #$time = $(($StopAt).ToString("HHmmss"))
 
                     # Create the schedule
-                    $schedule = New-DbaAgentSchedule -SqlInstance $server -Schedule $name -FrequencyType Once -StartDate $StopAt
+                    $StartDateDatePart = Get-Date -Date $StopAt -format 'yyyyMMdd'
+                    $StartDateTimePart = Get-Date -Date $StopAt -format 'HHmmss'
+                    $schedule = New-DbaAgentSchedule -SqlInstance $server -Schedule $name -FrequencyType Once -StartDate $StartDateDatePart -StartTime $StartDateTimePart -Force
 
                     # Create the job and attach the schedule
                     $job = New-DbaAgentJob -SqlInstance $server -Job $name -Schedule $schedule -DeleteLevel Always -Force
@@ -165,7 +166,7 @@ function Start-DbaXESession {
                     Start-XESessions $xeSessions
 
                     if ($StopAt) {
-                        New-StopJob -xeSessions $xeSessions -StopAt $stopat
+                        New-StopJob -xeSessions $xeSessions -StopAt $StopAt
                     }
                 }
             }

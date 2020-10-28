@@ -13,7 +13,7 @@ function New-DbaComputerCertificate {
         It makes a lot of assumptions - namely, that your account is allowed to auto-enroll and that you have permission to do everything it needs to do ;)
 
         References:
-        http://sqlmag.com/sql-server/7-steps-ssl-encryption
+        https://www.itprotoday.com/sql-server/7-steps-ssl-encryption
         https://azurebi.jppp.org/2016/01/23/using-lets-encrypt-certificates-for-secure-sql-server-connections/
         https://blogs.msdn.microsoft.com/sqlserverfaq/2016/09/26/creating-and-registering-ssl-certificates/
 
@@ -359,7 +359,7 @@ function New-DbaComputerCertificate {
                     if ($ClusterInstanceName) { $secondaryNode = $true }
                 }
 
-                $scriptblock = {
+                $scriptBlock = {
                     $cert = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2
                     $cert.Import($args[0], $args[1], "Exportable,PersistKeySet")
 
@@ -372,7 +372,7 @@ function New-DbaComputerCertificate {
 
                 if ($PScmdlet.ShouldProcess("local", "Connecting to $computer to import new cert")) {
                     try {
-                        $thumbprint = (Invoke-Command2 -ComputerName $computer -Credential $Credential -ArgumentList $certdata, $SecurePassword, $Store, $Folder -ScriptBlock $scriptblock -ErrorAction Stop).Thumbprint
+                        $thumbprint = (Invoke-Command2 -ComputerName $computer -Credential $Credential -ArgumentList $certdata, $SecurePassword, $Store, $Folder -ScriptBlock $scriptBlock -ErrorAction Stop).Thumbprint
                         Get-DbaComputerCertificate -ComputerName $computer -Credential $Credential -Thumbprint $thumbprint
                     } catch {
                         Stop-Function -Message "Issue importing new cert on $computer" -ErrorRecord $_ -Target $computer -Continue

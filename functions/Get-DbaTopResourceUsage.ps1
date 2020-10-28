@@ -102,7 +102,7 @@ function Get-DbaTopResourceUsage {
         }
 
         if ($ExcludeDatabase) {
-            $wherenotdb = " and coalesce(db_name(st.dbid), db_name(cast(pa.value AS INT)), 'Resource') notin '$($excludedatabase -join '', '')'"
+            $wherenotdb = " and coalesce(db_name(st.dbid), db_name(cast(pa.value AS INT)), 'Resource') not in ('$($excludedatabase -join '', '')')"
         }
 
         if ($ExcludeSystem) {

@@ -89,28 +89,22 @@ function Get-DbaDbRestoreHistory {
         [switch]$EnableException
     )
 
-    begin {
-        if ($Since -ne $null) {
-            $Since = $Since.ToString("yyyy-MM-ddTHH:mm:ss")
-        }
-    }
-
     process {
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
                 $computername = $server.ComputerName
-                $instancename = $server.ServiceName
+                $instanceName = $server.ServiceName
                 $servername = $server.DomainInstanceName
 
                 if ($force -eq $true) {
                     $select = "SELECT '$computername' AS [ComputerName],
-                    '$instancename' AS [InstanceName],
+                    '$instanceName' AS [InstanceName],
                     '$servername' AS [SqlInstance], * "
                 } else {
                     $select = "SELECT
                     '$computername' AS [ComputerName],
-                    '$instancename' AS [InstanceName],
+                    '$instanceName' AS [InstanceName],
                     '$servername' AS [SqlInstance],
                      rsh.destination_database_name AS [Database],
                      --rsh.restore_history_id as RestoreHistoryID,
@@ -163,7 +157,7 @@ function Get-DbaDbRestoreHistory {
                 }
 
                 if ($null -ne $Since) {
-                    $wherearray += "rsh.restore_date >= '$since'"
+                    $wherearray += "rsh.restore_date >= CONVERT(datetime,'$($Since.ToString("yyyy-MM-ddTHH:mm:ss", [System.Globalization.CultureInfo]::InvariantCulture))',126)"
                 }
 
 

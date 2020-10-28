@@ -87,7 +87,7 @@ function Mount-DbaDatabase {
     process {
         foreach ($instance in $SqlInstance) {
             try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             } catch {
                 Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
@@ -123,7 +123,7 @@ function Mount-DbaDatabase {
 
                     $FileStructure = New-Object System.Collections.Specialized.StringCollection
                     foreach ($file in $filepaths) {
-                        $exists = Test-Dbapath -SqlInstance $server -Path $file
+                        $exists = Test-DbaPath -SqlInstance $server -Path $file
                         if (-not $exists) {
                             $message = "Could not find the files to build the FileStructure. Rerun the command and provide the FileStructure parameter."
                             Stop-Function -Message $message -Target $file -Continue

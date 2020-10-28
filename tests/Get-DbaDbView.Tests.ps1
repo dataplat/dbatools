@@ -4,11 +4,10 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'ExcludeSystemView', 'InputObject', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
         It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
+            [array]$params = ([Management.Automation.CommandMetaData]$ExecutionContext.SessionState.InvokeCommand.GetCommand($CommandName, 'Function')).Parameters.Keys
+            [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'ExcludeSystemView', 'View', 'InputObject', 'EnableException'
+            Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params | Should -BeNullOrEmpty
         }
     }
 }
@@ -24,26 +23,28 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     }
 
     Context "Command actually works" {
-        $results = Get-DbaDbView -SqlInstance $script:instance2 -Database tempdb
+        BeforeAll {
+            $results = Get-DbaDbView -SqlInstance $script:instance2 -Database tempdb
+        }
         It "Should have standard properties" {
             $ExpectedProps = 'ComputerName,InstanceName,SqlInstance'.Split(',')
-            ($results[0].PsObject.Properties.Name | Where-Object { $_ -in $ExpectedProps } | Sort-Object) | Should Be ($ExpectedProps | Sort-Object)
+            ($results[0].PsObject.Properties.Name | Where-Object { $_ -in $ExpectedProps } | Sort-Object) | Should -Be ($ExpectedProps | Sort-Object)
         }
         It "Should get test view: $viewName" {
-            ($results | Where-Object Name -eq $viewName).Name | Should Be $true
+            ($results | Where-Object Name -eq $viewName).Name | Should -Be $viewName
         }
         It "Should include system views" {
-            $results.IsSystemObject | Should Contain $true
+            ($results | Where-Object IsSystemObject -eq $true).Count | Should -BeGreaterThan 0
         }
     }
 
     Context "Exclusions work correctly" {
         It "Should contain no views from master database" {
             $results = Get-DbaDbView -SqlInstance $script:instance2 -ExcludeDatabase master
-            $results.Database | Should Not Contain 'master'
+            'master' | Should -Not -BeIn $results.Database
         }
         It "Should exclude system views" {
-            $results = Get-DbaDbView -SqlInstance $script:instance2 -ExcludeSystemView
+            $results = Get-DbaDbView -SqlInstance $script:instance2 -Database master -ExcludeSystemView
             ($results | Where-Object IsSystemObject -eq $true).Count | Should -Be 0
         }
     }
@@ -51,11 +52,11 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     Context "Piping workings" {
         It "Should allow piping from string" {
             $results = $script:instance2 | Get-DbaDbView -Database tempdb
-            ($results | Where-Object Name -eq $viewName).Name | Should -Be $true
+            ($results | Where-Object Name -eq $viewName).Name | Should -Be $viewName
         }
         It "Should allow piping from Get-DbaDatabase" {
             $results = Get-DbaDatabase -SqlInstance $script:instance2 -Database tempdb | Get-DbaDbView
-            ($results | Where-Object Name -eq $viewName).Name | Should -Be $true
+            ($results | Where-Object Name -eq $viewName).Name | Should -Be $viewName
         }
     }
 }

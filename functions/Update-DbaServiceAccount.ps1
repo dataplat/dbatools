@@ -154,10 +154,10 @@ function Update-DbaServiceAccount {
         if ($PsCmdlet.ParameterSetName -match 'ServiceName') {
             foreach ($Computer in $ComputerName.ComputerName) {
                 $Server = Resolve-DbaNetworkName -ComputerName $Computer -Credential $credential
-                if ($Server.ComputerName) {
+                if ($Server.FullComputerName) {
                     foreach ($service in $ServiceName) {
                         $svcCollection += [psobject]@{
-                            ComputerName = $server.ComputerName
+                            ComputerName = $server.FullComputerName
                             ServiceName  = $service
                         }
                     }
@@ -171,13 +171,13 @@ function Update-DbaServiceAccount {
                     Stop-Function -Message "PowerBIReportServer service is not supported, skipping." -Continue
                 } else {
                     $Server = Resolve-DbaNetworkName -ComputerName $service.ComputerName -Credential $credential
-                    if ($Server.ComputerName) {
+                    if ($Server.FullComputerName) {
                         $svcCollection += [psobject]@{
-                            ComputerName = $Server.ComputerName
+                            ComputerName = $Server.FullComputerName
                             ServiceName  = $service.ServiceName
                         }
                     } else {
-                        Stop-Function -EnableException $EnableException -Message "Failed to connect to $($service.ComputerName)" -Continue
+                        Stop-Function -EnableException $EnableException -Message "Failed to connect to $($service.FullComputerName)" -Continue
                     }
                 }
             }
@@ -217,7 +217,7 @@ function Update-DbaServiceAccount {
                     } catch {
                         $outStatus = 'Failed'
                         $outMessage = $_.Exception.Message
-                        Write-Message -Level Warning -Message $_.Exception.Message -EnableException $EnableException.ToBool()
+                        Stop-Function -Message $outMessage -Continue
                     }
                 } else {
                     $outStatus = 'Successful'

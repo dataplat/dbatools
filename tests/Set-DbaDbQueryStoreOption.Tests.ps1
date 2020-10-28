@@ -16,6 +16,10 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     BeforeAll {
         Get-DbaDatabase -SqlInstance $script:instance1, $script:instance2 | Where-Object Name -Match 'dbatoolsci' | Remove-DbaDatabase -Confirm:$false
+        New-DbaDatabase -SqlInstance $script:instance1, $script:instance2 -Name dbatoolsciqs
+    }
+    AfterAll {
+        Get-DbaDatabase -SqlInstance $script:instance1, $script:instance2 | Where-Object Name -Match 'dbatoolsci' | Remove-DbaDatabase -Confirm:$false
     }
     Context "Get some client protocols" {
         foreach ($instance in ($script:instance1, $script:instance2)) {
@@ -28,7 +32,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
                 }
             } else {
                 It "should return some valid results" {
-                    $result = $results | Where-Object Database -eq msdb
+                    $result = $results | Where-Object Database -eq dbatoolsciqs
                     $result.ActualState | Should Be 'Off'
                     $result.MaxStorageSizeInMB | Should BeGreaterThan 1
                 }
@@ -36,19 +40,19 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
                 $newnumber = $result.DataFlushIntervalInSeconds + 1
 
                 It "should change the specified param to the new value" {
-                    $results = Set-DbaDbQueryStoreOption -SqlInstance $instance -Database msdb -FlushInterval $newnumber -State ReadWrite
+                    $results = Set-DbaDbQueryStoreOption -SqlInstance $instance -Database dbatoolsciqs -FlushInterval $newnumber -State ReadWrite
                     $results.DataFlushIntervalInSeconds | Should Be $newnumber
                 }
 
                 It "should only get one database" {
-                    $results = Get-DbaDbQueryStoreOption -SqlInstance $instance -Database model
+                    $results = Get-DbaDbQueryStoreOption -SqlInstance $instance -Database dbatoolsciqs
                     $results.Count | Should Be 1
-                    $results.Database | Should Be 'model'
+                    $results.Database | Should Be 'dbatoolsciqs'
                 }
 
                 It "should not get this one database" {
-                    $results = Get-DbaDbQueryStoreOption -SqlInstance $instance -ExcludeDatabase model
-                    $result = $results | Where-Object Database -eq model
+                    $results = Get-DbaDbQueryStoreOption -SqlInstance $instance -ExcludeDatabase dbatoolsciqs
+                    $result = $results | Where-Object Database -eq dbatoolsciqs
                     $result.Count | Should Be 0
                 }
             }

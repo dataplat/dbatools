@@ -76,9 +76,9 @@ function Get-SQLInstanceComponent {
 
         $regScript = {
             Param (
-                [ValidateSet('SSDS', 'SSAS', 'SSRS')]
-                [string[]]$Component = @('SSDS', 'SSAS', 'SSRS')
+                $ComponentObject
             )
+            $Component = $ComponentObject.Component
             $componentNameMap = @(
                 [pscustomobject]@{
                     ComponentName = 'SSAS';
@@ -287,7 +287,7 @@ function Get-SQLInstanceComponent {
             } elseif ($regKey.GetValueNames() -contains 'InstalledInstances') {
                 $isCluster = $false;
                 $regKey.GetValue('InstalledInstances') | ForEach-Object {
-                    Get-SQLInstanceDetail -RegPath $regPath -Reg $reg -RegKey $regKey -Instance $_;
+                    Get-SQLInstanceDetail -RegPath $regPath -Reg $reg -RegKey $regKey -Instance $_
                 };
             } else {
                 throw "Failed to find any instance names on $env:computername"
@@ -296,20 +296,26 @@ function Get-SQLInstanceComponent {
     }
     process {
         foreach ($computer in $ComputerName) {
-            $results = Invoke-Command2 -ComputerName $computer -ScriptBlock $regScript -Credential $Credential -ErrorAction Stop -Raw -ArgumentList @($Component) -RequiredPSVersion 3.0
+            $arguments = @{ Component = $Component }
+            $results = Invoke-Command2 -ComputerName $computer -ScriptBlock $regScript -Credential $Credential -ErrorAction Stop -Raw -ArgumentList $arguments -RequiredPSVersion 3.0
 
             # Log is stored in the log property, pile it all into the debug log
             foreach ($logEntry in $results.Log) {
                 Write-Message -Level Debug -Message $logEntry
             }
             foreach ($result in $results) {
-                #Replace first decimal of the minor build with a 0, since we're using build numbers here
-                #Refer to https://sqlserverbuilds.blogspot.com/
+                # If version is unknown that component should be excluded, otherwise it would fail on conversion. We have no use for versionless components anyways.
+                if (-Not $result.Version) {
+                    Write-Message -Level Warning -Message "Component $($result.InstanceName) on $($result.ComputerName) has an unknown version and was ommitted from the instance list"
+                    continue
+                }
+                # Replace first decimal of the minor build with a 0, since we're using build numbers here
+                # Refer to https://sqlserverbuilds.blogspot.com/
                 Write-Message -Level Debug -Message "Converting version $($result.Version) to [version]"
                 $newVersion = New-Object -TypeName System.Version -ArgumentList ([string]$result.Version)
                 $newVersion = New-Object -TypeName System.Version -ArgumentList ($newVersion.Major , ($newVersion.Minor - $newVersion.Minor % 10), $newVersion.Build)
                 Write-Message -Level Debug -Message "Converted version $($result.Version) to $newVersion"
-                #Find a proper build reference and replace Version property
+                # Find a proper build reference and replace Version property
                 $result.Version = Get-DbaBuildReference -Build $newVersion -EnableException
                 $result | Select-Object -ExcludeProperty Log
             }

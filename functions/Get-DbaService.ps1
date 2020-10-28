@@ -19,7 +19,7 @@ function Get-DbaService {
 
     .PARAMETER Type
         Use -Type to collect only services of the desired SqlServiceType.
-        Can be one of the following: "Agent","Browser","Engine","FullText","SSAS","SSIS","SSRS", "PolyBase"
+        Can be one of the following: "Agent", "Browser", "Engine", "FullText", "SSAS", "SSIS", "SSRS", "PolyBase", "Launchpad"
 
     .PARAMETER ServiceName
         Can be used to specify service names explicitly, without looking for service types/instances.
@@ -99,7 +99,7 @@ function Get-DbaService {
         [string[]]$InstanceName,
         [PSCredential]$Credential,
         [Parameter(ParameterSetName = "Search")]
-        [ValidateSet("Agent", "Browser", "Engine", "FullText", "SSAS", "SSIS", "SSRS", "PolyBase")]
+        [ValidateSet("Agent", "Browser", "Engine", "FullText", "SSAS", "SSIS", "SSRS", "PolyBase", "Launchpad")]
         [string[]]$Type,
         [Parameter(ParameterSetName = "ServiceName")]
         [string[]]$ServiceName,
@@ -118,6 +118,7 @@ function Get-DbaService {
             @{ Name = "SSRS"; Id = 6 },
             @{ Name = "Browser"; Id = 7 },
             @{ Name = "PolyBase"; Id = 10, 11 },
+            @{ Name = "Launchpad"; Id = 12 },
             @{ Name = "Unknown"; Id = 8 }
         )
         if ($PsCmdlet.ParameterSetName -match 'Search') {
@@ -190,10 +191,10 @@ function Get-DbaService {
                     Add-Member -Force -InputObject $service -MemberType NoteProperty -Name State -Value $(switch ($service.State) { 1 { 'Stopped' } 2 { 'Start Pending' }  3 { 'Stop Pending' } 4 { 'Running' } })
                     Add-Member -Force -InputObject $service -MemberType NoteProperty -Name StartMode -Value $(switch ($service.StartMode) { 1 { 'Unknown' } 2 { 'Automatic' }  3 { 'Manual' } 4 { 'Disabled' } })
 
-                    if ($service.ServiceName -in ("MSSQLSERVER", "SQLSERVERAGENT", "ReportServer", "MSSQLServerOLAPService")) {
+                    if ($service.ServiceName -in ("MSSQLSERVER", "SQLSERVERAGENT", "ReportServer", "MSSQLServerOLAPService", "MSSQLFDLauncher", "SQLPBDMS", "SQLPBENGINE", "MSSQLLAUNCHPAD")) {
                         $instance = "MSSQLSERVER"
                     } else {
-                        if ($service.ServiceType -in @("Agent", "Engine", "SSRS", "SSAS")) {
+                        if ($service.ServiceType -in @("Agent", "Engine", "SSRS", "SSAS", "FullText", "PolyBase", "Launchpad")) {
                             if ($service.ServiceName.indexof('$') -ge 0) {
                                 $instance = $service.ServiceName.split('$')[1]
                             } else {

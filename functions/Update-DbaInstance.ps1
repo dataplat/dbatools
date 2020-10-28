@@ -82,6 +82,10 @@ function Update-DbaInstance {
         Maximum number of computers updated in parallel. Once reached, the update operations will queue up.
         Default: 50
 
+    .PARAMETER ArgumentList
+        A list of extra arguments to pass to the execution file. Accepts one or more strings containing command line parameters.
+        Example: ... -ArgumentList "/SkipRules=RebootRequiredCheck", "/Q"
+
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
 
@@ -153,6 +157,13 @@ function Update-DbaInstance {
         Does not prompt for confirmation.
         Extracts the files in local driver on Server1 C:\temp.
 
+    .EXAMPLE
+        PS C:\> Update-DbaInstance -ComputerName Server1 -Path \\network\share -ArgumentList "/SkipRules=RebootRequiredCheck"
+
+        Updates all applicable SQL Server installations on Server1 with the most recent patch.
+        Additional command line parameters would be passed to the executable.
+        Binary files for the update will be searched among all files and folders recursively in \\network\share.
+
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High', DefaultParameterSetName = 'Version')]
     Param (
@@ -179,6 +190,7 @@ function Update-DbaInstance {
         [ValidateSet('Default', 'Basic', 'Negotiate', 'NegotiateWithImplicitCredential', 'Credssp', 'Digest', 'Kerberos')]
         [string]$Authentication = @('CredSSP', 'Default')[$null -eq $Credential],
         [string]$ExtractPath,
+        [string[]]$ArgumentList,
         [switch]$EnableException
 
     )
@@ -325,7 +337,9 @@ function Update-DbaInstance {
                 Stop-Function -Message "$resolvedName is pending a reboot. Reboot the computer before proceeding." -Continue
             }
             $upgrades = @()
-            :actions foreach ($currentAction in $actions) {
+            :actions foreach ($actionItem in $actions) {
+                # Clone action to use as a splat
+                $currentAction = $actionItem.Clone()
                 # Attempt to configure CredSSP for the remote host when credentials are defined
                 if ($Credential -and -not ([DbaInstanceParameter]$resolvedName).IsLocalHost -and $Authentication -eq 'Credssp') {
                     Write-Message -Level Verbose -Message "Attempting to configure CredSSP for remote connections"
@@ -416,6 +430,7 @@ function Update-DbaInstance {
                 EnableException = $EnableException
                 ExtractPath     = $ExtractPath
                 Authentication  = $Authentication
+                ArgumentList    = $ArgumentList
             }
             Invoke-DbaAdvancedUpdate @updateSplat
         }

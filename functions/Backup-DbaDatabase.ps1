@@ -1,7 +1,7 @@
 function Backup-DbaDatabase {
     <#
     .SYNOPSIS
-        Backup one or more SQL Sever databases from a single SQL Server SqlInstance.
+        Backup one or more SQL Server databases from a single SQL Server SqlInstance.
 
     .DESCRIPTION
         Performs a backup of a specified type of 1 or more databases on a single SQL Server Instance. These backups may be Full, Differential or Transaction log backups.
@@ -395,7 +395,7 @@ function Backup-DbaDatabase {
         foreach ($db in $InputObject) {
             $ProgressId = Get-Random
             $failures = @()
-            $dbname = $db.Name
+            $dbName = $db.Name
             $server = $db.Parent
 
             if ($null -eq $PSBoundParameters.Path -and $PSBoundParameters.FilePath -ne 'NUL' -and $server.VersionMajor -eq 8) {
@@ -403,23 +403,23 @@ function Backup-DbaDatabase {
                 $Path = (Get-DbaDefaultPath -SqlInstance $server).Backup
             }
 
-            if ($dbname -eq "tempdb") {
+            if ($dbName -eq "tempdb") {
                 Stop-Function -Message "Backing up tempdb not supported" -Continue
             }
 
             if ('Normal' -notin ($db.Status -split ',')) {
-                Stop-Function -Message "Database status not Normal. $dbname skipped." -Continue
+                Stop-Function -Message "Database status not Normal. $dbName skipped." -Continue
             }
 
             if ($db.DatabaseSnapshotBaseName) {
-                Stop-Function -Message "Backing up snapshots not supported. $dbname skipped." -Continue
+                Stop-Function -Message "Backing up snapshots not supported. $dbName skipped." -Continue
             }
 
             Write-Message -Level Verbose -Message "Backup database $db"
 
             if ($null -eq $db.RecoveryModel) {
                 $db.RecoveryModel = $server.Databases[$db.Name].RecoveryModel
-                Write-Message -Level Verbose -Message "$dbname is in $($db.RecoveryModel) recovery model"
+                Write-Message -Level Verbose -Message "$dbName is in $($db.RecoveryModel) recovery model"
             }
 
             # Fixes one-off cases of StackOverflowException crashes, see issue 1481
@@ -453,7 +453,7 @@ function Backup-DbaDatabase {
 
             if ($CompressBackup) {
                 if ($db.EncryptionEnabled) {
-                    Write-Message -Level Warning -Message "$dbname is enabled for encryption, will not compress"
+                    Write-Message -Level Warning -Message "$dbName is enabled for encryption, will not compress"
                     $backup.CompressionOption = 2
                 } elseif ($server.Edition -like 'Express*' -or ($server.VersionMajor -eq 10 -and $server.VersionMinor -eq 0 -and $server.Edition -notlike '*enterprise*') -or $server.VersionMajor -lt 10) {
                     Write-Message -Level Warning -Message "Compression is not supported with this version/edition of Sql Server"
@@ -515,7 +515,7 @@ function Backup-DbaDatabase {
                 }
             } else {
                 Write-Message -Level VeryVerbose -Message "Setting filename - $timestamp"
-                $BackupFinalName = "$($dbname)_$timestamp.$suffix"
+                $BackupFinalName = "$($dbName)_$timestamp.$suffix"
             }
 
             Write-Message -Level Verbose -Message "Building backup path"
@@ -548,13 +548,13 @@ function Backup-DbaDatabase {
                 for ($i = 0; $i -lt $FinalBackupPath.Count; $i++) {
                     $parent = [IO.Path]::GetDirectoryName($FinalBackupPath[$i])
                     $leaf = [IO.Path]::GetFileName($FinalBackupPath[$i])
-                    $FinalBackupPath[$i] = [IO.Path]::Combine($parent, $dbname, $leaf)
+                    $FinalBackupPath[$i] = [IO.Path]::Combine($parent, $dbName, $leaf)
                 }
             }
 
             if ($True -eq $ReplaceInName) {
                 for ($i = 0; $i -lt $FinalBackupPath.count; $i++) {
-                    $FinalBackupPath[$i] = $FinalBackupPath[$i] -replace ('dbname', $dbname)
+                    $FinalBackupPath[$i] = $FinalBackupPath[$i] -replace ('dbname', $dbName)
                     $FinalBackupPath[$i] = $FinalBackupPath[$i] -replace ('instancename', $SqlInstance.InstanceName)
                     $FinalBackupPath[$i] = $FinalBackupPath[$i] -replace ('servername', $SqlInstance.ComputerName)
                     $FinalBackupPath[$i] = $FinalBackupPath[$i] -replace ('timestamp', $timestamp)
@@ -612,7 +612,7 @@ function Backup-DbaDatabase {
                 $humanBackupFile = $FinalBackupPath -Join ','
                 Write-Message -Level Verbose -Message "Devices added"
                 $percent = [Microsoft.SqlServer.Management.Smo.PercentCompleteEventHandler] {
-                    Write-Progress -id $ProgressId -activity "Backing up database $dbname to $humanBackupFile" -PercentComplete $_.Percent -status ([System.String]::Format("Progress: {0} %", $_.Percent))
+                    Write-Progress -id $ProgressId -activity "Backing up database $dbName to $humanBackupFile" -PercentComplete $_.Percent -status ([System.String]::Format("Progress: {0} %", $_.Percent))
                 }
                 $backup.add_PercentComplete($percent)
                 $backup.PercentCompleteNotification = 1
@@ -628,23 +628,23 @@ function Backup-DbaDatabase {
                     $backup.Blocksize = $BlockSize
                 }
 
-                Write-Progress -id $ProgressId -activity "Backing up database $dbname to $humanBackupFile" -PercentComplete 0 -status ([System.String]::Format("Progress: {0} %", 0))
+                Write-Progress -id $ProgressId -activity "Backing up database $dbName to $humanBackupFile" -PercentComplete 0 -status ([System.String]::Format("Progress: {0} %", 0))
 
                 try {
-                    if ($Pscmdlet.ShouldProcess($server.Name, "Backing up $dbname to $humanBackupFile")) {
+                    if ($Pscmdlet.ShouldProcess($server.Name, "Backing up $dbName to $humanBackupFile")) {
                         if ($OutputScriptOnly -ne $True) {
                             $Filelist = @()
-                            $FileList += $server.Databases[$dbname].FileGroups.Files | Select-Object @{ Name = "FileType"; Expression = { "D" } }, @{ Name = "Type"; Expression = { "D" } }, @{ Name = "LogicalName"; Expression = { $_.Name } }, @{ Name = "PhysicalName"; Expression = { $_.FileName } }
-                            $FileList += $server.Databases[$dbname].LogFiles | Select-Object @{ Name = "FileType"; Expression = { "L" } }, @{ Name = "Type"; Expression = { "L" } }, @{ Name = "LogicalName"; Expression = { $_.Name } }, @{ Name = "PhysicalName"; Expression = { $_.FileName } }
+                            $FileList += $server.Databases[$dbName].FileGroups.Files | Select-Object @{ Name = "FileType"; Expression = { "D" } }, @{ Name = "Type"; Expression = { "D" } }, @{ Name = "LogicalName"; Expression = { $_.Name } }, @{ Name = "PhysicalName"; Expression = { $_.FileName } }
+                            $FileList += $server.Databases[$dbName].LogFiles | Select-Object @{ Name = "FileType"; Expression = { "L" } }, @{ Name = "Type"; Expression = { "L" } }, @{ Name = "LogicalName"; Expression = { $_.Name } }, @{ Name = "PhysicalName"; Expression = { $_.FileName } }
 
                             $backup.SqlBackup($server)
                             $script = $backup.Script($server)
-                            Write-Progress -id $ProgressId -activity "Backing up database $dbname to $backupfile" -status "Complete" -Completed
+                            Write-Progress -id $ProgressId -activity "Backing up database $dbName to $backupfile" -status "Complete" -Completed
                             $BackupComplete = $true
                             if ($server.VersionMajor -eq '8') {
-                                $HeaderInfo = Get-BackupAncientHistory -SqlInstance $server -Database $dbname
+                                $HeaderInfo = Get-BackupAncientHistory -SqlInstance $server -Database $dbName
                             } else {
-                                $HeaderInfo = Get-DbaDbBackupHistory -SqlInstance $server -Database $dbname @gbhSwitch -IncludeCopyOnly -RecoveryFork $db.RecoveryForkGuid | Sort-Object -Property End -Descending | Select-Object -First 1
+                                $HeaderInfo = Get-DbaDbBackupHistory -SqlInstance $server -Database $dbName @gbhSwitch -IncludeCopyOnly -RecoveryFork $db.RecoveryForkGuid | Sort-Object -Property End -Descending | Select-Object -First 1
                             }
                             $Verified = $false
                             if ($Verify) {
@@ -652,7 +652,7 @@ function Backup-DbaDatabase {
                                     ComputerName         = $server.ComputerName
                                     InstanceName         = $server.ServiceName
                                     SqlInstance          = $server.DomainInstanceName
-                                    DatabaseName         = $dbname
+                                    DatabaseName         = $dbName
                                     BackupComplete       = $BackupComplete
                                     BackupFilesCount     = $FinalBackupPath.Count
                                     BackupFile           = (Split-Path $FinalBackupPath -Leaf)
@@ -692,7 +692,7 @@ function Backup-DbaDatabase {
                             }
                             $HeaderInfo | Add-Member -Type NoteProperty -Name BackupFolder -Value $pathresult
                             $HeaderInfo | Add-Member -Type NoteProperty -Name BackupPath -Value ($FinalBackupPath | Sort-Object -Unique)
-                            $HeaderInfo | Add-Member -Type NoteProperty -Name DatabaseName -Value $dbname
+                            $HeaderInfo | Add-Member -Type NoteProperty -Name DatabaseName -Value $dbName
                             $HeaderInfo | Add-Member -Type NoteProperty -Name Notes -Value ($failures -join (','))
                             $HeaderInfo | Add-Member -Type NoteProperty -Name Script -Value $script
                             $HeaderInfo | Add-Member -Type NoteProperty -Name Verified -Value $Verified

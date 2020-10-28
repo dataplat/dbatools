@@ -135,7 +135,7 @@ function Install-DbaMaintenanceSolution {
         [switch]$ReplaceExisting,
         [switch]$LogToTable,
         [ValidateSet('All', 'Backup', 'IntegrityCheck', 'IndexOptimize')]
-        [string]$Solution = 'All',
+        [string[]]$Solution = 'All',
         [switch]$InstallJobs,
         [string]$LocalFile,
         [switch]$Force,
@@ -144,7 +144,11 @@ function Install-DbaMaintenanceSolution {
     begin {
         if ($Force) { $ConfirmPreference = 'none' }
 
-        if ($InstallJobs -and $Solution -ne 'All') {
+        if ($Solution -contains 'All') {
+            $Solution = @('All');
+        }
+
+        if ($InstallJobs -and $Solution -notcontains 'All') {
             Stop-Function -Message "Jobs can only be created for all solutions. To create SQL Agent jobs you need to use '-Solution All' (or not specify the Solution and let it default to All) and '-InstallJobs'."
             return
         }
@@ -241,36 +245,36 @@ function Install-DbaMaintenanceSolution {
 
                 # Backup location
                 if ($BackupLocation) {
-                    $findBKP = 'SET @BackupDirectory     = NULL'
-                    $replaceBKP = 'SET @BackupDirectory     = N''' + $BackupLocation + ''''
+                    $findBKP = 'DECLARE @BackupDirectory nvarchar(max)     = NULL'
+                    $replaceBKP = 'DECLARE @BackupDirectory nvarchar(max)     = N''' + $BackupLocation + ''''
                     $fileContents[$file] = $fileContents[$file].Replace($findBKP, $replaceBKP)
                 }
 
                 # CleanupTime
                 if ($CleanupTime -ne 0) {
-                    $findCleanupTime = 'SET @CleanupTime         = NULL'
-                    $replaceCleanupTime = 'SET @CleanupTime         = ' + $CleanupTime
+                    $findCleanupTime = 'DECLARE @CleanupTime int                   = NULL'
+                    $replaceCleanupTime = 'DECLARE @CleanupTime int                   = ' + $CleanupTime
                     $fileContents[$file] = $fileContents[$file].Replace($findCleanupTime, $replaceCleanupTime)
                 }
 
                 # OutputFileDirectory
                 if ($OutputFileDirectory) {
-                    $findOutputFileDirectory = 'SET @OutputFileDirectory = NULL'
-                    $replaceOutputFileDirectory = 'SET @OutputFileDirectory = N''' + $OutputFileDirectory + ''''
+                    $findOutputFileDirectory = 'DECLARE @OutputFileDirectory nvarchar(max) = NULL'
+                    $replaceOutputFileDirectory = 'DECLARE @OutputFileDirectory nvarchar(max) = N''' + $OutputFileDirectory + ''''
                     $fileContents[$file] = $fileContents[$file].Replace($findOutputFileDirectory, $replaceOutputFileDirectory)
                 }
 
                 # LogToTable
                 if (!$LogToTable) {
-                    $findLogToTable = "SET @LogToTable          = 'Y'"
-                    $replaceLogToTable = "SET @LogToTable          = 'N'"
+                    $findLogToTable = "DECLARE @LogToTable nvarchar(max)          = 'Y'"
+                    $replaceLogToTable = "DECLARE @LogToTable nvarchar(max)          = 'N'"
                     $fileContents[$file] = $fileContents[$file].Replace($findLogToTable, $replaceLogToTable)
                 }
 
                 # Create Jobs
                 if (-not $InstallJobs) {
-                    $findCreateJobs = "SET @CreateJobs          = 'Y'"
-                    $replaceCreateJobs = "SET @CreateJobs          = 'N'"
+                    $findCreateJobs = "DECLARE @CreateJobs nvarchar(max)          = 'Y'"
+                    $replaceCreateJobs = "DECLARE @CreateJobs nvarchar(max)          = 'N'"
                     $fileContents[$file] = $fileContents[$file].Replace($findCreateJobs, $replaceCreateJobs)
                 }
             }
@@ -307,7 +311,7 @@ function Install-DbaMaintenanceSolution {
 
             $db = $server.Databases[$Database]
 
-            if (-not ($Solution -match 'All')) {
+            if ($Solution -notcontains 'All') {
                 $required = @('CommandExecute.sql')
             }
 
@@ -315,19 +319,19 @@ function Install-DbaMaintenanceSolution {
                 $required += 'CommandLog.sql'
             }
 
-            if ($Solution -match 'Backup') {
+            if ($Solution -contains 'Backup') {
                 $required += 'DatabaseBackup.sql'
             }
 
-            if ($Solution -match 'IntegrityCheck') {
+            if ($Solution -contains 'IntegrityCheck') {
                 $required += 'DatabaseIntegrityCheck.sql'
             }
 
-            if ($Solution -match 'IndexOptimize') {
+            if ($Solution -contains 'IndexOptimize') {
                 $required += 'IndexOptimize.sql'
             }
 
-            if ($Solution -match 'All') {
+            if ($Solution -contains 'All') {
                 $required += 'MaintenanceSolution.sql'
             }
 

@@ -6,20 +6,22 @@ function Set-DbaTcpPort {
     .DESCRIPTION
         This function changes the TCP port used by the specified SQL Server.
 
+        Be aware that the Database Engine begins listening on a new port only when restarted. So you have to restart the Database Engine that the new settings become effective.
+
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.
 
     .PARAMETER SqlCredential
-        Credential object used to connect to the SQL Server instance as a different user
+        Credential object used to connect to the SQL Server instance as a different user.
 
     .PARAMETER Credential
-        Credential object used to connect to the Windows server itself as a different user (like SQL Configuration Manager)
+        Credential object used to connect to the Windows server itself as a different user (like SQL Configuration Manager).
 
     .PARAMETER Port
         TCPPort that SQLService should listen on.
 
     .PARAMETER IpAddress
-        Which IpAddress should the portchange , if omitted allip (0.0.0.0) will be changed with the new port number.
+        Ip address to which the change should apply, if omitted allip (0.0.0.0) will be changed with the new port number.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -80,15 +82,15 @@ function Set-DbaTcpPort {
             }
         }
         $scriptblock = {
-            $computername = $args[0]
-            $wmiinstancename = $args[1]
+            $computerName = $args[0]
+            $wmiInstanceName = $args[1]
             $port = $args[2]
             $IpAddress = $args[3]
-            $sqlinstanceName = $args[4]
+            $sqlInstanceName = $args[4]
 
-            $wmi = New-Object Microsoft.SqlServer.Management.Smo.Wmi.ManagedComputer $computername
+            $wmi = New-Object Microsoft.SqlServer.Management.Smo.Wmi.ManagedComputer $computerName
             $wmiinstance = $wmi.ServerInstances | Where-Object {
-                $_.Name -eq $wmiinstancename
+                $_.Name -eq $wmiInstanceName
             }
             $tcp = $wmiinstance.ServerProtocols | Where-Object {
                 $_.DisplayName -eq 'TCP/IP'
@@ -96,28 +98,28 @@ function Set-DbaTcpPort {
             $IpAddress = $tcp.IpAddresses | Where-Object {
                 $_.IpAddress -eq $IpAddress
             }
-            $tcpport = $IpAddress.IpAddressProperties | Where-Object {
+            $tcpPort = $IpAddress.IpAddressProperties | Where-Object {
                 $_.Name -eq 'TcpPort'
             }
 
-            $oldport = $tcpport.Value
+            $oldPort = $tcpPort.Value
             try {
-                $tcpport.value = $port
+                $tcpPort.value = $port
                 $tcp.Alter()
                 [pscustomobject]@{
-                    ComputerName       = $computername
-                    InstanceName       = $wmiinstancename
-                    SqlInstance        = $sqlinstanceName
-                    PreviousPortNumber = $oldport
+                    ComputerName       = $computerName
+                    InstanceName       = $wmiInstanceName
+                    SqlInstance        = $sqlInstanceName
+                    PreviousPortNumber = $oldPort
                     PortNumber         = $Port
                     Status             = "Success"
                 }
             } catch {
                 [pscustomobject]@{
-                    ComputerName       = $computername
-                    InstanceName       = $wmiinstancename
-                    SqlInstance        = $sqlinstanceName
-                    PreviousPortNumber = $oldport
+                    ComputerName       = $computerName
+                    InstanceName       = $wmiInstanceName
+                    SqlInstance        = $sqlInstanceName
+                    PreviousPortNumber = $oldPort
                     PortNumber         = $Port
                     Status             = "Failed: $_"
                 }
@@ -130,19 +132,20 @@ function Set-DbaTcpPort {
         }
 
         foreach ($instance in $SqlInstance) {
-            $wmiinstancename = $instance.InstanceName
+            $wmiInstanceName = $instance.InstanceName
             $computerName = $instance.ComputerName
+            $resolvedComputerName = (Resolve-DbaNetworkName -ComputerName $computerName).FullComputerName
 
-            if ($Pscmdlet.ShouldProcess($computerName, "Setting port to $Port for $wmiinstancename")) {
+            if ($Pscmdlet.ShouldProcess($computerName, "Setting port to $Port for $wmiInstanceName")) {
                 try {
-                    $computerName = $instance.ComputerName
-                    $resolved = Resolve-DbaNetworkName -ComputerName $computerName
-                    Invoke-ManagedComputerCommand -ComputerName $resolved.FullComputerName -ScriptBlock $scriptblock -ArgumentList $instance.ComputerName, $wmiinstancename, $port, $IpAddress, $instance.InputObject -Credential $Credential
+                    Write-Message -Level Verbose -Message "Trying Invoke-ManagedComputerCommand with ComputerName = '$resolvedComputerName'"
+                    Invoke-ManagedComputerCommand -ComputerName $resolvedComputerName -ScriptBlock $scriptblock -ArgumentList $computerName, $wmiInstanceName, $port, $IpAddress, $instance.InputObject -Credential $Credential
                 } catch {
                     try {
-                        Invoke-ManagedComputerCommand -ComputerName $instance.ComputerName -ScriptBlock $scriptblock -ArgumentList $instance.ComputerName, $wmiinstancename, $port, $IpAddress, $instance.InputObject -Credential $Credential
+                        Write-Message -Level Verbose -Message "Fallback: Trying Invoke-ManagedComputerCommand with ComputerName = '$computerName'"
+                        Invoke-ManagedComputerCommand -ComputerName $computerName -ScriptBlock $scriptblock -ArgumentList $computerName, $wmiInstanceName, $port, $IpAddress, $instance.InputObject -Credential $Credential
                     } catch {
-                        Stop-Function -Message "Failure setting port to $Port for $wmiinstancename on $computerName" -Continue
+                        Stop-Function -Message "Failure setting port to $Port for $wmiInstanceName on $computerName" -Continue
                     }
                 }
             }

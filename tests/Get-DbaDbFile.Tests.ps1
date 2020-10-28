@@ -30,7 +30,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         }
     }
 
-    Context "Check that temppb database is in Simple recovery mode" {
+    Context "Check that tempdb database is in Simple recovery mode" {
         $results = Get-DbaDbFile -SqlInstance $script:instance1 -Database tempdb
         foreach ($result in $results) {
             It "returns only information about tempdb" {

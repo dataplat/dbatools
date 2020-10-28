@@ -119,7 +119,7 @@ function Get-DbaDbMailHistory {
                 $wherearray = @()
 
                 if ($Since) {
-                    $wherearray += "send_request_date >= '$($Since.ToString("yyyy-MM-ddTHH:mm:ss"))'"
+                    $wherearray += "send_request_date >= CONVERT(datetime,'$($Since.ToString("yyyy-MM-ddTHH:mm:ss", [System.Globalization.CultureInfo]::InvariantCulture))',126)"
                 }
 
                 if ($Status) {

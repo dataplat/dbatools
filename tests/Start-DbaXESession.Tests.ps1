@@ -4,11 +4,11 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
+        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
         [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Session', 'StopAt', 'AllSessions', 'InputObject', 'EnableException'
         $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
         It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
         }
     }
 }
@@ -29,13 +29,10 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         $allSessions = Get-DbaXESession -SqlInstance $server
     }
     BeforeEach {
-        <#
         $systemhealth.Refresh()
         if ($systemhealth.IsRunning) {
             $systemhealth.Stop()
         }
-        #>
-        $systemhealth | Stop-DbaXESession #-ErrorAction SilentlyContinue
     }
     AfterAll {
         # Set the Status of all session back to what they were before the test
@@ -88,6 +85,16 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $dbatoolsciValid.Refresh()
             $systemhealth.IsRunning | Should Be $false
             $dbatoolsciValid.IsRunning | Should Be $true
+        }
+
+        It "works when -StopAt is passed" {
+            $StopAt = (Get-Date).AddSeconds(10)
+            Start-DbaXESession $server -Session $dbatoolsciValid.Name -StopAt $StopAt -WarningAction SilentlyContinue
+            $dbatoolsciValid.IsRunning | Should Be $true
+            (Get-DbaAgentJob -SqlInstance $server -Job "XE Session Stop - dbatoolsci_session_valid").Count | Should -Be 1
+            $stopSchedule = Get-DbaAgentSchedule -SqlInstance $server -Schedule "XE Session Stop - dbatoolsci_session_valid"
+            $stopSchedule.ActiveStartTimeOfDay.ToString('hhmmss') | Should -Be $StopAt.TimeOfDay.ToString('hhmmss')
+            $stopSchedule.ActiveStartDate | Should -Be $StopAt.Date
         }
 
     }

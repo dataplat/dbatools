@@ -65,7 +65,7 @@ function Get-DbaDbDetachedFileInfo {
             return
         }
         $servername = $server.name
-        $serviceaccount = $server.ServiceAccount
+        $serviceAccount = $server.ServiceAccount
     }
     process {
         if (Test-FunctionInterrupt) { return }
@@ -74,12 +74,12 @@ function Get-DbaDbDetachedFileInfo {
             $logfiles = New-Object System.Collections.Specialized.StringCollection
 
             if (-not (Test-DbaPath -SqlInstance $server -Path $filepath)) {
-                Stop-Function -Message "$servername cannot access the file $filepath. Does the file exist and does the service account ($serviceaccount) have access to the path?" -Continue
+                Stop-Function -Message "$servername cannot access the file $filepath. Does the file exist and does the service account ($serviceAccount) have access to the path?" -Continue
             }
 
             try {
                 $detachedDatabaseInfo = $server.DetachedDatabaseInfo($filepath)
-                $dbname = ($detachedDatabaseInfo | Where-Object { $_.Property -eq "Database name" }).Value
+                $dbName = ($detachedDatabaseInfo | Where-Object { $_.Property -eq "Database name" }).Value
                 $exactdbversion = ($detachedDatabaseInfo | Where-Object { $_.Property -eq "Database version" }).Value
                 $collationid = ($detachedDatabaseInfo | Where-Object { $_.Property -eq "Collation" }).Value
             } catch {
@@ -128,7 +128,7 @@ function Get-DbaDbDetachedFileInfo {
                 ComputerName = $SqlInstance.ComputerName
                 InstanceName = $SqlInstance.InstanceName
                 SqlInstance  = $SqlInstance.InputObject
-                Name         = $dbname
+                Name         = $dbName
                 Version      = $dbversion
                 ExactVersion = $exactdbversion
                 Collation    = $collation

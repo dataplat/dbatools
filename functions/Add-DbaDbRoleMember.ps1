@@ -107,11 +107,11 @@ function Add-DbaDbRoleMember {
             switch ($inputType) {
                 'Sqlcollaborative.Dbatools.Parameter.DbaInstanceParameter' {
                     Write-Message -Level Verbose -Message "Processing DbaInstanceParameter through InputObject"
-                    $dbRoles = Get-DbaDBRole -SqlInstance $input -SqlCredential $sqlcredential -Database $Database -Role $Role
+                    $dbRoles = Get-DbaDBRole -SqlInstance $input -SqlCredential $SqlCredential -Database $Database -Role $Role
                 }
                 'Microsoft.SqlServer.Management.Smo.Server' {
                     Write-Message -Level Verbose -Message "Processing Server through InputObject"
-                    $dbRoles = Get-DbaDBRole -SqlInstance $input -SqlCredential $sqlcredential -Database $Database -Role $Role
+                    $dbRoles = Get-DbaDBRole -SqlInstance $input -SqlCredential $SqlCredential -Database $Database -Role $Role
                 }
                 'Microsoft.SqlServer.Management.Smo.Database' {
                     Write-Message -Level Verbose -Message "Processing Database through InputObject"
@@ -141,14 +141,14 @@ function Add-DbaDbRoleMember {
 
                 foreach ($username in $User) {
                     if ($db.Users.Name -contains $username) {
-                        if ($members.Name -notcontains $username) {
+                        if ($members -notcontains $username) {
                             if ($PSCmdlet.ShouldProcess($instance, "Adding User $username to role: $dbRole in database $db")) {
                                 Write-Message -Level 'Verbose' -Message "Adding User $username to role: $dbRole in database $db on $instance"
                                 $dbRole.AddMember($username)
                             }
                         }
                     } else {
-                        Write-Message -Level 'Verbose' -Message "User $username does not exist in $db on $instance"
+                        Write-Message -Level 'Warning' -Message "User $username does not exist in $db on $instance"
                     }
                 }
             }

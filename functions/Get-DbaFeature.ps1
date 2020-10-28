@@ -68,7 +68,7 @@ function Get-DbaFeature {
     )
 
     begin {
-        $scriptblock = {
+        $scriptBlock = {
             $setup = Get-ChildItem -Recurse -Include setup.exe -Path "$([System.Environment]::GetFolderPath("ProgramFiles"))\Microsoft SQL Server" -ErrorAction SilentlyContinue |
                 Where-Object { $_.FullName -match 'Setup Bootstrap\\SQL' -or $_.FullName -match 'Bootstrap\\Release\\Setup.exe' -or $_.FullName -match 'Bootstrap\\Setup.exe' } |
                 Sort-Object FullName -Descending | Select-Object -First 1
@@ -87,7 +87,7 @@ function Get-DbaFeature {
     process {
         foreach ($computer in $ComputerName) {
             try {
-                $text = Invoke-Command2 -ComputerName $Computer -ScriptBlock $scriptblock -Credential $Credential -Raw
+                $text = Invoke-Command2 -ComputerName $Computer -ScriptBlock $scriptBlock -Credential $Credential -Raw
 
                 if (-not $text) {
                     Write-Message -Level Verbose -Message "No features found on $computer"

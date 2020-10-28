@@ -11,7 +11,7 @@
     RootModule             = 'dbatools.psm1'
 
     # Version number of this module.
-    ModuleVersion          = '1.0.88'
+    ModuleVersion          = '1.0.127'
 
     # ID used to uniquely identify this module
     GUID                   = '9d139310-ce45-41ce-8e8b-d76335aa1789'
@@ -135,6 +135,7 @@
         'Get-DbaLastBackup',
         'Connect-DbaInstance',
         'Get-DbaDbBackupHistory',
+        'Get-DbaAgBackupHistory',
         'Read-DbaBackupHeader',
         'Test-DbaLastBackup',
         'Get-DbaMaxMemory',
@@ -495,6 +496,8 @@
         'Get-DbaDbAsymmetricKey',
         'New-DbaDbAsymmetricKey',
         'Remove-DbaDbAsymmetricKey',
+        'Invoke-DbaDbTransfer',
+        'New-DbaDbTransfer',
         # noncoresmo
         # SMO issues
         'Export-DbaUser',
@@ -526,6 +529,7 @@
         'Get-DbaAgentJobOutputFile',
         'Set-DbaAgentJobOutputFile',
         'Get-DbaBuildReference',
+        'Update-DbaBuildReference',
         'New-DbaDacProfile'
         'Import-DbaXESessionTemplate',
         'Export-DbaXESessionTemplate',
@@ -539,6 +543,8 @@
         'Test-DbaMaxMemory', # can be fixed by not testing remote when linux is detected
         'Rename-DbaDatabase', # can maybebe fixed by not remoting when linux is detected
         # CM and Windows functions
+        'Get-DbaExtendedProtection',
+        'Set-DbaExtendedProtection',
         'Install-DbaInstance',
         'Invoke-DbaAdvancedInstall',
         'Update-DbaInstance',
@@ -609,6 +615,7 @@
         'Backup-DbaComputerCertificate',
         'Get-DbaNetworkCertificate',
         'Set-DbaNetworkCertificate',
+        'Remove-DbaDbLogshipping',
         'Invoke-DbaDbLogShipping',
         'New-DbaCmConnection',
         'Get-DbaCmConnection',
@@ -660,7 +667,8 @@
         # Unknown
         'Get-DbaErrorLog',
         'Get-DbaManagementObject',
-        'Test-DbaManagementObject'
+        'Test-DbaManagementObject',
+        'Copy-DbaDbViewData'
     )
 
     # Cmdlets to export from this module

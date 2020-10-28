@@ -25,7 +25,7 @@ function Find-DbaDbUnusedIndex {
         Specifies the database(s) to exclude from processing. Options for this list are auto-populated from the server.
 
     .PARAMETER IgnoreUptime
-        Less than 7 days uptime can mean that analysis of unused indexes is unreliable, and normally no results will be returned. By setting this option results will be returned even if the Instance has been running for less that 7 days.
+        Less than 7 days uptime can mean that analysis of unused indexes is unreliable, and normally no results will be returned. By setting this option results will be returned even if the Instance has been running for less than 7 days.
 
     .PARAMETER InputObject
         Enables piping from Get-DbaDatabase
@@ -34,6 +34,30 @@ function Find-DbaDbUnusedIndex {
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+
+    .PARAMETER Seeks
+        Specify a custom threshold for user seeks. The default for this parameter is 1.
+        The valid values are between 1 and 1000000 to provide flexibility on the definition of 'unused' indexes.
+        Note: The resulting WHERE clause uses the AND operator:
+        user_seeks < $Seeks
+        AND user_scans < $Scans
+        AND user_lookups < $Lookups
+
+    .PARAMETER Scans
+        Specify a custom threshold for user scans. The default for this parameter is 1.
+        The valid values are between 1 and 1000000 to provide flexibility on the definition of 'unused' indexes.
+        Note: The resulting WHERE clause uses the AND operator:
+        user_seeks < $Seeks
+        AND user_scans < $Scans
+        AND user_lookups < $Lookups
+
+    .PARAMETER Lookups
+        Specify a custom threshold for user lookups. The default for this parameter is 1.
+        The valid values are between 1 and 1000000 to provide flexibility on the definition of 'unused' indexes.
+        Note: The resulting WHERE clause uses the AND operator:
+        user_seeks < $Seeks
+        AND user_scans < $Scans
+        AND user_lookups < $Lookups
 
     .NOTES
         Tags: Index
@@ -61,6 +85,12 @@ function Find-DbaDbUnusedIndex {
 
         Finds unused indexes on all databases on sql2016
 
+    .EXAMPLE
+        PS C:\> Get-DbaDatabase -SqlInstance sql2019 | Find-DbaDbUnusedIndex -Seeks 10 -Scans 100 -Lookups 1000
+
+        Finds 'unused' indexes with user_seeks < 10, user_scans < 100, and user_lookups < 1000 on all databases on sql2019.
+        Note that these additional parameters provide flexibility to define what is considered an 'unused' index.
+
     #>
     [CmdletBinding()]
     param (
@@ -70,13 +100,42 @@ function Find-DbaDbUnusedIndex {
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
         [switch]$IgnoreUptime,
+        [ValidateRange(1, 1000000)][int]$Seeks = 1,
+        [ValidateRange(1, 1000000)][int]$Scans = 1,
+        [ValidateRange(1, 1000000)][int]$Lookups = 1,
         [Parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
         [switch]$EnableException
     )
     begin {
         # Support Compression 2008+
-        $sql = "SELECT  SERVERPROPERTY('MachineName') AS ComputerName,
+        $sql = "
+        ;WITH
+            CTE_IndexSpace
+        AS
+        (
+            SELECT
+                s.object_id                         AS object_id
+            ,   s.index_id                          AS index_id
+            ,   SUM(s.used_page_count) * 8 / 1024.0 AS IndexSizeMB
+            ,   SUM(p.[rows])                       AS [RowCount]
+            --REPLACEPARAMCTE
+            FROM
+                sys.dm_db_partition_stats AS s
+            INNER JOIN
+                sys.partitions p WITH (NOLOCK)
+                    ON s.[partition_id] = p.[partition_id]
+                    AND s.[object_id] = p.[object_id]
+                    AND s.index_id = p.index_id
+            WHERE
+                s.index_id > 0 -- Exclude HEAPS
+                AND OBJECT_SCHEMA_NAME(s.[object_id]) <> 'sys'
+            GROUP BY
+                s.[object_id]
+            ,   s.index_id
+            --REPLACEPARAMCTE
+        )
+        SELECT  SERVERPROPERTY('MachineName') AS ComputerName,
         ISNULL(SERVERPROPERTY('InstanceName'), 'MSSQLSERVER') AS InstanceName,
         SERVERPROPERTY('ServerName') AS SqlInstance, DB_NAME(database_id) AS 'Database'
         ,s.name AS 'Schema'
@@ -101,25 +160,43 @@ function Find-DbaDbUnusedIndex {
         ,last_system_scan  as 'LastSystemScan'
         ,last_system_lookup  as 'LastSystemLookup'
         ,last_system_update as 'LastSystemUpdate'
+        ,COALESCE(indexSpace.IndexSizeMB, 0) AS 'IndexSizeMB'
+        ,COALESCE(indexSpace.[RowCount], 0) AS 'RowCount'
+        --REPLACEPARAMSELECT
         FROM sys.tables t
         JOIN sys.schemas s
             ON t.schema_id = s.schema_id
         JOIN sys.indexes i
-            ON i.object_id = t.object_id LEFT OUTER
-        JOIN sys.dm_db_index_usage_stats iu
+            ON i.object_id = t.object_id
+        LEFT OUTER JOIN sys.dm_db_index_usage_stats iu
             ON iu.object_id = i.object_id
                 AND iu.index_id = i.index_id
+        JOIN CTE_IndexSpace indexSpace
+            ON indexSpace.index_id = i.index_id
+                AND indexSpace.object_id = i.object_id
         WHERE iu.database_id = DB_ID()
                 AND OBJECTPROPERTY(i.[object_id], 'IsMSShipped') = 0
-                AND user_seeks = 0
-                AND user_scans = 0
-                AND user_lookups = 0
+                AND user_seeks < $Seeks
+                AND user_scans < $Scans
+                AND user_lookups < $Lookups
                 AND i.type_desc NOT IN ('HEAP', 'CLUSTERED COLUMNSTORE')"
+
+        # Replacement values for the SQL above
+        $replaceParamCTE = "--REPLACEPARAMCTE"
+        $replaceValueCTE = ", p.data_compression_desc"
+        $replaceParamSelect = "--REPLACEPARAMSELECT"
+        $replaceValueSelect = ", indexSpace.data_compression_desc AS CompressionDescription"
     }
 
     process {
         if ($SqlInstance) {
             $InputObject += Get-DbaDatabase -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $Database -ExcludeDatabase $ExcludeDatabase
+        }
+
+        # Return a warning if the database specified was not found
+        if ($null -eq $InputObject -or $InputObject.Count -eq 0) {
+            Write-Message -Level Warning -Message "Database [$Database] was not found on [$SqlInstance]."
+            continue
         }
 
         foreach ($db in $InputObject) {
@@ -162,8 +239,17 @@ function Find-DbaDbUnusedIndex {
                 Write-Message -Level Verbose -Message "The SQL Service on $instance was restarted on $lastRestart, which may not be long enough for a solid evaluation."
             }
 
+            <#
+                Data compression was added in SQL 2008, so add in the additional compression description column for versions 2008 or higher.
+            #>
+            $sqlToRun = $sql
+
+            if ($server.VersionMajor -gt 9) {
+                $sqlToRun = $sqlToRun.Replace($replaceParamCTE, $replaceValueCTE).Replace($replaceParamSelect, $replaceValueSelect)
+            }
+
             try {
-                $db.Query($sql)
+                $db.Query($sqlToRun)
             } catch {
                 Stop-Function -Message "Issue gathering indexes" -Category InvalidOperation -ErrorRecord $_ -Target $db
             }

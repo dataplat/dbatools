@@ -168,7 +168,7 @@ function Set-DbaAgentJobStep {
         [int]$RetryAttempts,
         [int]$RetryInterval,
         [string]$OutputFileName,
-        [ValidateSet('AppendAllCmdExecOutputToJobHistory', 'AppendToJobHistory', 'AppendToLogFile', 'LogToTableWithOverwrite', 'None', 'ProvideStopProcessEvent')]
+        [ValidateSet('AppendAllCmdExecOutputToJobHistory', 'AppendToJobHistory', 'AppendToLogFile', 'AppendToTableLog', 'LogToTableWithOverwrite', 'None', 'ProvideStopProcessEvent')]
         [string[]]$Flag,
         [string]$ProxyName,
         [parameter(ValueFromPipeline)]
@@ -198,16 +198,16 @@ function Set-DbaAgentJobStep {
         if (Test-FunctionInterrupt) { return }
 
         if ((-not $InputObject) -and (-not $Job)) {
-            Stop-Function -Message "You must specify a job name or pipe in results from another command" -Target $sqlinstance
+            Stop-Function -Message "You must specify a job name or pipe in results from another command" -Target $SqlInstance
             return
         }
 
         if ((-not $InputObject) -and (-not $StepName)) {
-            Stop-Function -Message "You must specify a job step name or pipe in results from another command" -Target $sqlinstance
+            Stop-Function -Message "You must specify a job step name or pipe in results from another command" -Target $SqlInstance
             return
         }
 
-        foreach ($instance in $sqlinstance) {
+        foreach ($instance in $SqlInstance) {
             # Try connecting to the instance
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
@@ -242,7 +242,7 @@ function Set-DbaAgentJobStep {
             $InputObject = $InputObject | Where-Object Name -in $StepName
         }
 
-        foreach ($instance in $sqlinstance) {
+        foreach ($instance in $SqlInstance) {
 
             # Try connecting to the instance
             try {

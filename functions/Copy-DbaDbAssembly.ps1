@@ -146,7 +146,7 @@ function Copy-DbaDbAssembly {
                 $assemblyName = $currentAssembly.Name
                 $dbName = $currentAssembly.Parent.Name
                 $destDb = $destServer.Databases[$dbName]
-                Write-Message -Level VeryVerbose -Message "Processing $assemblyName on $dbname"
+                Write-Message -Level VeryVerbose -Message "Processing $assemblyName on $dbName"
                 $copyDbAssemblyStatus = [pscustomobject]@{
                     SourceServer        = $sourceServer.Name
                     SourceDatabase      = $dbName

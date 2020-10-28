@@ -4,7 +4,8 @@ function Enable-DbaTraceFlag {
         Enable Global Trace Flag(s)
 
     .DESCRIPTION
-        The function will set one or multiple trace flags on the SQL Server instance(s) listed
+        The function will set one or multiple trace flags on the SQL Server instance(s) listed.
+        These are not persisted after a restart, use Set-DbaStartupParameter to set them to persist after restarts.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.
@@ -44,7 +45,6 @@ function Enable-DbaTraceFlag {
         PS C:\> Enable-DbaTraceFlag -SqlInstance sql2016 -TraceFlag 1117, 1118
 
         Enable multiple trace flags on SQL Server instance sql2016
-
     #>
     [CmdletBinding()]
     param (
