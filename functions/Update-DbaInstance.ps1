@@ -559,7 +559,7 @@ function Update-DbaInstance {
                         }
                     }
                     # Update appropriate action
-                    $installAction = $installActions | Where-Object ComputerName -EQ $groupItem.ComputerName
+                    $installAction = $installActions | Where-Object ComputerName -eq $groupItem.ComputerName
                     $action = $installAction.Actions | Where-Object { $_.KB -eq $groupItem.KB -and $_.Architecture -eq $groupItem.Architecture }
                     $action.Installer = $filePath
                 }
