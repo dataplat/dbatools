@@ -658,7 +658,7 @@ function Add-DbaDbRoleMember {
                             }
                         }
                     } else {
-                        Write-Message -Level 'Verbose' -Message "User $username does not exist in $db on $instance"
+                        Write-Message -Level 'Warning' -Message "User $username does not exist in $db on $instance"
                     }
                 }
             }
@@ -8265,7 +8265,18 @@ function Copy-DbaLogin {
 
                 Write-Message -Level Verbose -Message "Attempting to add $newUserName to $destinstance."
                 try {
-                    $destLogin = New-DbaLogin -SqlInstance $destServer -InputObject $Login -NewSid:$NewSid -LoginRenameHashtable:$LoginRenameHashtable -EnableException:$true
+                    $splatNewLogin = @{
+                        SqlInstance          = $destServer
+                        InputObject          = $Login
+                        NewSid               = $NewSid
+                        LoginRenameHashtable = $LoginRenameHashtable
+                    }
+                    if ($Login.DefaultDatabase -notin $destServer.Databases.Name) {
+                        $copyLoginStatus.Notes = "Database $($Login.DefaultDatabase) does not exist on $destServer, switching DefaultDatabase to 'master' for $($Login.Name)"
+                        Write-Message -Level Warning -Message $copyLoginStatus.Notes
+                        $splatNewLogin.DefaultDatabase = 'master'
+                    }
+                    $destLogin = New-DbaLogin @splatNewLogin -EnableException:$true
                     $copyLoginStatus.Status = "Successful"
                 } catch {
                     $copyLoginStatus.Status = "Failed"
@@ -26650,7 +26661,7 @@ function Get-DbaDependency {
             $limitCount = 2
             if ($IncludeSelf) { $limitCount = 1 }
             if ($tree.Count -lt $limitCount) {
-                Write-Message -Message "No dependencies detected for $($Item)" -Level Host
+                Write-Message -Message "No dependencies detected for $($Item)" -Level Important
                 continue
             }
 
@@ -41125,9 +41136,9 @@ function Invoke-DbaAdvancedInstall {
             Write-ProgressHelper -ExcludePercent -Activity $activity -Message "Copying configuration file to $ComputerName"
             $session = New-PSSession @connectionParams
             $chosenPath = Invoke-Command -Session $session -ScriptBlock { (Get-Item ([System.IO.Path]::GetTempPath())).FullName } -ErrorAction Stop
-            $remoteConfig = Join-DbaPath $chosenPath (Split-Path $ConfigurationPath -Leaf)
+            $remoteConfig = Join-DbaPath $chosenPath.TrimEnd('\') (Split-Path $ConfigurationPath -Leaf)
             Write-Message -Level Verbose -Message "Copying $($ConfigurationPath) to remote machine into $chosenPath"
-            Copy-Item -Path $ConfigurationPath -Destination $remoteConfig -ToSession $session -Force -ErrorAction Stop
+            $null = Send-File -Path $ConfigurationPath -Destination $chosenPath -Session $session -ErrorAction Stop
             $session | Remove-PSSession
         } catch {
             Stop-Function -Message "Failed to copy file $($ConfigurationPath) to $remoteConfig on $($ComputerName), exiting" -ErrorRecord $_
@@ -43661,9 +43672,34 @@ function Invoke-DbaDbDataMasking {
                                     $updateQuery = "UPDATE [$($tableobject.Schema)].[$($tableobject.Name)] SET $($updates -join ', ') WHERE [$($identityColumn)] = $($row.$($identityColumn)); "
                                     $null = $stringBuilder.AppendLine($updateQuery)
 
+                                    if ($batchRowCounter -eq $BatchSize) {
+                                        if ($batchCounter -ne $totalBatches) {
+                                            $batchCounter++
+                                        }
+
+                                        $progressParams = @{
+                                            StepNumber = $batchCounter
+                                            TotalSteps = $totalBatches
+                                            Activity   = "Masking $($data.Count) rows in $($tableobject.Schema).$($tableobject.Name) in $($dbName) on $instance"
+                                            Message    = "Executing Batch $batchCounter/$totalBatches"
+                                        }
+
+                                        Write-ProgressHelper @progressParams
+
+                                        Write-Message -Level Verbose -Message "Executing batch $batchCounter/$totalBatches"
+
+                                        try {
+                                            Invoke-DbaQuery -SqlInstance $instance -SqlCredential $SqlCredential -Database $db.Name -Query $stringBuilder.ToString()
+                                        } catch {
+                                            Stop-Function -Message "Error updating $($tableobject.Schema).$($tableobject.Name): $_" -Target $stringBuilder -Continue -ErrorRecord $_
+                                        }
+
+                                        $null = $stringBuilder.Clear()
+                                        $batchRowCounter = 0
+                                    }
                                 }
 
-                                if ($batchRowCounter -eq $BatchSize) {
+                                if ($stringBuilder.Length -ge 1) {
                                     if ($batchCounter -ne $totalBatches) {
                                         $batchCounter++
                                     }
@@ -43677,37 +43713,11 @@ function Invoke-DbaDbDataMasking {
 
                                     Write-ProgressHelper @progressParams
 
-                                    Write-Message -Level Verbose -Message "Executing batch $batchCounter/$totalBatches"
-
                                     try {
                                         Invoke-DbaQuery -SqlInstance $instance -SqlCredential $SqlCredential -Database $db.Name -Query $stringBuilder.ToString()
                                     } catch {
                                         Stop-Function -Message "Error updating $($tableobject.Schema).$($tableobject.Name): $_" -Target $stringBuilder -Continue -ErrorRecord $_
                                     }
-
-                                    $null = $stringBuilder.Clear()
-                                    $batchRowCounter = 0
-                                }
-                            }
-
-                            if ($stringBuilder.Length -ge 1) {
-                                if ($batchCounter -ne $totalBatches) {
-                                    $batchCounter++
-                                }
-
-                                $progressParams = @{
-                                    StepNumber = $batchCounter
-                                    TotalSteps = $totalBatches
-                                    Activity   = "Masking $($data.Count) rows in $($tableobject.Schema).$($tableobject.Name) in $($dbName) on $instance"
-                                    Message    = "Executing Batch $batchCounter/$totalBatches"
-                                }
-
-                                Write-ProgressHelper @progressParams
-
-                                try {
-                                    Invoke-DbaQuery -SqlInstance $instance -SqlCredential $SqlCredential -Database $db.Name -Query $stringBuilder.ToString()
-                                } catch {
-                                    Stop-Function -Message "Error updating $($tableobject.Schema).$($tableobject.Name): $_" -Target $stringBuilder -Continue -ErrorRecord $_
                                 }
                             }
                         }
@@ -47990,9 +48000,22 @@ function Invoke-DbatoolsFormatter {
         [switch]$EnableException
     )
     begin {
-        $HasInvokeFormatter = $null -ne (Get-Command Invoke-Formatter -ErrorAction SilentlyContinue).Version
+        $invokeFormatterVersion = (Get-Command Invoke-Formatter -ErrorAction SilentlyContinue).Version
+        $HasInvokeFormatter = $null -ne $invokeFormatterVersion
+        $ScriptAnalyzerCorrectVersion = '1.18.2'
         if (!($HasInvokeFormatter)) {
-            Stop-Function -Message "You need a recent version of PSScriptAnalyzer installed"
+            Stop-Function -Message "You need PSScriptAnalyzer version $ScriptAnalyzerCorrectVersion installed"
+            Write-Message -Level Warning "     Install-Module -Name PSScriptAnalyzer -RequiredVersion '$ScriptAnalyzerCorrectVersion'"
+        } else {
+            if ($invokeFormatterVersion -ne $ScriptAnalyzerCorrectVersion) {
+                Remove-Module PSScriptAnalyzer
+                try {
+                    Import-Module PSScriptAnalyzer -RequiredVersion $ScriptAnalyzerCorrectVersion -ErrorAction Stop
+                } catch {
+                    Stop-Function -Message "Please install PSScriptAnalyzer $ScriptAnalyzerCorrectVersion"
+                    Write-Message -Level Warning "     Install-Module -Name PSScriptAnalyzer -RequiredVersion '$ScriptAnalyzerCorrectVersion'"
+                }
+            }
         }
         $CBHRex = [regex]'(?smi)\s+\<\#[^#]*\#\>'
         $CBHStartRex = [regex]'(?<spaces>[ ]+)\<\#'
@@ -71335,7 +71358,7 @@ function Test-DbaDbDataMaskingConfig {
             return
         }
 
-        $supportedDataTypes = @('bigint', 'bit', 'bool', 'char', 'date', 'datetime', 'datetime2', 'decimal', 'int', 'money', 'nchar', 'ntext', 'nvarchar', 'smalldatetime', 'smallint', 'text', 'time', 'uniqueidentifier', 'userdefineddatatype', 'varchar')
+        $supportedDataTypes = @('bigint', 'bit', 'bool', 'char', 'date', 'datetime', 'datetime2', 'decimal', 'float', 'int', 'money', 'nchar', 'ntext', 'nvarchar', 'smalldatetime', 'smallint', 'text', 'time', 'tinyint', 'uniqueidentifier', 'userdefineddatatype', 'varchar')
 
         $randomizerTypes = Get-DbaRandomizedType
 
@@ -75702,7 +75725,7 @@ function Update-DbaServiceAccount {
                     } catch {
                         $outStatus = 'Failed'
                         $outMessage = $_.Exception.Message
-                        Write-Message -Level Warning -Message $_.Exception.Message -EnableException $EnableException.ToBool()
+                        Stop-Function -Message $outMessage -Continue
                     }
                 } else {
                     $outStatus = 'Successful'
@@ -82174,6 +82197,100 @@ function Select-DefaultView {
         $inputobject
     }
 }
+
+#.ExternalHelp dbatools-Help.xml
+function Send-File {
+    
+    [CmdletBinding()]
+    param
+    (
+        [Parameter(Mandatory)]
+        [ValidateNotNullOrEmpty()]
+        [string[]]$Path,
+
+        [Parameter(Mandatory)]
+        [ValidateNotNullOrEmpty()]
+        [string]$Destination,
+
+        [Parameter(Mandatory)]
+        [System.Management.Automation.Runspaces.PSSession]$Session
+    )
+    process {
+        foreach ($p in $Path) {
+            if ($p.StartsWith('\\')) {
+                Write-Message -Level Verbose -Message "[$($p)] is a UNC path. Copying locally first"
+                Copy-Item -Path $p -Destination ([environment]::GetEnvironmentVariable('TEMP', 'Machine')) -ErrorAction Stop
+                $p = "$([environment]::GetEnvironmentVariable('TEMP', 'Machine'))\$($p | Split-Path -Leaf)"
+            }
+            if (Test-Path -Path $p -PathType Container) {
+                Write-Message -Level Verbose -Message "[$($p)] is a folder. Sending all files"
+                $files = Get-ChildItem -Path $p -File -Recurse -ErrorAction Stop
+                $sendFileParamColl = @()
+                foreach ($file in $Files) {
+                    $sendParams = @{
+                        'Session' = $Session
+                        'Path'    = $file.FullName
+                    }
+                    if ($file.DirectoryName -ne $p) {
+                        ## It's a subdirectory
+                        $subdirpath = $file.DirectoryName.Replace("$p\", '')
+                        $sendParams.Destination = "$Destination\$subDirPath"
+                    } else {
+                        $sendParams.Destination = $Destination
+                    }
+                    $sendFileParamColl += $sendParams
+                }
+                foreach ($paramBlock in $sendFileParamColl) {
+                    Send-File @paramBlock
+                }
+            } else {
+                Write-Message -Level Verbose -Message "Starting WinRM copy of [$($p)] to [$($Destination)]"
+                # Get the source file, and then get its contents
+                $sourceBytes = [System.IO.File]::ReadAllBytes($p);
+                $streamChunks = @();
+
+                # Now break it into chunks to stream.
+                $streamSize = 1MB;
+                for ($position = 0; $position -lt $sourceBytes.Length; $position += $streamSize) {
+                    $remaining = $sourceBytes.Length - $position
+                    $remaining = [Math]::Min($remaining, $streamSize)
+
+                    $nextChunk = New-Object byte[] $remaining
+                    [Array]::Copy($sourcebytes, $position, $nextChunk, 0, $remaining)
+                    $streamChunks += , $nextChunk
+                }
+                $remoteScript = {
+                    if (-not (Test-Path -Path $using:Destination -PathType Container)) {
+                        $null = New-Item -Path $using:Destination -Type Directory -Force
+                    }
+                    $fileDest = "$using:Destination\$($using:p | Split-Path -Leaf)"
+                    ## Create a new array to hold the file content
+                    $destBytes = New-Object byte[] $using:length
+                    $position = 0
+
+                    ## Go through the input, and fill in the new array of file content
+                    foreach ($chunk in $input) {
+                        [GC]::Collect()
+                        [Array]::Copy($chunk, 0, $destBytes, $position, $chunk.Length)
+                        $position += $chunk.Length
+                    }
+
+                    [IO.File]::WriteAllBytes($fileDest, $destBytes)
+
+                    Get-Item $fileDest
+                    [GC]::Collect()
+                }
+
+                # Stream the chunks into the remote script.
+                $Length = $sourceBytes.Length
+                $streamChunks | Invoke-Command -Session $Session -ScriptBlock $remoteScript -ErrorAction Stop
+                Write-Message -Level Verbose -Message "WinRM copy of [$($p)] to [$($Destination)] complete"
+            }
+        }
+    }
+
+}
+
 
 #.ExternalHelp dbatools-Help.xml
 function Set-FileSystemSetting {
