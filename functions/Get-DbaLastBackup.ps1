@@ -59,6 +59,12 @@ function Get-DbaLastBackup {
         Returns a gridview displaying ComputerName, InstanceName, SqlInstance, Database, RecoveryModel, LastFullBackup, LastDiffBackup, LastLogBackup, SinceFull, SinceDiff, SinceLog, LastFullBackupIsCopyOnly, LastDiffBackupIsCopyOnly, LastLogBackupIsCopyOnly, DatabaseCreated, DaysSinceDbCreated, Status
 
     .EXAMPLE
+        PS C:\> $MyInstances | Get-DbaLastBackup | Where-Object -FilterScript { $_.LastFullBackup.Date -lt (Get-Date).AddDays(-3) } | Format-Table -Property SqlInstance, Database, LastFullBackup
+
+        Returns all databases on the given instances without a full backup in the last three days.
+        Note that the property LastFullBackup is a custom object, with the subproperty Date of type datetime and therefore suitable for comparison with dates.
+
+    .EXAMPLE
         PS C:\> Get-DbaLastBackup -SqlInstance ServerA\sql987 | Where-Object { $_.LastFullBackupIsCopyOnly -eq $true }
 
         Filters for the databases that had a copy_only full backup done as the last backup.
