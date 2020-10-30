@@ -77,6 +77,15 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         }
     }
 
+    Context "Test Ignoring Diff Backups" {
+        $results = Test-DbaLastBackup -SqlInstance $script:instance1 -Database $testlastbackup -IgnoreDiffBackup
+
+        It "Should return success" {
+            $results.RestoreResult | Should Be "Success"
+            $results.DbccResult | Should Be "Success"
+        }
+    }
+
     Context "Test dbsize skip and cleanup (Issue 3968)" {
         $results1 = Restore-DbaDatabase -SqlInstance $script:instance1 -Database bigtestrest -Path $script:appveyorlabrepo\sql2008-backups\db1\FULL -ReplaceDbNameInFile
         Backup-DbaDatabase -SqlInstance $script:instance1 -Database bigtestrest
