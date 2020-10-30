@@ -147,7 +147,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
 
     Context "Testing IgnoreDiff parameter for #6914" {
         $noIgnore = Get-DbaDbBackupHistory -SqlInstance $script:instance1 -Database $dbname
-        $Ignore = Get-DbaDbBackupHistory -SqlInstance $script:instance1 -Database $dbname -IgnoreDiff
+        $Ignore = Get-DbaDbBackupHistory -SqlInstance $script:instance1 -Database $dbname -IgnoreDiffBackup
         It "Should return one less backup" {
             $noIgnore.count - $Ignore.count | Should -Be 1
         }

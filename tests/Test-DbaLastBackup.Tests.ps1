@@ -5,7 +5,7 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
         [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'Destination', 'DestinationCredential', 'DataDirectory', 'LogDirectory', 'Prefix', 'VerifyOnly', 'NoCheck', 'NoDrop', 'CopyFile', 'CopyPath', 'MaxSize', 'IncludeCopyOnly', 'IgnoreLogBackup', 'AzureCredential', 'InputObject', 'EnableException', 'DeviceType', 'MaxTransferSize', 'BufferCount'
+        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'Destination', 'DestinationCredential', 'DataDirectory', 'LogDirectory', 'Prefix', 'VerifyOnly', 'NoCheck', 'NoDrop', 'CopyFile', 'CopyPath', 'MaxSize', 'IncludeCopyOnly', 'IgnoreLogBackup', 'AzureCredential', 'InputObject', 'EnableException', 'DeviceType', 'MaxTransferSize', 'BufferCount', 'IgnoreDiffBackup'
         $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
         It "Should only contain our specific parameters" {
             (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
@@ -77,14 +77,14 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         }
     }
 
-    Context "Test Ignoring Diff Backups" {
-        $results = Test-DbaLastBackup -SqlInstance $script:instance1 -Database $testlastbackup -IgnoreDiffBackup
+    # Context "Test Ignoring Diff Backups" {
+    #     $results = Test-DbaLastBackup -SqlInstance $script:instance1 -Database $testlastbackup -IgnoreDiffBackup
 
-        It "Should return success" {
-            $results.RestoreResult | Should Be "Success"
-            $results.DbccResult | Should Be "Success"
-        }
-    }
+    #     It "Should return success" {
+    #         $results.RestoreResult | Should Be "Success"
+    #         $results.DbccResult | Should Be "Success"
+    #     }
+    # }
 
     Context "Test dbsize skip and cleanup (Issue 3968)" {
         $results1 = Restore-DbaDatabase -SqlInstance $script:instance1 -Database bigtestrest -Path $script:appveyorlabrepo\sql2008-backups\db1\FULL -ReplaceDbNameInFile
