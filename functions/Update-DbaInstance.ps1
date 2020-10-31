@@ -545,53 +545,53 @@ function Update-DbaInstance {
                     [PSCustomObject]@{ComputerName = $_.ComputerName; KB = $action.KB; Architecture = $action.Architecture }
                 }
             } | Group-Object -Property KB, Architecture
-        # for each such combo, .Installer paths need to be updated and, potentially, files copied
-        foreach ($groupKB in $groupedRequirements) {
-            $fileItem = ($downloadedKbs | Where-Object { $_.KB -eq $groupKB.Values[0] -and $_.Architecture -eq $groupKB.Values[1] }).FileItem
-            $filePath = Join-Path $Path[0] $fileItem.Name
-            foreach ($groupItem in $groupKB.Group) {
-                if (-Not $mainPathIsNetwork) {
-                    # For each KB, copy the file to the remote (or local) server
-                    try {
-                        $null = Copy-UncFile -ComputerName $groupItem.ComputerName -Path $fileItem.FullName -Destination $Path[0] -Credential $Credential
-                    } catch {
-                        Stop-Function -Message "Could not move installer $($fileItem.FullName) to $($Path[0]) on $($groupItem.ComputerName): $_" -Continue
+            # for each such combo, .Installer paths need to be updated and, potentially, files copied
+            foreach ($groupKB in $groupedRequirements) {
+                $fileItem = ($downloadedKbs | Where-Object { $_.KB -eq $groupKB.Values[0] -and $_.Architecture -eq $groupKB.Values[1] }).FileItem
+                $filePath = Join-Path $Path[0] $fileItem.Name
+                foreach ($groupItem in $groupKB.Group) {
+                    if (-Not $mainPathIsNetwork) {
+                        # For each KB, copy the file to the remote (or local) server
+                        try {
+                            $null = Copy-UncFile -ComputerName $groupItem.ComputerName -Path $fileItem.FullName -Destination $Path[0] -Credential $Credential
+                        } catch {
+                            Stop-Function -Message "Could not move installer $($fileItem.FullName) to $($Path[0]) on $($groupItem.ComputerName): $_" -Continue
+                        }
                     }
+                    # Update appropriate action
+                    $installAction = $installActions | Where-Object ComputerName -EQ $groupItem.ComputerName
+                    $action = $installAction.Actions | Where-Object { $_.KB -eq $groupItem.KB -and $_.Architecture -eq $groupItem.Architecture }
+                    $action.Installer = $filePath
                 }
-                # Update appropriate action
-                $installAction = $installActions | Where-Object ComputerName -EQ $groupItem.ComputerName
-                $action = $installAction.Actions | Where-Object { $_.KB -eq $groupItem.KB -and $_.Architecture -eq $groupItem.Architecture }
-                $action.Installer = $filePath
-            }
 
-        }
-        if (-Not $mainPathIsNetwork) {
-            # remove temp files
-            foreach ($downloadedKb in $downloadedKbs) {
-                $null = Remove-Item $downloadedKb.FileItem.FullName -Force
+            }
+            if (-Not $mainPathIsNetwork) {
+                # remove temp files
+                foreach ($downloadedKb in $downloadedKbs) {
+                    $null = Remove-Item $downloadedKb.FileItem.FullName -Force
+                }
             }
         }
-    }
 
-    # Declare the installation script
-    $installScript = {
-        $updateSplat = @{
-            ComputerName    = $_.ComputerName
-            Action          = $_.Actions
-            Restart         = $Restart
-            Credential      = $Credential
-            EnableException = $EnableException
-            ExtractPath     = $ExtractPath
-            Authentication  = $Authentication
-            ArgumentList    = $ArgumentList
+        # Declare the installation script
+        $installScript = {
+            $updateSplat = @{
+                ComputerName    = $_.ComputerName
+                Action          = $_.Actions
+                Restart         = $Restart
+                Credential      = $Credential
+                EnableException = $EnableException
+                ExtractPath     = $ExtractPath
+                Authentication  = $Authentication
+                ArgumentList    = $ArgumentList
+            }
+            Invoke-DbaAdvancedUpdate @updateSplat
         }
-        Invoke-DbaAdvancedUpdate @updateSplat
+        # check how many computers we are looking at and decide upon parallelism
+        if ($installActions.Count -eq 1) {
+            $installActions | ForEach-Object -Process $installScript | ForEach-Object -Process $outputHandler
+        } elseif ($installActions.Count -ge 2) {
+            $installActions | Invoke-Parallel -ImportModules -ImportVariables -ScriptBlock $installScript -Throttle $Throttle | ForEach-Object -Process $outputHandler
+        }
     }
-    # check how many computers we are looking at and decide upon parallelism
-    if ($installActions.Count -eq 1) {
-        $installActions | ForEach-Object -Process $installScript | ForEach-Object -Process $outputHandler
-    } elseif ($installActions.Count -ge 2) {
-        $installActions | Invoke-Parallel -ImportModules -ImportVariables -ScriptBlock $installScript -Throttle $Throttle | ForEach-Object -Process $outputHandler
-    }
-}
 }
