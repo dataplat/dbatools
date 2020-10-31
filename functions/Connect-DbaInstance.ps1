@@ -258,6 +258,16 @@ function Connect-DbaInstance {
 
         Logs into Azure using Universal with MFA Support with a certificate, then performs a sample query. Note that you will be prompted for a password but the password can be left blank and the certificate will be used instead.
 
+    .EXAMPLE
+        PS C:\> Set-DbatoolsConfig -FullName sql.connection.experimental -Value $true
+        PS C:\> $sqlcred = Get-Credential sqladmin
+        PS C:\> $server = Connect-DbaInstance -SqlInstance sql2014 -SqlCredential $sqlcred
+        PS C:\> Invoke-Query -SqlInstance $server -Query "select 1 as test"
+
+        Use the new code path for handling connections. Especially when you have problems with connection pooling, try this.
+        We also have added additional -Verbose and -Debug output to help us understand your problem if you open an issue related to connections.
+        For additional information about how the new code path works, please have a look at the code: https://github.com/sqlcollaborative/dbatools/blob/development/functions/Connect-DbaInstance.ps1
+
     #>
     [CmdletBinding()]
     param (
