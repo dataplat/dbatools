@@ -33,9 +33,9 @@ function Invoke-DbaQuery {
         Specify one or more SQL objects. Those will be converted to script and their scripts run on the target system(s).
 
     .PARAMETER As
-        Specifies output type. Valid options for this parameter are 'DataSet', 'DataTable', 'DataRow', 'PSObject', and 'SingleValue'
+        Specifies output type. Valid options for this parameter are 'DataSet', 'DataTable', 'PSObjectTable', 'DataRow', 'PSObject', and 'SingleValue'
 
-        PSObject output introduces overhead but adds flexibility for working with results: http://powershell.org/wp/forums/topic/dealing-with-dbnull/
+        PSObjectTable and PSObject output introduces overhead but adds flexibility for working with results: http://powershell.org/wp/forums/topic/dealing-with-dbnull/
 
     .PARAMETER SqlParameters
         Specifies a hashtable of parameters for parameterized SQL queries.  http://blog.codinghorror.com/give-me-parameterized-sql-or-give-me-death/
@@ -132,7 +132,7 @@ function Invoke-DbaQuery {
         [object[]]$File,
         [Parameter(Mandatory, ParameterSetName = "SMO")]
         [Microsoft.SqlServer.Management.Smo.SqlSmoObject[]]$SqlObject,
-        [ValidateSet("DataSet", "DataTable", "DataRow", "PSObject", "SingleValue")]
+        [ValidateSet("DataSet", "DataTable", "PSObjectTable", "DataRow", "PSObject", "SingleValue")]
         [string]$As = "DataRow",
         [System.Collections.IDictionary]$SqlParameters,
         [System.Data.CommandType]$CommandType = 'Text',

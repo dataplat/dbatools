@@ -196,8 +196,8 @@ SELECT @@servername as dbname
         }
         'tempdb' | Should -BeIn $results.dbname
     }
-    It "supports multiple datasets also as PSObjects (see #6921)" {
-        $results = Invoke-DbaQuery -SqlInstance $script:instance2 -Database tempdb -Query "select 1 as 'a'; select 2 as 'b', 3 as 'c';" -As PSObject
+    It "supports multiple datatables also as table of PSObjects (see #6921)" {
+        $results = Invoke-DbaQuery -SqlInstance $script:instance2 -Database tempdb -Query "select 1 as 'a'; select 2 as 'b', 3 as 'c';" -As PSObjectTable
         $results.Count | Should -Be 2
         $results[0].a | Should -Be 1
         $results[1].b | Should -Be 2
