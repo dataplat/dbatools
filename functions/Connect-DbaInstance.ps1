@@ -436,7 +436,7 @@ function Connect-DbaInstance {
                 * When reusing the smo server object, only the following additional parameters are allowed with Connect-DbaInstance:
                   - Database (command clones ConnectionContext and returns new smo server object)
                   - AzureUnsupported (command fails if target is Azure)
-                  - MinimumVersion (command failes if target version is too old)
+                  - MinimumVersion (command fails if target version is too old)
                   - SqlConnectionOnly (command returns only the ConnectionContext.SqlConnectionObject)
                 TODO: Try to identify all commands that use additional parameters and rewrite the command or add support for that parameter to Connect-DbaInstance
                 Commands found:
