@@ -433,7 +433,7 @@ function Connect-DbaInstance {
                 Best practice:
                 * Create a smo server object by submitting the name of the instance as a string to SqlInstance and additional parameters to configure the connection
                 * Reuse the smo server object in all following calls as SqlInstance
-                * When reusing the smo server object, only the following additial parameters are allowed with Connect-DbaInstance:
+                * When reusing the smo server object, only the following additional parameters are allowed with Connect-DbaInstance:
                   - Database (command clones ConnectionContext and returns new smo server object)
                   - AzureUnsupported (command failes if target is Azure)
                   - MinimumVersion (command failes if target version is too old)
