@@ -518,6 +518,7 @@
         'Test-DbaRepLatency',
         'Export-DbaRepServerSetting',
         'Get-DbaRepServer',
+        'Export-DbaSysDbUserObject',
         # windowsonly
         # solvable filesystem issues or other workarounds
         'Install-DbaSqlWatch',
