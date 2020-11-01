@@ -8742,6 +8742,107 @@
         "Syntax":  "Export-DbaSpConfigure [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Path] \u003cString\u003e] [[-FilePath] \u003cString\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
+        "Name":  "Export-DbaSysDbUserObject",
+        "Description":  "Exports all user objects found in source SQL Server\u0027s master, msdb and model databases to the FilePath.",
+        "Synopsis":  "Exports all user objects found in source SQL Server\u0027s master, msdb and model databases to the FilePath.",
+        "Alias":  "",
+        "CommandName":  "Export-DbaSysDbUserObject",
+        "Availability":  "Windows, Linux, macOS",
+        "Links":  "https://dbatools.io/Export-DbaSysDbUserObject",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS\u003eExport-DbaSysDbUserObject -SqlInstance server1\nExports any user objects that are in the system database to the default location.",
+        "Params":  [
+                       [
+                           "SqlInstance",
+                           "The target SQL Server instance or instances.\r\nThis can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.",
+                           "",
+                           true,
+                           "true (ByValue)",
+                           ""
+                       ],
+                       [
+                           "SqlCredential",
+                           "Login to the target instance using alternative credentials.\r\nWindows and SQL Authentication supported. Accepts credential objects (Get-Credential)",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "IncludeDependencies",
+                           "Specifies whether dependent objects are also scripted out.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "BatchSeparator",
+                           "Batch separator for scripting output. \"GO\" by default.",
+                           "",
+                           false,
+                           "false",
+                           "GO"
+                       ],
+                       [
+                           "Path",
+                           "Specifies the directory where the file or files will be exported.",
+                           "",
+                           false,
+                           "false",
+                           "(Get-DbatoolsConfigValue -FullName \u0027Path.DbatoolsExport\u0027)"
+                       ],
+                       [
+                           "FilePath",
+                           "Specifies the full file path of the output file.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "NoPrefix",
+                           "If this switch is used, the scripts will not include prefix information containing creator and datetime.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "ScriptingOptionsObject",
+                           "Add scripting options to scripting output.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "NoClobber",
+                           "Do not overwrite file.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "PassThru",
+                           "Output script to console.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ]
+                   ],
+        "Syntax":  "Export-DbaSysDbUserObject [-SqlInstance] \u003cDbaInstanceParameter\u003e [[-SqlCredential] \u003cPSCredential\u003e] [-IncludeDependencies] [[-BatchSeparator] \u003cString\u003e] [[-Path] \u003cString\u003e] [[-FilePath] \u003cString\u003e] [-NoPrefix] [[-ScriptingOptionsObject] \u003cScriptingOptions\u003e] [-NoClobber] [-PassThru] [-EnableException] [\u003cCommonParameters\u003e]"
+    },
+    {
         "Name":  "Export-DbatoolsConfig",
         "Description":  "Exports configuration items to a Json file.",
         "Tags":  "Module",
