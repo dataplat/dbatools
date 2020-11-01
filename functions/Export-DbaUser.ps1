@@ -158,7 +158,7 @@ function Export-DbaUser {
     begin {
         $null = Test-ExportDirectory -Path $Path
 
-        $outsql = $script:pathcollection = @()
+        $outsql = $script:pathcollection = $instanceArray = @()
         $GenerateFilePerUser = $false
 
         $versions = @{
@@ -228,8 +228,6 @@ function Export-DbaUser {
             } else {
                 # Generate a new file name with passed/default path
                 $FilePath = Get-ExportFilePath -Path $PSBoundParameters.Path -FilePath $PSBoundParameters.FilePath -Type sql -ServerName $db.Parent.Name -Unique
-                # Force append to have everything on same file
-                $Append = $true
             }
 
             # Store roles between users so if we hit the same one we don't create it again
@@ -493,7 +491,14 @@ function Export-DbaUser {
                             Get-ChildItem -Path $FilePath
                         }
                     } else {
-                        $sql | Out-File -Encoding UTF8 -FilePath $FilePath -Append:$Append -NoClobber:$NoClobber
+                        $dbUserInstance = $dbuser.Parent.Parent.Name
+
+                        if ($instanceArray -notcontains $($dbUserInstance)) {
+                            $sql | Out-File -Encoding UTF8 -FilePath $FilePath -Append:$Append -NoClobber:$NoClobber
+                            $instanceArray += $dbUserInstance
+                        } else {
+                            $sql | Out-File -Encoding UTF8 -FilePath $FilePath -Append
+                        }
                     }
                     # Clear variables for next user
                     $outsql = @()
