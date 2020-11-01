@@ -952,8 +952,8 @@ function Add-DbaRegServerGroup {
                     $newgroup.Alter()
 
                     Get-DbaRegServerGroup -SqlInstance $currentInstance -Group (Get-RegServerGroupReverseParse -object $newgroup)
-                    if ($parentserver.ServerConnection) {
-                        $parentserver.ServerConnection.Disconnect()
+                    if ($currentInstance.ConnectionContext) {
+                        $currentInstance.ConnectionContext.Disconnect()
                     }
                 } catch {
                     Stop-Function -Message "Failed to add $reggroup" -ErrorRecord $_ -Continue
@@ -13666,47 +13666,96 @@ function Export-DbaRegServer {
         [object[]]$InputObject,
         [string]$Path = (Get-DbatoolsConfigValue -FullName 'Path.DbatoolsExport'),
         [Alias("OutFile", "FileName")]
-        [string]$FilePath,
+        [System.IO.FileInfo]$FilePath,
         [ValidateSet("None", "PersistLoginName", "PersistLoginNameAndPassword")]
         [string]$CredentialPersistenceType = "None",
+        [object[]]$Group,
+        [object[]]$ExcludeGroup,
+        [switch]$Overwrite,
         [switch]$EnableException
     )
     begin {
         $null = Test-ExportDirectory -Path $Path
-        $timeNow = (Get-Date -uformat "%m%d%Y%H%M%S")
+        $timeNow = (Get-Date -UFormat "%m%d%Y%H%M%S")
+
+        # ValidateScript in the above param block relies on the order of the params specified by the user,
+        # so the creation of the file path and $Overwrite are evaluated here
+        if ($PSBoundParameters.ContainsKey("FilePath")) {
+            if ($FilePath.FullName -notmatch "\.xml$|\.regsrvr$") {
+                Stop-Function -Message "The FilePath specified must end with either .xml or .regsrvr"
+                return
+            }
+
+            if (-not (Test-Path $FilePath) ) {
+                New-Item -Path $FilePath.DirectoryName -ItemType "directory" -Force | Out-Null # make sure the parent dir exists
+            } elseif (-not $Overwrite.IsPresent) {
+                Stop-Function -Message "Use the -Overwrite parameter if the file $FilePath should be overwritten."
+                return
+            }
+        }
     }
     process {
         if (Test-FunctionInterrupt) { return }
 
         foreach ($instance in $SqlInstance) {
-            $InputObject += Get-DbaRegServerGroup -SqlInstance $instance -SqlCredential $SqlCredential -Id 1
+            if ($PSBoundParameters.ContainsKey("Group")) {
+                if ($PSBoundParameters.ContainsKey("ExcludeGroup")) {
+                    $InputObject += Get-DbaRegServerGroup -SqlInstance $instance -SqlCredential $SqlCredential -Group $Group -ExcludeGroup $ExcludeGroup
+                } else {
+                    $InputObject += Get-DbaRegServerGroup -SqlInstance $instance -SqlCredential $SqlCredential -Group $Group
+                }
+            } elseif ($PSBoundParameters.ContainsKey("ExcludeGroup")) {
+                $InputObject += Get-DbaRegServerGroup -SqlInstance $instance -SqlCredential $SqlCredential -ExcludeGroup $ExcludeGroup
+            } else {
+                $InputObject += Get-DbaRegServerGroup -SqlInstance $instance -SqlCredential $SqlCredential -Id 1 # legacy behavior to return -Id 1 which means return everything
+            }
         }
 
         foreach ($object in $InputObject) {
             try {
                 if ($object -is [Microsoft.SqlServer.Management.RegisteredServers.RegisteredServersStore]) {
-                    $object = Get-DbaRegServerGroup -SqlInstance $object.ParentServer -Id 1
+                    if ($PSBoundParameters.ContainsKey("Group")) {
+                        if ($PSBoundParameters.ContainsKey("ExcludeGroup")) {
+                            $object = Get-DbaRegServerGroup -SqlInstance $object.ParentServer -Group $Group -ExcludeGroup $ExcludeGroup
+                        } else {
+                            $object = Get-DbaRegServerGroup -SqlInstance $object.ParentServer -Group $Group
+                        }
+                    } elseif ($PSBoundParameters.ContainsKey("ExcludeGroup")) {
+                        $InputObject += Get-DbaRegServerGroup -SqlInstance $instance -SqlCredential $SqlCredential -ExcludeGroup $ExcludeGroup
+                    } else {
+                        $object = Get-DbaRegServerGroup -SqlInstance $object.ParentServer -Id 1 # legacy behavior to return -Id 1 which means return everything
+                    }
                 }
-                if ($object -is [Microsoft.SqlServer.Management.RegisteredServers.RegisteredServer]) {
-                    if (-not $FilePath) {
+
+                if (($object -is [Microsoft.SqlServer.Management.RegisteredServers.RegisteredServer]) -or ($object -is [Microsoft.SqlServer.Management.RegisteredServers.ServerGroup])) {
+                    $regname = $object.Name.Replace('\', '$')
+                    $OutputFilePath = $null
+
+                    if (-not $PSBoundParameters.ContainsKey("FilePath")) {
+                        $ExportFileName = $null
                         $serverName = $object.SqlInstance.Replace('\', '$');
-                        $regservername = $object.Name.Replace('\', '$')
-                        $ExportFileName = "$serverName-regserver-$regservername-$timeNow.xml"
-                        $FilePath = Join-DbaPath -Path $Path -Child $ExportFileName
-                        $object.Export($FilePath, $CredentialPersistenceType)
+
+                        if ($object -is [Microsoft.SqlServer.Management.RegisteredServers.RegisteredServer]) {
+                            $ExportFileName = "$serverName-regserver-$regname-$timeNow.xml"
+                        } elseif ($object -is [Microsoft.SqlServer.Management.RegisteredServers.ServerGroup]) {
+                            $ExportFileName = "$serverName-reggroup-$regname-$timeNow.xml"
+                        }
+
+                        $OutputFilePath = Join-DbaPath -Path $Path -Child $ExportFileName
+                    } elseif ($InputObject.length -gt 1) {
+                        # more than one group was passed in, so we need to add the group name to the FilePath because there will be multiple files generated.
+                        $extension = [IO.Path]::GetExtension($FilePath.FullName)
+                        $OutputFilePath = $FilePath.FullName.Replace($extension, "-" + $regname + $extension)
+                    } else {
+                        $OutputFilePath = $FilePath.FullName
                     }
-                } elseif ($object -is [Microsoft.SqlServer.Management.RegisteredServers.ServerGroup]) {
-                    if (-not $FilePath) {
-                        $servername = $object.SqlInstance.Replace('\', '$')
-                        $regservergroup = $object.Name.Replace('\', '$')
-                        $ExportFileName = "$serverName-reggroup-$regservergroup-$timeNow.xml"
-                        $FilePath = Join-DbaPath -Path $Path -Child $ExportFileName
-                        $object.Export($FilePath, $CredentialPersistenceType)
-                    }
+
+                    $object.Export($OutputFilePath, $CredentialPersistenceType)
+
+                    Get-ChildItem $OutputFilePath -ErrorAction Stop
                 } else {
                     Stop-Function -Message "InputObject is not a registered server or server group" -Continue
                 }
-                Get-ChildItem $FilePath -ErrorAction Stop
             } catch {
                 Stop-Function -Message "Failure" -ErrorRecord $_
             }
@@ -14484,6 +14533,8 @@ function Export-DbaUser {
         [string]$Path = (Get-DbatoolsConfigValue -FullName 'Path.DbatoolsExport'),
         [Alias("OutFile", "FileName")]
         [string]$FilePath,
+        [ValidateSet('ASCII', 'BigEndianUnicode', 'Byte', 'String', 'Unicode', 'UTF7', 'UTF8', 'Unknown')]
+        [string]$Encoding = 'UTF8',
         [Alias("NoOverwrite")]
         [switch]$NoClobber,
         [switch]$Append,
@@ -14497,7 +14548,7 @@ function Export-DbaUser {
     begin {
         $null = Test-ExportDirectory -Path $Path
 
-        $outsql = $script:pathcollection = @()
+        $outsql = $script:pathcollection = $instanceArray = @()
         $GenerateFilePerUser = $false
 
         $versions = @{
@@ -14567,8 +14618,6 @@ function Export-DbaUser {
             } else {
                 # Generate a new file name with passed/default path
                 $FilePath = Get-ExportFilePath -Path $PSBoundParameters.Path -FilePath $PSBoundParameters.FilePath -Type sql -ServerName $db.Parent.Name -Unique
-                # Force append to have everything on same file
-                $Append = $true
             }
 
             # Store roles between users so if we hit the same one we don't create it again
@@ -14828,11 +14877,18 @@ function Export-DbaUser {
                     # If generate a file per user, clean the collection to populate with next one
                     if ($GenerateFilePerUser) {
                         if (-not [string]::IsNullOrEmpty($sql)) {
-                            $sql | Out-File -Encoding UTF8 -FilePath $FilePath -Append:$Append -NoClobber:$NoClobber
+                            $sql | Out-File -Encoding:$Encoding -FilePath $FilePath -Append:$Append -NoClobber:$NoClobber
                             Get-ChildItem -Path $FilePath
                         }
                     } else {
-                        $sql | Out-File -Encoding UTF8 -FilePath $FilePath -Append:$Append -NoClobber:$NoClobber
+                        $dbUserInstance = $dbuser.Parent.Parent.Name
+
+                        if ($instanceArray -notcontains $($dbUserInstance)) {
+                            $sql | Out-File -Encoding:$Encoding -FilePath $FilePath -Append:$Append -NoClobber:$NoClobber
+                            $instanceArray += $dbUserInstance
+                        } else {
+                            $sql | Out-File -Encoding:$Encoding -FilePath $FilePath -Append
+                        }
                     }
                     # Clear variables for next user
                     $outsql = @()
@@ -21990,6 +22046,7 @@ function Get-DbaDbBackupHistory {
         [ValidateSet("Full", "Log", "Differential", "File", "Differential File", "Partial Full", "Partial Differential")]
         [string[]]$Type,
         [switch]$AgCheck,
+        [switch]$IgnoreDiffBackup,
         [switch]$EnableException
     )
 
@@ -22134,19 +22191,26 @@ function Get-DbaDbBackupHistory {
                     #Get the full and build upwards
                     $allBackups = @()
                     $allBackups += $fullDb = Get-DbaDbBackupHistory -SqlInstance $server -Database $db.Name -LastFull -raw:$Raw -DeviceType $DeviceType -IncludeCopyOnly:$IncludeCopyOnly -Since:$since -RecoveryFork $RecoveryFork
-                    $diffDb = Get-DbaDbBackupHistory -SqlInstance $server -Database $db.Name -LastDiff -raw:$Raw -DeviceType $DeviceType -IncludeCopyOnly:$IncludeCopyOnly -Since:$since -RecoveryFork $RecoveryFork
+                    if (-not $IgnoreDiffBackup) {
+                        $diffDb = Get-DbaDbBackupHistory -SqlInstance $server -Database $db.Name -LastDiff -raw:$Raw -DeviceType $DeviceType -IncludeCopyOnly:$IncludeCopyOnly -Since:$since -RecoveryFork $RecoveryFork
+                    }
                     if ($diffDb.LastLsn -gt $fullDb.LastLsn -and $diffDb.DatabaseBackupLSN -eq $fullDb.CheckPointLSN ) {
                         Write-Message -Level Verbose -Message "Valid Differential backup "
                         $allBackups += $diffDb
                         $tlogStartDsn = ($diffDb.FirstLsn -as [bigint])
                     } else {
-                        Write-Message -Level Verbose -Message "No Diff found"
+                        if ($IgnoreDiffBackup) {
+                            Write-Message -Level Verbose -Message "Ignoring Diff backups, so using Full backup FirstLSN"
+                        } else {
+                            Write-Message -Level Verbose -Message "No Diff found"
+                        }
                         try {
                             [bigint]$tlogStartDsn = $fullDb.FirstLsn.ToString()
                         } catch {
                             continue
                         }
                     }
+
                     if ($IncludeCopyOnly -eq $true) {
                         Write-Message -Level Verbose -Message 'Copy Only check'
                         $allBackups += Get-DbaDbBackupHistory -SqlInstance $server -Database $db.Name -raw:$raw -DeviceType $DeviceType -LastLsn $tlogStartDsn -IncludeCopyOnly:$IncludeCopyOnly -Since:$since -RecoveryFork $RecoveryFork | Where-Object { $_.Type -eq 'Log' -and [bigint]$_.LastLsn -gt [bigint]$tlogStartDsn -and $_.LastRecoveryForkGuid -eq $fullDb.LastRecoveryForkGuid }
@@ -22406,6 +22470,10 @@ function Get-DbaDbBackupHistory {
                 if ($Last -or $LastFull -or $LastLog -or $LastDiff) {
                     $tempWhere = $whereArray -join " AND "
                     $whereArray += "type = 'Full' AND mediaset.media_set_id = (SELECT TOP 1 mediaset.media_set_id $from $tempWhere ORDER BY backupset.last_lsn DESC)"
+                }
+
+                if ($IgnoreDiffBackup) {
+                    $whereArray += "backupset.type not in ('I','G','Q')"
                 }
 
                 if ($null -ne $Since) {
@@ -33733,7 +33801,7 @@ function Get-DbaRegServerGroup {
             }
 
             if ($ExcludeGroup) {
-                $excluded = Get-DbaRegServer -SqlInstance $serverstore.ParentServer -Group $ExcludeGroup
+                $excluded = Get-DbaRegServerGroup -SqlInstance $serverstore.ParentServer -SqlCredential $SqlCredential -Group $ExcludeGroup
                 Write-Message -Level Verbose -Message "Excluding $ExcludeGroup"
                 $groups = $groups | Where-Object { $_.Urn.Value -notin $excluded.Urn.Value }
             }
@@ -33743,7 +33811,7 @@ function Get-DbaRegServerGroup {
                 if ($Id -eq 1) {
                     $groups = $serverstore.DatabaseEngineServerGroup
                 } else {
-                    $groups = $serverstore.DatabaseEngineServerGroup.GetDescendantRegisteredServers().Parent | Where-Object Id -in $Id
+                    $groups = $serverstore.DatabaseEngineServerGroup.GetDescendantRegisteredServers().Parent | Where-Object Id -In $Id
                 }
             }
             if ($serverstore.ServerConnection) {
@@ -33751,10 +33819,10 @@ function Get-DbaRegServerGroup {
             }
 
             foreach ($groupobject in $groups) {
-                Add-Member -Force -InputObject $groupobject -MemberType NoteProperty -Name ComputerName -value $serverstore.ComputerName
-                Add-Member -Force -InputObject $groupobject -MemberType NoteProperty -Name InstanceName -value $serverstore.InstanceName
-                Add-Member -Force -InputObject $groupobject -MemberType NoteProperty -Name SqlInstance -value $serverstore.SqlInstance
-                Add-Member -Force -InputObject $groupobject -MemberType NoteProperty -Name ParentServer -value $serverstore.ParentServer
+                Add-Member -Force -InputObject $groupobject -MemberType NoteProperty -Name ComputerName -Value $serverstore.ComputerName
+                Add-Member -Force -InputObject $groupobject -MemberType NoteProperty -Name InstanceName -Value $serverstore.InstanceName
+                Add-Member -Force -InputObject $groupobject -MemberType NoteProperty -Name SqlInstance -Value $serverstore.SqlInstance
+                Add-Member -Force -InputObject $groupobject -MemberType NoteProperty -Name ParentServer -Value $serverstore.ParentServer
 
                 if ($groupobject.ComputerName) {
                     Select-DefaultView -InputObject $groupobject -Property ComputerName, InstanceName, SqlInstance, Name, DisplayName, Description, ServerGroups, RegisteredServers
@@ -58305,6 +58373,111 @@ function Remove-DbaDbCertificate {
     }
 }
 
+#.ExternalHelp dbatools-Help.xml
+function Remove-DbaDbData {
+    
+    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High')]
+    param (
+        [DbaInstance[]]$SqlInstance,
+        [PSCredential]$SqlCredential,
+        [string[]]$Database,
+        [string[]]$ExcludeDatabase,
+        [parameter(ValueFromPipeline)]
+        [object[]]$InputObject,
+        [string]$Path = (Get-DbatoolsConfigValue -FullName 'Path.DbatoolsExport'),
+        [switch]$EnableException
+    )
+
+    begin {
+        $null = Test-ExportDirectory -Path $Path
+    }
+    process {
+        if (Test-FunctionInterrupt) { return }
+
+        if (-not $InputObject -and -not $SqlInstance) {
+            Stop-Function -Message "You must pipe in a database or a server, or specify a SqlInstance"
+            return
+        }
+
+        if ($SqlInstance) {
+            $InputObject = $SqlInstance
+        }
+
+        foreach ($input in $InputObject) {
+            $inputType = $input.GetType().FullName
+            switch ($inputType) {
+                'Sqlcollaborative.Dbatools.Parameter.DbaInstanceParameter' {
+                    Write-Message -Level Verbose -Message "Processing DbaInstanceParameter through InputObject"
+                    $dbDatabases = Get-DbaDatabase -SqlInstance $input -SqlCredential $SqlCredential -Database $Database -ExcludeDatabase $ExcludeDatabase -ExcludeSystem
+                }
+                'Microsoft.SqlServer.Management.Smo.Server' {
+                    Write-Message -Level Verbose -Message "Processing Server through InputObject"
+                    $dbDatabases = Get-DbaDatabase -SqlInstance $input -SqlCredential $SqlCredential -Database $Database -ExcludeDatabase $ExcludeDatabase -ExcludeSystem
+                }
+                'Microsoft.SqlServer.Management.Smo.Database' {
+                    Write-Message -Level Verbose -Message "Processing Database through InputObject"
+                    $dbDatabases = $input | Where-Object { -not $_.IsSystemObject }
+                }
+                default {
+                    Stop-Function -Message "InputObject is not a server or database."
+                    return
+                }
+            }
+
+            foreach ($db in $dbDatabases) {
+                if ($Pscmdlet.ShouldProcess($db.Name, "Removing all data on $($db.Parent.Name)")) {
+                    Write-Message -Level Verbose -Message "Truncating tables in $db on instance $instance"
+                    $instance = $db.Parent
+                    try {
+
+                        # Collect up the objects we need to drop and recreate
+                        $objects = @()
+                        $objects += Get-DbaDbForeignKey -SqlInstance $instance -Database $db.Name
+                        $objects += Get-DbaDbView -SqlInstance $instance -Database $db.Name -ExcludeSystemView
+
+                        # Script out the create statements for objects
+                        $createOptions = New-DbaScriptingOption
+                        $createOptions.Permissions = $true
+                        $createOptions.ScriptBatchTerminator = $true
+                        $createOptions.AnsiFile = $true
+                        $null = $objects | Export-DbaScript -FilePath "$Path\$($db.Name)_Create.Sql" -ScriptingOptionsObject $createOptions
+
+                        # Script out the drop statements for objects
+                        $dropOptions = New-DbaScriptingOption
+                        $dropOptions.ScriptDrops = $true
+                        $null = $objects | Export-DbaScript -FilePath "$Path\$($db.Name)_Drop.Sql" -ScriptingOptionsObject $dropOptions
+                    } catch {
+                        Stop-Function -Message "Issue scripting out the drop\create scripts for objects in $db on instance $instance" -ErrorRecord $_
+                        return
+                    }
+
+                    try {
+                        if ($objects) {
+                            Invoke-DbaQuery -SqlInstance $instance -Database $db.Name -File "$Path\$($db.Name)_Drop.Sql"
+                        }
+
+                        $db.Tables | ForEach-Object { $_.TruncateData() }
+
+                        if ($objects) {
+                            Invoke-DbaQuery -SqlInstance $instance -Database $db.Name -File "$Path\$($db.Name)_Create.Sql"
+                        }
+                    } catch {
+                        Write-Message -Level warning -Message "Issue truncating tables in $db on instance $instance"
+                        Invoke-DbaQuery -SqlInstance $instance -Database $db.Name -File "$Path\$($db.Name)_Create.Sql"
+                    }
+                    if ($objects) {
+                        try {
+                            Remove-Item "$Path\$($db.Name)_Drop.Sql", "$Path\$($db.Name)_Create.Sql" -ErrorAction Stop
+                        } catch {
+                            Write-Message -Level warning -Message "Unable to clear up output files for $instance.$db"
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
 function Remove-DbaDbLogShipping {
 
     [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess, ConfirmImpact = "Medium")]
@@ -72903,6 +73076,7 @@ function Test-DbaLastBackup {
         [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
         [int]$MaxTransferSize,
         [int]$BufferCount,
+        [switch]$IgnoreDiffBackup,
         [switch]$EnableException
     )
     process {
@@ -73012,12 +73186,14 @@ function Test-DbaLastBackup {
                 Write-Message -Level Verbose -Message "Skipping Log backups as requested."
                 $lastbackup = @()
                 $lastbackup += $full = Get-DbaDbBackupHistory -SqlInstance $sourceserver -Database $dbName -IncludeCopyOnly:$IncludeCopyOnly -LastFull -DeviceType $DeviceType -WarningAction SilentlyContinue
-                $diff = Get-DbaDbBackupHistory -SqlInstance $sourceserver -Database $dbName -IncludeCopyOnly:$IncludeCopyOnly -LastDiff -DeviceType $DeviceType -WarningAction SilentlyContinue
+                if (-not (Test-Bound "IgnoreDiffBackup")) {
+                    $diff = Get-DbaDbBackupHistory -SqlInstance $sourceserver -Database $dbName -IncludeCopyOnly:$IncludeCopyOnly -LastDiff -DeviceType $DeviceType -WarningAction SilentlyContinue
+                }
                 if ($full.start -le $diff.start) {
                     $lastbackup += $diff
                 }
             } else {
-                $lastbackup = Get-DbaDbBackupHistory -SqlInstance $sourceserver -Database $dbName -IncludeCopyOnly:$IncludeCopyOnly -Last -DeviceType $DeviceType -WarningAction SilentlyContinue
+                $lastbackup = Get-DbaDbBackupHistory -SqlInstance $sourceserver -Database $dbName -IncludeCopyOnly:$IncludeCopyOnly -Last -DeviceType $DeviceType -WarningAction SilentlyContinue -IgnoreDiffBackup:$IgnoreDiffBackup
             }
 
             if (-not $lastbackup) {
