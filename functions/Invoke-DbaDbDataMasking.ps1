@@ -804,7 +804,7 @@ function Invoke-DbaDbDataMasking {
                                         # Check the columnobject properties and possible scenarios
                                         if ($columnobject.MaskingType -eq 'Static') {
                                             $newValue = $columnobject.StaticValue
-                                        } elseif ($columnobject.KeepNull -and (($row.($columnobject.Name)).GetType().Name -eq 'DBNull')) {
+                                        } elseif ($columnobject.KeepNull -and $columnobject.Nullable -and (($row.($columnobject.Name)).GetType().Name -eq 'DBNull')) {
                                             $newValue = $null
                                         } elseif (-not $columnobject.KeepNull -and $columnobject.Nullable -and (($nullmod++) % $ModulusFactor -eq 0)) {
                                             $newValue = $null
