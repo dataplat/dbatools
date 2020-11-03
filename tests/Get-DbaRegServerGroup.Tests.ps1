@@ -4,11 +4,11 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 
 Describe "$CommandName Unit Tests" -Tags "UnitTests" {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Group', 'ExcludeGroup', 'Id', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
         It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+            [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
+            [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Group', 'ExcludeGroup', 'Id', 'EnableException'
+            $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
+            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should -Be 0
         }
     }
 }
@@ -36,34 +36,81 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $newServer.Description = $regSrvDesc
             $newServer.Create()
 
-            <# Create the sub-group #>
-            $srvName2 = "dbatoolsci-server2"
-            $group2 = "dbatoolsci-group1a"
-            $regSrvName2 = "dbatoolsci-server21"
-            $regSrvDesc2 = "dbatoolsci-server321"
+            <# Create the second group #>
+            $srvName2 = "dbatoolsci-server1"
+            $group2 = "dbatoolsci-group2"
+            $regSrvName2 = "dbatoolsci-group2-server12"
+            $regSrvDesc2 = "dbatoolsci-group2-server123"
 
-            $newGroup2 = New-Object Microsoft.SqlServer.Management.RegisteredServers.ServerGroup($groupStore, $group2)
+            $newGroup2 = New-Object Microsoft.SqlServer.Management.RegisteredServers.ServerGroup($dbStore, $group2)
             $newGroup2.Create()
             $dbStore.Refresh()
 
-            $groupStore2 = $dbStore.ServerGroups[$group].ServerGroups[$group2]
-            $newServer2 = New-Object Microsoft.SqlServer.Management.RegisteredServers.RegisteredServer($groupStore2, $regSrvName2)
-            $newServer2.ServerName = $srvName2
-            $newServer2.Description = $regSrvDesc2
-            $newServer2.Create()
+            $groupStore2 = $dbStore.ServerGroups[$group2]
+            $newServer = New-Object Microsoft.SqlServer.Management.RegisteredServers.RegisteredServer($groupStore2, $regSrvName2)
+            $newServer.ServerName = $srvName2
+            $newServer.Description = $regSrvDesc2
+            $newServer.Create()
+
+            <# Create the third group #>
+            $srvName3 = "dbatoolsci-server1"
+            $group3 = "dbatoolsci-group3"
+            $regSrvName3 = "dbatoolsci-group3-server12"
+            $regSrvDesc3 = "dbatoolsci-group3-server123"
+
+            $newGroup3 = New-Object Microsoft.SqlServer.Management.RegisteredServers.ServerGroup($dbStore, $group3)
+            $newGroup3.Create()
+            $dbStore.Refresh()
+
+            $groupStore3 = $dbStore.ServerGroups[$group3]
+            $newServer = New-Object Microsoft.SqlServer.Management.RegisteredServers.RegisteredServer($groupStore3, $regSrvName3)
+            $newServer.ServerName = $srvName3
+            $newServer.Description = $regSrvDesc3
+            $newServer.Create()
+
+            <# Create the sub-group #>
+            $subGroupSrvName = "dbatoolsci-subgroup-server"
+            $subGroup = "dbatoolsci-group1a"
+            $subGroupRegSrvName = "dbatoolsci-subgroup-server21"
+            $subGroupRegSrvDesc = "dbatoolsci-subgroup-server321"
+
+            $newSubGroup = New-Object Microsoft.SqlServer.Management.RegisteredServers.ServerGroup($groupStore, $subGroup)
+            $newSubGroup.Create()
+            $dbStore.Refresh()
+
+            $groupStoreSubGroup = $dbStore.ServerGroups[$group].ServerGroups[$subGroup]
+            $subGroupServer = New-Object Microsoft.SqlServer.Management.RegisteredServers.RegisteredServer($groupStoreSubGroup, $subGroupRegSrvName)
+            $subGroupServer.ServerName = $subGroupSrvName
+            $subGroupServer.Description = $subGroupRegSrvDesc
+            $subGroupServer.Create()
         }
         AfterAll {
-            Get-DbaRegServer -SqlInstance $script:instance1 | Where-Object Name -match dbatoolsci | Remove-DbaRegServer -Confirm:$false
-            Get-DbaRegServerGroup -SqlInstance $script:instance1 | Where-Object Name -match dbatoolsci | Remove-DbaRegServerGroup -Confirm:$false
+            Get-DbaRegServer -SqlInstance $script:instance1 | Where-Object Name -Match dbatoolsci | Remove-DbaRegServer -Confirm:$false
+            Get-DbaRegServerGroup -SqlInstance $script:instance1 | Where-Object Name -Match dbatoolsci | Remove-DbaRegServerGroup -Confirm:$false
         }
 
         It "Should return one group" {
             $results = Get-DbaRegServerGroup -SqlInstance $script:instance1 -Group $group
-            $results.Count | Should Be 1
+            $results.Count | Should -Be 1
         }
         It "Should allow searching subgroups" {
-            $results = Get-DbaRegServerGroup -SqlInstance $script:instance1 -Group "$group\$group2"
-            $results.Count | Should Be 1
+            $results = Get-DbaRegServerGroup -SqlInstance $script:instance1 -Group "$group\$subGroup"
+            $results.Count | Should -Be 1
+        }
+
+        It "Should return two groups" {
+            $results = Get-DbaRegServerGroup -SqlInstance $script:instance1 -Group @($group, "$group\$subGroup")
+            $results.Count | Should -Be 2
+        }
+
+        It "Verify the ExcludeGroup param is working" {
+            $results = Get-DbaRegServerGroup -SqlInstance $script:instance1 -Group @($group, $group2) -ExcludeGroup $group
+            $results.Count | Should -Be 1
+            $results.Name | Should -Be $group2
+
+            $results = Get-DbaRegServerGroup -SqlInstance $script:instance1 -ExcludeGroup $group
+            $results.Count | Should -Be 2
+            (($results.Name -contains $group2) -and ($results.Name -contains $group3)) | Should -Be $true
         }
 
         # Property Comparisons will come later when we have the commands

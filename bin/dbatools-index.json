@@ -8253,7 +8253,7 @@
                        ],
                        [
                            "FilePath",
-                           "Specifies the full file path of the output file.",
+                           "Specifies the full file path of the output file. The file must end with .xml or .regsrvr",
                            "OutFile,FileName",
                            false,
                            "false",
@@ -8268,6 +8268,30 @@
                            "None"
                        ],
                        [
+                           "Group",
+                           "Specifies one or more groups to include.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "ExcludeGroup",
+                           "Specifies one or more groups to exclude.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Overwrite",
+                           "Specifies to overwrite the output file (FilePath) if it already exists.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
                            "EnableException",
                            "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
                            "",
@@ -8276,7 +8300,7 @@
                            "False"
                        ]
                    ],
-        "Syntax":  "Export-DbaRegServer [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-InputObject] \u003cObject[]\u003e] [[-Path] \u003cString\u003e] [[-FilePath] \u003cString\u003e] [[-CredentialPersistenceType] \u003cString\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Export-DbaRegServer [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-InputObject] \u003cObject[]\u003e] [[-Path] \u003cString\u003e] [[-FilePath] \u003cFileInfo\u003e] [[-CredentialPersistenceType] \u003cString\u003e] [[-Group] \u003cObject[]\u003e] [[-ExcludeGroup] \u003cObject[]\u003e] [-Overwrite] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Export-DbaRepServerSetting",
@@ -8718,6 +8742,107 @@
         "Syntax":  "Export-DbaSpConfigure [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Path] \u003cString\u003e] [[-FilePath] \u003cString\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
+        "Name":  "Export-DbaSysDbUserObject",
+        "Description":  "Exports all user objects found in source SQL Server\u0027s master, msdb and model databases to the FilePath.",
+        "Synopsis":  "Exports all user objects found in source SQL Server\u0027s master, msdb and model databases to the FilePath.",
+        "Alias":  "",
+        "CommandName":  "Export-DbaSysDbUserObject",
+        "Availability":  "Windows, Linux, macOS",
+        "Links":  "https://dbatools.io/Export-DbaSysDbUserObject",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS\u003eExport-DbaSysDbUserObject -SqlInstance server1\nExports any user objects that are in the system database to the default location.",
+        "Params":  [
+                       [
+                           "SqlInstance",
+                           "The target SQL Server instance or instances.\r\nThis can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.",
+                           "",
+                           true,
+                           "true (ByValue)",
+                           ""
+                       ],
+                       [
+                           "SqlCredential",
+                           "Login to the target instance using alternative credentials.\r\nWindows and SQL Authentication supported. Accepts credential objects (Get-Credential)",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "IncludeDependencies",
+                           "Specifies whether dependent objects are also scripted out.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "BatchSeparator",
+                           "Batch separator for scripting output. \"GO\" by default.",
+                           "",
+                           false,
+                           "false",
+                           "GO"
+                       ],
+                       [
+                           "Path",
+                           "Specifies the directory where the file or files will be exported.",
+                           "",
+                           false,
+                           "false",
+                           "(Get-DbatoolsConfigValue -FullName \u0027Path.DbatoolsExport\u0027)"
+                       ],
+                       [
+                           "FilePath",
+                           "Specifies the full file path of the output file.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "NoPrefix",
+                           "If this switch is used, the scripts will not include prefix information containing creator and datetime.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "ScriptingOptionsObject",
+                           "Add scripting options to scripting output.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "NoClobber",
+                           "Do not overwrite file.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "PassThru",
+                           "Output script to console.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ]
+                   ],
+        "Syntax":  "Export-DbaSysDbUserObject [-SqlInstance] \u003cDbaInstanceParameter\u003e [[-SqlCredential] \u003cPSCredential\u003e] [-IncludeDependencies] [[-BatchSeparator] \u003cString\u003e] [[-Path] \u003cString\u003e] [[-FilePath] \u003cString\u003e] [-NoPrefix] [[-ScriptingOptionsObject] \u003cScriptingOptions\u003e] [-NoClobber] [-PassThru] [-EnableException] [\u003cCommonParameters\u003e]"
+    },
+    {
         "Name":  "Export-DbatoolsConfig",
         "Description":  "Exports configuration items to a Json file.",
         "Tags":  "Module",
@@ -8900,6 +9025,14 @@
                            ""
                        ],
                        [
+                           "Encoding",
+                           "Specifies the file encoding. The default is UTF8.\nValid values are:\r\n-- ASCII: Uses the encoding for the ASCII (7-bit) character set.\r\n-- BigEndianUnicode: Encodes in UTF-16 format using the big-endian byte order.\r\n-- Byte: Encodes a set of characters into a sequence of bytes.\r\n-- String: Uses the encoding type for a string.\r\n-- Unicode: Encodes in UTF-16 format using the little-endian byte order.\r\n-- UTF7: Encodes in UTF-7 format.\r\n-- UTF8: Encodes in UTF-8 format.\r\n-- Unknown: The encoding type is unknown or invalid. The data can be treated as binary.",
+                           "",
+                           false,
+                           "false",
+                           "UTF8"
+                       ],
+                       [
                            "NoClobber",
                            "Do not overwrite file",
                            "NoOverwrite",
@@ -8956,7 +9089,7 @@
                            "False"
                        ]
                    ],
-        "Syntax":  "Export-DbaUser [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-InputObject] \u003cDatabase[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cString[]\u003e] [[-ExcludeDatabase] \u003cString[]\u003e] [[-User] \u003cString[]\u003e] [[-DestinationVersion] \u003cString\u003e] [[-Path] \u003cString\u003e] [[-FilePath] \u003cString\u003e] [-NoClobber] [-Append] [-Passthru] [-Template] [-EnableException] [[-ScriptingOptionsObject] \u003cScriptingOptions\u003e] [-ExcludeGoBatchSeparator] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Export-DbaUser [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-InputObject] \u003cDatabase[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cString[]\u003e] [[-ExcludeDatabase] \u003cString[]\u003e] [[-User] \u003cString[]\u003e] [[-DestinationVersion] \u003cString\u003e] [[-Path] \u003cString\u003e] [[-FilePath] \u003cString\u003e] [[-Encoding] \u003cString\u003e] [-NoClobber] [-Append] [-Passthru] [-Template] [-EnableException] [[-ScriptingOptionsObject] \u003cScriptingOptions\u003e] [-ExcludeGoBatchSeparator] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Export-DbaXECsv",
@@ -13221,6 +13354,14 @@
                            "False"
                        ],
                        [
+                           "IgnoreDiffBackup",
+                           "When this switch is enabled, Differential backups will be ignored.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
                            "EnableException",
                            "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
                            "",
@@ -13229,7 +13370,7 @@
                            "False"
                        ]
                    ],
-        "Syntax":  "Get-DbaDbBackupHistory -SqlInstance \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-Database \u003cObject[]\u003e] [-ExcludeDatabase \u003cObject[]\u003e] [-IncludeCopyOnly] [-Since \u003cDateTime\u003e] [-RecoveryFork \u003cString\u003e] [-Last] [-LastFull] [-LastDiff] [-LastLog] [-DeviceType \u003cString[]\u003e] [-Raw] [-LastLsn \u003cBigInteger\u003e] [-IncludeMirror] [-Type \u003cString[]\u003e] [-AgCheck] [-EnableException] [\u003cCommonParameters\u003e]\nGet-DbaDbBackupHistory -SqlInstance \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-Database \u003cObject[]\u003e] [-ExcludeDatabase \u003cObject[]\u003e] [-IncludeCopyOnly] [-Force] [-Since \u003cDateTime\u003e] [-RecoveryFork \u003cString\u003e] [-Last] [-LastFull] [-LastDiff] [-LastLog] [-DeviceType \u003cString[]\u003e] [-Raw] [-LastLsn \u003cBigInteger\u003e] [-IncludeMirror] [-Type \u003cString[]\u003e] [-AgCheck] [-EnableException] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Get-DbaDbBackupHistory -SqlInstance \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-Database \u003cObject[]\u003e] [-ExcludeDatabase \u003cObject[]\u003e] [-IncludeCopyOnly] [-Since \u003cDateTime\u003e] [-RecoveryFork \u003cString\u003e] [-Last] [-LastFull] [-LastDiff] [-LastLog] [-DeviceType \u003cString[]\u003e] [-Raw] [-LastLsn \u003cBigInteger\u003e] [-IncludeMirror] [-Type \u003cString[]\u003e] [-AgCheck] [-IgnoreDiffBackup] [-EnableException] [\u003cCommonParameters\u003e]\nGet-DbaDbBackupHistory -SqlInstance \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-Database \u003cObject[]\u003e] [-ExcludeDatabase \u003cObject[]\u003e] [-IncludeCopyOnly] [-Force] [-Since \u003cDateTime\u003e] [-RecoveryFork \u003cString\u003e] [-Last] [-LastFull] [-LastDiff] [-LastLog] [-DeviceType \u003cString[]\u003e] [-Raw] [-LastLsn \u003cBigInteger\u003e] [-IncludeMirror] [-Type \u003cString[]\u003e] [-AgCheck] [-IgnoreDiffBackup] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Get-DbaDbccHelp",
@@ -37749,6 +37890,96 @@
         "Syntax":  "Remove-DbaDbCertificate [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cString[]\u003e] [[-Certificate] \u003cString[]\u003e] [[-InputObject] \u003cCertificate[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
+        "Name":  "Remove-DbaDbData",
+        "Description":  "This command truncates all the tables in a database. If there are foreign keys and/or views they are scripted out, then dropped before the truncate, and recreated after.",
+        "Tags":  [
+                     "Role",
+                     "Database"
+                 ],
+        "Synopsis":  "Removes all the data from a database(s) for each instance(s) of SQL Server.",
+        "Alias":  "",
+        "Author":  "Jess Pomfret (@jpomfret), jesspomfret.com",
+        "CommandName":  "Remove-DbaDbData",
+        "Availability":  "Windows, Linux, macOS",
+        "Links":  "https://dbatools.io/Remove-DbaDbData",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eRemove-DbaDbData -SqlInstance localhost -Database dbname\nRemoves all data from the dbname database on the local default SQL Server instance\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eRemove-DbaDbData -SqlInstance mssql1 -ExcludeDatabase DBA -Confirm:$False\nRemoves all data from all databases on mssql1 except the DBA Database. Doesn\u0027t prompt for confirmation.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003e$svr = Connect-DbaInstance -SqlInstance mssql1\nPS C:\\\u003e $svr | Remove-DbaDbData -Database AdventureWorks2017\nRemoves all data from AdventureWorks2017 on the mssql1 SQL Server Instance, uses piped input from Connect-DbaInstance.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaDatabase -SqlInstance mssql1 -Database AdventureWorks2017 | Remove-DbaDbData\nRemoves all data from AdventureWorks2017 on the mssql1 SQL Server Instance, uses piped input from Get-DbaDatabase.",
+        "Params":  [
+                       [
+                           "SqlInstance",
+                           "The target SQL Server instance or instances.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "SqlCredential",
+                           "Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).\nWindows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.\nFor MFA support, please use Connect-DbaInstance.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Database",
+                           "The database(s) to process. This list is auto-populated from the server. If unspecified, all user databases will be processed.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "ExcludeDatabase",
+                           "The database(s) to exclude. This list is auto-populated from the server.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "InputObject",
+                           "Enables piped input from Get-DbaDatabase",
+                           "",
+                           false,
+                           "true (ByValue)",
+                           ""
+                       ],
+                       [
+                           "Path",
+                           "Specifies the directory where the file or files will be exported.\r\nWill default to Path.DbatoolsExport Configuration entry",
+                           "",
+                           false,
+                           "false",
+                           "(Get-DbatoolsConfigValue -FullName \u0027Path.DbatoolsExport\u0027)"
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "WhatIf",
+                           "Shows what would happen if the command were to run. No actions are actually performed.",
+                           "wi",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Confirm",
+                           "Prompts you for confirmation before executing any changing operations within the command.",
+                           "cf",
+                           false,
+                           "false",
+                           ""
+                       ]
+                   ],
+        "Syntax":  "Remove-DbaDbData [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cString[]\u003e] [[-ExcludeDatabase] \u003cString[]\u003e] [[-InputObject] \u003cObject[]\u003e] [[-Path] \u003cString\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+    },
+    {
         "Name":  "Remove-DbaDbLogShipping",
         "Description":  "The command Remove-DbaDbLogShipping will remove one or more databases from log shipping\n\nAfter running the command it will remove all the jobs, configurations set up for log shipping\n\nBy default the secondary database will NOT be removed.\nUse -RemoveSecondaryDatabase to make the command the secondary database",
         "Tags":  "LogShipping",
@@ -49201,6 +49432,14 @@
                            "0"
                        ],
                        [
+                           "IgnoreDiffBackup",
+                           "If this switch is enabled, differential backuys will be ignored. The restore will only use Full and Log backups, so will take longer to complete",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
                            "EnableException",
                            "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
                            "",
@@ -49225,7 +49464,7 @@
                            ""
                        ]
                    ],
-        "Syntax":  "Test-DbaLastBackup [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cObject[]\u003e] [[-ExcludeDatabase] \u003cObject[]\u003e] [[-Destination] \u003cDbaInstanceParameter\u003e] [[-DestinationCredential] \u003cObject\u003e] [[-DataDirectory] \u003cString\u003e] [[-LogDirectory] \u003cString\u003e] [[-Prefix] \u003cString\u003e] [-VerifyOnly] [-NoCheck] [-NoDrop] [-CopyFile] [[-CopyPath] \u003cString\u003e] [[-MaxSize] \u003cInt32\u003e] [[-DeviceType] \u003cString[]\u003e] [-IncludeCopyOnly] [-IgnoreLogBackup] [[-AzureCredential] \u003cString\u003e] [[-InputObject] \u003cDatabase[]\u003e] [[-MaxTransferSize] \u003cInt32\u003e] [[-BufferCount] \u003cInt32\u003e] [-EnableException] \r\n[-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Test-DbaLastBackup [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cObject[]\u003e] [[-ExcludeDatabase] \u003cObject[]\u003e] [[-Destination] \u003cDbaInstanceParameter\u003e] [[-DestinationCredential] \u003cObject\u003e] [[-DataDirectory] \u003cString\u003e] [[-LogDirectory] \u003cString\u003e] [[-Prefix] \u003cString\u003e] [-VerifyOnly] [-NoCheck] [-NoDrop] [-CopyFile] [[-CopyPath] \u003cString\u003e] [[-MaxSize] \u003cInt32\u003e] [[-DeviceType] \u003cString[]\u003e] [-IncludeCopyOnly] [-IgnoreLogBackup] [[-AzureCredential] \u003cString\u003e] [[-InputObject] \u003cDatabase[]\u003e] [[-MaxTransferSize] \u003cInt32\u003e] [[-BufferCount] \u003cInt32\u003e] [-IgnoreDiffBackup] \r\n[-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Test-DbaLinkedServerConnection",

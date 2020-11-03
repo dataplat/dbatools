@@ -100,6 +100,14 @@ function Convert-DbaMaskingValue {
             if ($null -eq $item -or -not $item) {
                 $originalValue = '$null'
                 $newValue = "NULL"
+            } elseif ($item -eq '') {
+                $originalValue = ''
+
+                if ($Nullable) {
+                    $newValue = "NULL"
+                } else {
+                    $newValue = ""
+                }
             } else {
                 switch ($DataType.ToLower()) {
                     { $_ -in 'bit', 'bool' } {

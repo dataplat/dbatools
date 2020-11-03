@@ -66,6 +66,9 @@ function Get-DbaDbBackupHistory {
     .PARAMETER AgCheck
         Deprecated. The functionality to also get the history from all replicas if SqlInstance is part on an availability group has been moved to Get-DbaAgBackupHistory.
 
+    .PARAMETER IgnoreDiffBackup
+        When this switch is enabled, Differential backups will be ignored.
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -169,6 +172,7 @@ function Get-DbaDbBackupHistory {
         [ValidateSet("Full", "Log", "Differential", "File", "Differential File", "Partial Full", "Partial Differential")]
         [string[]]$Type,
         [switch]$AgCheck,
+        [switch]$IgnoreDiffBackup,
         [switch]$EnableException
     )
 
@@ -313,19 +317,26 @@ function Get-DbaDbBackupHistory {
                     #Get the full and build upwards
                     $allBackups = @()
                     $allBackups += $fullDb = Get-DbaDbBackupHistory -SqlInstance $server -Database $db.Name -LastFull -raw:$Raw -DeviceType $DeviceType -IncludeCopyOnly:$IncludeCopyOnly -Since:$since -RecoveryFork $RecoveryFork
-                    $diffDb = Get-DbaDbBackupHistory -SqlInstance $server -Database $db.Name -LastDiff -raw:$Raw -DeviceType $DeviceType -IncludeCopyOnly:$IncludeCopyOnly -Since:$since -RecoveryFork $RecoveryFork
+                    if (-not $IgnoreDiffBackup) {
+                        $diffDb = Get-DbaDbBackupHistory -SqlInstance $server -Database $db.Name -LastDiff -raw:$Raw -DeviceType $DeviceType -IncludeCopyOnly:$IncludeCopyOnly -Since:$since -RecoveryFork $RecoveryFork
+                    }
                     if ($diffDb.LastLsn -gt $fullDb.LastLsn -and $diffDb.DatabaseBackupLSN -eq $fullDb.CheckPointLSN ) {
                         Write-Message -Level Verbose -Message "Valid Differential backup "
                         $allBackups += $diffDb
                         $tlogStartDsn = ($diffDb.FirstLsn -as [bigint])
                     } else {
-                        Write-Message -Level Verbose -Message "No Diff found"
+                        if ($IgnoreDiffBackup) {
+                            Write-Message -Level Verbose -Message "Ignoring Diff backups, so using Full backup FirstLSN"
+                        } else {
+                            Write-Message -Level Verbose -Message "No Diff found"
+                        }
                         try {
                             [bigint]$tlogStartDsn = $fullDb.FirstLsn.ToString()
                         } catch {
                             continue
                         }
                     }
+
                     if ($IncludeCopyOnly -eq $true) {
                         Write-Message -Level Verbose -Message 'Copy Only check'
                         $allBackups += Get-DbaDbBackupHistory -SqlInstance $server -Database $db.Name -raw:$raw -DeviceType $DeviceType -LastLsn $tlogStartDsn -IncludeCopyOnly:$IncludeCopyOnly -Since:$since -RecoveryFork $RecoveryFork | Where-Object { $_.Type -eq 'Log' -and [bigint]$_.LastLsn -gt [bigint]$tlogStartDsn -and $_.LastRecoveryForkGuid -eq $fullDb.LastRecoveryForkGuid }
@@ -585,6 +596,10 @@ function Get-DbaDbBackupHistory {
                 if ($Last -or $LastFull -or $LastLog -or $LastDiff) {
                     $tempWhere = $whereArray -join " AND "
                     $whereArray += "type = 'Full' AND mediaset.media_set_id = (SELECT TOP 1 mediaset.media_set_id $from $tempWhere ORDER BY backupset.last_lsn DESC)"
+                }
+
+                if ($IgnoreDiffBackup) {
+                    $whereArray += "backupset.type not in ('I','G','Q')"
                 }
 
                 if ($null -ne $Since) {
