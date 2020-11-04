@@ -21,9 +21,9 @@ function Invoke-DbaAsync {
             Specifies the number of seconds before the queries time out.
 
         .PARAMETER As
-            Specifies output type. Valid options for this parameter are 'DataSet', 'DataTable', 'PSObjectTable', 'DataRow', 'PSObject', and 'SingleValue'
+            Specifies output type. Valid options for this parameter are 'DataSet', 'DataTable', 'DataRow', 'PSObject', 'PSObjectArray', and 'SingleValue'
 
-            PSObjectTable and PSObject output introduces overhead but adds flexibility for working with results: http://powershell.org/wp/forums/topic/dealing-with-dbnull/
+            PSObject and PSObjectArray output introduces overhead but adds flexibility for working with results: http://powershell.org/wp/forums/topic/dealing-with-dbnull/
 
         .PARAMETER SqlParameters
             Specifies a hashtable of parameters for parameterized SQL queries.  http://blog.codinghorror.com/give-me-parameterized-sql-or-give-me-death/
@@ -53,7 +53,7 @@ function Invoke-DbaAsync {
         [string]
         $Query,
 
-        [ValidateSet("DataSet", "DataTable", "PSObjectTable", "DataRow", "PSObject", "SingleValue")]
+        [ValidateSet("DataSet", "DataTable", "DataRow", "PSObject", "PSObjectArray", "SingleValue")]
         [string]
         $As = "DataRow",
 
@@ -108,7 +108,7 @@ function Invoke-DbaAsync {
 
         }
 
-        if ($As -eq "PSObject") {
+        if ($As -in "PSObject", "PSObjectArray") {
             #This code scrubs DBNulls.  Props to Dave Wyatt
             $cSharp = @'
                 using System;
@@ -278,14 +278,6 @@ function Invoke-DbaAsync {
                 'DataTable' {
                     $ds.Tables
                 }
-                'PSObjectTable' {
-                    foreach ($table in $ds.Tables) {
-                        $rows = foreach ($row in $table.Rows) {
-                            [DBNullScrubber]::DataRowToPSObject($row)
-                        }
-                        , $rows
-                    }
-                }
                 'DataRow' {
                     if ($ds.Tables.Count -ne 0) {
                         $ds.Tables[0]
@@ -298,6 +290,14 @@ function Invoke-DbaAsync {
                         foreach ($row in $ds.Tables[0].Rows) {
                             [DBNullScrubber]::DataRowToPSObject($row)
                         }
+                    }
+                }
+                'PSObjectArray' {
+                    foreach ($table in $ds.Tables) {
+                        $rows = foreach ($row in $table.Rows) {
+                            [DBNullScrubber]::DataRowToPSObject($row)
+                        }
+                        , $rows
                     }
                 }
                 'SingleValue' {
