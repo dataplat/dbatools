@@ -284,10 +284,10 @@ function Invoke-DbaAsync {
                     }
                 }
                 'PSObject' {
-                    if ($ds.Tables.Count -ne 0) {
+                    foreach ($table in $ds.Tables) {
                         #Scrub DBNulls - Provides convenient results you can use comparisons with
                         #Introduces overhead (e.g. ~2000 rows w/ ~80 columns went from .15 Seconds to .65 Seconds - depending on your data could be much more!)
-                        foreach ($row in $ds.Tables[0].Rows) {
+                        foreach ($row in $table.Rows) {
                             [DBNullScrubber]::DataRowToPSObject($row)
                         }
                     }

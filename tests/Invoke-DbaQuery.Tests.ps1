@@ -197,10 +197,19 @@ SELECT @@servername as dbname
         'tempdb' | Should -BeIn $results.dbname
     }
     It "supports multiple datatables also as array of PSObjects (see #6921)" {
-        $results = Invoke-DbaQuery -SqlInstance $script:instance2 -Database tempdb -Query "select 1 as 'a'; select 2 as 'b', 3 as 'c';" -As PSObjectArray
+        $results = Invoke-DbaQuery -SqlInstance $script:instance2 -Database tempdb -Query "select 1 as a union all select 2 union all select 3; select 4 as b, 5 as c union all select 6, 7;" -As PSObjectArray
         $results.Count | Should -Be 2
+        $results[0].Count | Should -Be 3
+        $results[0][0].a | Should -Be 1
+        $results[1].Count | Should -Be 2
+        $results[1][0].b | Should -Be 4
+        $results[1][1].c | Should -Be 7
+    }
+    It "supports multiple datatables also as PSObjects (see #6921)" {
+        $results = Invoke-DbaQuery -SqlInstance $script:instance2 -Database tempdb -Query "select 1 as a union all select 2 union all select 3; select 4 as b, 5 as c union all select 6, 7;" -As PSObject
+        $results.Count | Should -Be 5
         $results[0].a | Should -Be 1
-        $results[1].b | Should -Be 2
-        $results[1].c | Should -Be 3
+        $results[3].b | Should -Be 4
+        $results[4].c | Should -Be 7
     }
 }
