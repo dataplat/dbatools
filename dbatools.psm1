@@ -408,6 +408,7 @@ $script:xplat = @(
     'Remove-DbaDbAsymmetricKey',
     'Invoke-DbaDbTransfer',
     'New-DbaDbTransfer',
+    'Remove-DbaDbData',
     'Resolve-DbaNetworkName',
     'Export-DbaAvailabilityGroup',
     'Write-DbaDbTableData',
@@ -771,7 +772,8 @@ $script:xplat = @(
     'Update-Dbatools',
     'Add-DbaServerRoleMember',
     'Get-DbatoolsPath',
-    'Set-DbatoolsPath'
+    'Set-DbatoolsPath',
+    'Export-DbaSysDbUserObject'
 )
 
 $script:noncoresmo = @(
