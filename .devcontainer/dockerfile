@@ -1,4 +1,23 @@
 FROM mcr.microsoft.com/mssql/server:2019-latest
 USER root
-RUN apt-get update && apt-get install -y powershell
-RUN /opt/mssql/bin/mssql-conf set sqlagent.enabled true
+# Install PowerShell
+RUN apt-get update && install -y powershell
+# install git
+RUN apt-get -y git
+
+# some cleanup
+RUN apt-get autoremove -y \
+    && apt-get clean -y
+
+ENV GIT_PROMPT_START='\033[1;36dbatools>\033[0m\033[0;33m\w\a\033[0m'
+
+# Save command line history
+RUN echo "export HISTFILE=/root/commandhistory/.bash_history" >> "/root/.bashrc" \
+    && echo "export PROMPT_COMMAND='history -a'" >> "/root/.bashrc" \
+    && mkdir -p /root/commandhistory \
+    && touch /root/commandhistory/.bash_history
+
+# Git command prompt
+# Change this if you want to utilize your fork
+RUN git clone https://github.com/sqlcollaborative/dbatools.git.git ~/.bash-git-prompt --depth=1 \
+    && echo "if [ -f \"$HOME/.bash-git-prompt/gitprompt.sh\" ]; then GIT_PROMPT_ONLY_IN_REPO=1 && source $HOME/.bash-git-prompt/gitprompt.sh; fi" >> "/root/.bashrc"

@@ -8,11 +8,12 @@ services:
     environment:
       - ACCEPT_EULA=Y
       - SA_PASSWORD=Password123
+      - MSSQL_AGENT_ENABLED=True
     ports:
       - "1401:1433"
     volumes:
       # Update this to wherever you want VS Code to mount the folder of your project
-      - .:/workspace:cached
+      - ./:/workspace:cached
   dbatools2:
     depends_on:
       - dbatools1
@@ -22,6 +23,7 @@ services:
     environment:
       - ACCEPT_EULA=Y
       - SA_PASSWORD=Password123
+      - MSSQL_AGENT_ENABLED=True
     ports:
       - "1402:1433"
   dbatools3:
@@ -33,5 +35,6 @@ services:
     environment:
       - ACCEPT_EULA=Y
       - SA_PASSWORD=Password123
+      - MSSQL_AGENT_ENABLED=True
     ports:
       - "1403:1433"
