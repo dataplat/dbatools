@@ -5,10 +5,9 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
         It "Should only contain our specific parameters" {
-            [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
+            [array]$params = ([Management.Automation.CommandMetaData]$ExecutionContext.SessionState.InvokeCommand.GetCommand($CommandName, 'Function')).Parameters.Keys
             [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'EnableException'
-            $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should -Be 0
+            Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params | Should -BeNullOrEmpty
         }
     }
 }
@@ -34,9 +33,9 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     Context "Get null history for database" {
         It "doesn't have any values for last backups because none exist yet" {
             $results = Get-DbaLastBackup -SqlInstance $script:instance2 -Database $dbname
-            $results.LastFullBackup | Should -Be $null
-            $results.LastDiffBackup | Should -Be $null
-            $results.LastLogBackup  | Should -Be $null
+            $results.LastFullBackup | Should -BeNullOrEmpty
+            $results.LastDiffBackup | Should -BeNullOrEmpty
+            $results.LastLogBackup  | Should -BeNullOrEmpty
         }
     }
 
