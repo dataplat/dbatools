@@ -13,7 +13,7 @@ function Export-DbaInstance {
         This is useful when you're looking to Export entire instances. It less flexible than using the underlying functions.
         Think of it as an easy button. Unless an -Exclude is specified, it exports:
 
-        All database restore scripts.
+        All database 'restore from backup' scripts.  Note: if a database does not have a backup the 'restore from backup' script won't be generated.
         All logins.
         All database mail objects.
         All credentials.
@@ -85,7 +85,7 @@ function Export-DbaInstance {
         ReplicationSettings
 
     .PARAMETER BatchSeparator
-        Batch separator for scripting output. "GO" by default.
+        Batch separator for scripting output. "GO" by default based on (Get-DbatoolsConfigValue -FullName 'formatting.batchseparator').
 
     .PARAMETER NoPrefix
         If this switch is used, the scripts will not include prefix information containing creator and datetime.
@@ -141,9 +141,9 @@ function Export-DbaInstance {
         [string]$Path = (Get-DbatoolsConfigValue -FullName 'Path.DbatoolsExport'),
         [switch]$NoRecovery,
         [switch]$IncludeDbMasterKey,
-        [ValidateSet('Databases', 'Logins', 'AgentServer', 'Credentials', 'LinkedServers', 'SpConfigure', 'CentralManagementServer', 'DatabaseMail', 'SysDbUserObjects', 'SystemTriggers', 'BackupDevices', 'Audits', 'Endpoints', 'ExtendedEvents', 'PolicyManagement', 'ResourceGovernor', 'ServerAuditSpecifications', 'CustomErrors', 'ServerRoles', 'AvailabilityGroups', 'ReplicationSettings')]
+        [ValidateSet('AgentServer', 'Audits', 'AvailabilityGroups', 'BackupDevices', 'CentralManagementServer', 'Credentials', 'CustomErrors', 'DatabaseMail', 'Databases', 'Endpoints', 'ExtendedEvents', 'LinkedServers', 'Logins', 'PolicyManagement', 'ReplicationSettings', 'ResourceGovernor', 'ServerAuditSpecifications', 'ServerRoles', 'SpConfigure', 'SysDbUserObjects', 'SystemTriggers')]
         [string[]]$Exclude,
-        [string]$BatchSeparator = 'GO',
+        [string]$BatchSeparator = (Get-DbatoolsConfigValue -FullName 'formatting.batchseparator'),
         [switch]$Append,
         [Microsoft.SqlServer.Management.Smo.ScriptingOptions]$ScriptingOption,
         [switch]$NoPrefix = $false,
@@ -163,6 +163,10 @@ function Export-DbaInstance {
         $ScriptingOptions = New-Object Microsoft.SqlServer.Management.Smo.ScriptingOptions
         $ScriptingOptions.ScriptBatchTerminator = $true
 
+        # The way this command is currently written it makes sense for it to always append, since the files are dynamically created and some of the exported objects are gathered in multiple steps and then written to the same file.
+        # This issue is discussed at: https://github.com/sqlcollaborative/dbatools/pull/6919 and https://github.com/sqlcollaborative/dbatools/issues/6918
+        $Append = $true
+        $ScriptingOptions.AppendToFile = $true
     }
     process {
         if (Test-FunctionInterrupt) { return }
@@ -173,7 +177,7 @@ function Export-DbaInstance {
             } catch {
                 Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
-            $timeNow = (Get-Date -uformat "%m%d%Y%H%M%S")
+            $timeNow = (Get-Date -UFormat (Get-DbatoolsConfigValue -FullName 'formatting.uformat'))
             $exportPath = Join-DbaPath -Path $Path -Child "$($server.name.replace('\', '$'))-$timeNow"
 
             if (-not (Test-Path $exportPath)) {
@@ -246,7 +250,7 @@ function Export-DbaInstance {
                 $null = Get-DbaDbMailAccount -SqlInstance $server | Export-DbaScript -FilePath "$exportPath\$fileCounter-dbmail.sql" -Append:$Append -BatchSeparator $BatchSeparator -ScriptingOptionsObject $ScriptingOption -NoPrefix:$NoPrefix
                 $null = Get-DbaDbMailProfile -SqlInstance $server | Export-DbaScript -FilePath "$exportPath\$fileCounter-dbmail.sql" -Append:$Append -BatchSeparator $BatchSeparator -ScriptingOptionsObject $ScriptingOption -NoPrefix:$NoPrefix
                 $null = Get-DbaDbMailServer -SqlInstance $server | Export-DbaScript -FilePath "$exportPath\$fileCounter-dbmail.sql" -Append:$Append -BatchSeparator $BatchSeparator -ScriptingOptionsObject $ScriptingOption -NoPrefix:$NoPrefix
-                $null = Get-DbaDbMail -SqlInstance $server | Export-DbaScript -FilePath "$exportPath\$fileCounter-dbmail.sql" -Append:$Append -BatchSeparator $BatchSeparator -ScriptingOptionsObject $ScriptingOption -NoPrefix:$NoPrefix
+
                 Get-ChildItem -ErrorAction Ignore -Path "$exportPath\$fileCounter-dbmail.sql"
                 if (-not (Test-Path "$exportPath\$fileCounter-dbmail.sql")) {
                     $fileCounter--
@@ -257,10 +261,10 @@ function Export-DbaInstance {
                 $fileCounter++
                 Write-Message -Level Verbose -Message "Exporting Central Management Server"
                 Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Exporting Central Management Server"
-                $null = Get-DbaRegServerGroup -SqlInstance $server | Export-DbaScript -FilePath "$exportPath\$fileCounter-regserver.sql" -Append:$Append -BatchSeparator 'GO' -NoPrefix:$NoPrefix
-                $null = Get-DbaRegServer -SqlInstance $server | Export-DbaScript -FilePath "$exportPath\$fileCounter-regserver.sql" -Append:$Append -BatchSeparator 'GO' -NoPrefix:$NoPrefix
-                Get-ChildItem -ErrorAction Ignore -Path "$exportPath\$fileCounter-regserver.sql"
-                if (-not (Test-Path "$exportPath\$fileCounter-regserver.sql")) {
+                $outputFilePath = "$exportPath\$fileCounter-regserver.xml"
+                $null = Export-DbaRegServer -SqlInstance $server -FilePath $outputFilePath
+                Get-ChildItem -ErrorAction Ignore -Path $outputFilePath
+                if (-not (Test-Path $outputFilePath)) {
                     $fileCounter--
                 }
             }
@@ -293,8 +297,8 @@ function Export-DbaInstance {
                 $null = Get-DbaInstanceTrigger -SqlInstance $server | Export-DbaScript -FilePath "$exportPath\$fileCounter-servertriggers.sql" -Append:$Append -BatchSeparator $BatchSeparator -ScriptingOptionsObject $ScriptingOption -NoPrefix:$NoPrefix
                 $triggers = Get-Content -Path "$exportPath\$fileCounter-servertriggers.sql" -Raw -ErrorAction Ignore
                 if ($triggers) {
-                    $triggers = $triggers.ToString() -replace 'CREATE TRIGGER', "GO`r`nCREATE TRIGGER"
-                    $triggers = $triggers.ToString() -replace 'ENABLE TRIGGER', "GO`r`nENABLE TRIGGER"
+                    $triggers = $triggers.ToString() -replace 'CREATE TRIGGER', "$BatchSeparator`r`nCREATE TRIGGER"
+                    $triggers = $triggers.ToString() -replace 'ENABLE TRIGGER', "$BatchSeparator`r`nENABLE TRIGGER"
                     $null = $triggers | Set-Content -Path "$exportPath\$fileCounter-servertriggers.sql" -Force
                     Get-ChildItem -ErrorAction Ignore -Path "$exportPath\$fileCounter-servertriggers.sql"
                 }
@@ -340,7 +344,7 @@ function Export-DbaInstance {
                 $fileCounter++
                 Write-Message -Level Verbose -Message "Exporting Endpoints"
                 Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Exporting Endpoints"
-                $null = Get-DbaEndpoint -SqlInstance $server | Where-Object IsSystemObject -eq $false | Export-DbaScript -FilePath "$exportPath\$fileCounter-endpoints.sql" -Append:$Append -BatchSeparator $BatchSeparator -ScriptingOptionsObject $ScriptingOption -NoPrefix:$NoPrefix
+                $null = Get-DbaEndpoint -SqlInstance $server | Where-Object IsSystemObject -EQ $false | Export-DbaScript -FilePath "$exportPath\$fileCounter-endpoints.sql" -Append:$Append -BatchSeparator $BatchSeparator -ScriptingOptionsObject $ScriptingOption -NoPrefix:$NoPrefix
                 Get-ChildItem -ErrorAction Ignore -Path "$exportPath\$fileCounter-endpoints.sql"
                 if (-not (Test-Path "$exportPath\$fileCounter-endpoints.sql")) {
                     $fileCounter--
@@ -351,9 +355,23 @@ function Export-DbaInstance {
                 $fileCounter++
                 Write-Message -Level Verbose -Message "Exporting Policy Management"
                 Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Exporting Policy Management"
-                $null = Get-DbaPbmCondition -SqlInstance $server | Export-DbaScript -FilePath "$exportPath\$fileCounter-policymanagement.sql" -Append:$Append -BatchSeparator $BatchSeparator -NoPrefix:$NoPrefix
-                $null = Get-DbaPbmObjectSet -SqlInstance $server | Export-DbaScript -FilePath "$exportPath\$fileCounter-policymanagement.sql" -Append:$Append -BatchSeparator $BatchSeparator -NoPrefix:$NoPrefix
-                $null = Get-DbaPbmPolicy -SqlInstance $server | Export-DbaScript -FilePath "$exportPath\$fileCounter-policymanagement.sql" -Append:$Append -BatchSeparator $BatchSeparator -NoPrefix:$NoPrefix
+
+                $outputFilePath = "$exportPath\$fileCounter-policymanagement.sql"
+                $scriptText = ""
+                $policyObjects = @()
+
+                # the policy objects are a different set of classes and are not compatible with the SMO object usage in Export-DbaScript
+                $policyObjects += Get-DbaPbmCondition   -SqlInstance $server
+                $policyObjects += Get-DbaPbmObjectSet   -SqlInstance $server
+                $policyObjects += Get-DbaPbmPolicy      -SqlInstance $server
+
+                foreach ($policyObject in $policyObjects) {
+                    $tsqlScript = $policyObject.ScriptCreate()
+                    $scriptText += $tsqlScript.GetScript() + "`r`n$BatchSeparator`r`n`r`n"
+                }
+
+                Set-Content -Path $outputFilePath -Value $scriptText
+
                 Get-ChildItem -ErrorAction Ignore -Path "$exportPath\$fileCounter-policymanagement.sql"
                 if (-not (Test-Path "$exportPath\$fileCounter-policymanagement.sql")) {
                     $fileCounter--
@@ -364,11 +382,10 @@ function Export-DbaInstance {
                 $fileCounter++
                 Write-Message -Level Verbose -Message "Exporting Resource Governor"
                 Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Exporting Resource Governor"
-                $null = Get-DbaResourceGovernor -SqlInstance $server | Export-DbaScript -FilePath "$exportPath\$fileCounter-resourcegov.sql" -Append:$Append -BatchSeparator $BatchSeparator -ScriptingOptionsObject $ScriptingOption -NoPrefix:$NoPrefix
                 $null = Get-DbaRgClassifierFunction -SqlInstance $server | Export-DbaScript -FilePath "$exportPath\$fileCounter-resourcegov.sql" -Append:$Append -BatchSeparator $BatchSeparator -ScriptingOptionsObject $ScriptingOption -NoPrefix:$NoPrefix
-                $null = Get-DbaRgResourcePool -SqlInstance $server | Where-Object Name -notin 'default', 'internal' | Export-DbaScript -FilePath "$exportPath\$fileCounter-resourcegov.sql" -Append:$Append -BatchSeparator $BatchSeparator -ScriptingOptionsObject $ScriptingOption -NoPrefix:$NoPrefix
-                $null = Get-DbaRgWorkloadGroup -SqlInstance $server | Where-Object Name -notin 'default', 'internal' | Export-DbaScript -FilePath "$exportPath\$fileCounter-resourcegov.sql" -Append:$Append -BatchSeparator $BatchSeparator -ScriptingOptionsObject $ScriptingOption -NoPrefix:$NoPrefix
-                $null = Add-Content -Value "ALTER RESOURCE GOVERNOR RECONFIGURE" -Path "$exportPath\$fileCounter-resourcegov.sql"
+                $null = Get-DbaRgResourcePool -SqlInstance $server | Where-Object Name -NotIn 'default', 'internal' | Export-DbaScript -FilePath "$exportPath\$fileCounter-resourcegov.sql" -Append:$Append -BatchSeparator $BatchSeparator -ScriptingOptionsObject $ScriptingOption -NoPrefix:$NoPrefix
+                $null = Get-DbaRgWorkloadGroup -SqlInstance $server | Where-Object Name -NotIn 'default', 'internal' | Export-DbaScript -FilePath "$exportPath\$fileCounter-resourcegov.sql" -Append:$Append -BatchSeparator $BatchSeparator -ScriptingOptionsObject $ScriptingOption -NoPrefix:$NoPrefix
+                $null = Get-DbaResourceGovernor -SqlInstance $server | Export-DbaScript -FilePath "$exportPath\$fileCounter-resourcegov.sql" -Append:$Append -BatchSeparator $BatchSeparator -ScriptingOptionsObject $ScriptingOption -NoPrefix:$NoPrefix
                 Get-ChildItem -ErrorAction Ignore -Path "$exportPath\$fileCounter-resourcegov.sql"
                 if (-not (Test-Path "$exportPath\$fileCounter-resourcegov.sql")) {
                     $fileCounter--
@@ -379,7 +396,7 @@ function Export-DbaInstance {
                 $fileCounter++
                 Write-Message -Level Verbose -Message "Exporting Extended Events"
                 Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Exporting Extended Events"
-                $null = Get-DbaXESession -SqlInstance $server | Export-DbaXeSession -FilePath "$exportPath\$fileCounter-extendedevents.sql" -Append:$Append -BatchSeparator 'GO' -NoPrefix:$NoPrefix
+                $null = Get-DbaXESession -SqlInstance $server | Export-DbaXESession -FilePath "$exportPath\$fileCounter-extendedevents.sql" -Append:$Append -BatchSeparator $BatchSeparator -NoPrefix:$NoPrefix
                 Get-ChildItem -ErrorAction Ignore -Path "$exportPath\$fileCounter-extendedevents.sql"
                 if (-not (Test-Path "$exportPath\$fileCounter-extendedevents.sql")) {
                     $fileCounter--

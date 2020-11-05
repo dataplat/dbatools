@@ -154,19 +154,19 @@ function Export-DbaScript {
         $commandName = $MyInvocation.MyCommand.Name
         $prefixArray = @()
 
-        $appendToScript = $Append
+        # if the Append switch is used then ensure the scripting options are updated
+        $appendToScript = $false
+        if ($Append.IsPresent) {
+            $ScriptingOptionsObject.AppendToFile = $true
+            $appendToScript = $true
+        }
+
         if ($ScriptingOptionsObject) {
             # Check if BatchTerminator is consistent
             if (($($ScriptingOptionsObject.ScriptBatchTerminator)) -and ([string]::IsNullOrWhitespace($BatchSeparator))) {
                 Write-Message -Level Warning -Message "Setting ScriptBatchTerminator to true and also having BatchSeperarator as an empty or null string may produce unintended results."
             }
-
-            if ($ScriptingOptionsObject.AppendToFile) {
-                Write-Message -Level Verbose -Message "The ScriptingOptionsObject AppendToFile setting of true will override Append parameter."
-                $appendToScript = $true
-            }
         }
-
     }
 
     process {
