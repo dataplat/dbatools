@@ -71,8 +71,7 @@ function Update-DbaInstance {
         If the protocol fails to establish a connection
 
         Defaults:
-        * CredSSP when -Credential is specified - due to the fact that repository Path is usually a network share and credentials need to be passed to the remote host
-          to avoid the double-hop issue.
+        * CredSSP when -Credential is specified - due to the fact that repository Path is usually a network share and credentials need to be passed to the remote host to avoid the double-hop issue.
         * Default when -Credential is not specified. Will likely fail if a network path is specified.
 
     .PARAMETER InstanceName
@@ -540,11 +539,8 @@ function Update-DbaInstance {
         # if path is not on the network, upload the patch to each remote computer
         if ($downloadedKbs) {
             # find unique KB/Architecture combos without an Installer
-            $groupedRequirements = $installActions | ForEach-Object {
-                foreach ($action in $_.Actions | Where-Object { -Not $_.Installer }) {
-                    [PSCustomObject]@{ComputerName = $_.ComputerName; KB = $action.KB; Architecture = $action.Architecture }
-                }
-            } | Group-Object -Property KB, Architecture
+            $groupedRequirements = $installActions | ForEach-Object { foreach ($action in $_.Actions | Where-Object { -Not $_.Installer }) { [PSCustomObject]@{ComputerName = $_.ComputerName; KB = $action.KB; Architecture = $action.Architecture } } } | Group-Object -Property KB, Architecture
+
             # for each such combo, .Installer paths need to be updated and, potentially, files copied
             foreach ($groupKB in $groupedRequirements) {
                 $fileItem = ($downloadedKbs | Where-Object { $_.KB -eq $groupKB.Values[0] -and $_.Architecture -eq $groupKB.Values[1] }).FileItem
