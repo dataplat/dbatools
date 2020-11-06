@@ -11,6 +11,72 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
             (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
         }
     }
+
+    Context "PII Known Names" {
+
+        $piiKnownNames = Get-Content "$PSScriptRoot\..\bin\datamasking\pii-knownnames.json" -Raw | ConvertFrom-Json
+        $randomizerTypes = Get-Content "$PSScriptRoot\..\bin\randomizer\en.randomizertypes.csv" | ConvertFrom-Csv -Delimiter ','
+
+        It "All masking types match randomizer types" {
+            # Arrange
+            $maskingTypesOK = $true
+
+            # Act
+            $piiKnownNames | ForEach-Object {
+                $maskingTypesOK = $maskingTypesOK -and ($_.MaskingType -in $randomizerTypes.Type)
+            }
+
+            # Assert
+            $maskingTypesOK | Should -Be $true
+        }
+
+        It "All masking subtypes match randomizer subtypes" {
+            # Arrange
+            $maskingSubtypesOK = $true
+
+            # Act
+            $piiKnownNames | ForEach-Object {
+                $maskingSubtypesOK = $maskingSubtypesOK -and ($_.MaskingSubType -in $randomizerTypes.SubType)
+            }
+
+            # Assert
+            $maskingSubtypesOK | Should -Be $true
+        }
+
+    }
+
+    Context "PII patterns" {
+
+        $piiPatterns = Get-Content "$PSScriptRoot\..\bin\datamasking\pii-patterns.json" -Raw | ConvertFrom-Json
+        $randomizerTypes = Get-Content "$PSScriptRoot\..\bin\randomizer\en.randomizertypes.csv" | ConvertFrom-Csv -Delimiter ','
+
+        It "All masking types match randomizer types" {
+            # Arrange
+            $maskingTypesOK = $true
+
+            # Act
+            $piiPatterns | ForEach-Object {
+                $maskingTypesOK = $maskingTypesOK -and ($_.MaskingType -in $randomizerTypes.Type)
+            }
+
+            # Assert
+            $maskingTypesOK | Should -Be $true
+        }
+
+        It "All masking subtypes match randomizer subtypes" {
+            # Arrange
+            $maskingSubtypesOK = $true
+
+            # Act
+            $piiPatterns | ForEach-Object {
+                $maskingSubtypesOK = $maskingSubtypesOK -and ($_.MaskingSubType -in $randomizerTypes.SubType)
+            }
+
+            # Assert
+            $maskingSubtypesOK | Should -Be $true
+        }
+
+    }
 }
 
 Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {

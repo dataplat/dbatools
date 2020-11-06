@@ -11,6 +11,18 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
             (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
         }
     }
+    Context "Retired KBs" {
+        It "Handles retired kbs" {
+            $result = Test-DbaBuild -Build '13.0.5479' -Latest
+            $result.Warning | Should -Be 'This version has been officially retired by Microsoft'
+            $latestCUfor2019 = (Test-DbaBuild -Build '15.0.4003' -MaxBehind '0CU').CUTarget.Replace('CU', '')
+            #CU7 for 2019 was retired
+            [int]$behindforCU7 = [int]$latestCUfor2019 - 7
+            $goBackTo = "$($behindforCU7)CU"
+            $result = Test-DbaBuild -Build '15.0.4003' -MaxBehind $goBackTo
+            $result.CUTarget | Should -Be 'CU6'
+        }
+    }
 }
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     Context "Command actually works" {
