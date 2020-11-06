@@ -21,9 +21,9 @@ function Invoke-DbaAsync {
             Specifies the number of seconds before the queries time out.
 
         .PARAMETER As
-            Specifies output type. Valid options for this parameter are 'DataSet', 'DataTable', 'DataRow', 'PSObject', and 'SingleValue'
+            Specifies output type. Valid options for this parameter are 'DataSet', 'DataTable', 'DataRow', 'PSObject', 'PSObjectArray', and 'SingleValue'
 
-            PSObject output introduces overhead but adds flexibility for working with results: http://powershell.org/wp/forums/topic/dealing-with-dbnull/
+            PSObject and PSObjectArray output introduces overhead but adds flexibility for working with results: http://powershell.org/wp/forums/topic/dealing-with-dbnull/
 
         .PARAMETER SqlParameters
             Specifies a hashtable of parameters for parameterized SQL queries.  http://blog.codinghorror.com/give-me-parameterized-sql-or-give-me-death/
@@ -53,7 +53,7 @@ function Invoke-DbaAsync {
         [string]
         $Query,
 
-        [ValidateSet("DataSet", "DataTable", "DataRow", "PSObject", "SingleValue")]
+        [ValidateSet("DataSet", "DataTable", "DataRow", "PSObject", "PSObjectArray", "SingleValue")]
         [string]
         $As = "DataRow",
 
@@ -108,7 +108,7 @@ function Invoke-DbaAsync {
 
         }
 
-        if ($As -eq "PSObject") {
+        if ($As -in "PSObject", "PSObjectArray") {
             #This code scrubs DBNulls.  Props to Dave Wyatt
             $cSharp = @'
                 using System;
@@ -173,14 +173,13 @@ function Invoke-DbaAsync {
             $cmd.CommandTimeout = $QueryTimeout
 
             if ($null -ne $SqlParameters) {
-                $SqlParameters.GetEnumerator() |
-                    ForEach-Object {
-                        if ($null -ne $_.Value) {
-                            $cmd.Parameters.AddWithValue($_.Key, $_.Value)
-                        } else {
-                            $cmd.Parameters.AddWithValue($_.Key, [DBNull]::Value)
-                        }
-                    } > $null
+                $SqlParameters.GetEnumerator() | ForEach-Object {
+                    if ($null -ne $_.Value) {
+                        $cmd.Parameters.AddWithValue($_.Key, $_.Value)
+                    } else {
+                        $cmd.Parameters.AddWithValue($_.Key, [DBNull]::Value)
+                    }
+                } > $null
             }
 
             $ds = New-Object system.Data.DataSet
@@ -284,12 +283,20 @@ function Invoke-DbaAsync {
                     }
                 }
                 'PSObject' {
-                    if ($ds.Tables.Count -ne 0) {
+                    foreach ($table in $ds.Tables) {
                         #Scrub DBNulls - Provides convenient results you can use comparisons with
                         #Introduces overhead (e.g. ~2000 rows w/ ~80 columns went from .15 Seconds to .65 Seconds - depending on your data could be much more!)
-                        foreach ($row in $ds.Tables[0].Rows) {
+                        foreach ($row in $table.Rows) {
                             [DBNullScrubber]::DataRowToPSObject($row)
                         }
+                    }
+                }
+                'PSObjectArray' {
+                    foreach ($table in $ds.Tables) {
+                        $rows = foreach ($row in $table.Rows) {
+                            [DBNullScrubber]::DataRowToPSObject($row)
+                        }
+                        , $rows
                     }
                 }
                 'SingleValue' {
