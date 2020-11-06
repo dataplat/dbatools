@@ -156,7 +156,7 @@ function Export-DbaScript {
 
         # if the Append switch is used then ensure the scripting options are updated
         $appendToScript = $false
-        if ($Append.IsPresent) {
+        if (Test-Bound 'Append') {
             $ScriptingOptionsObject.AppendToFile = $true
             $appendToScript = $true
         }

@@ -10,6 +10,8 @@ function Export-DbaInstance {
     .DESCRIPTION
         Export-DbaInstance consolidates most of the export scripts in dbatools into one command.
 
+        The exported files are written to a new folder with a naming convention of "servername-yyyyMMddHHmmss".
+
         This is useful when you're looking to Export entire instances. It less flexible than using the underlying functions.
         Think of it as an easy button. Unless an -Exclude is specified, it exports:
 
@@ -361,9 +363,9 @@ function Export-DbaInstance {
                 $policyObjects = @()
 
                 # the policy objects are a different set of classes and are not compatible with the SMO object usage in Export-DbaScript
-                $policyObjects += Get-DbaPbmCondition   -SqlInstance $server
-                $policyObjects += Get-DbaPbmObjectSet   -SqlInstance $server
-                $policyObjects += Get-DbaPbmPolicy      -SqlInstance $server
+                $policyObjects += Get-DbaPbmCondition -SqlInstance $server
+                $policyObjects += Get-DbaPbmObjectSet -SqlInstance $server
+                $policyObjects += Get-DbaPbmPolicy -SqlInstance $server
 
                 foreach ($policyObject in $policyObjects) {
                     $tsqlScript = $policyObject.ScriptCreate()
