@@ -173,8 +173,7 @@ function Invoke-DbaAsync {
             $cmd.CommandTimeout = $QueryTimeout
 
             if ($null -ne $SqlParameters) {
-                $SqlParameters.GetEnumerator() |
-                ForEach-Object {
+                $SqlParameters.GetEnumerator() | ForEach-Object {
                     if ($null -ne $_.Value) {
                         $cmd.Parameters.AddWithValue($_.Key, $_.Value)
                     } else {
