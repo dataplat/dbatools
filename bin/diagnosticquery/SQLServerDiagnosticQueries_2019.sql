@@ -1,7 +1,7 @@
 
 -- SQL Server 2019 Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: October 30, 2020
+-- Last Modified: November 3, 2020
 -- https://glennsqlperformance.com/ 
 -- https://sqlserverperformance.wordpress.com/
 -- YouTube: https://bit.ly/2PkoAM1 
@@ -877,11 +877,22 @@ ORDER BY [VLF Count] DESC OPTION (RECOMPILE);
 -- and they can make full database restores and crash recovery take much longer
 -- Try to keep your VLF counts under 200 in most cases (depending on log file size)
 
--- Important change to VLF creation algorithm in SQL Server 2014
--- https://bit.ly/2Hsjbg4
+-- sys.dm_db_log_info (Transact-SQL)
+-- https://bit.ly/3jpmqsd
+
+-- sys.databases (Transact-SQL)
+-- https://bit.ly/2G5wqaX
 
 -- SQL Server Transaction Log Architecture and Management Guide
 -- https://bit.ly/2JjmQRZ
+
+-- VLF Growth Formula (SQL Server 2014 and newer)
+-- If the log growth increment is less than 1/8th the current size of the log
+--		Then:            1 new VLF
+-- Otherwise:
+--		Up to 64MB:      4 new VLFs
+--		64MB to 1GB:     8 new VLFs
+--		More than 1GB:  16 new VLFs	
 
 
 
