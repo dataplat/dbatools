@@ -100,6 +100,14 @@ function Convert-DbaMaskingValue {
             if ($null -eq $item -or -not $item) {
                 $originalValue = '$null'
                 $newValue = "NULL"
+            } elseif ($item -eq '') {
+                $originalValue = ''
+
+                if ($Nullable) {
+                    $newValue = "NULL"
+                } else {
+                    $newValue = ""
+                }
             } else {
                 switch ($DataType.ToLower()) {
                     { $_ -in 'bit', 'bool' } {
@@ -121,7 +129,7 @@ function Convert-DbaMaskingValue {
                         $newValue = "'$item'"
                     }
                     { $_ -eq 'datetime' } {
-                        if ($item -match "(\d{4})-(\d{2})-(\d{2})") {
+                        if (($item -match "(\d{4})-(\d{2})-(\d{2})") -or ($item -match "(\d{2})/(\d{2})/(\d{4})")) {
                             $item = ([datetime]$item).Tostring("yyyy-MM-dd HH:mm:ss.fff", [System.Globalization.CultureInfo]::InvariantCulture)
                             $newValue = "'$item'"
                         } else {
@@ -129,7 +137,7 @@ function Convert-DbaMaskingValue {
                         }
                     }
                     { $_ -eq 'datetime2' } {
-                        if ($item -match "(\d{4})-(\d{2})-(\d{2})") {
+                        if (($item -match "(\d{4})-(\d{2})-(\d{2})") -or ($item -match "(\d{2})/(\d{2})/(\d{4})")) {
                             $item = ([datetime]$item).Tostring("yyyy-MM-dd HH:mm:ss.fffffff", [System.Globalization.CultureInfo]::InvariantCulture)
                             $newValue = "'$item'"
                         } else {
@@ -137,7 +145,7 @@ function Convert-DbaMaskingValue {
                         }
                     }
                     { $_ -eq 'date' } {
-                        if ($item -match "(\d{4})-(\d{2})-(\d{2})") {
+                        if (($item -match "(\d{4})-(\d{2})-(\d{2})") -or ($item -match "(\d{2})/(\d{2})/(\d{4})")) {
                             $item = ([datetime]$item).Tostring("yyyy-MM-dd", [System.Globalization.CultureInfo]::InvariantCulture)
                             $newValue = "'$item'"
                         } else {
@@ -145,7 +153,7 @@ function Convert-DbaMaskingValue {
                         }
                     }
                     { $_ -like 'smalldatetime' } {
-                        if ($item -match "(\d{4})-(\d{2})-(\d{2})") {
+                        if (($item -match "(\d{4})-(\d{2})-(\d{2})") -or ($item -match "(\d{2})/(\d{2})/(\d{4})")) {
                             $item = ([datetime]$item).Tostring("yyyy-MM-dd HH:mm:ss", [System.Globalization.CultureInfo]::InvariantCulture)
                             $newValue = "'$item'"
                         } else {
