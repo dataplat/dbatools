@@ -333,6 +333,7 @@ function Invoke-DbaQuery {
             }
         }
         foreach ($instance in $SqlInstance) {
+            Write-Message -Level Debug -Message "SqlInstance passed in, will work on: $instance"
             try {
                 $connDbaInstanceParams = @{
                     SqlInstance   = $instance
@@ -340,6 +341,7 @@ function Invoke-DbaQuery {
                     Database      = $Database
                 }
                 if ($ReadOnly) {
+                    # TODO: This will not work, if SqlInstance is already a server object
                     $connDbaInstanceParams.ApplicationIntent = "ReadOnly"
                 }
                 $server = Connect-DbaInstance @connDbaInstanceParams
@@ -348,10 +350,12 @@ function Invoke-DbaQuery {
             }
             $conncontext = $server.ConnectionContext
             try {
-                if ($Database -and $conncontext.DatabaseName -ne $Database) {
-                    #$conncontext = $server.ConnectionContext.Copy()
-                    #$conncontext.DatabaseName = $Database
-                    $conncontext = $server.ConnectionContext.Copy().GetDatabaseConnection($Database)
+                if (-not (Get-DbatoolsConfigValue -FullName sql.connection.experimental)) {
+                    if ($Database -and $conncontext.DatabaseName -ne $Database) {
+                        #$conncontext = $server.ConnectionContext.Copy()
+                        #$conncontext.DatabaseName = $Database
+                        $conncontext = $server.ConnectionContext.Copy().GetDatabaseConnection($Database)
+                    }
                 }
                 if ($File -or $SqlObject) {
                     foreach ($item in $files) {
