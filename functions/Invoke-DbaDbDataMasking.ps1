@@ -553,7 +553,11 @@ function Invoke-DbaDbDataMasking {
                                         }
 
                                         if ($columnMaskInfo) {
-                                            $insertValue = Convert-DbaMaskingValue -Value $newValue -DataType $columnMaskInfo.ColumnType -Nullable:$columnMaskInfo.Nullable
+                                            try {
+                                                $insertValue = Convert-DbaMaskingValue -Value $newValue -DataType $columnMaskInfo.ColumnType -Nullable:$columnMaskInfo.Nullable -EnableException
+                                            } catch {
+                                                Stop-Function -Message "Could not convert value" -ErrorRecord $_ -Target $newValue
+                                            }
 
                                             $insertValues += $insertValue.NewValue
                                         } elseif ($indexColumn -eq "RowNr") {
@@ -669,7 +673,11 @@ function Invoke-DbaDbDataMasking {
                                             }
 
                                             if ($columnMaskInfo) {
-                                                $insertValue = Convert-DbaMaskingValue -Value $newValue -DataType $columnMaskInfo.ColumnType -Nullable:$columnMaskInfo.Nullable
+                                                try {
+                                                    $insertValue = Convert-DbaMaskingValue -Value $newValue -DataType $columnMaskInfo.ColumnType -Nullable:$columnMaskInfo.Nullable -EnableException
+                                                } catch {
+                                                    Stop-Function -Message "Could not convert value" -ErrorRecord $_ -Target $newValue
+                                                }
 
                                                 $insertValues += $insertValue.NewValue
                                             } elseif ($indexColumn -eq "RowNr") {
@@ -764,8 +772,13 @@ function Invoke-DbaDbDataMasking {
                                     if ($null -eq $newValue -and -not $columnobject.Nullable) {
                                         Write-PSFMessage -Message "Column '$($columnobject.Name)' static value cannot null when column is set not to be nullable."
                                     } else {
-                                        $convertedValue = Convert-DbaMaskingValue -Value $newValue -DataType $columnobject.ColumnType -Nullable:$columnobject.Nullable
-                                        $null = $stringBuilder.AppendLine("UPDATE [$($tableobject.Schema)].[$($tableobject.Name)] SET [$($columnObject.Name)] = $($convertedValue.NewValue)")
+                                        try {
+                                            $convertedValue = Convert-DbaMaskingValue -Value $newValue -DataType $columnobject.ColumnType -Nullable:$columnobject.Nullable -EnableException
+                                            $null = $stringBuilder.AppendLine("UPDATE [$($tableobject.Schema)].[$($tableobject.Name)] SET [$($columnObject.Name)] = $($convertedValue.NewValue)")
+                                        } catch {
+                                            Stop-Function -Message "Could not convert value" -ErrorRecord $_ -Target $newValue
+                                        }
+
                                         $batchRowNr++
                                     }
                                 } else {
@@ -791,20 +804,27 @@ function Invoke-DbaDbDataMasking {
                                         $newValue = $null
 
                                         # Check for value being in deterministic masking table
-                                        $lookupValue = Convert-DbaMaskingValue -Value $row.($columnobject.Name) -DataType varchar -Nullable:$columnobject.Nullable
-                                        $query = "SELECT [NewValue] FROM dbo.DeterministicValues WHERE [ValueKey] = $($lookupValue.NewValue)"
+                                        if (($null -ne $row.($columnobject.Name)) -and ($row.($columnobject.Name) -ne '')) {
+                                            try {
+                                                $lookupValue = Convert-DbaMaskingValue -Value $row.($columnobject.Name) -DataType varchar -Nullable:$columnobject.Nullable -EnableException
+                                            } catch {
+                                                Stop-Function -Message "Could not convert value" -ErrorRecord $_ -Target $row.($columnobject.Name)
+                                            }
 
-                                        try {
-                                            $lookupResult = $null
-                                            $lookupResult = $server.Databases['tempdb'].Query($query)
-                                        } catch {
-                                            Stop-Function -Message "Something went wrong retrieving the deterministic values" -Target $query -ErrorRecord $_
+                                            $query = "SELECT [NewValue] FROM dbo.DeterministicValues WHERE [ValueKey] = $($lookupValue.NewValue)"
+
+                                            try {
+                                                $lookupResult = $null
+                                                $lookupResult = $server.Databases['tempdb'].Query($query)
+                                            } catch {
+                                                Stop-Function -Message "Something went wrong retrieving the deterministic values" -Target $query -ErrorRecord $_
+                                            }
                                         }
 
                                         # Check the columnobject properties and possible scenarios
                                         if ($columnobject.MaskingType -eq 'Static') {
                                             $newValue = $columnobject.StaticValue
-                                        } elseif ($columnobject.KeepNull -and $columnobject.Nullable -and (($row.($columnobject.Name)).GetType().Name -eq 'DBNull')) {
+                                        } elseif ($columnobject.KeepNull -and $columnobject.Nullable -and (($row.($columnobject.Name)).GetType().Name -eq 'DBNull') -or ($row.($columnobject.Name) -eq '')) {
                                             $newValue = $null
                                         } elseif (-not $columnobject.KeepNull -and $columnobject.Nullable -and (($nullmod++) % $ModulusFactor -eq 0)) {
                                             $newValue = $null
@@ -918,20 +938,35 @@ function Invoke-DbaDbDataMasking {
                                         }
 
                                         # Convert the values so they can used in TSQL
-                                        $convertedValue = Convert-DbaMaskingValue -Value $newValue -DataType $columnobject.ColumnType -Nullable:$columnobject.Nullable
+                                        try {
+                                            if ($row.($columnobject.Name) -eq '') {
+                                                $convertedValue = Convert-DbaMaskingValue -Value " " -DataType $columnobject.ColumnType -Nullable:$columnobject.Nullable -EnableException
+                                            } else {
+                                                $convertedValue = Convert-DbaMaskingValue -Value $newValue -DataType $columnobject.ColumnType -Nullable:$columnobject.Nullable -EnableException
+                                            }
+                                        } catch {
+                                            Stop-Function -Message "Could not convert value" -ErrorRecord $_ -Target $newValue
+                                        }
+
 
                                         # Add to the updates
                                         $updates += "[$($columnobject.Name)] = $($convertedValue.NewValue)"
 
                                         # Check if this value is determinisic
                                         if ($columnobject.Deterministic -and ($null -eq $lookupResult.NewValue)) {
-                                            $previous = Convert-DbaMaskingValue -Value $row.($columnobject.Name) -DataType $columnobject.ColumnType -Nullable:$columnobject.Nullable
+                                            if (($null -ne $row.($columnobject.Name)) -and ($row.($columnobject.Name) -ne '')) {
+                                                try {
+                                                    $previous = Convert-DbaMaskingValue -Value $row.($columnobject.Name) -DataType $columnobject.ColumnType -Nullable:$columnobject.Nullable -EnableException
+                                                } catch {
+                                                    Stop-Function -Message "Could not convert value" -ErrorRecord $_ -Target $row.($columnobject.Name)
+                                                }
 
-                                            $query = "INSERT INTO dbo.DeterministicValues (ValueKey, NewValue) VALUES ($($previous.NewValue), $($convertedValue.NewValue));"
-                                            try {
-                                                $null = $server.Databases['tempdb'].Query($query)
-                                            } catch {
-                                                Stop-Function -Message "Could not save deterministic value.`n$_" -Target $query -ErrorRecord $_
+                                                $query = "INSERT INTO dbo.DeterministicValues (ValueKey, NewValue) VALUES ($($previous.NewValue), $($convertedValue.NewValue));"
+                                                try {
+                                                    $null = $server.Databases['tempdb'].Query($query)
+                                                } catch {
+                                                    Stop-Function -Message "Could not save deterministic value.`n$_" -Target $query -ErrorRecord $_
+                                                }
                                             }
                                         }
 
