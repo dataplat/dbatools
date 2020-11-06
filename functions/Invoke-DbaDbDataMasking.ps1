@@ -714,7 +714,7 @@ function Invoke-DbaDbDataMasking {
                                 Write-PSFMessage -Level Verbose -Message "Table [$($tableobject.Schema)].[$($tableobject.Name)] does not contain any masking index columns to process"
                             }
                         } else {
-                            Stop-Function -Message "The table does not havce any indexes"
+                            Stop-Function -Message "The table does not have any indexes"
                         }
                     }
 
