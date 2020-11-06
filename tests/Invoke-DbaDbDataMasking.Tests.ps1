@@ -53,11 +53,11 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
 
             [array]$results = $file | Invoke-DbaDbDataMasking -SqlInstance $script:instance2 -SqlCredential $script:SqlCredential -Database $db -Confirm:$false
 
+            $results[0].Rows | Should -Be 2
+            $results[0].Database | Should -Contain $db
+
             $results[1].Rows | Should -Be 2
             $results[1].Database | Should -Contain $db
-
-            $results[2].Rows | Should -Be 2
-            $results[2].Database | Should -Contain $db
         }
 
         It "masks the data and does not delete it" {

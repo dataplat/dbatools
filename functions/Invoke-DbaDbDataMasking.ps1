@@ -274,7 +274,7 @@ function Invoke-DbaDbDataMasking {
                 ON dbo.DeterministicValues ( ValueKey )
             "
 
-            $server.Databases['tempdb'].Query($query)
+            $null = $server.Databases['tempdb'].Query($query)
 
             # Import the dictionary files
             if ($DictionaryFilePath.Count -ge 1) {
@@ -577,7 +577,7 @@ function Invoke-DbaDbDataMasking {
 
                                     # Try inserting the value
                                     try {
-                                        $server.Databases['tempdb'].Query($insertQuery)
+                                        $null = $server.Databases['tempdb'].Query($insertQuery)
                                         $insertFailed = $false
                                     } catch {
                                         Write-PSFMessage -Level Verbose -Message "Could not insert value"
@@ -700,7 +700,7 @@ function Invoke-DbaDbDataMasking {
 
                                         # Try inserting the value
                                         try {
-                                            $server.Databases['tempdb'].Query($insertQuery)
+                                            $null = $server.Databases['tempdb'].Query($insertQuery)
                                             $insertFailed = $false
                                         } catch {
                                             Write-PSFMessage -Level Verbose -Message "Could not insert value"
@@ -713,7 +713,7 @@ function Invoke-DbaDbDataMasking {
                                 try {
                                     Write-Message -Level Verbose -Message "Creating masking index for [$($indexToTable.TempTableName)]"
                                     $query = "CREATE NONCLUSTERED INDEX [NIX_$($indexToTable.TempTableName)_MaskID] ON [$($indexToTable.TempTableName)]([RowNr])"
-                                    $server.Databases['tempdb'].Query($query)
+                                    $null = $server.Databases['tempdb'].Query($query)
                                 } catch {
                                     Stop-Function -Message "Could not add masking index for [$($indexToTable.TempTableName)]" -ErrorRecord $_
                                 }
