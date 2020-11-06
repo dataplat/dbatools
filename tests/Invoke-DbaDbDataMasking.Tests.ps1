@@ -34,36 +34,36 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
                 GO
                 INSERT INTO people2 (fname, lname, dob) VALUES ('Layla','Schmoe','2/2/2000')
                 INSERT INTO people2 (fname, lname, dob) VALUES ('Eric','Schmee','2/2/1950')"
-        New-DbaDatabase -SqlInstance $script:instance2 -Name $db
-        Invoke-DbaQuery -SqlInstance $script:instance2 -Database $db -Query $sql
+        New-DbaDatabase -SqlInstance $script:instance2 -SqlCredential $script:SqlCredential -Name $db
+        Invoke-DbaQuery -SqlInstance $script:instance2 -SqlCredential $script:SqlCredential -Database $db -Query $sql
     }
 
     AfterAll {
-        Remove-DbaDatabase -SqlInstance $script:instance2 -Database $db -Confirm:$false
+        Remove-DbaDatabase -SqlInstance $script:instance2 -SqlCredential $script:SqlCredential -Database $db -Confirm:$false
         $file | Remove-Item -Confirm:$false -ErrorAction Ignore
     }
 
     Context "Command works" {
         It "starts with the right data" {
-            Invoke-DbaQuery -SqlInstance $script:instance2 -Database $db -Query "select * from people where fname = 'Joe'" | Should -Not -Be $null
-            Invoke-DbaQuery -SqlInstance $script:instance2 -Database $db -Query "select * from people where lname = 'Schmee'" | Should -Not -Be $null
+            Invoke-DbaQuery -SqlInstance $script:instance2 -SqlCredential $script:SqlCredential -Database $db -Query "select * from people where fname = 'Joe'" | Should -Not -Be $null
+            Invoke-DbaQuery -SqlInstance $script:instance2 -SqlCredential $script:SqlCredential -Database $db -Query "select * from people where lname = 'Schmee'" | Should -Not -Be $null
         }
         It "returns the proper output" {
-            $file = New-DbaDbMaskingConfig -SqlInstance $script:instance2 -Database $db -Path C:\temp
+            $file = New-DbaDbMaskingConfig -SqlInstance $script:instance2 -SqlCredential $script:SqlCredential -Database $db -Path C:\temp
 
-            $results = $file | Invoke-DbaDbDataMasking -SqlInstance $script:instance2 -Database $db -Confirm:$false
+            [array]$results = $file | Invoke-DbaDbDataMasking -SqlInstance $script:instance2 -SqlCredential $script:SqlCredential -Database $db -Confirm:$false
 
-            foreach ($result in $results) {
-                $result.Rows | Should -Be 2
-                $result.Database | Should -Contain $db
-            }
+            $results[0].Rows | Should -Be 2
+            $results[0].Database | Should -Contain $db
 
+            $results[1].Rows | Should -Be 2
+            $results[1].Database | Should -Contain $db
         }
 
         It "masks the data and does not delete it" {
-            Invoke-DbaQuery -SqlInstance $script:instance2 -Database $db -Query "select * from people" | Should -Not -Be $null
-            Invoke-DbaQuery -SqlInstance $script:instance2 -Database $db -Query "select * from people where fname = 'Joe'" | Should -Be $null
-            Invoke-DbaQuery -SqlInstance $script:instance2 -Database $db -Query "select * from people where lname = 'Schmee'" | Should -Be $null
+            Invoke-DbaQuery -SqlInstance $script:instance2 -SqlCredential $script:SqlCredential -Database $db -Query "select * from people" | Should -Not -Be $null
+            Invoke-DbaQuery -SqlInstance $script:instance2 -SqlCredential $script:SqlCredential -Database $db -Query "select * from people where fname = 'Joe'" | Should -Be $null
+            Invoke-DbaQuery -SqlInstance $script:instance2 -SqlCredential $script:SqlCredential -Database $db -Query "select * from people where lname = 'Schmee'" | Should -Be $null
         }
     }
 }
