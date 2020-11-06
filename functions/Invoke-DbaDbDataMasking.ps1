@@ -468,8 +468,6 @@ function Invoke-DbaDbDataMasking {
                                     $insertFailed = $false
                                     $insertValues = @()
 
-                                    #[array]$paramArray = @()
-
                                     foreach ($indexColumn in $indexToTable.Columns) {
                                         $columnMaskInfo = $tableobject.Columns | Where-Object { $_.Name -eq $indexColumn }
 
@@ -555,6 +553,11 @@ function Invoke-DbaDbDataMasking {
                                         if ($columnMaskInfo) {
                                             try {
                                                 $insertValue = Convert-DbaMaskingValue -Value $newValue -DataType $columnMaskInfo.ColumnType -Nullable:$columnMaskInfo.Nullable -EnableException
+
+                                                if ($convertedValue.ErrorMessage) {
+                                                    $maskingErrorFlag = $true
+                                                    Stop-Function "Could not convert the value. $($convertedValue.ErrorMessage)" -Target $convertedValue
+                                                }
                                             } catch {
                                                 Stop-Function -Message "Could not convert value" -ErrorRecord $_ -Target $newValue
                                             }
@@ -675,6 +678,11 @@ function Invoke-DbaDbDataMasking {
                                             if ($columnMaskInfo) {
                                                 try {
                                                     $insertValue = Convert-DbaMaskingValue -Value $newValue -DataType $columnMaskInfo.ColumnType -Nullable:$columnMaskInfo.Nullable -EnableException
+
+                                                    if ($convertedValue.ErrorMessage) {
+                                                        $maskingErrorFlag = $true
+                                                        Stop-Function "Could not convert the value. $($convertedValue.ErrorMessage)" -Target $convertedValue
+                                                    }
                                                 } catch {
                                                     Stop-Function -Message "Could not convert value" -ErrorRecord $_ -Target $newValue
                                                 }
@@ -696,7 +704,6 @@ function Invoke-DbaDbDataMasking {
                                             $insertFailed = $false
                                         } catch {
                                             Write-PSFMessage -Level Verbose -Message "Could not insert value"
-                                            $insertQuery
                                             $insertFailed = $true
                                             $retryCount++
                                         }
@@ -774,7 +781,14 @@ function Invoke-DbaDbDataMasking {
                                     } else {
                                         try {
                                             $convertedValue = Convert-DbaMaskingValue -Value $newValue -DataType $columnobject.ColumnType -Nullable:$columnobject.Nullable -EnableException
-                                            $null = $stringBuilder.AppendLine("UPDATE [$($tableobject.Schema)].[$($tableobject.Name)] SET [$($columnObject.Name)] = $($convertedValue.NewValue)")
+
+                                            if ($convertedValue.ErrorMessage) {
+                                                $maskingErrorFlag = $true
+                                                Stop-Function "Could not convert the value. $($convertedValue.ErrorMessage)" -Target $convertedValue
+                                            } else {
+                                                $null = $stringBuilder.AppendLine("UPDATE [$($tableobject.Schema)].[$($tableobject.Name)] SET [$($columnObject.Name)] = $($convertedValue.NewValue)")
+                                            }
+
                                         } catch {
                                             Stop-Function -Message "Could not convert value" -ErrorRecord $_ -Target $newValue
                                         }
@@ -807,6 +821,11 @@ function Invoke-DbaDbDataMasking {
                                         if (($null -ne $row.($columnobject.Name)) -and ($row.($columnobject.Name) -ne '')) {
                                             try {
                                                 $lookupValue = Convert-DbaMaskingValue -Value $row.($columnobject.Name) -DataType varchar -Nullable:$columnobject.Nullable -EnableException
+
+                                                if ($convertedValue.ErrorMessage) {
+                                                    $maskingErrorFlag = $true
+                                                    Stop-Function "Could not convert the value. $($convertedValue.ErrorMessage)" -Target $convertedValue
+                                                }
                                             } catch {
                                                 Stop-Function -Message "Could not convert value" -ErrorRecord $_ -Target $row.($columnobject.Name)
                                             }
@@ -940,14 +959,18 @@ function Invoke-DbaDbDataMasking {
                                         # Convert the values so they can used in TSQL
                                         try {
                                             if ($row.($columnobject.Name) -eq '') {
-                                                $convertedValue = Convert-DbaMaskingValue -Value " " -DataType $columnobject.ColumnType -Nullable:$columnobject.Nullable -EnableException
+                                                $convertedValue = Convert-DbaMaskingValue -Value ' ' -DataType $columnobject.ColumnType -Nullable:$columnobject.Nullable -EnableException
                                             } else {
                                                 $convertedValue = Convert-DbaMaskingValue -Value $newValue -DataType $columnobject.ColumnType -Nullable:$columnobject.Nullable -EnableException
+                                            }
+
+                                            if ($convertedValue.ErrorMessage) {
+                                                $maskingErrorFlag = $true
+                                                Stop-Function "Could not convert the value. $($convertedValue.ErrorMessage)" -Target $convertedValue
                                             }
                                         } catch {
                                             Stop-Function -Message "Could not convert value" -ErrorRecord $_ -Target $newValue
                                         }
-
 
                                         # Add to the updates
                                         $updates += "[$($columnobject.Name)] = $($convertedValue.NewValue)"
@@ -957,6 +980,11 @@ function Invoke-DbaDbDataMasking {
                                             if (($null -ne $row.($columnobject.Name)) -and ($row.($columnobject.Name) -ne '')) {
                                                 try {
                                                     $previous = Convert-DbaMaskingValue -Value $row.($columnobject.Name) -DataType $columnobject.ColumnType -Nullable:$columnobject.Nullable -EnableException
+
+                                                    if ($convertedValue.ErrorMessage) {
+                                                        $maskingErrorFlag = $true
+                                                        Stop-Function "Could not convert the value. $($convertedValue.ErrorMessage)" -Target $convertedValue
+                                                    }
                                                 } catch {
                                                     Stop-Function -Message "Could not convert value" -ErrorRecord $_ -Target $row.($columnobject.Name)
                                                 }
@@ -1243,7 +1271,7 @@ function Invoke-DbaDbDataMasking {
 
 
                         # Reset time
-                        $elapsed.Reset()
+                        $null = $elapsed.Reset()
                     }
 
                     # Cleanup
@@ -1251,7 +1279,7 @@ function Invoke-DbaDbDataMasking {
                         Write-Message -Message "Cleaning up unique temporary table '$uniqueDataTableName'" -Level verbose
                         $query = "DROP TABLE [$($uniqueDataTableName)];"
                         try {
-                            Invoke-DbaQuery -SqlInstance $server -SqlCredential $SqlCredential -Database 'tempdb' -Query $query -EnableException
+                            $null = Invoke-DbaQuery -SqlInstance $server -SqlCredential $SqlCredential -Database 'tempdb' -Query $query -EnableException
                         } catch {
                             Stop-Function -Message "Could not clean up unique values table '$uniqueDataTableName'" -Target $uniqueDataTableName -ErrorRecord $_
                         }
@@ -1271,7 +1299,7 @@ function Invoke-DbaDbDataMasking {
 
                             # Check if the output directory already exists
                             if (-not (Test-Path -Path $DictionaryExportPath)) {
-                                New-Item -Path $DictionaryExportPath -ItemType Directory
+                                $null = New-Item -Path $DictionaryExportPath -ItemType Directory
                             }
 
                             # Of course with Linux we need to change the slashes
@@ -1284,7 +1312,7 @@ function Invoke-DbaDbDataMasking {
                             $dictionaryFileName = "$DictionaryExportPath\$($filenamepart).$($db.Name).Dictionary.csv"
 
                             # Export dictionary
-                            $dictResult | Export-Csv -Path $dictionaryFileName -NoTypeInformation
+                            $null = $dictResult | Export-Csv -Path $dictionaryFileName -NoTypeInformation
 
                             Get-ChildItem -Path $dictionaryFileName
                         } else {
@@ -1297,14 +1325,14 @@ function Invoke-DbaDbDataMasking {
             } # End foreach database
 
             # Do some cleanup
-            $server.Databases['tempdb'].Tables.Refresh()
+            $null = $server.Databases['tempdb'].Tables.Refresh()
 
             if ($server.Databases['tempdb'].Tables.Name -contains 'DeterministicValues') {
                 $query = "DROP TABLE dbo.DeterministicValues"
 
                 try {
                     Write-Message -Level Verbose -Message "Cleaning up deterministic values table"
-                    $server.Databases['tempdb'].Query($query)
+                    $null = $server.Databases['tempdb'].Query($query)
                 } catch {
                     Stop-Function -Message "Could not remove deterministic value table" -ErrorRecord $_
                 }
