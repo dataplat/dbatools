@@ -105,7 +105,7 @@ function Get-DbaFilestream {
         <# Get Instance-Level information #>
         try {
             Write-Message -Level Verbose -Message "Connecting to $instance."
-            $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential -MinimumVersion 10
+            $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 10
         } catch {
             Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
         }

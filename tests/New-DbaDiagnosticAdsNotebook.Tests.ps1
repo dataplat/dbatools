@@ -18,13 +18,18 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
         $file = "c:\temp\myNotebook.ipynb"
     }
     AfterAll {
-        $null = Remove-Item -Path $file
+        $null = Remove-Item -Path $file -ErrorAction SilentlyContinue
     }
     Context "creates notebook" {
+        It "should create a file" {
+            $notebook = New-DbaDiagnosticAdsNotebook -TargetVersion 2017 -Path $file -IncludeDatabaseSpecific
+            $notebook | Should Not BeNullOrEmpty
+        }
+
         It "returns a file that includes specific phrases" {
             $results = New-DbaDiagnosticAdsNotebook -TargetVersion 2017 -Path $file -IncludeDatabaseSpecific
-            $text = $results | Get-Content
-            $text -match "information for current instance"
+            $results | Should Not BeNullOrEmpty
+            ($results | Get-Content) -contains "information for current instance"
         }
     }
 }

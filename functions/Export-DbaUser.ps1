@@ -28,6 +28,19 @@ function Export-DbaUser {
     .PARAMETER DestinationVersion
         To say to which version the script should be generated. If not specified will use database compatibility level
 
+    .PARAMETER Encoding
+        Specifies the file encoding. The default is UTF8.
+
+        Valid values are:
+        -- ASCII: Uses the encoding for the ASCII (7-bit) character set.
+        -- BigEndianUnicode: Encodes in UTF-16 format using the big-endian byte order.
+        -- Byte: Encodes a set of characters into a sequence of bytes.
+        -- String: Uses the encoding type for a string.
+        -- Unicode: Encodes in UTF-16 format using the little-endian byte order.
+        -- UTF7: Encodes in UTF-7 format.
+        -- UTF8: Encodes in UTF-8 format.
+        -- Unknown: The encoding type is unknown or invalid. The data can be treated as binary.
+
     .PARAMETER Path
         Specifies the directory where the file or files will be exported.
 
@@ -145,6 +158,8 @@ function Export-DbaUser {
         [string]$Path = (Get-DbatoolsConfigValue -FullName 'Path.DbatoolsExport'),
         [Alias("OutFile", "FileName")]
         [string]$FilePath,
+        [ValidateSet('ASCII', 'BigEndianUnicode', 'Byte', 'String', 'Unicode', 'UTF7', 'UTF8', 'Unknown')]
+        [string]$Encoding = 'UTF8',
         [Alias("NoOverwrite")]
         [switch]$NoClobber,
         [switch]$Append,
@@ -158,7 +173,7 @@ function Export-DbaUser {
     begin {
         $null = Test-ExportDirectory -Path $Path
 
-        $outsql = $script:pathcollection = @()
+        $outsql = $script:pathcollection = $instanceArray = @()
         $GenerateFilePerUser = $false
 
         $versions = @{
@@ -228,8 +243,6 @@ function Export-DbaUser {
             } else {
                 # Generate a new file name with passed/default path
                 $FilePath = Get-ExportFilePath -Path $PSBoundParameters.Path -FilePath $PSBoundParameters.FilePath -Type sql -ServerName $db.Parent.Name -Unique
-                # Force append to have everything on same file
-                $Append = $true
             }
 
             # Store roles between users so if we hit the same one we don't create it again
@@ -489,11 +502,18 @@ function Export-DbaUser {
                     # If generate a file per user, clean the collection to populate with next one
                     if ($GenerateFilePerUser) {
                         if (-not [string]::IsNullOrEmpty($sql)) {
-                            $sql | Out-File -Encoding UTF8 -FilePath $FilePath -Append:$Append -NoClobber:$NoClobber
+                            $sql | Out-File -Encoding:$Encoding -FilePath $FilePath -Append:$Append -NoClobber:$NoClobber
                             Get-ChildItem -Path $FilePath
                         }
                     } else {
-                        $sql | Out-File -Encoding UTF8 -FilePath $FilePath -Append:$Append -NoClobber:$NoClobber
+                        $dbUserInstance = $dbuser.Parent.Parent.Name
+
+                        if ($instanceArray -notcontains $($dbUserInstance)) {
+                            $sql | Out-File -Encoding:$Encoding -FilePath $FilePath -Append:$Append -NoClobber:$NoClobber
+                            $instanceArray += $dbUserInstance
+                        } else {
+                            $sql | Out-File -Encoding:$Encoding -FilePath $FilePath -Append
+                        }
                     }
                     # Clear variables for next user
                     $outsql = @()

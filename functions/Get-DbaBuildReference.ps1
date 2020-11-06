@@ -331,9 +331,15 @@ function Get-DbaBuildReference {
                 $Detected.KB = $el.KBList
                 if (($Build -and $el.Version -eq $Build) -or ($Kb -and $el.KBList -eq $currentKb)) {
                     $Detected.MatchType = 'Exact'
+                    if ($el.Retired) {
+                        $Detected.Warning = "This version has been officially retired by Microsoft"
+                    }
                     break
                 } elseif ($MajorVersion -and $Detected.SP -contains $ServicePack -and (!$CumulativeUpdate -or ($el.CU -and $el.CU -eq $CumulativeUpdate))) {
                     $Detected.MatchType = 'Exact'
+                    if ($el.Retired) {
+                        $Detected.Warning = "This version has been officially retired by Microsoft"
+                    }
                     break
                 }
             }
