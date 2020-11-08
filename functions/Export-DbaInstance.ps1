@@ -39,7 +39,7 @@ function Export-DbaInstance {
         This command supports the following use cases related to the output files:
 
         1. Export files to a new timestamped folder. This is the default behavior and results in a simple historical archive within the local filesystem.
-        2. Export files to an existing folder and overwrite pre-existing files. This can be accomplished using the -Overwrite parameter.
+        2. Export files to an existing folder and overwrite pre-existing files. This can be accomplished using the -Force parameter.
         This results in a single folder location with the latest exported files. These files can then be checked into a source control system if needed.
 
     .PARAMETER SqlInstance
@@ -104,10 +104,7 @@ function Export-DbaInstance {
     .PARAMETER ScriptingOption
         Add scripting options to scripting output for all objects except Registered Servers and Extended Events.
 
-    .PARAMETER Append
-        Note: this parameter is deprecated and will be removed in a future release.
-
-    .PARAMETER Overwrite
+    .PARAMETER Force
         Overwrite files in the location specified by -Path. Note: The Server Name is used when creating the folder structure.
 
     .PARAMETER EnableException
@@ -129,25 +126,22 @@ function Export-DbaInstance {
     .EXAMPLE
         PS C:\> Export-DbaInstance -SqlInstance sqlserver\instance
 
-        All databases, logins, job objects and sp_configure options will be exported from
-        sqlserver\instance to an automatically generated folder name in Documents. For example, C:\Users\<username>\Documents\DbatoolsExport\<machinename>$sqlcluster-yyyyMMddHHmmss
+        All databases, logins, job objects and sp_configure options will be exported from sqlserver\instance to an automatically generated folder name in Documents. For example, %userprofile%\Documents\DbatoolsExport\sqldev1$sqlcluster-20201108140000
 
     .EXAMPLE
         PS C:\> Export-DbaInstance -SqlInstance sqlcluster -Exclude Databases, Logins -Path C:\dr\sqlcluster
 
-        Exports everything but logins and database restore scripts to C:\dr\sqlcluster\<machinename>$sqlcluster-yyyyMMddHHmmss
+        Exports everything but logins and database restore scripts to a folder such as C:\dr\sqlcluster\sqldev1$sqlcluster-20201108140000
 
     .EXAMPLE
         PS C:\> Export-DbaInstance -SqlInstance sqlcluster -Path C:\servers\ -NoPrefix
 
-        Exports everything to C:\servers\<machinename>$sqlcluster-yyyyMMddHHmmss but scripts will not include prefix information.
+        Exports everything to a folder such as C:\servers\sqldev1$sqlcluster-20201108140000 but scripts will not include prefix information.
 
     .EXAMPLE
-        PS C:\> Export-DbaInstance -SqlInstance sqlcluster -Path C:\servers\ -Overwrite
+        PS C:\> Export-DbaInstance -SqlInstance sqlcluster -Path C:\servers\ -Force
 
-        Exports everything to C:\servers\<machinename>$sqlcluster and will overwrite/refresh existing files in that folder.
-        Note: when the -Overwrite param is used the generated folder name will not include a timestamp. This supports the use case of
-        running Export-DbaInstance on a schedule and writing to the same dir each time.
+        Exports everything to a folder such as C:\servers\sqldev1$sqlcluster and will overwrite/refresh existing files in that folder. Note: when the -Force param is used the generated folder name will not include a timestamp. This supports the use case of running Export-DbaInstance on a schedule and writing to the same dir each time.
     #>
     [CmdletBinding()]
     param (
@@ -162,11 +156,10 @@ function Export-DbaInstance {
         [ValidateSet('AgentServer', 'Audits', 'AvailabilityGroups', 'BackupDevices', 'CentralManagementServer', 'Credentials', 'CustomErrors', 'DatabaseMail', 'Databases', 'Endpoints', 'ExtendedEvents', 'LinkedServers', 'Logins', 'PolicyManagement', 'ReplicationSettings', 'ResourceGovernor', 'ServerAuditSpecifications', 'ServerRoles', 'SpConfigure', 'SysDbUserObjects', 'SystemTriggers')]
         [string[]]$Exclude,
         [string]$BatchSeparator = (Get-DbatoolsConfigValue -FullName 'formatting.batchseparator'),
-        [switch]$Append,
         [Microsoft.SqlServer.Management.Smo.ScriptingOptions]$ScriptingOption,
         [switch]$NoPrefix = $false,
         [switch]$ExcludePassword,
-        [switch]$Overwrite,
+        [switch]$Force,
         [switch]$EnableException
     )
     begin {
@@ -178,10 +171,6 @@ function Export-DbaInstance {
 
         $elapsed = [System.Diagnostics.Stopwatch]::StartNew()
         $started = Get-Date
-
-        if ($Append) {
-            Write-Message -Level Warning -Message "The -Append parameter is deprecated for Export-DbaInstance. It will be removed in a future release."
-        }
     }
     process {
         if (Test-FunctionInterrupt) { return }
@@ -193,7 +182,7 @@ function Export-DbaInstance {
                 Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
-            if ($Overwrite) {
+            if ($Force) {
                 # when the caller requests to overwrite existing scripts we won't add the dynamic timestamp to the folder name, so that a pre-existing location can be overwritten.
                 $exportPath = Join-DbaPath -Path $Path -Child "$($server.name.replace('\', '$'))"
             } else {
@@ -263,11 +252,7 @@ function Export-DbaInstance {
                 Write-Message -Level Verbose -Message "Exporting Central Management Server"
                 Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Exporting Central Management Server"
                 $outputFilePath = "$exportPath\regserver.xml"
-                if ($Overwrite) {
-                    $null = Export-DbaRegServer -SqlInstance $server -FilePath $outputFilePath -Overwrite
-                } else {
-                    $null = Export-DbaRegServer -SqlInstance $server -FilePath $outputFilePath
-                }
+                $null = Export-DbaRegServer -SqlInstance $server -FilePath $outputFilePath -Overwrite:$Force
                 Get-ChildItem -ErrorAction Ignore -Path $outputFilePath
             }
 
@@ -394,7 +379,7 @@ function Export-DbaInstance {
                 Write-Message -Level Verbose -Message "Exporting user objects in system databases (this can take a minute)."
                 Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Exporting user objects in system databases (this can take a minute)."
                 $outputFile = "$exportPath\userobjectsinsysdbs.sql"
-                $sysDbUserObjects = Export-DbaSysDbUserObject -SqlInstance $server -FilePath $outputFile -BatchSeparator $BatchSeparator -NoPrefix:$NoPrefix -ScriptingOptionsObject $ScriptingOption -PassThru
+                $sysDbUserObjects = Export-DbaSysDbUserObject -SqlInstance $server -BatchSeparator $BatchSeparator -NoPrefix:$NoPrefix -ScriptingOptionsObject $ScriptingOption -PassThru
                 Set-Content -Path $outputFile -Value $sysDbUserObjects # this approach is needed because -Append is used in Export-DbaSysDbUserObject.ps1
                 Get-ChildItem -ErrorAction Ignore -Path $outputFile
             }

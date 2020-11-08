@@ -154,11 +154,14 @@ function Export-DbaScript {
         $commandName = $MyInvocation.MyCommand.Name
         $prefixArray = @()
 
-        # if the Append switch is used then ensure the scripting options are updated
+        # If -Append or -Append:$true is passed in then set these variables. Otherwise, the caller has specified -Append:$false or not specified -Append and they want to overwrite the file if it already exists.
         $appendToScript = $false
         if ($Append) {
-            $ScriptingOptionsObject.AppendToFile = $true
             $appendToScript = $true
+
+            if ($ScriptingOptionsObject) {
+                $ScriptingOptionsObject.AppendToFile = $true
+            }
         }
 
         if ($ScriptingOptionsObject) {

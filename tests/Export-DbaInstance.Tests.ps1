@@ -6,7 +6,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
         It "Should only contain our specific parameters" {
             [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-            [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Credential', 'Path', 'NoRecovery', 'IncludeDbMasterKey', 'Exclude', 'BatchSeparator', 'ScriptingOption', 'NoPrefix', 'ExcludePassword', 'Append', 'EnableException', 'Overwrite'
+            [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Credential', 'Path', 'NoRecovery', 'IncludeDbMasterKey', 'Exclude', 'BatchSeparator', 'ScriptingOption', 'NoPrefix', 'ExcludePassword', 'EnableException', 'Force'
             $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
             (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should -Be 0
         }
@@ -191,8 +191,8 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         $dateTimeStampOnFolder | Should -Not -Be Null
     }
 
-    It "Ensure the -Overwrite param replaces existing files" {
-        $results = Export-DbaInstance -SqlInstance $testServer -Path $exportDir -Exclude 'Audits', 'AvailabilityGroups', 'BackupDevices', 'CentralManagementServer', 'Credentials', 'CustomErrors', 'DatabaseMail', 'Databases', 'Endpoints', 'ExtendedEvents', 'LinkedServers', 'Logins', 'PolicyManagement', 'ReplicationSettings', 'ResourceGovernor', 'ServerAuditSpecifications', 'ServerRoles', 'SpConfigure', 'SysDbUserObjects', 'SystemTriggers' -Overwrite
+    It "Ensure the -Force param replaces existing files" {
+        $results = Export-DbaInstance -SqlInstance $testServer -Path $exportDir -Exclude 'Audits', 'AvailabilityGroups', 'BackupDevices', 'CentralManagementServer', 'Credentials', 'CustomErrors', 'DatabaseMail', 'Databases', 'Endpoints', 'ExtendedEvents', 'LinkedServers', 'Logins', 'PolicyManagement', 'ReplicationSettings', 'ResourceGovernor', 'ServerAuditSpecifications', 'ServerRoles', 'SpConfigure', 'SysDbUserObjects', 'SystemTriggers' -Force
 
         $results.FullName | Should -Exist
         $results.Length | Should -BeGreaterThan 0
@@ -200,7 +200,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         $originalLength = $results.Length
         $originalLastWriteTime = $results.LastWriteTime
 
-        $results = Export-DbaInstance -SqlInstance $testServer -Path $exportDir -Exclude 'Audits', 'AvailabilityGroups', 'BackupDevices', 'CentralManagementServer', 'Credentials', 'CustomErrors', 'DatabaseMail', 'Databases', 'Endpoints', 'ExtendedEvents', 'LinkedServers', 'Logins', 'PolicyManagement', 'ReplicationSettings', 'ResourceGovernor', 'ServerAuditSpecifications', 'ServerRoles', 'SpConfigure', 'SysDbUserObjects', 'SystemTriggers' -Overwrite
+        $results = Export-DbaInstance -SqlInstance $testServer -Path $exportDir -Exclude 'Audits', 'AvailabilityGroups', 'BackupDevices', 'CentralManagementServer', 'Credentials', 'CustomErrors', 'DatabaseMail', 'Databases', 'Endpoints', 'ExtendedEvents', 'LinkedServers', 'Logins', 'PolicyManagement', 'ReplicationSettings', 'ResourceGovernor', 'ServerAuditSpecifications', 'ServerRoles', 'SpConfigure', 'SysDbUserObjects', 'SystemTriggers' -Force
 
         $results.FullName | Should -Exist
         $results.Length | Should -BeGreaterThan 0
