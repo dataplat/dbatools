@@ -6,7 +6,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
         It "Should only contain our specific parameters" {
             [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-            [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Credential', 'Path', 'NoRecovery', 'IncludeDbMasterKey', 'Exclude', 'BatchSeparator', 'ScriptingOption', 'NoPrefix', 'ExcludePassword', 'Append', 'EnableException'
+            [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Credential', 'Path', 'NoRecovery', 'IncludeDbMasterKey', 'Exclude', 'BatchSeparator', 'ScriptingOption', 'NoPrefix', 'ExcludePassword', 'Append', 'EnableException', 'Overwrite'
             $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
             (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should -Be 0
         }
@@ -189,6 +189,23 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         $dateTimeStampOnFolder = [datetime]::parseexact($results[0].Directory.Name.Split("-")[$indexOfDateTimeStamp - 1], "yyyyMMddHHmmss", $null)
 
         $dateTimeStampOnFolder | Should -Not -Be Null
+    }
+
+    It "Ensure the -Overwrite param replaces existing files" {
+        $results = Export-DbaInstance -SqlInstance $testServer -Path $exportDir -Exclude 'Audits', 'AvailabilityGroups', 'BackupDevices', 'CentralManagementServer', 'Credentials', 'CustomErrors', 'DatabaseMail', 'Databases', 'Endpoints', 'ExtendedEvents', 'LinkedServers', 'Logins', 'PolicyManagement', 'ReplicationSettings', 'ResourceGovernor', 'ServerAuditSpecifications', 'ServerRoles', 'SpConfigure', 'SysDbUserObjects', 'SystemTriggers' -Overwrite
+
+        $results.FullName | Should -Exist
+        $results.Length | Should -BeGreaterThan 0
+
+        $originalLength = $results.Length
+        $originalLastWriteTime = $results.LastWriteTime
+
+        $results = Export-DbaInstance -SqlInstance $testServer -Path $exportDir -Exclude 'Audits', 'AvailabilityGroups', 'BackupDevices', 'CentralManagementServer', 'Credentials', 'CustomErrors', 'DatabaseMail', 'Databases', 'Endpoints', 'ExtendedEvents', 'LinkedServers', 'Logins', 'PolicyManagement', 'ReplicationSettings', 'ResourceGovernor', 'ServerAuditSpecifications', 'ServerRoles', 'SpConfigure', 'SysDbUserObjects', 'SystemTriggers' -Overwrite
+
+        $results.FullName | Should -Exist
+        $results.Length | Should -BeGreaterThan 0
+        $results.Length | Should -Be $originalLength
+        $results.LastWriteTime | Should -BeGreaterThan $originalLastWriteTime
     }
 
     It "Export sp_configure values" {

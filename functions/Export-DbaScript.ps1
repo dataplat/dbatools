@@ -156,7 +156,7 @@ function Export-DbaScript {
 
         # if the Append switch is used then ensure the scripting options are updated
         $appendToScript = $false
-        if (Test-Bound 'Append') {
+        if ($Append) {
             $ScriptingOptionsObject.AppendToFile = $true
             $appendToScript = $true
         }
@@ -239,7 +239,7 @@ function Export-DbaScript {
                         if ((Test-Path -Path $scriptPath) -and $NoClobber) {
                             Stop-Function -Message "File already exists. If you want to overwrite it remove the -NoClobber parameter. If you want to append data, please Use -Append parameter." -Target $scriptPath -Continue
                         }
-                        #Only at the first output we use the passed variables Append & NoClobber. For this execution the next ones need to buse -Append
+                        #Only at the first output we use the passed variables Append & NoClobber. For this execution the next ones need to use -Append
                         if ($null -ne $prefix) {
                             $prefix | Out-File -FilePath $scriptPath -Encoding $encoding -Append:$appendToScript -NoClobber:$NoClobber
                             $prefixArray += $scriptPath
