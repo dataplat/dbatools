@@ -540,6 +540,7 @@
         'Update-Dbatools',
         'Install-DbaWhoIsActive',
         'Install-DbaFirstResponderKit',
+        'Install-DbaMultiTool',
         'Read-DbaXEFile',
         'Watch-DbaXESession',
         'Test-DbaMaxMemory', # can be fixed by not testing remote when linux is detected
