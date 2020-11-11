@@ -81,8 +81,8 @@ function Install-DbaMultiTool {
         Logs into sql2016\standardrtm, sql2016\sqlexpress and sql2014 with Windows authentication and then installs the DBA MultiTool in the master database.
 
     .EXAMPLE
-        PS C:\> $Servers = "sql2016\standardrtm", "sql2016\sqlexpress", "sql2014"
-        PS C:\> $Servers | Install-DbaMultiTool
+        PS C:\> $servers = "sql2016\standardrtm", "sql2016\sqlexpress", "sql2014"
+        PS C:\> $servers | Install-DbaMultiTool
 
         Logs into sql2016\standardrtm, sql2016\sqlexpress and sql2014 with Windows authentication and then installs the DBA MultiTool in the master database.
 
@@ -112,18 +112,18 @@ function Install-DbaMultiTool {
             $DbatoolsData = [System.IO.Path]::GetTempPath()
         }
 
-        $Url = "https://github.com/LowlyDBA/dba-multitool/archive/$Branch.zip"
-        $Temp = [System.IO.Path]::GetTempPath()
-        $ZipFile = Join-Path -Path $Temp -ChildPath "DBA-MultiTool-$Branch.zip"
-        $ZipFolder = Join-Path -Path $Temp -ChildPath "DBA-MultiTool-$Branch"
-        $LocalCachedCopy = Join-Path -Path $DbatoolsData -ChildPath "DBA-MultiTool-$Branch"
-        $MinimumVersion = 11
+        $url = "https://github.com/LowlyDBA/dba-multitool/archive/$Branch.zip"
+        $temp = [System.IO.Path]::GetTempPath()
+        $zipFile = Join-Path -Path $temp -ChildPath "DBA-MultiTool-$Branch.zip"
+        $zipFolder = Join-Path -Path $temp -ChildPath "DBA-MultiTool-$Branch"
+        $localCachedCopy = Join-Path -Path $DbatoolsData -ChildPath "DBA-MultiTool-$Branch"
+        $minimumVersion = 11
 
-        if ($Force -or -not(Test-Path -Path $LocalCachedCopy -PathType Container) -or $LocalFile) {
+        if ($Force -or -not(Test-Path -Path $localCachedCopy -PathType Container) -or $LocalFile) {
             # Force was passed, or we don't have a local copy, or $LocalFile was passed
-            if (Test-Path $ZipFile) {
-                if ($PSCmdlet.ShouldProcess($ZipFile, "File found, dropping $ZipFile")) {
-                    Remove-Item -Path $ZipFile -ErrorAction SilentlyContinue
+            if (Test-Path $zipFile) {
+                if ($PSCmdlet.ShouldProcess($zipFile, "File found, dropping $zipFile")) {
+                    Remove-Item -Path $zipFile -ErrorAction SilentlyContinue
                 }
             }
 
@@ -145,30 +145,30 @@ function Install-DbaMultiTool {
                         Unblock-File $LocalFile -ErrorAction SilentlyContinue
                     }
                 }
-                if ($PSCmdlet.ShouldProcess($LocalFile, "Extracting archive to $Temp path")) {
-                    Expand-Archive -Path $LocalFile -DestinationPath $Temp -Force
+                if ($PSCmdlet.ShouldProcess($LocalFile, "Extracting archive to $temp path")) {
+                    Expand-Archive -Path $LocalFile -DestinationPath $temp -Force
                 }
             } else {
                 Write-Message -Level Verbose -Message "Downloading and unzipping the DBA MultiTool zip file."
-                if ($PSCmdlet.ShouldProcess($Url, "Downloading zip file")) {
+                if ($PSCmdlet.ShouldProcess($url, "Downloading zip file")) {
                     try {
                         try {
-                            Invoke-TlsWebRequest $Url -OutFile $ZipFile -ErrorAction Stop -UseBasicParsing
+                            Invoke-TlsWebRequest $url -OutFile $zipFile -ErrorAction Stop -UseBasicParsing
                         } catch {
                             # Try with default proxy and usersettings
                             (New-Object System.Net.WebClient).Proxy.Credentials = [System.Net.CredentialCache]::DefaultNetworkCredentials
-                            Invoke-TlsWebRequest $Url -OutFile $ZipFile -ErrorAction Stop -UseBasicParsing
+                            Invoke-TlsWebRequest $url -OutFile $zipFile -ErrorAction Stop -UseBasicParsing
                         }
 
                         # Unblock if there's a block
                         if (Test-Windows -NoWarn) {
-                            Unblock-File $ZipFile -ErrorAction SilentlyContinue
+                            Unblock-File $zipFile -ErrorAction SilentlyContinue
                         }
 
-                        Expand-Archive -Path $ZipFile -DestinationPath $Temp -Force
-                        Remove-Item -Path $ZipFile
+                        Expand-Archive -Path $zipFile -DestinationPath $temp -Force
+                        Remove-Item -Path $zipFile
                     } catch {
-                        Stop-Function -Message "Couldn't download the DBA MultiTool. Download and install manually from $Url." -ErrorRecord $_
+                        Stop-Function -Message "Couldn't download the DBA MultiTool. Download and install manually from $url." -ErrorRecord $_
                         return
                     }
                 }
@@ -176,12 +176,12 @@ function Install-DbaMultiTool {
 
             ## Copy it into local area
             if ($PSCmdlet.ShouldProcess("LocalCachedCopy", "Copying extracted files to the local module cache")) {
-                if (Test-Path -Path $LocalCachedCopy -PathType Container) {
-                    Remove-Item -Path (Join-Path $LocalCachedCopy '*') -Recurse -ErrorAction SilentlyContinue
+                if (Test-Path -Path $localCachedCopy -PathType Container) {
+                    Remove-Item -Path (Join-Path $localCachedCopy '*') -Recurse -ErrorAction SilentlyContinue
                 } else {
-                    $null = New-Item -Path $LocalCachedCopy -ItemType Container
+                    $null = New-Item -Path $localCachedCopy -ItemType Container
                 }
-                Copy-Item -Path "$ZipFolder\sp_*.sql" -Destination $LocalCachedCopy
+                Copy-Item -Path "$zipFolder\sp_*.sql" -Destination $localCachedCopy
             }
         }
     }
@@ -192,56 +192,56 @@ function Install-DbaMultiTool {
         foreach ($instance in $SqlInstance) {
             if ($PSCmdlet.ShouldProcess($instance, "Connecting to $instance")) {
                 try {
-                    $Server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
+                    $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
                 } catch {
                     Stop-Function -Message "Error occurred while establishing connection to $instance." -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
                 }
             }
-            if ($PSCmdlet.ShouldProcess($database, "Installing DBA MultiTool procedures in $database on $instance")) {
-                Write-Message -Level Verbose -Message "Starting installing/updating the DBA MultiTool stored procedures in $database on $instance."
-                $AllProcedures_Query = "SELECT name FROM sys.procedures WHERE is_ms_shipped = 0;"
-                $AllProcedures = ($Server.Query($AllProcedures_Query, $Database)).Name
+            if ($PSCmdlet.ShouldProcess($Database, "Installing DBA MultiTool procedures in $Database on $instance")) {
+                Write-Message -Level Verbose -Message "Starting installing/updating the DBA MultiTool stored procedures in $Database on $instance."
+                $allProcedures_Query = "SELECT name FROM sys.procedures WHERE is_ms_shipped = 0;"
+                $allProcedures = ($server.Query($allProcedures_Query, $Database)).Name
 
                 # Install/Update each stored procedure
-                $sqlScripts = Get-ChildItem $LocalCachedCopy -Filter "sp_*.sql"
+                $sqlScripts = Get-ChildItem $localCachedCopy -Filter "sp_*.sql"
                 foreach ($script in $sqlScripts) {
-                    $ScriptName = $script.Name
-                    $ScriptError = $false
+                    $scriptName = $script.Name
+                    $scriptError = $false
 
-                    $BaseRes = [PSCustomObject]@{
-                        ComputerName = $Server.ComputerName
-                        InstanceName = $Server.ServiceName
-                        SqlInstance  = $Server.DomainInstanceName
+                    $baseRes = [PSCustomObject]@{
+                        ComputerName = $server.ComputerName
+                        InstanceName = $server.ServiceName
+                        SqlInstance  = $server.DomainInstanceName
                         Database     = $Database
                         Name         = $script.BaseName
                         Status       = $null
                     }
-                    if ($Server.VersionMajor -lt $MinimumVersion) {
-                        Write-Message -Level Warning -Message "$instance found to be below SQL Server 2012, skipping $ScriptName."
-                        $BaseRes.Status = 'Skipped'
-                        $BaseRes
+                    if ($server.VersionMajor -lt $minimumVersion) {
+                        Write-Message -Level Warning -Message "$instance found to be below SQL Server 2012, skipping $scriptName."
+                        $baseRes.Status = 'Skipped'
+                        $baseRes
                         continue
                     }
-                    if ($Pscmdlet.ShouldProcess($instance, "installing/updating $ScriptName in $database")) {
+                    if ($Pscmdlet.ShouldProcess($instance, "installing/updating $scriptName in $Database")) {
                         try {
-                            Invoke-DbaQuery -SqlInstance $Server -Database $Database -File $script.FullName -EnableException -Verbose:$false
+                            Invoke-DbaQuery -SqlInstance $server -Database $Database -File $script.FullName -EnableException -Verbose:$false
                         } catch {
-                            Write-Message -Level Warning -Message "Could not execute at least one portion of $ScriptName in $Database on $instance." -ErrorRecord $_
-                            $ScriptError = $true
+                            Write-Message -Level Warning -Message "Could not execute at least one portion of $scriptName in $Database on $instance." -ErrorRecord $_
+                            $scriptError = $true
                         }
 
-                        if ($ScriptError) {
-                            $BaseRes.Status = 'Error'
-                        } elseif ($script.BaseName -in $AllProcedures) {
-                            $BaseRes.Status = 'Updated'
+                        if ($scriptError) {
+                            $baseRes.Status = 'Error'
+                        } elseif ($script.BaseName -in $allProcedures) {
+                            $baseRes.Status = 'Updated'
                         } else {
-                            $BaseRes.Status = 'Installed'
+                            $baseRes.Status = 'Installed'
                         }
-                        $BaseRes
+                        $baseRes
                     }
                 }
             }
-            Write-Message -Level Verbose -Message "Finished installing/updating DBA MultiTool stored procedures in $database on $instance."
+            Write-Message -Level Verbose -Message "Finished installing/updating DBA MultiTool stored procedures in $Database on $instance."
         }
     }
 }
