@@ -104,7 +104,7 @@ function Set-DbaMaxDop {
     }
 
     process {
-        if (Test-Bound -ParameterName Database, AllDatabases, ExcludeDatabase) {
+        if (Test-Bound -Not -Min 0 -Max 1 -ParameterName Database, AllDatabases, ExcludeDatabase) {
             Stop-Function -Category InvalidArgument -Message "-Database, -AllDatabases and -ExcludeDatabase are mutually exclusive. Please choose only one."
             return
         }
