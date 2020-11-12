@@ -458,7 +458,7 @@ function Backup-DbaDatabase {
                     $flagTestBoundMaxTransferSize = Test-Bound 'MaxTransferSize'
                     $flagCorrectMaxTransferSize = $flagTestBoundMaxTransferSize -and ($MaxTransferSize -gt 64kb)
                     if ($flagTDESQLVersion -and $flagTestBoundMaxTransferSize -and $flagCorrectMaxTransferSize) {
-                        Write-Message -Level Verbose "$dbName is enabled for encryption but will compress"
+                        Write-Message -Level Verbose -Message "$dbName is enabled for encryption but will compress"
                         $backup.CompressionOption = 1
                     } else {
                         Write-Message -Level Warning -Message "$dbName is enabled for encryption, will not compress"
