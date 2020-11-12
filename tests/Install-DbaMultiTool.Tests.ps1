@@ -56,7 +56,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         BeforeAll {
             $branch = "master"
             $database = "dbatoolsci_multitool_$(Get-Random)"
-            $server = Connect-DbaInstance -SqlInstance $script:instance2
+            $server = Connect-DbaInstance -SqlInstance $script:instance3
             $server.Query("CREATE DATABASE $database")
 
             $outfile = "DBA-MultiTool-$branch.zip"
@@ -85,7 +85,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             ($result.PsObject.Properties.Name | Sort-Object) | Should -Be ($ExpectedProps | Sort-Object)
         }
         It "Shows status of Updated" {
-            $resultsLocalFile = Install-DbaMultiTool -SqlInstance $script:instance3 -Database $database -LocalFile $fullOutfile -Force
+            $resultsLocalFile = Install-DbaMultiTool -SqlInstance $script:instance3 -Database $database
             $resultsLocalFile[0].Status -eq 'Updated' | Should -Be $true
         }
         It "Shows status of Error" {
