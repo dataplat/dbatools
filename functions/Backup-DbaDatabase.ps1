@@ -461,7 +461,7 @@ function Backup-DbaDatabase {
                         Write-Message -Level Verbose "$dbName is enabled for encryption but will compress"
                         $backup.CompressionOption = 1
                     } else {
-                        Write-Message -Level Output -Message "$dbName is enabled for encryption, will not compress"
+                        Write-Message -Level Warning -Message "$dbName is enabled for encryption, will not compress"
                         $backup.CompressionOption = 2
                     }
                 } elseif ($server.Edition -like 'Express*' -or ($server.VersionMajor -eq 10 -and $server.VersionMinor -eq 0 -and $server.Edition -notlike '*enterprise*') -or $server.VersionMajor -lt 10) {
