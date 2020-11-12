@@ -456,8 +456,8 @@ function Backup-DbaDatabase {
                     $minVerForTDECompression = [version]'13.0.4446.0' # SQL Server 2016 CU 4
                     $flagTDESQLVersion = $minVerForTDECompression -le $Server.version
                     $flagTestBoundMaxTransferSize = test-bound 'MaxTransferSize'
-                    $flagVcorrectMaxTransferSize = $flagTestBoundMaxTransferSize -and ($MaxTransferSize -gt 64kb)
-                    if ($flagTDESQLVersion -and $flagTestBoundMaxTransferSize -and $flagVcorrectMaxTransferSize) {
+                    $flagCorrectMaxTransferSize = $flagTestBoundMaxTransferSize -and ($MaxTransferSize -gt 64kb)
+                    if ($flagTDESQLVersion -and $flagTestBoundMaxTransferSize -and $flagCorrectMaxTransferSize) {
                         Write-Message -Level Verbose "$dbName is enabled for encryption but will compress"
                         $backup.CompressionOption = 1
                     } else {
