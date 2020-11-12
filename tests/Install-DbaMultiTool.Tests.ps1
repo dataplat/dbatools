@@ -1,4 +1,4 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".first.Tests.ps1", "")
+$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
 
@@ -18,7 +18,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $branch = "master"
             $database = "dbatoolsci_multitool_$(Get-Random)"
             $server = Connect-DbaInstance -SqlInstance $script:instance2
-            $server.Query("CREATE DATABASE $database;")
+            $server.Query("CREATE DATABASE $database")
 
             $resultsDownload = Install-DbaMultiTool -SqlInstance $script:instance2 -Database $database -Branch $branch -Force -Verbose:$false
         }
@@ -57,7 +57,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $branch = "master"
             $database = "dbatoolsci_multitool_$(Get-Random)"
             $server = Connect-DbaInstance -SqlInstance $script:instance2
-            $server.Query("CREATE DATABASE $database;")
+            $server.Query("CREATE DATABASE $database")
 
             $outfile = "DBA-MultiTool-$branch.zip"
             Invoke-WebRequest -Uri "https://github.com/LowlyDBA/dba-multitool/archive/$branch.zip" -OutFile $outfile
@@ -85,11 +85,11 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             ($result.PsObject.Properties.Name | Sort-Object) | Should -Be ($ExpectedProps | Sort-Object)
         }
         It "Shows status of Updated" {
-            $resultsLocalFile = Install-DbaMultiTool -SqlInstance $script:instance3 -Database $database
+            $resultsLocalFile = Install-DbaMultiTool -SqlInstance $script:instance3 -Database $database -LocalFile $fullOutfile -Force
             $resultsLocalFile[0].Status -eq 'Updated' | Should -Be $true
         }
         It "Shows status of Error" {
-            $folder = Join-Path (Get-DbatoolsConfigValue -FullName Path.DbatoolsData) -Child "SQL-Server-First-Responder-Kit-main"
+            $folder = Join-Path (Get-DbatoolsConfigValue -FullName Path.DbatoolsData) -Child "DBA-MultiTool-$branch"
             $sqlScript = (Get-ChildItem $folder | Select-Object -First 1).FullName
             Add-Content $sqlScript (New-Guid).ToString()
             $result = Install-DbaMultiTool -SqlInstance $script:instance3 -Database $database

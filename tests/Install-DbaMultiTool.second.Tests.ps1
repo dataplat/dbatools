@@ -8,7 +8,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $branch = "master"
             $database = "dbatoolsci_multitool_$(Get-Random)"
             $server = Connect-DbaInstance -SqlInstance $script:instance1
-            $server.Query("CREATE DATABASE $database;")
+            $server.Query("CREATE DATABASE $database")
 
             $outfile = "DBA-MultiTool-$branch.zip"
             Invoke-WebRequest -Uri "https://github.com/LowlyDBA/dba-multitool/archive/$branch.zip" -OutFile $outfile
