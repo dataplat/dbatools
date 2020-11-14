@@ -16,18 +16,18 @@ Describe "$CommandName Unit Tests" -Tag "UnitTests" {
 Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
         $dbname = "JESSdbatoolsci_querystore_$(get-random)"
-        $server = Connect-DbaInstance -SqlInstance $script:instance1
+        $server = Connect-DbaInstance -SqlInstance $script:instance2
         $db = New-DbaDatabase -SqlInstance $server -Name $dbname
 
-        $null = Set-DbaDbQueryStoreOption -SqlInstance $script:instance1 -Database $dbname -State ReadWrite
-        $null = Enable-DbaTraceFlag -SqlInstance $script:instance1 -TraceFlag 7745
+        $null = Set-DbaDbQueryStoreOption -SqlInstance $script:instance2 -Database $dbname -State ReadWrite
+        $null = Enable-DbaTraceFlag -SqlInstance $script:instance2 -TraceFlag 7745
     }
     AfterAll {
-        $null = Remove-DbaDatabase -SqlInstance $script:instance1 -Database $dbname -Confirm:$false
-        $null = Disable-DbaTraceFlag -SqlInstance $script:instance1 -TraceFlag 7745
+        $null = Remove-DbaDatabase -SqlInstance $script:instance2 -Database $dbname -Confirm:$false
+        $null = Disable-DbaTraceFlag -SqlInstance $script:instance2 -TraceFlag 7745
     }
     Context 'Function works as expected' {
-        $svr = Connect-DbaInstance -SqlInstance $script:instance1
+        $svr = Connect-DbaInstance -SqlInstance $script:instance2
 
         $results = Test-DbaDbQueryStore -SqlInstance $svr -Database $dbname
         It 'Should return results' {
@@ -51,9 +51,9 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
     }
 
     Context 'Exclude database works' {
-        $svr = Connect-DbaInstance -SqlInstance $script:instance1
+        $svr = Connect-DbaInstance -SqlInstance $script:instance2
 
-        $results = Test-DbaDbQueryStore -SqlInstance $script:instance1 -ExcludeDatabase $dbname
+        $results = Test-DbaDbQueryStore -SqlInstance $script:instance2 -ExcludeDatabase $dbname
         It 'Should return results' {
             $results | Should Not BeNullOrEmpty
         }
@@ -63,7 +63,7 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
     }
 
     Context 'Function works with piping smo server object' {
-        $svr = Connect-DbaInstance -SqlInstance $script:instance1
+        $svr = Connect-DbaInstance -SqlInstance $script:instance2
 
         $results = $svr | Test-DbaDbQueryStore
         It 'Should return results' {
