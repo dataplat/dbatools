@@ -1,7 +1,7 @@
 
 -- SQL Managed Instance Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: September 1, 2020
+-- Last Modified: November 1, 2020
 -- https://glennsqlperformance.com/
 -- https://sqlserverperformance.wordpress.com/
 -- YouTube: https://bit.ly/2PkoAM1 
@@ -334,7 +334,6 @@ ORDER BY vs.volume_mount_point OPTION (RECOMPILE);
 
 
 -- Drive level latency information (Query 14) (Drive Level Latency)
--- Based on code from Jimmy May
 SELECT tab.[Drive], tab.volume_mount_point AS [Volume Mount Point], 
 	CASE 
 		WHEN num_of_reads = 0 THEN 0 
@@ -444,17 +443,24 @@ db.[compatibility_level] AS [DB Compatibility Level],
 db.is_mixed_page_allocation_on, db.page_verify_option_desc AS [Page Verify Option], 
 db.is_auto_create_stats_on, db.is_auto_update_stats_on, db.is_auto_update_stats_async_on, db.is_parameterization_forced, 
 db.snapshot_isolation_state_desc, db.is_read_committed_snapshot_on, db.is_auto_close_on, db.is_auto_shrink_on, 
-db.target_recovery_time_in_seconds, db.is_cdc_enabled,  
-db.delayed_durability_desc, db.is_auto_create_stats_incremental_on,
-db.is_query_store_on, db.is_sync_with_backup, db.is_temporal_history_retention_enabled,
-db.is_supplemental_logging_enabled, 
-db.is_encrypted, de.encryption_state, de.percent_complete, de.key_algorithm, de.key_length, db.resource_pool_id,
-db.is_tempdb_spill_to_remote_store, db.is_result_set_caching_on, db.is_accelerated_database_recovery_on
+db.target_recovery_time_in_seconds, db.is_cdc_enabled, db.delayed_durability_desc, 
+db.is_query_store_on, db.is_sync_with_backup, db.is_temporal_history_retention_enabled, 
+db.is_encrypted, de.encryption_state, de.percent_complete, de.key_algorithm, de.key_length, 
+db.is_accelerated_database_recovery_on
 FROM sys.databases AS db WITH (NOLOCK)
 LEFT OUTER JOIN sys.dm_database_encryption_keys AS de WITH (NOLOCK)
 ON db.database_id = de.database_id
 ORDER BY db.[name] OPTION (RECOMPILE);
 ------
+
+-- sys.databases (Transact-SQL)
+-- https://bit.ly/2G5wqaX
+
+-- sys.dm_os_performance_counters (Transact-SQL)
+-- https://bit.ly/3kEO2JR
+
+-- sys.dm_database_encryption_keys (Transact-SQL)
+-- https://bit.ly/3mE7kkx
 
 -- Things to look at:
 -- How many databases are on the instance?
@@ -1653,28 +1659,6 @@ ORDER BY bs.backup_finish_date DESC OPTION (RECOMPILE);
 -- In SQL Server 2016, native SQL Server backup compression actually works 
 -- much better with databases that are using TDE than in previous versions
 -- https://bit.ly/28Rpb2x
-
-
--- These six Pluralsight Courses go into more detail about how to run these queries and interpret the results
-
--- Azure SQL Database: Diagnosing Performance Issues with DMVs
--- https://bit.ly/2meDRCN
-
--- SQL Server 2017: Diagnosing Performance Issues with DMVs
--- https://bit.ly/2FqCeti
-
--- SQL Server 2017: Diagnosing Configuration Issues with DMVs
--- https://bit.ly/2MSUDUL
-
--- SQL Server 2014 DMV Diagnostic Queries – Part 1 
--- https://bit.ly/2plxCer
-
--- SQL Server 2014 DMV Diagnostic Queries – Part 2
--- https://bit.ly/2IuJpzI
-
--- SQL Server 2014 DMV Diagnostic Queries – Part 3
--- https://bit.ly/2FIlCPb
-
 
 
 -- Microsoft Visual Studio Dev Essentials

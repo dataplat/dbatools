@@ -228,6 +228,16 @@ function Export-DbaInstance {
                 }
             }
 
+            if ($Exclude -notcontains 'Logins') {
+                $fileCounter++
+                Write-Message -Level Verbose -Message "Exporting logins"
+                Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Exporting logins"
+                Export-DbaLogin -SqlInstance $server -FilePath "$exportPath\$fileCounter-logins.sql" -Append:$Append -ExcludePassword:$ExcludePassword -NoPrefix:$NoPrefix -WarningAction SilentlyContinue
+                if (-not (Test-Path "$exportPath\$fileCounter-logins.sql")) {
+                    $fileCounter--
+                }
+            }
+
             if ($Exclude -notcontains 'DatabaseMail') {
                 $fileCounter++
                 Write-Message -Level Verbose -Message "Exporting database mail"
@@ -300,16 +310,6 @@ function Export-DbaInstance {
                 Get-DbaDbBackupHistory -SqlInstance $server -Last | Restore-DbaDatabase -SqlInstance $server -NoRecovery:$NoRecovery -WithReplace -OutputScriptOnly -WarningAction SilentlyContinue | Out-File -FilePath "$exportPath\$fileCounter-databases.sql" -Append:$Append
                 Get-ChildItem -ErrorAction Ignore -Path "$exportPath\$fileCounter-databases.sql"
                 if (-not (Test-Path "$exportPath\$fileCounter-databases.sql")) {
-                    $fileCounter--
-                }
-            }
-
-            if ($Exclude -notcontains 'Logins') {
-                $fileCounter++
-                Write-Message -Level Verbose -Message "Exporting logins"
-                Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Exporting logins"
-                Export-DbaLogin -SqlInstance $server -FilePath "$exportPath\$fileCounter-logins.sql" -Append:$Append -ExcludePassword:$ExcludePassword -NoPrefix:$NoPrefix -WarningAction SilentlyContinue
-                if (-not (Test-Path "$exportPath\$fileCounter-logins.sql")) {
                     $fileCounter--
                 }
             }

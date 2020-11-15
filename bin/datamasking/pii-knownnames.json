@@ -304,7 +304,7 @@
             "(\\w*)(?i)(sales|special|shop|product)(\\w*)"
         ],
         "MaskingType": "Commerce",
-        "MaskingSubType": "Category"
+        "MaskingSubType": "Categories"
     },
     {
         "Name": "Other",

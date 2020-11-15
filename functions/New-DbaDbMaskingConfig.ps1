@@ -503,6 +503,7 @@ function New-DbaDbMaskingConfig {
                             KeepNull        = $true
                             Composite       = $null
                             Action          = $null
+                            StaticValue     = $null
                         }
                     } else {
                         $type = "Random"
@@ -569,6 +570,7 @@ function New-DbaDbMaskingConfig {
                             KeepNull        = $true
                             Composite       = $null
                             Action          = $null
+                            StaticValue     = $null
                         }
                     }
                 }

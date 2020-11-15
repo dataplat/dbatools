@@ -89,12 +89,6 @@ function Get-DbaDbRestoreHistory {
         [switch]$EnableException
     )
 
-    begin {
-        if ($Since -ne $null) {
-            $Since = $Since.ToString("yyyy-MM-ddTHH:mm:ss")
-        }
-    }
-
     process {
         foreach ($instance in $SqlInstance) {
             try {
@@ -163,7 +157,7 @@ function Get-DbaDbRestoreHistory {
                 }
 
                 if ($null -ne $Since) {
-                    $wherearray += "rsh.restore_date >= '$since'"
+                    $wherearray += "rsh.restore_date >= CONVERT(datetime,'$($Since.ToString("yyyy-MM-ddTHH:mm:ss", [System.Globalization.CultureInfo]::InvariantCulture))',126)"
                 }
 
 

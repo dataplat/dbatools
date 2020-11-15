@@ -1,7 +1,7 @@
 
 -- SQL Server 2005 Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: September 1, 2020
+-- Last Modified: November 1, 2020
 -- https://glennsqlperformance.com/
 -- https://sqlserverperformance.wordpress.com/
 -- YouTube: https://bit.ly/2PkoAM1 
@@ -358,6 +358,15 @@ WHERE lu.counter_name LIKE N'Log File(s) Used Size (KB)%'
 AND ls.counter_name LIKE N'Log File(s) Size (KB)%'
 AND ls.cntr_value > 0 OPTION (RECOMPILE);
 ------
+
+-- sys.databases (Transact-SQL)
+-- https://bit.ly/2G5wqaX
+
+-- sys.dm_os_performance_counters (Transact-SQL)
+-- https://bit.ly/3kEO2JR
+
+-- sys.dm_database_encryption_keys (Transact-SQL)
+-- https://bit.ly/3mE7kkx
 
 -- Things to look at:
 -- How many databases are on the instance?
@@ -1156,7 +1165,6 @@ ORDER BY bs.backup_finish_date DESC OPTION (RECOMPILE);
 -- Microsoft Azure Learn
 -- https://bit.ly/2O0Hacc
 
--- August 2017 blog series about upgrading and migrating to SQL Server 2016/2017
--- https://bit.ly/2ftKVrX
+
 
 

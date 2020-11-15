@@ -31,9 +31,6 @@ function Get-DbaDependency {
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-    .PARAMETER IncludeScript
-        Setting this switch will cause the function to also retrieve the creation script of the dependency.
-
     .NOTES
         Tags: Database, Dependent, Dependency, Object
         Author: Chrissy LeMaire (@cl), netnerds.net
@@ -228,7 +225,7 @@ function Get-DbaDependency {
             $limitCount = 2
             if ($IncludeSelf) { $limitCount = 1 }
             if ($tree.Count -lt $limitCount) {
-                Write-Message -Message "No dependencies detected for $($Item)" -Level Host
+                Write-Message -Message "No dependencies detected for $($Item)" -Level Important
                 continue
             }
 

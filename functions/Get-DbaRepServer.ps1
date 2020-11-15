@@ -63,7 +63,7 @@ function Get-DbaRepServer {
         if (Test-FunctionInterrupt) { return }
         foreach ($instance in $SqlInstance) {
             try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
                 New-Object Microsoft.SqlServer.Replication.ReplicationServer $server.ConnectionContext.SqlConnectionObject
             } catch {
                 Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
