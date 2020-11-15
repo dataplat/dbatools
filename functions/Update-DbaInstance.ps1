@@ -354,8 +354,8 @@ function Update-DbaInstance {
                     Name       = 'UpdateCopy'
                     Root       = $uncFileName
                     PSProvider = 'FileSystem'
+                    Credential = $Credential
                 }
-                if ($Credential) { $driveSplat.Credential = $Credential }
                 $null = New-PSDrive @driveSplat -ErrorAction Stop
                 $remoteFolder = 'UpdateCopy:\'
             }
@@ -392,7 +392,7 @@ function Update-DbaInstance {
         $pathIsNetwork = $Path | Test-NetworkPath
         foreach ($computer in $ComputerName) {
             $null = Test-ElevationRequirement -ComputerName $computer -Continue
-            if (!$computer.IsLocalHost -and -not $notifiedCredentials -and -not $Credential -and $pathIsNetwork) {
+            if (-not $computer.IsLocalHost -and -not $notifiedCredentials -and -not $Credential -and $pathIsNetwork) {
                 Write-Message -Level Warning -Message "Explicit -Credential might be required when running agains remote hosts and -Path is a network folder"
                 $notifiedCredentials = $true
             }
