@@ -188,24 +188,24 @@ function Test-DbaDbQueryStore {
                 $currentOptions = Get-DbaDbQueryStoreOption -SqlInstance $smo -Database $dbDatabases.name
 
                 $currentOptions |
-                ForEach-Object -PipelineVariable db -Process { $_ } |
-                ForEach-Object {
-                    $db.GetPropertySet() | Where-Object Name -NotIn ('CurrentStorageSizeInMB', 'ReadOnlyReason', 'DesiredState') |
-                    ForEach-Object -PipelineVariable property -Process { $_ } |
+                    ForEach-Object -PipelineVariable db -Process { $_ } |
                     ForEach-Object {
-                        [PSCustomObject]@{
-                            ComputerName     = $db.ComputerName
-                            InstanceName     = $db.InstanceName
-                            SqlInstance      = $db.SqlInstance
-                            Database         = $db.Database
-                            Name             = $property.Name
-                            Value            = $property.Value
-                            RecommendedValue = ($desiredState | Where-Object Property -eq $property.Name).Value
-                            IsBestPractice   = ($property.Value -eq ($desiredState | Where-Object Property -eq $property.Name).Value)
-                            Justification    = ($desiredState | Where-Object Property -eq $property.Name).Justification
+                        $db.GetPropertySet() | Where-Object Name -NotIn ('CurrentStorageSizeInMB', 'ReadOnlyReason', 'DesiredState') |
+                            ForEach-Object -PipelineVariable property -Process { $_ } |
+                            ForEach-Object {
+                                [PSCustomObject]@{
+                                    ComputerName     = $db.ComputerName
+                                    InstanceName     = $db.InstanceName
+                                    SqlInstance      = $db.SqlInstance
+                                    Database         = $db.Database
+                                    Name             = $property.Name
+                                    Value            = $property.Value
+                                    RecommendedValue = ($desiredState | Where-Object Property -EQ $property.Name).Value
+                                    IsBestPractice   = ($property.Value -eq ($desiredState | Where-Object Property -EQ $property.Name).Value)
+                                    Justification    = ($desiredState | Where-Object Property -EQ $property.Name).Justification
+                                }
+                            }
                         }
-                    }
-                }
             } catch {
                 Stop-Function -Message "Unable to get Query Store data $smo" -Target $smo -ErrorRecord $_
             }
