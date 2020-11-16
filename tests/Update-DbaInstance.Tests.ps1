@@ -21,7 +21,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     }
     Context "Validate parameters" {
         [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'ComputerName', 'Credential', 'Version', 'Type', 'KB', 'InstanceName', 'Path', 'Restart', 'Continue', 'Throttle', 'Authentication', 'EnableException', 'ExtractPath', 'ArgumentList'
+        [object[]]$knownParameters = 'ComputerName', 'Credential', 'Version', 'Type', 'KB', 'InstanceName', 'Path', 'Restart', 'Continue', 'Throttle', 'Authentication', 'EnableException', 'ExtractPath', 'ArgumentList', 'Download'
         $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
         It "Should only contain our specific parameters" {
             (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
@@ -502,6 +502,55 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
             $result.InstanceName | Should -Be LAB
             $result.Installer | Should -Be 'c:\mocked\filename.exe'
             $result.Notes | Should -BeNullOrEmpty
+            $result.ExtractPath | Should -BeLike '*\dbatools_KB*Extract_*'
+        }
+    }
+    Context "Download KB before installation" {
+        BeforeAll {
+            #this is our 'currently installed' versions
+            Mock -CommandName Get-SQLInstanceComponent -ModuleName dbatools -MockWith {
+                [pscustomobject]@{
+                    InstanceName = 'LAB'
+                    Version      = [pscustomobject]@{
+                        "SqlInstance" = $null
+                        "Build"       = "11.0.5058"
+                        "NameLevel"   = "2012"
+                        "SPLevel"     = "SP2"
+                        "CULevel"     = $null
+                        "KBLevel"     = "2958429"
+                        "BuildLevel"  = [version]'11.0.5058'
+                        "MatchType"   = "Exact"
+                    }
+                }
+            }
+            #Mock some of the file-related calls
+            Mock -CommandName Remove-Item -ModuleName dbatools -MockWith { }
+            Mock -CommandName Copy-Item -ModuleName dbatools -MockWith { }
+            Mock -CommandName Find-SqlInstanceUpdate -ModuleName dbatools -MockWith { }
+            Mock -CommandName Save-DbaKbUpdate -ModuleName dbatools -MockWith {
+                [pscustomobject]@{
+                    FullName = 'c:\mocked\filename.exe'
+                    Name     = 'filename.exe'
+                }
+            }
+        }
+        It "Should download and mock-upgrade SQL2012 KB3045321" {
+            $result = Update-DbaInstance -InstanceName LAB -KB KB3045321 -Path $exeDir -Download -EnableException -Confirm:$false
+            Assert-MockCalled -CommandName Get-SQLInstanceComponent -Exactly 1 -Scope It -ModuleName dbatools
+            Assert-MockCalled -CommandName Invoke-Program -Exactly 2 -Scope It -ModuleName dbatools
+            Assert-MockCalled -CommandName Save-DbaKbUpdate -Exactly 1 -Scope It -ModuleName dbatools -ParameterFilter {
+                $Name -eq '3045321' -and $Path -eq [System.IO.Path]::GetTempPath() -and $Architecture -eq 'x64'
+            }
+
+            $result | Should -Not -BeNullOrEmpty
+            $result.MajorVersion | Should -Be 2012
+            $result.TargetLevel | Should -Be SP2
+            $result.KB | Should -Be 3045321
+            $result.Successful | Should -Be $true
+            $result.Restarted | Should -Be $false
+            $result.InstanceName | Should -Be LAB
+            $result.Installer | Should -Be (Join-Path $exeDir 'filename.exe')
+            $result.Notes | Should -Not -BeNullOrEmpty
             $result.ExtractPath | Should -BeLike '*\dbatools_KB*Extract_*'
         }
     }
