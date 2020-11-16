@@ -7716,7 +7716,7 @@
     },
     {
         "Name":  "Export-DbaInstance",
-        "Description":  "Export-DbaInstance consolidates most of the export scripts in dbatools into one command.\n\nThis is useful when you\u0027re looking to Export entire instances. It less flexible than using the underlying functions.\nThink of it as an easy button. Unless an -Exclude is specified, it exports:\n\nAll database restore scripts.\nAll logins.\nAll database mail objects.\nAll credentials.\nAll objects within the Job Server (SQL Agent).\nAll linked servers.\nAll groups and servers within Central Management Server.\nAll SQL Server configuration objects (everything in sp_configure).\nAll user objects in system databases.\nAll system triggers.\nAll system backup devices.\nAll Audits.\nAll Endpoints.\nAll Extended Events.\nAll Policy Management objects.\nAll Resource Governor objects.\nAll Server Audit Specifications.\nAll Custom Errors (User Defined Messages).\nAll Server Roles.\nAll Availability Groups.",
+        "Description":  "Export-DbaInstance consolidates most of the export scripts in dbatools into one command.\n\nThis is useful when you\u0027re looking to Export entire instances. It less flexible than using the underlying functions.\nThink of it as an easy button. Unless an -Exclude is specified, it exports:\n\nAll database \u0027restore from backup\u0027 scripts.  Note: if a database does not have a backup the \u0027restore from backup\u0027 script won\u0027t be generated.\nAll logins.\nAll database mail objects.\nAll credentials.\nAll objects within the Job Server (SQL Agent).\nAll linked servers.\nAll groups and servers within Central Management Server.\nAll SQL Server configuration objects (everything in sp_configure).\nAll user objects in system databases.\nAll system triggers.\nAll system backup devices.\nAll Audits.\nAll Endpoints.\nAll Extended Events.\nAll Policy Management objects.\nAll Resource Governor objects.\nAll Server Audit Specifications.\nAll Custom Errors (User Defined Messages).\nAll Server Roles.\nAll Availability Groups.\n\nThe exported files are written to a folder with a naming convention of \"machinename$instance-yyyyMMddHHmmss\".\n\nThis command supports the following use cases related to the output files:\n\n1. Export files to a new timestamped folder. This is the default behavior and results in a simple historical archive within the local filesystem.\n2. Export files to an existing folder and overwrite pre-existing files. This can be accomplished using the -Force parameter.\nThis results in a single folder location with the latest exported files. These files can then be checked into a source control system if needed.",
         "Tags":  "Export",
         "Synopsis":  "Exports SQL Server *ALL* database restore scripts, logins, database mail profiles/accounts, credentials, SQL Agent objects, linked servers,\nCentral Management Server objects, server configuration settings (sp_configure), user objects in systems databases,\nsystem triggers and backup devices from one SQL Server to another.\n\nFor more granular control, please use one of the -Exclude parameters and use the other functions available within the dbatools module.",
         "Alias":  "",
@@ -7724,7 +7724,7 @@
         "CommandName":  "Export-DbaInstance",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Export-DbaInstance",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eExport-DbaInstance -SqlInstance sqlserver\\instance\nAll databases, logins, job objects and sp_configure options will be exported from\r\nsqlserver\\instance to an automatically generated folder name in Documents.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eExport-DbaInstance -SqlInstance sqlcluster -Exclude Databases, Logins -Path C:\\dr\\sqlcluster\nExports everything but logins and database restore scripts to C:\\dr\\sqlcluster\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eExport-DbaInstance -SqlInstance sqlcluster -Path C:\\servers\\ -NoPrefix\nExports everything to C:\\servers but scripts do not include prefix information.",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eExport-DbaInstance -SqlInstance sqlserver\\instance\nAll databases, logins, job objects and sp_configure options will be exported from sqlserver\\instance to an automatically generated folder name in Documents. For example, \r\n%userprofile%\\Documents\\DbatoolsExport\\sqldev1$sqlcluster-20201108140000\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eExport-DbaInstance -SqlInstance sqlcluster -Exclude Databases, Logins -Path C:\\dr\\sqlcluster\nExports everything but logins and database restore scripts to a folder such as C:\\dr\\sqlcluster\\sqldev1$sqlcluster-20201108140000\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eExport-DbaInstance -SqlInstance sqlcluster -Path C:\\servers\\ -NoPrefix\nExports everything to a folder such as C:\\servers\\sqldev1$sqlcluster-20201108140000 but scripts will not include prefix information.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eExport-DbaInstance -SqlInstance sqlcluster -Path C:\\servers\\ -Force\nExports everything to a folder such as C:\\servers\\sqldev1$sqlcluster and will overwrite/refresh existing files in that folder. Note: when the -Force param is used the generated folder name will not \r\ninclude a timestamp. This supports the use case of running Export-DbaInstance on a schedule and writing to the same dir each time.",
         "Params":  [
                        [
                            "SqlInstance",
@@ -7784,19 +7784,11 @@
                        ],
                        [
                            "BatchSeparator",
-                           "Batch separator for scripting output. \"GO\" by default.",
+                           "Batch separator for scripting output. \"GO\" by default based on (Get-DbatoolsConfigValue -FullName \u0027formatting.batchseparator\u0027).",
                            "",
                            false,
                            "false",
-                           "GO"
-                       ],
-                       [
-                           "Append",
-                           "Append to the target file instead of overwriting.",
-                           "",
-                           false,
-                           "false",
-                           "False"
+                           "(Get-DbatoolsConfigValue -FullName \u0027formatting.batchseparator\u0027)"
                        ],
                        [
                            "ScriptingOption",
@@ -7823,6 +7815,14 @@
                            "False"
                        ],
                        [
+                           "Force",
+                           "Overwrite files in the location specified by -Path. Note: The Server Name is used when creating the folder structure.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
                            "EnableException",
                            "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
                            "",
@@ -7831,7 +7831,7 @@
                            "False"
                        ]
                    ],
-        "Syntax":  "Export-DbaInstance [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Credential] \u003cPSCredential\u003e] [[-Path] \u003cString\u003e] [-NoRecovery] [-IncludeDbMasterKey] [[-Exclude] \u003cString[]\u003e] [[-BatchSeparator] \u003cString\u003e] [-Append] [[-ScriptingOption] \u003cScriptingOptions\u003e] [-NoPrefix] [-ExcludePassword] [-EnableException] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Export-DbaInstance [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Credential] \u003cPSCredential\u003e] [[-Path] \u003cString\u003e] [-NoRecovery] [-IncludeDbMasterKey] [[-Exclude] \u003cString[]\u003e] [[-BatchSeparator] \u003cString\u003e] [[-ScriptingOption] \u003cScriptingOptions\u003e] [-NoPrefix] [-ExcludePassword] [-Force] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Export-DbaLinkedServer",
@@ -48739,6 +48739,69 @@
         "Syntax":  "Test-DbaDbOwner [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [-SqlCredential \u003cPSCredential\u003e] [-Database \u003cObject[]\u003e] [-ExcludeDatabase \u003cObject[]\u003e] [-TargetLogin \u003cString\u003e] [-InputObject \u003cDatabase[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
+        "Name":  "Test-DbaDbQueryStore",
+        "Description":  "Evaluates Query Store against a set of rules to match best practices. The rules are:\n\n* ActualState = ReadWrite (This means Query Store is enabled and collecting data.)\n* DataFlushIntervalInSeconds = 900 (Recommended to leave this at the default of 900 seconds (15 mins).)\n* MaxPlansPerQuery = 200 (Number of distinct plans per query. 200 is a good starting point for most environments.)\n* MaxStorageSizeInMB = 2048 (How much disk space Query Store will use. 2GB is a good starting point.)\n* QueryCaptureMode = Auto (With auto, queries that are insignificant from a resource utilization perspective, or executed infrequently, are not captured.)\n* SizeBasedCleanupMode = Auto (With auto, as Query Store gets close to out of space it will automatically purge older data.)\n* StaleQueryThresholdInDays = 30 (Determines how much historic data to keep. 30 days is a good value here.)\n* StatisticsCollectionIntervalInMinutes = 30 (Time window that runtime stats will be aggregated. Use 30 unless you have space concerns, then leave at the default (60).)\n* WaitStatsCaptureMode = ON (Adds valuable data when troubleshooting.)\n* Trace Flag 7745 enabled\n* Trace Flag 7752 enabled",
+        "Tags":  "QueryStore",
+        "Synopsis":  "Compares Query Store settings against best practices.",
+        "Alias":  "",
+        "Author":  "Jess Pomfret (@jpomfret), jesspomfret.com",
+        "CommandName":  "Test-DbaDbQueryStore",
+        "Availability":  "Windows, Linux, macOS",
+        "Links":  "https://dbatools.io/Test-DbaDbQueryStore",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eTest-DbaDbQueryStore -SqlInstance localhost\nChecks that Query Store is enabled and meets best practices for all user databases on the localhost machine.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eTest-DbaDbQueryStore -SqlInstance localhost -Database AdventureWorks2017\nChecks that Query Store is enabled and meets best practices for the AdventureWorks2017 database on the localhost machine.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eTest-DbaDbQueryStore -SqlInstance localhost -ExcludeDatabase AdventureWorks2017\nChecks that Query Store is enabled and meets best practices for all user databases except AdventureWorks2017 on the localhost machine.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003e$databases = Get-DbaDatabase -SqlInstance localhost\nPS C:\\\u003e $databases | Test-DbaDbQueryStore\nChecks that Query Store is enabled and meets best practices for all databases that are piped on the localhost machine.",
+        "Params":  [
+                       [
+                           "SqlInstance",
+                           "The target SQL Server instance or instances.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "SqlCredential",
+                           "Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).\nWindows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.\nFor MFA support, please use Connect-DbaInstance.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Database",
+                           "The database(s) to process. This list is auto-populated from the server. If unspecified, all user databases will be processed.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "ExcludeDatabase",
+                           "The database(s) to exclude. This list is auto-populated from the server.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "InputObject",
+                           "Enables piped input from Get-DbaDatabase.",
+                           "",
+                           false,
+                           "true (ByValue)",
+                           ""
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ]
+                   ],
+        "Syntax":  "Test-DbaDbQueryStore [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cObject[]\u003e] [[-ExcludeDatabase] \u003cObject[]\u003e] [[-InputObject] \u003cObject[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
+    },
+    {
         "Name":  "Test-DbaDbRecoveryModel",
         "Description":  "When you switch a database into FULL recovery model, it will behave like a SIMPLE recovery model until a full backup is taken in order to begin a log backup chain.\n\nHowever, you may also desire to validate if a database is SIMPLE or BULK LOGGED on an instance.\n\nInspired by Paul Randal\u0027s post (http://www.sqlskills.com/blogs/paul/new-script-is-that-database-really-in-the-full-recovery-mode/)",
         "Tags":  [
@@ -50399,7 +50462,7 @@
         "CommandName":  "Update-DbaInstance",
         "Availability":  "Windows only",
         "Links":  "https://dbatools.io/Update-DbaInstance",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eUpdate-DbaInstance -ComputerName SQL1 -Version SP3 -Path \\\\network\\share\nUpdates all applicable SQL Server installations on SQL1 to SP3.\r\nBinary files for the update will be searched among all files and folders recursively in \\\\network\\share.\r\nPrompts for confirmation before the update.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eUpdate-DbaInstance -ComputerName SQL1, SQL2 -Restart -Path \\\\network\\share -Confirm:$false\nUpdates all applicable SQL Server installations on SQL1 and SQL2 with the most recent patch.\r\nIt will install latest ServicePack, restart the computers, install latest Cumulative Update, and finally restart the computer once again.\r\nBinary files for the update will be searched among all files and folders recursively in \\\\network\\share.\r\nDoes not prompt for confirmation.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eUpdate-DbaInstance -ComputerName SQL1 -Version 2012 -Type ServicePack -Path \\\\network\\share\nUpdates SQL Server 2012 on SQL1 with the most recent ServicePack found in your patch repository.\r\nBinary files for the update will be searched among all files and folders recursively in \\\\network\\share.\r\nPrompts for confirmation before the update.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eUpdate-DbaInstance -ComputerName SQL1 -KB 123456 -Restart -Path \\\\network\\share -Confirm:$false\nInstalls KB 123456 on SQL1 and restarts the computer.\r\nBinary files for the update will be searched among all files and folders recursively in \\\\network\\share.\r\nDoes not prompt for confirmation.\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eUpdate-DbaInstance -ComputerName Server1 -Version SQL2012SP3, SQL2016SP2CU3 -Path \\\\network\\share -Restart -Confirm:$false\nUpdates SQL 2012 to SP3 and SQL 2016 to SP2CU3 on Server1. Each update will be followed by a restart.\r\nBinary files for the update will be searched among all files and folders recursively in \\\\network\\share.\r\nDoes not prompt for confirmation.\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eUpdate-DbaInstance -ComputerName Server1 -Path \\\\network\\share -Restart -Confirm:$false -ExtractPath \"C:\\temp\"\nUpdates all applicable SQL Server installations on Server1 with the most recent patch. Each update will be followed by a restart.\r\nBinary files for the update will be searched among all files and folders recursively in \\\\network\\share.\r\nDoes not prompt for confirmation.\r\nExtracts the files in local driver on Server1 C:\\temp.\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003eUpdate-DbaInstance -ComputerName Server1 -Path \\\\network\\share -ArgumentList \"/SkipRules=RebootRequiredCheck\"\nUpdates all applicable SQL Server installations on Server1 with the most recent patch.\r\nAdditional command line parameters would be passed to the executable.\r\nBinary files for the update will be searched among all files and folders recursively in \\\\network\\share.",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eUpdate-DbaInstance -ComputerName SQL1 -Version SP3 -Path \\\\network\\share\nUpdates all applicable SQL Server installations on SQL1 to SP3.\r\nBinary files for the update will be searched among all files and folders recursively in \\\\network\\share.\r\nPrompts for confirmation before the update.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eUpdate-DbaInstance -ComputerName SQL1, SQL2 -Restart -Path \\\\network\\share -Confirm:$false\nUpdates all applicable SQL Server installations on SQL1 and SQL2 with the most recent patch.\r\nIt will install latest ServicePack, restart the computers, install latest Cumulative Update, and finally restart the computer once again.\r\nBinary files for the update will be searched among all files and folders recursively in \\\\network\\share.\r\nDoes not prompt for confirmation.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eUpdate-DbaInstance -ComputerName SQL1 -Version 2012 -Type ServicePack -Path \\\\network\\share\nUpdates SQL Server 2012 on SQL1 with the most recent ServicePack found in your patch repository.\r\nBinary files for the update will be searched among all files and folders recursively in \\\\network\\share.\r\nPrompts for confirmation before the update.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eUpdate-DbaInstance -ComputerName SQL1 -KB 123456 -Restart -Path \\\\network\\share -Confirm:$false\nInstalls KB 123456 on SQL1 and restarts the computer.\r\nBinary files for the update will be searched among all files and folders recursively in \\\\network\\share.\r\nDoes not prompt for confirmation.\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eUpdate-DbaInstance -ComputerName Server1 -Version SQL2012SP3, SQL2016SP2CU3 -Path \\\\network\\share -Restart -Confirm:$false\nUpdates SQL 2012 to SP3 and SQL 2016 to SP2CU3 on Server1. Each update will be followed by a restart.\r\nBinary files for the update will be searched among all files and folders recursively in \\\\network\\share.\r\nDoes not prompt for confirmation.\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eUpdate-DbaInstance -ComputerName Server1 -Path \\\\network\\share -Restart -Confirm:$false -ExtractPath \"C:\\temp\"\nUpdates all applicable SQL Server installations on Server1 with the most recent patch. Each update will be followed by a restart.\r\nBinary files for the update will be searched among all files and folders recursively in \\\\network\\share.\r\nDoes not prompt for confirmation.\r\nExtracts the files in local driver on Server1 C:\\temp.\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003eUpdate-DbaInstance -ComputerName Server1 -Path \\\\network\\share -ArgumentList \"/SkipRules=RebootRequiredCheck\"\nUpdates all applicable SQL Server installations on Server1 with the most recent patch.\r\nAdditional command line parameters would be passed to the executable.\r\nBinary files for the update will be searched among all files and folders recursively in \\\\network\\share.\n-------------------------- EXAMPLE 8 --------------------------\nPS C:\\\u003eUpdate-DbaInstance -ComputerName SQL1 -Version CU3 -Download -Path \\\\network\\share -Confirm:$false\nDownloads an appropriate CU KB to \\\\network\\share and installs it onto SQL1.\r\nDoes not prompt for confirmation.",
         "Params":  [
                        [
                            "ComputerName",
@@ -50483,7 +50546,7 @@
                        ],
                        [
                            "Authentication",
-                           "Chooses an authentication protocol for remote connections.\r\nIf the protocol fails to establish a connection\nDefaults:\r\n* CredSSP when -Credential is specified - due to the fact that repository Path is usually a network share and credentials need to be passed to the remote host\r\n  to avoid the double-hop issue.\r\n* Default when -Credential is not specified. Will likely fail if a network path is specified.",
+                           "Chooses an authentication protocol for remote connections.\r\nIf the protocol fails to establish a connection\nDefaults:\r\n* CredSSP when -Credential is specified - due to the fact that repository Path is usually a network share and credentials need to be passed to the remote host to avoid the double-hop issue.\r\n* Default when -Credential is not specified. Will likely fail if a network path is specified.",
                            "",
                            false,
                            "false",
@@ -50504,6 +50567,14 @@
                            false,
                            "false",
                            ""
+                       ],
+                       [
+                           "Download",
+                           "Download missing KBs to the first folder specified in the -Path parameter.\r\nFiles would be first downloaded to the local machine (TEMP folder), and then distributed onto remote machines if needed.\r\nIf the Path is a network Path, the files would be downloaded straight to the network folder and executed from there.",
+                           "",
+                           false,
+                           "false",
+                           "False"
                        ],
                        [
                            "EnableException",
@@ -50530,7 +50601,7 @@
                            ""
                        ]
                    ],
-        "Syntax":  "Update-DbaInstance [[-ComputerName] \u003cDbaInstanceParameter[]\u003e] [-Credential \u003cPSCredential\u003e] [-Version \u003cString[]\u003e] [-Type \u003cString[]\u003e] [-InstanceName \u003cString\u003e] [-Path \u003cString[]\u003e] [-Restart] [-Continue] [-Throttle \u003cInt32\u003e] [-Authentication \u003cString\u003e] [-ExtractPath \u003cString\u003e] [-ArgumentList \u003cString[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\nUpdate-DbaInstance [[-ComputerName] \u003cDbaInstanceParameter[]\u003e] [-Credential \u003cPSCredential\u003e] -KB \u003cString[]\u003e [-InstanceName \u003cString\u003e] [-Path \u003cString[]\u003e] [-Restart] [-Continue] [-Throttle \u003cInt32\u003e] [-Authentication \u003cString\u003e] [-ExtractPath \u003cString\u003e] [-ArgumentList \u003cString[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Update-DbaInstance [[-ComputerName] \u003cDbaInstanceParameter[]\u003e] [-Credential \u003cPSCredential\u003e] [-Version \u003cString[]\u003e] [-Type \u003cString[]\u003e] [-InstanceName \u003cString\u003e] [-Path \u003cString[]\u003e] [-Restart] [-Continue] [-Throttle \u003cInt32\u003e] [-Authentication \u003cString\u003e] [-ExtractPath \u003cString\u003e] [-ArgumentList \u003cString[]\u003e] [-Download] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\nUpdate-DbaInstance [[-ComputerName] \u003cDbaInstanceParameter[]\u003e] [-Credential \u003cPSCredential\u003e] -KB \u003cString[]\u003e [-InstanceName \u003cString\u003e] [-Path \u003cString[]\u003e] [-Restart] [-Continue] [-Throttle \u003cInt32\u003e] [-Authentication \u003cString\u003e] [-ExtractPath \u003cString\u003e] [-ArgumentList \u003cString[]\u003e] [-Download] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Update-DbaServiceAccount",

@@ -1,7 +1,7 @@
 
 -- SQL Server 2019 Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: November 3, 2020
+-- Last Modified: November 10, 2020
 -- https://glennsqlperformance.com/ 
 -- https://sqlserverperformance.wordpress.com/
 -- YouTube: https://bit.ly/2PkoAM1 
@@ -916,6 +916,12 @@ ORDER BY [CPU Rank] OPTION (RECOMPILE);
 -- Helps determine which database is using the most CPU resources on the instance
 -- Note: This only reflects CPU usage from the currently cached query plans
 
+-- sys.dm_exec_query_stats (Transact-SQL)
+-- https://bit.ly/32tHCGH
+
+-- sys.dm_exec_plan_attributes (Transact-SQL)
+-- https://bit.ly/35iP2hV
+
 
 -- Get I/O utilization by database (Query 36) (IO Usage By Database)
 WITH Aggregate_IO_Statistics
@@ -940,6 +946,9 @@ ORDER BY [I/O Rank] OPTION (RECOMPILE);
 -- These numbers are cumulative since the last service restart
 -- They include all I/O activity, not just the nominal I/O workload
 
+-- sys.dm_io_virtual_file_stats (Transact-SQL)
+-- https://bit.ly/3bRWUc0
+
 
 -- Get total buffer usage by database for current instance  (Query 37) (Total Buffer Usage by Database)
 -- This make take some time to run on a busy instance
@@ -958,6 +967,9 @@ ORDER BY [Buffer Pool Rank] OPTION (RECOMPILE);
 
 -- Tells you how much memory (in the buffer pool) 
 -- is being used by each database on the instance
+
+-- sys.dm_os_buffer_descriptors (Transact-SQL)
+-- https://bit.ly/36s7aFo
 
 
 -- Get tempdb version store space usage by database (Query 38) (Version Store Space Usage)
