@@ -50,10 +50,10 @@ function Get-DbaRepDistributor {
             Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Replication.dll" -ErrorAction Stop
             Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Rmo.dll" -ErrorAction Stop
         } catch {
-            try {
-                $null = [System.Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.Replication")
-                $null = [System.Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.Rmo")
-            } catch {
+            $repdll = [System.Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.Replication")
+            $rmodll = [System.Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.Rmo")
+
+            if ($null -eq $repdll -or $null -eq $rmodll) {
                 Stop-Function -Message "Could not load replication libraries" -ErrorRecord $_
                 return
             }
