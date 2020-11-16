@@ -307,7 +307,7 @@ function Export-DbaInstance {
                 $fileCounter++
                 Write-Message -Level Verbose -Message "Exporting database restores"
                 Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Exporting database restores"
-                Get-DbaDbBackupHistory -SqlInstance $server -Last | Restore-DbaDatabase -SqlInstance $server -NoRecovery:$NoRecovery -WithReplace -OutputScriptOnly -WarningAction SilentlyContinue | Out-File -FilePath "$exportPath\$fileCounter-databases.sql" -Append:$Append
+                Get-DbaDbBackupHistory -SqlInstance $server -Last -WarningAction SilentlyContinue | Restore-DbaDatabase -SqlInstance $server -NoRecovery:$NoRecovery -WithReplace -OutputScriptOnly -WarningAction SilentlyContinue | Out-File -FilePath "$exportPath\$fileCounter-databases.sql" -Append:$Append
                 Get-ChildItem -ErrorAction Ignore -Path "$exportPath\$fileCounter-databases.sql"
                 if (-not (Test-Path "$exportPath\$fileCounter-databases.sql")) {
                     $fileCounter--
@@ -394,7 +394,7 @@ function Export-DbaInstance {
                 $null = Get-DbaAgentJobCategory -SqlInstance $server | Export-DbaScript -FilePath "$exportPath\$fileCounter-sqlagent.sql" -Append:$Append -BatchSeparator $BatchSeparator -ScriptingOptionsObject $ScriptingOption -NoPrefix:$NoPrefix
                 $null = Get-DbaAgentOperator -SqlInstance $server | Export-DbaScript -FilePath "$exportPath\$fileCounter-sqlagent.sql" -Append:$Append -BatchSeparator $BatchSeparator -ScriptingOptionsObject $ScriptingOption -NoPrefix:$NoPrefix
                 $null = Get-DbaAgentAlert -SqlInstance $server | Export-DbaScript -FilePath "$exportPath\$fileCounter-sqlagent.sql" -Append:$Append -BatchSeparator $BatchSeparator -ScriptingOptionsObject $ScriptingOption -NoPrefix:$NoPrefix
-                $null = Get-DbaAgentProxy -SqlInstance $server | Export-DbaScript  -FilePath "$exportPath\$fileCounter-sqlagent.sql" -Append:$Append -BatchSeparator $BatchSeparator -ScriptingOptionsObject $ScriptingOption -NoPrefix:$NoPrefix
+                $null = Get-DbaAgentProxy -SqlInstance $server | Export-DbaScript -FilePath "$exportPath\$fileCounter-sqlagent.sql" -Append:$Append -BatchSeparator $BatchSeparator -ScriptingOptionsObject $ScriptingOption -NoPrefix:$NoPrefix
                 $null = Get-DbaAgentSchedule -SqlInstance $server | Export-DbaScript -FilePath "$exportPath\$fileCounter-sqlagent.sql" -Append:$Append -BatchSeparator $BatchSeparator -ScriptingOptionsObject $ScriptingOption -NoPrefix:$NoPrefix
                 $null = Get-DbaAgentJob -SqlInstance $server | Export-DbaScript -FilePath "$exportPath\$fileCounter-sqlagent.sql" -Append:$Append -BatchSeparator $BatchSeparator -ScriptingOptionsObject $ScriptingOption -NoPrefix:$NoPrefix
                 Get-ChildItem -ErrorAction Ignore -Path "$exportPath\$fileCounter-sqlagent.sql"
