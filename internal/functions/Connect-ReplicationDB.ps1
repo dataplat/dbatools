@@ -10,8 +10,13 @@ function Connect-ReplicationDB {
         Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Replication.dll" -ErrorAction Stop
         Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Rmo.dll" -ErrorAction Stop
     } catch {
-        Stop-Function -Message "Could not load replication libraries" -ErrorRecord $_
-        return
+        try {
+            $null = [System.Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.Replication")
+            $null = [System.Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.Rmo")
+        } catch {
+            Stop-Function -Message "Could not load replication libraries" -ErrorRecord $_
+            return
+        }
     }
 
     $repDB = New-Object Microsoft.SqlServer.Replication.ReplicationDatabase
