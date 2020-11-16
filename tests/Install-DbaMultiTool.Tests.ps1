@@ -17,13 +17,13 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         BeforeAll {
             $branch = "master"
             $database = "dbatoolsci_multitool_$(Get-Random)"
-            $server = Connect-DbaInstance -SqlInstance $script:instance2
+            $server = Connect-DbaInstance -SqlInstance $script:instance3
             $server.Query("CREATE DATABASE $database")
 
-            $resultsDownload = Install-DbaMultiTool -SqlInstance $script:instance2 -Database $database -Branch $branch -Force -Verbose:$false
+            $resultsDownload = Install-DbaMultiTool -SqlInstance $script:instance3 -Database $database -Branch $branch -Force -Verbose:$false
         }
         AfterAll {
-            Remove-DbaDatabase -SqlInstance $script:instance2 -Database $database -Confirm:$false
+            Remove-DbaDatabase -SqlInstance $script:instance3 -Database $database -Confirm:$false
         }
 
         It "Installs to specified database: $database" {
@@ -41,14 +41,14 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             ($result.PsObject.Properties.Name | Sort-Object) | Should Be ($ExpectedProps | Sort-Object)
         }
         It "Shows status of Updated" {
-            $resultsDownload = Install-DbaMultiTool -SqlInstance $script:instance2 -Database $database -Verbose:$false
+            $resultsDownload = Install-DbaMultiTool -SqlInstance $script:instance3 -Database $database -Verbose:$false
             $resultsDownload[0].Status -eq 'Updated' | Should -Be $true
         }
         It "Shows status of Error" {
             $folder = Join-Path (Get-DbatoolsConfigValue -FullName Path.DbatoolsData) -Child "DBA-MultiTool-$branch"
             $sqlScript = (Get-ChildItem $folder | Select-Object -First 1).FullName
             Add-Content $sqlScript (New-Guid).ToString()
-            $result = Install-DbaMultiTool -SqlInstance $script:instance2 -Database $database -Verbose:$false
+            $result = Install-DbaMultiTool -SqlInstance $script:instance3 -Database $database -Verbose:$false
             $result[0].Status -eq "Error" | Should -Be $true
         }
     }
@@ -97,12 +97,13 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         }
     }
 }
+<#
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     Context "Testing DBA MultiTool installer with unsupported SQL Server version" {
         BeforeAll {
             $branch = "master"
             $database = "dbatoolsci_multitool_$(Get-Random)"
-            $server = Connect-DbaInstance -SqlInstance $script:instance1
+            $server = Connect-DbaInstance -SqlInstance $script:instance3
             $server.Query("CREATE DATABASE $database")
 
             $outfile = "DBA-MultiTool-$branch.zip"
@@ -110,10 +111,10 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             if (Test-Path $outfile) {
                 $fullOutfile = (Get-ChildItem $outfile).FullName
             }
-            $resultsLocalFile = Install-DbaMultiTool -SqlInstance $script:instance1 -Database $database -Branch $branch -LocalFile $fullOutfile -Force
+            $resultsLocalFile = Install-DbaMultiTool -SqlInstance $script:instance3 -Database $database -Branch $branch -LocalFile $fullOutfile -Force
         }
         AfterAll {
-            Remove-DbaDatabase -SqlInstance $script:instance1 -Database $database -Confirm:$false
+            Remove-DbaDatabase -SqlInstance $script:instance3 -Database $database -Confirm:$false
         }
 
         It "Installs to specified database: $database" {
@@ -129,3 +130,4 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         }
     }
 }
+#>
