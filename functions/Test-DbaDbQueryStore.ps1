@@ -187,25 +187,22 @@ function Test-DbaDbQueryStore {
                 Write-Message -Level Verbose -Message "Evaluating Query Store options"
                 $currentOptions = Get-DbaDbQueryStoreOption -SqlInstance $smo -Database $dbDatabases.name
 
-                $currentOptions |
-                    ForEach-Object -PipelineVariable db -Process { $_ } |
-                    ForEach-Object {
-                        $db.GetPropertySet() | Where-Object Name -NotIn ('CurrentStorageSizeInMB', 'ReadOnlyReason', 'DesiredState') |
-                            ForEach-Object -PipelineVariable property -Process { $_ } |
-                            ForEach-Object {
-                                [PSCustomObject]@{
-                                    ComputerName     = $db.ComputerName
-                                    InstanceName     = $db.InstanceName
-                                    SqlInstance      = $db.SqlInstance
-                                    Database         = $db.Database
-                                    Name             = $property.Name
-                                    Value            = $property.Value
-                                    RecommendedValue = ($desiredState | Where-Object Property -EQ $property.Name).Value
-                                    IsBestPractice   = ($property.Value -eq ($desiredState | Where-Object Property -EQ $property.Name).Value)
-                                    Justification    = ($desiredState | Where-Object Property -EQ $property.Name).Justification
-                                }
-                            }
+                foreach ($db in $currentOptions) {
+                    $props = $db.GetPropertySet() | Where-Object Name -NotIn ('CurrentStorageSizeInMB', 'ReadOnlyReason', 'DesiredState')
+                    foreach ($property in $props) {
+                        [PSCustomObject]@{
+                            ComputerName     = $db.ComputerName
+                            InstanceName     = $db.InstanceName
+                            SqlInstance      = $db.SqlInstance
+                            Database         = $db.Database
+                            Name             = $property.Name
+                            Value            = $property.Value
+                            RecommendedValue = ($desiredState | Where-Object Property -EQ $property.Name).Value
+                            IsBestPractice   = ($property.Value -eq ($desiredState | Where-Object Property -EQ $property.Name).Value)
+                            Justification    = ($desiredState | Where-Object Property -EQ $property.Name).Justification
                         }
+                    }
+                }
             } catch {
                 Stop-Function -Message "Unable to get Query Store data $smo" -Target $smo -ErrorRecord $_
             }
@@ -220,7 +217,7 @@ function Test-DbaDbQueryStore {
                 Justification = 'Load Query Store data asynchronously on SQL Server startup.'
             }
             try {
-                $queryStoreTF | ForEach-Object -PipelineVariable tf -Process { $_ } | ForEach-Object {
+                foreach ($tf in $queryStoreTF) {
                     $tfEnabled = Get-DbaTraceFlag -SqlInstance $smo -TraceFlag $tf.TraceFlag
                     [PSCustomObject]@{
                         ComputerName     = $smo.ComputerName
