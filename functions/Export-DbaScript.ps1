@@ -154,19 +154,22 @@ function Export-DbaScript {
         $commandName = $MyInvocation.MyCommand.Name
         $prefixArray = @()
 
-        $appendToScript = $Append
+        # If -Append or -Append:$true is passed in then set these variables. Otherwise, the caller has specified -Append:$false or not specified -Append and they want to overwrite the file if it already exists.
+        $appendToScript = $false
+        if ($Append) {
+            $appendToScript = $true
+
+            if ($ScriptingOptionsObject) {
+                $ScriptingOptionsObject.AppendToFile = $true
+            }
+        }
+
         if ($ScriptingOptionsObject) {
             # Check if BatchTerminator is consistent
             if (($($ScriptingOptionsObject.ScriptBatchTerminator)) -and ([string]::IsNullOrWhitespace($BatchSeparator))) {
                 Write-Message -Level Warning -Message "Setting ScriptBatchTerminator to true and also having BatchSeperarator as an empty or null string may produce unintended results."
             }
-
-            if ($ScriptingOptionsObject.AppendToFile) {
-                Write-Message -Level Verbose -Message "The ScriptingOptionsObject AppendToFile setting of true will override Append parameter."
-                $appendToScript = $true
-            }
         }
-
     }
 
     process {
@@ -239,7 +242,7 @@ function Export-DbaScript {
                         if ((Test-Path -Path $scriptPath) -and $NoClobber) {
                             Stop-Function -Message "File already exists. If you want to overwrite it remove the -NoClobber parameter. If you want to append data, please Use -Append parameter." -Target $scriptPath -Continue
                         }
-                        #Only at the first output we use the passed variables Append & NoClobber. For this execution the next ones need to buse -Append
+                        #Only at the first output we use the passed variables Append & NoClobber. For this execution the next ones need to use -Append
                         if ($null -ne $prefix) {
                             $prefix | Out-File -FilePath $scriptPath -Encoding $encoding -Append:$appendToScript -NoClobber:$NoClobber
                             $prefixArray += $scriptPath
