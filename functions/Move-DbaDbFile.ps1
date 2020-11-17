@@ -1,0 +1,341 @@
+function Move-DbaDbFile {
+    <#
+    .SYNOPSIS
+        Moves database files from one location to another.
+
+    .DESCRIPTION
+        Moves database files from one location to another.
+        It will put database offline, update metadata and set it online again.
+
+    .PARAMETER SqlInstance
+        The target SQL Server instance or instances.
+
+    .PARAMETER SqlCredential
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
+
+    .PARAMETER Database
+        The database to be moved.
+
+    .PARAMETER FileToMove
+        Pass a hash table object that contains a list database files and its destination path.
+        $fileToMove=@{
+            'dbatools'='D:\DATA3'
+            'dbatools_log'='D:\LOG2'
+        }
+
+    .PARAMETER FileType
+        You can define which file types you want to move. Data, Log or Both. If not specified 'Both' will be used.
+        Exclusive. Can't be used with FileToMove
+
+    .PARAMETER FileDestination
+        Says destination folder to move all files of type defined by FileType.
+
+    .PARAMETER DeleteAfterMove
+        Indicates whether the soure files should be deleted after copy with success
+
+    .PARAMETER FileStructureOnly
+        Outputs an hash table defintion with current database file structure.
+        You can use this to define de destination folder and delete the entries you want to exclude. Then you can use this hashtable on -FileToMove parameter
+
+    .PARAMETER WhatIf
+        Shows what would happen if the command were to run. No actions are actually performed.
+
+    .PARAMETER Confirm
+        Prompts you for confirmation before executing any changing operations within the command.
+
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+
+    .NOTES
+        Tags: Database, Move, File
+        Author: Cláudio Silva (@claudioessilva), claudioeesilva.eu
+
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
+
+    .LINK
+        https://dbatools.io/Move-DbaDbFile
+
+    .EXAMPLE
+        PS C:\> Move-DbaDbFile -SqlInstance sql2017 -Database dbatools -FileType Data -FileDestination "D:\DATA2"
+
+        Copy all data files of dbatools database on sql2017 instance to the "D:\DATA2" path.
+        Before it puts database offline and after copy each file will update database metadata and it ends by set the database back online
+
+    .EXAMPLE
+        PS C:\> $fileToMove=@{
+            'dbatools'='D:\DATA3'
+            'dbatools_log'='D:\LOG2'
+        }
+        PS C:\> Move-DbaDbFile -SqlInstance sql2019 -Database dbatools -FileToMove $fileToMove
+
+        Declares a hashtable that says for each logical file the new path.
+        Copy each dbatools database file referenced on the hashtable on the sql2019 instance from the current location to the new mentioned location (D:\DATA3 and D:\LOG2 paths).
+        Before it puts database offline and after copy each file will update database metadata and it ends by set the database back online
+
+    .EXAMPLE
+        PS C:\> Move-DbaDbFile -SqlInstance sql2017 -Database dbatools -FileStructureOnly
+
+        Shows the current database file structure (without filenames).
+
+    #>
+
+    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Medium")]
+    param (
+        [parameter(Mandatory, ValueFromPipeline)]
+        [DbaInstanceParameter]$SqlInstance,
+        [PSCredential]$SqlCredential,
+        [parameter(Mandatory)]
+        [string]$Database,
+        [parameter(ParameterSetName = "All")]
+        [ValidateSet('Data', 'Log', 'Both')]
+        [string]$FileType,
+        [parameter(ParameterSetName = "All")]
+        [string]$FileDestination,
+        [parameter(ParameterSetName = "Detailed")]
+        [hashtable]$FileToMove,
+        [parameter(ParameterSetName = "All")]
+        [parameter(ParameterSetName = "Detailed")]
+        [switch]$DeleteAfterMove,
+        [parameter(ParameterSetName = "FileStructure")]
+        [switch]$FileStructureOnly,
+        [switch]$EnableException
+    )
+
+    begin {
+        if ((Test-Bound -ParameterName FileType) -and (-not(Test-Bound -ParameterName FileDestination))) {
+            Stop-Function -Category InvalidArgument -Message "You need to specify the -FileDestination parmeter. Quitting."
+        }
+    }
+
+    process {
+        if (Test-FunctionInterrupt) { return }
+
+        if (!$FileType -and !$FileToMove -and !$FileStructureOnly ) {
+            Stop-Function -Message "You must specify at least one of -FileType or -FileToMove or -FileStructureOnly to continue"
+            return
+        }
+
+        try {
+            try {
+                $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
+            } catch {
+                Stop-Function -Message "Error occurred while establishing connection to $SqlInstance" -Category ConnectionError -ErrorRecord $_ -Target $SqlInstance -Continue
+            }
+
+            switch ($FileType) {
+                'Data' { $fileTypeFilter = 0 }
+                'Log' { $fileTypeFilter = 1 }
+                'Both' { $fileTypeFilter = -1 }
+                default { $fileTypeFilter = -1 }
+            }
+
+            $dbStatus = (Get-DbaDbState -SqlInstance $server -Database $Database).Status
+            if ($dbStatus -eq 'OFFLINE') {
+                Write-Message -Level Verbose -Message "Database $Database is already Offline. Getting file strucutre from sys.master_files."
+                $DataFiles = Get-DbaDbPhysicalFile -SqlInstance $server | Where-Object Name -eq $Database | Select-Object LogicalName, PhysicalName
+            } else {
+                if ($fileTypeFilter -eq -1) {
+                    $DataFiles = Get-DbaDbFile -SqlInstance $server -Database $Database | Select-Object LogicalName, PhysicalName
+                } else {
+                    $DataFiles = Get-DbaDbFile -SqlInstance $server -Database $Database | Where-Object Type -eq $fileTypeFilter | Select-Object LogicalName, PhysicalName
+                }
+            }
+
+            if (@($DataFiles).Count -gt 0) {
+
+                if ($FileStructureOnly) {
+                    $fileStructure = "`$fileToMove=@{`n"
+                    foreach ($file in $DataFiles) {
+                        $fileStructure += "`t'$($file.LogicalName)'='$(Split-Path -Path $file.PhysicalName -Parent)'`n"
+                    }
+                    $fileStructure += "}"
+                    Write-Output $fileStructure
+                    return
+                }
+
+                if ($FileDestination) {
+                    $DataFilesToMove = $DataFiles | Select-Object -ExpandProperty LogicalName
+                } else {
+                    $DataFilesToMove = $FileToMove.Keys
+                }
+
+                if ($dbStatus -ne "Offline") {
+                    if ($PSCmdlet.ShouldProcess($database, "Setting database $Database offline")) {
+                        try {
+
+                            $SetState = Set-DbaDbState -SqlInstance $server -Database $Database -Offline -Force
+                            if ($SetState.Status -ne 'Offline') {
+                                Write-Message -Level Warning -Message "Setting database Offline failed!"
+
+                            } else {
+                                Write-Message -Level Verbose -Message "Database $Database was set to Offline status."
+                            }
+                        } catch {
+                            Stop-Function -Message "Setting database Offline failed! : $($_.Exception.InnerException.InnerException.InnerException)" -ErrorRecord $_ -Target $server.DomainInstanceName -OverrideExceptionMessage
+                        }
+                    }
+                }
+
+                if ([DbaValidate]::IsLocalhost($server.ComputerName)) {
+                    # locally ran so we can just use Start-BitsTransfer
+                    $ComputerName = $server.ComputerName
+                } else {
+                    # let's start checking if we can access .ComputerName
+                    $testPS = $false
+                    if ($SqlCredential) {
+                        # why does Test-PSRemoting require a Credential param ? this is ugly...
+                        $testPS = Test-PSRemoting -ComputerName $server.ComputerName -Credential $SqlCredential -ErrorAction Stop
+                    } else {
+                        $testPS = Test-PSRemoting -ComputerName $server.ComputerName -ErrorAction Stop
+                    }
+                    if (!($testPS)) {
+                        # let's try to resolve it to a more qualified name, without "cutting" knowledge about the domain (only $server.Name possibly holds the complete info)
+                        $Resolved = (Resolve-DbaNetworkName -ComputerName $server.Name).FullComputerName
+                        if ($SqlCredential) {
+                            $testPS = Test-PSRemoting -ComputerName $Resolved -Credential $SqlCredential -ErrorAction Stop
+                        } else {
+                            $testPS = Test-PSRemoting -ComputerName $Resolved -ErrorAction Stop
+                        }
+                        if ($testPS) {
+                            $ComputerName = $Resolved
+                        }
+                    } else {
+                        $ComputerName = $server.ComputerName
+                    }
+                }
+
+                # if we don't have remote access ($ComputerName is null) we can fallback to admin shares if they're available
+                if ($null -eq $ComputerName) {
+                    $ComputerName = $server.ComputerName
+                }
+
+                foreach ($LogicalName in $DataFilesToMove) {
+
+                    $physicalName = $DataFiles | Where-Object LogicalName -eq $LogicalName | Select-Object -ExpandProperty PhysicalName
+
+                    if ($FileDestination) {
+                        $destinationPath = $FileDestination
+                    } else {
+                        $destinationPath = $FileToMove[$LogicalName]
+                    }
+                    $fileName = [IO.Path]::GetFileName($physicalName)
+                    $destination = "$destinationPath\$fileName"
+
+                    if ($physicalName -ne $destination) {
+                        try {
+                            Write-Message -Level Verbose -Message "Try copying using Start-BitsTransfer."
+
+                            if ($PSCmdlet.ShouldProcess($database, "Copying file $physicalName to $destination using Bits on $ComputerName")) {
+                                $scriptBlock = {
+                                    $physicalName = $args[0]
+                                    $destination = $args[1]
+                                    Start-BitsTransfer -Source $physicalName -Destination $destination -ErrorAction Stop
+                                }
+                                Invoke-Command2 -ComputerName $ComputerName -Credential $SqlCredential -ScriptBlock $scriptBlock -ArgumentList $physicalName, $destination
+                            }
+                        } catch {
+                            Write-Message -Level Warning -Message "Did not work using Start-BitsTransfer. ERROR: $_"
+
+                            Write-Message -Level Verbose -Message "Try using Admin UNC path"
+                            try {
+                                $physicalName = Join-AdminUnc -ServerName $ComputerName -Filepath $physicalName
+                                $destination = Join-AdminUnc -ServerName $ComputerName -Filepath $destination
+
+                                if ($PSCmdlet.ShouldProcess($database, "Copying file $physicalName to $destination using UNC path for $ComputerName")) {
+                                    $scriptBlock = {
+                                        $physicalName = $args[0]
+                                        $destination = $args[1]
+                                        Copy-Item -Path $physicalName -Destination $destination -ErrorAction Stop
+                                    }
+                                    Invoke-Command2 -ComputerName $ComputerName -Credential $SqlCredential -ScriptBlock $scriptBlock -ArgumentList $physicalName, $destination
+                                }
+
+                            } catch {
+                                [PSCustomObject]@{
+                                    Instance             = $SqlInstance
+                                    Database             = $Database
+                                    LogicalName          = $LogicalName
+                                    Source               = $physicalName
+                                    Destination          = $destination
+                                    Result               = "Failed"
+                                    DatabaseFileMetadata = "N/A"
+                                }
+
+                                Write-Message -Level Important -Message "ERROR: Could not copy file. $_"
+                            }
+                        }
+
+                        $query = "ALTER DATABASE [$Database] MODIFY FILE (name=$LogicalName, filename='$destination'); "
+
+                        Write-Message -Level Verbose -Message "Query: $query"
+
+                        if ($PSCmdlet.ShouldProcess($Database, "Executing ALTER DATABASE query - $query")) {
+                            # Change database file path
+                            $server.Databases["master"].Query($query)
+
+                            [PSCustomObject]@{
+                                Instance             = $SqlInstance
+                                Database             = $Database
+                                LogicalName          = $LogicalName
+                                Source               = $physicalName
+                                Destination          = $destination
+                                Result               = "Success"
+                                DatabaseFileMetadata = "Updated"
+                            }
+                        }
+
+                        Write-Message -Level Verbose -Message "File $fileName was copied successfully"
+
+                        if ($DeleteAfterMove) {
+                            if ($PSCmdlet.ShouldProcess($database, "Deleting source file $physicalName")) {
+                                $scriptBlock = {
+                                    $source = $args[0]
+                                    Remove-Item -Path $source -ErrorAction Stop
+                                }
+                                Invoke-Command2 -ComputerName $ComputerName -Credential $SqlCredential -ScriptBlock $scriptBlock -ArgumentList $physicalName
+                            }
+                        }
+                    } else {
+                        Write-Message -Level Verbose -Message "File $fileName already exists on $destination. Skipping."
+                        [PSCustomObject]@{
+                            Instance             = $SqlInstance
+                            Database             = $Database
+                            LogicalName          = $LogicalName
+                            Source               = $physicalName
+                            Destination          = $destination
+                            Result               = "Already exists. Skipping"
+                            DatabaseFileMetadata = "N/A"
+                        }
+                    }
+                }
+
+                if ($PSCmdlet.ShouldProcess($Database, "Setting database Online")) {
+                    try {
+                        $SetState = Set-DbaDbState -SqlInstance $server -Database $Database -Online
+                        if ($SetState.Status -ne 'Online') {
+                            Write-Message -Level Warning -Message "Setting database online failed!"
+                        } else {
+                            Write-Message -Level Verbose -Message "Database is online!"
+                        }
+                    } catch {
+                        Stop-Function -Message "Setting database online failed! : $($_.Exception.InnerException.InnerException.InnerException)" -ErrorRecord $_ -Target $server.DomainInstanceName -OverrideExceptionMessage
+                    }
+                }
+            } else {
+                Write-Message -Level Warning -Message "We could not get any files for database $Database!"
+            }
+        } catch {
+            Stop-Function -Message "ERROR:" -ErrorRecord $_
+        }
+    }
+}
