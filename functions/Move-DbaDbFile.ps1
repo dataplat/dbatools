@@ -125,6 +125,11 @@ function Move-DbaDbFile {
             return
         }
 
+        if ($Database -in @("master", "model", "msdb", "tempdb")) {
+            Stop-Function -Message "You have specified the system database $Database. As for now, system database are not supported by this command"
+            return
+        }
+
         try {
             try {
                 $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
