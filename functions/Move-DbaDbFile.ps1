@@ -239,7 +239,7 @@ function Move-DbaDbFile {
                                 $scriptBlock = {
                                     $physicalName = $args[0]
                                     $destination = $args[1]
-                                    Start-BitsTransfer -Source $physicalName -Destination $destination -ErrorAction Stop
+                                    Start-BitsTransfer -Source $physicalName -Destination $destination -ACLFlags DACL -ErrorAction Stop
                                 }
                                 Invoke-Command2 -ComputerName $ComputerName -Credential $SqlCredential -ScriptBlock $scriptBlock -ArgumentList $physicalName, $destination
                             }
