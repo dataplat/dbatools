@@ -219,8 +219,26 @@ function Move-DbaDbFile {
                     $ComputerName = $server.ComputerName
                 }
 
-                foreach ($LogicalName in $DataFilesToMove) {
 
+                # Test if defined paths are accesible by the instance
+                $testPathResults = @()
+                if ($FileDestination) {
+                    if (-not (Test-DbaPath -SqlInstance $server -Path $FileDestination)) {
+                        $testPathResults += $FileDestination
+                    }
+                } else {
+                    foreach ($filePath in $FileToMove.Keys) {
+                        if (-not (Test-DbaPath -SqlInstance $server -Path $FileToMove[$filePath])) {
+                            $testPathResults += $FileToMove[$filePath]
+                        }
+                    }
+                }
+                if (@($testPathResults).Count -gt 0) {
+                    Stop-Function -Message "The path(s):`r`n $($testPathResults -join [Environment]::NewLine)`r`n is/are not accessible by the instance. Confirm if it/they exists."
+                    return
+                }
+
+                foreach ($LogicalName in $DataFilesToMove) {
                     $physicalName = $DataFiles | Where-Object LogicalName -eq $LogicalName | Select-Object -ExpandProperty PhysicalName
 
                     if ($FileDestination) {
