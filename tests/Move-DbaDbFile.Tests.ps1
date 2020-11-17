@@ -42,7 +42,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             FileStructureOnly = $true
         }
 
-        $results = Move-DbaDbFile @variables
+        $results = Move-DbaDbFile @variables -Verbose
 
         It "Should have Results" {
             $results | Should Not BeNullOrEmpty
