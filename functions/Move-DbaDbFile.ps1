@@ -271,16 +271,16 @@ function Move-DbaDbFile {
 
                             Write-Message -Level Verbose -Message "Try using Admin UNC path"
                             try {
-                                $physicalName = Join-AdminUnc -ServerName $ComputerName -Filepath $physicalName
-                                $destination = Join-AdminUnc -ServerName $ComputerName -Filepath $destination
+                                $physicalNameUNC = Join-AdminUnc -ServerName $ComputerName -Filepath $physicalName
+                                $destinationUNC = Join-AdminUnc -ServerName $ComputerName -Filepath $destination
 
-                                if ($PSCmdlet.ShouldProcess($database, "Copying file $physicalName to $destination using UNC path for $ComputerName")) {
+                                if ($PSCmdlet.ShouldProcess($database, "Copying file $physicalNameUNC to $destinationUNC using UNC path for $ComputerName")) {
                                     $scriptBlock = {
                                         $physicalName = $args[0]
                                         $destination = $args[1]
                                         Copy-Item -Path $physicalName -Destination $destination -ErrorAction Stop
                                     }
-                                    Invoke-Command2 -ComputerName $ComputerName -Credential $SqlCredential -ScriptBlock $scriptBlock -ArgumentList $physicalName, $destination
+                                    Invoke-Command2 -ComputerName $ComputerName -Credential $SqlCredential -ScriptBlock $scriptBlock -ArgumentList $physicalNameUNC, $destinationUNC
                                 }
 
                             } catch {
