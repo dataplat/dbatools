@@ -265,6 +265,8 @@ function Move-DbaDbFile {
                                     Start-BitsTransfer -Source $physicalName -Destination $destination -ACLFlags DACL -ErrorAction Stop
                                 }
                                 Invoke-Command2 -ComputerName $ComputerName -Credential $SqlCredential -ScriptBlock $scriptBlock -ArgumentList $physicalName, $destination
+
+                                Write-Message -Level Verbose -Message "File $fileName was copied successfully"
                             }
                         } catch {
                             Write-Message -Level Warning -Message "Did not work using Start-BitsTransfer. ERROR: $_"
@@ -283,6 +285,8 @@ function Move-DbaDbFile {
                                         Get-Acl -Path $physicalName | Set-Acl $destination
                                     }
                                     Invoke-Command2 -ComputerName $ComputerName -Credential $SqlCredential -ScriptBlock $scriptBlock -ArgumentList $physicalNameUNC, $destinationUNC
+
+                                    Write-Message -Level Verbose -Message "File $fileName was copied successfully"
                                 }
 
                             } catch {
@@ -302,8 +306,6 @@ function Move-DbaDbFile {
 
                         $query = "ALTER DATABASE [$Database] MODIFY FILE (name=$LogicalName, filename='$destination'); "
 
-                        Write-Message -Level Verbose -Message "Query: $query"
-
                         if ($PSCmdlet.ShouldProcess($Database, "Executing ALTER DATABASE query - $query")) {
                             # Change database file path
                             $server.Databases["master"].Query($query)
@@ -318,8 +320,6 @@ function Move-DbaDbFile {
                                 DatabaseFileMetadata = "Updated"
                             }
                         }
-
-                        Write-Message -Level Verbose -Message "File $fileName was copied successfully"
 
                         if ($DeleteAfterMove) {
                             if ($PSCmdlet.ShouldProcess($database, "Deleting source file $physicalName")) {
@@ -348,12 +348,12 @@ function Move-DbaDbFile {
                     try {
                         $SetState = Set-DbaDbState -SqlInstance $server -Database $Database -Online
                         if ($SetState.Status -ne 'Online') {
-                            Write-Message -Level Warning -Message "Setting database online failed!"
+                            Stop-Function -Message "$($SetState.Notes)! : Please check SQL Server error log."
                         } else {
                             Write-Message -Level Verbose -Message "Database is online!"
                         }
                     } catch {
-                        Stop-Function -Message "Setting database online failed! : $($_.Exception.InnerException.InnerException.InnerException)" -ErrorRecord $_ -Target $server.DomainInstanceName -OverrideExceptionMessage
+                        Stop-Function -Message "Setting database online failed! : $($_.Exception.InnerException.InnerException.InnerException.InnerException)" -ErrorRecord $_ -Target $server.DomainInstanceName -OverrideExceptionMessage
                     }
                 }
             } else {
