@@ -346,9 +346,9 @@ function Move-DbaDbFile {
 
                 if ($PSCmdlet.ShouldProcess($Database, "Setting database Online")) {
                     try {
-                        $SetState = Set-DbaDbState -SqlInstance $server -Database $Database -Online
+                        $SetState = Set-DbaDbState -SqlInstance $server -Database $Database -Online -ErrorVariable dbstate
                         if ($SetState.Status -ne 'Online') {
-                            Stop-Function -Message "$($SetState.Notes)! : Please check SQL Server error log."
+                            Stop-Function -Message "$($SetState.Notes)! : $($dbstate.Exception.InnerException.InnerException.InnerException.InnerException)."
                         } else {
                             Write-Message -Level Verbose -Message "Database is online!"
                         }
