@@ -279,6 +279,8 @@ function Move-DbaDbFile {
                                         $physicalName = $args[0]
                                         $destination = $args[1]
                                         Copy-Item -Path $physicalName -Destination $destination -ErrorAction Stop
+                                        # Force the copy of the file's ACL
+                                        Get-Acl -Path $physicalName | Set-Acl $destination
                                     }
                                     Invoke-Command2 -ComputerName $ComputerName -Credential $SqlCredential -ScriptBlock $scriptBlock -ArgumentList $physicalNameUNC, $destinationUNC
                                 }
