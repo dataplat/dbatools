@@ -65,7 +65,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             FileDestination = $physicalPathPreviousFolder
         }
 
-        $results = Move-DbaDbFile @variables -Verbose
+        $results = Move-DbaDbFile @variables
 
         It "Should have Results" {
             $results | Should Not BeNullOrEmpty
