@@ -1,10 +1,10 @@
 function Move-DbaDbFile {
     <#
     .SYNOPSIS
-        Moves database files from one location to another.
+        Moves database files from one local drive or folder to another.
 
     .DESCRIPTION
-        Moves database files from one location to another.
+        Moves database files from one local drive or folder to another.
         It will put database offline, update metadata and set it online again.
 
     .PARAMETER SqlInstance
