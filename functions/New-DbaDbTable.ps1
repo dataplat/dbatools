@@ -355,7 +355,7 @@ function New-DbaDbTable {
 
                     foreach ($column in $ColumnMap) {
                         $sqlDbType = [Microsoft.SqlServer.Management.Smo.SqlDataType]$($column.Type)
-                        if ($sqlDbType -eq 'VarBinary' -or $sqlDbType -eq 'VarChar') {
+                        if ($sqlDbType -eq 'VarBinary' -or $sqlDbType -in @('VarChar', 'NVarChar', 'Char', 'NChar')) {
                             if ($column.MaxLength -gt 0) {
                                 $dataType = New-Object Microsoft.SqlServer.Management.Smo.DataType $sqlDbType, $column.MaxLength
                             } else {
@@ -376,6 +376,23 @@ function New-DbaDbTable {
                         }
                         $sqlcolumn = New-Object Microsoft.SqlServer.Management.Smo.Column $object, $column.Name, $dataType
                         $sqlcolumn.Nullable = $column.Nullable
+
+                        if ($column.Default) {
+                            if ($column.DefaultName) {
+                                $dfName = $column.DefaultName
+                            } else {
+                                $dfName = "DF_$name`_$($column.Name)"
+                            }
+
+                            if ($sqlDbType -in @('NVarchar', 'NChar', 'NVarcharMax', 'NCharMax')) {
+                                $sqlcolumn.AddDefaultConstraint($dfName).Text = "N'$($column.Default)'"
+                            } elseif ($sqlDbType -in @('Varchar', 'Char', 'VarcharMax', 'CharMax')) {
+                                $sqlcolumn.AddDefaultConstraint($dfName).Text = "'$($column.Default)'"
+                            } else {
+                                $sqlcolumn.AddDefaultConstraint($dfName).Text = $column.Default
+                            }
+                        }
+
                         $object.Columns.Add($sqlcolumn)
                     }
 
