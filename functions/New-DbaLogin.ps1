@@ -55,6 +55,10 @@ function New-DbaLogin {
     .PARAMETER PasswordPolicyEnforced
         Enforces password complexity policy. Can be $true or $false(default)
 
+    .PARAMETER PasswordMustChange
+        Enforces user must change password at next login.
+        When specified will enforce PasswordExpirationEnabled and PasswordPolicyEnforced as they are required for the must change.
+
     .PARAMETER Disabled
         Create the login in a disabled state
 
@@ -168,6 +172,9 @@ function New-DbaLogin {
         [parameter(ParameterSetName = "Password")]
         [parameter(ParameterSetName = "PasswordHash")]
         [switch]$PasswordPolicyEnforced,
+        [Alias("MustChange")]
+        [parameter(ParameterSetName = "Password")]
+        [switch]$PasswordMustChange,
         [Alias("Disable")]
         [switch]$Disabled,
         [switch]$DenyWindowsLogin,
@@ -234,6 +241,7 @@ function New-DbaLogin {
                     $currentLanguage = $loginItem.Language
                     $currentPasswordExpirationEnabled = $loginItem.PasswordExpirationEnabled
                     $currentPasswordPolicyEnforced = $loginItem.PasswordPolicyEnforced
+                    $currentPasswordMustChange = $loginItem.MustChangePassword
                     $currentDisabled = $loginItem.IsDisabled
                     $currentDenyWindowsLogin = $loginItem.DenyWindowsLogin
                     #Get previous password
@@ -305,6 +313,13 @@ function New-DbaLogin {
                 }
                 if ($PSBoundParameters.Keys -contains 'PasswordPolicyEnforced') {
                     $currentPasswordPolicyEnforced = $PasswordPolicyEnforced
+                }
+                if ($PSBoundParameters.Keys -contains 'PasswordMustChange') {
+                    $currentPasswordMustChange = $PasswordMustChange
+                    # Enforce Expiration and Policy properties as they are needed when we want to use "Must Change" property
+                    Write-Message -Level Verbose -Message "Forcing 'Expiration' and 'Policy' properties to 'ON' because MustChange was specified."
+                    $currentPasswordExpirationEnabled = $true
+                    $currentPasswordPolicyEnforced = $true
                 }
                 if ($PSBoundParameters.Keys -contains 'MapToAsymmetricKey') {
                     $currentAsymmetricKey = $MapToAsymmetricKey
@@ -493,6 +508,18 @@ function New-DbaLogin {
                                 }
                             }
                         }
+
+                        #Process the MustChangePassword property
+                        if ($currentPasswordMustChange -ne $newLogin.MustChangePassword) {
+                            try {
+                                $newLogin.ChangePassword($SecurePassword, $true, $true)
+                                #$newLogin.Alter()
+                                Write-Message -Level Verbose -Message "Login $loginName has been marked as must change password."
+                            } catch {
+                                Write-Message -Level Verbose -Message "Failed to marked as must change password in $loginName on $instance using SMO."
+                            }
+                        }
+
                         #Display results
                         # If we ever used T-SQL, the smo is some times not up to date and should be refreshed
                         if ($usedTsql) {
