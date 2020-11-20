@@ -178,6 +178,9 @@ function New-DbaDbTable {
     .PARAMETER IsVarDecimalStorageFormatEnabled
         No information provided by Microsoft
 
+    .PARAMETER Passthru
+        Don't create the table, just print the table script on the screen.
+
     .PARAMETER WhatIf
        Shows what would happen if the command were to run. No actions are actually performed.
 
@@ -300,6 +303,7 @@ function New-DbaDbTable {
         [Switch]$IsNode,
         [Switch]$IsEdge,
         [Switch]$IsVarDecimalStorageFormatEnabled,
+        [switch]$Passthru,
         [parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
         [switch]$EnableException
@@ -397,7 +401,11 @@ function New-DbaDbTable {
                     }
 
                     if ($Passthru) {
-                        $object.Script()
+                        $ScriptingOptionsObject = New-DbaScriptingOption
+                        $ScriptingOptionsObject.ContinueScriptingOnError = $false
+                        $ScriptingOptionsObject.DriAllConstraints = $true
+
+                        $object.Script($ScriptingOptionsObject)
                     } else {
                         $null = Invoke-Create -Object $object
                     }
