@@ -18,9 +18,10 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         $dbname = "dbatoolsscidb_$(Get-Random)"
         $null = New-DbaDatabase -SqlInstance $script:instance1 -Name $dbname
         $tablename = "dbatoolssci_$(Get-Random)"
+        $tablename2 = "dbatoolssci2_$(Get-Random)"
     }
     AfterAll {
-        $null = Invoke-DbaQuery -SqlInstance $script:instance1 -Database $dbname -Query "drop table $tablename"
+        $null = Invoke-DbaQuery -SqlInstance $script:instance1 -Database $dbname -Query "drop table $tablename, $tablename2"
         $null = Remove-DbaDatabase -SqlInstance $script:instance1 -Database $dbname -Confirm:$false
     }
     Context "Should create the table" {
@@ -47,11 +48,11 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
                 Default  =  'MyTest'
                 DefaultName = 'DF_MyTest'
             }
-            (New-DbaDbTable -SqlInstance $script:instance1 -Database $dbname -Name $tablename -ColumnMap $map).Name | Should -Contain $tablename
+            (New-DbaDbTable -SqlInstance $script:instance1 -Database $dbname -Name $tablename2 -ColumnMap $map).Name | Should -Contain $tablename2
         }
         It "Has a default constraint" {
-            $table = Get-DbaDbTable -SqlInstance $script:instance1 -Database $dbname -Table "test"
-            $table.Name | Should -Contain $tablename
+            $table = Get-DbaDbTable -SqlInstance $script:instance1 -Database $dbname -Table $tablename2
+            $table.Name | Should -Contain $tablename2
             $table.Columns.DefaultConstraint.Name | Should -Contain "DF_MyTest"
         }
     }
