@@ -242,6 +242,47 @@ function New-DbaDbTable {
         >>     Scale = 2
         >>     Nullable  = $false
         >> }
+        >> PS C:\> $cols += @{
+        >>     Name      = 'test5'
+        >>     Type      = 'Nvarchar'
+        >>     MaxLength = 50
+        >>     Nullable  =  $false
+        >>     Default  =  'Hello'
+        >>     DefaultName = 'DF_Name_Darryl'
+        >> }
+        >> PS C:\> $cols += @{
+        >>     Name      = 'test6'
+        >>     Type      = 'int'
+        >>     Nullable  =  $false
+        >>     Default  =  '0'
+        >> }
+        >> PS C:\> $cols += @{
+        >>     Name      = 'test7'
+        >>     Type      = 'smallint'
+        >>     Nullable  =  $false
+        >>     Default  =  100
+        >> }
+        >> PS C:\> $cols += @{
+        >>     Name      = 'test8'
+        >>     Type      = 'Nchar'
+        >>     MaxLength = 3
+        >>     Nullable  =  $false
+        >>     Default  =  'ABC'
+        >> }
+        >> PS C:\> $cols += @{
+        >>     Name      = 'test9'
+        >>     Type      = 'char'
+        >>     MaxLength = 4
+        >>     Nullable  =  $false
+        >>     Default  =  'XPTO'
+        >> }
+        >> PS C:\> $cols += @{
+        >>     Name      = 'test10'
+        >>     Type      = 'datetime'
+        >>     Nullable  =  $false
+        >>     Default  =  'GETDATE()'
+        >> }
+
         PS C:\> New-DbaDbTable -SqlInstance sql2017 -Database tempdb -Name testtable -ColumnMap $cols
 
         Creates a new table on sql2017 in tempdb with the name testtable and four columns
