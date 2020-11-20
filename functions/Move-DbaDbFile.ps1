@@ -120,7 +120,7 @@ function Move-DbaDbFile {
     process {
         if (Test-FunctionInterrupt) { return }
 
-        if (!$FileType -and !$FileToMove -and !$FileStructureOnly ) {
+        if ((-not $FileType) -and (-not $FileToMove) -and (-not $FileStructureOnly) ) {
             Stop-Function -Message "You must specify at least one of -FileType or -FileToMove or -FileStructureOnly to continue"
             return
         }
@@ -203,7 +203,7 @@ function Move-DbaDbFile {
                     } else {
                         $testPS = Test-PSRemoting -ComputerName $server.ComputerName -ErrorAction Stop
                     }
-                    if (!($testPS)) {
+                    if (-not ($testPS)) {
                         # let's try to resolve it to a more qualified name, without "cutting" knowledge about the domain (only $server.Name possibly holds the complete info)
                         $Resolved = (Resolve-DbaNetworkName -ComputerName $server.Name).FullComputerName
                         if ($SqlCredential) {
