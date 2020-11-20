@@ -513,8 +513,10 @@ function New-DbaLogin {
                         if ($currentPasswordMustChange -ne $newLogin.MustChangePassword) {
                             try {
                                 $newLogin.ChangePassword($SecurePassword, $true, $true)
-                                #$newLogin.Alter()
                                 Write-Message -Level Verbose -Message "Login $loginName has been marked as must change password."
+
+                                # We need to refresh login after ChangePassword. Otherwise, MustChangePassword will appear as False
+                                $server.Logins[$loginName].Refresh()
                             } catch {
                                 Write-Message -Level Verbose -Message "Failed to marked as must change password in $loginName on $instance using SMO."
                             }
@@ -525,7 +527,12 @@ function New-DbaLogin {
                         if ($usedTsql) {
                             $server.Logins.Refresh()
                         }
-                        Get-DbaLogin -SqlInstance $server -Login $loginName
+
+                        if ($loginType -eq 'SqlLogin') {
+                            Get-DbaLogin -SqlInstance $server -Login $loginName | Select-Object ComputerName, InstanceName, SqlInstance, Name, LoginType, CreateDate, LastLogin, HasAccess, IsLocked, IsDisabled, MustChangePassword
+                        } else {
+                            Get-DbaLogin -SqlInstance $server -Login $loginName
+                        }
                     } catch {
                         Stop-Function -Message "Failed to create login $loginName on $instance." -Target $credential -InnerErrorRecord $_ -Continue
                     }
