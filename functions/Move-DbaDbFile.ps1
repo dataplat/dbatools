@@ -87,6 +87,12 @@ function Move-DbaDbFile {
 
         Shows the current database file structure (without filenames).
 
+        Example:
+            $fileToMove=@{
+                'dbatools'='D:\Data'
+                'dbatools_log'='D:\Log'
+            }
+
     #>
 
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Medium")]
