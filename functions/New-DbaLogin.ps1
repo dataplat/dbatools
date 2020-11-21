@@ -534,7 +534,7 @@ function New-DbaLogin {
                         }
 
                         if ($loginType -eq 'SqlLogin') {
-                            Get-DbaLogin -SqlInstance $server -Login $loginName | Select-Object ComputerName, InstanceName, SqlInstance, Name, LoginType, CreateDate, LastLogin, HasAccess, IsLocked, IsDisabled, MustChangePassword
+                            Get-DbaLogin -SqlInstance $server -Login $loginName | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, Name, LoginType, CreateDate, LastLogin, HasAccess, IsLocked, IsDisabled, MustChangePassword
                         } else {
                             Get-DbaLogin -SqlInstance $server -Login $loginName
                         }
