@@ -212,6 +212,11 @@ function New-DbaLogin {
             Return
         }
 
+        if ($PasswordMustChange -and (-not $SecurePassword)) {
+            Stop-Function -Message "You need to specified -SecurePassword when using -PasswordMustChange parameter." -Category InvalidArgument -EnableException $EnableException
+            Return
+        }
+
         $loginCollection = @()
         if ($InputObject) {
             $loginCollection += $InputObject
