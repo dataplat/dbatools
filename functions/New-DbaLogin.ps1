@@ -533,11 +533,8 @@ function New-DbaLogin {
                             $server.Logins.Refresh()
                         }
 
-                        if ($loginType -eq 'SqlLogin') {
-                            Get-DbaLogin -SqlInstance $server -Login $loginName | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, Name, LoginType, CreateDate, LastLogin, HasAccess, IsLocked, IsDisabled, MustChangePassword
-                        } else {
-                            Get-DbaLogin -SqlInstance $server -Login $loginName
-                        }
+                        Get-DbaLogin -SqlInstance $server -Login $loginName
+
                     } catch {
                         Stop-Function -Message "Failed to create login $loginName on $instance." -Target $credential -InnerErrorRecord $_ -Continue
                     }
