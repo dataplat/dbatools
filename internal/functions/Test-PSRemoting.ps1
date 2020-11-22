@@ -15,9 +15,12 @@ function Test-PSRemoting {
     )
 
     process {
+        $UseSSL = Get-DbatoolsConfigValue -FullName 'PSRemoting.PsSession.UseSSL' -Fallback $false
+
         Write-Message -Level VeryVerbose -Message "Testing $($ComputerName.Computername)"
+
         try {
-            $null = Test-WSMan -ComputerName $ComputerName.ComputerName -Credential $Credential -Authentication Default -ErrorAction Stop
+            $null = Test-WSMan -ComputerName $ComputerName.ComputerName -Credential $Credential -Authentication Default -UseSSL:$UseSSL -ErrorAction Stop
             $true
         } catch {
             $false
