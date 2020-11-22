@@ -40,6 +40,9 @@ function Get-DbaLogin {
     .PARAMETER Disabled
         A Switch to return disabled Logins.
 
+    .PARAMETER MustChangePassword
+        A Switch to return Logins that need to change password.
+
     .PARAMETER SqlLogins
         Deprecated. Please use -Type SQL
 
@@ -143,6 +146,10 @@ function Get-DbaLogin {
 
         Get all user objects from server sql2016 that are SQL Logins. Get additional info for login available from LoginProperty function
 
+.EXAMPLE
+        PS C:\> 'sql2016', 'sql2014' | Get-DbaLogin -SqlCredential $sqlcred -MustChangePassword
+
+        Using Get-DbaLogin on the pipeline to get all logins that must change password on servers sql2016 and sql2014.
 #>
     [CmdletBinding()]
     param (
