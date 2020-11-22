@@ -230,7 +230,6 @@ function Move-DbaDbFile {
                     $ComputerName = $server.ComputerName
                 }
 
-
                 # Test if defined paths are accesible by the instance
                 $testPathResults = @()
                 if ($FileDestination) {
@@ -268,7 +267,9 @@ function Move-DbaDbFile {
                                 $scriptBlock = {
                                     $physicalName = $args[0]
                                     $destination = $args[1]
-                                    Start-BitsTransfer -Source $physicalName -Destination $destination -ACLFlags DACL -ErrorAction Stop
+                                    Start-BitsTransfer -Source $physicalName -Destination $destination -ErrorAction Stop
+                                    # Force the copy of the file's ACL
+                                    Get-Acl -Path $physicalName | Set-Acl $destination
                                 }
                                 Invoke-Command2 -ComputerName $ComputerName -Credential $SqlCredential -ScriptBlock $scriptBlock -ArgumentList $physicalName, $destination
 
