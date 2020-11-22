@@ -160,6 +160,7 @@ function Get-DbaLogin {
         [switch]$HasAccess,
         [switch]$Locked,
         [switch]$Disabled,
+        [switch]$MustChangePassword,
         [switch]$Detailed,
         [switch]$EnableException
     )
@@ -239,6 +240,10 @@ function Get-DbaLogin {
 
             if ($Disabled) {
                 $serverLogins = $serverLogins | Where-Object IsDisabled
+            }
+
+            if ($MustChangePassword) {
+                $serverLogins = $serverLogins | Where-Object MustChangePassword
             }
 
             # There's no reliable method to get last login time with SQL Server 2000, so only show on 2005+
