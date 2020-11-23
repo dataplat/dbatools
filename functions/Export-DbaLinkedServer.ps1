@@ -136,8 +136,10 @@ function Export-DbaLinkedServer {
                     if ($currentls.Password) {
                         $tempsql = $ls.Script()
                         foreach ($map in $currentls) {
-                            $rmtuser = $map.Identity.Replace("'", "''")
-                            $password = $map.Password.Replace("'", "''")
+                            if ($map.Identity -isnot [dbnull]) {
+                                $rmtuser = $map.Identity.Replace("'", "''")
+                                $password = $map.Password.Replace("'", "''")
+                            }
                             $tempsql = $tempsql.Replace(' /* For security reasons the linked server remote logins password is changed with ######## */', '')
                             $tempsql = $tempsql.Replace("rmtuser=N'$rmtuser',@rmtpassword='########'", "rmtuser=N'$rmtuser',@rmtpassword='$password'")
                         }

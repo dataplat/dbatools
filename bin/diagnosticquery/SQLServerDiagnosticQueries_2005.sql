@@ -1,7 +1,7 @@
 
 -- SQL Server 2005 Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: October 1, 2020
+-- Last Modified: November 1, 2020
 -- https://glennsqlperformance.com/
 -- https://sqlserverperformance.wordpress.com/
 -- YouTube: https://bit.ly/2PkoAM1 
@@ -1165,7 +1165,6 @@ ORDER BY bs.backup_finish_date DESC OPTION (RECOMPILE);
 -- Microsoft Azure Learn
 -- https://bit.ly/2O0Hacc
 
--- August 2017 blog series about upgrading and migrating to SQL Server 2016/2017
--- https://bit.ly/2ftKVrX
+
 
 

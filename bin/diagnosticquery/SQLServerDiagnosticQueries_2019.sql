@@ -1,7 +1,7 @@
 
 -- SQL Server 2019 Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: October 6, 2020
+-- Last Modified: November 10, 2020
 -- https://glennsqlperformance.com/ 
 -- https://sqlserverperformance.wordpress.com/
 -- YouTube: https://bit.ly/2PkoAM1 
@@ -877,11 +877,22 @@ ORDER BY [VLF Count] DESC OPTION (RECOMPILE);
 -- and they can make full database restores and crash recovery take much longer
 -- Try to keep your VLF counts under 200 in most cases (depending on log file size)
 
--- Important change to VLF creation algorithm in SQL Server 2014
--- https://bit.ly/2Hsjbg4
+-- sys.dm_db_log_info (Transact-SQL)
+-- https://bit.ly/3jpmqsd
+
+-- sys.databases (Transact-SQL)
+-- https://bit.ly/2G5wqaX
 
 -- SQL Server Transaction Log Architecture and Management Guide
 -- https://bit.ly/2JjmQRZ
+
+-- VLF Growth Formula (SQL Server 2014 and newer)
+-- If the log growth increment is less than 1/8th the current size of the log
+--		Then:            1 new VLF
+-- Otherwise:
+--		Up to 64MB:      4 new VLFs
+--		64MB to 1GB:     8 new VLFs
+--		More than 1GB:  16 new VLFs	
 
 
 
@@ -904,6 +915,12 @@ ORDER BY [CPU Rank] OPTION (RECOMPILE);
 
 -- Helps determine which database is using the most CPU resources on the instance
 -- Note: This only reflects CPU usage from the currently cached query plans
+
+-- sys.dm_exec_query_stats (Transact-SQL)
+-- https://bit.ly/32tHCGH
+
+-- sys.dm_exec_plan_attributes (Transact-SQL)
+-- https://bit.ly/35iP2hV
 
 
 -- Get I/O utilization by database (Query 36) (IO Usage By Database)
@@ -929,6 +946,9 @@ ORDER BY [I/O Rank] OPTION (RECOMPILE);
 -- These numbers are cumulative since the last service restart
 -- They include all I/O activity, not just the nominal I/O workload
 
+-- sys.dm_io_virtual_file_stats (Transact-SQL)
+-- https://bit.ly/3bRWUc0
+
 
 -- Get total buffer usage by database for current instance  (Query 37) (Total Buffer Usage by Database)
 -- This make take some time to run on a busy instance
@@ -947,6 +967,9 @@ ORDER BY [Buffer Pool Rank] OPTION (RECOMPILE);
 
 -- Tells you how much memory (in the buffer pool) 
 -- is being used by each database on the instance
+
+-- sys.dm_os_buffer_descriptors (Transact-SQL)
+-- https://bit.ly/36s7aFo
 
 
 -- Get tempdb version store space usage by database (Query 38) (Version Store Space Usage)
@@ -2030,29 +2053,6 @@ ORDER BY bs.backup_finish_date DESC OPTION (RECOMPILE);
 -- In SQL Server 2016, native SQL Server backup compression actually works 
 -- much better with databases that are using TDE than in previous versions
 -- https://bit.ly/28Rpb2x
-
-
--- These six Pluralsight Courses go into more detail about how to run these queries and interpret the results
-
--- Azure SQL Database: Diagnosing Performance Issues with DMVs
--- https://bit.ly/2meDRCN
-
--- SQL Server 2017: Diagnosing Performance Issues with DMVs
--- https://bit.ly/2FqCeti
-
--- SQL Server 2017: Diagnosing Configuration Issues with DMVs
--- https://bit.ly/2MSUDUL
-
--- SQL Server 2014 DMV Diagnostic Queries – Part 1 
--- https://bit.ly/2plxCer
-
--- SQL Server 2014 DMV Diagnostic Queries – Part 2
--- https://bit.ly/2IuJpzI
-
--- SQL Server 2014 DMV Diagnostic Queries – Part 3
--- https://bit.ly/2FIlCPb
-
-
 
 
 -- Microsoft Visual Studio Dev Essentials
