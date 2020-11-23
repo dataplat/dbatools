@@ -16,6 +16,12 @@ function Test-Bound {
     .PARAMETER And
         All specified parameters must be present, rather than at least one of them.
 
+    .PARAMETER Min
+        At least the specified number of parameters out of the specified parameters must be present. Default is 1.
+
+    .PARAMETER Max
+        A maximum of the specified number of parameters out of the specified parameters may be present. Default is the length of ParameterName.
+
     .PARAMETER BoundParameters
         The hashtable of bound parameters. Is automatically inherited from the calling function via default value. Needs not be bound explicitly.
 
@@ -35,7 +41,17 @@ function Test-Bound {
     .EXAMPLE
         Test-Bound -And 'Login', 'Spid', 'ExcludeSpid', 'Host', 'Program', 'Database'
 
-        Returns whether any of the specified parameters was not bound
+        Returns whether any of the specified parameters was not bound.
+
+    .EXAMPLE
+        Test-Bound -ParameterName 'MinimumBuild', 'MaxBehind', 'Latest' -Max 1
+
+        Tests for mutually exclusive but necessary parameters.
+
+    .EXAMPLE
+        Test-Bound -ParameterName 'Database', 'AllDatabases', 'ExcludeDatabase' -Min 0 -Max 1
+
+        Tests for mutually exclusive but optional parameters.
     #>
     # Do not be tempted to use [CmdletBinding()] here, this will subtly change the way this function's parameters are bound, and break it.
     param (
@@ -49,6 +65,11 @@ function Test-Bound {
         [switch]
         $And,
 
+        [int]
+        $Min = 1,
+        [int]
+        $Max = $ParameterName.Length,
+
         [object]
         $BoundParameters = $($ExecutionContext.SessionState.PSVariable.Get('psboundparameters').Value)
     )
@@ -57,17 +78,20 @@ function Test-Bound {
     if (-not $BoundParameters) { return $false }
 
     if ($And) {
+        $Min = $ParameterName.Length
+    }
+
+    $usedParameters = 0
+    foreach ($name in $ParameterName) {
+        if ($BoundParameters.ContainsKey($name)) {
+            $usedParameters++
+        }
+    }
+
+    if ($usedParameters -ge $Min -and $usedParameters -le $Max) {
         $test = $true
     } else {
         $test = $false
-    }
-
-    foreach ($name in $ParameterName) {
-        if ($And) {
-            if (-not $BoundParameters.ContainsKey($name)) { $test = $false }
-        } else {
-            if ($BoundParameters.ContainsKey($name)) { $test = $true }
-        }
     }
 
     return ((-not $Not) -eq $test)
