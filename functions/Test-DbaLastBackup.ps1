@@ -77,6 +77,9 @@ function Test-DbaLastBackup {
     .PARAMETER IgnoreLogBackup
         If this switch is enabled, transaction log backups will be ignored. The restore will stop at the latest full or differential backup point.
 
+    .PARAMETER IgnoreDiffBackup
+        If this switch is enabled, differential backuys will be ignored. The restore will only use Full and Log backups, so will take longer to complete
+
     .PARAMETER Prefix
         The database is restored as "dbatools-testrestore-$databaseName" by default. You can change dbatools-testrestore to whatever you would like using this parameter.
 
@@ -195,6 +198,7 @@ function Test-DbaLastBackup {
         [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
         [int]$MaxTransferSize,
         [int]$BufferCount,
+        [switch]$IgnoreDiffBackup,
         [switch]$EnableException
     )
     process {
@@ -304,12 +308,14 @@ function Test-DbaLastBackup {
                 Write-Message -Level Verbose -Message "Skipping Log backups as requested."
                 $lastbackup = @()
                 $lastbackup += $full = Get-DbaDbBackupHistory -SqlInstance $sourceserver -Database $dbName -IncludeCopyOnly:$IncludeCopyOnly -LastFull -DeviceType $DeviceType -WarningAction SilentlyContinue
-                $diff = Get-DbaDbBackupHistory -SqlInstance $sourceserver -Database $dbName -IncludeCopyOnly:$IncludeCopyOnly -LastDiff -DeviceType $DeviceType -WarningAction SilentlyContinue
+                if (-not (Test-Bound "IgnoreDiffBackup")) {
+                    $diff = Get-DbaDbBackupHistory -SqlInstance $sourceserver -Database $dbName -IncludeCopyOnly:$IncludeCopyOnly -LastDiff -DeviceType $DeviceType -WarningAction SilentlyContinue
+                }
                 if ($full.start -le $diff.start) {
                     $lastbackup += $diff
                 }
             } else {
-                $lastbackup = Get-DbaDbBackupHistory -SqlInstance $sourceserver -Database $dbName -IncludeCopyOnly:$IncludeCopyOnly -Last -DeviceType $DeviceType -WarningAction SilentlyContinue
+                $lastbackup = Get-DbaDbBackupHistory -SqlInstance $sourceserver -Database $dbName -IncludeCopyOnly:$IncludeCopyOnly -Last -DeviceType $DeviceType -WarningAction SilentlyContinue -IgnoreDiffBackup:$IgnoreDiffBackup
             }
 
             if (-not $lastbackup) {

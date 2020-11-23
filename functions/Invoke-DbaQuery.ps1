@@ -33,9 +33,9 @@ function Invoke-DbaQuery {
         Specify one or more SQL objects. Those will be converted to script and their scripts run on the target system(s).
 
     .PARAMETER As
-        Specifies output type. Valid options for this parameter are 'DataSet', 'DataTable', 'DataRow', 'PSObject', and 'SingleValue'
+        Specifies output type. Valid options for this parameter are 'DataSet', 'DataTable', 'DataRow', 'PSObject', 'PSObjectArray', and 'SingleValue'
 
-        PSObject output introduces overhead but adds flexibility for working with results: http://powershell.org/wp/forums/topic/dealing-with-dbnull/
+        PSObject and PSObjectArray output introduces overhead but adds flexibility for working with results: http://powershell.org/wp/forums/topic/dealing-with-dbnull/
 
     .PARAMETER SqlParameters
         Specifies a hashtable of parameters for parameterized SQL queries.  http://blog.codinghorror.com/give-me-parameterized-sql-or-give-me-death/
@@ -132,7 +132,7 @@ function Invoke-DbaQuery {
         [object[]]$File,
         [Parameter(Mandatory, ParameterSetName = "SMO")]
         [Microsoft.SqlServer.Management.Smo.SqlSmoObject[]]$SqlObject,
-        [ValidateSet("DataSet", "DataTable", "DataRow", "PSObject", "SingleValue")]
+        [ValidateSet("DataSet", "DataTable", "DataRow", "PSObject", "PSObjectArray", "SingleValue")]
         [string]$As = "DataRow",
         [System.Collections.IDictionary]$SqlParameters,
         [System.Data.CommandType]$CommandType = 'Text',
@@ -333,6 +333,7 @@ function Invoke-DbaQuery {
             }
         }
         foreach ($instance in $SqlInstance) {
+            Write-Message -Level Debug -Message "SqlInstance passed in, will work on: $instance"
             try {
                 $connDbaInstanceParams = @{
                     SqlInstance   = $instance
@@ -340,6 +341,7 @@ function Invoke-DbaQuery {
                     Database      = $Database
                 }
                 if ($ReadOnly) {
+                    # TODO: This will not work, if SqlInstance is already a server object
                     $connDbaInstanceParams.ApplicationIntent = "ReadOnly"
                 }
                 $server = Connect-DbaInstance @connDbaInstanceParams
@@ -348,10 +350,12 @@ function Invoke-DbaQuery {
             }
             $conncontext = $server.ConnectionContext
             try {
-                if ($Database -and $conncontext.DatabaseName -ne $Database) {
-                    #$conncontext = $server.ConnectionContext.Copy()
-                    #$conncontext.DatabaseName = $Database
-                    $conncontext = $server.ConnectionContext.Copy().GetDatabaseConnection($Database)
+                if (-not (Get-DbatoolsConfigValue -FullName sql.connection.experimental)) {
+                    if ($Database -and $conncontext.DatabaseName -ne $Database) {
+                        #$conncontext = $server.ConnectionContext.Copy()
+                        #$conncontext.DatabaseName = $Database
+                        $conncontext = $server.ConnectionContext.Copy().GetDatabaseConnection($Database)
+                    }
                 }
                 if ($File -or $SqlObject) {
                     foreach ($item in $files) {
