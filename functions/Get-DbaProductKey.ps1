@@ -1,7 +1,7 @@
 function Get-DbaProductKey {
     <#
     .SYNOPSIS
-        Gets SQL Server Product Keys from local or destination SQL Servers. Works with SQL Server 2005-2017
+        Gets SQL Server Product Keys from local or destination SQL Servers. Works with SQL Server 2008-2019
 
     .DESCRIPTION
         This command find the product key for all installed instances. Clustered instances are supported as well.
