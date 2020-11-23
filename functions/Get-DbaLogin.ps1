@@ -270,8 +270,12 @@ function Get-DbaLogin {
                     Add-Member -Force -InputObject $serverLogin -MemberType NoteProperty -Name LockoutTime -Value $loginProperties.LockoutTime
                     Add-Member -Force -InputObject $serverLogin -MemberType NoteProperty -Name PasswordHash -Value $loginProperties.PasswordHash
                     Add-Member -Force -InputObject $serverLogin -MemberType NoteProperty -Name PasswordLastSetTime -Value $loginProperties.PasswordLastSetTime
+					
+                    Select-DefaultView -InputObject $serverLogin -Property ComputerName, InstanceName, SqlInstance, Name, LoginType, CreateDate, LastLogin, HasAccess, IsLocked, IsDisabled, BadPasswordCount, BadPasswordTime, DaysUntilExpiration, HistoryLength, IsMustChange, LockoutTime, PasswordHash, PasswordLastSetTime
                 }
-                Select-DefaultView -InputObject $serverLogin -Property ComputerName, InstanceName, SqlInstance, Name, LoginType, CreateDate, LastLogin, HasAccess, IsLocked, IsDisabled
+				else{
+					Select-DefaultView -InputObject $serverLogin -Property ComputerName, InstanceName, SqlInstance, Name, LoginType, CreateDate, LastLogin, HasAccess, IsLocked, IsDisabled
+				}
             }
         }
     }
