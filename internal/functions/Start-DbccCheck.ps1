@@ -3,7 +3,8 @@ function Start-DbccCheck {
     param (
         [object]$server,
         [string]$DbName,
-        [switch]$table
+        [switch]$table,
+        [int]$MaxDop
     )
 
     $servername = $server.name
@@ -18,8 +19,14 @@ function Start-DbccCheck {
                 $null = $server.databases[$DbName].CheckTables('None')
                 Write-Verbose "Dbcc CheckTables finished successfully for $DbName on $servername"
             } else {
-                $null = $server.Query("DBCC CHECKDB ([$DbName])")
-                Write-Verbose "Dbcc CHECKDB finished successfully for $DbName on $servername"
+                if ($MaxDop) {
+                    $null = $server.Query("DBCC CHECKDB ([$DbName]) WITH MAXDOP = $MaxDop")
+                    Write-Output $MaxDop
+                    Write-Verbose "Dbcc CHECKDB finished successfully for $DbName on $servername"
+                } else {
+                    $null = $server.Query("DBCC CHECKDB ([$DbName])")
+                    Write-Verbose "Dbcc CHECKDB finished successfully for $DbName on $servername"
+                }
             }
             return "Success"
         } catch {
