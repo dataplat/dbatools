@@ -21,7 +21,6 @@ function Start-DbccCheck {
             } else {
                 if ($MaxDop) {
                     $null = $server.Query("DBCC CHECKDB ([$DbName]) WITH MAXDOP = $MaxDop")
-                    Write-Output $MaxDop
                     Write-Verbose "Dbcc CHECKDB finished successfully for $DbName on $servername"
                 } else {
                     $null = $server.Query("DBCC CHECKDB ([$DbName])")
