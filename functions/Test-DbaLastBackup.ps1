@@ -106,6 +106,9 @@ function Test-DbaLastBackup {
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
+    .PARAMETER MaxDop
+        Allows you to pass in a MAXDOP setting to the DBCC CheckDB command to limit the number of parallel processes used.
+
     .NOTES
         Tags: DisasterRecovery, Backup, Restore
         Author: Chrissy LeMaire (@cl), netnerds.net
@@ -171,6 +174,11 @@ function Test-DbaLastBackup {
         Prior to running, you should check memory and server resources before configure it to run automatically.
         More information:
         https://www.mssqltips.com/sqlservertip/4935/optimize-sql-server-database-restore-performance/
+
+    .EXAMPLE
+        PS C:\> Test-DbaLastBackup -SqlInstance sql2016 -MaxDop 4
+
+        The use of the MaxDop parameter will limit the number of processors used during the DBCC command
     #>
     [CmdletBinding(SupportsShouldProcess)]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingPlainTextForPassword", "", Justification = "For Parameters DestinationCredential and AzureCredential")]
@@ -199,6 +207,7 @@ function Test-DbaLastBackup {
         [int]$MaxTransferSize,
         [int]$BufferCount,
         [switch]$IgnoreDiffBackup,
+        [int]$MaxDop,
         [switch]$EnableException
     )
     process {
@@ -477,7 +486,7 @@ function Test-DbaLastBackup {
                                 Write-Message -Level Verbose -Message "Starting DBCC."
 
                                 $startDbcc = Get-Date
-                                $dbccresult = Start-DbccCheck -Server $destserver -DbName $dbName 3>$null
+                                $dbccresult = Start-DbccCheck -Server $destserver -DbName $dbName -MaxDop $MaxDop 3>$null
                                 $endDbcc = Get-Date
 
                                 $dbccts = New-TimeSpan -Start $startDbcc -End $endDbcc
