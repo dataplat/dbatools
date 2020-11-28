@@ -132,10 +132,18 @@ Describe "$CommandName Unit Test" -Tags Unittest {
         }
     }
     Context "Passing just -Update works, see #6823" {
-        function Get-DbaBuildReferenceIndexOnline { }
-        Mock Get-DbaBuildReferenceIndexOnline -MockWith { } -ModuleName dbatools
-        Get-DbaBuildReference -Update -WarningVariable warnings 3>$null
-        $warnings | Should -BeNullOrEmpty
+        It 'works with -Update' {
+            function Get-DbaBuildReferenceIndexOnline { }
+            Mock Get-DbaBuildReferenceIndexOnline -MockWith { } -ModuleName dbatools
+            Get-DbaBuildReference -Update -WarningVariable warnings 3>$null
+            $warnings | Should -BeNullOrEmpty
+        }
+    }
+    Context "Retired KBs" {
+        It 'Handles retired KBs' {
+            $result = Get-DbaBuildReference -Build '13.0.5479'
+            $result.Warning | Should -Be 'This version has been officially retired by Microsoft'
+        }
     }
 
     # These are groups by major release (aka "Name")

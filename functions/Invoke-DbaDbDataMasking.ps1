@@ -201,39 +201,6 @@ function Invoke-DbaDbDataMasking {
             $Retry = 1000
             Write-Message -Level Verbose -Message "Retry count set to $Retry"
         }
-
-        # Import the dictionary files
-        if ($DictionaryFilePath.Count -ge 1) {
-            $dictionary = @{ }
-
-            foreach ($file in $DictionaryFilePath) {
-                Write-Message -Level Verbose -Message "Importing dictionary file '$file'"
-                if (Test-Path -Path $file) {
-                    try {
-                        # Import the keys and values
-                        $items = Import-Csv -Path $file
-
-                        # Loop through the items and define the types
-                        foreach ($item in $items) {
-                            if ($item.Type) {
-                                $type = [type]"$($item.type)"
-                            } else {
-                                $type = [type]"string"
-                            }
-
-                            # Add the item to the hash array
-                            if ($dictionary.Keys -notcontains $item.Key) {
-                                $dictionary.Add($item.Key, ($($item.Value) -as $type))
-                            }
-                        }
-                    } catch {
-                        Stop-Function -Message "Could not import csv data from file '$file'" -ErrorRecord $_ -Target $file
-                    }
-                } else {
-                    Stop-Function -Message "Could not import dictionary file '$file'" -ErrorRecord $_ -Target $file
-                }
-            }
-        }
     }
 
     process {
@@ -268,6 +235,7 @@ function Invoke-DbaDbDataMasking {
             }
         }
 
+        # Test the columns for data types
         foreach ($tabletest in $tables.Tables) {
             if ($Table -and $tabletest.Name -notin $Table) {
                 continue
@@ -287,15 +255,51 @@ function Invoke-DbaDbDataMasking {
                 Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
+            # Check if the deterministic values table is already present
+            if ($server.Databases['tempdb'].Tables.Name -contains 'DeterministicValues') {
+                Write-Message -Level Verbose -Message "Deterministic values table already exists. Dropping it...."
+                $query = "DROP TABLE [dbo].[DeterministicValues];"
+                $server.Databases['tempdb'].Query($query)
+            }
+
+            # Create the deterministic value table
+            $query = "
+                CREATE TABLE dbo.DeterministicValues
+                (
+                    [ValueKey] VARCHAR(900),
+                    [NewValue] VARCHAR(900)
+                )
+
+                CREATE UNIQUE NONCLUSTERED INDEX UNX__DeterministicValues_ValueKey
+                ON dbo.DeterministicValues ( ValueKey )
+            "
+
+            $null = $server.Databases['tempdb'].Query($query)
+
+            # Import the dictionary files
+            if ($DictionaryFilePath.Count -ge 1) {
+                foreach ($file in $DictionaryFilePath) {
+                    Write-Message -Level Verbose -Message "Importing dictionary file '$file'"
+                    if (Test-Path -Path $file) {
+                        try {
+                            # Import the keys and values
+                            Import-DbaCsv -Path $file -SqlInstance $server -Database tempdb -Schema dbo -Table DeterministicValues
+                        } catch {
+                            Stop-Function -Message "Could not import csv data from file '$file'" -ErrorRecord $_ -Target $file
+                        }
+                    } else {
+                        Stop-Function -Message "Could not import dictionary file '$file'" -ErrorRecord $_ -Target $file
+                    }
+                }
+            }
+
+            # Get the database name
             if (-not $Database) {
                 $Database = $tables.Name
             }
 
+            # Loop through the databases
             foreach ($dbName in $Database) {
-                if (-not $DictionaryFilePath) {
-                    $dictionary = @{ }
-                }
-
                 if ($server.VersionMajor -lt 9) {
                     Stop-Function -Message "SQL Server version must be 2005 or greater" -Continue
                 }
@@ -307,6 +311,8 @@ function Invoke-DbaDbDataMasking {
 
                 #region for each table
                 foreach ($tableobject in $tables.Tables) {
+                    $elapsed = [System.Diagnostics.Stopwatch]::StartNew()
+
                     $uniqueDataTableName = $null
                     $uniqueValueColumns = @()
                     $stringBuilder = [System.Text.StringBuilder]''
@@ -329,7 +335,11 @@ function Invoke-DbaDbDataMasking {
                         Write-Message -Level Verbose -Message "Adding identity column to table [$($dbTable.Schema)].[$($dbTable.Name)]"
                         $query = "ALTER TABLE [$($dbTable.Schema)].[$($dbTable.Name)] ADD MaskingID BIGINT IDENTITY(1, 1) NOT NULL;"
 
-                        Invoke-DbaQuery -SqlInstance $server -SqlCredential $SqlCredential -Database $db.Name -Query $query
+                        try {
+                            Invoke-DbaQuery -SqlInstance $server -SqlCredential $SqlCredential -Database $db.Name -Query $query
+                        } catch {
+                            Stop-Function -Message "Could not alter the table to add the masking id" -Target $db -Continue
+                        }
 
                         $cleanupIdentityColumn = $true
 
@@ -409,171 +419,54 @@ function Invoke-DbaDbDataMasking {
 
                         $indexToTable = Convert-DbaIndexToTable @params
 
-                        # compare the index columns to the column in the json table object
-                        $compareParams = @{
-                            ReferenceObject  = $indexToTable.Columns
-                            DifferenceObject = $tableobject.Columns.Name
-                            IncludeEqual     = $true
-                        }
-                        $maskingColumnIndexCount = (Compare-Object @compareParams | Where-Object { $_.SideIndicator -eq "==" }).Count
+                        if ($indexToTable) {
+                            # compare the index columns to the column in the json table object
+                            $compareParams = @{
+                                ReferenceObject  = $indexToTable.Columns
+                                DifferenceObject = $tableobject.Columns.Name
+                                IncludeEqual     = $true
+                            }
+                            $maskingColumnIndexCount = (Compare-Object @compareParams | Where-Object { $_.SideIndicator -eq "==" }).Count
 
-                        # Check if there is any need to generate unique values
-                        if ($maskingColumnIndexCount -ge 1) {
+                            # Check if there is any need to generate unique values
+                            if ($maskingColumnIndexCount -ge 1) {
 
-                            # Check if the temporary table already exists
-                            $server.Databases['tempdb'].Tables.Refresh()
-                            $uniqueDataTableName = $indexToTable.TempTableName
+                                # Check if the temporary table already exists
+                                $server.Databases['tempdb'].Tables.Refresh()
+                                $uniqueDataTableName = $indexToTable.TempTableName
 
-                            if ($server.Databases['tempdb'].Tables.Name -contains $indexToTable.TempTableName) {
-                                Write-Message -Level Verbose -Message "Table '$($indexToTable.TempTableName)' already exists. Dropping it.."
+                                if ($server.Databases['tempdb'].Tables.Name -contains $indexToTable.TempTableName) {
+                                    Write-Message -Level Verbose -Message "Table '$($indexToTable.TempTableName)' already exists. Dropping it.."
+                                    try {
+                                        $query = "DROP TABLE $($indexToTable.TempTableName)"
+                                        Invoke-DbaQuery -SqlInstance $server -SqlCredential $SqlCredential -Database 'tempdb' -Query $query
+                                    } catch {
+                                        Stop-Function -Message "Could not drop temporary table"
+                                    }
+                                }
+
+                                # Create the temporary table
                                 try {
-                                    $query = "DROP TABLE $($indexToTable.TempTableName)"
-                                    Invoke-DbaQuery -SqlInstance $server -SqlCredential $SqlCredential -Database 'tempdb' -Query $query
+                                    Write-Message -Level Verbose -Message "Creating temporary table '$($indexToTable.TempTableName)'"
+                                    Invoke-DbaQuery -SqlInstance $server -SqlCredential $SqlCredential -Database 'tempdb' -Query $indexToTable.CreateStatement
                                 } catch {
-                                    Stop-Function -Message "Could not drop temporary table"
-                                }
-                            }
-
-                            # Create the temporary table
-                            try {
-                                Write-Message -Level Verbose -Message "Creating temporary table '$($indexToTable.TempTableName)'"
-                                Invoke-DbaQuery -SqlInstance $server -SqlCredential $SqlCredential -Database 'tempdb' -Query $indexToTable.CreateStatement
-                            } catch {
-                                Stop-Function -Message "Could not create temporary table #[$($tableobject.Schema)].[$($tableobject.Name)]"
-                            }
-
-                            # Create the unique index table
-                            try {
-                                Write-Message -Level Verbose -Message "Creating the unique index for temporary table '$($indexToTable.TempTableName)'"
-                                Invoke-DbaQuery -SqlInstance $server -SqlCredential $SqlCredential -Database 'tempdb' -Query $indexToTable.UniqueIndexStatement
-                            } catch {
-                                Stop-Function -Message "Could not create temporary table #[$($tableobject.Schema)].[$($tableobject.Name)]"
-                            }
-
-                            # Create a unique row
-                            $retryCount = 0
-                            for ($i = 0; $i -lt $data.Count; $i++) {
-                                $insertQuery = "INSERT INTO [$($indexToTable.TempTableName)]([$($indexToTable.Columns -join '],[')]) VALUES("
-                                $insertFailed = $false
-                                $insertValues = @()
-
-                                #[array]$paramArray = @()
-
-                                foreach ($indexColumn in $indexToTable.Columns) {
-                                    $columnMaskInfo = $tableobject.Columns | Where-Object { $_.Name -eq $indexColumn }
-
-                                    if ($indexColumn -eq "RowNr") {
-                                        $newValue = $i + 1
-                                    } elseif ($columnMaskInfo) {
-                                        # make sure min is good
-                                        if ($columnMaskInfo.MinValue) {
-                                            $min = $columnMaskInfo.MinValue
-                                        } else {
-                                            if ($columnMaskInfo.CharacterString) {
-                                                $min = 1
-                                            } else {
-                                                $min = 0
-                                            }
-                                        }
-
-                                        # make sure max is good
-                                        if ($MaxValue) {
-                                            if ($columnMaskInfo.MaxValue -le $MaxValue) {
-                                                $max = $columnMaskInfo.MaxValue
-                                            } else {
-                                                $max = $MaxValue
-                                            }
-                                        } else {
-                                            $max = $columnMaskInfo.MaxValue
-                                        }
-
-                                        if (-not $columnMaskInfo.MaxValue -and -not (Test-Bound -ParameterName MaxValue)) {
-                                            $max = 10
-                                        }
-
-                                        if ((-not $columnMaskInfo.MinValue -or -not $columnMaskInfo.MaxValue) -and ($columnMaskInfo.ColumnType -match 'date')) {
-                                            if (-not $columnMaskInfo.MinValue) {
-                                                $min = (Get-Date).AddDays(-365)
-                                            }
-                                            if (-not $columnMaskInfo.MaxValue) {
-                                                $max = (Get-Date).AddDays(365)
-                                            }
-                                        }
-
-                                        if ($columnMaskInfo.CharacterString) {
-                                            $charstring = $columnMaskInfo.CharacterString
-                                        } else {
-                                            $charstring = $CharacterString
-                                        }
-
-                                        # Generate a new value
-                                        $newValue = $null
-
-                                        $newValueParams = $null
-
-                                        try {
-                                            $newValueParams = $null
-                                            if (-not $columnobject.SubType -and $columnobject.ColumnType -in $supportedDataTypes) {
-                                                $newValueParams = @{
-                                                    DataType = $columnMaskInfo.SubType
-                                                    Min      = $columnMaskInfo.MinValue
-                                                    Max      = $columnMaskInfo.MaxValue
-                                                    Locale   = $Locale
-                                                }
-                                            } else {
-                                                $newValueParams = @{
-                                                    RandomizerType    = $columnMaskInfo.MaskingType
-                                                    RandomizerSubtype = $columnMaskInfo.SubType
-                                                    Min               = $min
-                                                    Max               = $max
-                                                    CharacterString   = $charstring
-                                                    Format            = $columnMaskInfo.Format
-                                                    Separator         = $columnMaskInfo.Separator
-                                                    Locale            = $Locale
-                                                }
-                                            }
-
-                                            $newValue = Get-DbaRandomizedValue @newValueParams
-                                        } catch {
-                                            Stop-Function -Message "Failure" -Target $columnMaskInfo -Continue -ErrorRecord $_
-                                        }
-                                    } else {
-                                        $newValue = $null
-                                    }
-
-                                    if ($columnMaskInfo) {
-                                        $insertValue = Convert-DbaMaskingValue -Value $newValue -DataType $columnMaskInfo.ColumnType -Nullable:$columnMaskInfo.Nullable
-
-                                        $insertValues += $insertValue.NewValue
-                                    } elseif ($indexColumn -eq "RowNr") {
-                                        $insertValues += $newValue
-                                    } else {
-                                        $insertValues += "NULL"
-                                    }
-
-                                    $uniqueValueColumns += $columnMaskInfo.Name
+                                    Stop-Function -Message "Could not create temporary table #[$($tableobject.Schema)].[$($tableobject.Name)]"
                                 }
 
-                                # Join all the values to the insert query
-                                $insertQuery += "$($insertValues -join ','));"
-
-                                # Try inserting the value
+                                # Create the unique index table
                                 try {
-                                    $server.Databases['tempdb'].Query($insertQuery)
-                                    $insertFailed = $false
+                                    Write-Message -Level Verbose -Message "Creating the unique index for temporary table '$($indexToTable.TempTableName)'"
+                                    Invoke-DbaQuery -SqlInstance $server -SqlCredential $SqlCredential -Database 'tempdb' -Query $indexToTable.UniqueIndexStatement
                                 } catch {
-                                    Write-PSFMessage -Level Verbose -Message "Could not insert value"
-                                    $insertFailed = $true
+                                    Stop-Function -Message "Could not create temporary table #[$($tableobject.Schema)].[$($tableobject.Name)]"
                                 }
 
-                                # Try to insert the value as long it's failed
-                                while ($insertFailed) {
-                                    if ($retryCount -eq $Retry) {
-                                        Stop-Function -Message "Could not create a unique row after $retryCount tries. Stopping..."
-                                        return
-                                    }
-
+                                # Create a unique row
+                                $retryCount = 0
+                                for ($i = 0; $i -lt $data.Count; $i++) {
                                     $insertQuery = "INSERT INTO [$($indexToTable.TempTableName)]([$($indexToTable.Columns -join '],[')]) VALUES("
+                                    $insertFailed = $false
+                                    $insertValues = @()
 
                                     foreach ($indexColumn in $indexToTable.Columns) {
                                         $columnMaskInfo = $tableobject.Columns | Where-Object { $_.Name -eq $indexColumn }
@@ -658,7 +551,16 @@ function Invoke-DbaDbDataMasking {
                                         }
 
                                         if ($columnMaskInfo) {
-                                            $insertValue = Convert-DbaMaskingValue -Value $newValue -DataType $columnMaskInfo.ColumnType -Nullable:$columnMaskInfo.Nullable
+                                            try {
+                                                $insertValue = Convert-DbaMaskingValue -Value $newValue -DataType $columnMaskInfo.ColumnType -Nullable:$columnMaskInfo.Nullable -EnableException
+
+                                                if ($convertedValue.ErrorMessage) {
+                                                    $maskingErrorFlag = $true
+                                                    Stop-Function "Could not convert the value. $($convertedValue.ErrorMessage)" -Target $convertedValue
+                                                }
+                                            } catch {
+                                                Stop-Function -Message "Could not convert value" -ErrorRecord $_ -Target $newValue
+                                            }
 
                                             $insertValues += $insertValue.NewValue
                                         } elseif ($indexColumn -eq "RowNr") {
@@ -666,6 +568,8 @@ function Invoke-DbaDbDataMasking {
                                         } else {
                                             $insertValues += "NULL"
                                         }
+
+                                        $uniqueValueColumns += $columnMaskInfo.Name
                                     }
 
                                     # Join all the values to the insert query
@@ -673,26 +577,151 @@ function Invoke-DbaDbDataMasking {
 
                                     # Try inserting the value
                                     try {
-                                        $server.Databases['tempdb'].Query($insertQuery)
+                                        $null = $server.Databases['tempdb'].Query($insertQuery)
                                         $insertFailed = $false
                                     } catch {
                                         Write-PSFMessage -Level Verbose -Message "Could not insert value"
-                                        $insertQuery
                                         $insertFailed = $true
-                                        $retryCount++
+                                    }
+
+                                    # Try to insert the value as long it's failed
+                                    while ($insertFailed) {
+                                        if ($retryCount -eq $Retry) {
+                                            Stop-Function -Message "Could not create a unique row after $retryCount tries. Stopping..."
+                                            return
+                                        }
+
+                                        $insertQuery = "INSERT INTO [$($indexToTable.TempTableName)]([$($indexToTable.Columns -join '],[')]) VALUES("
+
+                                        foreach ($indexColumn in $indexToTable.Columns) {
+                                            $columnMaskInfo = $tableobject.Columns | Where-Object { $_.Name -eq $indexColumn }
+
+                                            if ($indexColumn -eq "RowNr") {
+                                                $newValue = $i + 1
+                                            } elseif ($columnMaskInfo) {
+                                                # make sure min is good
+                                                if ($columnMaskInfo.MinValue) {
+                                                    $min = $columnMaskInfo.MinValue
+                                                } else {
+                                                    if ($columnMaskInfo.CharacterString) {
+                                                        $min = 1
+                                                    } else {
+                                                        $min = 0
+                                                    }
+                                                }
+
+                                                # make sure max is good
+                                                if ($MaxValue) {
+                                                    if ($columnMaskInfo.MaxValue -le $MaxValue) {
+                                                        $max = $columnMaskInfo.MaxValue
+                                                    } else {
+                                                        $max = $MaxValue
+                                                    }
+                                                } else {
+                                                    $max = $columnMaskInfo.MaxValue
+                                                }
+
+                                                if (-not $columnMaskInfo.MaxValue -and -not (Test-Bound -ParameterName MaxValue)) {
+                                                    $max = 10
+                                                }
+
+                                                if ((-not $columnMaskInfo.MinValue -or -not $columnMaskInfo.MaxValue) -and ($columnMaskInfo.ColumnType -match 'date')) {
+                                                    if (-not $columnMaskInfo.MinValue) {
+                                                        $min = (Get-Date).AddDays(-365)
+                                                    }
+                                                    if (-not $columnMaskInfo.MaxValue) {
+                                                        $max = (Get-Date).AddDays(365)
+                                                    }
+                                                }
+
+                                                if ($columnMaskInfo.CharacterString) {
+                                                    $charstring = $columnMaskInfo.CharacterString
+                                                } else {
+                                                    $charstring = $CharacterString
+                                                }
+
+                                                # Generate a new value
+                                                $newValue = $null
+
+                                                $newValueParams = $null
+
+                                                try {
+                                                    $newValueParams = $null
+                                                    if (-not $columnobject.SubType -and $columnobject.ColumnType -in $supportedDataTypes) {
+                                                        $newValueParams = @{
+                                                            DataType = $columnMaskInfo.SubType
+                                                            Min      = $columnMaskInfo.MinValue
+                                                            Max      = $columnMaskInfo.MaxValue
+                                                            Locale   = $Locale
+                                                        }
+                                                    } else {
+                                                        $newValueParams = @{
+                                                            RandomizerType    = $columnMaskInfo.MaskingType
+                                                            RandomizerSubtype = $columnMaskInfo.SubType
+                                                            Min               = $min
+                                                            Max               = $max
+                                                            CharacterString   = $charstring
+                                                            Format            = $columnMaskInfo.Format
+                                                            Separator         = $columnMaskInfo.Separator
+                                                            Locale            = $Locale
+                                                        }
+                                                    }
+
+                                                    $newValue = Get-DbaRandomizedValue @newValueParams
+                                                } catch {
+                                                    Stop-Function -Message "Failure" -Target $columnMaskInfo -Continue -ErrorRecord $_
+                                                }
+                                            } else {
+                                                $newValue = $null
+                                            }
+
+                                            if ($columnMaskInfo) {
+                                                try {
+                                                    $insertValue = Convert-DbaMaskingValue -Value $newValue -DataType $columnMaskInfo.ColumnType -Nullable:$columnMaskInfo.Nullable -EnableException
+
+                                                    if ($convertedValue.ErrorMessage) {
+                                                        $maskingErrorFlag = $true
+                                                        Stop-Function "Could not convert the value. $($convertedValue.ErrorMessage)" -Target $convertedValue
+                                                    }
+                                                } catch {
+                                                    Stop-Function -Message "Could not convert value" -ErrorRecord $_ -Target $newValue
+                                                }
+
+                                                $insertValues += $insertValue.NewValue
+                                            } elseif ($indexColumn -eq "RowNr") {
+                                                $insertValues += $newValue
+                                            } else {
+                                                $insertValues += "NULL"
+                                            }
+                                        }
+
+                                        # Join all the values to the insert query
+                                        $insertQuery += "$($insertValues -join ','));"
+
+                                        # Try inserting the value
+                                        try {
+                                            $null = $server.Databases['tempdb'].Query($insertQuery)
+                                            $insertFailed = $false
+                                        } catch {
+                                            Write-PSFMessage -Level Verbose -Message "Could not insert value"
+                                            $insertFailed = $true
+                                            $retryCount++
+                                        }
                                     }
                                 }
-                            }
 
-                            try {
-                                Write-Message -Level Verbose -Message "Creating masking index for [$($indexToTable.TempTableName)]"
-                                $query = "CREATE NONCLUSTERED INDEX [NIX_$($indexToTable.TempTableName)_MaskID] ON [$($indexToTable.TempTableName)]([RowNr])"
-                                $server.Databases['tempdb'].Query($query)
-                            } catch {
-                                Stop-Function -Message "Could not add masking index for [$($indexToTable.TempTableName)]" -ErrorRecord $_
+                                try {
+                                    Write-Message -Level Verbose -Message "Creating masking index for [$($indexToTable.TempTableName)]"
+                                    $query = "CREATE NONCLUSTERED INDEX [NIX_$($indexToTable.TempTableName)_MaskID] ON [$($indexToTable.TempTableName)]([RowNr])"
+                                    $null = $server.Databases['tempdb'].Query($query)
+                                } catch {
+                                    Stop-Function -Message "Could not add masking index for [$($indexToTable.TempTableName)]" -ErrorRecord $_
+                                }
+                            } else {
+                                Write-PSFMessage -Level Verbose -Message "Table [$($tableobject.Schema)].[$($tableobject.Name)] does not contain any masking index columns to process"
                             }
                         } else {
-                            Write-PSFMessage -Level Verbose -Message "Table [$($tableobject.Schema)].[$($tableobject.Name)] does not contain any masking index columns to process"
+                            Stop-Function -Message "The table does not have any indexes"
                         }
                     }
 
@@ -718,18 +747,329 @@ function Invoke-DbaDbDataMasking {
                     }
 
                     if ($Pscmdlet.ShouldProcess($instance, "Masking $($data.Count) row(s) for column [$($tablecolumns.Name -join ', ')] in $($dbName).$($tableobject.Schema).$($tableobject.Name)")) {
-                        $elapsed = [System.Diagnostics.Stopwatch]::StartNew()
-
                         $totalBatches = [System.Math]::Ceiling($data.Count / $BatchSize)
-                        #$rowNumber = $stepcounter = $batchRowCounter = $batchCounter = 0
-                        $rowNumber = $batchRowCounter = $batchCounter = 0
 
+                        # Firgure out if the columns has actions
                         $columnsWithActions = @()
                         $columnsWithActions += $tableobject.Columns | Where-Object { $null -ne $_.Action }
+
+                        # Firgure out if the columns has composites
+                        $columnsWithComposites = @()
+                        $columnsWithComposites += $tableobject.Columns | Where-Object { $null -ne $_.Composite }
+
+                        # Check for both special actions
+                        if (($columnsWithComposites.Count -ge 1) -and ($columnsWithActions.Count -ge 1)) {
+                            Stop-Function -Message "You cannot use both composites and actions"
+                        }
+
+                        # Loop through each of the rows and change them
+                        foreach ($columnobject in $tablecolumns) {
+                            # Set the masking error
+                            [bool]$maskingErrorFlag = $false
+
+                            # Only start generating values if the column is not using Actions or Composites
+                            if (($columnobject.Name -notin $columnsWithActions.Name) -and ($columnobject.Name -notin $columnsWithComposites.Name)) {
+
+                                # Set the counters
+                                $rowNumber = $batchRowNr = $batchNr = 0
+
+                                if ($columnobject.StaticValue) {
+                                    $newValue = $columnobject.StaticValue
+
+                                    if ($null -eq $newValue -and -not $columnobject.Nullable) {
+                                        Write-PSFMessage -Message "Column '$($columnobject.Name)' static value cannot null when column is set not to be nullable."
+                                    } else {
+                                        try {
+                                            $convertedValue = Convert-DbaMaskingValue -Value $newValue -DataType $columnobject.ColumnType -Nullable:$columnobject.Nullable -EnableException
+
+                                            if ($convertedValue.ErrorMessage) {
+                                                $maskingErrorFlag = $true
+                                                Stop-Function "Could not convert the value. $($convertedValue.ErrorMessage)" -Target $convertedValue
+                                            } else {
+                                                $null = $stringBuilder.AppendLine("UPDATE [$($tableobject.Schema)].[$($tableobject.Name)] SET [$($columnObject.Name)] = $($convertedValue.NewValue)")
+                                            }
+
+                                        } catch {
+                                            Stop-Function -Message "Could not convert value" -ErrorRecord $_ -Target $newValue
+                                        }
+
+                                        $batchRowNr++
+                                    }
+                                } else {
+                                    Write-Message -Level Verbose -Message "Processing column [$($columnObject.Name)]"
+                                    # Column does not have an action
+                                    foreach ($row in $data) {
+                                        # Start counting the rows
+                                        $rowNumber++
+
+                                        if ((($batchRowNr) % 100) -eq 0) {
+
+                                            $progressParams = @{
+                                                StepNumber = $batchNr
+                                                TotalSteps = $totalBatches
+                                                Activity   = "Masking $($data.Count) rows in $($tableobject.Schema).$($tableobject.Name) in $($dbName) on $instance"
+                                                Message    = "Generating Updates"
+                                            }
+
+                                            Write-ProgressHelper @progressParams
+                                        }
+
+                                        $updates = @()
+                                        $newValue = $null
+
+                                        # Check for value being in deterministic masking table
+                                        if (($null -ne $row.($columnobject.Name)) -and ($row.($columnobject.Name) -ne '')) {
+                                            try {
+                                                $lookupValue = Convert-DbaMaskingValue -Value $row.($columnobject.Name) -DataType varchar -Nullable:$columnobject.Nullable -EnableException
+
+                                                if ($convertedValue.ErrorMessage) {
+                                                    $maskingErrorFlag = $true
+                                                    Stop-Function "Could not convert the value. $($convertedValue.ErrorMessage)" -Target $convertedValue
+                                                }
+                                            } catch {
+                                                Stop-Function -Message "Could not convert value" -ErrorRecord $_ -Target $row.($columnobject.Name)
+                                            }
+
+                                            $query = "SELECT [NewValue] FROM dbo.DeterministicValues WHERE [ValueKey] = $($lookupValue.NewValue)"
+
+                                            try {
+                                                $lookupResult = $null
+                                                $lookupResult = $server.Databases['tempdb'].Query($query)
+                                            } catch {
+                                                Stop-Function -Message "Something went wrong retrieving the deterministic values" -Target $query -ErrorRecord $_
+                                            }
+                                        }
+
+                                        # Check the columnobject properties and possible scenarios
+                                        if ($columnobject.MaskingType -eq 'Static') {
+                                            $newValue = $columnobject.StaticValue
+                                        } elseif ($columnobject.KeepNull -and $columnobject.Nullable -and (($row.($columnobject.Name)).GetType().Name -eq 'DBNull') -or ($row.($columnobject.Name) -eq '')) {
+                                            $newValue = $null
+                                        } elseif (-not $columnobject.KeepNull -and $columnobject.Nullable -and (($nullmod++) % $ModulusFactor -eq 0)) {
+                                            $newValue = $null
+                                        } elseif ($tableobject.HasUniqueIndex -and $columnobject.Name -in $uniqueValueColumns) {
+                                            $query = "SELECT $($columnobject.Name) FROM $($uniqueDataTableName) WHERE [RowNr] = $rowNumber"
+
+                                            try {
+                                                $uniqueData = Invoke-DbaQuery -SqlInstance $server -SqlCredential $SqlCredential -Database tempdb -Query $query
+                                            } catch {
+                                                Stop-Function -Message "Something went wrong getting the unique data" -Target $query -ErrorRecord $_
+                                            }
+
+                                            if ($null -eq $uniqueData) {
+                                                Stop-Function -Message "Could not find any unique values" -Target $tableobject
+                                                return
+                                            }
+
+                                            $newValue = $uniqueData.$($columnobject.Name)
+                                        } elseif ($columnobject.Deterministic -and $lookupResult.NewValue) {
+                                            $newValue = $lookupResult.NewValue
+                                        } else {
+                                            # make sure min is good
+                                            if ($columnobject.MinValue) {
+                                                $min = $columnobject.MinValue
+                                            } else {
+                                                if ($columnobject.CharacterString) {
+                                                    $min = 1
+                                                } else {
+                                                    $min = 0
+                                                }
+                                            }
+
+                                            # make sure max is good
+                                            if ($MaxValue) {
+                                                if ($columnobject.MaxValue -le $MaxValue) {
+                                                    $max = $columnobject.MaxValue
+                                                } else {
+                                                    $max = $MaxValue
+                                                }
+                                            } else {
+                                                $max = $columnobject.MaxValue
+                                            }
+
+                                            if (-not $columnobject.MaxValue -and -not (Test-Bound -ParameterName MaxValue)) {
+                                                $max = 10
+                                            }
+
+                                            if ((-not $columnobject.MinValue -or -not $columnobject.MaxValue) -and ($columnobject.ColumnType -match 'date')) {
+                                                if (-not $columnobject.MinValue) {
+                                                    $min = (Get-Date).AddDays(-365)
+                                                }
+                                                if (-not $columnobject.MaxValue) {
+                                                    $max = (Get-Date).AddDays(365)
+                                                }
+                                            }
+
+                                            if ($columnobject.CharacterString) {
+                                                $charstring = $columnobject.CharacterString
+                                            } else {
+                                                $charstring = $CharacterString
+                                            }
+
+                                            # Setup the new value parameters
+                                            $newValueParams = $null
+
+                                            if ($null -eq $columnobject.SubType) {
+                                                $newValueParams = @{
+                                                    DataType        = $columnobject.ColumnType
+                                                    Min             = $min
+                                                    Max             = $max
+                                                    CharacterString = $charstring
+                                                    Format          = $columnobject.Format
+                                                    Locale          = $Locale
+                                                }
+                                            } elseif ($columnobject.SubType.ToLowerInvariant() -eq 'shuffle') {
+                                                if ($columnobject.ColumnType -in 'bigint', 'char', 'int', 'nchar', 'nvarchar', 'smallint', 'tinyint', 'varchar') {
+                                                    $newValueParams = @{
+                                                        RandomizerType    = "Random"
+                                                        RandomizerSubtype = "Shuffle"
+                                                        Value             = ($row.$($columnobject.Name))
+                                                        Locale            = $Locale
+                                                    }
+                                                } elseif ($columnobject.ColumnType -in 'decimal', 'numeric', 'float', 'money', 'smallmoney', 'real') {
+                                                    $newValueParams = @{
+                                                        RandomizerType    = "Random"
+                                                        RandomizerSubtype = "Shuffle"
+                                                        Value             = ($row.$($columnobject.Name))
+                                                        Locale            = $Locale
+                                                    }
+                                                }
+                                            } else {
+                                                $newValueParams = @{
+                                                    RandomizerType    = $columnobject.MaskingType
+                                                    RandomizerSubtype = $columnobject.SubType
+                                                    Min               = $min
+                                                    Max               = $max
+                                                    CharacterString   = $charstring
+                                                    Format            = $columnobject.Format
+                                                    Separator         = $columnobject.Separator
+                                                    Locale            = $Locale
+                                                }
+                                            }
+
+                                            # Generate the new value
+                                            try {
+                                                $newValue = Get-DbaRandomizedValue @newValueParams
+                                            } catch {
+                                                $maskingErrorFlag = $true
+                                                Stop-Function -Message "Failure" -Target $columnobject -Continue -ErrorRecord $_
+                                            }
+                                        }
+
+                                        # Convert the values so they can used in TSQL
+                                        try {
+                                            if ($row.($columnobject.Name) -eq '') {
+                                                $convertedValue = Convert-DbaMaskingValue -Value ' ' -DataType $columnobject.ColumnType -Nullable:$columnobject.Nullable -EnableException
+                                            } else {
+                                                $convertedValue = Convert-DbaMaskingValue -Value $newValue -DataType $columnobject.ColumnType -Nullable:$columnobject.Nullable -EnableException
+                                            }
+
+                                            if ($convertedValue.ErrorMessage) {
+                                                $maskingErrorFlag = $true
+                                                Stop-Function "Could not convert the value. $($convertedValue.ErrorMessage)" -Target $convertedValue
+                                            }
+                                        } catch {
+                                            Stop-Function -Message "Could not convert value" -ErrorRecord $_ -Target $newValue
+                                        }
+
+                                        # Add to the updates
+                                        $updates += "[$($columnobject.Name)] = $($convertedValue.NewValue)"
+
+                                        # Check if this value is determinisic
+                                        if ($columnobject.Deterministic -and ($null -eq $lookupResult.NewValue)) {
+                                            if (($null -ne $row.($columnobject.Name)) -and ($row.($columnobject.Name) -ne '')) {
+                                                try {
+                                                    $previous = Convert-DbaMaskingValue -Value $row.($columnobject.Name) -DataType $columnobject.ColumnType -Nullable:$columnobject.Nullable -EnableException
+
+                                                    if ($convertedValue.ErrorMessage) {
+                                                        $maskingErrorFlag = $true
+                                                        Stop-Function "Could not convert the value. $($convertedValue.ErrorMessage)" -Target $convertedValue
+                                                    }
+                                                } catch {
+                                                    Stop-Function -Message "Could not convert value" -ErrorRecord $_ -Target $row.($columnobject.Name)
+                                                }
+
+                                                $query = "INSERT INTO dbo.DeterministicValues (ValueKey, NewValue) VALUES ($($previous.NewValue), $($convertedValue.NewValue));"
+                                                try {
+                                                    $null = $server.Databases['tempdb'].Query($query)
+                                                } catch {
+                                                    Stop-Function -Message "Could not save deterministic value.`n$_" -Target $query -ErrorRecord $_
+                                                }
+                                            }
+                                        }
+
+                                        # Setup the query
+                                        $updateQuery = "UPDATE [$($tableobject.Schema)].[$($tableobject.Name)] SET $($updates -join ', ') WHERE [$($identityColumn)] = $($row.$($identityColumn)); "
+                                        $null = $stringBuilder.AppendLine($updateQuery)
+
+                                        # Increase the batch row number to keep track of the batches
+                                        $batchRowNr++
+
+                                        # if we reached the batchsize
+                                        if ($batchRowNr -eq $BatchSize) {
+                                            # Increase the batch nr if it's not already reached
+                                            if ($batchNr -lt $totalBatches) {
+                                                $batchNr++
+                                            }
+
+                                            # Execute the batch
+                                            try {
+                                                $progressParams = @{
+                                                    StepNumber = $batchNr
+                                                    TotalSteps = $totalBatches
+                                                    Activity   = "Masking $($data.Count) rows in $($tableobject.Schema).$($tableobject.Name).$($columnobject.Name) in $($dbName) on $instance"
+                                                    Message    = "Executing Batch $batchNr/$totalBatches"
+                                                }
+
+                                                Write-ProgressHelper @progressParams
+
+                                                Write-Message -Level Verbose -Message "Executing batch $batchNr/$totalBatches"
+
+                                                Invoke-DbaQuery -SqlInstance $instance -SqlCredential $SqlCredential -Database $db.Name -Query $stringBuilder.ToString() -EnableException
+                                            } catch {
+                                                $maskingErrorFlag = $true
+                                                Stop-Function -Message "Error updating $($tableobject.Schema).$($tableobject.Name): $_ `n$($stringBuilder.ToString())" -Target $stringBuilder.ToString() -Continue -ErrorRecord $_
+                                            }
+
+                                            $null = $stringBuilder.Clear()
+                                            $batchRowNr = 0
+                                        }
+                                    }
+
+                                    if ($stringBuilder.Length -ge 1) {
+                                        if ($batchNr -lt $totalBatches) {
+                                            $batchNr++
+                                        }
+
+                                        try {
+                                            $progressParams = @{
+                                                StepNumber = $batchNr
+                                                TotalSteps = $totalBatches
+                                                Activity   = "Masking $($data.Count) rows in $($tableobject.Schema).$($tableobject.Name) in $($dbName) on $instance"
+                                                Message    = "Executing Batch $batchNr/$totalBatches"
+                                            }
+
+                                            Write-ProgressHelper @progressParams
+
+                                            Write-Message -Level Verbose -Message "Executing batch $batchNr/$totalBatches"
+
+                                            Invoke-DbaQuery -SqlInstance $instance -SqlCredential $SqlCredential -Database $db.Name -Query $stringBuilder.ToString() -EnableException
+                                        } catch {
+                                            $maskingErrorFlag = $true
+                                            Stop-Function -Message "Error updating $($tableobject.Schema).$($tableobject.Name): $_`n$($stringBuilder.ToString())" -Target $stringBuilder.ToString() -Continue -ErrorRecord $_
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        $null = $stringBuilder.Clear()
 
                         # Go through the actions
                         if ($columnsWithActions.Count -ge 1) {
                             foreach ($columnObject in $columnsWithActions) {
+                                Write-Message -Level Verbose -Message "Processing action for [$($columnObject.Name)]"
+
                                 [bool]$validAction = $true
 
                                 $columnAction = $columnobject.Action
@@ -797,252 +1137,28 @@ function Invoke-DbaDbDataMasking {
 
                             try {
                                 if ($stringBuilder.Length -ge 1) {
-                                    Invoke-DbaQuery -SqlInstance $instance -SqlCredential $SqlCredential -Database $db.Name -Query $stringBuilder.ToString()
+                                    Invoke-DbaQuery -SqlInstance $instance -SqlCredential $SqlCredential -Database $db.Name -Query $stringBuilder.ToString() -EnableException
                                 }
                             } catch {
+                                $stringBuilder.ToString()
                                 Stop-Function -Message "Error updating $($tableobject.Schema).$($tableobject.Name): $_" -Target $stringBuilder -Continue -ErrorRecord $_
                             }
 
                             $null = $stringBuilder.Clear()
                         }
 
-                        # Loop through each of the rows and change them
-                        foreach ($columnobject in $tablecolumns) {
-                            $batchCounter = 0
-
-                            if ($columnobject.StaticValue) {
-                                $newValue = $columnobject.StaticValue
-
-                                if ($null -eq $newValue -and -not $columnobject.Nullable) {
-                                    Write-PSFMessage -Message "Column '$($columnobject.Name)' static value cannot null when column is set not to be nullable."
-                                } else {
-                                    $convertedValue = Convert-DbaMaskingValue -Value $newValue -DataType $columnobject.ColumnType -Nullable:$columnobject.Nullable
-                                    $null = $stringBuilder.AppendLine("UPDATE [$($tableobject.Schema)].[$($tableobject.Name)] SET [$($columnObject.Name)] = $($convertedValue.NewValue)")
-                                    $batchRowCounter++
-                                }
-                            } elseif ($columnobject.Name -notin $columnsWithActions.Name) {
-                                # Column does not have an action
-                                foreach ($row in $data) {
-                                    $rowNumber++
-                                    if ((($batchRowCounter++) % 100) -eq 0) {
-
-                                        $progressParams = @{
-                                            StepNumber = $batchCounter
-                                            TotalSteps = $totalBatches
-                                            Activity   = "Masking $($data.Count) rows in $($tableobject.Schema).$($tableobject.Name) in $($dbName) on $instance"
-                                            Message    = "Generating Updates"
-                                        }
-
-                                        Write-ProgressHelper @progressParams
-                                    }
-
-                                    $updates = @()
-                                    $newValue = $null
-
-                                    # Generate a unique value for the row
-                                    if ($columnobject.ColumnType -notin $supportedDataTypes) {
-                                        Stop-Function -Message "Unsupported data type '$($columnobject.ColumnType)' for column $($columnobject.Name)" -Target $columnobject -Continue
-                                    }
-
-                                    if ($columnobject.MaskingType -notin $supportedFakerMaskingTypes) {
-                                        Stop-Function -Message "Unsupported masking type '$($columnobject.MaskingType)' for column $($columnobject.Name)" -Target $columnobject -Continue
-                                    }
-
-                                    if ($columnobject.SubType -notin $supportedFakerSubTypes) {
-                                        Stop-Function -Message "Unsupported masking sub type '$($columnobject.SubType)' for column $($columnobject.Name)" -Target $columnobject -Continue
-                                    }
-
-                                    if ($columnobject.MaskingType -eq 'Static') {
-                                        $newValue = $columnobject.StaticValue
-                                    } elseif ($columnobject.KeepNull -and (($row.($columnobject.Name)).GetType().Name -eq 'DBNull')) {
-                                        $newValue = $null
-                                    } elseif (-not $columnobject.KeepNull -and $columnobject.Nullable -and (($nullmod++) % $ModulusFactor -eq 0)) {
-                                        $newValue = $null
-                                    } elseif ($tableobject.HasUniqueIndex -and $columnobject.Name -in $uniqueValueColumns) {
-                                        $query = "SELECT $($columnobject.Name) FROM $($uniqueDataTableName) Where [RowNr] = $rowNumber"
-                                        $uniqueData = Invoke-DbaQuery -SqlInstance $server -SqlCredential $SqlCredential -Database tempdb -Query $query
-
-                                        if ($null -eq $uniqueData) {
-                                            Stop-Function -Message "Could not find any unique values" -Target $tableobject
-                                            return
-                                        }
-
-                                        $newValue = $uniqueData.$($columnobject.Name)
-                                    } elseif ($columnobject.Deterministic -and $dictionary.ContainsKey($row.$($columnobject.Name) )) {
-                                        $newValue = $dictionary.Item($row.$($columnobject.Name))
-                                    } else {
-                                        # make sure min is good
-                                        if ($columnobject.MinValue) {
-                                            $min = $columnobject.MinValue
-                                        } else {
-                                            if ($columnobject.CharacterString) {
-                                                $min = 1
-                                            } else {
-                                                $min = 0
-                                            }
-                                        }
-
-                                        # make sure max is good
-                                        if ($MaxValue) {
-                                            if ($columnobject.MaxValue -le $MaxValue) {
-                                                $max = $columnobject.MaxValue
-                                            } else {
-                                                $max = $MaxValue
-                                            }
-                                        } else {
-                                            $max = $columnobject.MaxValue
-                                        }
-
-                                        if (-not $columnobject.MaxValue -and -not (Test-Bound -ParameterName MaxValue)) {
-                                            $max = 10
-                                        }
-
-                                        if ((-not $columnobject.MinValue -or -not $columnobject.MaxValue) -and ($columnobject.ColumnType -match 'date')) {
-                                            if (-not $columnobject.MinValue) {
-                                                $min = (Get-Date).AddDays(-365)
-                                            }
-                                            if (-not $columnobject.MaxValue) {
-                                                $max = (Get-Date).AddDays(365)
-                                            }
-                                        }
-
-                                        if ($columnobject.CharacterString) {
-                                            $charstring = $columnobject.CharacterString
-                                        } else {
-                                            $charstring = $CharacterString
-                                        }
-
-                                        try {
-                                            $newValue = $null
-
-                                            if ($columnobject.SubType.ToLowerInvariant() -eq 'shuffle') {
-                                                if ($columnobject.ColumnType -in 'bigint', 'char', 'int', 'nchar', 'nvarchar', 'smallint', 'tinyint', 'varchar') {
-
-                                                    $newValueParams = @{
-                                                        RandomizerType    = "Random"
-                                                        RandomizerSubtype = "Shuffle"
-                                                        Value             = ($row.$($columnobject.Name))
-                                                        Locale            = $Locale
-                                                    }
-                                                } elseif ($columnobject.ColumnType -in 'decimal', 'numeric', 'float', 'money', 'smallmoney', 'real') {
-                                                    $newValueParams = @{
-                                                        RandomizerType    = "Random"
-                                                        RandomizerSubtype = "Shuffle"
-                                                        Value             = ($row.$($columnobject.Name))
-                                                        Locale            = $Locale
-                                                    }
-                                                }
-                                            } elseif (-not $columnobject.SubType -and $columnobject.ColumnType -in $supportedDataTypes) {
-                                                $newValueParams = @{
-                                                    DataType        = $columnobject.ColumnType
-                                                    Min             = $min
-                                                    Max             = $max
-                                                    CharacterString = $charstring
-                                                    Format          = $columnobject.Format
-                                                    Locale          = $Locale
-                                                }
-                                            } else {
-                                                $newValueParams = @{
-                                                    RandomizerType    = $columnobject.MaskingType
-                                                    RandomizerSubtype = $columnobject.SubType
-                                                    Min               = $min
-                                                    Max               = $max
-                                                    CharacterString   = $charstring
-                                                    Format            = $columnobject.Format
-                                                    Separator         = $columnobject.Separator
-                                                    Locale            = $Locale
-                                                }
-                                            }
-
-                                            $newValue = Get-DbaRandomizedValue @newValueParams
-                                        } catch {
-
-                                            Stop-Function -Message "Failure" -Target $columnobject -Continue -ErrorRecord $_
-                                        }
-                                    }
-
-                                    $convertedValue = Convert-DbaMaskingValue -Value $newValue -DataType $columnobject.ColumnType -Nullable:$columnobject.Nullable
-                                    $updates += "[$($columnobject.Name)] = $($convertedValue.NewValue)"
-
-                                    # Check if this value is determinisic
-                                    if ($columnobject.Deterministic -and -not $dictionary.ContainsKey($row.$($columnobject.Name) )) {
-                                        $dictionary.Add($row.$($columnobject.Name), $newValue)
-                                    }
-
-                                    # Setup the query
-                                    $updateQuery = "UPDATE [$($tableobject.Schema)].[$($tableobject.Name)] SET $($updates -join ', ') WHERE [$($identityColumn)] = $($row.$($identityColumn)); "
-                                    $null = $stringBuilder.AppendLine($updateQuery)
-
-                                }
-
-                                if ($batchRowCounter -eq $BatchSize) {
-                                    if ($batchCounter -ne $totalBatches) {
-                                        $batchCounter++
-                                    }
-
-                                    $progressParams = @{
-                                        StepNumber = $batchCounter
-                                        TotalSteps = $totalBatches
-                                        Activity   = "Masking $($data.Count) rows in $($tableobject.Schema).$($tableobject.Name) in $($dbName) on $instance"
-                                        Message    = "Executing Batch $batchCounter/$totalBatches"
-                                    }
-
-                                    Write-ProgressHelper @progressParams
-
-                                    Write-Message -Level Verbose -Message "Executing batch $batchCounter/$totalBatches"
-
-                                    try {
-                                        Invoke-DbaQuery -SqlInstance $instance -SqlCredential $SqlCredential -Database $db.Name -Query $stringBuilder.ToString()
-                                    } catch {
-                                        Stop-Function -Message "Error updating $($tableobject.Schema).$($tableobject.Name): $_" -Target $stringBuilder -Continue -ErrorRecord $_
-                                    }
-
-                                    $null = $stringBuilder.Clear()
-                                    $batchRowCounter = 0
-                                }
-                            }
-
-                            if ($stringBuilder.Length -ge 1) {
-                                if ($batchCounter -ne $totalBatches) {
-                                    $batchCounter++
-                                }
-
-                                $progressParams = @{
-                                    StepNumber = $batchCounter
-                                    TotalSteps = $totalBatches
-                                    Activity   = "Masking $($data.Count) rows in $($tableobject.Schema).$($tableobject.Name) in $($dbName) on $instance"
-                                    Message    = "Executing Batch $batchCounter/$totalBatches"
-                                }
-
-                                Write-ProgressHelper @progressParams
-
-                                try {
-                                    Invoke-DbaQuery -SqlInstance $instance -SqlCredential $SqlCredential -Database $db.Name -Query $stringBuilder.ToString()
-                                } catch {
-                                    Stop-Function -Message "Error updating $($tableobject.Schema).$($tableobject.Name): $_" -Target $stringBuilder -Continue -ErrorRecord $_
-                                }
-                            }
-                        }
-
-                        $null = $stringBuilder.Clear()
-
-                        $columnsWithComposites = @()
-                        $columnsWithComposites += $tableobject.Columns | Where-Object { $null -ne $_.Composite }
-
-                        # Check for both special actions
-                        if (($columnsWithComposites.Count -ge 1) -and ($columnsWithActions.Count -ge 1)) {
-                            Stop-Function -Message "You cannot use both composites and actions"
-                        }
-
                         # Go through the composites
                         if ($columnsWithComposites.Count -ge 1) {
                             foreach ($columnObject in $columnsWithComposites) {
+                                Write-Message -Level Verbose -Message "Processing composite for [$($columnObject.Name)]"
 
                                 $compositeItems = @()
 
                                 foreach ($columnComposite in $columnObject.Composite) {
                                     if ($columnComposite.Type -eq 'Column') {
                                         $compositeItems += "[$($columnComposite.Value)]"
+                                    } elseif ($columnComposite.Type -eq 'Static') {
+                                        $compositeItems += "'$($columnComposite.Value)'"
                                     } elseif ($columnComposite.Type -in $supportedFakerMaskingTypes) {
                                         try {
                                             $newValue = $null
@@ -1087,8 +1203,6 @@ function Invoke-DbaDbDataMasking {
                                             $newValue = ($newValue).Tostring().Replace("'", "''")
                                             $compositeItems += "'$newValue'"
                                         }
-                                    } elseif ($columnComposite.Type -eq 'Static') {
-                                        $compositeItems += "'$($columnComposite.Value)'"
                                     } else {
                                         $compositeItems += ""
                                     }
@@ -1100,10 +1214,12 @@ function Invoke-DbaDbDataMasking {
                             }
 
                             try {
-                                Invoke-DbaQuery -SqlInstance $instance -SqlCredential $SqlCredential -Database $db.Name -Query $stringBuilder.ToString()
+                                Invoke-DbaQuery -SqlInstance $instance -SqlCredential $SqlCredential -Database $db.Name -Query $stringBuilder.ToString() -EnableException
                             } catch {
                                 Stop-Function -Message "Error updating $($tableobject.Schema).$($tableobject.Name): $_" -Target $stringBuilder -Continue -ErrorRecord $_
                             }
+
+                            $null = $stringBuilder.Clear()
                         }
 
                         # Clean up the masking index
@@ -1127,30 +1243,35 @@ function Invoke-DbaDbDataMasking {
 
                                 $query = "ALTER TABLE [$($dbTable.Schema)].[$($dbTable.Name)] DROP COLUMN [$($identityColumn)]"
 
-                                Invoke-DbaQuery -SqlInstance $instance -SqlCredential $SqlCredential -Database $db.Name -Query $query
-
+                                Invoke-DbaQuery -SqlInstance $instance -SqlCredential $SqlCredential -Database $db.Name -Query $query -EnableException
                             } catch {
                                 Stop-Function -Message "Could not remove identity column from table [$($dbTable.Schema)].[$($dbTable.Name)]" -Continue
                             }
                         }
 
                         # Return the masking results
-                        try {
-                            [pscustomobject]@{
-                                ComputerName = $db.Parent.ComputerName
-                                InstanceName = $db.Parent.ServiceName
-                                SqlInstance  = $db.Parent.DomainInstanceName
-                                Database     = $dbName
-                                Schema       = $tableobject.Schema
-                                Table        = $tableobject.Name
-                                Columns      = $tableobject.Columns.Name
-                                Rows         = $($data.Count)
-                                Elapsed      = [prettytimespan]$elapsed.Elapsed
-                                Status       = "Masked"
-                            }
-                        } catch {
-                            Stop-Function -Message "Error updating $($tableobject.Schema).$($tableobject.Name).`n$updatequery" -Target $updatequery -Continue -ErrorRecord $_
+                        if ($maskingErrorFlag) {
+                            $maskingStatus = "Failed"
+                        } else {
+                            $maskingStatus = "Successful"
                         }
+
+                        [pscustomobject]@{
+                            ComputerName = $db.Parent.ComputerName
+                            InstanceName = $db.Parent.ServiceName
+                            SqlInstance  = $db.Parent.DomainInstanceName
+                            Database     = $dbName
+                            Schema       = $tableobject.Schema
+                            Table        = $tableobject.Name
+                            Columns      = $tableobject.Columns.Name
+                            Rows         = $($data.Count)
+                            Elapsed      = [prettytimespan]$elapsed.Elapsed
+                            Status       = $maskingStatus
+                        }
+
+
+                        # Reset time
+                        $null = $elapsed.Reset()
                     }
 
                     # Cleanup
@@ -1158,7 +1279,7 @@ function Invoke-DbaDbDataMasking {
                         Write-Message -Message "Cleaning up unique temporary table '$uniqueDataTableName'" -Level verbose
                         $query = "DROP TABLE [$($uniqueDataTableName)];"
                         try {
-                            Invoke-DbaQuery -SqlInstance $server -SqlCredential $SqlCredential -Database 'tempdb' -Query $query
+                            $null = Invoke-DbaQuery -SqlInstance $server -SqlCredential $SqlCredential -Database 'tempdb' -Query $query -EnableException
                         } catch {
                             Stop-Function -Message "Could not clean up unique values table '$uniqueDataTableName'" -Target $uniqueDataTableName -ErrorRecord $_
                         }
@@ -1169,27 +1290,54 @@ function Invoke-DbaDbDataMasking {
                 # Export the dictionary when needed
                 if ($DictionaryExportPath) {
                     try {
-                        if (-not (Test-Path -Path $DictionaryExportPath)) {
-                            New-Item -Path $DictionaryExportPath -ItemType Directory
+                        # Handle dictionary
+                        $query = "SELECT [ValueKey], [NewValue] FROM dbo.DeterministicValues"
+                        [array]$dictResult = $server.Databases['tempdb'].Query($query)
+
+                        if ($dictResult.Count -ge 1) {
+                            Write-Message -Message "Writing dictionary for $($db.Name)" -Level Verbose
+
+                            # Check if the output directory already exists
+                            if (-not (Test-Path -Path $DictionaryExportPath)) {
+                                $null = New-Item -Path $DictionaryExportPath -ItemType Directory
+                            }
+
+                            # Of course with Linux we need to change the slashes
+                            if (-not $script:isWindows) {
+                                $dictionaryFileName = $dictionaryFileName.Replace("\", "/")
+                            }
+
+                            # Setup the file paths
+                            $filenamepart = $server.Name.Replace('\', '$').Replace('TCP:', '').Replace(',', '.')
+                            $dictionaryFileName = "$DictionaryExportPath\$($filenamepart).$($db.Name).Dictionary.csv"
+
+                            # Export dictionary
+                            $null = $dictResult | Export-Csv -Path $dictionaryFileName -NoTypeInformation
+
+                            Get-ChildItem -Path $dictionaryFileName
+                        } else {
+                            Write-Message -Level Verbose -Message "No values to export as a dictionary"
                         }
-
-                        Write-Message -Message "Writing dictionary for $($db.Name)" -Level Verbose
-
-                        $filenamepart = $server.Name.Replace('\', '$').Replace('TCP:', '').Replace(',', '.')
-                        $dictionaryFileName = "$DictionaryExportPath\$($filenamepart).$($db.Name).Dictionary.csv"
-
-                        if (-not $script:isWindows) {
-                            $dictionaryFileName = $dictionaryFileName.Replace("\", "/")
-                        }
-
-                        $dictionary.GetEnumerator() | Sort-Object Key | Select-Object Key, Value, @{Name = "Type"; Expression = { $_.Value.GetType().Name } } | Export-Csv -Path $dictionaryFileName -NoTypeInformation
-
-                        Get-ChildItem -Path $dictionaryFileName
                     } catch {
                         Stop-Function -Message "Something went wrong writing the dictionary to the $DictionaryExportPath" -Target $DictionaryExportPath -Continue -ErrorRecord $_
                     }
                 }
             } # End foreach database
+
+            # Do some cleanup
+            $null = $server.Databases['tempdb'].Tables.Refresh()
+
+            if ($server.Databases['tempdb'].Tables.Name -contains 'DeterministicValues') {
+                $query = "DROP TABLE dbo.DeterministicValues"
+
+                try {
+                    Write-Message -Level Verbose -Message "Cleaning up deterministic values table"
+                    $null = $server.Databases['tempdb'].Query($query)
+                } catch {
+                    Stop-Function -Message "Could not remove deterministic value table" -ErrorRecord $_
+                }
+            }
+
         } # End foreach instance
     } # End process block
 } # End

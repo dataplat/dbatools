@@ -71,8 +71,7 @@ function Update-DbaInstance {
         If the protocol fails to establish a connection
 
         Defaults:
-        * CredSSP when -Credential is specified - due to the fact that repository Path is usually a network share and credentials need to be passed to the remote host
-          to avoid the double-hop issue.
+        * CredSSP when -Credential is specified - due to the fact that repository Path is usually a network share and credentials need to be passed to the remote host to avoid the double-hop issue.
         * Default when -Credential is not specified. Will likely fail if a network path is specified.
 
     .PARAMETER InstanceName
@@ -85,6 +84,11 @@ function Update-DbaInstance {
     .PARAMETER ArgumentList
         A list of extra arguments to pass to the execution file. Accepts one or more strings containing command line parameters.
         Example: ... -ArgumentList "/SkipRules=RebootRequiredCheck", "/Q"
+
+    .PARAMETER Download
+        Download missing KBs to the first folder specified in the -Path parameter.
+        Files would be first downloaded to the local machine (TEMP folder), and then distributed onto remote machines if needed.
+        If the Path is a network Path, the files would be downloaded straight to the network folder and executed from there.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
@@ -164,6 +168,12 @@ function Update-DbaInstance {
         Additional command line parameters would be passed to the executable.
         Binary files for the update will be searched among all files and folders recursively in \\network\share.
 
+    .EXAMPLE
+        PS C:\> Update-DbaInstance -ComputerName SQL1 -Version CU3 -Download -Path \\network\share -Confirm:$false
+
+        Downloads an appropriate CU KB to \\network\share and installs it onto SQL1.
+        Does not prompt for confirmation.
+
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High', DefaultParameterSetName = 'Version')]
     Param (
@@ -191,6 +201,7 @@ function Update-DbaInstance {
         [string]$Authentication = @('CredSSP', 'Default')[$null -eq $Credential],
         [string]$ExtractPath,
         [string[]]$ArgumentList,
+        [switch]$Download,
         [switch]$EnableException
 
     )
@@ -289,16 +300,99 @@ function Update-DbaInstance {
                 Write-Message -Level Warning -Message "Update failed: $($_.Notes -join ' | ')"
             }
         }
+        function Join-AdminUnc {
+            <#
+                .SYNOPSIS
+                Internal function. Parses a path to make it an admin UNC.
+            #>
+            [CmdletBinding()]
+            param (
+                [Parameter(Mandatory)]
+                [ValidateNotNullOrEmpty()]
+                [DbaInstanceParameter]$ComputerName,
+
+                [Parameter(Mandatory)]
+                [ValidateNotNullOrEmpty()]
+                [string]$Path
+
+            )
+            if ($Path.StartsWith("\\")) {
+                return $filepath
+            }
+
+            $servername = $ComputerName.ComputerName
+            $newpath = Join-Path "\\$servername\" $Path.replace(':', '$')
+            return $newpath
+        }
+        function Copy-UncFile {
+            <#
+
+                SYNOPSIS
+                Internal function. Uses PSDrive to copy file to the remote system.
+
+                #>
+            param (
+                [Parameter(Mandatory)]
+                [ValidateNotNullOrEmpty()]
+                [DbaInstanceParameter]$ComputerName,
+
+                [Parameter(Mandatory)]
+                [ValidateNotNullOrEmpty()]
+                [string]$Path,
+
+                [Parameter(Mandatory)]
+                [ValidateNotNullOrEmpty()]
+                [string]$Destination,
+
+                [PSCredential]$Credential
+            )
+            if (([DbaInstanceParameter]$groupItem.ComputerName).IsLocalHost) {
+                $remoteFolder = $Destination
+            } else {
+                $uncFileName = Join-AdminUnc -ComputerName $ComputerName -Path $Destination
+                $driveSplat = @{
+                    Name       = 'UpdateCopy'
+                    Root       = $uncFileName
+                    PSProvider = 'FileSystem'
+                    Credential = $Credential
+                }
+                $null = New-PSDrive @driveSplat -ErrorAction Stop
+                $remoteFolder = 'UpdateCopy:\'
+            }
+            try {
+                Copy-Item -Path $Path -Destination $remoteFolder -ErrorAction Stop
+            } finally {
+                if (-Not ([DbaInstanceParameter]$groupItem.ComputerName).IsLocalHost) {
+                    $null = Remove-PSDrive -Name UpdateCopy -Force
+                }
+            }
+        }
+        function Test-NetworkPath {
+            <#
+
+            SYNOPSIS
+            Internal function. Tests if a path is a network path
+
+            #>
+            param (
+                [Parameter(ValueFromPipeline)]
+                [string]$Path
+            )
+            begin { $pathList = @() }
+            process { $pathList += $Path -like '\\*' }
+            end { return $pathList -contains $true }
+        }
     }
+
     process {
         if (Test-FunctionInterrupt) { return }
 
         #Resolve all the provided names
         $resolvedComputers = @()
-        $pathIsNetwork = $Path | ForEach-Object -Begin { $o = @() } -Process { $o += $_ -like '\\*' } -End { $o -contains $true }
+        $pathIsNetwork = $Path | Test-NetworkPath
         foreach ($computer in $ComputerName) {
             $null = Test-ElevationRequirement -ComputerName $computer -Continue
-            if (!$computer.IsLocalHost -and -not $notifiedCredentials -and -not $Credential -and $pathIsNetwork) {
+            if (-not $computer.IsLocalHost -and -not $notifiedCredentials -and -not $Credential -and $pathIsNetwork) {
                 Write-Message -Level Warning -Message "Explicit -Credential might be required when running agains remote hosts and -Path is a network folder"
                 $notifiedCredentials = $true
             }
@@ -310,6 +404,7 @@ function Update-DbaInstance {
         $resolvedComputers = $resolvedComputers | Sort-Object -Unique
         #Process planned actions and gather installation actions
         $installActions = @()
+        $downloads = @()
         :computers foreach ($resolvedName in $resolvedComputers) {
             $activity = "Preparing to update SQL Server on $resolvedName"
             ## Find the current version on the computer
@@ -395,6 +490,8 @@ function Update-DbaInstance {
                     }
                     if ($installer) {
                         $detail.Installer = $installer.FullName
+                    } elseif ($Download) {
+                        $downloads += [PSCustomObject]@{ KB = $detail.KB; Architecture = $detail.Architecture }
                     } else {
                         Stop-Function -Message "Could not find installer for the SQL$($detail.MajorVersion) update KB$($detail.KB)" -Continue
                     }
@@ -420,6 +517,58 @@ function Update-DbaInstance {
             }
             Write-Progress -Activity $activity -Completed
         }
+        # Download and distribute updates if needed
+        $downloadedKbs = @()
+        $mainPathIsNetwork = $Path[0] | Test-NetworkPath
+        foreach ($kbItem in $downloads | Select-Object -Unique -Property KB, Architecture) {
+            if ($mainPathIsNetwork) {
+                $downloadPath = $Path[0]
+            } else {
+                $downloadPath = [System.IO.Path]::GetTempPath()
+            }
+            try {
+                $downloadedKbs += [PSCustomObject]@{
+                    FileItem     = Save-DbaKbUpdate -Name $kbItem.KB -Path $downloadPath -Architecture $kbItem.Architecture -EnableException
+                    KB           = $kbItem.KB
+                    Architecture = $kbItem.Architecture
+                }
+            } catch {
+                Stop-Function -Message "Could not download installer for KB$($kbItem.KB)($($kbItem.Architecture)): $_" -Continue
+            }
+        }
+        # if path is not on the network, upload the patch to each remote computer
+        if ($downloadedKbs) {
+            # find unique KB/Architecture combos without an Installer
+            $groupedRequirements = $installActions | ForEach-Object { foreach ($action in $_.Actions | Where-Object { -Not $_.Installer }) { [PSCustomObject]@{ComputerName = $_.ComputerName; KB = $action.KB; Architecture = $action.Architecture } } } | Group-Object -Property KB, Architecture
+
+            # for each such combo, .Installer paths need to be updated and, potentially, files copied
+            foreach ($groupKB in $groupedRequirements) {
+                $fileItem = ($downloadedKbs | Where-Object { $_.KB -eq $groupKB.Values[0] -and $_.Architecture -eq $groupKB.Values[1] }).FileItem
+                $filePath = Join-Path $Path[0] $fileItem.Name
+                foreach ($groupItem in $groupKB.Group) {
+                    if (-Not $mainPathIsNetwork) {
+                        # For each KB, copy the file to the remote (or local) server
+                        try {
+                            $null = Copy-UncFile -ComputerName $groupItem.ComputerName -Path $fileItem.FullName -Destination $Path[0] -Credential $Credential
+                        } catch {
+                            Stop-Function -Message "Could not move installer $($fileItem.FullName) to $($Path[0]) on $($groupItem.ComputerName): $_" -Continue
+                        }
+                    }
+                    # Update appropriate action
+                    $installAction = $installActions | Where-Object ComputerName -EQ $groupItem.ComputerName
+                    $action = $installAction.Actions | Where-Object { $_.KB -eq $groupItem.KB -and $_.Architecture -eq $groupItem.Architecture }
+                    $action.Installer = $filePath
+                }
+
+            }
+            if (-Not $mainPathIsNetwork) {
+                # remove temp files
+                foreach ($downloadedKb in $downloadedKbs) {
+                    $null = Remove-Item $downloadedKb.FileItem.FullName -Force
+                }
+            }
+        }
+
         # Declare the installation script
         $installScript = {
             $updateSplat = @{

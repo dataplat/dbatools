@@ -52,6 +52,9 @@ Import-Module "$ModuleBase\dbatools.psm1"
 #imports the module making sure DLL is loaded ok
 Import-Module "$ModuleBase\dbatools.psd1"
 
+# Use the new experimental configuration (can be activated to run all the tests with the new code path)
+# Set-DbatoolsConfig -FullName sql.connection.experimental -Value $true
+
 Update-TypeData -AppendPath "$ModuleBase\xml\dbatools.types.ps1xml" -ErrorAction SilentlyContinue # ( this should already be loaded by dbatools.psd1 )
 Start-Sleep 5
 
