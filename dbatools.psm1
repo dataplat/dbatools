@@ -773,7 +773,9 @@ $script:xplat = @(
     'Add-DbaServerRoleMember',
     'Get-DbatoolsPath',
     'Set-DbatoolsPath',
-    'Export-DbaSysDbUserObject'
+    'Export-DbaSysDbUserObject',
+    'Test-DbaDbQueryStore',
+    'Install-DbaMultiTool'
 )
 
 $script:noncoresmo = @(
