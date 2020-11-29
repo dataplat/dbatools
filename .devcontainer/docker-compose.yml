@@ -4,7 +4,6 @@ services:
     container_name: "dbatools1"
     build: .
     image: dbatools:latest
-    user: root
     environment:
       - ACCEPT_EULA=Y
       - SA_PASSWORD=Password123
@@ -13,13 +12,12 @@ services:
       - "1401:1433"
     volumes:
       # Update this to wherever you want VS Code to mount the folder of your project
-      - ./:/workspace:cached
+      - ..:/workspace:cached
   dbatools2:
     depends_on:
       - dbatools1
     container_name: "dbatools2"
     image: dbatools:latest
-    user: root
     environment:
       - ACCEPT_EULA=Y
       - SA_PASSWORD=Password123
@@ -31,7 +29,6 @@ services:
       - dbatools1
     container_name: "dbatools3"
     image: dbatools:latest
-    user: root
     environment:
       - ACCEPT_EULA=Y
       - SA_PASSWORD=Password123
