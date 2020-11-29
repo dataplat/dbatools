@@ -40,7 +40,7 @@ function Test-DbaConnection {
 
     .EXAMPLE
         PS C:\> Test-DbaConnection SQL2016
-        ```
+
         ComputerName         : SQL2016
         InstanceName         : MSSQLSERVER
         SqlInstance          : sql2016
@@ -61,9 +61,38 @@ function Test-DbaConnection {
         LocalSMOVersion      : 13.0.0.0
         LocalDomainUser      : True
         LocalRunAsAdmin      : False
-        ```
+        LocalEdition         : Desktop
 
         Test connection to SQL2016 and outputs information collected
+
+    .EXAMPLE
+        PS C:\> $winCred = Get-Credential sql2017\Administrator
+        PS C:\> $sqlCred = Get-Credential sa
+        PS C:\> Test-DbaConnection SQL2017 -SqlCredential $sqlCred -Credential $winCred
+
+        ComputerName         : SQL2017
+        InstanceName         : MSSQLSERVER
+        SqlInstance          : sql2017
+        SqlVersion           : 14.0.3356
+        ConnectingAsUser     : sa
+        ConnectSuccess       : True
+        AuthType             : SQL Authentication
+        AuthScheme           : SQL
+        TcpPort              : 50164
+        IPAddress            : 10.10.10.15
+        NetBiosName          : sql2017.company.local
+        IsPingable           : True
+        PSRemotingAccessible : True
+        DomainName           : company.local
+        LocalWindows         : 10.0.15063.0
+        LocalPowerShell      : 5.1.19041.610
+        LocalCLR             : 4.0.30319.42000
+        LocalSMOVersion      : 15.100.0.0
+        LocalDomainUser      : True
+        LocalRunAsAdmin      : False
+        LocalEdition         : Desktop
+        
+        Test connection to SQL2017 instance and collecting information on SQL Server using the sa login, local Administrator account is used to collect port information
     #>
     [CmdletBinding()]
     param (
