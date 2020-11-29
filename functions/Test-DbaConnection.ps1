@@ -12,6 +12,8 @@ function Test-DbaConnection {
 
     .PARAMETER Credential
         Credential object used to connect to the Computer as a different user
+        
+        Utilized for gathering TCPPort information.
 
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
