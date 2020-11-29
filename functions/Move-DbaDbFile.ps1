@@ -41,6 +41,9 @@ function Move-DbaDbFile {
         Outputs an hash table defintion with current database file structure.
         You can use this to define de destination folder and delete the entries you want to exclude. Then you can use this hashtable on -FileToMove parameter
 
+    .PARAMETER Force
+        This translates to instantly rolling back any open transactions that may be stopping the process of setting database offline.
+
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
 
@@ -114,6 +117,7 @@ function Move-DbaDbFile {
         [switch]$DeleteAfterMove,
         [parameter(ParameterSetName = "FileStructure")]
         [switch]$FileStructureOnly,
+        [switch]$Force,
         [switch]$EnableException
     )
 
@@ -184,7 +188,7 @@ function Move-DbaDbFile {
                     if ($PSCmdlet.ShouldProcess($database, "Setting database $Database offline")) {
                         try {
 
-                            $SetState = Set-DbaDbState -SqlInstance $server -Database $Database -Offline -Force
+                            $SetState = Set-DbaDbState -SqlInstance $server -Database $Database -Offline -Force:$Force
                             if ($SetState.Status -ne 'Offline') {
                                 Write-Message -Level Warning -Message "Setting database Offline failed!"
 
