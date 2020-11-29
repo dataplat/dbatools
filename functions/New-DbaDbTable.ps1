@@ -248,7 +248,7 @@ function New-DbaDbTable {
         >>     MaxLength = 50
         >>     Nullable  =  $false
         >>     Default  =  'Hello'
-        >>     DefaultName = 'DF_Name_Darryl'
+        >>     DefaultName = 'DF_Name_test5'
         >> }
         >> PS C:\> $cols += @{
         >>     Name      = 'test6'
@@ -285,7 +285,7 @@ function New-DbaDbTable {
 
         PS C:\> New-DbaDbTable -SqlInstance sql2017 -Database tempdb -Name testtable -ColumnMap $cols
 
-        Creates a new table on sql2017 in tempdb with the name testtable and four columns
+        Creates a new table on sql2017 in tempdb with the name testtable and ten columns.
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'Low')]
     param (
