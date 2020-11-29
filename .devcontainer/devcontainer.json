@@ -5,11 +5,9 @@
         "docker-compose.yml"
     ],
     "remoteEnv": {
-        "LOCAL_WORKSPACE_FOLDER": "${localWorkspaceFolder}"
-    },
-    "containerEnv": {
-        "SERVERS": "'dbatools1','dbatools2','dbatools3'",
-        "SERVER": "dbatools1"
+        "LOCAL_WORKSPACE_FOLDER": "${localWorkspaceFolder}",
+        "MY_SERVERS": "dbatools1,dbatools2,dbatools3",
+        "MY_SERVER": "dbatools1"
     },
     "service": "dbatools1",
     "settings": {
