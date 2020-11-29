@@ -245,6 +245,7 @@ function Test-DbaLastBackup {
                     RestoreStart   = $null
                     RestoreEnd     = $null
                     RestoreElapsed = $null
+                    DbccMaxDop     = $null
                     DbccStart      = $null
                     DbccEnd        = $null
                     DbccElapsed    = $null
@@ -551,6 +552,7 @@ function Test-DbaLastBackup {
                     RestoreStart   = [dbadatetime]$startRestore
                     RestoreEnd     = [dbadatetime]$endRestore
                     RestoreElapsed = $restoreElapsed
+                    DbccMaxDop     = [int]$MaxDop
                     DbccStart      = [dbadatetime]$startDbcc
                     DbccEnd        = [dbadatetime]$endDbcc
                     DbccElapsed    = $dbccElapsed
