@@ -20278,7 +20278,7 @@
         "Name":  "Get-DbaProductKey",
         "Description":  "This command find the product key for all installed instances. Clustered instances are supported as well.\n\nUses key decoder by Jakob Bindslet (http://goo.gl/1jiwcB)",
         "Tags":  "ProductKey",
-        "Synopsis":  "Gets SQL Server Product Keys from local or destination SQL Servers. Works with SQL Server 2005-2017",
+        "Synopsis":  "Gets SQL Server Product Keys from local or destination SQL Servers. Works with SQL Server 2008-2019",
         "Alias":  "",
         "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "CommandName":  "Get-DbaProductKey",
@@ -25255,6 +25255,96 @@
                        ]
                    ],
         "Syntax":  "Install-DbaMaintenanceSolution [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cObject\u003e] [[-BackupLocation] \u003cString\u003e] [[-CleanupTime] \u003cInt32\u003e] [[-OutputFileDirectory] \u003cString\u003e] [-ReplaceExisting] [-LogToTable] [[-Solution] \u003cString[]\u003e] [-InstallJobs] [[-LocalFile] \u003cString\u003e] [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+    },
+    {
+        "Name":  "Install-DbaMultiTool",
+        "Description":  "Downloads, extracts and installs the DBA MultiTool stored procedures.\n\nDBA MultiTool links:\nhttps://dba-multitool.org\nhttps://github.com/LowlyDBA/dba-multitool/",
+        "Tags":  [
+                     "Community",
+                     "DbaMultiTool"
+                 ],
+        "Synopsis":  "Installs or updates the DBA MultiTool stored procedures.",
+        "Alias":  "",
+        "Author":  "John McCall (@lowlydba), https://lowlydba.com/",
+        "CommandName":  "Install-DbaMultiTool",
+        "Availability":  "Windows, Linux, macOS",
+        "Links":  "https://dbatools.io/Install-DbaMultiTool",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eInstall-DbaMultiTool -SqlInstance server1 -Database master\nLogs into server1 with Windows authentication and then installs the DBA MultiTool in the master database.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eInstall-DbaMultiTool -SqlInstance server1\\instance1 -Database DBA\nLogs into server1\\instance1 with Windows authentication and then installs the DBA MultiTool in the DBA database.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eInstall-DbaMultiTool -SqlInstance server1\\instance1 -Database master -SqlCredential $cred\nLogs into server1\\instance1 with SQL authentication and then installs the DBA MultiTool in the master database.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eInstall-DbaMultiTool -SqlInstance sql2016\\standardrtm, sql2016\\sqlexpress, sql2014\nLogs into sql2016\\standardrtm, sql2016\\sqlexpress and sql2014 with Windows authentication and then installs the DBA MultiTool in the master database.\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003e$servers = \"sql2016\\standardrtm\", \"sql2016\\sqlexpress\", \"sql2014\"\nPS C:\\\u003e $servers | Install-DbaMultiTool\nLogs into sql2016\\standardrtm, sql2016\\sqlexpress and sql2014 with Windows authentication and then installs the DBA MultiTool in the master database.\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eInstall-DbaMultiTool -SqlInstance sql2016 -Branch development\nInstalls the development branch version of the DBA MultiTool in the master database on sql2016 instance.",
+        "Params":  [
+                       [
+                           "SqlInstance",
+                           "The target SQL Server instance or instances.",
+                           "",
+                           true,
+                           "true (ByValue)",
+                           ""
+                       ],
+                       [
+                           "SqlCredential",
+                           "Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).\nWindows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.\nFor MFA support, please use Connect-DbaInstance.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Branch",
+                           "Specifies an alternate branch of the DBA MultiTool to install.\r\nAllowed values:\r\n    master (default)\r\n    development",
+                           "",
+                           false,
+                           "false",
+                           "master"
+                       ],
+                       [
+                           "Database",
+                           "Specifies the database to install DBA MultiTool stored procedures into.",
+                           "",
+                           false,
+                           "false",
+                           "master"
+                       ],
+                       [
+                           "LocalFile",
+                           "Specifies the path to a local file to install DBA MultiTool from. This *should* be the zip file as distributed by the maintainers.\r\nIf this parameter is not specified, the latest version will be downloaded and installed from https://github.com/LowlyDBA/dba-multitool/.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Force",
+                           "If this switch is enabled, the DBA MultiTool will be downloaded from the internet even if previously cached.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "WhatIf",
+                           "Shows what would happen if the command were to run. No actions are actually performed.",
+                           "wi",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Confirm",
+                           "Prompts to confirm actions.",
+                           "cf",
+                           false,
+                           "false",
+                           ""
+                       ]
+                   ],
+        "Syntax":  "Install-DbaMultiTool [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Branch] \u003cString\u003e] [[-Database] \u003cObject\u003e] [[-LocalFile] \u003cString\u003e] [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Install-DbaSqlWatch",
