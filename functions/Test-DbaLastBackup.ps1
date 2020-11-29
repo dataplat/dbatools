@@ -65,6 +65,9 @@ function Test-DbaLastBackup {
     .PARAMETER MaxSize
         Max size in MB. Databases larger than this value will not be restored.
 
+    .PARAMETER MaxDop
+        Allows you to pass in a MAXDOP setting to the DBCC CheckDB command to limit the number of parallel processes used.
+
     .PARAMETER DeviceType
         Specifies a filter for backup sets based on DeviceTypes. Valid options are 'Disk','Permanent Disk Device', 'Tape', 'Permanent Tape Device','Pipe','Permanent Pipe Device','Virtual Device', in addition to custom integers for your own DeviceTypes.
 
@@ -106,8 +109,6 @@ function Test-DbaLastBackup {
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-    .PARAMETER MaxDop
-        Allows you to pass in a MAXDOP setting to the DBCC CheckDB command to limit the number of parallel processes used.
 
     .NOTES
         Tags: DisasterRecovery, Backup, Restore
