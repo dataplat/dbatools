@@ -112,7 +112,7 @@ function Get-DbaAgBackupHistory {
         >>
         PS C:\> $allAgResults | Format-Table
 
-        Returns information for all database on all replicas for all availability groups on sql instance MyServer.
+        Returns information for all database backups on all replicas for all availability groups on SQL instance MyServer.
 
     #>
     [CmdletBinding(DefaultParameterSetName = "Default")]
