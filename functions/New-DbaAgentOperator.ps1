@@ -33,7 +33,7 @@ function New-DbaAgentOperator {
         are 'EveryDay', 'Weekdays', 'Weekend', 'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', and
         'Saturday'.
 
-     .PARAMETER SaturdayStartTime
+    .PARAMETER SaturdayStartTime
         This a string that takes the Saturday Pager Start Time.
 
     .PARAMETER SaturdayEndTime
