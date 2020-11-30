@@ -51,7 +51,7 @@ function New-DbaAgentOperator {
     .PARAMETER WeekdayEndTime
         This a string that takes the Weekdays Pager End Time.
 
-    .PARAMETER IsFailSafeOperator
+    .PARAMETER IsFailsafeOperator
         If this switch is enabled, this operator will be your failsafe operator and replace the one that existed before.
 
     .PARAMETER FailsafeNotificationMethod
@@ -262,7 +262,7 @@ function New-DbaAgentOperator {
 
         foreach ($instance in $SqlInstance) {
             try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $serverSqlCredential
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             } catch {
                 Stop-Function -Message "Failed" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
@@ -317,7 +317,7 @@ function New-DbaAgentOperator {
                     }
 
                     Write-Message -Level Verbose -Message "Creating Operator $operatorName"
-                    Get-DbaAgentOperator -SqlInstance $instance -Operator $Operator
+                    Get-DbaAgentOperator -SqlInstance $server -Operator $Operator
                 } catch {
                     Stop-Function -Message "Issue creating operator." -Category InvalidOperation -ErrorRecord $_ -Target $instance
                 }
