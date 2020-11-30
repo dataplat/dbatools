@@ -107,8 +107,8 @@ function Get-DbaAgBackupHistory {
     .EXAMPLE
         PS C:\> $serverWithAllAgs = Connect-DbaInstance -SqlInstance MyServer
         PS C:\> $allAgResults = foreach ( $ag in $serverWithAllAgs.AvailabilityGroups ) {
-        PS C:\>     Get-DbaAgBackupHistory -SqlInstance $ag.AvailabilityReplicas.Name -AvailabilityGroup $ag.Name
-        PS C:\> }
+        >>     Get-DbaAgBackupHistory -SqlInstance $ag.AvailabilityReplicas.Name -AvailabilityGroup $ag.Name
+        >> }
         PS C:\> $allAgResults | Format-Table
 
         Returns information for all database on all replicas for all availability groups on sql instance MyServer.
