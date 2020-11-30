@@ -269,7 +269,7 @@ function New-DbaAgentOperator {
 
             $failsafe = $server.JobServer.AlertSystem | Select-Object FailSafeOperator
 
-            if ((Get-DbaAgentOperator -SqlInstance $instance -Operator $Operator).Count -ne 0) {
+            if ((Get-DbaAgentOperator -SqlInstance $server -Operator $Operator).Count -ne 0) {
                 if ($force -eq $false) {
                     if ($Pscmdlet.ShouldProcess($instance, "Operator $operatorName exists at on $instance. Use -Force to drop and and create it.")) {
                         Write-Message -Level Verbose -Message "Operator $operatorName exists at $instance. Use -Force to drop and create."
@@ -286,7 +286,7 @@ function New-DbaAgentOperator {
                             Write-Message -Level Verbose -Message "Dropping Operator $operatorName"
                             $server.JobServer.Operators[$operatorName].Drop()
                         } catch {
-                            Stop-Function -Message "Issue dropping operator" -Category InvalidOperation -ErrorRecord $_ -Target $destServer -Continue
+                            Stop-Function -Message "Issue dropping operator" -Category InvalidOperation -ErrorRecord $_ -Target $instance -Continue
                         }
                     }
                 }
