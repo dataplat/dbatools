@@ -408,7 +408,7 @@ function New-DbaDbMaskingConfig {
                             }
                         } else {
                             if ($knownNames.Count -ge 1) {
-                                # Go through the first check to see if any column is found with a known type
+                                # Go through the first check to see if any column is found with a known name
                                 foreach ($knownName in $knownNames) {
                                     foreach ($pattern in $knownName.Pattern) {
                                         if ($null -eq $result -and $columnobject.Name -match $pattern ) {
