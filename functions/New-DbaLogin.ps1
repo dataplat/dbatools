@@ -55,6 +55,10 @@ function New-DbaLogin {
     .PARAMETER PasswordPolicyEnforced
         Enforces password complexity policy. Can be $true or $false(default)
 
+    .PARAMETER PasswordMustChange
+        Enforces user must change password at next login.
+        When specified will enforce PasswordExpirationEnabled and PasswordPolicyEnforced as they are required for the must change.
+
     .PARAMETER Disabled
         Create the login in a disabled state
 
@@ -168,6 +172,9 @@ function New-DbaLogin {
         [parameter(ParameterSetName = "Password")]
         [parameter(ParameterSetName = "PasswordHash")]
         [switch]$PasswordPolicyEnforced,
+        [Alias("MustChange")]
+        [parameter(ParameterSetName = "Password")]
+        [switch]$PasswordMustChange,
         [Alias("Disable")]
         [switch]$Disabled,
         [switch]$DenyWindowsLogin,
@@ -205,6 +212,11 @@ function New-DbaLogin {
             Return
         }
 
+        if ($PasswordMustChange -and (-not $SecurePassword)) {
+            Stop-Function -Message "You need to specified -SecurePassword when using -PasswordMustChange parameter." -Category InvalidArgument -EnableException $EnableException
+            Return
+        }
+
         $loginCollection = @()
         if ($InputObject) {
             $loginCollection += $InputObject
@@ -234,6 +246,7 @@ function New-DbaLogin {
                     $currentLanguage = $loginItem.Language
                     $currentPasswordExpirationEnabled = $loginItem.PasswordExpirationEnabled
                     $currentPasswordPolicyEnforced = $loginItem.PasswordPolicyEnforced
+                    $currentPasswordMustChange = $loginItem.MustChangePassword
                     $currentDisabled = $loginItem.IsDisabled
                     $currentDenyWindowsLogin = $loginItem.DenyWindowsLogin
                     #Get previous password
@@ -305,6 +318,13 @@ function New-DbaLogin {
                 }
                 if ($PSBoundParameters.Keys -contains 'PasswordPolicyEnforced') {
                     $currentPasswordPolicyEnforced = $PasswordPolicyEnforced
+                }
+                if ($PSBoundParameters.Keys -contains 'PasswordMustChange') {
+                    $currentPasswordMustChange = $PasswordMustChange
+                    # Enforce Expiration and Policy properties as they are needed when we want to use "Must Change" property
+                    Write-Message -Level Verbose -Message "Forcing 'Expiration' and 'Policy' properties to 'ON' because MustChange was specified."
+                    $currentPasswordExpirationEnabled = $true
+                    $currentPasswordPolicyEnforced = $true
                 }
                 if ($PSBoundParameters.Keys -contains 'MapToAsymmetricKey') {
                     $currentAsymmetricKey = $MapToAsymmetricKey
@@ -493,12 +513,28 @@ function New-DbaLogin {
                                 }
                             }
                         }
+
+                        #Process the MustChangePassword property
+                        if ($currentPasswordMustChange -ne $newLogin.MustChangePassword) {
+                            try {
+                                $newLogin.ChangePassword($SecurePassword, $true, $true)
+                                Write-Message -Level Verbose -Message "Login $loginName has been marked as must change password."
+
+                                # We need to refresh login after ChangePassword. Otherwise, MustChangePassword will appear as False
+                                $server.Logins[$loginName].Refresh()
+                            } catch {
+                                Write-Message -Level Verbose -Message "Failed to marked as must change password in $loginName on $instance using SMO."
+                            }
+                        }
+
                         #Display results
                         # If we ever used T-SQL, the smo is some times not up to date and should be refreshed
                         if ($usedTsql) {
                             $server.Logins.Refresh()
                         }
+
                         Get-DbaLogin -SqlInstance $server -Login $loginName
+
                     } catch {
                         Stop-Function -Message "Failed to create login $loginName on $instance." -Target $credential -InnerErrorRecord $_ -Continue
                     }
