@@ -35,9 +35,9 @@ function Get-DbaDbPhysicalFile {
         return
     }
     if ($Server.versionMajor -le 8) {
-        $sql = "SELECT DB_NAME(dbid) AS name, Name AS LogicalName, filename AS PhysicalName FROM sysaltfiles"
+        $sql = "SELECT DB_NAME(dbid) AS name, Name AS LogicalName, filename AS PhysicalName, type FROM sysaltfiles"
     } else {
-        $sql = "SELECT DB_NAME(database_id) AS Name, name AS LogicalName, physical_name AS PhysicalName FROM sys.master_files"
+        $sql = "SELECT DB_NAME(database_id) AS Name, name AS LogicalName, physical_name AS PhysicalName, type FROM sys.master_files"
     }
     Write-Message -Level Debug -Message "$sql"
     try {
