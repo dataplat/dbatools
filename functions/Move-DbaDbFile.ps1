@@ -288,7 +288,7 @@ function Move-DbaDbFile {
                                     $scriptBlock = {
                                         $physicalName = $args[0]
                                         $destination = $args[1]
-                                       
+
                                         # Version 1 will yield - "The remote use of BITS is not supported." when using Remoting PS
                                         if ((Get-Command -Name Start-BitsTransfer).Version.Major -gt 1) {
                                             Write-Verbose "Try copying using Start-BitsTransfer."
@@ -297,7 +297,7 @@ function Move-DbaDbFile {
                                             Write-Verbose "Can't use Bits. Using Copy-Item instead"
                                             Copy-Item -Path $physicalName -Destination $destination -ErrorAction Stop
                                         }
-                                       
+
                                         Get-Acl -Path $physicalName | Set-Acl $destination
                                     }
                                     Invoke-Command2 -ComputerName $ComputerName -Credential $SqlCredential -ScriptBlock $scriptBlock -ArgumentList $physicalName, $destination
@@ -335,7 +335,7 @@ function Move-DbaDbFile {
                         }
 
                         if (-not $failed) {
-                           
+
                             $query = "ALTER DATABASE [$Database] MODIFY FILE (name=$LogicalName, filename='$destination'); "
 
                             if ($PSCmdlet.ShouldProcess($Database, "Executing ALTER DATABASE query - $query")) {
