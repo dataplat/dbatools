@@ -6,6 +6,7 @@ function Move-DbaDbFile {
     .DESCRIPTION
         Moves database files from one local drive or folder to another.
         It will put database offline, update metadata and set it online again.
+        It can also be used to move database files on an AG secondary.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.
