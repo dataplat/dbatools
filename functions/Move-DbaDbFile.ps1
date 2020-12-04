@@ -276,9 +276,16 @@ function Move-DbaDbFile {
                                 try {
                                     Start-BitsTransfer -Source $physicalName -Destination $destination -ErrorAction Stop
                                 } catch {
-                                    $failed = $true
+                                    try {
+                                        Write-Message -Level Warning -Message "WARN: Could not copy file using Bits transfer. $_"
+                                        Write-Message -Level Verbose -Message "Trying with Copy-Item"
+                                        Copy-Item -Path $physicalName -Destination $destination -ErrorAction Stop
 
-                                    Write-Message -Level Important -Message "ERROR: Could not copy file. $_"
+                                    } catch {
+                                        $failed = $true
+
+                                        Write-Message -Level Important -Message "ERROR: Could not copy file. $_"
+                                    }
                                 }
                             }
                         } else {
