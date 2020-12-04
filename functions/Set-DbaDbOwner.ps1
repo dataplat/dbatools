@@ -146,6 +146,8 @@ function Set-DbaDbOwner {
                         Write-Message -Level Warning -Message "$dbName on $instance has $TargetLogin as a mapped user. Mapped users can not be database owners."
                     } else {
                         $db.SetOwner($TargetLogin)
+                        # The used version of the SMO does not update the .Owner property, so we have to force this:
+                        $db.Alter()
                         [PSCustomObject]@{
                             ComputerName = $server.ComputerName
                             InstanceName = $server.ServiceName
