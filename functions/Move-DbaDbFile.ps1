@@ -206,9 +206,11 @@ function Move-DbaDbFile {
                     }
                 }
 
+                $locally = $false
                 if ([DbaValidate]::IsLocalhost($server.ComputerName)) {
                     # locally ran so we can just use Start-BitsTransfer
                     $ComputerName = $server.ComputerName
+                    $locally = $true
                 } else {
                     # let's start checking if we can access .ComputerName
                     $testPS = $false
@@ -269,62 +271,106 @@ function Move-DbaDbFile {
                     $destination = "$destinationPath\$fileName"
 
                     if ($physicalName -ne $destination) {
-                        try {
-                            Write-Message -Level Verbose -Message "Try copying using Start-BitsTransfer."
-
-                            if ($PSCmdlet.ShouldProcess($database, "Copying file $physicalName to $destination using Bits on $ComputerName")) {
-                                $scriptBlock = {
-                                    $physicalName = $args[0]
-                                    $destination = $args[1]
+                        if ($locally) {
+                            if ($PSCmdlet.ShouldProcess($database, "Copying file $physicalName to $destination using Bits locally on $ComputerName")) {
+                                try {
                                     Start-BitsTransfer -Source $physicalName -Destination $destination -ErrorAction Stop
-                                    # Force the copy of the file's ACL
-                                    Get-Acl -Path $physicalName | Set-Acl $destination
+                                } catch {
+                                    $failed = $true
+
+                                    Write-Message -Level Important -Message "ERROR: Could not copy file. $_"
                                 }
-                                Invoke-Command2 -ComputerName $ComputerName -Credential $SqlCredential -ScriptBlock $scriptBlock -ArgumentList $physicalName, $destination
-
-                                Write-Message -Level Verbose -Message "File $fileName was copied successfully"
                             }
-                        } catch {
-                            Write-Message -Level Warning -Message "Did not work using Start-BitsTransfer. ERROR: $_"
-
-                            Write-Message -Level Verbose -Message "Try using Admin UNC path"
+                        } else {
+                            # Use Remoting PS to run the command on the server
                             try {
-                                $physicalNameUNC = Join-AdminUnc -ServerName $ComputerName -Filepath $physicalName
-                                $destinationUNC = Join-AdminUnc -ServerName $ComputerName -Filepath $destination
-
-                                if ($PSCmdlet.ShouldProcess($database, "Copying file $physicalNameUNC to $destinationUNC using UNC path for $ComputerName")) {
+                                if ($PSCmdlet.ShouldProcess($database, "Copying file $physicalName to $destination using remote PS on $ComputerName")) {
                                     $scriptBlock = {
                                         $physicalName = $args[0]
                                         $destination = $args[1]
-                                        Copy-Item -Path $physicalName -Destination $destination -ErrorAction Stop
-                                        # Force the copy of the file's ACL
+                                       
+                                        # Version 1 will yield - "The remote use of BITS is not supported." when using Remoting PS
+                                        if ((Get-Command -Name Start-BitsTransfer).Version.Major -gt 1) {
+                                            Write-Verbose "Try copying using Start-BitsTransfer."
+                                            Start-BitsTransfer -Source $physicalName -Destination $destination -ErrorAction Stop
+                                        } else {
+                                            Write-Verbose "Can't use Bits. Using Copy-Item instead"
+                                            Copy-Item -Path $physicalName -Destination $destination -ErrorAction Stop
+                                        }
+                                       
                                         Get-Acl -Path $physicalName | Set-Acl $destination
                                     }
-                                    Invoke-Command2 -ComputerName $ComputerName -Credential $SqlCredential -ScriptBlock $scriptBlock -ArgumentList $physicalNameUNC, $destinationUNC
-
-                                    Write-Message -Level Verbose -Message "File $fileName was copied successfully"
+                                    Invoke-Command2 -ComputerName $ComputerName -Credential $SqlCredential -ScriptBlock $scriptBlock -ArgumentList $physicalName, $destination
                                 }
-
                             } catch {
-                                [PSCustomObject]@{
-                                    Instance             = $SqlInstance
-                                    Database             = $Database
-                                    LogicalName          = $LogicalName
-                                    Source               = $physicalName
-                                    Destination          = $destination
-                                    Result               = "Failed"
-                                    DatabaseFileMetadata = "N/A"
-                                }
+                                # Try using UNC paths
+                                try {
+                                    $physicalNameUNC = Join-AdminUnc -ServerName $ComputerName -Filepath $physicalName
+                                    $destinationUNC = Join-AdminUnc -ServerName $ComputerName -Filepath $destination
 
-                                Write-Message -Level Important -Message "ERROR: Could not copy file. $_"
+                                    if ($PSCmdlet.ShouldProcess($database, "Copying file $physicalNameUNC to $destinationUNC using UNC path for $ComputerName")) {
+
+                                        try {
+                                            Write-Message -Level Verbose -Message "Try copying using Start-BitsTransfer with UNC paths."
+                                            Start-BitsTransfer -Source $physicalNameUNC -Destination $destinationUNC -ErrorAction Stop
+                                        } catch {
+                                            Write-Message -Level Warning -Message "Did not work using Start-BitsTransfer. ERROR: $_"
+                                            Write-Message -Level Verbose -Message "Trying using Copy-Item with UNC paths instead."
+                                            Copy-Item -Path $physicalNameUNC -Destination $destinationUNC -ErrorAction Stop
+                                        }
+
+                                        # Force the copy of the file's ACL
+                                        Get-Acl -Path $physicalNameUNC | Set-Acl $destinationUNC
+
+                                        Write-Message -Level Verbose -Message "File $fileName was copied successfully"
+                                    }
+                                } catch {
+                                    $failed = $true
+
+                                    Write-Message -Level Important -Message "ERROR: Could not copy file. $_"
+                                }
                             }
+
+                            Write-Message -Level Verbose -Message "File $fileName was copied successfully"
                         }
 
-                        $query = "ALTER DATABASE [$Database] MODIFY FILE (name=$LogicalName, filename='$destination'); "
+                        if (-not $failed) {
+                           
+                            $query = "ALTER DATABASE [$Database] MODIFY FILE (name=$LogicalName, filename='$destination'); "
 
-                        if ($PSCmdlet.ShouldProcess($Database, "Executing ALTER DATABASE query - $query")) {
-                            # Change database file path
-                            $server.Databases["master"].Query($query)
+                            if ($PSCmdlet.ShouldProcess($Database, "Executing ALTER DATABASE query - $query")) {
+                                # Change database file path
+                                $server.Databases["master"].Query($query)
+                            }
+
+                            if ($DeleteAfterMove) {
+                                try {
+                                    if ($PSCmdlet.ShouldProcess($database, "Deleting source file $physicalName")) {
+                                        if ($locally) {
+                                            Remove-Item -Path $physicalName -ErrorAction Stop
+                                        } else {
+                                            $scriptBlock = {
+                                                $source = $args[0]
+                                                Remove-Item -Path $source -ErrorAction Stop
+                                            }
+                                            Invoke-Command2 -ComputerName $ComputerName -Credential $SqlCredential -ScriptBlock $scriptBlock -ArgumentList $physicalName
+                                        }
+                                    }
+                                } catch {
+                                    [PSCustomObject]@{
+                                        Instance             = $SqlInstance
+                                        Database             = $Database
+                                        LogicalName          = $LogicalName
+                                        Source               = $physicalName
+                                        Destination          = $destination
+                                        Result               = "Success"
+                                        DatabaseFileMetadata = "Updated"
+                                        SourceFileDeleted    = $false
+                                    }
+
+                                    Stop-Function -Message "ERROR:" -ErrorRecord $_
+                                }
+                            }
 
                             [PSCustomObject]@{
                                 Instance             = $SqlInstance
@@ -334,16 +380,18 @@ function Move-DbaDbFile {
                                 Destination          = $destination
                                 Result               = "Success"
                                 DatabaseFileMetadata = "Updated"
+                                SourceFileDeleted    = $true
                             }
-                        }
-
-                        if ($DeleteAfterMove) {
-                            if ($PSCmdlet.ShouldProcess($database, "Deleting source file $physicalName")) {
-                                $scriptBlock = {
-                                    $source = $args[0]
-                                    Remove-Item -Path $source -ErrorAction Stop
-                                }
-                                Invoke-Command2 -ComputerName $ComputerName -Credential $SqlCredential -ScriptBlock $scriptBlock -ArgumentList $physicalName
+                        } else {
+                            [PSCustomObject]@{
+                                Instance             = $SqlInstance
+                                Database             = $Database
+                                LogicalName          = $LogicalName
+                                Source               = $physicalName
+                                Destination          = $destination
+                                Result               = "Failed"
+                                DatabaseFileMetadata = "N/A"
+                                SourceFileDeleted    = "N/A"
                             }
                         }
                     } else {
@@ -356,6 +404,7 @@ function Move-DbaDbFile {
                             Destination          = $destination
                             Result               = "Already exists. Skipping"
                             DatabaseFileMetadata = "N/A"
+                            SourceFileDeleted    = "N/A"
                         }
                     }
                 }
