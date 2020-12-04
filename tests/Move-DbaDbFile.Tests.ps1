@@ -65,7 +65,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             FileDestination = $physicalPathPreviousFolder
         }
 
-        $results = Move-DbaDbFile @variables
+        $results = Move-DbaDbFile @variables -Verbose
 
         Start-Sleep -Seconds 5
 
