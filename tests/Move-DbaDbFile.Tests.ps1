@@ -20,7 +20,8 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 
         $dbFiles = Get-DbaDbFile -SqlInstance $script:instance2 -Database dbatoolsci_MoveDbFile_2DataFiles | Where-Object TypeDescription -eq 'ROWS'
         $physicalPathFolder = Split-Path -Path $dbFiles[0].PhysicalName -Parent
-        $physicalPathPreviousFolder = Split-Path -Path $physicalPathFolder -Parent
+        $physicalPathNewFolder = "$physicalPathFolder\moveFile"
+        $null = New-Item -Path $physicalPathNewFolder -Type Directory
 
         $addNewDataFile = @"
         ALTER DATABASE [dbatoolsci_MoveDbFile_2DataFiles]
@@ -62,10 +63,10 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             SqlInstance     = $script:instance2
             Database        = 'dbatoolsci_MoveDbFile'
             FileType        = 'Data'
-            FileDestination = $physicalPathPreviousFolder
+            FileDestination = $physicalPathNewFolder
         }
 
-        $results = Move-DbaDbFile @variables -Verbose
+        $results = Move-DbaDbFile @variables
 
         Start-Sleep -Seconds 5
 
@@ -93,7 +94,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             SqlInstance     = $script:instance2
             Database        = 'dbatoolsci_MoveDbFile'
             FileType        = 'Log'
-            FileDestination = $physicalPathPreviousFolder
+            FileDestination = $physicalPathNewFolder
             DeleteAfterMove = $true
         }
 
@@ -125,7 +126,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             SqlInstance     = $script:instance2
             Database        = 'dbatoolsci_MoveDbFile_2DataFiles'
             FileToMove      = @{
-                'dbatoolsci_MoveDbFile_2DataFiles_2' = $physicalPathPreviousFolder
+                'dbatoolsci_MoveDbFile_2DataFiles_2' = $physicalPathNewFolder
             }
             DeleteAfterMove = $true
         }
