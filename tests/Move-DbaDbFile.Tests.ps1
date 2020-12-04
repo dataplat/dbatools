@@ -67,6 +67,8 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 
         $results = Move-DbaDbFile @variables
 
+        Start-Sleep -Seconds 5
+
         It "Should have Results" {
             $results | Should Not BeNullOrEmpty
         }
@@ -96,6 +98,8 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
 
         $results = Move-DbaDbFile @variables
+
+        Start-Sleep -Seconds 5
 
         It "Should have Results" {
             $results | Should Not BeNullOrEmpty
@@ -127,6 +131,8 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
 
         $results = Move-DbaDbFile @variables
+
+        Start-Sleep -Seconds 5
 
         It "Should have Results" {
             $results | Should Not BeNullOrEmpty
@@ -160,6 +166,8 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
 
         $results = Move-DbaDbFile @variables
+
+        Start-Sleep -Seconds 5
 
         It "Should have Results" {
             $results | Should Not BeNullOrEmpty
