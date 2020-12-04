@@ -158,7 +158,11 @@ function Move-DbaDbFile {
             $dbStatus = (Get-DbaDbState -SqlInstance $server -Database $Database).Status
             if ($dbStatus -ne 'ONLINE') {
                 Write-Message -Level Verbose -Message "Database $Database is already Offline. Getting file strucutre from sys.master_files."
-                $DataFiles = Get-DbaDbPhysicalFile -SqlInstance $server | Where-Object Name -eq $Database | Select-Object LogicalName, PhysicalName
+                if ($fileTypeFilter -eq -1) {
+                    $DataFiles = Get-DbaDbPhysicalFile -SqlInstance $server | Where-Object Name -eq $Database | Select-Object LogicalName, PhysicalName
+                } else {
+                    $DataFiles = Get-DbaDbPhysicalFile -SqlInstance $server | Where-Object {$_.Name -eq $Database -and $_.Type -eq $fileTypeFilter } | Select-Object LogicalName, PhysicalName
+                }
             } else {
                 if ($fileTypeFilter -eq -1) {
                     $DataFiles = Get-DbaDbFile -SqlInstance $server -Database $Database | Select-Object LogicalName, PhysicalName
