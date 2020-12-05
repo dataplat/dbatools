@@ -268,6 +268,9 @@ function Connect-DbaInstance {
         We also have added additional -Verbose and -Debug output to help us understand your problem if you open an issue related to connections.
         For additional information about how the new code path works, please have a look at the code: https://github.com/sqlcollaborative/dbatools/blob/development/functions/Connect-DbaInstance.ps1
 
+        If you like to use the new code path permanently, register this config:
+        PS C:\> Set-DbatoolsConfig -FullName sql.connection.experimental -Value $true -Passthru | Register-DbatoolsConfig
+
     #>
     [CmdletBinding()]
     param (
