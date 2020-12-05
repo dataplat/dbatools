@@ -280,7 +280,7 @@ function Copy-DbaDatabase {
         }
 
         if ($Force) {
-            $ConfirmPreference = 'none' 
+            $ConfirmPreference = 'none'
         }
 
         function Join-Path {
@@ -1201,7 +1201,7 @@ function Copy-DbaDatabase {
                                     continue
                                 }
                             } else {
-                                $backupTmpResult = $backupCollection | Where-Object Database -EQ $dbName
+                                $backupTmpResult = $backupCollection | Where-Object Database -eq $dbName
                                 if (-not $backupTmpResult) {
                                     if ($SharedPath -like 'https*') {
                                         $backupTmpResult = Backup-DbaDatabase -SqlInstance $sourceServer -Database $dbName -AzureBaseUrl $SharedPath -FileCount $numberfiles -CopyOnly:$CopyOnly -AzureCredential $AzureCredential
@@ -1228,7 +1228,7 @@ function Copy-DbaDatabase {
                             try {
                                 $msg = $null
                                 if ($miRestore) {
-                                    $restoreResultTmp = $backupTmpResult | Restore-DbaDatabase -SqlInstance $destServer -DatabaseName $DestinationdbName -TrustDbBackupHistory -WithReplace:$WithReplace  -EnableException -AzureCredential $AzureCredential
+                                    $restoreResultTmp = $backupTmpResult | Restore-DbaDatabase -SqlInstance $destServer -DatabaseName $DestinationdbName -TrustDbBackupHistory -WithReplace:$WithReplace -EnableException -AzureCredential $AzureCredential
                                 } else {
                                     $restoreResultTmp = $backupTmpResult | Restore-DbaDatabase -SqlInstance $destServer -DatabaseName $DestinationdbName -ReuseSourceFolderStructure:$ReuseSourceFolderStructure -NoRecovery:$NoRecovery -TrustDbBackupHistory -WithReplace:$WithReplace -Continue:$Continue -EnableException -ReplaceDbNameInFile -AzureCredential $AzureCredential -KeepCDC:$KeepCDC -KeepReplication:$KeepReplication
                                 }
