@@ -152,7 +152,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
 
     Context "Test restoring as SA" {
         $results = Get-ChildItem $script:appveyorlabrepo\singlerestore\singlerestore.bak | Restore-DbaDatabase -SqlInstance $script:instance2 -DatabaseName Pestering -replaceDbNameInFile -WithReplace -RestoreAsSA
-        $db = Get-DbaDatabase -SqlInstance $script:instance2 -DatabaseName Pestering
+        $db = Get-DbaDatabase -SqlInstance $script:instance2 -Database Pestering
         It "Should be owned by SA" {
             $db.owner | Should -Be 'sa'
         }
