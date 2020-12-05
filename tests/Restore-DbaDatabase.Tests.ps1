@@ -5,7 +5,7 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
         [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Path', 'DatabaseName', 'DestinationDataDirectory', 'DestinationLogDirectory', 'DestinationFileStreamDirectory', 'RestoreTime', 'NoRecovery', 'WithReplace', 'XpDirTree', 'OutputScriptOnly', 'VerifyOnly', 'MaintenanceSolutionBackup', 'FileMapping', 'IgnoreLogBackup', 'IgnoreDiffBackup', 'UseDestinationDefaultDirectories', 'ReuseSourceFolderStructure', 'DestinationFilePrefix', 'RestoredDatabaseNamePrefix', 'TrustDbBackupHistory', 'MaxTransferSize', 'BlockSize', 'BufferCount', 'DirectoryRecurse', 'EnableException', 'StandbyDirectory', 'Continue', 'AzureCredential', 'ReplaceDbNameInFile', 'DestinationFileSuffix', 'Recover', 'KeepCDC', 'GetBackupInformation', 'StopAfterGetBackupInformation', 'SelectBackupInformation', 'StopAfterSelectBackupInformation', 'FormatBackupInformation', 'StopAfterFormatBackupInformation', 'TestBackupInformation', 'StopAfterTestBackupInformation', 'PageRestore', 'PageRestoreTailFolder', 'StatementTimeout', 'KeepReplication', 'StopBefore', 'StopMark', 'StopAfterDate'
+        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Path', 'DatabaseName', 'DestinationDataDirectory', 'DestinationLogDirectory', 'DestinationFileStreamDirectory', 'RestoreTime', 'NoRecovery', 'WithReplace', 'XpDirTree', 'OutputScriptOnly', 'VerifyOnly', 'MaintenanceSolutionBackup', 'FileMapping', 'IgnoreLogBackup', 'IgnoreDiffBackup', 'UseDestinationDefaultDirectories', 'ReuseSourceFolderStructure', 'DestinationFilePrefix', 'RestoredDatabaseNamePrefix', 'TrustDbBackupHistory', 'MaxTransferSize', 'BlockSize', 'BufferCount', 'DirectoryRecurse', 'EnableException', 'StandbyDirectory', 'Continue', 'AzureCredential', 'ReplaceDbNameInFile', 'DestinationFileSuffix', 'Recover', 'KeepCDC', 'GetBackupInformation', 'StopAfterGetBackupInformation', 'SelectBackupInformation', 'StopAfterSelectBackupInformation', 'FormatBackupInformation', 'StopAfterFormatBackupInformation', 'TestBackupInformation', 'StopAfterTestBackupInformation', 'PageRestore', 'PageRestoreTailFolder', 'StatementTimeout', 'KeepReplication', 'StopBefore', 'StopMark', 'StopAfterDate', 'RestoreAsSA'
         $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
         It "Should only contain our specific parameters" {
             (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
@@ -147,6 +147,14 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         $results = Remove-DbaDatabase -Confirm:$false -SqlInstance $script:instance2 -Database pestering
         It "Should say the status was dropped" {
             $results.Status | Should Be "Dropped"
+        }
+    }
+
+    Context "Test restoring as SA" {
+        $results = Get-ChildItem $script:appveyorlabrepo\singlerestore\singlerestore.bak | Restore-DbaDatabase -SqlInstance $script:instance2 -DatabaseName Pestering -replaceDbNameInFile -WithReplace -RestoreAsSA
+        $db = Get-DbaDatabase -SqlInstance $script:instance2 -DatabaseName Pestering
+        It "Should be owned by SA" {
+            $db.owner | Should -Be 'sa'
         }
     }
 
@@ -863,7 +871,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     }
 
     Context "Test restoring with StopAt and StopAfterDate" {
-        $restoreOutput = Restore-DbaDatabase -SqlInstance $script:instance2 -Name StopAt2 -Path $script:appveyorlabrepo\sql2008-backups\StopAt -StopMark dbatoolstest -StopAfterDate (get-date '2020-05-12 13:33:35') -WithReplace
+        $restoreOutput = Restore-DbaDatabase -SqlInstance $script:instance2 -Name StopAt2 -Path $script:appveyorlabrepo\sql2008-backups\StopAt -StopMark dbatoolstest -StopAfterDate (Get-Date '2020-05-12 13:33:35') -WithReplace
         $null = Restore-DbaDatabase -SqlInstance $script:instance2 -Name StopAt2 -Recover
         $sqlOut = Invoke-DbaQuery -SqlInstance $script:instance2 -Database StopAt2 -Query "select max(step) as ms from steps"
         It "Should have stoped at mark" {

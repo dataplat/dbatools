@@ -379,6 +379,7 @@ function Restore-DbaDatabase {
         [switch]$EnableException,
         [parameter(ParameterSetName = "Restore")][string]$StandbyDirectory,
         [parameter(ParameterSetName = "Restore")][switch]$Continue,
+        [parameter(ParameterSetName = "Restore")][switch]$RestoreAsSA,
         [string]$AzureCredential,
         [parameter(ParameterSetName = "Restore")][switch]$ReplaceDbNameInFile,
         [parameter(ParameterSetName = "Restore")][string]$DestinationFileSuffix,
@@ -421,6 +422,10 @@ function Restore-DbaDatabase {
                     return
                 }
             }
+        }
+
+        if ($RestoreAsSA) {
+            Invoke-DbaQuery -SqlInstance $RestoreInstance -Query "EXECUTE AS LOGIN = 'sa'"
         }
         if ($PSCmdlet.ParameterSetName -eq "Restore") {
             $UseDestinationDefaultDirectories = $true
