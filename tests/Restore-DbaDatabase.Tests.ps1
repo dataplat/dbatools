@@ -154,7 +154,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         #Check first that the db isn't owned by SA
         $results = Get-ChildItem $script:appveyorlabrepo\singlerestore\singlerestore.bak | Restore-DbaDatabase -SqlInstance $script:instance2 -DatabaseName Pestering -replaceDbNameInFile -WithReplace
         $db = Get-DbaDatabase -SqlInstance $script:instance2 -Database Pestering
-        It "Should be owned by SA this time" {
+        It "Should Not be owned by SA this time" {
             $db.owner | Should -Not -Be 'sa'
         }
         $results = Get-ChildItem $script:appveyorlabrepo\singlerestore\singlerestore.bak | Restore-DbaDatabase -SqlInstance $script:instance2 -DatabaseName Pestering -replaceDbNameInFile -WithReplace -RestoreAsSA

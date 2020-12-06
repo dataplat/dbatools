@@ -82,6 +82,9 @@ function Invoke-DbaAdvancedRestore {
     .PARAMETER Confirm
         Prompts you for confirmation before running the cmdlet.
 
+    .PARAMETER RestoreAsSA
+        If set, this will cause the database(s) to be restored (and therefore owned) as the SA user
+
     .PARAMETER StopMark
         Mark in the transaction log to stop the restore at
 
@@ -141,6 +144,7 @@ function Invoke-DbaAdvancedRestore {
         [switch]$KeepReplication,
         [switch]$KeepCDC,
         [object[]]$PageRestore,
+        [switch]$RestoreAsSA,
         [switch]$StopBefore,
         [string]$StopMark,
         [datetime]$StopAfterDate,
@@ -303,6 +307,9 @@ function Invoke-DbaAdvancedRestore {
                 $confirmMessage = "`n Restore Database $database on $SqlInstance `n from files: $RestoreFileNames `n with these file moves: `n $LogicalFileMovesString `n $ConfirmPointInTime `n"
                 if ($Pscmdlet.ShouldProcess("$database on $SqlInstance `n `n", $confirmMessage)) {
                     try {
+                        if ($RestoreAsSA) {
+                            $null = $server.ConnectionContext.ExecuteNonQuery("EXECUTE AS LOGIN = 'sa'")
+                        }
                         $restoreComplete = $true
                         if ($KeepCDC -and $restore.NoRecovery -eq $false) {
                             $script = $restore.Script($server)
