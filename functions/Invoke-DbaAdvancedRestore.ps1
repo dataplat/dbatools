@@ -307,9 +307,6 @@ function Invoke-DbaAdvancedRestore {
                 $confirmMessage = "`n Restore Database $database on $SqlInstance `n from files: $RestoreFileNames `n with these file moves: `n $LogicalFileMovesString `n $ConfirmPointInTime `n"
                 if ($Pscmdlet.ShouldProcess("$database on $SqlInstance `n `n", $confirmMessage)) {
                     try {
-                        if ($RestoreAsSA) {
-                            $null = $server.ConnectionContext.ExecuteNonQuery("EXECUTE AS LOGIN = 'sa'")
-                        }
                         $restoreComplete = $true
                         if ($KeepCDC -and $restore.NoRecovery -eq $false) {
                             $script = $restore.Script($server)
@@ -352,13 +349,18 @@ function Invoke-DbaAdvancedRestore {
                             }
                             Write-Progress -id 2 -ParentId 1 -Activity "Restore $($backup.FullName -Join ',')" -percentcomplete 0
                             $script = $restore.Script($server)
-                            $percentcomplete = [Microsoft.SqlServer.Management.Smo.PercentCompleteEventHandler] {
-                                Write-Progress -id 2 -ParentId 1 -Activity "Restore $($backup.FullName -Join ',')" -percentcomplete $_.Percent -status ([System.String]::Format("Progress: {0} %", $_.Percent))
+                            if ($RestoreAsSA -and $BackupCnt -eq 1) {
+                                $script = "EXECUTE AS LOGIN='sa'; " + $script
+                                $restore.ConnectionContext.ExecuteNonQuery($script)
+                            } else {
+                                $percentcomplete = [Microsoft.SqlServer.Management.Smo.PercentCompleteEventHandler] {
+                                    Write-Progress -id 2 -ParentId 1 -Activity "Restore $($backup.FullName -Join ',')" -percentcomplete $_.Percent -status ([System.String]::Format("Progress: {0} %", $_.Percent))
+                                }
+                                $restore.add_PercentComplete($percentcomplete)
+                                $restore.PercentCompleteNotification = 1
+                                $restore.SqlRestore($server)
+                                Write-Progress -id 2 -ParentId 1 -Activity "Restore $($backup.FullName -Join ',')" -Completed
                             }
-                            $restore.add_PercentComplete($percentcomplete)
-                            $restore.PercentCompleteNotification = 1
-                            $restore.SqlRestore($server)
-                            Write-Progress -id 2 -ParentId 1 -Activity "Restore $($backup.FullName -Join ',')" -Completed
                             Write-Progress -id 1 -Activity "Restoring $database to $SqlInstance - Backup $BackupCnt of $($Backups.count)" -percentcomplete $outerProgress -status ([System.String]::Format("Progress: {0:N2} %", $outerProgress))
                         }
                     } catch {
