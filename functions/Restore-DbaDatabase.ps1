@@ -136,7 +136,7 @@ function Restore-DbaDatabase {
         If specified we will to attempt to recover more transaction log backups onto  database(s) in Recovering or Standby states
         When specified, WithReplace will be set to true
 
-    .PARAMETER RestoreAsSA
+    .PARAMETER ExecuteAsSa
         If set, this will cause the database(s) to be restored (and therefore owned) as the SA user
 
 
@@ -385,7 +385,7 @@ function Restore-DbaDatabase {
         [switch]$EnableException,
         [parameter(ParameterSetName = "Restore")][string]$StandbyDirectory,
         [parameter(ParameterSetName = "Restore")][switch]$Continue,
-        [parameter(ParameterSetName = "Restore")][switch]$RestoreAsSA,
+        [parameter(ParameterSetName = "Restore")][switch]$ExecuteAsSa,
         [string]$AzureCredential,
         [parameter(ParameterSetName = "Restore")][switch]$ReplaceDbNameInFile,
         [parameter(ParameterSetName = "Restore")][string]$DestinationFileSuffix,
@@ -726,7 +726,7 @@ function Restore-DbaDatabase {
                 $TailBackup = Backup-DbaDatabase -SqlInstance $RestoreInstance -Database $DatabaseName -Type Log -BackupDirectory $PageRestoreTailFolder -Norecovery -CopyOnly
             }
             try {
-                $FilteredBackupHistory | Where-Object { $_.IsVerified -eq $true } | Invoke-DbaAdvancedRestore -SqlInstance $RestoreInstance -WithReplace:$WithReplace -RestoreTime $RestoreTime -StandbyDirectory $StandbyDirectory -NoRecovery:$NoRecovery -Continue:$Continue -OutputScriptOnly:$OutputScriptOnly -BlockSize $BlockSize -MaxTransferSize $MaxTransferSize -BufferCount $Buffercount -KeepCDC:$KeepCDC -VerifyOnly:$VerifyOnly -PageRestore $PageRestore -EnableException -AzureCredential $AzureCredential -KeepReplication:$KeepReplication -StopMark:$StopMark -StopAfterDate:$StopAfterDate -StopBefore:$StopBefore -RestoreAsSA:$RestoreAsSA
+                $FilteredBackupHistory | Where-Object { $_.IsVerified -eq $true } | Invoke-DbaAdvancedRestore -SqlInstance $RestoreInstance -WithReplace:$WithReplace -RestoreTime $RestoreTime -StandbyDirectory $StandbyDirectory -NoRecovery:$NoRecovery -Continue:$Continue -OutputScriptOnly:$OutputScriptOnly -BlockSize $BlockSize -MaxTransferSize $MaxTransferSize -BufferCount $Buffercount -KeepCDC:$KeepCDC -VerifyOnly:$VerifyOnly -PageRestore $PageRestore -EnableException -AzureCredential $AzureCredential -KeepReplication:$KeepReplication -StopMark:$StopMark -StopAfterDate:$StopAfterDate -StopBefore:$StopBefore -ExecuteAsSa:$ExecuteAsSa
             } catch {
                 Stop-Function -Message "Failure" -ErrorRecord $_ -Continue -Target $RestoreInstance
             }

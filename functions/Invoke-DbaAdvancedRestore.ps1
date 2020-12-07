@@ -82,7 +82,7 @@ function Invoke-DbaAdvancedRestore {
     .PARAMETER Confirm
         Prompts you for confirmation before running the cmdlet.
 
-    .PARAMETER RestoreAsSA
+    .PARAMETER ExecuteAsSa
         If set, this will cause the database(s) to be restored (and therefore owned) as the SA user
 
     .PARAMETER StopMark
@@ -144,7 +144,7 @@ function Invoke-DbaAdvancedRestore {
         [switch]$KeepReplication,
         [switch]$KeepCDC,
         [object[]]$PageRestore,
-        [switch]$RestoreAsSA,
+        [switch]$ExecuteAsSa,
         [switch]$StopBefore,
         [string]$StopMark,
         [datetime]$StopAfterDate,
@@ -349,7 +349,7 @@ function Invoke-DbaAdvancedRestore {
                             }
                             Write-Progress -id 2 -ParentId 1 -Activity "Restore $($backup.FullName -Join ',')" -percentcomplete 0
                             $script = $restore.Script($server)
-                            if ($RestoreAsSA -and $BackupCnt -eq 1) {
+                            if ($ExecuteAsSa -and $BackupCnt -eq 1) {
                                 Write-Progress -id 1 -activity "Restoring $database to $SqlInstance - Backup $BackupCnt of $($Backups.count)" -percentcomplete 0 -status ([System.String]::Format("Progress: {0} %", 0))
                                 $script = "EXECUTE AS LOGIN='sa'; " + $script
                                 $null = $restore.ConnectionContext.ExecuteNonQuery($script)
