@@ -885,7 +885,12 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         }
     }
 
-    Context "Warn if OutputScriptOnly and VerifyOnly specified together #6987"
+    Context "Warn if OutputScriptOnly and VerifyOnly specified together #6987" {
+        $restoreOutput = Restore-DbaDatabase -SqlInstance $script:instance2 -Name StopAt2 -Path $script:appveyorlabrepo\sql2008-backups\StopAt -OutputScriptOnly -VerifyOnly -WarningVariable warnvar
+        It "Should return a warning" {
+            $warnvar | Should -BeLike '*The switches OutputScriptOnly and VerifyOnly cannot both be specified at the same time, stopping'
+        }
+    }
     if ($env:azurepasswd) {
         Context "Restores From Azure using SAS" {
             BeforeAll {
