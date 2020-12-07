@@ -65,9 +65,11 @@ function Restore-DbaDatabase {
 
     .PARAMETER OutputScriptOnly
         Switch indicates that ONLY T-SQL scripts should be generated, no restore takes place
+        Due to the limitations of SMO, this switch cannot be combined with VeriyOnly, and a warning will be raised if it is.
 
     .PARAMETER VerifyOnly
-        Switch indicate that restore should be verified
+        Switch indicate that restore should be verified.
+        Due to the limitations of SMO, this switch cannot be combined with OutputScriptOnly, and a warning will be raised if it is.
 
     .PARAMETER MaintenanceSolutionBackup
         Switch to indicate the backup files are in a folder structure as created by Ola Hallengreen's maintenance scripts.
@@ -498,6 +500,10 @@ function Restore-DbaDatabase {
             }
             if (!($PSBoundParameters.ContainsKey("DataBasename"))) {
                 $PipeDatabaseName = $true
+            }
+            if ($OutputScriptOnly -and $VerifyOnly) {
+                Stop-Function -Category InvalidArgument -Message "The switches OutputScriptOnly and VerifyOnly cannot both be specified at the same time, stopping"
+                return
             }
         }
 

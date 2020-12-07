@@ -150,7 +150,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         }
     }
 
-    Context "Test restoring as SA" {
+    Context "Test restoring as SA #6992" {
         #Check first that the db isn't owned by SA
         $results = Get-ChildItem $script:appveyorlabrepo\singlerestore\singlerestore.bak | Restore-DbaDatabase -SqlInstance $script:instance2 -DatabaseName Pestering -replaceDbNameInFile -WithReplace
         $db = Get-DbaDatabase -SqlInstance $script:instance2 -Database Pestering
@@ -884,6 +884,8 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             $sqlOut.ms | Should -Be 29876
         }
     }
+
+    Context "Warn if OutputScriptOnly and VerifyOnly specified together #6987"
     if ($env:azurepasswd) {
         Context "Restores From Azure using SAS" {
             BeforeAll {
