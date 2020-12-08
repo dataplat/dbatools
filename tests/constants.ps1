@@ -2,7 +2,7 @@
 if (Test-Path "$PSScriptRoot\constants.local.ps1") {
     Write-Verbose "tests\constants.local.ps1 found."
     . "$PSScriptRoot\constants.local.ps1"
-} elseif ($env:CODESPACES) {
+} elseif ($env:CODESPACES -and ($env:TERM_PROGRAM -eq 'vscode' -and $env:REMOTE_CONTAINERS)) {
     $script:instance1 = "dbatools1"
     $script:instance2 = "dbatools2"
     $script:instance3 = "dbatools3"
