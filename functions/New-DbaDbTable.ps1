@@ -178,6 +178,9 @@ function New-DbaDbTable {
     .PARAMETER IsVarDecimalStorageFormatEnabled
         No information provided by Microsoft
 
+    .PARAMETER Passthru
+        Don't create the table, just print the table script on the screen.
+
     .PARAMETER WhatIf
        Shows what would happen if the command were to run. No actions are actually performed.
 
@@ -239,9 +242,50 @@ function New-DbaDbTable {
         >>     Scale = 2
         >>     Nullable  = $false
         >> }
+        >> PS C:\> $cols += @{
+        >>     Name      = 'test5'
+        >>     Type      = 'Nvarchar'
+        >>     MaxLength = 50
+        >>     Nullable  =  $false
+        >>     Default  =  'Hello'
+        >>     DefaultName = 'DF_Name_test5'
+        >> }
+        >> PS C:\> $cols += @{
+        >>     Name      = 'test6'
+        >>     Type      = 'int'
+        >>     Nullable  =  $false
+        >>     Default  =  '0'
+        >> }
+        >> PS C:\> $cols += @{
+        >>     Name      = 'test7'
+        >>     Type      = 'smallint'
+        >>     Nullable  =  $false
+        >>     Default  =  100
+        >> }
+        >> PS C:\> $cols += @{
+        >>     Name      = 'test8'
+        >>     Type      = 'Nchar'
+        >>     MaxLength = 3
+        >>     Nullable  =  $false
+        >>     Default  =  'ABC'
+        >> }
+        >> PS C:\> $cols += @{
+        >>     Name      = 'test9'
+        >>     Type      = 'char'
+        >>     MaxLength = 4
+        >>     Nullable  =  $false
+        >>     Default  =  'XPTO'
+        >> }
+        >> PS C:\> $cols += @{
+        >>     Name      = 'test10'
+        >>     Type      = 'datetime'
+        >>     Nullable  =  $false
+        >>     Default  =  'GETDATE()'
+        >> }
+
         PS C:\> New-DbaDbTable -SqlInstance sql2017 -Database tempdb -Name testtable -ColumnMap $cols
 
-        Creates a new table on sql2017 in tempdb with the name testtable and four columns
+        Creates a new table on sql2017 in tempdb with the name testtable and ten columns.
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'Low')]
     param (
@@ -300,6 +344,7 @@ function New-DbaDbTable {
         [Switch]$IsNode,
         [Switch]$IsEdge,
         [Switch]$IsVarDecimalStorageFormatEnabled,
+        [switch]$Passthru,
         [parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
         [switch]$EnableException
@@ -355,7 +400,7 @@ function New-DbaDbTable {
 
                     foreach ($column in $ColumnMap) {
                         $sqlDbType = [Microsoft.SqlServer.Management.Smo.SqlDataType]$($column.Type)
-                        if ($sqlDbType -eq 'VarBinary' -or $sqlDbType -eq 'VarChar') {
+                        if ($sqlDbType -eq 'VarBinary' -or $sqlDbType -in @('VarChar', 'NVarChar', 'Char', 'NChar')) {
                             if ($column.MaxLength -gt 0) {
                                 $dataType = New-Object Microsoft.SqlServer.Management.Smo.DataType $sqlDbType, $column.MaxLength
                             } else {
@@ -376,11 +421,32 @@ function New-DbaDbTable {
                         }
                         $sqlcolumn = New-Object Microsoft.SqlServer.Management.Smo.Column $object, $column.Name, $dataType
                         $sqlcolumn.Nullable = $column.Nullable
+
+                        if ($column.Default) {
+                            if ($column.DefaultName) {
+                                $dfName = $column.DefaultName
+                            } else {
+                                $dfName = "DF_$name`_$($column.Name)"
+                            }
+
+                            if ($sqlDbType -in @('NVarchar', 'NChar', 'NVarcharMax', 'NCharMax')) {
+                                $sqlcolumn.AddDefaultConstraint($dfName).Text = "N'$($column.Default)'"
+                            } elseif ($sqlDbType -in @('Varchar', 'Char', 'VarcharMax', 'CharMax')) {
+                                $sqlcolumn.AddDefaultConstraint($dfName).Text = "'$($column.Default)'"
+                            } else {
+                                $sqlcolumn.AddDefaultConstraint($dfName).Text = $column.Default
+                            }
+                        }
+
                         $object.Columns.Add($sqlcolumn)
                     }
 
                     if ($Passthru) {
-                        $object.Script()
+                        $ScriptingOptionsObject = New-DbaScriptingOption
+                        $ScriptingOptionsObject.ContinueScriptingOnError = $false
+                        $ScriptingOptionsObject.DriAllConstraints = $true
+
+                        $object.Script($ScriptingOptionsObject)
                     } else {
                         $null = Invoke-Create -Object $object
                     }

@@ -40,6 +40,9 @@ function Get-DbaLogin {
     .PARAMETER Disabled
         A Switch to return disabled Logins.
 
+    .PARAMETER MustChangePassword
+        A Switch to return Logins that need to change password.
+
     .PARAMETER SqlLogins
         Deprecated. Please use -Type SQL
 
@@ -143,6 +146,10 @@ function Get-DbaLogin {
 
         Get all user objects from server sql2016 that are SQL Logins. Get additional info for login available from LoginProperty function
 
+.EXAMPLE
+        PS C:\> 'sql2016', 'sql2014' | Get-DbaLogin -SqlCredential $sqlcred -MustChangePassword
+
+        Using Get-DbaLogin on the pipeline to get all logins that must change password on servers sql2016 and sql2014.
 #>
     [CmdletBinding()]
     param (
@@ -160,6 +167,7 @@ function Get-DbaLogin {
         [switch]$HasAccess,
         [switch]$Locked,
         [switch]$Disabled,
+        [switch]$MustChangePassword,
         [switch]$Detailed,
         [switch]$EnableException
     )
@@ -241,6 +249,10 @@ function Get-DbaLogin {
                 $serverLogins = $serverLogins | Where-Object IsDisabled
             }
 
+            if ($MustChangePassword) {
+                $serverLogins = $serverLogins | Where-Object MustChangePassword
+            }
+
             # There's no reliable method to get last login time with SQL Server 2000, so only show on 2005+
             if ($server.VersionMajor -gt 9) {
                 Write-Message -Level Verbose -Message "Getting last login times"
@@ -271,7 +283,7 @@ function Get-DbaLogin {
                     Add-Member -Force -InputObject $serverLogin -MemberType NoteProperty -Name PasswordHash -Value $loginProperties.PasswordHash
                     Add-Member -Force -InputObject $serverLogin -MemberType NoteProperty -Name PasswordLastSetTime -Value $loginProperties.PasswordLastSetTime
                 }
-                Select-DefaultView -InputObject $serverLogin -Property ComputerName, InstanceName, SqlInstance, Name, LoginType, CreateDate, LastLogin, HasAccess, IsLocked, IsDisabled
+                Select-DefaultView -InputObject $serverLogin -Property ComputerName, InstanceName, SqlInstance, Name, LoginType, CreateDate, LastLogin, HasAccess, IsLocked, IsDisabled, MustChangePassword
             }
         }
     }

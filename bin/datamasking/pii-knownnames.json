@@ -123,7 +123,7 @@
         "Name": "Address",
         "Category": "Location",
         "Pattern": [
-            "(\\w*)(?i)address(\\w*)",
+            "(\\w*)(?i)^(?!ipaddress)(address)(\\w*)",
             "(?>(str(eet)?_?addre?s?s?\\|street))(?!\\w*(ID\\|type))",
             "(\\w*)(?i)adresse(\\w*)",
             "(\\w*)(?i)direccion(\\w*)",
@@ -222,7 +222,7 @@
         "MaskingSubType": "Url"
     },
     {
-        "Name": "IPAddres",
+        "Name": "IPAddress",
         "Category": "System",
         "Pattern": [
             "(\\w*)(?i)(ip|ipaddress|ipv4|ipv6)(\\w*)",

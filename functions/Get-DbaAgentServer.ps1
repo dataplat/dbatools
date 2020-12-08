@@ -67,7 +67,7 @@ function Get-DbaAgentServer {
             Add-Member -Force -InputObject $jobServer -MemberType NoteProperty -Name ComputerName -Value $jobServer.Parent.ComputerName
             Add-Member -Force -InputObject $jobServer -MemberType NoteProperty -Name InstanceName -value $jobServer.Parent.ServiceName
             Add-Member -Force -InputObject $jobServer -MemberType NoteProperty -Name SqlInstance -Value $jobServer.Parent.DomainInstanceName
-            Add-Member -Force -InputObject $jobServer -MemberType ScriptProperty -Name JobHistoryIsEnabled -Value { switch ( $jobServer.MaximumHistoryRows ) { -1 { $false } default { $true } } }
+            Add-Member -Force -InputObject $jobServer -MemberType ScriptProperty -Name JobHistoryIsEnabled -Value { switch ( $this.MaximumHistoryRows ) { -1 { $false } default { $true } } }
 
             Select-DefaultView -InputObject $jobServer -Property $defaultView
         }

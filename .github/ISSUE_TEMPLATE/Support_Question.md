@@ -1,14 +1,16 @@
 ---
 name: "❓ Support Question"
-about: If you have a question you may try asking on StackExchange network or dbatools
-  channel in sqlcommunity.slack.com
+about: If you have a question, please ask in the Discussions tab on GitHub
 title: ''
 labels: Question
 assignees: ''
 
 ---
 
+PLEASE USE OUR FORUM INSTEAD: https://github.com/sqlcollaborative/dbatools/discussions
+
+
+
+
 - Slack Community Channel: https://sqlcommunity.slack.com/messages/C1M2WEASG/ (get an invite: https://dbatools.io/slack/)
 - Documentation within the module: `Get-Help <command>`
-- Database Administrator on Stack Exchange network, dbatools tag: https://dba.stackexchange.com/questions/tagged/dbatools
-- StackOverflow dbatools tag: https://stackoverflow.com/questions/tagged/dbatools
