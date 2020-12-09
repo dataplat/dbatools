@@ -136,9 +136,8 @@ function Restore-DbaDatabase {
         If specified we will to attempt to recover more transaction log backups onto  database(s) in Recovering or Standby states
         When specified, WithReplace will be set to true
 
-    .PARAMETER ExecuteAsSa
-        If set, this will cause the database(s) to be restored (and therefore owned) as the SA user
-
+    .PARAMETER ExecuteAs
+        If value provided the restore will be executed under this login's context. The login must exist, and have the relevant permissions to perform the restore
 
     .PARAMETER StandbyDirectory
         If a directory is specified the database(s) will be restored into a standby state, with the standby file placed into this directory (which must exist, and be writable by the target Sql Server instance)
@@ -385,7 +384,7 @@ function Restore-DbaDatabase {
         [switch]$EnableException,
         [parameter(ParameterSetName = "Restore")][string]$StandbyDirectory,
         [parameter(ParameterSetName = "Restore")][switch]$Continue,
-        [parameter(ParameterSetName = "Restore")][switch]$ExecuteAsSa,
+        [parameter(ParameterSetName = "Restore")][string]$ExecuteAs,
         [string]$AzureCredential,
         [parameter(ParameterSetName = "Restore")][switch]$ReplaceDbNameInFile,
         [parameter(ParameterSetName = "Restore")][string]$DestinationFileSuffix,
@@ -436,6 +435,12 @@ function Restore-DbaDatabase {
 
             if (Test-Bound "FileMapping") {
                 $paramCount += 1
+            }
+            If (Test-Bound "ExecuteAs") {
+                if ((Get-DbaLogin -SqlInstance $RestoreInstance -Login $ExecuteAs).count -eq 0) {
+                    Stop-Function -Category  InvalidArgument -Message "You specified a Login to execute the restore, but the login '$ExecuteAs' does not exist"
+                    return
+                }
             }
             if (Test-Bound "ReuseSourceFolderStructure") {
                 $paramCount += 1
@@ -726,7 +731,7 @@ function Restore-DbaDatabase {
                 $TailBackup = Backup-DbaDatabase -SqlInstance $RestoreInstance -Database $DatabaseName -Type Log -BackupDirectory $PageRestoreTailFolder -Norecovery -CopyOnly
             }
             try {
-                $FilteredBackupHistory | Where-Object { $_.IsVerified -eq $true } | Invoke-DbaAdvancedRestore -SqlInstance $RestoreInstance -WithReplace:$WithReplace -RestoreTime $RestoreTime -StandbyDirectory $StandbyDirectory -NoRecovery:$NoRecovery -Continue:$Continue -OutputScriptOnly:$OutputScriptOnly -BlockSize $BlockSize -MaxTransferSize $MaxTransferSize -BufferCount $Buffercount -KeepCDC:$KeepCDC -VerifyOnly:$VerifyOnly -PageRestore $PageRestore -EnableException -AzureCredential $AzureCredential -KeepReplication:$KeepReplication -StopMark:$StopMark -StopAfterDate:$StopAfterDate -StopBefore:$StopBefore -ExecuteAsSa:$ExecuteAsSa
+                $FilteredBackupHistory | Where-Object { $_.IsVerified -eq $true } | Invoke-DbaAdvancedRestore -SqlInstance $RestoreInstance -WithReplace:$WithReplace -RestoreTime $RestoreTime -StandbyDirectory $StandbyDirectory -NoRecovery:$NoRecovery -Continue:$Continue -OutputScriptOnly:$OutputScriptOnly -BlockSize $BlockSize -MaxTransferSize $MaxTransferSize -BufferCount $Buffercount -KeepCDC:$KeepCDC -VerifyOnly:$VerifyOnly -PageRestore $PageRestore -EnableException -AzureCredential $AzureCredential -KeepReplication:$KeepReplication -StopMark:$StopMark -StopAfterDate:$StopAfterDate -StopBefore:$StopBefore -ExecuteAs $ExecuteAs
             } catch {
                 Stop-Function -Message "Failure" -ErrorRecord $_ -Continue -Target $RestoreInstance
             }
