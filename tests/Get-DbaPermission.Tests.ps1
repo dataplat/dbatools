@@ -15,7 +15,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 
 Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
-        $server = $script:instance3
+        $server = $script:instance1
         $random = Get-Random
         $password = 'MyV3ry$ecur3P@ssw0rd'
         $securePassword = ConvertTo-SecureString $password -AsPlainText -Force
@@ -25,7 +25,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         $loginNameDBOwner = "db_owner_$random"
         $loginDBO = New-DbaLogin -SqlInstance $server -Login $loginNameDBO -Password $securePassword -Confirm:$false
         $loginDBOwner = New-DbaLogin -SqlInstance $server -Login $loginNameDBOwner -Password $securePassword -Confirm:$false
-        $dbName = "dbatoolsci_$random"
+        $dbName = "dbatoolsci_DB_$random"
         $testDb = New-DbaDatabase -SqlInstance $server -Owner $loginNameDBO -Name $dbName -Confirm:$false
         $newUserDBOwner = New-DbaDbUser -SqlInstance $server -Database $dbName -Login $loginNameDBOwner -Confirm:$false
         $roleMember = Add-DbaDbRoleMember -SqlInstance $server -Database $dbName -Role db_owner -User $loginNameDBOwner -Confirm:$false
@@ -80,7 +80,6 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     Context "Validate test setup" {
 
         It "Ensure that the BeforeAll completed successfully" {
-            $testDb.Name | Should -Be $dbName
             $loginDBO.Name | Should -Be $loginNameDBO
             $loginDBOwner.Name | Should -Be $loginNameDBOwner
             $loginUser1.Name | Should -Be $loginNameUser1
@@ -91,6 +90,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             $table1.Name | Should -Be $tableName1
             $table2.Name | Should -Be $tableName2
             $table2.Schema | Should -Be $schemaNameForTable2
+            $testDb.Name | Should -Be $dbName
         }
     }
 
