@@ -180,7 +180,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
 
             $results = Get-ChildItem $script:appveyorlabrepo\singlerestore\singlerestore.bak | Restore-DbaDatabase -SqlInstance $script:instance2 -DatabaseName Pestering -replaceDbNameInFile -WithReplace -ExecuteAs $RestoreAsUser -OutputScriptOnly
             It "Should prefix the script with the Execute As statement" {
-                $results | Should -Be -Like '"EXECUTE AS LOGIN='$RestoreUser'*'
+                $results | Should -Be -Like "EXECUTE AS LOGIN='$RestoreUser'*'"
             }
 
 
