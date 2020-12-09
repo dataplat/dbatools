@@ -64,6 +64,9 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         $null = Invoke-DbaQuery -SqlInstance $server -Database $dbName -Query "GRANT CONTROL ON Schema::$schemaNameForTable2 TO $loginNameUser2"
 
         $table2 = New-DbaDbTable -SqlInstance $server -Database $dbName -Name $tableName2 -Schema $schemaNameForTable2 -ColumnMap $tableSpec2
+        
+        # debugging errors seen only in AppVeyor 
+        Write-Message -Level Warning -Message "Get-DbaPermission: Server=$server, dbName=$dbName, loginDBO=$($loginDBO.Name), loginDBOwner=$($loginDBOwner.Name), loginUser1=$($loginUser1.Name), newUserDBOwner=$($newUserDBOwner.Name), newUser1=$($newUser1.Name), table1=$($table1.Name), loginUser2=$($loginUser2.Name), newUser2=$($newUser2.Name), table2=$($table2.Name), table2Schema=$($table2.Schema)"
     }
 
     AfterAll {
@@ -107,7 +110,11 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
 
     Context "Bug 6744" {
         It "the dbo user and db_owner users are returned in the result set with the CONTROL permission" {
-            $results = Get-DbaPermission -SqlInstance $server -Database $dbName -ExcludeSystemObjects | Where-Object { $_.Grantee -in ($loginNameDBO, $loginNameDBOwner) }
+            $results = Get-DbaPermission -SqlInstance $server -Database $dbName -ExcludeSystemObjects 
+            
+            Write-Message -Level Warning -Message "Get-DbaPermission: $($results | Out-String)"
+            
+            $results = $results | Where-Object { $_.Grantee -in ($loginNameDBO, $loginNameDBOwner) }
             $results.count | Should -Be 2
 
             $results.where( { ($_.Grantee -eq $loginNameDBO -and $_.GranteeType -eq "DATABASE OWNER (dbo user)" -and $_.PermissionName -eq "CONTROL") -or ($_.Grantee -eq $loginNameDBOwner -and $_.GranteeType -eq "DATABASE OWNER (db_owner role)" -and $_.PermissionName -eq "CONTROL") }).count | Should -Be 2
