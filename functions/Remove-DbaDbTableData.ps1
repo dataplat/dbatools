@@ -1,7 +1,7 @@
 function Remove-DbaDbTableData {
     <#
     .SYNOPSIS
-        Removes table data using a batch technique from a database(s) for each instance(s) of SQL Server.
+        Removes table data using a batch technique from a database(s) for each instance(s) of on-prem SQL Server. SQL Azure DB is not supported.
 
     .DESCRIPTION
         This command does a batch delete of table data using the technique described by Aaron Bertrand here: https://sqlperformance.com/2013/03/io-subsystem/chunk-deletes. The main goal of this command is to ensure that the log file size is controlled while deleting data. This command can be used for doing both very large deletes or small deletes. Foreign keys are not temporarily removed, so the caller needs to perform deletes in the correct order with dependent tables or enable cascading deletes. When a database is using the full or bulk_logged recovery model this command will take log backups at the end of each batch. If the database is using the simple recovery model then CHECKPOINTs will be performed. The object returned will contain metadata about the batch deletion process including the log backup details.
@@ -32,7 +32,7 @@ function Remove-DbaDbTableData {
         A SQL fragment for the WHERE clause of a DELETE statement. See the example command invocation for -WhereSql.
 
     .PARAMETER LogBackupPath
-        The directory to store the log backups. This command creates log backups when the database is using the full or bulk_logged recovery models. If this param is not provided and the database is using the full or bulk_logged recovery model then the folder location of the last full backup will be used.
+        The directory to store the log backups. This command creates log backups when the database is using the full or bulk_logged recovery models. If this param is not provided the command will not take log backups.
 
     .PARAMETER LogBackupTimeStampFormat
         By default the command timestamps the log backup files using the format yyyyMMddHHmm. The timestamp format should be defined using the Get-Date formats, because illegal formats will cause an error to be thrown.
@@ -81,9 +81,9 @@ function Remove-DbaDbTableData {
         Removes data from the dbo.Test table in the TestDb database on the local SQL instance. When specifying -FromSql the SQL fragment needs to have a table alias of 'deleteFromTable' for the target deletion table. The deletes are dones in batches of 1000000 rows each and the log backups are written to E:\LogBackups.
 
     .EXAMPLE
-        PS C:\> Remove-DbaDbTableData -SqlInstance localhost -Database TestDb -Table dbo.Test -WhereSql "WHERE Id >= 50" -BatchSize 1000000 -LogBackupPath E:\LogBackups -Confirm:$false
+        PS C:\> Remove-DbaDbTableData -SqlInstance localhost -Database TestDb -Table dbo.Test -WhereSql "WHERE Id IN (SELECT TOP 1000000 Id FROM dbo.Test ORDER BY Id)" -BatchSize 1000000 -LogBackupPath E:\LogBackups -Confirm:$false
 
-        Removes data from the dbo.Test table with an Id >= 50 in the TestDb database on the local SQL instance. The deletes are dones in batches of 1000000 rows each and the log backups are written to E:\LogBackups.
+        Removes data from the dbo.Test table based on the ORDER BY specified in the -WhereSql. The deletes occur in the TestDb database on the local SQL instance. The deletes are dones in batches of 1000000 rows each and the log backups are written to E:\LogBackups.
 
     .EXAMPLE
         PS C:\> Get-DbaDatabase -SqlInstance localhost -Database TestDb1, TestDb2  | Remove-DbaDbTableData -Table dbo.Test -BatchSize 1000000 -LogBackupPath E:\LogBackups -Confirm:$false
@@ -135,6 +135,10 @@ function Remove-DbaDbTableData {
 
         # build the delete statement based on the caller's parameters
         $sql = "
+            SET DEADLOCK_PRIORITY LOW;
+            SET NOCOUNT ON;
+            SET XACT_ABORT ON;
+
             DECLARE
                 @RowCount       INTEGER         = 0
             ,   @ErrorMessage   NVARCHAR(MAX)   = NULL;
@@ -212,21 +216,30 @@ function Remove-DbaDbTableData {
             }
 
             foreach ($db in $dbDatabases) {
+
+                $instance = $db.Parent
+
+                # warn the caller if the database is using one of these configurations.
+                $isDbLogShipping = $db.Query("SELECT COUNT(1) FROM msdb.dbo.log_shipping_monitor_primary WHERE primary_database = '$($db.Name)'")
+
+                if ($isDbLogShipping -eq 1) {
+                    Write-Message -Level Warning -Message "$($db.Name) is the primary db in a log shipping configuration. Be sure to re-sync after this command completes."
+                }
+
+                if ($db.IsMirroringEnabled) {
+                    Write-Message -Level Warning -Message "$($db.Name) is configured for mirroring. Be sure to validate the mirror is synchronized after this command completes."
+                }
+
+                if (-not [string]::IsNullOrEmpty($db.AvailabilityGroupName)) {
+                    Write-Message -Level Warning -Message "$($db.Name) is part of an availability group. Be sure to validate the secondary database(s) is synchronized after this command completes."
+                }
+
+                if ($instance.DatabaseEngineType -eq "SqlAzureDatabase") {
+                    Stop-Function -Message "Sql Azure DB is not supported by this command."
+                    return
+                }
+
                 if ($Pscmdlet.ShouldProcess($db.Name, "Removing data using $sql on $($db.Parent.Name)")) {
-
-                    $instance = $db.Parent
-
-                    # Before doing the delete set a default log backup location if the caller did not specify -LogBackupPath and this db is not using the simple recovery model
-                    if ($db.RecoveryModel -ne "Simple" -and [string]::IsNullOrEmpty($LogBackupPath)) {
-                        $lastFullBackup = Get-DbaDbBackupHistory -SqlInstance $instance -Database $db.Name -LastFull
-
-                        if ($lastFullBackup -eq $null) {
-                            Stop-Function -Message "A full backup must be performed first on $($db.Name) on $($db.Parent.Name)" -ErrorRecord $_
-                            return
-                        }
-
-                        $LogBackupPath = $lastFullBackup.Path | Split-Path -Parent
-                    }
 
                     # metadata to collect while running the loop
                     $totalRowsDeleted = 0
@@ -269,9 +282,8 @@ function Remove-DbaDbTableData {
                             # perform a checkpoint or log backup depending on the recovery model
                             if ( $db.RecoveryModel -eq "Simple" ) {
                                 $result = $db.Query("CHECKPOINT")
-                            } else {
+                            } elseif (Test-Bound LogBackupPath) {
                                 $timestamp = Get-Date -Format $LogBackupTimeStampFormat
-                                $backupLog = $null
 
                                 if (Test-Bound AzureBaseUrl) {
                                     $backupLog = Backup-DbaDatabase -SqlInstance $instance -Database $db.Name -Type Log -AzureBaseUrl $AzureBaseUrl -AzureCredential $AzureCredential

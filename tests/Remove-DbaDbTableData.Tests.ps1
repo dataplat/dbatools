@@ -106,6 +106,16 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $result.Database | Should -Be $dbnameSimpleModel
             (Invoke-DbaQuery -SqlInstance $server -Database $dbnameSimpleModel -Query 'SELECT COUNT(1) AS [RowCount] FROM dbo.Test').RowCount | Should -Be 50
         }
+
+        It "WhereSql param is used to specify an order by clause for the delete" {
+            $result = Remove-DbaDbTableData -SqlInstance $server -Database $dbnameSimpleModel -Table dbo.Test -WhereSql "WHERE Id IN (SELECT TOP 10 Id FROM dbo.Test ORDER BY Id)" -BatchSize 10 -Confirm:$false
+            $result.TotalIterations | Should -Be 10
+            $result.TotalRowsDeleted | Should -Be 100
+            $result.LogBackups.count | Should -Be 0
+            $result.Timings.count | Should -Be 10
+            $result.Database | Should -Be $dbnameSimpleModel
+            (Invoke-DbaQuery -SqlInstance $server -Database $dbnameSimpleModel -Query 'SELECT COUNT(1) AS [RowCount] FROM dbo.Test').RowCount | Should -Be 0
+        }
     }
 
     Context "Functionality with simple recovery model" {
@@ -145,8 +155,8 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $addRowsToFullModelDb = Invoke-DbaQuery -SqlInstance $server -Database $dbnameFullModel -Query $sqlAddRows
         }
 
-        It 'Removes Data for a specified database' {
-            $result = Remove-DbaDbTableData -SqlInstance $server -Database $dbnameFullModel -Table dbo.Test -BatchSize 10 -LogBackupPath $logBackupPath -Confirm:$false
+        It 'Removes Data for a specified database and specifies LogBackupTimeStampFormat' {
+            $result = Remove-DbaDbTableData -SqlInstance $server -Database $dbnameFullModel -Table dbo.Test -BatchSize 10 -LogBackupPath $logBackupPath -LogBackupTimeStampFormat "yyMMddHHmm" -Confirm:$false
             $result.TotalIterations | Should -Be 10
             $result.TotalRowsDeleted | Should -Be 100
             $result.LogBackups.count | Should -Be 10
@@ -155,11 +165,11 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             (Invoke-DbaQuery -SqlInstance $server -Database $dbnameFullModel -Query 'SELECT COUNT(1) AS [RowCount] FROM dbo.Test').RowCount | Should -Be 0
         }
 
-        It "LogBackupTimeStampFormat and no -LogBackupPath param is specified" {
-            $result = Remove-DbaDbTableData -SqlInstance $server -Database $dbnameFullModel -Table dbo.Test -BatchSize 10 -LogBackupTimeStampFormat "yyMMddHHmm" -Confirm:$false
+        It "The LogBackupPath param is not specified so no log backups are taken" {
+            $result = Remove-DbaDbTableData -SqlInstance $server -Database $dbnameFullModel -Table dbo.Test -BatchSize 10 -Confirm:$false
             $result.TotalIterations | Should -Be 10
             $result.TotalRowsDeleted | Should -Be 100
-            $result.LogBackups.count | Should -Be 10
+            $result.LogBackups.count | Should -Be 0
             $result.Timings.count | Should -Be 10
             $result.Database | Should -Be $dbnameFullModel
             (Invoke-DbaQuery -SqlInstance $server -Database $dbnameFullModel -Query 'SELECT COUNT(1) AS [RowCount] FROM dbo.Test').RowCount | Should -Be 0
