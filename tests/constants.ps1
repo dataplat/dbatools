@@ -5,7 +5,7 @@ if (Test-Path "$PSScriptRoot\constants.local.ps1") {
 } else {
     $script:dbatoolsci_computer = "localhost"
     $script:instance1 = "localhost\sql2008r2sp2"
-    $script:instance2 = "localhost\sql2016"
+    $script:instance2 = "SB-SQL1\SQL1"
     $script:instance2SQLUserName = $null # placeholders for -SqlCredential testing
     $script:instance2SQLPassword = $null
     $script:instance3 = "localhost\sql2017"
