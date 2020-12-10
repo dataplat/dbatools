@@ -81,7 +81,6 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
 
         It "Ensure that the BeforeAll completed successfully" {
             $loginDBO.Name | Should -Be $loginNameDBO
-            $loginDBOwner.Name | Should -Be $loginNameDBOwner
             $loginUser1.Name | Should -Be $loginNameUser1
             $loginUser2.Name | Should -Be $loginNameUser2
             $newUserDBOwner.Name | Should -Be $loginNameDBOwner
@@ -91,6 +90,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             $table2.Name | Should -Be $tableName2
             $table2.Schema | Should -Be $schemaNameForTable2
             $testDb.Name | Should -Be $dbName
+            $loginDBOwner.Name | Should -Be $loginNameDBOwner
         }
     }
 
@@ -127,11 +127,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
 
     Context "Bug 6744" {
         It "the dbo user and db_owner users are returned in the result set with the CONTROL permission" {
-            $results = Get-DbaPermission -SqlInstance $server -Database $dbName -ExcludeSystemObjects
-
-            Write-Message -Level Verbose -Message "Get-DbaPermission: $($results | Out-String)"
-
-            $results = $results | Where-Object { $_.Grantee -in ($loginNameDBO, $loginNameDBOwner) }
+            $results = Get-DbaPermission -SqlInstance $server -Database $dbName -ExcludeSystemObjects | Where-Object { $_.Grantee -in ($loginNameDBO, $loginNameDBOwner) }
             $results.count | Should -Be 2
 
             $results.where( { ($_.Grantee -eq $loginNameDBO -and $_.GranteeType -eq "DATABASE OWNER (dbo user)" -and $_.PermissionName -eq "CONTROL") -or ($_.Grantee -eq $loginNameDBOwner -and $_.GranteeType -eq "DATABASE OWNER (db_owner role)" -and $_.PermissionName -eq "CONTROL") }).count | Should -Be 2
