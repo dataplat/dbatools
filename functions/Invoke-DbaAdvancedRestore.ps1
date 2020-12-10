@@ -330,7 +330,7 @@ function Invoke-DbaAdvancedRestore {
                             }
                         } elseif ($OutputScriptOnly) {
                             $script = $restore.Script($server)
-                            if (Test-Bound "ExecuteAs" -and $BackupCnt -eq 1) {
+                            if ($ExecuteAs -ne '' -and $BackupCnt -eq 1) {
                                 $script = "EXECUTE AS LOGIN='$ExecuteAs'; " + $script
                             }
                         } elseif ($VerifyOnly) {
@@ -352,10 +352,10 @@ function Invoke-DbaAdvancedRestore {
                             }
                             Write-Progress -id 2 -ParentId 1 -Activity "Restore $($backup.FullName -Join ',')" -percentcomplete 0
                             $script = $restore.Script($server)
-                            if (Test-Bound "ExecuteAs" -and $BackupCnt -eq 1) {
+                            if ($ExecuteAs -ne '' -and $BackupCnt -eq 1) {
                                 Write-Progress -id 1 -activity "Restoring $database to $SqlInstance - Backup $BackupCnt of $($Backups.count)" -percentcomplete 0 -status ([System.String]::Format("Progress: {0} %", 0))
                                 $script = "EXECUTE AS LOGIN='$ExecuteAs'; " + $script
-                                $null = $restore.ConnectionContext.ExecuteNonQuery($script)
+                                $null = $server.ConnectionContext.ExecuteNonQuery($script)
                                 Write-Progress -id 1 -activity "Restoring $database to $SqlInstance - Backup $BackupCnt of $($Backups.count)" -status "Complete" -Completed
                             } else {
                                 $percentcomplete = [Microsoft.SqlServer.Management.Smo.PercentCompleteEventHandler] {
