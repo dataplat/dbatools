@@ -5,7 +5,7 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 Describe "$CommandName Unit Tests" -Tags "UnitTests" {
     Context "Validate parameters" {
         [array]$params = ([Management.Automation.CommandMetaData]$ExecutionContext.SessionState.InvokeCommand.GetCommand($CommandName, 'Function')).Parameters.Keys
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'BatchSize', 'Table', 'FromSql', 'WhereSql', 'InputObject', 'LogBackupPath', 'LogBackupTimeStampFormat', 'AzureBaseUrl', 'AzureCredential', 'EnableException'
+        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'BatchSize', 'Table', 'DeleteSql', 'InputObject', 'LogBackupPath', 'LogBackupTimeStampFormat', 'AzureBaseUrl', 'AzureCredential', 'EnableException'
         It "Should only contain our specific parameters" {
             Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params | Should -BeNullOrEmpty
         }
@@ -58,11 +58,16 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     }
 
     Context "Param validation" {
-        It "Either Table or FromSql needs to be specified" {
+        It "Either -Table or -DeleteSql needs to be specified" {
             $result = Remove-DbaDbTableData -SqlInstance $server -Database $dbnameFullModel
             $result | Should -BeNullOrEmpty
 
-            $result = Remove-DbaDbTableData -SqlInstance $server -Database $dbnameFullModel -Table dbo.Test -FromSql "FROM dbo.Test"
+            $result = Remove-DbaDbTableData -SqlInstance $server -Database $dbnameFullModel -Table dbo.Test -DeleteSql "DELETE TOP (10) FROM dbo.Test" -Confirm:$false
+            $result | Should -BeNullOrEmpty
+        }
+
+        It "-BatchSize cannot be used when -DeleteSql is specified" {
+            $result = Remove-DbaDbTableData -SqlInstance $server -Database $dbnameFullModel -DeleteSql "DELETE TOP (10) FROM dbo.Test" -BatchSize 10 -Confirm:$false
             $result | Should -BeNullOrEmpty
         }
 
@@ -71,24 +76,29 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $result | Should -BeNullOrEmpty
         }
 
-        It "Invalid -FromSql value because it is missing the deleteFromTable table alias" {
-            $result = Remove-DbaDbTableData -SqlInstance $server -Database $dbnameFullModel -FromSql "FROM dbo.Test a LEFT JOIN dbo.Test2 b ON a.Id = b.Id" -Confirm:$false
+        It "Invalid -DeleteSql due to missing DELETE keyword (i.e. user has not passed in a DELETE statement)" {
+            $result = Remove-DbaDbTableData -SqlInstance $server -Database $dbnameFullModel -DeleteSql "SELECT TOP (10) FROM dbo.Test" -Confirm:$false
             $result | Should -BeNullOrEmpty
         }
 
-        It "Invalid SQL used to test the error handling in the delete statement" {
-            $result = Remove-DbaDbTableData -SqlInstance $server -Database $dbnameFullModel -Table dbo.Test -WhereSql "WHERE 1/0 = 1" -Confirm:$false
+        It "Invalid -DeleteSql due to missing TOP (N) clause" {
+            $result = Remove-DbaDbTableData -SqlInstance $server -Database $dbnameFullModel -DeleteSql "DELETE FROM dbo.Test" -Confirm:$false
+            $result | Should -BeNullOrEmpty
+        }
+
+        It "Invalid SQL used to test the error handling and reporting" {
+            $result = Remove-DbaDbTableData -SqlInstance $server -Database $dbnameFullModel -DeleteSql "DELETE TOP (10) FROM dbo.Test WHERE 1/0 = 1" -Confirm:$false
             $result | Should -BeNullOrEmpty
         }
     }
 
-    Context "Sql param options" {
+    Context "-DeleteSql examples" {
         BeforeEach {
             $addRowsToSimpleModelDb = Invoke-DbaQuery -SqlInstance $server -Database $dbnameSimpleModel -Query $sqlAddRows
         }
 
-        It "FromSql param is used to specify a delete based on a join" {
-            $result = Remove-DbaDbTableData -SqlInstance $server -Database $dbnameSimpleModel -FromSql "FROM dbo.Test deleteFromTable LEFT JOIN dbo.Test2 b ON deleteFromTable.Id = b.Id" -BatchSize 10 -Confirm:$false
+        It "-DeleteSql param is used to specify a delete based on a join" {
+            $result = Remove-DbaDbTableData -SqlInstance $server -Database $dbnameSimpleModel -DeleteSql "DELETE TOP (10) deleteFromTable FROM dbo.Test deleteFromTable LEFT JOIN dbo.Test2 b ON deleteFromTable.Id = b.Id" -Confirm:$false
             $result.TotalIterations | Should -Be 10
             $result.TotalRowsDeleted | Should -Be 100
             $result.LogBackups.count | Should -Be 0
@@ -97,24 +107,14 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             (Invoke-DbaQuery -SqlInstance $server -Database $dbnameSimpleModel -Query 'SELECT COUNT(1) AS [RowCount] FROM dbo.Test').RowCount | Should -Be 0
         }
 
-        It "WhereSql param is used to specify a where clause for the delete" {
-            $result = Remove-DbaDbTableData -SqlInstance $server -Database $dbnameSimpleModel -Table dbo.Test -WhereSql "WHERE Id >= 50" -BatchSize 10 -Confirm:$false
+        It "-DeleteSql param is used to specify an order by clause for the delete" {
+            $result = Remove-DbaDbTableData -SqlInstance $server -Database $dbnameSimpleModel -DeleteSql "WITH ToDelete AS (SELECT TOP (10) Id FROM dbo.Test WHERE Id >= 50 ORDER BY Id DESC) DELETE FROM ToDelete" -Confirm:$false
             $result.TotalIterations | Should -Be 5
             $result.TotalRowsDeleted | Should -Be 50
             $result.LogBackups.count | Should -Be 0
             $result.Timings.count | Should -Be 5
             $result.Database | Should -Be $dbnameSimpleModel
             (Invoke-DbaQuery -SqlInstance $server -Database $dbnameSimpleModel -Query 'SELECT COUNT(1) AS [RowCount] FROM dbo.Test').RowCount | Should -Be 50
-        }
-
-        It "WhereSql param is used to specify an order by clause for the delete" {
-            $result = Remove-DbaDbTableData -SqlInstance $server -Database $dbnameSimpleModel -Table dbo.Test -WhereSql "WHERE Id IN (SELECT TOP 10 Id FROM dbo.Test ORDER BY Id)" -BatchSize 10 -Confirm:$false
-            $result.TotalIterations | Should -Be 10
-            $result.TotalRowsDeleted | Should -Be 100
-            $result.LogBackups.count | Should -Be 0
-            $result.Timings.count | Should -Be 10
-            $result.Database | Should -Be $dbnameSimpleModel
-            (Invoke-DbaQuery -SqlInstance $server -Database $dbnameSimpleModel -Query 'SELECT COUNT(1) AS [RowCount] FROM dbo.Test').RowCount | Should -Be 0
         }
     }
 
