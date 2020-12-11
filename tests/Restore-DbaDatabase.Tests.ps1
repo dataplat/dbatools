@@ -151,7 +151,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
 
     }
 
-    Context "Test restoring as SA #6992" {
+    Context "Test restoring as other login #6992" {
         #Check first that the db isn't owned by SA
         $results = Get-ChildItem $script:appveyorlabrepo\singlerestore\singlerestore.bak | Restore-DbaDatabase -SqlInstance $script:instance2 -DatabaseName Pestering -replaceDbNameInFile -WithReplace
         $db = Get-DbaDatabase -SqlInstance $script:instance2 -Database Pestering
