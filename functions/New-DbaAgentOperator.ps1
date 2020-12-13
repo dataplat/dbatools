@@ -84,7 +84,7 @@ function New-DbaAgentOperator {
         https://dbatools.io/New-DbaAgentOperator
 
     .EXAMPLE
-        PS:\> New-DbaAgentOperator -SqlInstance sql01 -Operator DBA -EmailAddress operator@operator.com -PagerDay Everyday
+        PS:\> New-DbaAgentOperator -SqlInstance sql01 -Operator DBA -EmailAddress operator@operator.com -PagerDay Everyday -Force
 
         This sets a new operator named DBA with the above email address with default values to alerts everyday
         for all hours of the day.
@@ -267,24 +267,24 @@ function New-DbaAgentOperator {
                 Stop-Function -Message "Failed" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
-            $failsafe = $server.JobServer.AlertSystem | Select-Object FailSafeOperator
+            $failsafe = $server.JobServer.AlertSystem | Select-Object FailsafeOperator
 
             if ((Get-DbaAgentOperator -SqlInstance $server -Operator $Operator).Count -ne 0) {
                 if ($force -eq $false) {
-                    if ($Pscmdlet.ShouldProcess($instance, "Operator $operatorName exists at on $instance. Use -Force to drop and and create it.")) {
-                        Write-Message -Level Verbose -Message "Operator $operatorName exists at $instance. Use -Force to drop and create."
+                    if ($Pscmdlet.ShouldProcess($instance, "Operator $operator exists at on $instance. Use -Force to drop and and create it.")) {
+                        Write-Message -Level Verbose -Message "Operator $operator exists at $instance. Use -Force to drop and create."
                     }
                     continue
                 } else {
-                    if ($failsafe.FailSafeOperator -eq $operatorName -and $IsFailsafeOperator) {
-                        Write-Message -Level Verbose -Message "$operatorName is the failsafe operator. Skipping drop."
+                    if ($failsafe.FailsafeOperator -eq $operator -and $IsFailsafeOperator) {
+                        Write-Message -Level Verbose -Message "$operator is the failsafe operator. Skipping drop."
                         continue
                     }
 
-                    if ($Pscmdlet.ShouldProcess($instance, "Dropping operator $operatorName")) {
+                    if ($Pscmdlet.ShouldProcess($instance, "Dropping operator $operator")) {
                         try {
-                            Write-Message -Level Verbose -Message "Dropping Operator $operatorName"
-                            $server.JobServer.Operators[$operatorName].Drop()
+                            Write-Message -Level Verbose -Message "Dropping Operator $operator"
+                            $server.JobServer.Operators[$operator].Drop()
                         } catch {
                             Stop-Function -Message "Issue dropping operator" -Category InvalidOperation -ErrorRecord $_ -Target $instance -Continue
                         }
@@ -292,7 +292,7 @@ function New-DbaAgentOperator {
                 }
             }
 
-            if ($Pscmdlet.ShouldProcess($instance, "Creating Operator $operatorName")) {
+            if ($Pscmdlet.ShouldProcess($instance, "Creating Operator $operator")) {
                 try {
                     $operator = New-Object ('Microsoft.SqlServer.Management.Smo.Agent.Operator') ($server.JobServer, $Operator)
 
@@ -316,7 +316,7 @@ function New-DbaAgentOperator {
                         $server.JobServer.AlertSystem.Alter()
                     }
 
-                    Write-Message -Level Verbose -Message "Creating Operator $operatorName"
+                    Write-Message -Level Verbose -Message "Creating Operator $operator"
                     Get-DbaAgentOperator -SqlInstance $server -Operator $Operator
                 } catch {
                     Stop-Function -Message "Issue creating operator." -Category InvalidOperation -ErrorRecord $_ -Target $instance
