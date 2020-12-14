@@ -312,8 +312,8 @@ function New-DbaAgentOperator {
                     $operators.Create()
 
                     if ($IsFailsafeOperator) {
-                        $server.JobServer.AlertSystem.FailSafeOperator = $IsFailsafeOperator
-                        $server.JobServer.AlertSystem.FailSafeOperator.NotificationMethod = $FailsafeNoficationMethod
+                        $server.JobServer.AlertSystem.FailSafeOperator = $Operator
+                        $server.JobServer.AlertSystem.FailSafeOperator.NotificationMethod = $FailsafeNotificationMethod
                         $server.JobServer.AlertSystem.Alter()
                     }
 
