@@ -294,21 +294,22 @@ function New-DbaAgentOperator {
 
             if ($Pscmdlet.ShouldProcess($instance, "Creating Operator $operator")) {
                 try {
-                    $operator = New-Object ('Microsoft.SqlServer.Management.Smo.Agent.Operator') ($server.JobServer, $Operator)
+                    $JobServer = $server.JobServer
+                    $operators = $JobServer.Operators
+                    $operators = new-object Microsoft.SqlServer.Management.Smo.Agent.Operator( $JobServer, $Operator)
 
-                    $operator.Name = $Operator
-                    $operator.EmailAddress = $EmailAddress
-                    $operator.NetSendAddress = $NetSendAddress
-                    $operator.PagerAddress = $PagerAddress
-                    $operator.PagerDays = $Interval
-                    $operator.SaturdayPagerStartTime = $SaturdayStartTime
-                    $operator.SaturdayPagerEndTime = $SaturdayEndTime
-                    $operator.SundayPagerStartTime = $SundayStartTime
-                    $operator.SundayPagerEndTime = $SundayEndTime
-                    $operator.WeekdayPagerStartTime = $WeekdayStartTime
-                    $operator.WeekdayPagerEndTime = $WeekdayEndTime
+                    $operators.EmailAddress = $EmailAddress
+                    $operators.NetSendAddress = $NetSendAddress
+                    $operators.PagerAddress = $PagerAddress
+                    $operators.PagerDays = $Interval
+                    $operators.SaturdayPagerStartTime = $SaturdayStartTime
+                    $operators.SaturdayPagerEndTime = $SaturdayEndTime
+                    $operators.SundayPagerStartTime = $SundayStartTime
+                    $operators.SundayPagerEndTime = $SundayEndTime
+                    $operators.WeekdayPagerStartTime = $WeekdayStartTime
+                    $operators.WeekdayPagerEndTime = $WeekdayEndTime
 
-                    $operator.Create()
+                    $operators.Create()
 
                     if ($IsFailsafeOperator) {
                         $server.JobServer.AlertSystem.FailSafeOperator = $IsFailsafeOperator
