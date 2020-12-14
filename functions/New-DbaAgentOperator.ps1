@@ -296,7 +296,7 @@ function New-DbaAgentOperator {
                 try {
                     $JobServer = $server.JobServer
                     $operators = $JobServer.Operators
-                    $operators = new-object Microsoft.SqlServer.Management.Smo.Agent.Operator( $JobServer, $Operator)
+                    $operators = New-Object Microsoft.SqlServer.Management.Smo.Agent.Operator( $JobServer, $Operator)
 
                     $operators.EmailAddress = $EmailAddress
                     $operators.NetSendAddress = $NetSendAddress

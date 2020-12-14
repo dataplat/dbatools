@@ -17,7 +17,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 
         It "Should have the right name" {
             $results = New-DbaAgentOperator -SqlInstance $script:instance2 -Operator DBA -EmailAddress operator@operator.com -PagerDay Everyday -Force
-            $results.Operator | Should Be "DBA"
+            $results.Name | Should Be "DBA"
         }
 
         # Cleanup and ignore all output
