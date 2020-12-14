@@ -634,8 +634,8 @@ function Write-DbaDbTableData {
     }
     end {
         #region ConvertTo-DbaDataTable wrapper
-        if ($null -ne $steppablePipeline) {
-            $dataTable = $steppablePipeline.End()
+        $dataTable = $steppablePipeline.End()
+        if ($dataTable[0].Rows.Count -gt 0) {
 
             if (-not $tableExists) {
                 try {
