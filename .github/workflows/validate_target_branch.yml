@@ -12,7 +12,11 @@ jobs:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v2
       - name: Target branch should be development
-        if: github.base_ref != 'refs/heads/development'
+        shell: pwsh
         run: |
-          echo "Target branch is found not set to development"
-          exit 1
+          if ($env:GITHUB_BASE_REF -ne 'development') {
+            Write-Host "Base branch set to: $env:GITHUB_BASE_REF"
+            throw "Target branch not set to development"
+          } else {
+            Write-Host "Base branch set properly to $env:GITHUB_BASE_REF"
+          }
