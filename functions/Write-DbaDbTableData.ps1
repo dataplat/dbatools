@@ -241,7 +241,7 @@ function Write-DbaDbTableData {
 
                 $bulkCopy.WriteToServer($DataTable)
                 if ($rowCount -is [int]) {
-                    Write-Progress -id 1 -activity "Inserting $rowCount rows" -status "Complete" -Completed
+                    Write-Progress -Id 1 -Activity "Inserting $rowCount rows" -Status "Complete" -Completed
                 }
             }
         }
@@ -509,7 +509,7 @@ function Write-DbaDbTableData {
                 $script:totalRows = $args[1].RowsCopied
                 $percent = [int](($script:totalRows / $rowCount) * 100)
                 $timeTaken = [math]::Round($elapsed.Elapsed.TotalSeconds, 1)
-                Write-Progress -id 1 -activity "Inserting $rowCount rows." -PercentComplete $percent -Status ([System.String]::Format("Progress: {0} rows ({1}%) in {2} seconds", $script:totalRows, $percent, $timeTaken))
+                Write-Progress -Id 1 -Activity "Inserting $rowCount rows." -PercentComplete $percent -Status ([System.String]::Format("Progress: {0} rows ({1}%) in {2} seconds", $script:totalRows, $percent, $timeTaken))
             })
 
         $PStoSQLTypes = @{
