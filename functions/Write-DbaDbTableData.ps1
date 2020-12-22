@@ -1,7 +1,7 @@
 function Write-DbaDbTableData {
     <#
     .SYNOPSIS
-        Writes data to a SQL Server Table.
+        Writes data to a SQL Server table.
 
     .DESCRIPTION
         Writes a .NET DataTable to a SQL Server table using SQL Bulk Copy.
@@ -17,21 +17,26 @@ function Write-DbaDbTableData {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        The database where the Input Object data will be written
+        The database where the Input Object data will be written.
 
     .PARAMETER InputObject
         This is the DataTable (or data row) to import to SQL Server.
 
+        It is very important to understand how different types of objects are beeing processed to get the best performance.
+        The best performance is achieved when using the DataSet data type. If the data to be imported are determined with Invoke-DbaQuery, the option "-As DataSet" should be used. Then all records are imported in a single call of SqlBulkCopy.
+        Also the data type DataTable can lead to an import of all records in a single call of SqlBulkCopy. However, it should be noted that "$varWithDataTable | Write-DbaDbTableData" causes the pipeline to convert the single object of type DataTable to a series of objects of type DataRow. These in turn lead to single calls of SqlBulkCopy per record, which negatively affects performance. This is also the reason why the use of the DataRow data type is generally discouraged.
+        When using objects of type PSObject, these are first all combined into an internal object of type DataTable and then imported in a single call of SqlBulkCopy.
+
     .PARAMETER Table
         The table name to import data into. You can specify a one, two, or three part table name. If you specify a one or two part name, you must also use -Database.
 
-        If the table does not exist, you can use -AutoCreateTable to automatically create the table with inefficient data types.
+        If the table does not exist, you can use -AutoCreateTable to automatically create the table. The table will be created with sub-optimal data types such as nvarchar(max).
 
         If the object has special characters please wrap them in square brackets [ ].
         Using dbo.First.Table will try to import to a table named 'Table' on schema 'First' and database 'dbo'.
-        The correct way to import to a table named 'First.Table' on schema 'dbo' is by passing dbo.[First.Table]
+        The correct way to import to a table named 'First.Table' on schema 'dbo' is by passing dbo.[First.Table].
         Any actual usage of the ] must be escaped by duplicating the ] character.
-        The correct way to import to a table Name] in schema Schema.Name is by passing [Schema.Name].[Name]]]
+        The correct way to import to a table Name] in schema Schema.Name is by passing [Schema.Name].[Name]]].
 
     .PARAMETER Schema
         Defaults to dbo if no schema is specified.
@@ -40,10 +45,10 @@ function Write-DbaDbTableData {
         The BatchSize for the import defaults to 5000.
 
     .PARAMETER NotifyAfter
-        Sets the option to show the notification after so many rows of import
+        Sets the option to show the notification after so many rows of import.
 
     .PARAMETER AutoCreateTable
-        If this switch is enabled, the table will be created if it does not already exist. The table will be created with sub-optimal data types such as nvarchar(max)
+        If this switch is enabled, the table will be created if it does not already exist. The table will be created with sub-optimal data types such as nvarchar(max).
 
     .PARAMETER NoTableLock
         If this switch is enabled, a table lock (TABLOCK) will not be placed on the destination table. By default, this operation will lock the destination table while running.
@@ -87,7 +92,7 @@ function Write-DbaDbTableData {
 
     .PARAMETER UseDynamicStringLength
         By default, all string columns will be NVARCHAR(MAX).
-        If this switch is enabled, all columns will get the length specified by the column's MaxLength property (if specified)
+        If this switch is enabled, all columns will get the length specified by the column's MaxLength property (if specified).
 
     .NOTES
         Tags: DataTable, Insert
@@ -108,9 +113,9 @@ function Write-DbaDbTableData {
 
     .EXAMPLE
         PS C:\> $tableName = "MyTestData"
-        PS C:\> $query = "SELECT name, create_date, owner_sid FROM sys.databases"
-        PS C:\> $dataset = Invoke-DbaQuery -SqlInstance 'localhost,1417' -SqlCredential $containerCred -Database master -Query $query
-        PS C:\> $dataset | Select-Object name, create_date, @{L="owner_sid";E={$_."owner_sid"}} | Write-DbaDbTableData -SqlInstance 'localhost,1417' -SqlCredential $containerCred -Database tempdb -Table myTestData -Schema dbo -AutoCreateTable
+        PS C:\> $query = "SELECT name, create_date FROM sys.databases"
+        PS C:\> $dataset = Invoke-DbaQuery -SqlInstance 'localhost,1417' -SqlCredential $containerCred -Database master -Query $query -As DataSet
+        PS C:\> $dataset | Write-DbaDbTableData -SqlInstance 'localhost,1417' -SqlCredential $containerCred -Database tempdb -Table $tableName -AutoCreateTable
 
         Pulls data from a SQL Server instance and then performs a bulk insert of the dataset to a new, auto-generated table tempdb.dbo.MyTestData.
 
