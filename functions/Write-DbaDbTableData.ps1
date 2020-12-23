@@ -113,7 +113,7 @@ function Write-DbaDbTableData {
 
     .EXAMPLE
         PS C:\> $tableName = "MyTestData"
-        PS C:\> $query = "SELECT name, create_date FROM sys.databases"
+        PS C:\> $query = "SELECT name, create_date, owner_sid FROM sys.databases"
         PS C:\> $dataset = Invoke-DbaQuery -SqlInstance 'localhost,1417' -SqlCredential $containerCred -Database master -Query $query -As DataSet
         PS C:\> $dataset | Write-DbaDbTableData -SqlInstance 'localhost,1417' -SqlCredential $containerCred -Database tempdb -Table $tableName -AutoCreateTable
 
