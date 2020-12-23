@@ -524,6 +524,7 @@ function Write-DbaDbTableData {
             'System.Single'         = 'bigint';
             'System.Double'         = 'float';
             'System.Byte'           = 'tinyint';
+            'System.Byte[]'         = 'varbinary(MAX)';
             'System.SByte'          = 'smallint';
             'System.TimeSpan'       = 'nvarchar(30)';
             'System.String'         = 'nvarchar(MAX)';
@@ -542,6 +543,7 @@ function Write-DbaDbTableData {
             'Single'                = 'bigint';
             'Double'                = 'float';
             'Byte'                  = 'tinyint';
+            'Byte[]'                = 'varbinary(MAX)';
             'SByte'                 = 'smallint';
             'TimeSpan'              = 'nvarchar(30)';
             'String'                = 'nvarchar(MAX)';
