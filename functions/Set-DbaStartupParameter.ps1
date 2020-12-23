@@ -227,7 +227,7 @@ function Set-DbaStartupParameter {
                 return
             }
             $originalParamString = $currentStartup.ParameterString
-            $parameterString = ""
+            $parameterString = $null
 
             Write-Message -Level Verbose -Message "Original startup parameter string: $originalParamString"
 
