@@ -209,7 +209,7 @@ function Export-DbaDacPackage {
                     $ext = 'bacpac'
                 }
 
-                $FilePath = Get-ExportFilePath -Path $PSBoundParameters.Path -FilePath $PSBoundParameters.FilePath -Type $ext -ServerName $instance
+                $FilePath = Get-ExportFilePath -Path $PSBoundParameters.Path -FilePath $PSBoundParameters.FilePath -Type $ext -ServerName $instance -DatabaseName $dbName
 
                 #using SMO by default
                 if ($PsCmdlet.ParameterSetName -eq 'SMO') {

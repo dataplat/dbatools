@@ -4,22 +4,23 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
+        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
         [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'AllUserDatabases', 'Path', 'FilePath', 'DacOption', 'ExtendedParameters', 'ExtendedProperties', 'Type', 'Table', 'EnableException'
         $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
         It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
         }
     }
 }
 
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     BeforeAll {
+        $server = $script:instance1
         $dbname = "dbatoolsci_exportdacpac"
         try {
-            $server = Connect-DbaInstance -SqlInstance $script:instance1
+            $server = Connect-DbaInstance -SqlInstance $server
             $null = $server.Query("Create Database [$dbname]")
-            $db = Get-DbaDatabase -SqlInstance $script:instance1 -Database $dbname
+            $db = Get-DbaDatabase -SqlInstance $server -Database $dbname
             $null = $db.Query("CREATE TABLE dbo.example (id int, PRIMARY KEY (id));
             INSERT dbo.example
             SELECT top 100 object_id
@@ -27,9 +28,28 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         } catch { } # No idea why appveyor can't handle this
 
         $testFolder = 'C:\Temp\dacpacs'
+
+        $dbName2 = "dbatoolsci:2"
+        $dbName2Escaped = "dbatoolsci$2"
+
+        $null = New-DbaDatabase -SqlInstance $server -Name $dbName2
     }
     AfterAll {
-        Remove-DbaDatabase -SqlInstance $script:instance1 -Database $dbname -Confirm:$false
+        Remove-DbaDatabase -SqlInstance $server -Database $dbname, $dbName2 -Confirm:$false
+    }
+
+    Context "Bug 7038" {
+        It "Database name is included in the output filename" {
+            $result = Export-DbaDacPackage -SqlInstance $server -Database $dbname
+            $result.Path | Should -BeLike "*$($dbName)*"
+        }
+
+        It "Database names with invalid filesystem chars are successfully exported" {
+            $result = Export-DbaDacPackage -SqlInstance $server -Database $dbname, $dbName2
+            $result.Path.Count | Should -Be 2
+            $result.Path[0] | Should -BeLike "*$($dbName)*"
+            $result.Path[1] | Should -BeLike "*$($dbName2Escaped)*"
+        }
     }
     Context "Extract dacpac" {
         BeforeEach {
@@ -40,10 +60,10 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             Pop-Location
             Remove-Item $testFolder -Force -Recurse
         }
-        if ((Get-DbaDbTable -SqlInstance $script:instance1 -Database $dbname -Table example)) {
+        if ((Get-DbaDbTable -SqlInstance $server -Database $dbname -Table example)) {
             # Sometimes appveyor bombs
             It "exports a dacpac" {
-                $results = Export-DbaDacPackage -SqlInstance $script:instance1 -Database $dbname
+                $results = Export-DbaDacPackage -SqlInstance $server -Database $dbname
                 $results.Path | Should -Not -BeNullOrEmpty
                 Test-Path $results.Path | Should -Be $true
                 if (($results).Path) {
@@ -53,14 +73,14 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             It "exports to the correct directory" {
                 $relativePath = '.\'
                 $expectedPath = (Resolve-Path $relativePath).Path
-                $results = Export-DbaDacPackage -SqlInstance $script:instance1 -Database $dbname -Path $relativePath
+                $results = Export-DbaDacPackage -SqlInstance $server -Database $dbname -Path $relativePath
                 $results.Path | Split-Path | Should -Be $expectedPath
                 Test-Path $results.Path | Should -Be $true
             }
             It "exports dacpac with a table list" {
                 $relativePath = '.\extract.dacpac'
                 $expectedPath = Join-Path (Get-Item .) 'extract.dacpac'
-                $results = Export-DbaDacPackage -SqlInstance $script:instance1 -Database $dbname -FilePath $relativePath -Table example
+                $results = Export-DbaDacPackage -SqlInstance $server -Database $dbname -FilePath $relativePath -Table example
                 $results.Path | Should -Be $expectedPath
                 Test-Path $results.Path | Should -Be $true
                 if (($results).Path) {
@@ -69,7 +89,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             }
             It "uses EXE to extract dacpac" {
                 $exportProperties = "/p:ExtractAllTableData=True"
-                $results = Export-DbaDacPackage -SqlInstance $script:instance1 -Database $dbname -ExtendedProperties $exportProperties
+                $results = Export-DbaDacPackage -SqlInstance $server -Database $dbname -ExtendedProperties $exportProperties
                 $results.Path | Should -Not -BeNullOrEmpty
                 Test-Path $results.Path | Should -Be $true
                 if (($results).Path) {
@@ -87,10 +107,10 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             Pop-Location
             Remove-Item $testFolder -Force -Recurse
         }
-        if ((Get-DbaDbTable -SqlInstance $script:instance1 -Database $dbname -Table example)) {
+        if ((Get-DbaDbTable -SqlInstance $server -Database $dbname -Table example)) {
             # Sometimes appveyor bombs
             It "exports a bacpac" {
-                $results = Export-DbaDacPackage -SqlInstance $script:instance1 -Database $dbname -Type Bacpac
+                $results = Export-DbaDacPackage -SqlInstance $server -Database $dbname -Type Bacpac
                 $results.Path | Should -Not -BeNullOrEmpty
                 Test-Path $results.Path | Should -Be $true
                 if (($results).Path) {
@@ -100,7 +120,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             It "exports bacpac with a table list" {
                 $relativePath = '.\extract.bacpac'
                 $expectedPath = Join-Path (Get-Item .) 'extract.bacpac'
-                $results = Export-DbaDacPackage -SqlInstance $script:instance1 -Database $dbname -FilePath $relativePath -Table example -Type Bacpac
+                $results = Export-DbaDacPackage -SqlInstance $server -Database $dbname -FilePath $relativePath -Table example -Type Bacpac
                 $results.Path | Should -Be $expectedPath
                 Test-Path $results.Path | Should -Be $true
                 if (($results).Path) {
@@ -109,7 +129,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             }
             It "uses EXE to extract bacpac" {
                 $exportProperties = "/p:TargetEngineVersion=Default"
-                $results = Export-DbaDacPackage -SqlInstance $script:instance1 -Database $dbname -ExtendedProperties $exportProperties -Type Bacpac
+                $results = Export-DbaDacPackage -SqlInstance $server -Database $dbname -ExtendedProperties $exportProperties -Type Bacpac
                 $results.Path | Should -Not -BeNullOrEmpty
                 Test-Path $results.Path | Should -Be $true
                 if (($results).Path) {
