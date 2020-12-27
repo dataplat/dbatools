@@ -67,9 +67,9 @@ function Export-DbaDacPackage {
         https://dbatools.io/Export-DbaDacPackage
 
     .EXAMPLE
-        PS C:\> Export-DbaDacPackage -SqlInstance sql2016 -Database SharePoint_Config
+        PS C:\> Export-DbaDacPackage -SqlInstance sql2016 -Database SharePoint_Config -FilePath C:\SharePoint_Config.dacpac
 
-        Exports the dacpac for SharePoint_Config on sql2016 to $home\Documents\SharePoint_Config.dacpac
+        Exports the dacpac for SharePoint_Config on sql2016 to C:\SharePoint_Config.dacpac
 
     .EXAMPLE
         PS C:\> $options = New-DbaDacOption -Type Dacpac -Action Export
@@ -77,17 +77,17 @@ function Export-DbaDacPackage {
         PS C:\> $options.CommandTimeout = 0
         PS C:\> Export-DbaDacPackage -SqlInstance sql2016 -Database DB1 -Options $options
 
-        Uses DacOption object to set the CommandTimeout to 0 then extracts the dacpac for DB1 on sql2016 to $home\Documents\DB1.dacpac including all table data.
+        Uses DacOption object to set the CommandTimeout to 0 then extracts the dacpac for DB1 on sql2016 to C:\Users\username\Documents\DbatoolsExport\ including all table data. The generated filename will contain the server name, database name, and a timestamp.
 
     .EXAMPLE
         PS C:\> Export-DbaDacPackage -SqlInstance sql2016 -AllUserDatabases -ExcludeDatabase "DBMaintenance","DBMonitoring" -Path "C:\temp"
-        Exports dacpac packages for all USER databases, excluding "DBMaintenance" & "DBMonitoring", on sql2016 and saves them to C:\temp
+        Exports dacpac packages for all USER databases, excluding "DBMaintenance" & "DBMonitoring", on sql2016 and saves them to C:\temp. The generated filename(s) will contain the server name, database name, and a timestamp.
 
     .EXAMPLE
         PS C:\> $moreparams = "/OverwriteFiles:$true /Quiet:$true"
         PS C:\> Export-DbaDacPackage -SqlInstance sql2016 -Database SharePoint_Config -Path C:\temp -ExtendedParameters $moreparams
 
-        Using extended parameters to over-write the files and performs the extraction in quiet mode. Uses command line instead of SMO behind the scenes.
+        Using extended parameters to over-write the files and performs the extraction in quiet mode. Uses command line instead of SMO behind the scenes. The generated filename will contain the server name, database name, and a timestamp.
     #>
     [CmdletBinding(DefaultParameterSetName = 'SMO')]
     param
