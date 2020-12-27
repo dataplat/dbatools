@@ -77,17 +77,17 @@ function Export-DbaDacPackage {
         PS C:\> $options.CommandTimeout = 0
         PS C:\> Export-DbaDacPackage -SqlInstance sql2016 -Database DB1 -Options $options
 
-        Uses DacOption object to set the CommandTimeout to 0 then extracts the dacpac for DB1 on sql2016 to C:\Users\username\Documents\DbatoolsExport\ including all table data. The generated filename will contain the server name, database name, and a timestamp.
+        Uses DacOption object to set the CommandTimeout to 0 then extracts the dacpac for DB1 on sql2016 to C:\Users\username\Documents\DbatoolsExport\sql2016-DB1-20201227140759-dacpackage.dacpac including all table data. As noted the generated filename will contain the server name, database name, and the current timestamp in the "%Y%m%d%H%M%S" format.
 
     .EXAMPLE
         PS C:\> Export-DbaDacPackage -SqlInstance sql2016 -AllUserDatabases -ExcludeDatabase "DBMaintenance","DBMonitoring" -Path "C:\temp"
-        Exports dacpac packages for all USER databases, excluding "DBMaintenance" & "DBMonitoring", on sql2016 and saves them to C:\temp. The generated filename(s) will contain the server name, database name, and a timestamp.
+        Exports dacpac packages for all USER databases, excluding "DBMaintenance" & "DBMonitoring", on sql2016 and saves them to C:\temp. The generated filename(s) will contain the server name, database name, and the current timestamp in the "%Y%m%d%H%M%S" format.
 
     .EXAMPLE
         PS C:\> $moreparams = "/OverwriteFiles:$true /Quiet:$true"
         PS C:\> Export-DbaDacPackage -SqlInstance sql2016 -Database SharePoint_Config -Path C:\temp -ExtendedParameters $moreparams
 
-        Using extended parameters to over-write the files and performs the extraction in quiet mode. Uses command line instead of SMO behind the scenes. The generated filename will contain the server name, database name, and a timestamp.
+        Using extended parameters to over-write the files and performs the extraction in quiet mode to C:\temp\sql2016-SharePoint_Config-20201227140759-dacpackage.dacpac. Uses command line instead of SMO behind the scenes. As noted the generated filename will contain the server name, database name, and the current timestamp in the "%Y%m%d%H%M%S" format.
     #>
     [CmdletBinding(DefaultParameterSetName = 'SMO')]
     param
