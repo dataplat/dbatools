@@ -82,6 +82,9 @@ function Invoke-DbaAdvancedRestore {
     .PARAMETER Confirm
         Prompts you for confirmation before running the cmdlet.
 
+    .PARAMETER ExecuteAs
+        If set, this will cause the database(s) to be restored (and therefore owned) as the SA user
+
     .PARAMETER StopMark
         Mark in the transaction log to stop the restore at
 
@@ -141,6 +144,7 @@ function Invoke-DbaAdvancedRestore {
         [switch]$KeepReplication,
         [switch]$KeepCDC,
         [object[]]$PageRestore,
+        [string]$ExecuteAs,
         [switch]$StopBefore,
         [string]$StopMark,
         [datetime]$StopAfterDate,
@@ -326,6 +330,9 @@ function Invoke-DbaAdvancedRestore {
                             }
                         } elseif ($OutputScriptOnly) {
                             $script = $restore.Script($server)
+                            if ($ExecuteAs -ne '' -and $BackupCnt -eq 1) {
+                                $script = "EXECUTE AS LOGIN='$ExecuteAs'; " + $script
+                            }
                         } elseif ($VerifyOnly) {
                             Write-Message -Message "VerifyOnly restore" -Level Verbose
                             Write-Progress -id 1 -activity "Verifying $database backup file on $SqlInstance - Backup $BackupCnt of $($Backups.count)" -percentcomplete 0 -status ([System.String]::Format("Progress: {0} %", 0))
@@ -345,13 +352,20 @@ function Invoke-DbaAdvancedRestore {
                             }
                             Write-Progress -id 2 -ParentId 1 -Activity "Restore $($backup.FullName -Join ',')" -percentcomplete 0
                             $script = $restore.Script($server)
-                            $percentcomplete = [Microsoft.SqlServer.Management.Smo.PercentCompleteEventHandler] {
-                                Write-Progress -id 2 -ParentId 1 -Activity "Restore $($backup.FullName -Join ',')" -percentcomplete $_.Percent -status ([System.String]::Format("Progress: {0} %", $_.Percent))
+                            if ($ExecuteAs -ne '' -and $BackupCnt -eq 1) {
+                                Write-Progress -id 1 -activity "Restoring $database to $SqlInstance - Backup $BackupCnt of $($Backups.count)" -percentcomplete 0 -status ([System.String]::Format("Progress: {0} %", 0))
+                                $script = "EXECUTE AS LOGIN='$ExecuteAs'; " + $script
+                                $null = $server.ConnectionContext.ExecuteNonQuery($script)
+                                Write-Progress -id 1 -activity "Restoring $database to $SqlInstance - Backup $BackupCnt of $($Backups.count)" -status "Complete" -Completed
+                            } else {
+                                $percentcomplete = [Microsoft.SqlServer.Management.Smo.PercentCompleteEventHandler] {
+                                    Write-Progress -id 2 -ParentId 1 -Activity "Restore $($backup.FullName -Join ',')" -percentcomplete $_.Percent -status ([System.String]::Format("Progress: {0} %", $_.Percent))
+                                }
+                                $restore.add_PercentComplete($percentcomplete)
+                                $restore.PercentCompleteNotification = 1
+                                $restore.SqlRestore($server)
+                                Write-Progress -id 2 -ParentId 1 -Activity "Restore $($backup.FullName -Join ',')" -Completed
                             }
-                            $restore.add_PercentComplete($percentcomplete)
-                            $restore.PercentCompleteNotification = 1
-                            $restore.SqlRestore($server)
-                            Write-Progress -id 2 -ParentId 1 -Activity "Restore $($backup.FullName -Join ',')" -Completed
                             Write-Progress -id 1 -Activity "Restoring $database to $SqlInstance - Backup $BackupCnt of $($Backups.count)" -percentcomplete $outerProgress -status ([System.String]::Format("Progress: {0:N2} %", $outerProgress))
                         }
                     } catch {

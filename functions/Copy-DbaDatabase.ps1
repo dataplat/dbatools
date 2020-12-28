@@ -279,7 +279,9 @@ function Copy-DbaDatabase {
             return
         }
 
-        if ($Force) { $ConfirmPreference = 'none' }
+        if ($Force) {
+            $ConfirmPreference = 'none'
+        }
 
         function Join-Path {
             <#
@@ -422,7 +424,7 @@ function Copy-DbaDatabase {
                             if ($destServer.VersionMajor -lt 10) {
                                 $directory = "$directory\FTDATA"
                             }
-                            $fileName = Split-Path($physical) -leaf
+                            $fileName = Split-Path($physical) -Leaf
                             $d.physical = "$directory\$fileName"
                         }
                         $d.logical = $logical
@@ -490,7 +492,7 @@ function Copy-DbaDatabase {
             $fileStructure = [pscustomobject]@{
                 "databases" = $dbcollection
             }
-            Write-Progress -id 1 -Activity "Processing database file structure" -Status "Completed" -Completed
+            Write-Progress -Id 1 -Activity "Processing database file structure" -Status "Completed" -Completed
             return $fileStructure
         }
 
@@ -605,26 +607,26 @@ function Copy-DbaDatabase {
                     $remotefilename = $dbdestination[$file].remotefilename
                     $from = $dbsource[$file].remotefilename
                     try {
-                        if (Test-Path $from -pathtype container) {
+                        if (Test-Path $from -PathType container) {
                             $null = New-Item -ItemType Directory -Path $remotefilename -Force
-                            Start-BitsTransfer -Source "$from\*.*" -Destination $remotefilename
+                            Start-BitsTransfer -Source "$from\*.*" -Destination $remotefilename -ErrorAction Stop
 
-                            $directories = (Get-ChildItem -recurse $from | Where-Object {
+                            $directories = (Get-ChildItem -Recurse $from | Where-Object {
                                     $_.PsIsContainer
                                 }).FullName
                             foreach ($directory in $directories) {
                                 $newdirectory = $directory.replace($from, $remotefilename)
                                 $null = New-Item -ItemType Directory -Path $newdirectory -Force
-                                Start-BitsTransfer -Source "$directory\*.*" -Destination $newdirectory
+                                Start-BitsTransfer -Source "$directory\*.*" -Destination $newdirectory -ErrorAction Stop
                             }
                         } else {
                             Write-Message -Level Verbose -Message "Copying $from for $dbName."
-                            Start-BitsTransfer -Source $from -Destination $remotefilename
+                            Start-BitsTransfer -Source $from -Destination $remotefilename -ErrorAction Stop
                         }
                     } catch {
                         try {
                             # Sometimes BITS trips out temporarily on cloned drives.
-                            Start-BitsTransfer -Source $from -Destination $remotefilename
+                            Start-BitsTransfer -Source $from -Destination $remotefilename -ErrorAction Stop
                         } catch {
                             Write-Message -Level Verbose -Message "Start-BitsTransfer did not succeed. Now attempting with Copy-Item - no progress bar will be shown."
                             try {
@@ -1226,7 +1228,7 @@ function Copy-DbaDatabase {
                             try {
                                 $msg = $null
                                 if ($miRestore) {
-                                    $restoreResultTmp = $backupTmpResult | Restore-DbaDatabase -SqlInstance $destServer -DatabaseName $DestinationdbName -TrustDbBackupHistory -WithReplace:$WithReplace  -EnableException -AzureCredential $AzureCredential
+                                    $restoreResultTmp = $backupTmpResult | Restore-DbaDatabase -SqlInstance $destServer -DatabaseName $DestinationdbName -TrustDbBackupHistory -WithReplace:$WithReplace -EnableException -AzureCredential $AzureCredential
                                 } else {
                                     $restoreResultTmp = $backupTmpResult | Restore-DbaDatabase -SqlInstance $destServer -DatabaseName $DestinationdbName -ReuseSourceFolderStructure:$ReuseSourceFolderStructure -NoRecovery:$NoRecovery -TrustDbBackupHistory -WithReplace:$WithReplace -Continue:$Continue -EnableException -ReplaceDbNameInFile -AzureCredential $AzureCredential -KeepCDC:$KeepCDC -KeepReplication:$KeepReplication
                                 }
