@@ -5,7 +5,7 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
         [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Path', 'DatabaseName', 'DestinationDataDirectory', 'DestinationLogDirectory', 'DestinationFileStreamDirectory', 'RestoreTime', 'NoRecovery', 'WithReplace', 'XpDirTree', 'OutputScriptOnly', 'VerifyOnly', 'MaintenanceSolutionBackup', 'FileMapping', 'IgnoreLogBackup', 'IgnoreDiffBackup', 'UseDestinationDefaultDirectories', 'ReuseSourceFolderStructure', 'DestinationFilePrefix', 'RestoredDatabaseNamePrefix', 'TrustDbBackupHistory', 'MaxTransferSize', 'BlockSize', 'BufferCount', 'DirectoryRecurse', 'EnableException', 'StandbyDirectory', 'Continue', 'AzureCredential', 'ReplaceDbNameInFile', 'DestinationFileSuffix', 'Recover', 'KeepCDC', 'GetBackupInformation', 'StopAfterGetBackupInformation', 'SelectBackupInformation', 'StopAfterSelectBackupInformation', 'FormatBackupInformation', 'StopAfterFormatBackupInformation', 'TestBackupInformation', 'StopAfterTestBackupInformation', 'PageRestore', 'PageRestoreTailFolder', 'StatementTimeout', 'KeepReplication', 'StopBefore', 'StopMark', 'StopAfterDate'
+        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Path', 'DatabaseName', 'DestinationDataDirectory', 'DestinationLogDirectory', 'DestinationFileStreamDirectory', 'RestoreTime', 'NoRecovery', 'WithReplace', 'XpDirTree', 'OutputScriptOnly', 'VerifyOnly', 'MaintenanceSolutionBackup', 'FileMapping', 'IgnoreLogBackup', 'IgnoreDiffBackup', 'UseDestinationDefaultDirectories', 'ReuseSourceFolderStructure', 'DestinationFilePrefix', 'RestoredDatabaseNamePrefix', 'TrustDbBackupHistory', 'MaxTransferSize', 'BlockSize', 'BufferCount', 'DirectoryRecurse', 'EnableException', 'StandbyDirectory', 'Continue', 'AzureCredential', 'ReplaceDbNameInFile', 'DestinationFileSuffix', 'Recover', 'KeepCDC', 'GetBackupInformation', 'StopAfterGetBackupInformation', 'SelectBackupInformation', 'StopAfterSelectBackupInformation', 'FormatBackupInformation', 'StopAfterFormatBackupInformation', 'TestBackupInformation', 'StopAfterTestBackupInformation', 'PageRestore', 'PageRestoreTailFolder', 'StatementTimeout', 'KeepReplication', 'StopBefore', 'StopMark', 'StopAfterDate', 'ExecuteAs'
         $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
         It "Should only contain our specific parameters" {
             (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
@@ -147,6 +147,46 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         $results = Remove-DbaDatabase -Confirm:$false -SqlInstance $script:instance2 -Database pestering
         It "Should say the status was dropped" {
             $results.Status | Should Be "Dropped"
+        }
+
+    }
+
+    Context "Test restoring as other login #6992" {
+        #Check first that the db isn't owned by SA
+        $results = Get-ChildItem $script:appveyorlabrepo\singlerestore\singlerestore.bak | Restore-DbaDatabase -SqlInstance $script:instance2 -DatabaseName Pestering -replaceDbNameInFile -WithReplace
+        $db = Get-DbaDatabase -SqlInstance $script:instance2 -Database Pestering
+        It "Should Not be owned by SA this time" {
+            $db.owner | Should Not Be "sa"
+        }
+
+        Remove-DbaDatabase -SqlInstance $script:instance2 -Database Pestering -Confirm:$false
+
+        $results = Get-ChildItem $script:appveyorlabrepo\singlerestore\singlerestore.bak | Restore-DbaDatabase -SqlInstance $script:instance2 -DatabaseName Pestering -replaceDbNameInFile -WithReplace -ExecuteAs badlogin -WarningVariable warnvar
+        $db = Get-DbaDatabase -SqlInstance $script:instance2 -Database Pestering
+        It "Should throw a warning if login doesn't exist" {
+            $warnvar | Should BeLike "*You specified a Login to execute the restore, but the login 'badlogin' does not exist"
+        }
+
+        $results = Get-ChildItem $script:appveyorlabrepo\singlerestore\singlerestore.bak | Restore-DbaDatabase -SqlInstance $script:instance2 -DatabaseName Pestering -replaceDbNameInFile -WithReplace -ExecuteAs sa
+        $db = Get-DbaDatabase -SqlInstance $script:instance2 -Database Pestering
+        It "Should be owned by SA this time" {
+            $db.owner | Should Be "sa"
+        }
+
+        Remove-DbaDatabase -SqlInstance $script:instance2 -Database Pestering -Confirm:$false
+
+        $RestoreAsUser = 'RestoreAs'
+        New-DbaLogin -SqlInstance $script:instance2 -Login $RestoreAsUser -SecurePassword (ConvertTo-SecureString 'P@ssw0rdl!ng' -AsPlainText -Force) -force
+        Add-DbaServerRoleMember -SqlInstance $script:instance2 -ServerRole sysadmin -Login $RestoreAsUser -confirm:$false
+        $results = Get-ChildItem $script:appveyorlabrepo\singlerestore\singlerestore.bak | Restore-DbaDatabase -SqlInstance $script:instance2 -DatabaseName Pestering -replaceDbNameInFile -WithReplace -ExecuteAs $RestoreAsUser
+        $db2 = Get-DbaDatabase -SqlInstance $script:instance2 -Database Pestering
+        It "Should be owned by $RestoreAsUser this time" {
+            $db2.owner | Should Be "$RestoreAsUser"
+        }
+
+        $results6 = Get-ChildItem $script:appveyorlabrepo\singlerestore\singlerestore.bak | Restore-DbaDatabase -SqlInstance $script:instance2 -DatabaseName Pestering -replaceDbNameInFile -WithReplace -ExecuteAs $RestoreAsUser -OutputScriptOnly
+        It "Should prefix the script with the Execute As statement" {
+            $results6 | Should BeLike "EXECUTE AS LOGIN='$RestoreAsUser'*"
         }
     }
 
@@ -863,11 +903,18 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     }
 
     Context "Test restoring with StopAt and StopAfterDate" {
-        $restoreOutput = Restore-DbaDatabase -SqlInstance $script:instance2 -Name StopAt2 -Path $script:appveyorlabrepo\sql2008-backups\StopAt -StopMark dbatoolstest -StopAfterDate (get-date '2020-05-12 13:33:35') -WithReplace
+        $restoreOutput = Restore-DbaDatabase -SqlInstance $script:instance2 -Name StopAt2 -Path $script:appveyorlabrepo\sql2008-backups\StopAt -StopMark dbatoolstest -StopAfterDate (Get-Date '2020-05-12 13:33:35') -WithReplace
         $null = Restore-DbaDatabase -SqlInstance $script:instance2 -Name StopAt2 -Recover
         $sqlOut = Invoke-DbaQuery -SqlInstance $script:instance2 -Database StopAt2 -Query "select max(step) as ms from steps"
         It "Should have stoped at mark" {
             $sqlOut.ms | Should -Be 29876
+        }
+    }
+
+    Context "Warn if OutputScriptOnly and VerifyOnly specified together #6987" {
+        $restoreOutput = Restore-DbaDatabase -SqlInstance $script:instance2 -Name StopAt2 -Path $script:appveyorlabrepo\sql2008-backups\StopAt -OutputScriptOnly -VerifyOnly -WarningVariable warnvar
+        It "Should return a warning" {
+            $warnvar | Should -BeLike '*The switches OutputScriptOnly and VerifyOnly cannot both be specified at the same time, stopping'
         }
     }
     if ($env:azurepasswd) {
