@@ -17,11 +17,12 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     BeforeAll {
         $defaultInstance = $script:instance1
         $namedInstance = $script:instance2
+        $SkipLocalTest = $true # Change to $false to run the tests on a local instance.
     }
 
-    Context "Bug 7035" {
-        # Adding the -Skip here to ensure the AppVeyor instance isn't modified. This test can be run locally.
-        It -Skip "Ensure the startup params are not duplicated when more than one server is modified in the same invocation" {
+    Context "Validate command functionality" {
+        # See https://github.com/sqlcollaborative/dbatools/issues/7035
+        It -Skip:$SkipLocalTest "Ensure the startup params are not duplicated when more than one server is modified in the same invocation" {
             $result = Set-DbaStartupParameter -SqlInstance $defaultInstance, $namedInstance -TraceFlag 3226 -Confirm:$false
 
             $resultDefaultInstance = Get-DbaStartupParameter -SqlInstance $defaultInstance
@@ -39,8 +40,8 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $resultNamedInstance.TraceFlags[0] | Should -Be 3226
         }
 
-        # Adding the -Skip here to ensure the AppVeyor instance isn't modified. This test can be run locally.
-        It -Skip "Ensure the correct instance name is returned" {
+        # See https://github.com/sqlcollaborative/dbatools/issues/7035
+        It -Skip:$SkipLocalTest "Ensure the correct instance name is returned" {
             $result = Set-DbaStartupParameter -SqlInstance $namedInstance -TraceFlag 3226 -Confirm:$false
 
             $result.SqlInstance | Should -Be $namedInstance
