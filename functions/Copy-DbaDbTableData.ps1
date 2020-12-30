@@ -350,11 +350,11 @@ function Copy-DbaDbTableData {
                 $Destination = $server
             }
 
-            foreach ($destinationserver in $Destination) {
+            foreach ($destinationServer in $Destination) {
                 try {
                     $destServer = Connect-SqlInstance -SqlInstance $destinationserver -SqlCredential $DestinationSqlCredential
                 } catch {
-                    Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $destinationserver
+                    Stop-Function -Message "Error occurred while establishing connection to $destinationServer" -Category ConnectionError -ErrorRecord $_ -Target $destinationserver
                     return
                 }
 
