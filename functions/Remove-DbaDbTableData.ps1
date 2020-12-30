@@ -1,7 +1,7 @@
 function Remove-DbaDbTableData {
     <#
     .SYNOPSIS
-        Removes table data using a batch technique from a database(s) for each instance(s) of on-prem SQL Server. SQL Azure DB is not supported.
+        Removes table data using a batch technique from a database(s) for each instance(s) of on-prem SQL Server. Azure SQL Database is supported.
 
     .DESCRIPTION
         This command does a batch delete of table data using the technique described by Aaron Bertrand here: https://sqlperformance.com/2013/03/io-subsystem/chunk-deletes. The main goal of this command is to ensure that the log file size is controlled while deleting data. This command can be used for doing both very large deletes or small deletes. Foreign keys are not temporarily removed, so the caller needs to perform deletes in the correct order with dependent tables or enable cascading deletes. When a database is using the full or bulk_logged recovery model this command will take log backups at the end of each batch if the -LogBackupPath param is specified. If the database is using the simple recovery model then CHECKPOINTs will be performed. The object returned will contain metadata about the batch deletion process including the log backup details.
@@ -24,7 +24,7 @@ function Remove-DbaDbTableData {
         The database(s) to process. This list is auto-populated from the server. If unspecified, all user databases will be processed.
 
     .PARAMETER BatchSize
-        The number of rows to delete per batch. This param is defaulted to 100000 and limited to a value between 1 and 1000000000 (1 billion). This param can only be used with the -Table param. If -DeleteSql is used the TOP (N) clause must be specified in the SQL DELETE string.
+        The number of rows to delete per batch. This param is defaulted to 100000 and limited to a value between 1 and 1000000000 (1 billion). This param can only be used with the -Table param. If -DeleteSql is used the TOP (N) clause must be specified in the SQL DELETE string. Note: for Azure SQL databases error 40552 could occur for large batch deletions: https://docs.microsoft.com/en-us/azure/azure-sql/database/troubleshoot-common-errors-issues#error-40552-the-session-has-been-terminated-because-of-excessive-transaction-log-space-usage
 
     .PARAMETER Table
         The name of the table that data should be deleted. This param is required except when -DeleteSql is specified. When this param is used the -BatchSize param may also be used (or its default value).
@@ -33,7 +33,7 @@ function Remove-DbaDbTableData {
         A SQL DELETE statement to be used in the command's loop for more advanced scenarios such as deleting based on a join, using a where clause, or using an order by clause (or a combination of all of those). It is required that the DELETE statement include the TOP (N) clause. See the example below. This param may be used instead of -Table and -BatchSize.
 
     .PARAMETER LogBackupPath
-        The directory to store the log backups. This command creates log backups when the database is using the full or bulk_logged recovery models. If this param is not provided the command will not take log backups.
+        The directory to store the log backups. This command creates log backups when the database is using the full or bulk_logged recovery models. If this param is not provided the command will not take log backups. This directory should be writeable by the SQL Server service account.
 
     .PARAMETER LogBackupTimeStampFormat
         By default the command timestamps the log backup files using the format yyyyMMddHHmm. The timestamp format should be defined using the Get-Date formats, because illegal formats will cause an error to be thrown.
@@ -95,6 +95,13 @@ function Remove-DbaDbTableData {
         PS C:\> $server, $server2 | Remove-DbaDbTableData -Database TestDb -Table dbo.Test -BatchSize 1000000 -LogBackupPath E:\LogBackups -Confirm:$false
 
         Removes data from the dbo.Test table in the TestDb database on the SQL instances represented by $server and $server2. The deletes are dones in batches of 1000000 rows each and the log backups are written to E:\LogBackups.
+
+    .EXAMPLE
+        PS C:\> $server = Connect-DbaInstance -ConnectionString "Data Source=TCP:yourdb.database.windows.net,1433;MultipleActiveResultSets=False;Connect Timeout=30;Encrypt=True;TrustServerCertificate=False;User Id=dbuser;Password=strongpassword;Database=TestDb"
+
+        Remove-DbaDbTableData -SqlInstance $server -Database TestDb -Table dbo.Test -BatchSize 1000000 -Confirm:$false
+
+        Removes data from the dbo.Test table in the TestDb database on the Azure SQL server yourdb.database.windows.net. The deletes are dones in batches of 1000000 rows. Log backups are managed by Azure SQL. Note: for Azure SQL databases error 40552 could occur for large batch deletions: https://docs.microsoft.com/en-us/azure/azure-sql/database/troubleshoot-common-errors-issues#error-40552-the-session-has-been-terminated-because-of-excessive-transaction-log-space-usage
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High')]
     param (
@@ -139,10 +146,6 @@ function Remove-DbaDbTableData {
                 Stop-Function -Message "The -DeleteSql param must be a DELETE statement with a TOP (N) clause. See the command description for more details."
                 return
             }
-        }
-
-        if (Test-Bound LogBackupPath) {
-            $null = Test-ExportDirectory -Path $LogBackupPath
         }
 
         if (-not (Test-Bound 'LogBackupTimeStampFormat')) {
@@ -227,24 +230,30 @@ function Remove-DbaDbTableData {
 
                 $instance = $db.Parent
 
-                # warn the caller if the database is using one of these configurations.
-                $isDbLogShipping = $db.Query("SELECT COUNT(1) FROM msdb.dbo.log_shipping_monitor_primary WHERE primary_database = '$($db.Name)'")
-
-                if ($isDbLogShipping -eq 1) {
-                    Write-Message -Level Warning -Message "$($db.Name) is the primary db in a log shipping configuration. Be sure to re-sync after this command completes."
+                if (Test-Bound LogBackupPath) {
+                    $pathCheck = Test-DbaPath -SqlInstance $instance -Path $LogBackupPath
+                    if (-not $pathCheck) {
+                        Stop-Function -Message "The service account for $instance.Name is not able to create log backups in $LogBackupPath."
+                        return
+                    }
                 }
 
-                if ($db.IsMirroringEnabled) {
-                    Write-Message -Level Warning -Message "$($db.Name) is configured for mirroring. Be sure to validate the mirror is synchronized after this command completes."
-                }
+                # warn the caller if the database is using one of these configurations for on-prem
+                if ($instance.DatabaseEngineType -ne "SqlAzureDatabase") {
 
-                if (-not [string]::IsNullOrEmpty($db.AvailabilityGroupName)) {
-                    Write-Message -Level Warning -Message "$($db.Name) is part of an availability group. Be sure to validate the secondary database(s) is synchronized after this command completes."
-                }
+                    $isDbLogShipping = $db.Query("SELECT COUNT(1) FROM msdb.dbo.log_shipping_monitor_primary WHERE primary_database = '$($db.Name)'")
 
-                if ($instance.DatabaseEngineType -eq "SqlAzureDatabase") {
-                    Stop-Function -Message "Sql Azure DB is not supported by this command."
-                    return
+                    if ($isDbLogShipping -eq 1) {
+                        Write-Message -Level Warning -Message "$($db.Name) is the primary db in a log shipping configuration. Be sure to re-sync after this command completes."
+                    }
+
+                    if ($db.IsMirroringEnabled) {
+                        Write-Message -Level Warning -Message "$($db.Name) is configured for mirroring. Be sure to validate the mirror is synchronized after this command completes."
+                    }
+
+                    if (-not [string]::IsNullOrEmpty($db.AvailabilityGroupName)) {
+                        Write-Message -Level Warning -Message "$($db.Name) is part of an availability group. Be sure to validate the secondary database(s) is synchronized after this command completes."
+                    }
                 }
 
                 if ($Pscmdlet.ShouldProcess($db.Name, "Removing data using $sql on $($db.Parent.Name)")) {
@@ -271,7 +280,7 @@ function Remove-DbaDbTableData {
 
                             $rowCount = $result.RowCount
 
-                            if ( $rowCount -gt 0 ) {
+                            if ($rowCount -gt 0) {
                                 # rows were deleted on the last statement execution, so collect the metadata and print out a verbose message.
                                 $totalRowsDeleted += $rowCount
                                 $timingsArray += $commandTiming
@@ -284,21 +293,36 @@ function Remove-DbaDbTableData {
                             return
                         }
 
-                        if ( $rowCount -gt 0 ) {
+                        if ($rowCount -gt 0) {
                             $iterationCount += 1
 
-                            # perform a checkpoint or log backup depending on the recovery model
-                            if ( $db.RecoveryModel -eq "Simple" ) {
-                                $result = $db.Query("CHECKPOINT")
-                            } elseif (Test-Bound LogBackupPath) {
-                                $timestamp = Get-Date -Format $LogBackupTimeStampFormat
+                            #If the db is in Azure then we won't do a checkpoint or a log backup since those are automatically managed.
+                            if ($instance.DatabaseEngineType -ne "SqlAzureDatabase") {
 
-                                if (Test-Bound AzureBaseUrl) {
-                                    $backupLog = Backup-DbaDatabase -SqlInstance $instance -Database $db.Name -Type Log -AzureBaseUrl $AzureBaseUrl -AzureCredential $AzureCredential
+                                if ($db.RecoveryModel -eq "Simple") {
+                                    try {
+                                        $checkPointResult = $db.Query("CHECKPOINT")
+
+                                        if (-not [string]::IsNullOrEmpty($checkPointResult.ErrorMessage)) {
+                                            throw $checkPointResult.ErrorMessage
+                                        }
+                                    } catch {
+                                        Stop-Function -Message "Error during checkpoint on $($db.Parent.Name)" -ErrorRecord $_
+                                        return
+                                    }
+
                                 } else {
-                                    $backupLog = Backup-DbaDatabase -SqlInstance $instance -Database $db.Name -Type Log -FilePath "$LogBackupPath\$($db.Name)_$($timestamp)_$($iterationCount).trn"
+                                    # bulk-logged or full recovery model
+
+                                    if (Test-Bound LogBackupPath) {
+                                        $timestamp = Get-Date -Format $LogBackupTimeStampFormat
+                                        $logBackupsArray += Backup-DbaDatabase -SqlInstance $instance -Database $db.Name -Type Log -FilePath "$LogBackupPath\$($db.Name)_$($timestamp)_$($iterationCount).trn"
+                                    }
+
+                                    if (Test-Bound AzureBaseUrl) {
+                                        $logBackupsArray += Backup-DbaDatabase -SqlInstance $instance -Database $db.Name -Type Log -AzureBaseUrl $AzureBaseUrl -AzureCredential $AzureCredential
+                                    }
                                 }
-                                $logBackupsArray += $backupLog
                             }
                         }
 
