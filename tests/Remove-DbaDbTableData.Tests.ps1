@@ -90,6 +90,11 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $result = Remove-DbaDbTableData -SqlInstance $server -Database $dbnameFullModel -DeleteSql "DELETE TOP (10) FROM dbo.Test WHERE 1/0 = 1" -Confirm:$false
             $result | Should -BeNullOrEmpty
         }
+
+        It "Either -LogBackupPath or -AzureBaseUrl needs to be specified, but not both" {
+            $result = Remove-DbaDbTableData -SqlInstance $server -Database $dbnameFullModel -Table dbo.Test -LogBackupPath $logBackupPath -AzureBaseUrl https://dbatoolsaz.blob.core.windows.net/azbackups/
+            $result | Should -BeNullOrEmpty
+        }
     }
 
     Context "-DeleteSql examples" {
@@ -173,6 +178,11 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $result.Timings.count | Should -Be 10
             $result.Database | Should -Be $dbnameFullModel
             (Invoke-DbaQuery -SqlInstance $server -Database $dbnameFullModel -Query 'SELECT COUNT(1) AS [RowCount] FROM dbo.Test').RowCount | Should -Be 0
+        }
+
+        It "Test with an invalid LogBackupPath location" {
+            $result = Remove-DbaDbTableData -SqlInstance $server -Database $dbnameFullModel -Table dbo.Test -BatchSize 10 -LogBackupPath "C:\dbatools\$(Get-Random)" -Confirm:$false
+            $result | Should -BeNullOrEmpty
         }
     }
 
