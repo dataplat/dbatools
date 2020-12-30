@@ -107,7 +107,10 @@ function New-DbaDacProfile {
         }
 
         function Get-Template {
-            Param ($db, $connString)
+            param (
+                $db,
+                $connString
+            )
 
             "<?xml version=""1.0"" ?>
             <Project ToolsVersion=""14.0"" xmlns=""http://schemas.microsoft.com/developer/msbuild/2003"">
