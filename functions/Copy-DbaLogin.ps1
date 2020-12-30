@@ -377,7 +377,11 @@ function Copy-DbaLogin {
 
                 if (-not $ExcludePermissionSync) {
                     if ($Pscmdlet.ShouldProcess($destinstance, "Updating SQL login $newUserName permissions")) {
-                        Update-SqlPermission -SourceServer $sourceServer -SourceLogin $Login -DestServer $destServer -DestLogin $destLogin -ObjectLevel:$ObjectLevel
+                        # In rare cases, when the instance has a case sensitive collation and there are two logins that differ only in case, New-DbaLogin will return them both into $destLogin
+                        # So we loop, just in case...
+                        foreach ($dl in $destLogin) {
+                            Update-SqlPermission -SourceServer $sourceServer -SourceLogin $Login -DestServer $destServer -DestLogin $dl -ObjectLevel:$ObjectLevel
+                        }
                     }
                 }
             }
