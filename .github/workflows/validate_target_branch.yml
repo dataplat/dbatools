@@ -1,0 +1,22 @@
+name: Validate Target Branch
+on: [pull_request]
+
+jobs:
+  # This workflow contains a single job called "build"
+  build:
+    # The type of runner that the job will run on
+    runs-on: ubuntu-latest
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v2
+      - name: Target branch should be development
+        shell: pwsh
+        run: |
+          if ($env:GITHUB_BASE_REF -ne 'development') {
+            Write-Host "Base branch set to: $env:GITHUB_BASE_REF"
+            throw "Target branch not set to development"
+          } else {
+            Write-Host "Base branch set properly to $env:GITHUB_BASE_REF"
+          }
