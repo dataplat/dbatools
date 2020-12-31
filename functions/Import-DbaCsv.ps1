@@ -439,7 +439,7 @@ function Import-DbaCsv {
                 $elapsed = [System.Diagnostics.Stopwatch]::StartNew()
                 # Open Connection to SQL Server
                 try {
-                    $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -StatementTimeout 0 -MinimumVersion 9
+                    $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential -Database $Database -StatementTimeout 0 -MinimumVersion 9
                     $sqlconn = $server.ConnectionContext.SqlConnectionObject
                     if ($sqlconn.State -ne 'Open') {
                         $sqlconn.Open()
@@ -455,15 +455,6 @@ function Import-DbaCsv {
                         $transaction = $sqlconn.BeginTransaction()
                     }
                 }
-
-                # Ensure database exists
-                $sql = "select count(*) from master.dbo.sysdatabases where name = '$Database'"
-                $sqlcmd = New-Object System.Data.SqlClient.SqlCommand($sql, $sqlconn, $transaction)
-                if (($sqlcmd.ExecuteScalar()) -eq 0) {
-                    Stop-Function -Continue -Message "Database does not exist on $instance"
-                }
-                Write-Message -Level Verbose -Message "Database exists"
-                $sqlconn.ChangeDatabase($Database)
 
                 # Ensure Schema exists
                 $sql = "select count(*) from [$Database].sys.schemas where name='$schema'"
