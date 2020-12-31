@@ -69,8 +69,12 @@ function Connect-SqlInstance {
         if ($AzureUnsupported -and $server.DatabaseEngineType -eq "SqlAzureDatabase") {
             throw "Azure SQL Database is not supported by this command"
         }
-        return $SqlInstance.InputObject
-    } else {
-        Connect-DbaInstance @PSBoundParameters -ClientName (Get-DbatoolsConfigValue -FullName 'sql.connection.clientname')
+
+        # Boundary case: Verify the existing connection context is pointing to the db name requested. Azure SQL doesn't currently allow usage of the ChangeDatabase method since it results in a 'use' statement.
+        if ((Test-Bound Database) -and ($Database -eq $($SqlInstance.InputObject.ConnectionContext.DatabaseName))) {
+            return $SqlInstance.InputObject
+        }
     }
+
+    Connect-DbaInstance @PSBoundParameters -ClientName (Get-DbatoolsConfigValue -FullName 'sql.connection.clientname')
 }
