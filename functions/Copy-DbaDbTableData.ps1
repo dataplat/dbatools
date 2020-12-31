@@ -12,7 +12,7 @@ function Copy-DbaDbTableData {
         Source SQL Server.You must have sysadmin access and server version must be SQL Server version 2000 or greater.
 
     .PARAMETER SqlCredential
-        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+        Login to the source instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
 
         Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
 
@@ -22,7 +22,7 @@ function Copy-DbaDbTableData {
         Destination Sql Server. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
 
     .PARAMETER DestinationSqlCredential
-        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+        Login to the destination instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
 
         Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
 
