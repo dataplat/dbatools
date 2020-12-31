@@ -11,7 +11,7 @@
     RootModule             = 'dbatools.psm1'
 
     # Version number of this module.
-    ModuleVersion          = '1.0.135'
+    ModuleVersion          = '1.0.136'
 
     # ID used to uniquely identify this module
     GUID                   = '9d139310-ce45-41ce-8e8b-d76335aa1789'
@@ -522,6 +522,7 @@
         'Export-DbaRepServerSetting',
         'Get-DbaRepServer',
         'Export-DbaSysDbUserObject',
+        'New-DbaAgentOperator',
         # windowsonly
         # solvable filesystem issues or other workarounds
         'Install-DbaSqlWatch',

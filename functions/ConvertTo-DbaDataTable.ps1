@@ -118,6 +118,7 @@ function ConvertTo-DbaDataTable {
                 'System.Single',
                 'System.Double',
                 'System.Byte',
+                'System.Byte[]',
                 'System.SByte',
                 'System.Boolean',
                 'System.DateTime',
