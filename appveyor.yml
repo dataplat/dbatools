@@ -1,5 +1,5 @@
 ﻿# See http://www.appveyor.com/docs/appveyor-yml for many more options
-version: 0.9.{build}
+build: off
 
 cache:
   - C:\ProgramData\chocolatey\bin -> appveyor.yml
