@@ -11,6 +11,8 @@ function Get-DbaPermission {
         Securables exist on Instance and Database level.
         A permission state can be GRANT, DENY or REVOKE.
         The permission type can be SELECT, CONNECT, EXECUTE and more.
+        The CONTROL permission is also returned for dbo users, db_owners, and schema owners.
+        To see server-level implicit permissions via fixed roles run the following command: Get-DbaServerRole -SqlInstance serverName | Select-Object *
 
         See https://msdn.microsoft.com/en-us/library/ms191291.aspx for more information
 
@@ -157,12 +159,16 @@ function Get-DbaPermission {
                                             END
                     , [Grantee] = USER_NAME(grantee_principal_id)
                     , [GranteeType] = pr.type_desc
-                    , [RevokeStatement] = 'REVOKE ' + permission_name + ' ON ' + isnull(schema_name(o.schema_id) COLLATE DATABASE_DEFAULT+'.','')+OBJECT_NAME(major_id)+ ' FROM [' + USER_NAME(grantee_principal_id) +']'
-                    , [GrantStatement] = 'GRANT ' + permission_name + ' ON ' + isnull(schema_name(o.schema_id) COLLATE DATABASE_DEFAULT+'.','')+OBJECT_NAME(major_id)+ ' TO [' + USER_NAME(grantee_principal_id) + ']'
+                    , [RevokeStatement] = CASE WHEN class = 3 THEN 'REVOKE ' + permission_name + ' ON Schema::' + isnull(SCHEMA_NAME(dp.major_id) COLLATE DATABASE_DEFAULT,'') + ' FROM [' + USER_NAME(grantee_principal_id) +']'
+                                            ELSE 'REVOKE ' + permission_name + ' ON ' + isnull(schema_name(o.schema_id) COLLATE DATABASE_DEFAULT+'.','')+OBJECT_NAME(major_id)+ ' FROM [' + USER_NAME(grantee_principal_id) +']'
+                                            END
+                    , [GrantStatement] = CASE WHEN class = 3 THEN 'GRANT ' + permission_name + ' ON Schema::' + isnull(SCHEMA_NAME(dp.major_id) COLLATE DATABASE_DEFAULT,'') + ' TO [' + USER_NAME(grantee_principal_id) + ']'
+                                            ELSE 'GRANT ' + permission_name + ' ON ' + isnull(schema_name(o.schema_id) COLLATE DATABASE_DEFAULT+'.','')+OBJECT_NAME(major_id)+ ' TO [' + USER_NAME(grantee_principal_id) + ']'
+                                            END
                         + CASE WHEN dp.state_desc = 'GRANT_WITH_GRANT_OPTION' THEN ' WITH GRANT OPTION' ELSE '' END
                     FROM sys.database_permissions dp
                     JOIN sys.database_principals pr ON pr.principal_id = dp.grantee_principal_id
-                    LEFT OUTER JOIN sys.all_objects o ON o.object_id = dp.major_id
+                    LEFT OUTER JOIN sys.all_objects o ON (o.object_id = dp.major_id AND dp.class NOT IN (0, 3))
                     LEFT OUTER JOIN sys.schemas s ON s.schema_id = o.schema_id
                     LEFT OUTER JOIN sys.types t on t.user_type_id = dp.major_id
 
@@ -210,6 +216,73 @@ function Get-DbaPermission {
 
                 WHERE dp.[type]='R'
                     AND dp.is_fixed_role=1
+                UNION ALL -- include the dbo user
+                SELECT
+                    [ComputerName]		= SERVERPROPERTY('MachineName')
+                ,	[InstanceName]		= ISNULL(SERVERPROPERTY('InstanceName'), 'MSSQLSERVER')
+                ,	[SqlInstance]		= SERVERPROPERTY('ServerName')
+                ,	[database]			= DB_NAME()
+                ,	[PermState]			= ''
+                ,	[PermissionName]	= 'CONTROL'
+                ,	[SecurableType]		= 'DATABASE'
+                ,	[Securable]			= DB_NAME()
+                ,	[Grantee]			= SUSER_SNAME(owner_sid)
+                ,	[GranteeType]		= 'DATABASE OWNER (dbo user)'
+                ,	[revokestatement]	= ''
+                ,	[grantstatement]	= ''
+                FROM
+                    sys.databases
+                WHERE
+                    name = DB_NAME()
+                UNION ALL -- include the users with the db_owner role
+                SELECT
+                    [ComputerName]		= SERVERPROPERTY('MachineName')
+                ,	[InstanceName]		= ISNULL(SERVERPROPERTY('InstanceName'), 'MSSQLSERVER')
+                ,	[SqlInstance]		= SERVERPROPERTY('ServerName')
+                ,	[database]			= DB_NAME()
+                ,	[PermState]			= ''
+                ,	[PermissionName]	= 'CONTROL'
+                ,	[SecurableType]		= 'DATABASE'
+                ,	[Securable]			= DB_NAME()
+                ,	[Grantee]			= databaseUser.name
+                ,	[GranteeType]		= 'DATABASE OWNER (db_owner role)'
+                ,	[revokestatement]	= ''
+                ,	[grantstatement]	= ''
+                FROM
+                (
+                    SELECT
+                        member_principal_id
+                    FROM
+                        sys.database_role_members AS roleMembers
+                    INNER JOIN
+                        sys.database_principals AS roleFilter
+                            ON roleMembers.role_principal_id = roleFilter.principal_id
+                            AND roleFilter.name = 'db_owner'
+                ) dbOwner
+                INNER JOIN
+                    sys.database_principals AS databaseUser
+                        ON dbOwner.member_principal_id = databaseUser.principal_id
+                WHERE
+                    databaseUser.name <> 'dbo'
+                UNION ALL -- include the schema owners
+                SELECT
+                    [ComputerName]		= SERVERPROPERTY('MachineName')
+                ,	[InstanceName]		= ISNULL(SERVERPROPERTY('InstanceName'), 'MSSQLSERVER')
+                ,	[SqlInstance]		= SERVERPROPERTY('ServerName')
+                ,	[database]			= DB_NAME()
+                ,	[PermState]			= ''
+                ,	[PermissionName]	= 'CONTROL'
+                ,	[SecurableType]		= 'SCHEMA'
+                ,	[Securable]			= name
+                ,	[Grantee]			= USER_NAME(principal_id)
+                ,	[GranteeType]		= 'SCHEMA OWNER'
+                ,	[revokestatement]	= ''
+                ,	[grantstatement]	= ''
+                FROM
+                    sys.schemas
+                WHERE
+                    name NOT IN (SELECT name FROM sys.database_principals WHERE type = 'R')
+                AND name NOT IN ('dbo', 'guest', 'INFORMATION_SCHEMA', 'sys')
                 ;"
     }
 
