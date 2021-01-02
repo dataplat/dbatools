@@ -1,15 +1,4 @@
 ﻿# See http://www.appveyor.com/docs/appveyor-yml for many more options
-image: Previous Visual Studio 2015
-configuration: "Debug"
-
-build_script:
- - ps: Push-Location bin\projects\dbatools; dotnet build; Pop-Location
-
-after_build:
-    # Removed to prevent credential exposure
-    # - ps: Push-AppveyorArtifact msbuild.binlog
-    # - ps: Push-AppveyorArtifact msbuild.log
-
 version: 0.9.{build}
 
 cache:
@@ -89,7 +78,7 @@ before_test:
   #- ps: $blockRdp = $true; iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
 
 test_script:
-   # Test with native PS version
+  # Test with native PS version
   - ps: .\Tests\appveyor.pester.ps1 -IncludeCoverage
 
   # Collecting results
@@ -97,6 +86,5 @@ test_script:
 
 after_test:
   - ps: .\Tests\appveyor.post.ps1
-
 # on_finish:
 #- ps: $blockRdp = $true; iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
