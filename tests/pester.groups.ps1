@@ -11,6 +11,7 @@ $TestsRunGroups = @{
     "service_restarts"  = @(
         'Start-DbaService',
         'Stop-DbaService',
+        'Set-DbaStartupParameter',
         'Restart-DbaService',
         'Get-DbaService',
         'Update-DbaServiceAccount',
