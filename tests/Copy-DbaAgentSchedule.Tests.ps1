@@ -35,7 +35,7 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
 
         It "returns one results" {
             $results.Count | Should -BeGreaterThan 1
-            ($results | Where Status -eq "Successful") | Should -Not -Be $null
+            ($results | Where-Object Status -eq "Successful") | Should -Not -Be $null
         }
 
         It "return one result of Start Time 1:00 AM" {
