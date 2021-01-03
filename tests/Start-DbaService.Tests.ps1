@@ -1,15 +1,14 @@
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
-. "$PSScriptRoot\src\internal\functions\Connect-SqlInstance.ps1"
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'ComputerName', 'InstanceName', 'Type', 'InputObject', 'Timeout', 'Credential', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
+        [array]$knownParameters = 'ComputerName', 'InstanceName', 'Type', 'InputObject', 'Timeout', 'Credential', 'EnableException'
+        [array]$params = ([Management.Automation.CommandMetaData]$ExecutionContext.SessionState.InvokeCommand.GetCommand($CommandName, 'Function')).Parameters.Keys
+
         It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+            Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params | Should -BeNullOrEmpty
         }
     }
 }
@@ -17,7 +16,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     Context "Command actually works" {
 
-        $server = Connect-SqlInstance -SqlInstance $script:instance2
+        $server = Connect-DbaInstance -SqlInstance $script:instance2
         $instanceName = $server.ServiceName
         $computerName = $server.NetName
 
@@ -32,7 +31,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 
         It "starts the services back" {
             $services = Start-DbaService -ComputerName $script:instance2 -Type Agent -InstanceName $instanceName
-            $services | Should Not Be $null
+            $services | Should -Not -BeNullOrEmpty
             foreach ($service in $services) {
                 $service.State | Should Be 'Running'
                 $service.Status | Should Be 'Successful'
@@ -51,13 +50,13 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $services = Get-DbaService -ComputerName $script:instance2 -InstanceName $instanceName -Type Agent, Engine | Start-DbaService
             $services | Should Not Be $null
             foreach ($service in $services) {
-                $service.State | Should Be 'Running'
-                $service.Status | Should Be 'Successful'
+                $service.State | Should -Be 'Running'
+                $service.Status | Should -Be 'Successful'
             }
         }
 
         It "errors when passing an invalid InstanceName" {
-            { Start-DbaService -ComputerName $script:instance2 -Type 'Agent' -InstanceName 'ThisIsInvalid' -EnableException } | Should Throw 'No services found in relevant namespaces'
+            { Start-DbaService -ComputerName $script:instance2 -Type 'Agent' -InstanceName 'ThisIsInvalid' -EnableException } | Should -Throw 'No services found in relevant namespaces'
         }
     }
 }

@@ -1,16 +1,16 @@
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
-. "$PSScriptRoot\src\internal\functions\Connect-SqlInstance.ps1"
+. ([IO.Path]::Combine([string]$PSScriptRoot, '..', 'src\internal\functions', 'Connect-SqlInstance.ps1'))
 
 Describe "$commandname Unit Tests" -Tags "UnitTests" {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
+        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
         [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'StatementTimeout', 'MinimumVersion', 'AzureUnsupported', 'NonPooled'
 
         $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
         It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
         }
     }
 }
@@ -50,7 +50,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $results = Invoke-DbaQuery -SqlInstance $script:instance1 -Query "IF EXISTS (SELECT * FROM sys.server_principals WHERE name = '$login') EXEC sp_who '$login'"
             $results | Should Not BeNullOrEmpty
             foreach ($spid in $results.spid) {
-                { Invoke-DbaQuery -SqlInstance $script:instance1 -Query "kill $spid" -ErrorAction Stop} | Should Not Throw
+                { Invoke-DbaQuery -SqlInstance $script:instance1 -Query "kill $spid" -ErrorAction Stop } | Should Not Throw
             }
         }
     }

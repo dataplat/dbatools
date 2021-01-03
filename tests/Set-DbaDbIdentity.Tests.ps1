@@ -5,18 +5,18 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
         Context "Validate parameters" {
-            [object[]]$params = (Get-Command -Name $CommandName).Parameters.Keys
-            $knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'Table', 'ReSeedValue', 'EnableException'
+            [array]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'Table', 'ReSeedValue', 'EnableException'
+            [array]$params = ([Management.Automation.CommandMetaData]$ExecutionContext.SessionState.InvokeCommand.GetCommand($CommandName, 'Function')).Parameters.Keys
 
-            It "Should contain our specific parameters" {
-                ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $knownParameters.Count
+            It "Should only contain our specific parameters" {
+                Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params | Should -BeNullOrEmpty
             }
         }
     }
 }
 Describe "$commandname Integration Test" -Tag "IntegrationTests" {
     BeforeAll {
-        $server = Connect-SqlInstance -SqlInstance $script:instance2
+        $server = Connect-DbaInstance -SqlInstance $script:instance2
         $random = Get-Random
         $tableName1 = "dbatools_getdbtbl1"
         $tableName2 = "dbatools_getdbtbl2"
