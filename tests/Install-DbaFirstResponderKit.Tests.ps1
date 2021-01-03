@@ -4,8 +4,8 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
-        [array]$params = ([Management.Automation.CommandMetaData]$ExecutionContext.SessionState.InvokeCommand.GetCommand($CommandName, 'Function')).Parameters.Keys
         [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Branch', 'Database', 'LocalFile', 'Force', 'EnableException'
+        [array]$params = ([Management.Automation.CommandMetaData]$ExecutionContext.SessionState.InvokeCommand.GetCommand($CommandName, 'Function')).Parameters.Keys
 
         It "Should only contain our specific parameters" {
             Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params | Should -BeNullOrEmpty
@@ -62,7 +62,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             if (Test-Path $outfile) {
                 $fullOutfile = (Get-ChildItem $outfile).FullName
             }
-            $resultsLocalFile = Install-DbaFirstResponderKit -SqlInstance $script:instance3 -Database $database -Branch main -LocalFile $fullOutfile  -Force
+            $resultsLocalFile = Install-DbaFirstResponderKit -SqlInstance $script:instance3 -Database $database -Branch main -LocalFile $fullOutfile -Force
         }
         AfterAll {
             Remove-DbaDatabase -SqlInstance $script:instance3 -Database $database -Confirm:$false
