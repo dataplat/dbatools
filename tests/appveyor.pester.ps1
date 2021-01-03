@@ -36,7 +36,7 @@ param (
     $PSVersion = $PSVersionTable.PSVersion.Major,
     $TestFile = "TestResultsPS$PSVersion.xml",
     $ProjectRoot = $env:APPVEYOR_BUILD_FOLDER,
-    $ModuleBase = $ProjectRoot,
+    $ModuleBase = "$ProjectRoot\src",
     [switch]$IncludeCoverage
 )
 
@@ -82,7 +82,7 @@ function Get-CoverageIndications($Path, $ModuleBase) {
     $func_name += ($leaf -replace '^([^.]+)(.+)?.Tests.ps1', '$1')
     if ($func_name -in $everyfunction) {
         $funcs += $func_name
-        $f = $everything | Where-Object Name -eq $func_name
+        $f = $everything | Where-Object Name -EQ $func_name
         $source = $f.Definition
         $CBH = $CBHRex.match($source).Value
         # This fails very hard sometimes
