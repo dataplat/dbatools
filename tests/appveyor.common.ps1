@@ -63,9 +63,9 @@ function Get-TestsForScenario {
 function Get-TestsForBuildScenario {
     param($ModuleBase, [switch]$Silent)
     # Invoke pester.groups.ps1 to know which tests to run
-    . ".\tests\pester.groups.ps1"
+    . "$PSScriptRoot\tests\pester.groups.ps1"
     # retrieve all .Tests.
-    $AllDbatoolsTests = Get-ChildItem -File -Path ".\tests\*.Tests.ps1"
+    $AllDbatoolsTests = Get-ChildItem -File -Path "$PSScriptRoot\tests\*.Tests.ps1"
     # exclude "disabled"
     $AllTests = $AllDbatoolsTests | Where-Object { ($_.Name -replace '^([^.]+)(.+)?.Tests.ps1', '$1') -notin $TestsRunGroups['disabled'] }
     # only in appveyor, disable uncooperative tests
