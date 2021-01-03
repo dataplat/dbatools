@@ -79,12 +79,12 @@ before_test:
 
 test_script:
   # Test with native PS version
-  - ps: .\Tests\appveyor.pester.ps1 -IncludeCoverage
+  - ps: \tests\appveyor.pester.ps1 -IncludeCoverage
 
   # Collecting results
-  - ps: .\Tests\appveyor.pester.ps1 -Finalize -IncludeCoverage
+  - ps: \tests\appveyor.pester.ps1 -Finalize -IncludeCoverage
 
 after_test:
-  - ps: .\Tests\appveyor.post.ps1
+  - ps: \tests\appveyor.post.ps1
 # on_finish:
 #- ps: $blockRdp = $true; iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
