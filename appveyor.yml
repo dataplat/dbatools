@@ -71,20 +71,20 @@ before_test:
   # turn tests\ (at least) to CRLF, as it's faster to do this on the zipball rather than checking out the repo
   - cmd: pushd C:\github\dbatools\tests & unix2dos -q  *.ps1 & popd
   # grab appveyor lab files and needed requirements for tests in CI
-  - ps: .\Tests\appveyor.prep.ps1
+  - ps: c:\github\dbatools\tests\appveyor.prep.ps1
 
   # Setting up the local SQL Server environments
-  - ps: .\Tests\appveyor.sqlserver.ps1
+  - ps: c:\github\dbatools\tests\appveyor.sqlserver.ps1
   #- ps: $blockRdp = $true; iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
 
 test_script:
   # Test with native PS version
-  - ps: \tests\appveyor.pester.ps1 -IncludeCoverage
+  - ps: c:\github\dbatools\tests\appveyor.pester.ps1 -IncludeCoverage
 
   # Collecting results
-  - ps: \tests\appveyor.pester.ps1 -Finalize -IncludeCoverage
+  - ps: c:\github\dbatools\tests\appveyor.pester.ps1 -Finalize -IncludeCoverage
 
 after_test:
-  - ps: \tests\appveyor.post.ps1
+  - ps: c:\github\dbatools\tests\appveyor.post.ps1
 # on_finish:
 #- ps: $blockRdp = $true; iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
