@@ -1,7 +1,7 @@
 $indent = '...'
 Write-Host -Object "Running $PSCommandpath" -ForegroundColor DarkGreen
 $dbatools_serialimport = $true
-Import-Module C:\github\dbatools\dbatools.psd1
+Import-Module C:\github\dbatools\src\dbatools.psd1
 Start-Sleep 5
 # This script spins up the 2016 instance and the relative setup
 

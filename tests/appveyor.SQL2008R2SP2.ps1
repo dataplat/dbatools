@@ -14,7 +14,7 @@ Function Install-ADAuthenticationLibraryforSQLServer {
     try {
         #Write-Host "attempting to uninstall..."
         #Write-Host "Running MsiExec.exe /uninstall {4EE99065-01C6-49DD-9EC6-E08AA5B13491} /quiet"
-        Start-Process -FilePath "MsiExec.exe" -ArgumentList  "/uninstall {4EE99065-01C6-49DD-9EC6-E08AA5B13491} /quiet" -Wait -NoNewWindow
+        Start-Process -FilePath "MsiExec.exe" -ArgumentList "/uninstall {4EE99065-01C6-49DD-9EC6-E08AA5B13491} /quiet" -Wait -NoNewWindow
     } catch {
         #Write-Host "oh dear install did not work"
         $fail = $_.Exception
@@ -22,7 +22,7 @@ Function Install-ADAuthenticationLibraryforSQLServer {
         Throw
     }
     try {
-        $DataStamp = get-date -Format yyyyMMddTHHmmss
+        $DataStamp = Get-Date -Format yyyyMMddTHHmmss
         $logFile = '{0}-{1}.log' -f $Installer, $DataStamp
         $MSIArguments = @(
             "/i"
@@ -46,7 +46,7 @@ $null = Install-ADAuthenticationLibraryforSQLServer
 
 $indent = '...'
 Write-Host -Object "$indent Running $PSCommandpath" -ForegroundColor DarkGreen
-Import-Module C:\github\dbatools\dbatools.psm1 -Force
+Import-Module C:\github\dbatools\src\dbatools.psm1 -Force
 
 # This script spins up the 2008R2SP2 instance and the relative setup
 
@@ -91,4 +91,4 @@ foreach ($file in (Get-ChildItem C:\github\appveyor-lab\sql2008-startup\*.sql -R
     Invoke-DbaQuery -SqlInstance $sqlinstance -InputFile $file
 }
 
-Import-Module C:\github\dbatools\dbatools.psm1 -Force
+Import-Module C:\github\dbatools\src\dbatools.psm1 -Force
