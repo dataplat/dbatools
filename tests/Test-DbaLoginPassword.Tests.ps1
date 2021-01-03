@@ -1,7 +1,7 @@
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
-. "$PSScriptRoot\..\internal\functions\Get-PasswordHash.ps1"
+. "$PSScriptRoot\src\internal\functions\Get-PasswordHash.ps1"
 
 Describe "$CommandName Unit Tests" -Tag UnitTests, Get-DbaLogin {
     Context "Validate parameters" {
