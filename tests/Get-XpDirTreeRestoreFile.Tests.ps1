@@ -1,23 +1,29 @@
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
-. "$PSScriptRoot\src\internal\functions\Connect-SqlInstance.ps1"
 
 Describe "$commandname Unit Tests" -Tag 'UnitTests' {
+    Context "Validate parameters" {
+        [array]$params = ([Management.Automation.CommandMetaData]$ExecutionContext.SessionState.InvokeCommand.GetCommand($CommandName, 'Function')).Parameters.Keys
+        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Path', 'NoRecurse', 'EnableException'
+
+        It "Should only contain our specific parameters" {
+            Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params | Should -BeNullOrEmpty
+        }
+    }
+
     InModuleScope dbatools {
-        #mock Connect-SqlInstance { $true }
-        mock Test-DbaPath { $true }
+        Mock Test-DbaPath { $true }
 
         Context "Test Connection and User Rights" {
             It "Should throw on an invalid SQL Connection" {
-                #mock Test-SQLConnection {(1..12) | %{[System.Collections.ArrayList]$t += @{ConnectSuccess = $false}}}
                 Mock Connect-SqlInstance { throw }
-                { Get-XpDirTreeRestoreFile -path c:\dummy -SqlInstance bad\bad -EnableException } | Should Throw
+                { Get-XpDirTreeRestoreFile -path c:\dummy -SqlInstance bad\bad -EnableException } | Should -Throw
             }
             It "Should throw if SQL Server can't see the path" {
                 Mock Test-DbaPath { $false }
                 Mock Connect-SqlInstance { [DbaInstanceParameter]"bad\bad" }
-                { Get-XpDirTreeRestoreFile -path c:\dummy -SqlInstance bad\bad -EnableException } | Should Throw
+                { Get-XpDirTreeRestoreFile -path c:\dummy -SqlInstance bad\bad -EnableException } | Should -Throw
             }
         }
         Context "Non recursive filestructure" {
@@ -36,7 +42,7 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
                     VersionMajor         = 9
                     ConnectionContext    = New-Object PSObject
                 }
-                Add-Member -InputObject $obj.ConnectionContext -Name ConnectionString  -MemberType NoteProperty -Value 'put=an=equal=in=it'
+                Add-Member -InputObject $obj.ConnectionContext -Name ConnectionString -MemberType NoteProperty -Value 'put=an=equal=in=it'
                 Add-Member -InputObject $obj -Name Query -MemberType ScriptMethod -Value {
                     param($query)
                     if ($query -eq "EXEC master.sys.xp_dirtree 'c:\temp\',1,1;") {
@@ -49,13 +55,13 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
             }
             $results = Get-XpDirTreeRestoreFile -path c:\temp -SqlInstance bad\bad -EnableException
             It "Should return an array of 2 files" {
-                $results.count | Should Be 2
+                $results.count | Should -Be 2
             }
             It "Should return a file in c:\temp" {
-                $results[0].Fullname | Should BeLike 'c:\temp\*bak'
+                $results[0].Fullname | Should -BeLike 'c:\temp\*bak'
             }
             It "Should return another file in C:\temp" {
-                $results[1].Fullname | Should BeLike 'c:\temp\*bak'
+                $results[1].Fullname | Should -BeLike 'c:\temp\*bak'
             }
         }
         Context "Recursive Filestructure" {
@@ -77,7 +83,7 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
                     VersionMajor         = 9
                     ConnectionContext    = New-Object PSObject
                 }
-                Add-Member -InputObject $obj.ConnectionContext -Name ConnectionString  -MemberType NoteProperty -Value 'put=an=equal=in=it'
+                Add-Member -InputObject $obj.ConnectionContext -Name ConnectionString -MemberType NoteProperty -Value 'put=an=equal=in=it'
                 Add-Member -InputObject $obj -Name Query -MemberType ScriptMethod -Value {
                     param($query)
                     if ($query -eq "EXEC master.sys.xp_dirtree 'c:\temp\recurse\',1,1;") {
@@ -95,19 +101,19 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
 
             $results = Get-XpDirTreeRestoreFile -path c:\temp -SqlInstance bad\bad -EnableException
             It "Should return array of 4 files - recursion" {
-                $results.count | Should Be 4
+                $results.count | Should -Be 4
             }
             It "Should return C:\temp\recurse\fulllow.bak" {
-                ($results | Where-Object { $_.Fullname -eq 'C:\temp\recurse\fulllow.bak' } | measure-Object).count | Should be 1
+                ($results | Where-Object { $_.Fullname -eq 'C:\temp\recurse\fulllow.bak' } | Measure-Object).Count | Should -Be 1
             }
             It "Should return C:\temp\recurse\fulllow.bak" {
-                ($results | Where-Object { $_.Fullname -eq 'C:\temp\recurse\full2low.bak' } | measure-Object).count | Should be 1
+                ($results | Where-Object { $_.Fullname -eq 'C:\temp\recurse\full2low.bak' } | Measure-Object).Count | Should -Be 1
             }
             It "Should return C:\temp\recurse\fulllow.bak" {
-                ($results | Where-Object { $_.Fullname -eq 'C:\temp\full.bak' } | measure-Object).count | Should be 1
+                ($results | Where-Object { $_.Fullname -eq 'C:\temp\full.bak' } | Measure-Object).Count | Should -Be 1
             }
             It "Should return C:\temp\recurse\fulllow.bak" {
-                ($results | Where-Object { $_.Fullname -eq 'C:\temp\full2.bak' } | measure-Object).count | Should be 1
+                ($results | Where-Object { $_.Fullname -eq 'C:\temp\full2.bak' } | Measure-Object).Count | Should -Be 1
             }
         }
     }
