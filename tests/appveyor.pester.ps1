@@ -186,7 +186,7 @@ function Send-CodecovReport($CodecovReport) {
 
 if (-not $Finalize) {
     # Invoke appveyor.common.ps1 to know which tests to run
-    . "$ModuleBase\tests\appveyor.common.ps1"
+    . "$ProjectRoot\tests\appveyor.common.ps1"
     $AllScenarioTests = Get-TestsForBuildScenario -ModuleBase $ModuleBase
 }
 

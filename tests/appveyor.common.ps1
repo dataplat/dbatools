@@ -63,9 +63,9 @@ function Get-TestsForScenario {
 function Get-TestsForBuildScenario {
     param($ModuleBase, [switch]$Silent)
     # Invoke pester.groups.ps1 to know which tests to run
-    . "$ModuleBase\tests\pester.groups.ps1"
+    . ".\tests\pester.groups.ps1"
     # retrieve all .Tests.
-    $AllDbatoolsTests = Get-ChildItem -File -Path "$ModuleBase\tests\*.Tests.ps1"
+    $AllDbatoolsTests = Get-ChildItem -File -Path ".\tests\*.Tests.ps1"
     # exclude "disabled"
     $AllTests = $AllDbatoolsTests | Where-Object { ($_.Name -replace '^([^.]+)(.+)?.Tests.ps1', '$1') -notin $TestsRunGroups['disabled'] }
     # only in appveyor, disable uncooperative tests
@@ -115,7 +115,7 @@ function Get-TestsForBuildScenario {
                 Write-Host -ForegroundColor DarkGreen "Test Parts    : part $($env:PART) on total $($AllScenarioTests.Count)"
             }
             #shuffle things a bit (i.e. with natural sorting most of the *get* fall into the first part, all the *set* in the last, etc)
-            $AllScenarioTestsShuffled = $AllScenarioTests | Sort-Object -Property @{Expression = { $_.Name.Split('-')[-1].Replace('Dba', '') }; Ascending = $true}
+            $AllScenarioTestsShuffled = $AllScenarioTests | Sort-Object -Property @{Expression = { $_.Name.Split('-')[-1].Replace('Dba', '') }; Ascending = $true }
             $scenarioParts = Split-ArrayInParts -array $AllScenarioTestsShuffled -parts $denom
             $AllScenarioTests = $scenarioParts[$num - 1] | Sort-Object -Property Name
         } catch {
