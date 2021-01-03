@@ -136,7 +136,7 @@ if (($HasPester -and $HasScriptAnalyzer -and ($PesterVersion -ge $MinimumPesterV
     return
 }
 
-$ModuleBase = Split-Path -Path $PSScriptRoot -Parent
+$ModuleBase = [IO.Path]::Combine([string]$PSScriptRoot, '..', 'src')
 
 if (-not(Test-Path "$ModuleBase\.git" -Type Container)) {
     New-Item -Type Container -Path "$ModuleBase\.git"
@@ -171,7 +171,7 @@ function Get-CoverageIndications($Path, $ModuleBase) {
     $func_name += ($leaf -replace '^([^.]+)(.+)?.Tests.ps1', '$1')
     if ($func_name -in $everyfunction) {
         $funcs += $func_name
-        $f = $everything | Where-Object Name -eq $func_name
+        $f = $everything | Where-Object Name -EQ $func_name
         $source = $f.Definition
         $CBH = $CBHRex.match($source).Value
         $cmdonly = $source.Replace($CBH, '')
