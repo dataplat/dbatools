@@ -1,6 +1,6 @@
 Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 $Path = Split-Path -Parent $MyInvocation.MyCommand.Path
-$ModulePath = (Get-Item $Path).Parent.FullName
+$ModulePath = [IO.Path]::Combine(([string]$PSScriptRoot).Trim("tests"), 'src\')
 $ModuleName = (Split-Path -Leaf $MyInvocation.MyCommand.Path) -Replace ".Tests.ps1"
 #$ManifestPath = "$ModulePath\$ModuleName.psd1"
 
@@ -9,13 +9,13 @@ Describe "$ModuleName Aliases" -Tag Aliases, Build {
 
     $psm1 = Get-Content $ModulePath\$ModuleName.psm1 -Verbose
     $Matches = [regex]::Matches($psm1, "AliasName`"\s=\s`"(\w*-\w*)`"")
-    $Aliases = $Matches.ForEach{$_.Groups[1].Value}
+    $Aliases = $Matches.ForEach{ $_.Groups[1].Value }
 
     foreach ($Alias in $Aliases) {
         Context "Testing $Alias Alias" {
             $Definition = (Get-Alias $Alias).Definition
             It "$Alias Alias should exist" {
-                Get-Alias $Alias| Should Not BeNullOrEmpty
+                Get-Alias $Alias | Should Not BeNullOrEmpty
             }
             It "$Alias Aliased Command $Definition Should Exist" {
                 Get-Command $Definition -ErrorAction SilentlyContinue | Should Not BeNullOrEmpty

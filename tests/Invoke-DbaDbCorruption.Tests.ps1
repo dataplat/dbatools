@@ -1,7 +1,7 @@
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
-. ([IO.Path]::Combine([string]$PSScriptRoot, '..', 'src\internal\functions', 'Invoke-DbaCorruption.ps1'))
+. ([IO.Path]::Combine(([string]$PSScriptRoot).Trim("tests"), 'src\internal\functions', 'Invoke-DbaCorruption.ps1'))
 
 Describe "$commandname Unit Tests" -Tags "UnitTests" {
 

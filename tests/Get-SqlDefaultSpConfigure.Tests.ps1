@@ -3,7 +3,7 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
 
 # import internal function
-. ([IO.Path]::Combine([string]$PSScriptRoot, '..', 'src\internal\functions', 'Get-SqlDefaultSpConfigure.ps1'))
+. ([IO.Path]::Combine(([string]$PSScriptRoot).Trim("tests"), 'src\internal\functions', 'Get-SqlDefaultSpConfigure.ps1'))
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
