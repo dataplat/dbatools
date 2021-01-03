@@ -15,18 +15,14 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 
 Describe "$commandname Integration Tests" -Tags "UnitTests" {
     BeforeAll {
-        Write-Message -Level Warning -Message "BeforeAll start: Get-DbaAgentSchedule.Tests.ps1 testing with instance3=$($script:instance3) and instance2=$($script:instance2)"
         $server3 = Connect-DbaInstance -SqlInstance $script:instance3
         $server2 = Connect-DbaInstance -SqlInstance $script:instance2
 
         $sqlAgentServer3 = Get-DbaService -ComputerName $server3.ComputerName -InstanceName $server3.DbaInstanceName -Type Agent
-        Write-Message -Level Warning -Message "The SQL Agent service for instance3 has state=$($sqlAgentServer3.State) and start mode=$($sqlAgentServer3.StartMode)"
-
         $sqlAgentServer2 = Get-DbaService -ComputerName $server2.ComputerName -InstanceName $server2.DbaInstanceName -Type Agent
-        Write-Message -Level Warning -Message "The SQL Agent service for instance2 has state=$($sqlAgentServer2.State) and start mode=$($sqlAgentServer2.StartMode)"
 
         $null = New-DbaAgentSchedule -SqlInstance $script:instance2 -Schedule dbatoolsci_MonthlyTest -FrequencyType Monthly -FrequencyInterval 10 -FrequencyRecurrenceFactor 1 -Force
-        $null = New-DbaAgentSchedule -SqlInstance $script:instance2 -Schedule dbatoolsci_WeeklyTest -FrequencyType Weekly -FrequencyInterval 2 -FrequencyRecurrenceFactor 1 -StartTime 020000  -Force
+        $null = New-DbaAgentSchedule -SqlInstance $script:instance2 -Schedule dbatoolsci_WeeklyTest -FrequencyType Weekly -FrequencyInterval 2 -FrequencyRecurrenceFactor 1 -StartTime 020000 -Force
         $null = New-DbaAgentSchedule -SqlInstance $script:instance3 -Schedule dbatoolsci_MonthlyTest -FrequencyType Monthly -FrequencyInterval 10 -FrequencyRecurrenceFactor 1 -Force
         $scheduleParams = @{
             SqlInstance               = $script:instance2
@@ -104,18 +100,15 @@ Describe "$commandname Integration Tests" -Tags "UnitTests" {
         }
 
         $null = New-DbaAgentSchedule @ScheduleParams -Force
-
-        Write-Message -Level Warning -Message "BeforeAll end: Get-DbaAgentSchedule.Tests.ps1 testing with instance3=$($script:instance3) and instance2=$($script:instance2)"
     }
     AfterAll {
-        Write-Message -Level Warning -Message "AfterAll start: Get-DbaAgentSchedule.Tests.ps1 testing with instance3=$($script:instance3) and instance2=$($script:instance2)"
 
         $schedules = Get-DbaAgentSchedule -SqlInstance $script:instance2 -Schedule dbatoolsci_WeeklyTest, dbatoolsci_MonthlyTest, Issue_6636_Once, Issue_6636_Once_Copy, Issue_6636_Hour, Issue_6636_Hour_Copy, Issue_6636_Minute, Issue_6636_Minute_Copy, Issue_6636_Second, Issue_6636_Second_Copy, Issue_6636_OneTime, Issue_6636_OneTime_Copy, Issue_6636_AutoStart, Issue_6636_AutoStart_Copy, Issue_6636_OnIdle, Issue_6636_OnIdle_Copy
 
         if ($null -ne $schedules) {
             $schedules.DROP()
         } else {
-            Write-Message -Level Warning -Message "The schedules from $script:instance2 were returned as null"
+            Write-Host "The schedules from $script:instance2 were returned as null"
         }
 
         $schedules = Get-DbaAgentSchedule -SqlInstance $script:instance3 -Schedule dbatoolsci_MonthlyTest
@@ -123,10 +116,8 @@ Describe "$commandname Integration Tests" -Tags "UnitTests" {
         if ($null -ne $schedules) {
             $schedules.DROP()
         } else {
-            Write-Message -Level Warning -Message "The schedules from $script:instance3 were returned as null"
+            Write-Host "The schedules from $script:instance3 were returned as null"
         }
-
-        Write-Message -Level Warning -Message "AfterAll end: Get-DbaAgentSchedule.Tests.ps1 testing with instance3=$($script:instance3) and instance2=$($script:instance2)"
     }
 
     Context "Gets the list of Schedules" {
