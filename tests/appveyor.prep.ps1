@@ -38,7 +38,6 @@ if (-not(Test-Path 'C:\Users\appveyor\Documents\DbatoolsExport')) {
     New-Item -Path C:\Users\appveyor\Documents\DbatoolsExport -ItemType Directory | Out-Null
 }
 
-
 #Get opencover.portable (to run DLL tests)
 Write-Host -Object "appveyor.prep: Install opencover.portable" -ForegroundColor DarkGreen
 choco install opencover.portable | Out-Null

@@ -1,8 +1,6 @@
 Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
-$Path = Split-Path -Parent $MyInvocation.MyCommand.Path
-$ModulePath = [IO.Path]::Combine(([string]$PSScriptRoot).Trim("tests"), 'src\')
+$ModulePath = [IO.Path]::Combine(([string]$PSScriptRoot).Trim("tests"), 'src')
 $ModuleName = (Split-Path -Leaf $MyInvocation.MyCommand.Path) -Replace ".Tests.ps1"
-#$ManifestPath = "$ModulePath\$ModuleName.psd1"
 
 Describe "$ModuleName Aliases" -Tag Aliases, Build {
     ## Get the Aliases that should -Be set from the psm1 file
@@ -23,7 +21,6 @@ Describe "$ModuleName Aliases" -Tag Aliases, Build {
         }
     }
 }
-
 function Split-ArrayInParts($array, [int]$parts) {
     #splits an array in "equal" parts
     $size = $array.Length / $parts
@@ -35,8 +32,6 @@ function Split-ArrayInParts($array, [int]$parts) {
     }
     $rtn
 }
-
-
 Describe "$ModuleName style" -Tag 'Compliance' {
     <#
     Ensures common formatting standards are applied:
@@ -80,8 +75,6 @@ Describe "$ModuleName style" -Tag 'Compliance' {
             }
         }
     }
-
-
     Context "indentation" {
         foreach ($f in $AllFiles) {
             $LeadingTabs = Select-String -Path $f -Pattern '^[\t]+'
@@ -99,14 +92,11 @@ Describe "$ModuleName style" -Tag 'Compliance' {
         }
     }
 }
-
-
 Describe "$ModuleName style" -Tag 'Compliance' {
     <#
     Ensures avoiding already discovered pitfalls
     #>
     $AllPublicFunctions = Get-ChildItem -Path "$ModulePath\functions" -Filter '*.ps*1'
-
     Context "NoCompatibleTLS" {
         # .NET defaults clash with recent TLS hardening (e.g. no TLS 1.2 by default)
         foreach ($f in $AllPublicFunctions) {
@@ -129,10 +119,7 @@ Describe "$ModuleName style" -Tag 'Compliance' {
             }
         }
     }
-
 }
-
-
 Describe "$ModuleName ScriptAnalyzerErrors" -Tag 'Compliance' {
     $ScriptAnalyzerErrors = @()
     $ScriptAnalyzerErrors += Invoke-ScriptAnalyzer -Path "$ModulePath\functions" -Severity Error
@@ -147,7 +134,6 @@ Describe "$ModuleName ScriptAnalyzerErrors" -Tag 'Compliance' {
         }
     }
 }
-
 Describe "$ModuleName Tests missing" -Tag 'Tests' {
     $functions = Get-ChildItem "$ModulePath\functions\" -Recurse -Include *.ps1
     Context "Every function should have tests" {
@@ -163,7 +149,6 @@ Describe "$ModuleName Tests missing" -Tag 'Tests' {
         }
     }
 }
-
 Describe "$ModuleName Function Name" -Tag 'Compliance' {
     $FunctionNameMatchesErrors = @()
     $FunctionNameDbaErrors = @()
@@ -222,93 +207,3 @@ Describe "$ModuleName Function Name" -Tag 'Compliance' {
         }
     }
 }
-
-# test the module manifest - exports the right functions, processes the right formats, and is generally correct
-<#
-Describe "Manifest" {
-
-    $Manifest = $null
-
-    It "has a valid manifest" {
-
-        {
-
-            $Script:Manifest = Test-ModuleManifest -Path $ManifestPath -ErrorAction Stop -WarningAction SilentlyContinue
-
-        } | Should Not Throw
-
-    }
-## Should -Be fixed now - Until the issue with requiring full paths for required assemblies is resolved need to keep this commented out RMS 01112016
-
-$Script:Manifest = Test-ModuleManifest -Path $ManifestPath -ErrorAction SilentlyContinue
-    It "has a valid name" {
-
-        $Script:Manifest.Name | Should -Be $ModuleName
-
-    }
-
-
-
-    It "has a valid root module" {
-
-        $Script:Manifest.RootModule | Should -Be "$ModuleName.psm1"
-
-    }
-
-
-
-    It "has a valid Description" {
-
-        $Script:Manifest.Description | Should -Be 'Provides extra functionality for SQL Server Database admins and enables SQL Server instance migrations.'
-
-    }
-
-    It "has a valid Author" {
-        $Script:Manifest.Author | Should -Be 'Chrissy LeMaire'
-    }
-
-    It "has a valid Company Name" {
-        $Script:Manifest.CompanyName | Should -Be 'dbatools.io'
-    }
-    It "has a valid guid" {
-
-        $Script:Manifest.Guid | Should -Be '9d139310-ce45-41ce-8e8b-d76335aa1789'
-
-    }
-    It "has valid PowerShell version" {
-        $Script:Manifest.PowerShellVersion | Should -Be '3.0'
-    }
-
-    It "has valid  required assemblies" {
-        {$Script:Manifest.RequiredAssemblies -eq @()} | Should -Be $true
-    }
-
-    It "has a valid copyright" {
-
-        $Script:Manifest.CopyRight | Should BeLike '* Chrissy LeMaire'
-
-    }
-
-
-
- # Don't want this just yet
-
-    It 'exports all public functions' {
-
-        $FunctionFiles = Get-ChildItem "$ModulePath\functions" -Filter *.ps1 | Select-Object -ExpandProperty BaseName
-
-        $FunctionNames = $FunctionFiles
-
-        $ExFunctions = $Script:Manifest.ExportedFunctions.Values.Name
-        $ExFunctions
-        foreach ($FunctionName in $FunctionNames)
-
-        {
-
-            $ExFunctions -contains $FunctionName | Should -Be $true
-
-        }
-
-    }
-}
-#>
