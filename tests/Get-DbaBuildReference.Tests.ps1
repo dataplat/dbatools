@@ -4,19 +4,18 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'Build', 'Kb', 'MajorVersion', 'ServicePack', 'CumulativeUpdate', 'SqlInstance', 'SqlCredential', 'Update', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
+        [array]$knownParameters = 'Build', 'Kb', 'MajorVersion', 'ServicePack', 'CumulativeUpdate', 'SqlInstance', 'SqlCredential', 'Update', 'EnableException'
+        [array]$params = ([Management.Automation.CommandMetaData]$ExecutionContext.SessionState.InvokeCommand.GetCommand($CommandName, 'Function')).Parameters.Keys
+
         It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
+            Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params | Should -BeNullOrEmpty
         }
     }
 }
 
 Describe "$CommandName Unit Test" -Tags Unittest {
     BeforeAll {
-        $ModuleBase = (Get-Module -Name dbatools | Where-Object ModuleBase -notmatch net).ModuleBase
-        $idxfile = "$ModuleBase\bin\dbatools-buildref-index.json"
+        $idxfile = ([IO.Path]::Combine(([string]$PSScriptRoot).Trim("tests"), 'src\bin', 'dbatools-buildref-index.json'))
     }
 
     Context 'Validate data in json is correct' {

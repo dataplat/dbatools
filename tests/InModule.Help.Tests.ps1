@@ -25,20 +25,18 @@ if ($env:appveyor) {
     )
 
     foreach ($name in $names) {
-        Add-Type -Path "C:\github\dbatools\bin\smo\$name.dll" -ErrorAction SilentlyContinue
+        Add-Type -Path "C:\github\dbatools\src\bin\smo\$name.dll" -ErrorAction SilentlyContinue
     }
 }
 
 if ($SkipHelpTest) { return }
 . "$PSScriptRoot\InModule.Help.Exceptions.ps1"
 
-$includedNames = (Get-ChildItem "$PSScriptRoot\..\functions" | Where-Object Name -like "*.ps1" ).BaseName
+$includedNames = (Get-ChildItem ([IO.Path]::Combine(([string]$PSScriptRoot).Trim("tests"), 'src\functions')) | Where-Object Name -like "*.ps1" ).BaseName
 $commands = Get-Command -Module (Get-Module dbatools) -CommandType Cmdlet, Function, Workflow | Where-Object Name -in $includedNames
 
 ## When testing help, remember that help is cached at the beginning of each session.
 ## To test, restart session.
-
-
 foreach ($command in $commands) {
     $commandName = $command.Name
 
@@ -100,7 +98,7 @@ foreach ($command in $commands) {
         if (-not ([string]::Equals($help.relatedLinks.NavigationLink.uri, "https://dbatools.io/$commandName"))) {
             # the link should point to the correct page
             It "The link for $commandName should be https://dbatools.io/$commandName" {
-                $help.relatedLinks[0].NavigationLink.uri | Should -MatchExactly "https://dbatools.io/$commandName"  -Because "The web-page should be the one for the command!"
+                $help.relatedLinks[0].NavigationLink.uri | Should -MatchExactly "https://dbatools.io/$commandName" -Because "The web-page should be the one for the command!"
             }
             $testhelperrors += 1
         }
