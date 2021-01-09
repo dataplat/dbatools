@@ -75,7 +75,7 @@ function Export-DbaDacPackage {
         PS C:\> $options = New-DbaDacOption -Type Dacpac -Action Export
         PS C:\> $options.ExtractAllTableData = $true
         PS C:\> $options.CommandTimeout = 0
-        PS C:\> Export-DbaDacPackage -SqlInstance sql2016 -Database DB1 -Options $options
+        PS C:\> Export-DbaDacPackage -SqlInstance sql2016 -Database DB1 -DacOption $options
 
         Uses DacOption object to set the CommandTimeout to 0 then extracts the dacpac for DB1 on sql2016 to C:\Users\username\Documents\DbatoolsExport\sql2016-DB1-20201227140759-dacpackage.dacpac including all table data. As noted the generated filename will contain the server name, database name, and the current timestamp in the "%Y%m%d%H%M%S" format.
 
@@ -171,7 +171,7 @@ function Export-DbaDacPackage {
                     $tblName = [string]$tableSplit
                     $schemaName = 'dbo'
                 }
-                $tblList.Add((New-Object "tuple[String, String]" -ArgumentList $schemaName, $tblName))
+                $tblList.Add((New-Object "tuple[String, String]" -ArgumentList $schemaName,$tblName))
             }
         } else {
             $tblList = $null
@@ -181,7 +181,7 @@ function Export-DbaDacPackage {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             } catch {
-                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+                Stop-Function -Message "Error occurred while establishing connection to $instance"-Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
             if ($Database) {
                 $dbs = Get-DbaDatabase -SqlInstance $server -OnlyAccessible -Database $Database -ExcludeDatabase $ExcludeDatabase
@@ -190,7 +190,7 @@ function Export-DbaDacPackage {
                 $dbs = Get-DbaDatabase -SqlInstance $server -OnlyAccessible -ExcludeSystem -ExcludeDatabase $ExcludeDatabase
             }
             if (-not $dbs) {
-                Stop-Function -Message "Databases not found on $instance" -Target $instance -Continue
+                Stop-Function -Message "Databases not found on $instance"-Target $instance -Continue
             }
 
             foreach ($db in $dbs) {
@@ -216,7 +216,7 @@ function Export-DbaDacPackage {
                     try {
                         $dacSvc = New-Object -TypeName Microsoft.SqlServer.Dac.DacServices -ArgumentList $connstring -ErrorAction Stop
                     } catch {
-                        Stop-Function -Message "Could not connect to the connection string $connstring" -Target $instance -Continue
+                        Stop-Function -Message "Could not connect to the connection string $connstring"-Target $instance -Continue
                     }
                     if (-not $DacOption) {
                         $opts = New-DbaDacOption -Type $Type -Action Export
@@ -276,7 +276,7 @@ function Export-DbaDacPackage {
                     }
 
                     if ($process.ExitCode -ne 0) {
-                        Stop-Function -Message "Standard output - $stderr" -Continue
+                        Stop-Function -Message "Standard output - $stderr"-Continue
                     }
                 }
                 [pscustomobject]@{
@@ -287,7 +287,7 @@ function Export-DbaDacPackage {
                     Path         = $FilePath
                     Elapsed      = [prettytimespan]($resultstime.Elapsed)
                     Result       = $finalResult
-                } | Select-DefaultView -ExcludeProperty ComputerName, InstanceName
+                } | Select-DefaultView -ExcludeProperty ComputerName,InstanceName
             }
         }
     }
