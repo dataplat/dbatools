@@ -24,11 +24,12 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
                     [Address] [VARCHAR](100) NULL,
                     [Zip] [VARCHAR](10) NULL,
                     [City] [VARCHAR](255) NULL,
-                    [Randomtext] [VARCHAR](255) NULL
+                    [Randomtext] [VARCHAR](255) NULL,
+                    [UnknownColumn] [VARCHAR](32) NULL, -- scenario is this column could contain both IPv4 or IPv6
                 ) ON [PRIMARY]
                 GO
-                INSERT [dbo].[Customer] ([Firstname], [Lastname], [FullName], [Address], [Zip], [City], [Randomtext]) VALUES (NULL, N'Lakin', N' Lakin', N'74262 Cormier Inlet', N'43515', N'Port Karine', N'6011295760226704')
-                INSERT [dbo].[Customer] ([Firstname], [Lastname], [FullName], [Address], [Zip], [City], [Randomtext]) VALUES (N'Monserrate', N'Schmidt', N'Monserrate Schmidt', NULL, N'45269', N'New Gussie', N'eu3geQ2dINZWhLzs2eMEclvEFOVEYxQTI084fD91hP')
+                INSERT [dbo].[Customer] ([Firstname], [Lastname], [FullName], [Address], [Zip], [City], [Randomtext], [UnknownColumn]) VALUES (NULL, N'Lakin', N' Lakin', N'74262 Cormier Inlet', N'43515', N'Port Karine', N'6011295760226704', '172.16.0.1')
+                INSERT [dbo].[Customer] ([Firstname], [Lastname], [FullName], [Address], [Zip], [City], [Randomtext], [UnknownColumn]) VALUES (N'Monserrate', N'Schmidt', N'Monserrate Schmidt', NULL, N'45269', N'New Gussie', N'eu3geQ2dINZWhLzs2eMEclvEFOVEYxQTI084fD91hP', 'fe10::4837:3dec:8bc:b749%21')
                 INSERT [dbo].[Customer] ([Firstname], [Lastname], [FullName], [Address], [Zip], [City], [Randomtext]) VALUES (N'Delores', N'Fay', N'Delores Fay', N'209 Howe Club', N'89464', N'Homenickberg', NULL)
                 INSERT [dbo].[Customer] ([Firstname], [Lastname], [FullName], [Address], [Zip], [City], [Randomtext]) VALUES (N'Chelsea', N'Williamson', N'Chelsea Williamson', N'0733 Ebert Keys', N'10237-6424', N'Luciochester', N'5Q2K5TAequaevwlQjvGU72uvg')
                 INSERT [dbo].[Customer] ([Firstname], [Lastname], [FullName], [Address], [Zip], [City], [Randomtext]) VALUES (N'Bobby', N'Rogahn', N'Bobby Rogahn', N'555 Koch Pine', N'54869-8872', N'South Duaneberg', N'tsg8idvGDY9LlV1zHYWOkOF2YfbLf2PDKsmkEJyGk9baOuQe20QNEKAOWokdbUBKiFb2JR57ApElNFoDz7Tplb891HxpyvEAIA1itXFk5SnogparaQOeblyhHbbbuPJfVdMnNfjLCIuDYT3LHgpSRAywb')
@@ -57,6 +58,22 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
                 INSERT [dbo].[Customer] ([Firstname], [Lastname], [FullName], [Address], [Zip], [City], [Randomtext]) VALUES (N'Waylon', NULL, N'Waylon ', N'96507 Torey Street', N'47277', N'Lake Elyseshire', N'x0yUhYAGJfAB7Zey2Bx3PwzIdrEyunfOxVwCNlShqdBQX8XCNxpx5fVaB0R0tblvaVdmDLVRTpML5SUeDcU78RTr9vbWE1Xo2fQc4L8bMIOQDjfTf')
                 INSERT [dbo].[Customer] ([Firstname], [Lastname], [FullName], [Address], [Zip], [City], [Randomtext]) VALUES (N'Lilla', N'Hills', N'Lilla Hills', N'2159 Alfreda Springs', NULL, N'Port Ivorybury', N'ZbSk2dSuAdcYZpsR1EF7NSy9jyZBOvXofAqRwCEoI37o97w3sqvw6AghMSaDorQfqYTz9KuzarzTUjalc6jx9AsOtifOBa9qn28kn64R66vObwwCSZBritfZGef0FQ79riG2l07fcBBdfNN7VM6MJSi4WjNj1dmp8vw30Dr21wpQ1cT3Bie3UvAJ9Mgbm')
                 INSERT [dbo].[Customer] ([Firstname], [Lastname], [FullName], [Address], [Zip], [City], [Randomtext]) VALUES (N'Reese', N'Farrell', N'Reese Farrell', N'12307 Gottlieb Shoal', N'44074', N'Prohaskachester', N'tEN4W3nxqPciqAP7aLRaWIQJohGKwLBhFa6QBYE034eyTembwWziaRlUYdQPwNbPn4MpE8Gmh1h1Es0j4FnJmthXYl2xhYDp3ykYC6HxpnbiKuqGnHU1ACD4XYAsgjesx18fhcR880t8r8nE5wkKeMZB5qaNFoqgiTVTvkzk0W3JiENZL5xU9EoVbGj1cdCTJmZHmEjU69TrTqsBMlbK0GhOFaRZbHiWtja5OfMhWMX9U6bVnRo0b22cf')
+                GO
+                CREATE TABLE dbo.TestTable (
+                    TestId  INTEGER
+                ,   FirstName    NVARCHAR(64)
+                )
+                GO
+                INSERT INTO dbo.TestTable VALUES (1, 'Firstname1')
+                INSERT INTO dbo.TestTable VALUES (2, 'Firstname2')
+                GO
+                CREATE TABLE dbo.TestTable2 (
+                    TestId  INTEGER
+                ,   FirstName    NVARCHAR(64)
+                )
+                GO
+                INSERT INTO dbo.TestTable2 VALUES (1, 'Firstname1')
+                INSERT INTO dbo.TestTable2 VALUES (2, 'Firstname2')
                 "
 
         New-DbaDatabase -SqlInstance $script:instance2 -Name $db
@@ -74,13 +91,96 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         }
 
         It "returns the proper output" {
-
-            $results = Invoke-DbaDbPiiScan -SqlInstance $script:instance2 -Database $db
-
-            $results.Count | Should -Be 7
-
+            $results = Invoke-DbaDbPiiScan -SqlInstance $script:instance2 -Database $db -SampleCount 500
+            $results.Count | Should -Be 29
             $results."PII-Name" | Should -Contain "Creditcard Discover"
+            $results."PII-Name" | Should -Contain "First name"
+            $results."PII-Name" | Should -Contain "National ID"
         }
 
+        It "ExcludeColumn param" {
+            $results = Invoke-DbaDbPiiScan -SqlInstance $script:instance2 -Database $db -ExcludeColumn @('CustomerID', 'Firstname', 'Lastname', 'FullName', 'Address', 'Zip', 'City', 'Randomtext')
+            $results.Count | Should -Be 2
+            $results."PII-Name" | Should -Contain 'IPv4 Address'
+            $results."PII-Name" | Should -Contain 'IPv6 Address'
+        }
+
+        It "Table param" {
+            $results = Invoke-DbaDbPiiScan -SqlInstance $script:instance2 -Database $db -Table Customer
+            $results.Count | Should -Be 27
+            $results.Table | Should -Not -Contain TestTable
+            $results.Table | Should -Not -Contain TestTable2
+
+            $results = Invoke-DbaDbPiiScan -SqlInstance $script:instance2 -Database $db -Table Customer, TestTable
+            $results.Count | Should -Be 28
+            $results.Table | Should -Not -Contain TestTable2
+        }
+
+        It "Column param" {
+            $results = Invoke-DbaDbPiiScan -SqlInstance $script:instance2 -Database $db -Table Customer -Column UnknownColumn
+            $results.Count | Should -Be 2
+            $results."PII-Name" | Should -Contain 'IPv4 Address'
+            $results."PII-Name" | Should -Contain 'IPv6 Address'
+
+            $results = Invoke-DbaDbPiiScan -SqlInstance $script:instance2 -Database $db -Table Customer -Column UnknownColumn, Firstname
+            $results.Count | Should -Be 3
+            $results."PII-Name" | Should -Contain 'IPv4 Address'
+            $results."PII-Name" | Should -Contain 'IPv6 Address'
+            $results."PII-Name" | Should -Contain 'First name'
+
+            $results = Invoke-DbaDbPiiScan -SqlInstance $script:instance2 -Database $db -Table Customer, TestTable -Column UnknownColumn, Firstname
+            $results.Count | Should -Be 4
+            $results."PII-Name" | Should -Contain 'IPv4 Address'
+            $results."PII-Name" | Should -Contain 'IPv6 Address'
+            ($results | Where-Object "PII-Name" -eq "First name").Count | Should -Be 2
+        }
+
+        It "Country param" {
+            $results = Invoke-DbaDbPiiScan -SqlInstance $script:instance2 -Database $db -Table Customer -Country Austria
+            $results.Count | Should -Be 9
+            (($results | Where-Object Country -eq "Austria")."PII-Name" -eq "National ID") | Should -Be $true
+
+            $results = Invoke-DbaDbPiiScan -SqlInstance $script:instance2 -Database $db -Table Customer -Country Austria, Slovakia
+            $results.Count | Should -Be 10
+            (($results | Where-Object Country -eq "Austria")."PII-Name" -eq "National ID") | Should -Be $true
+            (($results | Where-Object Country -eq "Slovakia")."PII-Name" -eq "National ID") | Should -Be $true
+        }
+
+        It "CountryCode param" {
+            $results = Invoke-DbaDbPiiScan -SqlInstance $script:instance2 -Database $db -Table Customer -CountryCode SK
+            $results.Count | Should -Be 9
+            (($results | Where-Object CountryCode -eq "SK")."PII-Name" -eq "National ID") | Should -Be $true
+
+            $results = Invoke-DbaDbPiiScan -SqlInstance $script:instance2 -Database $db -Table Customer -CountryCode AT, SK
+            $results.Count | Should -Be 10
+            (($results | Where-Object CountryCode -eq "SK")."PII-Name" -eq "National ID") | Should -Be $true
+            (($results | Where-Object CountryCode -eq "AT")."PII-Name" -eq "National ID") | Should -Be $true
+        }
+
+        It "Custom scan definitions" {
+            $results = Invoke-DbaDbPiiScan -SqlInstance $script:instance2 -Database $db -KnownNameFilePath .\ObjectDefinitions\Invoke-DbaDbPiiScan\custom-pii-knownnames.json -PatternFilePath .\ObjectDefinitions\Invoke-DbaDbPiiScan\custom-pii-patterns.json -ExcludeDefaultKnownName -ExcludeDefaultPattern
+            $results.Count | Should -Be 6
+            ($results | Where-Object "PII-Name" -eq "First name").Count | Should -Be 3
+            ($results | Where-Object "PII-Name" -eq "IPv4 Address").Count | Should -Be 2
+            ($results | Where-Object "PII-Name" -eq "IPv6 Address").Column | Should -Be UnknownColumn
+        }
+
+        It "ExcludeColumn and ExcludeTable params" {
+            $results = Invoke-DbaDbPiiScan -SqlInstance $script:instance2 -Database $db -ExcludeTable Customer
+            $results.Count | Should -Be 2
+            ($results | Where-Object "PII-Name" -eq "First name").Count | Should -Be 2
+
+            $results = Invoke-DbaDbPiiScan -SqlInstance $script:instance2 -Database $db -ExcludeTable Customer, TestTable
+            $results.Table | Should -Be TestTable2
+
+            $results = Invoke-DbaDbPiiScan -SqlInstance $script:instance2 -Database $db -ExcludeColumn UnknownColumn
+            $results.Count | Should -Be 27
+            $results.Column | Should -Not -Contain UnknownColumn
+
+            $results = Invoke-DbaDbPiiScan -SqlInstance $script:instance2 -Database $db -ExcludeColumn UnknownColumn, FirstName
+            $results.Count | Should -Be 24
+            $results.Column | Should -Not -Contain UnknownColumn
+            $results.Column | Should -Not -Contain FirstName
+        }
     }
 }
