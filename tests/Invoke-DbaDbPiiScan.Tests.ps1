@@ -158,7 +158,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         }
 
         It "Custom scan definitions" {
-            $results = Invoke-DbaDbPiiScan -SqlInstance $script:instance2 -Database $db -KnownNameFilePath .\ObjectDefinitions\Invoke-DbaDbPiiScan\custom-pii-knownnames.json -PatternFilePath .\ObjectDefinitions\Invoke-DbaDbPiiScan\custom-pii-patterns.json -ExcludeDefaultKnownName -ExcludeDefaultPattern
+            $results = Invoke-DbaDbPiiScan -SqlInstance $script:instance2 -Database $db -KnownNameFilePath "$PSScriptRoot\ObjectDefinitions\Invoke-DbaDbPiiScan\custom-pii-knownnames.json" -PatternFilePath "$PSScriptRoot\ObjectDefinitions\Invoke-DbaDbPiiScan\custom-pii-patterns.json" -ExcludeDefaultKnownName -ExcludeDefaultPattern
             $results.Count | Should -Be 6
             ($results | Where-Object "PII-Name" -eq "First name").Count | Should -Be 3
             ($results | Where-Object "PII-Name" -eq "IPv4 Address").Count | Should -Be 2
