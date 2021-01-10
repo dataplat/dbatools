@@ -776,7 +776,8 @@ $script:xplat = @(
     'Export-DbaSysDbUserObject',
     'Test-DbaDbQueryStore',
     'Install-DbaMultiTool',
-    'New-DbaAgentOperator'
+    'New-DbaAgentOperator',
+    'Remove-DbaAgentOperator'
 )
 
 $script:noncoresmo = @(
