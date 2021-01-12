@@ -134,7 +134,6 @@ function Get-DbaKbUpdate {
 
                 $guids = $results.Links |
                     Where-Object ID -match '_link' |
-                    Where-Object { $_.OuterHTML -match ( "(?=.*" + ( $Filter -join ")(?=.*" ) + ")" ) } |
                     ForEach-Object { $_.id.replace('_link', '') } |
                     Where-Object { $_ -in $kbids }
 
