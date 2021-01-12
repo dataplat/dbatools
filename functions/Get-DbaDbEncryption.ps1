@@ -136,9 +136,8 @@ function Get-DbaDbEncryption {
                         $returnCertificate.Owner = $serverCertificate.Owner
                         $returnCertificate.Object = $serverCertificate
                         $returnCertificate.ExpirationDate = $serverCertificate.ExpirationDate
-                        If($true -eq $db.DatabaseEncryptionKey.Properties.Contains("EncryptionAlgorithm"))
-                        {
-	                        $returnCertificate.EncryptionAlgorithm = $db.DatabaseEncryptionKey.Properties["EncryptionAlgorithm"].value
+                        If ($true -eq $db.DatabaseEncryptionKey.Properties.Contains("EncryptionAlgorithm")) {
+                            $returnCertificate.EncryptionAlgorithm = $db.DatabaseEncryptionKey.Properties["EncryptionAlgorithm"].value
                         }
                     }
 
