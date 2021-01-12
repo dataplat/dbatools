@@ -40,6 +40,14 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
 
     It "Call with multiple KBs" {
         $results = Get-DbaKbUpdate -Name KB4057119, KB4577194, KB4564903
+
+        # basic retry logic in case the first download didn't get all of the files
+        if ($null -eq $results -or $results.Count -ne 3) {
+            Write-Message -Level Warning -Message "Retrying..."
+            Start-Sleep -s 30
+            $results = Get-DbaKbUpdate -Name KB4057119, KB4577194, KB4564903
+        }
+
         $results.KBLevel | Should -Contain 4057119
         $results.KBLevel | Should -Contain 4577194
         $results.KBLevel | Should -Contain 4564903

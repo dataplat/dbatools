@@ -26,10 +26,33 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
     }
     It "Download multiple updates" {
         $results = Save-DbaKbUpdate -Name KB2992080, KB4513696 -Path C:\temp
+
+        # basic retry logic in case the first download didn't get all of the files
+        if ($null -eq $results -or $results.Count -ne 2) {
+            Write-Message -Level Warning -Message "Retrying..."
+            if ($results.Count -gt 0) {
+                $results | Remove-Item -Confirm:$false
+            }
+            Start-Sleep -s 30
+            $results = Save-DbaKbUpdate -Name KB2992080, KB4513696 -Path C:\temp
+        }
+
         $results.Count | Should -Be 2
         $results | Remove-Item -Confirm:$false
 
+        # download multiple updates via piping
         $results = Get-DbaKbUpdate -Name KB2992080, KB4513696 | Save-DbaKbUpdate -Path C:\temp
+
+        # basic retry logic in case the first download didn't get all of the files
+        if ($null -eq $results -or $results.Count -ne 2) {
+            Write-Message -Level Warning -Message "Retrying..."
+            if ($results.Count -gt 0) {
+                $results | Remove-Item -Confirm:$false
+            }
+            Start-Sleep -s 30
+            $results = Get-DbaKbUpdate -Name KB2992080, KB4513696 | Save-DbaKbUpdate -Path C:\temp
+        }
+
         $results.Count | Should -Be 2
         $results | Remove-Item -Confirm:$false
     }
