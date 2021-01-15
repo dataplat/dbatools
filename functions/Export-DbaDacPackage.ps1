@@ -171,7 +171,7 @@ function Export-DbaDacPackage {
                     $tblName = [string]$tableSplit
                     $schemaName = 'dbo'
                 }
-                $tblList.Add((New-Object "tuple[String, String]" -ArgumentList $schemaName,$tblName))
+                $tblList.Add((New-Object "tuple[String, String]" -ArgumentList $schemaName, $tblName))
             }
         } else {
             $tblList = $null
@@ -287,7 +287,7 @@ function Export-DbaDacPackage {
                     Path         = $FilePath
                     Elapsed      = [prettytimespan]($resultstime.Elapsed)
                     Result       = $finalResult
-                } | Select-DefaultView -ExcludeProperty ComputerName,InstanceName
+                } | Select-DefaultView -ExcludeProperty ComputerName, InstanceName
             }
         }
     }
