@@ -522,6 +522,7 @@
         'Export-DbaRepServerSetting',
         'Get-DbaRepServer',
         'Export-DbaSysDbUserObject',
+        'Move-DbaDbFile'
         # windowsonly
         # solvable filesystem issues or other workarounds
         'Install-DbaSqlWatch',
