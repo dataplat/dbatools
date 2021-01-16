@@ -1,7 +1,7 @@
 
 -- SQL Server 2014 Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: November 1, 2020
+-- Last Modified: January 12, 2021
 -- https://glennsqlperformance.com/
 -- https://sqlserverperformance.wordpress.com/
 -- YouTube: https://bit.ly/2PkoAM1 
@@ -22,7 +22,7 @@
 
 
 --******************************************************************************
---*   Copyright (C) 2020 Glenn Berry
+--*   Copyright (C) 2021 Glenn Berry
 --*   All rights reserved. 
 --*
 --*
@@ -89,14 +89,18 @@ SELECT @@SERVERNAME AS [Server Name], @@VERSION AS [SQL Server and OS Version In
 --																													12.0.5589		SP2 CU12		 6/18/2018
 --																													12.0.5590		SP2 CU13		 8/27/2018
 --																													12.0.5600		SP2 CU14	    10/15/2018
---																																										12.0.6024	SP3 RTM		10/30/2018
---																													12.0.5605		SP2 CU15		12/12/2018 ---->	12.0.6205	SP3 CU1	    12/12/2018
---																													12.0.5626		SP2 CU16		 2/19/2019 ---->    12.0.6214	SP3 CU2      2/19/2019
---																													12.0.5632		SP2 CU17		 4/16/2019 ---->    12.0.6259   SP3 CU3		 4/16/2019
---																													12.0.5687		SP2 CU18		 7/29/2019 ---->	12.0.6329	SP3	CU4		 7/29/2019
+--																																										12.0.6024	SP3 RTM						10/30/2018
+--																													12.0.5605		SP2 CU15		12/12/2018 ---->	12.0.6205	SP3 CU1						12/12/2018
+--																													12.0.5626		SP2 CU16		 2/19/2019 ---->    12.0.6214	SP3 CU2						2/19/2019
+--																													12.0.5632		SP2 CU17		 4/16/2019 ---->    12.0.6259   SP3 CU3						4/16/2019
+--																													12.0.5687		SP2 CU18		 7/29/2019 ---->	12.0.6329	SP3	CU4						7/29/2019
+--																																										12.0.6372.1	SP3 CU4 + Security Update	2/11/2020	
+--																																										12.0.6433.1	SP3 CU4 + Security Update	1/12/2021
 
+-- KB4583462 - Description of the security update for SQL Server 2014 SP3 CU4: January 12, 2021
+-- https://support.microsoft.com/en-us/help/4583462/kb4583462-security-update-for-sql-server-2014-sp3-cu4
 
--- 12.0.6372.1  Security Update for SQL Server 2016 SP3 CU4   February 11, 2020
+-- Security Update for SQL Server 2016 SP3 CU4   February 11, 2020
 -- https://support.microsoft.com/en-us/help/4535288/description-of-the-security-update-for-sql-server-2014-sp3-cu4-feb
 
 -- How to determine the version, edition and update level of SQL Server and its components 
@@ -1733,7 +1737,8 @@ ORDER BY ps.avg_fragmentation_in_percent DESC OPTION (RECOMPILE);
 
 
 --- Index Read/Write stats (all tables in current DB) ordered by Reads  (Query 70) (Overall Index Usage - Reads)
-SELECT OBJECT_NAME(i.[object_id]) AS [ObjectName], i.[name] AS [IndexName], i.index_id, 
+SELECT SCHEMA_NAME(t.[schema_id]) AS [SchemaName], OBJECT_NAME(i.[object_id]) AS [ObjectName], 
+       i.[name] AS [IndexName], i.index_id, 
        s.user_seeks, s.user_scans, s.user_lookups,
 	   s.user_seeks + s.user_scans + s.user_lookups AS [Total Reads], 
 	   s.user_updates AS [Writes],  
@@ -1744,6 +1749,8 @@ LEFT OUTER JOIN sys.dm_db_index_usage_stats AS s WITH (NOLOCK)
 ON i.[object_id] = s.[object_id]
 AND i.index_id = s.index_id
 AND s.database_id = DB_ID()
+LEFT OUTER JOIN sys.tables AS t WITH (NOLOCK)
+ON t.[object_id] = i.[object_id]
 WHERE OBJECTPROPERTY(i.[object_id],'IsUserTable') = 1
 ORDER BY s.user_seeks + s.user_scans + s.user_lookups DESC OPTION (RECOMPILE); -- Order by reads
 ------
@@ -1752,7 +1759,8 @@ ORDER BY s.user_seeks + s.user_scans + s.user_lookups DESC OPTION (RECOMPILE); -
 
 
 --- Index Read/Write stats (all tables in current DB) ordered by Writes  (Query 71) (Overall Index Usage - Writes)
-SELECT OBJECT_NAME(i.[object_id]) AS [ObjectName], i.[name] AS [IndexName], i.index_id,
+SELECT SCHEMA_NAME(t.[schema_id]) AS [SchemaName],OBJECT_NAME(i.[object_id]) AS [ObjectName], 
+	   i.[name] AS [IndexName], i.index_id,
 	   s.user_updates AS [Writes], s.user_seeks + s.user_scans + s.user_lookups AS [Total Reads], 
 	   i.[type_desc] AS [Index Type], i.fill_factor AS [Fill Factor], i.has_filter, i.filter_definition,
 	   s.last_system_update, s.last_user_update
@@ -1761,6 +1769,8 @@ LEFT OUTER JOIN sys.dm_db_index_usage_stats AS s WITH (NOLOCK)
 ON i.[object_id] = s.[object_id]
 AND i.index_id = s.index_id
 AND s.database_id = DB_ID()
+LEFT OUTER JOIN sys.tables AS t WITH (NOLOCK)
+ON t.[object_id] = i.[object_id]
 WHERE OBJECTPROPERTY(i.[object_id],'IsUserTable') = 1
 ORDER BY s.user_updates DESC OPTION (RECOMPILE);						 -- Order by writes
 ------
