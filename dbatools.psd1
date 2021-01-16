@@ -523,6 +523,7 @@
         'Export-DbaRepServerSetting',
         'Get-DbaRepServer',
         'Export-DbaSysDbUserObject',
+        'Move-DbaDbFile'
         'New-DbaAgentOperator',
         # windowsonly
         # solvable filesystem issues or other workarounds
