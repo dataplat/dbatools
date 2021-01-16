@@ -65,6 +65,9 @@ function Test-DbaLastBackup {
     .PARAMETER MaxSize
         Max size in MB. Databases larger than this value will not be restored.
 
+    .PARAMETER MaxDop
+        Allows you to pass in a MAXDOP setting to the DBCC CheckDB command to limit the number of parallel processes used.
+
     .PARAMETER DeviceType
         Specifies a filter for backup sets based on DeviceTypes. Valid options are 'Disk','Permanent Disk Device', 'Tape', 'Permanent Tape Device','Pipe','Permanent Pipe Device','Virtual Device', in addition to custom integers for your own DeviceTypes.
 
@@ -105,6 +108,7 @@ function Test-DbaLastBackup {
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+
 
     .NOTES
         Tags: DisasterRecovery, Backup, Restore
@@ -171,6 +175,11 @@ function Test-DbaLastBackup {
         Prior to running, you should check memory and server resources before configure it to run automatically.
         More information:
         https://www.mssqltips.com/sqlservertip/4935/optimize-sql-server-database-restore-performance/
+
+    .EXAMPLE
+        PS C:\> Test-DbaLastBackup -SqlInstance sql2016 -MaxDop 4
+
+        The use of the MaxDop parameter will limit the number of processors used during the DBCC command
     #>
     [CmdletBinding(SupportsShouldProcess)]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingPlainTextForPassword", "", Justification = "For Parameters DestinationCredential and AzureCredential")]
@@ -199,6 +208,7 @@ function Test-DbaLastBackup {
         [int]$MaxTransferSize,
         [int]$BufferCount,
         [switch]$IgnoreDiffBackup,
+        [int]$MaxDop,
         [switch]$EnableException
     )
     process {
@@ -235,6 +245,7 @@ function Test-DbaLastBackup {
                     RestoreStart   = $null
                     RestoreEnd     = $null
                     RestoreElapsed = $null
+                    DbccMaxDop     = $null
                     DbccStart      = $null
                     DbccEnd        = $null
                     DbccElapsed    = $null
@@ -477,7 +488,7 @@ function Test-DbaLastBackup {
                                 Write-Message -Level Verbose -Message "Starting DBCC."
 
                                 $startDbcc = Get-Date
-                                $dbccresult = Start-DbccCheck -Server $destserver -DbName $dbName 3>$null
+                                $dbccresult = Start-DbccCheck -Server $destserver -DbName $dbName -MaxDop $MaxDop 3>$null
                                 $endDbcc = Get-Date
 
                                 $dbccts = New-TimeSpan -Start $startDbcc -End $endDbcc
@@ -541,6 +552,7 @@ function Test-DbaLastBackup {
                     RestoreStart   = [dbadatetime]$startRestore
                     RestoreEnd     = [dbadatetime]$endRestore
                     RestoreElapsed = $restoreElapsed
+                    DbccMaxDop     = [int]$MaxDop
                     DbccStart      = [dbadatetime]$startDbcc
                     DbccEnd        = [dbadatetime]$endDbcc
                     DbccElapsed    = $dbccElapsed

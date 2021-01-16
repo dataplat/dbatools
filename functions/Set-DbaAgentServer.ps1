@@ -30,7 +30,7 @@ function Set-DbaAgentServer {
         The text value can either be lowercase, uppercase or something in between as long as the text is correct.
 
     .PARAMETER AgentShutdownWaitTime
-        The Agent Shutdown Wait Time value of the server agent.
+        The Agent Shutdown Wait Time value of the server agent. The accepted value range is between 5 and 600.
 
     .PARAMETER DatabaseMailProfile
         The Database Mail Profile to be used. Must exists on database mail profiles.
@@ -39,10 +39,10 @@ function Set-DbaAgentServer {
         Error log file location
 
     .PARAMETER IdleCpuDuration
-        Idle CPU Duration value to be used
+        Idle CPU Duration value to be used. The accepted value range is between 20 and 86400.
 
     .PARAMETER IdleCpuPercentage
-        Idle CPU Percentage value to be used
+        Idle CPU Percentage value to be used. The accepted value range is between 10 and 100.
 
     .PARAMETER CpuPolling
         Enable or Disable the Polling.
@@ -52,13 +52,13 @@ function Set-DbaAgentServer {
         The value for Local Host Alias configuration
 
     .PARAMETER LoginTimeout
-        The value for Login Timeout configuration
+        The value for Login Timeout configuration. The accepted value range is between 5 and 45.
 
     .PARAMETER MaximumHistoryRows
-        Indicates the Maximum job history log size (in rows). If you want to turn it off use the value -1
+        Indicates the Maximum job history log size (in rows). The acceptable value range is between 2 and 999999. To turn off the job history limitations use the value -1 and specify 0 for MaximumJobHistoryRows. See the example listed below.
 
     .PARAMETER MaximumJobHistoryRows
-        Indicates the Maximum job history rows per job. If you want to turn it off use the value 0
+        Indicates the Maximum job history rows per job. The acceptable value range is between 2 and 999999. To turn off the job history limitations use the value 0 and specify -1 for MaximumHistoryRows. See the example listed below.
 
     .PARAMETER NetSendRecipient
         The Net send recipient value
@@ -132,6 +132,16 @@ function Set-DbaAgentServer {
 
         Disable the CPU Polling configurations.
 
+    .EXAMPLE
+        PS C:\> Set-DbaAgentServer -SqlInstance sql1 -MaximumJobHistoryRows 1000 -MaximumHistoryRows 10000
+
+        Set the max history limitations. This is the equivalent to calling:  EXEC msdb.dbo.sp_set_sqlagent_properties @jobhistory_max_rows=10000, @jobhistory_max_rows_per_job=1000
+
+    .EXAMPLE
+        PS C:\> Set-DbaAgentServer -SqlInstance sql1 -MaximumJobHistoryRows 0 -MaximumHistoryRows -1
+
+        Disable the max history limitations. This is the equivalent to calling:  EXEC msdb.dbo.sp_set_sqlagent_properties @jobhistory_max_rows=-1, @jobhistory_max_rows_per_job=0
+
     #>
     [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "Low")]
     param (
@@ -143,17 +153,17 @@ function Set-DbaAgentServer {
         [object]$AgentLogLevel,
         [ValidateSet(0, "SqlAgentMail", 1, "DatabaseMail")]
         [object]$AgentMailType,
-        [int]$AgentShutdownWaitTime,
+        [ValidateRange(5, 600)][int]$AgentShutdownWaitTime,
         [string]$DatabaseMailProfile,
         [string]$ErrorLogFile,
-        [int]$IdleCpuDuration,
-        [int]$IdleCpuPercentage,
+        [ValidateRange(20, 86400)][int]$IdleCpuDuration,
+        [ValidateRange(10, 100)][int]$IdleCpuPercentage,
         [ValidateSet("Enabled", "Disabled")]
         [string]$CpuPolling,
         [string]$LocalHostAlias,
-        [int]$LoginTimeout,
-        [int]$MaximumHistoryRows,
-        [int]$MaximumJobHistoryRows,
+        [ValidateRange(5, 45)][int]$LoginTimeout,
+        [int]$MaximumHistoryRows, # validated in the begin block
+        [int]$MaximumJobHistoryRows, # validated in the begin block
         [string]$NetSendRecipient,
         [ValidateSet("Enabled", "Disabled")]
         [string]$ReplaceAlertTokens,
@@ -180,6 +190,16 @@ function Set-DbaAgentServer {
         # Check of the agent log level is of type string and set the integer value
         if (($AgentLogLevel -notin 0, 1) -and ($null -ne $AgentLogLevel)) {
             $AgentLogLevel = switch ($AgentLogLevel) { "Errors" { 1 } "Warnings" { 2 } "Errors, Warnings" { 3 } "Informational" { 4 } "Errors, Informational" { 5 } "Warnings, Informational" { 6 } "All" { 7 } }
+        }
+
+        if ($PSBoundParameters.ContainsKey("MaximumHistoryRows") -and ($MaximumHistoryRows -ne -1 -and $MaximumHistoryRows -notin 2..999999)) {
+            Stop-Function -Message "You must specify a MaximumHistoryRows value of -1 (i.e. turn off max history) or a value between 2 and 999999. See the command description for examples."
+            return
+        }
+
+        if ($PSBoundParameters.ContainsKey("MaximumJobHistoryRows") -and ($MaximumJobHistoryRows -ne 0 -and $MaximumJobHistoryRows -notin 2..999999)) {
+            Stop-Function -Message "You must specify a MaximumJobHistoryRows value of 0 (i.e. turn off max history) or a value between 2 and 999999. See the command description for examples."
+            return
         }
     }
     process {
@@ -267,7 +287,7 @@ function Set-DbaAgentServer {
                 $jobServer.MaximumHistoryRows = $MaximumHistoryRows
             }
 
-            if ($MaximumJobHistoryRows) {
+            if ($PSBoundParameters.ContainsKey("MaximumJobHistoryRows")) {
                 Write-Message -Message "Setting agent server MaximumJobHistoryRows to $MaximumJobHistoryRows" -Level Verbose
                 $jobServer.MaximumJobHistoryRows = $MaximumJobHistoryRows
             }
@@ -279,7 +299,7 @@ function Set-DbaAgentServer {
 
             if ($ReplaceAlertTokens) {
                 Write-Message -Message "Setting agent server ReplaceAlertTokensEnabled to $ReplaceAlertTokens" -Level Verbose
-                $jobServer.ReplaceAlertTokens = if ($ReplaceAlertTokens -eq "Enabled") { $true } else { $false }
+                $jobServer.ReplaceAlertTokensEnabled = if ($ReplaceAlertTokens -eq "Enabled") { $true } else { $false }
             }
 
             if ($SaveInSentFolder) {

@@ -12,7 +12,7 @@ function Copy-DbaDbTableData {
         Source SQL Server.You must have sysadmin access and server version must be SQL Server version 2000 or greater.
 
     .PARAMETER SqlCredential
-        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+        Login to the source instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
 
         Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
 
@@ -22,7 +22,7 @@ function Copy-DbaDbTableData {
         Destination Sql Server. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
 
     .PARAMETER DestinationSqlCredential
-        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+        Login to the destination instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
 
         Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
 
@@ -37,13 +37,13 @@ function Copy-DbaDbTableData {
     .PARAMETER Table
         Specify a table to use as a source. You can specify a 2 or 3 part name.
         If the object has special characters please wrap them in square brackets.
-        
+
         Note: Cannot specify a view if a table value is provided
 
     .PARAMETER View
         Specify a view to use as a source. You can specify a 2 or 3 part name (see examples).
         If the object has special characters please wrap them in square brackets.
-        
+
         Note: Cannot specify a table if a view value is provided
 
     .PARAMETER DestinationTable
@@ -179,10 +179,10 @@ function Copy-DbaDbTableData {
         Copies data returned from the query on server1 into the AdventureWorks2017 on server1, using a 4-part name for the -Table parameter.
         See the -Query param documentation for more details.
         Copy is processed in BatchSize of 10000 rows.
-    
+
     .EXAMPLE
        Copy-DbaDbTableData -SqlInstance sql1 -Database tempdb -View [tempdb].[dbo].[vw1] -DestinationTable [SampleDb].[SampleSchema].[SampleTable] -AutoCreateTable
-       
+
        Copies all data from [tempdb].[dbo].[vw1] (3-part name) view on instance sql1 to an auto-created table [SampleDb].[SampleSchema].[SampleTable] on instance sql1
     #>
     [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess)]
@@ -226,6 +226,52 @@ function Copy-DbaDbTableData {
                 $bulkCopyOptions += $([Data.SqlClient.SqlBulkCopyOptions]::$option).value__
             }
         }
+
+        #region Utility Functions
+        function Get-AdjustedTotalRowsCopied {
+            <#
+            .SYNOPSIS
+                The legacy bulk copy library still uses a 4 byte integer to track the number of rows copied. That 4 byte integer is subject to overflow/wraparound
+                if the number of rows copied is greater than an integer can support. The SqlRowsCopiedEventArgs.RowsCopied property is defined as an Int64
+                but a 4 byte integer is used in the underlying legacy library. See https://github.com/sqlcollaborative/dbatools/issues/6927 for more details.
+
+            .DESCRIPTION
+                Determines the accurate total rows copied even if the bulkcopy.RowsCopied has experienced integer wrap.
+
+            .PARAMETER ReportedRowsCopied
+                The number of rows copied as reported by the bulk copy library (i.e. https://docs.microsoft.com/en-us/dotnet/api/system.data.sqlclient.sqlrowscopiedeventargs.rowscopied)
+
+            .PARAMETER PreviousRowsCopied
+                The previous number of rows reported by the bulk copy library.
+        #>
+            [CmdletBinding()]
+            param (
+                $ReportedRowsCopied,
+                $PreviousRowsCopied
+            )
+
+            $newRowCountAdded = 0
+
+            if ($ReportedRowsCopied -gt 0) {
+                if ($PreviousRowsCopied -ge 0) {
+                    $newRowCountAdded = $ReportedRowsCopied - $PreviousRowsCopied
+                } else {
+                    # integer wrap just changed from negative to positive
+                    $newRowCountAdded = [math]::Abs($PreviousRowsCopied) + $ReportedRowsCopied
+                }
+            } elseif ($ReportedRowsCopied -lt 0) {
+                if ($PreviousRowsCopied -ge 0) {
+                    # integer wrap just changed from positive to negative
+                    $newRowCountAdded = ([int32]::MaxValue - $PreviousRowsCopied) + [math]::Abs(([int32]::MinValue - ($ReportedRowsCopied))) + 1
+                } else {
+                    $newRowCountAdded = [math]::Abs($PreviousRowsCopied) - [math]::Abs($ReportedRowsCopied)
+                }
+            }
+
+            [pscustomobject]@{
+                NewRowCountAdded = $newRowCountAdded
+            }
+        }
     }
 
     process {
@@ -233,7 +279,7 @@ function Copy-DbaDbTableData {
             Stop-Function -Message "You must pipe in a table or specify SqlInstance, Database and [View|Table]."
             return
         }
-        
+
         # determine if -Table or -View was used
         $SourceObject = $Table
         if ((Test-Bound -ParameterName View) -and (Test-Bound -ParameterName Table)) {
@@ -242,7 +288,7 @@ function Copy-DbaDbTableData {
         } elseif ( Test-Bound -ParameterName View ) {
             $SourceObject = $View
         }
-        
+
         if ($SqlInstance) {
             if ((Test-Bound -Not -ParameterName Database)) {
                 Stop-Function -Message "Database is required when passing a SqlInstance" -Target $SourceObject
@@ -265,13 +311,13 @@ function Copy-DbaDbTableData {
             try {
                 foreach ($sourceDataObject in $SourceObject) {
                     $dbObject = $null
-                    
+
                     if ( Test-Bound -ParameterName View ) {
                         $dbObject = Get-DbaDbView -SqlInstance $server -View $sourceDataObject -Database $Database -EnableException -Verbose:$false
                     } else {
                         $dbObject = Get-DbaDbTable -SqlInstance $server -Table $sourceDataObject -Database $Database -EnableException -Verbose:$false
                     }
-                    
+
                     if ($dbObject.Count -eq 1) {
                         $InputObject += $dbObject
                     } else {
@@ -287,7 +333,7 @@ function Copy-DbaDbTableData {
         foreach ($sqlObject in $InputObject) {
             $Database = $sqlObject.Parent.Name
             $server = $sqlObject.Parent.Parent
-            
+
             if ((Test-Bound -Not -ParameterName DestinationTable)) {
                 $DestinationTable = '[' + $sqlObject.Schema + '].[' + $sqlObject.Name + ']'
             }
@@ -304,11 +350,11 @@ function Copy-DbaDbTableData {
                 $Destination = $server
             }
 
-            foreach ($destinationserver in $Destination) {
+            foreach ($destinationServer in $Destination) {
                 try {
                     $destServer = Connect-SqlInstance -SqlInstance $destinationserver -SqlCredential $DestinationSqlCredential
                 } catch {
-                    Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $destinationserver
+                    Stop-Function -Message "Error occurred while establishing connection to $destinationServer" -Category ConnectionError -ErrorRecord $_ -Target $destinationserver
                     return
                 }
 
@@ -316,7 +362,7 @@ function Copy-DbaDbTableData {
                     Stop-Function -Message "Database $DestinationDatabase doesn't exist on $destServer"
                     return
                 }
-                
+
                 $desttable = Get-DbaDbTable -SqlInstance $destServer -Table $DestinationTable -Database $DestinationDatabase -Verbose:$false | Select-Object -First 1
                 if (-not $desttable -and $AutoCreateTable) {
                     try {
@@ -417,21 +463,40 @@ function Copy-DbaDbTableData {
                         $bulkCopy.NotifyAfter = $NotifyAfter
                         $bulkCopy.BulkCopyTimeOut = $BulkCopyTimeOut
 
+                        # The legacy bulk copy library uses a 4 byte integer to track the RowsCopied, so the only option is to use
+                        # integer wrap so that copy operations of row counts greater than [int32]::MaxValue will report accurate numbers.
+                        # See https://github.com/sqlcollaborative/dbatools/issues/6927 for more details
+                        $script:prevRowsCopied = [int64]0
+                        $script:totalRowsCopied = [int64]0
+
                         $elapsed = [System.Diagnostics.Stopwatch]::StartNew()
                         # Add RowCount output
                         $bulkCopy.Add_SqlRowsCopied( {
-                                $RowsPerSec = [math]::Round($args[1].RowsCopied / $elapsed.ElapsedMilliseconds * 1000.0, 1)
-                                Write-Progress -Id 1 -Activity "Inserting rows" -Status ([System.String]::Format("{0} rows ({1} rows/sec)", $args[1].RowsCopied, $RowsPerSec))
+
+                                $script:totalRowsCopied += (Get-AdjustedTotalRowsCopied -ReportedRowsCopied $args[1].RowsCopied -PreviousRowsCopied $script:prevRowsCopied).NewRowCountAdded
+
+                                $tstamp = $(Get-Date -format 'yyyyMMddHHmmss')
+                                Write-Message -Level Verbose -Message "[$tstamp] The bulk copy library reported RowsCopied = $($args[1].RowsCopied). The previous RowsCopied = $($script:prevRowsCopied). The adjusted total rows copied = $($script:totalRowsCopied)"
+
+                                $RowsPerSec = [math]::Round($script:totalRowsCopied / $elapsed.ElapsedMilliseconds * 1000.0, 1)
+                                Write-Progress -Id 1 -Activity "Inserting rows" -Status ([System.String]::Format("{0} rows ({1} rows/sec)", $script:totalRowsCopied, $RowsPerSec))
+
+                                # save the previous count of rows copied to be used on the next event notification
+                                $script:prevRowsCopied = $args[1].RowsCopied
                             })
                     }
 
                     if ($Pscmdlet.ShouldProcess($destServer, "Writing rows to $fqtndest")) {
                         $reader = $cmd.ExecuteReader()
                         $bulkCopy.WriteToServer($reader)
-                        $RowsTotal = Get-BulkRowsCopiedCount $bulkCopy
+                        $finalRowCountReported = Get-BulkRowsCopiedCount $bulkCopy
+
+                        $script:totalRowsCopied += (Get-AdjustedTotalRowsCopied -ReportedRowsCopied $finalRowCountReported -PreviousRowsCopied $script:prevRowsCopied).NewRowCountAdded
+
+                        $RowsTotal = $script:totalRowsCopied
                         $TotalTime = [math]::Round($elapsed.Elapsed.TotalSeconds, 1)
                         Write-Message -Level Verbose -Message "$RowsTotal rows inserted in $TotalTime sec"
-                        if ($rowCount -is [int]) {
+                        if ($RowsTotal -gt 0) {
                             Write-Progress -Id 1 -Activity "Inserting rows" -Status "Complete" -Completed
                         }
 
@@ -449,7 +514,7 @@ function Copy-DbaDbTableData {
                             DestinationDatabase = $DestinationDatabase
                             DestinationSchema   = $desttable.Schema
                             DestinationTable    = $desttable.Name
-                            RowsCopied          = $rowstotal
+                            RowsCopied          = $RowsTotal
                             Elapsed             = [prettytimespan]$elapsed.Elapsed
                         }
                     }
