@@ -126,7 +126,7 @@ function Move-DbaDbFile {
 
     begin {
         if ((Test-Bound -ParameterName FileType) -and (-not(Test-Bound -ParameterName FileDestination))) {
-            Stop-Function -Category InvalidArgument -Message "You need to specify the -FileDestination parmeter. Quitting."
+            Stop-Function -Category InvalidArgument -Message "FileDestination parameter is missing. Quitting."
         }
     }
 
@@ -139,7 +139,7 @@ function Move-DbaDbFile {
         }
 
         if ($Database -in @("master", "model", "msdb", "tempdb")) {
-            Stop-Function -Message "You have specified the system database $Database. As for now, system database are not supported by this command"
+            Stop-Function -Message "System database detected as input. The command does not support moving system databases. Quitting."
             return
         }
 
