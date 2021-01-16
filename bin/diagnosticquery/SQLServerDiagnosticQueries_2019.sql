@@ -1,7 +1,7 @@
 
 -- SQL Server 2019 Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: November 10, 2020
+-- Last Modified: January 12, 2021
 -- https://glennsqlperformance.com/ 
 -- https://sqlserverperformance.wordpress.com/
 -- YouTube: https://bit.ly/2PkoAM1 
@@ -22,7 +22,7 @@
 
 
 --******************************************************************************
---*   Copyright (C) 2020 Glenn Berry
+--*   Copyright (C) 2021 Glenn Berry
 --*   All rights reserved. 
 --*
 --*
@@ -75,6 +75,7 @@ SELECT @@SERVERNAME AS [Server Name], @@VERSION AS [SQL Server and OS Version In
 -- 15.0.4053.23		CU6									 8/4/2020		https://support.microsoft.com/en-us/help/4563110/cumulative-update-6-for-sql-server-2019
 -- 15.0.4063.15		CU7									 9/2/2020		-- CU7 was removed by Microsoft
 -- 15.0.4073.23		CU8									10/1/2020		https://support.microsoft.com/en-in/help/4577194/cumulative-update-8-for-sql-server-2019
+-- 15.0.4083.2		CU8 Security Update					 1/12/2021		https://support.microsoft.com/en-us/help/4583459/kb4583459-security-update-for-sql-server-2019-cu8
 
 -- Performance and Stability Fixes in SQL Server 2019 CU Builds
 -- https://bit.ly/3712NQQ
@@ -775,24 +776,25 @@ OPTION (RECOMPILE);
 
 -- Recovery model, log reuse wait description, log file size, log usage size  (Query 32) (Database Properties)
 -- and compatibility level for all databases on instance
-SELECT db.[name] AS [Database Name], SUSER_SNAME(db.owner_sid) AS [Database Owner], db.recovery_model_desc AS [Recovery Model], 
-db.state_desc, db.containment_desc, db.log_reuse_wait_desc AS [Log Reuse Wait Description], 
+SELECT db.[name] AS [Database Name], SUSER_SNAME(db.owner_sid) AS [Database Owner],
+db.[compatibility_level] AS [DB Compatibility Level], 
+db.recovery_model_desc AS [Recovery Model], 
+db.log_reuse_wait_desc AS [Log Reuse Wait Description], 
 CONVERT(DECIMAL(18,2), ls.cntr_value/1024.0) AS [Log Size (MB)], CONVERT(DECIMAL(18,2), lu.cntr_value/1024.0) AS [Log Used (MB)],
 CAST(CAST(lu.cntr_value AS FLOAT) / CAST(ls.cntr_value AS FLOAT)AS DECIMAL(18,2)) * 100 AS [Log Used %], 
-db.[compatibility_level] AS [DB Compatibility Level], 
-db.is_mixed_page_allocation_on, db.page_verify_option_desc AS [Page Verify Option], 
+db.page_verify_option_desc AS [Page Verify Option], db.user_access_desc, db.state_desc, db.containment_desc,
+db.is_mixed_page_allocation_on,  
 db.is_auto_create_stats_on, db.is_auto_update_stats_on, db.is_auto_update_stats_async_on, db.is_parameterization_forced, 
 db.snapshot_isolation_state_desc, db.is_read_committed_snapshot_on, db.is_auto_close_on, db.is_auto_shrink_on, 
-db.target_recovery_time_in_seconds, db.is_cdc_enabled, db.is_published, db.is_distributor,
-db.group_database_id, db.replica_id,db.is_memory_optimized_elevate_to_snapshot_on, 
-db.delayed_durability_desc, db.is_query_store_on, db.is_sync_with_backup, 
-db.is_temporal_history_retention_enabled, db.is_remote_data_archive_enabled,
-db.is_encrypted, de.encryption_state, de.percent_complete, de.key_algorithm, de.key_length, 
-db.is_accelerated_database_recovery_on
+db.target_recovery_time_in_seconds, db.is_cdc_enabled, db.is_published, db.is_distributor, db.is_sync_with_backup, 
+db.group_database_id, db.replica_id, db.is_memory_optimized_enabled, db.is_memory_optimized_elevate_to_snapshot_on, 
+db.delayed_durability_desc, db.is_query_store_on, 
+db.is_temporal_history_retention_enabled, db.is_remote_data_archive_enabled, db.is_accelerated_database_recovery_on,
+db.is_master_key_encrypted_by_server, db.is_encrypted, de.encryption_state, de.percent_complete, de.key_algorithm, de.key_length
 FROM sys.databases AS db WITH (NOLOCK)
-INNER JOIN sys.dm_os_performance_counters AS lu WITH (NOLOCK)
+LEFT OUTER JOIN sys.dm_os_performance_counters AS lu WITH (NOLOCK)
 ON db.name = lu.instance_name
-INNER JOIN sys.dm_os_performance_counters AS ls WITH (NOLOCK)
+LEFT OUTER JOIN sys.dm_os_performance_counters AS ls WITH (NOLOCK)
 ON db.name = ls.instance_name
 LEFT OUTER JOIN sys.dm_database_encryption_keys AS de WITH (NOLOCK)
 ON db.database_id = de.database_id
@@ -1342,19 +1344,19 @@ ORDER BY total_worker_time DESC OPTION (RECOMPILE);
 --GO
 
 -- Individual File Sizes and space available for current database  (Query 52) (File Sizes and Space)
-SELECT f.name AS [File Name] , f.physical_name AS [Physical Name], 
+SELECT f.[name] AS [File Name] , f.physical_name AS [Physical Name], 
 CAST((f.size/128.0) AS DECIMAL(15,2)) AS [Total Size in MB],
+CAST((f.size/128.0) AS DECIMAL(15,2)) - 
+CAST(f.size/128.0 - CAST(FILEPROPERTY(f.name, 'SpaceUsed') AS int)/128.0 AS DECIMAL(15,2)) 
+AS [Used Space in MB],
 CAST(f.size/128.0 - CAST(FILEPROPERTY(f.name, 'SpaceUsed') AS int)/128.0 AS DECIMAL(15,2)) 
 AS [Available Space In MB],
-CAST((f.size/128.0) AS DECIMAL(15,2)) - 
-CAST(f.size/128.0 - CAST(FILEPROPERTY(f.name, 'SpaceUsed') AS int)/128.0 AS DECIMAL(15,2)) AS [Used Space in MB],
 f.[file_id], fg.name AS [Filegroup Name],
-f.is_percent_growth, f.growth, fg.is_default, fg.is_read_only, 
-fg.is_autogrow_all_files
+f.is_percent_growth, f.growth, fg.is_default, fg.is_read_only, fg.is_autogrow_all_files
 FROM sys.database_files AS f WITH (NOLOCK) 
 LEFT OUTER JOIN sys.filegroups AS fg WITH (NOLOCK)
 ON f.data_space_id = fg.data_space_id
-ORDER BY f.[file_id] OPTION (RECOMPILE);
+ORDER BY f.[type], f.[file_id] OPTION (RECOMPILE);
 ------
 
 -- Look at how large and how full the files are and where they are located
@@ -1869,7 +1871,8 @@ ORDER BY ps.avg_fragmentation_in_percent DESC OPTION (RECOMPILE);
 
 
 --- Index Read/Write stats (all tables in current DB) ordered by Reads  (Query 75) (Overall Index Usage - Reads)
-SELECT OBJECT_NAME(i.[object_id]) AS [ObjectName], i.[name] AS [IndexName], i.index_id, 
+SELECT SCHEMA_NAME(t.[schema_id]) AS [SchemaName], OBJECT_NAME(i.[object_id]) AS [ObjectName], 
+       i.[name] AS [IndexName], i.index_id, 
        s.user_seeks, s.user_scans, s.user_lookups,
 	   s.user_seeks + s.user_scans + s.user_lookups AS [Total Reads], 
 	   s.user_updates AS [Writes],  
@@ -1880,6 +1883,8 @@ LEFT OUTER JOIN sys.dm_db_index_usage_stats AS s WITH (NOLOCK)
 ON i.[object_id] = s.[object_id]
 AND i.index_id = s.index_id
 AND s.database_id = DB_ID()
+LEFT OUTER JOIN sys.tables AS t WITH (NOLOCK)
+ON t.[object_id] = i.[object_id]
 WHERE OBJECTPROPERTY(i.[object_id],'IsUserTable') = 1
 ORDER BY s.user_seeks + s.user_scans + s.user_lookups DESC OPTION (RECOMPILE); -- Order by reads
 ------
@@ -1888,7 +1893,8 @@ ORDER BY s.user_seeks + s.user_scans + s.user_lookups DESC OPTION (RECOMPILE); -
 
 
 --- Index Read/Write stats (all tables in current DB) ordered by Writes  (Query 76) (Overall Index Usage - Writes)
-SELECT OBJECT_NAME(i.[object_id]) AS [ObjectName], i.[name] AS [IndexName], i.index_id,
+SELECT SCHEMA_NAME(t.[schema_id]) AS [SchemaName],OBJECT_NAME(i.[object_id]) AS [ObjectName], 
+	   i.[name] AS [IndexName], i.index_id,
 	   s.user_updates AS [Writes], s.user_seeks + s.user_scans + s.user_lookups AS [Total Reads], 
 	   i.[type_desc] AS [Index Type], i.fill_factor AS [Fill Factor], i.has_filter, i.filter_definition,
 	   s.last_system_update, s.last_user_update
@@ -1897,6 +1903,8 @@ LEFT OUTER JOIN sys.dm_db_index_usage_stats AS s WITH (NOLOCK)
 ON i.[object_id] = s.[object_id]
 AND i.index_id = s.index_id
 AND s.database_id = DB_ID()
+LEFT OUTER JOIN sys.tables AS t WITH (NOLOCK)
+ON t.[object_id] = i.[object_id]
 WHERE OBJECTPROPERTY(i.[object_id],'IsUserTable') = 1
 ORDER BY s.user_updates DESC OPTION (RECOMPILE);						 -- Order by writes
 ------
