@@ -23,11 +23,7 @@ function Move-DbaDbFile {
 
     .PARAMETER FileToMove
         Pass a hashtable that contains a list of database files and their destination path.
-        Key and value should be the logical name and then the path (e.g. 'db1_log' = 'D:\mssql\logs') 
-        $fileToMove=@{
-            'dbatools'='D:\DATA3'
-            'dbatools_log'='D:\LOG2'
-        }
+        Key and value should be the logical name and then the path (e.g. 'db1_log' = 'D:\mssql\logs')
 
     .PARAMETER FileType
         Define the file type to move; accepted values: Data, Log or Both.
@@ -79,9 +75,9 @@ function Move-DbaDbFile {
 
     .EXAMPLE
         PS C:\> $fileToMove=@{
-            'dbatools'='D:\DATA3'
-            'dbatools_log'='D:\LOG2'
-        }
+        >> 'dbatools'='D:\DATA3'
+        >> 'dbatools_log'='D:\LOG2'
+        >> }
         PS C:\> Move-DbaDbFile -SqlInstance sql2019 -Database dbatools -FileToMove $fileToMove
 
         Declares a hashtable that says for each logical file the new path.
@@ -91,16 +87,8 @@ function Move-DbaDbFile {
     .EXAMPLE
         PS C:\> Move-DbaDbFile -SqlInstance sql2017 -Database dbatools -FileStructureOnly
 
-        Shows the current database file structure (without filenames).
-
-        Example:
-            $fileToMove=@{
-                'dbatools'='D:\Data'
-                'dbatools_log'='D:\Log'
-            }
-
+        Shows the current database file structure (without filenames). Example: 'dbatools'='D:\Data'
     #>
-
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Medium")]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
@@ -163,7 +151,7 @@ function Move-DbaDbFile {
                 if ($fileTypeFilter -eq -1) {
                     $DataFiles = Get-DbaDbPhysicalFile -SqlInstance $server | Where-Object Name -eq $Database | Select-Object LogicalName, PhysicalName
                 } else {
-                    $DataFiles = Get-DbaDbPhysicalFile -SqlInstance $server | Where-Object {$_.Name -eq $Database -and $_.Type -eq $fileTypeFilter } | Select-Object LogicalName, PhysicalName
+                    $DataFiles = Get-DbaDbPhysicalFile -SqlInstance $server | Where-Object { $_.Name -eq $Database -and $_.Type -eq $fileTypeFilter } | Select-Object LogicalName, PhysicalName
                 }
             } else {
                 if ($fileTypeFilter -eq -1) {
@@ -194,11 +182,9 @@ function Move-DbaDbFile {
                 if ($dbStatus -ne "Offline") {
                     if ($PSCmdlet.ShouldProcess($database, "Setting database $Database offline")) {
                         try {
-
                             $SetState = Set-DbaDbState -SqlInstance $server -Database $Database -Offline -Force:$Force
                             if ($SetState.Status -ne 'Offline') {
                                 Write-Message -Level Warning -Message "Setting database Offline failed!"
-
                             } else {
                                 Write-Message -Level Verbose -Message "Database $Database was set to Offline status."
                             }
@@ -344,7 +330,6 @@ function Move-DbaDbFile {
                         }
 
                         if (-not $failed) {
-
                             $query = "ALTER DATABASE [$Database] MODIFY FILE (name=$LogicalName, filename='$destination'); "
 
                             if ($PSCmdlet.ShouldProcess($Database, "Executing ALTER DATABASE query - $query")) {
