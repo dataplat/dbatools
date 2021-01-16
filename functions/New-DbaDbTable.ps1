@@ -219,6 +219,11 @@ function New-DbaDbTable {
 
         >> # Add columns to collection
         >> $cols += @{
+        >>     Name      = 'testId'
+        >>     Type      = 'int'
+        >>     Identity  = $true
+        >> }
+        >> $cols += @{
         >>     Name      = 'test'
         >>     Type      = 'varchar'
         >>     MaxLength = 20
@@ -419,8 +424,8 @@ function New-DbaDbTable {
                         } else {
                             $dataType = New-Object Microsoft.SqlServer.Management.Smo.DataType $sqlDbType
                         }
-                        $sqlcolumn = New-Object Microsoft.SqlServer.Management.Smo.Column $object, $column.Name, $dataType
-                        $sqlcolumn.Nullable = $column.Nullable
+                        $sqlColumn = New-Object Microsoft.SqlServer.Management.Smo.Column $object, $column.Name, $dataType
+                        $sqlColumn.Nullable = $column.Nullable
 
                         if ($column.Default) {
                             if ($column.DefaultName) {
@@ -430,15 +435,24 @@ function New-DbaDbTable {
                             }
 
                             if ($sqlDbType -in @('NVarchar', 'NChar', 'NVarcharMax', 'NCharMax')) {
-                                $sqlcolumn.AddDefaultConstraint($dfName).Text = "N'$($column.Default)'"
+                                $sqlColumn.AddDefaultConstraint($dfName).Text = "N'$($column.Default)'"
                             } elseif ($sqlDbType -in @('Varchar', 'Char', 'VarcharMax', 'CharMax')) {
-                                $sqlcolumn.AddDefaultConstraint($dfName).Text = "'$($column.Default)'"
+                                $sqlColumn.AddDefaultConstraint($dfName).Text = "'$($column.Default)'"
                             } else {
-                                $sqlcolumn.AddDefaultConstraint($dfName).Text = $column.Default
+                                $sqlColumn.AddDefaultConstraint($dfName).Text = $column.Default
                             }
                         }
 
-                        $object.Columns.Add($sqlcolumn)
+                        if ($column.Identity) {
+                            $sqlColumn.Identity = $true
+                            if ($column.IdentitySeed) {
+                                $sqlColumn.IdentitySeed = $column.IdentitySeed
+                            }
+                            if ($column.IdentityIncrement) {
+                                $sqlColumn.IdentityIncrement = $column.IdentityIncrement
+                            }
+                        }
+                        $object.Columns.Add($sqlColumn)
                     }
 
                     if ($Passthru) {
