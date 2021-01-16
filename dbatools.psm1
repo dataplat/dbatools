@@ -797,7 +797,8 @@ $script:noncoresmo = @(
     'Get-DbaRepPublication',
     'Test-DbaRepLatency',
     'Export-DbaRepServerSetting',
-    'Get-DbaRepServer'
+    'Get-DbaRepServer',
+    'Move-DbaDbFile'
 )
 $script:windowsonly = @(
     # solvable filesystem issues or other workarounds
