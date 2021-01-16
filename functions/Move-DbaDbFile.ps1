@@ -22,28 +22,30 @@ function Move-DbaDbFile {
         The database to be moved.
 
     .PARAMETER FileToMove
-        Pass a hash table object that contains a list database files and its destination path.
+        Pass a hashtable that contains a list of database files and their destination path.
+        Key and value should be the logical name and then the path (e.g. 'db1_log' = 'D:\mssql\logs') 
         $fileToMove=@{
             'dbatools'='D:\DATA3'
             'dbatools_log'='D:\LOG2'
         }
 
     .PARAMETER FileType
-        You can define which file types you want to move. Data, Log or Both. If not specified 'Both' will be used.
-        Exclusive. Can't be used with FileToMove
+        Define the file type to move; accepted values: Data, Log or Both.
+        Default value: Both
+        Exclusive, cannot be used in conjunction with FileToMove.
 
     .PARAMETER FileDestination
-        Says destination folder to move all files of type defined by FileType.
+        Destination directory of the database file(s).
 
     .PARAMETER DeleteAfterMove
-        Indicates whether the soure files should be deleted after copy with success
+        Remove the source database file(s) after the successful move operation.
 
     .PARAMETER FileStructureOnly
-        Outputs an hash table defintion with current database file structure.
-        You can use this to define de destination folder and delete the entries you want to exclude. Then you can use this hashtable on -FileToMove parameter
+        Return a hashtable of the Database file structure.
+        Modifying the hashtable it can then be utilized with the FileToMove parameter
 
     .PARAMETER Force
-        This translates to instantly rolling back any open transactions that may be stopping the process of setting database offline.
+        Database(s) is set offline as part of the move process, this will utilize WITH ROLLBACK IMMEDIATE and rollback any open transaction running against the database(s).
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
