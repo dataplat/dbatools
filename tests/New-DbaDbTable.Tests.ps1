@@ -4,11 +4,11 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'Name', 'Schema', 'ColumnMap', 'ColumnObject', 'AnsiNullsStatus', 'ChangeTrackingEnabled', 'DataSourceName', 'Durability', 'ExternalTableDistribution', 'FileFormatName', 'FileGroup', 'FileStreamFileGroup', 'FileStreamPartitionScheme', 'FileTableDirectoryName', 'FileTableNameColumnCollation', 'FileTableNamespaceEnabled', 'HistoryTableName', 'HistoryTableSchema', 'IsExternal', 'IsFileTable', 'IsMemoryOptimized', 'IsSystemVersioned', 'Location', 'LockEscalation', 'Owner', 'PartitionScheme', 'QuotedIdentifierStatus', 'RejectSampleValue', 'RejectType', 'RejectValue', 'RemoteDataArchiveDataMigrationState', 'RemoteDataArchiveEnabled', 'RemoteDataArchiveFilterPredicate', 'RemoteObjectName', 'RemoteSchemaName', 'RemoteTableName', 'RemoteTableProvisioned', 'ShardingColumnName', 'TextFileGroup', 'TrackColumnsUpdatedEnabled', 'HistoryRetentionPeriod', 'HistoryRetentionPeriodUnit', 'DwTableDistribution', 'RejectedRowLocation', 'OnlineHeapOperation', 'LowPriorityMaxDuration', 'DataConsistencyCheck', 'LowPriorityAbortAfterWait', 'MaximumDegreeOfParallelism', 'IsNode', 'IsEdge', 'IsVarDecimalStorageFormatEnabled', 'Passthru', 'InputObject', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
+        [array]$params = ([Management.Automation.CommandMetaData]$ExecutionContext.SessionState.InvokeCommand.GetCommand($CommandName, 'Function')).Parameters.Keys
+        [array]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'Name', 'Schema', 'ColumnMap', 'ColumnObject', 'AnsiNullsStatus', 'ChangeTrackingEnabled', 'DataSourceName', 'Durability', 'ExternalTableDistribution', 'FileFormatName', 'FileGroup', 'FileStreamFileGroup', 'FileStreamPartitionScheme', 'FileTableDirectoryName', 'FileTableNameColumnCollation', 'FileTableNamespaceEnabled', 'HistoryTableName', 'HistoryTableSchema', 'IsExternal', 'IsFileTable', 'IsMemoryOptimized', 'IsSystemVersioned', 'Location', 'LockEscalation', 'Owner', 'PartitionScheme', 'QuotedIdentifierStatus', 'RejectSampleValue', 'RejectType', 'RejectValue', 'RemoteDataArchiveDataMigrationState', 'RemoteDataArchiveEnabled', 'RemoteDataArchiveFilterPredicate', 'RemoteObjectName', 'RemoteSchemaName', 'RemoteTableName', 'RemoteTableProvisioned', 'ShardingColumnName', 'TextFileGroup', 'TrackColumnsUpdatedEnabled', 'HistoryRetentionPeriod', 'HistoryRetentionPeriodUnit', 'DwTableDistribution', 'RejectedRowLocation', 'OnlineHeapOperation', 'LowPriorityMaxDuration', 'DataConsistencyCheck', 'LowPriorityAbortAfterWait', 'MaximumDegreeOfParallelism', 'IsNode', 'IsEdge', 'IsVarDecimalStorageFormatEnabled', 'Passthru', 'InputObject', 'EnableException'
+
         It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
+            Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params | Should -BeNullOrEmpty
         }
     }
 }
@@ -26,13 +26,15 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         $null = Remove-DbaDatabase -SqlInstance $script:instance1 -Database $dbname -Confirm:$false
     }
     Context "Should create the table" {
-        It "Creates the table" {
+        BeforeEach {
             $map = @{
                 Name      = 'test'
                 Type      = 'varchar'
                 MaxLength = 20
                 Nullable  = $true
             }
+        }
+        It "Creates the table" {
             (New-DbaDbTable -SqlInstance $script:instance1 -Database $dbname -Name $tablename -ColumnMap $map).Name | Should -Contain $tablename
         }
         It "Really created it" {
@@ -40,7 +42,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         }
     }
     Context "Should create the table with constraint on column" {
-        It "Creates the table" {
+        BeforeEach {
             $map = @{
                 Name        = 'test'
                 Type        = 'nvarchar'
@@ -49,6 +51,8 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
                 Default     = 'MyTest'
                 DefaultName = 'DF_MyTest'
             }
+        }
+        It "Creates the table" {
             (New-DbaDbTable -SqlInstance $script:instance1 -Database $dbname -Name $tablename2 -ColumnMap $map).Name | Should -Contain $tablename2
         }
         It "Has a default constraint" {
@@ -58,7 +62,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         }
     }
     Context "Should create the table with an identity column" {
-        It "Creates the table" {
+        BeforeEach {
             $map = @{
                 Name              = 'testId'
                 Type              = 'int'
@@ -66,12 +70,14 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
                 IdentitySeed      = 10
                 IdentityIncrement = 2
             }
+        }
+        It "Creates the table" {
             (New-DbaDbTable -SqlInstance $script:instance1 -Database $dbname -Name $tablename3 -ColumnMap $map).Name | Should -Contain $tablename3
         }
         It "Has an identity column" {
             $table = Get-DbaDbTable -SqlInstance $script:instance1 -Database $dbname -Table $tablename3
             $table.Name | Should -Be $tablename3
-            $table.Columns.Identity | Should -Be $true
+            $table.Columns.Identity | Should -BeTrue
             $table.Columns.IdentitySeed | Should -Be $map.IdentitySeed
             $table.Columns.IdentityIncrement | Should -Be $map.IdentityIncrement
         }
