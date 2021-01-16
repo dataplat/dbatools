@@ -61,5 +61,17 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
                 $result.Table | Should -Be SuperSmall
             }
         }
+
+        It "Catches the scenario where the database param does not match the server object passed into the command" {
+            $server = Connect-DbaInstance $script:instance1 -Database tempdb
+            $result = Import-DbaCsv -Path $path -SqlInstance $server -Database InvalidDB -Delimiter `t -Table SuperSmall -Truncate -AutoCreateTable
+            $result | Should -BeNullOrEmpty
+
+            $server = Connect-DbaInstance $script:instance1 -Database tempdb
+            $result = Import-DbaCsv -Path $path -SqlInstance $server -Database tempdb -Delimiter `t -Table SuperSmall -Truncate -AutoCreateTable
+            $result.RowsCopied | Should -Be 999
+            $result.Database | Should -Be tempdb
+            $result.Table | Should -Be SuperSmall
+        }
     }
 }
