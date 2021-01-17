@@ -102,14 +102,8 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $invalidPassword = ConvertTo-SecureString -String 'invalid' -AsPlainText -Force
             $invalidSqlCredential = New-Object -TypeName System.Management.Automation.PSCredential -ArgumentList "testlogin1_$random", $invalidPassword
 
-            # Get the lockout threshold for the local server (assumption: the tests are running on the server itself) https://stackoverflow.com/questions/60117943/powershell-script-to-report-account-lockout-policy-settings
-            $lockoutObj = net accounts | Select-String threshold
-            $lockoutStr = $lockoutObj.ToString()
-            $lockoutStr -match '\d{1,3}' | Out-Null
-            $lockoutThreshold = $matches[0]
-
             # exceed the lockout count
-            for (($i = 0); $i -le $lockoutThreshold; $i++) {
+            for (($i = 0); $i -le 5; $i++) {
                 try {
                     Connect-DbaInstance -SqlInstance $script:instance1 -SqlCredential $invalidSqlCredential
                 } catch {

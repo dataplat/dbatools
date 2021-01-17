@@ -51,6 +51,9 @@ function Set-DbaLogin {
     .PARAMETER PasswordPolicyEnforced
         Should the password policy be enforced.
 
+    .PARAMETER PasswordExpirationEnabled
+        Should the password expiration check be enforced.
+
     .PARAMETER AddRole
         Add one or more server roles to the login
         The following roles can be used "bulkadmin", "dbcreator", "diskadmin", "processadmin", "public", "securityadmin", "serveradmin", "setupadmin", "sysadmin".
