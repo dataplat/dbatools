@@ -4,11 +4,12 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Path', 'DatabaseName', 'DestinationDataDirectory', 'DestinationLogDirectory', 'DestinationFileStreamDirectory', 'RestoreTime', 'NoRecovery', 'WithReplace', 'XpDirTree', 'OutputScriptOnly', 'VerifyOnly', 'MaintenanceSolutionBackup', 'FileMapping', 'IgnoreLogBackup', 'IgnoreDiffBackup', 'UseDestinationDefaultDirectories', 'ReuseSourceFolderStructure', 'DestinationFilePrefix', 'RestoredDatabaseNamePrefix', 'TrustDbBackupHistory', 'MaxTransferSize', 'BlockSize', 'BufferCount', 'DirectoryRecurse', 'EnableException', 'StandbyDirectory', 'Continue', 'AzureCredential', 'ReplaceDbNameInFile', 'DestinationFileSuffix', 'Recover', 'KeepCDC', 'GetBackupInformation', 'StopAfterGetBackupInformation', 'SelectBackupInformation', 'StopAfterSelectBackupInformation', 'FormatBackupInformation', 'StopAfterFormatBackupInformation', 'TestBackupInformation', 'StopAfterTestBackupInformation', 'PageRestore', 'PageRestoreTailFolder', 'StatementTimeout', 'KeepReplication', 'StopBefore', 'StopMark', 'StopAfterDate', 'ExecuteAs'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
+
+        [array]$knownParameters = 'SqlInstance', 'SqlCredential', 'Path', 'DatabaseName', 'DestinationDataDirectory', 'DestinationLogDirectory', 'DestinationFileStreamDirectory', 'RestoreTime', 'NoRecovery', 'WithReplace', 'XpDirTree', 'OutputScriptOnly', 'VerifyOnly', 'MaintenanceSolutionBackup', 'FileMapping', 'IgnoreLogBackup', 'IgnoreDiffBackup', 'UseDestinationDefaultDirectories', 'ReuseSourceFolderStructure', 'DestinationFilePrefix', 'RestoredDatabaseNamePrefix', 'TrustDbBackupHistory', 'MaxTransferSize', 'BlockSize', 'BufferCount', 'DirectoryRecurse', 'EnableException', 'StandbyDirectory', 'Continue', 'AzureCredential', 'ReplaceDbNameInFile', 'DestinationFileSuffix', 'Recover', 'KeepCDC', 'GetBackupInformation', 'StopAfterGetBackupInformation', 'SelectBackupInformation', 'StopAfterSelectBackupInformation', 'FormatBackupInformation', 'StopAfterFormatBackupInformation', 'TestBackupInformation', 'StopAfterTestBackupInformation', 'PageRestore', 'PageRestoreTailFolder', 'StatementTimeout', 'KeepReplication', 'StopBefore', 'StopMark', 'StopAfterDate', 'ExecuteAs'
+        [array]$params = ([Management.Automation.CommandMetaData]$ExecutionContext.SessionState.InvokeCommand.GetCommand($CommandName, 'Function')).Parameters.Keys
+
         It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
+            Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params | Should -BeNullOrEmpty
         }
     }
 }
@@ -533,7 +534,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         $files = @()
         $files += Get-ChildItem $script:appveyorlabrepo\sql2008-backups\db1\FULL\
         $files += Get-ChildItem $script:appveyorlabrepo\sql2008-backups\dbareports\FULL
-        $Results = $files | Restore-DbaDatabase -SqlInstance $script:instance2  -NoRecovery
+        $Results = $files | Restore-DbaDatabase -SqlInstance $script:instance2 -NoRecovery
         It "Should Have restored the database cleanly" {
             ($results.RestoreComplete -contains $false) | Should be $False
             (($results | Measure-Object).count -gt 0) | Should be $True
@@ -958,7 +959,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
                 Get-DbaDatabase -SqlInstance $script:instance2 -Database "dbatoolsci_azure" | Remove-DbaDatabase -Confirm:$false
             }
             It "Should restore cleanly" {
-                $results = @("$script:azureblob/az-1.bak", "$script:azureblob/az-2.bak", "$script:azureblob/az-3.bak") | Restore-DbaDatabase -SqlInstance $script:instance2 -DatabaseName azstripetest  -WithReplace -ReplaceDbNameInFile
+                $results = @("$script:azureblob/az-1.bak", "$script:azureblob/az-2.bak", "$script:azureblob/az-3.bak") | Restore-DbaDatabase -SqlInstance $script:instance2 -DatabaseName azstripetest -WithReplace -ReplaceDbNameInFile
                 $results.RestoreComplete | Should Be $True
             }
         }

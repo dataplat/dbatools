@@ -27,44 +27,12 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
         $null = New-Item -ItemType File -Path TestDrive:\dummy.exe -Force
     }
     Context "Validate parameters" {
-        [object[]]$params = (Get-ChildItem function:\$CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = @(
-            'SqlInstance',
-            'Version',
-            'InstanceName',
-            'SaCredential',
-            'Credential',
-            'Authentication',
-            'ConfigurationFile',
-            'Configuration',
-            'Path',
-            'Feature',
-            'AuthenticationMode',
-            'InstancePath',
-            'DataPath',
-            'LogPath',
-            'TempPath',
-            'BackupPath',
-            'UpdateSourcePath',
-            'AdminAccount',
-            'Port',
-            'Throttle',
-            'ProductID',
-            'EngineCredential',
-            'AgentCredential',
-            'ASCredential',
-            'ISCredential',
-            'RSCredential',
-            'FTCredential',
-            'PBEngineCredential',
-            'SaveConfiguration',
-            'PerformVolumeMaintenanceTasks',
-            'Restart',
-            'EnableException'
-        )
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
+
+        [array]$knownParameters = 'SqlInstance', 'Version', 'InstanceName', 'SaCredential', 'Credential', 'Authentication', 'ConfigurationFile', 'Configuration', 'Path', 'Feature', 'AuthenticationMode', 'InstancePath', 'DataPath', 'LogPath', 'TempPath', 'BackupPath', 'UpdateSourcePath', 'AdminAccount', 'Port', 'Throttle', 'ProductID', 'EngineCredential', 'AgentCredential', 'ASCredential', 'ISCredential', 'RSCredential', 'FTCredential', 'PBEngineCredential', 'SaveConfiguration', 'PerformVolumeMaintenanceTasks', 'Restart', 'EnableException'
+        [array]$params = ([Management.Automation.CommandMetaData]$ExecutionContext.SessionState.InvokeCommand.GetCommand($CommandName, 'Function')).Parameters.Keys
+
         It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params).Count ) | Should Be 0
+            Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params | Should -BeNullOrEmpty
         }
     }
     Context "Validate installs of each version" {

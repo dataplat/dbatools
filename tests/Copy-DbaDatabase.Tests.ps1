@@ -4,11 +4,11 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'Source', 'SourceSqlCredential', 'Destination', 'DestinationSqlCredential', 'Database', 'ExcludeDatabase', 'AllDatabases', 'BackupRestore', 'SharedPath', 'AzureCredential', 'WithReplace', 'NoRecovery', 'NoBackupCleanup', 'NumberFiles', 'DetachAttach', 'Reattach', 'SetSourceReadOnly', 'ReuseSourceFolderStructure', 'IncludeSupportDbs', 'UseLastBackup', 'Continue', 'InputObject', 'NoCopyOnly', 'SetSourceOffline', 'NewName', 'Prefix', 'Force', 'EnableException', 'KeepCDC', 'KeepReplication'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
+        [array]$knownParameters = 'Source', 'SourceSqlCredential', 'Destination', 'DestinationSqlCredential', 'Database', 'ExcludeDatabase', 'AllDatabases', 'BackupRestore', 'SharedPath', 'AzureCredential', 'WithReplace', 'NoRecovery', 'NoBackupCleanup', 'NumberFiles', 'DetachAttach', 'Reattach', 'SetSourceReadOnly', 'ReuseSourceFolderStructure', 'IncludeSupportDbs', 'UseLastBackup', 'Continue', 'InputObject', 'NoCopyOnly', 'SetSourceOffline', 'NewName', 'Prefix', 'Force', 'EnableException', 'KeepCDC', 'KeepReplication'
+        [array]$params = ([Management.Automation.CommandMetaData]$ExecutionContext.SessionState.InvokeCommand.GetCommand($CommandName, 'Function')).Parameters.Keys
+
         It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
+            Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params | Should -BeNullOrEmpty
         }
     }
 }
@@ -99,7 +99,7 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
         }
 
         # needs regr test that uses $backuprestoredb once #3377 is fixed
-        It  "Should say skipped" {
+        It "Should say skipped" {
             $result = Copy-DbaDatabase -Source $script:instance2 -Destination $script:instance3 -Database $backuprestoredb2 -BackupRestore -SharedPath $NetworkPath 3>$null
             $result.Status | Should be "Skipped"
             $result.Notes | Should be "Already exists on destination"

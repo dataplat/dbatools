@@ -4,11 +4,12 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'Name', 'Path', 'FilePath', 'InputObject', 'Architecture', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
+
+        [array]$knownParameters = 'Name', 'Path', 'FilePath', 'InputObject', 'Architecture', 'EnableException'
+        [array]$params = ([Management.Automation.CommandMetaData]$ExecutionContext.SessionState.InvokeCommand.GetCommand($CommandName, 'Function')).Parameters.Keys
+
         It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
+            Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params | Should -BeNullOrEmpty
         }
     }
 }
@@ -20,7 +21,7 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
         $results | Remove-Item -Confirm:$false
     }
     It "supports piping" {
-        $results = Get-DbaKbUpdate -Name KB2992080 | select -First 1 | Save-DbaKbUpdate -Path C:\temp
+        $results = Get-DbaKbUpdate -Name KB2992080 | Select-Object -First 1 | Save-DbaKbUpdate -Path C:\temp
         $results.Name -match 'aspnet'
         $results | Remove-Item -Confirm:$false
     }

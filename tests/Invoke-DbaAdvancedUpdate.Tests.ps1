@@ -102,11 +102,12 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
         )
     }
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'ComputerName', 'Action', 'Credential', 'Restart', 'Authentication', 'EnableException', 'ExtractPath', 'ArgumentList'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
+
+        [array]$knownParameters = 'ComputerName', 'Action', 'Credential', 'Restart', 'Authentication', 'EnableException', 'ExtractPath', 'ArgumentList'
+        [array]$params = ([Management.Automation.CommandMetaData]$ExecutionContext.SessionState.InvokeCommand.GetCommand($CommandName, 'Function')).Parameters.Keys
+
         It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
+            Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params | Should -BeNullOrEmpty
         }
     }
     Context "Validate upgrades to a latest version" {

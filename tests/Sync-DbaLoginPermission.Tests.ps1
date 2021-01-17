@@ -4,11 +4,12 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'Source', 'SourceSqlCredential', 'Destination', 'DestinationSqlCredential', 'Login', 'ExcludeLogin', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
+
+        [array]$knownParameters = 'Source', 'SourceSqlCredential', 'Destination', 'DestinationSqlCredential', 'Login', 'ExcludeLogin', 'EnableException'
+        [array]$params = ([Management.Automation.CommandMetaData]$ExecutionContext.SessionState.InvokeCommand.GetCommand($CommandName, 'Function')).Parameters.Keys
+
         It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+            Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params | Should -BeNullOrEmpty
         }
     }
 }
@@ -41,7 +42,7 @@ CREATE LOGIN [$DBUserName]
     Context "Verifying command output" {
 
         It "Should not have the user permissions of $DBUserName" {
-            $permissionsBefore = Get-DbaUserPermission -SqlInstance $script:instance3 -Database master | Where-object {$_.member -eq $DBUserName}
+            $permissionsBefore = Get-DbaUserPermission -SqlInstance $script:instance3 -Database master | Where-object { $_.member -eq $DBUserName }
             $permissionsBefore | Should -be $null
         }
 
@@ -54,7 +55,7 @@ CREATE LOGIN [$DBUserName]
         }
 
         It "Should have coppied the user permissions of $DBUserName" {
-            $permissionsAfter = Get-DbaUserPermission -SqlInstance $script:instance3 -Database master | Where-object {$_.member -eq $DBUserName -and $_.permission -eq 'VIEW ANY DEFINITION' }
+            $permissionsAfter = Get-DbaUserPermission -SqlInstance $script:instance3 -Database master | Where-object { $_.member -eq $DBUserName -and $_.permission -eq 'VIEW ANY DEFINITION' }
             $permissionsAfter.member | Should -Be $DBUserName
         }
     }

@@ -4,8 +4,8 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
-        [array]$params = ([Management.Automation.CommandMetaData]$ExecutionContext.SessionState.InvokeCommand.GetCommand($CommandName, 'Function')).Parameters.Keys
         [array]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'Name', 'Schema', 'ColumnMap', 'ColumnObject', 'AnsiNullsStatus', 'ChangeTrackingEnabled', 'DataSourceName', 'Durability', 'ExternalTableDistribution', 'FileFormatName', 'FileGroup', 'FileStreamFileGroup', 'FileStreamPartitionScheme', 'FileTableDirectoryName', 'FileTableNameColumnCollation', 'FileTableNamespaceEnabled', 'HistoryTableName', 'HistoryTableSchema', 'IsExternal', 'IsFileTable', 'IsMemoryOptimized', 'IsSystemVersioned', 'Location', 'LockEscalation', 'Owner', 'PartitionScheme', 'QuotedIdentifierStatus', 'RejectSampleValue', 'RejectType', 'RejectValue', 'RemoteDataArchiveDataMigrationState', 'RemoteDataArchiveEnabled', 'RemoteDataArchiveFilterPredicate', 'RemoteObjectName', 'RemoteSchemaName', 'RemoteTableName', 'RemoteTableProvisioned', 'ShardingColumnName', 'TextFileGroup', 'TrackColumnsUpdatedEnabled', 'HistoryRetentionPeriod', 'HistoryRetentionPeriodUnit', 'DwTableDistribution', 'RejectedRowLocation', 'OnlineHeapOperation', 'LowPriorityMaxDuration', 'DataConsistencyCheck', 'LowPriorityAbortAfterWait', 'MaximumDegreeOfParallelism', 'IsNode', 'IsEdge', 'IsVarDecimalStorageFormatEnabled', 'Passthru', 'InputObject', 'EnableException'
+        [array]$params = ([Management.Automation.CommandMetaData]$ExecutionContext.SessionState.InvokeCommand.GetCommand($CommandName, 'Function')).Parameters.Keys
 
         It "Should only contain our specific parameters" {
             Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params | Should -BeNullOrEmpty

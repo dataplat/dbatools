@@ -4,11 +4,12 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'Threshold', 'ExcludeSystem', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
+
+        [array]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'Threshold', 'ExcludeSystem', 'EnableException'
+        [array]$params = ([Management.Automation.CommandMetaData]$ExecutionContext.SessionState.InvokeCommand.GetCommand($CommandName, 'Function')).Parameters.Keys
+
         It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+            Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params | Should -BeNullOrEmpty
         }
     }
 }
@@ -30,7 +31,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         for ($i = 1; $i -le 128; $i++) {
             Invoke-DbaQuery -SqlInstance $script:instance1 -Query $insertSql -database TempDb
         }
-        $results = Test-DbaIdentityUsage -SqlInstance $script:instance1 -Database TempDb | Where-Object {$_.Table -eq $table}
+        $results = Test-DbaIdentityUsage -SqlInstance $script:instance1 -Database TempDb | Where-Object { $_.Table -eq $table }
 
         It "Identity column should have 128 uses" {
             $results.NumberOfUses | Should Be 128
@@ -43,7 +44,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         for ($i = 1; $i -le 127; $i++) {
             Invoke-DbaQuery -SqlInstance $script:instance1 -Query $insertSql -database TempDb
         }
-        $results = Test-DbaIdentityUsage -SqlInstance $script:instance1 -Database TempDb | Where-Object {$_.Table -eq $table}
+        $results = Test-DbaIdentityUsage -SqlInstance $script:instance1 -Database TempDb | Where-Object { $_.Table -eq $table }
 
         It "Identity column should have 255 uses" {
             $results.NumberOfUses | Should Be 255
@@ -70,7 +71,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         for ($i = 1; $i -le 25; $i++) {
             Invoke-DbaQuery -SqlInstance $script:instance1 -Query $insertSql -database TempDb
         }
-        $results = Test-DbaIdentityUsage -SqlInstance $script:instance1 -Database TempDb | Where-Object {$_.Table -eq $table}
+        $results = Test-DbaIdentityUsage -SqlInstance $script:instance1 -Database TempDb | Where-Object { $_.Table -eq $table }
 
         It "Identity column should have 24 uses" {
             $results.NumberOfUses | Should Be 24

@@ -4,11 +4,12 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'Object', 'Target', 'Option', 'NoInformationalMessages', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
+
+        [array]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'Object', 'Target', 'Option', 'NoInformationalMessages', 'EnableException'
+        [array]$params = ([Management.Automation.CommandMetaData]$ExecutionContext.SessionState.InvokeCommand.GetCommand($CommandName, 'Function')).Parameters.Keys
+
         It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+            Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params | Should -BeNullOrEmpty
         }
     }
 }
@@ -111,7 +112,7 @@ Describe "$commandname Integration Test" -Tag "IntegrationTests" {
     }
 
     Context "Validate returns results for single Object and Target " {
-        $result = Get-DbaDbccStatistic -SqlInstance $script:instance2 -Database $dbname -Object $tableName2 -Target 'TestStat2'  -Option DensityVector
+        $result = Get-DbaDbccStatistic -SqlInstance $script:instance2 -Database $dbname -Object $tableName2 -Target 'TestStat2' -Option DensityVector
 
         It "returns results" {
             $result.Count -gt 0 | Should Be $true

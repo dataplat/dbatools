@@ -18,7 +18,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
         Mock -CommandName Set-DbaPrivilege -ModuleName dbatools -MockWith {}
         Mock -CommandName Set-DbaTcpPort -ModuleName dbatools -MockWith {}
         Mock -CommandName Restart-DbaService -ModuleName dbatools -MockWith {}
-        Mock -CommandName Get-DbaCmObject -ModuleName dbatools -MockWith { [pscustomobject]@{NumberOfCores = 24} } -ParameterFilter { $ClassName -eq 'Win32_processor' }
+        Mock -CommandName Get-DbaCmObject -ModuleName dbatools -MockWith { [pscustomobject]@{NumberOfCores = 24 } } -ParameterFilter { $ClassName -eq 'Win32_processor' }
         # mock searching for setup, proper file should always it find
         Mock -CommandName Find-SqlInstanceSetup -MockWith {
             Get-ChildItem $Path -Filter "dummy.exe" -ErrorAction Stop | Select-Object -ExpandProperty FullName -First 1
@@ -26,27 +26,12 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
         $null = New-Item -ItemType File -Path TestDrive:\dummy.exe -Force
     }
     Context "Validate parameters" {
-        [object[]]$params = (Get-ChildItem function:\$CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = @(
-            'ComputerName',
-            'Version',
-            'InstanceName',
-            'SaCredential',
-            'Credential',
-            'Authentication',
-            'ConfigurationPath',
-            'Configuration',
-            'InstallationPath',
-            'Port',
-            'SaveConfiguration',
-            'PerformVolumeMaintenanceTasks',
-            'Restart',
-            'EnableException',
-            'ArgumentList'
-        )
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
+
+        [array]$knownParameters = 'ComputerName', 'Version', 'InstanceName', 'SaCredential', 'Credential', 'Authentication', 'ConfigurationPath', 'Configuration', 'InstallationPath', 'Port', 'SaveConfiguration', 'PerformVolumeMaintenanceTasks', 'Restart', 'EnableException', 'ArgumentList'
+        [array]$params = ([Management.Automation.CommandMetaData]$ExecutionContext.SessionState.InvokeCommand.GetCommand($CommandName, 'Function')).Parameters.Keys
+
         It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params).Count ) | Should Be 0
+            Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params | Should -BeNullOrEmpty
         }
     }
     Context "Validate installs of each version" {

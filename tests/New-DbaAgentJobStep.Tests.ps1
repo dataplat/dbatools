@@ -4,11 +4,12 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Job', 'StepId', 'StepName', 'Subsystem', 'SubsystemServer', 'Command', 'CmdExecSuccessCode', 'OnSuccessAction', 'OnSuccessStepId', 'OnFailAction', 'OnFailStepId', 'Database', 'DatabaseUser', 'RetryAttempts', 'RetryInterval', 'OutputFileName', 'Insert', 'Flag', 'ProxyName', 'Force', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
+
+        [array]$knownParameters = 'SqlInstance', 'SqlCredential', 'Job', 'StepId', 'StepName', 'Subsystem', 'SubsystemServer', 'Command', 'CmdExecSuccessCode', 'OnSuccessAction', 'OnSuccessStepId', 'OnFailAction', 'OnFailStepId', 'Database', 'DatabaseUser', 'RetryAttempts', 'RetryInterval', 'OutputFileName', 'Insert', 'Flag', 'ProxyName', 'Force', 'EnableException'
+        [array]$params = ([Management.Automation.CommandMetaData]$ExecutionContext.SessionState.InvokeCommand.GetCommand($CommandName, 'Function')).Parameters.Keys
+
         It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+            Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params | Should -BeNullOrEmpty
         }
     }
 }
@@ -29,14 +30,14 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 
         It "Should have the right properties" {
             $jobStep = @{
-                SqlInstance = $script:instance2
-                Job = $jobTwo
-                StepName = "Step X"
-                Subsystem = "TransactSql"
-                Command = "select 1"
-                Database = "master"
-                RetryAttempts = 2
-                RetryInterval = 5
+                SqlInstance    = $script:instance2
+                Job            = $jobTwo
+                StepName       = "Step X"
+                Subsystem      = "TransactSql"
+                Command        = "select 1"
+                Database       = "master"
+                RetryAttempts  = 2
+                RetryInterval  = 5
                 OutputFileName = "log.txt"
             }
             $results = New-DbaAgentJobStep @jobStep

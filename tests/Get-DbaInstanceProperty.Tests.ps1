@@ -4,11 +4,12 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'InstanceProperty', 'ExcludeInstanceProperty', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
+
+        [array]$knownParameters = 'SqlInstance', 'SqlCredential', 'InstanceProperty', 'ExcludeInstanceProperty', 'EnableException'
+        [array]$params = ([Management.Automation.CommandMetaData]$ExecutionContext.SessionState.InvokeCommand.GetCommand($CommandName, 'Function')).Parameters.Keys
+
         It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+            Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params | Should -BeNullOrEmpty
         }
     }
 }
@@ -21,14 +22,14 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             (($results | Get-Member -MemberType NoteProperty).name | Sort-Object) | Should Be ($ExpectedProps | Sort-Object)
         }
         It "Should return that returns a valid build" {
-            $(Get-DbaBuildReference -Build ($results | Where-Object {$_.name -eq 'ResourceVersionString'}).Value).MatchType | Should Be "Exact"
+            $(Get-DbaBuildReference -Build ($results | Where-Object { $_.name -eq 'ResourceVersionString' }).Value).MatchType | Should Be "Exact"
         }
         It "Should have DisableDefaultConstraintCheck set false" {
-            ($results | Where-Object {$_.name -eq 'DisableDefaultConstraintCheck'}).Value | Should Be $False
+            ($results | Where-Object { $_.name -eq 'DisableDefaultConstraintCheck' }).Value | Should Be $False
         }
         It "Should get the correct DefaultFile location" {
             $defaultFiles = Get-DbaDefaultPath -SqlInstance $script:instance2
-            ($results | Where-Object {$_.name -eq 'DefaultFile'}).Value | Should BeLike "$($defaultFiles.Data)*"
+            ($results | Where-Object { $_.name -eq 'DefaultFile' }).Value | Should BeLike "$($defaultFiles.Data)*"
         }
     }
     Context "Property filters work" {

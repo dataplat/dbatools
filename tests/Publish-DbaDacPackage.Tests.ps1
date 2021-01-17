@@ -4,11 +4,12 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Path', 'PublishXml', 'Database', 'ConnectionString', 'GenerateDeploymentReport', 'ScriptOnly', 'Type', 'OutputPath', 'IncludeSqlCmdVars', 'DacOption', 'EnableException', 'DacFxPath'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
+
+        [array]$knownParameters = 'SqlInstance', 'SqlCredential', 'Path', 'PublishXml', 'Database', 'ConnectionString', 'GenerateDeploymentReport', 'ScriptOnly', 'Type', 'OutputPath', 'IncludeSqlCmdVars', 'DacOption', 'EnableException', 'DacFxPath'
+        [array]$params = ([Management.Automation.CommandMetaData]$ExecutionContext.SessionState.InvokeCommand.GetCommand($CommandName, 'Function')).Parameters.Keys
+
         It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
+            Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params | Should -BeNullOrEmpty
         }
     }
 }
@@ -67,7 +68,7 @@ if (-not $env:appveyor) {
                 $ids.id | Should -Not -BeNullOrEmpty
             }
             It "Performs a script generation without deployment" {
-                $results = $dacpac | Publish-DbaDacPackage -Database $dbname -SqlInstance $script:instance2 -ScriptOnly -PublishXml $publishprofile.FileName  -Confirm:$false
+                $results = $dacpac | Publish-DbaDacPackage -Database $dbname -SqlInstance $script:instance2 -ScriptOnly -PublishXml $publishprofile.FileName -Confirm:$false
                 $results.Result | Should -BeLike '*Reporting and scripting deployment plan (Complete)*'
                 $results.DatabaseScriptPath | Should -Not -BeNullOrEmpty
                 Test-Path ($results.DatabaseScriptPath) | Should -Be $true

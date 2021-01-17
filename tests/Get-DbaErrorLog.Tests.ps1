@@ -4,11 +4,12 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'LogNumber', 'Source', 'Text', 'After', 'Before', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
+
+        [array]$knownParameters = 'SqlInstance', 'SqlCredential', 'LogNumber', 'Source', 'Text', 'After', 'Before', 'EnableException'
+        [array]$params = ([Management.Automation.CommandMetaData]$ExecutionContext.SessionState.InvokeCommand.GetCommand($CommandName, 'Function')).Parameters.Keys
+
         It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+            Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params | Should -BeNullOrEmpty
         }
     }
 }
@@ -51,11 +52,11 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         }
         It "Returns filtered results for [Text = $textFilter]" {
             $results = Get-DbaErrorLog -SqlInstance $script:instance1 -Text $textFilter
-            {$results[0].Text -like "*$textFilter*"} | Should Be $true
+            { $results[0].Text -like "*$textFilter*" } | Should Be $true
         }
         It "Returns filtered result for [LogNumber = 0] and [Text = $textFilter]" {
             $results = Get-DbaErrorLog -SqlInstance $script:instance1 -LogNumber 0 -Text $textFilter
-            {$results[0].Text -like "*$textFilter"} | Should Be $true
+            { $results[0].Text -like "*$textFilter" } | Should Be $true
         }
         $after = Get-DbaErrorLog -SqlInstance $script:instance1 -LogNumber 1 | Select-Object -First 1
         $before = Get-DbaErrorLog -SqlInstance $script:instance1 -LogNumber 1 | Select-Object -Last 1
@@ -63,20 +64,20 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         $afterFilter = $after.LogDate.AddMinutes(+1)
         It "Returns filtered results for [After = $afterFilter" {
             $results = Get-DbaErrorLog -SqlInstance $script:instance1 -After $afterFilter
-            {$results[0].LogDate -ge $afterFilter} | Should Be $true
+            { $results[0].LogDate -ge $afterFilter } | Should Be $true
         }
         It "Returns filtered results for [LogNumber = 1] and [After = $afterFilter" {
             $results = Get-DbaErrorLog -SqlInstance $script:instance1 -LogNumber 1 -After $afterFilter
-            {$results[0].LogDate -ge $afterFilter} | Should Be $true
+            { $results[0].LogDate -ge $afterFilter } | Should Be $true
         }
         $beforeFilter = $before.LogDate.AddMinutes(-1)
         It "Returns filtered result for [Before = $beforeFilter]" {
             $results = Get-DbaErrorLog -SqlInstance $script:instance1 -Before $beforeFilter
-            {$results[-1].LogDate -le $beforeFilter} | Should Be $true
+            { $results[-1].LogDate -le $beforeFilter } | Should Be $true
         }
         It "Returns filtered result for [LogNumber = 1] and [Before = $beforeFilter]" {
             $results = Get-DbaErrorLog -SqlInstance $script:instance1 -LogNumber 1 -Before $beforeFilter
-            {$results[-1].LogDate -le $beforeFilter} | Should Be $true
+            { $results[-1].LogDate -le $beforeFilter } | Should Be $true
         }
     }
 }

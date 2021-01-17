@@ -4,11 +4,12 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 
 Describe "$commandname Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'BackupHistory', 'SqlInstance', 'SqlCredential', 'WithReplace', 'Continue', 'VerifyOnly', 'OutputScriptOnly', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
+
+        [array]$knownParameters = 'BackupHistory', 'SqlInstance', 'SqlCredential', 'WithReplace', 'Continue', 'VerifyOnly', 'OutputScriptOnly', 'EnableException'
+        [array]$params = ([Management.Automation.CommandMetaData]$ExecutionContext.SessionState.InvokeCommand.GetCommand($CommandName, 'Function')).Parameters.Keys
+
         It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+            Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params | Should -BeNullOrEmpty
         }
     }
 }
@@ -31,7 +32,7 @@ Describe "$commandname Integration Tests" -Tag 'IntegrationTests' {
                     VersionMajor         = 9
                     ConnectionContext    = New-Object PSObject
                 }
-                Add-Member -InputObject $obj.ConnectionContext -Name ConnectionString  -MemberType NoteProperty -Value 'put=an=equal=in=it'
+                Add-Member -InputObject $obj.ConnectionContext -Name ConnectionString -MemberType NoteProperty -Value 'put=an=equal=in=it'
                 Add-Member -InputObject $obj -Name Query -MemberType ScriptMethod -Value {
                     param($query)
                     if ($query -eq "SELECT DB_NAME(database_id) AS Name, physical_name AS PhysicalName FROM sys.master_files") {
@@ -48,13 +49,13 @@ Describe "$commandname Integration Tests" -Tag 'IntegrationTests' {
             }
             Mock Get-DbaDatabase { $null }
 
-            Mock New-DbaDirectory {$true}
+            Mock New-DbaDirectory { $true }
             Mock Test-DbaPath { [pscustomobject]@{
                     FilePath   = 'does\exists'
                     FileExists = $true
                 }
             }
-            Mock New-DbaDirectory {$True}
+            Mock New-DbaDirectory { $True }
             It "Should pass as all systems Green" {
                 $output = $BackupHistory | Test-DbaBackupInformation -SqlInstance NotExist -WarningVariable warnvar -WarningAction SilentlyContinue
                 ($output.Count) -gt 0 | Should be $true
@@ -78,7 +79,7 @@ Describe "$commandname Integration Tests" -Tag 'IntegrationTests' {
                     VersionMajor         = 9
                     ConnectionContext    = New-Object PSObject
                 }
-                Add-Member -InputObject $obj.ConnectionContext -Name ConnectionString  -MemberType NoteProperty -Value 'put=an=equal=in=it'
+                Add-Member -InputObject $obj.ConnectionContext -Name ConnectionString -MemberType NoteProperty -Value 'put=an=equal=in=it'
                 Add-Member -InputObject $obj -Name Query -MemberType ScriptMethod -Value {
                     param($query)
                     if ($query -eq "SELECT DB_NAME(database_id) AS Name, physical_name AS PhysicalName FROM sys.master_files") {
@@ -94,13 +95,13 @@ Describe "$commandname Integration Tests" -Tag 'IntegrationTests' {
                 return $obj
             }
             Mock Get-DbaDatabase { $null }
-            Mock New-DbaDirectory {$true}
+            Mock New-DbaDirectory { $true }
             Mock Test-DbaPath { [pscustomobject]@{
                     FilePath   = 'does\not\exists'
                     FileExists = $false
                 }
             }
-            Mock New-DbaDirectory {$True}
+            Mock New-DbaDirectory { $True }
             It "Should return fail as backup files don't exist" {
                 $output = $BackupHistory | Test-DbaBackupInformation -SqlInstance NotExist -WarningVariable warnvar -WarningAction SilentlyContinue
                 ($output.Count) -gt 0 | Should be $true
@@ -125,7 +126,7 @@ Describe "$commandname Integration Tests" -Tag 'IntegrationTests' {
                     VersionMajor         = 9
                     ConnectionContext    = New-Object PSObject
                 }
-                Add-Member -InputObject $obj.ConnectionContext -Name ConnectionString  -MemberType NoteProperty -Value 'put=an=equal=in=it'
+                Add-Member -InputObject $obj.ConnectionContext -Name ConnectionString -MemberType NoteProperty -Value 'put=an=equal=in=it'
                 Add-Member -InputObject $obj -Name Query -MemberType ScriptMethod -Value {
                     param($query)
                     if ($query -eq "SELECT DB_NAME(database_id) AS Name, physical_name AS PhysicalName FROM sys.master_files") {
@@ -141,13 +142,13 @@ Describe "$commandname Integration Tests" -Tag 'IntegrationTests' {
                 return $obj
             }
             Mock Get-DbaDatabase { $null }
-            Mock New-DbaDirectory {$true}
+            Mock New-DbaDirectory { $true }
             Mock Test-DbaPath { [pscustomobject]@{
                     FilePath   = 'does\exists'
                     FileExists = $true
                 }
             }
-            Mock New-DbaDirectory {$True}
+            Mock New-DbaDirectory { $True }
             It "Should return fail as 2 origin dbs" {
                 $output = $BackupHistory | Test-DbaBackupInformation -SqlInstance NotExist -WarningVariable warnvar -WarningAction SilentlyContinue
                 ($output.Count) -gt 0 | Should be $true
@@ -172,7 +173,7 @@ Describe "$commandname Integration Tests" -Tag 'IntegrationTests' {
                     VersionMajor         = 9
                     ConnectionContext    = New-Object PSObject
                 }
-                Add-Member -InputObject $obj.ConnectionContext -Name ConnectionString  -MemberType NoteProperty -Value 'put=an=equal=in=it'
+                Add-Member -InputObject $obj.ConnectionContext -Name ConnectionString -MemberType NoteProperty -Value 'put=an=equal=in=it'
                 Add-Member -InputObject $obj -Name Query -MemberType ScriptMethod -Value {
                     param($query)
                     if ($query -eq "SELECT DB_NAME(database_id) AS Name, physical_name AS PhysicalName FROM sys.master_files") {
@@ -188,13 +189,13 @@ Describe "$commandname Integration Tests" -Tag 'IntegrationTests' {
                 return $obj
             }
             Mock Get-DbaDatabase { '1' }
-            Mock New-DbaDirectory {$true}
+            Mock New-DbaDirectory { $true }
             Mock Test-DbaPath { [pscustomobject]@{
                     FilePath   = 'does\exists'
                     FileExists = $true
                 }
             }
-            Mock New-DbaDirectory {$True}
+            Mock New-DbaDirectory { $True }
             It "Should return fail if dest db exists" {
                 $output = $BackupHistory | Test-DbaBackupInformation -SqlInstance NotExist -WarningVariable warnvar -WarningAction SilentlyContinue
                 ($output.Count) -gt 0 | Should be $true
@@ -219,7 +220,7 @@ Describe "$commandname Integration Tests" -Tag 'IntegrationTests' {
                     VersionMajor         = 9
                     ConnectionContext    = New-Object PSObject
                 }
-                Add-Member -InputObject $obj.ConnectionContext -Name ConnectionString  -MemberType NoteProperty -Value 'put=an=equal=in=it'
+                Add-Member -InputObject $obj.ConnectionContext -Name ConnectionString -MemberType NoteProperty -Value 'put=an=equal=in=it'
                 Add-Member -InputObject $obj -Name Query -MemberType ScriptMethod -Value {
                     param($query)
                     if ($query -eq "SELECT DB_NAME(database_id) AS Name, physical_name AS PhysicalName FROM sys.master_files") {
@@ -235,13 +236,13 @@ Describe "$commandname Integration Tests" -Tag 'IntegrationTests' {
                 return $obj
             }
             Mock Get-DbaDatabase { '1' }
-            Mock New-DbaDirectory {$true}
+            Mock New-DbaDirectory { $true }
             Mock Test-DbaPath { [pscustomobject]@{
                     FilePath   = 'does\exists'
                     FileExists = $true
                 }
             }
-            Mock New-DbaDirectory {$True}
+            Mock New-DbaDirectory { $True }
             It "Should pass if destdb exists and WithReplace specified" {
                 $output = $BackupHistory | Test-DbaBackupInformation -SqlInstance NotExist -WarningVariable warnvar -WarningAction SilentlyContinue -WithReplace
                 ($output.Count) -gt 0 | Should be $true

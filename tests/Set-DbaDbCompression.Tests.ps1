@@ -4,11 +4,12 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'CompressionType', 'MaxRunTime', 'PercentCompression', 'InputObject', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
+
+        [array]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'CompressionType', 'MaxRunTime', 'PercentCompression', 'InputObject', 'EnableException'
+        [array]$params = ([Management.Automation.CommandMetaData]$ExecutionContext.SessionState.InvokeCommand.GetCommand($CommandName, 'Function')).Parameters.Keys
+
         It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+            Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params | Should -BeNullOrEmpty
         }
     }
 }
@@ -36,14 +37,14 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     }
 
     Context "Command handles heaps and clustered indexes" {
-        foreach ($row in $results | Where-Object {$_.IndexId -le 1}) {
+        foreach ($row in $results | Where-Object { $_.IndexId -le 1 }) {
             It "Should process object $($row.TableName)" {
                 $row.AlreadyProcessed | Should Be $True
             }
         }
     }
     Context "Command handles nonclustered indexes" {
-        foreach ($row in $results | Where-Object {$_.IndexId -gt 1}) {
+        foreach ($row in $results | Where-Object { $_.IndexId -gt 1 }) {
             It "Should process nonclustered index $($row.IndexName)" {
                 $row.AlreadyProcessed | Should Be $True
             }

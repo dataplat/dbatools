@@ -4,11 +4,12 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Job', 'ExcludeJob', 'Login', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
+
+        [array]$knownParameters = 'SqlInstance', 'SqlCredential', 'Job', 'ExcludeJob', 'Login', 'EnableException'
+        [array]$params = ([Management.Automation.CommandMetaData]$ExecutionContext.SessionState.InvokeCommand.GetCommand($CommandName, 'Function')).Parameters.Keys
+
         It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+            Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params | Should -BeNullOrEmpty
         }
     }
 }
@@ -27,17 +28,17 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     Context "Command actually works" {
         $results = Test-DbaAgentJobOwner -SqlInstance $script:instance2
         It "Should return $notSaJob" {
-            $results | Where-Object {$_.Job -eq $notsajob} | Should Not Be Null
+            $results | Where-Object { $_.Job -eq $notsajob } | Should Not Be Null
         }
     }
 
     Context "Command works for specific jobs" {
         $results = Test-DbaAgentJobOwner -SqlInstance $script:instance2 -Job $saJob, $notSaJob
         It "Should find $sajob owner matches default sa" {
-            $($results | Where-Object {$_.Job -eq $sajob}).OwnerMatch | Should Be $True
+            $($results | Where-Object { $_.Job -eq $sajob }).OwnerMatch | Should Be $True
         }
         It "Should find $notSaJob owner doesn't match default sa" {
-            $($results | Where-Object {$_.Job -eq $notSaJob}).OwnerMatch | Should Be $False
+            $($results | Where-Object { $_.Job -eq $notSaJob }).OwnerMatch | Should Be $False
         }
     }
 

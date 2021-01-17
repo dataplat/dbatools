@@ -4,11 +4,12 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'Path', 'SqlInstance', 'SqlCredential', 'DatabaseName', 'SourceInstance', 'NoXpDirTree', 'DirectoryRecurse', 'EnableException', 'MaintenanceSolution', 'IgnoreLogBackup', 'IgnoreDiffBackup', 'ExportPath', 'AzureCredential', 'Import', 'Anonymise', 'NoClobber', 'PassThru'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
+
+        [array]$knownParameters = 'Path', 'SqlInstance', 'SqlCredential', 'DatabaseName', 'SourceInstance', 'NoXpDirTree', 'DirectoryRecurse', 'EnableException', 'MaintenanceSolution', 'IgnoreLogBackup', 'IgnoreDiffBackup', 'ExportPath', 'AzureCredential', 'Import', 'Anonymise', 'NoClobber', 'PassThru'
+        [array]$params = ([Management.Automation.CommandMetaData]$ExecutionContext.SessionState.InvokeCommand.GetCommand($CommandName, 'Function')).Parameters.Keys
+
         It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+            Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params | Should -BeNullOrEmpty
         }
     }
 }
@@ -71,10 +72,10 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $results.count | Should Be 6
         }
         It "Should return 2 full backups" {
-            ($results | Where-Object {$_.Type -eq 'Database'}).count | Should be 2
+            ($results | Where-Object { $_.Type -eq 'Database' }).count | Should be 2
         }
         It "Should return 2 log backups" {
-            ($results | Where-Object {$_.Type -eq 'Transaction Log'}).count | Should be 2
+            ($results | Where-Object { $_.Type -eq 'Transaction Log' }).count | Should be 2
         }
     }
 
@@ -84,13 +85,13 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $results.count | Should Be 3
         }
         It "Should Be 1 full backup" {
-            ($results | Where-Object {$_.Type -eq 'Database'}).count | Should be 1
+            ($results | Where-Object { $_.Type -eq 'Database' }).count | Should be 1
         }
         It "Should be 1 log backups" {
-            ($results | Where-Object {$_.Type -eq 'Transaction Log'}).count | Should be 1
+            ($results | Where-Object { $_.Type -eq 'Transaction Log' }).count | Should be 1
         }
         It "Should only be backups of $dbname2" {
-            ($results | Where-Object {$_.Database -ne $dbname2 }).count | Should Be 0
+            ($results | Where-Object { $_.Database -ne $dbname2 }).count | Should Be 0
         }
     }
 
@@ -102,7 +103,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         # Get-DbaBackupInformation -Import -Path "$DestBackupDir\history.xml" | Restore-DbaDatabase -SqlInstance $script:instance1 -DestinationFilePrefix hist -RestoredDatabaseNamePrefix hist -TrustDbBackupHistory
 
         It "Should restore cleanly" {
-            ($results | Where-Object {$_.RestoreComplete -eq $false}).count | Should be 0
+            ($results | Where-Object { $_.RestoreComplete -eq $false }).count | Should be 0
         }
     }
 
@@ -112,23 +113,23 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $results.count | Should Be 3
         }
         It "Should Be 1 full backup" {
-            ($results | Where-Object {$_.Type -eq 'Database'}).count | Should be 1
+            ($results | Where-Object { $_.Type -eq 'Database' }).count | Should be 1
         }
         It "Should be 1 log backups" {
-            ($results | Where-Object {$_.Type -eq 'Transaction Log'}).count | Should be 1
+            ($results | Where-Object { $_.Type -eq 'Transaction Log' }).count | Should be 1
         }
         It "Should only be backups of $dbname3" {
-            ($results | Where-Object {$_.Database -ne $dbname3 }).count | Should Be 0
+            ($results | Where-Object { $_.Database -ne $dbname3 }).count | Should Be 0
         }
         $ResultsSanLog = Get-DbaBackupInformation -SqlInstance $script:instance1 -Path $DestBackupDirOla -MaintenanceSolution -IgnoreLogBackup
         It "Should be 2 backups returned" {
             $ResultsSanLog.count | Should Be 2
         }
         It "Should Be 1 full backup" {
-            ($ResultsSanLog | Where-Object {$_.Type -eq 'Database'}).count | Should be 1
+            ($ResultsSanLog | Where-Object { $_.Type -eq 'Database' }).count | Should be 1
         }
         It "Should be 0 log backups" {
-            ($resultsSanLog | Where-Object {$_.Type -eq 'Transaction Log'}).count | Should be 0
+            ($resultsSanLog | Where-Object { $_.Type -eq 'Transaction Log' }).count | Should be 0
         }
         $ResultsSanLog = Get-DbaBackupInformation -SqlInstance $script:instance1 -Path $DestBackupDirOla -IgnoreLogBackup -WarningVariable warnvar -WarningAction SilentlyContinue
         It "Should Warn if IgnoreLogBackup without MaintenanceSolution" {

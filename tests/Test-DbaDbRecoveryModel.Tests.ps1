@@ -4,15 +4,16 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'Database', 'ExcludeDatabase', 'SqlCredential', 'RecoveryModel', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
+
+        [array]$knownParameters = 'SqlInstance', 'Database', 'ExcludeDatabase', 'SqlCredential', 'RecoveryModel', 'EnableException'
+        [array]$params = ([Management.Automation.CommandMetaData]$ExecutionContext.SessionState.InvokeCommand.GetCommand($CommandName, 'Function')).Parameters.Keys
+
         It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+            Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params | Should -BeNullOrEmpty
         }
     }
 }
-Describe "$CommandName Intigration Tests" -Tag  "IntegrationTests" {
+Describe "$CommandName Intigration Tests" -Tag "IntegrationTests" {
     BeforeAll {
         $fullRecovery = "dbatoolsci_RecoveryModelFull"
         $bulkLoggedRecovery = "dbatoolsci_RecoveryModelBulk"
@@ -75,7 +76,7 @@ Describe "$CommandName Intigration Tests" -Tag  "IntegrationTests" {
     }
 
     Context "Psudo Simple Recovery" {
-        $results = Test-DbaDbRecoveryModel -SqlInstance $script:instance2 -RecoveryModel Full | Where-Object {$_.database -eq "$psudoSimpleRecovery"}
+        $results = Test-DbaDbRecoveryModel -SqlInstance $script:instance2 -RecoveryModel Full | Where-Object { $_.database -eq "$psudoSimpleRecovery" }
 
         It "Should return $psudoSimpleRecovery" {
             $results.Database | should -Be "$psudoSimpleRecovery"
@@ -86,17 +87,17 @@ Describe "$CommandName Intigration Tests" -Tag  "IntegrationTests" {
     Context "Error Check" {
 
         It "Should Throw Error for Incorrect Recovery Model" {
-            {Test-DbaDbRecoveryModel -SqlInstance $script:instance2 -RecoveryModel Awesome -EnableException -Database 'dontexist' } | should -Throw
+            { Test-DbaDbRecoveryModel -SqlInstance $script:instance2 -RecoveryModel Awesome -EnableException -Database 'dontexist' } | should -Throw
         }
 
         Mock Connect-SqlInstance { Throw } -ModuleName dbatools
         It "Should Thow Error for a DB Connection Error" {
-            {Test-DbaDbRecoveryModel -SqlInstance $script:instance2 -EnableException | Should -Throw }
+            { Test-DbaDbRecoveryModel -SqlInstance $script:instance2 -EnableException | Should -Throw }
         }
 
         Mock Select-DefaultView { Throw } -ModuleName dbatools
         It "Should Thow Error for Output Error " {
-            {Test-DbaDbRecoveryModel -SqlInstance $script:instance2 -EnableException | Should -Throw }
+            { Test-DbaDbRecoveryModel -SqlInstance $script:instance2 -EnableException | Should -Throw }
         }
 
     }

@@ -4,8 +4,10 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 
 Describe "$CommandName Unit Tests" -Tags "UnitTests" {
     Context "Validate parameters" {
+
+        [array]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'BatchSize', 'Table', 'DeleteSql', 'InputObject', 'LogBackupPath', 'LogBackupTimeStampFormat', 'AzureBaseUrl', 'AzureCredential', 'EnableException'
         [array]$params = ([Management.Automation.CommandMetaData]$ExecutionContext.SessionState.InvokeCommand.GetCommand($CommandName, 'Function')).Parameters.Keys
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'BatchSize', 'Table', 'DeleteSql', 'InputObject', 'LogBackupPath', 'LogBackupTimeStampFormat', 'AzureBaseUrl', 'AzureCredential', 'EnableException'
+
         It "Should only contain our specific parameters" {
             Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params | Should -BeNullOrEmpty
         }

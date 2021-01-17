@@ -4,11 +4,12 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'Database', 'ExcludeDatabase', 'ExcludeQuery', 'SqlCredential', 'Path', 'QueryName', 'UseSelectionHelper', 'InstanceOnly', 'DatabaseSpecific', 'ExcludeQueryTextColumn', 'ExcludePlanColumn', 'NoColumnParsing', 'OutputPath', 'ExportQueries', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
+
+        [array]$knownParameters = 'SqlInstance', 'Database', 'ExcludeDatabase', 'ExcludeQuery', 'SqlCredential', 'Path', 'QueryName', 'UseSelectionHelper', 'InstanceOnly', 'DatabaseSpecific', 'ExcludeQueryTextColumn', 'ExcludePlanColumn', 'NoColumnParsing', 'OutputPath', 'ExportQueries', 'EnableException'
+        [array]$params = ([Management.Automation.CommandMetaData]$ExecutionContext.SessionState.InvokeCommand.GetCommand($CommandName, 'Function')).Parameters.Keys
+
         It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+            Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params | Should -BeNullOrEmpty
         }
     }
 }
@@ -52,14 +53,14 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         }
         It "works with specific database provided" {
             $results = Invoke-DbaDiagnosticQuery -SqlInstance $script:instance2 -QueryName 'File Sizes and Space', 'Log Space Usage' -Database $database2, $database3
-            @($results | Where-Object {$_.Database -eq $Database}).Count | Should -Be 0
-            @($results | Where-Object {$_.Database -eq $Database2}).Count | Should -Be 2
-            @($results | Where-Object {$_.Database -eq $Database3}).Count | Should -Be 2
+            @($results | Where-Object { $_.Database -eq $Database }).Count | Should -Be 0
+            @($results | Where-Object { $_.Database -eq $Database2 }).Count | Should -Be 2
+            @($results | Where-Object { $_.Database -eq $Database3 }).Count | Should -Be 2
         }
         It "works with Exclude Databases provided" {
             $results = Invoke-DbaDiagnosticQuery -SqlInstance $script:instance2 -DatabaseSpecific -ExcludeDatabase $database2
-            @($results | Where-Object {$_.Database -eq $Database}).Count | Should -BeGreaterThan 1
-            @($results | Where-Object {$_.Database -eq $Database2}).Count | Should -Be 0
+            @($results | Where-Object { $_.Database -eq $Database }).Count | Should -BeGreaterThan 1
+            @($results | Where-Object { $_.Database -eq $Database2 }).Count | Should -Be 0
         }
         It "Correctly excludes queries when QueryName and ExcludeQuery parameters are used" {
             $results = Invoke-DbaDiagnosticQuery -SqlInstance $script:instance2 -QueryName 'Version Info', 'Core Counts', 'Server Properties' -ExcludeQuery 'Core Counts' -WhatIf
@@ -74,7 +75,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 
         $columnnames = 'Item', 'RowError', 'RowState', 'Table', 'ItemArray', 'HasErrors'
         $TestCases = @()
-        $columnnames.ForEach{$TestCases += @{columnname = $PSItem}}
+        $columnnames.ForEach{ $TestCases += @{columnname = $PSItem } }
         $results = Invoke-DbaDiagnosticQuery -SqlInstance $script:instance2 -QueryName 'Memory Clerk Usage'
         It "correctly excludes default column name <columnname>" -TestCases $TestCases {
             Param($columnname)
@@ -90,18 +91,18 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         }
 
         It "exports single database specific query against single database" {
-            $null = Invoke-DbaDiagnosticQuery -SqlInstance $script:instance2  -ExportQueries  -DatabaseSpecific -QueryName 'Database-scoped Configurations' -Database $database -OutputPath $script:PesterOutputPath
-            @(Get-ChildItem -path $script:PesterOutputPath -filter *.sql | Where-Object {$_.FullName -match "($database)"}).Count | Should -Be 1
+            $null = Invoke-DbaDiagnosticQuery -SqlInstance $script:instance2 -ExportQueries -DatabaseSpecific -QueryName 'Database-scoped Configurations' -Database $database -OutputPath $script:PesterOutputPath
+            @(Get-ChildItem -path $script:PesterOutputPath -filter *.sql | Where-Object { $_.FullName -match "($database)" }).Count | Should -Be 1
         }
 
         It "exports a database specific query foreach specific database provided" {
-            $null = Invoke-DbaDiagnosticQuery -SqlInstance $script:instance2  -ExportQueries  -DatabaseSpecific -QueryName 'Database-scoped Configurations' -Database @($database, $database2) -OutputPath $script:PesterOutputPath
-            @(Get-ChildItem -path $script:PesterOutputPath -filter *.sql | Where-Object {$_.FullName -match "($database)|($database2)"}).Count | Should -Be 2
+            $null = Invoke-DbaDiagnosticQuery -SqlInstance $script:instance2 -ExportQueries -DatabaseSpecific -QueryName 'Database-scoped Configurations' -Database @($database, $database2) -OutputPath $script:PesterOutputPath
+            @(Get-ChildItem -path $script:PesterOutputPath -filter *.sql | Where-Object { $_.FullName -match "($database)|($database2)" }).Count | Should -Be 2
         }
 
         It "exports database specific query when multiple specific databases are referenced" {
             $null = Invoke-DbaDiagnosticQuery -SqlInstance $script:instance2 -ExportQueries -DatabaseSpecific -QueryName 'Database-scoped Configurations' -Database @($database, $database2) -OutputPath $script:PesterOutputPath
-            @(Get-ChildItem -path $script:PesterOutputPath -filter *.sql | Where-Object {$_.FullName -match "($database)|($database2)"}).Count | Should -Be 2
+            @(Get-ChildItem -path $script:PesterOutputPath -filter *.sql | Where-Object { $_.FullName -match "($database)|($database2)" }).Count | Should -Be 2
         }
 
     }

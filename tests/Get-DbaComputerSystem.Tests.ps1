@@ -4,17 +4,18 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 
 Describe "Get-DbaComputerSystem Unit Tests" -Tag "UnitTests" {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'ComputerName', 'Credential', 'IncludeAws', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
+
+        [array]$knownParameters = 'ComputerName', 'Credential', 'IncludeAws', 'EnableException'
+        [array]$params = ([Management.Automation.CommandMetaData]$ExecutionContext.SessionState.InvokeCommand.GetCommand($CommandName, 'Function')).Parameters.Keys
+
         It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+            Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params | Should -BeNullOrEmpty
         }
     }
     Context "Validate input" {
         it "Cannot resolve hostname of computer" {
-            mock Resolve-DbaNetworkName {$null}
-            {Get-DbaComputerSystem -ComputerName 'DoesNotExist142' -WarningAction Stop 3> $null} | Should Throw
+            mock Resolve-DbaNetworkName { $null }
+            { Get-DbaComputerSystem -ComputerName 'DoesNotExist142' -WarningAction Stop 3> $null } | Should Throw
         }
     }
 }

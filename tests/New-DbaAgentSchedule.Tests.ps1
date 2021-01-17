@@ -4,11 +4,11 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
+        [array]$knownParameters = 'SqlInstance', 'SqlCredential', 'Job', 'Schedule', 'Disabled', 'FrequencyType', 'FrequencyInterval', 'FrequencySubdayType', 'FrequencySubdayInterval', 'FrequencyRelativeInterval', 'FrequencyRecurrenceFactor', 'StartDate', 'EndDate', 'StartTime', 'EndTime', 'Force', 'EnableException'
+        [array]$params = ([Management.Automation.CommandMetaData]$ExecutionContext.SessionState.InvokeCommand.GetCommand($CommandName, 'Function')).Parameters.Keys
+
         It "Should only contain our specific parameters" {
-            [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-            [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Job', 'Schedule', 'Disabled', 'FrequencyType', 'FrequencyInterval', 'FrequencySubdayType', 'FrequencySubdayInterval', 'FrequencyRelativeInterval', 'FrequencyRecurrenceFactor', 'StartDate', 'EndDate', 'StartTime', 'EndTime', 'Force', 'EnableException'
-            $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should -Be 0
+            Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params | Should -BeNullOrEmpty
         }
     }
 }
@@ -50,8 +50,8 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
         AfterAll {
             $null = Get-DbaAgentSchedule -SqlInstance $script:instance2 |
-                Where-Object { $_.name -like 'dbatools*' } |
-                Remove-DbaAgentSchedule -Confirm:$false -Force
+            Where-Object { $_.name -like 'dbatools*' } |
+            Remove-DbaAgentSchedule -Confirm:$false -Force
             Remove-Variable -Name results
         }
 
@@ -107,8 +107,8 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
         AfterAll {
             $null = Get-DbaAgentSchedule -SqlInstance $script:instance2 |
-                Where-Object { $_.name -like 'dbatools*' } |
-                Remove-DbaAgentSchedule -Confirm:$false -Force
+            Where-Object { $_.name -like 'dbatools*' } |
+            Remove-DbaAgentSchedule -Confirm:$false -Force
             Remove-Variable -Name results
         }
 
@@ -166,8 +166,8 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
         AfterAll {
             $null = Get-DbaAgentSchedule -SqlInstance $script:instance2 |
-                Where-Object { $_.name -like 'dbatools*' } |
-                Remove-DbaAgentSchedule -Confirm:$false -Force
+            Where-Object { $_.name -like 'dbatools*' } |
+            Remove-DbaAgentSchedule -Confirm:$false -Force
             Remove-Variable -Name results
         }
 
@@ -223,8 +223,8 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
         AfterAll {
             $null = Get-DbaAgentSchedule -SqlInstance $script:instance2 |
-                Where-Object { $_.name -like 'dbatools*' } |
-                Remove-DbaAgentSchedule -Confirm:$false -Force
+            Where-Object { $_.name -like 'dbatools*' } |
+            Remove-DbaAgentSchedule -Confirm:$false -Force
             Remove-Variable -Name results
         }
 
