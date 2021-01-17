@@ -60,6 +60,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 Describe "$CommandName Integration Tests" -Tag 'IntegrationTests' {
     Context "verify command functions" {
         BeforeAll {
+            $SkipLocalTest = $true # Change to $false to run the local-only tests on a local instance.
             $random = Get-Random
 
             # Create the new password
@@ -188,7 +189,7 @@ Describe "$CommandName Integration Tests" -Tag 'IntegrationTests' {
             $results.DefaultDatabase | Should -Be "testdb1_$random"
         }
 
-        It "Unlock" {
+        It -Skip:$SkipLocalTest "Unlock" {
             $result = Set-DbaLogin -SqlInstance $script:instance2 -Login "testlogin1_$random" -PasswordPolicyEnforced -EnableException
             $result.PasswordPolicyEnforced | Should -Be $true
 

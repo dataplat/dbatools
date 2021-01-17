@@ -15,6 +15,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     BeforeAll {
+        $SkipLocalTest = $true # Change to $false to run the local-only tests on a local instance.
         $random = Get-Random
 
         $password = ConvertTo-SecureString -String "password1A@" -AsPlainText -Force
@@ -94,7 +95,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $results.Name | Should -Contain "testlogin2_$random"
         }
 
-        It "Locked" {
+        It -Skip:$SkipLocalTest "Locked" {
             $result = Set-DbaLogin -SqlInstance $script:instance1 -Login "testlogin1_$random" -PasswordPolicyEnforced -EnableException
             $result.PasswordPolicyEnforced | Should -Be $true
 
