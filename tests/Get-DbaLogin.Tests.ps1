@@ -15,7 +15,6 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     BeforeAll {
-        $SkipLocalTest = $true # Change to $false to run the local-only tests on a local instance.
         $random = Get-Random
 
         $password = ConvertTo-SecureString -String "password1A@" -AsPlainText -Force
@@ -95,44 +94,11 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $results.Name | Should -Contain "testlogin2_$random"
         }
 
-        It -Skip:$SkipLocalTest "Locked" {
-            $result = Set-DbaLogin -SqlInstance $script:instance1 -Login "testlogin1_$random" -PasswordPolicyEnforced -EnableException
-            $result.PasswordPolicyEnforced | Should -Be $true
-
-            # simulate a lockout
-            $invalidPassword = ConvertTo-SecureString -String 'invalid' -AsPlainText -Force
-            $invalidSqlCredential = New-Object -TypeName System.Management.Automation.PSCredential -ArgumentList "testlogin1_$random", $invalidPassword
-
-            # exceed the lockout count
-            for (($i = 0); $i -le 5; $i++) {
-                try {
-                    Connect-DbaInstance -SqlInstance $script:instance1 -SqlCredential $invalidSqlCredential
-                } catch {
-                    Write-Message -Level Warning -Message "invalid login credentials used on purpose to lock out account"
-                    Start-Sleep -s 5
-                }
-            }
-
-            $results = Get-DbaLogin -SqlInstance $script:instance1 -Locked
-            $results.Name | Should -Contain "testlogin1_$random"
-
-            $results = Set-DbaLogin -SqlInstance $script:instance1 -Login "testlogin1_$random" -Unlock -SecurePassword $password
-            $results.IsLocked | Should -Be $false
-        }
-
         It "Disabled" {
             $null = Set-DbaLogin -SqlInstance $script:instance1 -Login "testlogin1_$random" -Disable
             $result = Get-DbaLogin -SqlInstance $script:instance1 -Disabled
             $result.Name | Should -Contain "testlogin1_$random"
             $null = Set-DbaLogin -SqlInstance $script:instance1 -Login "testlogin1_$random" -Enable
-        }
-
-        It "MustChangePassword" {
-            $changeResult = Set-DbaLogin -SqlInstance $script:instance1 -Login "testlogin1_$random" -MustChange -Password $password -PasswordPolicyEnforced -PasswordExpirationEnabled
-            $changeResult.MustChangePassword | Should -Be $true
-
-            $result = Get-DbaLogin -SqlInstance $script:instance1 -MustChangePassword
-            $result.Name | Should -Contain "testlogin1_$random"
         }
 
         It "Detailed" {

@@ -5,7 +5,7 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
         [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('WhatIf', 'Confirm') }
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Login', 'SecurePassword', 'DefaultDatabase', 'Unlock', 'MustChange', 'NewName', 'Disable', 'Enable', 'DenyLogin', 'GrantLogin', 'PasswordPolicyEnforced', 'PasswordExpirationEnabled', 'AddRole', 'RemoveRole', 'InputObject', 'EnableException'
+        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Login', 'SecurePassword', 'DefaultDatabase', 'Unlock', 'MustChange', 'NewName', 'Disable', 'Enable', 'DenyLogin', 'GrantLogin', 'PasswordPolicyEnforced', 'AddRole', 'RemoveRole', 'InputObject', 'EnableException'
         $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
         It "Should only contain our specific parameters" {
             (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
@@ -60,7 +60,6 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 Describe "$CommandName Integration Tests" -Tag 'IntegrationTests' {
     Context "verify command functions" {
         BeforeAll {
-            $SkipLocalTest = $true # Change to $false to run the local-only tests on a local instance.
             $random = Get-Random
 
             # Create the new password
@@ -187,53 +186,6 @@ Describe "$CommandName Integration Tests" -Tag 'IntegrationTests' {
         It "DefaultDatabase" {
             $results = Set-DbaLogin -SqlInstance $script:instance2 -Login "testlogin1_$random" -DefaultDatabase "testdb1_$random"
             $results.DefaultDatabase | Should -Be "testdb1_$random"
-        }
-
-        It -Skip:$SkipLocalTest "Unlock" {
-            $result = Set-DbaLogin -SqlInstance $script:instance2 -Login "testlogin1_$random" -PasswordPolicyEnforced -EnableException
-            $result.PasswordPolicyEnforced | Should -Be $true
-
-            # simulate a lockout
-            $invalidPassword = ConvertTo-SecureString -String 'invalid' -AsPlainText -Force
-            $invalidSqlCredential = New-Object -TypeName System.Management.Automation.PSCredential -ArgumentList "testlogin1_$random", $invalidPassword
-
-            # exceed the lockout count
-            for (($i = 0); $i -le 5; $i++) {
-                try {
-                    Connect-DbaInstance -SqlInstance $script:instance2 -SqlCredential $invalidSqlCredential
-                } catch {
-                    Write-Message -Level Warning -Message "invalid login credentials used on purpose to lock out account"
-                    Start-Sleep -s 5
-                }
-            }
-
-            $results = Get-DbaLogin -SqlInstance $script:instance2 -Login "testlogin1_$random"
-            $results.IsLocked | Should -Be $true
-
-            $results = Set-DbaLogin -SqlInstance $script:instance2 -Login "testlogin1_$random" -Unlock
-            $results | Should -BeNullOrEmpty
-
-            $results = Set-DbaLogin -SqlInstance $script:instance2 -Login "testlogin1_$random" -Unlock -SecurePassword $password1
-            $results.IsLocked | Should -Be $false
-        }
-
-        It "MustChange" {
-            $changeResult = Set-DbaLogin -SqlInstance $script:instance2 -Login "testlogin1_$random" -MustChange
-            $changeResult | Should -BeNullOrEmpty
-
-            $changeResult = Set-DbaLogin -SqlInstance $script:instance2 -Login "testlogin1_$random" -MustChange -Password $password1
-            $changeResult | Should -BeNullOrEmpty
-
-            $changeResult = Set-DbaLogin -SqlInstance $script:instance2 -Login "testlogin1_$random" -MustChange -Password $password1 -PasswordPolicyEnforced -PasswordExpirationEnabled
-            $changeResult.MustChangePassword | Should -Be $true
-
-            $result = Get-DbaLogin -SqlInstance $script:instance2 -MustChangePassword
-            $result.Name | Should -Contain "testlogin1_$random"
-        }
-
-        It "PasswordExpirationEnabled" {
-            $result = Set-DbaLogin -SqlInstance $script:instance2 -Login "testlogin1_$random" -PasswordExpirationEnabled
-            $result.PasswordExpirationEnabled | Should Be $true
         }
     }
 }

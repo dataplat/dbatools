@@ -20,7 +20,7 @@ function Get-DbaLogin {
         The login(s) to process - this list is auto-populated from the server. If unspecified, all logins will be processed.
 
     .PARAMETER ExcludeLogin
-        The login(s) to exclude
+        The login(s) to exclude from an auto-populated list of logins from the server.
 
     .PARAMETER IncludeFilter
         A list of logins to include - accepts wildcard patterns
