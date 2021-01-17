@@ -1,7 +1,7 @@
 function Get-DbaLogin {
     <#
     .SYNOPSIS
-        Function to get an SMO login object of the logins for a given SQL Server instance. Takes a server object from the pipeline.
+        Function to get an SMO login object of the logins for a given SQL Server instance. Takes a server object from the pipeline. SQL Azure DB is not supported.
 
     .DESCRIPTION
         The Get-DbaLogin function returns an SMO Login object for the logins passed, if there are no users passed it will return all logins.
@@ -20,7 +20,7 @@ function Get-DbaLogin {
         The login(s) to process - this list is auto-populated from the server. If unspecified, all logins will be processed.
 
     .PARAMETER ExcludeLogin
-        The login(s) to exclude - this list is auto-populated from the server
+        The login(s) to exclude
 
     .PARAMETER IncludeFilter
         A list of logins to include - accepts wildcard patterns
@@ -194,7 +194,7 @@ function Get-DbaLogin {
         foreach ($instance in $SqlInstance) {
 
             try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -AzureUnsupported
             } catch {
                 Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }

@@ -1,7 +1,7 @@
 function Set-DbaLogin {
     <#
     .SYNOPSIS
-        Set-DbaLogin makes it possible to make changes to one or more logins.
+        Set-DbaLogin makes it possible to make changes to one or more logins. SQL Azure DB is not supported.
 
     .DESCRIPTION
         Set-DbaLogin will enable you to change the password, unlock, rename, disable or enable, deny or grant login privileges to the login. It's also possible to add or remove server roles from the login.
@@ -173,6 +173,7 @@ function Set-DbaLogin {
         [switch]$DenyLogin,
         [switch]$GrantLogin,
         [switch]$PasswordPolicyEnforced,
+        [switch]$PasswordExpirationEnabled,
         [ValidateSet('bulkadmin', 'dbcreator', 'diskadmin', 'processadmin', 'public', 'securityadmin', 'serveradmin', 'setupadmin', 'sysadmin')]
         [string[]]$AddRole,
         [ValidateSet('bulkadmin', 'dbcreator', 'diskadmin', 'processadmin', 'public', 'securityadmin', 'serveradmin', 'setupadmin', 'sysadmin')]
@@ -209,6 +210,19 @@ function Set-DbaLogin {
                 }
             }
         }
+
+        if ((Test-Bound Unlock) -and (Test-Bound SecurePassword -Not)) {
+            Stop-Function -Message 'You must specify a password when using the -Unlock parameter'
+        }
+
+        if ((Test-Bound MustChange) -and (Test-Bound SecurePassword -Not)) {
+            Stop-Function -Message 'You must specify a password when using the -MustChange parameter'
+        }
+
+        # check_expiration and check_policy are required for must_change
+        if ((Test-Bound MustChange) -and ((Test-Bound PasswordPolicyEnforced -Not) -or (Test-Bound PasswordExpirationEnabled -Not))) {
+            Stop-Function -Message 'The -MustChange parameter must be used with -PasswordPolicyEnforced and -PasswordExpirationEnabled'
+        }
     }
 
     process {
@@ -218,7 +232,7 @@ function Set-DbaLogin {
         foreach ($instance in $SqlInstance) {
             # Try connecting to the instance
             try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9 -AzureUnsupported
             } catch {
                 Stop-Function -Message 'Failure' -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
@@ -253,8 +267,20 @@ function Set-DbaLogin {
                 # Change the password
                 if (Test-bound -ParameterName 'SecurePassword') {
                     try {
+                        # these settings are required for must_change and are validated above
+                        if (Test-Bound MustChange) {
+                            Write-Message -Message "Setting check_policy and check_expiration to true for $l because the must_change option requires it." -Level Warning
+                            $l.PasswordPolicyEnforced = $PasswordPolicyEnforced
+                            $l.PasswordExpirationEnabled = $PasswordExpirationEnabled
+                            $l.Alter()
+                        }
+
                         $l.ChangePassword($NewSecurePassword, $Unlock, $MustChange)
                         $passwordChanged = $true
+
+                        if (Test-Bound MustChange) {
+                            $l.Refresh()  # necessary so that the read only property MustChangePassword is updated
+                        }
                     } catch {
                         $notes += "Couldn't change password"
                         $passwordChanged = $false
@@ -314,6 +340,15 @@ function Set-DbaLogin {
                         Write-Message -Message "Login $l password policy is already set to $($l.PasswordPolicyEnforced)" -Level Verbose
                     } else {
                         $l.PasswordPolicyEnforced = $PasswordPolicyEnforced
+                    }
+                }
+
+                # Enforce password expiration
+                if (Test-Bound -ParameterName 'PasswordExpirationEnabled') {
+                    if ($l.PasswordExpirationEnabled -eq $PasswordExpirationEnabled) {
+                        Write-Message -Message "Login $l password expiration check is already set to $($l.PasswordExpirationEnabled)" -Level Verbose
+                    } else {
+                        $l.PasswordExpirationEnabled = $PasswordExpirationEnabled
                     }
                 }
 
@@ -379,7 +414,7 @@ function Set-DbaLogin {
                 Add-Member -Force -InputObject $l -MemberType NoteProperty -Name DenyLogin -Value $l.DenyWindowsLogin
 
                 $defaults = 'ComputerName', 'InstanceName', 'SqlInstance', 'LoginName', 'DenyLogin', 'IsDisabled', 'IsLocked',
-                'PasswordPolicyEnforced', 'MustChangePassword', 'PasswordChanged', 'ServerRole', 'Notes'
+                'PasswordPolicyEnforced', 'PasswordExpirationEnabled', 'MustChangePassword', 'PasswordChanged', 'ServerRole', 'Notes'
 
                 Select-DefaultView -InputObject $l -Property $defaults
             }
