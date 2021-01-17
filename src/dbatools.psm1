@@ -776,7 +776,8 @@ $script:xplat = @(
     'Export-DbaSysDbUserObject',
     'Test-DbaDbQueryStore',
     'Install-DbaMultiTool',
-    'New-DbaAgentOperator'
+    'New-DbaAgentOperator',
+    'Remove-DbaAgentOperator'
 )
 
 $script:noncoresmo = @(
@@ -798,7 +799,8 @@ $script:noncoresmo = @(
     'Get-DbaRepPublication',
     'Test-DbaRepLatency',
     'Export-DbaRepServerSetting',
-    'Get-DbaRepServer'
+    'Get-DbaRepServer',
+    'Move-DbaDbFile'
 )
 $script:windowsonly = @(
     # solvable filesystem issues or other workarounds

@@ -501,6 +501,7 @@
         'Remove-DbaDbData',
         'Test-DbaDbQueryStore',
         'Install-DbaMultiTool',
+        'Remove-DbaAgentOperator',
         # noncoresmo
         # SMO issues
         'Export-DbaUser',
@@ -522,6 +523,7 @@
         'Export-DbaRepServerSetting',
         'Get-DbaRepServer',
         'Export-DbaSysDbUserObject',
+        'Move-DbaDbFile'
         'New-DbaAgentOperator',
         # windowsonly
         # solvable filesystem issues or other workarounds

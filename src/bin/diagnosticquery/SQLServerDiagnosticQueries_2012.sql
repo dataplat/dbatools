@@ -1,7 +1,7 @@
 
 -- SQL Server 2012 Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: November 1, 2020
+-- Last Modified: January 12, 2021
 -- https://glennsqlperformance.com/
 -- https://sqlserverperformance.wordpress.com/
 -- YouTube: https://bit.ly/2PkoAM1 
@@ -22,7 +22,7 @@
 
 
 --******************************************************************************
---*   Copyright (C) 2020 Glenn Berry
+--*   Copyright (C) 2021 Glenn Berry
 --*   All rights reserved. 
 --*
 --*
@@ -90,16 +90,21 @@ SELECT @@SERVERNAME AS [Server Name], @@VERSION AS [SQL Server and OS Version In
 --																																									   11.0.6594		SP3 CU8			 3/20/2017
 --																																									   11.0.6598		SP3 CU9			 5/15/2017																											                                                            				
 --																																									   11.0.6607		SP3 CU10		  8/8/2017																											
---																																																							11.0.7001		SP4 RTM				10/3/2017	
+--																																																							11.0.7001		SP4 RTM				10/3/2017
+--																																																							11.0.7462	    Security Update		1/12/2018  (Security Update for SQL Server 2012 SP4 (KB4057116))
+--                                                                                                                                                                                                                          11.0.7493.4		Security Update		2/11/2020  (Security Update for SQL Server 2012 SP4 (KB4532098))
+--																																																							11.0.7507.2		Security Update		1/12/2021  (Security Update for SQL Server 2012 SP4 (KB4583465))
 -- 
 --
+-- KB4583465 - Description of the security update for SQL Server 2012 SP4 GDR: January 12, 2021
+-- https://support.microsoft.com/en-us/help/4583465/kb4583465-description-of-the-security-update-for-sql-server-2012-sp4-g
+
 -- Security Update for SQL Server 2012 SP4 (KB4532098) 
 -- https://support.microsoft.com/en-us/help/4532098/security-update-for-sql-server-2012-sp4-gdr
 
 -- Security Update for SQL Server 2012 SP4 (KB4057116) 
--- https://bit.ly/2F33Sc4
---                                                                                                                                                                                                                          11.0.7462	    Security Update		1/12/2018  (Security Update for SQL Server 2012 SP4 (KB4057116))
---																																																							11.0.7493.4		Security Update		2/11/2020  (Security Update for SQL Server 2012 SP4 (KB4532098))														
+-- https://bit.ly/2F33Sc4                                                                                                                                                                                                                       
+																																																																			
 -- SQL Server 2012 Service Pack 4 (SP4) Released!
 -- https://bit.ly/2qN8kr3
 
@@ -1695,7 +1700,8 @@ ORDER BY ps.avg_fragmentation_in_percent DESC OPTION (RECOMPILE);
 
 
 --- Index Read/Write stats (all tables in current DB) ordered by Reads  (Query 68) (Overall Index Usage - Reads)
-SELECT OBJECT_NAME(i.[object_id]) AS [ObjectName], i.[name] AS [IndexName], i.index_id, 
+SELECT SCHEMA_NAME(t.[schema_id]) AS [SchemaName], OBJECT_NAME(i.[object_id]) AS [ObjectName], 
+       i.[name] AS [IndexName], i.index_id, 
        s.user_seeks, s.user_scans, s.user_lookups,
 	   s.user_seeks + s.user_scans + s.user_lookups AS [Total Reads], 
 	   s.user_updates AS [Writes],  
@@ -1706,6 +1712,8 @@ LEFT OUTER JOIN sys.dm_db_index_usage_stats AS s WITH (NOLOCK)
 ON i.[object_id] = s.[object_id]
 AND i.index_id = s.index_id
 AND s.database_id = DB_ID()
+LEFT OUTER JOIN sys.tables AS t WITH (NOLOCK)
+ON t.[object_id] = i.[object_id]
 WHERE OBJECTPROPERTY(i.[object_id],'IsUserTable') = 1
 ORDER BY s.user_seeks + s.user_scans + s.user_lookups DESC OPTION (RECOMPILE); -- Order by reads
 ------
@@ -1714,7 +1722,8 @@ ORDER BY s.user_seeks + s.user_scans + s.user_lookups DESC OPTION (RECOMPILE); -
 
 
 --- Index Read/Write stats (all tables in current DB) ordered by Writes  (Query 69) (Overall Index Usage - Writes)
-SELECT OBJECT_NAME(i.[object_id]) AS [ObjectName], i.[name] AS [IndexName], i.index_id,
+SELECT SCHEMA_NAME(t.[schema_id]) AS [SchemaName],OBJECT_NAME(i.[object_id]) AS [ObjectName], 
+	   i.[name] AS [IndexName], i.index_id,
 	   s.user_updates AS [Writes], s.user_seeks + s.user_scans + s.user_lookups AS [Total Reads], 
 	   i.[type_desc] AS [Index Type], i.fill_factor AS [Fill Factor], i.has_filter, i.filter_definition,
 	   s.last_system_update, s.last_user_update
@@ -1723,6 +1732,8 @@ LEFT OUTER JOIN sys.dm_db_index_usage_stats AS s WITH (NOLOCK)
 ON i.[object_id] = s.[object_id]
 AND i.index_id = s.index_id
 AND s.database_id = DB_ID()
+LEFT OUTER JOIN sys.tables AS t WITH (NOLOCK)
+ON t.[object_id] = i.[object_id]
 WHERE OBJECTPROPERTY(i.[object_id],'IsUserTable') = 1
 ORDER BY s.user_updates DESC OPTION (RECOMPILE);						 -- Order by writes
 ------

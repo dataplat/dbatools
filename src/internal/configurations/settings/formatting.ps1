@@ -20,4 +20,4 @@ Set-DbatoolsConfig -FullName 'Formatting.size.digits' -Value 2 -Initialize -Vali
 Set-DbatoolsConfig -FullName 'Formatting.BatchSeparator' -Value "GO" -Initialize -Validation string -Handler { [Sqlcollaborative.Dbatools.Utility.UtilityHost]::FormatDate = $args[0] } -Description "The default batch separator used in export of scripts"
 
 # The default uformat style for formatting dates in scripts
-Set-DbatoolsConfig -FullName 'Formatting.UFormat' -Value "%Y%m%d%H%M%S" -Initialize -Validation string -Handler { [Sqlcollaborative.Dbatools.Utility.UtilityHost]::FormatDate = $args[0] } -Description "The default batch separator used in export of scripts"
+Set-DbatoolsConfig -FullName 'Formatting.UFormat' -Value "%Y%m%d%H%M%S" -Initialize -Validation string -Handler { [Sqlcollaborative.Dbatools.Utility.UtilityHost]::FormatDate = $args[0] } -Description "The default uformat style for formatting dates in scripts"
