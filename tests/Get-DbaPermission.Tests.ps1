@@ -77,23 +77,6 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         $removedUser2 = Remove-DbaLogin -SqlInstance $server -Login $loginNameUser2 -Confirm:$false
     }
 
-    Context "Validate test setup" {
-
-        It "Ensure that the BeforeAll completed successfully" {
-            $loginDBO.Name | Should -Be $loginNameDBO
-            $loginUser1.Name | Should -Be $loginNameUser1
-            $loginUser2.Name | Should -Be $loginNameUser2
-            $newUserDBOwner.Name | Should -Be $loginNameDBOwner
-            $newUser1.Name | Should -Be $loginNameUser1
-            $newUser2.Name | Should -Be $loginNameUser2
-            $table1.Name | Should -Be $tableName1
-            $table2.Name | Should -Be $tableName2
-            $table2.Schema | Should -Be $schemaNameForTable2
-            $testDb.Name | Should -Be $dbName
-            $loginDBOwner.Name | Should -Be $loginNameDBOwner
-        }
-    }
-
     Context "parameters work" {
         It "returns server level permissions with -IncludeServerLevel" {
             $results = Get-DbaPermission -SqlInstance $server -IncludeServerLevel
