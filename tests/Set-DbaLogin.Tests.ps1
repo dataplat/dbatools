@@ -5,7 +5,7 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
         [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('WhatIf', 'Confirm') }
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Login', 'SecurePassword', 'DefaultDatabase', 'Unlock', 'MustChange', 'NewName', 'Disable', 'Enable', 'DenyLogin', 'GrantLogin', 'PasswordPolicyEnforced', 'AddRole', 'RemoveRole', 'InputObject', 'EnableException'
+        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Login', 'SecurePassword', 'DefaultDatabase', 'Unlock', 'MustChange', 'NewName', 'Disable', 'Enable', 'DenyLogin', 'GrantLogin', 'PasswordPolicyEnforced', 'PasswordExpirationEnabled', 'AddRole', 'RemoveRole', 'InputObject', 'EnableException'
         $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
         It "Should only contain our specific parameters" {
             (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
@@ -186,6 +186,11 @@ Describe "$CommandName Integration Tests" -Tag 'IntegrationTests' {
         It "DefaultDatabase" {
             $results = Set-DbaLogin -SqlInstance $script:instance2 -Login "testlogin1_$random" -DefaultDatabase "testdb1_$random"
             $results.DefaultDatabase | Should -Be "testdb1_$random"
+        }
+
+        It "PasswordExpirationEnabled" {
+            $result = Set-DbaLogin -SqlInstance $script:instance2 -Login "testlogin1_$random" -PasswordPolicyEnforced -PasswordExpirationEnabled
+            $result.PasswordExpirationEnabled | Should Be $true
         }
     }
 }
