@@ -1,4 +1,4 @@
-﻿Import-Module ".\dbatools.psd1"
+Import-Module ".\dbatools.psd1"
 
 Find-DbaCommand -Rebuild
 
