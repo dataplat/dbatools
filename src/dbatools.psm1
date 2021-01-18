@@ -270,7 +270,7 @@ if (-not ([Sqlcollaborative.Dbatools.Message.LogHost]::LoggingPath)) {
 # Note: Each optional file must include a conditional governing whether it's run at all.
 # Validations were moved into the other files, in order to prevent having to update dbatools.psm1 every time
 # 96ms
-foreach ($file in (Get-ChildItem -Path "$script:PSScriptRoot\optional" -filter *.ps1)) {
+foreach ($file in (Get-ChildItem -Path "$script:PSScriptRoot\optional" -Filter *.ps1)) {
     . $file.FullName
 }
 Write-ImportTime -Text "Loading Optional Commands"
@@ -777,7 +777,8 @@ $script:xplat = @(
     'Test-DbaDbQueryStore',
     'Install-DbaMultiTool',
     'New-DbaAgentOperator',
-    'Remove-DbaAgentOperator'
+    'Remove-DbaAgentOperator',
+    'Remove-DbaDbTableData'
 )
 
 $script:noncoresmo = @(

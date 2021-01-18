@@ -502,6 +502,7 @@
         'Test-DbaDbQueryStore',
         'Install-DbaMultiTool',
         'Remove-DbaAgentOperator',
+        'Remove-DbaDbTableData',
         # noncoresmo
         # SMO issues
         'Export-DbaUser',
