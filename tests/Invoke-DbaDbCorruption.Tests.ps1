@@ -8,6 +8,7 @@ Import-Module ([IO.Path]::Combine(([string]$PSScriptRoot).Trim("tests"), 'src\bi
 . ([IO.Path]::Combine(([string]$PSScriptRoot).Trim("tests"), 'src\internal\functions\message', 'Convert-DbaMessageException.ps1'))
 . ([IO.Path]::Combine(([string]$PSScriptRoot).Trim("tests"), 'src\internal\functions\flowcontrol', 'Stop-Function.ps1'))
 . ([IO.Path]::Combine(([string]$PSScriptRoot).Trim("tests"), 'src\internal\functions', 'Connect-SqlInstance.ps1'))
+. ([IO.Path]::Combine(([string]$PSScriptRoot).Trim("tests"), 'src\internal\functions', 'Start-DbccCheck.ps1'))
 . ([IO.Path]::Combine(([string]$PSScriptRoot).Trim("tests"), 'src\internal\functions', 'Invoke-DbaDbCorruption.ps1'))
 
 Describe "$commandName Unit Tests" -Tags "UnitTests" {
