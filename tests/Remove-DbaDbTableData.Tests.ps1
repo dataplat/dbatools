@@ -43,17 +43,14 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         $logBackupPath = $backupDbFull.BackupFolder
 
         # SQL to populate some data for testing
-        $sqlAddRows = "
-                TRUNCATE TABLE dbo.Test;
-
-                DECLARE
-                    @loopCounter INTEGER = 0;
-
-                WHILE @loopCounter < 100
+        $sqlAddRows = "TRUNCATE TABLE dbo.Test;
+            DECLARE @loopCounter INTEGER = 0;
+            WHILE @loopCounter < 100
                 BEGIN
                     INSERT INTO dbo.Test VALUES (@loopCounter);
                     SET @loopCounter = @loopCounter + 1;
-                END;"
+                END;
+        "
     }
     AfterAll {
         $newDbSimpleModel, $newDbFullModel, $newDbBulkLoggedModel, $newDbSimpleModelServer2 | Remove-DbaDatabase -Confirm:$false
