@@ -8,7 +8,7 @@
     "editor.tabSize": 4,
     "editor.detectIndentation": false,
     "editor.insertSpaces": true,
-    "editor.formatOnSave": true,
+    "editor.formatOnSave": false,
     // editor settings that will auto add the closing quote or curly brace
     "editor.autoClosingBrackets": "always",
     "editor.autoClosingQuotes": "always",
