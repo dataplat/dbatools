@@ -1,7 +1,8 @@
 function Set-DbaLogin {
     <#
     .SYNOPSIS
-        Set-DbaLogin makes it possible to make changes to one or more logins. SQL Azure DB is not supported.
+        Set-DbaLogin makes it possible to make changes to one or more logins.
+        SQL Azure DB is not supported.
 
     .DESCRIPTION
         Set-DbaLogin will enable you to change the password, unlock, rename, disable or enable, deny or grant login privileges to the login. It's also possible to add or remove server roles from the login.

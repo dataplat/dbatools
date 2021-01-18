@@ -1,7 +1,8 @@
 function Get-DbaLogin {
     <#
     .SYNOPSIS
-        Function to get an SMO login object of the logins for a given SQL Server instance. Takes a server object from the pipeline. SQL Azure DB is not supported.
+        Function to get an SMO login object of the logins for a given SQL Server instance. Takes a server object from the pipeline.
+        SQL Azure DB is not supported.
 
     .DESCRIPTION
         The Get-DbaLogin function returns an SMO Login object for the logins passed, if there are no users passed it will return all logins.
@@ -20,7 +21,7 @@ function Get-DbaLogin {
         The login(s) to process - this list is auto-populated from the server. If unspecified, all logins will be processed.
 
     .PARAMETER ExcludeLogin
-        The login(s) to exclude from an auto-populated list of logins from the server.
+        The login(s) to exclude. Options for this list are auto-populated from the server.
 
     .PARAMETER IncludeFilter
         A list of logins to include - accepts wildcard patterns
