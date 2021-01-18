@@ -113,10 +113,10 @@ foreach ($command in $commands) {
         $testparamserrors = 0
         Context "Test parameter help for $commandName" {
 
-            $Common = 'Debug', 'ErrorAction', 'ErrorVariable', 'InformationAction', 'InformationVariable', 'OutBuffer', 'OutVariable',
-            'PipelineVariable', 'Verbose', 'WarningAction', 'WarningVariable'
+            $Common = [System.Management.Automation.PSCmdlet]::CommonParameters
+            $Optional = [System.Management.Automation.PSCmdlet]::OptionalCommonParameters
 
-            $parameters = $command.ParameterSets.Parameters | Sort-Object -Property Name -Unique | Where-Object Name -notin $common
+            $parameters = $command.ParameterSets.Parameters | Sort-Object -Property Name -Unique | Where-Object { $_.Name -notin $common -and $_.Name -notin $Optional }
             $parameterNames = $parameters.Name
             $HelpParameterNames = $Help.Parameters.Parameter.Name | Sort-Object -Unique
             foreach ($parameter in $parameters) {
