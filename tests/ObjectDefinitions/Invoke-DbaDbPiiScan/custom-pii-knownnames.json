@@ -1,0 +1,16 @@
+[
+    {
+        "Name": "First name",
+        "Category": "Personal",
+        "Pattern": [
+            "(\\w*)(?i)(firstname|fname|first_name)(\\w*)",
+            "(?>(fi?rst)_?(na?me?)\\|f_?name)(?!\\w*ID)",
+            "(\\w*)(?i)(vorname|vname|vor_name)(\\w*)",
+            "(\\w*)(?i)(prenom|pnom)(\\w*)",
+            "(\\w*)(?i)(nombredepila|npila|apellido)(\\w*)",
+            "(\\w*)(?i)(voornaam|vnaam)(\\w*)"
+        ],
+        "MaskingType": "Name",
+        "MaskingSubType": "FirstName"
+    }
+]

@@ -1,7 +1,7 @@
 
 -- SQL Server 2008 Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: November 1, 2020
+-- Last Modified: January 1, 2021
 -- https://glennsqlperformance.com/
 -- https://sqlserverperformance.wordpress.com/
 -- YouTube: https://bit.ly/2PkoAM1 
@@ -14,7 +14,7 @@
 -- Please make sure you are using the correct version of these diagnostic queries for your version of SQL Server
 
 --******************************************************************************
---*   Copyright (C) 2020 Glenn Berry
+--*   Copyright (C) 2021 Glenn Berry
 --*   All rights reserved. 
 --*
 --*
@@ -1219,17 +1219,22 @@ ORDER BY ps.avg_fragmentation_in_percent DESC OPTION (RECOMPILE);
 
 
 --- Index Read/Write stats (all tables in current DB) ordered by Reads  (Query 56) (Overall Index Usage - Reads)
-SELECT OBJECT_NAME(s.[object_id]) AS [ObjectName], i.name AS [IndexName], i.index_id,
-	   user_seeks + user_scans + user_lookups AS [Reads], s.user_updates AS [Writes],  
-	   i.type_desc AS [IndexType], i.fill_factor AS [FillFactor], i.has_filter, i.filter_definition, 
+SELECT SCHEMA_NAME(t.[schema_id]) AS [SchemaName], OBJECT_NAME(i.[object_id]) AS [ObjectName], 
+       i.[name] AS [IndexName], i.index_id, 
+       s.user_seeks, s.user_scans, s.user_lookups,
+	   s.user_seeks + s.user_scans + s.user_lookups AS [Total Reads], 
+	   s.user_updates AS [Writes],  
+	   i.[type_desc] AS [Index Type], i.fill_factor AS [Fill Factor], i.has_filter, i.filter_definition, 
 	   s.last_user_scan, s.last_user_lookup, s.last_user_seek
-FROM sys.dm_db_index_usage_stats AS s WITH (NOLOCK)
-INNER JOIN sys.indexes AS i WITH (NOLOCK)
-ON s.[object_id] = i.[object_id]
-WHERE OBJECTPROPERTY(s.[object_id],'IsUserTable') = 1
+FROM sys.indexes AS i WITH (NOLOCK)
+LEFT OUTER JOIN sys.dm_db_index_usage_stats AS s WITH (NOLOCK)
+ON i.[object_id] = s.[object_id]
 AND i.index_id = s.index_id
 AND s.database_id = DB_ID()
-ORDER BY user_seeks + user_scans + user_lookups DESC OPTION (RECOMPILE); -- Order by reads
+LEFT OUTER JOIN sys.tables AS t WITH (NOLOCK)
+ON t.[object_id] = i.[object_id]
+WHERE OBJECTPROPERTY(i.[object_id],'IsUserTable') = 1
+ORDER BY s.user_seeks + s.user_scans + s.user_lookups DESC OPTION (RECOMPILE); -- Order by reads
 ------
 
 
@@ -1237,16 +1242,19 @@ ORDER BY user_seeks + user_scans + user_lookups DESC OPTION (RECOMPILE); -- Orde
 
 
 --- Index Read/Write stats (all tables in current DB) ordered by Writes  (Query 57) (Overall Index Usage - Writes)
-SELECT OBJECT_NAME(s.[object_id]) AS [ObjectName], i.name AS [IndexName], i.index_id,
-	   s.user_updates AS [Writes], user_seeks + user_scans + user_lookups AS [Reads], 
-	   i.type_desc AS [IndexType], i.fill_factor AS [FillFactor], i.has_filter, i.filter_definition,
+SELECT SCHEMA_NAME(t.[schema_id]) AS [SchemaName],OBJECT_NAME(i.[object_id]) AS [ObjectName], 
+	   i.[name] AS [IndexName], i.index_id,
+	   s.user_updates AS [Writes], s.user_seeks + s.user_scans + s.user_lookups AS [Total Reads], 
+	   i.[type_desc] AS [Index Type], i.fill_factor AS [Fill Factor], i.has_filter, i.filter_definition,
 	   s.last_system_update, s.last_user_update
-FROM sys.dm_db_index_usage_stats AS s WITH (NOLOCK)
-INNER JOIN sys.indexes AS i WITH (NOLOCK)
-ON s.[object_id] = i.[object_id]
-WHERE OBJECTPROPERTY(s.[object_id],'IsUserTable') = 1
+FROM sys.indexes AS i WITH (NOLOCK)
+LEFT OUTER JOIN sys.dm_db_index_usage_stats AS s WITH (NOLOCK)
+ON i.[object_id] = s.[object_id]
 AND i.index_id = s.index_id
 AND s.database_id = DB_ID()
+LEFT OUTER JOIN sys.tables AS t WITH (NOLOCK)
+ON t.[object_id] = i.[object_id]
+WHERE OBJECTPROPERTY(i.[object_id],'IsUserTable') = 1
 ORDER BY s.user_updates DESC OPTION (RECOMPILE);						 -- Order by writes
 ------
 

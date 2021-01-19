@@ -2,6 +2,7 @@ function Set-DbaLogin {
     <#
     .SYNOPSIS
         Set-DbaLogin makes it possible to make changes to one or more logins.
+        SQL Azure DB is not supported.
 
     .DESCRIPTION
         Set-DbaLogin will enable you to change the password, unlock, rename, disable or enable, deny or grant login privileges to the login. It's also possible to add or remove server roles from the login.
@@ -218,7 +219,7 @@ function Set-DbaLogin {
         foreach ($instance in $SqlInstance) {
             # Try connecting to the instance
             try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9 -AzureUnsupported
             } catch {
                 Stop-Function -Message 'Failure' -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }

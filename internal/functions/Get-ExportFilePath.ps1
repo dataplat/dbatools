@@ -1,5 +1,5 @@
 #$FilePath = Get-ExportFilePath -Path $PSBoundParameters.Path -FilePath $PSBoundParameters.FilePath -Type sql -ServerName $instance
-function Get-ExportFilePath ($Path, $FilePath, $Type, $ServerName, [switch]$Unique) {
+function Get-ExportFilePath ($Path, $FilePath, $Type, $ServerName, $DatabaseName, [switch]$Unique) {
     if ($FilePath) {
         return ($ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($FilePath))
     }
@@ -18,6 +18,14 @@ function Get-ExportFilePath ($Path, $FilePath, $Type, $ServerName, [switch]$Uniq
     }
 
     $ServerName = $ServerName.ToString().Replace('\', '$')
+
+    if (Test-Bound DatabaseName) {
+        $DatabaseName = $DatabaseName.Split([IO.Path]::GetInvalidFileNameChars()) -join '$'
+        $prefix = "$ServerName-$DatabaseName"
+    } else {
+        $prefix = "$ServerName"
+    }
+
     $timenow = (Get-Date -uformat (Get-DbatoolsConfigValue -FullName 'Formatting.UFormat'))
     $caller = (Get-PSCallStack)[1].Command.ToString().Replace("Export-Dba", "").ToLower()
 
@@ -25,7 +33,7 @@ function Get-ExportFilePath ($Path, $FilePath, $Type, $ServerName, [switch]$Uniq
         $caller = "replication"
     }
 
-    $finalpath = Join-DbaPath -Path $Path -Child "$servername-$timenow-$caller.$Type"
+    $finalpath = Join-DbaPath -Path $Path -Child "$prefix-$timenow-$caller.$Type"
 
     if ($Unique) {
         if ($null -eq $script:pathcollection) {
