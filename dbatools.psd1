@@ -11,7 +11,7 @@
     RootModule             = 'dbatools.psm1'
 
     # Version number of this module.
-    ModuleVersion          = '1.0.136'
+    ModuleVersion          = '1.0.137'
 
     # ID used to uniquely identify this module
     GUID                   = '9d139310-ce45-41ce-8e8b-d76335aa1789'
@@ -501,6 +501,8 @@
         'Remove-DbaDbData',
         'Test-DbaDbQueryStore',
         'Install-DbaMultiTool',
+        'Remove-DbaAgentOperator',
+        'Remove-DbaDbTableData',
         # noncoresmo
         # SMO issues
         'Export-DbaUser',
@@ -522,6 +524,7 @@
         'Export-DbaRepServerSetting',
         'Get-DbaRepServer',
         'Export-DbaSysDbUserObject',
+        'Move-DbaDbFile'
         'New-DbaAgentOperator',
         # windowsonly
         # solvable filesystem issues or other workarounds

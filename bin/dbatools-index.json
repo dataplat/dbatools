@@ -1271,7 +1271,7 @@
         "CommandName":  "Backup-DbaDatabase",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Backup-DbaDatabase",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eBackup-DbaDatabase -SqlInstance Server1 -Database HR, Finance\nThis will perform a full database backup on the databases HR and Finance on SQL Server Instance Server1 to Server1 default backup directory.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eBackup-DbaDatabase -SqlInstance sql2016 -Path C:\\temp -Database AdventureWorks2014 -Type Full\nBacks up AdventureWorks2014 to sql2016 C:\\temp folder.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eBackup-DbaDatabase -SqlInstance sql2016 -AzureBaseUrl https://dbatoolsaz.blob.core.windows.net/azbackups/ -AzureCredential dbatoolscred -Type Full -CreateFolder\nPerforms a full backup of all databases on the sql2016 instance to their own containers under the https://dbatoolsaz.blob.core.windows.net/azbackups/ container on Azure blog storage using the sql \r\ncredential \"dbatoolscred\" registered on the sql2016 instance.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eBackup-DbaDatabase -SqlInstance sql2016 -AzureBaseUrl https://dbatoolsaz.blob.core.windows.net/azbackups/  -Type Full\nPerforms a full backup of all databases on the sql2016 instance to the https://dbatoolsaz.blob.core.windows.net/azbackups/ container on Azure blog storage using the Shared Access Signature sql \r\ncredential \"https://dbatoolsaz.blob.core.windows.net/azbackups\" registered on the sql2016 instance.\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eBackup-DbaDatabase -SqlInstance Server1\\Prod -Database db1 -Path \\\\filestore\\backups\\servername\\instancename\\dbname\\backuptype -Type Full -ReplaceInName\nPerforms a full backup of db1 into the folder \\\\filestore\\backups\\server1\\prod\\db1\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eBackup-DbaDatabase -SqlInstance Server1\\Prod -Path \\\\filestore\\backups\\servername\\instancename\\dbname\\backuptype -FilePath dbname-backuptype-timestamp.trn -Type Log -ReplaceInName\nPerforms a log backup for every database. For the database db1 this would results in backup files in \\\\filestore\\backups\\server1\\prod\\db1\\Log\\db1-log-31102018.trn\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003eBackup-DbaDatabase -SqlInstance Sql2017 -Database master -FilePath NUL\nPerforms a backup of master, but sends the output to the NUL device (ie; throws it away)\n-------------------------- EXAMPLE 8 --------------------------\nPS C:\\\u003eBackup-DbaDatabase -SqlInstance Sql2016 -Database stripetest -AzureBaseUrl https://az.blob.core.windows.net/sql,https://dbatools.blob.core.windows.net/sql\nPerforms a backup of the database stripetest, striping it across the 2 Azure blob containers at https://az.blob.core.windows.net/sql and https://dbatools.blob.core.windows.net/sql, assuming that \r\nShared Access Signature credentials for both containers exist on the source instance\n-------------------------- EXAMPLE 9 --------------------------\nPS C:\\\u003eBackup-DbaDatabase -SqlInstance Sql2017 -Database master -EncryptionAlgorithm AES256 -EncryptionCertificate BackupCert\nBacks up the master database using the BackupCert certificate and the AES256 algorithm.",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eBackup-DbaDatabase -SqlInstance Server1 -Database HR, Finance\nThis will perform a full database backup on the databases HR and Finance on SQL Server Instance Server1 to Server1 default backup directory.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eBackup-DbaDatabase -SqlInstance sql2016 -Path C:\\temp -Database AdventureWorks2014 -Type Full\nBacks up AdventureWorks2014 to sql2016 C:\\temp folder.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eBackup-DbaDatabase -SqlInstance sql2016 -AzureBaseUrl https://dbatoolsaz.blob.core.windows.net/azbackups/ -AzureCredential dbatoolscred -Type Full -CreateFolder\nPerforms a full backup of all databases on the sql2016 instance to their own containers under the https://dbatoolsaz.blob.core.windows.net/azbackups/ container on Azure blob storage using the sql \r\ncredential \"dbatoolscred\" registered on the sql2016 instance.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eBackup-DbaDatabase -SqlInstance sql2016 -AzureBaseUrl https://dbatoolsaz.blob.core.windows.net/azbackups/  -Type Full\nPerforms a full backup of all databases on the sql2016 instance to the https://dbatoolsaz.blob.core.windows.net/azbackups/ container on Azure blob storage using the Shared Access Signature sql \r\ncredential \"https://dbatoolsaz.blob.core.windows.net/azbackups\" registered on the sql2016 instance.\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eBackup-DbaDatabase -SqlInstance Server1\\Prod -Database db1 -Path \\\\filestore\\backups\\servername\\instancename\\dbname\\backuptype -Type Full -ReplaceInName\nPerforms a full backup of db1 into the folder \\\\filestore\\backups\\server1\\prod\\db1\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eBackup-DbaDatabase -SqlInstance Server1\\Prod -Path \\\\filestore\\backups\\servername\\instancename\\dbname\\backuptype -FilePath dbname-backuptype-timestamp.trn -Type Log -ReplaceInName\nPerforms a log backup for every database. For the database db1 this would results in backup files in \\\\filestore\\backups\\server1\\prod\\db1\\Log\\db1-log-31102018.trn\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003eBackup-DbaDatabase -SqlInstance Sql2017 -Database master -FilePath NUL\nPerforms a backup of master, but sends the output to the NUL device (ie; throws it away)\n-------------------------- EXAMPLE 8 --------------------------\nPS C:\\\u003eBackup-DbaDatabase -SqlInstance Sql2016 -Database stripetest -AzureBaseUrl https://az.blob.core.windows.net/sql,https://dbatools.blob.core.windows.net/sql\nPerforms a backup of the database stripetest, striping it across the 2 Azure blob containers at https://az.blob.core.windows.net/sql and https://dbatools.blob.core.windows.net/sql, assuming that \r\nShared Access Signature credentials for both containers exist on the source instance\n-------------------------- EXAMPLE 9 --------------------------\nPS C:\\\u003eBackup-DbaDatabase -SqlInstance Sql2017 -Database master -EncryptionAlgorithm AES256 -EncryptionCertificate BackupCert\nBacks up the master database using the BackupCert certificate and the AES256 algorithm.",
         "Params":  [
                        [
                            "SqlInstance",
@@ -4586,7 +4586,7 @@
                        ],
                        [
                            "SqlCredential",
-                           "Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).\nWindows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.\nFor MFA support, please use Connect-DbaInstance.",
+                           "Login to the source instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).\nWindows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.\nFor MFA support, please use Connect-DbaInstance.",
                            "",
                            false,
                            "false",
@@ -4604,7 +4604,7 @@
                        ],
                        [
                            "DestinationSqlCredential",
-                           "Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).\nWindows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.\nFor MFA support, please use Connect-DbaInstance.",
+                           "Login to the destination instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).\nWindows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.\nFor MFA support, please use Connect-DbaInstance.",
                            "",
                            false,
                            "false",
@@ -4817,7 +4817,7 @@
                        ],
                        [
                            "SqlCredential",
-                           "Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).\nWindows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.\nFor MFA support, please use Connect-DbaInstance.",
+                           "Login to the source instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).\nWindows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.\nFor MFA support, please use Connect-DbaInstance.",
                            "",
                            false,
                            "false",
@@ -4835,7 +4835,7 @@
                        ],
                        [
                            "DestinationSqlCredential",
-                           "Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).\nWindows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.\nFor MFA support, please use Connect-DbaInstance.",
+                           "Login to the destination instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).\nWindows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.\nFor MFA support, please use Connect-DbaInstance.",
                            "",
                            false,
                            "false",
@@ -7886,7 +7886,7 @@
         "CommandName":  "Export-DbaDacPackage",
         "Availability":  "Windows only",
         "Links":  "https://dbatools.io/Export-DbaDacPackage",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eExport-DbaDacPackage -SqlInstance sql2016 -Database SharePoint_Config\nExports the dacpac for SharePoint_Config on sql2016 to $home\\Documents\\SharePoint_Config.dacpac\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003e$options = New-DbaDacOption -Type Dacpac -Action Export\nPS C:\\\u003e $options.ExtractAllTableData = $true\r\nPS C:\\\u003e $options.CommandTimeout = 0\r\nPS C:\\\u003e Export-DbaDacPackage -SqlInstance sql2016 -Database DB1 -Options $options\nUses DacOption object to set the CommandTimeout to 0 then extracts the dacpac for DB1 on sql2016 to $home\\Documents\\DB1.dacpac including all table data.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eExport-DbaDacPackage -SqlInstance sql2016 -AllUserDatabases -ExcludeDatabase \"DBMaintenance\",\"DBMonitoring\" -Path \"C:\\temp\"\nExports dacpac packages for all USER databases, excluding \"DBMaintenance\" \u0026 \"DBMonitoring\", on sql2016 and saves them to C:\\temp\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003e$moreparams = \"/OverwriteFiles:$true /Quiet:$true\"\nPS C:\\\u003e Export-DbaDacPackage -SqlInstance sql2016 -Database SharePoint_Config -Path C:\\temp -ExtendedParameters $moreparams\nUsing extended parameters to over-write the files and performs the extraction in quiet mode. Uses command line instead of SMO behind the scenes.",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eExport-DbaDacPackage -SqlInstance sql2016 -Database SharePoint_Config -FilePath C:\\SharePoint_Config.dacpac\nExports the dacpac for SharePoint_Config on sql2016 to C:\\SharePoint_Config.dacpac\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003e$options = New-DbaDacOption -Type Dacpac -Action Export\nPS C:\\\u003e $options.ExtractAllTableData = $true\r\nPS C:\\\u003e $options.CommandTimeout = 0\r\nPS C:\\\u003e Export-DbaDacPackage -SqlInstance sql2016 -Database DB1 -DacOption $options\nUses DacOption object to set the CommandTimeout to 0 then extracts the dacpac for DB1 on sql2016 to C:\\Users\\username\\Documents\\DbatoolsExport\\sql2016-DB1-20201227140759-dacpackage.dacpac including \r\nall table data. As noted the generated filename will contain the server name, database name, and the current timestamp in the \"%Y%m%d%H%M%S\" format.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eExport-DbaDacPackage -SqlInstance sql2016 -AllUserDatabases -ExcludeDatabase \"DBMaintenance\",\"DBMonitoring\" -Path \"C:\\temp\"\nExports dacpac packages for all USER databases, excluding \"DBMaintenance\" \u0026 \"DBMonitoring\", on sql2016 and saves them to C:\\temp. The generated filename(s) will contain the server name, database \r\nname, and the current timestamp in the \"%Y%m%d%H%M%S\" format.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003e$moreparams = \"/OverwriteFiles:$true /Quiet:$true\"\nPS C:\\\u003e Export-DbaDacPackage -SqlInstance sql2016 -Database SharePoint_Config -Path C:\\temp -ExtendedParameters $moreparams\nUsing extended parameters to over-write the files and performs the extraction in quiet mode to C:\\temp\\sql2016-SharePoint_Config-20201227140759-dacpackage.dacpac. Uses command line instead of SMO \r\nbehind the scenes. As noted the generated filename will contain the server name, database name, and the current timestamp in the \"%Y%m%d%H%M%S\" format.",
         "Params":  [
                        [
                            "SqlInstance",
@@ -21502,7 +21502,7 @@
     },
     {
         "Name":  "Get-DbaPermission",
-        "Description":  "Retrieves a list of permissions\n\nPermissions link principals to securables.\nPrincipals exist on Windows, Instance and Database level.\nSecurables exist on Instance and Database level.\nA permission state can be GRANT, DENY or REVOKE.\nThe permission type can be SELECT, CONNECT, EXECUTE and more.\n\nSee https://msdn.microsoft.com/en-us/library/ms191291.aspx for more information",
+        "Description":  "Retrieves a list of permissions\n\nPermissions link principals to securables.\nPrincipals exist on Windows, Instance and Database level.\nSecurables exist on Instance and Database level.\nA permission state can be GRANT, DENY or REVOKE.\nThe permission type can be SELECT, CONNECT, EXECUTE and more.\nThe CONTROL permission is also returned for dbo users, db_owners, and schema owners.\nTo see server-level implicit permissions via fixed roles run the following command: Get-DbaServerRole -SqlInstance serverName | Select-Object *\n\nSee https://msdn.microsoft.com/en-us/library/ms191291.aspx for more information",
         "Tags":  [
                      "Permissions",
                      "Databases"
@@ -30950,12 +30950,13 @@
     },
     {
         "Name":  "Invoke-DbaDbPiiScan",
-        "Description":  "This command will go through the tables in your database and assess each column.\nIt will first check the columns names if it was named in such a way that it would indicate PII.\nThe next thing that it will do is pattern recognition by looking into the data from the table.",
+        "Description":  "This command will go through the tables in your database and assess each column.\nIt will first check the columns names if it was named in such a way that it would indicate PII.\nThe next thing that it will do is pattern recognition by looking into the data from the table.\nCustom scan definitions can be specified using the formats seen in \u003cdbatools module root\u003e\\bin\\datamasking\\pii-knownnames.json and \u003cdbatools module root\u003e\\bin\\datamasking\\pii-patterns.json.",
         "Tags":  [
                      "Data Masking",
                      "Database",
                      "Personal Information",
-                     "GDPR"
+                     "GDPR",
+                     "Policy Compliance"
                  ],
         "Synopsis":  "Command to return any columns that could potentially contain PII (Personal Identifiable Information)",
         "Alias":  "",
@@ -31057,7 +31058,7 @@
                        ],
                        [
                            "KnownNameFilePath",
-                           "Points to a file containing the custom known names",
+                           "Points to a file containing the custom known names. Custom scan definitions can be specified using the format seen in \u003cdbatools module root\u003e\\bin\\datamasking\\pii-knownnames.json.",
                            "",
                            false,
                            "false",
@@ -31066,7 +31067,7 @@
                        ],
                        [
                            "PatternFilePath",
-                           "Points to a file containing the custom patterns",
+                           "Points to a file containing the custom patterns. Custom scan definitions can be specified using the format seen in \u003cdbatools module root\u003e\\bin\\datamasking\\pii-patterns.json.",
                            "",
                            false,
                            "false",
@@ -33030,6 +33031,133 @@
                        ]
                    ],
         "Syntax":  "Mount-DbaDatabase [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [-Database] \u003cString[]\u003e [[-FileStructure] \u003cStringCollection\u003e] [[-DatabaseOwner] \u003cString\u003e] [[-AttachOption] \u003cString\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+    },
+    {
+        "Name":  "Move-DbaDbFile",
+        "Description":  "Moves database files from one local drive or folder to another.\nIt will put database offline, update metadata and set it online again.\nIt can also be used to move database files on an AG secondary.",
+        "Tags":  [
+                     "Database",
+                     "Move",
+                     "File"
+                 ],
+        "Synopsis":  "Moves database files from one local drive or folder to another.",
+        "Alias":  "",
+        "Author":  "ClÃ¡udio Silva (@claudioessilva), claudioeesilva.eu",
+        "CommandName":  "Move-DbaDbFile",
+        "Availability":  "Windows only",
+        "Links":  "https://dbatools.io/Move-DbaDbFile",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eMove-DbaDbFile -SqlInstance sql2017 -Database dbatools -FileType Data -FileDestination \"D:\\DATA2\"\nCopy all data files of dbatools database on sql2017 instance to the \"D:\\DATA2\" path.\r\nBefore it puts database offline and after copy each file will update database metadata and it ends by set the database back online\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003e$fileToMove=@{\n\u003e\u003e \u0027dbatools\u0027=\u0027D:\\DATA3\u0027\r\n\u003e\u003e \u0027dbatools_log\u0027=\u0027D:\\LOG2\u0027\r\n\u003e\u003e }\r\nPS C:\\\u003e Move-DbaDbFile -SqlInstance sql2019 -Database dbatools -FileToMove $fileToMove\nDeclares a hashtable that says for each logical file the new path.\r\nCopy each dbatools database file referenced on the hashtable on the sql2019 instance from the current location to the new mentioned location (D:\\DATA3 and D:\\LOG2 paths).\r\nBefore it puts database offline and after copy each file will update database metadata and it ends by set the database back online\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eMove-DbaDbFile -SqlInstance sql2017 -Database dbatools -FileStructureOnly\nShows the current database file structure (without filenames). Example: \u0027dbatools\u0027=\u0027D:\\Data\u0027",
+        "Params":  [
+                       [
+                           "SqlInstance",
+                           "The target SQL Server instance or instances.",
+                           "",
+                           true,
+                           "true (ByValue)",
+                           "",
+                           ""
+                       ],
+                       [
+                           "SqlCredential",
+                           "Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).\nWindows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.\nFor MFA support, please use Connect-DbaInstance.",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "Database",
+                           "The database to be moved.",
+                           "",
+                           true,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "FileType",
+                           "Define the file type to move; accepted values: Data, Log or Both.\r\nDefault value: Both\r\nExclusive, cannot be used in conjunction with FileToMove.",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           "Data,Log,Both"
+                       ],
+                       [
+                           "FileDestination",
+                           "Destination directory of the database file(s).",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "FileToMove",
+                           "Pass a hashtable that contains a list of database files and their destination path.\r\nKey and value should be the logical name and then the path (e.g. \u0027db1_log\u0027 = \u0027D:\\mssql\\logs\u0027)",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "DeleteAfterMove",
+                           "Remove the source database file(s) after the successful move operation.",
+                           "",
+                           false,
+                           "false",
+                           "False",
+                           ""
+                       ],
+                       [
+                           "FileStructureOnly",
+                           "Return a hashtable of the Database file structure.\r\nModifying the hashtable it can then be utilized with the FileToMove parameter",
+                           "",
+                           false,
+                           "false",
+                           "False",
+                           ""
+                       ],
+                       [
+                           "Force",
+                           "Database(s) is set offline as part of the move process, this will utilize WITH ROLLBACK IMMEDIATE and rollback any open transaction running against the database(s).",
+                           "",
+                           false,
+                           "false",
+                           "False",
+                           ""
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "",
+                           false,
+                           "false",
+                           "False",
+                           ""
+                       ],
+                       [
+                           "WhatIf",
+                           "Shows what would happen if the command were to run. No actions are actually performed.",
+                           "wi",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "Confirm",
+                           "Prompts you for confirmation before executing any changing operations within the command.",
+                           "cf",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ]
+                   ],
+        "Syntax":  "Move-DbaDbFile -SqlInstance \u003cDbaInstanceParameter\u003e [-SqlCredential \u003cPSCredential\u003e] -Database \u003cString\u003e [-FileType \u003cString\u003e] [-FileDestination \u003cString\u003e] [-DeleteAfterMove] [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\nMove-DbaDbFile -SqlInstance \u003cDbaInstanceParameter\u003e [-SqlCredential \u003cPSCredential\u003e] -Database \u003cString\u003e [-FileToMove \u003cHashtable\u003e] [-DeleteAfterMove] [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\nMove-DbaDbFile -SqlInstance \u003cDbaInstanceParameter\u003e [-SqlCredential \u003cPSCredential\u003e] -Database \u003cString\u003e [-FileStructureOnly] [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Move-DbaRegServer",
@@ -37315,7 +37443,7 @@
         "CommandName":  "New-DbaDbTable",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/New-DbaDbTable",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003e$col = @{\n\u003e\u003e Name      = \u0027test\u0027\r\n\u003e\u003e Type      = \u0027varchar\u0027\r\n\u003e\u003e MaxLength = 20\r\n\u003e\u003e Nullable  = $true\r\n\u003e\u003e }\r\nPS C:\\\u003e New-DbaDbTable -SqlInstance sql2017 -Database tempdb -Name testtable -ColumnMap $col\nCreates a new table on sql2017 in tempdb with the name testtable and one column\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003e# Create collection\n\u003e\u003e $cols = @()\n\u003e\u003e # Add columns to collection\r\n\u003e\u003e $cols += @{\r\n\u003e\u003e     Name      = \u0027test\u0027\r\n\u003e\u003e     Type      = \u0027varchar\u0027\r\n\u003e\u003e     MaxLength = 20\r\n\u003e\u003e     Nullable  = $true\r\n\u003e\u003e }\r\nPS C:\\\u003e $cols += @{\r\n\u003e\u003e     Name      = \u0027test2\u0027\r\n\u003e\u003e     Type      = \u0027int\u0027\r\n\u003e\u003e     Nullable  = $false\r\n\u003e\u003e }\r\nPS C:\\\u003e $cols += @{\r\n\u003e\u003e     Name      = \u0027test3\u0027\r\n\u003e\u003e     Type      = \u0027decimal\u0027\r\n\u003e\u003e     MaxLength = 9\r\n\u003e\u003e     Nullable  = $true\r\n\u003e\u003e }\r\nPS C:\\\u003e $cols += @{\r\n\u003e\u003e     Name      = \u0027test4\u0027\r\n\u003e\u003e     Type      = \u0027decimal\u0027\r\n\u003e\u003e     Precision = 8\r\n\u003e\u003e     Scale = 2\r\n\u003e\u003e     Nullable  = $false\r\n\u003e\u003e }\r\n\u003e\u003e PS C:\\\u003e $cols += @{\r\n\u003e\u003e     Name      = \u0027test5\u0027\r\n\u003e\u003e     Type      = \u0027Nvarchar\u0027\r\n\u003e\u003e     MaxLength = 50\r\n\u003e\u003e     Nullable  =  $false\r\n\u003e\u003e     Default  =  \u0027Hello\u0027\r\n\u003e\u003e     DefaultName = \u0027DF_Name_test5\u0027\r\n\u003e\u003e }\r\n\u003e\u003e PS C:\\\u003e $cols += @{\r\n\u003e\u003e     Name      = \u0027test6\u0027\r\n\u003e\u003e     Type      = \u0027int\u0027\r\n\u003e\u003e     Nullable  =  $false\r\n\u003e\u003e     Default  =  \u00270\u0027\r\n\u003e\u003e }\r\n\u003e\u003e PS C:\\\u003e $cols += @{\r\n\u003e\u003e     Name      = \u0027test7\u0027\r\n\u003e\u003e     Type      = \u0027smallint\u0027\r\n\u003e\u003e     Nullable  =  $false\r\n\u003e\u003e     Default  =  100\r\n\u003e\u003e }\r\n\u003e\u003e PS C:\\\u003e $cols += @{\r\n\u003e\u003e     Name      = \u0027test8\u0027\r\n\u003e\u003e     Type      = \u0027Nchar\u0027\r\n\u003e\u003e     MaxLength = 3\r\n\u003e\u003e     Nullable  =  $false\r\n\u003e\u003e     Default  =  \u0027ABC\u0027\r\n\u003e\u003e }\r\n\u003e\u003e PS C:\\\u003e $cols += @{\r\n\u003e\u003e     Name      = \u0027test9\u0027\r\n\u003e\u003e     Type      = \u0027char\u0027\r\n\u003e\u003e     MaxLength = 4\r\n\u003e\u003e     Nullable  =  $false\r\n\u003e\u003e     Default  =  \u0027XPTO\u0027\r\n\u003e\u003e }\r\n\u003e\u003e PS C:\\\u003e $cols += @{\r\n\u003e\u003e     Name      = \u0027test10\u0027\r\n\u003e\u003e     Type      = \u0027datetime\u0027\r\n\u003e\u003e     Nullable  =  $false\r\n\u003e\u003e     Default  =  \u0027GETDATE()\u0027\r\n\u003e\u003e }\nPS C:\\\u003e New-DbaDbTable -SqlInstance sql2017 -Database tempdb -Name testtable -ColumnMap $cols\nCreates a new table on sql2017 in tempdb with the name testtable and ten columns.",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003e$col = @{\n\u003e\u003e Name      = \u0027test\u0027\r\n\u003e\u003e Type      = \u0027varchar\u0027\r\n\u003e\u003e MaxLength = 20\r\n\u003e\u003e Nullable  = $true\r\n\u003e\u003e }\r\nPS C:\\\u003e New-DbaDbTable -SqlInstance sql2017 -Database tempdb -Name testtable -ColumnMap $col\nCreates a new table on sql2017 in tempdb with the name testtable and one column\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003e# Create collection\n\u003e\u003e $cols = @()\n\u003e\u003e # Add columns to collection\r\n\u003e\u003e $cols += @{\r\n\u003e\u003e     Name      = \u0027testId\u0027\r\n\u003e\u003e     Type      = \u0027int\u0027\r\n\u003e\u003e     Identity  = $true\r\n\u003e\u003e }\r\n\u003e\u003e $cols += @{\r\n\u003e\u003e     Name      = \u0027test\u0027\r\n\u003e\u003e     Type      = \u0027varchar\u0027\r\n\u003e\u003e     MaxLength = 20\r\n\u003e\u003e     Nullable  = $true\r\n\u003e\u003e }\r\nPS C:\\\u003e $cols += @{\r\n\u003e\u003e     Name      = \u0027test2\u0027\r\n\u003e\u003e     Type      = \u0027int\u0027\r\n\u003e\u003e     Nullable  = $false\r\n\u003e\u003e }\r\nPS C:\\\u003e $cols += @{\r\n\u003e\u003e     Name      = \u0027test3\u0027\r\n\u003e\u003e     Type      = \u0027decimal\u0027\r\n\u003e\u003e     MaxLength = 9\r\n\u003e\u003e     Nullable  = $true\r\n\u003e\u003e }\r\nPS C:\\\u003e $cols += @{\r\n\u003e\u003e     Name      = \u0027test4\u0027\r\n\u003e\u003e     Type      = \u0027decimal\u0027\r\n\u003e\u003e     Precision = 8\r\n\u003e\u003e     Scale = 2\r\n\u003e\u003e     Nullable  = $false\r\n\u003e\u003e }\r\n\u003e\u003e PS C:\\\u003e $cols += @{\r\n\u003e\u003e     Name      = \u0027test5\u0027\r\n\u003e\u003e     Type      = \u0027Nvarchar\u0027\r\n\u003e\u003e     MaxLength = 50\r\n\u003e\u003e     Nullable  =  $false\r\n\u003e\u003e     Default  =  \u0027Hello\u0027\r\n\u003e\u003e     DefaultName = \u0027DF_Name_test5\u0027\r\n\u003e\u003e }\r\n\u003e\u003e PS C:\\\u003e $cols += @{\r\n\u003e\u003e     Name      = \u0027test6\u0027\r\n\u003e\u003e     Type      = \u0027int\u0027\r\n\u003e\u003e     Nullable  =  $false\r\n\u003e\u003e     Default  =  \u00270\u0027\r\n\u003e\u003e }\r\n\u003e\u003e PS C:\\\u003e $cols += @{\r\n\u003e\u003e     Name      = \u0027test7\u0027\r\n\u003e\u003e     Type      = \u0027smallint\u0027\r\n\u003e\u003e     Nullable  =  $false\r\n\u003e\u003e     Default  =  100\r\n\u003e\u003e }\r\n\u003e\u003e PS C:\\\u003e $cols += @{\r\n\u003e\u003e     Name      = \u0027test8\u0027\r\n\u003e\u003e     Type      = \u0027Nchar\u0027\r\n\u003e\u003e     MaxLength = 3\r\n\u003e\u003e     Nullable  =  $false\r\n\u003e\u003e     Default  =  \u0027ABC\u0027\r\n\u003e\u003e }\r\n\u003e\u003e PS C:\\\u003e $cols += @{\r\n\u003e\u003e     Name      = \u0027test9\u0027\r\n\u003e\u003e     Type      = \u0027char\u0027\r\n\u003e\u003e     MaxLength = 4\r\n\u003e\u003e     Nullable  =  $false\r\n\u003e\u003e     Default  =  \u0027XPTO\u0027\r\n\u003e\u003e }\r\n\u003e\u003e PS C:\\\u003e $cols += @{\r\n\u003e\u003e     Name      = \u0027test10\u0027\r\n\u003e\u003e     Type      = \u0027datetime\u0027\r\n\u003e\u003e     Nullable  =  $false\r\n\u003e\u003e     Default  =  \u0027GETDATE()\u0027\r\n\u003e\u003e }\nPS C:\\\u003e New-DbaDbTable -SqlInstance sql2017 -Database tempdb -Name testtable -ColumnMap $cols\nCreates a new table on sql2017 in tempdb with the name testtable and ten columns.",
         "Params":  [
                        [
                            "SqlInstance",
@@ -39698,19 +39826,20 @@
     },
     {
         "Name":  "Publish-DbaDacPackage",
-        "Description":  "Publishes the dacpac taken from SSDT project or Export-DbaDacPackage. Changing the schema to match the dacpac and also to run any scripts in the dacpac (pre/post deploy scripts).",
+        "Description":  "Publishes the dacpac taken from SSDT project or Export-DbaDacPackage. Changing the schema to match the dacpac and also to run any scripts in the dacpac (pre/post deploy scripts) or bacpac.",
         "Tags":  [
                      "Migration",
                      "Database",
-                     "Dacpac"
+                     "Dacpac",
+                     "Bacpac"
                  ],
-        "Synopsis":  "The Publish-DbaDacPackage command takes a dacpac and publishes it to a database.",
+        "Synopsis":  "The Publish-DbaDacPackage command takes a dacpac or bacpac and publishes it to a database.",
         "Alias":  "",
         "Author":  "Richie lee (@richiebzzzt)",
         "CommandName":  "Publish-DbaDacPackage",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Publish-DbaDacPackage",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003e$options = New-DbaDacOption -Type Dacpac -Action Publish\nPS C:\\\u003e $options.DeployOptions.DropObjectsNotInSource = $true\r\nPS C:\\\u003e Publish-DbaDacPackage -SqlInstance sql2016 -Database DB1 -DacOption $options -Path c:\\temp\\db.dacpac\nUses DacOption object to set Deployment Options and updates DB1 database on sql2016 from the db.dacpac dacpac file, dropping objects that are missing from source.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003ePublish-DbaDacPackage -SqlInstance sql2017 -Database WideWorldImporters -Path C:\\temp\\sql2016-WideWorldImporters.dacpac -PublishXml C:\\temp\\sql2016-WideWorldImporters-publish.xml -Confirm\nUpdates WideWorldImporters on sql2017 from the sql2016-WideWorldImporters.dacpac using the sql2016-WideWorldImporters-publish.xml publish profile. Prompts for confirmation.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eNew-DbaDacProfile -SqlInstance sql2016 -Database db2 -Path C:\\temp\nPS C:\\\u003e Export-DbaDacPackage -SqlInstance sql2016 -Database db2 | Publish-DbaDacPackage -PublishXml C:\\temp\\sql2016-db2-publish.xml -Database db1, db2 -SqlInstance sql2017\nCreates a publish profile at C:\\temp\\sql2016-db2-publish.xml, exports the .dacpac to $home\\Documents\\sql2016-db2.dacpac. Does not prompt for confirmation.\r\nthen publishes it to the sql2017 server database db2\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003e$loc = \"C:\\Users\\bob\\source\\repos\\Microsoft.Data.Tools.Msbuild\\lib\\net46\\Microsoft.SqlServer.Dac.dll\"\nPS C:\\\u003e Publish-DbaDacPackage -SqlInstance \"local\" -Database WideWorldImporters -Path C:\\temp\\WideWorldImporters.dacpac -PublishXml C:\\temp\\WideWorldImporters.publish.xml -DacFxPath $loc -Confirm\nPublishes the dacpac using a specific dacfx library. Prompts for confirmation.\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003ePublish-DbaDacPackage -SqlInstance sql2017 -Database WideWorldImporters -Path C:\\temp\\sql2016-WideWorldImporters.dacpac -PublishXml C:\\temp\\sql2016-WideWorldImporters-publish.xml \r\n-GenerateDeploymentScript -ScriptOnly\nDoes not deploy the changes, but will generate the deployment script that would be executed against WideWorldImporters.",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003e$options = New-DbaDacOption -Type Dacpac -Action Publish\nPS C:\\\u003e $options.DeployOptions.DropObjectsNotInSource = $true\r\nPS C:\\\u003e Publish-DbaDacPackage -SqlInstance sql2016 -Database DB1 -DacOption $options -Path c:\\temp\\db.dacpac\nUses DacOption object to set Deployment Options and updates DB1 database on sql2016 from the db.dacpac dacpac file, dropping objects that are missing from source.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003ePublish-DbaDacPackage -SqlInstance sql2017 -Database WideWorldImporters -Path C:\\temp\\sql2016-WideWorldImporters.dacpac -PublishXml C:\\temp\\sql2016-WideWorldImporters-publish.xml -Confirm\nUpdates WideWorldImporters on sql2017 from the sql2016-WideWorldImporters.dacpac using the sql2016-WideWorldImporters-publish.xml publish profile. Prompts for confirmation.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eNew-DbaDacProfile -SqlInstance sql2016 -Database db2 -Path C:\\temp\nPS C:\\\u003e Export-DbaDacPackage -SqlInstance sql2016 -Database db2 | Publish-DbaDacPackage -PublishXml C:\\temp\\sql2016-db2-publish.xml -Database db1, db2 -SqlInstance sql2017\nCreates a publish profile at C:\\temp\\sql2016-db2-publish.xml, exports the .dacpac to $home\\Documents\\sql2016-db2.dacpac. Does not prompt for confirmation.\r\nthen publishes it to the sql2017 server database db2\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003e$loc = \"C:\\Users\\bob\\source\\repos\\Microsoft.Data.Tools.Msbuild\\lib\\net46\\Microsoft.SqlServer.Dac.dll\"\nPS C:\\\u003e Publish-DbaDacPackage -SqlInstance \"local\" -Database WideWorldImporters -Path C:\\temp\\WideWorldImporters.dacpac -PublishXml C:\\temp\\WideWorldImporters.publish.xml -DacFxPath $loc -Confirm\nPublishes the dacpac using a specific dacfx library. Prompts for confirmation.\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003ePublish-DbaDacPackage -SqlInstance sql2017 -Database WideWorldImporters -Path C:\\temp\\sql2016-WideWorldImporters.dacpac -PublishXml C:\\temp\\sql2016-WideWorldImporters-publish.xml -ScriptOnly\nDoes not deploy the changes, but will generate the deployment script that would be executed against WideWorldImporters.",
         "Params":  [
                        [
                            "SqlInstance",
@@ -39743,7 +39872,7 @@
                            "PublishXml",
                            "Specifies the publish profile which will include options and sqlCmdVariables.",
                            "",
-                           true,
+                           false,
                            "false",
                            "",
                            ""
@@ -39767,15 +39896,6 @@
                            ""
                        ],
                        [
-                           "GenerateDeploymentScript",
-                           "If this switch is enabled, the publish script will be generated.",
-                           "",
-                           false,
-                           "false",
-                           "False",
-                           ""
-                       ],
-                       [
                            "GenerateDeploymentReport",
                            "If this switch is enabled, the publish XML report  will be generated.",
                            "",
@@ -39786,7 +39906,7 @@
                        ],
                        [
                            "ScriptOnly",
-                           "If this switch is enabled, only the change scripts will be generated.",
+                           "If this switch is enabled the publish script will be generated.",
                            "",
                            false,
                            "false",
@@ -39808,7 +39928,7 @@
                            "",
                            false,
                            "false",
-                           "\"$home\\Documents\"",
+                           "(Get-DbatoolsConfigValue -FullName \u0027Path.DbatoolsExport\u0027)",
                            ""
                        ],
                        [
@@ -39866,7 +39986,7 @@
                            ""
                        ]
                    ],
-        "Syntax":  "Publish-DbaDacPackage [-SqlInstance \u003cDbaInstanceParameter[]\u003e] [-SqlCredential \u003cPSCredential\u003e] -Path \u003cString\u003e -Database \u003cString[]\u003e [-ConnectionString \u003cString[]\u003e] [-ScriptOnly] [-Type \u003cString\u003e] [-OutputPath \u003cString\u003e] [-IncludeSqlCmdVars] [-DacOption \u003cObject\u003e] [-EnableException] [-DacFxPath \u003cString\u003e] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\nPublish-DbaDacPackage [-SqlInstance \u003cDbaInstanceParameter[]\u003e] [-SqlCredential \u003cPSCredential\u003e] -Path \u003cString\u003e -PublishXml \u003cString\u003e -Database \u003cString[]\u003e [-ConnectionString \u003cString[]\u003e] [-GenerateDeploymentScript] [-GenerateDeploymentReport] [-ScriptOnly] [-Type \u003cString\u003e] [-OutputPath \u003cString\u003e] [-IncludeSqlCmdVars] [-EnableException] [-DacFxPath \u003cString\u003e] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Publish-DbaDacPackage [-SqlInstance \u003cDbaInstanceParameter[]\u003e] [-SqlCredential \u003cPSCredential\u003e] -Path \u003cString\u003e -Database \u003cString[]\u003e [-ConnectionString \u003cString[]\u003e] [-GenerateDeploymentReport] [-ScriptOnly] [-Type \u003cString\u003e] [-OutputPath \u003cString\u003e] [-IncludeSqlCmdVars] [-DacOption \u003cObject\u003e] [-EnableException] [-DacFxPath \u003cString\u003e] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\nPublish-DbaDacPackage [-SqlInstance \u003cDbaInstanceParameter[]\u003e] [-SqlCredential \u003cPSCredential\u003e] -Path \u003cString\u003e [-PublishXml \u003cString\u003e] -Database \u003cString[]\u003e [-ConnectionString \u003cString[]\u003e] [-GenerateDeploymentReport] [-ScriptOnly] [-Type \u003cString\u003e] [-OutputPath \u003cString\u003e] [-IncludeSqlCmdVars] [-EnableException] [-DacFxPath \u003cString\u003e] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Read-DbaAuditFile",
@@ -40807,6 +40927,78 @@
                        ]
                    ],
         "Syntax":  "Remove-DbaAgentJobStep [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [-Job] \u003cObject[]\u003e [-StepName] \u003cString\u003e [[-Mode] {Strict | Lazy | Report}] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+    },
+    {
+        "Name":  "Remove-DbaAgentOperator",
+        "Description":  "Drop an operator from SQL Agent.",
+        "Tags":  [
+                     "Agent",
+                     "Operator"
+                 ],
+        "Synopsis":  "Removes a new operator on an instance.",
+        "Alias":  "",
+        "Author":  "Tracy Boggiano (@TracyBoggiano), databasesuperhero.com",
+        "CommandName":  "Remove-DbaAgentOperator",
+        "Availability":  "Windows, Linux, macOS",
+        "Links":  "https://dbatools.io/Remove-DbaAgentOperator",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS:\\\u003eRemove-DbaAgentOperator -SqlInstance sql01 -Operator DBA\nThis removes an operator named DBA from the instance.",
+        "Params":  [
+                       [
+                           "SqlInstance",
+                           "The target SQL Server instance or instances. You must have sysadmin access and server version must be SQL Server version 2000 or greater.",
+                           "",
+                           true,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "SqlCredential",
+                           "Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).\nWindows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.\nFor MFA support, please use Connect-DbaInstance.",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "Operator",
+                           "Name of the operator in SQL Agent.",
+                           "",
+                           true,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "",
+                           false,
+                           "false",
+                           "False",
+                           ""
+                       ],
+                       [
+                           "WhatIf",
+                           "Shows what would happen if the command were to run. No actions are actually performed.",
+                           "wi",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "Confirm",
+                           "Prompts you for confirmation before executing any changing operations within the command.",
+                           "cf",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ]
+                   ],
+        "Syntax":  "Remove-DbaAgentOperator [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [-Operator] \u003cString\u003e [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Remove-DbaAgentSchedule",
@@ -42863,6 +43055,156 @@
                        ]
                    ],
         "Syntax":  "Remove-DbaDbSnapshot [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cString[]\u003e] [[-ExcludeDatabase] \u003cString[]\u003e] [[-Snapshot] \u003cString[]\u003e] [[-InputObject] \u003cDatabase[]\u003e] [-AllSnapshots] [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+    },
+    {
+        "Name":  "Remove-DbaDbTableData",
+        "Description":  "This command does a batch delete of table data using the technique described by Aaron Bertrand here: https://sqlperformance.com/2013/03/io-subsystem/chunk-deletes. The main goal of this command is to ensure that the log file size is controlled while deleting data. This command can be used for doing both very large deletes or small deletes. Foreign keys are not temporarily removed, so the caller needs to perform deletes in the correct order with dependent tables or enable cascading deletes. When a database is using the full or bulk_logged recovery model this command will take log backups at the end of each batch if the -LogBackupPath or -AzureBaseUrl param is specified. If the database is using the simple recovery model then CHECKPOINTs will be performed for on-prem SQL Server databases. The object returned will contain metadata about the batch deletion process including the log backup details.\n\nThere are two categories of use cases for this command:\n1. Simplistic deletions from a table. In this scenario use the -Table and -BatchSize parameters. The DELETE statement is auto-generated by the this command.\n2. Complex deletions based on a join, where clause, or an order by clause. In this scenario use the -DeleteSql parameter to specify the DELETE statement.",
+        "Tags":  [
+                     "Data",
+                     "Database",
+                     "Delete",
+                     "LogFile",
+                     "Performance",
+                     "Remove",
+                     "Space",
+                     "Table"
+                 ],
+        "Synopsis":  "Removes table data using a batch technique. Databases in both on-prem SQL Server and Azure SQL Database are supported.",
+        "Alias":  "",
+        "Author":  "Adam Lancaster https://github.com/lancasteradam",
+        "CommandName":  "Remove-DbaDbTableData",
+        "Availability":  "Windows, Linux, macOS",
+        "Links":  "https://dbatools.io/Remove-DbaDbTableData",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eRemove-DbaDbTableData -SqlInstance localhost -Database TestDb -Table dbo.Test -BatchSize 1000000 -LogBackupPath E:\\LogBackups -Confirm:$false\nRemoves all data from the dbo.Test table in the TestDb database on the local SQL instance. The deletes are dones in batches of 1000000 rows each and the log backups are written to E:\\LogBackups.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eRemove-DbaDbTableData -SqlInstance localhost -Database TestDb -DeleteSql \"DELETE TOP (1000000) deleteFromTable FROM dbo.Test deleteFromTable LEFT JOIN dbo.Test2 b ON deleteFromTable.Id = b.Id\" \r\n-LogBackupPath E:\\LogBackups -Confirm:$false\nRemoves data from the dbo.Test table in the TestDb database on the local SQL instance. When specifying -DeleteSql the DELETE statement needs to specify the TOP (N) clause. In this example the deletes \r\nare done in batches of 1000000 rows each and the log backups are written to E:\\LogBackups.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eRemove-DbaDbTableData -SqlInstance localhost -Database TestDb -Table dbo.Test -DeleteSql \"WITH ToDelete AS (SELECT TOP (1000000) Id FROM dbo.Test ORDER BY Id DESC;) DELETE FROM ToDelete;\" \r\n-LogBackupPath E:\\LogBackups -Confirm:$false\nRemoves data from the dbo.Test table based on the DELETE statement specified in the -DeleteSql. The deletes occur in the TestDb database on the local SQL instance. The deletes are dones in batches of \r\n1000000 rows each and the log backups are written to E:\\LogBackups.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaDatabase -SqlInstance localhost -Database TestDb1, TestDb2  | Remove-DbaDbTableData -Table dbo.Test -BatchSize 1000000 -LogBackupPath E:\\LogBackups -Confirm:$false\nRemoves data from the dbo.Test table in the TestDb1 and TestDb2 databases on the local SQL instance. The deletes are dones in batches of 1000000 rows each and the log backups are written to \r\nE:\\LogBackups.\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003e$server, $server2 | Remove-DbaDbTableData -Database TestDb -Table dbo.Test -BatchSize 1000000 -LogBackupPath E:\\LogBackups -Confirm:$false\nRemoves data from the dbo.Test table in the TestDb database on the SQL instances represented by $server and $server2. The deletes are dones in batches of 1000000 rows each and the log backups are \r\nwritten to E:\\LogBackups.\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003e$server = Connect-DbaInstance -ConnectionString \"Data Source=TCP:yourserver.database.windows.net,1433;MultipleActiveResultSets=False;Connect \r\nTimeout=30;Encrypt=True;TrustServerCertificate=False;User Id=dbuser;Password=strongpassword;Database=TestDb\"\nRemove-DbaDbTableData -SqlInstance $server -Database TestDb -Table dbo.Test -BatchSize 1000000 -Confirm:$false\nRemoves data from the dbo.Test table in the TestDb database on the Azure SQL server yourserver.database.windows.net. The deletes are dones in batches of 1000000 rows. Log backups are managed by Azure \r\nSQL. Note: for Azure SQL databases error 40552 could occur for large batch deletions: \r\nhttps://docs.microsoft.com/en-us/azure/azure-sql/database/troubleshoot-common-errors-issues#error-40552-the-session-has-been-terminated-because-of-excessive-transaction-log-space-usage",
+        "Params":  [
+                       [
+                           "SqlInstance",
+                           "The target SQL Server instance or instances.",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "SqlCredential",
+                           "Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).\nWindows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.\nFor MFA support, please use Connect-DbaInstance.",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "Database",
+                           "The database(s) to process. This list is auto-populated from the server. If unspecified, all user databases will be processed.",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "BatchSize",
+                           "The number of rows to delete per batch. This param is defaulted to 100000 and limited to a value between 1 and 1000000000 (1 billion). This param can only be used with the -Table param. If -DeleteSql \r\nis used the TOP (N) clause must be specified in the SQL DELETE string. Note: for Azure SQL databases error 40552 could occur for large batch deletions: \r\nhttps://docs.microsoft.com/en-us/azure/azure-sql/database/troubleshoot-common-errors-issues#error-40552-the-session-has-been-terminated-because-of-excessive-transaction-log-space-usage",
+                           "",
+                           false,
+                           "false",
+                           "100000",
+                           ""
+                       ],
+                       [
+                           "Table",
+                           "The name of the table that data should be deleted. This param is required except when -DeleteSql is specified. When this param is used the -BatchSize param may also be used (or its default value).",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "DeleteSql",
+                           "A SQL DELETE statement to be used in the command\u0027s loop for more advanced scenarios such as deleting based on a join, using a where clause, or using an order by clause (or a combination of all of \r\nthose). It is required that the DELETE statement include the TOP (N) clause. See the example below. This param may be used instead of -Table and -BatchSize.",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "LogBackupPath",
+                           "The directory to store the log backups. This command creates log backups when the database is using the full or bulk_logged recovery models and is an on-prem SQL server instance. If this param is not \r\nprovided the command will not take log backups. This directory should be writeable by the SQL Server service account.",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "LogBackupTimeStampFormat",
+                           "By default the command timestamps the log backup files using the format yyyyMMddHHmm. The timestamp format should be defined using the Get-Date formats, because illegal formats will cause an error to \r\nbe thrown.",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "AzureBaseUrl",
+                           "Used for log backups. See https://dbatools.io/Backup-DbaDatabase for information on this parameter. This function invokes Backup-DbaDatabase with -AzureBaseUrl if it is provided.",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "AzureCredential",
+                           "Used for log backups. See https://dbatools.io/Backup-DbaDatabase for information on this parameter. This function invokes Backup-DbaDatabase with -AzureCredential if it is provided.",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "InputObject",
+                           "Enables piped input of Microsoft.SqlServer.Management.Smo.Database, Microsoft.SqlServer.Management.Smo.Server, and Sqlcollaborative.Dbatools.Parameter.DbaInstanceParameter objects.",
+                           "",
+                           false,
+                           "true (ByValue)",
+                           "",
+                           ""
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "",
+                           false,
+                           "false",
+                           "False",
+                           ""
+                       ],
+                       [
+                           "WhatIf",
+                           "Shows what would happen if the command were to run. No actions are actually performed.",
+                           "wi",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "Confirm",
+                           "Prompts for confirmation before executing any data modification operations.",
+                           "cf",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ]
+                   ],
+        "Syntax":  "Remove-DbaDbTableData [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cString[]\u003e] [[-BatchSize] \u003cInt32\u003e] [[-Table] \u003cString\u003e] [[-DeleteSql] \u003cString\u003e] [[-LogBackupPath] \u003cString\u003e] [[-LogBackupTimeStampFormat] \u003cString\u003e] [[-AzureBaseUrl] \u003cString[]\u003e] [[-AzureCredential] \u003cString\u003e] [[-InputObject] \u003cObject[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Remove-DbaDbUser",
@@ -45846,7 +46188,7 @@
                            ""
                        ]
                    ],
-        "Syntax":  "Save-DbaKbUpdate [[-Name] \u003cString[]\u003e] [[-Path] \u003cString\u003e] [[-FilePath] \u003cString\u003e] [[-Architecture] \u003cString\u003e] [[-InputObject] \u003cPSObject\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Save-DbaKbUpdate [[-Name] \u003cString[]\u003e] [[-Path] \u003cString\u003e] [[-FilePath] \u003cString\u003e] [[-Architecture] \u003cString\u003e] [[-InputObject] \u003cObject[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Select-DbaBackupInformation",
@@ -56022,7 +56364,7 @@
         "CommandName":  "Update-DbaServiceAccount",
         "Availability":  "Windows only",
         "Links":  "https://dbatools.io/Update-DbaServiceAccount",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003e$SecurePassword = ConvertTo-SecureString \u0027Qwerty1234\u0027 -AsPlainText -Force\nUpdate-DbaServiceAccount -ComputerName sql1 -ServiceName \u0027MSSQL$MYINSTANCE\u0027 -SecurePassword $SecurePassword\nChanges the current service account\u0027s password of the service MSSQL$MYINSTANCE to \u0027Qwerty1234\u0027\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003e$cred = Get-Credential\nPS C:\\\u003e Get-DbaService sql1 -Type Engine,Agent -Instance MYINSTANCE | Update-DbaServiceAccount -ServiceCredential $cred\nRequests credentials from the user and configures them as a service account for the SQL Server engine and agent services of the instance sql1\\MYINSTANCE\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eUpdate-DbaServiceAccount -ComputerName sql1,sql2 -ServiceName \u0027MSSQLSERVER\u0027,\u0027SQLSERVERAGENT\u0027 -Username NETWORKSERVICE\nConfigures SQL Server engine and agent services on the machines sql1 and sql2 to run under Network Service system user.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaService sql1 -Type Engine -Instance MSSQLSERVER | Update-DbaServiceAccount -Username \u0027MyDomain\\sqluser1\u0027\nConfigures SQL Server engine service on the machine sql1 to run under MyDomain\\sqluser1. Will request user to input the account password.",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003e$SecurePassword = ConvertTo-SecureString \u0027Qwerty1234\u0027 -AsPlainText -Force\nPS C:\\\u003e Update-DbaServiceAccount -ComputerName sql1 -ServiceName \u0027MSSQL$MYINSTANCE\u0027 -SecurePassword $SecurePassword\nChanges the current service account\u0027s password of the service MSSQL$MYINSTANCE to \u0027Qwerty1234\u0027\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003e$cred = Get-Credential\nPS C:\\\u003e Get-DbaService sql1 -Type Engine,Agent -Instance MYINSTANCE | Update-DbaServiceAccount -ServiceCredential $cred\nRequests credentials from the user and configures them as a service account for the SQL Server engine and agent services of the instance sql1\\MYINSTANCE\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eUpdate-DbaServiceAccount -ComputerName sql1,sql2 -ServiceName \u0027MSSQLSERVER\u0027,\u0027SQLSERVERAGENT\u0027 -Username NETWORKSERVICE\nConfigures SQL Server engine and agent services on the machines sql1 and sql2 to run under Network Service system user.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaService sql1 -Type Engine -Instance MSSQLSERVER | Update-DbaServiceAccount -Username \u0027MyDomain\\sqluser1\u0027\nConfigures SQL Server engine service on the machine sql1 to run under MyDomain\\sqluser1. Will request user to input the account password.",
         "Params":  [
                        [
                            "ComputerName",

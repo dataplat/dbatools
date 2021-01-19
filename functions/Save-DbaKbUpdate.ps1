@@ -67,7 +67,7 @@ function Save-DbaKbUpdate {
         [ValidateSet("x64", "x86", "ia64", "All")]
         [string]$Architecture = "x64",
         [parameter(ValueFromPipeline)]
-        [pscustomobject]$InputObject,
+        [object[]]$InputObject,
         [switch]$EnableException
     )
     process {
