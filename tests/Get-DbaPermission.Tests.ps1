@@ -119,11 +119,4 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
 
         }
     }
-
-    Context "Validate input" {
-        It "Cannot resolve hostname of computer" {
-            Mock Resolve-DbaNetworkName { $null }
-            { Get-DbaComputerSystem -ComputerName 'DoesNotExist142' -WarningAction Stop 3> $null } | Should Throw
-        }
-    }
 }
