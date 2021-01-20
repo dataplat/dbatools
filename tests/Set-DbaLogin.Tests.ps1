@@ -189,8 +189,18 @@ Describe "$CommandName Integration Tests" -Tag 'IntegrationTests' {
         }
 
         It "PasswordExpirationEnabled" {
-            $result = Set-DbaLogin -SqlInstance $script:instance2 -Login "testlogin1_$random" -PasswordPolicyEnforced -PasswordExpirationEnabled
+            $result = Set-DbaLogin -SqlInstance $script:instance2 -Login "testlogin2_$random" -PasswordPolicyEnforced
+            $result.PasswordPolicyEnforced | Should Be $true
+
+            # testlogin1_$random will get skipped since it does not have PasswordPolicyEnforced set to true (check_policy = ON)
+            $result = Set-DbaLogin -SqlInstance $script:instance2 -Login "testlogin1_$random", "testlogin2_$random" -PasswordExpirationEnabled
+            $result.Count | Should -Be 1
+            $result.Name | Should -Be "testlogin2_$random"
             $result.PasswordExpirationEnabled | Should Be $true
+
+            # set both params for this login
+            $result = Set-DbaLogin -SqlInstance $script:instance2 -Login "testlogin1_$random" -PasswordPolicyEnforced -PasswordExpirationEnabled
+            $result.PasswordExpirationEnabled | Should -Be $true
         }
     }
 }

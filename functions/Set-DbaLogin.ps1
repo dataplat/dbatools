@@ -50,10 +50,10 @@ function Set-DbaLogin {
         Grant access to SQL Server
 
     .PARAMETER PasswordPolicyEnforced
-        Should the password policy be enforced (check_policy).
+        Enable the password policy on the login (check_policy = ON). This option must be enabled in order for -PasswordExpirationEnabled to be used.
 
     .PARAMETER PasswordExpirationEnabled
-        Should the password expiration check be enforced (check_expiration). In order to enable this option the PasswordPolicyEnforced (check_policy) must also be enabled for the login.
+        Enable the password expiration check on the login (check_expiration = ON). In order to enable this option the PasswordPolicyEnforced (check_policy) must also be enabled for the login.
 
     .PARAMETER AddRole
         Add one or more server roles to the login
@@ -324,6 +324,12 @@ function Set-DbaLogin {
 
                 # Enforce password expiration
                 if (Test-Bound -ParameterName 'PasswordExpirationEnabled') {
+
+                    if ($l.PasswordPolicyEnforced -eq $false) {
+                        $notes += "Couldn't set check_expiration = ON because check_policy = OFF for $l. See the command description for more details on these settings."
+                        Stop-Function -Message "Couldn't set check_expiration = ON because check_policy = OFF for $l. See the command description for more details on these settings." -Target $l -Continue
+                    }
+
                     if ($l.PasswordExpirationEnabled -eq $PasswordExpirationEnabled) {
                         Write-Message -Message "Login $l password expiration check is already set to $($l.PasswordExpirationEnabled)" -Level Verbose
                     } else {
