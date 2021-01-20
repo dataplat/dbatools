@@ -66,7 +66,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         $table2 = New-DbaDbTable -SqlInstance $server -Database $dbName -Name $tableName2 -Schema $schemaNameForTable2 -ColumnMap $tableSpec2
 
         # debugging errors seen only in AppVeyor
-        Write-Message -Level Verbose -Message "Get-DbaPermission: Server=$server, dbName=$dbName, loginDBO=$($loginDBO.Name), loginDBOwner=$($loginDBOwner.Name), loginUser1=$($loginUser1.Name), newUserDBOwner=$($newUserDBOwner.Name), newUser1=$($newUser1.Name), table1=$($table1.Name), loginUser2=$($loginUser2.Name), newUser2=$($newUser2.Name), table2=$($table2.Name), table2Schema=$($table2.Schema)"
+        Write-Host "Get-DbaPermission: Server=$server, dbName=$dbName, loginDBO=$($loginDBO.Name), loginDBOwner=$($loginDBOwner.Name), loginUser1=$($loginUser1.Name), newUserDBOwner=$($newUserDBOwner.Name), newUser1=$($newUser1.Name), table1=$($table1.Name), loginUser2=$($loginUser2.Name), newUser2=$($newUser2.Name), table2=$($table2.Name), table2Schema=$($table2.Schema)"
     }
 
     AfterAll {
@@ -99,12 +99,6 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             $results.count | Should -Be 4
             $results.where( { $_.Securable -eq "dbo.$tableName1" -and $_.PermState -eq 'DENY' -and $_.PermissionName -in ('DELETE', 'INSERT', 'UPDATE') }).count | Should -Be 3
             $results.where( { $_.Securable -eq "dbo.$tableName1" -and $_.PermState -eq 'GRANT' -and $_.PermissionName -eq 'SELECT' }).count | Should -Be 1
-        }
-    }
-    Context "Validate input" {
-        It "Cannot resolve hostname of computer" {
-            Mock Resolve-DbaNetworkName { $null }
-            { Get-DbaComputerSystem -ComputerName 'DoesNotExist142' -WarningAction Stop 3> $null } | Should Throw
         }
     }
 
