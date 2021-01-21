@@ -399,7 +399,7 @@ function Write-DbaDbTableData {
         $tableName = $fqtnObj.Name
 
         $quotedFQTN = New-Object System.Text.StringBuilder
-       
+
         if ($server.ServerType -ne 'SqlAzureDatabase') {
             <#
                 Skip adding database name to Fully Qualified Tablename for Azure SQL DB
