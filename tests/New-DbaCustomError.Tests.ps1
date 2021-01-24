@@ -1,0 +1,141 @@
+$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
+. "$PSScriptRoot\constants.ps1"
+
+Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+    Context "Validate parameters" {
+        [array]$params = ([Management.Automation.CommandMetaData]$ExecutionContext.SessionState.InvokeCommand.GetCommand($CommandName, 'Function')).Parameters.Keys
+        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'MessageID', 'Severity', 'MessageText', 'Language', 'WithLog', 'Replace', 'EnableException'
+        It "Should only contain our specific parameters" {
+            Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params | Should -BeNullOrEmpty
+        }
+    }
+}
+
+Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
+    BeforeAll {
+        $server = Connect-DbaInstance -SqlInstance $script:instance1
+        $server2 = Connect-DbaInstance -SqlInstance $script:instance2
+    }
+    AfterAll {
+        $server.Query("IF EXISTS (SELECT 1 FROM master.sys.messages WHERE message_id = 70000) BEGIN EXEC msdb.dbo.sp_dropmessage @msgnum = 70000, @lang = 'all'; END")
+        $server.Query("IF EXISTS (SELECT 1 FROM master.sys.messages WHERE message_id = 70001) BEGIN EXEC msdb.dbo.sp_dropmessage @msgnum = 70001, @lang = 'all'; END")
+        $server.Query("IF EXISTS (SELECT 1 FROM master.sys.messages WHERE message_id = 70002) BEGIN EXEC msdb.dbo.sp_dropmessage @msgnum = 70002, @lang = 'all'; END")
+        $server.Query("IF EXISTS (SELECT 1 FROM master.sys.messages WHERE message_id = 70003) BEGIN EXEC msdb.dbo.sp_dropmessage @msgnum = 70003, @lang = 'all'; END")
+        $server.Query("IF EXISTS (SELECT 1 FROM master.sys.messages WHERE message_id = 70004) BEGIN EXEC msdb.dbo.sp_dropmessage @msgnum = 70004, @lang = 'all'; END")
+        $server.Query("IF EXISTS (SELECT 1 FROM master.sys.messages WHERE message_id = 70005) BEGIN EXEC msdb.dbo.sp_dropmessage @msgnum = 70005, @lang = 'all'; END")
+        $server.Query("IF EXISTS (SELECT 1 FROM master.sys.messages WHERE message_id = 70006) BEGIN EXEC msdb.dbo.sp_dropmessage @msgnum = 70006, @lang = 'all'; END")
+        $server2.Query("IF EXISTS (SELECT 1 FROM master.sys.messages WHERE message_id = 70006) BEGIN EXEC msdb.dbo.sp_dropmessage @msgnum = 70006, @lang = 'all'; END")
+    }
+
+    Context "Validate params" {
+
+        It "Message ID" {
+            { $results = New-DbaCustomError -SqlInstance $server -MessageID 1 -Severity 1 -MessageText "test 1" -Language English } | Should -Throw
+            { $results = New-DbaCustomError -SqlInstance $server -MessageID 2147483648 -Severity 1 -MessageText "test 1" -Language English } | Should -Throw
+
+            $results = New-DbaCustomError -SqlInstance $server -MessageID 70000 -Severity 16 -MessageText "test_70000"
+            $results.Count | Should -Be 1
+            $results.ID | Should -Be 70000
+        }
+
+        It "Severity" {
+            { $results = New-DbaCustomError -SqlInstance $server -MessageID 70001 -Severity 0 -MessageText "test 1" -Language English } | Should -Throw
+            { $results = New-DbaCustomError -SqlInstance $server -MessageID 70001 -Severity 26 -MessageText "test 1" -Language English } | Should -Throw
+            $results = New-DbaCustomError -SqlInstance $server -MessageID 70001 -Severity 16 -MessageText "test_70001"
+            $results.Count | Should -Be 1
+            $results.Severity | Should -Be 16
+        }
+
+        It "MessageText" {
+            { $results = New-DbaCustomError -SqlInstance $server -MessageID 70001 -Severity 1 -MessageText "test message that has a string length greater than 255 characters. test message that has a string length greater than 255 characters. test message that has a string length greater than 255 characters. test message that has a string length greater than 255 characters" -Language English } | Should -Throw
+
+            $results = New-DbaCustomError -SqlInstance $server -MessageID 70002 -Severity 1 -MessageText "test_70002"
+            $results.Count | Should -Be 1
+            $results.Text | Should -Be "test_70002"
+        }
+
+        It "Language" {
+            $results = New-DbaCustomError -SqlInstance $server -MessageID 70001 -Severity 1 -MessageText "test" -Language "InvalidLanguage"
+            $results | Should -BeNullOrEmpty
+
+            $results = New-DbaCustomError -SqlInstance $server -MessageID 70003 -Severity 1 -MessageText "test_70003" -Language "English"
+            $results.Count | Should -Be 1
+            $results.Language | Should -Match "English"
+            $results.Text | Should -Be "test_70003"
+            $results.ID | Should -Be 70003
+            $results.Severity | Should -Be 1
+
+            # add other languages available now that the english message is added
+            $languages = $server.Query("SELECT alias FROM sys.syslanguages WHERE alias NOT LIKE '%English%'")
+
+            foreach ($lang in $languages) {
+                $languageName = $lang.alias
+                $results = New-DbaCustomError -SqlInstance $server -MessageID 70003 -Severity 1 -MessageText "test_70003_$languageName" -Language "$languageName"
+                $results.Count | Should -Be 1
+                $results.Language | Should -Match "$languageName"
+                $results.Text | Should -Be "test_70003_$languageName"
+                $results.ID | Should -Be 70003
+                $results.Severity | Should -Be 1
+            }
+        }
+
+        It "Replace" {
+            $results = New-DbaCustomError -SqlInstance $server -MessageID 70004 -Severity 1 -MessageText "test_70004"
+            $results.Count | Should -Be 1
+            $results.Language | Should -Not -BeNullOrEmpty
+            $results.Text | Should -Be "test_70004"
+            $results.ID | Should -Be 70004
+            $results.Severity | Should -Be 1
+
+            $results = New-DbaCustomError -SqlInstance $server -MessageID 70004 -Severity 2 -MessageText "test_70004_replaced" -Replace
+            $results.Count | Should -Be 1
+            $results.Text | Should -Be "test_70004_replaced"
+            $results.Severity | Should -Be 2
+            $results.ID | Should -Be 70004
+            $results.IsLogged | Should -Be $false
+
+            # special case with British English because the language code 1033 is shared with English. The language is not actually changed because 'replace' is required to add the message and the replace action only allows the severity and the message text to be changed.
+            $results = New-DbaCustomError -SqlInstance $server -MessageID 70004 -Severity 3 -MessageText "test_70004_uk_english" -Language "British English" -Replace
+            $results.Count | Should -Be 1
+            $results.Severity | Should -Be 3
+            $results.Language | Should -Be "us_english"
+            $results.Text | Should -Be "test_70004_uk_english"
+            $results.ID | Should -Be 70004
+        }
+
+        It "WithLog" {
+            $results = New-DbaCustomError -SqlInstance $server -MessageID 70005 -Severity 25 -MessageText "test_70005" -WithLog
+            $results.Count | Should -Be 1
+            $results.Text | Should -Be "test_70005"
+            $results.Severity | Should -Be 25
+            $results.ID | Should -Be 70005
+            $results.IsLogged | Should -Be $true
+        }
+    }
+
+    Context "Supports multiple server inputs" {
+
+        It "Add messages to preconnected servers" {
+            $results = ([DbaInstanceParameter[]]$server, $server2 | New-DbaCustomError -MessageID 70006 -Severity 20 -MessageText "test_70006")
+            $results.Count | Should -Be 2
+            $results[0].Text | Should -Be "test_70006"
+            $results[1].Text | Should -Be "test_70006"
+            $results[0].Severity | Should -Be 20
+            $results[1].Severity | Should -Be 20
+            $results[0].ID | Should -Be 70006
+            $results[1].ID | Should -Be 70006
+        }
+
+        It "Use the -Replace with multiple servers via -SqlInstance" {
+            $results = New-DbaCustomError -SqlInstance $script:instance1, $script:instance2 -MessageID 70006 -Severity 21 -MessageText "test_70006_2" -Replace
+            $results.Count | Should -Be 2
+            $results[0].Text | Should -Be "test_70006_2"
+            $results[1].Text | Should -Be "test_70006_2"
+            $results[0].Severity | Should -Be 21
+            $results[1].Severity | Should -Be 21
+            $results[0].ID | Should -Be 70006
+            $results[1].ID | Should -Be 70006
+        }
+    }
+}
