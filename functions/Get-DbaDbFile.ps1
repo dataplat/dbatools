@@ -104,7 +104,7 @@ function Get-DbaDbFile {
 
         $sqlfrom = "from sys.database_files df
             left outer join  sys.filegroups fg on df.data_space_id=fg.data_space_id
-            inner join sys.dm_io_virtual_file_stats(db_id(),NULL) vfs on df.file_id=vfs.file_id
+            left join sys.dm_io_virtual_file_stats(db_id(),NULL) vfs on df.file_id=vfs.file_id
             inner join sys.master_files mf on df.file_id = mf.file_id
             and mf.database_id = db_id()"
 
