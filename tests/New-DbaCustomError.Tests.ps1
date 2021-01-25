@@ -5,7 +5,7 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
         [array]$params = ([Management.Automation.CommandMetaData]$ExecutionContext.SessionState.InvokeCommand.GetCommand($CommandName, 'Function')).Parameters.Keys
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'MessageID', 'Severity', 'MessageText', 'Language', 'WithLog', 'Replace', 'EnableException'
+        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'MessageID', 'Severity', 'MessageText', 'Language', 'WithLog', 'EnableException'
         It "Should only contain our specific parameters" {
             Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params | Should -BeNullOrEmpty
         }
@@ -80,30 +80,6 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             }
         }
 
-        It "Replace" {
-            $results = New-DbaCustomError -SqlInstance $server -MessageID 70004 -Severity 1 -MessageText "test_70004"
-            $results.Count | Should -Be 1
-            $results.Language | Should -Not -BeNullOrEmpty
-            $results.Text | Should -Be "test_70004"
-            $results.ID | Should -Be 70004
-            $results.Severity | Should -Be 1
-
-            $results = New-DbaCustomError -SqlInstance $server -MessageID 70004 -Severity 2 -MessageText "test_70004_replaced" -Replace
-            $results.Count | Should -Be 1
-            $results.Text | Should -Be "test_70004_replaced"
-            $results.Severity | Should -Be 2
-            $results.ID | Should -Be 70004
-            $results.IsLogged | Should -Be $false
-
-            # special case with British English because the language code 1033 is shared with English. The language is not actually changed because 'replace' is required to add the message and the replace action only allows the severity and the message text to be changed.
-            $results = New-DbaCustomError -SqlInstance $server -MessageID 70004 -Severity 3 -MessageText "test_70004_uk_english" -Language "British English" -Replace
-            $results.Count | Should -Be 1
-            $results.Severity | Should -Be 3
-            $results.Language | Should -Be "us_english"
-            $results.Text | Should -Be "test_70004_uk_english"
-            $results.ID | Should -Be 70004
-        }
-
         It "WithLog" {
             $results = New-DbaCustomError -SqlInstance $server -MessageID 70005 -Severity 25 -MessageText "test_70005" -WithLog
             $results.Count | Should -Be 1
@@ -123,17 +99,6 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $results[1].Text | Should -Be "test_70006"
             $results[0].Severity | Should -Be 20
             $results[1].Severity | Should -Be 20
-            $results[0].ID | Should -Be 70006
-            $results[1].ID | Should -Be 70006
-        }
-
-        It "Use the -Replace with multiple servers via -SqlInstance" {
-            $results = New-DbaCustomError -SqlInstance $script:instance1, $script:instance2 -MessageID 70006 -Severity 21 -MessageText "test_70006_2" -Replace
-            $results.Count | Should -Be 2
-            $results[0].Text | Should -Be "test_70006_2"
-            $results[1].Text | Should -Be "test_70006_2"
-            $results[0].Severity | Should -Be 21
-            $results[1].Severity | Should -Be 21
             $results[0].ID | Should -Be 70006
             $results[1].ID | Should -Be 70006
         }

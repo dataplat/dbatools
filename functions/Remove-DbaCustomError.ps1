@@ -52,6 +52,19 @@ function Remove-DbaCustomError {
         PS C:\> Remove-DbaCustomError -SqlInstance localhost, serverName2 -MessageID 70001 -Language "All"
 
         Removes all custom messages on the localhost and serverName2 instances with ID 70001.
+
+    .EXAMPLE
+        PS C:\> $server = Connect-DbaInstance localhost
+        PS C:\> $newMessage = New-DbaCustomError -SqlInstance $server -MessageID 70000 -Severity 1 -MessageText "test_70000"
+        PS C:\> $original = $server.UserDefinedMessages | Where-Object ID -eq 70000
+        PS C:\> $messageID = $original.ID
+        PS C:\> $severity = $original.Severity
+        PS C:\> $text = $original.Text
+        PS C:\> $language = $original.Language
+        PS C:\> $removed = Remove-DbaCustomError -SqlInstance $server -MessageID 70000
+        PS C:\> $alteredMessage = New-DbaCustomError -SqlInstance $server -MessageID $messageID -Severity $severity -MessageText $text -Language $language -WithLog
+
+        Simulates an update of an existing message using Remove-DbaCustomError and New-DbaCustomError.
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'Low')]
     param (
@@ -65,8 +78,6 @@ function Remove-DbaCustomError {
     )
 
     process {
-        $removedMessages = @()
-
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -AzureUnsupported
@@ -92,13 +103,10 @@ function Remove-DbaCustomError {
                     # find the message using language or languageID or the 'session language' message if they specified 'all'. SMO will drop all related messages for an ID if the english message is dropped.
                     $userDefinedMessage = $server.UserDefinedMessages | Where-Object { $_.ID -eq $MessageID -and ($_.Language -in $languageName, $languageAlias -or $_.LanguageID -eq $langId -or ($Language -ieq "All" -and $_.Language -like "*english")) }
                     $userDefinedMessage.Drop()
-                    $removedMessages += $userDefinedMessage
                 } catch {
                     Stop-Function -Message "Error occurred while trying to remove a message with id $MessageID from $server" -ErrorRecord $_ -Continue
                 }
             }
         }
-
-        $removedMessages
     }
 }

@@ -52,7 +52,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             { $results = Remove-DbaCustomError -SqlInstance $server -MessageID 2147483648 -Language English } | Should -Throw
 
             $results = Remove-DbaCustomError -SqlInstance $server -MessageID 70000
-            $results.Count | Should -Be 1
+            ($server.UserDefinedMessages | Where-Object ID -eq 70000).Count | Should -Be 0
         }
 
         It "Language" {
@@ -60,16 +60,16 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $results | Should -BeNullOrEmpty
 
             $results = Remove-DbaCustomError -SqlInstance $server -MessageID 70003 -Language "French"
-            $results.Count | Should -Be 1
+            ($server.UserDefinedMessages | Where-Object { $_.ID -eq 70003 -and $_.Language -eq "French" }).Count | Should -Be 0
 
             $results = Remove-DbaCustomError -SqlInstance $server -MessageID 70003 -Language "All"
-            $results.Count | Should -Be 1 # SMO does a cascade delete of all messages by related ID in this scenario, so the resulting count is 1.
+            ($server.UserDefinedMessages | Where-Object ID -eq 70003).Count | Should -Be 0 # SMO does a cascade delete of all messages by related ID in this scenario, so the resulting count is 1.
 
             $results = Remove-DbaCustomError -SqlInstance $server -MessageID 70004 -Language "English"
-            $results.Count | Should -Be 1
+            ($server.UserDefinedMessages | Where-Object ID -eq 70004).Count | Should -Be 0
 
             $results = Remove-DbaCustomError -SqlInstance $server -MessageID 70005
-            $results.Count | Should -Be 1
+            ($server.UserDefinedMessages | Where-Object ID -eq 70005).Count | Should -Be 0
         }
     }
 
@@ -77,33 +77,40 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 
         It "Preconnected servers" {
             $results = ([DbaInstanceParameter[]]$server, $server2 | Remove-DbaCustomError -MessageID 70001)
-            $results.Count | Should -Be 2
+            ($server.UserDefinedMessages | Where-Object ID -eq 70001).Count | Should -Be 0
+            ($server2.UserDefinedMessages | Where-Object ID -eq 70001).Count | Should -Be 0
         }
 
         It "Multiple servers via -SqlInstance" {
             $results = Remove-DbaCustomError -SqlInstance $script:instance1, $script:instance2 -MessageID 70002
-            $results.Count | Should -Be 2
+            # even the SMO server.Refresh() doesn't pick up the changes to the user defined messages
+            $server1Reconnected = Connect-DbaInstance -SqlInstance $script:instance1
+            $server2Reconnected = Connect-DbaInstance -SqlInstance $script:instance2
+            ($server1Reconnected.UserDefinedMessages | Where-Object ID -eq 70002).Count | Should -Be 0
+            ($server2Reconnected.UserDefinedMessages | Where-Object ID -eq 70002).Count | Should -Be 0
         }
     }
 
-    Context "Simulate the sp_altermessage" {
+    Context "Simulate an update " {
 
-        It "Use the existing commands to simulate sp_altermessage" {
+        It "Use the existing commands to simulate an update" {
             $results = New-DbaCustomError -SqlInstance $server -MessageID 70000 -Severity 1 -MessageText "test_70000"
             $results.IsLogged | Should -Be $false
+            $results.Text | Should -Be "test_70000"
 
             $original = $server.UserDefinedMessages | Where-Object ID -eq 70000
 
             $messageID = $original.ID
             $severity = $original.Severity
-            $text = $original.Text
+            $text = "updated text"
             $language = $original.Language
 
             $removed = Remove-DbaCustomError -SqlInstance $server -MessageID 70000
 
-            $altered = New-DbaCustomError -SqlInstance $server -MessageID $messageID -Severity $severity -MessageText $text -Language $language -WithLog
-            $altered.IsLogged | Should -Be $true
-            $altered.ID | Should -Be 70000
+            $updated = New-DbaCustomError -SqlInstance $server -MessageID $messageID -Severity $severity -MessageText $text -Language $language -WithLog
+            $updated.IsLogged | Should -Be $true
+            $updated.ID | Should -Be 70000
+            $updated.Text | Should -Be "updated text"
         }
     }
 }

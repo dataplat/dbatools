@@ -1,7 +1,7 @@
 function New-DbaCustomError {
     <#
     .SYNOPSIS
-        Creates or replaces a user defined message in sys.messages. This command does not support Azure SQL Database.
+        Creates a user defined message in sys.messages. This command does not support Azure SQL Database.
 
     .DESCRIPTION
         This command provides a wrapper for the sp_addmessage system procedure that allows for user defined messages to be added to sys.messages.
@@ -30,9 +30,6 @@ function New-DbaCustomError {
 
     .PARAMETER WithLog
         Always write this message to the Windows application log and the SQL Server Error Log when it occurs.
-
-    .PARAMETER Replace
-        Replace the message text and severity for an existing user defined message.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
@@ -67,11 +64,6 @@ function New-DbaCustomError {
         Creates a new custom message on the localhost instance for the french language with ID 70001, severity 16, and text "test".
 
     .EXAMPLE
-        PS C:\> New-DbaCustomError -SqlInstance localhost -MessageID 70001 -Severity 20 -MessageText "test2" -Replace
-
-        Replaces the text and severity on the localhost instance for the message with ID 70001.
-
-    .EXAMPLE
         PS C:\> New-DbaCustomError -SqlInstance localhost -MessageID 70001 -Severity 16 -MessageText "test" -WithLog
 
         Creates a new custom message on the localhost instance with ID 70001, severity 16, text "test", and enables the log mechanism.
@@ -87,7 +79,7 @@ function New-DbaCustomError {
         PS C:\> $removed = Remove-DbaCustomError -SqlInstance $server -MessageID 70000
         PS C:\> $alteredMessage = New-DbaCustomError -SqlInstance $server -MessageID $messageID -Severity $severity -MessageText $text -Language $language -WithLog
 
-        Simulates the sp_altermessage procedure which only allows the log behavior of the message to be changed.
+        Simulates an update of an existing message using Remove-DbaCustomError and New-DbaCustomError.
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'Low')]
     param (
@@ -102,13 +94,10 @@ function New-DbaCustomError {
         [String]$MessageText,
         [String]$Language = 'English',
         [switch]$WithLog,
-        [switch]$Replace,
         [switch]$EnableException
     )
 
     process {
-        $newMessages = @()
-
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -AzureUnsupported
@@ -131,41 +120,31 @@ function New-DbaCustomError {
             if ($Pscmdlet.ShouldProcess("Creating new server message with id $MessageID on $server")) {
                 Write-Message -Level Verbose -Message "Creating new server message with id $MessageID on $server"
                 try {
-                    if (Test-Bound Replace) {
-                        $userDefinedMessage = $server.UserDefinedMessages | Where-Object { $_.ID -eq $MessageID -and ($_.Language -in $languageName, $languageAlias -or $_.LanguageID -eq $langId) } # special case for English and British English requires using the langId
-                        $userDefinedMessage.Text = $MessageText
-                        $userDefinedMessage.Severity = $Severity
-                        $userDefinedMessage.Alter()
-                        $newMessages += $userDefinedMessage
+                    $userDefinedMessage = New-Object -TypeName Microsoft.SqlServer.Management.Smo.UserDefinedMessage
+                    $userDefinedMessage.Parent = $server
+                    $userDefinedMessage.ID = $MessageID
+
+                    if (Test-Bound Language) {
+                        $userDefinedMessage.Language = $Language
                     } else {
-                        $userDefinedMessage = New-Object -TypeName Microsoft.SqlServer.Management.Smo.UserDefinedMessage
-                        $userDefinedMessage.Parent = $server
-                        $userDefinedMessage.ID = $MessageID
-
-                        if (Test-Bound Language) {
-                            $userDefinedMessage.Language = $Language
-                        } else {
-                            $userDefinedMessage.Language = ($server.Query("SELECT syslang.name FROM sys.syslanguages syslang JOIN sys.configurations config ON syslang.langid = config.value_in_use AND config.name = 'default language'")).name
-                        }
-
-                        $userDefinedMessage.Severity = $Severity
-                        $userDefinedMessage.Text = $MessageText
-
-                        if (Test-Bound WithLog) {
-                            $userDefinedMessage.IsLogged = $true
-                        }
-
-                        $userDefinedMessage.Create()
-
-                        # pull the new message object from the server to get all properties refreshed (the $userDefinedMessage.Refresh() method does not work as expected)
-                        $newMessages += $server.UserDefinedMessages | Where-Object { $_.ID -eq $MessageID -and $_.Language -eq $userDefinedMessage.Language }
+                        $userDefinedMessage.Language = ($server.Query("SELECT syslang.name FROM sys.syslanguages syslang JOIN sys.configurations config ON syslang.langid = config.value_in_use AND config.name = 'default language'")).name
                     }
+
+                    $userDefinedMessage.Severity = $Severity
+                    $userDefinedMessage.Text = $MessageText
+
+                    if (Test-Bound WithLog) {
+                        $userDefinedMessage.IsLogged = $true
+                    }
+
+                    $userDefinedMessage.Create()
+
+                    # return the new message object from the server to get all properties refreshed (the $userDefinedMessage.Refresh() method does not work as expected)
+                    $server.UserDefinedMessages | Where-Object { $_.ID -eq $MessageID -and $_.Language -eq $userDefinedMessage.Language }
                 } catch {
                     Stop-Function -Message "Error occurred while trying to create a message with id $MessageID on $server" -ErrorRecord $_ -Continue
                 }
             }
         }
-
-        $newMessages
     }
 }
