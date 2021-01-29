@@ -123,20 +123,28 @@ function Get-DbaRegServer {
         }
 
         $servers = @()
+        $serverToServerStore = @{ }
         foreach ($instance in $SqlInstance) {
+
+            try {
+                $serverstore = Get-DbaRegServerStore -SqlInstance $instance -SqlCredential $SqlCredential -EnableException
+            } catch {
+                Stop-Function -Message "Cannot access Central Management Server '$instance'." -ErrorRecord $_ -Continue
+            }
+
             if ($Group) {
                 $groupservers = Get-DbaRegServerGroup -SqlInstance $instance -SqlCredential $SqlCredential -Group $Group -ExcludeGroup $ExcludeGroup
                 if ($groupservers) {
                     $servers += $groupservers.GetDescendantRegisteredServers()
                 }
             } else {
-                try {
-                    $serverstore = Get-DbaRegServerStore -SqlInstance $instance -SqlCredential $SqlCredential -EnableException
-                } catch {
-                    Stop-Function -Message "Cannot access Central Management Server '$instance'." -ErrorRecord $_ -Continue
-                }
                 $servers += ($serverstore.DatabaseEngineServerGroup.GetDescendantRegisteredServers())
                 $serverstore.ServerConnection.Disconnect()
+            }
+
+            # save the $serverstore for later usage
+            foreach ($server in $servers) {
+                $serverToServerStore[$server] = $serverstore
             }
         }
 
@@ -244,13 +252,13 @@ function Get-DbaRegServer {
             if (-not $server.Source) {
                 Add-Member -Force -InputObject $server -MemberType NoteProperty -Name Source -value "Central Management Servers"
             }
-            Add-Member -Force -InputObject $server -MemberType NoteProperty -Name ComputerName -value $serverstore.ComputerName
-            Add-Member -Force -InputObject $server -MemberType NoteProperty -Name InstanceName -value $serverstore.InstanceName
-            Add-Member -Force -InputObject $server -MemberType NoteProperty -Name SqlInstance -value $serverstore.SqlInstance
+            Add-Member -Force -InputObject $server -MemberType NoteProperty -Name ComputerName -value $serverToServerStore[$server].ComputerName
+            Add-Member -Force -InputObject $server -MemberType NoteProperty -Name InstanceName -value $serverToServerStore[$server].InstanceName
+            Add-Member -Force -InputObject $server -MemberType NoteProperty -Name SqlInstance -value $serverToServerStore[$server].SqlInstance
             Add-Member -Force -InputObject $server -MemberType NoteProperty -Name Group -value $groupname
             Add-Member -Force -InputObject $server -MemberType NoteProperty -Name FQDN -Value $null
             Add-Member -Force -InputObject $server -MemberType NoteProperty -Name IPAddress -Value $null
-            Add-Member -Force -InputObject $server -MemberType NoteProperty -Name ParentServer -Value $serverstore.ParentServer
+            Add-Member -Force -InputObject $server -MemberType NoteProperty -Name ParentServer -Value $serverToServerStore[$server].ParentServer
 
             if ($ResolveNetworkName) {
                 try {
