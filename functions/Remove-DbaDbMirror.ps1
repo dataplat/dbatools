@@ -20,12 +20,6 @@ function Remove-DbaDbMirror {
     .PARAMETER Database
         The target database.
 
-    .PARAMETER Partner
-        The partner Fully Qualified Domain Name.
-
-    .PARAMETER Witness
-        The witness Fully Qualified Domain Name.
-
     .PARAMETER InputObject
         Allows piping from Get-DbaDatabase.
 
@@ -52,14 +46,19 @@ function Remove-DbaDbMirror {
         https://dbatools.io/Remove-DbaDbMirror
 
     .EXAMPLE
-        PS C:\> Set-DbaDbMirror -SqlInstance localhost
+        PS C:\> Remove-DbaDbMirror -SqlInstance localhost -Database TestDB
 
-        Returns all Endpoint(s) on the local default SQL Server instance
+        Stops the database mirroring session for the TestDB on the localhost instance.
+
+	.EXAMPLE
+        PS C:\> Remove-DbaDbMirror -SqlInstance localhost -Database TestDB1, TestDB2
+
+        Stops the database mirroring session for the TestDB1 and TestDB2 databases on the localhost instance.
 
     .EXAMPLE
-        PS C:\> Set-DbaDbMirror -SqlInstance localhost, sql2016
+        PS C:\> Get-DbaDatabase -SqlInstance localhost -Database TestDB1, TestDB2 | Remove-DbaDbMirror
 
-        Returns all Endpoint(s) for the local and sql2016 SQL Server instances
+        Stops the database mirroring session for the TestDB1 and TestDB2 databases on the localhost instance.
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High')]
     param (
@@ -87,10 +86,15 @@ function Remove-DbaDbMirror {
                         $db.ChangeMirroringState([Microsoft.SqlServer.Management.Smo.MirroringOption]::Off)
                         $db.Alter()
                     } catch {
-                        try {
-                            $db.Parent.Query("ALTER DATABASE $db SET PARTNER OFF")
-                        } catch {
-                            Stop-Function -Message "Failure on $($db.Parent) for $db" -ErrorRecord $_ -Continue
+                        # The $db.Alter() command may both succeed and return an error code related to the mirror session being stopped.
+                        # Refresh the db state and if the mirror session is still active then run the ALTER statement.
+                        $db.Refresh()
+                        if ($db.IsMirroringEnabled) {
+                            try {
+                                $db.Parent.Query("ALTER DATABASE $db SET PARTNER OFF")
+                            } catch {
+                                Stop-Function -Message "Failure on $($db.Parent) for $db" -ErrorRecord $_ -Continue
+                            }
                         }
                     }
                     [pscustomobject]@{
