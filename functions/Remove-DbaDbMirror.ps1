@@ -50,7 +50,7 @@ function Remove-DbaDbMirror {
 
         Stops the database mirroring session for the TestDB on the localhost instance.
 
-	.EXAMPLE
+    .EXAMPLE
         PS C:\> Remove-DbaDbMirror -SqlInstance localhost -Database TestDB1, TestDB2
 
         Stops the database mirroring session for the TestDB1 and TestDB2 databases on the localhost instance.
