@@ -1,10 +1,10 @@
 function Get-DbaDbSchema {
     <#
     .SYNOPSIS
-		Finds the database schema SMO object(s) based on the given filter params.
+        Finds the database schema SMO object(s) based on the given filter params.
 
     .DESCRIPTION
-		Finds the database schema SMO object(s) based on the given filter params.
+        Finds the database schema SMO object(s) based on the given filter params.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function
@@ -26,13 +26,13 @@ function Get-DbaDbSchema {
     .PARAMETER SchemaOwner
         The name(s) of the database user(s) that own(s) the schema(s).
 
-	.PARAMETER IncludeSystemDatabases
-		Include the system databases.
+    .PARAMETER IncludeSystemDatabases
+        Include the system databases.
 
     .PARAMETER IncludeSystemSchemas
-		Include the system schemas.
+        Include the system schemas.
 
-	.PARAMETER InputObject
+    .PARAMETER InputObject
         Allows piping from Get-DbaDatabase.
 
     .PARAMETER WhatIf
@@ -60,32 +60,32 @@ function Get-DbaDbSchema {
     .EXAMPLE
         PS C:\> Get-DbaDbSchema -SqlInstance localhost
 
-		Gets all non-system database schemas from all user databases on the localhost instance. Note: the dbo schema is a system schema and won't be included in the output from this example. To include the dbo schema specify -IncludeSystemSchemas
+        Gets all non-system database schemas from all user databases on the localhost instance. Note: the dbo schema is a system schema and won't be included in the output from this example. To include the dbo schema specify -IncludeSystemSchemas
 
     .EXAMPLE
         PS C:\> Get-DbaDbSchema -SqlInstance localhost -SchemaName dbo -IncludeSystemSchemas
 
-		Returns the dbo schema from the databases on the localhost instance.
+        Returns the dbo schema from the databases on the localhost instance.
 
-	.EXAMPLE
+    .EXAMPLE
         PS C:\> Get-DbaDbSchema -SqlInstance localhost -IncludeSystemDatabases -IncludeSystemSchemas
 
-		Gets all database schemas from all databases on the localhost instance.
+        Gets all database schemas from all databases on the localhost instance.
 
-	.EXAMPLE
+    .EXAMPLE
         PS C:\> Get-DbaDbSchema -SqlInstance localhost -SchemaName TestSchema
 
-		Finds and returns the TestSchema schema from the localhost instance.
+        Finds and returns the TestSchema schema from the localhost instance.
 
-	.EXAMPLE
+    .EXAMPLE
         PS C:\> Get-DbaDbSchema -SqlInstance localhost -SchemaOwner DBUser1
 
-		Finds and returns the schemas owned by DBUser1 from the localhost instance.
+        Finds and returns the schemas owned by DBUser1 from the localhost instance.
 
-	.EXAMPLE
+    .EXAMPLE
         PS C:\> Get-DbaDbSchema -SqlInstance localhost -Database TestDB -SchemaOwner DBUser1
 
-		Finds and returns the schemas owned by DBUser1 in the TestDB database from the localhost instance.
+        Finds and returns the schemas owned by DBUser1 in the TestDB database from the localhost instance.
 
     .EXAMPLE
         PS C:\> $schema = Get-DbaDbSchema -SqlInstance localhost -Database TestDB -SchemaName TestSchema
