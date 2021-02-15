@@ -442,7 +442,7 @@ function Import-DbaCsv {
                     $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -Database $Database -StatementTimeout 0 -MinimumVersion 9
 
                     # boundary case: ensure the correct db is referenced in the $server object
-                    if ($Database -ne $server.ConnectionContext.DatabaseName) {
+                    if ($Database -ne $server.ConnectionContext.CurrentDatabase) {
                         Stop-Function -Message "The SqlInstance object for $instance is currently connected to the database `"$($server.ConnectionContext.CurrentDatabase)`" and does not match the parameter `"-Database $Database`". If a pre-connected SqlInstance object is passed in it must be connected to the database specified by the -Database parameter."
                         return
                     }
