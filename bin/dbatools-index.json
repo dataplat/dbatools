@@ -20326,7 +20326,7 @@
                      "Login",
                      "Security"
                  ],
-        "Synopsis":  "Function to get an SMO login object of the logins for a given SQL Server instance. Takes a server object from the pipeline.",
+        "Synopsis":  "Function to get an SMO login object of the logins for a given SQL Server instance. Takes a server object from the pipeline.\nSQL Azure DB is not supported.",
         "Alias":  "",
         "Author":  "Mitchell Hamann (@SirCaptainMitch) | Rob Sewell (@SQLDBaWithBeard)",
         "CommandName":  "Get-DbaLogin",
@@ -20372,7 +20372,7 @@
                        ],
                        [
                            "ExcludeLogin",
-                           "The login(s) to exclude - this list is auto-populated from the server",
+                           "The login(s) to exclude. Options for this list are auto-populated from the server.",
                            "",
                            false,
                            "false",
@@ -49745,7 +49745,7 @@
         "Name":  "Set-DbaLogin",
         "Description":  "Set-DbaLogin will enable you to change the password, unlock, rename, disable or enable, deny or grant login privileges to the login. It\u0027s also possible to add or remove server roles from the login.",
         "Tags":  "Login",
-        "Synopsis":  "Set-DbaLogin makes it possible to make changes to one or more logins.",
+        "Synopsis":  "Set-DbaLogin makes it possible to make changes to one or more logins.\nSQL Azure DB is not supported.",
         "Alias":  "",
         "Author":  "Sander Stad (@sqlstad), sqlstad.nl",
         "CommandName":  "Set-DbaLogin",
@@ -49863,7 +49863,16 @@
                        ],
                        [
                            "PasswordPolicyEnforced",
-                           "Should the password policy be enforced.",
+                           "Enable the password policy on the login (check_policy = ON). This option must be enabled in order for -PasswordExpirationEnabled to be used.",
+                           "",
+                           false,
+                           "false",
+                           "False",
+                           ""
+                       ],
+                       [
+                           "PasswordExpirationEnabled",
+                           "Enable the password expiration check on the login (check_expiration = ON). In order to enable this option the PasswordPolicyEnforced (check_policy) must also be enabled for the login.",
                            "",
                            false,
                            "false",
@@ -49925,7 +49934,7 @@
                            ""
                        ]
                    ],
-        "Syntax":  "Set-DbaLogin [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Login] \u003cString[]\u003e] [[-SecurePassword] \u003cObject\u003e] [[-DefaultDatabase] \u003cString\u003e] [-Unlock] [-MustChange] [[-NewName] \u003cString\u003e] [-Disable] [-Enable] [-DenyLogin] [-GrantLogin] [-PasswordPolicyEnforced] [[-AddRole] \u003cString[]\u003e] [[-RemoveRole] \u003cString[]\u003e] [[-InputObject] \u003cLogin[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Set-DbaLogin [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Login] \u003cString[]\u003e] [[-SecurePassword] \u003cObject\u003e] [[-DefaultDatabase] \u003cString\u003e] [-Unlock] [-MustChange] [[-NewName] \u003cString\u003e] [-Disable] [-Enable] [-DenyLogin] [-GrantLogin] [-PasswordPolicyEnforced] [-PasswordExpirationEnabled] [[-AddRole] \u003cString[]\u003e] [[-RemoveRole] \u003cString[]\u003e] [[-InputObject] \u003cLogin[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Set-DbaMaxDop",
