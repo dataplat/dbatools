@@ -616,13 +616,26 @@ function Import-DbaCsv {
                             $reader.DefaultParseErrorAction = $ParseErrorAction
                         }
 
+                        # The legacy bulk copy library uses a 4 byte integer to track the RowsCopied, so the only option is to use
+                        # integer wrap so that copy operations of row counts greater than [int32]::MaxValue will report accurate numbers.
+                        # See https://github.com/sqlcollaborative/dbatools/issues/6927 for more details
+                        $script:prevRowsCopied = [int64]0
+                        $script:totalRowsCopied = [int64]0
+
                         # Add rowcount output
                         $bulkCopy.Add_SqlRowsCopied( {
-                                $script:totalrows = $args[1].RowsCopied
+                                $script:totalRowsCopied += (Get-AdjustedTotalRowsCopied -ReportedRowsCopied $args[1].RowsCopied -PreviousRowsCopied $script:prevRowsCopied).NewRowCountAdded
+
+                                $tstamp = $(Get-Date -format 'yyyyMMddHHmmss')
+                                Write-Message -Level Verbose -Message "[$tstamp] The bulk copy library reported RowsCopied = $($args[1].RowsCopied). The previous RowsCopied = $($script:prevRowsCopied). The adjusted total rows copied = $($script:totalRowsCopied)"
+
                                 if (-not $NoProgress) {
                                     $timetaken = [math]::Round($elapsed.Elapsed.TotalSeconds, 2)
-                                    Write-ProgressHelper -StepNumber 1 -TotalSteps 2 -Activity "Importing from $file" -Message ([System.String]::Format("Progress: {0} rows in {2} seconds", $script:totalrows, $percent, $timetaken)) -ExcludePercent
+                                    Write-ProgressHelper -StepNumber 1 -TotalSteps 2 -Activity "Importing from $file" -Message ([System.String]::Format("Progress: {0} rows in {2} seconds", $script:totalRowsCopied, $percent, $timetaken)) -ExcludePercent
                                 }
+
+                                # save the previous count of rows copied to be used on the next event notification
+                                $script:prevRowsCopied = $args[1].RowsCopied
                             })
 
                         $bulkCopy.WriteToServer($reader)
