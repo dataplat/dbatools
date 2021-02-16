@@ -22,6 +22,9 @@ function Get-DbaDbFile {
     .PARAMETER ExcludeDatabase
         The database(s) to exclude - this list is auto-populated from the server
 
+    .PARAMETER FileGroup
+        Filter results to only files within this certain filegroup.
+
     .PARAMETER InputObject
         A piped collection of database objects
 
@@ -60,6 +63,11 @@ function Get-DbaDbFile {
         PS C:\> Get-DbaDatabase -SqlInstance sql2016 -Database Impromptu, Trading | Get-DbaDbFile
 
         Will accept piped input from Get-DbaDatabase and return an object containing all file groups and their contained files for the Impromptu and Trading databases on the sql2016 SQL Server instance
+
+    .EXAMPLE
+        PS C:\> Get-DbaDbFile -SqlInstance sql2016 -Database AdventureWorks2017 -FileGroup Index
+
+        Return any files that are in the Index filegroup of the AdventureWorks2017 database.
     #>
     [CmdletBinding()]
     param (
@@ -68,6 +76,7 @@ function Get-DbaDbFile {
         [PSCredential]$SqlCredential,
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
+        [object[]]$FileGroup,
         [parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
         [switch]$EnableException
@@ -169,6 +178,11 @@ function Get-DbaDbFile {
                 $results = $server.Query($query, $db.Name)
             } catch {
                 Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
+            }
+
+            if (Test-Bound -ParameterName FileGroup) {
+                Write-Message -Message "Results will be filtered to FileGroup specified" -Level Verbose
+                $results = $results | Where-Object { $_.FileGroupName -eq $FileGroup }
             }
 
             foreach ($result in $results) {
