@@ -15698,7 +15698,7 @@
         "CommandName":  "Get-DbaDbFile",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Get-DbaDbFile",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaDbFile -SqlInstance sql2016\nWill return an object containing all file groups and their contained files for every database on the sql2016 SQL Server instance\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaDbFile -SqlInstance sql2016 -Database Impromptu\nWill return an object containing all file groups and their contained files for the Impromptu Database on the sql2016 SQL Server instance\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaDbFile -SqlInstance sql2016 -Database Impromptu, Trading\nWill return an object containing all file groups and their contained files for the Impromptu and Trading databases on the sql2016 SQL Server instance\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaDatabase -SqlInstance sql2016 -Database Impromptu, Trading | Get-DbaDbFile\nWill accept piped input from Get-DbaDatabase and return an object containing all file groups and their contained files for the Impromptu and Trading databases on the sql2016 SQL Server instance",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaDbFile -SqlInstance sql2016\nWill return an object containing all file groups and their contained files for every database on the sql2016 SQL Server instance\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaDbFile -SqlInstance sql2016 -Database Impromptu\nWill return an object containing all file groups and their contained files for the Impromptu Database on the sql2016 SQL Server instance\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaDbFile -SqlInstance sql2016 -Database Impromptu, Trading\nWill return an object containing all file groups and their contained files for the Impromptu and Trading databases on the sql2016 SQL Server instance\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaDatabase -SqlInstance sql2016 -Database Impromptu, Trading | Get-DbaDbFile\nWill accept piped input from Get-DbaDatabase and return an object containing all file groups and their contained files for the Impromptu and Trading databases on the sql2016 SQL Server instance\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eGet-DbaDbFile -SqlInstance sql2016 -Database AdventureWorks2017 -FileGroup Index\nReturn any files that are in the Index filegroup of the AdventureWorks2017 database.",
         "Params":  [
                        [
                            "SqlInstance",
@@ -15737,6 +15737,15 @@
                            ""
                        ],
                        [
+                           "FileGroup",
+                           "Filter results to only files within this certain filegroup.",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
                            "InputObject",
                            "A piped collection of database objects",
                            "",
@@ -15755,7 +15764,7 @@
                            ""
                        ]
                    ],
-        "Syntax":  "Get-DbaDbFile [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cObject[]\u003e] [[-ExcludeDatabase] \u003cObject[]\u003e] [[-InputObject] \u003cDatabase[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Get-DbaDbFile [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cObject[]\u003e] [[-ExcludeDatabase] \u003cObject[]\u003e] [[-FileGroup] \u003cObject[]\u003e] [[-InputObject] \u003cDatabase[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Get-DbaDbFileGroup",
@@ -45203,7 +45212,7 @@
         "Params":  [
                        [
                            "SqlInstance",
-                           "The target SQL Server instance or instances.",
+                           "The target SQL Server instance.",
                            "",
                            true,
                            "false",
@@ -56751,7 +56760,7 @@
                        ],
                        [
                            "Table",
-                           "The table name to import data into. You can specify a one, two, or three part table name. If you specify a one or two part name, you must also use -Database.\nIf the table does not exist, you can use -AutoCreateTable to automatically create the table. The table will be created with sub-optimal data types such as nvarchar(max).\nIf the object has special characters please wrap them in square brackets [ ].\r\nUsing dbo.First.Table will try to import to a table named \u0027Table\u0027 on schema \u0027First\u0027 and database \u0027dbo\u0027.\r\nThe correct way to import to a table named \u0027First.Table\u0027 on schema \u0027dbo\u0027 is by passing dbo.[First.Table].\r\nAny actual usage of the ] must be escaped by duplicating the ] character.\r\nThe correct way to import to a table Name] in schema Schema.Name is by passing [Schema.Name].[Name]]].",
+                           "The table name to import data into. You can specify a one, two, or three part table name. If you specify a one or two part name, you must also use -Database.\nIf the table does not exist, you can use -AutoCreateTable to automatically create the table. The table will be created with sub-optimal data types such as nvarchar(max).\nIf the object has special characters please wrap them in square brackets [ ].\r\nUsing dbo.First.Table will try to import to a table named \u0027Table\u0027 on schema \u0027First\u0027 and database \u0027dbo\u0027.\r\nThe correct way to import to a table named \u0027First.Table\u0027 on schema \u0027dbo\u0027 is by passing dbo.[First].[Table].\r\nAny actual usage of the ] must be escaped by duplicating the ] character.\r\nThe correct way to import to a table Name] in schema Schema.Name is by passing [Schema.Name].[Name]]].",
                            "",
                            true,
                            "false",
