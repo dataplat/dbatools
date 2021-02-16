@@ -347,7 +347,16 @@ function Write-DbaDbTableData {
         }
 
         #endregion Utility Functions
-
+        
+        #region Connect to server
+        try {
+            $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
+        } catch {
+            Stop-Function -Message "Error occurred while establishing connection to $SqlInstance" -Category ConnectionError -ErrorRecord $_ -Target $SqlInstance
+            return
+        }
+        #endregion Connect to server
+        
         #region Prepare type for bulk copy
         if (-not $Truncate) { $ConfirmPreference = "None" }
 
@@ -425,14 +434,8 @@ function Write-DbaDbTableData {
         Write-Message -Level SomewhatVerbose -Message "FQTN processed: $fqtn"
         #endregion Resolve Full Qualified Table Name
 
-        #region Connect to server and get database
-        try {
-            $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
-        } catch {
-            Stop-Function -Message "Error occurred while establishing connection to $SqlInstance" -Category ConnectionError -ErrorRecord $_ -Target $SqlInstance
-            return
-        }
 
+        #region Get database
         if ($server.ServerType -eq 'SqlAzureDatabase') {
             <#
                 For some reasons SMO wants an initial pull when talking to Azure Sql DB
@@ -447,7 +450,7 @@ function Write-DbaDbTableData {
         }
         try {
             $databaseObject = $server.Databases[$databaseName]
-            #endregion Connect to server and get database
+            #endregion Get database
 
             #region Prepare database and bulk operations
             if ($null -eq $databaseObject) {
