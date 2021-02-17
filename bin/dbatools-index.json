@@ -15698,7 +15698,7 @@
         "CommandName":  "Get-DbaDbFile",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Get-DbaDbFile",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaDbFile -SqlInstance sql2016\nWill return an object containing all file groups and their contained files for every database on the sql2016 SQL Server instance\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaDbFile -SqlInstance sql2016 -Database Impromptu\nWill return an object containing all file groups and their contained files for the Impromptu Database on the sql2016 SQL Server instance\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaDbFile -SqlInstance sql2016 -Database Impromptu, Trading\nWill return an object containing all file groups and their contained files for the Impromptu and Trading databases on the sql2016 SQL Server instance\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaDatabase -SqlInstance sql2016 -Database Impromptu, Trading | Get-DbaDbFile\nWill accept piped input from Get-DbaDatabase and return an object containing all file groups and their contained files for the Impromptu and Trading databases on the sql2016 SQL Server instance",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaDbFile -SqlInstance sql2016\nWill return an object containing all file groups and their contained files for every database on the sql2016 SQL Server instance\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaDbFile -SqlInstance sql2016 -Database Impromptu\nWill return an object containing all file groups and their contained files for the Impromptu Database on the sql2016 SQL Server instance\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaDbFile -SqlInstance sql2016 -Database Impromptu, Trading\nWill return an object containing all file groups and their contained files for the Impromptu and Trading databases on the sql2016 SQL Server instance\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaDatabase -SqlInstance sql2016 -Database Impromptu, Trading | Get-DbaDbFile\nWill accept piped input from Get-DbaDatabase and return an object containing all file groups and their contained files for the Impromptu and Trading databases on the sql2016 SQL Server instance\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eGet-DbaDbFile -SqlInstance sql2016 -Database AdventureWorks2017 -FileGroup Index\nReturn any files that are in the Index filegroup of the AdventureWorks2017 database.",
         "Params":  [
                        [
                            "SqlInstance",
@@ -15737,6 +15737,15 @@
                            ""
                        ],
                        [
+                           "FileGroup",
+                           "Filter results to only files within this certain filegroup.",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
                            "InputObject",
                            "A piped collection of database objects",
                            "",
@@ -15755,7 +15764,7 @@
                            ""
                        ]
                    ],
-        "Syntax":  "Get-DbaDbFile [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cObject[]\u003e] [[-ExcludeDatabase] \u003cObject[]\u003e] [[-InputObject] \u003cDatabase[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Get-DbaDbFile [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cObject[]\u003e] [[-ExcludeDatabase] \u003cObject[]\u003e] [[-FileGroup] \u003cObject[]\u003e] [[-InputObject] \u003cDatabase[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Get-DbaDbFileGroup",
@@ -20326,7 +20335,7 @@
                      "Login",
                      "Security"
                  ],
-        "Synopsis":  "Function to get an SMO login object of the logins for a given SQL Server instance. Takes a server object from the pipeline.",
+        "Synopsis":  "Function to get an SMO login object of the logins for a given SQL Server instance. Takes a server object from the pipeline.\nSQL Azure DB is not supported.",
         "Alias":  "",
         "Author":  "Mitchell Hamann (@SirCaptainMitch) | Rob Sewell (@SQLDBaWithBeard)",
         "CommandName":  "Get-DbaLogin",
@@ -20372,7 +20381,7 @@
                        ],
                        [
                            "ExcludeLogin",
-                           "The login(s) to exclude - this list is auto-populated from the server",
+                           "The login(s) to exclude. Options for this list are auto-populated from the server.",
                            "",
                            false,
                            "false",
@@ -45203,7 +45212,7 @@
         "Params":  [
                        [
                            "SqlInstance",
-                           "The target SQL Server instance or instances.",
+                           "The target SQL Server instance.",
                            "",
                            true,
                            "false",
@@ -49745,7 +49754,7 @@
         "Name":  "Set-DbaLogin",
         "Description":  "Set-DbaLogin will enable you to change the password, unlock, rename, disable or enable, deny or grant login privileges to the login. It\u0027s also possible to add or remove server roles from the login.",
         "Tags":  "Login",
-        "Synopsis":  "Set-DbaLogin makes it possible to make changes to one or more logins.",
+        "Synopsis":  "Set-DbaLogin makes it possible to make changes to one or more logins.\nSQL Azure DB is not supported.",
         "Alias":  "",
         "Author":  "Sander Stad (@sqlstad), sqlstad.nl",
         "CommandName":  "Set-DbaLogin",
@@ -49863,7 +49872,16 @@
                        ],
                        [
                            "PasswordPolicyEnforced",
-                           "Should the password policy be enforced.",
+                           "Enable the password policy on the login (check_policy = ON). This option must be enabled in order for -PasswordExpirationEnabled to be used.",
+                           "",
+                           false,
+                           "false",
+                           "False",
+                           ""
+                       ],
+                       [
+                           "PasswordExpirationEnabled",
+                           "Enable the password expiration check on the login (check_expiration = ON). In order to enable this option the PasswordPolicyEnforced (check_policy) must also be enabled for the login.",
                            "",
                            false,
                            "false",
@@ -49925,7 +49943,7 @@
                            ""
                        ]
                    ],
-        "Syntax":  "Set-DbaLogin [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Login] \u003cString[]\u003e] [[-SecurePassword] \u003cObject\u003e] [[-DefaultDatabase] \u003cString\u003e] [-Unlock] [-MustChange] [[-NewName] \u003cString\u003e] [-Disable] [-Enable] [-DenyLogin] [-GrantLogin] [-PasswordPolicyEnforced] [[-AddRole] \u003cString[]\u003e] [[-RemoveRole] \u003cString[]\u003e] [[-InputObject] \u003cLogin[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Set-DbaLogin [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Login] \u003cString[]\u003e] [[-SecurePassword] \u003cObject\u003e] [[-DefaultDatabase] \u003cString\u003e] [-Unlock] [-MustChange] [[-NewName] \u003cString\u003e] [-Disable] [-Enable] [-DenyLogin] [-GrantLogin] [-PasswordPolicyEnforced] [-PasswordExpirationEnabled] [[-AddRole] \u003cString[]\u003e] [[-RemoveRole] \u003cString[]\u003e] [[-InputObject] \u003cLogin[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Set-DbaMaxDop",
@@ -56742,7 +56760,7 @@
                        ],
                        [
                            "Table",
-                           "The table name to import data into. You can specify a one, two, or three part table name. If you specify a one or two part name, you must also use -Database.\nIf the table does not exist, you can use -AutoCreateTable to automatically create the table. The table will be created with sub-optimal data types such as nvarchar(max).\nIf the object has special characters please wrap them in square brackets [ ].\r\nUsing dbo.First.Table will try to import to a table named \u0027Table\u0027 on schema \u0027First\u0027 and database \u0027dbo\u0027.\r\nThe correct way to import to a table named \u0027First.Table\u0027 on schema \u0027dbo\u0027 is by passing dbo.[First.Table].\r\nAny actual usage of the ] must be escaped by duplicating the ] character.\r\nThe correct way to import to a table Name] in schema Schema.Name is by passing [Schema.Name].[Name]]].",
+                           "The table name to import data into. You can specify a one, two, or three part table name. If you specify a one or two part name, you must also use -Database.\nIf the table does not exist, you can use -AutoCreateTable to automatically create the table. The table will be created with sub-optimal data types such as nvarchar(max).\nIf the object has special characters please wrap them in square brackets [ ].\r\nUsing dbo.First.Table will try to import to a table named \u0027Table\u0027 on schema \u0027First\u0027 and database \u0027dbo\u0027.\r\nThe correct way to import to a table named \u0027First.Table\u0027 on schema \u0027dbo\u0027 is by passing dbo.[First].[Table].\r\nAny actual usage of the ] must be escaped by duplicating the ] character.\r\nThe correct way to import to a table Name] in schema Schema.Name is by passing [Schema.Name].[Name]]].",
                            "",
                            true,
                            "false",
