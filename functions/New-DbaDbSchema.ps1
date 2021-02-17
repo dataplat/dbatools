@@ -59,17 +59,17 @@ function New-DbaDbSchema {
     .EXAMPLE
         PS C:\> New-DbaDbSchema -SqlInstance localhost -Database example1 -SchemaName TestSchema1, TestSchema2 -SchemaOwner dbatools
 
-        Creates the TestSchema1 and TestSchema2 schemas in the example1 database in the localhost instance and assigns the dbatools as the owner of the schemas.
+        Creates the TestSchema1 and TestSchema2 schemas in the example1 database in the localhost instance and assigns the dbatools user as the owner of the schemas.
 
     .EXAMPLE
         PS C:\> New-DbaDbSchema -SqlInstance localhost, localhost\sql2017 -Database example1 -SchemaName TestSchema1, TestSchema2 -SchemaOwner dbatools
 
-        Creates the TestSchema1 and TestSchema2 schemas in the example1 database in the localhost and localhost\sql2017 instances and assigns the dbatools as the owner of the schemas.
+        Creates the TestSchema1 and TestSchema2 schemas in the example1 database in the localhost and localhost\sql2017 instances and assigns the dbatools user as the owner of the schemas.
 
     .EXAMPLE
         PS C:\> Get-DbaDatabase -SqlInstance localhost, localhost\sql2017 -Database example1 | New-DbaDbSchema -SchemaName TestSchema1, TestSchema2 -SchemaOwner dbatools
 
-        Creates the TestSchema1 and TestSchema2 schemas in the example1 database in the localhost and localhost\sql2017 instances and assigns the dbatools as the owner of the schemas.
+        Passes in the example1 db via pipeline and creates the TestSchema1 and TestSchema2 schemas and assigns the dbatools user as the owner of the schemas.
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'Low')]
     param (

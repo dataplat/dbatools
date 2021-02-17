@@ -99,6 +99,12 @@ function Get-DbaDbSchema {
         PS C:\> $schema.Drop()
 
         Finds the TestSchema in the TestDB on the localhost instance and then drops it. Note: to drop a schema all objects must be transferred to another schema or dropped.
+
+    .EXAMPLE
+        PS C:\> $db = Get-DbaDatabase -SqlInstance localhost -Database TestDB
+        PS C:\> $schema = $db | Get-DbaDbSchema -SchemaName TestSchema
+
+        Finds the TestSchema in the TestDB which is passed via pipeline into the Get-DbaDbSchema command.
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'Low')]
     param (
