@@ -22,6 +22,9 @@ function Get-DbaDbFile {
     .PARAMETER ExcludeDatabase
         The database(s) to exclude - this list is auto-populated from the server
 
+    .PARAMETER FileGroup
+        Filter results to only files within this certain filegroup.
+
     .PARAMETER InputObject
         A piped collection of database objects
 
@@ -60,6 +63,11 @@ function Get-DbaDbFile {
         PS C:\> Get-DbaDatabase -SqlInstance sql2016 -Database Impromptu, Trading | Get-DbaDbFile
 
         Will accept piped input from Get-DbaDatabase and return an object containing all file groups and their contained files for the Impromptu and Trading databases on the sql2016 SQL Server instance
+
+    .EXAMPLE
+        PS C:\> Get-DbaDbFile -SqlInstance sql2016 -Database AdventureWorks2017 -FileGroup Index
+
+        Return any files that are in the Index filegroup of the AdventureWorks2017 database.
     #>
     [CmdletBinding()]
     param (
@@ -68,6 +76,7 @@ function Get-DbaDbFile {
         [PSCredential]$SqlCredential,
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
+        [object[]]$FileGroup,
         [parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
         [switch]$EnableException
@@ -84,18 +93,18 @@ function Get-DbaDbFile {
             df.state_desc as State,
             df.max_size as MaxSize,
             case mf.is_percent_growth when 1 then df.growth else df.Growth*8 end as Growth,
-            fileproperty(df.name, 'spaceused') as UsedSpace,
+            COALESCE(fileproperty(df.name, 'spaceused'), 0) as UsedSpace,
             df.size as Size,
-            vfs.size_on_disk_bytes as size_on_disk_bytes,
+            COALESCE(vfs.size_on_disk_bytes, 0) as size_on_disk_bytes,
             case df.state_desc when 'OFFLINE' then 'True' else 'False' End as IsOffline,
             case mf.is_read_only when 1 then 'True' when 0 then 'False' End as IsReadOnly,
             case mf.is_media_read_only when 1 then 'True' when 0 then 'False' End as IsReadOnlyMedia,
             case mf.is_sparse when 1 then 'True' when 0 then 'False' End as IsSparse,
             case mf.is_percent_growth when 1 then 'Percent' when 0 then 'kb' End as GrowthType,
-            vfs.num_of_writes as NumberOfDiskWrites,
-            vfs.num_of_reads as NumberOfDiskReads,
-            vfs.num_of_bytes_read as BytesReadFromDisk,
-            vfs.num_of_bytes_written as BytesWrittenToDisk,
+            COALESCE(vfs.num_of_writes, 0) as NumberOfDiskWrites,
+            COALESCE(vfs.num_of_reads, 0) as NumberOfDiskReads,
+            COALESCE(vfs.num_of_bytes_read, 0) as BytesReadFromDisk,
+            COALESCE(vfs.num_of_bytes_written, 0) as BytesWrittenToDisk,
             fg.data_space_id as FileGroupDataSpaceId,
             fg.Type as FileGroupType,
             fg.type_desc as FileGroupTypeDescription,
@@ -104,7 +113,7 @@ function Get-DbaDbFile {
 
         $sqlfrom = "from sys.database_files df
             left outer join  sys.filegroups fg on df.data_space_id=fg.data_space_id
-            inner join sys.dm_io_virtual_file_stats(db_id(),NULL) vfs on df.file_id=vfs.file_id
+            left join sys.dm_io_virtual_file_stats(db_id(),NULL) vfs on df.file_id=vfs.file_id
             inner join sys.master_files mf on df.file_id = mf.file_id
             and mf.database_id = db_id()"
 
@@ -169,6 +178,11 @@ function Get-DbaDbFile {
                 $results = $server.Query($query, $db.Name)
             } catch {
                 Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
+            }
+
+            if (Test-Bound -ParameterName FileGroup) {
+                Write-Message -Message "Results will be filtered to FileGroup specified" -Level Verbose
+                $results = $results | Where-Object { $_.FileGroupName -eq $FileGroup }
             }
 
             foreach ($result in $results) {
