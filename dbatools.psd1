@@ -11,7 +11,7 @@
     RootModule             = 'dbatools.psm1'
 
     # Version number of this module.
-    ModuleVersion          = '1.0.133'
+    ModuleVersion          = '1.0.139'
 
     # ID used to uniquely identify this module
     GUID                   = '9d139310-ce45-41ce-8e8b-d76335aa1789'
@@ -23,7 +23,7 @@
     CompanyName            = 'dbatools.io'
 
     # Copyright statement for this module
-    Copyright              = 'Copyright (c) 2019 by dbatools, licensed under MIT'
+    Copyright              = 'Copyright (c) 2021 by dbatools, licensed under MIT'
 
     # Description of the functionality provided by this module
     Description            = "The community module that enables SQL Server Pros to automate database development and server administration"
@@ -501,6 +501,8 @@
         'Remove-DbaDbData',
         'Test-DbaDbQueryStore',
         'Install-DbaMultiTool',
+        'Remove-DbaAgentOperator',
+        'Remove-DbaDbTableData',
         # noncoresmo
         # SMO issues
         'Export-DbaUser',
@@ -522,6 +524,8 @@
         'Export-DbaRepServerSetting',
         'Get-DbaRepServer',
         'Export-DbaSysDbUserObject',
+        'Move-DbaDbFile'
+        'New-DbaAgentOperator',
         # windowsonly
         # solvable filesystem issues or other workarounds
         'Install-DbaSqlWatch',

@@ -107,7 +107,7 @@ function Invoke-DbatoolsFormatter {
             $realContent = @()
             #trim whitespace lines
             foreach ($line in $content.Split("`n")) {
-                $realContent += $line.TrimEnd()
+                $realContent += $line.Replace("`t", "    ").TrimEnd()
             }
             [System.IO.File]::WriteAllText($realPath, ($realContent -Join "$OSEOL"), $Utf8NoBomEncoding)
         }

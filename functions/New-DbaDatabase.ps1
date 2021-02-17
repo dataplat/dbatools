@@ -6,7 +6,13 @@ function New-DbaDatabase {
     .DESCRIPTION
         This command creates a new database.
 
-        It allows creation with multiple files, and sets all growth settings to be fixed size rather than percentage growth.
+        It allows creation with multiple files, and sets all growth settings to be fixed size rather than percentage growth. The autogrowth settings are obtained from the modeldev file in the model database when not supplied as command line arguments.
+
+        The generated database filenames take the form:
+
+        <db name>_PRIMARY
+        <db name>_Log
+        <db name>_MainData_1  (Secondary filegroup files)
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.
@@ -30,7 +36,7 @@ function New-DbaDatabase {
     .PARAMETER Collation
         The database collation, if not supplied the default server collation will be used.
 
-    .PARAMETER Recoverymodel
+    .PARAMETER RecoveryModel
         The recovery model for the database, if not supplied the recovery model from the model database will be used.
         Valid options are: Simple, Full, BulkLogged.
 
@@ -44,13 +50,16 @@ function New-DbaDatabase {
         The size in MB that the Primary file will autogrow by.
 
     .PARAMETER PrimaryFileMaxSize
-        The maximum permitted size in MB for the Primary File. If this is less the primary file size for the model database, then the model size will be used instead.
+        The maximum permitted size in MB for the Primary File. If this is less than the primary file size for the model database, then the model size will be used instead.
 
     .PARAMETER LogSize
         The size in MB that the Transaction log will be created.
 
     .PARAMETER LogGrowth
         The amount in MB that the log file will be set to autogrow by.
+
+    .PARAMETER LogMaxSize
+        The maximum permitted size in MB. If this is less than the log file size for the model database, then the model log size will be used instead.
 
     .PARAMETER SecondaryFileCount
         The number of files to create in the Secondary filegroup for the database.
@@ -111,6 +120,15 @@ function New-DbaDatabase {
 
         Creates a secondary group with 2 files in the Secondary filegroup.
 
+    .EXAMPLE
+        New-DbaDatabase -SqlInstance sql1 -Name newDb -LogSize 32 -LogMaxSize 512 -PrimaryFilesize 64 -PrimaryFileMaxSize 512 -SecondaryFilesize 64 -SecondaryFileMaxSize 512 -LogGrowth 32 -PrimaryFileGrowth 64 -SecondaryFileGrowth 64
+
+        Creates a new database named newDb on the sql1 instance and sets the file sizes, max sizes, and growth as specified. The resulting filenames will take the form:
+
+        newDb_PRIMARY
+        newDb_Log
+        newDb_MainData_1  (Secondary filegroup files)
+
     #>
     [Cmdletbinding(SupportsShouldProcess, ConfirmImpact = "Low")]
     param
@@ -122,7 +140,7 @@ function New-DbaDatabase {
         [string[]]$Name,
         [string]$Collation,
         [ValidateSet('Simple', 'Full', 'BulkLogged')]
-        [string]$Recoverymodel,
+        [string]$RecoveryModel,
         [string]$Owner,
         [string]$DataFilePath,
         [string]$LogFilePath,
@@ -131,6 +149,7 @@ function New-DbaDatabase {
         [int32]$PrimaryFileMaxSize,
         [int32]$LogSize,
         [int32]$LogGrowth,
+        [int32]$LogMaxSize,
         [int32]$SecondaryFilesize,
         [int32]$SecondaryFileGrowth,
         [int32]$SecondaryFileMaxSize,
@@ -142,23 +161,8 @@ function New-DbaDatabase {
 
     begin {
         # do some checks to see if the advanced config settings will be invoked
-        if (Test-Bound -ParameterName DataFilePath, LogFilePath, DefaultFileGroup) {
+        if (Test-Bound -ParameterName DataFilePath, DefaultFileGroup, LogFilePath, LogGrowth, LogMaxSize, LogSize, PrimaryFileGrowth, PrimaryFileMaxSize, PrimaryFilesize, SecondaryFileCount, SecondaryFileGrowth, SecondaryFileMaxSize, SecondaryFilesize) {
             $advancedconfig = $true
-        }
-
-        if (Test-Bound -ParameterName PrimaryFilesize, PrimaryFileGrowth, PrimaryFileMaxSize) {
-            $advancedconfig = $true
-        }
-
-        if (Test-Bound -ParameterName LogSize, LogGrowth) {
-            $advancedconfig = $true
-        }
-
-        if (Test-Bound -ParameterName SecondaryFilesize, SecondaryFileMaxSize, SecondaryFileGrowth, SecondaryFileCount) {
-            $advancedconfig = $true
-        }
-
-        if ($advancedconfig) {
             Write-Message -Message "Advanced data file configuration will be invoked" -Level Verbose
         }
     }
@@ -177,6 +181,15 @@ function New-DbaDatabase {
 
             if ($advancedconfig -and $server.VersionMajor -eq 8) {
                 Stop-Function -Message "Advanced configuration options are not available to SQL Server 2000. Aborting creation of database on $instance" -Target $instance -Continue
+            }
+
+            # validate the collation
+            if ($Collation) {
+                $collations = Get-DbaAvailableCollation -SqlInstance $instance
+
+                if ($collations.Name -notcontains $Collation) {
+                    Stop-Function -Message "$Collation is not a valid collation on $instance" -Target $instance -Continue
+                }
             }
 
             if (-not (Test-Bound -ParameterName Name)) {
@@ -228,9 +241,9 @@ function New-DbaDatabase {
                     $newdb.Collation = $Collation
                 }
 
-                if ($Recoverymodel) {
-                    Write-Message -Message "Setting recovery model to $Recoverymodel" -Level Verbose
-                    $newdb.Recoverymodel = $Recoverymodel
+                if ($RecoveryModel) {
+                    Write-Message -Message "Setting recovery model to $RecoveryModel" -Level Verbose
+                    $newdb.RecoveryModel = $RecoveryModel
                 }
 
                 if ($advancedconfig) {
@@ -247,7 +260,7 @@ function New-DbaDatabase {
                         $primaryfilename = $dbName + "_PRIMARY"
                         Write-Message -Message "Creating file name $primaryfilename in filegroup PRIMARY" -Level Verbose
 
-                        #check the size of the modeldev file; if larger than our $PrimaryFilesize setting use that instead
+                        # if PrimaryFilesize and PrimaryFileMaxSize were passed in then check the size of the modeldev file; if larger than our $PrimaryFilesize setting use that instead
                         if ($server.Databases["model"].FileGroups["PRIMARY"].Files["modeldev"].Size -gt ($PrimaryFilesize * 1024)) {
                             Write-Message -Message "model database modeldev larger than our the PrimaryFilesize so using modeldev size for Primary file" -Level Verbose
                             $PrimaryFilesize = ($server.Databases["model"].FileGroups["PRIMARY"].Files["modeldev"].Size / 1024)
@@ -257,20 +270,27 @@ function New-DbaDatabase {
                             }
                         }
 
-                        #create the filegroup object
+                        #create the primary file
                         $primaryfile = New-Object Microsoft.SqlServer.Management.Smo.DataFile($primaryfg, $primaryfilename)
                         $primaryfile.FileName = $DataFilePath + "\" + $primaryfilename + ".mdf"
                         $primaryfile.IsPrimaryFile = $true
 
                         if (Test-Bound -ParameterName PrimaryFilesize) {
                             $primaryfile.Size = ($PrimaryFilesize * 1024)
+                        } else {
+                            $primaryfile.Size = $server.Databases["model"].FileGroups["PRIMARY"].Files["modeldev"].Size
                         }
                         if (Test-Bound -ParameterName PrimaryFileGrowth) {
                             $primaryfile.Growth = ($PrimaryFileGrowth * 1024)
                             $primaryfile.GrowthType = "KB"
+                        } else {
+                            $primaryfile.Growth = $server.Databases["model"].FileGroups["PRIMARY"].Files["modeldev"].Growth
+                            $primaryfile.GrowthType = $server.Databases["model"].FileGroups["PRIMARY"].Files["modeldev"].GrowthType
                         }
                         if (Test-Bound -ParameterName PrimaryFileMaxSize) {
                             $primaryfile.MaxSize = ($PrimaryFileMaxSize * 1024)
+                        } else {
+                            $primaryfile.MaxSize = $server.Databases["model"].FileGroups["PRIMARY"].Files["modeldev"].MaxSize
                         }
 
                         #add the file to the filegroup
@@ -283,10 +303,14 @@ function New-DbaDatabase {
                         $logname = $dbName + "_Log"
                         Write-Message -Message "Creating log $logname" -Level Verbose
 
-                        #check the size of the modellog file; if larger than our $LogSize setting use that instead
+                        # if LogSize and LogMaxSize were passed in then check the size of the modellog file; if larger than our $LogSize setting use that instead
                         if ($server.Databases["model"].LogFiles["modellog"].Size -gt ($LogSize * 1024)) {
                             Write-Message -Message "model database modellog larger than our the LogSize so using modellog size for Log file size" -Level Verbose
                             $LogSize = ($server.Databases["model"].LogFiles["modellog"].Size / 1024)
+                            if ($LogSize -gt $LogMaxSize) {
+                                Write-Message -Message "Resetting Log File Max size to be the new Log File Size setting" -Level Verbose
+                                $LogMaxSize = $LogSize
+                            }
                         }
 
                         $tlog = New-Object Microsoft.SqlServer.Management.Smo.LogFile($newdb, $logname)
@@ -294,10 +318,20 @@ function New-DbaDatabase {
 
                         if (Test-Bound -ParameterName LogSize) {
                             $tlog.Size = ($LogSize * 1024)
+                        } else {
+                            $tlog.Size = $server.Databases["model"].LogFiles["modellog"].Size
                         }
                         if (Test-Bound -ParameterName LogGrowth) {
                             $tlog.Growth = ($LogGrowth * 1024)
                             $tlog.GrowthType = "KB"
+                        } else {
+                            $tlog.Growth = $server.Databases["model"].LogFiles["modellog"].Growth
+                            $tlog.GrowthType = $server.Databases["model"].LogFiles["modellog"].GrowthType
+                        }
+                        if (Test-Bound -ParameterName LogMaxSize) {
+                            $tlog.MaxSize = ($LogMaxSize * 1024)
+                        } else {
+                            $tlog.MaxSize = $server.Databases["model"].LogFiles["modellog"].MaxSize
                         }
 
                         #add the log to the db
@@ -306,7 +340,7 @@ function New-DbaDatabase {
                         Stop-Function -Message "Error adding log file to database." -ErrorRecord $_ -Target $instance -Continue
                     }
 
-                    if (Test-Bound -ParameterName SecondaryFileMaxSize, SecondaryFileGrowth, SecondaryFilesize) {
+                    if ($DefaultFileGroup -eq "Secondary" -or (Test-Bound -ParameterName SecondaryFileMaxSize, SecondaryFileGrowth, SecondaryFilesize, SecondaryFileCount)) {
                         #add the Secondary data file group
                         try {
                             $secondaryfilegroupname = $dbName + "_MainData"
@@ -316,6 +350,16 @@ function New-DbaDatabase {
                             $newdb.Filegroups.Add($secondaryfg)
                         } catch {
                             Stop-Function -Message "Error creating Secondary filegroup" -ErrorRecord $_ -Target $instance -Continue
+                        }
+
+                        # if SecondaryFilesize and SecondaryFileMaxSize were passed in then check the size of the modeldev file; if larger than our $SecondaryFilesize setting use that instead
+                        if ($server.Databases["model"].FileGroups["PRIMARY"].Files["modeldev"].Size -gt ($SecondaryFilesize * 1024)) {
+                            Write-Message -Message "model database modeldev larger than our the SecondaryFilesize so using modeldev size for the Secondary file" -Level Verbose
+                            $SecondaryFilesize = ($server.Databases["model"].FileGroups["PRIMARY"].Files["modeldev"].Size / 1024)
+                            if ($SecondaryFilesize -gt $SecondaryFileMaxSize) {
+                                Write-Message -Message "Resetting Secondary File Max size to be the new Secondary File Size setting" -Level Verbose
+                                $SecondaryFileMaxSize = $SecondaryFilesize
+                            }
                         }
 
                         # add the required number of files to the filegroup in a loop
@@ -332,13 +376,20 @@ function New-DbaDatabase {
 
                                 if (Test-Bound -ParameterName SecondaryFilesize) {
                                     $secondaryfile.Size = ($SecondaryFilesize * 1024)
+                                } else {
+                                    $secondaryfile.Size = $server.Databases["model"].FileGroups["PRIMARY"].Files["modeldev"].Size
                                 }
                                 if (Test-Bound -ParameterName SecondaryFileGrowth) {
                                     $secondaryfile.Growth = ($SecondaryFileGrowth * 1024)
                                     $secondaryfile.GrowthType = "KB"
+                                } else {
+                                    $secondaryfile.Growth = $server.Databases["model"].FileGroups["PRIMARY"].Files["modeldev"].Growth
+                                    $secondaryfile.GrowthType = $server.Databases["model"].FileGroups["PRIMARY"].Files["modeldev"].GrowthType
                                 }
                                 if (Test-Bound -ParameterName SecondaryFileMaxSize) {
                                     $secondaryfile.MaxSize = ($SecondaryFileMaxSize * 1024)
+                                } else {
+                                    $secondaryfile.MaxSize = $server.Databases["model"].FileGroups["PRIMARY"].Files["modeldev"].MaxSize
                                 }
 
                                 $secondaryfg.Files.Add($secondaryfile)
@@ -347,7 +398,7 @@ function New-DbaDatabase {
                                 Stop-Function -Message "Error adding file $secondaryfg to $secondaryfilegroupname" -ErrorRecord $_ -Target $instance
                                 return
                             }
-                        } while ($secondaryfgcount -le $SecondaryFileCount -or $bail)
+                        } while ($secondaryfgcount -lt $SecondaryFileCount -or $bail)
                     }
                 }
 
@@ -374,7 +425,7 @@ function New-DbaDatabase {
                         try {
                             $newdb.SetDefaultFileGroup($secondaryfilegroupname)
                         } catch {
-                            Stop-Function -Message "Error setting default filegorup to $secondaryfilegroupname" -ErrorRecord $_ -Target $instance -Continue
+                            Stop-Function -Message "Error setting default filegroup to $secondaryfilegroupname" -ErrorRecord $_ -Target $instance -Continue
                         }
                     }
 

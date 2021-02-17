@@ -2,6 +2,7 @@ function Set-DbaLogin {
     <#
     .SYNOPSIS
         Set-DbaLogin makes it possible to make changes to one or more logins.
+        SQL Azure DB is not supported.
 
     .DESCRIPTION
         Set-DbaLogin will enable you to change the password, unlock, rename, disable or enable, deny or grant login privileges to the login. It's also possible to add or remove server roles from the login.
@@ -49,7 +50,10 @@ function Set-DbaLogin {
         Grant access to SQL Server
 
     .PARAMETER PasswordPolicyEnforced
-        Should the password policy be enforced.
+        Enable the password policy on the login (check_policy = ON). This option must be enabled in order for -PasswordExpirationEnabled to be used.
+
+    .PARAMETER PasswordExpirationEnabled
+        Enable the password expiration check on the login (check_expiration = ON). In order to enable this option the PasswordPolicyEnforced (check_policy) must also be enabled for the login.
 
     .PARAMETER AddRole
         Add one or more server roles to the login
@@ -173,6 +177,7 @@ function Set-DbaLogin {
         [switch]$DenyLogin,
         [switch]$GrantLogin,
         [switch]$PasswordPolicyEnforced,
+        [switch]$PasswordExpirationEnabled,
         [ValidateSet('bulkadmin', 'dbcreator', 'diskadmin', 'processadmin', 'public', 'securityadmin', 'serveradmin', 'setupadmin', 'sysadmin')]
         [string[]]$AddRole,
         [ValidateSet('bulkadmin', 'dbcreator', 'diskadmin', 'processadmin', 'public', 'securityadmin', 'serveradmin', 'setupadmin', 'sysadmin')]
@@ -218,12 +223,12 @@ function Set-DbaLogin {
         foreach ($instance in $SqlInstance) {
             # Try connecting to the instance
             try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9 -AzureUnsupported
             } catch {
                 Stop-Function -Message 'Failure' -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
             $allLogins[$instance.ToString()] = Get-DbaLogin -SqlInstance $server
-            $InputObject += $allLogins[$instance.ToString()] | Where-Object { ($_.Name -in $Login) -and ($_.IsSystemObject -eq $false) -and ($_.Name -notlike '##*') }
+            $InputObject += $allLogins[$instance.ToString()] | Where-Object { ($_.Name -in $Login) -and ($_.Name -notlike '##*') }
         }
 
         # Loop through all the logins
@@ -317,6 +322,21 @@ function Set-DbaLogin {
                     }
                 }
 
+                # Enforce password expiration
+                if (Test-Bound -ParameterName 'PasswordExpirationEnabled') {
+
+                    if ($l.PasswordPolicyEnforced -eq $false) {
+                        $notes += "Couldn't set check_expiration = ON because check_policy = OFF for $l. See the command description for more details on these settings."
+                        Stop-Function -Message "Couldn't set check_expiration = ON because check_policy = OFF for $l. See the command description for more details on these settings." -Target $l -Continue
+                    }
+
+                    if ($l.PasswordExpirationEnabled -eq $PasswordExpirationEnabled) {
+                        Write-Message -Message "Login $l password expiration check is already set to $($l.PasswordExpirationEnabled)" -Level Verbose
+                    } else {
+                        $l.PasswordExpirationEnabled = $PasswordExpirationEnabled
+                    }
+                }
+
                 # Add server roles to login
                 if ($AddRole) {
                     # Loop through each of the roles
@@ -379,7 +399,7 @@ function Set-DbaLogin {
                 Add-Member -Force -InputObject $l -MemberType NoteProperty -Name DenyLogin -Value $l.DenyWindowsLogin
 
                 $defaults = 'ComputerName', 'InstanceName', 'SqlInstance', 'LoginName', 'DenyLogin', 'IsDisabled', 'IsLocked',
-                'PasswordPolicyEnforced', 'MustChangePassword', 'PasswordChanged', 'ServerRole', 'Notes'
+                'PasswordPolicyEnforced', 'PasswordExpirationEnabled', 'MustChangePassword', 'PasswordChanged', 'ServerRole', 'Notes'
 
                 Select-DefaultView -InputObject $l -Property $defaults
             }

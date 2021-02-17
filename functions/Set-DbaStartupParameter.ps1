@@ -227,6 +227,7 @@ function Set-DbaStartupParameter {
                 return
             }
             $originalParamString = $currentStartup.ParameterString
+            $parameterString = $null
 
             Write-Message -Level Verbose -Message "Original startup parameter string: $originalParamString"
 
@@ -406,12 +407,12 @@ function Set-DbaStartupParameter {
                     if ($Credential) {
                         $null = Invoke-ManagedComputerCommand -ComputerName $server.ComputerName -Credential $Credential -ScriptBlock $scriptBlock -ArgumentList $server.ComputerName, $displayName, $parameterString -EnableException
 
-                        $output = Get-DbaStartupParameter -SqlInstance $server.ComputerName -Credential $Credential -EnableException
+                        $output = Get-DbaStartupParameter -SqlInstance $server -Credential $Credential -EnableException
                         Add-Member -Force -InputObject $output -MemberType NoteProperty -Name OriginalStartupParameters -Value $originalParamString
                     } else {
                         $null = Invoke-ManagedComputerCommand -ComputerName $server.ComputerName -scriptBlock $scriptBlock -ArgumentList $server.ComputerName, $displayName, $parameterString -EnableException
 
-                        $output = Get-DbaStartupParameter -SqlInstance $server.ComputerName -EnableException
+                        $output = Get-DbaStartupParameter -SqlInstance $server -EnableException
                         Add-Member -Force -InputObject $output -MemberType NoteProperty -Name OriginalStartupParameters -Value $originalParamString
                         Add-Member -Force -InputObject $output -MemberType NoteProperty -Name Notes -Value "Startup parameters changed on $instance. You must restart SQL Server for changes to take effect."
                     }

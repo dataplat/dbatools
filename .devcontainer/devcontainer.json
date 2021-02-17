@@ -1,0 +1,29 @@
+{
+    "name": "dbatools",
+    "workspaceFolder": "/workspace",
+    "dockerComposeFile": [
+        "docker-compose.yml"
+    ],
+    "remoteEnv": {
+        "LOCAL_WORKSPACE_FOLDER": "${localWorkspaceFolder}",
+        "MY_SERVERS": "dbatools1,dbatools2,dbatools3",
+        "MY_SERVER": "dbatools1"
+    },
+    "service": "dbatools1",
+    "settings": {
+        "terminal.integrated.shell.linux": "/usr/bin/pwsh"
+    },
+    // Add the IDs of extensions you want installed when the container is created.
+    "extensions": [
+        "ms-vscode.powershell",
+        "github.vscode-pull-request-github",
+        "2gua.rainbow-brackets",
+        "oderwat.indent-rainbow",
+        "mhutchie.git-graph",
+        "usernamehw.errorlens"
+    ]
+    // Uncomment the next line if you want to keep your containers running after VS Code shuts down.
+    // "shutdownAction": "none",
+    // Uncomment the next line to run commands after the container is created - for example installing curl.
+    // "postCreateCommand": "apt-get update && apt-get install -y curl",
+}

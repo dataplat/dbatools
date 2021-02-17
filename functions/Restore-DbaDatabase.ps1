@@ -15,7 +15,7 @@ function Restore-DbaDatabase {
         passed in.
 
     .PARAMETER SqlInstance
-        The target SQL Server instance or instances.
+        The target SQL Server instance.
 
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
@@ -65,9 +65,11 @@ function Restore-DbaDatabase {
 
     .PARAMETER OutputScriptOnly
         Switch indicates that ONLY T-SQL scripts should be generated, no restore takes place
+        Due to the limitations of SMO, this switch cannot be combined with VeriyOnly, and a warning will be raised if it is.
 
     .PARAMETER VerifyOnly
-        Switch indicate that restore should be verified
+        Switch indicate that restore should be verified.
+        Due to the limitations of SMO, this switch cannot be combined with OutputScriptOnly, and a warning will be raised if it is.
 
     .PARAMETER MaintenanceSolutionBackup
         Switch to indicate the backup files are in a folder structure as created by Ola Hallengreen's maintenance scripts.
@@ -133,6 +135,9 @@ function Restore-DbaDatabase {
     .PARAMETER Continue
         If specified we will to attempt to recover more transaction log backups onto  database(s) in Recovering or Standby states
         When specified, WithReplace will be set to true
+
+    .PARAMETER ExecuteAs
+        If value provided the restore will be executed under this login's context. The login must exist, and have the relevant permissions to perform the restore
 
     .PARAMETER StandbyDirectory
         If a directory is specified the database(s) will be restored into a standby state, with the standby file placed into this directory (which must exist, and be writable by the target Sql Server instance)
@@ -379,6 +384,7 @@ function Restore-DbaDatabase {
         [switch]$EnableException,
         [parameter(ParameterSetName = "Restore")][string]$StandbyDirectory,
         [parameter(ParameterSetName = "Restore")][switch]$Continue,
+        [parameter(ParameterSetName = "Restore")][string]$ExecuteAs,
         [string]$AzureCredential,
         [parameter(ParameterSetName = "Restore")][switch]$ReplaceDbNameInFile,
         [parameter(ParameterSetName = "Restore")][string]$DestinationFileSuffix,
@@ -422,12 +428,19 @@ function Restore-DbaDatabase {
                 }
             }
         }
+
         if ($PSCmdlet.ParameterSetName -eq "Restore") {
             $UseDestinationDefaultDirectories = $true
             $paramCount = 0
 
             if (Test-Bound "FileMapping") {
                 $paramCount += 1
+            }
+            If (Test-Bound "ExecuteAs") {
+                if ((Get-DbaLogin -SqlInstance $RestoreInstance -Login $ExecuteAs).count -eq 0) {
+                    Stop-Function -Category  InvalidArgument -Message "You specified a Login to execute the restore, but the login '$ExecuteAs' does not exist"
+                    return
+                }
             }
             if (Test-Bound "ReuseSourceFolderStructure") {
                 $paramCount += 1
@@ -496,6 +509,10 @@ function Restore-DbaDatabase {
             }
             if (!($PSBoundParameters.ContainsKey("DataBasename"))) {
                 $PipeDatabaseName = $true
+            }
+            if ($OutputScriptOnly -and $VerifyOnly) {
+                Stop-Function -Category InvalidArgument -Message "The switches OutputScriptOnly and VerifyOnly cannot both be specified at the same time, stopping"
+                return
             }
         }
 
@@ -714,7 +731,7 @@ function Restore-DbaDatabase {
                 $TailBackup = Backup-DbaDatabase -SqlInstance $RestoreInstance -Database $DatabaseName -Type Log -BackupDirectory $PageRestoreTailFolder -Norecovery -CopyOnly
             }
             try {
-                $FilteredBackupHistory | Where-Object { $_.IsVerified -eq $true } | Invoke-DbaAdvancedRestore -SqlInstance $RestoreInstance -WithReplace:$WithReplace -RestoreTime $RestoreTime -StandbyDirectory $StandbyDirectory -NoRecovery:$NoRecovery -Continue:$Continue -OutputScriptOnly:$OutputScriptOnly -BlockSize $BlockSize -MaxTransferSize $MaxTransferSize -BufferCount $Buffercount -KeepCDC:$KeepCDC -VerifyOnly:$VerifyOnly -PageRestore $PageRestore -EnableException -AzureCredential $AzureCredential -KeepReplication:$KeepReplication -StopMark:$StopMark -StopAfterDate:$StopAfterDate -StopBefore:$StopBefore
+                $FilteredBackupHistory | Where-Object { $_.IsVerified -eq $true } | Invoke-DbaAdvancedRestore -SqlInstance $RestoreInstance -WithReplace:$WithReplace -RestoreTime $RestoreTime -StandbyDirectory $StandbyDirectory -NoRecovery:$NoRecovery -Continue:$Continue -OutputScriptOnly:$OutputScriptOnly -BlockSize $BlockSize -MaxTransferSize $MaxTransferSize -BufferCount $Buffercount -KeepCDC:$KeepCDC -VerifyOnly:$VerifyOnly -PageRestore $PageRestore -EnableException -AzureCredential $AzureCredential -KeepReplication:$KeepReplication -StopMark:$StopMark -StopAfterDate:$StopAfterDate -StopBefore:$StopBefore -ExecuteAs $ExecuteAs
             } catch {
                 Stop-Function -Message "Failure" -ErrorRecord $_ -Continue -Target $RestoreInstance
             }
