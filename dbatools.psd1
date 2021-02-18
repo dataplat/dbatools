@@ -11,7 +11,7 @@
     RootModule             = 'dbatools.psm1'
 
     # Version number of this module.
-    ModuleVersion          = '1.0.139'
+    ModuleVersion          = '1.0.140'
 
     # ID used to uniquely identify this module
     GUID                   = '9d139310-ce45-41ce-8e8b-d76335aa1789'
@@ -503,6 +503,8 @@
         'Install-DbaMultiTool',
         'Remove-DbaAgentOperator',
         'Remove-DbaDbTableData',
+        'Get-DbaDbSchema',
+        'New-DbaDbSchema'
         # noncoresmo
         # SMO issues
         'Export-DbaUser',
