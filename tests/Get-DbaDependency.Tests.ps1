@@ -51,14 +51,41 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
                             CREATE TABLE dbo.dbatoolsci2
                             (
                                 ID INTEGER PRIMARY KEY
-                            ,	ParentID INTEGER FOREIGN KEY REFERENCES dbo.dbatoolsci1(ID)
+                            ,    ParentID INTEGER FOREIGN KEY REFERENCES dbo.dbatoolsci1(ID)
                             );
 
                             CREATE TABLE dbo.dbatoolsci3
                             (
                                 ID INTEGER
-                            ,	ParentID INTEGER FOREIGN KEY REFERENCES dbo.dbatoolsci2(ID)
-                            );"
+                            ,    ParentID INTEGER FOREIGN KEY REFERENCES dbo.dbatoolsci2(ID)
+                            );
+
+                            CREATE TABLE [dbo].[TableA](
+                                [TableAId] [int] NOT NULL,
+                                [TableBId] [int] NULL,
+                             CONSTRAINT [PK_TableA] PRIMARY KEY CLUSTERED
+                            (
+                                [TableAId] ASC
+                            ));
+
+                            CREATE TABLE [dbo].[TableB](
+                                [TableBId] [int] NOT NULL,
+                                [TableAId] [int] NOT NULL,
+                             CONSTRAINT [PK_TableB] PRIMARY KEY CLUSTERED
+                            (
+                                [TableBId] ASC
+                            ));
+
+                            ALTER TABLE [dbo].[TableA]  WITH CHECK ADD  CONSTRAINT [FK_TableA_TableB] FOREIGN KEY([TableBId])
+                            REFERENCES [dbo].[TableB] ([TableBId]);
+
+                            ALTER TABLE [dbo].[TableA] CHECK CONSTRAINT [FK_TableA_TableB];
+
+                            ALTER TABLE [dbo].[TableB]  WITH CHECK ADD  CONSTRAINT [FK_TableB_TableA] FOREIGN KEY([TableAId])
+                            REFERENCES [dbo].[TableA] ([TableAId]);
+
+                            ALTER TABLE [dbo].[TableB] CHECK CONSTRAINT [FK_TableB_TableA];
+                            "
 
 
         $null = Invoke-DbaQuery -SqlInstance $script:instance1 -Database $dbname -Query $createTableScript
@@ -74,22 +101,30 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
 
     It "Test with a table that has parent dependencies" {
         $results = Get-DbaDbTable -SqlInstance $script:instance1 -Database $dbname -Table dbo.dbatoolsci2 | Get-DbaDependency -Parents
-        $results.length         | Should -Be 1
-        $results[0].Dependent   | Should -Be "dbatoolsci1"
-        $results[0].Tier        | Should -Be -1
+        $results.length | Should -Be 1
+        $results[0].Dependent | Should -Be "dbatoolsci1"
+        $results[0].Tier | Should -Be -1
     }
 
     It "Test with a table that has child dependencies" {
         $results = Get-DbaDbTable -SqlInstance $script:instance1 -Database $dbname -Table dbo.dbatoolsci2 | Get-DbaDependency -IncludeSelf
         $results.length | Should -Be 2
-        $results[1].Dependent   | Should -Be "dbatoolsci3"
-        $results[1].Tier        | Should -Be 1
+        $results[1].Dependent | Should -Be "dbatoolsci3"
+        $results[1].Tier | Should -Be 1
     }
 
     It "Test with a table that has multiple levels of dependencies and use -IncludeSelf" {
         $results = Get-DbaDbTable -SqlInstance $script:instance1 -Database $dbname -Table dbo.dbatoolsci3 | Get-DbaDependency -IncludeSelf -Parents
-        $results.length         | Should -Be 3
-        $results[0].Dependent   | Should -Be "dbatoolsci1"
-        $results[0].Tier        | Should -Be -2
+        $results.length | Should -Be 3
+        $results[0].Dependent | Should -Be "dbatoolsci1"
+        $results[0].Tier | Should -Be -2
+    }
+
+    # https://github.com/sqlcollaborative/dbatools/issues/7139
+    It "Test with a circular dependency" {
+        $tableA = Get-DbaDbTable -SqlInstance $script:instance1 -Database $dbname -table TableA
+        $results = $tableA | Get-DbaDependency
+        $results.Count | Should -Be 2
+        $results.Dependent | Should -Be ('TableB', 'TableA')
     }
 }

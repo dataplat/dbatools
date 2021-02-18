@@ -113,15 +113,26 @@ function Get-DbaDependency {
                 $Parent,
 
                 [bool]
-                $EnumParents
+                $EnumParents,
+
+                [System.Object[]]
+                $processedDependencies
             )
 
-            Add-Member -Force -InputObject $InputObject -Name Parent -Value $Parent -MemberType NoteProperty
-            if ($EnumParents) { Add-Member -Force -InputObject $InputObject -Name Tier -Value ($Tier * -1) -MemberType NoteProperty -PassThru }
-            else { Add-Member -Force -InputObject $InputObject -Name Tier -Value $Tier -MemberType NoteProperty -PassThru }
+            if ($InputObject.Urn.Value -notin $processedDependencies) {
+                $processedDependencies += $InputObject.Urn.Value
 
-            if ($InputObject.HasChildNodes) { Read-DependencyTree -InputObject $InputObject.FirstChild -Tier ($Tier + 1) -Parent $InputObject -EnumParents $EnumParents }
-            if ($InputObject.NextSibling) { Read-DependencyTree -InputObject $InputObject.NextSibling -Tier $Tier -Parent $Parent -EnumParents $EnumParents }
+                Write-Message -Level Verbose -Message "Processing $($InputObject.Urn.Value)"
+
+                Add-Member -Force -InputObject $InputObject -Name Parent -Value $Parent -MemberType NoteProperty
+                if ($EnumParents) { Add-Member -Force -InputObject $InputObject -Name Tier -Value ($Tier * -1) -MemberType NoteProperty -PassThru }
+                else { Add-Member -Force -InputObject $InputObject -Name Tier -Value $Tier -MemberType NoteProperty -PassThru }
+
+                if ($InputObject.HasChildNodes) { Read-DependencyTree -InputObject $InputObject.FirstChild -Tier ($Tier + 1) -Parent $InputObject -EnumParents $EnumParents -ProcessedDependencies $processedDependencies }
+                if ($InputObject.NextSibling) { Read-DependencyTree -InputObject $InputObject.NextSibling -Tier $Tier -Parent $Parent -EnumParents $EnumParents -ProcessedDependencies $processedDependencies }
+            } else {
+                Write-Message -Level Warning -Message "A circular dependency was detected with $($InputObject.Urn.Value). The script output will need to be modified to create the circular objects and constraints in the correct order."
+            }
         }
 
         function Get-DependencyTreeNodeDetail {
@@ -204,6 +215,7 @@ function Get-DbaDependency {
     }
     process {
         foreach ($Item in $InputObject) {
+            $processedDependencies = @()
             Write-Message -Level Verbose -Message "Processing: $Item"
             if ($null -eq $Item.urn) {
                 Stop-Function -Message "$Item is not a valid SMO object" -Category InvalidData -Continue -Target $Item
@@ -221,7 +233,7 @@ function Get-DbaDependency {
 
             $server = $parent
 
-            $tree = Get-DependencyTree -Object $Item -AllowSystemObjects $false -Server $server -FunctionName (Get-PSCallStack)[0].COmmand -EnumParents $Parents
+            $tree = Get-DependencyTree -Object $Item -AllowSystemObjects $false -Server $server -FunctionName (Get-PSCallStack)[0].Command -EnumParents $Parents
             $limitCount = 2
             if ($IncludeSelf) { $limitCount = 1 }
             if ($tree.Count -lt $limitCount) {
@@ -229,8 +241,8 @@ function Get-DbaDependency {
                 continue
             }
 
-            if ($IncludeSelf) { $resolved = Read-DependencyTree -InputObject $tree.FirstChild -Tier 0 -Parent $tree.FirstChild -EnumParents $Parents }
-            else { $resolved = Read-DependencyTree -InputObject $tree.FirstChild.FirstChild -Tier 1 -Parent $tree.FirstChild -EnumParents $Parents }
+            if ($IncludeSelf) { $resolved = Read-DependencyTree -InputObject $tree.FirstChild -Tier 0 -Parent $tree.FirstChild -EnumParents $Parents -ProcessedDependencies $processedDependencies }
+            else { $resolved = Read-DependencyTree -InputObject $tree.FirstChild.FirstChild -Tier 1 -Parent $tree.FirstChild -EnumParents $Parents -ProcessedDependencies $processedDependencies }
             $resolved | Get-DependencyTreeNodeDetail -Server $server -OriginalResource $Item -AllowSystemObjects $AllowSystemObjects | Select-DependencyPrecedence
         }
     }
