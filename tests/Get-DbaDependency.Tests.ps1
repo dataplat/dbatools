@@ -131,13 +131,6 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         $results[0].Tier        | Should -Be -2
     }
 
-    It "Test with a table that has multiple levels of dependencies and use -IncludeSelf" {
-        $results = Get-DbaDbTable -SqlInstance $script:instance1 -Database $dbname -Table dbo.dbatoolsci3 | Get-DbaDependency -IncludeSelf -Parents
-        $results.length         | Should -Be 3
-        $results[0].Dependent   | Should -Be "dbatoolsci1"
-        $results[0].Tier        | Should -Be -2
-    }
-
     It "Test with a tables that have circular dependencies" {
         # this causes infinite loop when circular dependencies exist in dependency tree.
         $results = Get-DbaDbTable -SqlInstance $script:instance1 -Database $dbname -Table dbo.dbatoolsci_circrefA | Get-DbaDependency
