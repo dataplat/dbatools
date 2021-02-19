@@ -60,6 +60,18 @@ function Get-DbaDependency {
 
     begin {
         #region Utility functions
+
+        function Read-Parent {
+            [CmdletBinding()]
+            param (
+                $InputObject
+            )
+            $InputObject.Urn
+            if ($InputObject.Parent -ne $null) {
+                Read-Parent $InputObject.Parent
+            }
+        }
+
         function Get-DependencyTree {
             [CmdletBinding()]
             param (
@@ -116,9 +128,15 @@ function Get-DbaDependency {
                 $EnumParents
             )
 
+            Write-Message -Level 5 -Message "Add chid $($InputObject.Urn) which is a $($InputObject.urn.Type)"
             Add-Member -Force -InputObject $InputObject -Name Parent -Value $Parent -MemberType NoteProperty
             if ($EnumParents) { Add-Member -Force -InputObject $InputObject -Name Tier -Value ($Tier * -1) -MemberType NoteProperty -PassThru }
             else { Add-Member -Force -InputObject $InputObject -Name Tier -Value $Tier -MemberType NoteProperty -PassThru }
+
+            if ($Tier -gt 0 -and (Read-Parent -InputObject $Parent).Value -Contains $InputObject.Urn.Value) {
+                Write-Message -Message "Circular Reference detected. $($InputObject.Urn)" -Level Important
+                return # End dependency tree descension here.
+            }
 
             if ($InputObject.HasChildNodes) { Read-DependencyTree -InputObject $InputObject.FirstChild -Tier ($Tier + 1) -Parent $InputObject -EnumParents $EnumParents }
             if ($InputObject.NextSibling) { Read-DependencyTree -InputObject $InputObject.NextSibling -Tier $Tier -Parent $Parent -EnumParents $EnumParents }
