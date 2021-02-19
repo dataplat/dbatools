@@ -133,8 +133,9 @@ function Get-DbaDependency {
             if ($EnumParents) { Add-Member -Force -InputObject $InputObject -Name Tier -Value ($Tier * -1) -MemberType NoteProperty -PassThru }
             else { Add-Member -Force -InputObject $InputObject -Name Tier -Value $Tier -MemberType NoteProperty -PassThru }
 
-            if ($Tier -gt 0 -and (Read-Parent -InputObject $Parent).Value -Contains $InputObject.Urn.Value) {
-                Write-Message -Message "Circular Reference detected. $($InputObject.Urn)" -Level Important
+            $circularReferenceCheck = Read-Parent -InputObject $Parent
+            if ($Tier -gt 0 -and $circularReferenceCheck.Value -Contains $InputObject.Urn.Value) {
+                Write-Message -Message "Circular Reference detected. $circularReferenceCheck" -Level Warning
                 return # End dependency tree descension here.
             }
 
@@ -215,7 +216,7 @@ function Get-DbaDependency {
                 }
             }
             end {
-                $list | Group-Object -Property Object | ForEach-Object { $_.Group | Sort-Object -Property Tier -Descending | Select-Object -First 1 } | Sort-Object Tier
+                $list | Group-Object -Property Object,Tier | ForEach-Object { $_.Group | Sort-Object -Property Tier -Descending | Select-Object -First 1 } | Sort-Object Tier
             }
         }
         #endregion Utility functions
