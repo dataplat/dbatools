@@ -38,7 +38,7 @@ function Initialize-CredSSP {
     )
 
     #Check to see if this function is bypassed
-    if ( ( Get-DbatoolsConfigValue -FullName 'commands.initialize-credssp.bypass')  -eq $true ) {
+    if ( ( Get-DbatoolsConfigValue -FullName 'commands.initialize-credssp.bypass') -eq $true ) {
         Write-Message -Level Verbose -Message "CredSSP initialization bypass (commands.initialize-credssp.bypass) is set to $true";
         return;
     }
