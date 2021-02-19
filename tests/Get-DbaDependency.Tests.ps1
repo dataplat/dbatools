@@ -144,35 +144,20 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         $results.length | Should -Be 2
         $results[0].Dependent   | Should -Be "dbatoolsci_circrefB"
         $results[0].Tier        | Should -Be 1
+        $results[1].Dependent   | Should -Be "dbatoolsci_circrefA"
+        $results[1].Tier        | Should -Be 2
     }
 
     It "Test with a tables that have circular dependencies and use -IncludeSelf" {
         # this causes infinite loop when circular dependencies exist in dependency tree.
         $results = Get-DbaDbTable -SqlInstance $script:instance1 -Database $dbname -Table dbo.dbatoolsci_circrefA | Get-DbaDependency -IncludeSelf
-        $results.length | Should -Be 2
-        $results[0].Dependent   | Should -Be "dbatoolsci_circrefB"
-        $results[0].Tier        | Should -Be 1
-        Remove-Job $job
+        $results.length | Should -Be 3
+        $results[0].Dependent   | Should -Be "dbatoolsci_circrefA"
+        $results[0].Tier        | Should -Be 0
+        $results[1].Dependent   | Should -Be "dbatoolsci_circrefB"
+        $results[1].Tier        | Should -Be 1
+        $results[2].Dependent   | Should -Be "dbatoolsci_circrefA"
+        $results[2].Tier        | Should -Be 2
     }
 }
-
-
-# Import-Module .\dbatools.psm1 -Verbose -Force
-# $job = Start-Job -ScriptBlock { Get-Process }
-# $job = Start-Job -ScriptBlock {
-# Get-DbaDbTable -SqlInstance localhost -Database dbatoolsscidb_1140005995 -Table dbo.dbatoolsci1 | Get-DbaDependency -Verbose
-
-# Get-DbaDbTable -SqlInstance localhost -Database dbatoolsscidb_1140005995 -Table dbo.dbatoolsci1 | Get-DbaDependency -IncludeSelf
-# }
-# $job = Start-Job -ScriptBlock { Get-DbaDbTable -SqlInstance localhost -Database dbatoolsscidb_1140005995 -Table dbo.dbatoolsci_circrefA | Get-DbaDependency }
-# $job = Start-Job -ScriptBlock {
-# Get-DbaDbTable -SqlInstance localhost -Database dbatoolsscidb_1140005995 -Table dbo.dbatoolsci_circrefA | Get-DbaDependency -Verbose
-# Get-DbaDbTable -SqlInstance localhost -Database dbatoolsscidb_1140005995 -Table dbo.dbatoolsci_circrefA | Get-DbaDependency -Verbose
-# Get-DbaDbTable -SqlInstance localhost -Database dbatoolsscidb_1140005995 -Table dbo.dbatoolsci_circrefA | Get-DbaDependency -Verbose -IncludeSelf
-# Get-DbaDbTable -SqlInstance localhost -Database dbatoolsscidb_1140005995 -Table dbo.dbatoolsci_circrefA | Get-DbaDependency -Verbose -IncludeSelf
-# Get-DbaDbTable -SqlInstance $script:instance1 -Database $dbname -Table dbo.dbatoolsci_circrefA | Get-DbaDependency
-# Start-Job -ScriptBlock { Get-DbaDbTable -SqlInstance $script:instance1 -Database $dbname -Table dbo.dbatoolsci_circrefA | Get-DbaDependency } -OutVariable $res
-
-
-
 
