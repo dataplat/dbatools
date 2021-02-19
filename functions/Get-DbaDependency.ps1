@@ -128,7 +128,6 @@ function Get-DbaDependency {
                 $EnumParents
             )
 
-            Write-Message -Level 5 -Message "Add chid $($InputObject.Urn) which is a $($InputObject.urn.Type)"
             Add-Member -Force -InputObject $InputObject -Name Parent -Value $Parent -MemberType NoteProperty
             if ($EnumParents) { Add-Member -Force -InputObject $InputObject -Name Tier -Value ($Tier * -1) -MemberType NoteProperty -PassThru }
             else { Add-Member -Force -InputObject $InputObject -Name Tier -Value $Tier -MemberType NoteProperty -PassThru }
