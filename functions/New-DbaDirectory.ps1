@@ -76,9 +76,9 @@ function New-DbaDirectory {
 
         $Path = $Path.Replace("'", "''")
 
-        $exists = Test-DbaPath -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Path $Path
+        $exists = Test-DbaPath -SqlInstance $Instance -SqlCredential $SqlCredential -Path $Path
 
-        if ($exists) {
+        if ($exists.FileExists) {
             Stop-Function -Message "$Path already exists" -Target $server -Continue
         }
 
