@@ -55,7 +55,7 @@ function Move-DbaRegServerGroup {
         Moves the Development group within HR to the Prod group within AD
 
     .EXAMPLE
-        PS C:\> Get-DbaRegServerGroup -SqlInstance sql2017 -Group HR\Development| Move-DbaRegServer -NewGroup Web
+        PS C:\> Get-DbaRegServerGroup -SqlInstance sql2017 -Group HR\Development| Move-DbaRegServerGroup -NewGroup Web
 
         Moves the Development group within HR to the Web group
 
