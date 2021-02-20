@@ -215,7 +215,7 @@ function Get-DbaDependency {
                 }
             }
             end {
-                $list | Group-Object -Property Object,Tier | ForEach-Object { $_.Group | Sort-Object -Property Tier -Descending | Select-Object -First 1 } | Sort-Object Tier
+                $list | Group-Object -Property Object, Tier | ForEach-Object { $_.Group | Sort-Object -Property Tier -Descending | Select-Object -First 1 } | Sort-Object Tier
             }
         }
         #endregion Utility functions
