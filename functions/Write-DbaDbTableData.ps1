@@ -34,7 +34,7 @@ function Write-DbaDbTableData {
 
         If the object has special characters please wrap them in square brackets [ ].
         Using dbo.First.Table will try to import to a table named 'Table' on schema 'First' and database 'dbo'.
-        The correct way to import to a table named 'First.Table' on schema 'dbo' is by passing dbo.[First.Table].
+        The correct way to import to a table named 'First.Table' on schema 'dbo' is by passing dbo.[First].[Table].
         Any actual usage of the ] must be escaped by duplicating the ] character.
         The correct way to import to a table Name] in schema Schema.Name is by passing [Schema.Name].[Name]]].
 
@@ -347,7 +347,16 @@ function Write-DbaDbTableData {
         }
 
         #endregion Utility Functions
-
+        
+        #region Connect to server
+        try {
+            $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
+        } catch {
+            Stop-Function -Message "Error occurred while establishing connection to $SqlInstance" -Category ConnectionError -ErrorRecord $_ -Target $SqlInstance
+            return
+        }
+        #endregion Connect to server
+        
         #region Prepare type for bulk copy
         if (-not $Truncate) { $ConfirmPreference = "None" }
 
@@ -425,14 +434,8 @@ function Write-DbaDbTableData {
         Write-Message -Level SomewhatVerbose -Message "FQTN processed: $fqtn"
         #endregion Resolve Full Qualified Table Name
 
-        #region Connect to server and get database
-        try {
-            $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
-        } catch {
-            Stop-Function -Message "Error occurred while establishing connection to $SqlInstance" -Category ConnectionError -ErrorRecord $_ -Target $SqlInstance
-            return
-        }
 
+        #region Get database
         if ($server.ServerType -eq 'SqlAzureDatabase') {
             <#
                 For some reasons SMO wants an initial pull when talking to Azure Sql DB
@@ -447,7 +450,7 @@ function Write-DbaDbTableData {
         }
         try {
             $databaseObject = $server.Databases[$databaseName]
-            #endregion Connect to server and get database
+            #endregion Get database
 
             #region Prepare database and bulk operations
             if ($null -eq $databaseObject) {
@@ -503,13 +506,26 @@ function Write-DbaDbTableData {
         $bulkCopy.NotifyAfter = $NotifyAfter
         $bulkCopy.BulkCopyTimeOut = $BulkCopyTimeOut
 
+        # The legacy bulk copy library uses a 4 byte integer to track the RowsCopied, so the only option is to use
+        # integer wrap so that copy operations of row counts greater than [int32]::MaxValue will report accurate numbers.
+        # See https://github.com/sqlcollaborative/dbatools/issues/6927 for more details
+        $script:prevRowsCopied = [int64]0
+        $script:totalRowsCopied = [int64]0
+
         $elapsed = [System.Diagnostics.Stopwatch]::StartNew()
         # Add RowCount output
         $bulkCopy.Add_SqlRowsCopied( {
-                $script:totalRows = $args[1].RowsCopied
-                $percent = [int](($script:totalRows / $rowCount) * 100)
+                $script:totalRowsCopied += (Get-AdjustedTotalRowsCopied -ReportedRowsCopied $args[1].RowsCopied -PreviousRowsCopied $script:prevRowsCopied).NewRowCountAdded
+
+                $tstamp = $(Get-Date -format 'yyyyMMddHHmmss')
+                Write-Message -Level Verbose -Message "[$tstamp] The bulk copy library reported RowsCopied = $($args[1].RowsCopied). The previous RowsCopied = $($script:prevRowsCopied). The adjusted total rows copied = $($script:totalRowsCopied)"
+
+                $percent = [int](($script:totalRowsCopied / $rowCount) * 100)
                 $timeTaken = [math]::Round($elapsed.Elapsed.TotalSeconds, 1)
-                Write-Progress -Id 1 -Activity "Inserting $rowCount rows." -PercentComplete $percent -Status ([System.String]::Format("Progress: {0} rows ({1}%) in {2} seconds", $script:totalRows, $percent, $timeTaken))
+                Write-Progress -Id 1 -Activity "Inserting $rowCount rows." -PercentComplete $percent -Status ([System.String]::Format("Progress: {0} rows ({1}%) in {2} seconds", $script:totalRowsCopied, $percent, $timeTaken))
+
+                # save the previous count of rows copied to be used on the next event notification
+                $script:prevRowsCopied = $args[1].RowsCopied
             })
 
         $PStoSQLTypes = @{
