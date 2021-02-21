@@ -5,7 +5,8 @@ function New-DbaCustomError {
 
     .DESCRIPTION
         This command provides a wrapper for the sp_addmessage system procedure that allows for user defined messages to be added to sys.messages.
-        As noted in https://docs.microsoft.com/en-us/sql/relational-databases/system-stored-procedures/sp-addmessage-transact-sql?view=sql-server-ver15#remarks the english message must be present before the non-english messages can be added.
+
+        Note: See the remarks section of the documentation for sp_addmessage regarding the addition of non-English messages. The U.S. English message needs to be added first and the severity must be the same.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function
@@ -43,7 +44,7 @@ function New-DbaCustomError {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: Database, Configure, CustomError, Error, Logging, Messages, SystemDatabase
+        Tags: Error, CustomError
         Author: Adam Lancaster https://github.com/lancasteradam
 
         Website: https://dbatools.io
@@ -54,32 +55,37 @@ function New-DbaCustomError {
         https://dbatools.io/New-DbaCustomError
 
     .EXAMPLE
-        PS C:\> New-DbaCustomError -SqlInstance localhost, serverName2 -MessageID 70001 -Severity 16 -MessageText "test"
+        PS C:\> New-DbaCustomError -SqlInstance sqldev01, sqldev02 -MessageID 70001 -Severity 16 -MessageText "test"
 
-        Creates a new custom message on the localhost and serverName2 instances with ID 70001, severity 16, and text "test".
-
-    .EXAMPLE
-        PS C:\> New-DbaCustomError -SqlInstance localhost -MessageID 70001 -Severity 16 -MessageText "test" -Language "French"
-
-        Creates a new custom message on the localhost instance for the french language with ID 70001, severity 16, and text "test".
+        Creates a new custom message on the sqldev01 and sqldev02 instances with ID 70001, severity 16, and text "test".
 
     .EXAMPLE
-        PS C:\> New-DbaCustomError -SqlInstance localhost -MessageID 70001 -Severity 16 -MessageText "test" -WithLog
+        PS C:\> New-DbaCustomError -SqlInstance sqldev01 -MessageID 70001 -Severity 16 -MessageText "test" -Language "French"
 
-        Creates a new custom message on the localhost instance with ID 70001, severity 16, text "test", and enables the log mechanism.
+        Creates a new custom message on the sqldev01 instance for the french language with ID 70001, severity 16, and text "test".
 
     .EXAMPLE
-        PS C:\> $server = Connect-DbaInstance localhost
-        PS C:\> $newMessage = New-DbaCustomError -SqlInstance $server -MessageID 70000 -Severity 1 -MessageText "test_70000"
+        PS C:\> New-DbaCustomError -SqlInstance sqldev01 -MessageID 70001 -Severity 16 -MessageText "test" -WithLog
+
+        Creates a new custom message on the sqldev01 instance with ID 70001, severity 16, text "test", and enables the log mechanism.
+
+    .EXAMPLE
+        PS C:\> $server = Connect-DbaInstance sqldev01
+        PS C:\> $newMessage = New-DbaCustomError -SqlInstance $server -MessageID 70000 -Severity 16 -MessageText "test_70000"
+
+        Creates a new custom message on the sqldev01 instance with ID 70000, severity 16, and text "test_70000"
+
+        To modify the custom message at a later time the following can be done to change the severity from 16 to 20:
+
         PS C:\> $original = $server.UserDefinedMessages | Where-Object ID -eq 70000
         PS C:\> $messageID = $original.ID
-        PS C:\> $severity = $original.Severity
+        PS C:\> $severity = 20
         PS C:\> $text = $original.Text
         PS C:\> $language = $original.Language
         PS C:\> $removed = Remove-DbaCustomError -SqlInstance $server -MessageID 70000
         PS C:\> $alteredMessage = New-DbaCustomError -SqlInstance $server -MessageID $messageID -Severity $severity -MessageText $text -Language $language -WithLog
 
-        Simulates an update of an existing message using Remove-DbaCustomError and New-DbaCustomError.
+        The resulting updated message object is available in $alteredMessage.
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'Low')]
     param (
@@ -109,7 +115,7 @@ function New-DbaCustomError {
 
             if (Test-Bound Language) {
                 if ($null -eq $languageDetails) {
-                    Stop-Function -Message "$server does not have the $Language installed" -Target $instance -Continue
+                    Stop-Function -Message "$instance does not have the $Language installed" -Target $instance -Continue
                 }
             }
 
@@ -117,8 +123,8 @@ function New-DbaCustomError {
             $languageAlias = $languageDetails.alias
             $langId = $languageDetails.msglangid
 
-            if ($Pscmdlet.ShouldProcess("Creating new server message with id $MessageID on $server")) {
-                Write-Message -Level Verbose -Message "Creating new server message with id $MessageID on $server"
+            if ($Pscmdlet.ShouldProcess($instance, "Creating new server message with id $MessageID on $instance")) {
+                Write-Message -Level Verbose -Message "Creating new server message with id $MessageID on $instance"
                 try {
                     $userDefinedMessage = New-Object -TypeName Microsoft.SqlServer.Management.Smo.UserDefinedMessage
                     $userDefinedMessage.Parent = $server
@@ -142,7 +148,7 @@ function New-DbaCustomError {
                     # return the new message object from the server to get all properties refreshed (the $userDefinedMessage.Refresh() method does not work as expected)
                     $server.UserDefinedMessages | Where-Object { $_.ID -eq $MessageID -and $_.Language -eq $userDefinedMessage.Language }
                 } catch {
-                    Stop-Function -Message "Error occurred while trying to create a message with id $MessageID on $server" -ErrorRecord $_ -Continue
+                    Stop-Function -Message "Error occurred while trying to create a message with id $MessageID on $instance" -ErrorRecord $_ -Continue
                 }
             }
         }
