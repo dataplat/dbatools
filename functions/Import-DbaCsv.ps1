@@ -644,8 +644,6 @@ function Import-DbaCsv {
                             Write-Progress -id 1 -activity "Inserting $resultcount rows" -status "Complete" -Completed
                         }
 
-                        $reader.Close()
-                        $reader.Dispose()
                         $completed = $true
                     } catch {
                         $completed = $false
