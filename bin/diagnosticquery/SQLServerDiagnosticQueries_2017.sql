@@ -1,7 +1,7 @@
 
 -- SQL Server 2017 Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: January 12, 2021
+-- Last Modified: February 23, 2021
 -- https://glennsqlperformance.com/
 -- https://sqlserverperformance.wordpress.com/
 -- YouTube: https://bit.ly/2PkoAM1 
@@ -91,6 +91,7 @@ SELECT @@SERVERNAME AS [Server Name], @@VERSION AS [SQL Server and OS Version In
 -- 14.0.3335.7		CU21								7/1/2020		https://support.microsoft.com/en-us/help/4557397/cumulative-update-21-for-sql-server-2017
 -- 14.0.3356.20		CU22								9/10/2020		https://support.microsoft.com/en-us/help/4577467/cumulative-update-22-for-sql-server-2017
 -- 14.0.3370.1		CU22 + Security Update				1/12/2021		https://support.microsoft.com/en-us/help/4583457/kb4583457-security-update-for-sql-server-2017-cu22	
+-- 14.0.3381.3		CU23								2/22/2021
 															
 
 -- How to determine the version, edition and update level of SQL Server and its components 
@@ -127,6 +128,9 @@ SELECT @@SERVERNAME AS [Server Name], @@VERSION AS [SQL Server and OS Version In
 -- https://bit.ly/2vgke1A
 
 -- SQL Server 2017 Configuration Manager is SQLServerManager14.msc
+
+-- SQL Server troubleshooting (Microsoft documentation resources)
+-- http://bit.ly/2YY0pb1
 
 
 -- Get socket, physical core and logical core count from the SQL Server Error log. (Query 2) (Core Counts)
@@ -289,19 +293,14 @@ FROM sys.dm_server_services WITH (NOLOCK) OPTION (RECOMPILE);
 SELECT ISNULL(d.[name], bs.[database_name]) AS [Database], d.recovery_model_desc AS [Recovery Model], 
        d.log_reuse_wait_desc AS [Log Reuse Wait Desc],
     MAX(CASE WHEN [type] = 'D' THEN bs.backup_finish_date ELSE NULL END) AS [Last Full Backup],
-	MAX(CASE WHEN [type] = 'D' THEN bmf.physical_device_name ELSE NULL END) AS [Last Full Backup Location],
     MAX(CASE WHEN [type] = 'I' THEN bs.backup_finish_date ELSE NULL END) AS [Last Differential Backup],
-	MAX(CASE WHEN [type] = 'I' THEN bmf.physical_device_name ELSE NULL END) AS [Last Differential Backup Location],
-    MAX(CASE WHEN [type] = 'L' THEN bs.backup_finish_date ELSE NULL END) AS [Last Log Backup],
-	MAX(CASE WHEN [type] = 'L' THEN bmf.physical_device_name ELSE NULL END) AS [Last Log Backup Location]
+    MAX(CASE WHEN [type] = 'L' THEN bs.backup_finish_date ELSE NULL END) AS [Last Log Backup]
 FROM sys.databases AS d WITH (NOLOCK)
 LEFT OUTER JOIN msdb.dbo.backupset AS bs WITH (NOLOCK)
 ON bs.[database_name] = d.[name]
-LEFT OUTER JOIN msdb.dbo.backupmediafamily AS bmf WITH (NOLOCK)
-ON bs.media_set_id = bmf.media_set_id 
 AND bs.backup_finish_date > GETDATE()- 30
 WHERE d.name <> N'tempdb'
-GROUP BY ISNULL(d.[name], bs.[database_name]), d.recovery_model_desc, d.log_reuse_wait_desc, d.[name] 
+GROUP BY ISNULL(d.[name], bs.[database_name]), d.recovery_model_desc, d.log_reuse_wait_desc, d.[name]
 ORDER BY d.recovery_model_desc, d.[name] OPTION (RECOMPILE);
 ------
 
