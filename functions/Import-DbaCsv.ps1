@@ -654,6 +654,12 @@ function Import-DbaCsv {
                             Write-Progress -id 1 -activity "Inserting $resultcount rows" -status "Failed" -Completed
                         }
                         Stop-Function -Continue -Message "Failure" -ErrorRecord $_
+                    } finally {
+                        try {
+                            $reader.Close()
+                            $reader.Dispose()
+                        } catch {
+                        }
                     }
                 }
                 if ($PSCmdlet.ShouldProcess($instance, "Finalizing import")) {
