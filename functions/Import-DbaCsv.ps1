@@ -658,14 +658,37 @@ function Import-DbaCsv {
                             $reader.Dispose()
                         } catch {
                         }
+
+                        if (-not $NoTransaction) {
+                            if ($completed) {
+                                try {
+                                    $null = $transaction.Commit()
+                                } catch {
+                                }
+                            } else {
+                                try {
+                                    $null = $transaction.Rollback()
+                                } catch {
+                                }
+                            }
+                        }
+
+                        try {
+                            $sqlconn.Close()
+                            $sqlconn.Dispose()
+                        } catch {
+                        }
+
+                        try {
+                            $bulkCopy.Close()
+                            $bulkcopy.Dispose()
+                        } catch {
+                        }
                     }
                 }
                 if ($PSCmdlet.ShouldProcess($instance, "Finalizing import")) {
                     if ($completed) {
                         # "Note: This count does not take into consideration the number of rows actually inserted when Ignore Duplicates is set to ON."
-                        if (-not $NoTransaction) {
-                            $null = $transaction.Commit()
-                        }
                         $rowscopied = Get-BulkRowsCopiedCount $bulkcopy
                         $rps = [int]($rowscopied / $elapsed.Elapsed.TotalSeconds)
 
@@ -687,16 +710,6 @@ function Import-DbaCsv {
                         Stop-Function -Message "Transaction rolled back. Was the proper delimiter specified? Is the first row the column name?" -ErrorRecord $_
                         return
                     }
-                }
-
-                # Close everything just in case & ignore errors
-                try {
-                    $null = $sqlconn.close(); $null = $sqlconn.Dispose();
-                    $null = $bulkCopy.close(); $bulkcopy.dispose();
-                    $null = $reader.close(); $null = $reader.dispose()
-                } catch {
-                    #here to avoid an empty catch
-                    $null = 1
                 }
             }
         }
