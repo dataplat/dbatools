@@ -778,7 +778,9 @@ $script:xplat = @(
     'Install-DbaMultiTool',
     'New-DbaAgentOperator',
     'Remove-DbaAgentOperator',
-    'Remove-DbaDbTableData'
+    'Remove-DbaDbTableData',
+    'Get-DbaDbSchema',
+    'New-DbaDbSchema'
 )
 
 $script:noncoresmo = @(
