@@ -73,7 +73,7 @@ function Get-DbaAgReplica {
         }
 
         if ($SqlInstance) {
-            $InputObject += Get-DbaAvailabilityGroup -SqlInstance $SqlInstance -SqlCredential $SqlCredential -AvailabilityGroup $AvailabilityGroup
+            $InputObject += Get-DbaAvailabilityGroup -SqlInstance $SqlInstance -SqlCredential $SqlCredential -AvailabilityGroup $AvailabilityGroup -EnableException:$EnableException.IsPresent
         }
 
         $availabilityReplicas = $InputObject.AvailabilityReplicas
