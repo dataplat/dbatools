@@ -20,7 +20,7 @@ function Remove-DbaDbSchema {
     .PARAMETER Database
         The target database(s).
 
-    .PARAMETER SchemaName
+    .PARAMETER Schema
         The name(s) of the schema(s)
 
     .PARAMETER InputObject
@@ -49,22 +49,22 @@ function Remove-DbaDbSchema {
         https://dbatools.io/Remove-DbaDbSchema
 
     .EXAMPLE
-        PS C:\> Remove-DbaDbSchema -SqlInstance sqldev01 -Database example1 -SchemaName TestSchema1
+        PS C:\> Remove-DbaDbSchema -SqlInstance sqldev01 -Database example1 -Schema TestSchema1
 
         Removes the TestSchema1 schema in the example1 database in the sqldev01 instance.
 
     .EXAMPLE
-        PS C:\> Get-DbaDatabase -SqlInstance sqldev01, sqldev02 -Database example1 | Remove-DbaDbSchema -SchemaName TestSchema1, TestSchema2
+        PS C:\> Get-DbaDatabase -SqlInstance sqldev01, sqldev02 -Database example1 | Remove-DbaDbSchema -Schema TestSchema1, TestSchema2
 
         Passes in the example1 db via pipeline and removes the TestSchema1 and TestSchema2 schemas.
     #>
-    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'Low')]
+    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High')]
     param (
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [string[]]$Database,
         [Parameter(Mandatory)]
-        [string[]]$SchemaName,
+        [string[]]$Schema,
         [parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
         [switch]$EnableException
@@ -82,12 +82,12 @@ function Remove-DbaDbSchema {
 
         foreach ($db in $InputObject) {
 
-            foreach ($sName in $SchemaName) {
+            foreach ($sName in $Schema) {
 
                 if ($Pscmdlet.ShouldProcess($db.Parent.Name, "Dropping the schema $sName on the database $($db.Name)")) {
                     try {
-                        $schema = $db | Get-DbaDbSchema -SchemaName $sName
-                        $schema.Drop()
+                        $schemaObject = $db | Get-DbaDbSchema -SchemaName $sName
+                        $schemaObject.Drop()
                     } catch {
                         Stop-Function -Message "Failure on $($db.Parent.Name) to drop the schema $sName in the database $($db.Name)" -ErrorRecord $_ -Continue
                     }

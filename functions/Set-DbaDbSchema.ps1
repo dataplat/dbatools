@@ -20,7 +20,7 @@ function Set-DbaDbSchema {
     .PARAMETER Database
         The target database(s).
 
-    .PARAMETER SchemaName
+    .PARAMETER Schema
         The name(s) of the schema(s)
 
     .PARAMETER SchemaOwner
@@ -52,12 +52,12 @@ function Set-DbaDbSchema {
         https://dbatools.io/Set-DbaDbSchema
 
     .EXAMPLE
-        PS C:\> Set-DbaDbSchema -SqlInstance sqldev01 -Database example1 -SchemaName TestSchema1 -SchemaOwner dbatools
+        PS C:\> Set-DbaDbSchema -SqlInstance sqldev01 -Database example1 -Schema TestSchema1 -SchemaOwner dbatools
 
         Updates the TestSchema1 schema in the example1 database in the sqldev01 instance. The dbatools user will be the new owner of the schema.
 
     .EXAMPLE
-        PS C:\> Get-DbaDatabase -SqlInstance sqldev01, sqldev02 -Database example1 | Set-DbaDbSchema -SchemaName TestSchema1, TestSchema2 -SchemaOwner dbatools
+        PS C:\> Get-DbaDatabase -SqlInstance sqldev01, sqldev02 -Database example1 | Set-DbaDbSchema -Schema TestSchema1, TestSchema2 -SchemaOwner dbatools
 
         Passes in the example1 db via pipeline and updates the TestSchema1 and TestSchema2 schemas and assigns the dbatools user as the owner of the schemas.
     #>
@@ -67,7 +67,7 @@ function Set-DbaDbSchema {
         [PSCredential]$SqlCredential,
         [string[]]$Database,
         [Parameter(Mandatory)]
-        [string[]]$SchemaName,
+        [string[]]$Schema,
         [Parameter(Mandatory)]
         [string]$SchemaOwner,
         [parameter(ValueFromPipeline)]
@@ -87,14 +87,14 @@ function Set-DbaDbSchema {
 
         foreach ($db in $InputObject) {
 
-            foreach ($sName in $SchemaName) {
+            foreach ($sName in $Schema) {
 
                 if ($Pscmdlet.ShouldProcess($db.Parent.Name, "Updating the schema $sName on the database $($db.Name) to be owned by $SchemaOwner")) {
                     try {
-                        $schema = $db | Get-DbaDbSchema -SchemaName $sName
-                        $schema.Owner = $SchemaOwner
-                        $schema.Alter()
-                        $schema
+                        $schemaObject = $db | Get-DbaDbSchema -SchemaName $sName
+                        $schemaObject.Owner = $SchemaOwner
+                        $schemaObject.Alter()
+                        $schemaObject
                     } catch {
                         Stop-Function -Message "Failure on $($db.Parent.Name) to update the schema owner for $sName in the database $($db.Name)" -ErrorRecord $_ -Continue
                     }

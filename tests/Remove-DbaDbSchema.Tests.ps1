@@ -5,7 +5,7 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
         [array]$params = ([Management.Automation.CommandMetaData]$ExecutionContext.SessionState.InvokeCommand.GetCommand($CommandName, 'Function')).Parameters.Keys
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'SchemaName', 'InputObject', 'EnableException'
+        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'Schema', 'InputObject', 'EnableException'
         It "Should only contain our specific parameters" {
             Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params | Should -BeNullOrEmpty
         }
@@ -35,7 +35,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             $schema.Name | Should -Be TestSchema1
             $schema.Parent.Name | Should -Be $newDbName
 
-            Remove-DbaDbSchema -SqlInstance $instance1 -Database $newDbName -SchemaName TestSchema1
+            Remove-DbaDbSchema -SqlInstance $instance1 -Database $newDbName -Schema TestSchema1 -Confirm:$false
 
             (Get-DbaDbSchema -SqlInstance $instance1 -Database $newDbName -SchemaName TestSchema1) | Should -BeNullOrEmpty
 
@@ -44,7 +44,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             $schemas.Name | Should -Be TestSchema2, TestSchema3, TestSchema2, TestSchema3
             $schemas.Parent.Name | Should -Be $newDbName, $newDbName, $newDbName, $newDbName
 
-            Remove-DbaDbSchema -SqlInstance $instance1, $instance2 -Database $newDbName -SchemaName TestSchema2, TestSchema3
+            Remove-DbaDbSchema -SqlInstance $instance1, $instance2 -Database $newDbName -Schema TestSchema2, TestSchema3 -Confirm:$false
 
             (Get-DbaDbSchema -SqlInstance $instance1, $instance2 -Database $newDbName -SchemaName TestSchema2, TestSchema3) | Should -BeNullOrEmpty
         }
@@ -55,7 +55,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             $schema.Name | Should -Be TestSchema1
             $schema.Parent.Name | Should -Be $newDbName
 
-            Get-DbaDatabase -SqlInstance $instance1 -Database $newDbName | Remove-DbaDbSchema -SchemaName TestSchema1
+            Get-DbaDatabase -SqlInstance $instance1 -Database $newDbName | Remove-DbaDbSchema -Schema TestSchema1 -Confirm:$false
 
             (Get-DbaDbSchema -SqlInstance $instance1 -Database $newDbName -SchemaName TestSchema1) | Should -BeNullOrEmpty
         }
