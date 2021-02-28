@@ -4,11 +4,11 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 
 Describe "$CommandName Unit Tests" -Tags "UnitTests" {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
+        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
         [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Name', 'ServerName', 'Group', 'ExcludeGroup', 'Id', 'IncludeSelf', 'ResolveNetworkName', 'IncludeLocal', 'EnableException'
         $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
         It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
         }
     }
 }
@@ -68,6 +68,14 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         It "Should return multiple objects" {
             $results = Get-DbaRegServer -SqlInstance $script:instance1 -Group $group
             $results.Count | Should Be 2
+            $results[0].ParentServer | Should -Not -BeNullOrEmpty
+            $results[0].ComputerName | Should -Not -BeNullOrEmpty
+            $results[0].InstanceName | Should -Not -BeNullOrEmpty
+            $results[0].SqlInstance | Should -Not -BeNullOrEmpty
+            $results[1].ParentServer | Should -Not -BeNullOrEmpty
+            $results[1].ComputerName | Should -Not -BeNullOrEmpty
+            $results[1].InstanceName | Should -Not -BeNullOrEmpty
+            $results[1].SqlInstance | Should -Not -BeNullOrEmpty
         }
         It "Should allow searching subgroups" {
             $results = Get-DbaRegServer -SqlInstance $script:instance1 -Group "$group\$group2"
