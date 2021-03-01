@@ -504,7 +504,9 @@
         'Remove-DbaAgentOperator',
         'Remove-DbaDbTableData',
         'Get-DbaDbSchema',
-        'New-DbaDbSchema'
+        'New-DbaDbSchema',
+        'Set-DbaDbSchema',
+        'Remove-DbaDbSchema'
         # noncoresmo
         # SMO issues
         'Export-DbaUser',
