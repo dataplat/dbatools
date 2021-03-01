@@ -20,7 +20,7 @@ function New-DbaDbSchema {
     .PARAMETER Database
         The target database(s).
 
-    .PARAMETER SchemaName
+    .PARAMETER Schema
         The name(s) of the new schema(s)
 
     .PARAMETER SchemaOwner
@@ -52,22 +52,22 @@ function New-DbaDbSchema {
         https://dbatools.io/New-DbaDbSchema
 
     .EXAMPLE
-        PS C:\> New-DbaDbSchema -SqlInstance localhost -Database example1 -SchemaName TestSchema1
+        PS C:\> New-DbaDbSchema -SqlInstance localhost -Database example1 -Schema TestSchema1
 
         Creates the TestSchema1 schema in the example1 database in the localhost instance. The dbo user will be the owner of the schema.
 
     .EXAMPLE
-        PS C:\> New-DbaDbSchema -SqlInstance localhost -Database example1 -SchemaName TestSchema1, TestSchema2 -SchemaOwner dbatools
+        PS C:\> New-DbaDbSchema -SqlInstance localhost -Database example1 -Schema TestSchema1, TestSchema2 -SchemaOwner dbatools
 
         Creates the TestSchema1 and TestSchema2 schemas in the example1 database in the localhost instance and assigns the dbatools user as the owner of the schemas.
 
     .EXAMPLE
-        PS C:\> New-DbaDbSchema -SqlInstance localhost, localhost\sql2017 -Database example1 -SchemaName TestSchema1, TestSchema2 -SchemaOwner dbatools
+        PS C:\> New-DbaDbSchema -SqlInstance localhost, localhost\sql2017 -Database example1 -Schema TestSchema1, TestSchema2 -SchemaOwner dbatools
 
         Creates the TestSchema1 and TestSchema2 schemas in the example1 database in the localhost and localhost\sql2017 instances and assigns the dbatools user as the owner of the schemas.
 
     .EXAMPLE
-        PS C:\> Get-DbaDatabase -SqlInstance localhost, localhost\sql2017 -Database example1 | New-DbaDbSchema -SchemaName TestSchema1, TestSchema2 -SchemaOwner dbatools
+        PS C:\> Get-DbaDatabase -SqlInstance localhost, localhost\sql2017 -Database example1 | New-DbaDbSchema -Schema TestSchema1, TestSchema2 -SchemaOwner dbatools
 
         Passes in the example1 db via pipeline and creates the TestSchema1 and TestSchema2 schemas and assigns the dbatools user as the owner of the schemas.
     #>
@@ -76,7 +76,7 @@ function New-DbaDbSchema {
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [string[]]$Database,
-        [string[]]$SchemaName,
+        [string[]]$Schema,
         [string]$SchemaOwner,
         [parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
@@ -84,8 +84,8 @@ function New-DbaDbSchema {
     )
     process {
 
-        if (Test-Bound -Not -ParameterName SchemaName) {
-            Stop-Function -Message "SchemaName is required"
+        if (Test-Bound -Not -ParameterName Schema) {
+            Stop-Function -Message "Schema is required"
             return
         }
 
@@ -100,7 +100,7 @@ function New-DbaDbSchema {
 
         foreach ($db in $InputObject) {
 
-            foreach ($sName in $SchemaName) {
+            foreach ($sName in $Schema) {
 
                 if ($db.Schemas.Name -contains $sName) {
                     Stop-Function -Message "Schema $sName already exists in the database $($db.Name) on $($db.Parent.Name)" -Continue

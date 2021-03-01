@@ -20,7 +20,7 @@ function Get-DbaDbSchema {
     .PARAMETER Database
         The target database(s).
 
-    .PARAMETER SchemaName
+    .PARAMETER Schema
         The name(s) of the schema(s)
 
     .PARAMETER SchemaOwner
@@ -63,7 +63,7 @@ function Get-DbaDbSchema {
         Gets all non-system database schemas from all user databases on the localhost instance. Note: the dbo schema is a system schema and won't be included in the output from this example. To include the dbo schema specify -IncludeSystemSchemas
 
     .EXAMPLE
-        PS C:\> Get-DbaDbSchema -SqlInstance localhost -SchemaName dbo -IncludeSystemSchemas
+        PS C:\> Get-DbaDbSchema -SqlInstance localhost -Schema dbo -IncludeSystemSchemas
 
         Returns the dbo schema from the databases on the localhost instance.
 
@@ -73,7 +73,7 @@ function Get-DbaDbSchema {
         Gets all database schemas from all databases on the localhost instance.
 
     .EXAMPLE
-        PS C:\> Get-DbaDbSchema -SqlInstance localhost -SchemaName TestSchema
+        PS C:\> Get-DbaDbSchema -SqlInstance localhost -Schema TestSchema
 
         Finds and returns the TestSchema schema from the localhost instance.
 
@@ -88,21 +88,21 @@ function Get-DbaDbSchema {
         Finds and returns the schemas owned by DBUser1 in the TestDB database from the localhost instance.
 
     .EXAMPLE
-        PS C:\> $schema = Get-DbaDbSchema -SqlInstance localhost -Database TestDB -SchemaName TestSchema
+        PS C:\> $schema = Get-DbaDbSchema -SqlInstance localhost -Database TestDB -Schema TestSchema
         PS C:\> $schema.Owner = DBUser2
         PS C:\> $schema.Alter()
 
         Finds the TestSchema in the TestDB on the localhost instance and then changes the schema owner to DBUser2
 
     .EXAMPLE
-        PS C:\> $schema = Get-DbaDbSchema -SqlInstance localhost -Database TestDB -SchemaName TestSchema
+        PS C:\> $schema = Get-DbaDbSchema -SqlInstance localhost -Database TestDB -Schema TestSchema
         PS C:\> $schema.Drop()
 
         Finds the TestSchema in the TestDB on the localhost instance and then drops it. Note: to drop a schema all objects must be transferred to another schema or dropped.
 
     .EXAMPLE
         PS C:\> $db = Get-DbaDatabase -SqlInstance localhost -Database TestDB
-        PS C:\> $schema = $db | Get-DbaDbSchema -SchemaName TestSchema
+        PS C:\> $schema = $db | Get-DbaDbSchema -Schema TestSchema
 
         Finds the TestSchema in the TestDB which is passed via pipeline into the Get-DbaDbSchema command.
     #>
@@ -111,7 +111,7 @@ function Get-DbaDbSchema {
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [string[]]$Database,
-        [string[]]$SchemaName,
+        [string[]]$Schema,
         [string[]]$SchemaOwner,
         [switch]$IncludeSystemDatabases,
         [switch]$IncludeSystemSchemas,
@@ -126,7 +126,7 @@ function Get-DbaDbSchema {
         }
 
         foreach ($db in $InputObject) {
-            $db.Schemas | Where-Object { ($_.IsSystemObject -eq $false) -or ($_.IsSystemObject -eq $IncludeSystemSchemas) } | Where-Object { ($_.Name -in $SchemaName) -or ($null -eq $SchemaName) } | Where-Object { ($_.Owner -in $SchemaOwner) -or ($null -eq $SchemaOwner) }
+            $db.Schemas | Where-Object { ($_.IsSystemObject -eq $false) -or ($_.IsSystemObject -eq $IncludeSystemSchemas) } | Where-Object { ($_.Name -in $Schema) -or ($null -eq $Schema) } | Where-Object { ($_.Owner -in $SchemaOwner) -or ($null -eq $SchemaOwner) }
         }
     }
 }
