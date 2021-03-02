@@ -40,7 +40,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     Context "commands work as expected" {
 
         It "updates the schema to a different owner" {
-            $schema = New-DbaDbSchema -SqlInstance $instance1 -Database $newDbName -SchemaName TestSchema1 -SchemaOwner $userName
+            $schema = New-DbaDbSchema -SqlInstance $instance1 -Database $newDbName -Schema TestSchema1 -SchemaOwner $userName
             $schema.Count | Should -Be 1
             $schema.Owner | Should -Be $userName
             $schema.Name | Should -Be TestSchema1
@@ -52,7 +52,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             $updatedSchema.Name | Should -Be TestSchema1
             $updatedSchema.Parent.Name | Should -Be $newDbName
 
-            $schemas = New-DbaDbSchema -SqlInstance $instance1, $instance2 -Database $newDbName -SchemaName TestSchema2, TestSchema3 -SchemaOwner $userName
+            $schemas = New-DbaDbSchema -SqlInstance $instance1, $instance2 -Database $newDbName -Schema TestSchema2, TestSchema3 -SchemaOwner $userName
             $schemas.Count | Should -Be 4
             $schemas.Owner | Should -Be $userName, $userName, $userName, $userName
             $schemas.Name | Should -Be TestSchema2, TestSchema3, TestSchema2, TestSchema3

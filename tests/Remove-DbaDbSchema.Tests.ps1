@@ -30,34 +30,34 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     Context "commands work as expected" {
 
         It "drops the schema" {
-            $schema = New-DbaDbSchema -SqlInstance $instance1 -Database $newDbName -SchemaName TestSchema1
+            $schema = New-DbaDbSchema -SqlInstance $instance1 -Database $newDbName -Schema TestSchema1
             $schema.Count | Should -Be 1
             $schema.Name | Should -Be TestSchema1
             $schema.Parent.Name | Should -Be $newDbName
 
             Remove-DbaDbSchema -SqlInstance $instance1 -Database $newDbName -Schema TestSchema1 -Confirm:$false
 
-            (Get-DbaDbSchema -SqlInstance $instance1 -Database $newDbName -SchemaName TestSchema1) | Should -BeNullOrEmpty
+            (Get-DbaDbSchema -SqlInstance $instance1 -Database $newDbName -Schema TestSchema1) | Should -BeNullOrEmpty
 
-            $schemas = New-DbaDbSchema -SqlInstance $instance1, $instance2 -Database $newDbName -SchemaName TestSchema2, TestSchema3
+            $schemas = New-DbaDbSchema -SqlInstance $instance1, $instance2 -Database $newDbName -Schema TestSchema2, TestSchema3
             $schemas.Count | Should -Be 4
             $schemas.Name | Should -Be TestSchema2, TestSchema3, TestSchema2, TestSchema3
             $schemas.Parent.Name | Should -Be $newDbName, $newDbName, $newDbName, $newDbName
 
             Remove-DbaDbSchema -SqlInstance $instance1, $instance2 -Database $newDbName -Schema TestSchema2, TestSchema3 -Confirm:$false
 
-            (Get-DbaDbSchema -SqlInstance $instance1, $instance2 -Database $newDbName -SchemaName TestSchema2, TestSchema3) | Should -BeNullOrEmpty
+            (Get-DbaDbSchema -SqlInstance $instance1, $instance2 -Database $newDbName -Schema TestSchema2, TestSchema3) | Should -BeNullOrEmpty
         }
 
         It "supports piping databases" {
-            $schema = New-DbaDbSchema -SqlInstance $instance1 -Database $newDbName -SchemaName TestSchema1
+            $schema = New-DbaDbSchema -SqlInstance $instance1 -Database $newDbName -Schema TestSchema1
             $schema.Count | Should -Be 1
             $schema.Name | Should -Be TestSchema1
             $schema.Parent.Name | Should -Be $newDbName
 
             Get-DbaDatabase -SqlInstance $instance1 -Database $newDbName | Remove-DbaDbSchema -Schema TestSchema1 -Confirm:$false
 
-            (Get-DbaDbSchema -SqlInstance $instance1 -Database $newDbName -SchemaName TestSchema1) | Should -BeNullOrEmpty
+            (Get-DbaDbSchema -SqlInstance $instance1 -Database $newDbName -Schema TestSchema1) | Should -BeNullOrEmpty
         }
     }
 }

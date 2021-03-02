@@ -91,7 +91,7 @@ function Set-DbaDbSchema {
 
                 if ($Pscmdlet.ShouldProcess($db.Parent.Name, "Updating the schema $sName on the database $($db.Name) to be owned by $SchemaOwner")) {
                     try {
-                        $schemaObject = $db | Get-DbaDbSchema -SchemaName $sName
+                        $schemaObject = $db | Get-DbaDbSchema -Schema $sName
                         $schemaObject.Owner = $SchemaOwner
                         $schemaObject.Alter()
                         $schemaObject
