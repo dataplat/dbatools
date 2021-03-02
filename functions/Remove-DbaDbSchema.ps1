@@ -86,7 +86,7 @@ function Remove-DbaDbSchema {
 
                 if ($Pscmdlet.ShouldProcess($db.Parent.Name, "Dropping the schema $sName on the database $($db.Name)")) {
                     try {
-                        $schemaObject = $db | Get-DbaDbSchema -SchemaName $sName
+                        $schemaObject = $db | Get-DbaDbSchema -Schema $sName
                         $schemaObject.Drop()
                     } catch {
                         Stop-Function -Message "Failure on $($db.Parent.Name) to drop the schema $sName in the database $($db.Name)" -ErrorRecord $_ -Continue
