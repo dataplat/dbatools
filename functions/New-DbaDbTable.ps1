@@ -456,7 +456,7 @@ function New-DbaDbTable {
                     }
 
                     # user has specified a schema that does not exist yet
-                    if (-not ($db | Get-DbaDbSchema -SchemaName $schema -IncludeSystemSchemas)) {
+                    if (-not ($db | Get-DbaDbSchema -Schema $schema -IncludeSystemSchemas)) {
                         $schemaObject = New-Object -TypeName Microsoft.SqlServer.Management.Smo.Schema $db, $schema
                     }
 
