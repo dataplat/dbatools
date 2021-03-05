@@ -5,7 +5,7 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
         [array]$params = ([Management.Automation.CommandMetaData]$ExecutionContext.SessionState.InvokeCommand.GetCommand($CommandName, 'Function')).Parameters.Keys
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'SchemaName', 'SchemaOwner', 'IncludeSystemDatabases', 'IncludeSystemSchemas', 'InputObject', 'EnableException'
+        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'Schema', 'SchemaOwner', 'IncludeSystemDatabases', 'IncludeSystemSchemas', 'InputObject', 'EnableException'
         It "Should only contain our specific parameters" {
             Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params | Should -BeNullOrEmpty
         }
@@ -68,19 +68,19 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         }
 
         It "get non-system schemas from a user database" {
-            $schemas = Get-DbaDbSchema -SqlInstance $instance1 -SchemaName $schemaName
+            $schemas = Get-DbaDbSchema -SqlInstance $instance1 -Schema $schemaName
             $schemas.Name | Should -Contain $schemaName
             $schemas.Parent.Name | Should -Contain $newDbName
         }
 
         It "get a schema by name from a user database" {
-            $schemas = Get-DbaDbSchema -SqlInstance $instance1 -Database $newDbName -SchemaName $schemaName
+            $schemas = Get-DbaDbSchema -SqlInstance $instance1 -Database $newDbName -Schema $schemaName
             $schemas.Count | Should -Be 1
             $schemas.Name | Should -Be $schemaName
         }
 
         It "get the dbo schema" {
-            $schemas = Get-DbaDbSchema -SqlInstance $instance1 -Database $newDbName -SchemaName dbo -IncludeSystemSchemas
+            $schemas = Get-DbaDbSchema -SqlInstance $instance1 -Database $newDbName -Schema dbo -IncludeSystemSchemas
             $schemas.Count | Should -Be 1
             $schemas.Name | Should -Be dbo
         }
@@ -100,7 +100,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         }
 
         It "supports piping databases" {
-            $schemas = $newDbs | Get-DbaDbSchema -SchemaName $schemaName, $schemaName2
+            $schemas = $newDbs | Get-DbaDbSchema -Schema $schemaName, $schemaName2
             $schemas.Count | Should -Be 2
             $schemas.Owner | Should -Be $userName, $userName2
             $schemas.Name | Should -Be $schemaName, $schemaName2
@@ -108,26 +108,26 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         }
 
         It "get a schema and then change the owner" {
-            $schemas = Get-DbaDbSchema -SqlInstance $instance1 -Database $newDbName -SchemaName $schemaName
+            $schemas = Get-DbaDbSchema -SqlInstance $instance1 -Database $newDbName -Schema $schemaName
             $schemas.Count | Should -Be 1
             $schemas.Owner | Should -Be $userName
 
             $schemas.Owner = $userName2
             $schemas.Alter()
 
-            $schemas = Get-DbaDbSchema -SqlInstance $instance1 -Database $newDbName -SchemaName $schemaName
+            $schemas = Get-DbaDbSchema -SqlInstance $instance1 -Database $newDbName -Schema $schemaName
             $schemas.Count | Should -Be 1
             $schemas.Owner | Should -Be $userName2
         }
 
         It "get a schema and then drop it (assuming that it does not contain any objects)" {
-            $schemas = Get-DbaDbSchema -SqlInstance $instance2 -Database $newDbName -SchemaName $schemaName2
+            $schemas = Get-DbaDbSchema -SqlInstance $instance2 -Database $newDbName -Schema $schemaName2
             $schemas.Count | Should -Be 1
             $schemas.Owner | Should -Be $userName2
 
             $schemas.Drop()
 
-            $schemas = Get-DbaDbSchema -SqlInstance $instance2 -Database $newDbName -SchemaName $schemaName2
+            $schemas = Get-DbaDbSchema -SqlInstance $instance2 -Database $newDbName -Schema $schemaName2
             $schemas | Should -BeNullOrEmpty
         }
     }

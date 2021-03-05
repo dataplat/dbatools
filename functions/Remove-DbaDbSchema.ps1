@@ -1,10 +1,10 @@
-function New-DbaDbSchema {
+function Remove-DbaDbSchema {
     <#
     .SYNOPSIS
-        Creates a new database schema and assigns an owner.
+        Drops one or more schemas from the specified database(s).
 
     .DESCRIPTION
-        Creates a new database schema and assigns an owner.
+        Drops one or more schemas from the specified database(s). As noted in the remarks section of the documentation for DROP SCHEMA there must not be any objects in the schema.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function
@@ -21,10 +21,7 @@ function New-DbaDbSchema {
         The target database(s).
 
     .PARAMETER Schema
-        The name(s) of the new schema(s)
-
-    .PARAMETER SchemaOwner
-        The name of the database user that will own the schema(s).
+        The name(s) of the schema(s)
 
     .PARAMETER InputObject
         Allows piping from Get-DbaDatabase.
@@ -49,45 +46,30 @@ function New-DbaDbSchema {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/New-DbaDbSchema
+        https://dbatools.io/Remove-DbaDbSchema
 
     .EXAMPLE
-        PS C:\> New-DbaDbSchema -SqlInstance localhost -Database example1 -Schema TestSchema1
+        PS C:\> Remove-DbaDbSchema -SqlInstance sqldev01 -Database example1 -Schema TestSchema1
 
-        Creates the TestSchema1 schema in the example1 database in the localhost instance. The dbo user will be the owner of the schema.
-
-    .EXAMPLE
-        PS C:\> New-DbaDbSchema -SqlInstance localhost -Database example1 -Schema TestSchema1, TestSchema2 -SchemaOwner dbatools
-
-        Creates the TestSchema1 and TestSchema2 schemas in the example1 database in the localhost instance and assigns the dbatools user as the owner of the schemas.
+        Removes the TestSchema1 schema in the example1 database in the sqldev01 instance.
 
     .EXAMPLE
-        PS C:\> New-DbaDbSchema -SqlInstance localhost, localhost\sql2017 -Database example1 -Schema TestSchema1, TestSchema2 -SchemaOwner dbatools
+        PS C:\> Get-DbaDatabase -SqlInstance sqldev01, sqldev02 -Database example1 | Remove-DbaDbSchema -Schema TestSchema1, TestSchema2
 
-        Creates the TestSchema1 and TestSchema2 schemas in the example1 database in the localhost and localhost\sql2017 instances and assigns the dbatools user as the owner of the schemas.
-
-    .EXAMPLE
-        PS C:\> Get-DbaDatabase -SqlInstance localhost, localhost\sql2017 -Database example1 | New-DbaDbSchema -Schema TestSchema1, TestSchema2 -SchemaOwner dbatools
-
-        Passes in the example1 db via pipeline and creates the TestSchema1 and TestSchema2 schemas and assigns the dbatools user as the owner of the schemas.
+        Passes in the example1 db via pipeline and removes the TestSchema1 and TestSchema2 schemas.
     #>
-    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'Low')]
+    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High')]
     param (
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [string[]]$Database,
+        [Parameter(Mandatory)]
         [string[]]$Schema,
-        [string]$SchemaOwner,
         [parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
         [switch]$EnableException
     )
     process {
-
-        if (Test-Bound -Not -ParameterName Schema) {
-            Stop-Function -Message "Schema is required"
-            return
-        }
 
         if ((Test-Bound -ParameterName SqlInstance) -and (Test-Bound -Not -ParameterName Database)) {
             Stop-Function -Message "Database is required when SqlInstance is specified"
@@ -102,22 +84,12 @@ function New-DbaDbSchema {
 
             foreach ($sName in $Schema) {
 
-                if ($db.Schemas.Name -contains $sName) {
-                    Stop-Function -Message "Schema $sName already exists in the database $($db.Name) on $($db.Parent.Name)" -Continue
-                }
-
-                if ($Pscmdlet.ShouldProcess($db.Parent.Name, "Creating the schema $sName on the database $($db.Name)")) {
+                if ($Pscmdlet.ShouldProcess($db.Parent.Name, "Dropping the schema $sName on the database $($db.Name)")) {
                     try {
-                        $newSchema = New-Object Microsoft.SqlServer.Management.Smo.Schema -ArgumentList $db, $sName
-
-                        if (Test-Bound SchemaOwner) {
-                            $newSchema.Owner = $SchemaOwner
-                        }
-
-                        $newSchema.Create()
-                        $newSchema
+                        $schemaObject = $db | Get-DbaDbSchema -Schema $sName
+                        $schemaObject.Drop()
                     } catch {
-                        Stop-Function -Message "Failure on $($db.Parent.Name) to create the schema $sName in the database $($db.Name)" -ErrorRecord $_ -Continue
+                        Stop-Function -Message "Failure on $($db.Parent.Name) to drop the schema $sName in the database $($db.Name)" -ErrorRecord $_ -Continue
                     }
                 }
             }
