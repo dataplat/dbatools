@@ -16,12 +16,12 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
 
     BeforeAll {
         $random = Get-Random
-        $instance1 = Connect-DbaInstance -SqlInstance $script:instance1
-        $null = Get-DbaProcess -SqlInstance $instance1 | Where-Object Program -match dbatools | Stop-DbaProcess -Confirm:$false
+        $instance2 = Connect-DbaInstance -SqlInstance $script:instance2
+        $null = Get-DbaProcess -SqlInstance $instance2 | Where-Object Program -match dbatools | Stop-DbaProcess -Confirm:$false
         $newDbName = "dbatoolsci_newdb_$random"
-        $newDb = New-DbaDatabase -SqlInstance $instance1 -Name $newDbName
+        $newDb = New-DbaDatabase -SqlInstance $instance2 -Name $newDbName
 
-        $newSequence = New-DbaDbSequence -SqlInstance $instance1 -Database $newDbName -Name "Sequence1_$random" -Schema "Schema_$random"
+        $newSequence = New-DbaDbSequence -SqlInstance $instance2 -Database $newDbName -Name "Sequence1_$random" -Schema "Schema_$random"
     }
 
     AfterAll {
@@ -31,13 +31,13 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     Context "commands work as expected" {
 
         It "validates required Database param" {
-            $sequence = Set-DbaDbSequence -SqlInstance $instance1 -Name "Sequence1_$random" -Schema "Schema_$random" -Confirm:$false -ErrorVariable error
+            $sequence = Set-DbaDbSequence -SqlInstance $instance2 -Name "Sequence1_$random" -Schema "Schema_$random" -Confirm:$false -ErrorVariable error
             $sequence | Should -BeNullOrEmpty
             $error | Should -Match "Database is required when SqlInstance is specified"
         }
 
         It "supports piping databases" {
-            $sequence = Get-DbaDatabase -SqlInstance $instance1 -Database $newDbName | Set-DbaDbSequence -Name "Sequence1_$random" -Schema "Schema_$random" -Cycle -Confirm:$false
+            $sequence = Get-DbaDatabase -SqlInstance $instance2 -Database $newDbName | Set-DbaDbSequence -Name "Sequence1_$random" -Schema "Schema_$random" -Cycle -Confirm:$false
             $sequence.Name | Should -Be "Sequence1_$random"
             $sequence.Schema | Should -Be "Schema_$random"
             $sequence.Parent.Name | Should -Be $newDbName
@@ -48,7 +48,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             $startValues = @(-100000, -10, 0, 1, 1000)
 
             foreach ($startValue in $startValues) {
-                $sequence = Set-DbaDbSequence -SqlInstance $instance1 -Database $newDbName -Name "Sequence1_$random" -Schema "Schema_$random" -RestartWith $startValue -Confirm:$false
+                $sequence = Set-DbaDbSequence -SqlInstance $instance2 -Database $newDbName -Name "Sequence1_$random" -Schema "Schema_$random" -RestartWith $startValue -Confirm:$false
                 $sequence.Name | Should -Be "Sequence1_$random"
                 $sequence.Schema | Should -Be "Schema_$random"
                 $sequence.StartValue | Should -Be $startValue
@@ -60,7 +60,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             $incrementByValues = @(-1, 1, 10)
 
             foreach ($incrementByValue in $incrementByValues) {
-                $sequence = Set-DbaDbSequence -SqlInstance $instance1 -Database $newDbName -Name "Sequence1_$random" -Schema "Schema_$random" -IncrementBy $incrementByValue -Confirm:$false
+                $sequence = Set-DbaDbSequence -SqlInstance $instance2 -Database $newDbName -Name "Sequence1_$random" -Schema "Schema_$random" -IncrementBy $incrementByValue -Confirm:$false
                 $sequence.Name | Should -Be "Sequence1_$random"
                 $sequence.Schema | Should -Be "Schema_$random"
                 $sequence.IncrementValue | Should -Be $incrementByValue
@@ -69,7 +69,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         }
 
         It "updates a sequence with min and max values" {
-            $sequence = Set-DbaDbSequence -SqlInstance $instance1 -Database $newDbName -Name "Sequence1_$random" -Schema "Schema_$random" -MinValue 0 -MaxValue 100000 -Confirm:$false
+            $sequence = Set-DbaDbSequence -SqlInstance $instance2 -Database $newDbName -Name "Sequence1_$random" -Schema "Schema_$random" -MinValue 0 -MaxValue 100000 -Confirm:$false
             $sequence.Name | Should -Be "Sequence1_$random"
             $sequence.Schema | Should -Be "Schema_$random"
             $sequence.MinValue | Should -Be 0
@@ -78,13 +78,13 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         }
 
         It "updates a sequence with cycle options" {
-            $sequence = Set-DbaDbSequence -SqlInstance $instance1 -Database $newDbName -Name "Sequence1_$random" -Schema "Schema_$random" -Cycle -Confirm:$false
+            $sequence = Set-DbaDbSequence -SqlInstance $instance2 -Database $newDbName -Name "Sequence1_$random" -Schema "Schema_$random" -Cycle -Confirm:$false
             $sequence.Name | Should -Be "Sequence1_$random"
             $sequence.Schema | Should -Be "Schema_$random"
             $sequence.IsCycleEnabled | Should -Be $true
             $sequence.Parent.Name | Should -Be $newDbName
 
-            $sequence = Set-DbaDbSequence -SqlInstance $instance1 -Database $newDbName -Name "Sequence1_$random" -Schema "Schema_$random" -Cycle:$false -Confirm:$false
+            $sequence = Set-DbaDbSequence -SqlInstance $instance2 -Database $newDbName -Name "Sequence1_$random" -Schema "Schema_$random" -Cycle:$false -Confirm:$false
             $sequence.Name | Should -Be "Sequence1_$random"
             $sequence.Schema | Should -Be "Schema_$random"
             $sequence.IsCycleEnabled | Should -Be $false
@@ -92,19 +92,19 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         }
 
         It "updates a sequence with cache options" {
-            $sequence = Set-DbaDbSequence -SqlInstance $instance1 -Database $newDbName -Name "Sequence1_$random" -Schema "Schema_$random" -CacheSize 0 -Confirm:$false
+            $sequence = Set-DbaDbSequence -SqlInstance $instance2 -Database $newDbName -Name "Sequence1_$random" -Schema "Schema_$random" -CacheSize 0 -Confirm:$false
             $sequence.Name | Should -Be "Sequence1_$random"
             $sequence.Schema | Should -Be "Schema_$random"
             $sequence.SequenceCacheType | Should -Be NoCache
             $sequence.Parent.Name | Should -Be $newDbName
 
-            $sequence = Set-DbaDbSequence -SqlInstance $instance1 -Database $newDbName -Name "Sequence1_$random" -Schema "Schema_$random" -Confirm:$false
+            $sequence = Set-DbaDbSequence -SqlInstance $instance2 -Database $newDbName -Name "Sequence1_$random" -Schema "Schema_$random" -Confirm:$false
             $sequence.Name | Should -Be "Sequence1_$random"
             $sequence.Schema | Should -Be "Schema_$random"
             $sequence.SequenceCacheType | Should -Be DefaultCache
             $sequence.Parent.Name | Should -Be $newDbName
 
-            $sequence = Set-DbaDbSequence -SqlInstance $instance1 -Database $newDbName -Name "Sequence1_$random" -Schema "Schema_$random" -CacheSize 1000 -Confirm:$false
+            $sequence = Set-DbaDbSequence -SqlInstance $instance2 -Database $newDbName -Name "Sequence1_$random" -Schema "Schema_$random" -CacheSize 1000 -Confirm:$false
             $sequence.Name | Should -Be "Sequence1_$random"
             $sequence.Schema | Should -Be "Schema_$random"
             $sequence.SequenceCacheType | Should -Be CacheWithSize
@@ -113,7 +113,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         }
 
         It "validates IncrementBy param cannot be 0" {
-            $sequence = Set-DbaDbSequence -SqlInstance $instance1 -Database $newDbName -Name "Sequence1_$random" -Schema "Schema_$random" -IncrementBy 0 -Confirm:$false -ErrorVariable error
+            $sequence = Set-DbaDbSequence -SqlInstance $instance2 -Database $newDbName -Name "Sequence1_$random" -Schema "Schema_$random" -IncrementBy 0 -Confirm:$false -ErrorVariable error
             $sequence | Should -BeNullOrEmpty
             $error.Exception | Should -Match "cannot be zero"
         }

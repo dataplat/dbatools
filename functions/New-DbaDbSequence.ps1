@@ -4,7 +4,7 @@ function New-DbaDbSequence {
         Creates a sequence.
 
     .DESCRIPTION
-        Creates a sequence in the database(s) specified.
+        Creates a sequence in the database(s) specified. SQL Server 2012 and higher are supported.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function
@@ -118,6 +118,10 @@ function New-DbaDbSequence {
         }
 
         foreach ($db in $InputObject) {
+
+            if ($db.Parent.VersionMajor -lt 11) {
+                Stop-Function -Message "This command only supports SQL Server 2012 and higher." -Continue
+            }
 
             if (($db.Sequences | Where-Object { $_.Schema -eq $Schema -and $_.Name -eq $Name })) {
                 Stop-Function -Message "Sequence $Name already exists in the $Schema schema in the database $($db.Name) on $($db.Parent.Name)" -Continue

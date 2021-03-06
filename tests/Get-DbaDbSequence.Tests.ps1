@@ -16,12 +16,12 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
 
     BeforeAll {
         $random = Get-Random
-        $instance1 = Connect-DbaInstance -SqlInstance $script:instance1
-        $null = Get-DbaProcess -SqlInstance $instance1 | Where-Object Program -match dbatools | Stop-DbaProcess -Confirm:$false
+        $instance2 = Connect-DbaInstance -SqlInstance $script:instance2
+        $null = Get-DbaProcess -SqlInstance $instance2 | Where-Object Program -match dbatools | Stop-DbaProcess -Confirm:$false
         $newDbName = "dbatoolsci_newdb_$random"
-        $newDb = New-DbaDatabase -SqlInstance $instance1 -Name $newDbName
+        $newDb = New-DbaDatabase -SqlInstance $instance2 -Name $newDbName
 
-        $sequence = New-DbaDbSequence -SqlInstance $instance1 -Database $newDbName -Name "Sequence1_$random" -Schema "Schema_$random"
+        $sequence = New-DbaDbSequence -SqlInstance $instance2 -Database $newDbName -Name "Sequence1_$random" -Schema "Schema_$random"
     }
 
     AfterAll {
@@ -31,20 +31,20 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     Context "commands work as expected" {
 
         It "validates required Database param" {
-            $sequence = Get-DbaDbSequence -SqlInstance $instance1 -Name SequenceTest -ErrorVariable error
+            $sequence = Get-DbaDbSequence -SqlInstance $instance2 -Name SequenceTest -ErrorVariable error
             $sequence | Should -BeNullOrEmpty
             $error | Should -Match "Database is required when SqlInstance is specified"
         }
 
         It "finds a sequence" {
-            $sequence = Get-DbaDbSequence -SqlInstance $instance1 -Database $newDbName -Name "Sequence1_$random" -Schema "Schema_$random"
+            $sequence = Get-DbaDbSequence -SqlInstance $instance2 -Database $newDbName -Name "Sequence1_$random" -Schema "Schema_$random"
             $sequence.Name | Should -Be "Sequence1_$random"
             $sequence.Schema | Should -Be "Schema_$random"
             $sequence.Parent.Name | Should -Be $newDbName
         }
 
         It "supports piping databases" {
-            $sequence = Get-DbaDatabase -SqlInstance $instance1 -Database $newDbName | Get-DbaDbSequence -Name "Sequence1_$random" -Schema "Schema_$random"
+            $sequence = Get-DbaDatabase -SqlInstance $instance2 -Database $newDbName | Get-DbaDbSequence -Name "Sequence1_$random" -Schema "Schema_$random"
             $sequence.Name | Should -Be "Sequence1_$random"
             $sequence.Schema | Should -Be "Schema_$random"
             $sequence.Parent.Name | Should -Be $newDbName

@@ -16,10 +16,10 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
 
     BeforeAll {
         $random = Get-Random
-        $instance1 = Connect-DbaInstance -SqlInstance $script:instance1
-        $null = Get-DbaProcess -SqlInstance $instance1 | Where-Object Program -match dbatools | Stop-DbaProcess -Confirm:$false
+        $instance2 = Connect-DbaInstance -SqlInstance $script:instance2
+        $null = Get-DbaProcess -SqlInstance $instance2 | Where-Object Program -match dbatools | Stop-DbaProcess -Confirm:$false
         $newDbName = "dbatoolsci_newdb_$random"
-        $newDb = New-DbaDatabase -SqlInstance $instance1 -Name $newDbName
+        $newDb = New-DbaDatabase -SqlInstance $instance2 -Name $newDbName
 
         $newDb.Query("CREATE SCHEMA TestSchema")
         $newDb.Query("CREATE TYPE TestSchema.NonNullInteger FROM INTEGER NOT NULL")
@@ -33,31 +33,31 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     Context "commands work as expected" {
 
         It "validates required Database param" {
-            $sequence = New-DbaDbSequence -SqlInstance $instance1 -Name SequenceTest -ErrorVariable error
+            $sequence = New-DbaDbSequence -SqlInstance $instance2 -Name SequenceTest -ErrorVariable error
             $sequence | Should -BeNullOrEmpty
             $error | Should -Match "Database is required when SqlInstance is specified"
         }
 
         It "validates IncrementBy param cannot be 0" {
-            $sequence = New-DbaDbSequence -SqlInstance $instance1 -Database $newDbName -Name SequenceTest -IncrementBy 0 -ErrorVariable error
+            $sequence = New-DbaDbSequence -SqlInstance $instance2 -Database $newDbName -Name SequenceTest -IncrementBy 0 -ErrorVariable error
             $sequence | Should -BeNullOrEmpty
             $error.Exception | Should -Match "cannot be zero"
         }
 
         It "creates a new sequence" {
-            $sequence = New-DbaDbSequence -SqlInstance $instance1 -Database $newDbName -Name "Sequence1_$random" -Schema "Schema_$random"
+            $sequence = New-DbaDbSequence -SqlInstance $instance2 -Database $newDbName -Name "Sequence1_$random" -Schema "Schema_$random"
             $sequence.Name | Should -Be "Sequence1_$random"
             $sequence.Schema | Should -Be "Schema_$random"
             $sequence.Parent.Name | Should -Be $newDbName
         }
 
         It "tries to create a duplicate sequence" {
-            $sequence = New-DbaDbSequence -SqlInstance $instance1 -Database $newDbName -Name "Sequence1_$random" -Schema "Schema_$random"
+            $sequence = New-DbaDbSequence -SqlInstance $instance2 -Database $newDbName -Name "Sequence1_$random" -Schema "Schema_$random"
             $sequence | Should -BeNullOrEmpty
         }
 
         It "supports piping databases" {
-            $sequence = Get-DbaDatabase -SqlInstance $instance1 -Database $newDbName | New-DbaDbSequence -Name "Sequence2_$random" -Schema "Schema_$random"
+            $sequence = Get-DbaDatabase -SqlInstance $instance2 -Database $newDbName | New-DbaDbSequence -Name "Sequence2_$random" -Schema "Schema_$random"
             $sequence.Name | Should -Be "Sequence2_$random"
             $sequence.Schema | Should -Be "Schema_$random"
             $sequence.Parent.Name | Should -Be $newDbName
@@ -67,7 +67,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             $types = @('tinyint', 'smallint', 'int', 'bigint', 'decimal', 'numeric')
 
             foreach ($type in $types) {
-                $sequence = New-DbaDbSequence -SqlInstance $instance1 -Database $newDbName -Name "Sequence_$($type)_$($random)" -Schema "Schema_$random" -IntegerType $type
+                $sequence = New-DbaDbSequence -SqlInstance $instance2 -Database $newDbName -Name "Sequence_$($type)_$($random)" -Schema "Schema_$random" -IntegerType $type
                 $sequence.Name | Should -Be "Sequence_$($type)_$($random)"
                 $sequence.Schema | Should -Be "Schema_$random"
                 $sequence.DataType.ToString() | Should -Be $type
@@ -80,7 +80,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
 
             foreach ($startValue in $startValues) {
                 $randomForStartValues = Get-Random
-                $sequence = New-DbaDbSequence -SqlInstance $instance1 -Database $newDbName -Name "Sequence_$($randomForStartValues)" -Schema "Schema_$random" -StartWith $startValue
+                $sequence = New-DbaDbSequence -SqlInstance $instance2 -Database $newDbName -Name "Sequence_$($randomForStartValues)" -Schema "Schema_$random" -StartWith $startValue
                 $sequence.Name | Should -Be "Sequence_$($randomForStartValues)"
                 $sequence.Schema | Should -Be "Schema_$random"
                 $sequence.StartValue | Should -Be $startValue
@@ -93,7 +93,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
 
             foreach ($incrementByValue in $incrementByValues) {
                 $randomForIncrementValues = Get-Random
-                $sequence = New-DbaDbSequence -SqlInstance $instance1 -Database $newDbName -Name "Sequence_$($randomForIncrementValues)" -Schema "Schema_$random" -IncrementBy $incrementByValue
+                $sequence = New-DbaDbSequence -SqlInstance $instance2 -Database $newDbName -Name "Sequence_$($randomForIncrementValues)" -Schema "Schema_$random" -IncrementBy $incrementByValue
                 $sequence.Name | Should -Be "Sequence_$($randomForIncrementValues)"
                 $sequence.Schema | Should -Be "Schema_$random"
                 $sequence.IncrementValue | Should -Be $incrementByValue
@@ -106,7 +106,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
 
             foreach ($minValue in $minValues) {
                 $randomForMinValues = Get-Random
-                $sequence = New-DbaDbSequence -SqlInstance $instance1 -Database $newDbName -Name "Sequence_$($randomForMinValues)" -Schema "Schema_$random" -MinValue $minValue
+                $sequence = New-DbaDbSequence -SqlInstance $instance2 -Database $newDbName -Name "Sequence_$($randomForMinValues)" -Schema "Schema_$random" -MinValue $minValue
                 $sequence.Name | Should -Be "Sequence_$($randomForMinValues)"
                 $sequence.Schema | Should -Be "Schema_$random"
                 $sequence.MinValue | Should -Be $minValue
@@ -119,7 +119,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
 
             foreach ($maxValue in $maxValues) {
                 $randomForMaxValues = Get-Random
-                $sequence = New-DbaDbSequence -SqlInstance $instance1 -Database $newDbName -Name "Sequence_$($randomForMaxValues)" -Schema "Schema_$random" -MaxValue $maxValue
+                $sequence = New-DbaDbSequence -SqlInstance $instance2 -Database $newDbName -Name "Sequence_$($randomForMaxValues)" -Schema "Schema_$random" -MaxValue $maxValue
                 $sequence.Name | Should -Be "Sequence_$($randomForMaxValues)"
                 $sequence.Schema | Should -Be "Schema_$random"
                 $sequence.MaxValue | Should -Be $maxValue
@@ -128,13 +128,13 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         }
 
         It "creates a new sequence with cycle options" {
-            $sequence = New-DbaDbSequence -SqlInstance $instance1 -Database $newDbName -Name "Sequence_with_cycle" -Cycle
+            $sequence = New-DbaDbSequence -SqlInstance $instance2 -Database $newDbName -Name "Sequence_with_cycle" -Cycle
             $sequence.Name | Should -Be "Sequence_with_cycle"
             $sequence.Schema | Should -Be "dbo"
             $sequence.IsCycleEnabled | Should -Be $true
             $sequence.Parent.Name | Should -Be $newDbName
 
-            $sequence = New-DbaDbSequence -SqlInstance $instance1 -Database $newDbName -Name "Sequence_without_cycle"
+            $sequence = New-DbaDbSequence -SqlInstance $instance2 -Database $newDbName -Name "Sequence_without_cycle"
             $sequence.Name | Should -Be "Sequence_without_cycle"
             $sequence.Schema | Should -Be "dbo"
             $sequence.IsCycleEnabled | Should -Be $false
@@ -142,19 +142,19 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         }
 
         It "creates a new sequence with cache options" {
-            $sequence = New-DbaDbSequence -SqlInstance $instance1 -Database $newDbName -Name "Sequence_with_nocache" -CacheSize 0
+            $sequence = New-DbaDbSequence -SqlInstance $instance2 -Database $newDbName -Name "Sequence_with_nocache" -CacheSize 0
             $sequence.Name | Should -Be "Sequence_with_nocache"
             $sequence.Schema | Should -Be "dbo"
             $sequence.SequenceCacheType | Should -Be NoCache
             $sequence.Parent.Name | Should -Be $newDbName
 
-            $sequence = New-DbaDbSequence -SqlInstance $instance1 -Database $newDbName -Name "Sequence_with_defaultcache"
+            $sequence = New-DbaDbSequence -SqlInstance $instance2 -Database $newDbName -Name "Sequence_with_defaultcache"
             $sequence.Name | Should -Be "Sequence_with_defaultcache"
             $sequence.Schema | Should -Be "dbo"
             $sequence.SequenceCacheType | Should -Be DefaultCache
             $sequence.Parent.Name | Should -Be $newDbName
 
-            $sequence = New-DbaDbSequence -SqlInstance $instance1 -Database $newDbName -Name "Sequence_with_cache" -CacheSize 1000
+            $sequence = New-DbaDbSequence -SqlInstance $instance2 -Database $newDbName -Name "Sequence_with_cache" -CacheSize 1000
             $sequence.Name | Should -Be "Sequence_with_cache"
             $sequence.Schema | Should -Be "dbo"
             $sequence.SequenceCacheType | Should -Be CacheWithSize
@@ -163,13 +163,13 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         }
 
         It "creates a new sequence with a user defined integer type" {
-            $sequence = New-DbaDbSequence -SqlInstance $instance1 -Database $newDbName -Name "Sequence_with_custom_type_without_schema_prefix" -IntegerType NonNullInteger
+            $sequence = New-DbaDbSequence -SqlInstance $instance2 -Database $newDbName -Name "Sequence_with_custom_type_without_schema_prefix" -IntegerType NonNullInteger
             $sequence.Name | Should -Be "Sequence_with_custom_type_without_schema_prefix"
             $sequence.DataType.Name | Should -Be NonNullInteger
             $sequence.DataType.Schema | Should -Be dbo
             $sequence.Parent.Name | Should -Be $newDbName
 
-            $sequence = New-DbaDbSequence -SqlInstance $instance1 -Database $newDbName -Name "Sequence_with_custom_type" -IntegerType TestSchema.NonNullInteger
+            $sequence = New-DbaDbSequence -SqlInstance $instance2 -Database $newDbName -Name "Sequence_with_custom_type" -IntegerType TestSchema.NonNullInteger
             $sequence.Name | Should -Be "Sequence_with_custom_type"
             $sequence.DataType.Name | Should -Be NonNullInteger
             $sequence.DataType.Schema | Should -Be TestSchema
