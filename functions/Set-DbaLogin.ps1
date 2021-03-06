@@ -27,7 +27,7 @@ function Set-DbaLogin {
         Default database for the login
 
     .PARAMETER Unlock
-        Switch to unlock an account. This will only be used in conjunction with the -SecurePassword parameter.
+        Switch to unlock an account. This can be used in conjunction with the -SecurePassword or -Force parameters.
         The default is false.
 
     .PARAMETER MustChange
@@ -71,6 +71,9 @@ function Set-DbaLogin {
 
     .PARAMETER Confirm
         If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
+
+    .PARAMETER Force
+        This switch is used with -Unlock to unlock a login without providing a password. This command will temporarily disable and enable the policy settings as described at https://www.mssqltips.com/sqlservertip/2758/how-to-unlock-a-sql-login-without-resetting-the-password/.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -157,6 +160,10 @@ function Set-DbaLogin {
 
         Set the default database to master on a login
 
+    .EXAMPLE
+        PS C:\> Set-DbaLogin -SqlInstance sql1 -Login login1 -Unlock -Force
+
+        Unlocks the login1 on the sql1 instance using the technique described at https://www.mssqltips.com/sqlservertip/2758/how-to-unlock-a-sql-login-without-resetting-the-password/
     #>
 
     [CmdletBinding(SupportsShouldProcess)]
@@ -184,6 +191,7 @@ function Set-DbaLogin {
         [string[]]$RemoveRole,
         [parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.Login[]]$InputObject,
+        [switch]$Force,
         [switch]$EnableException
     )
 
@@ -214,6 +222,10 @@ function Set-DbaLogin {
                 }
             }
         }
+
+        if ((Test-Bound Unlock) -and (Test-Bound SecurePassword -Not) -and (Test-Bound Force -Not)) {
+            Stop-Function -Message 'You must specify a password when using the -Unlock parameter or use the -Force parameter. See the help documentation for this command.'
+        }
     }
 
     process {
@@ -238,6 +250,43 @@ function Set-DbaLogin {
 
                 # Create the notes
                 $notes = @()
+
+                # caller wants to unlock a login without a password and has specified the -Force param
+                if ((Test-Bound Unlock) -and (Test-Bound SecurePassword -Not) -and (Test-Bound Force)) {
+                    if (-not $l.IsLocked) {
+                        Write-Message -Message "Login $l is not locked" -Level Warning
+                    } else {
+                        try {
+                            # save the current state of the policy options for check_policy and check_expiration
+                            $checkPolicy = $l.PasswordPolicyEnforced
+                            $checkExpiration = $l.PasswordExpirationEnabled
+
+                            # alter the login to switch off the check_policy and check_expiration. Ref: https://www.mssqltips.com/sqlservertip/2758/how-to-unlock-a-sql-login-without-resetting-the-password/
+                            $l.PasswordPolicyEnforced = $false
+                            $l.PasswordExpirationEnabled = $false
+                            $l.Alter()
+
+                            # restore the settings immediately
+                            $l.PasswordPolicyEnforced = $checkPolicy
+                            $l.PasswordExpirationEnabled = $checkExpiration
+                            $l.Alter()
+
+                            # out of an abundance of caution let's refresh the login and double check the settings to see if they match what they were before
+                            $l.Refresh()
+
+                            if ($checkPolicy -ne $l.PasswordPolicyEnforced) {
+                                Stop-Function -Message "Unable to restore the check_policy setting for $l" -Target $l -Continue
+                            }
+
+                            if ($checkExpiration -ne $l.PasswordExpirationEnabled) {
+                                Stop-Function -Message "Unable to restore the check_expiration setting for $l" -Target $l -Continue
+                            }
+                        } catch {
+                            $notes += "Unable to unlock"
+                            Stop-Function -Message "Unable to unlock $l. Review the 'Enforce password policy' and 'Enforce password expiration' settings for $l" -Target $l -ErrorRecord $_ -Continue
+                        }
+                    }
+                }
 
                 # Change the name
                 if (Test-Bound -ParameterName 'NewName') {
