@@ -41,7 +41,7 @@ function Select-DbaDbSequenceNextValue {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: Data, Database, Migration, Sequence, Table
+        Tags: Data, Sequence, Table
         Author: Adam Lancaster https://github.com/lancasteradam
 
         dbatools PowerShell module (https://dbatools.io)

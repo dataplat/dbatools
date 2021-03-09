@@ -59,7 +59,7 @@ function Set-DbaDbSequence {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: Data, Database, Migration, Sequence, Table
+        Tags: Data, Sequence, Table
         Author: Adam Lancaster https://github.com/lancasteradam
 
         dbatools PowerShell module (https://dbatools.io)
@@ -148,8 +148,8 @@ function Set-DbaDbSequence {
                     }
 
                     $sequence.Alter()
-                    $sequence.Refresh()
-                    $sequence
+                    $db.Refresh()
+                    $db.Sequences | Where-Object { $_.Schema -eq $Schema -and $_.Name -eq $Name }
                 } catch {
                     Stop-Function -Message "Failure on $($db.Parent.Name) to modify the sequence $Name in the $Schema schema in the database $($db.Name)" -ErrorRecord $_ -Continue
                 }
