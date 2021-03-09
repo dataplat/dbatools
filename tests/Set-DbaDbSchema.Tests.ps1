@@ -23,11 +23,13 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         $newDbs = New-DbaDatabase -SqlInstance $instance1, $instance2 -Name $newDbName
 
         $userName = "user_$random"
+        $userName2 = "user2_$random"
         $password = 'MyV3ry$ecur3P@ssw0rd'
         $securePassword = ConvertTo-SecureString $password -AsPlainText -Force
-        $logins = New-DbaLogin -SqlInstance $instance1, $instance2 -Login $userName -Password $securePassword -Force
+        $logins = New-DbaLogin -SqlInstance $instance1, $instance2 -Login $userName, $userName2 -Password $securePassword -Force
 
         $null = New-DbaDbUser -SqlInstance $instance1, $instance2 -Database $newDbName -Login $userName
+        $null = New-DbaDbUser -SqlInstance $instance1, $instance2 -Database $newDbName -Login $userName2
     }
 
     AfterAll {
@@ -37,40 +39,37 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
 
     Context "commands work as expected" {
 
-        It "validates required Schema" {
-            $schema = New-DbaDbSchema -SqlInstance $instance1
-            $schema | Should -BeNullOrEmpty
-        }
-
-        It "validates required Database param" {
-            $schema = New-DbaDbSchema -SqlInstance $instance1 -Schema TestSchema1
-            $schema | Should -BeNullOrEmpty
-        }
-
-        It "creates a new schema" {
+        It "updates the schema to a different owner" {
             $schema = New-DbaDbSchema -SqlInstance $instance1 -Database $newDbName -Schema TestSchema1 -SchemaOwner $userName
             $schema.Count | Should -Be 1
             $schema.Owner | Should -Be $userName
             $schema.Name | Should -Be TestSchema1
             $schema.Parent.Name | Should -Be $newDbName
 
+            $updatedSchema = Set-DbaDbSchema -SqlInstance $instance1 -Database $newDbName -Schema TestSchema1 -SchemaOwner $userName2
+            $updatedSchema.Count | Should -Be 1
+            $updatedSchema.Owner | Should -Be $userName2
+            $updatedSchema.Name | Should -Be TestSchema1
+            $updatedSchema.Parent.Name | Should -Be $newDbName
+
             $schemas = New-DbaDbSchema -SqlInstance $instance1, $instance2 -Database $newDbName -Schema TestSchema2, TestSchema3 -SchemaOwner $userName
             $schemas.Count | Should -Be 4
             $schemas.Owner | Should -Be $userName, $userName, $userName, $userName
             $schemas.Name | Should -Be TestSchema2, TestSchema3, TestSchema2, TestSchema3
             $schemas.Parent.Name | Should -Be $newDbName, $newDbName, $newDbName, $newDbName
-        }
 
-        It "reports a warning that the schema already exists" {
-            $schema = New-DbaDbSchema -SqlInstance $instance1 -Database $newDbName -Schema TestSchema1 -SchemaOwner $userName
-            $schema | Should -BeNullOrEmpty
+            $updatedSchemas = Set-DbaDbSchema -SqlInstance $instance1, $instance2 -Database $newDbName -Schema TestSchema2, TestSchema3 -SchemaOwner $userName2
+            $updatedSchemas.Count | Should -Be 4
+            $schemas.Owner | Should -Be $userName2, $userName2, $userName2, $userName2
+            $schemas.Name | Should -Be TestSchema2, TestSchema3, TestSchema2, TestSchema3
+            $schemas.Parent.Name | Should -Be $newDbName, $newDbName, $newDbName, $newDbName
         }
 
         It "supports piping databases" {
-            $schema = Get-DbaDatabase -SqlInstance $instance1 -Database $newDbName | New-DbaDbSchema -Schema TestSchema4
+            $schema = Get-DbaDatabase -SqlInstance $instance1 -Database $newDbName | Set-DbaDbSchema -Schema TestSchema1 -SchemaOwner $userName
             $schema.Count | Should -Be 1
-            $schema.Owner | Should -Be dbo
-            $schema.Name | Should -Be TestSchema4
+            $schema.Owner | Should -Be $userName
+            $schema.Name | Should -Be TestSchema1
             $schema.Parent.Name | Should -Be $newDbName
         }
     }

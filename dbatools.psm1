@@ -780,7 +780,9 @@ $script:xplat = @(
     'Remove-DbaAgentOperator',
     'Remove-DbaDbTableData',
     'Get-DbaDbSchema',
-    'New-DbaDbSchema'
+    'New-DbaDbSchema',
+    'Set-DbaDbSchema',
+    'Remove-DbaDbSchema'
 )
 
 $script:noncoresmo = @(

@@ -15,6 +15,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     BeforeAll {
+        $SkipLocalTest = $true # Change to $false to run the local-only tests on a local instance. This is being used because the 'locked' test makes assumptions the password policy configuration is enabled for the Windows OS.
         $random = Get-Random
 
         $password = ConvertTo-SecureString -String "password1A@" -AsPlainText -Force
@@ -114,6 +115,40 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             ($results[0].PSobject.Properties.Name -contains "LockoutTime") | Should -Be $true
             ($results[0].PSobject.Properties.Name -contains "PasswordHash") | Should -Be $true
             ($results[0].PSobject.Properties.Name -contains "PasswordLastSetTime") | Should -Be $true
+        }
+
+        It -Skip:$SkipLocalTest "Locked" {
+            $results = Set-DbaLogin -SqlInstance $script:instance1 -Login "testlogin1_$random" -PasswordPolicyEnforced -EnableException
+            $results.PasswordPolicyEnforced | Should -Be $true
+
+            # simulate a lockout
+            $invalidPassword = ConvertTo-SecureString -String 'invalid' -AsPlainText -Force
+            $invalidSqlCredential = New-Object -TypeName System.Management.Automation.PSCredential -ArgumentList "testlogin1_$random", $invalidPassword
+
+            # exceed the lockout count
+            for (($i = 0); $i -le 4; $i++) {
+                try {
+                    Connect-DbaInstance -SqlInstance $script:instance1 -SqlCredential $invalidSqlCredential
+                } catch {
+                    Write-Message -Level Warning -Message "invalid login credentials used on purpose to lock out account"
+                    Start-Sleep -s 5
+                }
+            }
+
+            $results = Get-DbaLogin -SqlInstance $script:instance1 -Locked
+            $results.Name | Should -Contain "testlogin1_$random"
+
+            $results = Get-DbaLogin -SqlInstance $script:instance1 -Login "testlogin1_$random" -Type SQL
+            $results.IsLocked | Should -Be $true
+
+            $results = Set-DbaLogin -SqlInstance $script:instance1 -Login "testlogin1_$random" -Unlock -Force
+            $results.IsLocked | Should -Be $false
+
+            $results = Get-DbaLogin -SqlInstance $script:instance1 -Locked
+            $results.Name | Should -Not -Contain "testlogin1_$random"
+
+            $results = Get-DbaLogin -SqlInstance $script:instance1 -Login "testlogin1_$random" -Type SQL
+            $results.IsLocked | Should -Be $false
         }
     }
 }
