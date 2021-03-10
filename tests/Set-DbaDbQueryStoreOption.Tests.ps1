@@ -55,6 +55,14 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
                     $result = $results | Where-Object Database -eq dbatoolsciqs
                     $result.Count | Should Be 0
                 }
+
+                It "should not have any of the system databases" {
+                    $results = Set-DbaDbQueryStoreOption -SqlInstance $instance -AllDatabases -State ReadWrite
+                    $results.Database | Should -Not -Contain "msdb"
+                    $results.Database | Should -Not -Contain "master"
+                    $results.Database | Should -Not -Contain "model"
+                    $results.Database | Should -Not -Contain "tempdb"
+                }
             }
         }
     }
