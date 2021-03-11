@@ -15698,7 +15698,7 @@
         "CommandName":  "Get-DbaDbFile",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Get-DbaDbFile",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaDbFile -SqlInstance sql2016\nWill return an object containing all file groups and their contained files for every database on the sql2016 SQL Server instance\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaDbFile -SqlInstance sql2016 -Database Impromptu\nWill return an object containing all file groups and their contained files for the Impromptu Database on the sql2016 SQL Server instance\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaDbFile -SqlInstance sql2016 -Database Impromptu, Trading\nWill return an object containing all file groups and their contained files for the Impromptu and Trading databases on the sql2016 SQL Server instance\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaDatabase -SqlInstance sql2016 -Database Impromptu, Trading | Get-DbaDbFile\nWill accept piped input from Get-DbaDatabase and return an object containing all file groups and their contained files for the Impromptu and Trading databases on the sql2016 SQL Server instance",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaDbFile -SqlInstance sql2016\nWill return an object containing all file groups and their contained files for every database on the sql2016 SQL Server instance\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaDbFile -SqlInstance sql2016 -Database Impromptu\nWill return an object containing all file groups and their contained files for the Impromptu Database on the sql2016 SQL Server instance\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaDbFile -SqlInstance sql2016 -Database Impromptu, Trading\nWill return an object containing all file groups and their contained files for the Impromptu and Trading databases on the sql2016 SQL Server instance\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaDatabase -SqlInstance sql2016 -Database Impromptu, Trading | Get-DbaDbFile\nWill accept piped input from Get-DbaDatabase and return an object containing all file groups and their contained files for the Impromptu and Trading databases on the sql2016 SQL Server instance\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eGet-DbaDbFile -SqlInstance sql2016 -Database AdventureWorks2017 -FileGroup Index\nReturn any files that are in the Index filegroup of the AdventureWorks2017 database.",
         "Params":  [
                        [
                            "SqlInstance",
@@ -15737,6 +15737,15 @@
                            ""
                        ],
                        [
+                           "FileGroup",
+                           "Filter results to only files within this certain filegroup.",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
                            "InputObject",
                            "A piped collection of database objects",
                            "",
@@ -15755,7 +15764,7 @@
                            ""
                        ]
                    ],
-        "Syntax":  "Get-DbaDbFile [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cObject[]\u003e] [[-ExcludeDatabase] \u003cObject[]\u003e] [[-InputObject] \u003cDatabase[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Get-DbaDbFile [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cObject[]\u003e] [[-ExcludeDatabase] \u003cObject[]\u003e] [[-FileGroup] \u003cObject[]\u003e] [[-InputObject] \u003cDatabase[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Get-DbaDbFileGroup",
@@ -17671,6 +17680,129 @@
                        ]
                    ],
         "Syntax":  "Get-DbaDbRoleMember [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cString[]\u003e] [[-ExcludeDatabase] \u003cString[]\u003e] [[-Role] \u003cString[]\u003e] [[-ExcludeRole] \u003cString[]\u003e] [-ExcludeFixedRole] [-IncludeSystemUser] [[-InputObject] \u003cObject[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
+    },
+    {
+        "Name":  "Get-DbaDbSchema",
+        "Description":  "Finds the database schema SMO object(s) based on the given filter params.",
+        "Tags":  [
+                     "Data",
+                     "Database",
+                     "Migration",
+                     "Permission",
+                     "Security",
+                     "Schema",
+                     "Table",
+                     "User"
+                 ],
+        "Synopsis":  "Finds the database schema SMO object(s) based on the given filter params.",
+        "Alias":  "",
+        "Author":  "Adam Lancaster https://github.com/lancasteradam",
+        "CommandName":  "Get-DbaDbSchema",
+        "Availability":  "Windows, Linux, macOS",
+        "Links":  "https://dbatools.io/Get-DbaDbSchema",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaDbSchema -SqlInstance localhost\nGets all non-system database schemas from all user databases on the localhost instance. Note: the dbo schema is a system schema and won\u0027t be included in the output from this example. To include the \r\ndbo schema specify -IncludeSystemSchemas\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaDbSchema -SqlInstance localhost -SchemaName dbo -IncludeSystemSchemas\nReturns the dbo schema from the databases on the localhost instance.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaDbSchema -SqlInstance localhost -IncludeSystemDatabases -IncludeSystemSchemas\nGets all database schemas from all databases on the localhost instance.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaDbSchema -SqlInstance localhost -SchemaName TestSchema\nFinds and returns the TestSchema schema from the localhost instance.\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eGet-DbaDbSchema -SqlInstance localhost -SchemaOwner DBUser1\nFinds and returns the schemas owned by DBUser1 from the localhost instance.\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eGet-DbaDbSchema -SqlInstance localhost -Database TestDB -SchemaOwner DBUser1\nFinds and returns the schemas owned by DBUser1 in the TestDB database from the localhost instance.\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003e$schema = Get-DbaDbSchema -SqlInstance localhost -Database TestDB -SchemaName TestSchema\nPS C:\\\u003e $schema.Owner = DBUser2\r\nPS C:\\\u003e $schema.Alter()\nFinds the TestSchema in the TestDB on the localhost instance and then changes the schema owner to DBUser2\n-------------------------- EXAMPLE 8 --------------------------\nPS C:\\\u003e$schema = Get-DbaDbSchema -SqlInstance localhost -Database TestDB -SchemaName TestSchema\nPS C:\\\u003e $schema.Drop()\nFinds the TestSchema in the TestDB on the localhost instance and then drops it. Note: to drop a schema all objects must be transferred to another schema or dropped.\n-------------------------- EXAMPLE 9 --------------------------\nPS C:\\\u003e$db = Get-DbaDatabase -SqlInstance localhost -Database TestDB\nPS C:\\\u003e $schema = $db | Get-DbaDbSchema -SchemaName TestSchema\nFinds the TestSchema in the TestDB which is passed via pipeline into the Get-DbaDbSchema command.",
+        "Params":  [
+                       [
+                           "SqlInstance",
+                           "The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function\r\nto be executed against multiple SQL Server instances.",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "SqlCredential",
+                           "Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).\nWindows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.\nFor MFA support, please use Connect-DbaInstance.",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "Database",
+                           "The target database(s).",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "SchemaName",
+                           "The name(s) of the schema(s)",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "SchemaOwner",
+                           "The name(s) of the database user(s) that own(s) the schema(s).",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "IncludeSystemDatabases",
+                           "Include the system databases.",
+                           "",
+                           false,
+                           "false",
+                           "False",
+                           ""
+                       ],
+                       [
+                           "IncludeSystemSchemas",
+                           "Include the system schemas.",
+                           "",
+                           false,
+                           "false",
+                           "False",
+                           ""
+                       ],
+                       [
+                           "InputObject",
+                           "Allows piping from Get-DbaDatabase.",
+                           "",
+                           false,
+                           "true (ByValue)",
+                           "",
+                           ""
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "",
+                           false,
+                           "false",
+                           "False",
+                           ""
+                       ],
+                       [
+                           "WhatIf",
+                           "Shows what would happen if the command were to run. No actions are actually performed.",
+                           "wi",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "Confirm",
+                           "Prompts you for confirmation before executing any changing operations within the command.",
+                           "cf",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ]
+                   ],
+        "Syntax":  "Get-DbaDbSchema [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cString[]\u003e] [[-SchemaName] \u003cString[]\u003e] [[-SchemaOwner] \u003cString[]\u003e] [-IncludeSystemDatabases] [-IncludeSystemSchemas] [[-InputObject] \u003cDatabase[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Get-DbaDbSharePoint",
@@ -20326,7 +20458,7 @@
                      "Login",
                      "Security"
                  ],
-        "Synopsis":  "Function to get an SMO login object of the logins for a given SQL Server instance. Takes a server object from the pipeline.",
+        "Synopsis":  "Function to get an SMO login object of the logins for a given SQL Server instance. Takes a server object from the pipeline.\nSQL Azure DB is not supported.",
         "Alias":  "",
         "Author":  "Mitchell Hamann (@SirCaptainMitch) | Rob Sewell (@SQLDBaWithBeard)",
         "CommandName":  "Get-DbaLogin",
@@ -20372,7 +20504,7 @@
                        ],
                        [
                            "ExcludeLogin",
-                           "The login(s) to exclude - this list is auto-populated from the server",
+                           "The login(s) to exclude. Options for this list are auto-populated from the server.",
                            "",
                            false,
                            "false",
@@ -33271,7 +33403,7 @@
         "CommandName":  "Move-DbaRegServerGroup",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Move-DbaRegServerGroup",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eMove-DbaRegServerGroup -SqlInstance sql2012 -Group HR\\Development -NewGroup AD\\Prod\nMoves the Development group within HR to the Prod group within AD\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaRegServerGroup -SqlInstance sql2017 -Group HR\\Development| Move-DbaRegServer -NewGroup Web\nMoves the Development group within HR to the Web group",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eMove-DbaRegServerGroup -SqlInstance sql2012 -Group HR\\Development -NewGroup AD\\Prod\nMoves the Development group within HR to the Prod group within AD\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaRegServerGroup -SqlInstance sql2017 -Group HR\\Development| Move-DbaRegServerGroup -NewGroup Web\nMoves the Development group within HR to the Web group",
         "Params":  [
                        [
                            "SqlInstance",
@@ -37296,6 +37428,111 @@
                        ]
                    ],
         "Syntax":  "New-DbaDbRole [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cString[]\u003e] [[-ExcludeDatabase] \u003cString[]\u003e] [[-Role] \u003cString[]\u003e] [[-Owner] \u003cString\u003e] [[-InputObject] \u003cDatabase[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+    },
+    {
+        "Name":  "New-DbaDbSchema",
+        "Description":  "Creates a new database schema and assigns an owner.",
+        "Tags":  [
+                     "Data",
+                     "Database",
+                     "Migration",
+                     "Permission",
+                     "Security",
+                     "Schema",
+                     "Table",
+                     "User"
+                 ],
+        "Synopsis":  "Creates a new database schema and assigns an owner.",
+        "Alias":  "",
+        "Author":  "Adam Lancaster https://github.com/lancasteradam",
+        "CommandName":  "New-DbaDbSchema",
+        "Availability":  "Windows, Linux, macOS",
+        "Links":  "https://dbatools.io/New-DbaDbSchema",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eNew-DbaDbSchema -SqlInstance localhost -Database example1 -SchemaName TestSchema1\nCreates the TestSchema1 schema in the example1 database in the localhost instance. The dbo user will be the owner of the schema.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eNew-DbaDbSchema -SqlInstance localhost -Database example1 -SchemaName TestSchema1, TestSchema2 -SchemaOwner dbatools\nCreates the TestSchema1 and TestSchema2 schemas in the example1 database in the localhost instance and assigns the dbatools user as the owner of the schemas.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eNew-DbaDbSchema -SqlInstance localhost, localhost\\sql2017 -Database example1 -SchemaName TestSchema1, TestSchema2 -SchemaOwner dbatools\nCreates the TestSchema1 and TestSchema2 schemas in the example1 database in the localhost and localhost\\sql2017 instances and assigns the dbatools user as the owner of the schemas.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaDatabase -SqlInstance localhost, localhost\\sql2017 -Database example1 | New-DbaDbSchema -SchemaName TestSchema1, TestSchema2 -SchemaOwner dbatools\nPasses in the example1 db via pipeline and creates the TestSchema1 and TestSchema2 schemas and assigns the dbatools user as the owner of the schemas.",
+        "Params":  [
+                       [
+                           "SqlInstance",
+                           "The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function\r\nto be executed against multiple SQL Server instances.",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "SqlCredential",
+                           "Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).\nWindows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.\nFor MFA support, please use Connect-DbaInstance.",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "Database",
+                           "The target database(s).",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "SchemaName",
+                           "The name(s) of the new schema(s)",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "SchemaOwner",
+                           "The name of the database user that will own the schema(s).",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "InputObject",
+                           "Allows piping from Get-DbaDatabase.",
+                           "",
+                           false,
+                           "true (ByValue)",
+                           "",
+                           ""
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "",
+                           false,
+                           "false",
+                           "False",
+                           ""
+                       ],
+                       [
+                           "WhatIf",
+                           "Shows what would happen if the command were to run. No actions are actually performed.",
+                           "wi",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "Confirm",
+                           "Prompts you for confirmation before executing any changing operations within the command.",
+                           "cf",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ]
+                   ],
+        "Syntax":  "New-DbaDbSchema [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cString[]\u003e] [[-SchemaName] \u003cString[]\u003e] [[-SchemaOwner] \u003cString\u003e] [[-InputObject] \u003cDatabase[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "New-DbaDbSnapshot",
@@ -45203,7 +45440,7 @@
         "Params":  [
                        [
                            "SqlInstance",
-                           "The target SQL Server instance or instances.",
+                           "The target SQL Server instance.",
                            "",
                            true,
                            "false",
@@ -49745,7 +49982,7 @@
         "Name":  "Set-DbaLogin",
         "Description":  "Set-DbaLogin will enable you to change the password, unlock, rename, disable or enable, deny or grant login privileges to the login. It\u0027s also possible to add or remove server roles from the login.",
         "Tags":  "Login",
-        "Synopsis":  "Set-DbaLogin makes it possible to make changes to one or more logins.",
+        "Synopsis":  "Set-DbaLogin makes it possible to make changes to one or more logins.\nSQL Azure DB is not supported.",
         "Alias":  "",
         "Author":  "Sander Stad (@sqlstad), sqlstad.nl",
         "CommandName":  "Set-DbaLogin",
@@ -49863,7 +50100,16 @@
                        ],
                        [
                            "PasswordPolicyEnforced",
-                           "Should the password policy be enforced.",
+                           "Enable the password policy on the login (check_policy = ON). This option must be enabled in order for -PasswordExpirationEnabled to be used.",
+                           "",
+                           false,
+                           "false",
+                           "False",
+                           ""
+                       ],
+                       [
+                           "PasswordExpirationEnabled",
+                           "Enable the password expiration check on the login (check_expiration = ON). In order to enable this option the PasswordPolicyEnforced (check_policy) must also be enabled for the login.",
                            "",
                            false,
                            "false",
@@ -49925,7 +50171,7 @@
                            ""
                        ]
                    ],
-        "Syntax":  "Set-DbaLogin [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Login] \u003cString[]\u003e] [[-SecurePassword] \u003cObject\u003e] [[-DefaultDatabase] \u003cString\u003e] [-Unlock] [-MustChange] [[-NewName] \u003cString\u003e] [-Disable] [-Enable] [-DenyLogin] [-GrantLogin] [-PasswordPolicyEnforced] [[-AddRole] \u003cString[]\u003e] [[-RemoveRole] \u003cString[]\u003e] [[-InputObject] \u003cLogin[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Set-DbaLogin [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Login] \u003cString[]\u003e] [[-SecurePassword] \u003cObject\u003e] [[-DefaultDatabase] \u003cString\u003e] [-Unlock] [-MustChange] [[-NewName] \u003cString\u003e] [-Disable] [-Enable] [-DenyLogin] [-GrantLogin] [-PasswordPolicyEnforced] [-PasswordExpirationEnabled] [[-AddRole] \u003cString[]\u003e] [[-RemoveRole] \u003cString[]\u003e] [[-InputObject] \u003cLogin[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Set-DbaMaxDop",
@@ -56742,7 +56988,7 @@
                        ],
                        [
                            "Table",
-                           "The table name to import data into. You can specify a one, two, or three part table name. If you specify a one or two part name, you must also use -Database.\nIf the table does not exist, you can use -AutoCreateTable to automatically create the table. The table will be created with sub-optimal data types such as nvarchar(max).\nIf the object has special characters please wrap them in square brackets [ ].\r\nUsing dbo.First.Table will try to import to a table named \u0027Table\u0027 on schema \u0027First\u0027 and database \u0027dbo\u0027.\r\nThe correct way to import to a table named \u0027First.Table\u0027 on schema \u0027dbo\u0027 is by passing dbo.[First.Table].\r\nAny actual usage of the ] must be escaped by duplicating the ] character.\r\nThe correct way to import to a table Name] in schema Schema.Name is by passing [Schema.Name].[Name]]].",
+                           "The table name to import data into. You can specify a one, two, or three part table name. If you specify a one or two part name, you must also use -Database.\nIf the table does not exist, you can use -AutoCreateTable to automatically create the table. The table will be created with sub-optimal data types such as nvarchar(max).\nIf the object has special characters please wrap them in square brackets [ ].\r\nUsing dbo.First.Table will try to import to a table named \u0027Table\u0027 on schema \u0027First\u0027 and database \u0027dbo\u0027.\r\nThe correct way to import to a table named \u0027First.Table\u0027 on schema \u0027dbo\u0027 is by passing dbo.[First].[Table].\r\nAny actual usage of the ] must be escaped by duplicating the ] character.\r\nThe correct way to import to a table Name] in schema Schema.Name is by passing [Schema.Name].[Name]]].",
                            "",
                            true,
                            "false",
