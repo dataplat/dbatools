@@ -1,7 +1,7 @@
 
 -- SQL Server 2016 SP2 Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: February 16, 2021
+-- Last Modified: March 3, 2021
 -- https://glennsqlperformance.com/
 -- https://sqlserverperformance.wordpress.com/
 -- YouTube: https://bit.ly/2PkoAM1 
@@ -80,7 +80,7 @@ SELECT @@SERVERNAME AS [Server Name], @@VERSION AS [SQL Server and OS Version In
 -- 13.0.5830.85     SP2 CU14			         8/6/2020		https://support.microsoft.com/en-us/help/4564903/cumulative-update-14-for-sql-server-2016-sp2
 -- 13.0.5850.14		SP2 CU15					9/28/2020		https://support.microsoft.com/en-us/help/4577775/cumulative-update-15-for-sql-server-2016-sp2
 -- 13.0.5865.1		SP2 CU15 + Security Update	1/12/2021		https://support.microsoft.com/en-us/help/4583461/kb4583461-security-update-for-sql-server-2016-sp2-cu15	
--- 13.0.5822.1		SP2 CU16					2/11/2021		https://support.microsoft.com/en-us/office/kb5000645-cumulative-update-16-for-sql-server-2016-sp2-a3997fa9-ec49-4df0-bcc3-12dd58b78265
+-- 13.0.5882.1		SP2 CU16					2/11/2021		https://support.microsoft.com/en-us/office/kb5000645-cumulative-update-16-for-sql-server-2016-sp2-a3997fa9-ec49-4df0-bcc3-12dd58b78265
 															
 
 -- How to determine the version, edition and update level of SQL Server and its components 
@@ -366,10 +366,17 @@ FROM sys.dm_os_windows_info WITH (NOLOCK) OPTION (RECOMPILE);
 
 
 -- SQL Server NUMA Node information  (Query 12) (SQL Server NUMA Info)
-SELECT node_id, node_state_desc, memory_node_id, processor_group, cpu_count, online_scheduler_count, 
-       idle_scheduler_count, active_worker_count, avg_load_balance, resource_monitor_state
-FROM sys.dm_os_nodes WITH (NOLOCK) 
-WHERE node_state_desc <> N'ONLINE DAC' OPTION (RECOMPILE);
+SELECT osn.node_id, osn.node_state_desc, osn.memory_node_id, osn.processor_group, osn.cpu_count, osn.online_scheduler_count, 
+       osn.idle_scheduler_count, osn.active_worker_count, 
+	   osmn.pages_kb/1024 AS [Committed Memory (MB)], 
+	   osmn.locked_page_allocations_kb/1024 AS [Locked Physical (MB)],
+	   CONVERT(DECIMAL(18,2), osmn.foreign_committed_kb/1024.0) AS [Foreign Commited (MB)],
+	   osmn.target_kb/1024 AS [Target Memory Goal (MB)],
+	   osn.avg_load_balance, osn.resource_monitor_state
+FROM sys.dm_os_nodes AS osn WITH (NOLOCK)
+INNER JOIN sys.dm_os_memory_nodes AS osmn WITH (NOLOCK)
+ON osn.memory_node_id = osmn.memory_node_id
+WHERE osn.node_state_desc <> N'ONLINE DAC' OPTION (RECOMPILE);
 ------
 
 -- Gives you some useful information about the composition and relative load on your NUMA nodes
@@ -1939,6 +1946,9 @@ FROM sys.database_query_store_options WITH (NOLOCK) OPTION (RECOMPILE);
 
 -- Tuning Workload Performance with Query Store
 -- https://bit.ly/1kHSl7w
+
+-- Emergency shutoff for Query Store (SQL Server 2016 SP2 CU14 or newer)
+-- ALTER DATABASE [DatabaseName] SET QUERY_STORE = OFF(FORCED);
 
 
 
