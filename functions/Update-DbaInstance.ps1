@@ -25,6 +25,10 @@ function Update-DbaInstance {
         CVE-2018-0886 security update is required for both local and remote hosts. If CredSSP connections are failing, make sure to
         apply recent security updates prior to doing anything else.
 
+        When using CredSSP authentication, this function will configure CredSSP authentication for PowerShell Remoting sessions.
+        If this is not desired (e.g.: CredSSP authentication is managed externally, or is already configured appropriately,)
+        it can be disabled by setting the dbatools configuration option 'commands.initialize-credssp.bypass' value to $true.
+
         Always backup databases and configurations prior to upgrade.
 
     .PARAMETER ComputerName
