@@ -723,6 +723,8 @@ $script:xplat = @(
     'Move-DbaRegServerGroup',
     'Remove-DbaRegServer',
     'Remove-DbaRegServerGroup',
+    'New-DbaCustomError',
+    'Remove-DbaCustomError',
     # Config system
     'Get-DbatoolsConfig',
     'Get-DbatoolsConfigValue',
