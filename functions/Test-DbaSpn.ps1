@@ -209,7 +209,7 @@ function Test-DbaSpn {
                         $newspn = $spn.PSObject.Copy()
                         if ($port -like "*d") {
                             $newspn.Port = ($port.replace("d", ""))
-                            $newspn.RequiredSPN = $newspn.RequiredSPN.Replace($newSPN.InstanceName, $newspn.Port)
+                            $newspn.RequiredSPN = $newspn.RequiredSPN.Replace(":" + $newSPN.InstanceName, ":" + $newspn.Port)
                             $newspn.DynamicPort = $true
                             $newspn.Warning = "Dynamic port is enabled"
                         } else {
@@ -220,7 +220,7 @@ function Test-DbaSpn {
                             if ($newspn.InstanceName -eq "MSSQLSERVER") {
                                 $newspn.RequiredSPN = $newspn.RequiredSPN + ":" + $port
                             } else {
-                                $newspn.RequiredSPN = $newspn.RequiredSPN.Replace($newSPN.InstanceName, $newspn.Port)
+                                $newspn.RequiredSPN = $newspn.RequiredSPN.Replace(":" + $newSPN.InstanceName, ":" + $newspn.Port)
                             }
                         }
                         $spns += $newspn
