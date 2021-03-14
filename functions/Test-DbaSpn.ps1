@@ -104,6 +104,7 @@ function Test-DbaSpn {
                         12 { "SQL Server 2014" }
                         13 { "SQL Server 2016" }
                         14 { "SQL Server 2017" }
+                        15 { "SQL Server 2019" }
                         default { $version }
                     }
                 }
