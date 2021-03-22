@@ -461,16 +461,17 @@ function Export-DbaLogin {
 
                         $outsql += "`r`nUSE [$dbName]`r`n"
 
+                        $scriptOptions = New-DbaScriptingOption
+                        $scriptVersion = $sourceDb.CompatibilityLevel
+                        $scriptOptions.TargetServerVersion = [Microsoft.SqlServer.Management.Smo.SqlServerVersion]::$scriptVersion
+                        $scriptOptions.ContinueScriptingOnError = $false
+                        $scriptOptions.IncludeDatabaseContext = $false
+                        $scriptOptions.IncludeIfNotExists = $true
+
                         if ($ObjectLevel) {
                             # Exporting all permissions
-                            $scriptOptions = New-DbaScriptingOption
-                            $scriptVersion = $sourceDb.CompatibilityLevel
-                            $scriptOptions.TargetServerVersion = [Microsoft.SqlServer.Management.Smo.SqlServerVersion]::$scriptVersion
                             $scriptOptions.AllowSystemObjects = $true
                             $scriptOptions.IncludeDatabaseRoleMemberships = $true
-                            $scriptOptions.ContinueScriptingOnError = $false
-                            $scriptOptions.IncludeDatabaseContext = $false
-                            $scriptOptions.IncludeIfNotExists = $true
 
                             $exportSplat = @{
                                 SqlInstance            = $server
@@ -491,7 +492,7 @@ function Export-DbaLogin {
                             }
                         } else {
                             try {
-                                $sql = $server.Databases[$dbName].Users[$dbUserName].Script()
+                                $sql = $server.Databases[$dbName].Users[$dbUserName].Script($scriptOptions)
                                 $outsql += $sql
                             } catch {
                                 Write-Message -Level Warning -Message "User cannot be found in selected database"

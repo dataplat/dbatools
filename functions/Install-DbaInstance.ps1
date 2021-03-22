@@ -24,6 +24,10 @@ function Install-DbaInstance {
         Note that the dowloaded installation media must be extracted and available to the server where the installation runs.
         NOTE: If no ProductID (PID) is found in the configuration files/parameters, Evaluation version is going to be installed.
 
+        When using CredSSP authentication, this function will configure CredSSP authentication for PowerShell Remoting sessions.
+        If this is not desired (e.g.: CredSSP authentication is managed externally, or is already configured appropriately,)
+        it can be disabled by setting the dbatools configuration option 'commands.initialize-credssp.bypass' value to $true.
+
     .PARAMETER SqlInstance
         The target computer and, optionally, a new instance name and a port number.
         Use one of the following generic formats:

@@ -10,3 +10,6 @@ Set-DbatoolsConfig -FullName 'commands.resolve-dbanetworkname.bypass' -Value $fa
 # Get-DbaRegServer
 Set-DbatoolsConfig -FullName 'commands.get-dbaregserver.defaultcms' -Value $null -Initialize -Validation string -Description "Use a default Central Management Server"
 Set-DbatoolsConfig -FullName 'commands.get-dbaregserver.includelocal' -Value $false -Initialize -Validation bool -Description "Include local servers by default"
+
+# Initialize-CredSSP
+Set-DbatoolsConfig -FullName 'commands.initialize-credssp.bypass' -Value $false -Initialize -Validation bool -Description "Do not attempt to configure CredSSP authentication, use existing configuration as-is"

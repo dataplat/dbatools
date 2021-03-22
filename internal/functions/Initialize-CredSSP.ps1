@@ -8,6 +8,8 @@ function Initialize-CredSSP {
         Local computer will be told to trust the Delegate (remote) computer.
         Remote computer will be configured to act as a server and accept client connections from local computer.
 
+        This function can be disabled by setting the value of configuration item "commands.initialize-credssp.bypass" to $true.
+
     .PARAMETER ComputerName
         Remote computer name
 
@@ -34,6 +36,12 @@ function Initialize-CredSSP {
         [pscredential]$Credential,
         [bool]$EnableException
     )
+
+    #Check to see if this function is bypassed
+    if ( ( Get-DbatoolsConfigValue -FullName 'commands.initialize-credssp.bypass') -eq $true ) {
+        Write-Message -Level Verbose -Message "CredSSP initialization bypass (commands.initialize-credssp.bypass) is set to $true";
+        return;
+    }
 
     #Configure local machine
     #Start local WinRM service

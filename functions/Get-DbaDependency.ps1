@@ -60,6 +60,18 @@ function Get-DbaDependency {
 
     begin {
         #region Utility functions
+
+        function Read-Parent {
+            [CmdletBinding()]
+            param (
+                $InputObject
+            )
+            $InputObject.Urn
+            if ($InputObject.Parent -ne $null) {
+                Read-Parent $InputObject.Parent
+            }
+        }
+
         function Get-DependencyTree {
             [CmdletBinding()]
             param (
@@ -119,6 +131,12 @@ function Get-DbaDependency {
             Add-Member -Force -InputObject $InputObject -Name Parent -Value $Parent -MemberType NoteProperty
             if ($EnumParents) { Add-Member -Force -InputObject $InputObject -Name Tier -Value ($Tier * -1) -MemberType NoteProperty -PassThru }
             else { Add-Member -Force -InputObject $InputObject -Name Tier -Value $Tier -MemberType NoteProperty -PassThru }
+
+            $circularReferenceCheck = Read-Parent -InputObject $Parent
+            if ($Tier -gt 0 -and $circularReferenceCheck.Value -Contains $InputObject.Urn.Value) {
+                Write-Message -Message "Circular Reference detected. $circularReferenceCheck" -Level Warning
+                return # End dependency tree descension here.
+            }
 
             if ($InputObject.HasChildNodes) { Read-DependencyTree -InputObject $InputObject.FirstChild -Tier ($Tier + 1) -Parent $InputObject -EnumParents $EnumParents }
             if ($InputObject.NextSibling) { Read-DependencyTree -InputObject $InputObject.NextSibling -Tier $Tier -Parent $Parent -EnumParents $EnumParents }
@@ -197,7 +215,7 @@ function Get-DbaDependency {
                 }
             }
             end {
-                $list | Group-Object -Property Object | ForEach-Object { $_.Group | Sort-Object -Property Tier -Descending | Select-Object -First 1 } | Sort-Object Tier
+                $list | Group-Object -Property Object, Tier | ForEach-Object { $_.Group | Sort-Object -Property Tier -Descending | Select-Object -First 1 } | Sort-Object Tier
             }
         }
         #endregion Utility functions
