@@ -293,7 +293,7 @@ function Backup-DbaDatabase {
                 $FileCount = $Path.Count
             }
 
-            if ($InputObject.Count -gt 1 -and $FilePath -ne '' -and $True -ne $ReplaceInFile) {
+            if ($InputObject.Count -gt 1 -and $FilePath -ne '' -and $True -ne $ReplaceInName) {
                 Stop-Function -Message "1 BackupFile specified, but more than 1 database."
                 return
             }
