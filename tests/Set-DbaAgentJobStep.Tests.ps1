@@ -46,8 +46,8 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         }
 
         AfterAll {
-            $null = $newDb | Remove-DbaDatabase -Confirm:$false
-            $null = $newDBLogin | Remove-DbaLogin -Confirm:$false
+            Remove-DbaDatabase -SqlInstance $instance2 -Database $newDbName -Confirm:$false
+            Remove-DbaLogin -SqlInstance $instance2 -Login $userName -Confirm:$false
             Remove-DbaAgentJob -SqlInstance $script:instance1 -Job "dbatoolsci_job_1_$random"
             Remove-DbaAgentJob -SqlInstance $script:instance2 -Job "dbatoolsci_job_1_$random"
             $null = Invoke-Command2 -ScriptBlock { net user $args /delete *>&1 } -ArgumentList $login -ComputerName $instance2.ComputerName

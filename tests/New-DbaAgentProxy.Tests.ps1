@@ -27,7 +27,8 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $null = Invoke-Command2 -ScriptBlock { net user $login $plaintext /add *>&1 } -ComputerName $instance2.ComputerName
             $credential = New-DbaCredential -SqlInstance $instance2 -Name "dbatoolsci_$random" -Identity "$($instance2.ComputerName)\$login" -Password $password
 
-            $agentProxyAllSubsystems = New-DbaAgentProxy -SqlInstance $instance2 -Name "dbatoolsci_proxy_$random" -Description "Subsystem test" -ProxyCredential "dbatoolsci_$random" -Subsystem PowerShell, AnalysisCommand, AnalysisQuery, CmdExec, Distribution, LogReader, Merge, QueueReader, Snapshot, SSIS
+            # if replication is installed then these can be tested also: Distribution, LogReader, Merge, QueueReader, Snapshot
+            $agentProxyAllSubsystems = New-DbaAgentProxy -SqlInstance $instance2 -Name "dbatoolsci_proxy_$random" -Description "Subsystem test" -ProxyCredential "dbatoolsci_$random" -Subsystem PowerShell, AnalysisCommand, AnalysisQuery, CmdExec, SSIS
 
             # ActiveScripting was removed in SQL Server 2016
             $agentProxyActiveScripting = New-DbaAgentProxy -SqlInstance $instance2 -Name "dbatoolsci_proxy_ActiveScripting_$random" -Description "ActiveScripting test" -ProxyCredential "dbatoolsci_$random" -Subsystem ActiveScripting
@@ -49,7 +50,6 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $agentProxyAllSubsystems.Drop()
             $agentProxySSISDisabled.Drop()
             $agentProxyLoginRole.Drop()
-
         }
 
         It "does not try to add the proxy without a valid credential" {
@@ -64,7 +64,8 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $agentProxyAllSubsystems.CredentialIdentity | Should -Be "$($instance2.ComputerName)\$login"
             $agentProxyAllSubsystems.ComputerName | Should -Be $instance2.ComputerName
             $agentProxyAllSubsystems.InstanceName | Should -Be $instance2.DbaInstanceName
-            ($agentProxyAllSubsystems.SubSystems | Where-Object Name -in "PowerShell", "AnalysisCommand", "AnalysisQuery", "CmdExec", "Distribution", "LogReader", "Merge", "QueueReader", "Snapshot", "SSIS").Count | Should -Be 10
+            # if replication is installed then these can be tested also:  "Distribution", "LogReader", "Merge", "QueueReader", "Snapshot",
+            ($agentProxyAllSubsystems.SubSystems | Where-Object Name -in "PowerShell", "AnalysisCommand", "AnalysisQuery", "CmdExec", "SSIS").Count | Should -Be 5
             $agentProxyAllSubsystems.IsEnabled | Should -Be $true
         }
 
