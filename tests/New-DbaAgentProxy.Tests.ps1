@@ -63,7 +63,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $agentProxyAllSubsystems.CredentialName | Should -Be "dbatoolsci_$random"
             $agentProxyAllSubsystems.CredentialIdentity | Should -Be "$($instance2.ComputerName)\$login"
             $agentProxyAllSubsystems.ComputerName | Should -Be $instance2.ComputerName
-            $agentProxyAllSubsystems.SqlInstance | Should -Be $instance2.Name
+            $agentProxyAllSubsystems.InstanceName | Should -Be $instance2.DbaInstanceName
             ($agentProxyAllSubsystems.SubSystems | Where-Object Name -in "PowerShell", "AnalysisCommand", "AnalysisQuery", "CmdExec", "Distribution", "LogReader", "Merge", "QueueReader", "Snapshot", "SSIS").Count | Should -Be 10
             $agentProxyAllSubsystems.IsEnabled | Should -Be $true
         }
@@ -78,7 +78,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $agentProxySSISDisabled.CredentialName | Should -Be "dbatoolsci_$random"
             $agentProxySSISDisabled.CredentialIdentity | Should -Be "$($instance2.ComputerName)\$login"
             $agentProxySSISDisabled.ComputerName | Should -Be $instance2.ComputerName
-            $agentProxySSISDisabled.SqlInstance | Should -Be $instance2.Name
+            $agentProxySSISDisabled.InstanceName | Should -Be $instance2.DbaInstanceName
             $agentProxySSISDisabled.SubSystems.Name | Should -Be SSIS
             $agentProxySSISDisabled.IsEnabled | Should -Be $false
         }
@@ -88,7 +88,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $agentProxyLoginRole.CredentialName | Should -Be "dbatoolsci_$random"
             $agentProxyLoginRole.CredentialIdentity | Should -Be "$($instance2.ComputerName)\$login"
             $agentProxyLoginRole.ComputerName | Should -Be $instance2.ComputerName
-            $agentProxyLoginRole.SqlInstance | Should -Be $instance2.Name
+            $agentProxyLoginRole.InstanceName | Should -Be $instance2.DbaInstanceName
             $agentProxyLoginRole.SubSystems.Name | Should -Be CmdExec
             $agentProxyLoginRole.Logins.Name | Should -Be $loginName
             $agentProxyLoginRole.ServerRoles.Name | Should -Be securityadmin
