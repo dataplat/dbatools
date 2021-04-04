@@ -455,16 +455,28 @@ function New-DbaDbTable {
                         $object.Columns.Add($sqlColumn)
                     }
 
+                    # user has specified a schema that does not exist yet
+                    if (-not ($db | Get-DbaDbSchema -Schema $schema -IncludeSystemSchemas)) {
+                        $schemaObject = New-Object -TypeName Microsoft.SqlServer.Management.Smo.Schema $db, $schema
+                    }
+
                     if ($Passthru) {
                         $ScriptingOptionsObject = New-DbaScriptingOption
                         $ScriptingOptionsObject.ContinueScriptingOnError = $false
                         $ScriptingOptionsObject.DriAllConstraints = $true
 
+                        if ($schemaObject) {
+                            $schemaObject.Script($ScriptingOptionsObject)
+                        }
+
                         $object.Script($ScriptingOptionsObject)
                     } else {
+                        if ($schemaObject) {
+                            $null = Invoke-Create -Object $schemaObject
+                        }
                         $null = Invoke-Create -Object $object
                     }
-                    $db | Get-DbaDbTable -Table $Name
+                    $db | Get-DbaDbTable -Table "[$schema].[$Name]"
                 } catch {
                     Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
                 }
