@@ -42,10 +42,10 @@ function Write-DbaDbTableData {
         Defaults to dbo if no schema is specified.
 
     .PARAMETER BatchSize
-        The BatchSize for the import defaults to 5000.
+        The BatchSize for the import defaults to 50000.
 
     .PARAMETER NotifyAfter
-        Sets the option to show the notification after so many rows of import.
+        Sets the option to show the notification after so many rows of import. Defaults to 5000 rows.
 
     .PARAMETER AutoCreateTable
         If this switch is enabled, the table will be created if it does not already exist. The table will be created with sub-optimal data types such as nvarchar(max).
@@ -240,7 +240,7 @@ function Write-DbaDbTableData {
                 }
 
                 $bulkCopy.WriteToServer($DataTable)
-                if ($rowCount -is [int]) {
+                if ($rowCount) {
                     Write-Progress -Id 1 -Activity "Inserting $rowCount rows" -Status "Complete" -Completed
                 }
             }
@@ -347,7 +347,7 @@ function Write-DbaDbTableData {
         }
 
         #endregion Utility Functions
-        
+
         #region Connect to server
         try {
             $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
@@ -356,7 +356,7 @@ function Write-DbaDbTableData {
             return
         }
         #endregion Connect to server
-        
+
         #region Prepare type for bulk copy
         if (-not $Truncate) { $ConfirmPreference = "None" }
 

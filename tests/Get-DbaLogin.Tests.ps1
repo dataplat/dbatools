@@ -150,5 +150,13 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $results = Get-DbaLogin -SqlInstance $script:instance1 -Login "testlogin1_$random" -Type SQL
             $results.IsLocked | Should -Be $false
         }
+
+        It "MustChangePassword" {
+            $changeResult = Set-DbaLogin -SqlInstance $script:instance1 -Login "testlogin1_$random" -MustChange -Password $password -PasswordPolicyEnforced -PasswordExpirationEnabled
+            $changeResult.MustChangePassword | Should -Be $true
+
+            $result = Get-DbaLogin -SqlInstance $script:instance1 -MustChangePassword
+            $result.Name | Should -Contain "testlogin1_$random"
+        }
     }
 }
