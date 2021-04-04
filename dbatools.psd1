@@ -530,6 +530,8 @@
         'Export-DbaSysDbUserObject',
         'Move-DbaDbFile'
         'New-DbaAgentOperator',
+        'New-DbaCustomError',
+        'Remove-DbaCustomError',
         # windowsonly
         # solvable filesystem issues or other workarounds
         'Install-DbaSqlWatch',
