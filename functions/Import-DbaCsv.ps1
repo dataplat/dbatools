@@ -640,17 +640,10 @@ function Import-DbaCsv {
 
                         $bulkCopy.WriteToServer($reader)
 
-                        if ($resultcount -is [int]) {
-                            Write-Progress -id 1 -activity "Inserting $resultcount rows" -status "Complete" -Completed
-                        }
-
                         $completed = $true
                     } catch {
                         $completed = $false
 
-                        if ($resultcount -is [int]) {
-                            Write-Progress -id 1 -activity "Inserting $resultcount rows" -status "Failed" -Completed
-                        }
                         Stop-Function -Continue -Message "Failure" -ErrorRecord $_
                     } finally {
                         try {
@@ -684,15 +677,24 @@ function Import-DbaCsv {
                             $bulkcopy.Dispose()
                         } catch {
                         }
+
+                        $finalRowCountReported = Get-BulkRowsCopiedCount $bulkCopy
+
+                        $script:totalRowsCopied += (Get-AdjustedTotalRowsCopied -ReportedRowsCopied $finalRowCountReported -PreviousRowsCopied $script:prevRowsCopied).NewRowCountAdded
+
+                        if ($completed) {
+                            Write-Progress -id 1 -activity "Inserting $($script:totalRowsCopied) rows" -status "Complete" -Completed
+                        } else {
+                            Write-Progress -id 1 -activity "Inserting $($script:totalRowsCopied) rows" -status "Failed" -Completed
+                        }
                     }
                 }
                 if ($PSCmdlet.ShouldProcess($instance, "Finalizing import")) {
                     if ($completed) {
                         # "Note: This count does not take into consideration the number of rows actually inserted when Ignore Duplicates is set to ON."
-                        $rowscopied = Get-BulkRowsCopiedCount $bulkcopy
-                        $rps = [int]($rowscopied / $elapsed.Elapsed.TotalSeconds)
+                        $rowsPerSec = [math]::Round($script:totalRowsCopied / $elapsed.ElapsedMilliseconds * 1000.0, 1)
 
-                        Write-Message -Level Verbose -Message "$rowscopied total rows copied"
+                        Write-Message -Level Verbose -Message "$($script:totalRowsCopied) total rows copied"
 
                         [pscustomobject]@{
                             ComputerName  = $server.ComputerName
@@ -701,9 +703,9 @@ function Import-DbaCsv {
                             Database      = $Database
                             Table         = $table
                             Schema        = $schema
-                            RowsCopied    = $rowscopied
+                            RowsCopied    = $script:totalRowsCopied
                             Elapsed       = [prettytimespan]$elapsed.Elapsed
-                            RowsPerSecond = $rps
+                            RowsPerSecond = $rowsPerSec
                             Path          = $file
                         }
                     } else {
