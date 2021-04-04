@@ -159,8 +159,10 @@ Describe "$CommandName Integration Tests" -Tag 'IntegrationTests' {
         }
 
         It "Disables enforcing password policy on login" {
-            $result = Set-DbaLogin -SqlInstance $script:instance2 -Login "testlogin1_$random" -PasswordPolicyEnforced:$false
+            $result = Get-DbaLogin -SqlInstance $script:instance2 -Login "testlogin1_$random"
+            $result.PasswordPolicyEnforced | Should Be $true
 
+            $result = Set-DbaLogin -SqlInstance $script:instance2 -Login "testlogin1_$random" -PasswordPolicyEnforced:$false
             $result.PasswordPolicyEnforced | Should Be $false
         }
 
@@ -194,14 +196,30 @@ Describe "$CommandName Integration Tests" -Tag 'IntegrationTests' {
             $result.PasswordPolicyEnforced | Should Be $true
 
             # testlogin1_$random will get skipped since it does not have PasswordPolicyEnforced set to true (check_policy = ON)
-            $result = Set-DbaLogin -SqlInstance $script:instance2 -Login "testlogin1_$random", "testlogin2_$random" -PasswordExpirationEnabled
+            $result = Set-DbaLogin -SqlInstance $script:instance2 -Login "testlogin1_$random", "testlogin2_$random" -PasswordExpirationEnabled -ErrorVariable error
             $result.Count | Should -Be 1
             $result.Name | Should -Be "testlogin2_$random"
             $result.PasswordExpirationEnabled | Should Be $true
+            $error.Exception | Should -Match "Couldn't set check_expiration = ON because check_policy = OFF for \[testlogin1_$random\]"
 
             # set both params for this login
             $result = Set-DbaLogin -SqlInstance $script:instance2 -Login "testlogin1_$random" -PasswordPolicyEnforced -PasswordExpirationEnabled
             $result.PasswordExpirationEnabled | Should -Be $true
+            $result.PasswordPolicyEnforced | Should Be $true
+
+            # disable the setting for this login
+            $result = Set-DbaLogin -SqlInstance $script:instance2 -Login "testlogin1_$random" -PasswordExpirationEnabled:$false
+            $result.PasswordExpirationEnabled | Should -Be $false
+        }
+
+        It "Ensure both password policy settings can be disabled at the same time" {
+            $result = Set-DbaLogin -SqlInstance $script:instance2 -Login "testlogin1_$random" -PasswordPolicyEnforced -PasswordExpirationEnabled
+            $result.PasswordExpirationEnabled | Should -Be $true
+            $result.PasswordPolicyEnforced | Should Be $true
+
+            $result = Set-DbaLogin -SqlInstance $script:instance2 -Login "testlogin1_$random" -PasswordPolicyEnforced:$false -PasswordExpirationEnabled:$false
+            $result.PasswordExpirationEnabled | Should -Be $false
+            $result.PasswordPolicyEnforced | Should Be $false
         }
 
         It -Skip:$SkipLocalTest "Unlock" {
@@ -246,6 +264,45 @@ Describe "$CommandName Integration Tests" -Tag 'IntegrationTests' {
             # unlock by resetting the password
             $results = Set-DbaLogin -SqlInstance $script:instance2 -Login "testlogin1_$random" -Unlock -SecurePassword $password1
             $results.IsLocked | Should -Be $false
+        }
+
+        It "MustChange" {
+            # password is required
+            $changeResult = Set-DbaLogin -SqlInstance $script:instance2 -Login "testlogin1_$random" -MustChange -ErrorVariable error
+            $changeResult | Should -BeNullOrEmpty
+            $error.Exception | Should -Match "You must specify a password when using the -MustChange parameter"
+
+            # ensure the policy settings are off
+            $result = Set-DbaLogin -SqlInstance $script:instance2 -Login "testlogin1_$random" -PasswordPolicyEnforced:$false -PasswordExpirationEnabled:$false
+            $result.PasswordExpirationEnabled | Should -Be $false
+            $result.PasswordPolicyEnforced | Should Be $false
+
+            # set the policy options separately for testlogin2
+            $changeResult = Set-DbaLogin -SqlInstance $script:instance2 -Login "testlogin2_$random" -PasswordPolicyEnforced -PasswordExpirationEnabled
+            $changeResult.PasswordPolicyEnforced | Should Be $true
+            $changeResult.PasswordExpirationEnabled | Should Be $true
+
+            # check_policy and check_expiration must be set on the login
+            $changeResult = Set-DbaLogin -SqlInstance $script:instance2 -Login "testlogin1_$random", "testlogin2_$random" -MustChange -Password $password1 -ErrorVariable error
+            $changeResult.Count | Should -Be 1
+            $changeResult.LoginName | Should -Be "testlogin2_$random"
+            $error.Exception | Should -Match "Unable to change the password and set the must_change option for \[testlogin1_$random\] because check_policy = False and check_expiration = False"
+
+            $changeResult = Set-DbaLogin -SqlInstance $script:instance2 -Login "testlogin1_$random" -MustChange -Password $password1 -PasswordPolicyEnforced -PasswordExpirationEnabled
+            $changeResult.MustChangePassword | Should -Be $true
+            $changeResult.PasswordChanged | Should -Be $true
+            $changeResult.PasswordPolicyEnforced | Should Be $true
+            $changeResult.PasswordExpirationEnabled | Should Be $true
+
+            # now change the password and set the must_change
+            $changeResult = Set-DbaLogin -SqlInstance $script:instance2 -Login "testlogin2_$random" -MustChange -Password $password1
+            $changeResult.MustChangePassword | Should -Be $true
+            $changeResult.PasswordChanged | Should -Be $true
+
+            # get a listing of the logins that must change their password
+            $result = Get-DbaLogin -SqlInstance $script:instance2 -MustChangePassword
+            $result.Name | Should -Contain "testlogin1_$random"
+            $result.Name | Should -Contain "testlogin2_$random"
         }
     }
 }
