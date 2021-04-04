@@ -254,7 +254,7 @@ dbatools aims to support as many configurations as possible, including
 
 * PowerShell v3 and above
 * Windows, macOS and Linux
-* SQL Server 2000 - 2017
+* SQL Server 2000 - Current
 * Express - Datacenter Edition
 * Clustered and stand-alone instances
 * Windows and SQL authentication
