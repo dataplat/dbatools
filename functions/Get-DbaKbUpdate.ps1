@@ -141,7 +141,7 @@ function Get-DbaKbUpdate {
                     Write-Message -Level Verbose -Message "Downloading information for $guid"
                     $post = @{ size = 0; updateID = $guid; uidInfo = $guid } | ConvertTo-Json -Compress
                     $body = @{ updateIDs = "[$post]" }
-                    $downloaddialog = Invoke-TlsWebRequest -Uri 'http://www.catalog.update.microsoft.com/DownloadDialog.aspx' -Method Post -Body $body -UseBasicParsing -ErrorAction Stop | Select-Object -ExpandProperty Content
+                    $downloaddialog = Invoke-TlsWebRequest -Uri 'https://www.catalog.update.microsoft.com/DownloadDialog.aspx' -Method Post -Body $body -UseBasicParsing -ErrorAction Stop | Select-Object -ExpandProperty Content
 
                     # sorry, don't know regex. this is ugly af.
                     $title = Get-Info -Text $downloaddialog -Pattern 'enTitle ='
