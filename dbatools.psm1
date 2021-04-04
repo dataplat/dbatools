@@ -725,6 +725,11 @@ $script:xplat = @(
     'Remove-DbaRegServerGroup',
     'New-DbaCustomError',
     'Remove-DbaCustomError',
+    'Get-DbaDbSequence',
+    'New-DbaDbSequence',
+    'Remove-DbaDbSequence',
+    'Select-DbaDbSequenceNextValue',
+    'Set-DbaDbSequence',
     # Config system
     'Get-DbatoolsConfig',
     'Get-DbatoolsConfigValue',
