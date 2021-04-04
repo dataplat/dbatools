@@ -32,6 +32,7 @@ function Set-DbaLogin {
 
     .PARAMETER MustChange
         Does the user need to change his/her password. This will only be used in conjunction with the -SecurePassword parameter.
+        It is required that the login have both PasswordPolicyEnforced (check_policy) and PasswordExpirationEnabled (check_expiration) enabled for the login. See the Microsoft documentation for ALTER LOGIN for more details.
         The default is false.
 
     .PARAMETER NewName
@@ -226,6 +227,10 @@ function Set-DbaLogin {
         if ((Test-Bound Unlock) -and (Test-Bound SecurePassword -Not) -and (Test-Bound Force -Not)) {
             Stop-Function -Message 'You must specify a password when using the -Unlock parameter or use the -Force parameter. See the help documentation for this command.'
         }
+
+        if ((Test-Bound MustChange) -and (Test-Bound SecurePassword -Not)) {
+            Stop-Function -Message 'You must specify a password when using the -MustChange parameter. See the command help for more details.'
+        }
     }
 
     process {
@@ -304,18 +309,6 @@ function Set-DbaLogin {
                     }
                 }
 
-                # Change the password
-                if (Test-bound -ParameterName 'SecurePassword') {
-                    try {
-                        $l.ChangePassword($NewSecurePassword, $Unlock, $MustChange)
-                        $passwordChanged = $true
-                    } catch {
-                        $notes += "Couldn't change password"
-                        $passwordChanged = $false
-                        Stop-Function -Message "Something went wrong changing the password for $l" -Target $l -ErrorRecord $_ -Continue
-                    }
-                }
-
                 # Disable the login
                 if (Test-Bound -ParameterName 'Disable') {
                     if ($l.IsDisabled) {
@@ -374,7 +367,7 @@ function Set-DbaLogin {
                 # Enforce password expiration
                 if (Test-Bound -ParameterName 'PasswordExpirationEnabled') {
 
-                    if ($l.PasswordPolicyEnforced -eq $false) {
+                    if ($PasswordExpirationEnabled -and $l.PasswordPolicyEnforced -eq $false) {
                         $notes += "Couldn't set check_expiration = ON because check_policy = OFF for $l. See the command description for more details on these settings."
                         Stop-Function -Message "Couldn't set check_expiration = ON because check_policy = OFF for $l. See the command description for more details on these settings." -Target $l -Continue
                     }
@@ -423,6 +416,30 @@ function Set-DbaLogin {
 
                 # Alter the login to make the changes
                 $l.Alter()
+                $l.Refresh()
+
+                # Change the password after the Alter() because the must_change requires the policy settings to be enabled first.
+                if (Test-bound -ParameterName 'SecurePassword') {
+                    if (Test-Bound MustChange) {
+                        # Validate if the check_policy and check_expiration options are enabled on the login. These are required for the must_change option for alter login.
+                        if ((-not $l.PasswordPolicyEnforced) -or (-not $l.PasswordExpirationEnabled)) {
+                            Stop-Function -Message "Unable to change the password and set the must_change option for $l because check_policy = $($l.PasswordPolicyEnforced) and check_expiration = $($l.PasswordExpirationEnabled). See the command help for additional information on the -MustChange parameter." -Target $l -Continue
+                        }
+                    }
+
+                    try {
+                        $l.ChangePassword($NewSecurePassword, $Unlock, $MustChange)
+                        $passwordChanged = $true
+
+                        if (Test-Bound MustChange) {
+                            $l.Refresh()  # necessary so that the read only property MustChangePassword is updated
+                        }
+                    } catch {
+                        $notes += "Couldn't change password"
+                        $passwordChanged = $false
+                        Stop-Function -Message "Something went wrong changing the password for $l" -Target $l -ErrorRecord $_ -Continue
+                    }
+                }
 
                 # Retrieve the server roles for the login
                 $roles = Get-DbaServerRoleMember -SqlInstance $server | Where-Object { $_.Name -eq $l.Name }
