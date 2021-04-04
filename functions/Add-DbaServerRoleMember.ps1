@@ -1,10 +1,10 @@
 function Add-DbaServerRoleMember {
     <#
     .SYNOPSIS
-        Adds a Database User to a database role for each instance(s) of SQL Server.
+        Adds a login to a server-level role(s) for each instance(s) of SQL Server.
 
     .DESCRIPTION
-        The Add-DbaServerRoleMember adds users in a database to a database role or roles for each instance(s) of SQL Server.
+        Adds a login to a server-level role(s) for each instance(s) of SQL Server.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.
