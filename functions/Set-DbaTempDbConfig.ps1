@@ -34,7 +34,7 @@ function Set-DbaTempDbConfig {
         Specifies the growth amount for the log file in megabytes. The default is 512 MB.
 
     .PARAMETER DataPath
-        Specifies the filesystem path in which to create the tempdb data files. If not specified, current tempdb location will be used.
+        Specifies the filesystem path(s) in which to create the tempdb data files. If not specified, current tempdb location will be used.
 
     .PARAMETER LogPath
         Specifies the filesystem path in which to create the tempdb log file. If not specified, current tempdb location will be used.
@@ -108,7 +108,7 @@ function Set-DbaTempDbConfig {
         [int]$LogFileSize,
         [int]$DataFileGrowth = 512,
         [int]$LogFileGrowth = 512,
-        [string]$DataPath,
+        [string[]]$DataPath,
         [string]$LogPath,
         [string]$OutFile,
         [switch]$OutputScriptOnly,
@@ -144,15 +144,22 @@ function Set-DbaTempDbConfig {
             Write-Message -Message "Single data file size (MB): $DataFilesizeSingle." -Level Verbose
 
             if (Test-Bound -ParameterName DataPath) {
-                if ((Test-DbaPath -SqlInstance $server -Path $DataPath) -eq $false) {
-                    Stop-Function -Message "$datapath is an invalid path." -Continue
+                foreach ($dataDirPath in $DataPath) {
+                    if ((Test-DbaPath -SqlInstance $server -Path $dataDirPath) -eq $false) {
+                        $invalidPathFound = "$dataDirPath does not exist"
+                        break
+                    }
+                }
+
+                if ($invalidPathFound) {
+                    Stop-Function -Message $invalidPathFound -Continue
                 }
             } else {
                 $Filepath = $server.Databases['tempdb'].Query('SELECT physical_name as PhysicalName FROM sys.database_files WHERE file_id = 1').PhysicalName
                 $DataPath = Split-Path $Filepath
             }
 
-            Write-Message -Message "Using data path: $datapath." -Level Verbose
+            Write-Message -Message "Using data path(s): $DataPath." -Level Verbose
 
             if (Test-Bound -ParameterName LogPath) {
                 if ((Test-DbaPath -SqlInstance $server -Path $LogPath) -eq $false) {
@@ -186,17 +193,34 @@ function Set-DbaTempDbConfig {
 
             $DataFiles = Get-DbaDbFile -SqlInstance $server -Database tempdb | Where-Object Type -eq 0 | Select-Object LogicalName, PhysicalName
 
+            # Used to round-robin the placement of tempdb data files if more than one value for $DataPath was passed in.
+            $dataPathIndexToUse = 0
+
             #Checks passed, process reconfiguration
             for ($i = 0; $i -lt $DataFileCount; $i++) {
                 $File = $DataFiles[$i]
+
+                if ($DataPath.Count -gt 1) {
+                    $newDataDirPath = $DataPath[$dataPathIndexToUse]
+
+                    $dataPathIndexToUse += 1
+
+                    # reset the round robin index variable
+                    if ($dataPathIndexToUse -ge $DataPath.Count ) {
+                        $dataPathIndexToUse = 0
+                    }
+                } else {
+                    $newDataDirPath = $DataPath
+                }
+
                 if ($File) {
                     $Filename = Split-Path $File.PhysicalName -Leaf
                     $LogicalName = $File.LogicalName
-                    $NewPath = "$datapath\$Filename"
+                    $NewPath = "$newDataDirPath\$Filename"
                     $sql += "ALTER DATABASE tempdb MODIFY FILE(name=$LogicalName,filename='$NewPath',size=$DataFilesizeSingle MB,filegrowth=$DataFileGrowth);"
                 } else {
                     $NewName = "tempdev$i.ndf"
-                    $NewPath = "$datapath\$NewName"
+                    $NewPath = "$newDataDirPath\$NewName"
                     $sql += "ALTER DATABASE tempdb ADD FILE(name=tempdev$i,filename='$NewPath',size=$DataFilesizeSingle MB,filegrowth=$DataFileGrowth);"
                 }
             }

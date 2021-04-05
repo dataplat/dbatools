@@ -1133,7 +1133,7 @@ function Copy-DbaDatabase {
                         continue
                     }
 
-                    if (($null -ne $destServer.Databases[$DestinationdbName]) -and !$force -and !$WithReplace) {
+                    if (($null -ne $destServer.Databases[$DestinationdbName]) -and !$force -and !$WithReplace -and !$Continue) {
                         if ($Pscmdlet.ShouldProcess($destinstance, "$DestinationdbName exists at destination. Use -Force to drop and migrate. Aborting routine for this database.")) {
                             Write-Message -Level Verbose -Message "$DestinationdbName exists at destination. Use -Force to drop and migrate. Aborting routine for this database."
 
@@ -1209,19 +1209,18 @@ function Copy-DbaDatabase {
                                     } else {
                                         $backupTmpResult = Backup-DbaDatabase -SqlInstance $sourceServer -Database $dbName -BackupDirectory $SharedPath -FileCount $numberfiles -CopyOnly:$CopyOnly
                                     }
-                                }
-                                if ($backupTmpResult) {
-                                    $backupCollection += $backupTmpResult
-                                }
-                                $backupResult = $BackupTmpResult.BackupComplete
-                                if (-not $backupResult) {
-                                    $serviceAccount = $sourceServer.ServiceAccount
-                                    Write-Message -Level Verbose -Message "Backup Failed. Does SQL Server account $serviceAccount have access to $($SharedPath)? Aborting routine for this database."
 
-                                    $copyDatabaseStatus.Status = "Failed"
-                                    $copyDatabaseStatus.Notes = "Backup failed. Verify service account access to $SharedPath."
-                                    $copyDatabaseStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                                    continue
+                                    if ((-not $backupTmpResult) -or (-not $backupTmpResult.BackupComplete)) {
+                                        $serviceAccount = $sourceServer.ServiceAccount
+                                        Write-Message -Level Verbose -Message "Backup Failed. Does SQL Server account $serviceAccount have access to $($SharedPath)? Aborting routine for this database."
+
+                                        $copyDatabaseStatus.Status = "Failed"
+                                        $copyDatabaseStatus.Notes = "Backup failed. Verify service account access to $SharedPath."
+                                        $copyDatabaseStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                                        continue
+                                    }
+
+                                    $backupCollection += $backupTmpResult
                                 }
                             }
                             Write-Message -Level Verbose -Message "Reuse = $ReuseSourceFolderStructure."

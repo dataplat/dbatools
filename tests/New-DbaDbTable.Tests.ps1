@@ -82,4 +82,38 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             $table.Columns.IdentityIncrement | Should -Be $map.IdentityIncrement
         }
     }
+
+    Context "Should create the schema if it doesn't exist" {
+
+        It "schema created" {
+            $random = Get-Random
+            $tableName = "table_$random"
+            $schemaName = "schema_$random"
+            $map = @{
+                Name = 'testId'
+                Type = 'int'
+            }
+
+            $tableWithSchema = New-DbaDbTable -SqlInstance $script:instance1 -Database $dbname -Name $tableName -ColumnMap $map -Schema $schemaName
+            $tableWithSchema.Count | Should -Be 1
+            $tableWithSchema.Database | Should -Be $dbname
+            $tableWithSchema.Name | Should -Be "table_$random"
+            $tableWithSchema.Schema | Should -Be "schema_$random"
+        }
+
+        It "schema scripted via -Passthru" {
+            $random = Get-Random
+            $tableName = "table2_$random"
+            $schemaName = "schema2_$random"
+            $map = @{
+                Name = 'testId'
+                Type = 'int'
+            }
+
+            $tableWithSchema = New-DbaDbTable -SqlInstance $script:instance1 -Database $dbname -Name $tableName -ColumnMap $map -Schema $schemaName -Passthru
+            $tableWithSchema[0] | Should -Be "CREATE SCHEMA [$schemaName]"
+            $tableWithSchema[1] | Should -Match "$schemaName"
+            $tableWithSchema[1] | Should -Match "$tableName"
+        }
+    }
 }
