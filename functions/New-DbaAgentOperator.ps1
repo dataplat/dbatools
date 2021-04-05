@@ -67,7 +67,7 @@ function New-DbaAgentOperator {
     .PARAMETER Force
         If this switch is enabled, the Operator will be dropped and recreated on instance.
 
-    .PARAMETER ServerObject
+    .PARAMETER InputObject
         SMO Server Objects (pipeline input from Connect-DbaInstance)
 
     .PARAMETER EnableException
@@ -118,7 +118,7 @@ function New-DbaAgentOperator {
         [string]$FailsafeNotificationMethod = "NotifyEmail",
         [switch]$Force = $false,
         [parameter(ValueFromPipeline)]
-        [Microsoft.SqlServer.Management.Smo.Server[]]$ServerObject,
+        [Microsoft.SqlServer.Management.Smo.Server[]]$InputObject,
         [switch]$EnableException
     )
 
@@ -270,13 +270,13 @@ function New-DbaAgentOperator {
 
         foreach ($instance in $SqlInstance) {
             try {
-                $ServerObject += Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
+                $InputObject += Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             } catch {
                 Stop-Function -Message "Failed" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
         }
 
-        foreach ($server in $ServerObject) {
+        foreach ($server in $InputObject) {
             $failsafe = $server.JobServer.AlertSystem | Select-Object FailsafeOperator
 
             if ((Get-DbaAgentOperator -SqlInstance $server -Operator $Operator).Count -ne 0) {

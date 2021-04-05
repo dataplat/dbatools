@@ -25,7 +25,7 @@ function Remove-DbaAgentOperator {
     .PARAMETER Confirm
         Prompts you for confirmation before executing any changing operations within the command.
 
-    .PARAMETER ServerObject
+    .PARAMETER InputObject
         SMO Server Objects (pipeline input from Connect-DbaInstance)
 
     .PARAMETER EnableException
@@ -57,7 +57,7 @@ function Remove-DbaAgentOperator {
         [parameter(Mandatory)]
         [string]$Operator,
         [parameter(ValueFromPipeline)]
-        [Microsoft.SqlServer.Management.Smo.Server[]]$ServerObject,
+        [Microsoft.SqlServer.Management.Smo.Server[]]$InputObject,
         [switch]$EnableException
     )
 
@@ -67,13 +67,13 @@ function Remove-DbaAgentOperator {
     process {
         foreach ($instance in $SqlInstance) {
             try {
-                $ServerObject += Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
+                $InputObject += Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             } catch {
                 Stop-Function -Message "Failed" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
         }
 
-        foreach ($server in $ServerObject) {
+        foreach ($server in $InputObject) {
             if ((Get-DbaAgentOperator -SqlInstance $server -Operator $Operator).Count -ne 0) {
                 if ($Pscmdlet.ShouldProcess($server, "Dropping operator $operator")) {
                     try {
