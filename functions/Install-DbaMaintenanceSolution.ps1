@@ -296,9 +296,9 @@ function Install-DbaMaintenanceSolution {
 
             if ((Test-Bound -ParameterName ReplaceExisting -Not)) {
                 $procs = Get-DbaModule -SqlInstance $server -Database $Database | Where-Object Name -in 'CommandExecute', 'DatabaseBackup', 'DatabaseIntegrityCheck', 'IndexOptimize'
-                $table = Get-DbaDbTable -SqlInstance $server -Database $Database -Table CommandLog -IncludeSystemDBs | Where-Object Database -eq $Database
+                $tables = Get-DbaDbTable -SqlInstance $server -Database $Database -Table CommandLog, Queue, QueueDatabase -IncludeSystemDBs | Where-Object Database -eq $Database
 
-                if ($null -ne $procs -or $null -ne $table) {
+                if ($null -ne $procs -or $null -ne $tables) {
                     Stop-Function -Message "The Maintenance Solution already exists in $Database on $instance. Use -ReplaceExisting to automatically drop and recreate."
                     return
                 }
@@ -335,6 +335,9 @@ function Install-DbaMaintenanceSolution {
                 $required += 'MaintenanceSolution.sql'
             }
 
+            $required += 'Queue.sql'
+            $required += 'QueueDatabase.sql'
+
             $temp = ([System.IO.Path]::GetTempPath()).TrimEnd("\")
             $zipfile = "$temp\ola.zip"
 
@@ -347,6 +350,10 @@ function Install-DbaMaintenanceSolution {
                 [string]$CleanupQuery = $("
                             IF OBJECT_ID('[dbo].[CommandLog]', 'U') IS NOT NULL
                                 DROP TABLE [dbo].[CommandLog];
+                            IF OBJECT_ID('[dbo].[QueueDatabase]', 'U') IS NOT NULL
+                                DROP TABLE [dbo].[QueueDatabase];
+                            IF OBJECT_ID('[dbo].[Queue]', 'U') IS NOT NULL
+                                DROP TABLE [dbo].[Queue];
                             IF OBJECT_ID('[dbo].[CommandExecute]', 'P') IS NOT NULL
                                 DROP PROCEDURE [dbo].[CommandExecute];
                             IF OBJECT_ID('[dbo].[DatabaseBackup]', 'P') IS NOT NULL
@@ -379,7 +386,7 @@ function Install-DbaMaintenanceSolution {
             try {
                 Write-ProgressHelper -ExcludePercent -Message "Installing on server $instance, database $Database"
 
-                foreach ($file in $fileContents.Keys) {
+                foreach ($file in $fileContents.Keys | Sort-Object) {
                     $shortFileName = Split-Path $file -Leaf
                     if ($required.Contains($shortFileName)) {
                         if ($Pscmdlet.ShouldProcess($instance, "Installing $shortFileName")) {
