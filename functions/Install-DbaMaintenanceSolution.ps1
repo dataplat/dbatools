@@ -58,6 +58,9 @@ function Install-DbaMaintenanceSolution {
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
+    .PARAMETER InstallParallel
+        If this switch is enabled, the Queue and QueueDatabase tables are created.
+
     .NOTES
         Tags: Community, OlaHallengren
         Author: Viorel Ciucu, cviorel.com
@@ -139,7 +142,8 @@ function Install-DbaMaintenanceSolution {
         [switch]$InstallJobs,
         [string]$LocalFile,
         [switch]$Force,
-        [switch]$EnableException
+        [switch]$EnableException,
+        [switch]$InstallParallel
     )
     begin {
         if ($Force) { $ConfirmPreference = 'none' }
@@ -315,7 +319,7 @@ function Install-DbaMaintenanceSolution {
                 $required = @('CommandExecute.sql')
             }
 
-            if ($LogToTable) {
+            if ($LogToTable -and $InstallJobs -eq $false) {
                 $required += 'CommandLog.sql'
             }
 
@@ -331,12 +335,21 @@ function Install-DbaMaintenanceSolution {
                 $required += 'IndexOptimize.sql'
             }
 
-            if ($Solution -contains 'All') {
+            if ($Solution -contains 'All' -and $InstallJobs) {
                 $required += 'MaintenanceSolution.sql'
             }
 
-            $required += 'Queue.sql'
-            $required += 'QueueDatabase.sql'
+            if ($Solution -contains 'All' -and $InstallJobs -eq $false) {
+                $required += 'CommandExecute.sql'
+                $required += 'DatabaseBackup.sql'
+                $required += 'DatabaseIntegrityCheck.sql'
+                $required += 'IndexOptimize.sql'
+            }
+
+            if ($InstallParallel) {
+                $required += 'Queue.sql'
+                $required += 'QueueDatabase.sql'
+            }
 
             $temp = ([System.IO.Path]::GetTempPath()).TrimEnd("\")
             $zipfile = "$temp\ola.zip"
