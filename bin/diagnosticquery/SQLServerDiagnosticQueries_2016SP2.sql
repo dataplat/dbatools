@@ -1,7 +1,7 @@
 
 -- SQL Server 2016 SP2 Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: January 12, 2021
+-- Last Modified: April 1, 2021
 -- https://glennsqlperformance.com/
 -- https://sqlserverperformance.wordpress.com/
 -- YouTube: https://bit.ly/2PkoAM1 
@@ -80,7 +80,8 @@ SELECT @@SERVERNAME AS [Server Name], @@VERSION AS [SQL Server and OS Version In
 -- 13.0.5830.85     SP2 CU14			         8/6/2020		https://support.microsoft.com/en-us/help/4564903/cumulative-update-14-for-sql-server-2016-sp2
 -- 13.0.5850.14		SP2 CU15					9/28/2020		https://support.microsoft.com/en-us/help/4577775/cumulative-update-15-for-sql-server-2016-sp2
 -- 13.0.5865.1		SP2 CU15 + Security Update	1/12/2021		https://support.microsoft.com/en-us/help/4583461/kb4583461-security-update-for-sql-server-2016-sp2-cu15	
-															
+-- 13.0.5882.1		SP2 CU16					2/11/2021		https://support.microsoft.com/en-us/office/kb5000645-cumulative-update-16-for-sql-server-2016-sp2-a3997fa9-ec49-4df0-bcc3-12dd58b78265
+-- 13.0.5888.11		SP2 CU17					3/29/2021		https://support.microsoft.com/en-us/topic/kb5001092-cumulative-update-17-for-sql-server-2016-sp2-5876a4d6-59ac-484a-93dc-4be456cd87d1															
 
 -- How to determine the version, edition and update level of SQL Server and its components 
 -- https://bit.ly/2oAjKgW														
@@ -110,6 +111,10 @@ SELECT @@SERVERNAME AS [Server Name], @@VERSION AS [SQL Server and OS Version In
 -- https://bit.ly/2vgke1A
 
 -- SQL Server 2016 Configuration Manager is SQLServerManager13.msc
+
+-- SQL Server troubleshooting (Microsoft documentation resources)
+-- http://bit.ly/2YY0pb1
+
 
 -- Get socket, physical core and logical core count from the SQL Server Error log. (Query 2) (Core Counts)
 -- This query might take a few seconds depending on the size of your error log
@@ -268,20 +273,15 @@ FROM sys.dm_server_services WITH (NOLOCK) OPTION (RECOMPILE);
 -- Last backup information by database  (Query 8) (Last Backup By Database)
 SELECT ISNULL(d.[name], bs.[database_name]) AS [Database], d.recovery_model_desc AS [Recovery Model], 
        d.log_reuse_wait_desc AS [Log Reuse Wait Desc],
-    MAX(CASE WHEN bs.[type] = 'D' THEN bs.backup_finish_date ELSE NULL END) AS [Last Full Backup],
-	MAX(CASE WHEN bs.[type] = 'D' THEN bmf.physical_device_name ELSE NULL END) AS [Last Full Backup Location],
-    MAX(CASE WHEN bs.[type] = 'I' THEN bs.backup_finish_date ELSE NULL END) AS [Last Differential Backup],
-	MAX(CASE WHEN bs.[type] = 'I' THEN bmf.physical_device_name ELSE NULL END) AS [Last Differential Backup Location],
-    MAX(CASE WHEN bs.[type] = 'L' THEN bs.backup_finish_date ELSE NULL END) AS [Last Log Backup],
-	MAX(CASE WHEN bs.[type] = 'L' THEN bmf.physical_device_name ELSE NULL END) AS [Last Log Backup Location]
+    MAX(CASE WHEN [type] = 'D' THEN bs.backup_finish_date ELSE NULL END) AS [Last Full Backup],
+    MAX(CASE WHEN [type] = 'I' THEN bs.backup_finish_date ELSE NULL END) AS [Last Differential Backup],
+    MAX(CASE WHEN [type] = 'L' THEN bs.backup_finish_date ELSE NULL END) AS [Last Log Backup]
 FROM sys.databases AS d WITH (NOLOCK)
 LEFT OUTER JOIN msdb.dbo.backupset AS bs WITH (NOLOCK)
 ON bs.[database_name] = d.[name]
-LEFT OUTER JOIN msdb.dbo.backupmediafamily AS bmf WITH (NOLOCK)
-ON bs.media_set_id = bmf.media_set_id 
 AND bs.backup_finish_date > GETDATE()- 30
-WHERE d.[name] <> N'tempdb'
-GROUP BY ISNULL(d.[name], bs.[database_name]), d.recovery_model_desc, d.log_reuse_wait_desc, d.[name] 
+WHERE d.name <> N'tempdb'
+GROUP BY ISNULL(d.[name], bs.[database_name]), d.recovery_model_desc, d.log_reuse_wait_desc, d.[name]
 ORDER BY d.recovery_model_desc, d.[name] OPTION (RECOMPILE);
 ------
 
@@ -366,10 +366,17 @@ FROM sys.dm_os_windows_info WITH (NOLOCK) OPTION (RECOMPILE);
 
 
 -- SQL Server NUMA Node information  (Query 12) (SQL Server NUMA Info)
-SELECT node_id, node_state_desc, memory_node_id, processor_group, cpu_count, online_scheduler_count, 
-       idle_scheduler_count, active_worker_count, avg_load_balance, resource_monitor_state
-FROM sys.dm_os_nodes WITH (NOLOCK) 
-WHERE node_state_desc <> N'ONLINE DAC' OPTION (RECOMPILE);
+SELECT osn.node_id, osn.node_state_desc, osn.memory_node_id, osn.processor_group, osn.cpu_count, osn.online_scheduler_count, 
+       osn.idle_scheduler_count, osn.active_worker_count, 
+	   osmn.pages_kb/1024 AS [Committed Memory (MB)], 
+	   osmn.locked_page_allocations_kb/1024 AS [Locked Physical (MB)],
+	   CONVERT(DECIMAL(18,2), osmn.foreign_committed_kb/1024.0) AS [Foreign Commited (MB)],
+	   osmn.target_kb/1024 AS [Target Memory Goal (MB)],
+	   osn.avg_load_balance, osn.resource_monitor_state
+FROM sys.dm_os_nodes AS osn WITH (NOLOCK)
+INNER JOIN sys.dm_os_memory_nodes AS osmn WITH (NOLOCK)
+ON osn.memory_node_id = osmn.memory_node_id
+WHERE osn.node_state_desc <> N'ONLINE DAC' OPTION (RECOMPILE);
 ------
 
 -- Gives you some useful information about the composition and relative load on your NUMA nodes
@@ -900,11 +907,11 @@ ORDER BY [I/O Rank] OPTION (RECOMPILE);
 
 
 -- Get total buffer usage by database for current instance  (Query 35) (Total Buffer Usage by Database)
--- This make take some time to run on a busy instance
+-- This may take some time to run on a busy instance with lots of RAM
 WITH AggregateBufferPoolUsage
 AS
 (SELECT DB_NAME(database_id) AS [Database Name],
-CAST(COUNT(*) * 8/1024.0 AS DECIMAL (10,2))  AS [CachedSize]
+CAST(COUNT(*) * 8/1024.0 AS DECIMAL (15,2))  AS [CachedSize]
 FROM sys.dm_os_buffer_descriptors WITH (NOLOCK)
 WHERE database_id <> 32767 -- ResourceDB
 GROUP BY DB_NAME(database_id))
@@ -1939,6 +1946,9 @@ FROM sys.database_query_store_options WITH (NOLOCK) OPTION (RECOMPILE);
 
 -- Tuning Workload Performance with Query Store
 -- https://bit.ly/1kHSl7w
+
+-- Emergency shutoff for Query Store (SQL Server 2016 SP2 CU14 or newer)
+-- ALTER DATABASE [DatabaseName] SET QUERY_STORE = OFF(FORCED);
 
 
 

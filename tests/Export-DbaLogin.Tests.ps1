@@ -101,6 +101,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $allfiles += $file.FullName
             $results | Should Not Match "$login2|$dbname2"
             $results | Should Match "$login1|$dbname1"
+            $results | Should -Match ([regex]::Escape("IF NOT EXISTS (SELECT * FROM sys.database_principals WHERE name = N'$user1')"))
         }
         It "Should Export with object level permissions" {
             $results = Export-DbaLogin -SqlInstance $script:instance2 -Login $login2 -ObjectLevel -PassThru -WarningAction SilentlyContinue

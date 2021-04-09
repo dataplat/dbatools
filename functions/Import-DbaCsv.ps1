@@ -442,7 +442,7 @@ function Import-DbaCsv {
                     $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -Database $Database -StatementTimeout 0 -MinimumVersion 9
 
                     # boundary case: ensure the correct db is referenced in the $server object
-                    if ($Database -ne $server.ConnectionContext.DatabaseName) {
+                    if ($Database -ne $server.ConnectionContext.CurrentDatabase) {
                         Stop-Function -Message "The SqlInstance object for $instance is currently connected to the database `"$($server.ConnectionContext.CurrentDatabase)`" and does not match the parameter `"-Database $Database`". If a pre-connected SqlInstance object is passed in it must be connected to the database specified by the -Database parameter."
                         return
                     }
@@ -616,43 +616,85 @@ function Import-DbaCsv {
                             $reader.DefaultParseErrorAction = $ParseErrorAction
                         }
 
+                        # The legacy bulk copy library uses a 4 byte integer to track the RowsCopied, so the only option is to use
+                        # integer wrap so that copy operations of row counts greater than [int32]::MaxValue will report accurate numbers.
+                        # See https://github.com/sqlcollaborative/dbatools/issues/6927 for more details
+                        $script:prevRowsCopied = [int64]0
+                        $script:totalRowsCopied = [int64]0
+
                         # Add rowcount output
                         $bulkCopy.Add_SqlRowsCopied( {
-                                $script:totalrows = $args[1].RowsCopied
+                                $script:totalRowsCopied += (Get-AdjustedTotalRowsCopied -ReportedRowsCopied $args[1].RowsCopied -PreviousRowsCopied $script:prevRowsCopied).NewRowCountAdded
+
+                                $tstamp = $(Get-Date -format 'yyyyMMddHHmmss')
+                                Write-Message -Level Verbose -Message "[$tstamp] The bulk copy library reported RowsCopied = $($args[1].RowsCopied). The previous RowsCopied = $($script:prevRowsCopied). The adjusted total rows copied = $($script:totalRowsCopied)"
+
                                 if (-not $NoProgress) {
                                     $timetaken = [math]::Round($elapsed.Elapsed.TotalSeconds, 2)
-                                    Write-ProgressHelper -StepNumber 1 -TotalSteps 2 -Activity "Importing from $file" -Message ([System.String]::Format("Progress: {0} rows in {2} seconds", $script:totalrows, $percent, $timetaken)) -ExcludePercent
+                                    Write-ProgressHelper -StepNumber 1 -TotalSteps 2 -Activity "Importing from $file" -Message ([System.String]::Format("Progress: {0} rows in {2} seconds", $script:totalRowsCopied, $percent, $timetaken)) -ExcludePercent
                                 }
+
+                                # save the previous count of rows copied to be used on the next event notification
+                                $script:prevRowsCopied = $args[1].RowsCopied
                             })
 
                         $bulkCopy.WriteToServer($reader)
 
-                        if ($resultcount -is [int]) {
-                            Write-Progress -id 1 -activity "Inserting $resultcount rows" -status "Complete" -Completed
-                        }
-
-                        $reader.Close()
-                        $reader.Dispose()
                         $completed = $true
                     } catch {
                         $completed = $false
 
-                        if ($resultcount -is [int]) {
-                            Write-Progress -id 1 -activity "Inserting $resultcount rows" -status "Failed" -Completed
-                        }
                         Stop-Function -Continue -Message "Failure" -ErrorRecord $_
+                    } finally {
+                        try {
+                            $reader.Close()
+                            $reader.Dispose()
+                        } catch {
+                        }
+
+                        if (-not $NoTransaction) {
+                            if ($completed) {
+                                try {
+                                    $null = $transaction.Commit()
+                                } catch {
+                                }
+                            } else {
+                                try {
+                                    $null = $transaction.Rollback()
+                                } catch {
+                                }
+                            }
+                        }
+
+                        try {
+                            $sqlconn.Close()
+                            $sqlconn.Dispose()
+                        } catch {
+                        }
+
+                        try {
+                            $bulkCopy.Close()
+                            $bulkcopy.Dispose()
+                        } catch {
+                        }
+
+                        $finalRowCountReported = Get-BulkRowsCopiedCount $bulkCopy
+
+                        $script:totalRowsCopied += (Get-AdjustedTotalRowsCopied -ReportedRowsCopied $finalRowCountReported -PreviousRowsCopied $script:prevRowsCopied).NewRowCountAdded
+
+                        if ($completed) {
+                            Write-Progress -id 1 -activity "Inserting $($script:totalRowsCopied) rows" -status "Complete" -Completed
+                        } else {
+                            Write-Progress -id 1 -activity "Inserting $($script:totalRowsCopied) rows" -status "Failed" -Completed
+                        }
                     }
                 }
                 if ($PSCmdlet.ShouldProcess($instance, "Finalizing import")) {
                     if ($completed) {
                         # "Note: This count does not take into consideration the number of rows actually inserted when Ignore Duplicates is set to ON."
-                        if (-not $NoTransaction) {
-                            $null = $transaction.Commit()
-                        }
-                        $rowscopied = Get-BulkRowsCopiedCount $bulkcopy
-                        $rps = [int]($rowscopied / $elapsed.Elapsed.TotalSeconds)
+                        $rowsPerSec = [math]::Round($script:totalRowsCopied / $elapsed.ElapsedMilliseconds * 1000.0, 1)
 
-                        Write-Message -Level Verbose -Message "$rowscopied total rows copied"
+                        Write-Message -Level Verbose -Message "$($script:totalRowsCopied) total rows copied"
 
                         [pscustomobject]@{
                             ComputerName  = $server.ComputerName
@@ -661,25 +703,15 @@ function Import-DbaCsv {
                             Database      = $Database
                             Table         = $table
                             Schema        = $schema
-                            RowsCopied    = $rowscopied
+                            RowsCopied    = $script:totalRowsCopied
                             Elapsed       = [prettytimespan]$elapsed.Elapsed
-                            RowsPerSecond = $rps
+                            RowsPerSecond = $rowsPerSec
                             Path          = $file
                         }
                     } else {
                         Stop-Function -Message "Transaction rolled back. Was the proper delimiter specified? Is the first row the column name?" -ErrorRecord $_
                         return
                     }
-                }
-
-                # Close everything just in case & ignore errors
-                try {
-                    $null = $sqlconn.close(); $null = $sqlconn.Dispose();
-                    $null = $bulkCopy.close(); $bulkcopy.dispose();
-                    $null = $reader.close(); $null = $reader.dispose()
-                } catch {
-                    #here to avoid an empty catch
-                    $null = 1
                 }
             }
         }
