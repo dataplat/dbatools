@@ -154,7 +154,7 @@ function Invoke-Parallel {
         [System.Management.Automation.ScriptBlock]$ScriptBlock,
 
         [Parameter(ParameterSetName = 'ScriptFile')]
-        [ValidateScript( {Test-Path $_ -pathtype leaf})]
+        [ValidateScript( { Test-Path $_ -pathtype leaf })]
         $ScriptFile,
 
         [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
@@ -176,7 +176,7 @@ function Invoke-Parallel {
         [switch]$NoCloseOnTimeout = $false,
         [int]$MaxQueue,
 
-        [validatescript( {Test-Path (Split-Path $_ -parent)})]
+        [validatescript( { Test-Path (Split-Path $_ -parent) })]
         [switch] $AppendLog = $false,
         [string]$LogFile,
 
@@ -202,7 +202,11 @@ function Invoke-Parallel {
 
                     #Get modules, snapins, functions in this clean runspace
                     $Modules = Get-Module | Select-Object -ExpandProperty Name
-                    $Snapins = Get-PSSnapin | Select-Object -ExpandProperty Name
+                    $Snapins = @(
+                        if ( Get-Command -Name 'Get-PSSnapIn' -ErrorAction SilentlyContinue ) {
+                            Get-PSSnapin | Select-Object -ExpandProperty Name
+                        }
+                    );
                     $Functions = Get-ChildItem function:\ | Select-Object -ExpandProperty Name
 
                     #Get variables in this clean runspace
@@ -220,7 +224,7 @@ function Invoke-Parallel {
 
             if ($ImportVariables) {
                 #Exclude common parameters, bound parameters, and automatic variables
-                Function _temp {[cmdletbinding(SupportsShouldProcess)] param() }
+                Function _temp { [cmdletbinding(SupportsShouldProcess)] param() }
                 $VariablesToExclude = @( (Get-Command _temp | Select-Object -ExpandProperty parameters).Keys + $PSBoundParameters.Keys + $StandardUserEnv.Variables )
                 Write-Verbose "Excluding variables $( ($VariablesToExclude | Sort-Object ) -join ", ")"
 
@@ -232,8 +236,12 @@ function Invoke-Parallel {
                 Write-Verbose "Found variables to import: $( ($UserVariables | Select-Object -expandproperty Name | Sort-Object ) -join ", " | Out-String).`n"
             }
             if ($ImportModules) {
-                $UserModules = @( Get-Module | Where-Object {$StandardUserEnv.Modules -notcontains $_.Name -and (Test-Path $_.Path -ErrorAction SilentlyContinue)} | Select-Object -ExpandProperty Path )
-                $UserSnapins = @( Get-PSSnapin | Select-Object -ExpandProperty Name | Where-Object {$StandardUserEnv.Snapins -notcontains $_ } )
+                $UserModules = @( Get-Module | Where-Object { $StandardUserEnv.Modules -notcontains $_.Name -and (Test-Path $_.Path -ErrorAction SilentlyContinue) } | Select-Object -ExpandProperty Path )
+                $UserSnapins = @(
+                    if ( Get-Command -Name 'Get-PSSnapIn' -ErrorAction SilentlyContinue ) {
+                        Get-PSSnapin | Select-Object -ExpandProperty Name | Where-Object { $StandardUserEnv.Snapins -notcontains $_ }
+                    }
+                );
             }
             if ($ImportFunctions) {
                 $UserFunctions = @( Get-ChildItem function:\ | Where-Object { $StandardUserEnv.Functions -notcontains $_.Name } )
@@ -309,7 +317,7 @@ function Invoke-Parallel {
                         #add logging details and cleanup
                         $log.status = "TimedOut"
                         Write-Verbose ($log | ConvertTo-Csv -Delimiter ";" -NoTypeInformation)[1]
-                        Write-Error "Runspace timed out at $($runtime.totalseconds) seconds for the object:`n$($runspace.object | out-string)"
+                        Write-Error "Runspace timed out at $($runtime.totalseconds) seconds for the object:`n$($runspace.object | Out-String)"
 
                         #Depending on how it hangs, we could still get stuck here as dispose calls a synchronous method on the powershell instance
                         if (!$noCloseOnTimeout) { $runspace.powershell.dispose() }
@@ -326,7 +334,7 @@ function Invoke-Parallel {
 
                     #log the results if a log file was indicated
                     if ($logFile -and $log) {
-                        ($log | ConvertTo-Csv -Delimiter ";" -NoTypeInformation)[1] | out-file $LogFile -append
+                        ($log | ConvertTo-Csv -Delimiter ";" -NoTypeInformation)[1] | Out-File $LogFile -append
                     }
                 }
 
@@ -349,7 +357,7 @@ function Invoke-Parallel {
         #region Init
 
         if ($PSCmdlet.ParameterSetName -eq 'ScriptFile') {
-            $ScriptBlock = [scriptblock]::Create( $(Get-Content $ScriptFile | out-string) )
+            $ScriptBlock = [scriptblock]::Create( $(Get-Content $ScriptFile | Out-String) )
         } elseif ($PSCmdlet.ParameterSetName -eq 'ScriptBlock') {
             #Start building parameter names for the param block
             [string[]]$ParamsToAdd = '$_'
@@ -364,7 +372,7 @@ function Invoke-Parallel {
 
             if ($PSVersionTable.PSVersion.Major -gt 2) {
                 #Extract using references
-                $UsingVariables = $ScriptBlock.ast.FindAll( {$args[0] -is [System.Management.Automation.Language.UsingExpressionAst]}, $True)
+                $UsingVariables = $ScriptBlock.ast.FindAll( { $args[0] -is [System.Management.Automation.Language.UsingExpressionAst] }, $True)
 
                 If ($UsingVariables) {
                     $List = New-Object 'System.Collections.Generic.List`1[System.Management.Automation.Language.VariableExpressionAst]'
@@ -372,7 +380,7 @@ function Invoke-Parallel {
                         [void]$list.Add($Ast.SubExpression)
                     }
 
-                    $UsingVar = $UsingVariables | Group-Object -Property SubExpression | ForEach-Object {$_.Group | Select-Object -First 1}
+                    $UsingVar = $UsingVariables | Group-Object -Property SubExpression | ForEach-Object { $_.Group | Select-Object -First 1 }
 
                     #Extract the name, value, and create replacements for each
                     $UsingVariableData = ForEach ($Var in $UsingVar) {
@@ -464,7 +472,7 @@ function Invoke-Parallel {
         $log.Status = "Started"
         $log.Details = $null
         if ($logFile) {
-            ($log | convertto-csv -Delimiter ";" -NoTypeInformation)[1] | Out-File $LogFile -Append
+            ($log | ConvertTo-Csv -Delimiter ";" -NoTypeInformation)[1] | Out-File $LogFile -Append
         }
         $timedOutTasks = $false
         #endregion INIT
@@ -490,7 +498,7 @@ function Invoke-Parallel {
                 $powershell = [powershell]::Create()
 
                 if ($VerbosePreference -eq 'Continue') {
-                    [void]$PowerShell.AddScript( {$VerbosePreference = 'Continue'})
+                    [void]$PowerShell.AddScript( { $VerbosePreference = 'Continue' })
                 }
 
                 [void]$PowerShell.AddScript($ScriptBlock).AddArgument($object)
@@ -543,7 +551,7 @@ function Invoke-Parallel {
                 }
                 #endregion add scripts to runspace pool
             }
-            Write-Verbose ( "Finish processing the remaining runspace jobs: {0}" -f ( @($runspaces | Where-Object {$_.Runspace -ne $Null}).Count) )
+            Write-Verbose ( "Finish processing the remaining runspace jobs: {0}" -f ( @($runspaces | Where-Object { $_.Runspace -ne $Null }).Count) )
 
             Get-RunspaceData -wait
             if (-not $quiet) {

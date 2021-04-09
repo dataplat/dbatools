@@ -226,52 +226,6 @@ function Copy-DbaDbTableData {
                 $bulkCopyOptions += $([Data.SqlClient.SqlBulkCopyOptions]::$option).value__
             }
         }
-
-        #region Utility Functions
-        function Get-AdjustedTotalRowsCopied {
-            <#
-            .SYNOPSIS
-                The legacy bulk copy library still uses a 4 byte integer to track the number of rows copied. That 4 byte integer is subject to overflow/wraparound
-                if the number of rows copied is greater than an integer can support. The SqlRowsCopiedEventArgs.RowsCopied property is defined as an Int64
-                but a 4 byte integer is used in the underlying legacy library. See https://github.com/sqlcollaborative/dbatools/issues/6927 for more details.
-
-            .DESCRIPTION
-                Determines the accurate total rows copied even if the bulkcopy.RowsCopied has experienced integer wrap.
-
-            .PARAMETER ReportedRowsCopied
-                The number of rows copied as reported by the bulk copy library (i.e. https://docs.microsoft.com/en-us/dotnet/api/system.data.sqlclient.sqlrowscopiedeventargs.rowscopied)
-
-            .PARAMETER PreviousRowsCopied
-                The previous number of rows reported by the bulk copy library.
-        #>
-            [CmdletBinding()]
-            param (
-                $ReportedRowsCopied,
-                $PreviousRowsCopied
-            )
-
-            $newRowCountAdded = 0
-
-            if ($ReportedRowsCopied -gt 0) {
-                if ($PreviousRowsCopied -ge 0) {
-                    $newRowCountAdded = $ReportedRowsCopied - $PreviousRowsCopied
-                } else {
-                    # integer wrap just changed from negative to positive
-                    $newRowCountAdded = [math]::Abs($PreviousRowsCopied) + $ReportedRowsCopied
-                }
-            } elseif ($ReportedRowsCopied -lt 0) {
-                if ($PreviousRowsCopied -ge 0) {
-                    # integer wrap just changed from positive to negative
-                    $newRowCountAdded = ([int32]::MaxValue - $PreviousRowsCopied) + [math]::Abs(([int32]::MinValue - ($ReportedRowsCopied))) + 1
-                } else {
-                    $newRowCountAdded = [math]::Abs($PreviousRowsCopied) - [math]::Abs($ReportedRowsCopied)
-                }
-            }
-
-            [pscustomobject]@{
-                NewRowCountAdded = $newRowCountAdded
-            }
-        }
     }
 
     process {
@@ -392,12 +346,12 @@ function Copy-DbaDbTableData {
                         #replacing table name
                         if ($newTableParts.Name) {
                             $rX = "(CREATE TABLE \[$([regex]::Escape($schemaNameToReplace))\]\.\[)$([regex]::Escape($tableNameToReplace))(\]\()"
-                            $tablescript = $tablescript -replace $rX, "`$1$($newTableParts.Name)`$2"
+                            $tablescript = $tablescript -replace $rX, "`${1}$($newTableParts.Name)`${2}"
                         }
                         #replacing table schema
                         if ($newTableParts.Schema) {
                             $rX = "(CREATE TABLE \[)$([regex]::Escape($schemaNameToReplace))(\]\.\[$([regex]::Escape($newTableParts.Name))\]\()"
-                            $tablescript = $tablescript -replace $rX, "`$1$($newTableParts.Schema)`$2"
+                            $tablescript = $tablescript -replace $rX, "`${1}$($newTableParts.Schema)`${2}"
                         }
 
                         if ($PSCmdlet.ShouldProcess($destServer, "Creating new table: $DestinationTable")) {
