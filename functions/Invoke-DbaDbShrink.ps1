@@ -222,16 +222,16 @@ function Invoke-DbaDbShrink {
                     $desiredFileSize = $spaceUsed + $desiredSpaceAvailable
 
                     Write-Message -Level Verbose -Message "File: $($file.Name)"
-                    Write-Message -Level Verbose -Message "Initial Size (KB): $([int]$startingSize)"
-                    Write-Message -Level Verbose -Message "Space Used (KB): $([int]$spaceUsed)"
-                    Write-Message -Level Verbose -Message "Initial Freespace (KB): $([int]$spaceAvailable)"
-                    Write-Message -Level Verbose -Message "Target Freespace (KB): $([int]$desiredSpaceAvailable)"
-                    Write-Message -Level Verbose -Message "Target FileSize (KB): $([int]$desiredFileSize)"
+                    Write-Message -Level Verbose -Message "Initial Size (KB): $([dbasize]$startingSize)"
+                    Write-Message -Level Verbose -Message "Space Used (KB): $([dbasize]$spaceUsed)"
+                    Write-Message -Level Verbose -Message "Initial Freespace (KB): $([dbasize]$spaceAvailable)"
+                    Write-Message -Level Verbose -Message "Target Freespace (KB): $([dbasize]$desiredSpaceAvailable)"
+                    Write-Message -Level Verbose -Message "Target FileSize (KB): $([dbasize]$desiredFileSize)"
 
                     if ($spaceAvailable -le $desiredSpaceAvailable) {
                         Write-Message -Level Warning -Message "File size of ($startingSize) is less than or equal to the desired outcome ($desiredFileSize) for $($file.Name)"
                     } else {
-                        if ($Pscmdlet.ShouldProcess("$db on $instance", "Shrinking from $([int]$startingSize)KB to $([int]$desiredFileSize)KB")) {
+                        if ($Pscmdlet.ShouldProcess("$db on $instance", "Shrinking from $([dbasize]$startingSize)KB to $([dbasize]$desiredFileSize)KB")) {
                             if ($server.VersionMajor -gt 8 -and $ExcludeIndexStats -eq $false) {
                                 Write-Message -Level Verbose -Message "Getting starting average fragmentation"
                                 $dataRow = $server.Query($sql, $db.name)
@@ -246,12 +246,12 @@ function Invoke-DbaDbShrink {
                                 Write-Message -Level Verbose -Message "Beginning shrink of files"
 
                                 $shrinkGap = ($startingSize - $desiredFileSize)
-                                Write-Message -Level Verbose -Message "ShrinkGap: $([int]$shrinkGap) KB"
+                                Write-Message -Level Verbose -Message "ShrinkGap: $([dbasize]$shrinkGap) KB"
                                 Write-Message -Level Verbose -Message "Step Size: $($stepSizeKB) KB"
 
                                 if ($stepSizeKB -and ($shrinkGap -ge $stepSizeKB)) {
-                                    for ($i = 1; $i -le [int](($shrinkGap) / $stepSizeKB); $i++) {
-                                        Write-Message -Level Verbose -Message "Step: $i / $([int](($shrinkGap) / $stepSizeKB))"
+                                    for ($i = 1; $i -le [dbasize](($shrinkGap) / $stepSizeKB); $i++) {
+                                        Write-Message -Level Verbose -Message "Step: $i / $([dbasize](($shrinkGap) / $stepSizeKB))"
                                         $shrinkSize = $startingSize - ($stepSizeKB * $i)
                                         if ($shrinkSize -lt $desiredFileSize) {
                                             $shrinkSize = $desiredFileSize
@@ -278,7 +278,7 @@ function Invoke-DbaDbShrink {
                             $end = Get-Date
                             $finalFileSize = $file.Size
                             $finalSpaceAvailable = ($file.Size - $file.UsedSpace)
-                            Write-Message -Level Verbose -Message "Final file size: $([int]$finalFileSize) KB"
+                            Write-Message -Level Verbose -Message "Final file size: $([dbasize]$finalFileSize) KB"
                             Write-Message -Level Verbose -Message "Final file space available: $($finalSpaceAvailable) KB"
 
                             if ($server.VersionMajor -gt 8 -and $ExcludeIndexStats -eq $false -and $success -and $FileType -ne 'Log') {
