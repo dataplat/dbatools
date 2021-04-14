@@ -70,7 +70,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             $result.Table | Should -Be SuperSmall
         }
 
-        It "Catches the scenario where the header is not properly passed causing param errors" {
+        It "Catches the scenario where the header is not properly parsed causing param errors" {
             # create the table using AutoCreate
             $server = Connect-DbaInstance $script:instance1 -Database tempdb
             $null = Import-DbaCsv -Path $CommaSeparatedWithHeader -SqlInstance $server -Database tempdb -AutoCreateTable
