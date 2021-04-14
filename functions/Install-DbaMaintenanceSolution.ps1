@@ -54,7 +54,7 @@ function Install-DbaMaintenanceSolution {
         If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
     .PARAMETER InstallParallel
-        If this switch is enabled, the Queue and QueueDatabase tables are created.
+        If this switch is enabled, the Queue and QueueDatabase tables are created, for use when  @DatabasesInParallel = 'Y' are set in the jobs.
         
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -124,6 +124,12 @@ function Install-DbaMaintenanceSolution {
         - 'CommandLog Cleanup'
         - 'DatabaseIntegrityCheck - USER_DATABASES'
         - 'DatabaseBackup - USER_DATABASES - DIFF'
+
+    .EXAMPLE
+        PS C:\> Install-DbaMaintenanceSolution -SqlInstance RES14224 -Database DBA -InstallParallel
+
+        This will create the Queue and QueueDatabase tables for uses when manually changing jobs to use the @DatabasesInParallel = 'Y' flag
+
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Medium")]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseSingularNouns", "", Justification = "Internal functions are ignored")]
