@@ -13,18 +13,14 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     }
 }
 
-<#
-    Integration test should appear below and are custom to the command you are writing.
-    Read https://github.com/sqlcollaborative/dbatools/blob/development/contributing.md#tests
-    for more guidence.
-#>
-
 Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     AfterAll {
         Invoke-DbaQuery -SqlInstance $script:instance1, $script:instance2 -Database tempdb -Query "drop table SuperSmall"
     }
 
     $path = "$script:appveyorlabrepo\csv\SuperSmall.csv"
+    $CommaSeparatedWithHeader = "$script:appveyorlabrepo\csv\CommaSeparatedWithHeader.csv"
+
 
     Context "Works as expected" {
         $results = $path | Import-DbaCsv -SqlInstance $script:instance1 -Database tempdb -Delimiter `t -NotifyAfter 50000 -WarningVariable warn
@@ -72,6 +68,18 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             $result.RowsCopied | Should -Be 999
             $result.Database | Should -Be tempdb
             $result.Table | Should -Be SuperSmall
+        }
+
+        It "Catches the scenario where the header is not properly passed causing param errors" {
+            # create the table using AutoCreate
+            $server = Connect-DbaInstance $script:instance1 -Database tempdb
+            $null = Import-DbaCsv -Path $CommaSeparatedWithHeader -SqlInstance $server -Database tempdb -AutoCreateTable
+
+            # reload table without AutoCreate parameter to recreate bug #6553
+            $result = Import-DbaCsv -Path $CommaSeparatedWithHeader -SqlInstance $server -Database tempdb -Truncate
+            $result.RowsCopied | Should -Be 1
+            $result.Database | Should -Be tempdb
+            $result.Table | Should -Be CommaSeparatedWithHeader
         }
     }
 }
