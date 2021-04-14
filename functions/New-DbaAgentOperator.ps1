@@ -55,7 +55,7 @@ function New-DbaAgentOperator {
         If this switch is enabled, this operator will be your failsafe operator and replace the one that existed before.
 
     .PARAMETER FailsafeNotificationMethod
-        Deinfes the notifcation method for notifiy the failsafe oeprator.  Value must be NofityMail or NotifyPager.
+        Defines the notification method for the failsafe oeprator.  Value must be NotifyMail or NotifyPager.
         The default is NotifyEmail.
 
     .PARAMETER WhatIf
@@ -66,6 +66,9 @@ function New-DbaAgentOperator {
 
     .PARAMETER Force
         If this switch is enabled, the Operator will be dropped and recreated on instance.
+
+    .PARAMETER InputObject
+        SMO Server Objects (pipeline input from Connect-DbaInstance)
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -89,10 +92,13 @@ function New-DbaAgentOperator {
         This sets a new operator named DBA with the above email address with default values to alerts everyday
         for all hours of the day.
 
+    .EXAMPLE
+        PS:\> New-DbaAgentOperator -SqlInstance sql01 -Operator DBA -EmailAddress operator@operator.com -NetSendAddress dbauser1 -PagerAddress dbauser1@pager.dbatools.io -PagerDay Everyday -SaturdayStartTime 070000 -SaturdayEndTime 180000 -SundayStartTime 080000 -SundayEndTime 170000 -WeekdayStartTime 060000 -WeekdayEndTime 190000
+
+        Creates a new operator named DBA on the sql01 instance with email address operator@operator.com, net send address of dbauser1, pager address of dbauser1@pager.dbatools.io, page day as every day, Saturday start time of 7am, Saturday end time of 6pm, Sunday start time of 8am, Sunday end time of 5pm, Weekday start time of 6am, and Weekday end time of 7pm.
     #>
     [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess, ConfirmImpact = "Medium")]
     param (
-        [parameter(Mandatory)]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [parameter(Mandatory)]
@@ -111,6 +117,8 @@ function New-DbaAgentOperator {
         [switch]$IsFailsafeOperator = $false,
         [string]$FailsafeNotificationMethod = "NotifyEmail",
         [switch]$Force = $false,
+        [parameter(ValueFromPipeline)]
+        [Microsoft.SqlServer.Management.Smo.Server[]]$InputObject,
         [switch]$EnableException
     )
 
@@ -262,17 +270,19 @@ function New-DbaAgentOperator {
 
         foreach ($instance in $SqlInstance) {
             try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
+                $InputObject += Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             } catch {
                 Stop-Function -Message "Failed" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
+        }
 
+        foreach ($server in $InputObject) {
             $failsafe = $server.JobServer.AlertSystem | Select-Object FailsafeOperator
 
             if ((Get-DbaAgentOperator -SqlInstance $server -Operator $Operator).Count -ne 0) {
                 if ($force -eq $false) {
-                    if ($Pscmdlet.ShouldProcess($instance, "Operator $operator exists at on $instance. Use -Force to drop and and create it.")) {
-                        Write-Message -Level Verbose -Message "Operator $operator exists at $instance. Use -Force to drop and create."
+                    if ($Pscmdlet.ShouldProcess($server, "Operator $operator exists at $server. Use -Force to drop and and create it.")) {
+                        Write-Message -Level Verbose -Message "Operator $operator exists at $server. Use -Force to drop and create."
                     }
                     continue
                 } else {
@@ -281,33 +291,62 @@ function New-DbaAgentOperator {
                         continue
                     }
 
-                    if ($Pscmdlet.ShouldProcess($instance, "Dropping operator $operator")) {
+                    if ($Pscmdlet.ShouldProcess($server, "Dropping operator $operator")) {
                         try {
                             Write-Message -Level Verbose -Message "Dropping Operator $operator"
                             $server.JobServer.Operators[$operator].Drop()
                         } catch {
-                            Stop-Function -Message "Issue dropping operator" -Category InvalidOperation -ErrorRecord $_ -Target $instance -Continue
+                            Stop-Function -Message "Issue dropping operator" -Category InvalidOperation -ErrorRecord $_ -Target $server -Continue
                         }
                     }
                 }
             }
 
-            if ($Pscmdlet.ShouldProcess($instance, "Creating Operator $operator")) {
+            if ($Pscmdlet.ShouldProcess($server, "Creating Operator $operator")) {
                 try {
                     $JobServer = $server.JobServer
                     $operators = $JobServer.Operators
                     $operators = New-Object Microsoft.SqlServer.Management.Smo.Agent.Operator( $JobServer, $Operator)
 
-                    $operators.EmailAddress = $EmailAddress
-                    $operators.NetSendAddress = $NetSendAddress
-                    $operators.PagerAddress = $PagerAddress
-                    $operators.PagerDays = $Interval
-                    $operators.SaturdayPagerStartTime = $SaturdayStartTime
-                    $operators.SaturdayPagerEndTime = $SaturdayEndTime
-                    $operators.SundayPagerStartTime = $SundayStartTime
-                    $operators.SundayPagerEndTime = $SundayEndTime
-                    $operators.WeekdayPagerStartTime = $WeekdayStartTime
-                    $operators.WeekdayPagerEndTime = $WeekdayEndTime
+                    if ($EmailAddress) {
+                        $operators.EmailAddress = $EmailAddress
+                    }
+
+                    if ($NetSendAddress) {
+                        $operators.NetSendAddress = $NetSendAddress
+                    }
+
+                    if ($PagerAddress) {
+                        $operators.PagerAddress = $PagerAddress
+                    }
+
+                    if ($Interval) {
+                        $operators.PagerDays = $Interval
+                    }
+
+                    if ($SaturdayStartTime) {
+                        $operators.SaturdayPagerStartTime = $SaturdayStartTime
+                    }
+
+                    if ($SaturdayEndTime) {
+                        $operators.SaturdayPagerEndTime = $SaturdayEndTime
+                    }
+
+                    if ($SundayStartTime) {
+                        $operators.SundayPagerStartTime = $SundayStartTime
+                    }
+
+                    if ($SundayEndTime) {
+                        $operators.SundayPagerEndTime = $SundayEndTime
+                    }
+
+                    if ($WeekdayStartTime) {
+                        $operators.WeekdayPagerStartTime = $WeekdayStartTime
+                    }
+
+                    if ($WeekdayEndTime) {
+                        $operators.WeekdayPagerEndTime = $WeekdayEndTime
+                    }
 
                     $operators.Create()
 
@@ -320,7 +359,7 @@ function New-DbaAgentOperator {
                     Write-Message -Level Verbose -Message "Creating Operator $operator"
                     Get-DbaAgentOperator -SqlInstance $server -Operator $Operator
                 } catch {
-                    Stop-Function -Message "Issue creating operator." -Category InvalidOperation -ErrorRecord $_ -Target $instance
+                    Stop-Function -Message "Issue creating operator." -Category InvalidOperation -ErrorRecord $_ -Target $server
                 }
             }
         }
