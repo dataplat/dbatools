@@ -1090,13 +1090,13 @@
     },
     {
         "Name":  "Add-DbaServerRoleMember",
-        "Description":  "The Add-DbaServerRoleMember adds users in a database to a database role or roles for each instance(s) of SQL Server.",
+        "Description":  "Adds a login to a server-level role(s) for each instance(s) of SQL Server.",
         "Tags":  [
                      "Role",
                      "Security",
                      "Login"
                  ],
-        "Synopsis":  "Adds a Database User to a database role for each instance(s) of SQL Server.",
+        "Synopsis":  "Adds a login to a server-level role(s) for each instance(s) of SQL Server.",
         "Alias":  "",
         "Author":  "Shawn Melton (@wsmelton)",
         "CommandName":  "Add-DbaServerRoleMember",
@@ -17803,6 +17803,106 @@
                        ]
                    ],
         "Syntax":  "Get-DbaDbSchema [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cString[]\u003e] [[-Schema] \u003cString[]\u003e] [[-SchemaOwner] \u003cString[]\u003e] [-IncludeSystemDatabases] [-IncludeSystemSchemas] [[-InputObject] \u003cDatabase[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+    },
+    {
+        "Name":  "Get-DbaDbSequence",
+        "Description":  "Finds a sequence in the database(s) specified.",
+        "Tags":  [
+                     "Data",
+                     "Sequence",
+                     "Table"
+                 ],
+        "Synopsis":  "Finds a sequence.",
+        "Alias":  "",
+        "Author":  "Adam Lancaster https://github.com/lancasteradam",
+        "CommandName":  "Get-DbaDbSequence",
+        "Availability":  "Windows, Linux, macOS",
+        "Links":  "https://dbatools.io/Get-DbaDbSequence",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaDbSequence -SqlInstance sqldev01 -Database TestDB -Name TestSequence\nFinds the sequence TestSequence in the TestDB database on the sqldev01 instance.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaDatabase -SqlInstance sqldev01 -Database TestDB | Get-DbaDbSequence -Name TestSequence -Schema TestSchema\nUsing a pipeline this command finds the sequence named TestSchema.TestSequence in the TestDB database on the sqldev01 instance.",
+        "Params":  [
+                       [
+                           "SqlInstance",
+                           "The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function\r\nto be executed against multiple SQL Server instances.",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "SqlCredential",
+                           "Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).\nWindows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.\nFor MFA support, please use Connect-DbaInstance.",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "Database",
+                           "The target database(s).",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "Name",
+                           "The name of the sequence.",
+                           "",
+                           true,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "Schema",
+                           "The name of the schema for the sequence. The default is dbo.",
+                           "",
+                           false,
+                           "false",
+                           "dbo",
+                           ""
+                       ],
+                       [
+                           "InputObject",
+                           "Allows piping from Get-DbaDatabase.",
+                           "",
+                           false,
+                           "true (ByValue)",
+                           "",
+                           ""
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "",
+                           false,
+                           "false",
+                           "False",
+                           ""
+                       ],
+                       [
+                           "WhatIf",
+                           "Shows what would happen if the command were to run. No actions are actually performed.",
+                           "wi",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "Confirm",
+                           "Prompts you for confirmation before executing any changing operations within the command.",
+                           "cf",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ]
+                   ],
+        "Syntax":  "Get-DbaDbSequence [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cString[]\u003e] [-Name] \u003cString\u003e [[-Schema] \u003cString\u003e] [[-InputObject] \u003cDatabase[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Get-DbaDbSharePoint",
@@ -37643,6 +37743,169 @@
         "Syntax":  "New-DbaDbSchema [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cString[]\u003e] [[-Schema] \u003cString[]\u003e] [[-SchemaOwner] \u003cString\u003e] [[-InputObject] \u003cDatabase[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
+        "Name":  "New-DbaDbSequence",
+        "Description":  "Creates a sequence in the database(s) specified. SQL Server 2012 and higher are supported.",
+        "Tags":  [
+                     "Data",
+                     "Sequence",
+                     "Table"
+                 ],
+        "Synopsis":  "Creates a sequence.",
+        "Alias":  "",
+        "Author":  "Adam Lancaster https://github.com/lancasteradam",
+        "CommandName":  "New-DbaDbSequence",
+        "Availability":  "Windows, Linux, macOS",
+        "Links":  "https://dbatools.io/New-DbaDbSequence",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eNew-DbaDbSequence -SqlInstance sqldev01 -Database TestDB -Name TestSequence -StartWith 10000 -IncrementBy 10\nCreates a new sequence TestSequence in the TestDB database on the sqldev01 instance. The sequence will start with 10000 and increment by 10.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eNew-DbaDbSequence -SqlInstance sqldev01 -Database TestDB -Name TestSequence -Cycle\nCreates a new sequence TestSequence in the TestDB database on the sqldev01 instance. The sequence will cycle the numbers.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaDatabase -SqlInstance sqldev01 -Database TestDB | New-DbaDbSequence -Name TestSequence -Schema TestSchema -IntegerType bigint\nUsing a pipeline this command creates a new bigint sequence named TestSchema.TestSequence in the TestDB database on the sqldev01 instance.",
+        "Params":  [
+                       [
+                           "SqlInstance",
+                           "The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function\r\nto be executed against multiple SQL Server instances.",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "SqlCredential",
+                           "Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).\nWindows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.\nFor MFA support, please use Connect-DbaInstance.",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "Database",
+                           "The target database(s).",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "Name",
+                           "The name of the new sequence",
+                           "",
+                           true,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "Schema",
+                           "The name of the schema for the sequence. The default is dbo.",
+                           "",
+                           false,
+                           "false",
+                           "dbo",
+                           ""
+                       ],
+                       [
+                           "IntegerType",
+                           "The integer type for the sequence. The default is bigint. User defined integer types can be used.",
+                           "",
+                           false,
+                           "false",
+                           "bigint",
+                           ""
+                       ],
+                       [
+                           "StartWith",
+                           "The first value for the sequence to start with. The default is 1.",
+                           "",
+                           false,
+                           "false",
+                           "1",
+                           ""
+                       ],
+                       [
+                           "IncrementBy",
+                           "The value to increment by. The default is 1.",
+                           "",
+                           false,
+                           "false",
+                           "1",
+                           ""
+                       ],
+                       [
+                           "MinValue",
+                           "The minimum bound for the sequence.",
+                           "",
+                           false,
+                           "false",
+                           "0",
+                           ""
+                       ],
+                       [
+                           "MaxValue",
+                           "The maximum bound for the sequence.",
+                           "",
+                           false,
+                           "false",
+                           "0",
+                           ""
+                       ],
+                       [
+                           "Cycle",
+                           "Switch parameter that indicates if the sequence should cycle the values",
+                           "",
+                           false,
+                           "false",
+                           "False",
+                           ""
+                       ],
+                       [
+                           "CacheSize",
+                           "The integer size of the cache. To specify NO CACHE for a sequence use -CacheSize 0. As noted in the Microsoft documentation if the cache size is not specified the Database Engine will select a size.",
+                           "",
+                           false,
+                           "false",
+                           "0",
+                           ""
+                       ],
+                       [
+                           "InputObject",
+                           "Allows piping from Get-DbaDatabase.",
+                           "",
+                           false,
+                           "true (ByValue)",
+                           "",
+                           ""
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "",
+                           false,
+                           "false",
+                           "False",
+                           ""
+                       ],
+                       [
+                           "WhatIf",
+                           "Shows what would happen if the command were to run. No actions are actually performed.",
+                           "wi",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "Confirm",
+                           "Prompts you for confirmation before executing any changing operations within the command.",
+                           "cf",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ]
+                   ],
+        "Syntax":  "New-DbaDbSequence [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cString[]\u003e] [-Name] \u003cString\u003e [[-Schema] \u003cString\u003e] [[-IntegerType] \u003cString\u003e] [[-StartWith] \u003cInt64\u003e] [[-IncrementBy] \u003cInt64\u003e] [[-MinValue] \u003cInt64\u003e] [[-MaxValue] \u003cInt64\u003e] [-Cycle] [[-CacheSize] \u003cInt32\u003e] [[-InputObject] \u003cDatabase[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+    },
+    {
         "Name":  "New-DbaDbSnapshot",
         "Description":  "Creates database snapshots without hassles",
         "Tags":  [
@@ -43462,6 +43725,106 @@
         "Syntax":  "Remove-DbaDbSchema [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cString[]\u003e] [-Schema] \u003cString[]\u003e [[-InputObject] \u003cDatabase[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
+        "Name":  "Remove-DbaDbSequence",
+        "Description":  "Removes a sequence in the database(s) specified.",
+        "Tags":  [
+                     "Data",
+                     "Sequence",
+                     "Table"
+                 ],
+        "Synopsis":  "Removes a sequence.",
+        "Alias":  "",
+        "Author":  "Adam Lancaster https://github.com/lancasteradam",
+        "CommandName":  "Remove-DbaDbSequence",
+        "Availability":  "Windows, Linux, macOS",
+        "Links":  "https://dbatools.io/Remove-DbaDbSequence",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eRemove-DbaDbSequence -SqlInstance sqldev01 -Database TestDB -Name TestSequence\nRemoves the sequence TestSequence in the TestDB database on the sqldev01 instance.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaDatabase -SqlInstance sqldev01 -Database TestDB | Remove-DbaDbSequence -Name TestSequence -Schema TestSchema\nUsing a pipeline this command Removes the sequence named TestSchema.TestSequence in the TestDB database on the sqldev01 instance.",
+        "Params":  [
+                       [
+                           "SqlInstance",
+                           "The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function\r\nto be executed against multiple SQL Server instances.",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "SqlCredential",
+                           "Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).\nWindows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.\nFor MFA support, please use Connect-DbaInstance.",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "Database",
+                           "The target database(s).",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "Name",
+                           "The name of the sequence.",
+                           "",
+                           true,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "Schema",
+                           "The name of the schema for the sequence. The default is dbo.",
+                           "",
+                           false,
+                           "false",
+                           "dbo",
+                           ""
+                       ],
+                       [
+                           "InputObject",
+                           "Allows piping from Get-DbaDatabase.",
+                           "",
+                           false,
+                           "true (ByValue)",
+                           "",
+                           ""
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "",
+                           false,
+                           "false",
+                           "False",
+                           ""
+                       ],
+                       [
+                           "WhatIf",
+                           "Shows what would happen if the command were to run. No actions are actually performed.",
+                           "wi",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "Confirm",
+                           "Prompts you for confirmation before executing any changing operations within the command.",
+                           "cf",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ]
+                   ],
+        "Syntax":  "Remove-DbaDbSequence [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cString[]\u003e] [-Name] \u003cString\u003e [[-Schema] \u003cString\u003e] [[-InputObject] \u003cDatabase[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+    },
+    {
         "Name":  "Remove-DbaDbSnapshot",
         "Description":  "Removes (drops) database snapshots from the server",
         "Tags":  [
@@ -46812,6 +47175,106 @@
         "Syntax":  "Select-DbaBackupInformation [-BackupHistory] \u003cObject\u003e [[-RestoreTime] \u003cDateTime\u003e] [-IgnoreLogs] [-IgnoreDiffs] [[-DatabaseName] \u003cString[]\u003e] [[-ServerName] \u003cString[]\u003e] [[-ContinuePoints] \u003cObject\u003e] [[-LastRestoreType] \u003cObject\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
+        "Name":  "Select-DbaDbSequenceNextValue",
+        "Description":  "Selects the next value from a sequence.",
+        "Tags":  [
+                     "Data",
+                     "Sequence",
+                     "Table"
+                 ],
+        "Synopsis":  "Selects the next value from a sequence.",
+        "Alias":  "",
+        "Author":  "Adam Lancaster https://github.com/lancasteradam",
+        "CommandName":  "Select-DbaDbSequenceNextValue",
+        "Availability":  "Windows, Linux, macOS",
+        "Links":  "https://dbatools.io/Select-DbaDbSequenceNextValue",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eSelect-DbaDbSequenceNextValue -SqlInstance sqldev01 -Database TestDB -Name TestSequence\nSelects the next value from the sequence TestSequence in the TestDB database on the sqldev01 instance.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaDatabase -SqlInstance sqldev01 -Database TestDB | Select-DbaDbSequenceNextValue -Name TestSequence -Schema TestSchema\nUsing a pipeline this command selects the next value from the sequence TestSchema.TestSequence in the TestDB database on the sqldev01 instance.",
+        "Params":  [
+                       [
+                           "SqlInstance",
+                           "The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function\r\nto be executed against multiple SQL Server instances.",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "SqlCredential",
+                           "Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).\nWindows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.\nFor MFA support, please use Connect-DbaInstance.",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "Database",
+                           "The target database.",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "Name",
+                           "The name of the sequence.",
+                           "",
+                           true,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "Schema",
+                           "The name of the schema for the sequence. The default is dbo.",
+                           "",
+                           false,
+                           "false",
+                           "dbo",
+                           ""
+                       ],
+                       [
+                           "InputObject",
+                           "Allows piping from Get-DbaDatabase.",
+                           "",
+                           false,
+                           "true (ByValue)",
+                           "",
+                           ""
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "",
+                           false,
+                           "false",
+                           "False",
+                           ""
+                       ],
+                       [
+                           "WhatIf",
+                           "Shows what would happen if the command were to run. No actions are actually performed.",
+                           "wi",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "Confirm",
+                           "Prompts you for confirmation before executing any changing operations within the command.",
+                           "cf",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ]
+                   ],
+        "Syntax":  "Select-DbaDbSequenceNextValue [[-SqlInstance] \u003cDbaInstanceParameter\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cString\u003e] [-Name] \u003cString\u003e [[-Schema] \u003cString\u003e] [[-InputObject] \u003cDatabase\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+    },
+    {
         "Name":  "Select-DbaObject",
         "Description":  null,
         "Synopsis":  "\r\nSelect-DbaObject [[-Property] \u003cDbaSelectParameter[]\u003e] [[-Alias] \u003cSelectAliasParameter[]\u003e] [[-ScriptProperty] \u003cSelectScriptPropertyParameter[]\u003e] [[-ScriptMethod] \u003cSelectScriptMethodParameter[]\u003e] [-InputObject \u003cpsobject\u003e] [-ExcludeProperty \u003cstring[]\u003e] [-ExpandProperty \u003cstring\u003e] [-Unique] [-Last \u003cint\u003e] [-First \u003cint\u003e] [-Skip \u003cint\u003e] [-Wait] [-ShowProperty \u003cstring[]\u003e] [-ShowExcludeProperty \u003cstring[]\u003e] [-TypeName \u003cstring\u003e] [-KeepInputObject] [\u003cCommonParameters\u003e]\r\n\r\nSelect-DbaObject [[-Property] \u003cDbaSelectParameter[]\u003e] [[-Alias] \u003cSelectAliasParameter[]\u003e] [[-ScriptProperty] \u003cSelectScriptPropertyParameter[]\u003e] [[-ScriptMethod] \u003cSelectScriptMethodParameter[]\u003e] [-InputObject \u003cpsobject\u003e] [-ExcludeProperty \u003cstring[]\u003e] [-ExpandProperty \u003cstring\u003e] [-Unique] [-SkipLast \u003cint\u003e] [-ShowProperty \u003cstring[]\u003e] [-ShowExcludeProperty \u003cstring[]\u003e] [-TypeName \u003cstring\u003e] [-KeepInputObject] [\u003cCommonParameters\u003e]\r\n\r\nSelect-DbaObject [-InputObject \u003cpsobject\u003e] [-Unique] [-Wait] [-Index \u003cint[]\u003e] [-ShowProperty \u003cstring[]\u003e] [-ShowExcludeProperty \u003cstring[]\u003e] [-TypeName \u003cstring\u003e] [-KeepInputObject] [\u003cCommonParameters\u003e]\r\n",
@@ -49922,6 +50385,160 @@
         "Syntax":  "Set-DbaDbSchema [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cString[]\u003e] [-Schema] \u003cString[]\u003e [-SchemaOwner] \u003cString\u003e [[-InputObject] \u003cDatabase[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
+        "Name":  "Set-DbaDbSequence",
+        "Description":  "Modifies a sequence in the database(s) specified.",
+        "Tags":  [
+                     "Data",
+                     "Sequence",
+                     "Table"
+                 ],
+        "Synopsis":  "Modifies a sequence.",
+        "Alias":  "",
+        "Author":  "Adam Lancaster https://github.com/lancasteradam",
+        "CommandName":  "Set-DbaDbSequence",
+        "Availability":  "Windows, Linux, macOS",
+        "Links":  "https://dbatools.io/Set-DbaDbSequence",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eSet-DbaDbSequence -SqlInstance sqldev01 -Database TestDB -Name TestSequence -RestartWith 10000 -IncrementBy 10\nModifies the sequence TestSequence in the TestDB database on the sqldev01 instance. The sequence will restart with 10000 and increment by 10.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaDatabase -SqlInstance sqldev01 -Database TestDB | Set-DbaDbSequence -Name TestSequence -Schema TestSchema -Cycle\nUsing a pipeline this command modifies the sequence named TestSchema.TestSequence in the TestDB database on the sqldev01 instance. The sequence will now cycle the sequence values.",
+        "Params":  [
+                       [
+                           "SqlInstance",
+                           "The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function\r\nto be executed against multiple SQL Server instances.",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "SqlCredential",
+                           "Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).\nWindows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.\nFor MFA support, please use Connect-DbaInstance.",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "Database",
+                           "The target database(s).",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "Name",
+                           "The name of the new sequence",
+                           "",
+                           true,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "Schema",
+                           "The name of the schema for the sequence. The default is dbo.",
+                           "",
+                           false,
+                           "false",
+                           "dbo",
+                           ""
+                       ],
+                       [
+                           "RestartWith",
+                           "The first value for the sequence to restart with.",
+                           "",
+                           false,
+                           "false",
+                           "0",
+                           ""
+                       ],
+                       [
+                           "IncrementBy",
+                           "The value to increment by.",
+                           "",
+                           false,
+                           "false",
+                           "0",
+                           ""
+                       ],
+                       [
+                           "MinValue",
+                           "The minimum bound for the sequence.",
+                           "",
+                           false,
+                           "false",
+                           "0",
+                           ""
+                       ],
+                       [
+                           "MaxValue",
+                           "The maximum bound for the sequence.",
+                           "",
+                           false,
+                           "false",
+                           "0",
+                           ""
+                       ],
+                       [
+                           "Cycle",
+                           "Switch that indicates if the sequence should cycle the values",
+                           "",
+                           false,
+                           "false",
+                           "False",
+                           ""
+                       ],
+                       [
+                           "CacheSize",
+                           "The integer size of the cache. To specify NO CACHE for a sequence use -CacheSize 0. As noted in the Microsoft documentation if the cache size is not specified the Database Engine will select a size.",
+                           "",
+                           false,
+                           "false",
+                           "0",
+                           ""
+                       ],
+                       [
+                           "InputObject",
+                           "Allows piping from Get-DbaDatabase.",
+                           "",
+                           false,
+                           "true (ByValue)",
+                           "",
+                           ""
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "",
+                           false,
+                           "false",
+                           "False",
+                           ""
+                       ],
+                       [
+                           "WhatIf",
+                           "Shows what would happen if the command were to run. No actions are actually performed.",
+                           "wi",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "Confirm",
+                           "Prompts you for confirmation before executing any changing operations within the command.",
+                           "cf",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ]
+                   ],
+        "Syntax":  "Set-DbaDbSequence [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cString[]\u003e] [-Name] \u003cString\u003e [[-Schema] \u003cString\u003e] [[-RestartWith] \u003cInt64\u003e] [[-IncrementBy] \u003cInt64\u003e] [[-MinValue] \u003cInt64\u003e] [[-MaxValue] \u003cInt64\u003e] [-Cycle] [[-CacheSize] \u003cInt32\u003e] [[-InputObject] \u003cDatabase[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+    },
+    {
         "Name":  "Set-DbaDbState",
         "Description":  "Sets some common \"states\" on databases:\n- \"RW\" options (ReadOnly, ReadWrite)\n- \"Status\" options (Online, Offline, Emergency, plus a special \"Detached\")\n- \"Access\" options (SingleUser, RestrictedUser, MultiUser)\n\nReturns an object with SqlInstance, Database, RW, Status, Access, Notes\n\nNotes gets filled when something went wrong setting the state",
         "Tags":  [
@@ -50436,7 +51053,7 @@
                        ],
                        [
                            "MustChange",
-                           "Does the user need to change his/her password. This will only be used in conjunction with the -SecurePassword parameter.\r\nThe default is false.",
+                           "Does the user need to change his/her password. This will only be used in conjunction with the -SecurePassword parameter.\r\nIt is required that the login have both PasswordPolicyEnforced (check_policy) and PasswordExpirationEnabled (check_expiration) enabled for the login. See the Microsoft documentation for ALTER LOGIN \r\nfor more details.\r\nThe default is false.",
                            "",
                            false,
                            "false",
@@ -51562,7 +52179,7 @@
                        ],
                        [
                            "DataPath",
-                           "Specifies the filesystem path in which to create the tempdb data files. If not specified, current tempdb location will be used.",
+                           "Specifies the filesystem path(s) in which to create the tempdb data files. If not specified, current tempdb location will be used.",
                            "",
                            false,
                            "false",
@@ -51633,7 +52250,7 @@
                            ""
                        ]
                    ],
-        "Syntax":  "Set-DbaTempDbConfig [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-DataFileCount] \u003cInt32\u003e] [-DataFileSize] \u003cInt32\u003e [[-LogFileSize] \u003cInt32\u003e] [[-DataFileGrowth] \u003cInt32\u003e] [[-LogFileGrowth] \u003cInt32\u003e] [[-DataPath] \u003cString\u003e] [[-LogPath] \u003cString\u003e] [[-OutFile] \u003cString\u003e] [-OutputScriptOnly] [-DisableGrowth] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Set-DbaTempDbConfig [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-DataFileCount] \u003cInt32\u003e] [-DataFileSize] \u003cInt32\u003e [[-LogFileSize] \u003cInt32\u003e] [[-DataFileGrowth] \u003cInt32\u003e] [[-LogFileGrowth] \u003cInt32\u003e] [[-DataPath] \u003cString[]\u003e] [[-LogPath] \u003cString\u003e] [[-OutFile] \u003cString\u003e] [-OutputScriptOnly] [-DisableGrowth] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Set-DbatoolsConfig",
@@ -57405,7 +58022,7 @@
                        ],
                        [
                            "BatchSize",
-                           "The BatchSize for the import defaults to 5000.",
+                           "The BatchSize for the import defaults to 50000.",
                            "",
                            false,
                            "false",
@@ -57414,7 +58031,7 @@
                        ],
                        [
                            "NotifyAfter",
-                           "Sets the option to show the notification after so many rows of import.",
+                           "Sets the option to show the notification after so many rows of import. Defaults to 5000 rows.",
                            "",
                            false,
                            "false",

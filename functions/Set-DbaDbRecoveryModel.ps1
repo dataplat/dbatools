@@ -4,7 +4,7 @@ function Set-DbaDbRecoveryModel {
         Set-DbaDbRecoveryModel sets the Recovery Model.
 
     .DESCRIPTION
-        Set-DbaDbRecoveryModel sets the Recovery Model for user databases.
+        Set-DbaDbRecoveryModel sets the Recovery Model for all databases except TEMPDB.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.
@@ -78,7 +78,7 @@ function Set-DbaDbRecoveryModel {
     .EXAMPLE
         PS C:\> Set-DbaDbRecoveryModel -SqlInstance sql2014 -RecoveryModel Simple -AllDatabases -Confirm:$false
 
-        Sets the Recovery Model to Simple for ALL uses databases MODEL database on SQL Server instance sql2014. Runs without asking for confirmation.
+        Sets the Recovery Model to Simple for ALL user and system databases (except TEMPDB) on SQL Server instance sql2014. Runs without asking for confirmation.
 
     .EXAMPLE
         PS C:\> Set-DbaDbRecoveryModel -SqlInstance sql2014 -RecoveryModel BulkLogged -Database TestDB1, TestDB2 -Confirm:$false -Verbose
