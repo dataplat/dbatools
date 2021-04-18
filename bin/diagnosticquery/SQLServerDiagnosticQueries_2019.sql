@@ -1,7 +1,7 @@
 
 -- SQL Server 2019 Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: April 1, 2021
+-- Last Modified: April 16, 2021
 -- https://glennsqlperformance.com/ 
 -- https://sqlserverperformance.wordpress.com/
 -- YouTube: https://bit.ly/2PkoAM1 
@@ -77,6 +77,8 @@ SELECT @@SERVERNAME AS [Server Name], @@VERSION AS [SQL Server and OS Version In
 -- 15.0.4073.23		CU8									10/1/2020		https://support.microsoft.com/en-in/help/4577194/cumulative-update-8-for-sql-server-2019
 -- 15.0.4083.2		CU8 Security Update				    1/12/2021		https://support.microsoft.com/en-us/help/4583459/kb4583459-security-update-for-sql-server-2019-cu8
 -- 15.0.4102.2		CU9									2/11/2021		https://support.microsoft.com/en-in/help/5000642/cumulative-update-9-for-sql-server-2019
+-- 15.0.4123.1		CU10								 4/6/2021       https://support.microsoft.com/en-us/topic/kb5000642-cumulative-update-9-for-sql-server-2019-97ad5c3e-e002-4b6d-b566-698bf70ca44a
+
 
 -- Performance and Stability Fixes in SQL Server 2019 CU Builds
 -- https://bit.ly/3712NQQ
@@ -313,12 +315,13 @@ ORDER BY name OPTION (RECOMPILE);
 
 -- Host information (Query 11) (Host Info)
 SELECT host_platform, host_distribution, host_release, 
-       host_service_pack_level, host_sku, os_language_version 
+       host_service_pack_level, host_sku, os_language_version,
+	   host_architecture
 FROM sys.dm_os_host_info WITH (NOLOCK) OPTION (RECOMPILE); 
 ------
 
 -- host_release codes (only valid for Windows)
--- 10.0 is either Windows 10 or Windows Server 2016
+-- 10.0 is either Windows 10, Windows Server 2016 or Windows Server 2019
 -- 6.3 is either Windows 8.1 or Windows Server 2012 R2 
 -- 6.2 is either Windows 8 or Windows Server 2012
 
