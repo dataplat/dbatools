@@ -27789,7 +27789,7 @@
         "CommandName":  "Install-DbaMaintenanceSolution",
         "Availability":  "Windows only",
         "Links":  "https://dbatools.io/Install-DbaMaintenanceSolution",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eInstall-DbaMaintenanceSolution -SqlInstance RES14224 -Database DBA -CleanupTime 72\nInstalls Ola Hallengren\u0027s Solution objects on RES14224 in the DBA database.\r\nBackups will default to the default Backup Directory.\r\nIf the Maintenance Solution already exists, the script will be halted.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eInstall-DbaMaintenanceSolution -SqlInstance RES14224 -Database DBA -BackupLocation \"Z:\\SQLBackup\" -CleanupTime 72\nThis will create the Ola Hallengren\u0027s Solution objects. Existing objects are not affected in any way.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003e$params = @{\n\u003e\u003e SqlInstance = \u0027MyServer\u0027\r\n\u003e\u003e Database = \u0027maintenance\u0027\r\n\u003e\u003e ReplaceExisting = $true\r\n\u003e\u003e InstallJobs = $true\r\n\u003e\u003e LogToTable = $true\r\n\u003e\u003e BackupLocation = \u0027C:\\Data\\Backup\u0027\r\n\u003e\u003e CleanupTime = 65\r\n\u003e\u003e Verbose = $true\r\n\u003e\u003e }\r\n\u003e\u003e Install-DbaMaintenanceSolution @params\nInstalls Maintenance Solution to myserver in database. Adds Agent Jobs, and if any currently exist, they\u0027ll be replaced.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eInstall-DbaMaintenanceSolution -SqlInstance RES14224 -Database DBA -BackupLocation \"Z:\\SQLBackup\" -CleanupTime 72 -ReplaceExisting\nThis will drop and then recreate the Ola Hallengren\u0027s Solution objects\r\nThe cleanup script will drop and recreate:\r\n- TABLE [dbo].[CommandLog]\r\n- STORED PROCEDURE [dbo].[CommandExecute]\r\n- STORED PROCEDURE [dbo].[DatabaseBackup]\r\n- STORED PROCEDURE [dbo].[DatabaseIntegrityCheck]\r\n- STORED PROCEDURE [dbo].[IndexOptimize]\nThe following SQL Agent jobs will be deleted:\r\n- \u0027Output File Cleanup\u0027\r\n- \u0027IndexOptimize - USER_DATABASES\u0027\r\n- \u0027sp_delete_backuphistory\u0027\r\n- \u0027DatabaseBackup - USER_DATABASES - LOG\u0027\r\n- \u0027DatabaseBackup - SYSTEM_DATABASES - FULL\u0027\r\n- \u0027DatabaseBackup - USER_DATABASES - FULL\u0027\r\n- \u0027sp_purge_jobhistory\u0027\r\n- \u0027DatabaseIntegrityCheck - SYSTEM_DATABASES\u0027\r\n- \u0027CommandLog Cleanup\u0027\r\n- \u0027DatabaseIntegrityCheck - USER_DATABASES\u0027\r\n- \u0027DatabaseBackup - USER_DATABASES - DIFF\u0027",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eInstall-DbaMaintenanceSolution -SqlInstance RES14224 -Database DBA -CleanupTime 72\nInstalls Ola Hallengren\u0027s Solution objects on RES14224 in the DBA database.\r\nBackups will default to the default Backup Directory.\r\nIf the Maintenance Solution already exists, the script will be halted.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eInstall-DbaMaintenanceSolution -SqlInstance RES14224 -Database DBA -BackupLocation \"Z:\\SQLBackup\" -CleanupTime 72\nThis will create the Ola Hallengren\u0027s Solution objects. Existing objects are not affected in any way.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003e$params = @{\n\u003e\u003e SqlInstance = \u0027MyServer\u0027\r\n\u003e\u003e Database = \u0027maintenance\u0027\r\n\u003e\u003e ReplaceExisting = $true\r\n\u003e\u003e InstallJobs = $true\r\n\u003e\u003e LogToTable = $true\r\n\u003e\u003e BackupLocation = \u0027C:\\Data\\Backup\u0027\r\n\u003e\u003e CleanupTime = 65\r\n\u003e\u003e Verbose = $true\r\n\u003e\u003e }\r\n\u003e\u003e Install-DbaMaintenanceSolution @params\nInstalls Maintenance Solution to myserver in database. Adds Agent Jobs, and if any currently exist, they\u0027ll be replaced.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eInstall-DbaMaintenanceSolution -SqlInstance RES14224 -Database DBA -BackupLocation \"Z:\\SQLBackup\" -CleanupTime 72 -ReplaceExisting\nThis will drop and then recreate the Ola Hallengren\u0027s Solution objects\r\nThe cleanup script will drop and recreate:\r\n- TABLE [dbo].[CommandLog]\r\n- STORED PROCEDURE [dbo].[CommandExecute]\r\n- STORED PROCEDURE [dbo].[DatabaseBackup]\r\n- STORED PROCEDURE [dbo].[DatabaseIntegrityCheck]\r\n- STORED PROCEDURE [dbo].[IndexOptimize]\nThe following SQL Agent jobs will be deleted:\r\n- \u0027Output File Cleanup\u0027\r\n- \u0027IndexOptimize - USER_DATABASES\u0027\r\n- \u0027sp_delete_backuphistory\u0027\r\n- \u0027DatabaseBackup - USER_DATABASES - LOG\u0027\r\n- \u0027DatabaseBackup - SYSTEM_DATABASES - FULL\u0027\r\n- \u0027DatabaseBackup - USER_DATABASES - FULL\u0027\r\n- \u0027sp_purge_jobhistory\u0027\r\n- \u0027DatabaseIntegrityCheck - SYSTEM_DATABASES\u0027\r\n- \u0027CommandLog Cleanup\u0027\r\n- \u0027DatabaseIntegrityCheck - USER_DATABASES\u0027\r\n- \u0027DatabaseBackup - USER_DATABASES - DIFF\u0027\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eInstall-DbaMaintenanceSolution -SqlInstance RES14224 -Database DBA -InstallParallel\nThis will create the Queue and QueueDatabase tables for uses when manually changing jobs to use the @DatabasesInParallel = \u0027Y\u0027 flag",
         "Params":  [
                        [
                            "SqlInstance",
@@ -27900,6 +27900,15 @@
                            ""
                        ],
                        [
+                           "InstallParallel",
+                           "If this switch is enabled, the Queue and QueueDatabase tables are created, for use when  @DatabasesInParallel = \u0027Y\u0027 are set in the jobs.",
+                           "",
+                           false,
+                           "false",
+                           "False",
+                           ""
+                       ],
+                       [
                            "EnableException",
                            "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
                            "",
@@ -27927,7 +27936,7 @@
                            ""
                        ]
                    ],
-        "Syntax":  "Install-DbaMaintenanceSolution [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cObject\u003e] [[-BackupLocation] \u003cString\u003e] [[-CleanupTime] \u003cInt32\u003e] [[-OutputFileDirectory] \u003cString\u003e] [-ReplaceExisting] [-LogToTable] [[-Solution] \u003cString[]\u003e] [-InstallJobs] [[-LocalFile] \u003cString\u003e] [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Install-DbaMaintenanceSolution [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cObject\u003e] [[-BackupLocation] \u003cString\u003e] [[-CleanupTime] \u003cInt32\u003e] [[-OutputFileDirectory] \u003cString\u003e] [-ReplaceExisting] [-LogToTable] [[-Solution] \u003cString[]\u003e] [-InstallJobs] [[-LocalFile] \u003cString\u003e] [-Force] [-InstallParallel] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Install-DbaMultiTool",
@@ -34218,13 +34227,13 @@
         "CommandName":  "New-DbaAgentOperator",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/New-DbaAgentOperator",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS:\\\u003eNew-DbaAgentOperator -SqlInstance sql01 -Operator DBA -EmailAddress operator@operator.com -PagerDay Everyday -Force\nThis sets a new operator named DBA with the above email address with default values to alerts everyday\r\nfor all hours of the day.",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS:\\\u003eNew-DbaAgentOperator -SqlInstance sql01 -Operator DBA -EmailAddress operator@operator.com -PagerDay Everyday -Force\nThis sets a new operator named DBA with the above email address with default values to alerts everyday\r\nfor all hours of the day.\n-------------------------- EXAMPLE 2 --------------------------\nPS:\\\u003eNew-DbaAgentOperator -SqlInstance sql01 -Operator DBA -EmailAddress operator@operator.com -NetSendAddress dbauser1 -PagerAddress dbauser1@pager.dbatools.io -PagerDay Everyday -SaturdayStartTime \r\n070000 -SaturdayEndTime 180000 -SundayStartTime 080000 -SundayEndTime 170000 -WeekdayStartTime 060000 -WeekdayEndTime 190000\nCreates a new operator named DBA on the sql01 instance with email address operator@operator.com, net send address of dbauser1, pager address of dbauser1@pager.dbatools.io, page day as every day, \r\nSaturday start time of 7am, Saturday end time of 6pm, Sunday start time of 8am, Sunday end time of 5pm, Weekday start time of 6am, and Weekday end time of 7pm.",
         "Params":  [
                        [
                            "SqlInstance",
                            "The target SQL Server instance or instances. You must have sysadmin access and server version must be SQL Server version 2000 or greater.",
                            "",
-                           true,
+                           false,
                            "false",
                            "",
                            ""
@@ -34348,7 +34357,7 @@
                        ],
                        [
                            "FailsafeNotificationMethod",
-                           "Deinfes the notifcation method for notifiy the failsafe oeprator.  Value must be NofityMail or NotifyPager.\r\nThe default is NotifyEmail.",
+                           "Defines the notification method for the failsafe oeprator.  Value must be NotifyMail or NotifyPager.\r\nThe default is NotifyEmail.",
                            "",
                            false,
                            "false",
@@ -34362,6 +34371,15 @@
                            false,
                            "false",
                            "False",
+                           ""
+                       ],
+                       [
+                           "InputObject",
+                           "SMO Server Objects (pipeline input from Connect-DbaInstance)",
+                           "",
+                           false,
+                           "true (ByValue)",
+                           "",
                            ""
                        ],
                        [
@@ -34392,7 +34410,7 @@
                            ""
                        ]
                    ],
-        "Syntax":  "New-DbaAgentOperator [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [-Operator] \u003cString\u003e [[-EmailAddress] \u003cString\u003e] [[-NetSendAddress] \u003cString\u003e] [[-PagerAddress] \u003cString\u003e] [[-PagerDay] \u003cString\u003e] [[-SaturdayStartTime] \u003cString\u003e] [[-SaturdayEndTime] \u003cString\u003e] [[-SundayStartTime] \u003cString\u003e] [[-SundayEndTime] \u003cString\u003e] [[-WeekdayStartTime] \u003cString\u003e] [[-WeekdayEndTime] \u003cString\u003e] [-IsFailsafeOperator] [[-FailsafeNotificationMethod] \u003cString\u003e] [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Syntax":  "New-DbaAgentOperator [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [-Operator] \u003cString\u003e [[-EmailAddress] \u003cString\u003e] [[-NetSendAddress] \u003cString\u003e] [[-PagerAddress] \u003cString\u003e] [[-PagerDay] \u003cString\u003e] [[-SaturdayStartTime] \u003cString\u003e] [[-SaturdayEndTime] \u003cString\u003e] [[-SundayStartTime] \u003cString\u003e] [[-SundayEndTime] \u003cString\u003e] [[-WeekdayStartTime] \u003cString\u003e] [[-WeekdayEndTime] \u003cString\u003e] [-IsFailsafeOperator] [[-FailsafeNotificationMethod] \u003cString\u003e] [-Force] [[-InputObject] \u003cServer[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "New-DbaAgentProxy",
@@ -41555,7 +41573,7 @@
                            "SqlInstance",
                            "The target SQL Server instance or instances. You must have sysadmin access and server version must be SQL Server version 2000 or greater.",
                            "",
-                           true,
+                           false,
                            "false",
                            "",
                            ""
@@ -41575,6 +41593,15 @@
                            "",
                            true,
                            "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "InputObject",
+                           "SMO Server Objects (pipeline input from Connect-DbaInstance)",
+                           "",
+                           false,
+                           "true (ByValue)",
                            "",
                            ""
                        ],
@@ -41606,7 +41633,7 @@
                            ""
                        ]
                    ],
-        "Syntax":  "Remove-DbaAgentOperator [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [-Operator] \u003cString\u003e [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Remove-DbaAgentOperator [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [-Operator] \u003cString\u003e [[-InputObject] \u003cServer[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Remove-DbaAgentSchedule",
@@ -50173,7 +50200,7 @@
     },
     {
         "Name":  "Set-DbaDbRecoveryModel",
-        "Description":  "Set-DbaDbRecoveryModel sets the Recovery Model for user databases.",
+        "Description":  "Set-DbaDbRecoveryModel sets the Recovery Model for all databases except TEMPDB.",
         "Tags":  [
                      "RecoveryModel",
                      "Database"
@@ -50184,7 +50211,7 @@
         "CommandName":  "Set-DbaDbRecoveryModel",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Set-DbaDbRecoveryModel",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eSet-DbaDbRecoveryModel -SqlInstance sql2014 -RecoveryModel BulkLogged -Database model -Confirm:$true -Verbose\nSets the Recovery Model to BulkLogged for database [model] on SQL Server instance sql2014. User is requested to confirm the action.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaDatabase -SqlInstance sql2014 -Database TestDB | Set-DbaDbRecoveryModel -RecoveryModel Simple  -Confirm:$false\nSets the Recovery Model to Simple for database [TestDB] on SQL Server instance sql2014. Confirmation is not required.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eSet-DbaDbRecoveryModel -SqlInstance sql2014 -RecoveryModel Simple -Database TestDB -Confirm:$false\nSets the Recovery Model to Simple for database [TestDB] on SQL Server instance sql2014. Confirmation is not required.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eSet-DbaDbRecoveryModel -SqlInstance sql2014 -RecoveryModel Simple -AllDatabases -Confirm:$false\nSets the Recovery Model to Simple for ALL uses databases MODEL database on SQL Server instance sql2014. Runs without asking for confirmation.\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eSet-DbaDbRecoveryModel -SqlInstance sql2014 -RecoveryModel BulkLogged -Database TestDB1, TestDB2 -Confirm:$false -Verbose\nSets the Recovery Model to BulkLogged for [TestDB1] and [TestDB2] databases on SQL Server instance sql2014. Runs without asking for confirmation.",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eSet-DbaDbRecoveryModel -SqlInstance sql2014 -RecoveryModel BulkLogged -Database model -Confirm:$true -Verbose\nSets the Recovery Model to BulkLogged for database [model] on SQL Server instance sql2014. User is requested to confirm the action.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaDatabase -SqlInstance sql2014 -Database TestDB | Set-DbaDbRecoveryModel -RecoveryModel Simple  -Confirm:$false\nSets the Recovery Model to Simple for database [TestDB] on SQL Server instance sql2014. Confirmation is not required.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eSet-DbaDbRecoveryModel -SqlInstance sql2014 -RecoveryModel Simple -Database TestDB -Confirm:$false\nSets the Recovery Model to Simple for database [TestDB] on SQL Server instance sql2014. Confirmation is not required.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eSet-DbaDbRecoveryModel -SqlInstance sql2014 -RecoveryModel Simple -AllDatabases -Confirm:$false\nSets the Recovery Model to Simple for ALL user and system databases (except TEMPDB) on SQL Server instance sql2014. Runs without asking for confirmation.\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eSet-DbaDbRecoveryModel -SqlInstance sql2014 -RecoveryModel BulkLogged -Database TestDB1, TestDB2 -Confirm:$false -Verbose\nSets the Recovery Model to BulkLogged for [TestDB1] and [TestDB2] databases on SQL Server instance sql2014. Runs without asking for confirmation.",
         "Params":  [
                        [
                            "SqlInstance",
