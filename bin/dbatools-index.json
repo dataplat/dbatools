@@ -34414,7 +34414,7 @@
     },
     {
         "Name":  "New-DbaAgentProxy",
-        "Description":  "Adds one or more proxies to SQL Server Agent",
+        "Description":  "Adds one or more proxies to SQL Server Agent\n\nNote: ActiveScripting (ActiveX scripting) was discontinued in SQL Server 2016: https://docs.microsoft.com/en-us/sql/database-engine/discontinued-database-engine-functionality-in-sql-server",
         "Tags":  [
                      "Agent",
                      "Proxy"
@@ -34425,7 +34425,7 @@
         "CommandName":  "New-DbaAgentProxy",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/New-DbaAgentProxy",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eNew-DbaAgentProxy -SqlInstance sql2016 -Name STIG -ProxyCredential \u0027PowerShell Proxy\u0027\nCreates an Agent Proxy on sql2016 with the name STIG with the \u0027PowerShell Proxy\u0027 credential.\r\nThe proxy is automatically added to the CmdExec subsystem.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eNew-DbaAgentProxy -SqlInstance localhost\\sql2016 -Name STIG -ProxyCredential \u0027PowerShell Proxy\u0027 -Description \"Used for auditing purposes\" -Login ad\\sqlstig -SubSystem CmdExec, PowerShell \r\n-ServerRole securtyadmin -MsdbRole ServerGroupAdministratorRole\nCreates an Agent Proxy on sql2016 with the name STIG with the \u0027PowerShell Proxy\u0027 credential and the following principals:\nLogin: ad\\sqlstig\r\nServerRole: securtyadmin\r\nMsdbRole: ServerGroupAdministratorRole\nBy default, only sysadmins have access to create job steps with proxies. This will allow 3 additional principals access:\r\nThe proxy is then added to the CmdExec and PowerShell subsystems",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eNew-DbaAgentProxy -SqlInstance sql2016 -Name STIG -ProxyCredential \u0027PowerShell Proxy\u0027\nCreates an Agent Proxy on sql2016 with the name STIG with the \u0027PowerShell Proxy\u0027 credential.\r\nThe proxy is automatically added to the CmdExec subsystem.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eNew-DbaAgentProxy -SqlInstance localhost\\sql2016 -Name STIG -ProxyCredential \u0027PowerShell Proxy\u0027 -Description \"Used for auditing purposes\" -Login ad\\sqlstig -SubSystem CmdExec, PowerShell \r\n-ServerRole securityadmin -MsdbRole ServerGroupAdministratorRole\nCreates an Agent Proxy on sql2016 with the name STIG with the \u0027PowerShell Proxy\u0027 credential and the following principals:\nLogin: ad\\sqlstig\r\nServerRole: securityadmin\r\nMsdbRole: ServerGroupAdministratorRole\nBy default, only sysadmins have access to create job steps with proxies. This will allow 3 additional principals access:\r\nThe proxy is then added to the CmdExec and PowerShell subsystems",
         "Params":  [
                        [
                            "SqlInstance",
@@ -34465,12 +34465,12 @@
                        ],
                        [
                            "SubSystem",
-                           "The associated subsystem or subsystems. Defaults to CmdExec.\nValid options include:\r\nActiveScripting\r\nAnalysisCommand\r\nAnalysisQuery\r\nCmdExec\r\nDistribution\r\nLogReader\r\nMerge\r\nPowerShell\r\nQueueReader\r\nSnapshot\r\nSsis\r\nTransactSql",
+                           "The associated subsystem or subsystems. Defaults to CmdExec.\nValid options include:\r\nActiveScripting\r\nAnalysisCommand\r\nAnalysisQuery\r\nCmdExec\r\nDistribution\r\nLogReader\r\nMerge\r\nPowerShell\r\nQueueReader\r\nSnapshot\r\nSsis",
                            "",
                            false,
                            "false",
                            "CmdExec",
-                           "ActiveScripting,AnalysisCommand,AnalysisQuery,CmdExec,Distribution,LogReader,Merge,PowerShell,QueueReader,Snapshot,Ssis,TransactSql"
+                           "ActiveScripting,AnalysisCommand,AnalysisQuery,CmdExec,Distribution,LogReader,Merge,PowerShell,QueueReader,Snapshot,Ssis"
                        ],
                        [
                            "Description",
@@ -48119,7 +48119,7 @@
     },
     {
         "Name":  "Set-DbaAgentJobStep",
-        "Description":  "Set-DbaAgentJobStep updates a job step in the SQL Server Agent with parameters supplied.",
+        "Description":  "Set-DbaAgentJobStep updates a job step in the SQL Server Agent with parameters supplied.\n\nNote: ActiveScripting (ActiveX scripting) was discontinued in SQL Server 2016: https://docs.microsoft.com/en-us/sql/database-engine/discontinued-database-engine-functionality-in-sql-server",
         "Tags":  [
                      "Agent",
                      "Job",
@@ -48131,13 +48131,13 @@
         "CommandName":  "Set-DbaAgentJobStep",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Set-DbaAgentJobStep",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eSet-DbaAgentJobStep -SqlInstance sql1 -Job Job1 -StepName Step1 -NewName Step2\nChanges the name of the step in \"Job1\" with the name Step1 to Step2\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eSet-DbaAgentJobStep -SqlInstance sql1 -Job Job1 -StepName Step1 -Database msdb\nChanges the database of the step in \"Job1\" with the name Step1 to msdb\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eSet-DbaAgentJobStep -SqlInstance sql1 -Job Job1, Job2 -StepName Step1 -Database msdb\nChanges job steps in multiple jobs with the name Step1 to msdb\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eSet-DbaAgentJobStep -SqlInstance sql1, sql2, sql3 -Job Job1, Job2 -StepName Step1 -Database msdb\nChanges job steps in multiple jobs on multiple servers with the name Step1 to msdb\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eSet-DbaAgentJobStep -SqlInstance sql1, sql2, sql3 -Job Job1 -StepName Step1 -Database msdb\nChanges the database of the step in \"Job1\" with the name Step1 to msdb for multiple servers\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003esql1, sql2, sql3 | Set-DbaAgentJobStep -Job Job1 -StepName Step1 -Database msdb\nChanges the database of the step in \"Job1\" with the name Step1 to msdb for multiple servers using pipeline",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eSet-DbaAgentJobStep -SqlInstance sql1 -Job Job1 -StepName Step1 -NewName Step2\nChanges the name of the step in \"Job1\" with the name Step1 to Step2\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eSet-DbaAgentJobStep -SqlInstance sql1 -Job Job1 -StepName Step1 -Database msdb\nChanges the database of the step in \"Job1\" with the name Step1 to msdb\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eSet-DbaAgentJobStep -SqlInstance sql1 -Job Job1, Job2 -StepName Step1 -Database msdb\nChanges job steps in multiple jobs with the name Step1 to msdb\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eSet-DbaAgentJobStep -SqlInstance sql1, sql2, sql3 -Job Job1, Job2 -StepName Step1 -Database msdb\nChanges job steps in multiple jobs on multiple servers with the name Step1 to msdb\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eSet-DbaAgentJobStep -SqlInstance sql1, sql2, sql3 -Job Job1 -StepName Step1 -Database msdb\nChanges the database of the step in \"Job1\" with the name Step1 to msdb for multiple servers\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003esql1, sql2, sql3 | Set-DbaAgentJobStep -Job Job1 -StepName Step1 -Database msdb\nChanges the database of the step in \"Job1\" with the name Step1 to msdb for multiple servers using pipeline\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003e$jobStep = @{\nSqlInstance        = sqldev01\r\n        Job                = dbatools1\r\n        StepName           = \"Step 2\"\r\n        Subsystem          = \"CmdExec\"\r\n        Command            = \"enter command text here\"\r\n        CmdExecSuccessCode = 0\r\n        OnSuccessAction    = \"GoToStep\"\r\n        OnSuccessStepId    = 1\r\n        OnFailAction       = \"GoToStep\"\r\n        OnFailStepId       = 1\r\n        Database           = TestDB\r\n        RetryAttempts      = 2\r\n        RetryInterval      = 5\r\n        OutputFileName     = \"logCmdExec.txt\"\r\n        Flag               = [Microsoft.SqlServer.Management.Smo.Agent.JobStepFlags]::AppendAllCmdExecOutputToJobHistory\r\n        ProxyName          = \"dbatoolsci_proxy_1\"\r\n        Force              = $true\r\n    }\nPS C:\\\u003e$newJobStep = Set-DbaAgentJobStep @jobStep\nUpdates or creates a new job step named Step 2 in the dbatools1 job on the sqldev01 instance. The subsystem is set to CmdExec and uses a proxy.",
         "Params":  [
                        [
                            "SqlInstance",
                            "The target SQL Server instance or instances. You must have sysadmin access and server version must be SQL Server version 2000 or greater.",
                            "",
-                           true,
+                           false,
                            "false",
                            "",
                            ""
@@ -48153,7 +48153,7 @@
                        ],
                        [
                            "Job",
-                           "The name of the job. Can be null if the the job id is being used.",
+                           "The name of the job or the job object itself.",
                            "",
                            false,
                            "false",
@@ -48189,7 +48189,7 @@
                        ],
                        [
                            "SubsystemServer",
-                           "The subsystems AnalysisScripting, AnalysisCommand, AnalysisQuery ned the server property to be able to apply",
+                           "The subsystems AnalysisScripting, AnalysisCommand, AnalysisQuery require a server.",
                            "",
                            false,
                            "false",
@@ -48198,7 +48198,7 @@
                        ],
                        [
                            "Command",
-                           "The commands to be executed by SQLServerAgent service through subsystem.",
+                           "The commands to be executed by the SQLServerAgent service through the subsystem.",
                            "",
                            false,
                            "false",
@@ -48252,7 +48252,7 @@
                        ],
                        [
                            "Database",
-                           "The name of the database in which to execute a Transact-SQL step. The default is \u0027master\u0027.",
+                           "The name of the database in which to execute a Transact-SQL step.",
                            "",
                            false,
                            "false",
@@ -48261,7 +48261,7 @@
                        ],
                        [
                            "DatabaseUser",
-                           "The name of the user account to use when executing a Transact-SQL step. The default is \u0027sa\u0027.",
+                           "The name of the user account to use when executing a Transact-SQL step.",
                            "",
                            false,
                            "false",
@@ -48270,7 +48270,7 @@
                        ],
                        [
                            "RetryAttempts",
-                           "The number of retry attempts to use if this step fails. The default is 0.",
+                           "The number of retry attempts to use if this step fails.",
                            "",
                            false,
                            "false",
@@ -48279,7 +48279,7 @@
                        ],
                        [
                            "RetryInterval",
-                           "The amount of time in minutes between retry attempts. The default is 0.",
+                           "The amount of time in minutes between retry attempts.",
                            "",
                            false,
                            "false",
@@ -48315,7 +48315,7 @@
                        ],
                        [
                            "InputObject",
-                           "Enables piping job objects",
+                           "Allows pipeline input from Connect-DbaInstance.",
                            "",
                            false,
                            "true (ByValue)",
@@ -48359,7 +48359,7 @@
                            ""
                        ]
                    ],
-        "Syntax":  "Set-DbaAgentJobStep [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Job] \u003cObject[]\u003e] [[-StepName] \u003cString\u003e] [[-NewName] \u003cString\u003e] [[-Subsystem] \u003cString\u003e] [[-SubsystemServer] \u003cString\u003e] [[-Command] \u003cString\u003e] [[-CmdExecSuccessCode] \u003cInt32\u003e] [[-OnSuccessAction] \u003cString\u003e] [[-OnSuccessStepId] \u003cInt32\u003e] [[-OnFailAction] \u003cString\u003e] [[-OnFailStepId] \u003cInt32\u003e] [[-Database] \u003cString\u003e] [[-DatabaseUser] \u003cString\u003e] [[-RetryAttempts] \u003cInt32\u003e] [[-RetryInterval] \u003cInt32\u003e] [[-OutputFileName] \u003cString\u003e] [[-Flag] \u003cString[]\u003e] [[-ProxyName] \u003cString\u003e] [[-InputObject] \u003cJobStep[]\u003e] \r\n[-EnableException] [-Force] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Set-DbaAgentJobStep [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Job] \u003cObject[]\u003e] [[-StepName] \u003cString\u003e] [[-NewName] \u003cString\u003e] [[-Subsystem] \u003cString\u003e] [[-SubsystemServer] \u003cString\u003e] [[-Command] \u003cString\u003e] [[-CmdExecSuccessCode] \u003cInt32\u003e] [[-OnSuccessAction] \u003cString\u003e] [[-OnSuccessStepId] \u003cInt32\u003e] [[-OnFailAction] \u003cString\u003e] [[-OnFailStepId] \u003cInt32\u003e] [[-Database] \u003cString\u003e] [[-DatabaseUser] \u003cString\u003e] [[-RetryAttempts] \u003cInt32\u003e] [[-RetryInterval] \u003cInt32\u003e] [[-OutputFileName] \u003cString\u003e] [[-Flag] \u003cString[]\u003e] [[-ProxyName] \u003cString\u003e] [[-InputObject] \u003cServer[]\u003e] \r\n[-EnableException] [-Force] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Set-DbaAgentSchedule",
