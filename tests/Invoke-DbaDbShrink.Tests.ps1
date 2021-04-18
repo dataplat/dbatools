@@ -4,11 +4,11 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
+        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
         [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'AllUserDatabases', 'PercentFreeSpace', 'ShrinkMethod', 'FileType', 'StepSize', 'StatementTimeout', 'ExcludeIndexStats', 'ExcludeUpdateUsage', 'EnableException'
         $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
         It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
         }
     }
 }
@@ -60,7 +60,10 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         }
 
         It "Shrinks just the log file when FileType is Log" {
-            Invoke-DbaDbShrink $server -Database $db.Name -FileType Log
+            $result = Invoke-DbaDbShrink $server -Database $db.Name -FileType Log
+            $result.Database | Should -Be $db.Name
+            $result.File | Should -Be "$($db.Name)_log"
+            $result.Success | Should -Be $true
             $db.Refresh()
             $db.RecalculateSpaceUsage()
             $db.FileGroups[0].Files[0].Refresh()
@@ -70,7 +73,10 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         }
 
         It "Shrinks just the data file(s) when FileType is Data" {
-            Invoke-DbaDbShrink $server -Database $db.Name -FileType Data
+            $result = Invoke-DbaDbShrink $server -Database $db.Name -FileType Data
+            $result.Database | Should -Be $db.Name
+            $result.File | Should -Be $db.Name
+            $result.Success | Should -Be $true
             $db.Refresh()
             $db.RecalculateSpaceUsage()
             $db.FileGroups[0].Files[0].Refresh()
@@ -80,7 +86,10 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         }
 
         It "Shrinks the entire database when FileType is All" {
-            Invoke-DbaDbShrink $server -Database $db.Name -FileType All
+            $result = Invoke-DbaDbShrink $server -Database $db.Name -FileType All
+            $result.Database | Should -Be $db.Name, $db.Name
+            $result.File | Should -Be "$($db.Name)_log", $db.Name
+            $result.Success | Should -Be $true, $true
             $db.Refresh()
             $db.RecalculateSpaceUsage()
             $db.FileGroups[0].Files[0].Refresh()
