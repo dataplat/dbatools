@@ -6,6 +6,8 @@ function New-DbaAgentProxy {
     .DESCRIPTION
         Adds one or more proxies to SQL Server Agent
 
+        Note: ActiveScripting (ActiveX scripting) was discontinued in SQL Server 2016: https://docs.microsoft.com/en-us/sql/database-engine/discontinued-database-engine-functionality-in-sql-server
+
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.You must have sysadmin access and server version must be SQL Server version 2000 or higher.
 
@@ -37,7 +39,6 @@ function New-DbaAgentProxy {
         QueueReader
         Snapshot
         Ssis
-        TransactSql
 
     .PARAMETER Description
         A description of the proxy
@@ -86,12 +87,12 @@ function New-DbaAgentProxy {
         The proxy is automatically added to the CmdExec subsystem.
 
     .EXAMPLE
-        PS C:\> New-DbaAgentProxy -SqlInstance localhost\sql2016 -Name STIG -ProxyCredential 'PowerShell Proxy' -Description "Used for auditing purposes" -Login ad\sqlstig -SubSystem CmdExec, PowerShell -ServerRole securtyadmin -MsdbRole ServerGroupAdministratorRole
+        PS C:\> New-DbaAgentProxy -SqlInstance localhost\sql2016 -Name STIG -ProxyCredential 'PowerShell Proxy' -Description "Used for auditing purposes" -Login ad\sqlstig -SubSystem CmdExec, PowerShell -ServerRole securityadmin -MsdbRole ServerGroupAdministratorRole
 
         Creates an Agent Proxy on sql2016 with the name STIG with the 'PowerShell Proxy' credential and the following principals:
 
         Login: ad\sqlstig
-        ServerRole: securtyadmin
+        ServerRole: securityadmin
         MsdbRole: ServerGroupAdministratorRole
 
         By default, only sysadmins have access to create job steps with proxies. This will allow 3 additional principals access:
@@ -108,7 +109,7 @@ function New-DbaAgentProxy {
         [string[]]$Name,
         [parameter(Mandatory)]
         [string[]]$ProxyCredential,
-        [ValidateSet("ActiveScripting", "AnalysisCommand", "AnalysisQuery", "CmdExec", "Distribution", "LogReader", "Merge", "PowerShell", "QueueReader", "Snapshot", "Ssis", "TransactSql")]
+        [ValidateSet("ActiveScripting", "AnalysisCommand", "AnalysisQuery", "CmdExec", "Distribution", "LogReader", "Merge", "PowerShell", "QueueReader", "Snapshot", "Ssis")]
         [string[]]$SubSystem = "CmdExec",
         [string]$Description,
         [string[]]$Login,
@@ -127,6 +128,10 @@ function New-DbaAgentProxy {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
             } catch {
                 Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+            }
+
+            if ($Subsystem -eq "ActiveScripting" -and $server.VersionMajor -ge 13) {
+                Stop-Function -Message "ActiveScripting (ActiveX script) is not supported in SQL Server 2016 or higher" -Target $server -Continue
             }
 
             try {
