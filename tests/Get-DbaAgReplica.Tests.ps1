@@ -4,11 +4,11 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 
 Describe "$commandname Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
+        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
         [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'AvailabilityGroup', 'Replica', 'InputObject', 'EnableException'
         $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
         It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
         }
     }
 }
@@ -34,6 +34,14 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
             $results.AvailabilityGroup | Should -Be $agname
             $results.Role | Should -Be 'Primary'
             $results.AvailabilityMode | Should -Be 'SynchronousCommit'
+        }
+
+        It "Passes EnableException to Get-DbaAvailabilityGroup" {
+            $results = Get-DbaAgReplica -SqlInstance invalidSQLHostName -ErrorVariable error
+            $results | Should -BeNullOrEmpty
+            ($error | Where-Object Message -eq "The network path was not found") | Should -Not -BeNullOrEmpty
+
+            { Get-DbaAgReplica -SqlInstance invalidSQLHostName -EnableException } | Should -Throw
         }
     }
 } #$script:instance2 for appveyor

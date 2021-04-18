@@ -53,6 +53,9 @@ function Install-DbaMaintenanceSolution {
     .PARAMETER Confirm
         If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
+    .PARAMETER InstallParallel
+        If this switch is enabled, the Queue and QueueDatabase tables are created, for use when  @DatabasesInParallel = 'Y' are set in the jobs.
+        
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -121,6 +124,12 @@ function Install-DbaMaintenanceSolution {
         - 'CommandLog Cleanup'
         - 'DatabaseIntegrityCheck - USER_DATABASES'
         - 'DatabaseBackup - USER_DATABASES - DIFF'
+
+    .EXAMPLE
+        PS C:\> Install-DbaMaintenanceSolution -SqlInstance RES14224 -Database DBA -InstallParallel
+
+        This will create the Queue and QueueDatabase tables for uses when manually changing jobs to use the @DatabasesInParallel = 'Y' flag
+
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Medium")]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseSingularNouns", "", Justification = "Internal functions are ignored")]
@@ -139,7 +148,9 @@ function Install-DbaMaintenanceSolution {
         [switch]$InstallJobs,
         [string]$LocalFile,
         [switch]$Force,
+        [switch]$InstallParallel,
         [switch]$EnableException
+
     )
     begin {
         if ($Force) { $ConfirmPreference = 'none' }
@@ -296,9 +307,9 @@ function Install-DbaMaintenanceSolution {
 
             if ((Test-Bound -ParameterName ReplaceExisting -Not)) {
                 $procs = Get-DbaModule -SqlInstance $server -Database $Database | Where-Object Name -in 'CommandExecute', 'DatabaseBackup', 'DatabaseIntegrityCheck', 'IndexOptimize'
-                $table = Get-DbaDbTable -SqlInstance $server -Database $Database -Table CommandLog -IncludeSystemDBs | Where-Object Database -eq $Database
+                $tables = Get-DbaDbTable -SqlInstance $server -Database $Database -Table CommandLog, Queue, QueueDatabase -IncludeSystemDBs | Where-Object Database -eq $Database
 
-                if ($null -ne $procs -or $null -ne $table) {
+                if ($null -ne $procs -or $null -ne $tables) {
                     Stop-Function -Message "The Maintenance Solution already exists in $Database on $instance. Use -ReplaceExisting to automatically drop and recreate."
                     return
                 }
@@ -315,7 +326,7 @@ function Install-DbaMaintenanceSolution {
                 $required = @('CommandExecute.sql')
             }
 
-            if ($LogToTable) {
+            if ($LogToTable -and $InstallJobs -eq $false) {
                 $required += 'CommandLog.sql'
             }
 
@@ -331,8 +342,20 @@ function Install-DbaMaintenanceSolution {
                 $required += 'IndexOptimize.sql'
             }
 
-            if ($Solution -contains 'All') {
+            if ($Solution -contains 'All' -and $InstallJobs) {
                 $required += 'MaintenanceSolution.sql'
+            }
+
+            if ($Solution -contains 'All' -and $InstallJobs -eq $false) {
+                $required += 'CommandExecute.sql'
+                $required += 'DatabaseBackup.sql'
+                $required += 'DatabaseIntegrityCheck.sql'
+                $required += 'IndexOptimize.sql'
+            }
+
+            if ($InstallParallel) {
+                $required += 'Queue.sql'
+                $required += 'QueueDatabase.sql'
             }
 
             $temp = ([System.IO.Path]::GetTempPath()).TrimEnd("\")
@@ -347,6 +370,10 @@ function Install-DbaMaintenanceSolution {
                 [string]$CleanupQuery = $("
                             IF OBJECT_ID('[dbo].[CommandLog]', 'U') IS NOT NULL
                                 DROP TABLE [dbo].[CommandLog];
+                            IF OBJECT_ID('[dbo].[QueueDatabase]', 'U') IS NOT NULL
+                                DROP TABLE [dbo].[QueueDatabase];
+                            IF OBJECT_ID('[dbo].[Queue]', 'U') IS NOT NULL
+                                DROP TABLE [dbo].[Queue];
                             IF OBJECT_ID('[dbo].[CommandExecute]', 'P') IS NOT NULL
                                 DROP PROCEDURE [dbo].[CommandExecute];
                             IF OBJECT_ID('[dbo].[DatabaseBackup]', 'P') IS NOT NULL
@@ -379,7 +406,7 @@ function Install-DbaMaintenanceSolution {
             try {
                 Write-ProgressHelper -ExcludePercent -Message "Installing on server $instance, database $Database"
 
-                foreach ($file in $fileContents.Keys) {
+                foreach ($file in $fileContents.Keys | Sort-Object) {
                     $shortFileName = Split-Path $file -Leaf
                     if ($required.Contains($shortFileName)) {
                         if ($Pscmdlet.ShouldProcess($instance, "Installing $shortFileName")) {
