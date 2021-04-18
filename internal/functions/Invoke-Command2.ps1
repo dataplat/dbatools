@@ -78,9 +78,9 @@ function Invoke-Command2 {
         $runspaceId = [System.Management.Automation.Runspaces.Runspace]::DefaultRunspace.InstanceId
         # sessions with different Authentication should have different session names
         if ($ConfigurationName) {
-            $sessionName = "dbatools_$($Authentication)_$($ConfigurationName)_$runspaceId_$($ComputerName.ComputerName)"
+            $sessionName = "dbatools_$($Authentication)_$($ConfigurationName)_$($runspaceId)_$($ComputerName.ComputerName)"
         } else {
-            $sessionName = "dbatools_$($Authentication)_$runspaceId_$($ComputerName.ComputerName)"
+            $sessionName = "dbatools_$($Authentication)_$($runspaceId)_$($ComputerName.ComputerName)"
         }
 
         # Retrieve a session from the session cache, if available (it's unique per runspace)
