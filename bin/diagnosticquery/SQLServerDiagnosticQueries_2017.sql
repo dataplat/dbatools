@@ -1,7 +1,7 @@
 
 -- SQL Server 2017 Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: April 1, 2021
+-- Last Modified: April 7, 2021
 -- https://glennsqlperformance.com/
 -- https://sqlserverperformance.wordpress.com/
 -- YouTube: https://bit.ly/2PkoAM1 
@@ -352,12 +352,13 @@ ORDER BY name OPTION (RECOMPILE);
 
 -- Host information (Query 11) (Host Info)
 SELECT host_platform, host_distribution, host_release, 
-       host_service_pack_level, host_sku, os_language_version 
+       host_service_pack_level, host_sku, os_language_version,
+	   host_architecture
 FROM sys.dm_os_host_info WITH (NOLOCK) OPTION (RECOMPILE); 
 ------
 
 -- host_release codes (only valid for Windows)
--- 10.0 is either Windows 10 or Windows Server 2016
+-- 10.0 is either Windows 10, Windows Server 2016 or Windows Server 2019
 -- 6.3 is either Windows 8.1 or Windows Server 2012 R2 
 -- 6.2 is either Windows 8 or Windows Server 2012
 

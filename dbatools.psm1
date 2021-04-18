@@ -228,7 +228,7 @@ Write-ImportTime -Text "Loading dbatools library"
 # Tell the library where the module is based, just in case
 [Sqlcollaborative.Dbatools.dbaSystem.SystemHost]::ModuleBase = $script:PSModuleRoot
 
-if ($script:multiFileImport) {
+if ($script:multiFileImport -or -not (Test-Path -Path "$psScriptRoot\allcommands.ps1")) {
     # All internal functions privately available within the toolset
     foreach ($file in (Get-ChildItem -Path "$psScriptRoot\internal\functions\" -Recurse -Filter *.ps1)) {
         . $file.FullName
@@ -247,7 +247,7 @@ if ($script:multiFileImport) {
 
 } else {
     #    . $psScriptRoot\internal\scripts\cmdlets.ps1
-
+    Write-Verbose -Message "Loading allcommands.ps1 to speed up import times"
     . $psScriptRoot\allcommands.ps1
     #. (Resolve-Path -Path "$script:PSModuleRoot\allcommands.ps1")
     Write-ImportTime -Text "Loading Public and Private Commands"
