@@ -56,7 +56,7 @@ function Get-DbaMemoryCondition {
         $sql = "
     SELECT
         CONVERT (varchar(30), GETDATE(), 121) as Runtime,
-        DATEADD (MILLISECOND, -1 * Convert(INT, (sys.ms_ticks - sys.s_ticks*1000) - (a.[RecordTime] - a.[RecordTime_S]*1000)), DATEADD (SECOND, -1 * (sys.s_ticks - a.[RecordTime_S]), GETDATE())) AS NotificationTime,
+        DATEADD (MILLISECOND, -1 * Convert(BIGINT, (sys.ms_ticks - sys.s_ticks*1000) - (a.[RecordTime] - a.[RecordTime_S]*1000)), DATEADD (SECOND, -1 * (sys.s_ticks - a.[RecordTime_S]), GETDATE())) AS NotificationTime,
         [NotificationType],
         [MemoryUtilizationPercent],
         [TotalPhysicalMemoryKB],
@@ -91,7 +91,7 @@ function Get-DbaMemoryCondition {
             x.value('(//Record/@type)[1]', 'varchar(30)') AS [Type],
             x.value('(//Record/ResourceMonitor/Indicators)[1]', 'bigint') AS [Indicators],
             x.value('(//Record/@time)[1]', 'bigint') AS [RecordTime],
-            Convert(int, x.value('(//Record/@time)[1]', 'bigint')/1000) AS [RecordTime_S]
+            Convert(bigint, x.value('(//Record/@time)[1]', 'bigint')/1000) AS [RecordTime_S]
         FROM
         (
             SELECT CAST (record as xml) FROM sys.dm_os_ring_buffers

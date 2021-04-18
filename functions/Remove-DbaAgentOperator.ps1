@@ -25,6 +25,9 @@ function Remove-DbaAgentOperator {
     .PARAMETER Confirm
         Prompts you for confirmation before executing any changing operations within the command.
 
+    .PARAMETER InputObject
+        SMO Server Objects (pipeline input from Connect-DbaInstance)
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -47,13 +50,14 @@ function Remove-DbaAgentOperator {
         This removes an operator named DBA from the instance.
 
     #>
-    [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess, ConfirmImpact = "Medium")]
+    [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess, ConfirmImpact = "High")]
     param (
-        [parameter(Mandatory)]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [parameter(Mandatory)]
         [string]$Operator,
+        [parameter(ValueFromPipeline)]
+        [Microsoft.SqlServer.Management.Smo.Server[]]$InputObject,
         [switch]$EnableException
     )
 
@@ -63,20 +67,22 @@ function Remove-DbaAgentOperator {
     process {
         foreach ($instance in $SqlInstance) {
             try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
+                $InputObject += Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             } catch {
                 Stop-Function -Message "Failed" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
+        }
 
+        foreach ($server in $InputObject) {
             if ((Get-DbaAgentOperator -SqlInstance $server -Operator $Operator).Count -ne 0) {
-                if ($Pscmdlet.ShouldProcess($instance, "Dropping operator $operator")) {
+                if ($Pscmdlet.ShouldProcess($server, "Dropping operator $operator")) {
                     try {
                         Write-Message -Level Verbose -Message "Dropping Operator $operator"
                         $server.JobServer.Operators[$operator].Drop()
 
                         Get-DbaAgentOperator -SqlInstance $server -Operator $Operator
                     } catch {
-                        Stop-Function -Message "Issue dropping operator" -Category InvalidOperation -ErrorRecord $_ -Target $instance
+                        Stop-Function -Message "Issue dropping operator" -Category InvalidOperation -ErrorRecord $_ -Target $server
                     }
                 }
             }
