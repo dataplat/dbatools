@@ -181,6 +181,7 @@ function Install-DbaFirstResponderKit {
                     $null = New-Item -Path $LocalCachedCopy -ItemType Container
                 }
                 Copy-Item -Path "$zipFolder\sp_*.sql" -Destination $LocalCachedCopy
+                Copy-Item -Path "$zipFolder\SqlServerVersions.sql" -Destination $LocalCachedCopy
             }
         }
     }
@@ -203,6 +204,7 @@ function Install-DbaFirstResponderKit {
 
                 # Install/Update each FRK stored procedure
                 $sqlScripts = Get-ChildItem $LocalCachedCopy -Filter "sp_*.sql"
+                $sqlScripts += Get-ChildItem $LocalCachedCopy -Filter "SqlServerVersions.sql"
                 foreach ($script in $sqlScripts) {
                     $scriptName = $script.Name
                     $scriptError = $false
