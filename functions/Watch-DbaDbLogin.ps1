@@ -8,6 +8,10 @@ function Watch-DbaDbLogin {
 
         Running this script every 5 minutes for a week should give you a sufficient idea about database and login usage.
 
+        Logins from the same server are excluded from the watched set.
+
+        The inputs for this command are either a Central Management Server (registered server repository), a flat file of server names, or to use pipeline input via Connect-DbaInstance. See the examples for more information.
+
     .PARAMETER SqlInstance
         The SQL Server that stores the Watch database.
 
@@ -29,6 +33,9 @@ function Watch-DbaDbLogin {
         Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
 
         For MFA support, please use Connect-DbaInstance.
+
+    .PARAMETER InputObject
+        Allows pipeline input from Connect-DbaInstance.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -62,6 +69,14 @@ function Watch-DbaDbLogin {
 
         A list of servers is generated using database instance names within the SQL2014Clusters group on the Central Management Server SqlCms1. Using this list, the script enumerates all the processes and gathers login information and saves it to the table Dblogins in the DatabaseLogins database on sqlserver.
 
+    .EXAMPLE
+        PS C:\> $instance1 = Connect-DbaInstance -SqlInstance sqldev01
+        PS C:\> $instance2 = Connect-DbaInstance -SqlInstance sqldev02
+        PS C:\> $instance1, $instance2 | Watch-DbaDbLogin -SqlInstance sqltest01 -Database CentralAudit
+
+        Pre-connects two instances sqldev01 and sqldev02 and then using pipelining sends them to Watch-DbaDbLogin to enumerate processes and gather login info. The resulting gathered info is stored to the DbaTools-WatchDbLogins table in the CentralAudit database on the sqltest01 instance.
+
+        Note: This is the method to use if the instances have different credentials than the instance used to store the watch data.
     #>
     [CmdletBinding(DefaultParameterSetName = "Default")]
     param (
@@ -76,12 +91,17 @@ function Watch-DbaDbLogin {
 
         # File with one server per line
         [string]$ServersFromFile,
+
+        #Pre-connected servers to query
+        [parameter(ValueFromPipeline)]
+        [Microsoft.SqlServer.Management.Smo.Server[]]$InputObject,
+
         [switch]$EnableException
     )
 
     process {
-        if (Test-Bound 'SqlCms', 'ServersFromFile' -Not) {
-            Stop-Function -Message "You must specify a server list source using -SqlCms or -ServersFromFile"
+        if (Test-Bound 'SqlCms', 'ServersFromFile', 'InputObject' -Not) {
+            Stop-Function -Message "You must specify a server list source using -SqlCms or -ServersFromFile or pipe in connected instances. See the command documentation and examples for more details."
             return
         }
 
@@ -115,16 +135,26 @@ function Watch-DbaDbLogin {
         }
 
         <#
-            Process each server
+            Connect each server
         #>
         foreach ($instance in $servers) {
             try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
+                if ($instance -is [Microsoft.SqlServer.Management.RegisteredServers.RegisteredServer]) {
+                    $InputObject += Connect-SqlInstance -SqlInstance $instance.ServerName -SqlCredential $SqlCredential -MinimumVersion 9
+                } else {
+                    $InputObject += Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
+                }
             } catch {
                 Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
+        }
 
-            if (!(Test-SqlSa $server)) {
+        <#
+            Process each server
+        #>
+        foreach ($instance in $InputObject) {
+
+            if (!(Test-SqlSa $instance)) {
                 Write-Message -Level Warning -Message "Not a sysadmin on $instance, resultset would be underwhelming. Skipping.";
                 continue
             }
@@ -144,11 +174,11 @@ function Watch-DbaDbLogin {
                 ON r.session_id = s.session_id"
             Write-Message -Level Debug -Message $sql
 
-            $procs = $server.Query($sql) | Where-Object { $_.Host -ne $instance.ComputerName -and ![string]::IsNullOrEmpty($_.Host) }
+            $procs = $instance.Query($sql) | Where-Object { $_.Host -ne $instance.ComputerName -and ![string]::IsNullOrEmpty($_.Host) }
             $procs = $procs | Where-Object { $systemdbs -notcontains $_.Database -and $excludedPrograms -notcontains $_.Program }
 
             if ($procs.Count -gt 0) {
-                $procs | Select-Object @{Label = "ComputerName"; Expression = { $server.ComputerName } }, @{Label = "InstanceName"; Expression = { $server.ServiceName } }, @{Label = "SqlInstance"; Expression = { $server.DomainInstanceName } }, LoginTime, Login, Host, Program, DatabaseId, Database, IsSystem, CaptureTime | ConvertTo-DbaDataTable | Write-DbaDbTableData -SqlInstance $serverDest -Database $Database -Table $Table -AutoCreateTable
+                $procs | Select-Object @{Label = "ComputerName"; Expression = { $instance.ComputerName } }, @{Label = "InstanceName"; Expression = { $instance.ServiceName } }, @{Label = "SqlInstance"; Expression = { $instance.DomainInstanceName } }, LoginTime, Login, Host, Program, DatabaseId, Database, IsSystem, CaptureTime | ConvertTo-DbaDataTable | Write-DbaDbTableData -SqlInstance $serverDest -Database $Database -Table $Table -AutoCreateTable
 
                 Write-Message -Level Output -Message "Added process information for $instance to datatable."
             } else {
