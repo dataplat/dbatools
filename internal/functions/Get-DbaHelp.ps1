@@ -20,7 +20,7 @@ function Get-DbaHelp {
     License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Find-DbaCommand
+        https://dbatools.io/Get-DbaHelp
 
 
     .EXAMPLE
@@ -136,7 +136,10 @@ function Get-DbaHelp {
                     }
                     $null = $rtn.Add($row)
                 }
-
+            }
+            if ($inside -eq 1) {
+                $inside = 0
+                $null = $rtn.Add('```')
             }
             if ($doc_to_render.Params) {
                 $dotitle = 0
