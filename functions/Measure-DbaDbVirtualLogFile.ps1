@@ -55,7 +55,7 @@ function Measure-DbaDbVirtualLogFile {
         Returns all user database virtual log file counts for the sqlcluster instance.
 
     .EXAMPLE
-        PS C:\> Measure-DbaDbVirtualLogFile -SqlInstance sqlserver | Where-Object {$_.Count -ge 50}
+        PS C:\> Measure-DbaDbVirtualLogFile -SqlInstance sqlserver | Where-Object {$_.Total -ge 50}
 
         Returns user databases that have 50 or more VLFs.
 
