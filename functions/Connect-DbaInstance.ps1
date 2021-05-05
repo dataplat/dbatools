@@ -880,6 +880,7 @@ function Connect-DbaInstance {
             }
 
             # Gracefully handle Azure connections
+            $isAzure = $false
             if ($connstring -match $AzureDomain -or $instance.ComputerName -match $AzureDomain -or $instance.InputObject.ComputerName -match $AzureDomain) {
                 Write-Message -Level Debug -Message "We are about to connect to Azure"
                 # so far, this is not evaluating
