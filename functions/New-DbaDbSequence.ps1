@@ -130,7 +130,7 @@ function New-DbaDbSequence {
             if ($Pscmdlet.ShouldProcess($db.Parent.Name, "Creating the sequence $Name in the $Schema schema in the database $($db.Name) on $($db.Parent.Name)")) {
                 try {
                     if (Test-Bound Schema) {
-                        $schemaObject = $db | Get-DbaDbSchema -Schema $Schema
+                        $schemaObject = $db | Get-DbaDbSchema -Schema $Schema -IncludeSystemSchemas
 
                         # if the schema does not exist then create it
                         if ($null -eq $schemaObject) {
