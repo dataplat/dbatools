@@ -91,6 +91,10 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $results | Should Not Be $null
         }
 
+        It "Should contain the correct identity (see #7282)" {
+            $results | Should Match "IDENTITY = N'dbatoolsci_Hulk'"
+        }
+
         It "Should not have the password" {
             $results | Should Not Match 'ReallyT3rrible!'
         }
