@@ -453,11 +453,10 @@ function Connect-DbaInstance {
                   - AzureUnsupported (command fails if target is Azure)
                   - MinimumVersion (command fails if target version is too old)
                   - SqlConnectionOnly (command returns only the ConnectionContext.SqlConnectionObject)
+                  - NonPooledConnection (command clones ConnectionContext and returns new smo server object)
                 TODO: Try to identify all commands that use additional parameters and rewrite the command or add support for that parameter to Connect-DbaInstance
                 Commands found:
-                - Get-DbaDbExtentDiff (NonPooled)
                 - Import-DbaCsv (StatementTimeout)
-                - Install-DbaMaintenanceSolution (NonPooled)
                 - Invoke-DbaQuery (ApplicationIntent)
 
                 Additional possibilities as input to SqlInstance:
@@ -538,13 +537,13 @@ function Connect-DbaInstance {
                 }
 
                 # Check for ignored parameters
-                $ignoredParameters = 'ApplicationIntent', 'BatchSeparator', 'ClientName', 'ConnectTimeout', 'EncryptConnection', 'LockTimeout', 'MaxPoolSize', 'MinPoolSize', 'NetworkProtocol', 'NonPooledConnection', 'PacketSize', 'PooledConnectionLifetime', 'SqlExecutionModes', 'StatementTimeout', 'TrustServerCertificate', 'WorkstationId', 'AuthenticationType', 'FailoverPartner', 'MultipleActiveResultSets', 'MultiSubnetFailover', 'AppendConnectionString'
+                $ignoredParameters = 'ApplicationIntent', 'BatchSeparator', 'ClientName', 'ConnectTimeout', 'EncryptConnection', 'LockTimeout', 'MaxPoolSize', 'MinPoolSize', 'NetworkProtocol', 'PacketSize', 'PooledConnectionLifetime', 'SqlExecutionModes', 'StatementTimeout', 'TrustServerCertificate', 'WorkstationId', 'AuthenticationType', 'FailoverPartner', 'MultipleActiveResultSets', 'MultiSubnetFailover', 'AppendConnectionString'
                 if ($inputObjectType -eq 'Server') {
                     if (Test-Bound -ParameterName $ignoredParameters) {
                         Write-Message -Level Warning -Message "Additional parameters are passed in, but they will be ignored"
                     }
                 } elseif ($inputObjectType -in 'SqlConnection', 'RegisteredServer', 'ConnectionString' ) {
-                    if (Test-Bound -ParameterName $ignoredParameters, 'Database') {
+                    if (Test-Bound -ParameterName $ignoredParameters, 'Database', 'NonPooledConnection') {
                         Write-Message -Level Warning -Message "Additional parameters are passed in, but they will be ignored"
                     }
                 }
@@ -553,11 +552,17 @@ function Connect-DbaInstance {
                 # Create smo server object
                 if ($inputObjectType -eq 'Server') {
                     if ($Database) {
-                        Write-Message -Level Verbose -Message "Parameter Database passed in, so we clone the connection context"
+                        Write-Message -Level Verbose -Message "Parameter Database passed in, so we copy the connection context and change the database connection"
                         # TODO: Do we have to check if its the same database?
                         $server = New-Object -TypeName Microsoft.SqlServer.Management.Smo.Server -ArgumentList $inputObject.ConnectionContext.Copy().GetDatabaseConnection($Database)
                     } else {
                         $server = $inputObject
+                    }
+                    if ($NonPooledConnection) {
+                        Write-Message -Level Verbose -Message "Parameter NonPooledConnection passed in, so we copy the connection context and set NonPooledConnection"
+                        $connContext = $server.ConnectionContext.Copy()
+                        $connContext.NonPooledConnection = $true
+                        $server = New-Object -TypeName Microsoft.SqlServer.Management.Smo.Server -ArgumentList $connContext
                     }
                 } elseif ($inputObjectType -eq 'SqlConnection') {
                     $server = New-Object -TypeName Microsoft.SqlServer.Management.Smo.Server -ArgumentList $inputObject
