@@ -94,13 +94,15 @@ Function Uninstall-DbaSqlWatch {
             $views = Get-DbaDbView -SqlInstance $server -Database $Database | Where-Object { $PSItem.Name -like "vw_sqlwatch_*" } | Sort-Object $PSItem.createdate -Descending
             $sprocs = Get-DbaDbStoredProcedure -SqlInstance $server -Database $Database | Where-Object { $PSItem.Name -like "usp_sqlwatch_*" -or $PSItem.Name -like "Stream*" } | Sort-Object $PSItem.createdate -Descending
             $funcs = Get-DbaDbUDF -SqlInstance $server -Database $Database | Where-Object { $PSItem.Name -like "ufn_sqlwatch_*" -or $PSItem.Name -like "Get*" -or $PSItem.Name -like "Read*" -and $PSItem.Name -ne "ufn_sqlwatch_get_threshold_comparator" } | Sort-Object $PSItem.createdate
-            $funcs2 = Get-DbaDbUDF -SqlInstance $server -Database $Database | Where-Object { $PSItem.Name -eq "ufn_sqlwatch_get_threshold_comparator"}
+            $funcs += Get-DbaDbUDF -SqlInstance $server -Database $Database | Where-Object { $PSItem.Name -eq "ufn_sqlwatch_get_threshold_comparator"}
             $agentJobs = Get-DbaAgentJob -SqlInstance $server | Where-Object { $PSItem.Name -like "SqlWatch-*" }
             $XESessions = Get-DbaXESession -SqlInstance $server | Where-Object { $PSItem.Name -like "SQLWATCH_*" }
-            $Assemblies = Get-DbaDbAssembly -SqlInstance $instance -Database $Database | Where-Object { $PSItem.Name -like "SqlWatch*" }
+            $Assemblies = Get-DbaDbAssembly -SqlInstance $server -Database $Database | Where-Object { $PSItem.Name -like "SqlWatch*" }
             $TableTypes = Get-DbaDbUserDefinedTableType -SqlInstance $server -Database $Database | Where-Object { $PSItem.Name -like "utype_*" }
             $BrokerQueues = Get-DbaDbServiceBrokerQueue -SqlInstance $server -Database $Database | Where-Object { $PSItem.Name -like "sqlwatch_*" }
             $BrokerServices = Get-DbaDbServiceBrokerService -SqlInstance $server -Database $Database | Where-Object { $PSItem.Name -like "sqlwatch_*" }
+            #Put XE at the end as it messes with the call to Assemblies for some reason
+
 
             if ($PSCmdlet.ShouldProcess($server, "Removing SqlWatch SQL Agent jobs")) {
                 try {
@@ -114,12 +116,8 @@ Function Uninstall-DbaSqlWatch {
             if ($PSCmdlet.ShouldProcess($server, "Removing SqlWatch stored procedures")) {
                 try {
                     Write-Message -Level Verbose -Message "Removing SqlWatch stored procedures from $database on $server."
-                    $dropScript = ""
-                    $sprocs | ForEach-Object {
-                        $dropScript += "DROP PROCEDURE $($PSItem.Name);`n"
-                    }
-                    if ($dropScript) {
-                        Invoke-DbaQuery -SqlInstance $server -Database $Database -Query $dropScript
+                    if ($sprocs) {
+                        $sprocs | ForEach-Object { $PSItem.Drop() }
                     }
                 } catch {
                     Stop-Function -Message "Could not remove all SqlWatch stored procedures from $database on $server." -ErrorRecord $_ -Target $server -Continue
@@ -129,12 +127,8 @@ Function Uninstall-DbaSqlWatch {
             if ($PSCmdlet.ShouldProcess($server, "Removing SqlWatch views")) {
                 try {
                     Write-Message -Level Verbose -Message "Removing SqlWatch views from $database on $server."
-                    $dropScript = ""
-                    $views | ForEach-Object {
-                        $dropScript += "DROP VIEW $($PSItem.Name);`n"
-                    }
-                    if ($dropScript) {
-                        Invoke-DbaQuery -SqlInstance $server -Database $Database -Query $dropScript
+                    if ($views) {
+                        $views | ForEach-Object { $PSItem.Drop() }
                     }
                 } catch {
                     Stop-Function -Message "Could not remove all SqlWatch views from $database on $server." -ErrorRecord $_ -Target $server -Continue
@@ -144,15 +138,8 @@ Function Uninstall-DbaSqlWatch {
             if ($PSCmdlet.ShouldProcess($server, "Removing SqlWatch functions")) {
                 try {
                     Write-Message -Level Verbose -Message "Removing SqlWatch functions from $database on $server."
-                    $dropScript = ""
-                    $funcs | ForEach-Object {
-                        $dropScript += "DROP FUNCTION $($PSItem.Name);`n"
-                    }
-                    $funcs2 | ForEach-Object {
-                        $dropScript += "DROP FUNCTION $($PSItem.Name);`n"
-                    }
-                    if ($dropScript) {
-                        Invoke-DbaQuery -SqlInstance $server -Database $Database -Query $dropScript
+                    if ($funcs) {
+                        $funcs | ForEach-Object { $PSItem.Drop() }
                     }
                 } catch {
                     Stop-Function -Message "Could not remove all SqlWatch functions from $database on $server." -ErrorRecord $_ -Target $server -Continue
@@ -171,12 +158,8 @@ Function Uninstall-DbaSqlWatch {
 
                 try {
                     Write-Message -Level Verbose -Message "Removing SqlWatch tables from $database on $server."
-                    $dropScript = ""
-                    $tables | ForEach-Object {
-                        $dropScript += "DROP TABLE $($PSItem.Name);`n"
-                    }
-                    if ($dropScript) {
-                        Invoke-DbaQuery -SqlInstance $server -Database $Database -Query $dropScript
+                    if ($tables) {
+                        $tables | ForEach-Object { $PSItem.Drop() }
                     }
                 } catch {
                     Stop-Function -Message "Could not remove all SqlWatch tables from $database on $server." -ErrorRecord $_ -Target $server -Continue
@@ -186,12 +169,8 @@ Function Uninstall-DbaSqlWatch {
             if ($PSCmdlet.ShouldProcess($server, "Removing SqlWatch Assemblies")) {
                 try {
                     Write-Message -Level Verbose -Message "Removing SqlWatch assemblies from $database on $server."
-                    $dropScript = ""
-                    $Assemblies | ForEach-Object {
-                        $dropScript += "DROP ASSEMBLY $($PSItem.Name);`n"
-                    }
-                    if ($dropScript) {
-                        Invoke-DbaQuery -SqlInstance $server -Database $Database -Query $dropScript
+                    if ($Assemblies) {
+                        $Assemblies | ForEach-Object { $PSItem.Drop() }
                     }
                 } catch {
                     Stop-Function -Message "Could not remove all SqlWatch assemblies from $database on $server." -ErrorRecord $_ -Target $server -Continue
@@ -201,12 +180,8 @@ Function Uninstall-DbaSqlWatch {
             if ($PSCmdlet.ShouldProcess($server, "Removing SqlWatch Table Types")) {
                 try {
                     Write-Message -Level Verbose -Message "Removing SqlWatch Table Types from $database on $server."
-                    $dropScript = ""
-                    $TableTypes | ForEach-Object {
-                        $dropScript += "DROP TYPE $($PSItem.Name);`n"
-                    }
-                    if ($dropScript) {
-                        Invoke-DbaQuery -SqlInstance $server -Database $Database -Query $dropScript
+                    if ($TableTypes) {
+                        $TableTypes | ForEach-Object { $PSItem.Drop() }
                     }
                 } catch {
                     Stop-Function -Message "Could not remove all SqlWatch Table Types from $database on $server." -ErrorRecord $_ -Target $server -Continue
@@ -216,12 +191,8 @@ Function Uninstall-DbaSqlWatch {
             if ($PSCmdlet.ShouldProcess($server, "Removing SqlWatch Service Broker Services")) {
                 try {
                     Write-Message -Level Verbose -Message "Removing SqlWatch service broker services from $database on $server."
-                    $dropScript = ""
-                    $BrokerServices | ForEach-Object {
-                        $dropScript += "DROP SERVICE $($PSItem.Name);`n"
-                    }
-                    if ($dropScript) {
-                        Invoke-DbaQuery -SqlInstance $server -Database $Database -Query $dropScript
+                    if ($BrokerServices) {
+                        $BrokerServices | ForEach-Object { $PSItem.Drop() }
                     }
                 } catch {
                     Stop-Function -Message "Could not remove all SqlWatch broker services from $database on $server." -ErrorRecord $_ -Target $server -Continue
@@ -231,12 +202,8 @@ Function Uninstall-DbaSqlWatch {
             if ($PSCmdlet.ShouldProcess($server, "Removing SqlWatch Service Broker Queues")) {
                 try {
                     Write-Message -Level Verbose -Message "Removing SqlWatch service broker queues from $database on $server."
-                    $dropScript = ""
-                    $BrokerQueues | ForEach-Object {
-                        $dropScript += "DROP QUEUE $($PSItem.Name);`n"
-                    }
-                    if ($dropScript) {
-                        Invoke-DbaQuery -SqlInstance $server -Database $Database -Query $dropScript
+                    if ($BrokerQueues) {
+                        $BrokerQueues | ForEach-Object { $PSItem.Drop() }
                     }
                 } catch {
                     Stop-Function -Message "Could not remove all SqlWatch broker queues from $database on $server." -ErrorRecord $_ -Target $server -Continue
