@@ -1,4 +1,4 @@
-﻿function Get-DbaDbServiceBrokerQueue {
+function Get-DbaDbServiceBrokerQueue {
     <#
     .SYNOPSIS
         Gets database service broker queues

@@ -1,4 +1,4 @@
-﻿function Get-DbaDbServiceBrokerService {
+function Get-DbaDbServiceBrokerService {
     <#
     .SYNOPSIS
         Gets database service broker services

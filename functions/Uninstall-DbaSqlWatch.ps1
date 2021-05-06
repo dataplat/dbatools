@@ -90,11 +90,11 @@ Function Uninstall-DbaSqlWatch {
             }
 
             # get SqlWatch objects
-            $tables = Get-DbaDbTable -SqlInstance $server -Database $Database | Where-Object { $PSItem.Name -like "sqlwatch_*" -or $PSItem.Name -like "dbachecks*" -or $PSItem.Name -eq "__RefactorLog" }  | Sort-Object $PSItem.createdate -Descending
+            $tables = Get-DbaDbTable -SqlInstance $server -Database $Database | Where-Object { $PSItem.Name -like "sqlwatch_*" -or $PSItem.Name -like "dbachecks*" -or $PSItem.Name -eq "__RefactorLog" } | Sort-Object $PSItem.createdate -Descending
             $views = Get-DbaDbView -SqlInstance $server -Database $Database | Where-Object { $PSItem.Name -like "vw_sqlwatch_*" } | Sort-Object $PSItem.createdate -Descending
             $sprocs = Get-DbaDbStoredProcedure -SqlInstance $server -Database $Database | Where-Object { $PSItem.Name -like "usp_sqlwatch_*" -or $PSItem.Name -like "Stream*" } | Sort-Object $PSItem.createdate -Descending
-            $funcs = Get-DbaDbUDF -SqlInstance $server -Database $Database | Where-Object { $PSItem.Name -like "ufn_sqlwatch_*" -or $PSItem.Name -like "Get*" -or $PSItem.Name -like "Read*" -and $PSItem.Name -ne "ufn_sqlwatch_get_threshold_comparator" } | Sort-Object $PSItem.createdate
-            $funcs += Get-DbaDbUDF -SqlInstance $server -Database $Database | Where-Object { $PSItem.Name -eq "ufn_sqlwatch_get_threshold_comparator"}
+            $funcs = Get-DbaDbUdf -SqlInstance $server -Database $Database | Where-Object { $PSItem.Name -like "ufn_sqlwatch_*" -or $PSItem.Name -like "Get*" -or $PSItem.Name -like "Read*" -and $PSItem.Name -ne "ufn_sqlwatch_get_threshold_comparator" } | Sort-Object $PSItem.createdate
+            $funcs += Get-DbaDbUdf -SqlInstance $server -Database $Database | Where-Object { $PSItem.Name -eq "ufn_sqlwatch_get_threshold_comparator" }
             $agentJobs = Get-DbaAgentJob -SqlInstance $server | Where-Object { $PSItem.Name -like "SqlWatch-*" }
             $XESessions = Get-DbaXESession -SqlInstance $server | Where-Object { $PSItem.Name -like "SQLWATCH_*" }
             $Assemblies = Get-DbaDbAssembly -SqlInstance $server -Database $Database | Where-Object { $PSItem.Name -like "SqlWatch*" }
@@ -216,7 +216,7 @@ Function Uninstall-DbaSqlWatch {
                         Remove-DbaXESession -SqlInstance $Server -Session $XESessions.Name -Confirm:$false
                     }
                 } catch {
-                   Stop-Function -Message "Could not remove all XE Session for SqlWatch on $server." -ErrorRecord $_ -Target $server -Continue
+                    Stop-Function -Message "Could not remove all XE Session for SqlWatch on $server." -ErrorRecord $_ -Target $server -Continue
                 }
             }
 

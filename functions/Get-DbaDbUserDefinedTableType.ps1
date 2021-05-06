@@ -1,4 +1,4 @@
-﻿function Get-DbaDbUserDefinedTableType {
+function Get-DbaDbUserDefinedTableType {
     <#
     .SYNOPSIS
         Gets database user defined table types
