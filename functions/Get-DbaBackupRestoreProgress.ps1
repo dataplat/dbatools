@@ -1,10 +1,10 @@
 function Get-DbaBackupRestoreProgress {
     <#
     .SYNOPSIS
-        Returns all running BACKUP and RESTORE operations
+        Returns all active BACKUP and RESTORE operations
 
     .DESCRIPTION
-        Returns all running BACKUP and RESTORE operations on the provided instance(s)
+        Returns all active BACKUP and RESTORE operations on the provided instance(s)
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.
@@ -22,7 +22,7 @@ function Get-DbaBackupRestoreProgress {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: Backup, Restore
+        Tags: Backup, Restore, ETA
         Author: M. Boomaars
 
         Copyright: (c) 2021 by dbatools, licensed under MIT
@@ -34,17 +34,17 @@ function Get-DbaBackupRestoreProgress {
     .EXAMPLE
         PS C:\> Get-DbaBackupRestoreProgress -SqlInstance sql2017
 
-        Returns all running BACKUP and RESTORE operations on SQL Server instance 2017
+        Returns all active BACKUP and RESTORE operations on SQL Server instance 2017
 
     .EXAMPLE
         PS C:\> Get-DbaBackupRestoreProgress -SqlInstance sql2017 -SqlCredential sqladmin
 
-        Returns all running BACKUP and RESTORE operations on SQL Server instance 2017 using login 'sqladmin'
+        Returns all active BACKUP and RESTORE operations on SQL Server instance 2017 using login 'sqladmin'
 
     .EXAMPLE
         PS C:\> Get-DbaBackupRestoreProgress -SqlInstance sql2017,sql2019 | where {$_.Command -like 'RESTORE*'} | ft -AutoSize
 
-        Returns all running RESTORE operations on SQL Server instances 2017 and 2019
+        Returns all active RESTORE operations on SQL Server instances 2017 and 2019
 
     #>
     [CmdletBinding()]
