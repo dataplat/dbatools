@@ -55,7 +55,7 @@ function Install-DbaMaintenanceSolution {
 
     .PARAMETER InstallParallel
         If this switch is enabled, the Queue and QueueDatabase tables are created, for use when  @DatabasesInParallel = 'Y' are set in the jobs.
-        
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -422,15 +422,14 @@ function Install-DbaMaintenanceSolution {
                         }
                     }
                 }
+                [pscustomobject]@{
+                    ComputerName = $server.ComputerName
+                    InstanceName = $server.ServiceName
+                    SqlInstance  = $instance
+                    Results      = "Success"
+                }
             } catch {
                 Stop-Function -Message "Could not execute $shortFileName in $Database on $instance." -ErrorRecord $_ -Target $db -Continue
-            }
-
-            [pscustomobject]@{
-                ComputerName = $server.ComputerName
-                InstanceName = $server.ServiceName
-                SqlInstance  = $instance
-                Results      = "Success"
             }
         }
         # Only here due to need for non-pooled connection in this command
