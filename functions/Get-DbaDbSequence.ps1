@@ -60,6 +60,27 @@ function Get-DbaDbSequence {
         PS C:\> Get-DbaDatabase -SqlInstance sqldev01 -Database TestDB | Get-DbaDbSequence -Name TestSequence -Schema TestSchema
 
         Using a pipeline this command finds the sequence named TestSchema.TestSequence in the TestDB database on the sqldev01 instance.
+
+    .EXAMPLE
+        PS C:\> Get-DbaDbSequence -SqlInstance localhost
+
+        Finds all the sequences on the localhost instance.
+
+    .EXAMPLE
+        PS C:\> Get-DbaDbSequence -SqlInstance localhost -Database db
+
+        Finds all the sequences in the db database on the localhost instance.
+
+    .EXAMPLE
+        PS C:\> Get-DbaDbSequence -SqlInstance localhost -Name seq
+
+        Finds all the sequences named seq on the localhost instance.
+
+    .EXAMPLE
+        PS C:\> Get-DbaDbSequence -SqlInstance localhost -Schema sch
+
+        Finds all the sequences in the sch schema on the localhost instance.
+
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'Low')]
     param (
