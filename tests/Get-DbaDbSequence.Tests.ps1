@@ -30,12 +30,6 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
 
     Context "commands work as expected" {
 
-        It "validates required Database param" {
-            $sequence = Get-DbaDbSequence -SqlInstance $instance2 -Name SequenceTest -ErrorVariable error
-            $sequence | Should -BeNullOrEmpty
-            $error | Should -Match "Database is required when SqlInstance is specified"
-        }
-
         It "finds a sequence" {
             $sequence = Get-DbaDbSequence -SqlInstance $instance2 -Database $newDbName -Name "Sequence1_$random" -Schema "Schema_$random"
             $sequence.Name | Should -Be "Sequence1_$random"
