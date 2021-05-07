@@ -32,7 +32,7 @@ function Get-DbaDbServiceBrokerQueue {
 
     .NOTES
         Tags: Database, ServiceBroker, Queue
-        Author: Ant Green (@ant-green)
+        Author: Ant Green (@ant_green)
 
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT

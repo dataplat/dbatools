@@ -29,7 +29,7 @@ function Get-DbaDbUserDefinedTableType {
 
     .NOTES
         Tags: Database, UserDefinedTableType, Type
-        Author: Ant Green (@ant-green)
+        Author: Ant Green (@ant_green)
 
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT

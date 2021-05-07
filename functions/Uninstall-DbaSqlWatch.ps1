@@ -101,8 +101,6 @@ Function Uninstall-DbaSqlWatch {
             $TableTypes = Get-DbaDbUserDefinedTableType -SqlInstance $server -Database $Database | Where-Object { $PSItem.Name -like "utype_*" }
             $BrokerQueues = Get-DbaDbServiceBrokerQueue -SqlInstance $server -Database $Database | Where-Object { $PSItem.Name -like "sqlwatch_*" }
             $BrokerServices = Get-DbaDbServiceBrokerService -SqlInstance $server -Database $Database | Where-Object { $PSItem.Name -like "sqlwatch_*" }
-            #Put XE at the end as it messes with the call to Assemblies for some reason
-
 
             if ($PSCmdlet.ShouldProcess($server, "Removing SqlWatch SQL Agent jobs")) {
                 try {
