@@ -106,7 +106,7 @@ function Get-DbaDbSequence {
                 Add-Member -Force -InputObject $dbSequence -MemberType NoteProperty -Name SqlInstance -Value $server.DomainInstanceName
                 Add-Member -Force -InputObject $dbSequence -MemberType NoteProperty -Name Database -Value $db.Name
 
-                Select-DefaultView -InputObject $dbSequence -Property "ComputerName", "InstanceName", "Database", "Schema", "Name", "DataType", "StartValue", "IncrementValue"
+                Select-DefaultView -InputObject $dbSequence -Property "ComputerName", "InstanceName", "SqlInstance", "Database", "Schema", "Name", "DataType", "StartValue", "IncrementValue"
             }
         }
     }
