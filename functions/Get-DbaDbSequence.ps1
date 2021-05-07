@@ -63,33 +63,51 @@ function Get-DbaDbSequence {
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'Low')]
     param (
-        [DbaInstanceParameter[]]$SqlInstance,
+        [parameter(ValueFromPipeline)]
+        [DbaInstance[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [string[]]$Database,
-        [Parameter(Mandatory)]
-        [string]$Name,
-        [string]$Schema = 'dbo',
+        [string[]]$Name,
+        [string[]]$Schema,
         [parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
         [switch]$EnableException
     )
     process {
-
-        if ((Test-Bound -ParameterName SqlInstance) -and (Test-Bound -Not -ParameterName Database)) {
-            Stop-Function -Message "Database is required when SqlInstance is specified"
+        if (-not $InputObject -and -not $SqlInstance) {
+            Stop-Function -Message "You must pipe in a database or specify a SqlInstance"
             return
         }
 
-        # caller specified the instance info
-        foreach ($instance in $SqlInstance) {
-            foreach ($db in (Get-DbaDatabase -SqlInstance $instance -SqlCredential $SqlCredential -Database $Database)) {
-                $db.Sequences | Where-Object { $_.Schema -eq $Schema -and $_.Name -eq $Name }
-            }
+        if ($SqlInstance) {
+            $InputObject += Get-DbaDatabase -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $Database -ExcludeDatabase $ExcludeDatabase
         }
 
-        # caller has piped in one or more databases
         foreach ($db in $InputObject) {
-            $db.Sequences | Where-Object { $_.Schema -eq $Schema -and $_.Name -eq $Name }
+            if ($db.IsAccessible -eq $false) {
+                continue
+            }
+            $server = $db.Parent
+            Write-Message -Level 'Verbose' -Message "Getting Database Sequences for $db on $server"
+
+            $dbSequences = $db.Sequences
+
+            if ($Name) {
+                $dbSequences = $dbSequences | Where-Object { $_.Name -in $Name }
+            }
+
+            if ($Schema) {
+                $dbSequences = $dbSequences | Where-Object { $_.Schema -in $Schema }
+            }
+
+            foreach ($dbSequence in $dbSequences) {
+                Add-Member -Force -InputObject $dbSequence -MemberType NoteProperty -Name ComputerName -Value $server.ComputerName
+                Add-Member -Force -InputObject $dbSequence -MemberType NoteProperty -Name InstanceName -Value $server.ServiceName
+                Add-Member -Force -InputObject $dbSequence -MemberType NoteProperty -Name SqlInstance -Value $server.DomainInstanceName
+                Add-Member -Force -InputObject $dbSequence -MemberType NoteProperty -Name Database -Value $db.Name
+
+                Select-DefaultView -InputObject $dbSequence -Property "ComputerName", "InstanceName", "Database", "Schema", "Name", "DataType", "StartValue", "IncrementValue"
+            }
         }
     }
 }
