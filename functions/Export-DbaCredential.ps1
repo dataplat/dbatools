@@ -120,7 +120,7 @@ function Export-DbaCredential {
                         foreach ($cred in $server.Credentials) {
                             $credObject = [PSCustomObject]@{
                                 Name     = '[' + $cred.Name + ']'
-                                Identity = $cred.Name
+                                Identity = $cred.Identity.ToString()
                                 Password = ''
                             }
                             $creds.Add($credObject) | Out-Null

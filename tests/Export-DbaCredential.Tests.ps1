@@ -18,7 +18,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     BeforeAll {
         $plaintext = "ReallyT3rrible!"
         $password = ConvertTo-SecureString $plaintext -AsPlainText -Force
-        $null = New-DbaCredential -SqlInstance $script:instance2 -Name dbatoolsci_CaptainAcred -Identity dbatoolsci_CaptainAcred -Password $password
+        $null = New-DbaCredential -SqlInstance $script:instance2 -Name dbatoolsci_CaptainAcred -Identity dbatoolsci_CaptainAcredId -Password $password
         $null = New-DbaCredential -SqlInstance $script:instance2 -Identity dbatoolsci_Hulk -Password $password
         $allfiles = @()
     }
@@ -46,7 +46,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 
     Context "Should export a specific credential" {
         $filepath = "$env:USERPROFILE\Documents\dbatoolsci_credential.sql"
-        $null = Export-DbaCredential -SqlInstance $script:instance2 -Identity 'dbatoolsci_CaptainAcred' -FilePath $filepath
+        $null = Export-DbaCredential -SqlInstance $script:instance2 -Identity 'dbatoolsci_CaptainAcredId' -FilePath $filepath
         $results = Get-Content -Path $filepath
         $allfiles += $filepath
 
@@ -83,7 +83,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 
     Context "Should export a specific credential excluding the password" {
         $filepath = "$env:USERPROFILE\Documents\temp-credential.sql"
-        $null = Export-DbaCredential -SqlInstance $script:instance2 -Identity 'dbatoolsci_Hulk' -FilePath $filepath -ExcludePassword
+        $null = Export-DbaCredential -SqlInstance $script:instance2 -Identity 'dbatoolsci_CaptainAcredId' -FilePath $filepath -ExcludePassword
         $results = Get-Content -Path $filepath
         $allfiles += $filepath
 
@@ -92,7 +92,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
 
         It "Should contain the correct identity (see #7282)" {
-            $results | Should Match "IDENTITY = N'dbatoolsci_Hulk'"
+            $results | Should Match "IDENTITY = N'dbatoolsci_CaptainAcredId'"
         }
 
         It "Should not have the password" {
