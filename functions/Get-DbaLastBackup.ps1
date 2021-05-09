@@ -41,11 +41,6 @@ function Get-DbaLastBackup {
     .EXAMPLE
         PS C:\> Get-DbaLastBackup -SqlInstance ServerA\sql987
 
-        Returns a custom object displaying Server, Database, RecoveryModel, LastFullBackup, LastDiffBackup, LastLogBackup, SinceFull, SinceDiff, SinceLog, Status, DatabaseCreated, DaysSinceDbCreated
-
-    .EXAMPLE
-        PS C:\> Get-DbaLastBackup -SqlInstance ServerA\sql987
-
         Returns a custom object with Server name, Database name, and the date the last time backups were performed.
 
     .EXAMPLE
@@ -91,7 +86,7 @@ function Get-DbaLastBackup {
     process {
         foreach ($instance in $SqlInstance) {
             try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential -MinimumVersion 9
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
             } catch {
                 Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
