@@ -6,7 +6,7 @@ function Get-DbaLastBackup {
     .DESCRIPTION
         Retrieves and compares the date/time for the last known backups, as well as the creation date/time for the database.
 
-        Default output includes columns Server, Database, RecoveryModel, LastFullBackup, LastDiffBackup, LastLogBackup, SinceFull, SinceDiff, SinceLog, Status, DatabaseCreated, DaysSinceDbCreated.
+        Default output includes columns Server, Database, LastFullBackup, LastDiffBackup, LastLogBackup.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.
