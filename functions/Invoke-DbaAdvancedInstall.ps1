@@ -124,17 +124,13 @@ function Invoke-DbaAdvancedInstall {
             $output = [PSCustomObject]@{
                 Path              = $null
                 Content           = $null
-                # Andreas Jordan: I would like to remove the next line
-                Log               = $null
                 ExitMessage       = $null
                 ConfigurationFile = $null
             }
             if (Test-Path $summaryPath) {
                 $output.Path = $summaryPath
                 $output.Content = Get-Content -Path $summaryPath
-                # Andreas Jordan: I would like to remove the next line
-                $output.Log = $output.Content | Select-String "Exit Message"
-                $output.ExitMessage = ($output.Content | Select-String "Exit message" | Select-Object -ExpandProperty Line) -replace '^ *Exit message: *', ''
+                $output.ExitMessage = ($output.Content | Select-String "Exit message").Line -replace '^ *Exit message: *', ''
                 # get last folder created - that's our setup
                 $lastLogFolder = Get-ChildItem -Path $rootPath -Directory | Sort-Object -Property Name -Descending | Select-Object -First 1 -ExpandProperty FullName
                 if (Test-Path $lastLogFolder\ConfigurationFile.ini) {
@@ -167,10 +163,8 @@ function Invoke-DbaAdvancedInstall {
         Notes             = @()
         ExitCode          = $null
         ExitMessage       = $null
-        # Andreas Jordan: I would like to remove the next line
         Log               = $null
         LogFile           = $null
-        LogFileContent    = $null
         ConfigurationFile = $null
 
     }
@@ -260,10 +254,8 @@ function Invoke-DbaAdvancedInstall {
         try {
             $summary = Get-SqlInstallSummary -ComputerName $ComputerName -Credential $Credential -Version $Version
             $output.ExitMessage = $summary.ExitMessage
-            # Andreas Jordan: I would like to remove the next line
-            $output.Log = $summary.Log
+            $output.Log = $summary.Content
             $output.LogFile = $summary.Path
-            $output.LogFileContent = $summary.Content
             $output.ConfigurationFile = $summary.ConfigurationFile
         } catch {
             Write-Message -Level Warning -Message "Could not get the contents of the summary file from $($ComputerName). Related properties will be empty" -ErrorRecord $_
@@ -292,7 +284,7 @@ function Invoke-DbaAdvancedInstall {
     if ($installResult.Successful) {
         $output.Successful = $true
     } else {
-        $msg = "Installation failed with exit code $($installResult.ExitCode). Expand 'ExitMessage' and 'LogFileContent' property to find more details."
+        $msg = "Installation failed with exit code $($installResult.ExitCode). Expand 'ExitMessage' and 'Log' property to find more details."
         $output.Notes += $msg
         Stop-Function -Message $msg
         return $output
