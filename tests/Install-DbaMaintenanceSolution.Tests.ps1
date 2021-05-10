@@ -21,10 +21,18 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         }
         AfterAll {
             $server.Databases['tempdb'].Query("DROP TABLE CommandLog")
+            Invoke-DbaQuery -SqlInstance $script:instance3 -Database tempdb -Query "drop table CommandLog;"
+            Invoke-DbaQuery -SqlInstance $script:instance3 -Database tempdb -Query "drop procedure CommandExecute; drop procedure DatabaseBackup; drop procedure DatabaseIntegrityCheck; drop procedure IndexOptimize;"
         }
         It "does not overwrite existing " {
             $results = Install-DbaMaintenanceSolution -SqlInstance $script:instance2 -Database tempdb -WarningVariable warn -WarningAction SilentlyContinue
             $warn -match "already exists" | Should Be $true
+        }
+
+        It "Continues the installation on other servers " {
+            $results2 = Install-DbaMaintenanceSolution -SqlInstance $script:instance2, $script:instance3 -Database tempdb -installjobs
+            $table = Get-DbaDbTable -SqlInstance $script:instance3 -Database tempdb -Table CommandLog
+            $table | Should -Not -BeNullOrEmpty
         }
     }
 }
