@@ -134,7 +134,7 @@ function Invoke-DbaAdvancedInstall {
                 $output.Content = Get-Content -Path $summaryPath
                 # Andreas Jordan: I would like to remove the next line
                 $output.Log = $output.Content | Select-String "Exit Message"
-                $output.ExitMessage = $output.Content | Select-String "Exit Message" | Select-Object -ExpandProperty Line
+                $output.ExitMessage = ($output.Content | Select-String "Exit message" | Select-Object -ExpandProperty Line) -replace '^ *Exit message: *', ''
                 # get last folder created - that's our setup
                 $lastLogFolder = Get-ChildItem -Path $rootPath -Directory | Sort-Object -Property Name -Descending | Select-Object -First 1 -ExpandProperty FullName
                 if (Test-Path $lastLogFolder\ConfigurationFile.ini) {
