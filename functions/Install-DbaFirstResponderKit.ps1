@@ -33,6 +33,12 @@ function Install-DbaFirstResponderKit {
         Specifies the path to a local file to install FRK from. This *should* be the zip file as distributed by the maintainers.
         If this parameter is not specified, the latest version will be downloaded and installed from https://github.com/BrentOzarULTD/SQL-Server-First-Responder-Kit
 
+    .PARAMETER OnlyScript
+        Specifies the name(s) of the script(s) to run for installation. Wildcards are permitted.
+        This way only part of the First Responder Kit can be installed.
+        Using one of the three official Install-* scripts (Install-All-Scripts.sql, Install-Core-Blitz-No-Query-Store.sql, Install-Core-Blitz-With-Query-Store.sql) is possible this way.
+        Even removing the First Responder Kit is possible by using the official Uninstall.sql.
+
     .PARAMETER Force
         If this switch is enabled, the FRK will be downloaded from the internet even if previously cached.
 
@@ -90,6 +96,21 @@ function Install-DbaFirstResponderKit {
         PS C:\> Install-DbaFirstResponderKit -SqlInstance sql2016 -Branch dev
 
         Installs the dev branch version of the FRK in the master database on sql2016 instance.
+
+    .EXAMPLE
+        PS C:\> Install-DbaFirstResponderKit -SqlInstance sql2016 -OnlyScript sp_Blitz.sql, sp_BlitzWho.sql, SqlServerVersions.sql
+
+        Installs only the procedures sp_Blitz and sp_BlitzWho and the table SqlServerVersions by running the corresponding scripts.
+
+    .EXAMPLE
+        PS C:\> Install-DbaFirstResponderKit -SqlInstance sql2016 -OnlyScript Install-Core-Blitz-No-Query-Store.sql
+
+        Installs only part of the First Responder Kit by running the official install script.
+
+    .EXAMPLE
+        PS C:\> Install-DbaFirstResponderKit -SqlInstance sql2016 -OnlyScript Uninstall.sql
+
+        Uninstalls the First Responder Kit by running the official uninstall script.
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Medium")]
     param (
@@ -100,6 +121,7 @@ function Install-DbaFirstResponderKit {
         [string]$Branch = "main",
         [object]$Database = "master",
         [string]$LocalFile,
+        [string[]]$OnlyScript,
         [switch]$Force,
         [switch]$EnableException
     )
@@ -180,9 +202,23 @@ function Install-DbaFirstResponderKit {
                 } else {
                     $null = New-Item -Path $LocalCachedCopy -ItemType Container
                 }
-                Copy-Item -Path "$zipFolder\sp_*.sql" -Destination $LocalCachedCopy
-                Copy-Item -Path "$zipFolder\SqlServerVersions.sql" -Destination $LocalCachedCopy
+                Copy-Item -Path "$zipFolder\*.sql" -Destination $LocalCachedCopy
             }
+        }
+
+        if ($OnlyScript) {
+            $sqlScripts = @()
+            foreach ($script in $OnlyScript) {
+                $sqlScript = Get-ChildItem $LocalCachedCopy -Filter $script
+                if ($sqlScript) {
+                    $sqlScripts += $sqlScript
+                } else {
+                    Write-Message -Level Warning -Message "Script $script not found in $LocalCachedCopy, skipping."
+                }
+            }
+        } else {
+            $sqlScripts = Get-ChildItem $LocalCachedCopy -Filter "sp_*.sql"
+            $sqlScripts += Get-ChildItem $LocalCachedCopy -Filter "SqlServerVersions.sql"
         }
     }
 
@@ -203,8 +239,6 @@ function Install-DbaFirstResponderKit {
                 $allprocedures = ($server.Query($allprocedures_query, $Database)).Name
 
                 # Install/Update each FRK stored procedure
-                $sqlScripts = Get-ChildItem $LocalCachedCopy -Filter "sp_*.sql"
-                $sqlScripts += Get-ChildItem $LocalCachedCopy -Filter "SqlServerVersions.sql"
                 foreach ($script in $sqlScripts) {
                     $scriptName = $script.Name
                     $scriptError = $false
