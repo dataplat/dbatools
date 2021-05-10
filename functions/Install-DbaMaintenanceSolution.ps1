@@ -310,8 +310,8 @@ function Install-DbaMaintenanceSolution {
                 $tables = Get-DbaDbTable -SqlInstance $server -Database $Database -Table CommandLog, Queue, QueueDatabase -IncludeSystemDBs | Where-Object Database -eq $Database
 
                 if ($null -ne $procs -or $null -ne $tables) {
-                    Stop-Function -Message "The Maintenance Solution already exists in $Database on $instance. Use -ReplaceExisting to automatically drop and recreate."
-                    return
+                    Write-Message -Level Warning -Message "The Maintenance Solution already exists in $Database on $instance. Use -ReplaceExisting to automatically drop and recreate."
+                    continue
                 }
             }
 
