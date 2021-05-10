@@ -45,7 +45,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         }
         It "Shows status of Error" {
             $folder = Join-Path (Get-DbatoolsConfigValue -FullName Path.DbatoolsData) -Child "SQL-Server-First-Responder-Kit-main"
-            $sqlScript = (Get-ChildItem $folder | Select-Object -First 1).FullName
+            $sqlScript = (Get-ChildItem $folder -Filter "sp_*.sql" | Select-Object -First 1).FullName
             Add-Content $sqlScript (New-Guid).ToString()
             $result = Install-DbaFirstResponderKit -SqlInstance $script:instance2 -Database $database -Verbose:$false
             $result[0].Status -eq "Error" | Should -Be $true
@@ -88,7 +88,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         }
         It "Shows status of Error" {
             $folder = Join-Path (Get-DbatoolsConfigValue -FullName Path.DbatoolsData) -Child "SQL-Server-First-Responder-Kit-main"
-            $sqlScript = (Get-ChildItem $folder | Select-Object -First 1).FullName
+            $sqlScript = (Get-ChildItem $folder -Filter "sp_*.sql" | Select-Object -First 1).FullName
             Add-Content $sqlScript (New-Guid).ToString()
             $result = Install-DbaFirstResponderKit -SqlInstance $script:instance3 -Database $database
             $result[0].Status -eq "Error" | Should -Be $true
