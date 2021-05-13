@@ -233,7 +233,7 @@ function Install-DbaFirstResponderKit {
         foreach ($instance in $SqlInstance) {
             if ($PSCmdlet.ShouldProcess($instance, "Connecting to $instance")) {
                 try {
-                    $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
+                    $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -NonPooled
                 } catch {
                     Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
                 }
