@@ -106,10 +106,6 @@ function Mount-DbaDatabase {
                     Stop-Function -Message "$db is already attached to $server." -Target $db -Continue
                 }
 
-                if ($server.Databases[$db].IsSystemObject) {
-                    Stop-Function -Message "$db is a system database and cannot be attached using this method." -Target $db -Continue
-                }
-
                 if (-Not (Test-Bound -Parameter FileStructure)) {
                     $backuphistory = Get-DbaDbBackupHistory -SqlInstance $server -Database $db -Type Full | Sort-Object End -Descending | Select-Object -First 1
 
