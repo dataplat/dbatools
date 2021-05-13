@@ -1,10 +1,10 @@
 function Remove-DbaDbSynonym {
     <#
     .SYNOPSIS
-        Removes a database synonym from database(s) for each instance(s) of SQL Server.
+        Removes synonym(s) from database(s) / instance(s) of SQL Server.
 
     .DESCRIPTION
-        The Remove-DbaDbSynonym removes synonym(s) from database(s) for each instance(s) of SQL Server.
+        The Remove-DbaDbSynonym removes synonym(s) from database(s) / instance(s) of SQL Server.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.
@@ -33,9 +33,6 @@ function Remove-DbaDbSynonym {
 
     .PARAMETER ExcludeSynonym
         The synonym(s) to exclude.
-
-    .PARAMETER IncludeSystemDbs
-        If this switch is enabled, synonyms can be removed from system databases.
 
     .PARAMETER InputObject
         Enables piped input from Get-DbaDbSynonym or Get-DbaDatabase
@@ -82,7 +79,7 @@ function Remove-DbaDbSynonym {
         PS C:\> $synonyms = Get-DbaDbSynonym -SqlInstance localhost, sql2016 -Database db1, db2 -Synonym synonym1, synonym2, synonym3
         PS C:\> $synonyms | Remove-DbaDbSynonym
 
-        Removes synonym1,synonym2,synonym3 from db1 and db2 on the local and sql2016 SQL Server instances
+        Removes synonym1, synonym2, synonym3 from db1 and db2 on the local and sql2016 SQL Server instances
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High')]
     param (
@@ -95,7 +92,6 @@ function Remove-DbaDbSynonym {
         [string[]]$ExcludeSchema,
         [string[]]$Synonym,
         [string[]]$ExcludeSynonym,
-        [switch]$IncludeSystemDbs,
         [parameter(ValueFromPipeline)]
         [object[]]$InputObject,
         [switch]$EnableException

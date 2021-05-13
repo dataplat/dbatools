@@ -1,10 +1,10 @@
 function Get-DbaDbSynonym {
     <#
     .SYNOPSIS
-        Get the database synonyms for each instance(s) of SQL Server.
+        Get the synonym(s) for database(s) / instance(s) of SQL Server.
 
     .DESCRIPTION
-        The Get-DbaDbSynonym returns connected SMO object for database synonyms for each instance(s) of SQL Server.
+        The Get-DbaDbSynonym returns the synonym(s) for database(s) / instance(s) of SQL Server.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.

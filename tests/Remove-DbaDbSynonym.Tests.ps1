@@ -5,7 +5,7 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 Describe "$CommandName Unit Tests" -Tags "UnitTests" {
     Context "Validate parameters" {
         [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'Schema', 'ExcludeSchema', 'Synonym', 'ExcludeSynonym', 'IncludeSystemDbs', 'InputObject', 'EnableException'
+        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'Schema', 'ExcludeSchema', 'Synonym', 'ExcludeSynonym', 'InputObject', 'EnableException'
         $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
         It "Should only contain our specific parameters" {
             (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
@@ -75,16 +75,6 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $result8.Name | Should -Not -Contain 'syn7'
         }
 
-        It 'Removes synonyms in System DB' {
-            $null = New-DbaDbSynonym -SqlInstance $script:instance2 -Database 'msdb' -Synonym 'syn9' -BaseObject 'obj9'
-            $result9 = Get-DbaDbSynonym -SqlInstance $script:instance2 -Database 'msdb'
-            Remove-DbaDbSynonym -SqlInstance $script:instance2 -Database 'msdb' -Synonym 'syn9' -IncludeSystemDbs -confirm:$false
-            $result10 = Get-DbaDbSynonym -SqlInstance $script:instance2 -Database 'msdb'
-
-            $result9.Count | Should BeGreaterThan $result10.Count
-            $result10.Name | Should -Not -Contain 'syn9'
-        }
-
         It 'Excludes Synonyms in a specified database' {
             $null = New-DbaDbSynonym -SqlInstance $script:instance2 -Database $dbname -Synonym 'syn10' -BaseObject 'obj10'
             $null = New-DbaDbSynonym -SqlInstance $script:instance2 -Database $dbname2 -Synonym 'syn11' -BaseObject 'obj11'
@@ -137,6 +127,12 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $result17.Count | Should BeGreaterThan $result18.Count
             $result18.Database | Should -Not -Contain $dbname
             $result18.Database | Should -Not -Contain $dbname2
+        }
+
+        It 'Input is provided' {
+            $result20 = Remove-DbaDbSynonym -WarningAction SilentlyContinue -WarningVariable warn > $null
+
+            $warn | Should -Match 'You must pipe in a synonym, database, or server or specify a SqlInstance'
         }
     }
 }

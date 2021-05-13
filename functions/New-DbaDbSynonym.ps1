@@ -1,10 +1,10 @@
 function New-DbaDbSynonym {
     <#
     .SYNOPSIS
-        Create new synonyms for each database(s) / instance(s) of SQL Server.
+        Create new synonym for each database(s) / instance(s) of SQL Server.
 
     .DESCRIPTION
-        The New-DbaDbSynonym creates new synonyms on database(s) / instance(s) of SQL Server.
+        The New-DbaDbSynonym creates new synonym on database(s) / instance(s) of SQL Server.
 
    .PARAMETER SqlInstance
         The target SQL Server instance or instances.

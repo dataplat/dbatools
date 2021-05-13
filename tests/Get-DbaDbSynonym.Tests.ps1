@@ -31,61 +31,67 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 
     Context "Functionality" {
         It 'Returns Results' {
-            $result = Get-DbaDbSynonym -SqlInstance $script:instance2
+            $result1 = Get-DbaDbSynonym -SqlInstance $script:instance2
 
-            $result.Count | Should -Be 4
+            $result1.Count | Should -Be 4
         }
 
         It 'Returns all synonyms for all databases' {
-            $result = Get-DbaDbSynonym -SqlInstance $script:instance2
+            $result2 = Get-DbaDbSynonym -SqlInstance $script:instance2
 
-            $uniqueDatabases = $result.Database | Select-Object -Unique
+            $uniqueDatabases = $result2.Database | Select-Object -Unique
             $uniqueDatabases.Count | Should -Be 2
-            $result.Count | Should -Be 4
+            $result2.Count | Should -Be 4
         }
 
         It 'Accepts a list of databases' {
-            $result = Get-DbaDbSynonym -SqlInstance $script:instance2 -Database $dbname, $dbname2
+            $result3 = Get-DbaDbSynonym -SqlInstance $script:instance2 -Database $dbname, $dbname2
 
-            $result.Database | Select-Object -Unique| Should -Be $dbname, $dbname2
+            $result3.Database | Select-Object -Unique | Should -Be $dbname, $dbname2
         }
 
         It 'Excludes databases' {
-            $result = Get-DbaDbSynonym -SqlInstance $script:instance2 -ExcludeDatabase $dbname2
+            $result4 = Get-DbaDbSynonym -SqlInstance $script:instance2 -ExcludeDatabase $dbname2
 
-            $uniqueDatabases = $result.Database | Select-Object -Unique
+            $uniqueDatabases = $result4.Database | Select-Object -Unique
             $uniqueDatabases.Count | Should -BeExactly 1
             $uniqueDatabases | Should -Not -Contain $dbname2
         }
 
         It 'Accepts a list of synonyms' {
-            $result = Get-DbaDbSynonym -SqlInstance $script:instance2 -Synonym 'syn1', 'syn2'
+            $result5 = Get-DbaDbSynonym -SqlInstance $script:instance2 -Synonym 'syn1', 'syn2'
 
-            $result.Name | Select-Object -Unique | Should -Be 'syn1', 'syn2'
+            $result5.Name | Select-Object -Unique | Should -Be 'syn1', 'syn2'
         }
 
         It 'Excludes synonyms' {
-            $result = Get-DbaDbSynonym -SqlInstance $script:instance2 -ExcludeSynonym 'syn2'
+            $result6 = Get-DbaDbSynonym -SqlInstance $script:instance2 -ExcludeSynonym 'syn2'
 
-            $result.Name | Select-Object -Unique | Should -Not -Contain 'syn2'
+            $result6.Name | Select-Object -Unique | Should -Not -Contain 'syn2'
         }
 
         It 'Finds synonyms for specified schema only' {
-            $result = Get-DbaDbSynonym -SqlInstance $script:instance2 -Schema 'sch2'
+            $result7 = Get-DbaDbSynonym -SqlInstance $script:instance2 -Schema 'sch2'
 
-            $result.Count | Should -Be 1
+            $result7.Count | Should -Be 1
         }
 
         It 'Accepts a list of schemas' {
-            $result = Get-DbaDbSynonym -SqlInstance $script:instance2 -Schema 'dbo','sch2'
+            $result8 = Get-DbaDbSynonym -SqlInstance $script:instance2 -Schema 'dbo','sch2'
 
-            $result.Schema | Select-Object -Unique | Should -Be 'dbo','sch2'
+            $result8.Schema | Select-Object -Unique | Should -Be 'dbo','sch2'
         }
 
         It 'Excludes schemas' {
-            $result = Get-DbaDbSynonym -SqlInstance $script:instance2 -ExcludeSchema 'dbo'
+            $result9 = Get-DbaDbSynonym -SqlInstance $script:instance2 -ExcludeSchema 'dbo'
 
-            $result.Schema | Select-Object -Unique | Should -Not -Contain 'dbo'
+            $result9.Schema | Select-Object -Unique | Should -Not -Contain 'dbo'
+        }
+
+        It 'Input is provided' {
+            $result10 = Get-DbaDbSynonym -WarningAction SilentlyContinue -WarningVariable warn > $null
+
+            $warn | Should -Match 'You must pipe in a database or specify a SqlInstance'
         }
 
     }
