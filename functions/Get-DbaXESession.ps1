@@ -65,7 +65,7 @@ function Get-DbaXESession {
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 11 -AzureUnsupported
-                $SqlConn = $server.ConnectionContext.SqlConnectionObject
+                $SqlConn = $server.ConnectionContext.SqlConnectionObject.Clone()
                 $SqlStoreConnection = New-Object Microsoft.SqlServer.Management.Sdk.Sfc.SqlStoreConnection $SqlConn
                 $XEStore = New-Object  Microsoft.SqlServer.Management.XEvent.XEStore $SqlStoreConnection
             } catch {
