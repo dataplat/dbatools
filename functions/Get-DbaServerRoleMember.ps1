@@ -113,6 +113,7 @@ function Get-DbaServerRoleMember {
                     Stop-Function -Message "Issue gathering login details" -ErrorRecord $_ -Target $instance
                 }
                 Write-Message -Level 'Verbose' -Message "Filtering by logins: $($logins -join ', ')"
+                $loginRoles = @()
                 foreach ($l in $logins) {
                     $loginRoles += $l.ListMembers()
                 }
