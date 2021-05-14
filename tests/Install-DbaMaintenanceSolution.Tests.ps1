@@ -30,7 +30,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 
         It "Continues the installation on other servers " {
             $results2 = Install-DbaMaintenanceSolution -SqlInstance $script:instance2, $script:instance3 -Database tempdb
-            $sproc = Get-DbaDbModule -SqlInstance $script:instance3 -Database tempdb | where {$_.Name -eq "CommandExecute"}
+            $sproc = Get-DbaDbModule -SqlInstance $script:instance3 -Database tempdb | Where-Object {$_.Name -eq "CommandExecute"}
             $sproc | Should -Not -BeNullOrEmpty
         }
     }
