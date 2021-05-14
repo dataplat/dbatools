@@ -273,6 +273,19 @@ function Connect-DbaInstance {
 
         As we would like to use the new code path as a default in the future, please give feedback if you are using it in your environment.
 
+    .EXAMPLE
+        PS C:\> Set-DbatoolsConfig -FullName sql.connection.experimental -Value $true
+        PS C:\> $azureCredential = Get-Credential -Message 'Azure Credential'
+        PS C:\> $azureAccount = Connect-AzAccount -Credential $azureCredential
+        PS C:\> $azureToken = (Get-AzAccessToken -ResourceUrl https://database.windows.net).Token
+        PS C:\> $azureInstance = "YOURSERVER.database.windows.net"
+        PS C:\> $server = Connect-DbaInstance -SqlInstance $azureInstance -AccessToken $azureToken
+        PS C:\> Invoke-DbaQuery -SqlInstance $server -Query "select 1 as test"
+
+        Connect to an Azure SQL database with an AccessToken.
+        Note that the token is valid for only one hour and cannot be renewed automatically.
+        This is only available in the new code path for handling connections (see example above).
+
     #>
     [CmdletBinding()]
     param (
@@ -315,6 +328,7 @@ function Connect-DbaInstance {
         [string]$Thumbprint = (Get-DbatoolsConfigValue -FullName 'azure.certificate.thumbprint'),
         [ValidateSet('CurrentUser', 'LocalMachine')]
         [string]$Store = (Get-DbatoolsConfigValue -FullName 'azure.certificate.store'),
+        [string]$AccessToken,
         [switch]$DisableException
     )
     begin {
@@ -537,7 +551,7 @@ function Connect-DbaInstance {
                 }
 
                 # Check for ignored parameters
-                $ignoredParameters = 'ApplicationIntent', 'BatchSeparator', 'ClientName', 'ConnectTimeout', 'EncryptConnection', 'LockTimeout', 'MaxPoolSize', 'MinPoolSize', 'NetworkProtocol', 'PacketSize', 'PooledConnectionLifetime', 'SqlExecutionModes', 'StatementTimeout', 'TrustServerCertificate', 'WorkstationId', 'AuthenticationType', 'FailoverPartner', 'MultipleActiveResultSets', 'MultiSubnetFailover', 'AppendConnectionString'
+                $ignoredParameters = 'ApplicationIntent', 'BatchSeparator', 'ClientName', 'ConnectTimeout', 'EncryptConnection', 'LockTimeout', 'MaxPoolSize', 'MinPoolSize', 'NetworkProtocol', 'PacketSize', 'PooledConnectionLifetime', 'SqlExecutionModes', 'StatementTimeout', 'TrustServerCertificate', 'WorkstationId', 'AuthenticationType', 'FailoverPartner', 'MultipleActiveResultSets', 'MultiSubnetFailover', 'AppendConnectionString', 'AccessToken'
                 if ($inputObjectType -eq 'Server') {
                     if (Test-Bound -ParameterName $ignoredParameters) {
                         Write-Message -Level Warning -Message "Additional parameters are passed in, but they will be ignored"
@@ -595,6 +609,8 @@ function Connect-DbaInstance {
                             } else {
                                 $authType += 'sql'
                             }
+                        } elseif ($AccessToken) {
+                            $authType += 'token'
                         } else {
                             $authType += 'integrated'
                         }
@@ -603,6 +619,9 @@ function Connect-DbaInstance {
 
                     # Best way to get connection pooling to work is to use SqlConnectionInfo -> ServerConnection -> Server
                     $connInfo = New-Object -TypeName Microsoft.SqlServer.Management.Common.SqlConnectionInfo -ArgumentList $serverName
+
+                    # But if we have an AccessToken, we need ConnectionString -> SqlConnection -> ServerConnection -> Server
+                    # We will get the ConnectionString from the SqlConnectionInfo, so let's move on
 
                     # I will list all properties of SqlConnectionInfo and set them if value is provided
 
@@ -768,7 +787,18 @@ function Connect-DbaInstance {
                         $connInfo.WorkstationId = $WorkstationId
                     }
 
-                    $srvConn = New-Object -TypeName Microsoft.SqlServer.Management.Common.ServerConnection -ArgumentList $connInfo
+                    # If we have an AccessToken, so we will build a SqlConnection
+                    if ($AccessToken) {
+                        Write-Message -Level Debug -Message "We have an AccessToken and build a SqlConnection with that token"
+                        Write-Message -Level Debug -Message "We use connInfo.ConnectionString: $($connInfo.ConnectionString)"
+                        Write-Message -Level Debug -Message "But we remove 'Integrated Security=True;'"
+                        # TODO: How do we get a ConnectionString without this?
+                        $sqlConn = [System.Data.SqlClient.SqlConnection]::new(($connInfo.ConnectionString -replace 'Integrated Security=True;', ''))
+                        $sqlConn.AccessToken = $AccessToken
+                        $srvConn = [Microsoft.SqlServer.Management.Common.ServerConnection]::new($sqlConn)
+                    } else {
+                        $srvConn = New-Object -TypeName Microsoft.SqlServer.Management.Common.ServerConnection -ArgumentList $connInfo
+                    }
 
                     if ($authType -eq 'local ad') {
                         Write-Message -Level Debug -Message "ConnectAsUser will be set to '$true'"
@@ -862,6 +892,11 @@ function Connect-DbaInstance {
             This is the end of the experimental code path.
             All session without the configuration "sql.connection.experimental" set to $true will run through the following code.
             #>
+
+            if ($AccessToken) {
+                Stop-Function -Message "AccessToken is only supported in the new experimental code path. See documentation for details."
+                return
+            }
 
             $connstring = ''
             $isConnectionString = $false
