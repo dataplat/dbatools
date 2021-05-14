@@ -156,6 +156,8 @@ function Get-DbaServerRoleMember {
                             SqlInstance  = $server.DomainInstanceName
                             Role         = $role.Name
                             Name         = $l.Name
+                            SMORole      = $role
+                            SMOLogin     = $l
                         }
                     }
                 }
