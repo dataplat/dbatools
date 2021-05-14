@@ -160,7 +160,7 @@ function New-DbaDbSynonym {
             $dbSynonyms = $db.Synonyms
 
             foreach ($syn in $Synonym) {
-                if ($dbSynonyms | Where-Object Name -eq $syn) {
+                if ($dbSynonyms | Where-Object Name -EQ $syn) {
                     Stop-Function -Message "The $syn synonym already exist within database $db on instance $server." -Target $db -Continue
                 }
 
@@ -180,10 +180,10 @@ function New-DbaDbSynonym {
 
                         $newSynonym.Create()
 
-                        Add-Member -Force -InputObject $newSynonym -MemberType NoteProperty -Name ComputerName -value $server.ComputerName
-                        Add-Member -Force -InputObject $newSynonym -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
-                        Add-Member -Force -InputObject $newSynonym -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
-                        Add-Member -Force -InputObject $newSynonym -MemberType NoteProperty -Name ParentName -value $db.Name
+                        Add-Member -Force -InputObject $newSynonym -MemberType NoteProperty -Name ComputerName -Value $server.ComputerName
+                        Add-Member -Force -InputObject $newSynonym -MemberType NoteProperty -Name InstanceName -Value $server.ServiceName
+                        Add-Member -Force -InputObject $newSynonym -MemberType NoteProperty -Name SqlInstance -Value $server.DomainInstanceName
+                        Add-Member -Force -InputObject $newSynonym -MemberType NoteProperty -Name ParentName -Value $db.Name
 
                         Select-DefaultView -InputObject $newSynonym -Property ComputerName, InstanceName, SqlInstance, 'ParentName as Database', Name, Schema, BaseServer, BaseDatabase, BaseSchema, BaseObject
                     } catch {

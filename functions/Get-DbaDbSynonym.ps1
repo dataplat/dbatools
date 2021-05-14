@@ -124,7 +124,7 @@ function Get-DbaDbSynonym {
             }
 
             if ($Schema) {
-                $dbSynonyms = $dbSynonyms | Where-Object { $_.Schema -in $Schema}
+                $dbSynonyms = $dbSynonyms | Where-Object { $_.Schema -in $Schema }
             }
 
             if ($ExcludeSchema) {

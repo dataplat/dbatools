@@ -136,24 +136,24 @@ function Remove-DbaDbSynonym {
                 $db = $dbSynonym.Parent
                 $instance = $db.Parent
 
-                        if ($PSCmdlet.ShouldProcess($instance, "Remove synonym $dbSynonym from database $db")) {
+                if ($PSCmdlet.ShouldProcess($instance, "Remove synonym $dbSynonym from database $db")) {
 
-                                try {
-                                    # avoid enumeration issues
-                                    $db.Query("DROP SYNONYM $dbSynonym")
-                                    [pscustomobject]@{
-                                        ComputerName = $db.ComputerName
-                                        InstanceName = $db.InstanceName
-                                        SqlInstance  = $db.SqlInstance
-                                        Database     = $db.Name
-                                        Synonym      = $dbSynonym
-                                        Status       = "Removed"
-                                    }
-                                } catch {
-                                    Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
-                                }
-
+                    try {
+                        # avoid enumeration issues
+                        $db.Query("DROP SYNONYM $dbSynonym")
+                        [pscustomobject]@{
+                            ComputerName = $db.ComputerName
+                            InstanceName = $db.InstanceName
+                            SqlInstance  = $db.SqlInstance
+                            Database     = $db.Name
+                            Synonym      = $dbSynonym
+                            Status       = "Removed"
                         }
+                    } catch {
+                        Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
+                    }
+
+                }
 
             }
         }
