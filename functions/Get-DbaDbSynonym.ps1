@@ -80,7 +80,7 @@ function Get-DbaDbSynonym {
         Returns the synonym1 synonym in the db1 database on localhost.
 
     #>
-    [CmdletBinding()]
+    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'Low')]
     param (
         [parameter(ValueFromPipeline)]
         [DbaInstance[]]$SqlInstance,

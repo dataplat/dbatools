@@ -16,13 +16,13 @@ Describe "$CommandName Unit Tests" -Tags "UnitTests" {
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     BeforeAll {
         $dbname = "dbatoolsscidb_$(Get-Random)"
-        $dbname2 = "dbatoolsscidb_$(Get-Random)"
+        $dbname2 = "dbatoolsscidb2_$(Get-Random)"
         $null = New-DbaDatabase -SqlInstance $script:instance2 -Name $dbname
         $null = New-DbaDatabase -SqlInstance $script:instance2 -Name $dbname2
         $null = New-DbaDbSchema -SqlInstance $script:instance2 -Database $dbname2 -Schema sch2
-        $null = New-DbaDbSynonym -SqlInstance $script:instance2 -Database $dbname, $dbname2 -Synonym syn1 -BaseObject obj1
-        $null = New-DbaDbSynonym -SqlInstance $script:instance2 -Database $dbname -Synonym syn2 -BaseObject obj2
-        $null = New-DbaDbSynonym -SqlInstance $script:instance2 -Database $dbname2 -Schema sch2 -Synonym syn2 -BaseObject obj2
+        $null = New-DbaDbSynonym -SqlInstance $script:instance2 -Database $dbname -Synonym syn1 -BaseObject obj1
+        $null = New-DbaDbSynonym -SqlInstance $script:instance2 -Database $dbname2 -Synonym syn2 -BaseObject obj2
+        $null = New-DbaDbSynonym -SqlInstance $script:instance2 -Database $dbname2 -Schema sch2 -Synonym syn3 -BaseObject obj2
     }
     AfterAll {
         $null = Remove-DbaDatabase -SqlInstance $script:instance2 -Database $dbname, $dbname2 -Confirm:$false
@@ -41,7 +41,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 
             $uniqueDatabases = $result2.Database | Select-Object -Unique
             $uniqueDatabases.Count | Should -Be 2
-            $result2.Count | Should -Be 2
+            $result2.Count | Should -Be 3
         }
 
         It 'Accepts a list of databases' {
