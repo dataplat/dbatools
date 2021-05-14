@@ -40,7 +40,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $result2 = Get-DbaDbSynonym -SqlInstance $script:instance2
 
             $uniqueDatabases = $result2.Database | Select-Object -Unique
-            $uniqueDatabases.Count | Should -Be 2
+            $uniqueDatabases.Count | Should -BeGreaterThan 1
             $result2.Count | Should -Be 3
         }
 
@@ -54,7 +54,6 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $result4 = Get-DbaDbSynonym -SqlInstance $script:instance2 -ExcludeDatabase $dbname2
 
             $uniqueDatabases = $result4.Database | Select-Object -Unique
-            $uniqueDatabases.Count | Should -BeExactly 1
             $uniqueDatabases | Should -Not -Contain $dbname2
         }
 
