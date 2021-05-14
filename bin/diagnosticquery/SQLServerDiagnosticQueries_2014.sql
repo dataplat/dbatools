@@ -1,7 +1,7 @@
 
 -- SQL Server 2014 Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: April 1, 2021
+-- Last Modified: May 2, 2021
 -- https://glennsqlperformance.com/
 -- https://sqlserverperformance.wordpress.com/
 -- YouTube: https://bit.ly/2PkoAM1 
@@ -9,6 +9,9 @@
 
 -- Diagnostic Queries are available here
 -- https://glennsqlperformance.com/resources/
+
+-- YouTube video demonstrating these queries
+-- https://bit.ly/3aXNDzJ
 
 
 -- Please make sure you are using the correct version of these diagnostic queries for your version of SQL Server!
@@ -208,6 +211,9 @@ ORDER BY name OPTION (RECOMPILE);
 -- priority boost (should be zero)
 -- remote admin connections (should be 1)
 
+-- sys.configurations (Transact-SQL)
+-- https://bit.ly/2HsyDZI
+
 
 -- Returns a list of all global trace flags that are enabled (Query 5) (Global Trace Flags)
 DBCC TRACESTATUS (-1);
@@ -275,6 +281,9 @@ FROM sys.dm_os_process_memory WITH (NOLOCK) OPTION (RECOMPILE);
 -- You want to see 0 for process_virtual_memory_low
 -- This indicates that you are not under internal memory pressure
 -- If locked_page_allocations_kb > 0, then LPIM is enabled
+
+-- sys.dm_os_process_memory (Transact-SQL)
+-- https://bit.ly/3iUgQgC
 
 -- How to enable the "locked pages" feature in SQL Server 2012
 -- https://bit.ly/2F5UjOA
@@ -922,7 +931,7 @@ ORDER BY [I/O Rank] OPTION (RECOMPILE);
 WITH AggregateBufferPoolUsage
 AS
 (SELECT DB_NAME(database_id) AS [Database Name],
-CAST(COUNT(*) * 8/1024.0 AS DECIMAL (15,2))  AS [CachedSize]
+CAST(COUNT_BIG(*) * 8/1024.0 AS DECIMAL (15,2))  AS [CachedSize]
 FROM sys.dm_os_buffer_descriptors WITH (NOLOCK)
 WHERE database_id <> 32767 -- ResourceDB
 GROUP BY DB_NAME(database_id))
@@ -934,6 +943,9 @@ ORDER BY [Buffer Pool Rank] OPTION (RECOMPILE);
 
 -- Tells you how much memory (in the buffer pool) 
 -- is being used by each database on the instance
+
+-- sys.dm_os_buffer_descriptors (Transact-SQL)
+-- https://bit.ly/36s7aFo
 
 
 -- Clear Wait Stats with this command

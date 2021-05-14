@@ -198,32 +198,32 @@ function Connect-DbaInstance {
 
     .EXAMPLE
         PS C:\> $server = Connect-DbaInstance -SqlInstance myserver.database.windows.net -Database mydb -SqlCredential me@mydomain.onmicrosoft.com -DisableException
-        PS C:\> Invoke-Query -SqlInstance $server -Query "select 1 as test"
+        PS C:\> Invoke-DbaQuery -SqlInstance $server -Query "select 1 as test"
 
         Logs into Azure SQL DB using AAD / Azure Active Directory, then performs a sample query.
 
     .EXAMPLE
         PS C:\> $server = Connect-DbaInstance -SqlInstance psdbatools.database.windows.net -Database dbatools -DisableException
-        PS C:\> Invoke-Query -SqlInstance $server -Query "select 1 as test"
+        PS C:\> Invoke-DbaQuery -SqlInstance $server -Query "select 1 as test"
 
         Logs into Azure SQL DB using AAD Integrated Auth, then performs a sample query.
 
     .EXAMPLE
         PS C:\> $server = Connect-DbaInstance -SqlInstance "myserver.public.cust123.database.windows.net,3342" -Database mydb -SqlCredential me@mydomain.onmicrosoft.com -DisableException
-        PS C:\> Invoke-Query -SqlInstance $server -Query "select 1 as test"
+        PS C:\> Invoke-DbaQuery -SqlInstance $server -Query "select 1 as test"
 
         Logs into Azure SQL Managed instance using AAD / Azure Active Directory, then performs a sample query.
 
     .EXAMPLE
         PS C:\> $server = Connect-DbaInstance -SqlInstance db.mycustomazure.com -Database mydb -AzureDomain mycustomazure.com -DisableException
-        PS C:\> Invoke-Query -SqlInstance $server -Query "select 1 as test"
+        PS C:\> Invoke-DbaQuery -SqlInstance $server -Query "select 1 as test"
 
         In the event your AzureSqlDb is not on a database.windows.net domain, you can set a custom domain using the AzureDomain parameter.
         This tells Connect-DbaInstance to login to the database using the method that works best with Azure.
 
     .EXAMPLE
         PS C:\> $server = Connect-DbaInstance -ConnectionString "Data Source=TCP:mydb.database.windows.net,1433;User ID=sqladmin;Password=adfasdf;MultipleActiveResultSets=False;Connect Timeout=30;Encrypt=True;TrustServerCertificate=False;"
-        PS C:\> Invoke-Query -SqlInstance $server -Query "select 1 as test"
+        PS C:\> Invoke-DbaQuery -SqlInstance $server -Query "select 1 as test"
 
         Logs into Azure using a preconstructed connstring, then performs a sample query.
         ConnectionString is an alias of SqlInstance, so you can use -SqlInstance $connstring as well.
@@ -231,13 +231,13 @@ function Connect-DbaInstance {
     .EXAMPLE
         PS C:\> $cred = Get-Credential guid-app-id-here # appid for username, clientsecret for password
         PS C:\> $server = Connect-DbaInstance -SqlInstance psdbatools.database.windows.net -Database abc -SqCredential $cred -Tenant guidheremaybename
-        PS C:\> Invoke-Query -SqlInstance $server -Query "select 1 as test"
+        PS C:\> Invoke-DbaQuery -SqlInstance $server -Query "select 1 as test"
 
         When connecting from a non-Azure workstation, logs into Azure using Universal with MFA Support with a username and password, then performs a sample query.
 
     .EXAMPLE
         PS C:\> $server = Connect-DbaInstance -SqlInstance psdbatools.database.windows.net -Database abc -AuthenticationType 'AD Universal with MFA Support'
-        PS C:\> Invoke-Query -SqlInstance $server -Query "select 1 as test"
+        PS C:\> Invoke-DbaQuery -SqlInstance $server -Query "select 1 as test"
 
         When connecting from an Azure VM with .NET 4.7.2 and higher, logs into Azure using Universal with MFA Support, then performs a sample query.
 
@@ -254,7 +254,7 @@ function Connect-DbaInstance {
 
     .EXAMPLE
         PS C:\> $server = Connect-DbaInstance -SqlInstance psdbatools.database.windows.net -Thumbprint FF6361E82F21664F64A2576BB49EAC429BD5ABB6 -Store CurrentUser -Tenant tenant-guid -SqlCredential app-id-guid-here -Database abc
-        PS C:\> Invoke-Query -SqlInstance $server -Query "select 1 as test"
+        PS C:\> Invoke-DbaQuery -SqlInstance $server -Query "select 1 as test"
 
         Logs into Azure using Universal with MFA Support with a certificate, then performs a sample query. Note that you will be prompted for a password but the password can be left blank and the certificate will be used instead.
 
@@ -262,7 +262,7 @@ function Connect-DbaInstance {
         PS C:\> Set-DbatoolsConfig -FullName sql.connection.experimental -Value $true
         PS C:\> $sqlcred = Get-Credential sqladmin
         PS C:\> $server = Connect-DbaInstance -SqlInstance sql2014 -SqlCredential $sqlcred
-        PS C:\> Invoke-Query -SqlInstance $server -Query "select 1 as test"
+        PS C:\> Invoke-DbaQuery -SqlInstance $server -Query "select 1 as test"
 
         Use the new code path for handling connections. Especially when you have problems with connection pooling, try this.
         We also have added additional -Verbose and -Debug output to help us understand your problem if you open an issue related to connections.
@@ -270,6 +270,8 @@ function Connect-DbaInstance {
 
         If you like to use the new code path permanently, register this config:
         PS C:\> Set-DbatoolsConfig -FullName sql.connection.experimental -Value $true -Passthru | Register-DbatoolsConfig
+
+        As we would like to use the new code path as a default in the future, please give feedback if you are using it in your environment.
 
     #>
     [CmdletBinding()]
@@ -451,11 +453,10 @@ function Connect-DbaInstance {
                   - AzureUnsupported (command fails if target is Azure)
                   - MinimumVersion (command fails if target version is too old)
                   - SqlConnectionOnly (command returns only the ConnectionContext.SqlConnectionObject)
+                  - NonPooledConnection (command clones ConnectionContext and returns new smo server object)
                 TODO: Try to identify all commands that use additional parameters and rewrite the command or add support for that parameter to Connect-DbaInstance
                 Commands found:
-                - Get-DbaDbExtentDiff (NonPooled)
                 - Import-DbaCsv (StatementTimeout)
-                - Install-DbaMaintenanceSolution (NonPooled)
                 - Invoke-DbaQuery (ApplicationIntent)
 
                 Additional possibilities as input to SqlInstance:
@@ -536,13 +537,13 @@ function Connect-DbaInstance {
                 }
 
                 # Check for ignored parameters
-                $ignoredParameters = 'ApplicationIntent', 'BatchSeparator', 'ClientName', 'ConnectTimeout', 'EncryptConnection', 'LockTimeout', 'MaxPoolSize', 'MinPoolSize', 'NetworkProtocol', 'NonPooledConnection', 'PacketSize', 'PooledConnectionLifetime', 'SqlExecutionModes', 'StatementTimeout', 'TrustServerCertificate', 'WorkstationId', 'AuthenticationType', 'FailoverPartner', 'MultipleActiveResultSets', 'MultiSubnetFailover', 'AppendConnectionString'
+                $ignoredParameters = 'ApplicationIntent', 'BatchSeparator', 'ClientName', 'ConnectTimeout', 'EncryptConnection', 'LockTimeout', 'MaxPoolSize', 'MinPoolSize', 'NetworkProtocol', 'PacketSize', 'PooledConnectionLifetime', 'SqlExecutionModes', 'StatementTimeout', 'TrustServerCertificate', 'WorkstationId', 'AuthenticationType', 'FailoverPartner', 'MultipleActiveResultSets', 'MultiSubnetFailover', 'AppendConnectionString'
                 if ($inputObjectType -eq 'Server') {
                     if (Test-Bound -ParameterName $ignoredParameters) {
                         Write-Message -Level Warning -Message "Additional parameters are passed in, but they will be ignored"
                     }
                 } elseif ($inputObjectType -in 'SqlConnection', 'RegisteredServer', 'ConnectionString' ) {
-                    if (Test-Bound -ParameterName $ignoredParameters, 'Database') {
+                    if (Test-Bound -ParameterName $ignoredParameters, 'Database', 'NonPooledConnection') {
                         Write-Message -Level Warning -Message "Additional parameters are passed in, but they will be ignored"
                     }
                 }
@@ -551,11 +552,17 @@ function Connect-DbaInstance {
                 # Create smo server object
                 if ($inputObjectType -eq 'Server') {
                     if ($Database) {
-                        Write-Message -Level Verbose -Message "Parameter Database passed in, so we clone the connection context"
+                        Write-Message -Level Verbose -Message "Parameter Database passed in, so we copy the connection context and change the database connection"
                         # TODO: Do we have to check if its the same database?
                         $server = New-Object -TypeName Microsoft.SqlServer.Management.Smo.Server -ArgumentList $inputObject.ConnectionContext.Copy().GetDatabaseConnection($Database)
                     } else {
                         $server = $inputObject
+                    }
+                    if ($NonPooledConnection) {
+                        Write-Message -Level Verbose -Message "Parameter NonPooledConnection passed in, so we copy the connection context and set NonPooledConnection"
+                        $connContext = $server.ConnectionContext.Copy()
+                        $connContext.NonPooledConnection = $true
+                        $server = New-Object -TypeName Microsoft.SqlServer.Management.Smo.Server -ArgumentList $connContext
                     }
                 } elseif ($inputObjectType -eq 'SqlConnection') {
                     $server = New-Object -TypeName Microsoft.SqlServer.Management.Smo.Server -ArgumentList $inputObject
@@ -878,6 +885,7 @@ function Connect-DbaInstance {
             }
 
             # Gracefully handle Azure connections
+            $isAzure = $false
             if ($connstring -match $AzureDomain -or $instance.ComputerName -match $AzureDomain -or $instance.InputObject.ComputerName -match $AzureDomain) {
                 Write-Message -Level Debug -Message "We are about to connect to Azure"
                 # so far, this is not evaluating

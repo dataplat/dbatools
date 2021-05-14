@@ -1,7 +1,7 @@
 
 -- SQL Server 2019 Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: April 16, 2021
+-- Last Modified: May 2, 2021
 -- https://glennsqlperformance.com/ 
 -- https://sqlserverperformance.wordpress.com/
 -- YouTube: https://bit.ly/2PkoAM1 
@@ -9,6 +9,9 @@
 
 -- Diagnostic Queries are available here
 -- https://glennsqlperformance.com/resources/
+
+-- YouTube video demonstrating these queries
+-- https://bit.ly/3aXNDzJ
 
 
 -- Please make sure you are using the correct version of these diagnostic queries for your version of SQL Server
@@ -577,13 +580,15 @@ DECLARE @sql NVARCHAR(200) = N'';
 DECLARE @logCount INT = (SELECT COUNT(*) FROM #ErrorLogFiles);
 
 WHILE (@i < @logCount)
-	BEGIN
-		   SET @sql = 'INSERT INTO #SQLErrorLog_AllLogs
-					  (LogDate, ProcessInfo, LogText)
-					  EXEC master.sys.sp_readerrorlog ' + CAST(@i AS NVARCHAR(2)) + N';'
-		   EXEC master.sys.sp_executesql @sql;
-		   SET @i += 1;
-	END
+    BEGIN
+        IF(@i in (SELECT [Archive #] FROM #ErrorLogFiles))
+            BEGIN
+                SET @sql = N'INSERT INTO #SQLErrorLog_AllLogs (LogDate, ProcessInfo, LogText)
+                             EXEC master.sys.sp_readerrorlog ' + CAST(@i AS NVARCHAR(2)) + N';'
+                EXEC master.sys.sp_executesql @sql;
+            END
+        SET @i += 1;
+    END
 
 SELECT TOP(1000)LogDate, ProcessInfo, LogText 
 FROM #SQLErrorLog_AllLogs WITH (NOLOCK)
@@ -966,7 +971,7 @@ ORDER BY [I/O Rank] OPTION (RECOMPILE);
 WITH AggregateBufferPoolUsage
 AS
 (SELECT DB_NAME(database_id) AS [Database Name],
-CAST(COUNT(*) * 8/1024.0 AS DECIMAL (15,2))  AS [CachedSize]
+CAST(COUNT_BIG(*) * 8/1024.0 AS DECIMAL (15,2))  AS [CachedSize]
 FROM sys.dm_os_buffer_descriptors WITH (NOLOCK)
 WHERE database_id <> 32767 -- ResourceDB
 GROUP BY DB_NAME(database_id))
@@ -1039,7 +1044,7 @@ AS (SELECT wait_type, wait_time_ms/ 1000.0 AS [WaitS],
 		N'SLEEP_DCOMSTARTUP', N'SLEEP_MASTERDBREADY', N'SLEEP_MASTERMDREADY',
         N'SLEEP_MASTERUPGRADED', N'SLEEP_MSDBSTARTUP', N'SLEEP_SYSTEMTASK', N'SLEEP_TASK',
         N'SLEEP_TEMPDBSTARTUP', N'SNI_HTTP_ACCEPT', N'SOS_WORK_DISPATCHER',
-		N'SP_SERVER_DIAGNOSTICS_SLEEP',
+		N'SP_SERVER_DIAGNOSTICS_SLEEP', N'SOS_WORKER_MIGRATION', N'VDI_CLIENT_OTHER',
 		N'SQLTRACE_BUFFER_FLUSH', N'SQLTRACE_INCREMENTAL_FLUSH_SLEEP', N'SQLTRACE_WAIT_ENTRIES',
 		N'STARTUP_DEPENDENCY_MANAGER',
 		N'WAIT_FOR_RESULTS', N'WAITFOR', N'WAITFOR_TASKSHUTDOWN', N'WAIT_XTP_HOST_WAIT',
@@ -1434,17 +1439,17 @@ FROM sys.database_scoped_configurations WITH (NOLOCK) OPTION (RECOMPILE);
 
 -- I/O Statistics by file for the current database  (Query 56) (IO Stats By File)
 SELECT DB_NAME(DB_ID()) AS [Database Name], df.name AS [Logical Name], vfs.[file_id], df.type_desc,
-df.physical_name AS [Physical Name], CAST(vfs.size_on_disk_bytes/1048576.0 AS DECIMAL(10, 2)) AS [Size on Disk (MB)],
+df.physical_name AS [Physical Name], CAST(vfs.size_on_disk_bytes/1048576.0 AS DECIMAL(15, 2)) AS [Size on Disk (MB)],
 vfs.num_of_reads, vfs.num_of_writes, vfs.io_stall_read_ms, vfs.io_stall_write_ms,
 CAST(100. * vfs.io_stall_read_ms/(vfs.io_stall_read_ms + vfs.io_stall_write_ms) AS DECIMAL(10,1)) AS [IO Stall Reads Pct],
 CAST(100. * vfs.io_stall_write_ms/(vfs.io_stall_write_ms + vfs.io_stall_read_ms) AS DECIMAL(10,1)) AS [IO Stall Writes Pct],
 (vfs.num_of_reads + vfs.num_of_writes) AS [Writes + Reads], 
-CAST(vfs.num_of_bytes_read/1048576.0 AS DECIMAL(10, 2)) AS [MB Read], 
-CAST(vfs.num_of_bytes_written/1048576.0 AS DECIMAL(10, 2)) AS [MB Written],
-CAST(100. * vfs.num_of_reads/(vfs.num_of_reads + vfs.num_of_writes) AS DECIMAL(10,1)) AS [# Reads Pct],
-CAST(100. * vfs.num_of_writes/(vfs.num_of_reads + vfs.num_of_writes) AS DECIMAL(10,1)) AS [# Write Pct],
-CAST(100. * vfs.num_of_bytes_read/(vfs.num_of_bytes_read + vfs.num_of_bytes_written) AS DECIMAL(10,1)) AS [Read Bytes Pct],
-CAST(100. * vfs.num_of_bytes_written/(vfs.num_of_bytes_read + vfs.num_of_bytes_written) AS DECIMAL(10,1)) AS [Written Bytes Pct]
+CAST(vfs.num_of_bytes_read/1048576.0 AS DECIMAL(15, 2)) AS [MB Read], 
+CAST(vfs.num_of_bytes_written/1048576.0 AS DECIMAL(15, 2)) AS [MB Written],
+CAST(100. * vfs.num_of_reads/(vfs.num_of_reads + vfs.num_of_writes) AS DECIMAL(15,1)) AS [# Reads Pct],
+CAST(100. * vfs.num_of_writes/(vfs.num_of_reads + vfs.num_of_writes) AS DECIMAL(15,1)) AS [# Write Pct],
+CAST(100. * vfs.num_of_bytes_read/(vfs.num_of_bytes_read + vfs.num_of_bytes_written) AS DECIMAL(15,1)) AS [Read Bytes Pct],
+CAST(100. * vfs.num_of_bytes_written/(vfs.num_of_bytes_read + vfs.num_of_bytes_written) AS DECIMAL(15,1)) AS [Written Bytes Pct]
 FROM sys.dm_io_virtual_file_stats(DB_ID(), NULL) AS vfs
 INNER JOIN sys.database_files AS df WITH (NOLOCK)
 ON vfs.[file_id]= df.[file_id] OPTION (RECOMPILE);

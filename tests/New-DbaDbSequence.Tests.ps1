@@ -175,5 +175,10 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             $sequence.DataType.Schema | Should -Be TestSchema
             $sequence.Parent.Name | Should -Be $newDbName
         }
+
+        It "Does not return warning for system schema" {
+            $sequence2 = New-DbaDbSequence -SqlInstance $instance2 -Database $newDbName -Schema dbo -Name "Sequence_in_dbo_schema" -IntegerType bigint -WarningVariable warn
+            $warn.message | Should -Not -BeLike "*Schema dbo already exists in the database*"
+        }
     }
 }

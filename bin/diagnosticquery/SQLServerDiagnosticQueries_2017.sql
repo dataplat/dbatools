@@ -1,7 +1,7 @@
 
 -- SQL Server 2017 Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: April 7, 2021
+-- Last Modified: May 10, 2021
 -- https://glennsqlperformance.com/
 -- https://sqlserverperformance.wordpress.com/
 -- YouTube: https://bit.ly/2PkoAM1 
@@ -9,6 +9,9 @@
 
 -- Diagnostic Queries are available here
 -- https://glennsqlperformance.com/resources/
+
+-- YouTube video demonstrating these queries
+-- https://bit.ly/3aXNDzJ
 
 
 -- Please make sure you are using the correct version of these diagnostic queries for your version of SQL Server
@@ -92,7 +95,7 @@ SELECT @@SERVERNAME AS [Server Name], @@VERSION AS [SQL Server and OS Version In
 -- 14.0.3356.20		CU22								9/10/2020		https://support.microsoft.com/en-us/help/4577467/cumulative-update-22-for-sql-server-2017
 -- 14.0.3370.1		CU22 + Security Update				1/12/2021		https://support.microsoft.com/en-us/help/4583457/kb4583457-security-update-for-sql-server-2017-cu22	
 -- 14.0.3381.3		CU23								2/24/2021		https://support.microsoft.com/en-us/topic/kb5000685-cumulative-update-23-for-sql-server-2017-22b653c7-8487-4564-9db2-b5c1bd465145
-															
+-- 14.0.3391.2		CU24								5/10/2021		https://support.microsoft.com/en-us/topic/kb5001228-cumulative-update-24-for-sql-server-2017-fc49353e-cbb6-4862-9178-c319ce6f9db4															
 
 -- How to determine the version, edition and update level of SQL Server and its components 
 -- https://bit.ly/2oAjKgW	
@@ -944,7 +947,7 @@ ORDER BY [I/O Rank] OPTION (RECOMPILE);
 WITH AggregateBufferPoolUsage
 AS
 (SELECT DB_NAME(database_id) AS [Database Name],
-CAST(COUNT(*) * 8/1024.0 AS DECIMAL (15,2))  AS [CachedSize]
+CAST(COUNT_BIG(*) * 8/1024.0 AS DECIMAL (15,2))  AS [CachedSize]
 FROM sys.dm_os_buffer_descriptors WITH (NOLOCK)
 WHERE database_id <> 32767 -- ResourceDB
 GROUP BY DB_NAME(database_id))
@@ -956,6 +959,9 @@ ORDER BY [Buffer Pool Rank] OPTION (RECOMPILE);
 
 -- Tells you how much memory (in the buffer pool) 
 -- is being used by each database on the instance
+
+-- sys.dm_os_buffer_descriptors (Transact-SQL)
+-- https://bit.ly/36s7aFo
 
 
 -- Get tempdb version store space usage by database (Query 37) (Version Store Space Usage)
@@ -1407,17 +1413,17 @@ FROM sys.database_scoped_configurations WITH (NOLOCK) OPTION (RECOMPILE);
 
 -- I/O Statistics by file for the current database  (Query 55) (IO Stats By File)
 SELECT DB_NAME(DB_ID()) AS [Database Name], df.name AS [Logical Name], vfs.[file_id], df.type_desc,
-df.physical_name AS [Physical Name], CAST(vfs.size_on_disk_bytes/1048576.0 AS DECIMAL(16, 2)) AS [Size on Disk (MB)],
+df.physical_name AS [Physical Name], CAST(vfs.size_on_disk_bytes/1048576.0 AS DECIMAL(15, 2)) AS [Size on Disk (MB)],
 vfs.num_of_reads, vfs.num_of_writes, vfs.io_stall_read_ms, vfs.io_stall_write_ms,
-CAST(100. * vfs.io_stall_read_ms/(vfs.io_stall_read_ms + vfs.io_stall_write_ms) AS DECIMAL(16,1)) AS [IO Stall Reads Pct],
-CAST(100. * vfs.io_stall_write_ms/(vfs.io_stall_write_ms + vfs.io_stall_read_ms) AS DECIMAL(16,1)) AS [IO Stall Writes Pct],
+CAST(100. * vfs.io_stall_read_ms/(vfs.io_stall_read_ms + vfs.io_stall_write_ms) AS DECIMAL(10,1)) AS [IO Stall Reads Pct],
+CAST(100. * vfs.io_stall_write_ms/(vfs.io_stall_write_ms + vfs.io_stall_read_ms) AS DECIMAL(10,1)) AS [IO Stall Writes Pct],
 (vfs.num_of_reads + vfs.num_of_writes) AS [Writes + Reads], 
-CAST(vfs.num_of_bytes_read/1048576.0 AS DECIMAL(16, 2)) AS [MB Read], 
-CAST(vfs.num_of_bytes_written/1048576.0 AS DECIMAL(16, 2)) AS [MB Written],
-CAST(100. * vfs.num_of_reads/(vfs.num_of_reads + vfs.num_of_writes) AS DECIMAL(16,1)) AS [# Reads Pct],
-CAST(100. * vfs.num_of_writes/(vfs.num_of_reads + vfs.num_of_writes) AS DECIMAL(16,1)) AS [# Write Pct],
-CAST(100. * vfs.num_of_bytes_read/(vfs.num_of_bytes_read + vfs.num_of_bytes_written) AS DECIMAL(16,1)) AS [Read Bytes Pct],
-CAST(100. * vfs.num_of_bytes_written/(vfs.num_of_bytes_read + vfs.num_of_bytes_written) AS DECIMAL(16,1)) AS [Written Bytes Pct]
+CAST(vfs.num_of_bytes_read/1048576.0 AS DECIMAL(15, 2)) AS [MB Read], 
+CAST(vfs.num_of_bytes_written/1048576.0 AS DECIMAL(15, 2)) AS [MB Written],
+CAST(100. * vfs.num_of_reads/(vfs.num_of_reads + vfs.num_of_writes) AS DECIMAL(15,1)) AS [# Reads Pct],
+CAST(100. * vfs.num_of_writes/(vfs.num_of_reads + vfs.num_of_writes) AS DECIMAL(15,1)) AS [# Write Pct],
+CAST(100. * vfs.num_of_bytes_read/(vfs.num_of_bytes_read + vfs.num_of_bytes_written) AS DECIMAL(15,1)) AS [Read Bytes Pct],
+CAST(100. * vfs.num_of_bytes_written/(vfs.num_of_bytes_read + vfs.num_of_bytes_written) AS DECIMAL(15,1)) AS [Written Bytes Pct]
 FROM sys.dm_io_virtual_file_stats(DB_ID(), NULL) AS vfs
 INNER JOIN sys.database_files AS df WITH (NOLOCK)
 ON vfs.[file_id]= df.[file_id] OPTION (RECOMPILE);

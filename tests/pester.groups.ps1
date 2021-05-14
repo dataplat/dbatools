@@ -65,7 +65,8 @@ $TestsRunGroups = @{
         'Get-DbaLastGoodCheckDb',
         # doesn't work on appveyor but so works locally D:
         'Read-DbaXeFile',
-        'Find-DbaCommand'
+        'Find-DbaCommand',
+        'Watch-DbaDbLogin'
     )
     # do not run everywhere
     "disabled"          = @()

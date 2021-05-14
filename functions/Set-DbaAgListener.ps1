@@ -71,7 +71,7 @@ function Set-DbaAgListener {
         [Parameter(Mandatory)]
         [int]$Port,
         [parameter(ValueFromPipeline)]
-        [Microsoft.SqlServer.Management.Smo.AvailabilityGroup[]]$InputObject,
+        [Microsoft.SqlServer.Management.Smo.AvailabilityGroupListener[]]$InputObject,
         [switch]$EnableException
     )
     process {
@@ -80,16 +80,20 @@ function Set-DbaAgListener {
             return
         }
         if ((Test-Bound -ParameterName SqlInstance) -and (Test-Bound -Not -ParameterName AvailabilityGroup)) {
-            Stop-Function -Message "You must specify one or more databases and one or more Availability Groups when using the SqlInstance parameter."
+            Stop-Function -Message "You must specify one or more Availability Groups when using the SqlInstance parameter."
             return
         }
 
         if ($SqlInstance) {
-            $InputObject += Get-DbaAgListener -SqlInstance $SqlInstance -SqlCredential $SqlCredential -AvailabilityGroup $AvailabilityGroup -Listener $Listener
+            if (Test-Bound -ParameterName Listener) {
+                $InputObject += Get-DbaAgListener -SqlInstance $SqlInstance -SqlCredential $SqlCredential -AvailabilityGroup $AvailabilityGroup -Listener $Listener
+            } else {
+                $InputObject += Get-DbaAgListener -SqlInstance $SqlInstance -SqlCredential $SqlCredential -AvailabilityGroup $AvailabilityGroup
+            }
         }
 
         foreach ($aglistener in $InputObject) {
-            if ($Pscmdlet.ShouldProcess($ag.Parent.Name, "Setting port to $Port for $($ag.Name)")) {
+            if ($Pscmdlet.ShouldProcess($aglistener.Parent.Name, "Setting port to $Port for $($aglistener.Name)")) {
                 try {
                     $aglistener.PortNumber = $Port
                     $aglistener.Alter()
