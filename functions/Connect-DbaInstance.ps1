@@ -787,7 +787,7 @@ function Connect-DbaInstance {
                         $connInfo.WorkstationId = $WorkstationId
                     }
 
-                    # If we have an AccessToken, so we will build a SqlConnection
+                    # If we have an AccessToken, we will build a SqlConnection
                     if ($AccessToken) {
                         Write-Message -Level Debug -Message "We have an AccessToken and build a SqlConnection with that token"
                         Write-Message -Level Debug -Message "We use connInfo.ConnectionString: $($connInfo.ConnectionString)"
