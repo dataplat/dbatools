@@ -21,7 +21,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         $null = New-DbaDatabase -SqlInstance $script:instance2 -Name $dbname2
         $null = New-DbaDbSchema -SqlInstance $script:instance2 -Database $dbname2 -Schema sch2
         $null = New-DbaDbSynonym -SqlInstance $script:instance2 -Database $dbname -Synonym syn1 -BaseObject obj1
-        $null = New-DbaDbSynonym -SqlInstance $script:instance2 -Dataflocal
+        $null = New-DbaDbSynonym -SqlInstance $script:instance2 -Database $dbname2 -Synonym syn2 -BaseObject obj2
         $null = New-DbaDbSynonym -SqlInstance $script:instance2 -Database $dbname2 -Schema sch2 -Synonym syn3 -BaseObject obj2
     }
     AfterAll {
