@@ -62,19 +62,19 @@ function Get-DbaSpn {
 
             ForEach ($account in $AccountName) {
                 Write-Message -Message "Looking for account $account..." -Level Verbose
-                $searchfor = 'User'
+                $searchFor = 'User'
                 if ($account.EndsWith('$')) {
-                    $searchfor = 'Computer'
+                    $searchFor = 'Computer'
                 }
                 try {
-                    $Result = Get-DbaADObject -ADObject $account -Type $searchfor -Credential $Credential -EnableException
+                    $result = Get-DbaADObject -ADObject $account -Type $searchFor -Credential $Credential -EnableException
                 } catch {
                     Write-Message -Message "AD lookup failure. This may be because the domain cannot be resolved for the SQL Server service account ($Account)." -Level Warning
                     continue
                 }
-                if ($Result.Count -gt 0) {
+                if ($result.Count -gt 0) {
                     try {
-                        $results = $Result.GetUnderlyingObject()
+                        $results = $result.GetUnderlyingObject()
                         $spns = $results.Properties.servicePrincipalName
                     } catch {
                         Write-Message -Message "The SQL Service account ($Account) has been found, but you don't have enough permission to inspect its SPNs" -Level Warning
