@@ -41,7 +41,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 
             $uniqueDatabases = $result2.Database | Select-Object -Unique
             $uniqueDatabases.Count | Should -Be 2
-            $result2.Count | Should -Be 3
+            $result2.Count | Should -Be 2
         }
 
         It 'Accepts a list of databases' {
