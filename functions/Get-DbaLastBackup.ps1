@@ -6,7 +6,7 @@ function Get-DbaLastBackup {
     .DESCRIPTION
         Retrieves and compares the date/time for the last known backups, as well as the creation date/time for the database.
 
-        Default output includes columns Server, Database, RecoveryModel, LastFullBackup, LastDiffBackup, LastLogBackup, SinceFull, SinceDiff, SinceLog, Status, DatabaseCreated, DaysSinceDbCreated.
+        Default output includes columns Server, Database, LastFullBackup, LastDiffBackup, LastLogBackup.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.
@@ -37,11 +37,6 @@ function Get-DbaLastBackup {
 
     .LINK
         https://dbatools.io/Get-DbaLastBackup
-
-    .EXAMPLE
-        PS C:\> Get-DbaLastBackup -SqlInstance ServerA\sql987
-
-        Returns a custom object displaying Server, Database, RecoveryModel, LastFullBackup, LastDiffBackup, LastLogBackup, SinceFull, SinceDiff, SinceLog, Status, DatabaseCreated, DaysSinceDbCreated
 
     .EXAMPLE
         PS C:\> Get-DbaLastBackup -SqlInstance ServerA\sql987
@@ -91,7 +86,7 @@ function Get-DbaLastBackup {
     process {
         foreach ($instance in $SqlInstance) {
             try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential -MinimumVersion 9
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
             } catch {
                 Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
