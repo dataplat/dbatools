@@ -194,7 +194,7 @@ function Copy-DbaDbViewData {
         [switch]$KeepIdentity,
         [switch]$KeepNulls,
         [switch]$Truncate,
-        [int]$bulkCopyTimeOut = 5000,
+        [int]$BulkCopyTimeOut = 5000,
         [Parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.TableViewBase[]]$InputObject,
         [switch]$EnableException
