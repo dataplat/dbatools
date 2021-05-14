@@ -33,7 +33,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         It 'Returns Results' {
             $result1 = Get-DbaDbSynonym -SqlInstance $script:instance2
 
-            $result1.Count | Should -Be 4
+            $result1.Count | Should -BeGreaterThan 0
         }
 
         It 'Returns all synonyms for all databases' {
@@ -41,7 +41,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 
             $uniqueDatabases = $result2.Database | Select-Object -Unique
             $uniqueDatabases.Count | Should -Be 2
-            $result2.Count | Should -Be 4
+            $result2.Count | Should -Be 3
         }
 
         It 'Accepts a list of databases' {
@@ -54,7 +54,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $result4 = Get-DbaDbSynonym -SqlInstance $script:instance2 -ExcludeDatabase $dbname2
 
             $uniqueDatabases = $result4.Database | Select-Object -Unique
-            $uniqueDatabases.Count | Should -BeExactly 1
+            $uniqueDatabases.Count | Should -BeExactly 2
             $uniqueDatabases | Should -Not -Contain $dbname2
         }
 
