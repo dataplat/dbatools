@@ -120,7 +120,7 @@ function Remove-DbaDbSynonym {
                 }
                 'Microsoft.SqlServer.Management.Smo.Database' {
                     Write-Message -Level Verbose -Message "Processing Database through InputObject"
-                    $dbSynonyms = $input | Get-DbaDBSynonym -ExcludeDatabase $ExcludeDatabase -Schema $Schema -ExcludeSchema $ExcludeSchema -Synonym $Synonym -ExcludeSynonym $ExcludeSynonym
+                    $dbSynonyms = Get-DBaDbSynonym -InputObject $input
                 }
                 'Microsoft.SqlServer.Management.Smo.Synonym' {
                     Write-Message -Level Verbose -Message "Processing DatabaseSynonym through InputObject"
