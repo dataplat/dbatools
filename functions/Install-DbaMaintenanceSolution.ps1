@@ -178,10 +178,10 @@ function Install-DbaMaintenanceSolution {
         $url = "https://github.com/olahallengren/sql-server-maintenance-solution/archive/master.zip"
 
         $temp = ([System.IO.Path]::GetTempPath()).TrimEnd("\")
-        $zipfile = "$temp\ola-sql-server-maintenance-solution.zip"
-        $zipfolder = "$temp\ola-sql-server-maintenance-solution\"
+        $zipFile = "$temp\ola-sql-server-maintenance-solution.zip"
+        $zipFolder = "$temp\ola-sql-server-maintenance-solution\"
         $OLALocation = "OLA_SQL_MAINT_master"
-        $LocalCachedCopy = Join-Path -Path $DbatoolsData -ChildPath $OLALocation
+        $localCachedCopy = Join-Path -Path $DbatoolsData -ChildPath $OLALocation
         if ($LocalFile) {
             if (-not (Test-Path $LocalFile)) {
                 Stop-Function -Message "$LocalFile doesn't exist"
@@ -193,37 +193,37 @@ function Install-DbaMaintenanceSolution {
             }
         }
 
-        if ($Force -or -not (Test-Path -Path $LocalCachedCopy -PathType Container) -or $LocalFile) {
+        if ($Force -or -not (Test-Path -Path $localCachedCopy -PathType Container) -or $LocalFile) {
             # Force was passed, or we don't have a local copy, or $LocalFile was passed
-            if ($zipfile | Test-Path) {
-                Remove-Item -Path $zipfile -ErrorAction SilentlyContinue
+            if ($zipFile | Test-Path) {
+                Remove-Item -Path $zipFile -ErrorAction SilentlyContinue
             }
-            if ($zipfolder | Test-Path) {
-                Remove-Item -Path $zipfolder -Recurse -ErrorAction SilentlyContinue
+            if ($zipFolder | Test-Path) {
+                Remove-Item -Path $zipFolder -Recurse -ErrorAction SilentlyContinue
             }
 
-            $null = New-Item -ItemType Directory -Path $zipfolder -ErrorAction SilentlyContinue
+            $null = New-Item -ItemType Directory -Path $zipFolder -ErrorAction SilentlyContinue
             if ($LocalFile) {
                 Unblock-File $LocalFile -ErrorAction SilentlyContinue
-                Expand-Archive -Path $LocalFile -DestinationPath $zipfolder -Force
+                Expand-Archive -Path $LocalFile -DestinationPath $zipFolder -Force
             } else {
                 Write-ProgressHelper -ExcludePercent -Message "Downloading and unzipping Ola's maintenance solution zip file."
 
                 try {
                     try {
-                        Invoke-TlsWebRequest $url -OutFile $zipfile -ErrorAction Stop -UseBasicParsing
+                        Invoke-TlsWebRequest $url -OutFile $zipFile -ErrorAction Stop -UseBasicParsing
                     } catch {
                         # Try with default proxy and usersettings
                         (New-Object System.Net.WebClient).Proxy.Credentials = [System.Net.CredentialCache]::DefaultNetworkCredentials
-                        Invoke-TlsWebRequest $url -OutFile $zipfile -ErrorAction Stop -UseBasicParsing
+                        Invoke-TlsWebRequest $url -OutFile $zipFile -ErrorAction Stop -UseBasicParsing
                     }
 
                     # Unblock if there's a block
-                    Unblock-File $zipfile -ErrorAction SilentlyContinue
+                    Unblock-File $zipFile -ErrorAction SilentlyContinue
 
-                    Expand-Archive -Path $zipfile -DestinationPath $zipfolder -Force
+                    Expand-Archive -Path $zipFile -DestinationPath $zipFolder -Force
 
-                    Remove-Item -Path $zipfile
+                    Remove-Item -Path $zipFile
                 } catch {
                     Stop-Function -Message "Couldn't download Ola's maintenance solution. Download and install manually from https://github.com/olahallengren/sql-server-maintenance-solution/archive/master.zip." -ErrorRecord $_
                     return
@@ -231,12 +231,12 @@ function Install-DbaMaintenanceSolution {
             }
 
             ## Copy it into local area
-            if (Test-Path -Path $LocalCachedCopy -PathType Container) {
-                Remove-Item -Path (Join-Path $LocalCachedCopy '*') -Recurse -ErrorAction SilentlyContinue
+            if (Test-Path -Path $localCachedCopy -PathType Container) {
+                Remove-Item -Path (Join-Path $localCachedCopy '*') -Recurse -ErrorAction SilentlyContinue
             } else {
-                $null = New-Item -Path $LocalCachedCopy -ItemType Container
+                $null = New-Item -Path $localCachedCopy -ItemType Container
             }
-            Copy-Item -Path $zipfolder -Destination $LocalCachedCopy -Recurse
+            Copy-Item -Path $zipFolder -Destination $localCachedCopy -Recurse
         }
 
         function Get-DbaOlaWithParameters($listOfFiles) {
@@ -359,15 +359,15 @@ function Install-DbaMaintenanceSolution {
             }
 
             $temp = ([System.IO.Path]::GetTempPath()).TrimEnd("\")
-            $zipfile = "$temp\ola.zip"
+            $zipFile = "$temp\ola.zip"
 
-            $listOfFiles = Get-ChildItem -Filter "*.sql" -Path $LocalCachedCopy -Recurse | Select-Object -ExpandProperty FullName
+            $listOfFiles = Get-ChildItem -Filter "*.sql" -Path $localCachedCopy -Recurse | Select-Object -ExpandProperty FullName
 
             $fileContents = Get-DbaOlaWithParameters -listOfFiles $listOfFiles
 
-            $CleanupQuery = $null
+            $cleanupQuery = $null
             if ($ReplaceExisting) {
-                [string]$CleanupQuery = $("
+                [string]$cleanupQuery = $("
                             IF OBJECT_ID('[dbo].[CommandLog]', 'U') IS NOT NULL
                                 DROP TABLE [dbo].[CommandLog];
                             IF OBJECT_ID('[dbo].[QueueDatabase]', 'U') IS NOT NULL
@@ -386,7 +386,7 @@ function Install-DbaMaintenanceSolution {
 
                 if ($Pscmdlet.ShouldProcess($instance, "Dropping all objects created by Ola's Maintenance Solution")) {
                     Write-ProgressHelper -ExcludePercent -Message "Dropping objects created by Ola's Maintenance Solution"
-                    $null = $db.Query($CleanupQuery)
+                    $null = $db.Query($cleanupQuery)
                 }
 
                 # Remove Ola's Jobs
