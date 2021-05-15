@@ -124,11 +124,13 @@ function Invoke-DbaAdvancedInstall {
             $output = [PSCustomObject]@{
                 Path              = $null
                 Content           = $null
+                ExitMessage       = $null
                 ConfigurationFile = $null
             }
             if (Test-Path $summaryPath) {
                 $output.Path = $summaryPath
-                $output.Content = Get-Content -Path $summaryPath | Select-String "Exit Message"
+                $output.Content = Get-Content -Path $summaryPath
+                $output.ExitMessage = ($output.Content | Select-String "Exit message").Line -replace '^ *Exit message: *', ''
                 # get last folder created - that's our setup
                 $lastLogFolder = Get-ChildItem -Path $rootPath -Directory | Sort-Object -Property Name -Descending | Select-Object -First 1 -ExpandProperty FullName
                 if (Test-Path $lastLogFolder\ConfigurationFile.ini) {
@@ -160,6 +162,7 @@ function Invoke-DbaAdvancedInstall {
         Port              = $Port
         Notes             = @()
         ExitCode          = $null
+        ExitMessage       = $null
         Log               = $null
         LogFile           = $null
         ConfigurationFile = $null
@@ -250,11 +253,12 @@ function Invoke-DbaAdvancedInstall {
         # Get setup log summary contents
         try {
             $summary = Get-SqlInstallSummary -ComputerName $ComputerName -Credential $Credential -Version $Version
+            $output.ExitMessage = $summary.ExitMessage
             $output.Log = $summary.Content
             $output.LogFile = $summary.Path
             $output.ConfigurationFile = $summary.ConfigurationFile
         } catch {
-            Write-Message -Level Warning -Message "Could not get the contents of the summary file from $($ComputerName). 'Log' property will be empty" -ErrorRecord $_
+            Write-Message -Level Warning -Message "Could not get the contents of the summary file from $($ComputerName). Related properties will be empty" -ErrorRecord $_
         }
     } catch {
         Stop-Function -Message "Installation failed" -ErrorRecord $_
@@ -280,7 +284,7 @@ function Invoke-DbaAdvancedInstall {
     if ($installResult.Successful) {
         $output.Successful = $true
     } else {
-        $msg = "Installation failed with exit code $($installResult.ExitCode). Expand 'Log' property to find more details."
+        $msg = "Installation failed with exit code $($installResult.ExitCode). Expand 'ExitMessage' and 'Log' property to find more details."
         $output.Notes += $msg
         Stop-Function -Message $msg
         return $output
