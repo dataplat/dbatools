@@ -544,7 +544,6 @@
         # solvable filesystem issues or other workarounds
         'Install-DbaSqlWatch',
         'Uninstall-DbaSqlWatch',
-        'Remove-DbaDbView',
         'Get-DbaRegistryRoot',
         'Install-DbaMaintenanceSolution',
         'New-DbatoolsSupportPackage',
