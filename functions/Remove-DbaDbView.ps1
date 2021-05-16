@@ -99,18 +99,18 @@ function Remove-DbaDbView {
             return
         }
 
-        foreach ($instance in $SqlInstance) {
-            $InputObject += Get-DbaDbView -SqlInstance $instance -SqlCredential $SqlCredential -Database $Database -View $View -ExcludeSystemView -ExcludeDatabase $ExcludeDatabase
+        if ($SqlInstance) {
+            $InputObject = Get-DbaDbView -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $Database -View $View -ExcludeSystemView -ExcludeDatabase $ExcludeDatabase
         }
 
-        foreach ($db in $InputObject) {
+        foreach ($vw in $InputObject) {
 
-            if ($Pscmdlet.ShouldProcess($db.Parent.Name, "Removing the view $db in the database $($db.Parent.Name) on $instance")) {
+            if ($Pscmdlet.ShouldProcess($vw.SqlInstance, "Removing the view $vw in the database $($vw.Parent.Name)")) {
                 try {
-                    $viewToDrop = $db.Parent.Views | Where-Object { $_.Name -eq $db.Name }
+                    $viewToDrop = $vw.Parent.Views | Where-Object { $_.Name -eq $vw.Name }
                     $viewToDrop.Drop()
                 } catch {
-                    Stop-Function -Message "Failure on $instance to drop the view $db in the database $($db.Parent.Name)" -ErrorRecord $_ -Continue
+                    Stop-Function -Message "Failure on $($vw.SqlInstance) to drop the view $vw in the database $($vw.Parent.Name)" -ErrorRecord $_ -Continue
                 }
             }
         }
