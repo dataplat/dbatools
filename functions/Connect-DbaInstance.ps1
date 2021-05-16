@@ -141,6 +141,11 @@ function Connect-DbaInstance {
     .PARAMETER Store
         Store where the Azure MSI certificate is stored
 
+    .PARAMETER AccessToken
+        Connect to an Azure SQL Database or an Azure SQL Managed Instance with an AccessToken, that has to be generated with Get-AzAccessToken.
+        Note that the token is valid for only one hour and cannot be renewed automatically.
+        This is only available in the new code path for handling connections (see the last two examples).
+
     .PARAMETER DisableException
         By default in most of our commands, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
 
@@ -282,7 +287,7 @@ function Connect-DbaInstance {
         PS C:\> $server = Connect-DbaInstance -SqlInstance $azureInstance -AccessToken $azureToken
         PS C:\> Invoke-DbaQuery -SqlInstance $server -Query "select 1 as test"
 
-        Connect to an Azure SQL database with an AccessToken.
+        Connect to an Azure SQL Database or an Azure SQL Managed Instance with an AccessToken.
         Note that the token is valid for only one hour and cannot be renewed automatically.
         This is only available in the new code path for handling connections (see example above).
 
