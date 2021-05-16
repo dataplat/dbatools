@@ -19,10 +19,10 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         $view1 = "dbatoolssci_view1_$(Get-Random)"
         $view2 = "dbatoolssci_view2_$(Get-Random)"
         $dbname1 = "dbatoolsci_$(Get-Random)"
-        $null = New-DbaDatabase -SqlInstance $script:instance2 -Name $dbname1
+        $null = New-DbaDatabase -SqlInstance $server -Name $dbname1
     }
     AfterAll {
-        $null = Remove-DbaDatabase -SqlInstance $script:instance2 -Database $dbname1 -confirm:$false
+        $null = Remove-DbaDatabase -SqlInstance $server -Database $dbname1 -confirm:$false
     }
 
     Context "Functionality" {
@@ -56,18 +56,6 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $result1 = Get-DbaDbView -SqlInstance $script:instance2 -Database $dbname1
 
             $result1.Name -contains $view2  | Should Be $false
-        }
-
-        It 'SqlInstance and Database are provided' {
-            Remove-DbaDbView -SqlInstance $script:instance2 -WarningAction SilentlyContinue -WarningVariable warn > $null
-
-            $warn | Should -Match 'Database is required when SqlInstance is specified'
-        }
-
-        It 'SqlInstance and Database are provided' {
-            Remove-DbaDbView -SqlInstance $script:instance2 -WarningAction SilentlyContinue -WarningVariable warn > $null
-
-            $warn | Should -Match 'Database is required when SqlInstance is specified'
         }
 
     }

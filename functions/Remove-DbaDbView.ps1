@@ -25,11 +25,8 @@ function Remove-DbaDbView {
     .PARAMETER View
         The view(s) to process. If unspecified, all views will be processed.
 
-    .PARAMETER IncludeSystemDbs
-        If this switch is enabled, views can be removed from system databases.
-
     .PARAMETER InputObject
-        Enables piped input from Get-DbaDbView or Get-DbaDatabase
+        Enables piped input from Get-DbaDbView
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
@@ -54,19 +51,14 @@ function Remove-DbaDbView {
         https://dbatools.io/Remove-DbaDbView
 
     .EXAMPLE
-        PS C:\> Remove-DbaDbView -SqlInstance localhost -Database dbname -View "customview1", "customview2"
+        PS C:\> Remove-DbaDbView -SqlInstance localhost -Database dbname -View view1, view2
 
-        Removes views customview1 and customview2 from the database dbname on the local default SQL Server instance.
+        Removes views view1 and view2 from the database dbname on the local default SQL Server instance.
 
     .EXAMPLE
         PS C:\> Remove-DbaDbView -SqlInstance localhost, sql2016 -Database db1, db2 -View view1, view2, view3
 
         Removes view1, view2, view3 from db1 and db2 on the local and sql2016 SQL Server instances.
-
-    .EXAMPLE
-        PS C:\> Remove-DbaDbView -SqlInstance localhost -Database msdb -IncludeSystemDbs -View view1, view2, view3
-
-        Removes view1, view2, view3 from db1 and db2 from system database (msdb) on the local SQL Server instances.
 
     .EXAMPLE
         PS C:\> $servers = Get-Content C:\servers.txt
@@ -93,11 +85,6 @@ function Remove-DbaDbView {
     )
 
     process {
-
-        if ((Test-Bound -ParameterName SqlInstance) -and (Test-Bound -Not -ParameterName Database)) {
-            Stop-Function -Message "Database is required when SqlInstance is specified"
-            return
-        }
 
         if ($SqlInstance) {
             $InputObject = Get-DbaDbView -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $Database -View $View -ExcludeSystemView -ExcludeDatabase $ExcludeDatabase
