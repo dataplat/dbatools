@@ -20,7 +20,7 @@ function New-DbaDbFileGroup {
     .PARAMETER Database
         The target database(s).
 
-    .PARAMETER FileGroupName
+    .PARAMETER FileGroup
         The name of the new filegroup.
 
     .PARAMETER FileGroupType
@@ -52,22 +52,22 @@ function New-DbaDbFileGroup {
         https://dbatools.io/New-DbaDbFileGroup
 
     .EXAMPLE
-        PS C:\>New-DbaDbFileGroup -SqlInstance sqldev1 -Database TestDb -FileGroupName HRFG1
+        PS C:\>New-DbaDbFileGroup -SqlInstance sqldev1 -Database TestDb -FileGroup HRFG1
 
         Creates the HRFG1 filegroup on the TestDb database on the sqldev1 instance with the default options for the filegroup.
 
     .EXAMPLE
-        PS C:\>New-DbaDbFileGroup -SqlInstance sqldev1 -Database TestDb -FileGroupName HRFG1 -FileGroupType FileStreamDataFileGroup
+        PS C:\>New-DbaDbFileGroup -SqlInstance sqldev1 -Database TestDb -FileGroup HRFG1 -FileGroupType FileStreamDataFileGroup
 
         Creates a filestream filegroup named HRFG1 on the TestDb database on the sqldev1 instance.
 
     .EXAMPLE
-        PS C:\>New-DbaDbFileGroup -SqlInstance sqldev1 -Database TestDb -FileGroupName HRFG1 -FileGroupType MemoryOptimizedDataFileGroup
+        PS C:\>New-DbaDbFileGroup -SqlInstance sqldev1 -Database TestDb -FileGroup HRFG1 -FileGroupType MemoryOptimizedDataFileGroup
 
         Creates a MemoryOptimized data filegroup named HRFG1 on the TestDb database on the sqldev1 instance.
 
     .EXAMPLE
-        PS C:\>Get-DbaDatabase -SqlInstance sqldev1 -Database TestDb | New-DbaDbFileGroup -FileGroupName HRFG1
+        PS C:\>Get-DbaDatabase -SqlInstance sqldev1 -Database TestDb | New-DbaDbFileGroup -FileGroup HRFG1
 
         Passes in the TestDB database via pipeline and creates the HRFG1 filegroup on the TestDb database on the sqldev1 instance.
     #>
@@ -76,7 +76,7 @@ function New-DbaDbFileGroup {
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [string[]]$Database,
-        [string]$FileGroupName,
+        [string]$FileGroup,
         [ValidateSet("FileStreamDataFileGroup", "MemoryOptimizedDataFileGroup", "RowsFileGroup")]
         [string]$FileGroupType = "RowsFileGroup",
         [parameter(ValueFromPipeline)]
@@ -85,8 +85,8 @@ function New-DbaDbFileGroup {
     )
     process {
 
-        if (Test-Bound -Not -ParameterName FileGroupName) {
-            Stop-Function -Message "FileGroupName is required"
+        if (Test-Bound -Not -ParameterName FileGroup) {
+            Stop-Function -Message "FileGroup is required"
             return
         }
 
@@ -101,13 +101,13 @@ function New-DbaDbFileGroup {
 
         foreach ($db in $InputObject) {
 
-            if ($db.FileGroups.Name -contains $FileGroupName) {
-                Stop-Function -Message "Filegroup $FileGroupName already exists in the database $($db.Name) on $($db.Parent.Name)" -Continue
+            if ($db.FileGroups.Name -contains $FileGroup) {
+                Stop-Function -Message "Filegroup $FileGroup already exists in the database $($db.Name) on $($db.Parent.Name)" -Continue
             }
 
-            if ($Pscmdlet.ShouldProcess($db.Parent.Name, "Creating the filegroup $FileGroupName on the database $($db.Name) on $($db.Parent.Name)")) {
+            if ($Pscmdlet.ShouldProcess($db.Parent.Name, "Creating the filegroup $FileGroup on the database $($db.Name) on $($db.Parent.Name)")) {
                 try {
-                    $newFileGroup = New-Object Microsoft.SqlServer.Management.Smo.FileGroup -ArgumentList $db, $FileGroupName
+                    $newFileGroup = New-Object Microsoft.SqlServer.Management.Smo.FileGroup -ArgumentList $db, $FileGroup
 
                     if (Test-Bound FileGroupType) {
                         $newFileGroup.FileGroupType = [Microsoft.SqlServer.Management.Smo.FileGroupType]::$FileGroupType
@@ -116,7 +116,7 @@ function New-DbaDbFileGroup {
                     $newFileGroup.Create()
                     $newFileGroup
                 } catch {
-                    Stop-Function -Message "Failure on $($db.Parent.Name) to create the filegroup $FileGroupName in the database $($db.Name)" -ErrorRecord $_ -Continue
+                    Stop-Function -Message "Failure on $($db.Parent.Name) to create the filegroup $FileGroup in the database $($db.Name)" -ErrorRecord $_ -Continue
                 }
             }
         }

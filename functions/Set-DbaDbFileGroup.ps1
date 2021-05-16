@@ -20,8 +20,8 @@ function Set-DbaDbFileGroup {
     .PARAMETER Database
         The target database(s).
 
-    .PARAMETER FileGroupName
-        The name of the new filegroup.
+    .PARAMETER FileGroup
+        The name(s) of the filegroup(s).
 
     .PARAMETER Default
         Specifies if the filegroup should be the default. Only one filegroup in a database can be specified as the default.
@@ -29,11 +29,17 @@ function Set-DbaDbFileGroup {
     .PARAMETER ReadOnly
         Specifies the filegroup should be readonly.
 
+    .PARAMETER ReadWrite
+        Specifies the filegroup should be readwrite.
+
     .PARAMETER AutoGrowAllFiles
-        Specifies the filegroup should auto grow all files if one file has met the threshold to autogrow.
+        Specifies the filegroup should auto grow all files if one file has met the threshold to auto grow.
+
+    .PARAMETER AutoGrowSingleFile
+        Specifies the filegroup should not auto grow all files.
 
     .PARAMETER InputObject
-        Allows piping from Get-DbaDatabase.
+        Allows piping from Get-DbaDatabase and Get-DbaDbFileGroup.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
@@ -58,39 +64,51 @@ function Set-DbaDbFileGroup {
         https://dbatools.io/Set-DbaDbFileGroup
 
     .EXAMPLE
-        PS C:\>Set-DbaDbFileGroup -SqlInstance sqldev1 -Database TestDb -FileGroupName HRFG1 -Default -AutoGrowAllFiles
+        PS C:\>Set-DbaDbFileGroup -SqlInstance sqldev1 -Database TestDb -FileGroup HRFG1 -Default -AutoGrowAllFiles
 
         Sets the HRFG1 filegroup to auto grow all files and makes it the default filegroup on the TestDb database on the sqldev1 instance.
 
     .EXAMPLE
-        PS C:\>Set-DbaDbFileGroup -SqlInstance sqldev1 -Database TestDb -FileGroupName HRFG1 -ReadOnly
+        PS C:\>Set-DbaDbFileGroup -SqlInstance sqldev1 -Database TestDb -FileGroup HRFG1 -AutoGrowSingleFile
+
+        Sets the HRFG1 filegroup to not auto grow all files on the TestDb database on the sqldev1 instance.
+
+    .EXAMPLE
+        PS C:\>Set-DbaDbFileGroup -SqlInstance sqldev1 -Database TestDb -FileGroup HRFG1 -ReadOnly
 
         Sets the HRFG1 filegroup to read only on the TestDb database on the sqldev1 instance.
 
     .EXAMPLE
-        PS C:\>Get-DbaDatabase -SqlInstance sqldev1 -Database TestDb | Set-DbaDbFileGroup -FileGroupName HRFG1 -AutoGrowAllFiles
+        PS C:\>Set-DbaDbFileGroup -SqlInstance sqldev1 -Database TestDb -FileGroup HRFG1 -ReadWrite
 
-        Passes in the TestDB database via pipeline and sets the HRFG1 filegroup to auto grow all files on the TestDb database on the sqldev1 instance.
+        Sets the HRFG1 filegroup to read/write on the TestDb database on the sqldev1 instance.
+
+    .EXAMPLE
+        PS C:\>Get-DbaDatabase -SqlInstance sqldev1 -Database TestDb | Set-DbaDbFileGroup -FileGroup HRFG1 -AutoGrowAllFiles
+
+        Passes in the TestDB database from the sqldev1 instance and sets the HRFG1 filegroup to auto grow all files.
+
+    .EXAMPLE
+        PS C:\>Get-DbaDbFileGroup -SqlInstance sqldev1 -Database TestDb -FileGroup HRFG1 | Set-DbaDbFileGroup -AutoGrowAllFiles
+
+        Passes in the HRFG1 filegroup from the TestDB database on the sqldev1 instance and sets it to auto grow all files.
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High')]
     param (
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [string[]]$Database,
-        [string]$FileGroupName,
+        [string[]]$FileGroup,
         [switch]$Default,
         [switch]$ReadOnly,
+        [switch]$ReadWrite,
         [switch]$AutoGrowAllFiles,
+        [switch]$AutoGrowSingleFile,
         [parameter(ValueFromPipeline)]
-        [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
+        [object[]]$InputObject,
         [switch]$EnableException
     )
     process {
-
-        if (Test-Bound -Not -ParameterName FileGroupName) {
-            Stop-Function -Message "FileGroupName is required"
-            return
-        }
 
         if ((Test-Bound -ParameterName SqlInstance) -and (Test-Bound -Not -ParameterName Database)) {
             Stop-Function -Message "Database is required when SqlInstance is specified"
@@ -101,36 +119,61 @@ function Set-DbaDbFileGroup {
             $InputObject += Get-DbaDatabase -SqlInstance $instance -SqlCredential $SqlCredential -Database $Database
         }
 
-        foreach ($db in $InputObject) {
+        $fileGroupsToModify = @()
 
-            if ($db.FileGroups.Name -notcontains $FileGroupName) {
-                Stop-Function -Message "Filegroup $FileGroupName does not exist in the database $($db.Name) on $($db.Parent.Name)" -Continue
+        foreach ($obj in $InputObject) {
+
+            if ($obj -is [Microsoft.SqlServer.Management.Smo.Database]) {
+
+                if (Test-Bound -Not -ParameterName FileGroup) {
+                    Stop-Function -Message "Filegroup is required" -Continue
+                }
+
+                foreach ($fg in $FileGroup) {
+
+                    if ($obj.FileGroups.Name -notcontains $fg) {
+                        Stop-Function -Message "Filegroup $fg does not exist in the database $($obj.Name) on $($obj.Parent.Name)" -Continue
+                    }
+
+                    $fileGroupsToModify += $obj.FileGroups[$fg]
+                }
+            } elseif ($obj -is [Microsoft.SqlServer.Management.Smo.FileGroup]) {
+                $fileGroupsToModify += $obj
+            }
+        }
+
+        foreach ($fgToModify in $fileGroupsToModify) {
+
+            if ($fgToModify.Files.Count -eq 0) {
+                Stop-Function -Message "Filegroup $FileGroup is empty on $($obj.Name) on $($obj.Parent.Name). Before the options can be set there must be at least one file in the filegroup." -Continue
             }
 
-            if ($db.FileGroups[$FileGroupName].Files.Count -eq 0) {
-                Stop-Function -Message "Filegroup $FileGroupName is empty on $($db.Name) on $($db.Parent.Name). Before the filegroup options can be set there must be at least one file." -Continue
-            }
-
-            if ($Pscmdlet.ShouldProcess($db.Parent.Name, "Updating the filegroup options for $FileGroupName on the database $($db.Name) on $($db.Parent.Name)")) {
+            if ($Pscmdlet.ShouldProcess($fgToModify.Parent.Parent.Name, "Updating the filegroup options for $($fgToModify.Name) on the database $($fgToModify.Parent.Name) on $($fgToModify.Parent.Parent.Name)")) {
                 try {
-                    $fileGroup = $db.FileGroups[$FileGroupName]
-
                     if ($Default.IsPresent) {
-                        $fileGroup.IsDefault = $true
+                        $fgToModify.IsDefault = $true
                     }
 
                     if ($ReadOnly.IsPresent) {
-                        $fileGroup.ReadOnly = $true
+                        $fgToModify.ReadOnly = $true
+                    }
+
+                    if ($ReadWrite.IsPresent) {
+                        $fgToModify.ReadOnly = $false
                     }
 
                     if ($AutoGrowAllFiles.IsPresent) {
-                        $fileGroup.AutogrowAllFiles = $true
+                        $fgToModify.AutogrowAllFiles = $true
                     }
 
-                    $fileGroup.Alter()
-                    $fileGroup
+                    if ($AutoGrowSingleFile.IsPresent) {
+                        $fgToModify.AutogrowAllFiles = $false
+                    }
+
+                    $fgToModify.Alter()
+                    $fgToModify
                 } catch {
-                    Stop-Function -Message "Failure on $($db.Parent.Name) to set the filegroup options for $FileGroupName in the database $($db.Name)" -ErrorRecord $_ -Continue
+                    Stop-Function -Message "Failure on $($fgToModify.Parent.Parent.Name) to set the filegroup options for $($fgToModify.Name) in the database $($fgToModify.Parent.Name)" -ErrorRecord $_ -Continue
                 }
             }
         }

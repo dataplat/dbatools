@@ -5,7 +5,7 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
         [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'FileGroupName', 'FileGroupType', 'InputObject', 'EnableException'
+        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'FileGroup', 'FileGroupType', 'InputObject', 'EnableException'
         $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
         It "Should only contain our specific parameters" {
             (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
@@ -44,38 +44,38 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     Context "ensure command works" {
 
         It "Creates a filegroup" {
-            $results = New-DbaDbFileGroup -SqlInstance $script:instance2 -Database $db1name -FileGroupName "filegroup_$random"
+            $results = New-DbaDbFileGroup -SqlInstance $script:instance2 -Database $db1name -FileGroup "filegroup_$random"
             $results.Parent.Name | Should -Be $db1name
             $results.Name | Should -Be "filegroup_$random"
             $results.FileGroupType | Should -Be RowsFileGroup
         }
 
         It "Check the validation for duplicate filegroup names" {
-            $results = New-DbaDbFileGroup -SqlInstance $script:instance2 -Database $db1name -FileGroupName "filegroup_$random"
+            $results = New-DbaDbFileGroup -SqlInstance $script:instance2 -Database $db1name -FileGroup "filegroup_$random"
             $results | Should -BeNullOrEmpty
         }
 
         It "Creates a filegroup of each FileGroupType" {
-            $results = New-DbaDbFileGroup -SqlInstance $script:instance2 -Database $db1name -FileGroupName "filegroup_rows_$random" -FileGroupType RowsFileGroup
+            $results = New-DbaDbFileGroup -SqlInstance $script:instance2 -Database $db1name -FileGroup "filegroup_rows_$random" -FileGroupType RowsFileGroup
             $results.Name | Should -Be "filegroup_rows_$random"
             $results.FileGroupType | Should -Be RowsFileGroup
 
-            $results = New-DbaDbFileGroup -SqlInstance $script:instance2 -Database $db1name -FileGroupName "filegroup_filestream_$random" -FileGroupType FileStreamDataFileGroup
+            $results = New-DbaDbFileGroup -SqlInstance $script:instance2 -Database $db1name -FileGroup "filegroup_filestream_$random" -FileGroupType FileStreamDataFileGroup
             $results.Name | Should -Be "filegroup_filestream_$random"
             $results.FileGroupType | Should -Be FileStreamDataFileGroup
 
-            $results = New-DbaDbFileGroup -SqlInstance $script:instance2 -Database $db1name -FileGroupName "filegroup_memory_optimized_$random" -FileGroupType MemoryOptimizedDataFileGroup
+            $results = New-DbaDbFileGroup -SqlInstance $script:instance2 -Database $db1name -FileGroup "filegroup_memory_optimized_$random" -FileGroupType MemoryOptimizedDataFileGroup
             $results.Name | Should -Be "filegroup_memory_optimized_$random"
             $results.FileGroupType | Should -Be MemoryOptimizedDataFileGroup
 
         }
 
         It "Creates a filegroup using a database from a pipeline" {
-            $results = $newDb1 | New-DbaDbFileGroup -FileGroupName "filegroup_pipeline_$random"
+            $results = $newDb1 | New-DbaDbFileGroup -FileGroup "filegroup_pipeline_$random"
             $results.Name | Should -Be "filegroup_pipeline_$random"
             $results.Parent.Name | Should -Be $db1name
 
-            $results = $newDb1 | New-DbaDbFileGroup -SqlInstance $script:instance2 -Database $db2name -FileGroupName "filegroup_pipeline2_$random"
+            $results = $newDb1 | New-DbaDbFileGroup -SqlInstance $script:instance2 -Database $db2name -FileGroup "filegroup_pipeline2_$random"
             $results.Name | Should -Be "filegroup_pipeline2_$random", "filegroup_pipeline2_$random"
             $results.Parent.Name | Should -Be $db1name, $db2name
         }
