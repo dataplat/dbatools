@@ -5,7 +5,7 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 Describe "$CommandName Unit Tests" -Tags "UnitTests" {
     Context "Validate parameters" {
         [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'View', 'IncludeSystemDbs', 'InputObject', 'EnableException'
+        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'View', 'InputObject', 'EnableException'
         $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
         It "Should only contain our specific parameters" {
             (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
@@ -29,9 +29,9 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         It 'Removes user views' {
             $null = $server.Query("CREATE VIEW $view1 (a) AS (SELECT @@VERSION );" , $dbname1)
             $null = $server.Query("CREATE VIEW $view2 (b) AS (SELECT * from $view1);", $dbname1)
-            $result0 = Get-DbaDbView -SqlInstance $script:instance2 -Database $dbname1
+            $result0 = Get-DbaDbView -SqlInstance $script:instance2 -Database $dbname1 -ExcludeSystemView
             Remove-DbaDbView -SqlInstance $script:instance2 -Database $dbname1 -Confirm:$false
-            $result1 = Get-DbaDbView -SqlInstance $script:instance2 -Database $dbname1
+            $result1 = Get-DbaDbView -SqlInstance $script:instance2 -Database $dbname1 -ExcludeSystemView
 
             $result0.Count | Should BeGreaterThan $result1.Count
             $result1.Name -contains $view1  | Should Be $false
@@ -58,20 +58,16 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $result1.Name -contains $view2  | Should Be $false
         }
 
-        It 'Removes views in System DB' {
-            $null = $server.Query("CREATE VIEW $view1 (a) AS (SELECT @@VERSION );" , 'msdb')
-            $result0 = Get-DbaDbView -SqlInstance $script:instance2 -Database msdb
-            Remove-DbaDbView -SqlInstance $script:instance2 -Database msdb -View $view1 -IncludeSystemDbs -Confirm:$false
-            $result1 = Get-DbaDbView -SqlInstance $script:instance2 -Database msdb
+        It 'SqlInstance and Database are provided' {
+            Remove-DbaDbView -SqlInstance $script:instance2 -WarningAction SilentlyContinue -WarningVariable warn > $null
 
-            $result0.Count | Should BeGreaterThan $result1.Count
-            $result1.Name -contains $view1  | Should Be $false
+            $warn | Should -Match 'Database is required when SqlInstance is specified'
         }
 
-        It 'Input is provided' {
-            Remove-DbaDbView -WarningAction SilentlyContinue -WarningVariable warn > $null
+        It 'SqlInstance and Database are provided' {
+            Remove-DbaDbView -SqlInstance $script:instance2 -WarningAction SilentlyContinue -WarningVariable warn > $null
 
-            $warn | Should -Match 'You must pipe in a view, database, or server or specify a SqlInstance'
+            $warn | Should -Match 'Database is required when SqlInstance is specified'
         }
 
     }

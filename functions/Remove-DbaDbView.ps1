@@ -82,67 +82,35 @@ function Remove-DbaDbView {
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High')]
     param (
-        [parameter(ValueFromPipeline)]
-        [DbaInstance[]]$SqlInstance,
+        [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [string[]]$Database,
-        [string[]]$ExcludeDatabase,
+        [object[]]$Database,
+        [object[]]$ExcludeDatabase,
         [string[]]$View,
-        [switch]$IncludeSystemDbs,
         [parameter(ValueFromPipeline)]
-        [object[]]$InputObject,
+        [Microsoft.SqlServer.Management.Smo.View[]]$InputObject,
         [switch]$EnableException
     )
 
     process {
-        if (-not $InputObject -and -not $SqlInstance) {
-            Stop-Function -Message "You must pipe in a view, database, or server or specify a SqlInstance"
+
+        if ((Test-Bound -ParameterName SqlInstance) -and (Test-Bound -Not -ParameterName Database)) {
+            Stop-Function -Message "Database is required when SqlInstance is specified"
             return
         }
 
-        if ($SqlInstance) {
-            $InputObject = $SqlInstance
+        foreach ($instance in $SqlInstance) {
+            $InputObject += Get-DbaDbView -SqlInstance $instance -SqlCredential $SqlCredential -Database $Database -View $View -ExcludeSystemView -ExcludeDatabase $ExcludeDatabase
         }
 
-        foreach ($input in $InputObject) {
-            $inputType = $input.GetType().FullName
-            switch ($inputType) {
-                'Sqlcollaborative.Dbatools.Parameter.DbaInstanceParameter' {
-                    Write-Message -Level Verbose -Message "Processing DbaInstanceParameter through InputObject"
-                    $dbViews = Get-DbaDbView -SqlInstance $input -SqlCredential $SqlCredential -Database $Database -ExcludeDatabase $ExcludeDatabase -View $View
-                }
-                'Microsoft.SqlServer.Management.Smo.Server' {
-                    Write-Message -Level Verbose -Message "Processing Server through InputObject"
-                    $dbViews = Get-DbaDbView -SqlInstance $input -SqlCredential $SqlCredential -Database $Database -ExcludeDatabase $ExcludeDatabase -View $View
-                }
-                'Microsoft.SqlServer.Management.Smo.Database' {
-                    Write-Message -Level Verbose -Message "Processing Database through InputObject"
-                    $dbViews | Get-DbaDbView -InputObject $input
-                }
-                'Microsoft.SqlServer.Management.Smo.View' {
-                    Write-Message -Level Verbose -Message "Processing DatabaseView through InputObject"
-                    $dbViews = $input
-                }
-                default {
-                    Stop-Function -Message "InputObject is not a server, database, or database view."
-                    return
-                }
-            }
+        foreach ($db in $InputObject) {
 
-            foreach ($dbView in $dbViews) {
-                $db = $dbView.Parent
-                $instance = $db.Parent
-                if ((!$db.IsSystemObject) -or ($db.IsSystemObject -and $IncludeSystemDbs )) {
-                    if (!$dbView.IsSystemObject) {
-                        if ($PSCmdlet.ShouldProcess($instance, "Remove view $dbView from database $db")) {
-                            $dbView.Drop()
-
-                        }
-                    } else {
-                        Write-Message -Level Verbose -Message "Cannot remove fixed view $dbView from database $db on instance $instance"
-                    }
-                } else {
-                    Write-Message -Level Verbose -Message "Can only remove views from System database when IncludeSystemDbs switch used."
+            if ($Pscmdlet.ShouldProcess($db.Parent.Name, "Removing the view $db in the database $($db.Parent.Name) on $instance")) {
+                try {
+                    $viewToDrop = $db.Parent.Views | Where-Object { $_.Name -eq $db.Name }
+                    $viewToDrop.Drop()
+                } catch {
+                    Stop-Function -Message "Failure on $instance to drop the view $db in the database $($db.Parent.Name)" -ErrorRecord $_ -Continue
                 }
             }
         }
