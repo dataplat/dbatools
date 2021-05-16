@@ -18,7 +18,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     Context "Command functions as expected" {
         It "warns if SQL instance version is not supported" {
             $results = Watch-DbaXESession -SqlInstance $script:instance1 -Session system_health -WarningAction SilentlyContinue -WarningVariable versionwarn
-            $versionwarn -match "Unsupported version" | Should Be $true
+            $versionwarn -match "not supported" | Should Be $true
         }
     }
 }
