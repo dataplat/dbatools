@@ -928,6 +928,15 @@ function Connect-DbaInstance {
             $isAzure = $false
             if ($connstring -match $AzureDomain -or $instance.ComputerName -match $AzureDomain -or $instance.InputObject.ComputerName -match $AzureDomain) {
                 Write-Message -Level Debug -Message "We are about to connect to Azure"
+
+                # Test for AzureUnsupported, moved here from Connect-SqlInstance
+                if ($instance.InputObject.GetType().Name -eq 'Server') {
+                    if ($AzureUnsupported -and $instance.InputObject.DatabaseEngineType -eq "SqlAzureDatabase") {
+                        Stop-Function -Message "Azure SQL Database is not supported by this command."
+                        continue
+                    }
+                }
+
                 # so far, this is not evaluating
                 if ($instance.InputObject.ConnectionContext.IsOpen) {
                     Write-Message -Level Debug -Message "Connection is already open, test if database has to be changed"
