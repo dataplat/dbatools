@@ -68,6 +68,6 @@ function Connect-SqlInstance {
     if ($SqlInstance.InputObject.GetType().Name -eq 'Server') {
         return $SqlInstance.InputObject
     } else {
-        Connect-DbaInstance @PSBoundParameters -ClientName (Get-DbatoolsConfigValue -FullName 'sql.connection.clientname')
+        Connect-DbaInstance @PSBoundParameters
     }
 }
