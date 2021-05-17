@@ -1036,6 +1036,16 @@ function Connect-DbaInstance {
                     Write-Message -Level Debug -Message "will build server with [Microsoft.SqlServer.Management.Common.ServerConnection]serverconn (serverconn.ServerInstance = '$($serverconn.ServerInstance)')"
                     $server = New-Object Microsoft.SqlServer.Management.Smo.Server $serverconn
                     Write-Message -Level Debug -Message "server was build with server.Name = '$($server.Name)'"
+
+                    # Test for AzureUnsupported
+                    # Use the following lines to test in any case. Not active, because it would change the current behavior
+                    <#
+                    if ($AzureUnsupported -and $server.DatabaseEngineType -eq "SqlAzureDatabase") {
+                        Stop-Function -Message "Azure SQL Database is not supported by this command."
+                        continue
+                    }
+                    #>
+
                     # Make ComputerName easily available in the server object
                     Add-Member -InputObject $server -NotePropertyName IsAzure -NotePropertyValue $true -Force
                     Add-Member -InputObject $server -NotePropertyName ComputerName -NotePropertyValue $instance.ComputerName -Force
