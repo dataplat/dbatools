@@ -65,9 +65,5 @@ function Connect-SqlInstance {
         [switch]$AzureUnsupported,
         [switch]$NonPooled
     )
-    if ($SqlInstance.InputObject.GetType().Name -eq 'Server') {
-        return $SqlInstance.InputObject
-    } else {
-        Connect-DbaInstance @PSBoundParameters
-    }
+    Connect-DbaInstance @PSBoundParameters
 }
