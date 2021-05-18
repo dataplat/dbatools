@@ -99,7 +99,7 @@ function Get-DbaServerRoleMember {
             Write-Message -Level Verbose -Message "Attempting to connect to $instance"
 
             try {
-                $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             } catch {
                 Stop-Function -Message 'Failure' -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
