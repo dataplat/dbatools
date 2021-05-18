@@ -176,6 +176,7 @@ function Get-DbaAgBackupHistory {
     end {
         if ($serverList.Count -eq 0) {
             Stop-Function -Message "No instances with availability group named '$AvailabilityGroup' found, so finishing without results."
+            return
         }
 
         if ($serverList.Count -eq 1) {
