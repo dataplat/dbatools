@@ -305,6 +305,11 @@ function Install-DbaMaintenanceSolution {
                 Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
+            $db = $server.Databases[$Database]
+            if ($null -eq $db) {
+                Stop-Function -Message "Database $Database not found on $instance. Skipping." -Target $instance -Continue
+            }
+
             if ((Test-Bound -ParameterName ReplaceExisting -Not)) {
                 $procs = Get-DbaModule -SqlInstance $server -Database $Database | Where-Object Name -in 'CommandExecute', 'DatabaseBackup', 'DatabaseIntegrityCheck', 'IndexOptimize'
                 $tables = Get-DbaDbTable -SqlInstance $server -Database $Database -Table CommandLog, Queue, QueueDatabase -IncludeSystemDBs | Where-Object Database -eq $Database
@@ -319,8 +324,6 @@ function Install-DbaMaintenanceSolution {
                 $BackupLocation = (Get-DbaDefaultPath -SqlInstance $server).Backup
             }
             Write-ProgressHelper -ExcludePercent -Message "Ola Hallengren's solution will be installed on database $Database"
-
-            $db = $server.Databases[$Database]
 
             if ($Solution -notcontains 'All') {
                 $required = @('CommandExecute.sql')
@@ -403,33 +406,31 @@ function Install-DbaMaintenanceSolution {
                 }
             }
 
-            try {
-                Write-ProgressHelper -ExcludePercent -Message "Installing on server $instance, database $Database"
+            Write-ProgressHelper -ExcludePercent -Message "Installing on server $instance, database $Database"
 
-                foreach ($file in $fileContents.Keys | Sort-Object) {
-                    $shortFileName = Split-Path $file -Leaf
-                    if ($required.Contains($shortFileName)) {
-                        if ($Pscmdlet.ShouldProcess($instance, "Installing $shortFileName")) {
-                            Write-ProgressHelper -ExcludePercent -Message "Installing $shortFileName"
-                            $sql = $fileContents[$file]
-                            try {
-                                foreach ($query in ($sql -Split "\nGO\b")) {
-                                    $null = $db.Query($query)
-                                }
-                            } catch {
-                                Stop-Function -Message "Could not execute $shortFileName in $Database on $instance" -ErrorRecord $_ -Target $db -Continue
+            $result = "Success"
+            foreach ($file in $fileContents.Keys | Sort-Object) {
+                $shortFileName = Split-Path $file -Leaf
+                if ($required.Contains($shortFileName)) {
+                    if ($Pscmdlet.ShouldProcess($instance, "Installing $shortFileName")) {
+                        Write-ProgressHelper -ExcludePercent -Message "Installing $shortFileName"
+                        $sql = $fileContents[$file]
+                        try {
+                            foreach ($query in ($sql -Split "\nGO\b")) {
+                                $null = $db.Query($query)
                             }
+                        } catch {
+                            $result = "Failed"
+                            Stop-Function -Message "Could not execute $shortFileName in $Database on $instance" -ErrorRecord $_ -Target $db -Continue
                         }
                     }
                 }
-                [pscustomobject]@{
-                    ComputerName = $server.ComputerName
-                    InstanceName = $server.ServiceName
-                    SqlInstance  = $instance
-                    Results      = "Success"
-                }
-            } catch {
-                Stop-Function -Message "Could not execute $shortFileName in $Database on $instance." -ErrorRecord $_ -Target $db -Continue
+            }
+            [pscustomobject]@{
+                ComputerName = $server.ComputerName
+                InstanceName = $server.ServiceName
+                SqlInstance  = $instance
+                Results      = $result
             }
         }
         # Only here due to need for non-pooled connection in this command
