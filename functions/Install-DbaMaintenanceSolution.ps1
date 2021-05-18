@@ -417,7 +417,7 @@ function Install-DbaMaintenanceSolution {
                                 $null = $db.Query($query)
                             }
                         } catch {
-                            $result = "Failure"
+                            $result = "Failed"
                             Stop-Function -Message "Could not execute $shortFileName in $Database on $instance" -ErrorRecord $_ -Target $db -Continue
                         }
                     }
