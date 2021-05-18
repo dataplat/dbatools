@@ -113,6 +113,7 @@ function Get-DbaServerRoleMember {
                     Stop-Function -Message "Issue gathering login details" -ErrorRecord $_ -Target $instance
                 }
                 Write-Message -Level 'Verbose' -Message "Filtering by logins: $($logins -join ', ')"
+                $loginRoles = @()
                 foreach ($l in $logins) {
                     $loginRoles += $l.ListMembers()
                 }
@@ -147,16 +148,18 @@ function Get-DbaServerRoleMember {
                 }
 
                 foreach ($member in $members) {
-                    $l = $server.Logins | Where-Object { $_.Name -eq $member }
+                    $login = $server.Logins | Where-Object { $_.Name -eq $member }
 
-                    if ($l) {
-                        Add-Member -Force -InputObject $l -MemberType NoteProperty -Name ComputerName -Value $server.ComputerName
-                        Add-Member -Force -InputObject $l -MemberType NoteProperty -Name InstanceName -Value $server.ServiceName
-                        Add-Member -Force -InputObject $l -MemberType NoteProperty -Name SqlInstance -Value $server.DomainInstanceName
-                        Add-Member -Force -InputObject $l -MemberType NoteProperty -Name Role -Value $role.Name
-
-                        # Select object because Select-DefaultView causes strange behaviors when assigned to a variable (??)
-                        Select-Object -InputObject $l -Property 'ComputerName', 'InstanceName', 'SqlInstance', 'Role', 'Name'
+                    if ($login) {
+                        [PSCustomObject]@{
+                            ComputerName = $server.ComputerName
+                            InstanceName = $server.ServiceName
+                            SqlInstance  = $server.DomainInstanceName
+                            Role         = $role.Name
+                            Name         = $login.Name
+                            SMORole      = $role
+                            SMOLogin     = $login
+                        }
                     }
                 }
             }
