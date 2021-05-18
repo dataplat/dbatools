@@ -305,6 +305,11 @@ function Install-DbaMaintenanceSolution {
                 Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
+            $db = $server.Databases[$Database]
+            if ($null -eq $db) {
+                Stop-Function -Message "Database $Database not found on $instance. Skipping." -Target $instance -Continue
+            }
+
             if ((Test-Bound -ParameterName ReplaceExisting -Not)) {
                 $procs = Get-DbaModule -SqlInstance $server -Database $Database | Where-Object Name -in 'CommandExecute', 'DatabaseBackup', 'DatabaseIntegrityCheck', 'IndexOptimize'
                 $tables = Get-DbaDbTable -SqlInstance $server -Database $Database -Table CommandLog, Queue, QueueDatabase -IncludeSystemDBs | Where-Object Database -eq $Database
@@ -319,8 +324,6 @@ function Install-DbaMaintenanceSolution {
                 $BackupLocation = (Get-DbaDefaultPath -SqlInstance $server).Backup
             }
             Write-ProgressHelper -ExcludePercent -Message "Ola Hallengren's solution will be installed on database $Database"
-
-            $db = $server.Databases[$Database]
 
             if ($Solution -notcontains 'All') {
                 $required = @('CommandExecute.sql')
