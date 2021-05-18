@@ -202,7 +202,7 @@ function Invoke-DbaQuery {
                     }
                     "System.String" {
                         try {
-                            if (Test-PsVersion -Is 3) {
+                            if (Test-PsVersion -Maximum 4) {
                                 $uri = [uri]$item
                             } else {
                                 $uri = [uri]::New($item)
