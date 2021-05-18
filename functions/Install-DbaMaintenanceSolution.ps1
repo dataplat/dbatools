@@ -403,35 +403,31 @@ function Install-DbaMaintenanceSolution {
                 }
             }
 
-            try {
-                Write-ProgressHelper -ExcludePercent -Message "Installing on server $instance, database $Database"
+            Write-ProgressHelper -ExcludePercent -Message "Installing on server $instance, database $Database"
 
-                $result = "Success"
-                foreach ($file in $fileContents.Keys | Sort-Object) {
-                    $shortFileName = Split-Path $file -Leaf
-                    if ($required.Contains($shortFileName)) {
-                        if ($Pscmdlet.ShouldProcess($instance, "Installing $shortFileName")) {
-                            Write-ProgressHelper -ExcludePercent -Message "Installing $shortFileName"
-                            $sql = $fileContents[$file]
-                            try {
-                                foreach ($query in ($sql -Split "\nGO\b")) {
-                                    $null = $db.Query($query)
-                                }
-                            } catch {
-                                $result = "Failure"
-                                Stop-Function -Message "Could not execute $shortFileName in $Database on $instance" -ErrorRecord $_ -Target $db -Continue
+            $result = "Success"
+            foreach ($file in $fileContents.Keys | Sort-Object) {
+                $shortFileName = Split-Path $file -Leaf
+                if ($required.Contains($shortFileName)) {
+                    if ($Pscmdlet.ShouldProcess($instance, "Installing $shortFileName")) {
+                        Write-ProgressHelper -ExcludePercent -Message "Installing $shortFileName"
+                        $sql = $fileContents[$file]
+                        try {
+                            foreach ($query in ($sql -Split "\nGO\b")) {
+                                $null = $db.Query($query)
                             }
+                        } catch {
+                            $result = "Failure"
+                            Stop-Function -Message "Could not execute $shortFileName in $Database on $instance" -ErrorRecord $_ -Target $db -Continue
                         }
                     }
                 }
-                [pscustomobject]@{
-                    ComputerName = $server.ComputerName
-                    InstanceName = $server.ServiceName
-                    SqlInstance  = $instance
-                    Results      = $result
-                }
-            } catch {
-                Stop-Function -Message "Could not execute $shortFileName in $Database on $instance." -ErrorRecord $_ -Target $db -Continue
+            }
+            [pscustomobject]@{
+                ComputerName = $server.ComputerName
+                InstanceName = $server.ServiceName
+                SqlInstance  = $instance
+                Results      = $result
             }
         }
         # Only here due to need for non-pooled connection in this command
