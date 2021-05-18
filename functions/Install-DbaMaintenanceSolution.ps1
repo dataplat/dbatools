@@ -406,6 +406,7 @@ function Install-DbaMaintenanceSolution {
             try {
                 Write-ProgressHelper -ExcludePercent -Message "Installing on server $instance, database $Database"
 
+                $result = "Success"
                 foreach ($file in $fileContents.Keys | Sort-Object) {
                     $shortFileName = Split-Path $file -Leaf
                     if ($required.Contains($shortFileName)) {
@@ -417,6 +418,7 @@ function Install-DbaMaintenanceSolution {
                                     $null = $db.Query($query)
                                 }
                             } catch {
+                                $result = "Failure"
                                 Stop-Function -Message "Could not execute $shortFileName in $Database on $instance" -ErrorRecord $_ -Target $db -Continue
                             }
                         }
@@ -426,7 +428,7 @@ function Install-DbaMaintenanceSolution {
                     ComputerName = $server.ComputerName
                     InstanceName = $server.ServiceName
                     SqlInstance  = $instance
-                    Results      = "Success"
+                    Results      = $result
                 }
             } catch {
                 Stop-Function -Message "Could not execute $shortFileName in $Database on $instance." -ErrorRecord $_ -Target $db -Continue
