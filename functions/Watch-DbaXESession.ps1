@@ -71,19 +71,8 @@ function Watch-DbaXESession {
         [switch]$EnableException
     )
     process {
-        if (-not $SqlInstance) {
-
-        } else {
-            try {
-                $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential -MinimumVersion 11
-            } catch {
-                Stop-Function -Message "Error occurred while establishing connection to $SqlInstance" -Category ConnectionError -ErrorRecord $_ -Target $SqlInstance -Continue
-            }
-            $SqlConn = $server.ConnectionContext.SqlConnectionObject
-            $SqlStoreConnection = New-Object Microsoft.SqlServer.Management.Sdk.Sfc.SqlStoreConnection $SqlConn
-            $XEStore = New-Object  Microsoft.SqlServer.Management.XEvent.XEStore $SqlStoreConnection
-            Write-Message -Level Verbose -Message "Getting XEvents Sessions on $SqlInstance."
-            $InputObject += $XEStore.sessions | Where-Object Name -eq $Session
+        if ($SqlInstance) {
+            $InputObject += Get-DbaXESession -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Session $Session
         }
 
         foreach ($xesession in $InputObject) {
