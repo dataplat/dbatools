@@ -183,7 +183,7 @@ function Get-DbaAgBackupHistory {
             Write-Message -Level Verbose -Message "We have one server, so it should be a listener"
             $server = $serverList[0]
 
-            $replicaNames = $server.AvailabilityGroups.Where( { $_.Name -in $AvailabilityGroup }).AvailabilityReplicas.Name
+            $replicaNames = $server.AvailabilityGroups.Where( { $_.Name -in $AvailabilityGroup } ).AvailabilityReplicas.Name
             Write-Message -Level Verbose -Message "We have found these replicas: $replicaNames"
 
             $serverList = $replicaNames
@@ -194,7 +194,7 @@ function Get-DbaAgBackupHistory {
         $null = $PSBoundParameters.Remove('AvailabilityGroup')
         $null = $PSBoundParameters.Remove('Last')
         $AgResults = Get-DbaDbBackupHistory -SqlInstance $serverList @PSBoundParameters
-        Foreach ($agr in $AgResults) {
+        foreach ($agr in $AgResults) {
             $agr.AvailabilityGroupName = $AvailabilityGroup
         }
 
