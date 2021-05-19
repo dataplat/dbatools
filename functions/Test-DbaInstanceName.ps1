@@ -94,12 +94,12 @@ function Test-DbaInstanceName {
             Write-Message -Level Verbose -Message "server.NetName is $netName"
 
             if ($instanceName.Length -eq 0) {
-                $actualServerName = $netName
+                $newServerName = $netName
                 $instanceName = "MSSQLSERVER"
             } else {
-                $actualServerName = "$netName\$instanceName"
+                $newServerName = "$netName\$instanceName"
             }
-            Write-Message -Level Verbose -Message "actualServerName is $actualServerName"
+            Write-Message -Level Verbose -Message "newServerName is $newServerName"
 
             # output some other properties that migth help to get the new servername
             Write-Message -Level Debug -Message "server.ComputerName is $($server.ComputerName)"
@@ -111,10 +111,11 @@ function Test-DbaInstanceName {
 
             $serverInfo = [PSCustomObject]@{
                 ComputerName   = $server.ComputerName
-                ServerName     = $configuredServerName
                 InstanceName   = $server.ServiceName
                 SqlInstance    = $server.DomainInstanceName
-                RenameRequired = $actualServerName -ne $configuredServerName
+                ServerName     = $configuredServerName
+                NewServerName  = $newServerName
+                RenameRequired = $newServerName -ne $configuredServerName
                 Updatable      = "N/A"
                 Warnings       = $null
                 Blockers       = $null
@@ -182,7 +183,7 @@ function Test-DbaInstanceName {
                 $serverInfo.Blockers = "N/A"
             }
 
-            $serverInfo | Select-DefaultView -ExcludeProperty InstanceName, SqlInstance
+            $serverInfo
         }
     }
 }
