@@ -55,7 +55,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             if (Test-Path $outfile) {
                 $fullOutfile = (Get-ChildItem $outfile).FullName
             }
-            $resultsLocalFile = Install-DbaFirstResponderKit -SqlInstance $script:instance3 -Database $database -Branch main -LocalFile $fullOutfile  -Force
+            $resultsLocalFile = Install-DbaDarlingData -SqlInstance $script:instance3 -Database $database -Branch main -LocalFile $fullOutfile  -Force
         }
         AfterAll {
             Remove-DbaDatabase -SqlInstance $script:instance3 -Database $database -Confirm:$false
