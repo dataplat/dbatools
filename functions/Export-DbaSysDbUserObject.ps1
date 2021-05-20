@@ -44,7 +44,7 @@ function Export-DbaSysDbUserObject {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .EXAMPLE
-        PS> Export-DbaSysDbUserObject -SqlInstance server1
+        PS C:\> Export-DbaSysDbUserObject -SqlInstance server1
 
         Exports any user objects that are in the system database to the default location.
 
