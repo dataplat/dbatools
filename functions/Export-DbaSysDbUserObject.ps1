@@ -49,7 +49,12 @@ function Export-DbaSysDbUserObject {
         Exports any user objects that are in the system database to the default location.
 
     .NOTES
-    General notes
+        Tags: Export, Object, SystemDatabase
+        Author: Jess Pomfret (@jpomfret)
+
+        Website: https://dbatools.io
+        Copyright: (c) 2019 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
     .LINK
         https://dbatools.io/Export-DbaSysDbUserObject
