@@ -109,23 +109,17 @@ function Get-DbaErrorLog {
                 Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
-            if ($LogNumber) {
-                foreach ($number in $lognumber) {
-                    foreach ($object in $server.ReadErrorLog($number)) {
-                        if ( ($Source -and $object.ProcessInfo -ne $Source) -or ($Text -and $object.Text -notlike "*$Text*") -or ($After -and $object.LogDate -lt $After) -or ($Before -and $object.LogDate -gt $Before) ) {
-                            continue
-                        }
-                        Write-Message -Level Verbose -Message "Processing $object"
-                        Add-Member -Force -InputObject $object -MemberType NoteProperty ComputerName -value $server.ComputerName
-                        Add-Member -Force -InputObject $object -MemberType NoteProperty InstanceName -value $server.ServiceName
-                        Add-Member -Force -InputObject $object -MemberType NoteProperty SqlInstance -value $server.DomainInstanceName
+            # .ReadErrorLog() only reads active log.
+            # As there is no detailed documentation, not clear if bug or feature.
+            # https://docs.microsoft.com/en-us/dotnet/api/microsoft.sqlserver.management.smo.server.readerrorlog
+            # Since the reading of non existing logs is lightning fast, we just read all possible logs.
+            # Since the order inside of a log is from old to new, we read from 99 to 0.
+            if (Test-Bound -Not -ParameterName LogNumber) {
+                $LogNumber = 99 .. 0
+            }
 
-                        # Select all of the columns you'd like to show
-                        Select-DefaultView -InputObject $object -Property ComputerName, InstanceName, SqlInstance, LogDate, 'ProcessInfo as Source', Text
-                    }
-                }
-            } else {
-                foreach ($object in $server.ReadErrorLog()) {
+            foreach ($number in $lognumber) {
+                foreach ($object in $server.ReadErrorLog($number)) {
                     if ( ($Source -and $object.ProcessInfo -ne $Source) -or ($Text -and $object.Text -notlike "*$Text*") -or ($After -and $object.LogDate -lt $After) -or ($Before -and $object.LogDate -gt $Before) ) {
                         continue
                     }
