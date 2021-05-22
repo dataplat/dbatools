@@ -77,7 +77,7 @@ function Test-DbaDbCompatibility {
                 Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
-            $serverversion = "Version$($server.VersionMajor)0"
+            $serverLevel = [Microsoft.SqlServer.Management.Smo.CompatibilityLevel]"Version$($server.VersionMajor)0"
             $dbs = $server.Databases
 
             if ($Database) {
@@ -94,10 +94,10 @@ function Test-DbaDbCompatibility {
                     ComputerName          = $server.ComputerName
                     InstanceName          = $server.ServiceName
                     SqlInstance           = $server.DomainInstanceName
-                    ServerLevel           = $serverversion
+                    ServerLevel           = $serverLevel
                     Database              = $db.name
                     DatabaseCompatibility = $db.CompatibilityLevel
-                    IsEqual               = $db.CompatibilityLevel -eq $serverversion
+                    IsEqual               = $db.CompatibilityLevel -eq $serverLevel
                 }
             }
         }
