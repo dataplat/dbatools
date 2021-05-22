@@ -396,7 +396,7 @@ function Backup-DbaDatabase {
         $topProgressTarget = $InputObject.Count
         $topProgressNumber = 0
         foreach ($db in $InputObject) {
-            $topProgressPercent = $topProgressNumber * 100 / $topProgressTarget
+            $topProgressPercent = [int]($topProgressNumber * 100 / $topProgressTarget)
             $topProgressNumber++
             if (-not $PSCmdlet.MyInvocation.ExpectingInput) {
                 # Only when the databases to be processed are not piped to the command
