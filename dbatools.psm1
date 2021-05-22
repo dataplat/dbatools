@@ -730,6 +730,9 @@ $script:xplat = @(
     'Remove-DbaDbSequence',
     'Select-DbaDbSequenceNextValue',
     'Set-DbaDbSequence',
+    'Get-DbaDbUserDefinedTableType',
+    'Get-DbaDbServiceBrokerService',
+    'Get-DbaDbServiceBrokerQueue ',
     # Config system
     'Get-DbatoolsConfig',
     'Get-DbatoolsConfigValue',
@@ -789,7 +792,10 @@ $script:xplat = @(
     'Get-DbaDbSchema',
     'New-DbaDbSchema',
     'Set-DbaDbSchema',
-    'Remove-DbaDbSchema'
+    'Remove-DbaDbSchema',
+    'Get-DbaDbSynonym',
+    'New-DbaDbSynonym',
+    'Remove-DbaDbSynonym'
 )
 
 $script:noncoresmo = @(

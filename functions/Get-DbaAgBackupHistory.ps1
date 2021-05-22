@@ -176,13 +176,14 @@ function Get-DbaAgBackupHistory {
     end {
         if ($serverList.Count -eq 0) {
             Stop-Function -Message "No instances with availability group named '$AvailabilityGroup' found, so finishing without results."
+            return
         }
 
         if ($serverList.Count -eq 1) {
             Write-Message -Level Verbose -Message "We have one server, so it should be a listener"
             $server = $serverList[0]
 
-            $replicaNames = $server.AvailabilityGroups.Where( { $_.Name -in $AvailabilityGroup }).AvailabilityReplicas.Name
+            $replicaNames = $server.AvailabilityGroups.Where( { $_.Name -in $AvailabilityGroup } ).AvailabilityReplicas.Name
             Write-Message -Level Verbose -Message "We have found these replicas: $replicaNames"
 
             $serverList = $replicaNames
@@ -193,7 +194,7 @@ function Get-DbaAgBackupHistory {
         $null = $PSBoundParameters.Remove('AvailabilityGroup')
         $null = $PSBoundParameters.Remove('Last')
         $AgResults = Get-DbaDbBackupHistory -SqlInstance $serverList @PSBoundParameters
-        Foreach ($agr in $AgResults) {
+        foreach ($agr in $AgResults) {
             $agr.AvailabilityGroupName = $AvailabilityGroup
         }
 

@@ -5,7 +5,7 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
         [array]$params = ([Management.Automation.CommandMetaData]$ExecutionContext.SessionState.InvokeCommand.GetCommand($CommandName, 'Function')).Parameters.Keys
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Branch', 'Database', 'LocalFile', 'Force', 'EnableException'
+        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Branch', 'Database', 'LocalFile', 'OnlyScript', 'Force', 'EnableException'
 
         It "Should only contain our specific parameters" {
             Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params | Should -BeNullOrEmpty
@@ -45,7 +45,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         }
         It "Shows status of Error" {
             $folder = Join-Path (Get-DbatoolsConfigValue -FullName Path.DbatoolsData) -Child "SQL-Server-First-Responder-Kit-main"
-            $sqlScript = (Get-ChildItem $folder | Select-Object -First 1).FullName
+            $sqlScript = (Get-ChildItem $folder -Filter "sp_*.sql" | Select-Object -First 1).FullName
             Add-Content $sqlScript (New-Guid).ToString()
             $result = Install-DbaFirstResponderKit -SqlInstance $script:instance2 -Database $database -Verbose:$false
             $result[0].Status -eq "Error" | Should -Be $true
@@ -88,7 +88,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         }
         It "Shows status of Error" {
             $folder = Join-Path (Get-DbatoolsConfigValue -FullName Path.DbatoolsData) -Child "SQL-Server-First-Responder-Kit-main"
-            $sqlScript = (Get-ChildItem $folder | Select-Object -First 1).FullName
+            $sqlScript = (Get-ChildItem $folder -Filter "sp_*.sql" | Select-Object -First 1).FullName
             Add-Content $sqlScript (New-Guid).ToString()
             $result = Install-DbaFirstResponderKit -SqlInstance $script:instance3 -Database $database
             $result[0].Status -eq "Error" | Should -Be $true
