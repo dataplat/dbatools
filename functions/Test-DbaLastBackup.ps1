@@ -434,17 +434,29 @@ function Test-DbaLastBackup {
                         Write-Message -Level Verbose -Message "Performing restore."
                         $startRestore = Get-Date
                         try {
-                            $restoreSplat = @{
-                                SqlInstance                = $destserver
-                                RestoredDatabaseNamePrefix = $prefix
-                                DestinationFilePrefix      = $Prefix
-                                DestinationDataDirectory   = $datadirectory
-                                DestinationLogDirectory    = $logdirectory
-                                IgnoreLogBackup            = $IgnoreLogBackup
-                                AzureCredential            = $AzureCredential
-                                TrustDbBackupHistory       = $true
-                                ReuseSourceFolderStructure = $ReuseSourceFolderStructure
-                                EnableException            = $true
+                            if ($ReuseSourceFolderStructure) {
+                                $restoreSplat = @{
+                                    SqlInstance                = $destserver
+                                    RestoredDatabaseNamePrefix = $prefix
+                                    DestinationFilePrefix      = $Prefix
+                                    IgnoreLogBackup            = $IgnoreLogBackup
+                                    AzureCredential            = $AzureCredential
+                                    TrustDbBackupHistory       = $true
+                                    ReuseSourceFolderStructure = $true
+                                    EnableException            = $true
+                                }
+                            } else {
+                                $restoreSplat = @{
+                                    SqlInstance                = $destserver
+                                    RestoredDatabaseNamePrefix = $prefix
+                                    DestinationFilePrefix      = $Prefix
+                                    DestinationDataDirectory   = $datadirectory
+                                    DestinationLogDirectory    = $logdirectory
+                                    IgnoreLogBackup            = $IgnoreLogBackup
+                                    AzureCredential            = $AzureCredential
+                                    TrustDbBackupHistory       = $true
+                                    EnableException            = $true
+                                }
                             }
 
                             if (Test-Bound "MaxTransferSize") {
