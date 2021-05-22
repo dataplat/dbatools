@@ -104,6 +104,10 @@ function Test-DbaLastBackup {
         Refererence: https://msdn.microsoft.com/en-us/library/ms178615.aspx#data-transfer-options
         Parameter is used as passtrough for Restore-DbaDatabase.
 
+    .PARAMETER ReuseSourceFolderStructure
+        By default, databases will be migrated to the destination Sql Server's default data and log directories. You can override this by specifying -ReuseSourceFolderStructure.
+        The same structure on the SOURCE will be kept exactly, so consider this if you're migrating between different versions and use part of Microsoft's default Sql structure (MSSql12.INSTANCE, etc)
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -209,6 +213,7 @@ function Test-DbaLastBackup {
         [int]$BufferCount,
         [switch]$IgnoreDiffBackup,
         [int]$MaxDop,
+        [switch]$ReuseSourceFolderStructure,
         [switch]$EnableException
     )
     process {
@@ -438,6 +443,7 @@ function Test-DbaLastBackup {
                                 IgnoreLogBackup            = $IgnoreLogBackup
                                 AzureCredential            = $AzureCredential
                                 TrustDbBackupHistory       = $true
+                                ReuseSourceFolderStructure = $ReuseSourceFolderStructure
                                 EnableException            = $true
                             }
 
