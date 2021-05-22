@@ -396,9 +396,12 @@ function Backup-DbaDatabase {
         $topProgressTarget = $InputObject.Count
         $topProgressNumber = 0
         foreach ($db in $InputObject) {
-            $topProgressPercent = $topProgressNumber * 100.0 / $topProgressTarget
+            $topProgressPercent = $topProgressNumber * 100 / $topProgressTarget
             $topProgressNumber++
-            Write-Progress -Id $topProgressId -Activity "Backing up database $topProgressNumber of $topProgressTarget" -PercentComplete $topProgressPercent -Status ([System.String]::Format("Progress: {0} %", $topProgressPercent))
+            if (-not $PSCmdlet.MyInvocation.ExpectingInput) {
+                # Only when the databases to be processed are not piped to the command
+                Write-Progress -Id $topProgressId -Activity "Backing up database $topProgressNumber of $topProgressTarget" -PercentComplete $topProgressPercent -Status ([System.String]::Format("Progress: {0} %", $topProgressPercent))
+            }
 
             $ProgressId = Get-Random
             $failures = @()
