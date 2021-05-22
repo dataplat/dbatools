@@ -99,11 +99,11 @@ function Get-DbaHelp {
                 }
                 foreach ($syntax in $splitted_paramsets) {
                     $x = 0
-                    foreach ($val in ($syntax -split '[\[]+-')) {
+                    foreach ($val in ($syntax.Replace("`r", '').Replace("`n", '') -split ' \[')) {
                         if ($x -eq 0) {
                             $null = $rtn.Add($val)
                         } else {
-                            $null = $rtn.Add('    [-' + $val.replace("`n", '').replace("`n", ''))
+                            $null = $rtn.Add('    -' + $val.replace("`n", '').replace("`n", ''))
                         }
                         $x += 1
                     }

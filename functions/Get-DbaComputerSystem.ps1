@@ -128,6 +128,15 @@ function Get-DbaComputerSystem {
                         $awsProps = Invoke-Command2 -ComputerName $computerResolved -Credential $Credential -ArgumentList $ProxiedFunc -ScriptBlock $scriptBlock
                     }
                 }
+
+                $pendingReboot = $null
+                try {
+                    Write-Message -Level Verbose -Message "Getting information about pending reboots."
+                    $pendingReboot = Test-PendingReboot -ComputerName $computerResolved -Credential $Credential -PendingRename
+                } catch {
+                    Write-Message -Level Verbose -Message "Not able to get information about pending reboots."
+                }
+
                 $inputObject = [PSCustomObject]@{
                     ComputerName            = $computerResolved
                     Domain                  = $computerSystem.Domain
@@ -149,6 +158,7 @@ function Get-DbaComputerSystem {
                     DnsHostName             = $computerSystem.DNSHostName
                     IsSystemManagedPageFile = $computerSystem.AutomaticManagedPagefile
                     AdminPasswordStatus     = $adminPasswordStatus
+                    PendingReboot           = $pendingReboot
                 }
                 if ($IncludeAws -and $isAws) {
                     Add-Member -Force -InputObject $inputObject -MemberType NoteProperty -Name AwsAmiId -Value $awsProps.AmiId
