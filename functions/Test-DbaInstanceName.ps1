@@ -85,30 +85,44 @@ function Test-DbaInstanceName {
                 Write-Message -Level Warning -Message "$instance is a cluster. Renaming clusters is not supported by Microsoft."
             }
 
-            $sqlInstanceName = $server.Query("SELECT @@servername AS ServerName").ServerName
-            $instance = $server.InstanceName
+            $configuredServerName = $server.Query("SELECT @@servername AS ServerName").ServerName
+            Write-Message -Level Verbose -Message "configuredServerName from @@servername is $configuredServerName"
 
-            if ($instance.Length -eq 0) {
-                $serverInstanceName = $server.ComputerName
-                $instance = "MSSQLSERVER"
+            $instanceName = $server.InstanceName
+            Write-Message -Level Verbose -Message "server.InstanceName is $instanceName"
+            $netName = $server.NetName
+            Write-Message -Level Verbose -Message "server.NetName is $netName"
+
+            if ($instanceName.Length -eq 0) {
+                $newServerName = $netName
+                $instanceName = "MSSQLSERVER"
             } else {
-                $netname = $server.ComputerName
-                $serverInstanceName = "$netname\$instance"
+                $newServerName = "$netName\$instanceName"
             }
+            Write-Message -Level Verbose -Message "newServerName is $newServerName"
+
+            # output some other properties that migth help to get the new servername
+            Write-Message -Level Debug -Message "server.ComputerName is $($server.ComputerName)"
+            Write-Message -Level Debug -Message "server.ComputerNamePhysicalNetBIOS is $($server.ComputerNamePhysicalNetBIOS)"
+            Write-Message -Level Debug -Message "server.DomainInstanceName is $($server.DomainInstanceName)"
+            Write-Message -Level Debug -Message "server.Name is $($server.Name)"
+            Write-Message -Level Debug -Message "server.NetName is $($server.NetName)"
+            Write-Message -Level Debug -Message "server.ServiceName is $($server.ServiceName)"
 
             $serverInfo = [PSCustomObject]@{
                 ComputerName   = $server.ComputerName
-                ServerName     = $sqlInstanceName
                 InstanceName   = $server.ServiceName
                 SqlInstance    = $server.DomainInstanceName
-                RenameRequired = $serverInstanceName -ne $sqlInstanceName
+                ServerName     = $configuredServerName
+                NewServerName  = $newServerName
+                RenameRequired = $newServerName -ne $configuredServerName
                 Updatable      = "N/A"
                 Warnings       = $null
                 Blockers       = $null
             }
 
             $reasons = @()
-            $ssrsService = "SQL Server Reporting Services ($instance)"
+            $ssrsService = "SQL Server Reporting Services ($instanceName)"
 
             Write-Message -Level Verbose -Message "Checking for $serverName on $netBiosName"
             $rs = $null
@@ -169,7 +183,7 @@ function Test-DbaInstanceName {
                 $serverInfo.Blockers = "N/A"
             }
 
-            $serverInfo | Select-DefaultView -ExcludeProperty InstanceName, SqlInstance
+            $serverInfo
         }
     }
 }
