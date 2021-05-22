@@ -25,6 +25,10 @@ function Start-DbaXESession {
     .PARAMETER InputObject
         Internal parameter to support piping from Get-DbaXESession
 
+    .PARAMETER StartAt
+        Specifies a datetime at which the session will be started. This is done via a self-deleting schedule.
+        The command returns immediately and returns the affected sessions in their current state.
+
     .PARAMETER StopAt
         Specifies a datetime at which the session will be stopped. This is done via a self-deleting schedule.
 
@@ -66,6 +70,11 @@ function Start-DbaXESession {
         Starts the xesession1 and xesession2 Extended Event sessions and stops them in 30 minutes.
 
     .EXAMPLE
+        PS C:\> Start-DbaXESession -SqlInstance sqlserver2012 -Session AlwaysOn_health -StartAt (Get-Date).AddMinutes(1)
+
+        Starts the AlwaysOn_health Extended Event sessions in 1 minute. The command will return immediately.
+
+    .EXAMPLE
         PS C:\> Get-DbaXESession -SqlInstance sqlserver2012 -Session xesession1 | Start-DbaXESession
 
         Starts the sessions returned from the Get-DbaXESession function.
@@ -83,6 +92,7 @@ function Start-DbaXESession {
         [parameter(Mandatory, ParameterSetName = 'Session')]
         [Alias("Sessions")]
         [object[]]$Session,
+        [datetime]$StartAt,
         [datetime]$StopAt,
         [parameter(Mandatory, ParameterSetName = 'All')]
         [switch]$AllSessions,
@@ -117,30 +127,32 @@ function Start-DbaXESession {
             }
         }
 
-        function New-StopJob {
+        function New-Job {
             [CmdletBinding(SupportsShouldProcess)]
             param (
                 [Microsoft.SqlServer.Management.XEvent.Session[]]$xeSessions,
-                [datetime]$StopAt
+                [string]$Action,
+                [datetime]$At
             )
 
             foreach ($xe in $xeSessions) {
                 $server = $xe.Parent
                 $session = $xe.Name
-                $name = "XE Session Stop - $session"
-                if ($Pscmdlet.ShouldProcess("$Server", "Making New XEvent StopJob for $session")) {
+                $name = "XE Session $Action - $session"
+                Write-Message -Level Verbose -Message "Making New XEvent Job for $Action of $session on $server"
+                if ($Pscmdlet.ShouldProcess("$server", "Making New XEvent Job for $Action of $session")) {
                     # Setup the schedule time
 
                     # Create the schedule
-                    $StartDateDatePart = Get-Date -Date $StopAt -format 'yyyyMMdd'
-                    $StartDateTimePart = Get-Date -Date $StopAt -format 'HHmmss'
+                    $StartDateDatePart = Get-Date -Date $At -format 'yyyyMMdd'
+                    $StartDateTimePart = Get-Date -Date $At -format 'HHmmss'
                     $schedule = New-DbaAgentSchedule -SqlInstance $server -Schedule $name -FrequencyType Once -StartDate $StartDateDatePart -StartTime $StartDateTimePart -Force
 
                     # Create the job and attach the schedule
                     $job = New-DbaAgentJob -SqlInstance $server -Job $name -Schedule $schedule -DeleteLevel Always -Force
 
                     # Create the job step
-                    $sql = "ALTER EVENT SESSION [$session] ON SERVER STATE = stop;"
+                    $sql = "ALTER EVENT SESSION [$session] ON SERVER STATE = $Action;"
                     #Variable $jobstep marked as unused by PSScriptAnalyzer replace with $null to catch output
                     $null = New-DbaAgentJobStep -SqlInstance $server -Job $job -StepName 'T-SQL Stop' -Subsystem TransactSql -Command $sql -Force
                 }
@@ -163,10 +175,15 @@ function Start-DbaXESession {
                 }
 
                 if ($Pscmdlet.ShouldProcess("$instance", "Configuring XEvent Session $session to start")) {
-                    Start-XESessions $xeSessions
+                    if ($StartAt) {
+                        New-Job -xeSessions $xeSessions -Action START -At $StartAt
+                        $xeSessions
+                    } else {
+                        Start-XESessions $xeSessions
+                    }
 
                     if ($StopAt) {
-                        New-StopJob -xeSessions $xeSessions -StopAt $StopAt
+                        New-Job -xeSessions $xeSessions -Action STOP -At $StopAt
                     }
                 }
             }
