@@ -744,6 +744,10 @@ function Restore-DbaDatabase {
                 $TailBackup | Restore-DbaDatabase -SqlInstance $RestoreInstance -TrustDbBackupHistory -NoRecovery -OutputScriptOnly:$OutputScriptOnly -BlockSize $BlockSize -MaxTransferSize $MaxTransferSize -BufferCount $Buffercount -Continue
                 Restore-DbaDatabase -SqlInstance $RestoreInstance -Recover -DatabaseName $DatabaseName -OutputScriptOnly:$OutputScriptOnly
             }
+            # refresh the SMO as we probably used T-SQL, but only if we already got a SMO
+            if ($RestoreInstance.Equals($SqlInstance)) {
+                $RestoreInstance.Databases.Refresh()
+            }
         }
     }
 }

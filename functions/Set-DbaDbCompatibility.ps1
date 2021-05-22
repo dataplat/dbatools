@@ -19,7 +19,19 @@ function Set-DbaDbCompatibility {
     .PARAMETER Database
         The database or databases to process. If unspecified, all databases will be processed.
 
+    .PARAMETER Compatibility
+        The target compatibility level version. Same format as returned by Get-DbaDbCompatibility
+        Version90 = SQL Server 2005
+        Version100 = SQL Server 2008
+        Version110 = SQL Server 2012
+        Version120 = SQL Server 2014
+        Version130 = SQL Server 2016
+        Version140 = SQL Server 2017
+        Version150 = SQL Server 2019
+
     .PARAMETER TargetCompatibility
+        Deprecated parameter. Please use Compatibility instead.
+
         The target compatibility level version. This is an int and follows Microsoft's versioning:
 
         9 = SQL Server 2005
@@ -79,6 +91,7 @@ function Set-DbaDbCompatibility {
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [string[]]$Database,
+        [Microsoft.SqlServer.Management.Smo.CompatibilityLevel]$Compatibility,
         [ValidateSet(9, 10, 11, 12, 13, 14, 15)]
         [int]$TargetCompatibility,
         [parameter(ValueFromPipeline)]
@@ -92,52 +105,62 @@ function Set-DbaDbCompatibility {
             continue
         }
 
+        if (Test-Bound -ParameterName 'TargetCompatibility') {
+            Write-Message -Level Warning -Message "Parameter TargetCompatibility is deprecated, please use Compatibility instead."
+            if (Test-Bound -Not -ParameterName 'Compatibility') {
+                $Compatibility = switch ($TargetCompatibility) {
+                    9 { "Version100" }  # SQL Server 2005
+                    10 { "Version100" } # SQL Server 2008
+                    11 { "Version110" } # SQL Server 2012
+                    12 { "Version120" } # SQL Server 2014
+                    13 { "Version130" } # SQL Server 2016
+                    14 { "Version140" } # SQL Server 2017
+                    15 { "Version150" } # SQL Server 2019
+                }
+            }
+            Write-Message -Level Verbose -Message "TargetCompatibility $TargetCompatibility was converted to Compatibility $Compatibility."
+        }
+
         if ($SqlInstance) {
             $InputObject += Get-DbaDatabase -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $Database
         }
 
         foreach ($db in $InputObject) {
             $server = $db.Parent
-            $ServerVersion = $server.VersionMajor
-            Write-Message -Level Verbose -Message "SQL Server is using Version: $ServerVersion"
+            $serverVersion = $server.VersionMajor
+            Write-Message -Level Verbose -Message "SQL Server is using Version: $serverVersion"
 
-            $ogcompat = $db.CompatibilityLevel
-            $dbversion = switch ($ogcompat) {
-                "Version100" { 10 } # SQL Server 2008
-                "Version110" { 11 } # SQL Server 2012
-                "Version120" { 12 } # SQL Server 2014
-                "Version130" { 13 } # SQL Server 2016
-                "Version140" { 14 } # SQL Server 2017
-                "Version150" { 15 } # SQL Server 2019
-                default { 9 } # SQL Server 2005
-            }
-
-            if (-not $TargetCompatibility) {
-                if ($dbversion -lt $ServerVersion) {
-                    If ($Pscmdlet.ShouldProcess($server.Name, "Updating $db version from $dbversion to $ServerVersion")) {
-                        $comp = $ServerVersion * 10
-                        $sql = "ALTER DATABASE $db SET COMPATIBILITY_LEVEL = $comp"
-                        try {
-                            $db.ExecuteNonQuery($sql)
-                            $db.Refresh()
-                            Get-DbaDbCompatibility -SqlInstance $server -Database $db.Name
-                        } catch {
-                            Stop-Function -Message "Failed to change Compatibility Level" -ErrorRecord $_ -Target $instance -Continue
-                        }
-                    }
-                }
+            if ($Compatibility) {
+                Write-Message -Level Verbose -Message "Setting targetLevel from parameter Compatibility"
+                $targetLevel = $Compatibility
             } else {
-                if ($Pscmdlet.ShouldProcess($server.Name, "Updating $db version from $dbversion to $TargetCompatibility")) {
-                    $comp = $TargetCompatibility * 10
-                    $sql = "ALTER DATABASE $db SET COMPATIBILITY_LEVEL = $comp"
+                Write-Message -Level Verbose -Message "Setting targetLevel from SQL Server version"
+                $targetLevel = [Microsoft.SqlServer.Management.Smo.CompatibilityLevel]"Version$($server.VersionMajor)0"
+            }
+            Write-Message -Level Verbose -Message "targetLevel is $targetLevel"
+
+            $dbLevel = $db.CompatibilityLevel
+            Write-Message -Level Verbose -Message "dbLevel is $dbLevel"
+
+            if ($dbLevel -ne $targetLevel) {
+                If ($Pscmdlet.ShouldProcess($server.Name, "Changing $db Compatibility Level from $dbLevel to $targetLevel")) {
                     try {
-                        $db.ExecuteNonQuery($sql)
-                        $db.Refresh()
-                        Get-DbaDbCompatibility -SqlInstance $server -Database $db.Name
+                        $db.CompatibilityLevel = $targetLevel
+                        $db.Alter()
+                        [PSCustomObject]@{
+                            ComputerName          = $server.ComputerName
+                            InstanceName          = $server.ServiceName
+                            SqlInstance           = $server.DomainInstanceName
+                            Database              = $db.Name
+                            Compatibility         = $db.CompatibilityLevel
+                            PreviousCompatibility = $dbLevel
+                        }
                     } catch {
                         Stop-Function -Message "Failed to change Compatibility Level" -ErrorRecord $_ -Target $instance -Continue
                     }
                 }
+            } else {
+                Write-Message -Level Verbose -Message "Compatibility Level of $db on $($server.Name) is already at targetLevel $targetLevel"
             }
         }
     }
