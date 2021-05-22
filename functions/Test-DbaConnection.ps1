@@ -185,7 +185,7 @@ function Test-DbaConnection {
 
                 # TCP Port
                 try {
-                    $tcpport = (Get-DbaTcpPort -SqlInstance $server -Credential $Credential -EnableException).Port
+                    $tcpport = (Get-DbaTcpPort -SqlInstance $server -SqlCredential $SqlCredential -Credential $Credential -EnableException).Port
                 } catch {
                     $tcpport = $_
                 }
