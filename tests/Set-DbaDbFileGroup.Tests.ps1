@@ -5,7 +5,7 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
         [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'FileGroup', 'Default', 'ReadOnly', 'ReadWrite', 'AutoGrowAllFiles', 'AutoGrowSingleFile', 'InputObject', 'EnableException'
+        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'FileGroup', 'Default', 'ReadOnly', 'AutoGrowAllFiles', 'InputObject', 'EnableException'
         $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
         It "Should only contain our specific parameters" {
             (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
@@ -42,7 +42,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $results.AutogrowAllFiles | Should -Be $true
             $results.IsDefault | Should -Be $true
 
-            $results = Set-DbaDbFileGroup -SqlInstance $script:instance2 -Database $db1name -FileGroup $fileGroup1Name -AutoGrowSingleFile -Confirm:$false
+            $results = Set-DbaDbFileGroup -SqlInstance $script:instance2 -Database $db1name -FileGroup $fileGroup1Name -AutoGrowAllFiles:$false -Confirm:$false
             $results.Name | Should -Be $fileGroup1Name
             $results.AutogrowAllFiles | Should -Be $false
 
@@ -52,7 +52,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $results.IsDefault | Should -Be $false
             $results.ReadOnly | Should -Be $true
 
-            $results = Set-DbaDbFileGroup -SqlInstance $script:instance2 -Database $db1name -FileGroup $fileGroup1Name, $fileGroupROName -ReadWrite -Confirm:$false
+            $results = Set-DbaDbFileGroup -SqlInstance $script:instance2 -Database $db1name -FileGroup $fileGroup1Name, $fileGroupROName -ReadOnly:$false -Confirm:$false
             $results.Name | Should -Be $fileGroup1Name, $fileGroupROName
             $results.ReadOnly | Should -Be $false, $false
         }

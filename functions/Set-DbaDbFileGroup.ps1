@@ -27,16 +27,10 @@ function Set-DbaDbFileGroup {
         Specifies if the filegroup should be the default. Only one filegroup in a database can be specified as the default.
 
     .PARAMETER ReadOnly
-        Specifies the filegroup should be readonly.
-
-    .PARAMETER ReadWrite
-        Specifies the filegroup should be readwrite.
+        Specifies the filegroup should be readonly. To change the filegroup to readwrite use -ReadOnly:$false
 
     .PARAMETER AutoGrowAllFiles
-        Specifies the filegroup should auto grow all files if one file has met the threshold to auto grow.
-
-    .PARAMETER AutoGrowSingleFile
-        Specifies the filegroup should not auto grow all files.
+        Specifies the filegroup should auto grow all files if one file has met the threshold to auto grow. To revert this setting use -AutoGrowAllFiles:$false
 
     .PARAMETER InputObject
         Allows piping from Get-DbaDatabase and Get-DbaDbFileGroup.
@@ -69,7 +63,7 @@ function Set-DbaDbFileGroup {
         Sets the HRFG1 filegroup to auto grow all files and makes it the default filegroup on the TestDb database on the sqldev1 instance.
 
     .EXAMPLE
-        PS C:\>Set-DbaDbFileGroup -SqlInstance sqldev1 -Database TestDb -FileGroup HRFG1 -AutoGrowSingleFile
+        PS C:\>Set-DbaDbFileGroup -SqlInstance sqldev1 -Database TestDb -FileGroup HRFG1 -AutoGrowAllFiles:$false
 
         Sets the HRFG1 filegroup to not auto grow all files on the TestDb database on the sqldev1 instance.
 
@@ -79,7 +73,7 @@ function Set-DbaDbFileGroup {
         Sets the HRFG1 filegroup to read only on the TestDb database on the sqldev1 instance.
 
     .EXAMPLE
-        PS C:\>Set-DbaDbFileGroup -SqlInstance sqldev1 -Database TestDb -FileGroup HRFG1 -ReadWrite
+        PS C:\>Set-DbaDbFileGroup -SqlInstance sqldev1 -Database TestDb -FileGroup HRFG1 -ReadOnly:$false
 
         Sets the HRFG1 filegroup to read/write on the TestDb database on the sqldev1 instance.
 
@@ -101,9 +95,7 @@ function Set-DbaDbFileGroup {
         [string[]]$FileGroup,
         [switch]$Default,
         [switch]$ReadOnly,
-        [switch]$ReadWrite,
         [switch]$AutoGrowAllFiles,
-        [switch]$AutoGrowSingleFile,
         [parameter(ValueFromPipeline)]
         [object[]]$InputObject,
         [switch]$EnableException
@@ -150,24 +142,16 @@ function Set-DbaDbFileGroup {
 
             if ($Pscmdlet.ShouldProcess($fgToModify.Parent.Parent.Name, "Updating the filegroup options for $($fgToModify.Name) on the database $($fgToModify.Parent.Name) on $($fgToModify.Parent.Parent.Name)")) {
                 try {
-                    if ($Default.IsPresent) {
+                    if (Test-Bound Default) {
                         $fgToModify.IsDefault = $true
                     }
 
-                    if ($ReadOnly.IsPresent) {
-                        $fgToModify.ReadOnly = $true
+                    if (Test-Bound ReadOnly) {
+                        $fgToModify.ReadOnly = $ReadOnly
                     }
 
-                    if ($ReadWrite.IsPresent) {
-                        $fgToModify.ReadOnly = $false
-                    }
-
-                    if ($AutoGrowAllFiles.IsPresent) {
-                        $fgToModify.AutogrowAllFiles = $true
-                    }
-
-                    if ($AutoGrowSingleFile.IsPresent) {
-                        $fgToModify.AutogrowAllFiles = $false
+                    if (Test-Bound AutoGrowAllFiles) {
+                        $fgToModify.AutogrowAllFiles = $AutoGrowAllFiles
                     }
 
                     $fgToModify.Alter()
