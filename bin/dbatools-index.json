@@ -432,6 +432,15 @@
                            ""
                        ],
                        [
+                           "ConfigureXESession",
+                           "Configure the AlwaysOn_health extended events session to start automatically as the SSMS wizard would do.\r\nhttps://docs.microsoft.com/en-us/sql/database-engine/availability-groups/windows/always-on-extended-events#BKMK_alwayson_health",
+                           "",
+                           false,
+                           "false",
+                           "False",
+                           ""
+                       ],
+                       [
                            "InputObject",
                            "Enables piping from Get-DbaAvailabilityGroup.",
                            "",
@@ -468,7 +477,7 @@
                            ""
                        ]
                    ],
-        "Syntax":  "Add-DbaAgReplica [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Name] \u003cString\u003e] [[-AvailabilityMode] \u003cString\u003e] [[-FailoverMode] \u003cString\u003e] [[-BackupPriority] \u003cInt32\u003e] [[-ConnectionModeInPrimaryRole] \u003cString\u003e] [[-ConnectionModeInSecondaryRole] \u003cString\u003e] [[-SeedingMode] \u003cString\u003e] [[-Endpoint] \u003cString\u003e] [[-EndpointUrl] \u003cString[]\u003e] [-Passthru] [[-ReadOnlyRoutingList] \u003cString[]\u003e] [[-ReadonlyRoutingConnectionUrl] \u003cString\u003e] [[-Certificate] \u003cString\u003e] [-InputObject] \u003cAvailabilityGroup\u003e [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Add-DbaAgReplica [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Name] \u003cString\u003e] [[-AvailabilityMode] \u003cString\u003e] [[-FailoverMode] \u003cString\u003e] [[-BackupPriority] \u003cInt32\u003e] [[-ConnectionModeInPrimaryRole] \u003cString\u003e] [[-ConnectionModeInSecondaryRole] \u003cString\u003e] [[-SeedingMode] \u003cString\u003e] [[-Endpoint] \u003cString\u003e] [[-EndpointUrl] \u003cString[]\u003e] [-Passthru] [[-ReadOnlyRoutingList] \u003cString[]\u003e] [[-ReadonlyRoutingConnectionUrl] \u003cString\u003e] [[-Certificate] \u003cString\u003e] [-ConfigureXESession] [-InputObject] \u003cAvailabilityGroup\u003e [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Add-DbaComputerCertificate",
@@ -27629,6 +27638,115 @@
         "Syntax":  "Import-DbaXESessionTemplate [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Name] \u003cString\u003e] [[-Path] \u003cString[]\u003e] [[-Template] \u003cString[]\u003e] [[-TargetFilePath] \u003cString\u003e] [[-TargetFileMetadataPath] \u003cString\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
+        "Name":  "Install-DbaDarlingData",
+        "Description":  "Downloads, extracts and installs Erik Darling\u0027s stored procedures\n\nDarlingData links:\nhttps://www.erikdarlingdata.com\nhttps://github.com/erikdarlingdata/DarlingData",
+        "Tags":  [
+                     "Community",
+                     "Erik Darling",
+                     "DarlingData"
+                 ],
+        "Synopsis":  "Installs or updates Erik Darling\u0027s stored procedures.",
+        "Alias":  "",
+        "Author":  "Ant Green (@ant_green)",
+        "CommandName":  "Install-DbaDarlingData",
+        "Availability":  "Windows, Linux, macOS",
+        "Links":  "https://dbatools.io/Install-DbaDarlingData",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eInstall-DbaDarlingData -SqlInstance server1 -Database master\nLogs into server1 with Windows authentication and then installs all of Erik\u0027s scripts in the master database.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eInstall-DbaDarlingData -SqlInstance server1\\instance1 -Database DBA\nLogs into server1\\instance1 with Windows authentication and then installs tall of Erik\u0027s scripts in the DBA database.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eInstall-DbaDarlingData -SqlInstance server1\\instance1 -Database master -SqlCredential $cred\nLogs into server1\\instance1 with SQL authentication and then installs all of Erik\u0027s scripts in the master database.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eInstall-DbaDarlingData -SqlInstance sql2016\\standardrtm, sql2016\\sqlexpress, sql2014\nLogs into sql2016\\standardrtm, sql2016\\sqlexpress and sql2014 with Windows authentication and then installs al of Erik\u0027s scripts in the master database.\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eInstall-DbaDarlingData -SqlInstance sql2016 -Branch dev\nInstalls the dev branch version of Erik\u0027s scripts in the master database on sql2016 instance.\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eInstall-DbaDarlingData -SqlInstance server1\\instance1 -Database DBA -Procedure Human, Pressure\nLogs into server1\\instance1 with Windows authentication and then installs sp_HumanEvents and sp_PressureDetector of Erik\u0027s scripts in the DBA database.",
+        "Params":  [
+                       [
+                           "SqlInstance",
+                           "The target SQL Server instance or instances.",
+                           "",
+                           true,
+                           "true (ByValue)",
+                           "",
+                           ""
+                       ],
+                       [
+                           "SqlCredential",
+                           "Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).\nWindows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.\nFor MFA support, please use Connect-DbaInstance.",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "Database",
+                           "Specifies the database to install Erik\u0027s stored procedures into",
+                           "",
+                           false,
+                           "false",
+                           "master",
+                           ""
+                       ],
+                       [
+                           "Branch",
+                           "Specifies an alternate branch of Erik\u0027s to install.\r\nAllowed values:\r\n    master (default)\r\n    dev",
+                           "",
+                           false,
+                           "false",
+                           "master",
+                           "master,dev"
+                       ],
+                       [
+                           "Procedure",
+                           "Specifies the name(s) of the procedures to install\r\nAllowed Values or Combination of Values:\r\n    All (default, to install all 3 procedures)\r\n    Human (to install sp_HumanEvents)\r\n    Pressure (to install sp_PressureDetector)\r\n    Quickie (to install sp_QuickieStore)",
+                           "",
+                           false,
+                           "false",
+                           "All",
+                           "All,Human,Pressure,Quickie"
+                       ],
+                       [
+                           "LocalFile",
+                           "Specifies the path to a local file to install from. This *should* be the zip file as distributed by the maintainers.\r\nIf this parameter is not specified, the latest version will be downloaded and installed from https://github.com/erikdarlingdata/DarlingData",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "Force",
+                           "If this switch is enabled, the zip will be downloaded from the internet even if previously cached.",
+                           "",
+                           false,
+                           "false",
+                           "False",
+                           ""
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "",
+                           false,
+                           "false",
+                           "False",
+                           ""
+                       ],
+                       [
+                           "WhatIf",
+                           "Shows what would happen if the command were to run. No actions are actually performed.",
+                           "wi",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "Confirm",
+                           "Prompts to confirm actions",
+                           "cf",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ]
+                   ],
+        "Syntax":  "Install-DbaDarlingData [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cObject\u003e] [[-Branch] \u003cString\u003e] [[-Procedure] \u003cString[]\u003e] [[-LocalFile] \u003cString\u003e] [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+    },
+    {
         "Name":  "Install-DbaFirstResponderKit",
         "Description":  "Downloads, extracts and installs the First Responder Kit stored procedures\n\nFirst Responder Kit links:\nhttp://FirstResponderKit.org\nhttps://github.com/BrentOzarULTD/SQL-Server-First-Responder-Kit",
         "Tags":  [
@@ -35287,6 +35405,15 @@
                            ""
                        ],
                        [
+                           "ConfigureXESession",
+                           "Configure the AlwaysOn_health extended events session to start automatically on every replica as the SSMS wizard would do.\r\nhttps://docs.microsoft.com/en-us/sql/database-engine/availability-groups/windows/always-on-extended-events#BKMK_alwayson_health",
+                           "",
+                           false,
+                           "false",
+                           "False",
+                           ""
+                       ],
+                       [
                            "IPAddress",
                            "Sets the IP address of the availability group listener.",
                            "",
@@ -35350,7 +35477,7 @@
                            ""
                        ]
                    ],
-        "Syntax":  "New-DbaAvailabilityGroup [[-Primary] \u003cDbaInstanceParameter\u003e] [[-PrimarySqlCredential] \u003cPSCredential\u003e] [[-Secondary] \u003cDbaInstanceParameter[]\u003e] [[-SecondarySqlCredential] \u003cPSCredential\u003e] [-Name] \u003cString\u003e [-DtcSupport] [[-ClusterType] \u003cString\u003e] [[-AutomatedBackupPreference] \u003cString\u003e] [[-FailureConditionLevel] \u003cString\u003e] [[-HealthCheckTimeout] \u003cInt32\u003e] [-Basic] [-DatabaseHealthTrigger] [-Passthru] [[-Database] \u003cString[]\u003e] [[-SharedPath] \u003cString\u003e] [-UseLastBackup] [-Force] [[-AvailabilityMode] \u003cString\u003e] [[-FailoverMode] \u003cString\u003e] [[-BackupPriority] \u003cInt32\u003e] [[-ConnectionModeInPrimaryRole] \u003cString\u003e] \r\n[[-ConnectionModeInSecondaryRole] \u003cString\u003e] [[-SeedingMode] \u003cString\u003e] [[-Endpoint] \u003cString\u003e] [[-EndpointUrl] \u003cString[]\u003e] [[-ReadonlyRoutingConnectionUrl] \u003cString\u003e] [[-Certificate] \u003cString\u003e] [[-IPAddress] \u003cIPAddress[]\u003e] [[-SubnetMask] \u003cIPAddress\u003e] [[-Port] \u003cInt32\u003e] [-Dhcp] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Syntax":  "New-DbaAvailabilityGroup [[-Primary] \u003cDbaInstanceParameter\u003e] [[-PrimarySqlCredential] \u003cPSCredential\u003e] [[-Secondary] \u003cDbaInstanceParameter[]\u003e] [[-SecondarySqlCredential] \u003cPSCredential\u003e] [-Name] \u003cString\u003e [-DtcSupport] [[-ClusterType] \u003cString\u003e] [[-AutomatedBackupPreference] \u003cString\u003e] [[-FailureConditionLevel] \u003cString\u003e] [[-HealthCheckTimeout] \u003cInt32\u003e] [-Basic] [-DatabaseHealthTrigger] [-Passthru] [[-Database] \u003cString[]\u003e] [[-SharedPath] \u003cString\u003e] [-UseLastBackup] [-Force] [[-AvailabilityMode] \u003cString\u003e] [[-FailoverMode] \u003cString\u003e] [[-BackupPriority] \u003cInt32\u003e] [[-ConnectionModeInPrimaryRole] \u003cString\u003e] \r\n[[-ConnectionModeInSecondaryRole] \u003cString\u003e] [[-SeedingMode] \u003cString\u003e] [[-Endpoint] \u003cString\u003e] [[-EndpointUrl] \u003cString[]\u003e] [[-ReadonlyRoutingConnectionUrl] \u003cString\u003e] [[-Certificate] \u003cString\u003e] [-ConfigureXESession] [[-IPAddress] \u003cIPAddress[]\u003e] [[-SubnetMask] \u003cIPAddress\u003e] [[-Port] \u003cInt32\u003e] [-Dhcp] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "New-DbaAzAccessToken",
@@ -39503,7 +39630,7 @@
                        ],
                        [
                            "Name",
-                           "The name of the endpoint. If a name is not specified, one will be auto-generated.",
+                           "The name of the endpoint. Defaults to hadr_endpoint if type is DatabaseMirroring, has to be provided for other types.",
                            "Endpoint",
                            false,
                            "false",
@@ -50075,8 +50202,17 @@
                            ""
                        ],
                        [
+                           "Compatibility",
+                           "The target compatibility level version. Same format as returned by Get-DbaDbCompatibility\r\nVersion90 = SQL Server 2005\r\nVersion100 = SQL Server 2008\r\nVersion110 = SQL Server 2012\r\nVersion120 = SQL Server 2014\r\nVersion130 = SQL Server 2016\r\nVersion140 = SQL Server 2017\r\nVersion150 = SQL Server 2019",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
                            "TargetCompatibility",
-                           "The target compatibility level version. This is an int and follows Microsoft\u0027s versioning:\n9 = SQL Server 2005\r\n10 = SQL Server 2008\r\n11 = SQL Server 2012\r\n12 = SQL Server 2014\r\n13 = SQL Server 2016\r\n14 = SQL Server 2017\r\n15 = SQL Server 2019",
+                           "Deprecated parameter. Please use Compatibility instead.\nThe target compatibility level version. This is an int and follows Microsoft\u0027s versioning:\n9 = SQL Server 2005\r\n10 = SQL Server 2008\r\n11 = SQL Server 2012\r\n12 = SQL Server 2014\r\n13 = SQL Server 2016\r\n14 = SQL Server 2017\r\n15 = SQL Server 2019",
                            "",
                            false,
                            "false",
@@ -50120,7 +50256,7 @@
                            ""
                        ]
                    ],
-        "Syntax":  "Set-DbaDbCompatibility [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cString[]\u003e] [[-TargetCompatibility] \u003cInt32\u003e] [[-InputObject] \u003cDatabase[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Set-DbaDbCompatibility [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cString[]\u003e] [[-Compatibility] {Version60 | Version65 | Version70 | Version80 | Version90 | Version100 | Version110 | Version120 | Version130 | Version140 | Version150}] [[-TargetCompatibility] \u003cInt32\u003e] [[-InputObject] \u003cDatabase[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Set-DbaDbCompression",
@@ -53943,7 +54079,7 @@
         "CommandName":  "Start-DbaXESession",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Start-DbaXESession",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eStart-DbaXESession -SqlInstance sqlserver2012 -AllSessions\nStarts all Extended Event Session on the sqlserver2014 instance.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eStart-DbaXESession -SqlInstance sqlserver2012 -Session xesession1,xesession2\nStarts the xesession1 and xesession2 Extended Event sessions.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eStart-DbaXESession -SqlInstance sqlserver2012 -Session xesession1,xesession2 -StopAt (Get-Date).AddMinutes(30)\nStarts the xesession1 and xesession2 Extended Event sessions and stops them in 30 minutes.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaXESession -SqlInstance sqlserver2012 -Session xesession1 | Start-DbaXESession\nStarts the sessions returned from the Get-DbaXESession function.",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eStart-DbaXESession -SqlInstance sqlserver2012 -AllSessions\nStarts all Extended Event Session on the sqlserver2014 instance.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eStart-DbaXESession -SqlInstance sqlserver2012 -Session xesession1,xesession2\nStarts the xesession1 and xesession2 Extended Event sessions.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eStart-DbaXESession -SqlInstance sqlserver2012 -Session xesession1,xesession2 -StopAt (Get-Date).AddMinutes(30)\nStarts the xesession1 and xesession2 Extended Event sessions and stops them in 30 minutes.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eStart-DbaXESession -SqlInstance sqlserver2012 -Session AlwaysOn_health -StartAt (Get-Date).AddMinutes(1)\nStarts the AlwaysOn_health Extended Event sessions in 1 minute. The command will return immediately.\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eGet-DbaXESession -SqlInstance sqlserver2012 -Session xesession1 | Start-DbaXESession\nStarts the sessions returned from the Get-DbaXESession function.",
         "Params":  [
                        [
                            "SqlInstance",
@@ -53968,6 +54104,15 @@
                            "Only start specific Extended Events sessions.",
                            "Sessions",
                            true,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "StartAt",
+                           "Specifies a datetime at which the session will be started. This is done via a self-deleting schedule.\r\nThe command returns immediately and returns the affected sessions in their current state.",
+                           "",
+                           false,
                            "false",
                            "",
                            ""
@@ -54027,7 +54172,7 @@
                            ""
                        ]
                    ],
-        "Syntax":  "Start-DbaXESession [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] -Session \u003cObject[]\u003e [-StopAt \u003cDateTime\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\nStart-DbaXESession [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-StopAt \u003cDateTime\u003e] -AllSessions [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\nStart-DbaXESession [-StopAt \u003cDateTime\u003e] -InputObject \u003cSession[]\u003e [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Start-DbaXESession [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] -Session \u003cObject[]\u003e [-StartAt \u003cDateTime\u003e] [-StopAt \u003cDateTime\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\nStart-DbaXESession [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-StartAt \u003cDateTime\u003e] [-StopAt \u003cDateTime\u003e] -AllSessions [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\nStart-DbaXESession [-StartAt \u003cDateTime\u003e] [-StopAt \u003cDateTime\u003e] -InputObject \u003cSession[]\u003e [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Start-DbaXESmartTarget",

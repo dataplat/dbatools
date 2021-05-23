@@ -163,7 +163,7 @@ function Copy-DbaInstanceTrigger {
                     try {
                         Write-Message -Level Verbose -Message "Copying server trigger $triggerName"
                         $sql = $trigger.Script() | Out-String
-                        $sql = $sql -replace "CREATE TRIGGER", "`nGO`nCREATE TRIGGER"
+                        $sql = $sql -replace "CREATE ", "`nGO`nCREATE "
                         $sql = $sql -replace "ENABLE TRIGGER", "`nGO`nENABLE TRIGGER"
                         Write-Message -Level Debug -Message $sql
 
