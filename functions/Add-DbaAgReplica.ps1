@@ -78,6 +78,10 @@ function Add-DbaAgReplica {
 
         The far endpoint must have a certificate with the public key matching the private key of the specified certificate.
 
+    .PARAMETER ConfigureXESession
+        Configure the AlwaysOn_health extended events session to start automatically as the SSMS wizard would do.
+        https://docs.microsoft.com/en-us/sql/database-engine/availability-groups/windows/always-on-extended-events#BKMK_alwayson_health
+
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
 
@@ -137,6 +141,7 @@ function Add-DbaAgReplica {
         [string[]]$ReadOnlyRoutingList,
         [string]$ReadonlyRoutingConnectionUrl,
         [string]$Certificate,
+        [switch]$ConfigureXESession,
         [parameter(ValueFromPipeline, Mandatory)]
         [Microsoft.SqlServer.Management.Smo.AvailabilityGroup]$InputObject,
         [switch]$EnableException
@@ -242,6 +247,30 @@ function Add-DbaAgReplica {
                             $null = Grant-DbaAgPermission -SqlInstance $server -Type AvailabilityGroup -AvailabilityGroup $InputObject.Name -Login $serviceAccount -Permission CreateAnyDatabase
                             $null = Grant-DbaAgPermission -SqlInstance $server -Login $serviceAccount -Type Endpoint -Permission Connect
                         }
+                    }
+
+                    if ($ConfigureXESession) {
+                        try {
+                            Write-Message -Level Debug -Message "Getting session 'AlwaysOn_health' on $instance."
+                            $xeSession = Get-DbaXESession -SqlInstance $server -Session AlwaysOn_health -EnableException
+                            if ($xeSession) {
+                                if (-not $xeSession.AutoStart) {
+                                    Write-Message -Level Debug -Message "Setting autostart for session 'AlwaysOn_health' on $instance."
+                                    $xeSession.AutoStart = $true
+                                    $xeSession.Alter()
+                                }
+                                if (-not $xeSession.IsRunning) {
+                                    Write-Message -Level Debug -Message "Starting session 'AlwaysOn_health' on $instance."
+                                    $null = $xeSession | Start-DbaXESession -EnableException
+                                }
+                                Write-Message -Level Verbose -Message "ConfigureXESession was set, session 'AlwaysOn_health' is now configured and running on $instance."
+                            } else {
+                                Write-Message -Level Warning -Message "ConfigureXESession was set, but no session named 'AlwaysOn_health' was found on $instance."
+                            }
+                        } catch {
+                            Write-Message -Level Warning -Message "ConfigureXESession was set, but configuration failed on $instance with this error: $_"
+                        }
+
                     }
 
                     if ($Passthru) {

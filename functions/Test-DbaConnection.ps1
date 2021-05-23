@@ -12,7 +12,7 @@ function Test-DbaConnection {
 
     .PARAMETER Credential
         Credential object used to connect to the Computer as a different user
-        
+
         Utilized for gathering TCPPort information.
 
     .PARAMETER SqlCredential
@@ -91,7 +91,7 @@ function Test-DbaConnection {
         LocalDomainUser      : True
         LocalRunAsAdmin      : False
         LocalEdition         : Desktop
-        
+
         Test connection to SQL2017 instance and collecting information on SQL Server using the sa login, local Administrator account is used to collect port information
     #>
     [CmdletBinding()]
@@ -156,42 +156,37 @@ function Test-DbaConnection {
             }
 
             try {
-                $server = Connect-SqlInstance -SqlInstance $instance.InputObject -SqlCredential $SqlCredential
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
                 $connectSuccess = $true
                 $instanceName = $server.InstanceName
                 if (-not $instanceName) {
                     $instanceName = $instance.InstanceName
                 }
+
+                $username = $server.ConnectionContext.TrueLogin
+                if ($username -like "*\*") {
+                    $authType = "Windows Authentication"
+                } else {
+                    $authType = "SQL Authentication"
+                }
+
+                # TCP Port
+                try {
+                    $tcpport = (Get-DbaTcpPort -SqlInstance $server -Credential $Credential -EnableException).Port
+                } catch {
+                    $tcpport = $_
+                }
+
+                # Auth Scheme
+                try {
+                    $authscheme = (Test-DbaConnectionAuthScheme -SqlInstance $server -EnableException).AuthScheme
+                } catch {
+                    $authscheme = $_
+                }
             } catch {
                 $connectSuccess = $false
                 $instanceName = $instance.InputObject
-                Stop-Function -Message "Issue connection to SQL Server on $instance" -Category ConnectionError -Target $instance -ErrorRecord $_ -Continue
-            }
-
-            $username = $server.ConnectionContext.TrueLogin
-            if ($username -like "*\*") {
-                $authType = "Windows Authentication"
-            } else {
-                $authType = "SQL Authentication"
-            }
-
-            # TCP Port
-            try {
-                $tcpport = (Get-DbaTcpPort -SqlInstance $server -Credential $Credential -EnableException).Port
-            } catch {
-                $tcpport = $_
-            }
-
-            # Auth Scheme
-            $authwarning = $null
-            try {
-                $authscheme = (Test-DbaConnectionAuthScheme -SqlInstance $instance.InputObject -SqlCredential $SqlCredential -WarningVariable authwarning -WarningAction SilentlyContinue -EnableException).AuthScheme
-            } catch {
-                $authscheme = $_
-            }
-
-            if ($authwarning) {
-                #$authscheme = "N/A"
+                Stop-Function -Message "Issue connection to SQL Server on $instance" -Category ConnectionError -Target $instance -ErrorRecord $_
             }
 
             [pscustomobject]@{
