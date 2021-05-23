@@ -392,7 +392,17 @@ function Backup-DbaDatabase {
             Write-Message -Level Warning -Message "No databases match the request for backups"
         }
 
+        $topProgressId = Get-Random
+        $topProgressTarget = $InputObject.Count
+        $topProgressNumber = 0
         foreach ($db in $InputObject) {
+            $topProgressPercent = [int]($topProgressNumber * 100 / $topProgressTarget)
+            $topProgressNumber++
+            if (-not $PSCmdlet.MyInvocation.ExpectingInput) {
+                # Only when the databases to be processed are not piped to the command
+                Write-Progress -Id $topProgressId -Activity "Backing up database $topProgressNumber of $topProgressTarget" -PercentComplete $topProgressPercent -Status ([System.String]::Format("Progress: {0} %", $topProgressPercent))
+            }
+
             $ProgressId = Get-Random
             $failures = @()
             $dbName = $db.Name
@@ -621,7 +631,7 @@ function Backup-DbaDatabase {
                 $humanBackupFile = $FinalBackupPath -Join ','
                 Write-Message -Level Verbose -Message "Devices added"
                 $percent = [Microsoft.SqlServer.Management.Smo.PercentCompleteEventHandler] {
-                    Write-Progress -id $ProgressId -activity "Backing up database $dbName to $humanBackupFile" -PercentComplete $_.Percent -status ([System.String]::Format("Progress: {0} %", $_.Percent))
+                    Write-Progress -Id $ProgressId -Activity "Backing up database $dbName to $humanBackupFile" -PercentComplete $_.Percent -Status ([System.String]::Format("Progress: {0} %", $_.Percent))
                 }
                 $backup.add_PercentComplete($percent)
                 $backup.PercentCompleteNotification = 1
@@ -637,7 +647,7 @@ function Backup-DbaDatabase {
                     $backup.Blocksize = $BlockSize
                 }
 
-                Write-Progress -id $ProgressId -activity "Backing up database $dbName to $humanBackupFile" -PercentComplete 0 -status ([System.String]::Format("Progress: {0} %", 0))
+                Write-Progress -Id $ProgressId -Activity "Backing up database $dbName to $humanBackupFile" -PercentComplete 0 -Status ([System.String]::Format("Progress: {0} %", 0))
 
                 try {
                     if ($Pscmdlet.ShouldProcess($server.Name, "Backing up $dbName to $humanBackupFile")) {
@@ -648,7 +658,7 @@ function Backup-DbaDatabase {
 
                             $backup.SqlBackup($server)
                             $script = $backup.Script($server)
-                            Write-Progress -id $ProgressId -activity "Backing up database $dbName to $backupfile" -status "Complete" -Completed
+                            Write-Progress -Id $ProgressId -Activity "Backing up database $dbName to $backupfile" -Status "Complete" -Completed
                             $BackupComplete = $true
                             if ($server.VersionMajor -eq '8') {
                                 $HeaderInfo = Get-BackupAncientHistory -SqlInstance $server -Database $dbName
@@ -713,12 +723,14 @@ function Backup-DbaDatabase {
                     if ($NoRecovery -and ($_.Exception.InnerException.InnerException.InnerException -like '*cannot be opened. It is in the middle of a restore.')) {
                         Write-Message -Message "Exception thrown by db going into restoring mode due to recovery" -Leve Verbose
                     } else {
-                        Write-Progress -id $ProgressId -activity "Backup" -status "Failed" -completed
+                        Write-Progress -Id $ProgressId -Activity "Backup" -Status "Failed" -Completed
                         Stop-Function -message "Backup Failed" -ErrorRecord $_ -Continue
                         $BackupComplete = $false
                     }
                 }
             }
+            Write-Progress -Id $topProgressId -Activity 'Backup' -Completed
+
             $OutputExclude = 'FullName', 'FileList', 'SoftwareVersionMajor'
 
             if ($failures.Count -eq 0) {
