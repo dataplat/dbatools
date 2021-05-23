@@ -17,7 +17,7 @@ function New-DbaEndpoint {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Name
-        The name of the endpoint. If a name is not specified, one will be auto-generated.
+        The name of the endpoint. Defaults to hadr_endpoint if type is DatabaseMirroring, has to be provided for other types.
 
     .PARAMETER Type
         The type of endpoint. Defaults to DatabaseMirroring. Options: DatabaseMirroring, ServiceBroker, Soap, TSql
@@ -124,7 +124,12 @@ function New-DbaEndpoint {
     )
     process {
         if ((Test-Bound -ParameterName Name -Not)) {
-            $name = "endpoint-" + [DateTime]::Now.ToString('s').Replace(":", "-")
+            if ($Type -eq 'DatabaseMirroring') {
+                $Name = 'hadr_endpoint'
+            } else {
+                Stop-Function -Message "Name is required when Type is not DatabaseMirroring"
+                return
+            }
         }
 
         foreach ($instance in $SqlInstance) {

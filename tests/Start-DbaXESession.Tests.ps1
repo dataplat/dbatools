@@ -5,7 +5,7 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
         [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Session', 'StopAt', 'AllSessions', 'InputObject', 'EnableException'
+        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Session', 'StartAt', 'StopAt', 'AllSessions', 'InputObject', 'EnableException'
         $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
         It "Should only contain our specific parameters" {
             (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
@@ -91,10 +91,21 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $StopAt = (Get-Date).AddSeconds(10)
             Start-DbaXESession $server -Session $dbatoolsciValid.Name -StopAt $StopAt -WarningAction SilentlyContinue
             $dbatoolsciValid.IsRunning | Should Be $true
-            (Get-DbaAgentJob -SqlInstance $server -Job "XE Session Stop - dbatoolsci_session_valid").Count | Should -Be 1
-            $stopSchedule = Get-DbaAgentSchedule -SqlInstance $server -Schedule "XE Session Stop - dbatoolsci_session_valid"
+            (Get-DbaAgentJob -SqlInstance $server -Job "XE Session STOP - dbatoolsci_session_valid").Count | Should -Be 1
+            $stopSchedule = Get-DbaAgentSchedule -SqlInstance $server -Schedule "XE Session STOP - dbatoolsci_session_valid"
             $stopSchedule.ActiveStartTimeOfDay.ToString('hhmmss') | Should -Be $StopAt.TimeOfDay.ToString('hhmmss')
             $stopSchedule.ActiveStartDate | Should -Be $StopAt.Date
+        }
+
+        It "works when -StartAt is passed" {
+            $null = Stop-DbaXESession -SqlInstance $server -Session $dbatoolsciValid.Name -WarningAction SilentlyContinue
+            $StartAt = (Get-Date).AddSeconds(10)
+            $session = Start-DbaXESession $server -Session $dbatoolsciValid.Name -StartAt $StartAt
+            $session.IsRunning | Should Be $false
+            (Get-DbaAgentJob -SqlInstance $server -Job "XE Session START - dbatoolsci_session_valid").Count | Should -Be 1
+            $startSchedule = Get-DbaAgentSchedule -SqlInstance $server -Schedule "XE Session START - dbatoolsci_session_valid"
+            $startSchedule.ActiveStartTimeOfDay.ToString('hhmmss') | Should -Be $StartAt.TimeOfDay.ToString('hhmmss')
+            $startSchedule.ActiveStartDate | Should -Be $StartAt.Date
         }
 
     }

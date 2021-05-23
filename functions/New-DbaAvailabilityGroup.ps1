@@ -138,6 +138,10 @@ function New-DbaAvailabilityGroup {
 
         The far endpoint must have a certificate with the public key matching the private key of the specified certificate.
 
+    .PARAMETER ConfigureXESession
+        Configure the AlwaysOn_health extended events session to start automatically on every replica as the SSMS wizard would do.
+        https://docs.microsoft.com/en-us/sql/database-engine/availability-groups/windows/always-on-extended-events#BKMK_alwayson_health
+
     .PARAMETER IPAddress
         Sets the IP address of the availability group listener.
 
@@ -270,6 +274,7 @@ function New-DbaAvailabilityGroup {
         [string[]]$EndpointUrl,
         [string]$ReadonlyRoutingConnectionUrl,
         [string]$Certificate,
+        [switch]$ConfigureXESession,
         # network
 
         [ipaddress[]]$IPAddress,
@@ -482,6 +487,7 @@ function New-DbaAvailabilityGroup {
                     Endpoint                      = $Endpoint
                     ReadonlyRoutingConnectionUrl  = $ReadonlyRoutingConnectionUrl
                     Certificate                   = $Certificate
+                    ConfigureXESession            = $ConfigureXESession
                 }
 
                 if ($EndpointUrl) {

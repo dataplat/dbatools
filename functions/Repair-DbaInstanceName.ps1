@@ -96,15 +96,15 @@ function Repair-DbaInstanceName {
 
             # Check to see if we can easily proceed
 
-            $nametest = Test-DbaInstanceName $server -EnableException | Select-Object *
-            $oldserverinstancename = $nametest.ServerName
-            $SqlInstancename = $nametest.SqlInstance
+            $nametest = Test-DbaInstanceName -SqlInstance $server
+            $oldServerName = $nametest.ServerName
+            $newServerName = $nametest.NewServerName
 
             if ($nametest.RenameRequired -eq $false) {
-                Stop-Function -Continue -Message "Good news! $oldserverinstancename's @@SERVERNAME does not need to be changed. If you'd like to rename it, first rename the Windows server."
+                Stop-Function -Continue -Message "Good news! $oldServerName's @@SERVERNAME does not need to be changed. If you'd like to rename it, first rename the Windows server."
             }
 
-            if (-not $nametest.updatable) {
+            if (-not $nametest.Updatable) {
                 Write-Message -Level Output -Message "Test-DbaInstanceName reports that the rename cannot proceed with a rename in this $instance's current state."
 
                 foreach ($nametesterror in $nametest.Blockers) {
@@ -200,8 +200,8 @@ function Repair-DbaInstanceName {
                 }
             }
 
-            if ($Pscmdlet.ShouldProcess($server.name, "Performing sp_dropserver to remove the old server name, $oldserverinstancename, then sp_addserver to add $SqlInstancename")) {
-                $sql = "sp_dropserver '$oldserverinstancename'"
+            if ($Pscmdlet.ShouldProcess($server.name, "Performing sp_dropserver to remove the old server name, $oldServerName, then sp_addserver to add $newServerName")) {
+                $sql = "sp_dropserver '$oldServerName'"
                 Write-Message -Level Debug -Message $sql
                 try {
                     $null = $server.Query($sql)
@@ -210,7 +210,7 @@ function Repair-DbaInstanceName {
                     return
                 }
 
-                $sql = "sp_addserver '$SqlInstancename', local"
+                $sql = "sp_addserver '$newServerName', local"
                 Write-Message -Level Debug -Message $sql
 
                 try {
@@ -239,12 +239,12 @@ function Repair-DbaInstanceName {
             }
 
             if ($renamed -eq $true) {
-                Write-Message -Level Verbose -Message "$instance successfully renamed from $oldserverinstancename to $SqlInstancename."
-                Test-DbaInstanceName -SqlInstance $server
+                Write-Message -Level Verbose -Message "$instance successfully renamed from $oldServerName to $newServerName."
+                Test-DbaInstanceName -SqlInstance $instance -SqlCredential $SqlCredential
             }
 
             if ($needsrestart -eq $true) {
-                Write-Message -Level Warning -Message "SQL Service restart for $SqlInstancename still required."
+                Write-Message -Level Warning -Message "SQL Service restart for $newServerName still required."
             }
         }
     }
