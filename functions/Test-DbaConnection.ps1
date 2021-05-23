@@ -227,6 +227,7 @@ function Test-DbaConnection {
             }
 
             if ($Database) {
+                $server.Databases.Refresh()
                 foreach ($db in $Database) {
                     Add-Member -InputObject $output -NotePropertyName DatabaseName -NotePropertyValue $db -Force
                     Add-Member -InputObject $output -NotePropertyName DatabaseIsAccessible -NotePropertyValue $server.Databases[$db].IsAccessible -Force
