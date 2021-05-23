@@ -9670,12 +9670,18 @@
     {
         "Name":  "Export-DbaSysDbUserObject",
         "Description":  "Exports all user objects found in source SQL Server\u0027s master, msdb and model databases to the FilePath.",
+        "Tags":  [
+                     "Export",
+                     "Object",
+                     "SystemDatabase"
+                 ],
         "Synopsis":  "Exports all user objects found in source SQL Server\u0027s master, msdb and model databases to the FilePath.",
         "Alias":  "",
+        "Author":  "Jess Pomfret (@jpomfret)",
         "CommandName":  "Export-DbaSysDbUserObject",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Export-DbaSysDbUserObject",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS\u003eExport-DbaSysDbUserObject -SqlInstance server1\nExports any user objects that are in the system database to the default location.",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eExport-DbaSysDbUserObject -SqlInstance server1\nExports any user objects that are in the system database to the default location.",
         "Params":  [
                        [
                            "SqlInstance",
