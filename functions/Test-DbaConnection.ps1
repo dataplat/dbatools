@@ -22,9 +22,6 @@ function Test-DbaConnection {
 
         For MFA support, please use Connect-DbaInstance.
 
-    .PARAMETER Database
-        The database(s) to test. If unspecified, only the connection to the instance will be testet.
-
     .PARAMETER SkipPSRemoting
         This switch will skip the test for PSRemoting.
 
@@ -106,7 +103,6 @@ function Test-DbaConnection {
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$Credential,
         [PSCredential]$SqlCredential,
-        [string[]]$Database,
         [switch]$SkipPSRemoting,
         [switch]$EnableException
     )
@@ -202,7 +198,7 @@ function Test-DbaConnection {
                 Stop-Function -Message "Issue connection to SQL Server on $instance" -Category ConnectionError -Target $instance -ErrorRecord $_
             }
 
-            $output = [PSCustomObject]@{
+            [PSCustomObject]@{
                 ComputerName         = $resolved.ComputerName
                 InstanceName         = $instanceName
                 SqlInstance          = $instance.FullSmoName
@@ -224,18 +220,6 @@ function Test-DbaConnection {
                 LocalDomainUser      = $localInfo.DomainUser
                 LocalRunAsAdmin      = $localInfo.RunAsAdmin
                 LocalEdition         = $localInfo.Edition
-            }
-
-            if ($Database) {
-                $server.Databases.Refresh()
-                foreach ($db in $Database) {
-                    Add-Member -InputObject $output -NotePropertyName DatabaseName -NotePropertyValue $db -Force
-                    Add-Member -InputObject $output -NotePropertyName DatabaseIsAccessible -NotePropertyValue $server.Databases[$db].IsAccessible -Force
-                    Add-Member -InputObject $output -NotePropertyName DatabaseStatus -NotePropertyValue $server.Databases[$db].Status -Force
-                    $output
-                }
-            } else {
-                $output
             }
         }
     }
