@@ -154,15 +154,17 @@ function Get-DbaDbRoleMember {
                     }
 
                     if ($user) {
-                        Add-Member -Force -InputObject $user -MemberType NoteProperty -Name ComputerName -Value $server.ComputerName
-                        Add-Member -Force -InputObject $user -MemberType NoteProperty -Name InstanceName -Value $server.ServiceName
-                        Add-Member -Force -InputObject $user -MemberType NoteProperty -Name SqlInstance -Value $server.DomainInstanceName
-                        Add-Member -Force -InputObject $user -MemberType NoteProperty -Name Database -Value $db.Name
-                        Add-Member -Force -InputObject $user -MemberType NoteProperty -Name Role -Value $dbRole.Name
-                        Add-Member -Force -InputObject $user -MemberType NoteProperty -Name UserName -Value $user.Name
-
-                        # Select object because Select-DefaultView causes strange behaviors when assigned to a variable (??)
-                        Select-Object -InputObject $user -Property 'ComputerName', 'InstanceName', 'SqlInstance', 'Database', 'Role', 'UserName', 'Login', 'IsSystemObject', 'LoginType'
+                        [PSCustomObject]@{
+                            ComputerName = $server.ComputerName
+                            InstanceName = $server.ServiceName
+                            SqlInstance  = $server.DomainInstanceName
+                            Database     = $db.Name
+                            Role         = $dbRole.Name
+                            UserName     = $user.Name
+                            Login        = $user.Login
+                            SMORole      = $dbRole
+                            SMOUser      = $user
+                        }
                     }
                 }
             }
