@@ -29,7 +29,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         It 'Includes system users' {
             $result = Get-DbaDbRoleMember -SqlInstance $instance -IncludeSystemUser
 
-            $result.IsSystemObject | Select-Object -Unique | Should -Contain $true
+            $result.SMOUser.IsSystemObject | Select-Object -Unique | Should -Contain $true
         }
 
         It 'Returns all role membership for all databases' {

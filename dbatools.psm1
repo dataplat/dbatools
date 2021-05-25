@@ -796,7 +796,10 @@ $script:xplat = @(
     'Get-DbaDbSynonym',
     'New-DbaDbSynonym',
     'Remove-DbaDbSynonym',
-    'Install-DbaDarlingData'
+    'Install-DbaDarlingData',
+    'New-DbaDbFileGroup',
+    'Remove-DbaDbFileGroup',
+    'Set-DbaDbFileGroup'
 )
 
 $script:noncoresmo = @(

@@ -328,7 +328,7 @@ function Export-DbaDbRole {
 
                         foreach ($roleUser in $roleUsers) {
                             if ($server.VersionMajor -lt 11) {
-                                $script += "EXEC sys.sp_addrolemember @rolename=N'$roleName', @membername=N'$userName'"
+                                $script = "EXEC sys.sp_addrolemember @rolename=N'$($roleUser.RoleName)', @membername=N'$($roleUser.Member)'"
                             } else {
                                 $script = 'ALTER ROLE [' + $roleUser.RoleName + "] ADD MEMBER [" + $roleUser.Member + "]" + $commandTerminator
                             }
@@ -381,16 +381,16 @@ function Export-DbaDbRole {
                 $sql
             } elseif ($Path -Or $FilePath) {
                 if ($outputFileArray -notcontains $outputFileName) {
-                    Write-Message -Level Verbose -Message "New File $outputFileName "
+                    $scriptPath = Get-ExportFilePath -Path $PSBoundParameters.Path -FilePath $PSBoundParameters.FilePath -Type sql -ServerName $outputFileName
+                    Write-Message -Level Verbose -Message "New File $scriptPath"
                     if ($null -ne $prefix) {
                         $sql = "$prefix`r`n$sql"
                     }
-                    $scriptPath = Get-ExportFilePath -Path $PSBoundParameters.Path -FilePath $PSBoundParameters.FilePath -Type sql -ServerName $outputFileName
                     $sql | Out-File -Encoding $Encoding -LiteralPath $scriptPath -Append:$Append -NoClobber:$NoClobber
                     $outputFileArray += $outputFileName
                     Get-ChildItem $scriptPath
                 } else {
-                    Write-Message -Level Verbose -Message "Adding to $outputFileName "
+                    Write-Message -Level Verbose -Message "Adding to $scriptPath"
                     $sql | Out-File -Encoding $Encoding -LiteralPath $scriptPath -Append
                 }
             } else {
