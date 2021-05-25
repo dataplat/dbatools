@@ -93,7 +93,7 @@ function Disable-DbaFilestream {
             }
 
             # Instance level
-            $filestreamstate = [int]$server.Configuration.FilestreamAccessLevel.RunningValue
+            $filestreamstate = [int]$server.Configuration.FilestreamAccessLevel.RunValue
 
             if ($Force -or $PSCmdlet.ShouldProcess($instance, "Changing from '$($OutputLookup[$filestreamstate])' to '$($OutputLookup[$level])' at the instance level")) {
                 try {
