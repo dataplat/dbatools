@@ -32657,7 +32657,7 @@
                        ],
                        [
                            "As",
-                           "Specifies output type. Valid options for this parameter are \u0027DataSet\u0027, \u0027DataTable\u0027, \u0027DataRow\u0027, \u0027PSObject\u0027, \u0027PSObjectArray\u0027, and \u0027SingleValue\u0027\nPSObject and PSObjectArray output introduces overhead but adds flexibility for working with results: http://powershell.org/wp/forums/topic/dealing-with-dbnull/",
+                           "Specifies output type. Valid options for this parameter are \u0027DataSet\u0027, \u0027DataTable\u0027, \u0027DataRow\u0027, \u0027PSObject\u0027, \u0027PSObjectArray\u0027, and \u0027SingleValue\u0027.\nPSObject and PSObjectArray output introduces overhead but adds flexibility for working with results: https://forums.powershell.org/t/dealing-with-dbnull/2328/2",
                            "",
                            false,
                            "false",
@@ -32675,7 +32675,7 @@
                        ],
                        [
                            "CommandType",
-                           "Specifies the type of command represented by the query string.  Default is Text",
+                           "Specifies the type of command represented by the query string. Valid options for this parameter are \u0027Text\u0027, \u0027TableDirect\u0027, and \u0027StoredProcedure\u0027.\r\nDefault is \u0027Text\u0027. Further information: https://docs.microsoft.com/en-us/dotnet/api/system.data.sqlclient.sqlcommand.commandtype",
                            "",
                            false,
                            "false",
@@ -37464,6 +37464,110 @@
                        ]
                    ],
         "Syntax":  "New-DbaDbDataGeneratorConfig [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cString[]\u003e] [[-Table] \u003cString[]\u003e] [-ResetIdentity] [-TruncateTable] [[-Rows] \u003cInt32\u003e] [-Path] \u003cString\u003e [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+    },
+    {
+        "Name":  "New-DbaDbFileGroup",
+        "Description":  "Creates a new filegroup for the specified database(s). The filegroup properties cannot be set on an empty filegroup, so it is necessary to add one or more files and then use the Set-DbaDbFileGroup command to set the filegroup properties.",
+        "Tags":  [
+                     "Data",
+                     "Database",
+                     "File",
+                     "FileGroup",
+                     "Migration",
+                     "Partitioning",
+                     "Table"
+                 ],
+        "Synopsis":  "Creates a new empty filegroup.",
+        "Alias":  "",
+        "Author":  "Adam Lancaster https://github.com/lancasteradam",
+        "CommandName":  "New-DbaDbFileGroup",
+        "Availability":  "Windows, Linux, macOS",
+        "Links":  "https://dbatools.io/New-DbaDbFileGroup",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eNew-DbaDbFileGroup -SqlInstance sqldev1 -Database TestDb -FileGroup HRFG1\nCreates the HRFG1 filegroup on the TestDb database on the sqldev1 instance with the default options for the filegroup.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eNew-DbaDbFileGroup -SqlInstance sqldev1 -Database TestDb -FileGroup HRFG1 -FileGroupType FileStreamDataFileGroup\nCreates a filestream filegroup named HRFG1 on the TestDb database on the sqldev1 instance.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eNew-DbaDbFileGroup -SqlInstance sqldev1 -Database TestDb -FileGroup HRFG1 -FileGroupType MemoryOptimizedDataFileGroup\nCreates a MemoryOptimized data filegroup named HRFG1 on the TestDb database on the sqldev1 instance.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaDatabase -SqlInstance sqldev1 -Database TestDb | New-DbaDbFileGroup -FileGroup HRFG1\nPasses in the TestDB database via pipeline and creates the HRFG1 filegroup on the TestDb database on the sqldev1 instance.",
+        "Params":  [
+                       [
+                           "SqlInstance",
+                           "The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function\r\nto be executed against multiple SQL Server instances.",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "SqlCredential",
+                           "Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).\nWindows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.\nFor MFA support, please use Connect-DbaInstance.",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "Database",
+                           "The target database(s).",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "FileGroup",
+                           "The name of the new filegroup.",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "FileGroupType",
+                           "The type of the file group. Possible values are \"FileStreamDataFileGroup\", \"MemoryOptimizedDataFileGroup\", \"RowsFileGroup\". The default is \"RowsFileGroup\".",
+                           "",
+                           false,
+                           "false",
+                           "RowsFileGroup",
+                           "FileStreamDataFileGroup,MemoryOptimizedDataFileGroup,RowsFileGroup"
+                       ],
+                       [
+                           "InputObject",
+                           "Allows piping from Get-DbaDatabase.",
+                           "",
+                           false,
+                           "true (ByValue)",
+                           "",
+                           ""
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "",
+                           false,
+                           "false",
+                           "False",
+                           ""
+                       ],
+                       [
+                           "WhatIf",
+                           "Shows what would happen if the command were to run. No actions are actually performed.",
+                           "wi",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "Confirm",
+                           "Prompts you for confirmation before executing any changing operations within the command.",
+                           "cf",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ]
+                   ],
+        "Syntax":  "New-DbaDbFileGroup [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cString[]\u003e] [[-FileGroup] \u003cString\u003e] [[-FileGroupType] \u003cString\u003e] [[-InputObject] \u003cDatabase[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "New-DbaDbMailAccount",
@@ -43550,6 +43654,101 @@
                        ]
                    ],
         "Syntax":  "Remove-DbaDbData [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cString[]\u003e] [[-ExcludeDatabase] \u003cString[]\u003e] [[-InputObject] \u003cObject[]\u003e] [[-Path] \u003cString\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+    },
+    {
+        "Name":  "Remove-DbaDbFileGroup",
+        "Description":  "Removes the specified filegroup(s). It is required that the filegroup is empty before it can be removed.",
+        "Tags":  [
+                     "Data",
+                     "Database",
+                     "File",
+                     "FileGroup",
+                     "Migration",
+                     "Partitioning",
+                     "Table"
+                 ],
+        "Synopsis":  "Removes the specified filegroup(s).",
+        "Alias":  "",
+        "Author":  "Adam Lancaster https://github.com/lancasteradam",
+        "CommandName":  "Remove-DbaDbFileGroup",
+        "Availability":  "Windows, Linux, macOS",
+        "Links":  "https://dbatools.io/Remove-DbaDbFileGroup",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eRemove-DbaDbFileGroup -SqlInstance sqldev1 -Database TestDb -FileGroup HRFG1\nRemoves the HRFG1 filegroup on the TestDb database on the sqldev1 instance.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaDatabase -SqlInstance sqldev1 -Database TestDb | Remove-DbaDbFileGroup -FileGroup HRFG1\nPasses in the TestDB database from the sqldev1 instance and removes the HRFG1 filegroup.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaDbFileGroup -SqlInstance sqldev1 -Database TestDb -FileGroup HRFG1 | Remove-DbaDbFileGroup\nPasses in the HRFG1 filegroup from the TestDB database on the sqldev1 instance and removes the filegroup.",
+        "Params":  [
+                       [
+                           "SqlInstance",
+                           "The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function\r\nto be executed against multiple SQL Server instances.",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "SqlCredential",
+                           "Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).\nWindows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.\nFor MFA support, please use Connect-DbaInstance.",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "Database",
+                           "The target database(s).",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "FileGroup",
+                           "The name(s) of the filegroup(s).",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "InputObject",
+                           "Allows piping from Get-DbaDatabase and Get-DbaDbFileGroup.",
+                           "",
+                           false,
+                           "true (ByValue)",
+                           "",
+                           ""
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "",
+                           false,
+                           "false",
+                           "False",
+                           ""
+                       ],
+                       [
+                           "WhatIf",
+                           "Shows what would happen if the command were to run. No actions are actually performed.",
+                           "wi",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "Confirm",
+                           "Prompts you for confirmation before executing any changing operations within the command.",
+                           "cf",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ]
+                   ],
+        "Syntax":  "Remove-DbaDbFileGroup [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cString[]\u003e] [[-FileGroup] \u003cString[]\u003e] [[-InputObject] \u003cObject[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Remove-DbaDbLogShipping",
@@ -50381,6 +50580,128 @@
                        ]
                    ],
         "Syntax":  "Set-DbaDbCompression [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cObject[]\u003e] [[-ExcludeDatabase] \u003cObject[]\u003e] [[-CompressionType] \u003cObject\u003e] [[-MaxRunTime] \u003cInt32\u003e] [[-PercentCompression] \u003cInt32\u003e] [[-InputObject] \u003cObject\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+    },
+    {
+        "Name":  "Set-DbaDbFileGroup",
+        "Description":  "Sets the options for a filegroup for the specified database(s).",
+        "Tags":  [
+                     "Data",
+                     "Database",
+                     "File",
+                     "FileGroup",
+                     "Migration",
+                     "Partitioning",
+                     "Table"
+                 ],
+        "Synopsis":  "Sets the options for a filegroup.",
+        "Alias":  "",
+        "Author":  "Adam Lancaster https://github.com/lancasteradam",
+        "CommandName":  "Set-DbaDbFileGroup",
+        "Availability":  "Windows, Linux, macOS",
+        "Links":  "https://dbatools.io/Set-DbaDbFileGroup",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eSet-DbaDbFileGroup -SqlInstance sqldev1 -Database TestDb -FileGroup HRFG1 -Default -AutoGrowAllFiles\nSets the HRFG1 filegroup to auto grow all files and makes it the default filegroup on the TestDb database on the sqldev1 instance.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eSet-DbaDbFileGroup -SqlInstance sqldev1 -Database TestDb -FileGroup HRFG1 -AutoGrowAllFiles:$false\nSets the HRFG1 filegroup to not auto grow all files on the TestDb database on the sqldev1 instance.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eSet-DbaDbFileGroup -SqlInstance sqldev1 -Database TestDb -FileGroup HRFG1 -ReadOnly\nSets the HRFG1 filegroup to read only on the TestDb database on the sqldev1 instance.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eSet-DbaDbFileGroup -SqlInstance sqldev1 -Database TestDb -FileGroup HRFG1 -ReadOnly:$false\nSets the HRFG1 filegroup to read/write on the TestDb database on the sqldev1 instance.\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eGet-DbaDatabase -SqlInstance sqldev1 -Database TestDb | Set-DbaDbFileGroup -FileGroup HRFG1 -AutoGrowAllFiles\nPasses in the TestDB database from the sqldev1 instance and sets the HRFG1 filegroup to auto grow all files.\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eGet-DbaDbFileGroup -SqlInstance sqldev1 -Database TestDb -FileGroup HRFG1 | Set-DbaDbFileGroup -AutoGrowAllFiles\nPasses in the HRFG1 filegroup from the TestDB database on the sqldev1 instance and sets it to auto grow all files.",
+        "Params":  [
+                       [
+                           "SqlInstance",
+                           "The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function\r\nto be executed against multiple SQL Server instances.",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "SqlCredential",
+                           "Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).\nWindows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.\nFor MFA support, please use Connect-DbaInstance.",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "Database",
+                           "The target database(s).",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "FileGroup",
+                           "The name(s) of the filegroup(s).",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "Default",
+                           "Specifies if the filegroup should be the default. Only one filegroup in a database can be specified as the default.",
+                           "",
+                           false,
+                           "false",
+                           "False",
+                           ""
+                       ],
+                       [
+                           "ReadOnly",
+                           "Specifies the filegroup should be readonly. To change the filegroup to readwrite use -ReadOnly:$false",
+                           "",
+                           false,
+                           "false",
+                           "False",
+                           ""
+                       ],
+                       [
+                           "AutoGrowAllFiles",
+                           "Specifies the filegroup should auto grow all files if one file has met the threshold to auto grow. To revert this setting use -AutoGrowAllFiles:$false",
+                           "",
+                           false,
+                           "false",
+                           "False",
+                           ""
+                       ],
+                       [
+                           "InputObject",
+                           "Allows piping from Get-DbaDatabase and Get-DbaDbFileGroup.",
+                           "",
+                           false,
+                           "true (ByValue)",
+                           "",
+                           ""
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "",
+                           false,
+                           "false",
+                           "False",
+                           ""
+                       ],
+                       [
+                           "WhatIf",
+                           "Shows what would happen if the command were to run. No actions are actually performed.",
+                           "wi",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "Confirm",
+                           "Prompts you for confirmation before executing any changing operations within the command.",
+                           "cf",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ]
+                   ],
+        "Syntax":  "Set-DbaDbFileGroup [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cString[]\u003e] [[-FileGroup] \u003cString[]\u003e] [-Default] [-ReadOnly] [-AutoGrowAllFiles] [[-InputObject] \u003cObject[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Set-DbaDbIdentity",
