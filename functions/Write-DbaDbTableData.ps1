@@ -79,6 +79,9 @@ function Write-DbaDbTableData {
     .PARAMETER BulkCopyTimeOut
         Value in seconds for the BulkCopy operations timeout. The default is 30 seconds.
 
+    .PARAMETER ColumnMap
+        By default, the bulk insert tries to automap columns. When it doesn't work as desired, this parameter will help. Check out the examples for more information.
+
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
 
@@ -159,6 +162,14 @@ function Write-DbaDbTableData {
 
         This is an example of the type conversion in action. All process properties are converted, including special types like TimeSpan. Script properties are resolved before the type conversion starts thanks to ConvertTo-DbaDataTable.
 
+    .EXAMPLE
+        PS C:\> $server = Connect-DbaInstance -SqlInstance SRV1
+        PS C:\> $server.Invoke("CREATE TABLE tempdb.dbo.test (col1 INT, col2 VARCHAR(100))")
+        PS C:\> $data = Invoke-DbaQuery -SqlInstance $server -Query "SELECT 123 AS value1, 'Hello world' AS value2" -As DataSet
+        PS C:\> $data | Write-DbaDbTableData -SqlInstance $server -Table 'tempdb.dbo.test' -ColumnMap @{ value1 = 'col1' ; value2 = 'col2' }
+
+        The dataset column 'value1' is inserted into SQL column 'col1' and dataset column value2 is inserted into the SQL Column 'col2'. All other columns are ignored and therefore null or default values.
+
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low")]
     param (
@@ -191,6 +202,7 @@ function Write-DbaDbTableData {
         [switch]$Truncate,
         [ValidateNotNull()]
         [int]$BulkCopyTimeOut = 5000,
+        [hashtable[]]$ColumnMap,
         [switch]$EnableException,
         [switch]$UseDynamicStringLength
     )
@@ -235,8 +247,16 @@ function Write-DbaDbTableData {
             }
 
             if ($Pscmdlet.ShouldProcess($SqlInstance, "Writing $rowCount rows to $Fqtn")) {
-                foreach ($prop in $DataTable.Columns.ColumnName) {
-                    $null = $bulkCopy.ColumnMappings.Add($prop, $prop)
+                if ($ColumnMap) {
+                    foreach ($columnname in $ColumnMap) {
+                        foreach ($key in $columnname.Keys) {
+                            $null = $bulkCopy.ColumnMappings.Add($key, $columnname[$key])
+                        }
+                    }
+                } else {
+                    foreach ($prop in $DataTable.Columns.ColumnName) {
+                        $null = $bulkCopy.ColumnMappings.Add($prop, $prop)
+                    }
                 }
 
                 $bulkCopy.WriteToServer($DataTable)
