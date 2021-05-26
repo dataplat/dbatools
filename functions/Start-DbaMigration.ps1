@@ -48,7 +48,7 @@ function Start-DbaMigration {
     .PARAMETER Destination
         Destination SQL Server. You may specify multiple servers.
 
-        Note that when using -BackupRestore with multiple servers, the backup will only be performed once and backups will be deleted at the end (if you didn't specify -ExcludeBackupCleanup).
+        Note that when using -BackupRestore with multiple servers, the backup will only be performed once and backups will be deleted at the end.
 
         When using -DetachAttach with multiple servers, -Reattach must be specified.
 
