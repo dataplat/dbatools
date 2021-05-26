@@ -121,18 +121,24 @@ function Test-DbaDiskAlignment {
 
 
                 $disks = @()
-                $disks += $($partitions | ForEach-Object {
-                        Get-CimInstance -CimSession $CimSession -Query "ASSOCIATORS OF {Win32_DiskPartition.DeviceID=""$($_.DeviceID.Replace("\", "\\"))""} WHERE AssocClass = Win32_LogicalDiskToPartition" |
-                            Add-Member -Force -MemberType noteproperty -Name BlockSize -Value $_.BlockSize -PassThru |
-                            Add-Member -Force -MemberType noteproperty -Name BootPartition -Value $_.BootPartition -PassThru |
-                            Add-Member -Force -MemberType noteproperty -Name DiskIndex -Value $_.DiskIndex -PassThru |
-                            Add-Member -Force -MemberType noteproperty -Name Index -Value $_.Index -PassThru |
-                            Add-Member -Force -MemberType noteproperty -Name NumberOfBlocks -Value $_.NumberOfBlocks -PassThru |
-                            Add-Member -Force -MemberType noteproperty -Name StartingOffset -Value $_.StartingOffset -PassThru |
-                            Add-Member -Force -MemberType noteproperty -Name Type -Value $_.Type -PassThru
-                        } |
-                            Select-Object BlockSize, BootPartition, Description, DiskIndex, Index, Name, NumberOfBlocks, Size, StartingOffset, Type
-                )
+                foreach ($partition in $partitions) {
+                    $associators = Get-CimInstance -CimSession $CimSession -Query "ASSOCIATORS OF {Win32_DiskPartition.DeviceID=""$($partition.DeviceID.Replace("\", "\\"))""} WHERE AssocClass = Win32_LogicalDiskToPartition"
+                    foreach ($assoc in $associators) {
+                        $disks += [PSCustomObject]@{
+                            BlockSize      = $partition.BlockSize
+                            BootPartition  = $partition.BootPartition
+                            Description    = $partition.Description
+                            DiskIndex      = $partition.DiskIndex
+                            Index          = $partition.Index
+                            NumberOfBlocks = $partition.NumberOfBlocks
+                            StartingOffset = $partition.StartingOffset
+                            Type           = $partition.Type
+                            Name           = $assoc.Name
+                            Size           = $partition.Size
+                        }
+                    }
+                }
+
                 Write-Message -Level Verbose -Message "Gathered CIM information." -FunctionName $FunctionName
             } catch {
                 Stop-Function -Message "Can't connect to CIM on $ComputerName." -FunctionName $FunctionName -InnerErrorRecord $_
@@ -242,7 +248,7 @@ function Test-DbaDiskAlignment {
                     [PSCustomObject]@{
                         ComputerName            = $ogcomputer
                         Name                    = "$($partition.Name)"
-                        PartitonSize            = [dbasize]($($partition.Size / 1MB) * 1024 * 1024)
+                        PartitionSize           = [dbasize]($($partition.Size / 1MB) * 1024 * 1024)
                         PartitionType           = $partition.Type
                         TestingStripeSize       = [dbasize]($size * 1024)
                         OffsetModuluCalculation = [dbasize]($OffsetModuloKB * 1024)
@@ -298,7 +304,7 @@ function Test-DbaDiskAlignment {
             }
             #endregion Connecting to server via Cim
 
-            Write-Message -Level Verbose -Message "Getting Power Plan information from $Computer."
+            Write-Message -Level Verbose -Message "Getting Disk Alignment information from $Computer."
 
 
             try {
