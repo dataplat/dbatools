@@ -229,25 +229,25 @@ function New-DbaDbTable {
         >>     MaxLength = 20
         >>     Nullable  = $true
         >> }
-        PS C:\> $cols += @{
+        >> $cols += @{
         >>     Name      = 'test2'
         >>     Type      = 'int'
         >>     Nullable  = $false
         >> }
-        PS C:\> $cols += @{
+        >> $cols += @{
         >>     Name      = 'test3'
         >>     Type      = 'decimal'
         >>     MaxLength = 9
         >>     Nullable  = $true
         >> }
-        PS C:\> $cols += @{
+        >> $cols += @{
         >>     Name      = 'test4'
         >>     Type      = 'decimal'
         >>     Precision = 8
         >>     Scale = 2
         >>     Nullable  = $false
         >> }
-        >> PS C:\> $cols += @{
+        >> $cols += @{
         >>     Name      = 'test5'
         >>     Type      = 'Nvarchar'
         >>     MaxLength = 50
@@ -255,33 +255,33 @@ function New-DbaDbTable {
         >>     Default  =  'Hello'
         >>     DefaultName = 'DF_Name_test5'
         >> }
-        >> PS C:\> $cols += @{
+        >> $cols += @{
         >>     Name      = 'test6'
         >>     Type      = 'int'
         >>     Nullable  =  $false
         >>     Default  =  '0'
         >> }
-        >> PS C:\> $cols += @{
+        >> $cols += @{
         >>     Name      = 'test7'
         >>     Type      = 'smallint'
         >>     Nullable  =  $false
         >>     Default  =  100
         >> }
-        >> PS C:\> $cols += @{
+        >> $cols += @{
         >>     Name      = 'test8'
         >>     Type      = 'Nchar'
         >>     MaxLength = 3
         >>     Nullable  =  $false
         >>     Default  =  'ABC'
         >> }
-        >> PS C:\> $cols += @{
+        >> $cols += @{
         >>     Name      = 'test9'
         >>     Type      = 'char'
         >>     MaxLength = 4
         >>     Nullable  =  $false
         >>     Default  =  'XPTO'
         >> }
-        >> PS C:\> $cols += @{
+        >> $cols += @{
         >>     Name      = 'test10'
         >>     Type      = 'datetime'
         >>     Nullable  =  $false
