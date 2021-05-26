@@ -73,5 +73,5 @@ function Connect-SqlInstance {
     } else {
         Connect-DbaInstance @PSBoundParameters
     }
-    Connect-DbaInstance @PSBoundParameters
+    #Connect-DbaInstance @PSBoundParameters
 }
