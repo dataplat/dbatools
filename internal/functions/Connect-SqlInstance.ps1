@@ -69,7 +69,9 @@ function Connect-SqlInstance {
         if ($AzureUnsupported -and $SqlInstance.InputObject.DatabaseEngineType -eq "SqlAzureDatabase") {
             throw "Azure SQL Database is not supported by this command"
         }
-        return $SqlInstance.InputObject
+        #return $SqlInstance.InputObject
+        $PSBoundParameters['SqlInstance'] = $SqlInstance.InputObject
+        Connect-DbaInstance @PSBoundParameters
     } else {
         Connect-DbaInstance @PSBoundParameters
     }
