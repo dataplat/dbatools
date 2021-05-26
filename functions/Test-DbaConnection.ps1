@@ -8,12 +8,12 @@ function Test-DbaConnection {
         Tests the ability to connect to an SQL Server instance outputting information about the server and instance.
 
     .PARAMETER SqlInstance
-        The SQL Server Instance to test connection
+        The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.
 
     .PARAMETER Credential
-        Credential object used to connect to the Computer as a different user
+        Credential object used to connect to the Computer as a different user.
 
-        Utilized for gathering TCPPort information.
+        Utilized for gathering PSRemoting and TCPPort information.
 
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
@@ -21,6 +21,9 @@ function Test-DbaConnection {
         Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
 
         For MFA support, please use Connect-DbaInstance.
+
+    .PARAMETER SkipPSRemoting
+        This switch will skip the test for PSRemoting.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -100,6 +103,7 @@ function Test-DbaConnection {
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$Credential,
         [PSCredential]$SqlCredential,
+        [switch]$SkipPSRemoting,
         [switch]$EnableException
     )
     process {
@@ -135,12 +139,17 @@ function Test-DbaConnection {
             }
 
             # Test for WinRM #Test-WinRM
-            Write-Message -Level Verbose -Message "Checking remote access"
-            try {
-                $null = Invoke-Command2 -ComputerName $instance.ComputerName -Credential $Credential -ScriptBlock { Get-ChildItem } -ErrorAction Stop
-                $remoting = $true
-            } catch {
-                $remoting = $_
+            $remoting = $null
+            if ($SkipPSRemoting) {
+                Write-Message -Level Verbose -Message "Checking remote access will be skipped"
+            } else {
+                Write-Message -Level Verbose -Message "Checking remote access"
+                try {
+                    $null = Invoke-Command2 -ComputerName $instance.ComputerName -Credential $Credential -ScriptBlock { Get-ChildItem } -ErrorAction Stop
+                    $remoting = $true
+                } catch {
+                    $remoting = $_
+                }
             }
 
             # Test Connection first using Ping class which requires ICMP access then fail back to tcp if pings are blocked
@@ -172,7 +181,7 @@ function Test-DbaConnection {
 
                 # TCP Port
                 try {
-                    $tcpport = (Get-DbaTcpPort -SqlInstance $server -Credential $Credential -EnableException).Port
+                    $tcpport = (Get-DbaTcpPort -SqlInstance $server -SqlCredential $SqlCredential -Credential $Credential -EnableException).Port
                 } catch {
                     $tcpport = $_
                 }
@@ -189,7 +198,7 @@ function Test-DbaConnection {
                 Stop-Function -Message "Issue connection to SQL Server on $instance" -Category ConnectionError -Target $instance -ErrorRecord $_
             }
 
-            [pscustomobject]@{
+            [PSCustomObject]@{
                 ComputerName         = $resolved.ComputerName
                 InstanceName         = $instanceName
                 SqlInstance          = $instance.FullSmoName
