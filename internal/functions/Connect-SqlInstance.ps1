@@ -70,8 +70,8 @@ function Connect-SqlInstance {
             throw "Azure SQL Database is not supported by this command"
         }
         #return $SqlInstance.InputObject
-        $PSBoundParameters['SqlInstance'] = $SqlInstance.InputObject
-        Connect-DbaInstance @PSBoundParameters
+        $PSBoundParameters.Remove('SqlInstance')
+        Connect-DbaInstance @PSBoundParameters -SqlInstance $SqlInstance.InputObject
     } else {
         Connect-DbaInstance @PSBoundParameters
     }
