@@ -4,7 +4,9 @@ function Test-DbaDiskAlignment {
         Verifies that your non-dynamic disks are aligned according to physical constraints.
 
     .DESCRIPTION
-        Returns $true or $false by default for one server. Returns Server name and IsBestPractice for more than one server.
+        Verifies that your non-dynamic disks are aligned according to physical constraints.
+
+        Returns one row per computer, partition and stripe size with.
 
         Please refer to your storage vendor best practices before following any advice below.
 
