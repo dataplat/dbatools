@@ -202,7 +202,7 @@ function Write-DbaDbTableData {
         [switch]$Truncate,
         [ValidateNotNull()]
         [int]$BulkCopyTimeOut = 5000,
-        [hashtable[]]$ColumnMap,
+        [hashtable]$ColumnMap,
         [switch]$EnableException,
         [switch]$UseDynamicStringLength
     )
