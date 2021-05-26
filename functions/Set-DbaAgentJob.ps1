@@ -222,7 +222,7 @@ function Set-DbaAgentJob {
         }
 
         # Check the e-mail level parameter
-        if ($null -ne $EmailOperator -and ($null -eq $EmailLevel)) {
+        if ($EmailOperator -and ($null -eq $EmailLevel)) {
             Stop-Function -Message "Please set the e-mail level parameter when the e-mail level operator is set." -Target $SqlInstance
             return
         }
@@ -234,7 +234,7 @@ function Set-DbaAgentJob {
         }
 
         # Check the net send level parameter
-        if ($null -ne $NetsendOperator -and ($null -eq $NetsendLevel)) {
+        if ($NetsendOperator -and ($null -eq $NetsendLevel)) {
             Stop-Function -Message "Please set the net send level parameter when the net send level operator is set." -Target $SqlInstance
             return
         }
@@ -246,7 +246,7 @@ function Set-DbaAgentJob {
         }
 
         # Check the page level parameter
-        if ($null -ne $PageOperator -and ($null -eq $PageLevel)) {
+        if ($PageOperator -and ($null -eq $PageLevel)) {
             Stop-Function -Message "Please set the page level parameter when the page level operator is set." -Target $SqlInstance
             return
         }
