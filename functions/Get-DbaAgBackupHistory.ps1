@@ -123,8 +123,8 @@ function Get-DbaAgBackupHistory {
         [PsCredential]$SqlCredential,
         [parameter(Mandatory)]
         [string]$AvailabilityGroup,
-        [object[]]$Database,
-        [object[]]$ExcludeDatabase,
+        [string[]]$Database,
+        [string[]]$ExcludeDatabase,
         [switch]$IncludeCopyOnly,
         [Parameter(ParameterSetName = "NoLast")]
         [switch]$Force,
