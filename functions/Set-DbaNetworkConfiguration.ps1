@@ -31,6 +31,10 @@ function Set-DbaNetworkConfiguration {
         Will enable the TCP/IP protokoll if needed.
         Will set TcpIpProperties.ListenAll to $true if needed.
 
+    .PARAMETER RestartService
+        Every change to the network configuration needs a service restart to take effect.
+        This switch will force a restart of the service if the network configuration has changed.
+
     .PARAMETER InputObject
         The object with the structure that "Get-DbaNetworkConfiguration" or "Get-DbaNetworkConfiguration -OutputType Full" returns.
 
@@ -69,7 +73,7 @@ function Set-DbaNetworkConfiguration {
         Returns the network configuration for the sqlexpress on winserver and the default instance on sql2016.
 
     #>
-    [CmdletBinding(SupportsShouldProcess)]
+    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "High")]
     param (
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$Credential,
@@ -79,6 +83,7 @@ function Set-DbaNetworkConfiguration {
         [string]$DisableProtokoll,
         [switch]$DynamicPortForIPAll,
         [int[]]$StaticPortForIPAll,
+        [switch]$RestartService,
         [parameter(ValueFromPipeline)]
         [object[]]$InputObject,
         [switch]$EnableException
@@ -296,13 +301,41 @@ function Set-DbaNetworkConfiguration {
             $InputObject += $netConf
         }
 
-        foreach ($instance in $InputObject) {
+        foreach ($netConf in $InputObject) {
             try {
-                if ($Pscmdlet.ShouldProcess("Setting network configuration for instance $($instance.InstanceName) on $($instance.ComputerName)")) {
-                    Invoke-ManagedComputerCommand -ComputerName $instance.ComputerName -Credential $Credential -ScriptBlock $wmiScriptBlock -ArgumentList $instance
+                if ($Pscmdlet.ShouldProcess("Setting network configuration for instance $($netConf.InstanceName) on $($netConf.ComputerName)")) {
+                    $changes = Invoke-ManagedComputerCommand -ComputerName $netConf.ComputerName -Credential $Credential -ScriptBlock $wmiScriptBlock -ArgumentList $netConf
                 }
+
+                $restartNeeded = $false
+                $restarted = $false
+                if ($changes.Changes.Count -gt 0) {
+                    $restartNeeded = $true
+                    if ($RestartService) {
+                        if ($Pscmdlet.ShouldProcess("Restarting service for instance $($netConf.InstanceName) on $($netConf.ComputerName)")) {
+                            try {
+                                $null = Restart-DbaService -ComputerName $netConf.ComputerName -InstanceName $netConf.InstanceName -Credential $Credential -Type Engine -Force -EnableException -Confirm:$false
+                                $restarted = $true
+                            } catch {
+                                Write-Message -Level Warning -Message "A restart of the service for instance $($netConf.InstanceName) on $($netConf.ComputerName) failed ($_). Restart of instance is necessary for the new settings to take effect."
+                            }
+                        }
+                    } else {
+                        Write-Message -Level Warning -Message "A restart of the service for instance $($netConf.InstanceName) on $($netConf.ComputerName) is needed for the changes to take effect."
+                    }
+                }
+
+                [PSCustomObject]@{
+                    ComputerName  = $changes.ComputerName
+                    InstanceName  = $changes.InstanceName
+                    SqlInstance   = $changes.SqlInstance
+                    Changes       = $changes.Changes
+                    RestartNeeded = $restartNeeded
+                    Restarted     = $restarted
+                }
+
             } catch {
-                Stop-Function -Message "Setting network configuration for instance $($instance.InstanceName) on $($instance.ComputerName) not possible." -Target $instance -ErrorRecord $_ -Continue
+                Stop-Function -Message "Setting network configuration for instance $($netConf.InstanceName) on $($netConf.ComputerName) not possible." -Target $netConf.ComputerName -ErrorRecord $_ -Continue
             }
         }
     }
