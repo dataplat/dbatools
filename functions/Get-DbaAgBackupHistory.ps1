@@ -190,6 +190,11 @@ function Get-DbaAgBackupHistory {
         }
 
         Write-Message -Level Verbose -Message "We have more than one server, so query them all and aggregate"
+        # If -Database is not set, we want to filter on all databases of the availability group
+        if (Test-Bound -Not -ParameterName Database) {
+            $agDatabase = (Get-DbaAgDatabase -SqlInstance $serverList[0] -AvailabilityGroup $AvailabilityGroup).Name
+            $PSBoundParameters.Add('Database', $agDatabase)
+        }
         $null = $PSBoundParameters.Remove('SqlInstance')
         $null = $PSBoundParameters.Remove('AvailabilityGroup')
         $null = $PSBoundParameters.Remove('Last')
