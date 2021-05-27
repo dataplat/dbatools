@@ -94,6 +94,9 @@ function Copy-DbaDbTableData {
     .PARAMETER BulkCopyTimeOut
         Value in seconds for the BulkCopy operations timeout. The default is 5000 seconds.
 
+    .PARAMETER CommandTimeOut
+        Value in seconds for the reader command operations timeout. The default is 0 seconds (infinity).
+
     .PARAMETER InputObject
         Enables piping of Table objects from Get-DbaDbTable
 
@@ -207,6 +210,7 @@ function Copy-DbaDbTableData {
         [switch]$KeepNulls,
         [switch]$Truncate,
         [int]$BulkCopyTimeOut = 5000,
+        [int]$CommandTimeOut = 0,
         [Parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.TableViewBase[]]$InputObject,
         [switch]$EnableException
@@ -405,7 +409,7 @@ function Copy-DbaDbTableData {
                     }
                     if ($Pscmdlet.ShouldProcess($server, "Copy data from $sourceLabel")) {
                         $cmd = $server.ConnectionContext.SqlConnectionObject.CreateCommand()
-                        $cmd.CommandTimeout = 0
+                        $cmd.CommandTimeout = $CommandTimeOut
                         $cmd.CommandText = $Query
                         if ($server.ConnectionContext.IsOpen -eq $false) {
                             $server.ConnectionContext.SqlConnectionObject.Open()
