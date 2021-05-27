@@ -14,6 +14,22 @@ function Get-DbaNetworkConfiguration {
     .PARAMETER Credential
         Credential object used to connect to the Computer as a different user.
 
+    .PARAMETER OutputType
+        Defines what information is returned from the command.
+        Options include: Full, ServerProtocols, TcpIpProperties or TcpIpAddresses. Full by default.
+
+        Full returns one object per SqlInstance with information about the server protocols
+        and nested objects with information about TCP/IP properties and TCP/IP addresses.
+
+        ServerProtocols returns one object per SqlInstance with information about the server protocols only.
+
+        TcpIpProperties returns one object per SqlInstance with information about the TCP/IP protocol properties only.
+
+        TcpIpAddresses returns one object per SqlInstance and IP address.
+        If the instance listens on all IP addresses (TcpIpProperties.ListenAll), only the information about the IPAll address is returned.
+        Otherwise only information about the individual IP addresses is returned.
+        For more details see: https://docs.microsoft.com/en-us/sql/database-engine/configure-windows/configure-a-server-to-listen-on-a-specific-tcp-port
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -36,9 +52,9 @@ function Get-DbaNetworkConfiguration {
         Returns the network configuration for the default instance on sqlserver2014a.
 
     .EXAMPLE
-        PS C:\> Get-DbaNetworkConfiguration -SqlInstance winserver\sqlexpress, sql2016
+        PS C:\> Get-DbaNetworkConfiguration -SqlInstance winserver\sqlexpress, sql2016 -OutputType ServerProtocols
 
-        Returns the network configuration for the sqlexpress on winserver and the default instance on sql2016.
+        Returns information about the server protocols for the sqlexpress on winserver and the default instance on sql2016.
 
     #>
     [CmdletBinding()]
@@ -46,6 +62,8 @@ function Get-DbaNetworkConfiguration {
         [parameter(Mandatory, ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$Credential,
+        [ValidateSet('Full', 'ServerProtocols', 'TcpIpProperties', 'TcpIpAddresses')]
+        [string]$OutputType = 'Full',
         [switch]$EnableException
     )
 
@@ -59,29 +77,29 @@ function Get-DbaNetworkConfiguration {
             $wmiSpNp = $wmiServerProtocols | Where-Object { $_.Name -eq 'Np' }
             $wmiSpTcp = $wmiServerProtocols | Where-Object { $_.Name -eq 'Tcp' }
 
-            $outputTcpIpProtocol = [PSCustomObject]@{
+            $outputTcpIpProperties = [PSCustomObject]@{
                 Enabled   = ($wmiSpTcp.ProtocolProperties | Where-Object { $_.Name -eq 'Enabled' } ).Value
                 KeepAlive = ($wmiSpTcp.ProtocolProperties | Where-Object { $_.Name -eq 'KeepAlive' } ).Value
                 ListenAll = ($wmiSpTcp.ProtocolProperties | Where-Object { $_.Name -eq 'ListenOnAllIPs' } ).Value
             }
 
             $wmiIPn = $wmiSpTcp.IPAddresses | Where-Object { $_.Name -ne 'IPAll' }
-            $outputTcpIpIPAddressesIPn = foreach ($ip in $wmiIPn) {
+            $outputTcpIpAddressesIPn = foreach ($ip in $wmiIPn) {
                 [PSCustomObject]@{
                     Name            = $ip.Name
                     Active          = ($ip.IPAddressProperties | Where-Object { $_.Name -eq 'Active' } ).Value
                     Enabled         = ($ip.IPAddressProperties | Where-Object { $_.Name -eq 'Enabled' } ).Value
-                    IPAddress       = ($ip.IPAddressProperties | Where-Object { $_.Name -eq 'IpAddress' } ).Value
-                    TCPDynamicPorts = ($ip.IPAddressProperties | Where-Object { $_.Name -eq 'TcpDynamicPorts' } ).Value
-                    TCPPort         = ($ip.IPAddressProperties | Where-Object { $_.Name -eq 'TcpPort' } ).Value
+                    IpAddress       = ($ip.IPAddressProperties | Where-Object { $_.Name -eq 'IpAddress' } ).Value
+                    TcpDynamicPorts = ($ip.IPAddressProperties | Where-Object { $_.Name -eq 'TcpDynamicPorts' } ).Value
+                    TcpPort         = ($ip.IPAddressProperties | Where-Object { $_.Name -eq 'TcpPort' } ).Value
                 }
             }
 
             $wmiIPAll = $wmiSpTcp.IPAddresses | Where-Object { $_.Name -eq 'IPAll' }
-            $outputTcpIpIPAddressesIPAll = [PSCustomObject]@{
+            $outputTcpIpAddressesIPAll = [PSCustomObject]@{
                 Name            = $wmiIPAll.Name
-                TCPDynamicPorts = ($wmiIPAll.IPAddressProperties | Where-Object { $_.Name -eq 'TcpDynamicPorts' } ).Value
-                TCPPort         = ($wmiIPAll.IPAddressProperties | Where-Object { $_.Name -eq 'TcpPort' } ).Value
+                TcpDynamicPorts = ($wmiIPAll.IPAddressProperties | Where-Object { $_.Name -eq 'TcpDynamicPorts' } ).Value
+                TcpPort         = ($wmiIPAll.IPAddressProperties | Where-Object { $_.Name -eq 'TcpPort' } ).Value
             }
 
             [PSCustomObject]@{
@@ -90,9 +108,9 @@ function Get-DbaNetworkConfiguration {
                 SqlInstance         = $instance.SqlFullName.Trim('[]')
                 SharedMemoryEnabled = $wmiSpSm.IsEnabled
                 NamedPipesEnabled   = $wmiSpNp.IsEnabled
-                TCPIPEnabled        = $wmiSpTcp.IsEnabled
-                TCPIPProtokoll      = $outputTcpIpProtocol
-                TCPIPIPAddresses    = $outputTcpIpIPAddressesIPn + $outputTcpIpIPAddressesIPAll
+                TcpIpEnabled        = $wmiSpTcp.IsEnabled
+                TcpIpProperties     = $outputTcpIpProperties
+                TcpIpAddresses      = $outputTcpIpAddressesIPn + $outputTcpIpAddressesIPAll
             }
         }
     }
@@ -100,7 +118,56 @@ function Get-DbaNetworkConfiguration {
     process {
         foreach ($instance in $SqlInstance) {
             try {
-                Invoke-ManagedComputerCommand -ComputerName $instance.ComputerName -Credential $Credential -ScriptBlock $wmiScriptBlock -ArgumentList $instance
+                $netConf = Invoke-ManagedComputerCommand -ComputerName $instance.ComputerName -Credential $Credential -ScriptBlock $wmiScriptBlock -ArgumentList $instance
+
+                if ($OutputType -eq 'Full') {
+                    $netConf
+                } elseif ($OutputType -eq 'ServerProtocols') {
+                    [PSCustomObject]@{
+                        ComputerName        = $netConf.ComputerName
+                        InstanceName        = $netConf.InstanceName
+                        SqlInstance         = $netConf.SqlInstance
+                        SharedMemoryEnabled = $netConf.SharedMemoryEnabled
+                        NamedPipesEnabled   = $netConf.NamedPipesEnabled
+                        TcpIpEnabled        = $netConf.TcpIpEnabled
+                    }
+                } elseif ($OutputType -eq 'TcpIpProperties') {
+                    [PSCustomObject]@{
+                        ComputerName = $netConf.ComputerName
+                        InstanceName = $netConf.InstanceName
+                        SqlInstance  = $netConf.SqlInstance
+                        Enabled      = $netConf.TcpIpProperties.Enabled
+                        KeepAlive    = $netConf.TcpIpProperties.KeepAlive
+                        ListenAll    = $netConf.TcpIpProperties.ListenAll
+                    }
+                } elseif ($OutputType -eq 'TcpIpAddresses') {
+                    if ($netConf.TcpIpProperties.ListenAll) {
+                        $ipConf = $netConf.TcpIpAddresses | Where-Object { $_.Name -eq 'IPAll' }
+                        [PSCustomObject]@{
+                            ComputerName    = $netConf.ComputerName
+                            InstanceName    = $netConf.InstanceName
+                            SqlInstance     = $netConf.SqlInstance
+                            Name            = $ipConf.Name
+                            TcpDynamicPorts = $ipConf.TcpDynamicPorts
+                            TcpPort         = $ipConf.TcpPort
+                        }
+                    } else {
+                        $ipConf = $netConf.TcpIpAddresses | Where-Object { $_.Name -ne 'IPAll' }
+                        foreach ($ip in $ipConf) {
+                            [PSCustomObject]@{
+                                ComputerName    = $netConf.ComputerName
+                                InstanceName    = $netConf.InstanceName
+                                SqlInstance     = $netConf.SqlInstance
+                                Name            = $ip.Name
+                                Active          = $ip.Active
+                                Enabled         = $ip.Enabled
+                                IpAddress       = $ip.IpAddress
+                                TcpDynamicPorts = $ip.TcpDynamicPorts
+                                TcpPort         = $ip.TcpPort
+                            }
+                        }
+                    }
+                }
             } catch {
                 Stop-Function -Message "Connection to $($instance.ComputerName) not possible." -Target $instance -ErrorRecord $_ -Continue
             }

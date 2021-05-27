@@ -71,36 +71,36 @@ function Set-DbaNetworkConfiguration {
             }
 
             $wmiSpTcp = $wmiServerProtocols | Where-Object { $_.Name -eq 'Tcp' }
-            if ($wmiSpTcp.IsEnabled -ne $instance.TCPIPEnabled) {
-                $wmiSpTcp.IsEnabled = $instance.TCPIPEnabled
+            if ($wmiSpTcp.IsEnabled -ne $instance.TcpIpEnabled) {
+                $wmiSpTcp.IsEnabled = $instance.TcpIpEnabled
                 $wmiSpTcp.Alter()
-                $changes += "Changed TCPIPEnabled to $($instance.TCPIPEnabled)"
+                $changes += "Changed TcpIpEnabled to $($instance.TcpIpEnabled)"
             }
 
             $wmiSpTcpEnabled = $wmiSpTcp.ProtocolProperties | Where-Object { $_.Name -eq 'Enabled' }
-            if ($wmiSpTcpEnabled.Value -ne $instance.TCPIPProtokoll.Enabled) {
-                $wmiSpTcpEnabled.Value = $instance.TCPIPProtokoll.Enabled
+            if ($wmiSpTcpEnabled.Value -ne $instance.TcpIpProperties.Enabled) {
+                $wmiSpTcpEnabled.Value = $instance.TcpIpProperties.Enabled
                 $wmiSpTcp.Alter()
-                $changes += "Changed TCPIPProtokoll.Enabled to $($instance.TCPIPProtokoll.Enabled)"
+                $changes += "Changed TcpIpProperties.Enabled to $($instance.TcpIpProperties.Enabled)"
             }
 
             $wmiSpTcpKeepAlive = $wmiSpTcp.ProtocolProperties | Where-Object { $_.Name -eq 'KeepAlive' }
-            if ($wmiSpTcpKeepAlive.Value -ne $instance.TCPIPProtokoll.KeepAlive) {
-                $wmiSpTcpKeepAlive.Value = $instance.TCPIPProtokoll.KeepAlive
+            if ($wmiSpTcpKeepAlive.Value -ne $instance.TcpIpProperties.KeepAlive) {
+                $wmiSpTcpKeepAlive.Value = $instance.TcpIpProperties.KeepAlive
                 $wmiSpTcp.Alter()
-                $changes += "Changed TCPIPProtokoll.KeepAlive to $($instance.TCPIPProtokoll.KeepAlive)"
+                $changes += "Changed TcpIpProperties.KeepAlive to $($instance.TcpIpProperties.KeepAlive)"
             }
 
             $wmiSpTcpListenOnAllIPs = $wmiSpTcp.ProtocolProperties | Where-Object { $_.Name -eq 'ListenOnAllIPs' }
-            if ($wmiSpTcpListenOnAllIPs.Value -ne $instance.TCPIPProtokoll.ListenAll) {
-                $wmiSpTcpListenOnAllIPs.Value = $instance.TCPIPProtokoll.ListenAll
+            if ($wmiSpTcpListenOnAllIPs.Value -ne $instance.TcpIpProperties.ListenAll) {
+                $wmiSpTcpListenOnAllIPs.Value = $instance.TcpIpProperties.ListenAll
                 $wmiSpTcp.Alter()
-                $changes += "Changed TCPIPProtokoll.ListenAll to $($instance.TCPIPProtokoll.ListenAll)"
+                $changes += "Changed TcpIpProperties.ListenAll to $($instance.TcpIpProperties.ListenAll)"
             }
 
             $wmiIPn = $wmiSpTcp.IPAddresses | Where-Object { $_.Name -ne 'IPAll' }
             foreach ($ip in $wmiIPn) {
-                $ipTarget = $instance.TCPIPIPAddresses | Where-Object { $_.Name -eq $ip.Name }
+                $ipTarget = $instance.TcpIpAddresses | Where-Object { $_.Name -eq $ip.Name }
 
                 $ipActive = $ip.IPAddressProperties | Where-Object { $_.Name -eq 'Active' }
                 if ($ipActive.Value -ne $ipTarget.Active) {
@@ -139,7 +139,7 @@ function Set-DbaNetworkConfiguration {
             }
 
             $wmiIPAll = $wmiSpTcp.IPAddresses | Where-Object { $_.Name -eq 'IPAll' }
-            $ipTarget = $instance.TCPIPIPAddresses | Where-Object { $_.Name -eq 'IPAll' }
+            $ipTarget = $instance.TcpIpAddresses | Where-Object { $_.Name -eq 'IPAll' }
 
             $ipTcpDynamicPorts = $wmiIPAll.IPAddressProperties | Where-Object { $_.Name -eq 'TcpDynamicPorts' }
             if ($ipTcpDynamicPorts.Value -ne $ipTarget.TcpDynamicPorts) {
