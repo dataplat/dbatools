@@ -54,93 +54,105 @@ function Set-DbaNetworkConfiguration {
             $instance = $args[0]
             $changes = @()
 
-            $wmiServerProtocols = $wmi.ServerInstances.Where( { $_.Name -eq $instance.InstanceName } ).ServerProtocols
+            $wmiServerProtocols = ($wmi.ServerInstances | Where-Object { $_.Name -eq $instance.InstanceName } ).ServerProtocols
 
-            if ($wmiServerProtocols.Where( { $_.Name -eq 'Sm' } ).IsEnabled -ne $instance.SharedMemoryEnabled) {
-                $wmiServerProtocols.Where( { $_.Name -eq 'Sm' } )[0].IsEnabled = $instance.SharedMemoryEnabled
-                $wmiServerProtocols.Where( { $_.Name -eq 'Sm' } )[0].Alter()
+            $wmiSpSm = $wmiServerProtocols | Where-Object { $_.Name -eq 'Sm' }
+            if ($wmiSpSm.IsEnabled -ne $instance.SharedMemoryEnabled) {
+                $wmiSpSm.IsEnabled = $instance.SharedMemoryEnabled
+                $wmiSpSm.Alter()
                 $changes += "Changed SharedMemoryEnabled to $($instance.SharedMemoryEnabled)"
             }
 
-            if ($wmiServerProtocols.Where( { $_.Name -eq 'Np' } ).IsEnabled -ne $instance.NamedPipesEnabled) {
-                $wmiServerProtocols.Where( { $_.Name -eq 'Np' } )[0].IsEnabled = $instance.NamedPipesEnabled
-                $wmiServerProtocols.Where( { $_.Name -eq 'Np' } )[0].Alter()
+            $wmiSpNp = $wmiServerProtocols | Where-Object { $_.Name -eq 'Np' }
+            if ($wmiSpNp.IsEnabled -ne $instance.NamedPipesEnabled) {
+                $wmiSpNp.IsEnabled = $instance.NamedPipesEnabled
+                $wmiSpNp.Alter()
                 $changes += "Changed NamedPipesEnabled to $($instance.NamedPipesEnabled)"
             }
 
-            if ($wmiServerProtocols.Where( { $_.Name -eq 'Tcp' } ).IsEnabled -ne $instance.TCPIPEnabled) {
-                $wmiServerProtocols.Where( { $_.Name -eq 'Tcp' } )[0].IsEnabled = $instance.TCPIPEnabled
-                $wmiServerProtocols.Where( { $_.Name -eq 'Tcp' } )[0].Alter()
+            $wmiSpTcp = $wmiServerProtocols | Where-Object { $_.Name -eq 'Tcp' }
+            if ($wmiSpTcp.IsEnabled -ne $instance.TCPIPEnabled) {
+                $wmiSpTcp.IsEnabled = $instance.TCPIPEnabled
+                $wmiSpTcp.Alter()
                 $changes += "Changed TCPIPEnabled to $($instance.TCPIPEnabled)"
             }
 
-            $wmiTcpIp = $wmiServerProtocols.Where( { $_.Name -eq 'Tcp' } )[0]
-
-            if ($wmiTcpIp.ProtocolProperties.Where( { $_.Name -eq 'Enabled' } ).Value -ne $instance.TCPIPProtokoll.Enabled) {
-                $wmiTcpIp.ProtocolProperties.Where( { $_.Name -eq 'Enabled' } )[0].Value = $instance.TCPIPProtokoll.Enabled
-                $wmiTcpIp.Alter()
+            $wmiSpTcpEnabled = $wmiSpTcp.ProtocolProperties | Where-Object { $_.Name -eq 'Enabled' }
+            if ($wmiSpTcpEnabled.Value -ne $instance.TCPIPProtokoll.Enabled) {
+                $wmiSpTcpEnabled.Value = $instance.TCPIPProtokoll.Enabled
+                $wmiSpTcp.Alter()
                 $changes += "Changed TCPIPProtokoll.Enabled to $($instance.TCPIPProtokoll.Enabled)"
             }
 
-            if ($wmiTcpIp.ProtocolProperties.Where( { $_.Name -eq 'KeepAlive' } ).Value -ne $instance.TCPIPProtokoll.KeepAlive) {
-                $wmiTcpIp.ProtocolProperties.Where( { $_.Name -eq 'KeepAlive' } )[0].Value = $instance.TCPIPProtokoll.KeepAlive
-                $wmiTcpIp.Alter()
+            $wmiSpTcpKeepAlive = $wmiSpTcp.ProtocolProperties | Where-Object { $_.Name -eq 'KeepAlive' }
+            if ($wmiSpTcpKeepAlive.Value -ne $instance.TCPIPProtokoll.KeepAlive) {
+                $wmiSpTcpKeepAlive.Value = $instance.TCPIPProtokoll.KeepAlive
+                $wmiSpTcp.Alter()
                 $changes += "Changed TCPIPProtokoll.KeepAlive to $($instance.TCPIPProtokoll.KeepAlive)"
             }
 
-            if ($wmiTcpIp.ProtocolProperties.Where( { $_.Name -eq 'ListenOnAllIPs' } ).Value -ne $instance.TCPIPProtokoll.ListenAll) {
-                $wmiTcpIp.ProtocolProperties.Where( { $_.Name -eq 'ListenOnAllIPs' } )[0].Value = $instance.TCPIPProtokoll.ListenAll
-                $wmiTcpIp.Alter()
+            $wmiSpTcpListenOnAllIPs = $wmiSpTcp.ProtocolProperties | Where-Object { $_.Name -eq 'ListenOnAllIPs' }
+            if ($wmiSpTcpListenOnAllIPs.Value -ne $instance.TCPIPProtokoll.ListenAll) {
+                $wmiSpTcpListenOnAllIPs.Value = $instance.TCPIPProtokoll.ListenAll
+                $wmiSpTcp.Alter()
                 $changes += "Changed TCPIPProtokoll.ListenAll to $($instance.TCPIPProtokoll.ListenAll)"
             }
 
-            foreach ($ip in $wmiTcpIp.IPAddresses.Where( { $_.Name -ne 'IPAll' } )) {
-                $ipTarget = $instance.TCPIPIPAddresses.Where( { $_.Name -eq $ip.Name } )
+            $wmiIPn = $wmiSpTcp.IPAddresses | Where-Object { $_.Name -ne 'IPAll' }
+            foreach ($ip in $wmiIPn) {
+                $ipTarget = $instance.TCPIPIPAddresses | Where-Object { $_.Name -eq $ip.Name }
 
-                if ($ip.IPAddressProperties.Where( { $_.Name -eq 'Active' } ).Value -ne $ipTarget.Active) {
-                    $ip.IPAddressProperties.Where( { $_.Name -eq 'Active' } )[0].Value = $ipTarget.Active
-                    $wmiTcpIp.Alter()
+                $ipActive = $ip.IPAddressProperties | Where-Object { $_.Name -eq 'Active' }
+                if ($ipActive.Value -ne $ipTarget.Active) {
+                    $ipActive.Value = $ipTarget.Active
+                    $wmiSpTcp.Alter()
                     $changes += "Changed Active for $($ip.Name) to $($ipTarget.Active)"
                 }
 
-                if ($ip.IPAddressProperties.Where( { $_.Name -eq 'Enabled' } ).Value -ne $ipTarget.Enabled) {
-                    $ip.IPAddressProperties.Where( { $_.Name -eq 'Enabled' } )[0].Value = $ipTarget.Enabled
-                    $wmiTcpIp.Alter()
+                $ipEnabled = $ip.IPAddressProperties | Where-Object { $_.Name -eq 'Enabled' }
+                if ($ipEnabled.Value -ne $ipTarget.Enabled) {
+                    $ipEnabled.Value = $ipTarget.Enabled
+                    $wmiSpTcp.Alter()
                     $changes += "Changed Enabled for $($ip.Name) to $($ipTarget.Enabled)"
                 }
 
-                if ($ip.IPAddressProperties.Where( { $_.Name -eq 'IpAddress' } ).Value -ne $ipTarget.IpAddress) {
-                    $ip.IPAddressProperties.Where( { $_.Name -eq 'IpAddress' } )[0].Value = $ipTarget.IpAddress
-                    $wmiTcpIp.Alter()
+                $ipIpAddress = $ip.IPAddressProperties | Where-Object { $_.Name -eq 'IpAddress' }
+                if ($ipIpAddress.Value -ne $ipTarget.IpAddress) {
+                    $ipIpAddress.Value = $ipTarget.IpAddress
+                    $wmiSpTcp.Alter()
                     $changes += "Changed IpAddress for $($ip.Name) to $($ipTarget.IpAddress)"
                 }
 
-                if ($ip.IPAddressProperties.Where( { $_.Name -eq 'TcpDynamicPorts' } ).Value -ne $ipTarget.TcpDynamicPorts) {
-                    $ip.IPAddressProperties.Where( { $_.Name -eq 'TcpDynamicPorts' } )[0].Value = $ipTarget.TcpDynamicPorts
-                    $wmiTcpIp.Alter()
+                $ipTcpDynamicPorts = $ip.IPAddressProperties | Where-Object { $_.Name -eq 'TcpDynamicPorts' }
+                if ($ipTcpDynamicPorts.Value -ne $ipTarget.TcpDynamicPorts) {
+                    $ipTcpDynamicPorts.Value = $ipTarget.TcpDynamicPorts
+                    $wmiSpTcp.Alter()
                     $changes += "Changed TcpDynamicPorts for $($ip.Name) to $($ipTarget.TcpDynamicPorts)"
                 }
 
-                if ($ip.IPAddressProperties.Where( { $_.Name -eq 'TcpPort' } ).Value -ne $ipTarget.TcpPort) {
-                    $ip.IPAddressProperties.Where( { $_.Name -eq 'TcpPort' } )[0].Value = $ipTarget.TcpPort
-                    $wmiTcpIp.Alter()
+                $ipTcpPort = $ip.IPAddressProperties | Where-Object { $_.Name -eq 'TcpPort' }
+                if ($ipTcpPort.Value -ne $ipTarget.TcpPort) {
+                    $ipTcpPort.Value = $ipTarget.TcpPort
+                    $wmiSpTcp.Alter()
                     $changes += "Changed TcpPort for $($ip.Name) to $($ipTarget.TcpPort)"
                 }
             }
 
-            $ipAll = $wmiTcpIp.IPAddresses.Where( { $_.Name -eq 'IPAll' } )
-            $ipTarget = $instance.TCPIPIPAddresses.Where( { $_.Name -eq 'IPAll' } )
+            $wmiIPAll = $wmiSpTcp.IPAddresses | Where-Object { $_.Name -eq 'IPAll' }
+            $ipTarget = $instance.TCPIPIPAddresses | Where-Object { $_.Name -eq 'IPAll' }
 
-            if ($ipAll.IPAddressProperties.Where( { $_.Name -eq 'TcpDynamicPorts' } ).Value -ne $ipTarget.TcpDynamicPorts) {
-                $ipAll.IPAddressProperties.Where( { $_.Name -eq 'TcpDynamicPorts' } )[0].Value = $ipTarget.TcpDynamicPorts
-                $wmiTcpIp.Alter()
-                $changes += "Changed TcpDynamicPorts for $($ipAll.Name) to $($ipTarget.TcpDynamicPorts)"
+            $ipTcpDynamicPorts = $wmiIPAll.IPAddressProperties | Where-Object { $_.Name -eq 'TcpDynamicPorts' }
+            if ($ipTcpDynamicPorts.Value -ne $ipTarget.TcpDynamicPorts) {
+                $ipTcpDynamicPorts.Value = $ipTarget.TcpDynamicPorts
+                $wmiSpTcp.Alter()
+                $changes += "Changed TcpDynamicPorts for $($wmiIPAll.Name) to $($ipTarget.TcpDynamicPorts)"
             }
 
-            if ($ipAll.IPAddressProperties.Where( { $_.Name -eq 'TcpPort' } ).Value -ne $ipTarget.TcpPort) {
-                $ipAll.IPAddressProperties.Where( { $_.Name -eq 'TcpPort' } )[0].Value = $ipTarget.TcpPort
-                $wmiTcpIp.Alter()
-                $changes += "Changed TcpPort for $($ipAll.Name) to $($ipTarget.TcpPort)"
+            $ipTcpPort = $wmiIPAll.IPAddressProperties | Where-Object { $_.Name -eq 'TcpPort' }
+            if ($ipTcpPort.Value -ne $ipTarget.TcpPort) {
+                $ipTcpPort.Value = $ipTarget.TcpPort
+                $wmiSpTcp.Alter()
+                $changes += "Changed TcpPort for $($wmiIPAll.Name) to $($ipTarget.TcpPort)"
             }
 
             [PSCustomObject]@{

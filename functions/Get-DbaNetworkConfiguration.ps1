@@ -53,44 +53,46 @@ function Get-DbaNetworkConfiguration {
         $wmiScriptBlock = {
             $instance = $args[0]
 
-            $wmiServerProtocols = $wmi.ServerInstances.Where( { $_.Name -eq $instance.InstanceName } ).ServerProtocols
+            $wmiServerProtocols = ($wmi.ServerInstances | Where-Object { $_.Name -eq $instance.InstanceName } ).ServerProtocols
 
-            $wmiTcpIp = $wmiServerProtocols.Where( { $_.Name -eq 'Tcp' } )[0]
+            $wmiSpSm = $wmiServerProtocols | Where-Object { $_.Name -eq 'Sm' }
+            $wmiSpNp = $wmiServerProtocols | Where-Object { $_.Name -eq 'Np' }
+            $wmiSpTcp = $wmiServerProtocols | Where-Object { $_.Name -eq 'Tcp' }
+
             $outputTcpIpProtocol = [PSCustomObject]@{
-                Enabled   = $wmiTcpIp.ProtocolProperties.Where( { $_.Name -eq 'Enabled' } ).Value
-                KeepAlive = $wmiTcpIp.ProtocolProperties.Where( { $_.Name -eq 'KeepAlive' } ).Value
-                ListenAll = $wmiTcpIp.ProtocolProperties.Where( { $_.Name -eq 'ListenOnAllIPs' } ).Value
+                Enabled   = ($wmiSpTcp.ProtocolProperties | Where-Object { $_.Name -eq 'Enabled' } ).Value
+                KeepAlive = ($wmiSpTcp.ProtocolProperties | Where-Object { $_.Name -eq 'KeepAlive' } ).Value
+                ListenAll = ($wmiSpTcp.ProtocolProperties | Where-Object { $_.Name -eq 'ListenOnAllIPs' } ).Value
             }
 
-            $outputTcpIpIPAddressesIPn = foreach ($ip in $wmiTcpIp.IPAddresses.Where( { $_.Name -ne 'IPAll' } )) {
+            $wmiIPn = $wmiSpTcp.IPAddresses | Where-Object { $_.Name -ne 'IPAll' }
+            $outputTcpIpIPAddressesIPn = foreach ($ip in $wmiIPn) {
                 [PSCustomObject]@{
                     Name            = $ip.Name
-                    Active          = $ip.IPAddressProperties.Where( { $_.Name -eq 'Active' } ).Value
-                    Enabled         = $ip.IPAddressProperties.Where( { $_.Name -eq 'Enabled' } ).Value
-                    IPAddress       = $ip.IPAddressProperties.Where( { $_.Name -eq 'IpAddress' } ).Value
-                    TCPDynamicPorts = $ip.IPAddressProperties.Where( { $_.Name -eq 'TcpDynamicPorts' } ).Value
-                    TCPPort         = $ip.IPAddressProperties.Where( { $_.Name -eq 'TcpPort' } ).Value
+                    Active          = ($ip.IPAddressProperties | Where-Object { $_.Name -eq 'Active' } ).Value
+                    Enabled         = ($ip.IPAddressProperties | Where-Object { $_.Name -eq 'Enabled' } ).Value
+                    IPAddress       = ($ip.IPAddressProperties | Where-Object { $_.Name -eq 'IpAddress' } ).Value
+                    TCPDynamicPorts = ($ip.IPAddressProperties | Where-Object { $_.Name -eq 'TcpDynamicPorts' } ).Value
+                    TCPPort         = ($ip.IPAddressProperties | Where-Object { $_.Name -eq 'TcpPort' } ).Value
                 }
             }
 
-            $ipAll = $wmiTcpIp.IPAddresses.Where( { $_.Name -eq 'IPAll' } )
+            $wmiIPAll = $wmiSpTcp.IPAddresses | Where-Object { $_.Name -eq 'IPAll' }
             $outputTcpIpIPAddressesIPAll = [PSCustomObject]@{
-                Name            = $ipAll.Name
-                TCPDynamicPorts = $ipAll.IPAddressProperties.Where( { $_.Name -eq 'TcpDynamicPorts' } ).Value
-                TCPPort         = $ipAll.IPAddressProperties.Where( { $_.Name -eq 'TcpPort' } ).Value
+                Name            = $wmiIPAll.Name
+                TCPDynamicPorts = ($wmiIPAll.IPAddressProperties | Where-Object { $_.Name -eq 'TcpDynamicPorts' } ).Value
+                TCPPort         = ($wmiIPAll.IPAddressProperties | Where-Object { $_.Name -eq 'TcpPort' } ).Value
             }
-
-            $outputTcpIpIPAddresses = $outputTcpIpIPAddressesIPn + $outputTcpIpIPAddressesIPAll
 
             [PSCustomObject]@{
                 ComputerName        = $instance.ComputerName
                 InstanceName        = $instance.InstanceName
                 SqlInstance         = $instance.SqlFullName.Trim('[]')
-                SharedMemoryEnabled = $wmiServerProtocols.Where( { $_.Name -eq 'Sm' } ).IsEnabled
-                NamedPipesEnabled   = $wmiServerProtocols.Where( { $_.Name -eq 'Np' } ).IsEnabled
-                TCPIPEnabled        = $wmiServerProtocols.Where( { $_.Name -eq 'Tcp' } ).IsEnabled
+                SharedMemoryEnabled = $wmiSpSm.IsEnabled
+                NamedPipesEnabled   = $wmiSpNp.IsEnabled
+                TCPIPEnabled        = $wmiSpTcp.IsEnabled
                 TCPIPProtokoll      = $outputTcpIpProtocol
-                TCPIPIPAddresses    = $outputTcpIpIPAddresses
+                TCPIPIPAddresses    = $outputTcpIpIPAddressesIPn + $outputTcpIpIPAddressesIPAll
             }
         }
     }
