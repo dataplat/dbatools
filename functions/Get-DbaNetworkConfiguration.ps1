@@ -169,7 +169,7 @@ function Get-DbaNetworkConfiguration {
                     }
                 }
             } catch {
-                Stop-Function -Message "Connection to $($instance.ComputerName) not possible." -Target $instance -ErrorRecord $_ -Continue
+                Stop-Function -Message "Failed to collect network configuration from $($instance.ComputerName) for instance $($instance.InstanceName)." -Target $instance -ErrorRecord $_ -Continue
             }
         }
     }

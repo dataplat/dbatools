@@ -5,7 +5,7 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
         [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'InputObject', 'Credential', 'EnableException'
+        [object[]]$knownParameters = 'SqlInstance', 'Credential', 'EnableProtokoll', 'DisableProtokoll', 'DynamicPortForIPAll', 'StaticPortForIPAll', 'InputObject', 'EnableException'
         $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
         It "Should only contain our specific parameters" {
             (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
@@ -13,7 +13,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     }
 }
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
-    Context "Command actually works" {
+    Context "Command works with piped input" {
         $netConf = Get-DbaNetworkConfiguration -SqlInstance $script:instance2
         if ($netConf.NamedPipesEnabled) {
             $netConf.NamedPipesEnabled = $false
@@ -32,5 +32,24 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $netConf.NamedPipesEnabled = $true
         }
         $null = $netConf | Set-DbaNetworkConfiguration
+    }
+
+    Context "Command works with commandline input" {
+        $netConf = Get-DbaNetworkConfiguration -SqlInstance $script:instance2
+        if ($netConf.NamedPipesEnabled) {
+            $results = Set-DbaNetworkConfiguration -SqlInstance $script:instance2 -DisableProtokoll NamedPipes
+        } else {
+            $results = Set-DbaNetworkConfiguration -SqlInstance $script:instance2 -EnableProtokoll NamedPipes
+        }
+
+        It "Should Return a Result" {
+            $results.Changes | Should -Match "Changed NamedPipesEnabled to"
+        }
+
+        if ($netConf.NamedPipesEnabled) {
+            $null = Set-DbaNetworkConfiguration -SqlInstance $script:instance2 -EnableProtokoll NamedPipes
+        } else {
+            $null = Set-DbaNetworkConfiguration -SqlInstance $script:instance2 -DisableProtokoll NamedPipes
+        }
     }
 }
