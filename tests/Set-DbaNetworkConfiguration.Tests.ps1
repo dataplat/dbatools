@@ -20,7 +20,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         } else {
             $netConf.NamedPipesEnabled = $true
         }
-        $results = $netConf | Set-DbaNetworkConfiguration
+        $results = $netConf | Set-DbaNetworkConfiguration -Confirm:$false
 
         It "Should Return a Result" {
             $results.ComputerName | Should -Be $netConf.ComputerName
@@ -35,15 +35,15 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         } else {
             $netConf.NamedPipesEnabled = $true
         }
-        $null = $netConf | Set-DbaNetworkConfiguration
+        $null = $netConf | Set-DbaNetworkConfiguration -Confirm:$false
     }
 
     Context "Command works with commandline input" {
         $netConf = Get-DbaNetworkConfiguration -SqlInstance $script:instance2
         if ($netConf.NamedPipesEnabled) {
-            $results = Set-DbaNetworkConfiguration -SqlInstance $script:instance2 -DisableProtokoll NamedPipes
+            $results = Set-DbaNetworkConfiguration -SqlInstance $script:instance2 -DisableProtokoll NamedPipes -Confirm:$false
         } else {
-            $results = Set-DbaNetworkConfiguration -SqlInstance $script:instance2 -EnableProtokoll NamedPipes
+            $results = Set-DbaNetworkConfiguration -SqlInstance $script:instance2 -EnableProtokoll NamedPipes -Confirm:$false
         }
 
         It "Should Return a Result" {
@@ -55,9 +55,9 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         }
 
         if ($netConf.NamedPipesEnabled) {
-            $null = Set-DbaNetworkConfiguration -SqlInstance $script:instance2 -EnableProtokoll NamedPipes
+            $null = Set-DbaNetworkConfiguration -SqlInstance $script:instance2 -EnableProtokoll NamedPipes -Confirm:$false
         } else {
-            $null = Set-DbaNetworkConfiguration -SqlInstance $script:instance2 -DisableProtokoll NamedPipes
+            $null = Set-DbaNetworkConfiguration -SqlInstance $script:instance2 -DisableProtokoll NamedPipes -Confirm:$false
         }
     }
 }

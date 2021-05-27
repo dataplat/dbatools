@@ -8,6 +8,9 @@ function Get-DbaNetworkConfiguration {
 
         Remote SQL WMI is used by default. If this doesn't work, then remoting is used.
 
+        For a detailed explenation of the different properties see the documentation at:
+        https://docs.microsoft.com/en-us/sql/tools/configuration-manager/sql-server-network-configuration
+
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.
 

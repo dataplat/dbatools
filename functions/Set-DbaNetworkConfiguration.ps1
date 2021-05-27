@@ -4,9 +4,19 @@ function Set-DbaNetworkConfiguration {
         Sets the network configuration of a SQL Server instance.
 
     .DESCRIPTION
-        Sets the network configuration of a SQL Server instance. Needs an object with the structure that Get-DbaNetworkConfiguration returns.
+        Sets the network configuration of a SQL Server instance.
+
+        Parameters are available for typical tasks like enabling or disabling a protokoll or switching between dynamic and static ports.
+        To be more flexible, you can use Get-DbaNetworkConfiguration to get an object that represents the complete network configuration
+        like you would see it with the SQL Server Configuration Manager.
+        You can change any setting of this object and then pass it to Set-DbaNetworkConfiguration via pipeline or InputObject parameter.
+
+        Every change to the network configuration needs a service restart to take effect. To do this, use the RestartService parameter.
 
         Remote SQL WMI is used by default. If this doesn't work, then remoting is used.
+
+        For a detailed explenation of the different properties see the documentation at:
+        https://docs.microsoft.com/en-us/sql/tools/configuration-manager/sql-server-network-configuration
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.
@@ -15,10 +25,10 @@ function Set-DbaNetworkConfiguration {
         Credential object used to connect to the Computer as a different user.
 
     .PARAMETER EnableProtokoll
-        Enables a network protokoll. Options include: SharedMemory, NamedPipes, TcpIp.
+        Enables one of the following network protokolls: SharedMemory, NamedPipes, TcpIp.
 
     .PARAMETER DisableProtokoll
-        Disables a network protokoll. Options include: SharedMemory, NamedPipes, TcpIp.
+        Disables one of the following network protokolls: SharedMemory, NamedPipes, TcpIp.
 
     .PARAMETER DynamicPortForIPAll
         Configures the instance to listen on a dynamic port for all IP addresses.
@@ -36,7 +46,8 @@ function Set-DbaNetworkConfiguration {
         This switch will force a restart of the service if the network configuration has changed.
 
     .PARAMETER InputObject
-        The object with the structure that "Get-DbaNetworkConfiguration" or "Get-DbaNetworkConfiguration -OutputType Full" returns.
+        The object with the structure that Get-DbaNetworkConfiguration returns.
+        Get-DbaNetworkConfiguration has be run with the default OutputType Full to get the complete object.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -61,16 +72,24 @@ function Set-DbaNetworkConfiguration {
         https://dbatools.io/Set-DbaNetworkConfiguration
 
     .EXAMPLE
-        PS C:\> $netConf = Get-DbaNetworkConfiguration -SqlInstance sqlserver2014a
-        PS C:\> $netConf.SharedMemoryEnabled = $true
-        PS C:\> $netConf | Set-DbaNetworkConfiguration
+        PS C:\> Set-DbaNetworkConfiguration -SqlInstance sql2016 -EnableProtokoll SharedMemory -RestartService
 
-        Enables the shared memory protokoll for the default instance on sqlserver2014a.
+        Ensures that the shared memory network protokoll for the default instance on sql2016 is enabled.
+        Restarts the service if needed.
 
     .EXAMPLE
-        PS C:\> Get-DbaNetworkConfiguration -SqlInstance winserver\sqlexpress, sql2016
+        PS C:\> Set-DbaNetworkConfiguration -SqlInstance sql2016\test -StaticPortForIPAll 14331, 14332 -RestartService
 
-        Returns the network configuration for the sqlexpress on winserver and the default instance on sql2016.
+        Ensures that the TCP/IP network protokoll is enabled and configured to use the ports 14331 and 14332 for all IP addresses.
+        Restarts the service if needed.
+
+    .EXAMPLE
+        PS C:\> $netConf = Get-DbaNetworkConfiguration -SqlInstance sqlserver2014a
+        PS C:\> $netConf.TcpIpProperties.KeepAlive = 60000
+        PS C:\> $netConf | Set-DbaNetworkConfiguration -RestartService -Confirm:$false
+
+        Changes the value of the KeepAlive property for the default instance on sqlserver2014a and restarts the service.
+        Does not prompt for confirmation.
 
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "High")]
