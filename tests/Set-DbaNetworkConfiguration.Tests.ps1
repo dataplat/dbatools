@@ -15,11 +15,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     Context "Command works with piped input" {
         $netConf = Get-DbaNetworkConfiguration -SqlInstance $script:instance2
-        if ($netConf.NamedPipesEnabled) {
-            $netConf.NamedPipesEnabled = $false
-        } else {
-            $netConf.NamedPipesEnabled = $true
-        }
+        $netConf.TcpIpProperties.KeepAlive = 60000
         $results = $netConf | Set-DbaNetworkConfiguration -Confirm:$false
 
         It "Should Return a Result" {
@@ -27,15 +23,8 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         }
 
         It "Should Return a Change" {
-            $results.Changes | Should -Match "Changed NamedPipesEnabled to"
+            $results.Changes | Should -Match "Changed TcpIpProperties.KeepAlive to 60000"
         }
-
-        if ($netConf.NamedPipesEnabled) {
-            $netConf.NamedPipesEnabled = $false
-        } else {
-            $netConf.NamedPipesEnabled = $true
-        }
-        $null = $netConf | Set-DbaNetworkConfiguration -Confirm:$false
     }
 
     Context "Command works with commandline input" {

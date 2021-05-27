@@ -239,7 +239,7 @@ function Set-DbaNetworkConfiguration {
             return
         }
 
-        if (Test-Bound -ParameterName EnableProtokoll, DisableProtokoll, DynamicPortForIPAll, StaticPortForIPAll -Not -Max 1) {
+        if ($SqlInstance -and (Test-Bound -ParameterName EnableProtokoll, DisableProtokoll, DynamicPortForIPAll, StaticPortForIPAll -Not -Max 1)) {
             Stop-Function -Message "Only one action is allowed at a time."
             return
         }
