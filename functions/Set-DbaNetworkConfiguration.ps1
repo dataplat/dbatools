@@ -92,19 +92,27 @@ function Set-DbaNetworkConfiguration {
         Does not prompt for confirmation.
 
     #>
-    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "High")]
+    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "High", DefaultParameterSetName = 'NonPipeline')]
     param (
+        [Parameter(ParameterSetName = 'NonPipeline', Mandatory = $true, Position = 0)]
         [DbaInstanceParameter[]]$SqlInstance,
+        [Parameter(ParameterSetName = 'NonPipeline')][Parameter(ParameterSetName = 'Pipeline')]
         [PSCredential]$Credential,
+        [Parameter(ParameterSetName = 'NonPipeline')]
         [ValidateSet('SharedMemory', 'NamedPipes', 'TcpIp')]
         [string]$EnableProtokoll,
+        [Parameter(ParameterSetName = 'NonPipeline')]
         [ValidateSet('SharedMemory', 'NamedPipes', 'TcpIp')]
         [string]$DisableProtokoll,
+        [Parameter(ParameterSetName = 'NonPipeline')]
         [switch]$DynamicPortForIPAll,
+        [Parameter(ParameterSetName = 'NonPipeline')]
         [int[]]$StaticPortForIPAll,
+        [Parameter(ParameterSetName = 'NonPipeline')][Parameter(ParameterSetName = 'Pipeline')]
         [switch]$RestartService,
-        [parameter(ValueFromPipeline)]
+        [parameter(ValueFromPipeline, ParameterSetName = 'Pipeline', Mandatory = $true)]
         [object[]]$InputObject,
+        [Parameter(ParameterSetName = 'NonPipeline')][Parameter(ParameterSetName = 'Pipeline')]
         [switch]$EnableException
     )
 
@@ -224,16 +232,6 @@ function Set-DbaNetworkConfiguration {
     }
 
     process {
-        if (-not $InputObject -and -not $SqlInstance) {
-            Stop-Function -Message "You must pipe in a network configuration or specify a SqlInstance."
-            return
-        }
-
-        if ($InputObject -and $SqlInstance) {
-            Stop-Function -Message "You must either pipe in a network configuration or specify a SqlInstance, not both."
-            return
-        }
-
         if ($SqlInstance -and (Test-Bound -Not -ParameterName EnableProtokoll, DisableProtokoll, DynamicPortForIPAll, StaticPortForIPAll)) {
             Stop-Function -Message "You must choose an action if SqlInstance is used."
             return
@@ -322,19 +320,26 @@ function Set-DbaNetworkConfiguration {
 
         foreach ($netConf in $InputObject) {
             try {
-                if ($Pscmdlet.ShouldProcess("Setting network configuration for instance $($netConf.InstanceName) on $($netConf.ComputerName)")) {
-                    $changes = Invoke-ManagedComputerCommand -ComputerName $netConf.ComputerName -Credential $Credential -ScriptBlock $wmiScriptBlock -ArgumentList $netConf
+                $output = [PSCustomObject]@{
+                    ComputerName  = $netConf.ComputerName
+                    InstanceName  = $netConf.InstanceName
+                    SqlInstance   = $netConf.SqlInstance
+                    Changes       = $null
+                    RestartNeeded = $false
+                    Restarted     = $false
                 }
 
-                $restartNeeded = $false
-                $restarted = $false
+                if ($Pscmdlet.ShouldProcess("Setting network configuration for instance $($netConf.InstanceName) on $($netConf.ComputerName)")) {
+                    $output.Changes = Invoke-ManagedComputerCommand -ComputerName $netConf.ComputerName -Credential $Credential -ScriptBlock $wmiScriptBlock -ArgumentList $netConf
+                }
+
                 if ($changes.Changes.Count -gt 0) {
-                    $restartNeeded = $true
+                    $output.RestartNeeded = $true
                     if ($RestartService) {
                         if ($Pscmdlet.ShouldProcess("Restarting service for instance $($netConf.InstanceName) on $($netConf.ComputerName)")) {
                             try {
                                 $null = Restart-DbaService -ComputerName $netConf.ComputerName -InstanceName $netConf.InstanceName -Credential $Credential -Type Engine -Force -EnableException -Confirm:$false
-                                $restarted = $true
+                                $output.Restarted = $true
                             } catch {
                                 Write-Message -Level Warning -Message "A restart of the service for instance $($netConf.InstanceName) on $($netConf.ComputerName) failed ($_). Restart of instance is necessary for the new settings to take effect."
                             }
@@ -344,14 +349,7 @@ function Set-DbaNetworkConfiguration {
                     }
                 }
 
-                [PSCustomObject]@{
-                    ComputerName  = $changes.ComputerName
-                    InstanceName  = $changes.InstanceName
-                    SqlInstance   = $changes.SqlInstance
-                    Changes       = $changes.Changes
-                    RestartNeeded = $restartNeeded
-                    Restarted     = $restarted
-                }
+                $output
 
             } catch {
                 Stop-Function -Message "Setting network configuration for instance $($netConf.InstanceName) on $($netConf.ComputerName) not possible." -Target $netConf.ComputerName -ErrorRecord $_ -Continue
