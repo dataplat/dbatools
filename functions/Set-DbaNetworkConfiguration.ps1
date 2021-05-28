@@ -120,105 +120,139 @@ function Set-DbaNetworkConfiguration {
         $wmiScriptBlock = {
             $targetConf = $args[0]
             $changes = @()
+            $verbose = @()
             $exception = $null
 
             try {
+                $verbose += "Getting server protokolls for $($targetConf.InstanceName)"
                 $wmiServerProtocols = ($wmi.ServerInstances | Where-Object { $_.Name -eq $targetConf.InstanceName } ).ServerProtocols
 
+                $verbose += 'Getting server protokoll shared memory'
                 $wmiSpSm = $wmiServerProtocols | Where-Object { $_.Name -eq 'Sm' }
-                if ($wmiSpSm.IsEnabled -ne $targetConf.SharedMemoryEnabled) {
+                if ($null -eq $targetConf.SharedMemoryEnabled) {
+                    $verbose += 'SharedMemoryEnabled not in target object'
+                } elseif ($wmiSpSm.IsEnabled -ne $targetConf.SharedMemoryEnabled) {
                     $wmiSpSm.IsEnabled = $targetConf.SharedMemoryEnabled
                     $wmiSpSm.Alter()
                     $changes += "Changed SharedMemoryEnabled to $($targetConf.SharedMemoryEnabled)"
                 }
 
+                $verbose += 'Getting server protokoll named pipes'
                 $wmiSpNp = $wmiServerProtocols | Where-Object { $_.Name -eq 'Np' }
-                if ($wmiSpNp.IsEnabled -ne $targetConf.NamedPipesEnabled) {
+                if ($null -eq $targetConf.NamedPipesEnabled) {
+                    $verbose += 'NamedPipesEnabled not in target object'
+                } elseif ($wmiSpNp.IsEnabled -ne $targetConf.NamedPipesEnabled) {
                     $wmiSpNp.IsEnabled = $targetConf.NamedPipesEnabled
                     $wmiSpNp.Alter()
                     $changes += "Changed NamedPipesEnabled to $($targetConf.NamedPipesEnabled)"
                 }
 
+                $verbose += 'Getting server protokoll TCP/IP'
                 $wmiSpTcp = $wmiServerProtocols | Where-Object { $_.Name -eq 'Tcp' }
-                if ($wmiSpTcp.IsEnabled -ne $targetConf.TcpIpEnabled) {
+                if ($null -eq $targetConf.TcpIpEnabled) {
+                    $verbose += 'TcpIpEnabled not in target object'
+                } elseif ($wmiSpTcp.IsEnabled -ne $targetConf.TcpIpEnabled) {
                     $wmiSpTcp.IsEnabled = $targetConf.TcpIpEnabled
                     $wmiSpTcp.Alter()
                     $changes += "Changed TcpIpEnabled to $($targetConf.TcpIpEnabled)"
                 }
 
+                $verbose += 'Getting properties for server protokoll TCP/IP'
                 $wmiSpTcpEnabled = $wmiSpTcp.ProtocolProperties | Where-Object { $_.Name -eq 'Enabled' }
-                if ($wmiSpTcpEnabled.Value -ne $targetConf.TcpIpProperties.Enabled) {
+                if ($null -eq $targetConf.TcpIpProperties.Enabled) {
+                    $verbose += 'TcpIpProperties.Enabled not in target object'
+                } elseif ($wmiSpTcpEnabled.Value -ne $targetConf.TcpIpProperties.Enabled) {
                     $wmiSpTcpEnabled.Value = $targetConf.TcpIpProperties.Enabled
                     $wmiSpTcp.Alter()
                     $changes += "Changed TcpIpProperties.Enabled to $($targetConf.TcpIpProperties.Enabled)"
                 }
 
                 $wmiSpTcpKeepAlive = $wmiSpTcp.ProtocolProperties | Where-Object { $_.Name -eq 'KeepAlive' }
-                if ($wmiSpTcpKeepAlive.Value -ne $targetConf.TcpIpProperties.KeepAlive) {
+                if ($null -eq $targetConf.TcpIpProperties.KeepAlive) {
+                    $verbose += 'TcpIpProperties.KeepAlive not in target object'
+                } elseif ($wmiSpTcpKeepAlive.Value -ne $targetConf.TcpIpProperties.KeepAlive) {
                     $wmiSpTcpKeepAlive.Value = $targetConf.TcpIpProperties.KeepAlive
                     $wmiSpTcp.Alter()
                     $changes += "Changed TcpIpProperties.KeepAlive to $($targetConf.TcpIpProperties.KeepAlive)"
                 }
 
                 $wmiSpTcpListenOnAllIPs = $wmiSpTcp.ProtocolProperties | Where-Object { $_.Name -eq 'ListenOnAllIPs' }
-                if ($wmiSpTcpListenOnAllIPs.Value -ne $targetConf.TcpIpProperties.ListenAll) {
+                if ($null -eq $targetConf.TcpIpProperties.ListenAll) {
+                    $verbose += 'TcpIpProperties.ListenAll not in target object'
+                } elseif ($wmiSpTcpListenOnAllIPs.Value -ne $targetConf.TcpIpProperties.ListenAll) {
                     $wmiSpTcpListenOnAllIPs.Value = $targetConf.TcpIpProperties.ListenAll
                     $wmiSpTcp.Alter()
                     $changes += "Changed TcpIpProperties.ListenAll to $($targetConf.TcpIpProperties.ListenAll)"
                 }
 
+                $verbose += 'Getting properties for IPn'
                 $wmiIPn = $wmiSpTcp.IPAddresses | Where-Object { $_.Name -ne 'IPAll' }
                 foreach ($ip in $wmiIPn) {
                     $ipTarget = $targetConf.TcpIpAddresses | Where-Object { $_.Name -eq $ip.Name }
 
                     $ipActive = $ip.IPAddressProperties | Where-Object { $_.Name -eq 'Active' }
-                    if ($ipActive.Value -ne $ipTarget.Active) {
+                    if ($null -eq $ipTarget.Active) {
+                        $verbose += 'Active not in target IP address object'
+                    } elseif ($ipActive.Value -ne $ipTarget.Active) {
                         $ipActive.Value = $ipTarget.Active
                         $wmiSpTcp.Alter()
                         $changes += "Changed Active for $($ip.Name) to $($ipTarget.Active)"
                     }
 
                     $ipEnabled = $ip.IPAddressProperties | Where-Object { $_.Name -eq 'Enabled' }
-                    if ($ipEnabled.Value -ne $ipTarget.Enabled) {
+                    if ($null -eq $ipTarget.Enabled) {
+                        $verbose += 'Enabled not in target IP address object'
+                    } elseif ($ipEnabled.Value -ne $ipTarget.Enabled) {
                         $ipEnabled.Value = $ipTarget.Enabled
                         $wmiSpTcp.Alter()
                         $changes += "Changed Enabled for $($ip.Name) to $($ipTarget.Enabled)"
                     }
 
                     $ipIpAddress = $ip.IPAddressProperties | Where-Object { $_.Name -eq 'IpAddress' }
-                    if ($ipIpAddress.Value -ne $ipTarget.IpAddress) {
+                    if ($null -eq $ipTarget.IpAddress) {
+                        $verbose += 'IpAddress not in target IP address object'
+                    } elseif ($ipIpAddress.Value -ne $ipTarget.IpAddress) {
                         $ipIpAddress.Value = $ipTarget.IpAddress
                         $wmiSpTcp.Alter()
                         $changes += "Changed IpAddress for $($ip.Name) to $($ipTarget.IpAddress)"
                     }
 
                     $ipTcpDynamicPorts = $ip.IPAddressProperties | Where-Object { $_.Name -eq 'TcpDynamicPorts' }
-                    if ($ipTcpDynamicPorts.Value -ne $ipTarget.TcpDynamicPorts) {
+                    if ($null -eq $ipTarget.TcpDynamicPorts) {
+                        $verbose += 'TcpDynamicPorts not in target IP address object'
+                    } elseif ($ipTcpDynamicPorts.Value -ne $ipTarget.TcpDynamicPorts) {
                         $ipTcpDynamicPorts.Value = $ipTarget.TcpDynamicPorts
                         $wmiSpTcp.Alter()
                         $changes += "Changed TcpDynamicPorts for $($ip.Name) to $($ipTarget.TcpDynamicPorts)"
                     }
 
                     $ipTcpPort = $ip.IPAddressProperties | Where-Object { $_.Name -eq 'TcpPort' }
-                    if ($ipTcpPort.Value -ne $ipTarget.TcpPort) {
+                    if ($null -eq $ipTarget.TcpPort) {
+                        $verbose += 'TcpPort not in target IP address object'
+                    } elseif ($ipTcpPort.Value -ne $ipTarget.TcpPort) {
                         $ipTcpPort.Value = $ipTarget.TcpPort
                         $wmiSpTcp.Alter()
                         $changes += "Changed TcpPort for $($ip.Name) to $($ipTarget.TcpPort)"
                     }
                 }
 
+                $verbose += 'Getting properties for IPAll'
                 $wmiIPAll = $wmiSpTcp.IPAddresses | Where-Object { $_.Name -eq 'IPAll' }
                 $ipTarget = $targetConf.TcpIpAddresses | Where-Object { $_.Name -eq 'IPAll' }
 
                 $ipTcpDynamicPorts = $wmiIPAll.IPAddressProperties | Where-Object { $_.Name -eq 'TcpDynamicPorts' }
-                if ($ipTcpDynamicPorts.Value -ne $ipTarget.TcpDynamicPorts) {
+                if ($null -eq $ipTarget.TcpDynamicPorts) {
+                    $verbose += 'TcpDynamicPorts not in target IP address object'
+                } elseif ($ipTcpDynamicPorts.Value -ne $ipTarget.TcpDynamicPorts) {
                     $ipTcpDynamicPorts.Value = $ipTarget.TcpDynamicPorts
                     $wmiSpTcp.Alter()
                     $changes += "Changed TcpDynamicPorts for $($wmiIPAll.Name) to $($ipTarget.TcpDynamicPorts)"
                 }
 
                 $ipTcpPort = $wmiIPAll.IPAddressProperties | Where-Object { $_.Name -eq 'TcpPort' }
-                if ($ipTcpPort.Value -ne $ipTarget.TcpPort) {
+                if ($null -eq $ipTarget.TcpPort) {
+                    $verbose += 'TcpPort not in target IP address object'
+                } elseif ($ipTcpPort.Value -ne $ipTarget.TcpPort) {
                     $ipTcpPort.Value = $ipTarget.TcpPort
                     $wmiSpTcp.Alter()
                     $changes += "Changed TcpPort for $($wmiIPAll.Name) to $($ipTarget.TcpPort)"
@@ -229,6 +263,7 @@ function Set-DbaNetworkConfiguration {
 
             [PSCustomObject]@{
                 Changes   = $changes
+                Verbose   = $verbose
                 Exception = $exception
             }
         }
@@ -335,6 +370,9 @@ function Set-DbaNetworkConfiguration {
                 if ($Pscmdlet.ShouldProcess("Setting network configuration for instance $($netConf.InstanceName) on $($netConf.ComputerName)")) {
                     $return = Invoke-ManagedComputerCommand -ComputerName $netConf.ComputerName -Credential $Credential -ScriptBlock $wmiScriptBlock -ArgumentList $netConf
                     $output.Changes = $return.Changes
+                    foreach ($msg in $return.Verbose) {
+                        Write-Message -Level Verbose -Message $msg
+                    }
                     if ($return.Exception) {
                         Stop-Function -Message "Setting network configuration for instance $($netConf.InstanceName) on $($netConf.ComputerName) failed with: $($return.Exception)" -Target $netConf.ComputerName -ErrorRecord $output.Exception -Continue
                     }
