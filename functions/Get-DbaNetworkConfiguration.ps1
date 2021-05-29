@@ -72,6 +72,15 @@ function Get-DbaNetworkConfiguration {
 
     begin {
         $wmiScriptBlock = {
+            # This scriptblock will be processed by Invoke-ManagedComputerCommand.
+            # It is extended there above this line by the following lines:
+            #   $ipaddr = $args[$args.GetUpperBound(0)]
+            #   [void][System.Reflection.Assembly]::LoadWithPartialName('Microsoft.SqlServer.SqlWmiManagement')
+            #   $wmi = New-Object Microsoft.SqlServer.Management.Smo.Wmi.ManagedComputer $ipaddr
+            #   $null = $wmi.Initialize()
+            # So we can use $wmi here and assume that there is a successful connection.
+
+            # We take on object as the first parameter which has to include the property InstanceName.
             $instance = $args[0]
 
             $wmiServerProtocols = ($wmi.ServerInstances | Where-Object { $_.Name -eq $instance.InstanceName } ).ServerProtocols
