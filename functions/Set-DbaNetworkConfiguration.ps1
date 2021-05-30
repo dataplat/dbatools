@@ -6,7 +6,7 @@ function Set-DbaNetworkConfiguration {
     .DESCRIPTION
         Sets the network configuration of a SQL Server instance.
 
-        Parameters are available for typical tasks like enabling or disabling a protokoll or switching between dynamic and static ports.
+        Parameters are available for typical tasks like enabling or disabling a protocol or switching between dynamic and static ports.
         To be more flexible, you can use Get-DbaNetworkConfiguration to get an object that represents the complete network configuration
         like you would see it with the SQL Server Configuration Manager.
         You can change any setting of this object and then pass it to Set-DbaNetworkConfiguration via pipeline or InputObject parameter.
@@ -24,21 +24,21 @@ function Set-DbaNetworkConfiguration {
     .PARAMETER Credential
         Credential object used to connect to the Computer as a different user.
 
-    .PARAMETER EnableProtokoll
-        Enables one of the following network protokolls: SharedMemory, NamedPipes, TcpIp.
+    .PARAMETER EnableProtocol
+        Enables one of the following network protocols: SharedMemory, NamedPipes, TcpIp.
 
-    .PARAMETER DisableProtokoll
-        Disables one of the following network protokolls: SharedMemory, NamedPipes, TcpIp.
+    .PARAMETER DisableProtocol
+        Disables one of the following network protocols: SharedMemory, NamedPipes, TcpIp.
 
     .PARAMETER DynamicPortForIPAll
         Configures the instance to listen on a dynamic port for all IP addresses.
-        Will enable the TCP/IP protokoll if needed.
+        Will enable the TCP/IP protocol if needed.
         Will set TcpIpProperties.ListenAll to $true if needed.
         Will reset the last used dynamic port if already set.
 
     .PARAMETER StaticPortForIPAll
         Configures the instance to listen on one or more static ports for all IP addresses.
-        Will enable the TCP/IP protokoll if needed.
+        Will enable the TCP/IP protocol if needed.
         Will set TcpIpProperties.ListenAll to $true if needed.
 
     .PARAMETER RestartService
@@ -72,15 +72,15 @@ function Set-DbaNetworkConfiguration {
         https://dbatools.io/Set-DbaNetworkConfiguration
 
     .EXAMPLE
-        PS C:\> Set-DbaNetworkConfiguration -SqlInstance sql2016 -EnableProtokoll SharedMemory -RestartService
+        PS C:\> Set-DbaNetworkConfiguration -SqlInstance sql2016 -EnableProtocol SharedMemory -RestartService
 
-        Ensures that the shared memory network protokoll for the default instance on sql2016 is enabled.
+        Ensures that the shared memory network protocol for the default instance on sql2016 is enabled.
         Restarts the service if needed.
 
     .EXAMPLE
         PS C:\> Set-DbaNetworkConfiguration -SqlInstance sql2016\test -StaticPortForIPAll 14331, 14332 -RestartService
 
-        Ensures that the TCP/IP network protokoll is enabled and configured to use the ports 14331 and 14332 for all IP addresses.
+        Ensures that the TCP/IP network protocol is enabled and configured to use the ports 14331 and 14332 for all IP addresses.
         Restarts the service if needed.
 
     .EXAMPLE
@@ -100,10 +100,10 @@ function Set-DbaNetworkConfiguration {
         [PSCredential]$Credential,
         [Parameter(ParameterSetName = 'NonPipeline')]
         [ValidateSet('SharedMemory', 'NamedPipes', 'TcpIp')]
-        [string]$EnableProtokoll,
+        [string]$EnableProtocol,
         [Parameter(ParameterSetName = 'NonPipeline')]
         [ValidateSet('SharedMemory', 'NamedPipes', 'TcpIp')]
-        [string]$DisableProtokoll,
+        [string]$DisableProtocol,
         [Parameter(ParameterSetName = 'NonPipeline')]
         [switch]$DynamicPortForIPAll,
         [Parameter(ParameterSetName = 'NonPipeline')]
@@ -133,10 +133,10 @@ function Set-DbaNetworkConfiguration {
             $exception = $null
 
             try {
-                $verbose += "Getting server protokolls for $($targetConf.InstanceName)"
+                $verbose += "Getting server protocols for $($targetConf.InstanceName)"
                 $wmiServerProtocols = ($wmi.ServerInstances | Where-Object { $_.Name -eq $targetConf.InstanceName } ).ServerProtocols
 
-                $verbose += 'Getting server protokoll shared memory'
+                $verbose += 'Getting server protocol shared memory'
                 $wmiSpSm = $wmiServerProtocols | Where-Object { $_.Name -eq 'Sm' }
                 if ($null -eq $targetConf.SharedMemoryEnabled) {
                     $verbose += 'SharedMemoryEnabled not in target object'
@@ -146,7 +146,7 @@ function Set-DbaNetworkConfiguration {
                     $changes += "Changed SharedMemoryEnabled to $($targetConf.SharedMemoryEnabled)"
                 }
 
-                $verbose += 'Getting server protokoll named pipes'
+                $verbose += 'Getting server protocol named pipes'
                 $wmiSpNp = $wmiServerProtocols | Where-Object { $_.Name -eq 'Np' }
                 if ($null -eq $targetConf.NamedPipesEnabled) {
                     $verbose += 'NamedPipesEnabled not in target object'
@@ -156,7 +156,7 @@ function Set-DbaNetworkConfiguration {
                     $changes += "Changed NamedPipesEnabled to $($targetConf.NamedPipesEnabled)"
                 }
 
-                $verbose += 'Getting server protokoll TCP/IP'
+                $verbose += 'Getting server protocol TCP/IP'
                 $wmiSpTcp = $wmiServerProtocols | Where-Object { $_.Name -eq 'Tcp' }
                 if ($null -eq $targetConf.TcpIpEnabled) {
                     $verbose += 'TcpIpEnabled not in target object'
@@ -166,7 +166,7 @@ function Set-DbaNetworkConfiguration {
                     $changes += "Changed TcpIpEnabled to $($targetConf.TcpIpEnabled)"
                 }
 
-                $verbose += 'Getting properties for server protokoll TCP/IP'
+                $verbose += 'Getting properties for server protocol TCP/IP'
                 $wmiSpTcpEnabled = $wmiSpTcp.ProtocolProperties | Where-Object { $_.Name -eq 'Enabled' }
                 if ($null -eq $targetConf.TcpIpProperties.Enabled) {
                     $verbose += 'TcpIpProperties.Enabled not in target object'
@@ -279,12 +279,12 @@ function Set-DbaNetworkConfiguration {
     }
 
     process {
-        if ($SqlInstance -and (Test-Bound -Not -ParameterName EnableProtokoll, DisableProtokoll, DynamicPortForIPAll, StaticPortForIPAll)) {
+        if ($SqlInstance -and (Test-Bound -Not -ParameterName EnableProtocol, DisableProtocol, DynamicPortForIPAll, StaticPortForIPAll)) {
             Stop-Function -Message "You must choose an action if SqlInstance is used."
             return
         }
 
-        if ($SqlInstance -and (Test-Bound -ParameterName EnableProtokoll, DisableProtokoll, DynamicPortForIPAll, StaticPortForIPAll -Not -Max 1)) {
+        if ($SqlInstance -and (Test-Bound -ParameterName EnableProtocol, DisableProtocol, DynamicPortForIPAll, StaticPortForIPAll -Not -Max 1)) {
             Stop-Function -Message "Only one action is allowed at a time."
             return
         }
@@ -297,41 +297,41 @@ function Set-DbaNetworkConfiguration {
                 Stop-Function -Message "Failed to collect network configuration from $($instance.ComputerName) for instance $($instance.InstanceName)." -Target $instance -ErrorRecord $_ -Continue
             }
 
-            if ($EnableProtokoll) {
-                if ($netConf."${EnableProtokoll}Enabled") {
-                    Write-Message -Level Verbose -Message "Protokoll $EnableProtokoll is already enabled on $instance."
+            if ($EnableProtocol) {
+                if ($netConf."${EnableProtocol}Enabled") {
+                    Write-Message -Level Verbose -Message "Protocol $EnableProtocol is already enabled on $instance."
                 } else {
-                    Write-Message -Level Verbose -Message "Will enable protokoll $EnableProtokoll on $instance."
-                    $netConf."${EnableProtokoll}Enabled" = $true
-                    if ($EnableProtokoll -eq 'TcpIp') {
+                    Write-Message -Level Verbose -Message "Will enable protocol $EnableProtocol on $instance."
+                    $netConf."${EnableProtocol}Enabled" = $true
+                    if ($EnableProtocol -eq 'TcpIp') {
                         $netConf.TcpIpProperties.Enabled = $true
                     }
                 }
             }
 
-            if ($DisableProtokoll) {
-                if ($netConf."${DisableProtokoll}Enabled") {
-                    Write-Message -Level Verbose -Message "Will disable protokoll $EnableProtokoll on $instance."
-                    $netConf."${DisableProtokoll}Enabled" = $false
-                    if ($DisableProtokoll -eq 'TcpIp') {
+            if ($DisableProtocol) {
+                if ($netConf."${DisableProtocol}Enabled") {
+                    Write-Message -Level Verbose -Message "Will disable protocol $EnableProtocol on $instance."
+                    $netConf."${DisableProtocol}Enabled" = $false
+                    if ($DisableProtocol -eq 'TcpIp') {
                         $netConf.TcpIpProperties.Enabled = $false
                     }
                 } else {
-                    Write-Message -Level Verbose -Message "Protokoll $EnableProtokoll is already disabled on $instance."
+                    Write-Message -Level Verbose -Message "Protocol $EnableProtocol is already disabled on $instance."
                 }
             }
 
             if ($DynamicPortForIPAll) {
                 if (-not $netConf.TcpIpEnabled) {
-                    Write-Message -Level Verbose -Message "Will enable protokoll TcpIp on $instance."
+                    Write-Message -Level Verbose -Message "Will enable protocol TcpIp on $instance."
                     $netConf.TcpIpEnabled = $true
                 }
                 if (-not $netConf.TcpIpProperties.Enabled) {
-                    Write-Message -Level Verbose -Message "Will set property Enabled of protokoll TcpIp to True on $instance."
+                    Write-Message -Level Verbose -Message "Will set property Enabled of protocol TcpIp to True on $instance."
                     $netConf.TcpIpProperties.Enabled = $true
                 }
                 if (-not $netConf.TcpIpProperties.ListenAll) {
-                    Write-Message -Level Verbose -Message "Will set property ListenAll of protokoll TcpIp to True on $instance."
+                    Write-Message -Level Verbose -Message "Will set property ListenAll of protocol TcpIp to True on $instance."
                     $netConf.TcpIpProperties.ListenAll = $true
                 }
                 $ipAll = $netConf.TcpIpAddresses | Where-Object { $_.Name -eq 'IPAll' }
@@ -343,15 +343,15 @@ function Set-DbaNetworkConfiguration {
 
             if ($StaticPortForIPAll) {
                 if (-not $netConf.TcpIpEnabled) {
-                    Write-Message -Level Verbose -Message "Will enable protokoll TcpIp on $instance."
+                    Write-Message -Level Verbose -Message "Will enable protocol TcpIp on $instance."
                     $netConf.TcpIpEnabled = $true
                 }
                 if (-not $netConf.TcpIpProperties.Enabled) {
-                    Write-Message -Level Verbose -Message "Will set property Enabled of protokoll TcpIp to True on $instance."
+                    Write-Message -Level Verbose -Message "Will set property Enabled of protocol TcpIp to True on $instance."
                     $netConf.TcpIpProperties.Enabled = $true
                 }
                 if (-not $netConf.TcpIpProperties.ListenAll) {
-                    Write-Message -Level Verbose -Message "Will set property ListenAll of protokoll TcpIp to True on $instance."
+                    Write-Message -Level Verbose -Message "Will set property ListenAll of protocol TcpIp to True on $instance."
                     $netConf.TcpIpProperties.ListenAll = $true
                 }
                 $ipAll = $netConf.TcpIpAddresses | Where-Object { $_.Name -eq 'IPAll' }
