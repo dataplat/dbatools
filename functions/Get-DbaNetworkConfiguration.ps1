@@ -1,12 +1,12 @@
 function Get-DbaNetworkConfiguration {
     <#
     .SYNOPSIS
-        Returns the network configuration of a SQL Server instance as shown in the SQL Server Configuration Manager.
+        Returns the network configuration of a SQL Server instance as shown in SQL Server Configuration Manager.
 
     .DESCRIPTION
-        Returns a PowerShell object with the network configuration of a SQL Server instance as shown in the SQL Server Configuration Manager.
+        Returns a PowerShell object with the network configuration of a SQL Server instance as shown in SQL Server Configuration Manager.
 
-        Remote SQL WMI is used by default. If this doesn't work, then remoting is used.
+        Remote SQL WMI is used by default, with PS Remoting used as a fallback.
 
         For a detailed explenation of the different properties see the documentation at:
         https://docs.microsoft.com/en-us/sql/tools/configuration-manager/sql-server-network-configuration

@@ -7,15 +7,15 @@ function Set-DbaNetworkConfiguration {
         Sets the network configuration of a SQL Server instance.
 
         Parameters are available for typical tasks like enabling or disabling a protocol or switching between dynamic and static ports.
-        To be more flexible, you can use Get-DbaNetworkConfiguration to get an object that represents the complete network configuration
-        like you would see it with the SQL Server Configuration Manager.
-        You can change any setting of this object and then pass it to Set-DbaNetworkConfiguration via pipeline or InputObject parameter.
+        The object returned by Get-DbaNetworkConfiguration can be used to adjust settings of the properties
+        and then passed to this command via pipeline or -InputObject parameter.
 
-        Every change to the network configuration needs a service restart to take effect. To do this, use the RestartService parameter.
+        A change to the network configuration with SQL Server requires a restart to take effect,
+        support for this can be done via the RestartService parameter.
 
-        Remote SQL WMI is used by default. If this doesn't work, then remoting is used.
+        Remote SQL WMI is used by default, with PS Remoting used as a fallback.
 
-        For a detailed explenation of the different properties see the documentation at:
+        For a detailed explanation of the different properties see the documentation at:
         https://docs.microsoft.com/en-us/sql/tools/configuration-manager/sql-server-network-configuration
 
     .PARAMETER SqlInstance
@@ -46,8 +46,8 @@ function Set-DbaNetworkConfiguration {
         This switch will force a restart of the service if the network configuration has changed.
 
     .PARAMETER InputObject
-        The object with the structure that Get-DbaNetworkConfiguration returns.
-        Get-DbaNetworkConfiguration has be run with the default OutputType Full to get the complete object.
+        The output object from Get-DbaNetworkConfiguration.
+        Get-DbaNetworkConfiguration has to be run with -OutputType Full (default) to get the complete object.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
