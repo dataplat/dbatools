@@ -82,7 +82,7 @@ function Remove-DbaDbSnapshot {
         Removes all snapshots associated with databases that have dumpsterfire in the name
 
     .EXAMPLE
-        PS C:\> Get-DbaDbSnapshot -SqlInstance sql2016 | Out-GridView -Passthru | Remove-DbaDbSnapshot
+        PS C:\> Get-DbaDbSnapshot -SqlInstance sql2016 | Out-GridView -PassThru | Remove-DbaDbSnapshot
 
         Allows the selection of snapshots on sql2016 to remove
 
@@ -97,7 +97,7 @@ function Remove-DbaDbSnapshot {
         Removes all database snapshots from sql2014 and prompts for each database
 
     #>
-    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Medium")]
+    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "High")]
     param (
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
@@ -113,7 +113,7 @@ function Remove-DbaDbSnapshot {
     begin {
         if ($Force) { $ConfirmPreference = 'none' }
 
-        $defaultprops = 'ComputerName', 'InstanceName', 'SqlInstance', 'Database as Name', 'Status'
+        $defaultProps = 'ComputerName', 'InstanceName', 'SqlInstance', 'Database as Name', 'Status'
     }
     process {
         if (!$Snapshot -and !$Database -and !$AllSnapshots -and $null -eq $InputObject -and !$ExcludeDatabase) {
@@ -140,10 +140,10 @@ function Remove-DbaDbSnapshot {
             }
 
             if ($Force) {
-                $db | Remove-DbaDatabase -Confirm:$false | Select-DefaultView -Property $defaultprops
+                $db | Remove-DbaDatabase -Confirm:$false | Select-DefaultView -Property $defaultProps
             } else {
                 try {
-                    if ($Pscmdlet.ShouldProcess("$db on $server", "Drop snapshot")) {
+                    if ($PsCmdlet.ShouldProcess("$db on $server", "Drop snapshot")) {
                         $db.Drop()
                         $server.Refresh()
 
@@ -153,7 +153,7 @@ function Remove-DbaDbSnapshot {
                             SqlInstance  = $server.DomainInstanceName
                             Database     = $db.name
                             Status       = "Dropped"
-                        } | Select-DefaultView -Property $defaultprops
+                        } | Select-DefaultView -Property $defaultProps
                     }
                 } catch {
                     Write-Message -Level Verbose -Message "Could not drop database $db on $server"
@@ -164,7 +164,7 @@ function Remove-DbaDbSnapshot {
                         SqlInstance  = $server.DomainInstanceName
                         Database     = $db.name
                         Status       = (Get-ErrorMessage -Record $_)
-                    } | Select-DefaultView -Property $defaultprops
+                    } | Select-DefaultView -Property $defaultProps
                 }
             }
         }
