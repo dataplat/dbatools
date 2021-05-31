@@ -132,6 +132,11 @@ function Get-DbaNetworkConfiguration {
             try {
                 $netConf = Invoke-ManagedComputerCommand -ComputerName $instance.ComputerName -Credential $Credential -ScriptBlock $wmiScriptBlock -ArgumentList $instance
 
+                # Test if object is filled to test if instance was found on computer
+                if ($null -eq $netConf.SharedMemoryEnabled) {
+                    Stop-Function -Message "Failed to collect network configuration from $($instance.ComputerName) for instance $($instance.InstanceName). No data was found for this instance, so skipping." -Target $instance -ErrorRecord $_ -Continue
+                }
+
                 if ($OutputType -eq 'Full') {
                     $netConf
                 } elseif ($OutputType -eq 'ServerProtocols') {
