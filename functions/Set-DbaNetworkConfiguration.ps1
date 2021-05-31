@@ -387,7 +387,7 @@ function Set-DbaNetworkConfiguration {
                     }
                 }
 
-                if ($changes.Changes.Count -gt 0) {
+                if ($return.Changes.Count -gt 0) {
                     $output.RestartNeeded = $true
                     if ($RestartService) {
                         if ($Pscmdlet.ShouldProcess("Restarting service for instance $($netConf.InstanceName) on $($netConf.ComputerName)")) {
