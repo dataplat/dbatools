@@ -88,7 +88,6 @@ function Set-DbaTcpPort {
             $IpAddress = $args[3]
             $sqlInstanceName = $args[4]
 
-            $wmi = New-Object Microsoft.SqlServer.Management.Smo.Wmi.ManagedComputer $computerName
             $wmiinstance = $wmi.ServerInstances | Where-Object {
                 $_.Name -eq $wmiInstanceName
             }
@@ -139,11 +138,11 @@ function Set-DbaTcpPort {
             if ($Pscmdlet.ShouldProcess($computerName, "Setting port to $Port for $wmiInstanceName")) {
                 try {
                     Write-Message -Level Verbose -Message "Trying Invoke-ManagedComputerCommand with ComputerName = '$resolvedComputerName'"
-                    Invoke-ManagedComputerCommand -ComputerName $resolvedComputerName -ScriptBlock $scriptblock -ArgumentList $computerName, $wmiInstanceName, $port, $IpAddress, $instance.InputObject -Credential $Credential
+                    Invoke-ManagedComputerCommand -ComputerName $resolvedComputerName -ScriptBlock $scriptblock -ArgumentList $computerName, $wmiInstanceName, "$($Port)", "$($IpAddress)", "$($instance.InputObject)" -Credential $Credential
                 } catch {
                     try {
                         Write-Message -Level Verbose -Message "Fallback: Trying Invoke-ManagedComputerCommand with ComputerName = '$computerName'"
-                        Invoke-ManagedComputerCommand -ComputerName $computerName -ScriptBlock $scriptblock -ArgumentList $computerName, $wmiInstanceName, $port, $IpAddress, $instance.InputObject -Credential $Credential
+                        Invoke-ManagedComputerCommand -ComputerName $computerName -ScriptBlock $scriptblock -ArgumentList $computerName, $wmiInstanceName, "$($Port)", "$($IpAddress)", "$($instance.InputObject)" -Credential $Credential
                     } catch {
                         Stop-Function -Message "Failure setting port to $Port for $wmiInstanceName on $computerName" -Continue
                     }
