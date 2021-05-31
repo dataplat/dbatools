@@ -54,7 +54,7 @@ $old = $instance = "localhost"
 $allservers = $old, $new
 
 # Alternatively, use Registered Servers
-$allservers = Get-DbaCmsRegServer -SqlInstance $instance
+$allservers = Get-DbaRegServer -SqlInstance $instance
 
 # Need to restore a database? It can be as simple as this:
 Restore-DbaDatabase -SqlInstance $instance -Path "C:\temp\AdventureWorks2012-Full Database Backup.bak"
