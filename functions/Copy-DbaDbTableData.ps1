@@ -95,7 +95,7 @@ function Copy-DbaDbTableData {
         Value in seconds for the BulkCopy operations timeout. The default is 5000 seconds.
 
     .PARAMETER CommandTimeOut
-        Value in seconds for the reader command operations timeout. The default is 0 seconds (no timeout).
+        Gets or sets the wait time (in seconds) before terminating the attempt to execute the reader and bulk copy operation. The default is 0 seconds (no timeout).
 
     .PARAMETER InputObject
         Enables piping of Table objects from Get-DbaDbTable
