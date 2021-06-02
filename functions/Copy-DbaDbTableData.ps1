@@ -91,10 +91,10 @@ function Copy-DbaDbTableData {
     .PARAMETER Truncate
         If this switch is enabled, the destination table will be truncated after prompting for confirmation.
 
-    .PARAMETER BulkCopyTimeOut
+    .PARAMETER BulkCopyTimeout
         Value in seconds for the BulkCopy operations timeout. The default is 5000 seconds.
 
-    .PARAMETER CommandTimeOut
+    .PARAMETER CommandTimeout
         Gets or sets the wait time (in seconds) before terminating the attempt to execute the reader and bulk copy operation. The default is 0 seconds (no timeout).
 
     .PARAMETER InputObject
