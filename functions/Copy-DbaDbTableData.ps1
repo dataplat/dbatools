@@ -209,8 +209,8 @@ function Copy-DbaDbTableData {
         [switch]$KeepIdentity,
         [switch]$KeepNulls,
         [switch]$Truncate,
-        [int]$BulkCopyTimeOut = 5000,
-        [int]$CommandTimeOut = 0,
+        [int]$BulkCopyTimeout = 5000,
+        [int]$CommandTimeout = 0,
         [Parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.TableViewBase[]]$InputObject,
         [switch]$EnableException
@@ -409,7 +409,7 @@ function Copy-DbaDbTableData {
                     }
                     if ($Pscmdlet.ShouldProcess($server, "Copy data from $sourceLabel")) {
                         $cmd = $server.ConnectionContext.SqlConnectionObject.CreateCommand()
-                        $cmd.CommandTimeout = $CommandTimeOut
+                        $cmd.CommandTimeout = $CommandTimeout
                         $cmd.CommandText = $Query
                         if ($server.ConnectionContext.IsOpen -eq $false) {
                             $server.ConnectionContext.SqlConnectionObject.Open()
@@ -419,7 +419,7 @@ function Copy-DbaDbTableData {
                         $bulkCopy.EnableStreaming = $true
                         $bulkCopy.BatchSize = $BatchSize
                         $bulkCopy.NotifyAfter = $NotifyAfter
-                        $bulkCopy.BulkCopyTimeOut = $BulkCopyTimeOut
+                        $bulkCopy.BulkCopyTimeOut = $BulkCopyTimeout
 
                         # The legacy bulk copy library uses a 4 byte integer to track the RowsCopied, so the only option is to use
                         # integer wrap so that copy operations of row counts greater than [int32]::MaxValue will report accurate numbers.
