@@ -419,7 +419,7 @@ function Copy-DbaDbTableData {
                         $bulkCopy.EnableStreaming = $true
                         $bulkCopy.BatchSize = $BatchSize
                         $bulkCopy.NotifyAfter = $NotifyAfter
-                        $bulkCopy.BulkCopyTimeOut = $BulkCopyTimeout
+                        $bulkCopy.BulkCopyTimeout = $BulkCopyTimeout
 
                         # The legacy bulk copy library uses a 4 byte integer to track the RowsCopied, so the only option is to use
                         # integer wrap so that copy operations of row counts greater than [int32]::MaxValue will report accurate numbers.
