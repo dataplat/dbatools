@@ -156,7 +156,7 @@ function New-DbaDbSequence {
                         $newSequence.DataType = New-Object Microsoft.SqlServer.Management.Smo.DataType $IntegerType
                     }
 
-                    if (Test-Bound StartWith) {
+                    if ($StartWith) {
                         $newSequence.StartValue = $StartWith
                     }
 
