@@ -92,7 +92,7 @@ function Export-DbaRegServer {
     )
     begin {
         $null = Test-ExportDirectory -Path $Path
-        $timeNow = Get-Date -UFormat "%Y%m%d%H%M%S"
+        $timeNow = Get-Date -UFormat (Get-DbatoolsConfigValue -FullName formatting.uformat)
 
         # ValidateScript in the above param block relies on the order of the params specified by the user,
         # so the creation of the file path and $Overwrite are evaluated here
