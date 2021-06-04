@@ -1,14 +1,16 @@
 function Remove-DbaDbSequence {
     <#
     .SYNOPSIS
-        Removes a sequence.
+        Removes sequences.
 
     .DESCRIPTION
-        Removes a sequence in the database(s) specified.
+        Removes the sequences that have passed through the pipeline.
+
+        If not used with a pipeline, Get-DbaDbSequence will be executed with the parameters provided
+        and the returned sequences will be removed.
 
     .PARAMETER SqlInstance
-        The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function
-        to be executed against multiple SQL Server instances.
+        The target SQL Server instance(s).
 
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
@@ -21,19 +23,20 @@ function Remove-DbaDbSequence {
         The target database(s).
 
     .PARAMETER Name
-        The name of the sequence.
+        The name(s) of the sequence(s).
 
     .PARAMETER Schema
-        The name of the schema for the sequence. The default is dbo.
+        The name(s) of the schema for the sequence(s).
 
     .PARAMETER InputObject
-        Allows piping from Get-DbaDatabase.
+        Allows piping from Get-DbaDbSequence.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
 
     .PARAMETER Confirm
         Prompts you for confirmation before executing any changing operations within the command.
+        This is the default. Use -Confirm:$false to suppress these prompts.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -57,41 +60,48 @@ function Remove-DbaDbSequence {
         Removes the sequence TestSequence in the TestDB database on the sqldev01 instance.
 
     .EXAMPLE
-        PS C:\> Get-DbaDatabase -SqlInstance sqldev01 -Database TestDB | Remove-DbaDbSequence -Name TestSequence -Schema TestSchema
+        PS C:\> Get-DbaDbSequence -SqlInstance SRV1 | Out-GridView -Title 'Select sequence(s) to drop' -OutputMode Multiple | Remove-DbaDbSequence
 
-        Using a pipeline this command Removes the sequence named TestSchema.TestSequence in the TestDB database on the sqldev01 instance.
+        Using a pipeline this command gets all sequences on SRV1, lets the user select those to remove and then removes the selected sequences.
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High')]
     param (
+        [Parameter(ParameterSetName = 'NonPipeline', Mandatory = $true, Position = 0)]
         [DbaInstanceParameter[]]$SqlInstance,
+        [Parameter(ParameterSetName = 'NonPipeline')]
         [PSCredential]$SqlCredential,
+        [Parameter(ParameterSetName = 'NonPipeline')]
         [string[]]$Database,
-        [Parameter(Mandatory)]
-        [string]$Name,
-        [string]$Schema = 'dbo',
-        [parameter(ValueFromPipeline)]
-        [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
+        [Parameter(ParameterSetName = 'NonPipeline')]
+        [string[]]$Name,
+        [Parameter(ParameterSetName = 'NonPipeline')]
+        [string[]]$Schema,
+        [parameter(ValueFromPipeline, ParameterSetName = 'Pipeline', Mandatory = $true)]
+        [Microsoft.SqlServer.Management.Smo.Sequence[]]$InputObject,
+        [Parameter(ParameterSetName = 'NonPipeline')][Parameter(ParameterSetName = 'Pipeline')]
         [switch]$EnableException
     )
+
+    begin {
+        $sequences = @( )
+    }
+
     process {
-
-        if ((Test-Bound -ParameterName SqlInstance) -and (Test-Bound -Not -ParameterName Database)) {
-            Stop-Function -Message "Database is required when SqlInstance is specified"
-            return
+        if ($SqlInstance) {
+            $sequences = Get-DbaDbSequence @PSBoundParameters
+        } else {
+            $sequences += $InputObject
         }
+    }
 
-        foreach ($instance in $SqlInstance) {
-            $InputObject += Get-DbaDatabase -SqlInstance $instance -SqlCredential $SqlCredential -Database $Database
-        }
-
-        foreach ($db in $InputObject) {
-
-            if ($Pscmdlet.ShouldProcess($db.Parent.Name, "Removing the sequence $Name in the $Schema schema in the database $($db.Name) on $($db.Parent.Name)")) {
+    end {
+        # We have to delete in the end block to prevent "Collection was modified; enumeration operation may not execute." if directly piped from Get-DbaDbSequence.
+        foreach ($sequence in $sequences) {
+            if ($PSCmdlet.ShouldProcess($sequence.Parent.Parent.Name, "Removing the sequence $($sequence.Schema).$($sequence.Name) in the database $($sequence.Parent.Name) on $($sequence.Parent.Parent.Name)")) {
                 try {
-                    $sequenceToDrop = $db.Sequences | Where-Object { $_.Schema -eq $Schema -and $_.Name -eq $Name }
-                    $sequenceToDrop.Drop()
+                    $sequence.Drop()
                 } catch {
-                    Stop-Function -Message "Failure on $($db.Parent.Name) to drop the sequence $Name in the $Schema schema in the database $($db.Name)" -ErrorRecord $_ -Continue
+                    Stop-Function -Message "Failed removing the sequence $($sequence.Schema).$($sequence.Name) in the database $($sequence.Parent.Name) on $($sequence.Parent.Parent.Name)" -ErrorRecord $_ -Continue
                 }
             }
         }
