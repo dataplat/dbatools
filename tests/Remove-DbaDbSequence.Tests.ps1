@@ -39,7 +39,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
 
         It "supports piping sequences" {
             (Get-DbaDbSequence -SqlInstance $instance2 -Database $newDbName -Name "Sequence2_$random" -Schema "Schema_$random") | Should -Not -BeNullOrEmpty
-            Get-DbaDatabase -SqlInstance $instance2 -Database $newDbName -Name "Sequence2_$random" -Schema "Schema_$random" | Remove-DbaDbSequence -Confirm:$false
+            Get-DbaDbSequence -SqlInstance $instance2 -Database $newDbName -Name "Sequence2_$random" -Schema "Schema_$random" | Remove-DbaDbSequence -Confirm:$false
             (Get-DbaDbSequence -SqlInstance $instance2 -Database $newDbName -Name "Sequence2_$random" -Schema "Schema_$random") | Should -BeNullOrEmpty
         }
     }
