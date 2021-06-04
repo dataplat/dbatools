@@ -612,7 +612,7 @@ function New-DbaAvailabilityGroup {
             if ($Pscmdlet.ShouldProcess($server.Name, "Adding databases to Availability Group.")) {
                 if ($Force) {
                     try {
-                        Get-DbaDatabase -SqlInstance $secondaries -Database $Database | Remove-DbaDatabase
+                        Get-DbaDatabase -SqlInstance $secondaries -Database $Database -EnableException | Remove-DbaDatabase -EnableException
                     } catch {
                         Stop-Function -Message "Failed to remove databases from secondary replicas." -ErrorRecord $_
                     }
