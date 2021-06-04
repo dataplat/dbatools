@@ -416,7 +416,7 @@ function Add-DbaAgDatabase {
             Write-Message -Level Verbose -Message $progress['Status']
             Write-Progress @progress
 
-            if ($Pscmdlet.ShouldProcess($replicaServerSMO[$replicaName], "Wait for the database $($db.Name) to finish joining the Availability Group $AvailabilityGroup on the secondary replicas.")) {
+            if ($Pscmdlet.ShouldProcess($server, "Wait for the database $($db.Name) to finish joining the Availability Group $AvailabilityGroup on the secondary replicas.")) {
                 # We need to setup a progress bar for every replica to display them all at once.
                 $syncProgressId = @{ }
                 foreach ($replicaName in $replicaServerSMO.Keys) {
