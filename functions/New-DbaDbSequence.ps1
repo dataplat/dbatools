@@ -139,6 +139,7 @@ function New-DbaDbSequence {
                     }
 
                     $newSequence = New-Object Microsoft.SqlServer.Management.Smo.Sequence -ArgumentList $db, $Name, $Schema
+                    $newSequence.StartValue = $StartWith
                     $newSequence.IncrementValue = $IncrementBy
                     $newSequence.IsCycleEnabled = $Cycle.IsPresent
 
@@ -154,10 +155,6 @@ function New-DbaDbSequence {
                     } else {
                         # system integer type
                         $newSequence.DataType = New-Object Microsoft.SqlServer.Management.Smo.DataType $IntegerType
-                    }
-
-                    if ($StartWith) {
-                        $newSequence.StartValue = $StartWith
                     }
 
                     if (Test-Bound MinValue) {
