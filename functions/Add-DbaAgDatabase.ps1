@@ -27,6 +27,12 @@ function Add-DbaAgDatabase {
         perform the backup and restore part with Backup-DbaDatabase and Restore-DbaDatabase in advance.
         Please make sure that the last log backup has been restored before running Add-DbaAgDatabase.
 
+        Known limitations:
+
+        It is not possible to use this command to add the database to a newly added replica,
+        because the command fails if the database is already part of the Availability Group.
+        This limitation will be removed in a later version.
+
    .PARAMETER SqlInstance
         The primary replica of the Availability Group. Server version must be SQL Server version 2012 or higher.
 
