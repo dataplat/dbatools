@@ -1,10 +1,10 @@
 function Get-DbaAgDatabase {
     <#
     .SYNOPSIS
-        Gets availability group databases from a SQL Server instance.
+        Gets availability group databases from one or more SQL Server instances.
 
     .DESCRIPTION
-        Gets availability group databases from a SQL Server instance.
+        Gets availability group databases from one or more SQL Server instances.
 
         Default view provides most common set of properties for information on the database in an availability group.
 
@@ -84,15 +84,15 @@ function Get-DbaAgDatabase {
             if ($Database) {
                 if ($db.Name -notin $Database) { continue }
             }
+            $ag = $db.Parent
             $server = $db.Parent.Parent
-            Add-Member -Force -InputObject $db -MemberType NoteProperty -Name ComputerName -value $server.ComputerName
-            Add-Member -Force -InputObject $db -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
-            Add-Member -Force -InputObject $db -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
-            Add-Member -Force -InputObject $db -MemberType NoteProperty -Name Replica -value $server.ComputerName
-            Add-Member -Force -InputObject $db -MemberType NoteProperty -Name DatabaseName -value $db.Name # for backwards compat
-            Add-Member -Force -InputObject $db -MemberType NoteProperty -Name AvailabilityGroup -value $db.Parent.Name
+            Add-Member -Force -InputObject $db -MemberType NoteProperty -Name ComputerName -Value $server.ComputerName
+            Add-Member -Force -InputObject $db -MemberType NoteProperty -Name InstanceName -Value $server.ServiceName
+            Add-Member -Force -InputObject $db -MemberType NoteProperty -Name SqlInstance -Value $server.DomainInstanceName
+            Add-Member -Force -InputObject $db -MemberType NoteProperty -Name AvailabilityGroup -Value $ag.Name
+            Add-Member -Force -InputObject $db -MemberType NoteProperty -Name LocalReplicaRole -Value $ag.LocalReplicaRole
 
-            $defaults = 'ComputerName', 'InstanceName', 'SqlInstance', 'AvailabilityGroup', 'Replica', 'Name', 'SynchronizationState', 'IsFailoverReady', 'IsJoined', 'IsSuspended'
+            $defaults = 'ComputerName', 'InstanceName', 'SqlInstance', 'AvailabilityGroup', 'LocalReplicaRole', 'Name', 'SynchronizationState', 'IsFailoverReady', 'IsJoined', 'IsSuspended'
             Select-DefaultView -InputObject $db -Property $defaults
         }
     }

@@ -606,6 +606,11 @@ function New-DbaAvailabilityGroup {
             }
         }
 
+        if (-not $Database) {
+            Get-DbaAvailabilityGroup -SqlInstance $Primary -SqlCredential $PrimarySqlCredential -AvailabilityGroup $Name
+            return
+        }
+
         # Add databases
         Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Adding databases"
         $dbdone = $false
