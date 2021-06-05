@@ -150,38 +150,35 @@ function Get-DbaService {
             $Server = Resolve-DbaNetworkName -ComputerName $Computer -Credential $credential
             if ($Server.FullComputerName) {
                 $Computer = $server.FullComputerName
+                $services = @()
                 $outputServices = @()
                 if (!$Type -or 'SSRS' -in $Type) {
                     Write-Message -Level Verbose -Message "Getting SQL Reporting Server services on $Computer" -Target $Computer
                     $reportingServices = Get-DbaReportingService -ComputerName $Computer -InstanceName $InstanceName -Credential $Credential -ServiceName $ServiceName
                     $outputServices += $reportingServices
                 }
-                Write-Message -Level Verbose -Message "Getting SQL Server namespace on $Computer" -Target $Computer
-                try { $namespaces = Get-DbaCmObject -ComputerName $Computer -NameSpace root\Microsoft\SQLServer -Query "Select Name FROM __NAMESPACE WHERE Name Like 'ComputerManagement%'" -EnableException -Credential $credential | Sort-Object Name -Descending }
+                Write-Message -Level Verbose -Message "Getting SQL Server namespaces on $Computer" -Target $Computer
+                try {
+                    $namespaces = Get-DbaCmObject -ComputerName $Computer -Namespace root\Microsoft\SQLServer -Query "Select Name FROM __NAMESPACE WHERE Name Like 'ComputerManagement%'" -EnableException -Credential $credential | Sort-Object Name -Descending }
                 catch {
-                    # here to avoid an empty catch
-                    $null = 1
+                    Write-Message -Level Verbose -Message "Failed to get SQL Server namespaces on $Computer." -Target $Computer -ErrorRecord $_
                 }
                 if ($namespaces) {
-                    $servicesTemp = @()
-
+                    Write-Message -Level Verbose -Message "The following namespaces have been found: $($namespaces.Name -join ', ')."
                     ForEach ($namespace in $namespaces) {
                         try {
                             Write-Message -Level Verbose -Message "Getting Cim class SqlService in Namespace $($namespace.Name) on $Computer." -Target $Computer
                             foreach ($service in (Get-DbaCmObject -ComputerName $Computer -Namespace "root\Microsoft\SQLServer\$($namespace.Name)" -Query "SELECT * FROM SqlService WHERE $searchClause" -EnableException -Credential $credential)) {
-                                $servicesTemp += New-Object PSObject -Property @{
-                                    Name      = $service.ServiceName
-                                    Namespace = $namespace.Name
-                                    Service   = $service
-                                }
+                                Write-Message -Level Verbose -Message "Found service $($service.ServiceName) in namespace $($namespace.Name)."
+                                $services += $service
                             }
+                            # Use highest namespace available, so break if services have been found
+                            break
                         } catch {
                             Write-Message -Level Verbose -Message "Failed to acquire services from namespace $($namespace.Name)." -Target $Computer -ErrorRecord $_
                         }
                     }
                 }
-                #use highest namespace available
-                $services = ($servicesTemp | Group-Object Name | ForEach-Object { $_.Group | Sort-Object Namespace -Descending | Select-Object -First 1 }).Service
                 #remove services returned by the SSRS namespace
                 $services = $services | Where-Object ServiceName -notin $reportingServices.ServiceName
                 #Add custom properties and methods to the service objects
