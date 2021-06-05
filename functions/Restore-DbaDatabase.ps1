@@ -590,7 +590,7 @@ function Restore-DbaDatabase {
                     }
                     $BackupHistory += $F | Select-Object *, @{ Name = "ServerName"; Expression = { $_.SqlInstance } }, @{ Name = "BackupStartDate"; Expression = { $_.Start -as [DateTime] } }
                 }
-                # Fix #6662 by implementing a deep copy of the FileList
+                # Fix #5036 by implementing a deep copy of the FileList
                 foreach ($bhEntry in $BackupHistory) {
                     Write-Message -Level Verbose -Message "Working on $($bhEntry.GetType().FullName) $($bhEntry.FileList.Count) $($bhEntry.FileList.PhysicalName -join ',')"
                     $bhEntry.FileList = foreach ($flEntry in $bhEntry.FileList) {
