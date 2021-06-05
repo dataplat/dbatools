@@ -592,10 +592,10 @@ function Restore-DbaDatabase {
                 }
                 # Fix #5036 by implementing a deep copy of the FileList
                 foreach ($bhEntry in $BackupHistory) {
-                    Write-Message -Level Verbose -Message "Working on $($bhEntry.GetType().FullName) $($bhEntry.FileList.Count) $($bhEntry.FileList.PhysicalName -join ',')"
                     $bhEntry.FileList = foreach ($flEntry in $bhEntry.FileList) {
                         [PSCustomObject]@{
                             Type         = $flEntry.Type
+                            FileType     = $flEntry.FileType
                             LogicalName  = $flEntry.LogicalName
                             PhysicalName = $flEntry.PhysicalName
                         }
@@ -688,7 +688,7 @@ function Restore-DbaDatabase {
                 return
             }
             $pathSep = Get-DbaPathSep -Server $RestoreInstance
-            $null = $BackupHistory | Format-DbaBackupInformation -DataFileDirectory $DestinationDataDirectory -LogFileDirectory $DestinationLogDirectory -DestinationFileStreamDirectory $DestinationFileStreamDirectory -DatabaseFileSuffix $DestinationFileSuffix -DatabaseFilePrefix $DestinationFilePrefix -DatabaseNamePrefix $RestoredDatabaseNamePrefix -ReplaceDatabaseName $DatabaseName -Continue:$Continue -ReplaceDbNameInFile:$ReplaceDbNameInFile -FileMapping $FileMapping -PathSep $pathSep
+            $BackupHistory = $BackupHistory | Format-DbaBackupInformation -DataFileDirectory $DestinationDataDirectory -LogFileDirectory $DestinationLogDirectory -DestinationFileStreamDirectory $DestinationFileStreamDirectory -DatabaseFileSuffix $DestinationFileSuffix -DatabaseFilePrefix $DestinationFilePrefix -DatabaseNamePrefix $RestoredDatabaseNamePrefix -ReplaceDatabaseName $DatabaseName -Continue:$Continue -ReplaceDbNameInFile:$ReplaceDbNameInFile -FileMapping $FileMapping -PathSep $pathSep
 
             if (Test-Bound -ParameterName FormatBackupInformation) {
                 Set-Variable -Name $FormatBackupInformation -Value $BackupHistory -Scope Global
