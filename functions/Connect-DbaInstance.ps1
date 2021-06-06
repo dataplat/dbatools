@@ -18,6 +18,14 @@ function Connect-DbaInstance {
 
         To execute SQL commands, you can use $server.ConnectionContext.ExecuteReader($sql) or $server.Databases['master'].ExecuteNonQuery($sql)
 
+        On Nov 6, 2020 we added a complete new way of processing inside of this command, available via the config switch sql.connection.experimental.
+        Now it is time to use this as the default, but still allow users to use the old code path via a config switch. Please use:
+        Set-DbatoolsConfig -FullName sql.connection.legacy -Value $true
+
+        Some parameters are not supportet by the new code path. If your code relies on them, please use the legacy code path and please open an issue:
+        https://github.com/sqlcollaborative/dbatools/issues
+        This will help us to know which parameters are used and we will try to implement them in the new code path as quick as possible.
+
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.
 
@@ -899,7 +907,7 @@ function Connect-DbaInstance {
             #>
 
             if ($AccessToken) {
-                Stop-Function -Message "AccessToken is only supported in the new experimental code path. See documentation for details."
+                Stop-Function -Message "AccessToken is not supported in the legacy code path."
                 return
             }
 
