@@ -94,7 +94,7 @@ function Add-DbaAgDatabase {
 
     .NOTES
         Tags: AvailabilityGroup, HA, AG
-        Author: Chrissy LeMaire (@cl), netnerds.net / Andreas Jordan (@JordanOrdix), ordix.de
+        Author: Chrissy LeMaire (@cl), netnerds.net | Andreas Jordan (@JordanOrdix), ordix.de
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
