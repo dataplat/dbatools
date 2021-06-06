@@ -128,24 +128,31 @@ function Add-DbaAgDatabase {
         [DbaInstanceParameter]$SqlInstance,
         [Parameter(ParameterSetName = 'NonPipeline')]
         [PSCredential]$SqlCredential,
-        [Parameter(ParameterSetName = 'NonPipeline', Mandatory = $true)][Parameter(ParameterSetName = 'Pipeline', Mandatory = $true, Position = 0)]
+        [Parameter(ParameterSetName = 'NonPipeline', Mandatory = $true)]
+        [Parameter(ParameterSetName = 'Pipeline', Mandatory = $true, Position = 0)]
         [string]$AvailabilityGroup,
         [Parameter(ParameterSetName = 'NonPipeline', Mandatory = $true)]
         [string[]]$Database,
-        [Parameter(ParameterSetName = 'NonPipeline')][Parameter(ParameterSetName = 'Pipeline')]
+        [Parameter(ParameterSetName = 'NonPipeline')]
+        [Parameter(ParameterSetName = 'Pipeline')]
         [DbaInstanceParameter[]]$Secondary,
-        [Parameter(ParameterSetName = 'NonPipeline')][Parameter(ParameterSetName = 'Pipeline')]
+        [Parameter(ParameterSetName = 'NonPipeline')]
+        [Parameter(ParameterSetName = 'Pipeline')]
         [PSCredential]$SecondarySqlCredential,
         [parameter(ValueFromPipeline, ParameterSetName = 'Pipeline', Mandatory = $true)]
         [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
-        [Parameter(ParameterSetName = 'NonPipeline')][Parameter(ParameterSetName = 'Pipeline')]
+        [Parameter(ParameterSetName = 'NonPipeline')]
+        [Parameter(ParameterSetName = 'Pipeline')]
         [ValidateSet('Automatic', 'Manual')]
         [string]$SeedingMode,
-        [Parameter(ParameterSetName = 'NonPipeline')][Parameter(ParameterSetName = 'Pipeline')]
+        [Parameter(ParameterSetName = 'NonPipeline')]
+        [Parameter(ParameterSetName = 'Pipeline')]
         [string]$SharedPath,
-        [Parameter(ParameterSetName = 'NonPipeline')][Parameter(ParameterSetName = 'Pipeline')]
+        [Parameter(ParameterSetName = 'NonPipeline')]
+        [Parameter(ParameterSetName = 'Pipeline')]
         [switch]$UseLastBackup,
-        [Parameter(ParameterSetName = 'NonPipeline')][Parameter(ParameterSetName = 'Pipeline')]
+        [Parameter(ParameterSetName = 'NonPipeline')]
+        [Parameter(ParameterSetName = 'Pipeline')]
         [switch]$EnableException
     )
 
