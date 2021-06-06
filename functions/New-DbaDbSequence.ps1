@@ -177,7 +177,7 @@ function New-DbaDbSequence {
                     }
 
                     $newSequence.Create()
-                    $db | Get-DbaDbSequence
+                    $db | Get-DbaDbSequence -Name $newSequence.Name -Schema $newSequence.Schema
                 } catch {
                     Stop-Function -Message "Failure on $($db.Parent.Name) to create the sequence $Name in the $Schema schema in the database $($db.Name)" -ErrorRecord $_ -Continue
                 }
