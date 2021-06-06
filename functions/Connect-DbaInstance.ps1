@@ -831,7 +831,9 @@ function Connect-DbaInstance {
                     }
                     Write-Message -Level Debug -Message "TrueLogin is '$($srvConn.TrueLogin)'"
 
+                    Write-Message -Level Debug -Message "Building Server from ServerConnection"
                     $server = New-Object -TypeName Microsoft.SqlServer.Management.Smo.Server -ArgumentList $srvConn
+                    Write-Message -Level Debug -Message "Server was build"
 
                     # Set properties of ConnectionContext that are not part of SqlConnectionInfo
                     if (Test-Bound -ParameterName 'BatchSeparator') {
