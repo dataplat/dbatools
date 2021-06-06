@@ -643,15 +643,15 @@ function Connect-DbaInstance {
 
                     #AdditionalParameters   Property   string AdditionalParameters {get;set;}
                     if ($AppendConnectionString) {
-                        Write-Message -Level Debug -Message "AdditionalParameters will be appended by '$AppendConnectionString'"
+                        Write-Message -Level Debug -Message "AdditionalParameters will be appended by ';$AppendConnectionString'"
                         $connInfo.AdditionalParameters += ";$AppendConnectionString"
                     }
                     if ($FailoverPartner) {
-                        Write-Message -Level Debug -Message "AdditionalParameters will be appended by '$AppendConnectionString'"
+                        Write-Message -Level Debug -Message "AdditionalParameters will be appended by ';FailoverPartner=$FailoverPartner'"
                         $connInfo.AdditionalParameters += ";FailoverPartner=$FailoverPartner"
                     }
                     if ($MultiSubnetFailover) {
-                        Write-Message -Level Debug -Message "AdditionalParameters will be appended by '$AppendConnectionString'"
+                        Write-Message -Level Debug -Message "AdditionalParameters will be appended by ';MultiSubnetFailover=True'"
                         $connInfo.AdditionalParameters += ';MultiSubnetFailover=True'
                     }
 
@@ -806,11 +806,17 @@ function Connect-DbaInstance {
                         Write-Message -Level Debug -Message "We use connInfo.ConnectionString: $($connInfo.ConnectionString)"
                         Write-Message -Level Debug -Message "But we remove 'Integrated Security=True;'"
                         # TODO: How do we get a ConnectionString without this?
+                        Write-Message -Level Debug -Message "Building SqlConnection from SqlConnectionInfo.ConnectionString"
                         $sqlConn = [System.Data.SqlClient.SqlConnection]::new(($connInfo.ConnectionString -replace 'Integrated Security=True;', ''))
+                        Write-Message -Level Debug -Message "SqlConnection was build"
                         $sqlConn.AccessToken = $AccessToken
+                        Write-Message -Level Debug -Message "Building ServerConnection from SqlConnection"
                         $srvConn = [Microsoft.SqlServer.Management.Common.ServerConnection]::new($sqlConn)
+                        Write-Message -Level Debug -Message "ServerConnection was build"
                     } else {
+                        Write-Message -Level Debug -Message "Building ServerConnection from SqlConnectionInfo"
                         $srvConn = New-Object -TypeName Microsoft.SqlServer.Management.Common.ServerConnection -ArgumentList $connInfo
+                        Write-Message -Level Debug -Message "ServerConnection was build"
                     }
 
                     if ($authType -eq 'local ad') {
