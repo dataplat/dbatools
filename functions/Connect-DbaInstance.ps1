@@ -242,52 +242,6 @@ function Connect-DbaInstance {
         ConnectionString is an alias of SqlInstance, so you can use -SqlInstance $connstring as well.
 
     .EXAMPLE
-        PS C:\> $cred = Get-Credential guid-app-id-here # appid for username, clientsecret for password
-        PS C:\> $server = Connect-DbaInstance -SqlInstance psdbatools.database.windows.net -Database abc -SqCredential $cred -Tenant guidheremaybename
-        PS C:\> Invoke-DbaQuery -SqlInstance $server -Query "select 1 as test"
-
-        When connecting from a non-Azure workstation, logs into Azure using Universal with MFA Support with a username and password, then performs a sample query.
-
-    .EXAMPLE
-        PS C:\> $server = Connect-DbaInstance -SqlInstance psdbatools.database.windows.net -Database abc -AuthenticationType 'AD Universal with MFA Support'
-        PS C:\> Invoke-DbaQuery -SqlInstance $server -Query "select 1 as test"
-
-        When connecting from an Azure VM with .NET 4.7.2 and higher, logs into Azure using Universal with MFA Support, then performs a sample query.
-
-    .EXAMPLE
-        PS C:\> $cred = Get-Credential guid-app-id-here # appid for username, clientsecret for password
-        PS C:\> Set-DbatoolsConfig -FullName azure.tenantid -Value 'guidheremaybename' -Passthru | Register-DbatoolsConfig
-        PS C:\> Set-DbatoolsConfig -FullName azure.appid -Value $cred.Username -Passthru | Register-DbatoolsConfig
-        PS C:\> Set-DbatoolsConfig -FullName azure.clientsecret -Value $cred.Password -Passthru | Register-DbatoolsConfig # requires securestring
-        PS C:\> Set-DbatoolsConfig -FullName sql.connection.database -Value abc -Passthru | Register-DbatoolsConfig
-        PS C:\> Connect-DbaInstance -SqlInstance psdbatools.database.windows.net
-
-        Permanently sets some app id config values. To set them temporarily (just for a session), remove -Passthru | Register-DbatoolsConfig
-        When connecting from a non-Azure workstation or an Azure VM without .NET 4.7.2 and higher, logs into Azure using Universal with MFA Support, then performs a sample query.
-
-    .EXAMPLE
-        PS C:\> $server = Connect-DbaInstance -SqlInstance psdbatools.database.windows.net -Thumbprint FF6361E82F21664F64A2576BB49EAC429BD5ABB6 -Store CurrentUser -Tenant tenant-guid -SqlCredential app-id-guid-here -Database abc
-        PS C:\> Invoke-DbaQuery -SqlInstance $server -Query "select 1 as test"
-
-        Logs into Azure using Universal with MFA Support with a certificate, then performs a sample query. Note that you will be prompted for a password but the password can be left blank and the certificate will be used instead.
-
-    .EXAMPLE
-        PS C:\> Set-DbatoolsConfig -FullName sql.connection.experimental -Value $true
-        PS C:\> $sqlcred = Get-Credential sqladmin
-        PS C:\> $server = Connect-DbaInstance -SqlInstance sql2014 -SqlCredential $sqlcred
-        PS C:\> Invoke-DbaQuery -SqlInstance $server -Query "select 1 as test"
-
-        Use the new code path for handling connections. Especially when you have problems with connection pooling, try this.
-        We also have added additional -Verbose and -Debug output to help us understand your problem if you open an issue related to connections.
-        For additional information about how the new code path works, please have a look at the code: https://github.com/sqlcollaborative/dbatools/blob/development/functions/Connect-DbaInstance.ps1
-
-        If you like to use the new code path permanently, register this config:
-        PS C:\> Set-DbatoolsConfig -FullName sql.connection.experimental -Value $true -Passthru | Register-DbatoolsConfig
-
-        As we would like to use the new code path as a default in the future, please give feedback if you are using it in your environment.
-
-    .EXAMPLE
-        PS C:\> Set-DbatoolsConfig -FullName sql.connection.experimental -Value $true
         PS C:\> $azureCredential = Get-Credential -Message 'Azure Credential'
         PS C:\> $azureAccount = Connect-AzAccount -Credential $azureCredential
         PS C:\> $azureToken = (Get-AzAccessToken -ResourceUrl https://database.windows.net).Token
@@ -297,7 +251,6 @@ function Connect-DbaInstance {
 
         Connect to an Azure SQL Database or an Azure SQL Managed Instance with an AccessToken.
         Note that the token is valid for only one hour and cannot be renewed automatically.
-        This is only available in the new code path for handling connections (see example above).
 
     #>
     [CmdletBinding()]
