@@ -597,6 +597,11 @@ function Connect-DbaInstance {
                     $server = New-Object -TypeName Microsoft.SqlServer.Management.Smo.Server -ArgumentList $serverName
                     $server.ConnectionContext.ConnectionString = $connectionString
                 } elseif ($inputObjectType -eq 'String') {
+                    # Test for AzureUnsupported as soon as possible against AzureDomain to fail as soon as possible
+                    if ($AzureUnsupported -and (Test-Azure -SqlInstance $instance)) {
+                        Stop-Function -Message "Azure SQL Database not supported" -Continue
+                    }
+
                     # Identify authentication method
                     if ($AuthenticationType -ne 'Auto') {
                         # Only possibility at the moment: 'AD Universal with MFA Support'
