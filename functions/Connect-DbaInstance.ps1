@@ -829,18 +829,23 @@ function Connect-DbaInstance {
 
                     # Set properties of ConnectionContext that are not part of SqlConnectionInfo
                     if (Test-Bound -ParameterName 'BatchSeparator') {
+                        Write-Message -Level Debug -Message "Setting ConnectionContext.BatchSeparator to '$BatchSeparator'"
                         $server.ConnectionContext.BatchSeparator = $BatchSeparator
                     }
                     if (Test-Bound -ParameterName 'LockTimeout') {
+                        Write-Message -Level Debug -Message "Setting ConnectionContext.LockTimeout to '$LockTimeout'"
                         $server.ConnectionContext.LockTimeout = $LockTimeout
                     }
-                    if (Test-Bound -ParameterName 'MultipleActiveResultSets') {
+                    if ($MultipleActiveResultSets) {
+                        Write-Message -Level Debug -Message "Setting ConnectionContext.MultipleActiveResultSets to 'True'"
                         $server.ConnectionContext.MultipleActiveResultSets = $true
                     }
                     if (Test-Bound -ParameterName 'SqlExecutionModes') {
+                        Write-Message -Level Debug -Message "Setting ConnectionContext.SqlExecutionModes to '$SqlExecutionModes'"
                         $server.ConnectionContext.SqlExecutionModes = $SqlExecutionModes
                     }
                     if (Test-Bound -ParameterName 'StatementTimeout') {
+                        Write-Message -Level Debug -Message "Setting ConnectionContext.StatementTimeout to '$StatementTimeout'"
                         $server.ConnectionContext.StatementTimeout = $StatementTimeout
                     }
                 }
