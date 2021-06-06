@@ -138,21 +138,21 @@ function Connect-DbaInstance {
         Terminate if the target SQL Server instance version does not meet version requirements
 
     .PARAMETER AuthenticationType
-        Basically used to force AD Universal with MFA Support when other types have been detected
+        The default is Auto. The correct authentication type is determined by the use of SqlCredential and AccessToken.
+        "AD Universal with MFA Support" is only supported in the legacy code path.
 
     .PARAMETER Tenant
-        The TenantId for an Azure Instance
+        The TenantId for an Azure Instance. Parameter is only supported in the legacy code path.
 
     .PARAMETER Thumbprint
-        Thumbprint for connections to Azure MSI
+        Thumbprint for connections to Azure MSI. Parameter Store is not supported.
 
     .PARAMETER Store
-        Store where the Azure MSI certificate is stored
+        Store where the Azure MSI certificate is stored. Parameter Store is not supported.
 
     .PARAMETER AccessToken
         Connect to an Azure SQL Database or an Azure SQL Managed Instance with an AccessToken, that has to be generated with Get-AzAccessToken.
         Note that the token is valid for only one hour and cannot be renewed automatically.
-        This is only available in the new code path for handling connections (see the last two examples).
 
     .PARAMETER DisableException
         By default in most of our commands, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -602,13 +602,25 @@ function Connect-DbaInstance {
                         Stop-Function -Message "Azure SQL Database not supported" -Continue
                     }
 
+                    # Test for unsupported parameters
+                    # TODO: Thumbprint and Store are not used in legacy code path and should be removed.
+                    if ($Tenant) {
+                        Stop-Function -Message "Parameter Tenant is only supported in the legacy code path."
+                        return
+                    }
+                    if ($Thumbprint) {
+                        Stop-Function -Message "Parameter Thumbprint is not supported."
+                        return
+                    }
+                    if ($Store) {
+                        Stop-Function -Message "Parameter Store is not supported."
+                        return
+                    }
+
                     # Identify authentication method
                     if ($AuthenticationType -ne 'Auto') {
-                        # Only possibility at the moment: 'AD Universal with MFA Support'
-                        # $username will not be set
-                        # Will probably not work at all
-                        # TODO: We need a setup to test that
-                        $authType = $AuthenticationType
+                        Stop-Function -Message "AuthenticationType 'AD Universal with MFA Support' is only supported in the legacy code path."
+                        return
                     } else {
                         if (Test-Azure -SqlInstance $instance) {
                             $authType = 'azure '
