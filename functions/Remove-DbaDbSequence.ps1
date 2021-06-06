@@ -98,11 +98,33 @@ function Remove-DbaDbSequence {
         # We have to delete in the end block to prevent "Collection was modified; enumeration operation may not execute." if directly piped from Get-DbaDbSequence.
         foreach ($sequence in $sequences) {
             if ($PSCmdlet.ShouldProcess($sequence.Parent.Parent.Name, "Removing the sequence $($sequence.Schema).$($sequence.Name) in the database $($sequence.Parent.Name) on $($sequence.Parent.Parent.Name)")) {
+                $output = [pscustomobject]@{
+                    ComputerName   = $sequence.Parent.Parent.ComputerName
+                    InstanceName   = $sequence.Parent.Parent.ServiceName
+                    SqlInstance    = $sequence.Parent.Parent.DomainInstanceName
+                    Database       = $sequence.Parent.Name
+                    Sequence       = "$($sequence.Schema).$($sequence.Name)"
+                    SequenceName   = $sequence.Name
+                    SequenceSchema = $sequence.Schema
+                    Status         = $null
+                    Removed        = $false
+                    Success        = $false
+                    Successful     = $false
+                }
                 try {
                     $sequence.Drop()
+                    $output.Status = "Dropped"
+                    $output.Removed = $true
+                    $output.Success = $true
+                    $output.Successful = $true
                 } catch {
                     Stop-Function -Message "Failed removing the sequence $($sequence.Schema).$($sequence.Name) in the database $($sequence.Parent.Name) on $($sequence.Parent.Parent.Name)" -ErrorRecord $_ -Continue
+                    $output.Status = (Get-ErrorMessage -Record $_)
+                    $output.Removed = $false
+                    $output.Success = $false
+                    $output.Successful = $false
                 }
+                $output
             }
         }
     }
