@@ -536,7 +536,7 @@ function Connect-DbaInstance {
                 * Not every edge case will be covered at the beginning.
                 * We copy as less code from the existing code paths as possible.
                 #>
-                Write-Message -Level Debug -Message "sql.connection.experimental is used"
+                Write-Message -Level Debug -Message "The new code path is used"
 
                 # Analyse input object and extract necessary parts
                 if ($instance.Type -like 'Server') {
