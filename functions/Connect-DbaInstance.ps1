@@ -470,7 +470,8 @@ function Connect-DbaInstance {
             and within this function leads to the following code path being used.
             All the sub paths inside the following if clause will end with a continue, so the normal code path is not used.
             #>
-            if (Get-DbatoolsConfigValue -FullName sql.connection.experimental) {
+            # Now the new code path is the default and the legacy code path can be used with the switch "legacy".
+            if (-not (Get-DbatoolsConfigValue -FullName sql.connection.legacy)) {
                 <#
                 Best practice:
                 * Create a smo server object by submitting the name of the instance as a string to SqlInstance and additional parameters to configure the connection
