@@ -10,7 +10,7 @@ function Remove-DbaDbSequence {
         and the returned sequences will be removed.
 
     .PARAMETER SqlInstance
-        The target SQL Server instance(s).
+        The target SQL Server instance or instances.
 
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
