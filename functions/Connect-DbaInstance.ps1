@@ -145,10 +145,10 @@ function Connect-DbaInstance {
         The TenantId for an Azure Instance. Parameter is only supported in the legacy code path.
 
     .PARAMETER Thumbprint
-        Thumbprint for connections to Azure MSI. Parameter Store is not supported.
+        Thumbprint for connections to Azure MSI. Parameter is not supported.
 
     .PARAMETER Store
-        Store where the Azure MSI certificate is stored. Parameter Store is not supported.
+        Store where the Azure MSI certificate is stored. Parameter is not supported.
 
     .PARAMETER AccessToken
         Connect to an Azure SQL Database or an Azure SQL Managed Instance with an AccessToken, that has to be generated with Get-AzAccessToken.
