@@ -182,6 +182,10 @@ function Install-DbaSqlWatch {
             return
         }
 
+        if ($PSEdition -eq 'Core') {
+            Stop-Function -Message "PowerShell Core is not supported, please use Windows PowerShell."
+            return
+        }
         $totalSteps = $stepCounter + $SqlInstance.Count * 2
         foreach ($instance in $SqlInstance) {
             if ($PSCmdlet.ShouldProcess($instance, "Installing SqlWatch on $Database")) {
