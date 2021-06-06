@@ -851,7 +851,7 @@ function Connect-DbaInstance {
                         Write-Message -Level Debug -Message "Setting ConnectionContext.SqlExecutionModes to '$SqlExecutionModes'"
                         $server.ConnectionContext.SqlExecutionModes = $SqlExecutionModes
                     }
-                    if (Test-Bound -ParameterName 'StatementTimeout') {
+                    if ($null -ne $StatementTimeout) {
                         Write-Message -Level Debug -Message "Setting ConnectionContext.StatementTimeout to '$StatementTimeout'"
                         $server.ConnectionContext.StatementTimeout = $StatementTimeout
                     }
