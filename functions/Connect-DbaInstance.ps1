@@ -829,7 +829,6 @@ function Connect-DbaInstance {
                         Write-Message -Level Debug -Message "ConnectAsUserPassword will be set"
                         $srvConn.ConnectAsUserPassword = $SqlCredential.GetNetworkCredential().Password
                     }
-                    Write-Message -Level Debug -Message "TrueLogin is '$($srvConn.TrueLogin)'"
 
                     Write-Message -Level Debug -Message "Building Server from ServerConnection"
                     $server = New-Object -TypeName Microsoft.SqlServer.Management.Smo.Server -ArgumentList $srvConn
@@ -873,6 +872,7 @@ function Connect-DbaInstance {
                     Write-Message -Level Debug -Message "IsOpen is: $($server.ConnectionContext.IsOpen)"
                 }
                 Write-Message -Level Debug -Message "We have a connected server object"
+                Write-Message -Level Debug -Message "TrueLogin is '$($srvConn.TrueLogin)'"
 
                 if ($AzureUnsupported -and $server.DatabaseEngineType -eq "SqlAzureDatabase") {
                     Stop-Function -Message "Azure SQL Database not supported" -Continue
