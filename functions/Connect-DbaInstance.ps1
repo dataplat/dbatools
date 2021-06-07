@@ -561,8 +561,8 @@ function Connect-DbaInstance {
                         Write-Message -Level Verbose -Message "Parameter ApplicationIntent passed in, so we copy the connection context and set the ApplicationIntent"
                         $copyContext = $true
                     }
-                    if ($NonPooledConnection) {
-                        Write-Message -Level Verbose -Message "Parameter NonPooledConnection passed in, so we copy the connection context and set NonPooledConnection"
+                    if ($NonPooledConnection -and -not $inputObject.ConnectionContext.NonPooledConnection) {
+                        Write-Message -Level Verbose -Message "Parameter NonPooledConnection passed in and we currently have a pooled connection, so we copy the connection context and set NonPooledConnection"
                         $copyContext = $true
                     }
                     if (Test-Bound -Parameter StatementTimeout) {
@@ -861,10 +861,17 @@ function Connect-DbaInstance {
                 $maskedConnString = Hide-ConnectionString $server.ConnectionContext.ConnectionString
                 Write-Message -Level Debug -Message "The masked server.ConnectionContext.ConnectionString is $maskedConnString"
 
-                Write-Message -Level Debug -Message "We connect to the instance with server.ConnectionContext.SqlConnectionObject.Open()"
+                # It doesn't matter which input we have, we pass this line and have a server SMO in $server to work with
+                # It might be a brand new one or an already used one.
+                # "Pooled connections are always closed directly after an operation" (so .IsOpen does not tell us anything):
+                # https://docs.microsoft.com/en-us/dotnet/api/microsoft.sqlserver.management.common.connectionmanager.isopen?view=sql-smo-160#Microsoft_SqlServer_Management_Common_ConnectionManager_IsOpen
+                # We could use .ConnectionContext.SqlConnectionObject.Open(), but we would have to check ConnectionContext.IsOpen first because it is not allowed on open connections
+                # But ConnectionContext.IsOpen does not tell the truth if the instance was just shut down
+                # And we don't use $server.ConnectionContext.Connect() as this would create a non pooled connection
+                # Instead we run a real T-SQL command and just SELECT 1 to be sure we have a valid connection and let the SMO handle the connection
+                Write-Message -Level Debug -Message "We connect to the instance by running 'SELECT 1'"
                 try {
-                    # Don't use $server.ConnectionContext.Connect() - this would create a non pooled connection
-                    $server.ConnectionContext.SqlConnectionObject.Open()
+                    $null = $server.ConnectionContext.ExecuteWithResults("SELECT 1")
                 } catch {
                     Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
                 }
