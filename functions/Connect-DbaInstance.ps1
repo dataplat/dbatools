@@ -898,7 +898,6 @@ function Connect-DbaInstance {
                 Write-Message -Level Debug -Message "We return the server object"
                 $server
 
-                # TODO: Do we need this every time? How does it work exactly?
                 # Register the connected instance, so that the TEPP updater knows it's been connected to and starts building the cache
                 [Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::SetInstance($instance.FullSmoName.ToLowerInvariant(), $server.ConnectionContext.Copy(), ($server.ConnectionContext.FixedServerRoles -match "SysAdmin"))
 
