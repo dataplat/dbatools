@@ -533,9 +533,13 @@ function Connect-DbaInstance {
                 # Create smo server object
                 if ($inputObjectType -eq 'Server') {
                     if ($Database) {
-                        Write-Message -Level Verbose -Message "Parameter Database passed in, so we copy the connection context and change the database connection"
-                        # TODO: Do we have to check if its the same database?
-                        $server = New-Object -TypeName Microsoft.SqlServer.Management.Smo.Server -ArgumentList $inputObject.ConnectionContext.Copy().GetDatabaseConnection($Database)
+                        if ($inputObject.ConnectionContext.CurrentDatabase -eq $Database) {
+                            Write-Message -Level Verbose -Message "Parameter Database passed in, but its the same as currently in ConnectionContext.CurrentDatabase, so we just return the InputObject"
+                            $server = $inputObject
+                        } else {
+                            Write-Message -Level Verbose -Message "Parameter Database passed in, so we copy the connection context and change the database connection"
+                            $server = New-Object -TypeName Microsoft.SqlServer.Management.Smo.Server -ArgumentList $inputObject.ConnectionContext.Copy().GetDatabaseConnection($Database)
+                        }
                     } else {
                         $server = $inputObject
                     }
