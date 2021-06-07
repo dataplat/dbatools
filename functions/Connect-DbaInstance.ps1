@@ -519,13 +519,13 @@ function Connect-DbaInstance {
 
                 # Check for ignored parameters
                 # We do not check for SqlCredential as this parameter is widly used even if a server SMO is passed in and we don't want to outout a message for that
-                $ignoredParameters = 'ApplicationIntent', 'BatchSeparator', 'ClientName', 'ConnectTimeout', 'EncryptConnection', 'LockTimeout', 'MaxPoolSize', 'MinPoolSize', 'NetworkProtocol', 'PacketSize', 'PooledConnectionLifetime', 'SqlExecutionModes', 'TrustServerCertificate', 'WorkstationId', 'AuthenticationType', 'FailoverPartner', 'MultipleActiveResultSets', 'MultiSubnetFailover', 'AppendConnectionString', 'AccessToken'
+                $ignoredParameters = 'BatchSeparator', 'ClientName', 'ConnectTimeout', 'EncryptConnection', 'LockTimeout', 'MaxPoolSize', 'MinPoolSize', 'NetworkProtocol', 'PacketSize', 'PooledConnectionLifetime', 'SqlExecutionModes', 'TrustServerCertificate', 'WorkstationId', 'AuthenticationType', 'FailoverPartner', 'MultipleActiveResultSets', 'MultiSubnetFailover', 'AppendConnectionString', 'AccessToken'
                 if ($inputObjectType -eq 'Server') {
                     if (Test-Bound -ParameterName $ignoredParameters) {
                         Write-Message -Level Warning -Message "Additional parameters are passed in, but they will be ignored"
                     }
                 } elseif ($inputObjectType -in 'SqlConnection', 'RegisteredServer', 'ConnectionString' ) {
-                    if (Test-Bound -ParameterName $ignoredParameters, 'Database', 'NonPooledConnection') {
+                    if (Test-Bound -ParameterName $ignoredParameters, 'Database', 'ApplicationIntent', 'NonPooledConnection', 'StatementTimeout') {
                         Write-Message -Level Warning -Message "Additional parameters are passed in, but they will be ignored"
                     }
                 }
@@ -533,11 +533,15 @@ function Connect-DbaInstance {
                 # Create smo server object
                 if ($inputObjectType -eq 'Server') {
                     # Test if we have to copy the connection context
-                    # Currently only if we have a different Database or have to swith to a NonPooledConnection or using a specific StatementTimeout
+                    # Currently only if we have a different Database or have to swith to a NonPooledConnection or using a specific StatementTimeout or using ApplicationIntent
                     # We do not test for SqlCredential as this would change the behavior compared to the legacy code path
                     $copyContext = $false
                     if ($Database -and $inputObject.ConnectionContext.CurrentDatabase -ne $Database) {
                         Write-Message -Level Verbose -Message "Parameter Database passed in, and it's not the same as currently in ConnectionContext.CurrentDatabase, so we copy the connection context"
+                        $copyContext = $true
+                    }
+                    if ($ApplicationIntent) {
+                        Write-Message -Level Verbose -Message "Parameter ApplicationIntent passed in, so we copy the connection context and set the ApplicationIntent"
                         $copyContext = $true
                     }
                     if ($NonPooledConnection) {
@@ -552,6 +556,9 @@ function Connect-DbaInstance {
                         $connContext = $inputObject.ConnectionContext.Copy()
                         if ($Database) {
                             $connContext = $connContext.GetDatabaseConnection($Database)
+                        }
+                        if ($ApplicationIntent) {
+                            $connContext.ApplicationIntent = $ApplicationIntent
                         }
                         if ($NonPooledConnection) {
                             $connContext.NonPooledConnection = $true
