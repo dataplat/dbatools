@@ -533,7 +533,7 @@ function Connect-DbaInstance {
                 # Create smo server object
                 if ($inputObjectType -eq 'Server') {
                     # Test if we have to copy the connection context
-                    # Currently only if we have a different Database or have to swith to a NonPooledConnection
+                    # Currently only if we have a different Database or have to swith to a NonPooledConnection or using a specific StatementTimeout
                     # We do not test for SqlCredential as this would change the behavior compared to the legacy code path
                     $copyContext = $false
                     if ($Database -and $inputObject.ConnectionContext.CurrentDatabase -ne $Database) {
@@ -544,6 +544,10 @@ function Connect-DbaInstance {
                         Write-Message -Level Verbose -Message "Parameter NonPooledConnection passed in, so we copy the connection context and set NonPooledConnection"
                         $copyContext = $true
                     }
+                    if (Test-Bound -Parameter StatementTimeout) {
+                        Write-Message -Level Verbose -Message "Parameter StatementTimeout passed in, so we copy the connection context and set the StatementTimeout"
+                        $copyContext = $true
+                    }
                     if ($copyContext) {
                         $connContext = $inputObject.ConnectionContext.Copy()
                         if ($Database) {
@@ -551,6 +555,9 @@ function Connect-DbaInstance {
                         }
                         if ($NonPooledConnection) {
                             $connContext.NonPooledConnection = $true
+                        }
+                        if (Test-Bound -Parameter StatementTimeout) {
+                            $connContext.StatementTimeout = $StatementTimeout
                         }
                         $server = New-Object -TypeName Microsoft.SqlServer.Management.Smo.Server -ArgumentList $connContext
                     } else {
