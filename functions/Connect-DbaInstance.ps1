@@ -518,6 +518,7 @@ function Connect-DbaInstance {
                 }
 
                 # Check for ignored parameters
+                # We do not check for SqlCredential as this parameter is widly used even if a server SMO is passed in and we don't want to outout a message for that
                 $ignoredParameters = 'ApplicationIntent', 'BatchSeparator', 'ClientName', 'ConnectTimeout', 'EncryptConnection', 'LockTimeout', 'MaxPoolSize', 'MinPoolSize', 'NetworkProtocol', 'PacketSize', 'PooledConnectionLifetime', 'SqlExecutionModes', 'StatementTimeout', 'TrustServerCertificate', 'WorkstationId', 'AuthenticationType', 'FailoverPartner', 'MultipleActiveResultSets', 'MultiSubnetFailover', 'AppendConnectionString', 'AccessToken'
                 if ($inputObjectType -eq 'Server') {
                     if (Test-Bound -ParameterName $ignoredParameters) {
@@ -528,26 +529,32 @@ function Connect-DbaInstance {
                         Write-Message -Level Warning -Message "Additional parameters are passed in, but they will be ignored"
                     }
                 }
-                # TODO: Test for SqlCredential as well?
 
                 # Create smo server object
                 if ($inputObjectType -eq 'Server') {
-                    if ($Database) {
-                        if ($inputObject.ConnectionContext.CurrentDatabase -eq $Database) {
-                            Write-Message -Level Verbose -Message "Parameter Database passed in, but its the same as currently in ConnectionContext.CurrentDatabase, so we just return the InputObject"
-                            $server = $inputObject
-                        } else {
-                            Write-Message -Level Verbose -Message "Parameter Database passed in, so we copy the connection context and change the database connection"
-                            $server = New-Object -TypeName Microsoft.SqlServer.Management.Smo.Server -ArgumentList $inputObject.ConnectionContext.Copy().GetDatabaseConnection($Database)
-                        }
-                    } else {
-                        $server = $inputObject
+                    # Test if we have to copy the connection context
+                    # Currently only if we have a different Database or have to swith to a NonPooledConnection
+                    # We do not test for SqlCredential as this would change the behavior compared to the legacy code path
+                    $copyContext = $false
+                    if ($Database -and $inputObject.ConnectionContext.CurrentDatabase -ne $Database) {
+                        Write-Message -Level Verbose -Message "Parameter Database passed in, and it's not the same as currently in ConnectionContext.CurrentDatabase, so we copy the connection context"
+                        $copyContext = $true
                     }
                     if ($NonPooledConnection) {
                         Write-Message -Level Verbose -Message "Parameter NonPooledConnection passed in, so we copy the connection context and set NonPooledConnection"
-                        $connContext = $server.ConnectionContext.Copy()
-                        $connContext.NonPooledConnection = $true
+                        $copyContext = $true
+                    }
+                    if ($copyContext) {
+                        $connContext = $inputObject.ConnectionContext.Copy()
+                        if ($Database) {
+                            $connContext = $connContext.GetDatabaseConnection($Database)
+                        }
+                        if ($NonPooledConnection) {
+                            $connContext.NonPooledConnection = $true
+                        }
                         $server = New-Object -TypeName Microsoft.SqlServer.Management.Smo.Server -ArgumentList $connContext
+                    } else {
+                        $server = $inputObject
                     }
                 } elseif ($inputObjectType -eq 'SqlConnection') {
                     $server = New-Object -TypeName Microsoft.SqlServer.Management.Smo.Server -ArgumentList $inputObject
