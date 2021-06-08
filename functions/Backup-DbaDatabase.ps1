@@ -440,7 +440,7 @@ function Backup-DbaDatabase {
                 Write-Message -Level Warning -Message "$failreason"
             }
 
-            $lastfull = $db.LastBackupDate.Year
+            $lastfull = ($db.Refresh()).LastBackupDate.Year
 
             if ($Type -notin @("Database", "Full") -and $lastfull -eq 1) {
                 $failreason = "$db does not have an existing full backup, cannot take log or differentialbackup"
