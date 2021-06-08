@@ -931,13 +931,29 @@ function Connect-DbaInstance {
                     continue
                 }
 
+                # There a different ways to handle the new property ComputerName
+                # Rules in legacy code: Use $server.NetName, but if $server.NetName is empty or we are on Azure or Linux, use $instance.ComputerName
+                if ($server.DatabaseEngineType -eq "SqlAzureDatabase") {
+                    Write-Message -Level Debug -Message "We are on Azure, so server.ComputerName will be set to instance.ComputerName"
+                    $computerName = $instance.ComputerName
+                } elseif ($server.HostPlatform -eq 'Linux') {
+                    Write-Message -Level Debug -Message "We are on Linux what is often on docker and the internal name is not useful, so server.ComputerName will be set to instance.ComputerName"
+                    $computerName = $instance.ComputerName
+                } else {
+                    Write-Message -Level Debug -Message "We will set server.ComputerName to server.NetName"
+                    $computerName = $server.NetName
+                }
+
+                if (-not $computerName -or $server.HostPlatform -eq 'Linux') {
+                    $computerName = $instance.ComputerName
+                }
                 if (-not $server.ComputerName) {
                     Add-Member -InputObject $server -NotePropertyName IsAzure -NotePropertyValue (Test-Azure -SqlInstance $instance) -Force
-                    Add-Member -InputObject $server -NotePropertyName ComputerName -NotePropertyValue $instance.ComputerName -Force
+                    Add-Member -InputObject $server -NotePropertyName ComputerName -NotePropertyValue $computerName -Force
                     Add-Member -InputObject $server -NotePropertyName DbaInstanceName -NotePropertyValue $instance.InstanceName -Force
                     Add-Member -InputObject $server -NotePropertyName NetPort -NotePropertyValue $instance.Port -Force
                     Add-Member -InputObject $server -NotePropertyName ConnectedAs -NotePropertyValue $server.ConnectionContext.TrueLogin -Force
-                    Write-Message -Level Debug -Message "We added IsAzure = '$($server.IsAzure)', ComputerName = instance.ComputerName = '$($server.ComputerName)', DbaInstanceName = instance.InstanceName = '$($server.DbaInstanceName)', NetPort = instance.Port = '$($server.NetPort)', ConnectedAs = server.ConnectionContext.TrueLogin = '$($server.ConnectedAs)'"
+                    Write-Message -Level Debug -Message "We added IsAzure = '$($server.IsAzure)', ComputerName = '$($server.ComputerName)', DbaInstanceName = instance.InstanceName = '$($server.DbaInstanceName)', NetPort = instance.Port = '$($server.NetPort)', ConnectedAs = server.ConnectionContext.TrueLogin = '$($server.ConnectedAs)'"
                 }
 
                 Write-Message -Level Debug -Message "We return the server object"
