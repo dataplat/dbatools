@@ -963,6 +963,43 @@ function Connect-DbaInstance {
                     }
                 }
 
+                if (Get-DbatoolsConfigValue -FullName commands.connect-dbainstance.smo.setdefaultinitfields) {
+                    # This part was copied from the legacy code path, but tests have shown no differences so far.
+                    # So this will be disabled by default, but can be enabled for further tests with:
+                    # Set-DbatoolsConfig -FullName commands.connect-dbainstance.smo.setdefaultinitfields -Value $true
+                    Write-Message -Level Debug -Message "commands.connect-dbainstance.smo.setdefaultinitfields is used"
+
+                    # By default, SMO initializes several properties. We push it to the limit and gather a bit more
+                    # this slows down the connect a smidge but drastically improves overall performance
+                    # especially when dealing with a multitude of servers
+                    if ($loadedSmoVersion -ge 11 -and -not $isAzure) {
+                        try {
+                            Write-Message -Level Debug -Message "SetDefaultInitFields will be used"
+                            $initFieldsDb = New-Object System.Collections.Specialized.StringCollection
+                            $initFieldsLogin = New-Object System.Collections.Specialized.StringCollection
+                            if ($server.VersionMajor -eq 8) {
+                                # 2000
+                                [void]$initFieldsDb.AddRange($Fields2000_Db)
+                                [void]$initFieldsLogin.AddRange($Fields2000_Login)
+                            } elseif ($server.VersionMajor -eq 9 -or $server.VersionMajor -eq 10) {
+                                # 2005 and 2008
+                                [void]$initFieldsDb.AddRange($Fields200x_Db)
+                                [void]$initFieldsLogin.AddRange($Fields200x_Login)
+                            } else {
+                                # 2012 and above
+                                [void]$initFieldsDb.AddRange($Fields201x_Db)
+                                [void]$initFieldsLogin.AddRange($Fields201x_Login)
+                            }
+                            $server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Database], $initFieldsDb)
+                            $server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Login], $initFieldsLogin)
+                        } catch {
+                            Write-Message -Level Debug -Message "SetDefaultInitFields failed with $_"
+                            # perhaps a DLL issue, continue going
+                        }
+                    }
+
+                }
+
                 Write-Message -Level Debug -Message "We are finished with this instance"
                 continue
             }
