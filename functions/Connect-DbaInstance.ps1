@@ -951,6 +951,18 @@ function Connect-DbaInstance {
                     [Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Cache["sqlinstance"] += $instance.FullSmoName.ToLowerInvariant()
                 }
 
+                # Update lots of registered stuff
+                # Default for [Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::TeppSyncDisabled is $true, so will not run by default
+                # Must be explicitly activated with [Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::TeppSyncDisabled = $false to run
+                if (-not [Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::TeppSyncDisabled) {
+                    # Variable $FullSmoName is used inside the script blocks, so we have to set
+                    $FullSmoName = $instance.FullSmoName.ToLowerInvariant()
+                    Write-Message -Level Debug -Message "Will run Invoke-TEPPCacheUpdate for FullSmoName = $FullSmoName"
+                    foreach ($scriptBlock in ([Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::TeppGatherScriptsFast)) {
+                        Invoke-TEPPCacheUpdate -ScriptBlock $scriptBlock
+                    }
+                }
+
                 Write-Message -Level Debug -Message "We are finished with this instance"
                 continue
             }
