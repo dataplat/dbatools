@@ -944,9 +944,6 @@ function Connect-DbaInstance {
                     $computerName = $server.NetName
                 }
 
-                if (-not $computerName -or $server.HostPlatform -eq 'Linux') {
-                    $computerName = $instance.ComputerName
-                }
                 if (-not $server.ComputerName) {
                     Add-Member -InputObject $server -NotePropertyName IsAzure -NotePropertyValue (Test-Azure -SqlInstance $instance) -Force
                     Add-Member -InputObject $server -NotePropertyName ComputerName -NotePropertyValue $computerName -Force
