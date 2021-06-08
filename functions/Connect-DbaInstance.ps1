@@ -962,6 +962,7 @@ function Connect-DbaInstance {
                     Add-Member -InputObject $server -NotePropertyName IsAzure -NotePropertyValue (Test-Azure -SqlInstance $instance) -Force
                     Add-Member -InputObject $server -NotePropertyName ComputerName -NotePropertyValue $computerName -Force
                     Add-Member -InputObject $server -NotePropertyName DbaInstanceName -NotePropertyValue $instance.InstanceName -Force
+                    Add-Member -InputObject $server -NotePropertyName SqlInstance -NotePropertyValue $server.DomainInstanceName -Force
                     Add-Member -InputObject $server -NotePropertyName NetPort -NotePropertyValue $instance.Port -Force
                     Add-Member -InputObject $server -NotePropertyName ConnectedAs -NotePropertyValue $server.ConnectionContext.TrueLogin -Force
                     Write-Message -Level Debug -Message "We added IsAzure = '$($server.IsAzure)', ComputerName = '$($server.ComputerName)', DbaInstanceName = instance.InstanceName = '$($server.DbaInstanceName)', NetPort = instance.Port = '$($server.NetPort)', ConnectedAs = server.ConnectionContext.TrueLogin = '$($server.ConnectedAs)'"
