@@ -944,6 +944,20 @@ function Connect-DbaInstance {
                     $computerName = $server.NetName
                 }
 
+                # Set the source of ComputerName to something else than the default:
+                # Set-DbatoolsConfig -FullName commands.connect-dbainstance.smo.computername.source -Value 'server.ComputerNamePhysicalNetBIOS'
+                # Set-DbatoolsConfig -FullName commands.connect-dbainstance.smo.computername.source -Value 'instance.ComputerName'
+                $computerNameSource = Get-DbatoolsConfigValue -FullName commands.connect-dbainstance.smo.computername.source
+                if ($computerNameSource) {
+                    Write-Message -Level Debug -Message "Setting ComputerName based on $computerNameSource"
+                    $object, $property = $computerNameSource -split '.'
+                    $value = (Get-Variable -Name $object).Value.$property
+                    if ($value) {
+                        $computerName = (Get-Variable -Name $object).Value.$property
+                        Write-Message -Level Debug -Message "ComputerName was set to based on $computerName"
+                    }
+                }
+
                 if (-not $server.ComputerName) {
                     Add-Member -InputObject $server -NotePropertyName IsAzure -NotePropertyValue (Test-Azure -SqlInstance $instance) -Force
                     Add-Member -InputObject $server -NotePropertyName ComputerName -NotePropertyValue $computerName -Force
