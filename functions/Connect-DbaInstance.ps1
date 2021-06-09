@@ -462,6 +462,11 @@ function Connect-DbaInstance {
             and within this function leads to the following code path being used.
             All the sub paths inside the following if clause will end with a continue, so the normal code path is not used.
             #>
+
+            # The following line is just added so that we can use AppVayor to run all test with the experimental code path
+            Set-DbatoolsConfig -FullName sql.connection.experimental -Value $true
+            # Remove before merge!
+
             if (Get-DbatoolsConfigValue -FullName sql.connection.experimental) {
                 <#
                 Best practice:
