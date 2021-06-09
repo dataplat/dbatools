@@ -98,7 +98,8 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         It "connects using a connection object - instance2" {
             [System.Data.SqlClient.SqlConnection]$sqlconnection = "Data Source=$script:instance2;Initial Catalog=tempdb;Integrated Security=True;"
             $server = Connect-DbaInstance -SqlInstance $sqlconnection
-            $server.ComputerName -eq ([DbaInstance]$script:instance2).ComputerName | Should Be $true
+#            $server.ComputerName -eq ([DbaInstance]$script:instance2).ComputerName | Should Be $true
+            $server.ComputerName | Should Be ([DbaInstance]$script:instance2).ComputerName
             $server.Databases.Name.Count -gt 0 | Should Be $true
         }
 
