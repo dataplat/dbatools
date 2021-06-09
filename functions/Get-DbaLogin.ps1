@@ -157,10 +157,10 @@ function Get-DbaLogin {
         [parameter(Mandatory, ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [object[]]$Login,
-        [object[]]$IncludeFilter,
-        [object[]]$ExcludeLogin,
-        [object[]]$ExcludeFilter,
+        [string[]]$Login,
+        [string[]]$IncludeFilter,
+        [string[]]$ExcludeLogin,
+        [string[]]$ExcludeFilter,
         [Alias('ExcludeSystemLogins')]
         [switch]$ExcludeSystemLogin,
         [ValidateSet('Windows', 'SQL')]
