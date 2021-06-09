@@ -931,41 +931,83 @@ function Connect-DbaInstance {
                     continue
                 }
 
-                # There a different ways to handle the new property ComputerName
-                # Rules in legacy code: Use $server.NetName, but if $server.NetName is empty or we are on Azure or Linux, use $instance.ComputerName
-                if ($server.DatabaseEngineType -eq "SqlAzureDatabase") {
-                    Write-Message -Level Debug -Message "We are on Azure, so server.ComputerName will be set to instance.ComputerName"
-                    $computerName = $instance.ComputerName
-                } elseif ($server.HostPlatform -eq 'Linux') {
-                    Write-Message -Level Debug -Message "We are on Linux what is often on docker and the internal name is not useful, so server.ComputerName will be set to instance.ComputerName"
-                    $computerName = $instance.ComputerName
-                } else {
-                    Write-Message -Level Debug -Message "We will set server.ComputerName to server.NetName"
-                    $computerName = $server.NetName
-                }
-
-                # Set the source of ComputerName to something else than the default:
-                # Set-DbatoolsConfig -FullName commands.connect-dbainstance.smo.computername.source -Value 'server.ComputerNamePhysicalNetBIOS'
-                # Set-DbatoolsConfig -FullName commands.connect-dbainstance.smo.computername.source -Value 'instance.ComputerName'
-                $computerNameSource = Get-DbatoolsConfigValue -FullName commands.connect-dbainstance.smo.computername.source
-                if ($computerNameSource) {
-                    Write-Message -Level Debug -Message "Setting ComputerName based on $computerNameSource"
-                    $object, $property = $computerNameSource -split '.'
-                    $value = (Get-Variable -Name $object).Value.$property
-                    if ($value) {
-                        $computerName = (Get-Variable -Name $object).Value.$property
-                        Write-Message -Level Debug -Message "ComputerName was set to based on $computerName"
-                    }
-                }
-
                 if (-not $server.ComputerName) {
-                    Add-Member -InputObject $server -NotePropertyName IsAzure -NotePropertyValue (Test-Azure -SqlInstance $instance) -Force
+                    # To set the source of ComputerName to something else than the default use this config parameter:
+                    # Set-DbatoolsConfig -FullName commands.connect-dbainstance.smo.computername.source -Value 'server.ComputerNamePhysicalNetBIOS'
+                    # Set-DbatoolsConfig -FullName commands.connect-dbainstance.smo.computername.source -Value 'instance.ComputerName'
+                    # If the config parameter is not used, then there a different ways to handle the new property ComputerName
+                    # Rules in legacy code: Use $server.NetName, but if $server.NetName is empty or we are on Azure or Linux, use $instance.ComputerName
+                    $computerName = $null
+                    $computerNameSource = Get-DbatoolsConfigValue -FullName commands.connect-dbainstance.smo.computername.source
+                    if ($computerNameSource) {
+                        Write-Message -Level Debug -Message "Setting ComputerName based on $computerNameSource"
+                        $object, $property = $computerNameSource -split '\.'
+                        $value = (Get-Variable -Name $object).Value.$property
+                        if ($value) {
+                            $computerName = $value
+                            Write-Message -Level Debug -Message "ComputerName will be set to $computerName"
+                        } else {
+                            Write-Message -Level Debug -Message "No value found for ComputerName, so will use the default"
+                        }
+                    }
+                    if (-not $computerName) {
+                        if ($server.DatabaseEngineType -eq "SqlAzureDatabase") {
+                            Write-Message -Level Debug -Message "We are on Azure, so server.ComputerName will be set to instance.ComputerName"
+                            $computerName = $instance.ComputerName
+                        } elseif ($server.HostPlatform -eq 'Linux') {
+                            Write-Message -Level Debug -Message "We are on Linux what is often on docker and the internal name is not useful, so server.ComputerName will be set to instance.ComputerName"
+                            $computerName = $instance.ComputerName
+                        } else {
+                            Write-Message -Level Debug -Message "We will set server.ComputerName to server.NetName"
+                            $computerName = $server.NetName
+                        }
+                        Write-Message -Level Debug -Message "ComputerName will be set to $computerName"
+                    }
                     Add-Member -InputObject $server -NotePropertyName ComputerName -NotePropertyValue $computerName -Force
+                }
+
+                if (-not $server.FullComputerName) {
+                    # To set the source of FullComputerName to something else than the default use this config parameter:
+                    # Set-DbatoolsConfig -FullName commands.connect-dbainstance.smo.fullcomputername.source -Value 'server.ComputerName'
+                    # Set-DbatoolsConfig -FullName commands.connect-dbainstance.smo.fullcomputername.source -Value 'resolve.FullComputerName'
+                    # If the config parameter is not used, then the ComputerName of the input object is used.
+                    $fullComputerName = $null
+                    $fullComputerNameSource = Get-DbatoolsConfigValue -FullName commands.connect-dbainstance.smo.fullcomputername.source
+                    if ($fullComputerNameSource) {
+                        Write-Message -Level Debug -Message "Setting FullComputerName based on $fullComputerNameSource"
+                        $object, $property = $fullComputerNameSource -split '\.'
+                        if ($object -eq 'resolve') {
+                            $value = $null
+                            try {
+                                Write-Message -Level Debug -Message "Trying to use Resolve-DbaNetworkName"
+                                $value = (Resolve-DbaNetworkName -ComputerName $instance.ComputerName -EnableException).$property
+                            } catch {
+                                Write-Message -Level Debug -Message "Failed to use Resolve-DbaNetworkName"
+                            }
+                        } else {
+                            $value = (Get-Variable -Name $object).Value.$property
+                        }
+                        if ($value) {
+                            $fullComputerName = $value
+                            Write-Message -Level Debug -Message "FullComputerName will be set to $fullComputerName"
+                        } else {
+                            Write-Message -Level Debug -Message "No value found for FullComputerName, so will use the default"
+                        }
+                    }
+                    if (-not $fullComputerName) {
+                        $fullComputerName = $instance.ComputerName
+                        Write-Message -Level Debug -Message "FullComputerName will be set to $fullComputerName"
+                    }
+                    Add-Member -InputObject $server -NotePropertyName FullComputerName -NotePropertyValue $fullComputerName -Force
+                }
+
+                if (-not $server.IsAzure) {
+                    Add-Member -InputObject $server -NotePropertyName IsAzure -NotePropertyValue (Test-Azure -SqlInstance $instance) -Force
                     Add-Member -InputObject $server -NotePropertyName DbaInstanceName -NotePropertyValue $instance.InstanceName -Force
                     Add-Member -InputObject $server -NotePropertyName SqlInstance -NotePropertyValue $server.DomainInstanceName -Force
                     Add-Member -InputObject $server -NotePropertyName NetPort -NotePropertyValue $instance.Port -Force
                     Add-Member -InputObject $server -NotePropertyName ConnectedAs -NotePropertyValue $server.ConnectionContext.TrueLogin -Force
-                    Write-Message -Level Debug -Message "We added IsAzure = '$($server.IsAzure)', ComputerName = '$($server.ComputerName)', DbaInstanceName = instance.InstanceName = '$($server.DbaInstanceName)', NetPort = instance.Port = '$($server.NetPort)', ConnectedAs = server.ConnectionContext.TrueLogin = '$($server.ConnectedAs)'"
+                    Write-Message -Level Debug -Message "We added IsAzure = '$($server.IsAzure)', DbaInstanceName = instance.InstanceName = '$($server.DbaInstanceName)', SqlInstance = server.DomainInstanceName = '$($server.SqlInstance)', NetPort = instance.Port = '$($server.NetPort)', ConnectedAs = server.ConnectionContext.TrueLogin = '$($server.ConnectedAs)'"
                 }
 
                 Write-Message -Level Debug -Message "We return the server object"
