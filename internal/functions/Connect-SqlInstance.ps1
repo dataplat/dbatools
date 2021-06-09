@@ -71,6 +71,6 @@ function Connect-SqlInstance {
         }
         return $SqlInstance.InputObject
     } else {
-        Connect-DbaInstance @PSBoundParameters -ClientName (Get-DbatoolsConfigValue -FullName 'sql.connection.clientname')
+        Connect-DbaInstance @PSBoundParameters
     }
 }

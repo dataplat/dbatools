@@ -64,7 +64,7 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
             $results.Count | Should Be 3
         }
         It "Honors the Snapshot parameter" {
-            $result = Remove-DbaDbSnapshot -SqlInstance $script:instance2 -Snapshot $db1_snap1
+            $result = Remove-DbaDbSnapshot -SqlInstance $script:instance2 -Snapshot $db1_snap1 -Confirm:$false
             $result.Name | Should Be $db1_snap1
         }
         It "Works with piped snapshots" {

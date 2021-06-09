@@ -123,8 +123,8 @@ function Get-DbaAgBackupHistory {
         [PsCredential]$SqlCredential,
         [parameter(Mandatory)]
         [string]$AvailabilityGroup,
-        [object[]]$Database,
-        [object[]]$ExcludeDatabase,
+        [string[]]$Database,
+        [string[]]$ExcludeDatabase,
         [switch]$IncludeCopyOnly,
         [Parameter(ParameterSetName = "NoLast")]
         [switch]$Force,
@@ -183,13 +183,18 @@ function Get-DbaAgBackupHistory {
             Write-Message -Level Verbose -Message "We have one server, so it should be a listener"
             $server = $serverList[0]
 
-            $replicaNames = $server.AvailabilityGroups.Where( { $_.Name -in $AvailabilityGroup } ).AvailabilityReplicas.Name
+            $replicaNames = ($server.AvailabilityGroups | Where-Object { $_.Name -in $AvailabilityGroup } ).AvailabilityReplicas.Name
             Write-Message -Level Verbose -Message "We have found these replicas: $replicaNames"
 
             $serverList = $replicaNames
         }
 
         Write-Message -Level Verbose -Message "We have more than one server, so query them all and aggregate"
+        # If -Database is not set, we want to filter on all databases of the availability group
+        if (Test-Bound -Not -ParameterName Database) {
+            $agDatabase = (Get-DbaAgDatabase -SqlInstance $serverList[0] -AvailabilityGroup $AvailabilityGroup).Name
+            $PSBoundParameters.Add('Database', $agDatabase)
+        }
         $null = $PSBoundParameters.Remove('SqlInstance')
         $null = $PSBoundParameters.Remove('AvailabilityGroup')
         $null = $PSBoundParameters.Remove('Last')

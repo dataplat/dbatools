@@ -71,11 +71,6 @@ function New-DbaDbUser {
 
         Creates a new sql user named user1 mapped to Login1 in the specified database.
 
-    .EXAMPLE
-        PS C:\> Get-DbaDbUser -SqlInstance sqlserver1 -Database DB1 | New-DbaDbUser -SqlInstance sqlserver2 -Database DB1
-
-        Copies users from sqlserver1.DB1 to sqlserver2.DB1. Does not copy permissions!
-
     #>
     [CmdletBinding(SupportsShouldProcess, DefaultParameterSetName = "NoLogin", ConfirmImpact = "Medium")]
     param(
