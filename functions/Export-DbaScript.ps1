@@ -194,6 +194,15 @@ function Export-DbaScript {
                 Write-Message -Level Warning -Message "Support for $shorttype is limited at this time."
             }
 
+            if ($shorttype -eq "AvailabilityGroup") {
+                Write-Message -Level Verbose -Message "Invoking .Script() as a workaround for https://github.com/sqlcollaborative/dbatools/issues/5913."
+                try {
+                    $null = $InputObject.Script()
+                } catch {
+                    Write-Message -Level Verbose -Message "Invoking .Script() failed: $_"
+                }
+            }
+
             # Find the server object to pass on to the function
             $parent = $object.parent
 

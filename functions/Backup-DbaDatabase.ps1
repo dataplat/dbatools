@@ -293,7 +293,7 @@ function Backup-DbaDatabase {
                 $FileCount = $Path.Count
             }
 
-            if ($InputObject.Count -gt 1 -and $FilePath -ne '' -and $True -ne $ReplaceInFile) {
+            if ($InputObject.Count -gt 1 -and $FilePath -ne '' -and $True -ne $ReplaceInName) {
                 Stop-Function -Message "1 BackupFile specified, but more than 1 database."
                 return
             }
@@ -440,7 +440,8 @@ function Backup-DbaDatabase {
                 Write-Message -Level Warning -Message "$failreason"
             }
 
-            $lastfull = $db.Refresh().LastBackupDate.Year
+            $db.Refresh()
+            $lastfull = $db.LastBackupDate.Year
 
             if ($Type -notin @("Database", "Full") -and $lastfull -eq 1) {
                 $failreason = "$db does not have an existing full backup, cannot take log or differentialbackup"
