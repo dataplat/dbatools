@@ -88,7 +88,10 @@ function Remove-DbaDbSequence {
 
     process {
         if ($SqlInstance) {
-            $sequences = Get-DbaDbSequence @PSBoundParameters
+            $params = $PSBoundParameters
+            $null = $params.Remove('WhatIf')
+            $null = $params.Remove('Confirm')
+            $sequences = Get-DbaDbSequence @params
         } else {
             $sequences += $InputObject
         }
@@ -118,7 +121,7 @@ function Remove-DbaDbSequence {
                     $output.Success = $true
                     $output.Successful = $true
                 } catch {
-                    Stop-Function -Message "Failed removing the sequence $($sequence.Schema).$($sequence.Name) in the database $($sequence.Parent.Name) on $($sequence.Parent.Parent.Name)" -ErrorRecord $_ -Continue
+                    Stop-Function -Message "Failed removing the sequence $($sequence.Schema).$($sequence.Name) in the database $($sequence.Parent.Name) on $($sequence.Parent.Parent.Name)" -ErrorRecord $_
                     $output.Status = (Get-ErrorMessage -Record $_)
                     $output.Removed = $false
                     $output.Success = $false
