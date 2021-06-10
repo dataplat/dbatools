@@ -34,21 +34,19 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     }
 
     Context "Should remove schedules" {
-        $results = Get-DbaAgentSchedule -SqlInstance $script:instance2 |
-        Where-Object { $_.name -like 'dbatools*' }
+        $results = Get-DbaAgentSchedule -SqlInstance $script:instance2 | Where-Object { $_.name -like 'dbatools*' }
         It "Should find all created schedule" {
             $results | Should Not BeNullOrEmpty
         }
 
-        Remove-DbaAgentSchedule -SqlInstance $script:instance2 -Schedule dbatoolsci_MonthlyRelative -Confirm:$false
-        $results = Get-DbaAgentSchedule -SqlInstance $script:instance2 -Schedule dbatoolsci_MonthlyRelative
-        It "Should not find dbatoolsci_MonthlyRelative" {
+        $null = Remove-DbaAgentSchedule -SqlInstance $script:instance2 -Schedule dbatoolsci_Minutes -Confirm:$false
+        $results = Get-DbaAgentSchedule -SqlInstance $script:instance2 -Schedule dbatoolsci_Minutes
+        It "Should not find dbatoolsci_Minutes" {
             $results | Should BeNullOrEmpty
         }
 
-        $results = Get-DbaAgentSchedule -SqlInstance $script:instance2 |
-        Where-Object { $_.name -like 'dbatools*' } |
-        Remove-DbaAgentSchedule -Confirm:$false -Force
+        $null = Get-DbaAgentSchedule -SqlInstance $script:instance2 | Where-Object { $_.name -like 'dbatools*' } | Remove-DbaAgentSchedule -Confirm:$false -Force
+        $results = Get-DbaAgentSchedule -SqlInstance $script:instance2 | Where-Object { $_.name -like 'dbatools*' }
         It "Should not find any created schedule" {
             $results | Should BeNullOrEmpty
         }
