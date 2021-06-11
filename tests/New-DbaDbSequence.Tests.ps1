@@ -17,7 +17,6 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
         $random = Get-Random
         $instance2 = Connect-DbaInstance -SqlInstance $script:instance2
-        $null = Get-DbaProcess -SqlInstance $instance2 | Where-Object Program -match dbatools | Stop-DbaProcess -Confirm:$false
         $newDbName = "dbatoolsci_newdb_$random"
         $newDb = New-DbaDatabase -SqlInstance $instance2 -Name $newDbName
 
@@ -106,7 +105,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
 
             foreach ($minValue in $minValues) {
                 $randomForMinValues = Get-Random
-                $sequence = New-DbaDbSequence -SqlInstance $instance2 -Database $newDbName -Name "Sequence_$($randomForMinValues)" -Schema "Schema_$random" -MinValue $minValue
+                $sequence = New-DbaDbSequence -SqlInstance $instance2 -Database $newDbName -Name "Sequence_$($randomForMinValues)" -Schema "Schema_$random" -MinValue $minValue -StartWith $minValue
                 $sequence.Name | Should -Be "Sequence_$($randomForMinValues)"
                 $sequence.Schema | Should -Be "Schema_$random"
                 $sequence.MinValue | Should -Be $minValue
@@ -115,7 +114,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         }
 
         It "creates a new sequence with different max values" {
-            $maxValues = @(-100000, 1, 100000)
+            $maxValues = @(10000, 100000)
 
             foreach ($maxValue in $maxValues) {
                 $randomForMaxValues = Get-Random
