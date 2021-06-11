@@ -9193,7 +9193,7 @@
     },
     {
         "Name":  "Export-DbaRepServerSetting",
-        "Description":  "Exports replication server settings to file.",
+        "Description":  "Exports replication server settings to file.\n\nAll replication commands need SSMS 17 installed and are therefore currently not supported.\nHave a look at this issue to get more information: https://github.com/sqlcollaborative/dbatools/issues/7428",
         "Tags":  "Replication",
         "Synopsis":  "Exports replication server settings to file.",
         "Alias":  "",
@@ -17915,27 +17915,9 @@
                            "false",
                            "False",
                            ""
-                       ],
-                       [
-                           "WhatIf",
-                           "Shows what would happen if the command were to run. No actions are actually performed.",
-                           "wi",
-                           false,
-                           "false",
-                           "",
-                           ""
-                       ],
-                       [
-                           "Confirm",
-                           "Prompts you for confirmation before executing any changing operations within the command.",
-                           "cf",
-                           false,
-                           "false",
-                           "",
-                           ""
                        ]
                    ],
-        "Syntax":  "Get-DbaDbSequence [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cString[]\u003e] [[-Name] \u003cString[]\u003e] [[-Schema] \u003cString[]\u003e] [[-InputObject] \u003cDatabase[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Get-DbaDbSequence [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cString[]\u003e] [[-Name] \u003cString[]\u003e] [[-Schema] \u003cString[]\u003e] [[-InputObject] \u003cDatabase[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Get-DbaDbServiceBrokerService",
@@ -23571,7 +23553,7 @@
     },
     {
         "Name":  "Get-DbaRepDistributor",
-        "Description":  "This function locates and enumerates distributor information for a given SQL Server instance.",
+        "Description":  "This function locates and enumerates distributor information for a given SQL Server instance.\n\nAll replication commands need SSMS 17 installed and are therefore currently not supported.\nHave a look at this issue to get more information: https://github.com/sqlcollaborative/dbatools/issues/7428",
         "Tags":  "Replication",
         "Synopsis":  "Gets the information about a replication distributor for a given SQL Server instance.",
         "Alias":  "",
@@ -23613,7 +23595,7 @@
     },
     {
         "Name":  "Get-DbaRepPublication",
-        "Description":  "Quickly find all transactional, merge, and snapshot publications on a specific server or database.",
+        "Description":  "Quickly find all transactional, merge, and snapshot publications on a specific server or database.\n\nAll replication commands need SSMS 17 installed and are therefore currently not supported.\nHave a look at this issue to get more information: https://github.com/sqlcollaborative/dbatools/issues/7428",
         "Tags":  "Replication",
         "Synopsis":  "Displays all publications for a server or database.",
         "Alias":  "",
@@ -23673,7 +23655,7 @@
     },
     {
         "Name":  "Get-DbaRepServer",
-        "Description":  "Gets a replication server object",
+        "Description":  "Gets a replication server object\n\nAll replication commands need SSMS 17 installed and are therefore currently not supported.\nHave a look at this issue to get more information: https://github.com/sqlcollaborative/dbatools/issues/7428",
         "Tags":  "Replication",
         "Synopsis":  "Gets a replication server object",
         "Alias":  "",
@@ -58251,7 +58233,7 @@
     },
     {
         "Name":  "Test-DbaRepLatency",
-        "Description":  "Creates tracer tokens to determine latency between the publisher/distributor and the distributor/subscriber\nfor all transactional publications for a server, database, or publication.",
+        "Description":  "Creates tracer tokens to determine latency between the publisher/distributor and the distributor/subscriber\nfor all transactional publications for a server, database, or publication.\n\nAll replication commands need SSMS 17 installed and are therefore currently not supported.\nHave a look at this issue to get more information: https://github.com/sqlcollaborative/dbatools/issues/7428",
         "Tags":  "Replication",
         "Synopsis":  "Displays replication latency for all transactional publications for a server or database.",
         "Alias":  "",
