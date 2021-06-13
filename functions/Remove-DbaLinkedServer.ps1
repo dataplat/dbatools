@@ -70,13 +70,14 @@ function Remove-DbaLinkedServer {
         [object[]]$InputObject,
         [switch]$EnableException
     )
+    begin {
+        $linkedServersToDrop = @()
+    }
     process {
 
         foreach ($instance in $SqlInstance) {
             $InputObject += Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential
         }
-
-        $linkedServersToDrop = @()
 
         foreach ($obj in $InputObject) {
 
@@ -99,6 +100,8 @@ function Remove-DbaLinkedServer {
                 $linkedServersToDrop += $obj
             }
         }
+    }
+    end {
 
         foreach ($lsToDrop in $linkedServersToDrop) {
 

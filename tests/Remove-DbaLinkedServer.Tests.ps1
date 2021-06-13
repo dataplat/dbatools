@@ -58,7 +58,8 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         It "Removes a linked server using a server from a pipeline and a linked server from a pipeline" {
             $results = Get-DbaLinkedServer -SqlInstance $script:instance2 -LinkedServer "LS2_$random"
             $results.Length | Should -Be 1
-            $ls2 | Remove-DbaLinkedServer -Confirm:$false
+            Get-DbaLinkedServer -SqlInstance $instance2 -LinkedServer "LS2_$random" | Remove-DbaLinkedServer -WarningVariable warn -Confirm:$false
+            $warn | Should -BeNullOrEmpty
             $results = Get-DbaLinkedServer -SqlInstance $instance2 -LinkedServer "LS2_$random"
             $results | Should -BeNullOrEmpty
 
