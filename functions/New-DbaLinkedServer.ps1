@@ -99,15 +99,15 @@ function New-DbaLinkedServer {
             $InputObject += Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential
         }
 
-        foreach ($instance in $InputObject) {
+        foreach ($server in $InputObject) {
 
-            if ($instance.LinkedServers.Name -contains $LinkedServer) {
-                Stop-Function -Message "Linked server $LinkedServer already exists on $($instance.Name)" -Continue
+            if ($server.LinkedServers.Name -contains $LinkedServer) {
+                Stop-Function -Message "Linked server $LinkedServer already exists on $($server.Name)" -Continue
             }
 
-            if ($Pscmdlet.ShouldProcess($instance.Name, "Creating the linked server $LinkedServer on $($instance.Name)")) {
+            if ($Pscmdlet.ShouldProcess($server.Name, "Creating the linked server $LinkedServer on $($server.Name)")) {
                 try {
-                    $newLinkedServer = New-Object Microsoft.SqlServer.Management.Smo.LinkedServer -ArgumentList $instance, $LinkedServer
+                    $newLinkedServer = New-Object Microsoft.SqlServer.Management.Smo.LinkedServer -ArgumentList $server, $LinkedServer
 
                     if (Test-Bound ServerProduct) {
                         $newLinkedServer.ProductName = $ServerProduct
@@ -134,9 +134,10 @@ function New-DbaLinkedServer {
                     }
 
                     $newLinkedServer.Create()
-                    $newLinkedServer
+
+                    $server | Get-DbaLinkedServer -LinkedServer $LinkedServer
                 } catch {
-                    Stop-Function -Message "Failure on $($instance.Name) to create the linked server $LinkedServer" -ErrorRecord $_ -Continue
+                    Stop-Function -Message "Failure on $($server.Name) to create the linked server $LinkedServer" -ErrorRecord $_ -Continue
                 }
             }
         }
