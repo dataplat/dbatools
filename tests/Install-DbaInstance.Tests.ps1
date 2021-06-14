@@ -167,6 +167,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
                 $result.Notes | Should -BeNullOrEmpty
                 $result.Configuration.$mainNode.FEATURES | Should -Be 'SQLEngine,AS'
                 $result.Configuration.$mainNode.SQLSVCACCOUNT | Should -Be 'foo\bar'
+                $result.Configuration.$mainNode.ACTION | Should -Be 'Install'
                 if ($version -in '2016', '2017') {
                     $result.Configuration.$mainNode.SQLTEMPDBFILECOUNT | Should -Be 8
                 }
