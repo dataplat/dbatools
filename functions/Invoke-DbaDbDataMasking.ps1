@@ -367,7 +367,7 @@ function Invoke-DbaDbDataMasking {
 
                         $query = "CREATE NONCLUSTERED INDEX [$($maskingIndexName)] ON [$($dbTable.Schema)].[$($dbTable.Name)]([$($identityColumn)])"
 
-                        Invoke-DbaQuery -SqlInstance $server -SqlCredential $SqlCredential -Database $db.Name -Query $query
+                        Invoke-DbaQuery -SqlInstance $server -SqlCredential $SqlCredential -Database $db.Name -Query $query -QueryTimeout
                     } catch {
                         Stop-Function -Message "Could not add identity index to table [$($dbTable.Schema)].[$($dbTable.Name)]" -Continue
                     }
@@ -1025,7 +1025,16 @@ function Invoke-DbaDbDataMasking {
 
                                                 Write-Message -Level Verbose -Message "Executing batch $batchNr/$totalBatches"
 
-                                                Invoke-DbaQuery -SqlInstance $instance -SqlCredential $SqlCredential -Database $db.Name -Query $stringBuilder.ToString() -EnableException
+                                                $queryParams = @{
+                                                    SqlInstance     = $instance
+                                                    SqlCredential   = $SqlCredential
+                                                    Database        = $db.Name
+                                                    Query           = $stringBuilder.ToString()
+                                                    EnableException = $EnableException
+                                                    QueryTimeout    = $ConnectionTimeout
+                                                }
+
+                                                Invoke-DbaQuery @queryParams
                                             } catch {
                                                 $maskingErrorFlag = $true
                                                 Stop-Function -Message "Error updating $($tableobject.Schema).$($tableobject.Name): $_ `n$($stringBuilder.ToString())" -Target $stringBuilder.ToString() -Continue -ErrorRecord $_
@@ -1053,7 +1062,16 @@ function Invoke-DbaDbDataMasking {
 
                                             Write-Message -Level Verbose -Message "Executing batch $batchNr/$totalBatches"
 
-                                            Invoke-DbaQuery -SqlInstance $instance -SqlCredential $SqlCredential -Database $db.Name -Query $stringBuilder.ToString() -EnableException
+                                            $queryParams = @{
+                                                SqlInstance     = $instance
+                                                SqlCredential   = $SqlCredential
+                                                Database        = $db.Name
+                                                Query           = $stringBuilder.ToString()
+                                                EnableException = $EnableException
+                                                QueryTimeout    = $ConnectionTimeout
+                                            }
+
+                                            Invoke-DbaQuery @queryParams
                                         } catch {
                                             $maskingErrorFlag = $true
                                             Stop-Function -Message "Error updating $($tableobject.Schema).$($tableobject.Name): $_`n$($stringBuilder.ToString())" -Target $stringBuilder.ToString() -Continue -ErrorRecord $_
