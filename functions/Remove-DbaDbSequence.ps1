@@ -110,22 +110,16 @@ function Remove-DbaDbSequence {
                     SequenceName   = $sequence.Name
                     SequenceSchema = $sequence.Schema
                     Status         = $null
-                    Removed        = $false
-                    Success        = $false
-                    Successful     = $false
+                    IsRemoved      = $false
                 }
                 try {
                     $sequence.Drop()
                     $output.Status = "Dropped"
-                    $output.Removed = $true
-                    $output.Success = $true
-                    $output.Successful = $true
+                    $output.IsRemoved = $true
                 } catch {
                     Stop-Function -Message "Failed removing the sequence $($sequence.Schema).$($sequence.Name) in the database $($sequence.Parent.Name) on $($sequence.Parent.Parent.Name)" -ErrorRecord $_
                     $output.Status = (Get-ErrorMessage -Record $_)
-                    $output.Removed = $false
-                    $output.Success = $false
-                    $output.Successful = $false
+                    $output.IsRemoved = $false
                 }
                 $output
             }
