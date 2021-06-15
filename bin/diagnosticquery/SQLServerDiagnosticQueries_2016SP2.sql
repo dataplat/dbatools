@@ -1,7 +1,7 @@
 
 -- SQL Server 2016 SP2 Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: May 2, 2021
+-- Last Modified: June 2, 2021
 -- https://glennsqlperformance.com/
 -- https://sqlserverperformance.wordpress.com/
 -- YouTube: https://bit.ly/2PkoAM1 
@@ -1860,45 +1860,8 @@ ORDER BY s.user_updates DESC OPTION (RECOMPILE);						 -- Order by writes
 -- Show which indexes in the current database are most active for Writes
 
 
--- Get in-memory OLTP index usage (Query 75) (XTP Index Usage)
-SELECT OBJECT_NAME(i.[object_id]) AS [Object Name], i.index_id, i.[name] AS [Index Name],
-       i.[type_desc], xis.scans_started, xis.scans_retries, 
-	   xis.rows_touched, xis.rows_returned
-FROM sys.dm_db_xtp_index_stats AS xis WITH (NOLOCK)
-INNER JOIN sys.indexes AS i WITH (NOLOCK)
-ON i.[object_id] = xis.[object_id] 
-AND i.index_id = xis.index_id 
-ORDER BY OBJECT_NAME(i.[object_id]) OPTION (RECOMPILE);
-------
 
--- This gives you some index usage statistics for in-memory OLTP
--- Returns no data if you are not using in-memory OLTP
-
--- Guidelines for Using Indexes on Memory-Optimized Tables
--- https://bit.ly/2GCP8lF
-
-
-
--- Look at Columnstore index physical statistics (Query 76) (Columnstore Index Physical Stat)
-SELECT OBJECT_NAME(ps.object_id) AS [TableName],  
-	i.[name] AS [IndexName], ps.index_id, ps.partition_number,
-	ps.delta_store_hobt_id, ps.state_desc, ps.total_rows, ps.size_in_bytes,
-	ps.trim_reason_desc, ps.generation, ps.transition_to_compressed_state_desc,
-	ps.has_vertipaq_optimization, ps.deleted_rows,
-	100 * (ISNULL(ps.deleted_rows, 0))/ps.total_rows AS [Fragmentation]
-FROM sys.dm_db_column_store_row_group_physical_stats AS ps WITH (NOLOCK)
-INNER JOIN sys.indexes AS i WITH (NOLOCK)
-ON ps.object_id = i.object_id 
-AND ps.index_id = i.index_id
-ORDER BY ps.object_id, ps.partition_number, ps.row_group_id OPTION (RECOMPILE);
-------
-
--- sys.dm_db_column_store_row_group_physical_stats (Transact-SQL)
--- https://bit.ly/2q276XQ
-
-
-
--- Get lock waits for current database (Query 77) (Lock Waits)
+-- Get lock waits for current database (Query 75) (Lock Waits)
 SELECT o.name AS [table_name], i.name AS [index_name], ios.index_id, ios.partition_number,
 		SUM(ios.row_lock_wait_count) AS [total_row_lock_waits], 
 		SUM(ios.row_lock_wait_in_ms) AS [total_row_lock_wait_in_ms],
@@ -1921,7 +1884,7 @@ ORDER BY total_lock_wait_in_ms DESC OPTION (RECOMPILE);
 
 
 
--- Look at UDF execution statistics (Query 78) (UDF Statistics)
+-- Look at UDF execution statistics (Query 76) (UDF Statistics)
 SELECT OBJECT_NAME(object_id) AS [Function Name], execution_count,
 	   total_worker_time, total_logical_reads, total_physical_reads, total_elapsed_time, 
 	   total_elapsed_time/execution_count AS [avg_elapsed_time],
@@ -1939,7 +1902,7 @@ ORDER BY total_worker_time DESC OPTION (RECOMPILE);
 -- https://bit.ly/2q1Q6BM
 
 
--- Get QueryStore Options for this database (Query 79) (QueryStore Options)
+-- Get QueryStore Options for this database (Query 77) (QueryStore Options)
 SELECT actual_state_desc, desired_state_desc, [interval_length_minutes],
        current_storage_size_mb, [max_storage_size_mb], 
 	   query_capture_mode_desc, size_based_cleanup_mode_desc
@@ -1959,8 +1922,7 @@ FROM sys.database_query_store_options WITH (NOLOCK) OPTION (RECOMPILE);
 -- ALTER DATABASE [DatabaseName] SET QUERY_STORE = OFF(FORCED);
 
 
-
--- Get input buffer information for the current database (Query 80) (Input Buffer)
+-- Get input buffer information for the current database (Query 78) (Input Buffer)
 SELECT es.session_id, DB_NAME(es.database_id) AS [Database Name],
        es.login_time, es.cpu_time, es.logical_reads, es.memory_usage,
        es.[status], ib.event_info AS [Input Buffer]
@@ -1998,12 +1960,14 @@ AND bs.[type] = 'D' -- Change to L if you want Log backups
 ORDER BY bs.backup_finish_date DESC OPTION (RECOMPILE);
 ------
 
+-- Things to look at:
 -- Are your backup sizes and times changing over time?
 -- Are you using backup compression?
 -- Are you using backup checksums?
 -- Are you doing copy_only backups?
 -- Are you doing encrypted backups?
 -- Have you done any backup tuning with striped backups, or changing the parameters of the backup command?
+-- Where are the backups going to?
 
 -- In SQL Server 2016, native SQL Server backup compression actually works 
 -- much better with databases that are using TDE than in previous versions

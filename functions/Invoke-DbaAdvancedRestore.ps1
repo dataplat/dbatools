@@ -246,9 +246,9 @@ function Invoke-DbaAdvancedRestore {
                     $restore.ToPointInTime = $null
                 } else {
                     if ($RestoreTime -ne $backup.RestoreTime) {
-                        $restore.ToPointInTime = $backup.RestoreTime
+                        $restore.ToPointInTime = $backup.RestoreTime.ToString("yyyy-MM-ddTHH:mm:ss.fff", [System.Globalization.CultureInfo]::InvariantCulture)
                     } else {
-                        $restore.ToPointInTime = $RestoreTime
+                        $restore.ToPointInTime = $RestoreTime.ToString("yyyy-MM-ddTHH:mm:ss.fff", [System.Globalization.CultureInfo]::InvariantCulture)
                     }
                 }
 
