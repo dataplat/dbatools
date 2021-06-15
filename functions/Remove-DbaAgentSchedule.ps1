@@ -143,9 +143,7 @@ function Remove-DbaAgentSchedule {
                     ScheduleId   = $sched.Id
                     ScheduleUid  = $sched.ScheduleUid
                     Status       = $null
-                    Removed      = $false
-                    Success      = $false
-                    Successful   = $false
+                    IsRemoved    = $false
                 }
                 try {
                     if ($sched.JobCount -ge 1) {
@@ -158,15 +156,11 @@ function Remove-DbaAgentSchedule {
                     Write-Message -Level Verbose -Message "Removing the schedule $($sched.Name) with id $($sched.Id) and uid $($sched.ScheduleUid) on $($sched.Parent.Parent.Name)"
                     $sched.Drop()
                     $output.Status = "Dropped"
-                    $output.Removed = $true
-                    $output.Success = $true
-                    $output.Successful = $true
+                    $output.IsRemoved = $true
                 } catch {
                     Stop-Function -Message "Failed removing the schedule $($sched.Name) with id $($sched.Id) and uid $($sched.ScheduleUid) on $($sched.Parent.Parent.Name)" -ErrorRecord $_
                     $output.Status = (Get-ErrorMessage -Record $_)
-                    $output.Removed = $false
-                    $output.Success = $false
-                    $output.Successful = $false
+                    $output.IsRemoved = $false
                 }
                 $output
             }
