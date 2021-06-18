@@ -55,14 +55,16 @@ $TestsRunGroups = @{
         'Test-DbaAgentJobOwner',
         'Stop-DbaXESession',
         'Get-DbaPrivilege',
-        'Find-DbaAgentJob', # strange pester issue
-        'Remove-DbaDatabaseSafely', # strange pester issue
+        # strange pester issues
+        'Find-DbaAgentJob',
+        'Remove-DbaDatabaseSafely',
         'Set-DbaDbOwner',
         'Test-DbaManagementObject',
         'Test-DbaMaxDop',
         'New-DbaLogin',
         'New-DbaDbUser',
         'Get-DbaLastGoodCheckDb',
+        'Read-DbaAuditFile',
         # doesn't work on appveyor but so works locally D:
         'Read-DbaXeFile',
         'Find-DbaCommand',

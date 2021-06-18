@@ -40,14 +40,14 @@ function New-DbaDbSnapshot {
         You can also pass a standard placeholder, in which case it'll be interpolated (e.g. '{0}' gets replaced with the database name)
 
     .PARAMETER Path
-        Snapshot files will be created here (by default the filestructure will be created in the same folder as the base db)
+        Snapshot files will be created here (by default the file structure will be created in the same folder as the base db)
 
     .PARAMETER InputObject
         Allows Piping from Get-DbaDatabase
 
     .PARAMETER Force
         Databases with Filestream FG can be snapshotted, but the Filestream FG is marked offline
-        in the snapshot. To create a "partial" snapshot, you need to pass -Force explicitely
+        in the snapshot. To create a "partial" snapshot, you need to pass -Force explicitly
 
         NB: You can't then restore the Database from the newly-created snapshot.
         For details, check https://msdn.microsoft.com/en-us/library/bb895334.aspx
@@ -127,20 +127,20 @@ function New-DbaDbSnapshot {
         }
 
         function Resolve-SnapshotError($server) {
-            $errhelp = ''
+            $errHelp = ''
             $CurrentEdition = $server.Edition.ToLowerInvariant()
             $CurrentVersion = $server.Version.Major * 1000000 + $server.Version.Minor * 10000 + $server.Version.Build
             if ($server.Version.Major -lt 9) {
-                $errhelp = 'Not supported before 2005'
+                $errHelp = 'Not supported before 2005'
             }
-            if ($CurrentVersion -lt 12002000 -and $errhelp.Length -eq 0) {
+            if ($CurrentVersion -lt 12002000 -and $errHelp.Length -eq 0) {
                 if ($CurrentEdition -notmatch '.*enterprise.*|.*developer.*|.*datacenter.*') {
-                    $errhelp = 'Supported only for Enterprise, Developer or Datacenter editions'
+                    $errHelp = 'Supported only for Enterprise, Developer or Datacenter editions'
                 }
             }
             $message = ""
-            if ($errhelp.Length -gt 0) {
-                $message += "Please make sure your version supports snapshots : ($errhelp)"
+            if ($errHelp.Length -gt 0) {
+                $message += "Please make sure your version supports snapshots : ($errHelp)"
             } else {
                 $message += "This module can't tell you why the snapshot creation failed. Feel free to report back to dbatools what happened"
             }
@@ -218,7 +218,7 @@ function New-DbaDbSnapshot {
                 $SnapName = "{0}_{1}" -f $db.Name, $DefaultSuffix
             }
             if ($SnapName -in $server.Databases.Name) {
-                Write-Message -Level Warning -Message "A database named $Snapname already exists, skipping"
+                Write-Message -Level Warning -Message "A database named $SnapName already exists, skipping"
                 continue
             }
             $all_FSD = $db.FileGroups | Where-Object FileGroupType -eq 'FileStreamDataFileGroup'
@@ -233,11 +233,11 @@ function New-DbaDbSnapshot {
                 Write-Message -Level Warning -Message "Filestream detected, skipping. You need to specify -Force. See Get-Help for details"
                 continue
             }
-            $snaptype = "db snapshot"
+            $snapType = "db snapshot"
             if ($has_FSD) {
-                $snaptype = "partial db snapshot"
+                $snapType = "partial db snapshot"
             }
-            If ($Pscmdlet.ShouldProcess($server, "Create $snaptype $SnapName of $($db.Name)")) {
+            If ($PSCmdlet.ShouldProcess($server, "Create $snapType $SnapName of $($db.Name)")) {
                 $CustomFileStructure = @{ }
                 $counter = 0
                 foreach ($fg in $db.FileGroups) {
@@ -248,20 +248,25 @@ function New-DbaDbSnapshot {
                     foreach ($file in $fg.Files) {
                         $counter += 1
                         $basename = [IO.Path]::GetFileNameWithoutExtension($file.FileName)
-                        $basepath = Split-Path $file.FileName -Parent
+                        $basePath = Split-Path $file.FileName -Parent
                         # change path if specified
                         if ($Path.Length -gt 0) {
-                            $basepath = $Path
+                            $basePath = $Path
                         }
                         # we need to avoid cases where basename is the same for multiple FG
-                        $fname = [IO.Path]::Combine($basepath, ("{0}_{1}_{2:0000}_{3:000}" -f $basename, $DefaultSuffix, (Get-Date).MilliSecond, $counter))
+                        $fName = [IO.Path]::Combine($basePath, ("{0}_{1}_{2:0000}_{3:000}" -f $basename, $DefaultSuffix, (Get-Date).MilliSecond, $counter))
                         # fixed extension is hardcoded as "ss", which seems a "de-facto" standard
-                        $fname = [IO.Path]::ChangeExtension($fname, "ss")
-                        $CustomFileStructure[$fg.Name] += @{ 'name' = $file.name; 'filename' = $fname }
+                        $fName = [IO.Path]::ChangeExtension($fName, "ss")
+
+                        # change slashes for Linux
+                        if ($server.HostPlatform -eq 'Linux') {
+                            $fName = $fName.Replace("\", "/")
+                        }
+                        $CustomFileStructure[$fg.Name] += @{ 'name' = $file.name; 'filename' = $fName }
                     }
                 }
 
-                $SnapDB = New-Object -TypeName Microsoft.SqlServer.Management.Smo.Database -ArgumentList $server, $Snapname
+                $SnapDB = New-Object -TypeName Microsoft.SqlServer.Management.Smo.Database -ArgumentList $server, $SnapName
                 $SnapDB.DatabaseSnapshotBaseName = $db.Name
 
                 foreach ($fg in $CustomFileStructure.Keys) {
@@ -282,7 +287,7 @@ function New-DbaDbSnapshot {
                 try {
                     $SnapDB.Create()
                     $server.Databases.Refresh()
-                    Get-DbaDbSnapshot -SqlInstance $server -Snapshot $Snapname
+                    Get-DbaDbSnapshot -SqlInstance $server -Snapshot $SnapName
                 } catch {
                     try {
                         $server.Databases.Refresh()
@@ -290,9 +295,9 @@ function New-DbaDbSnapshot {
                             # previous creation failed completely, snapshot is not there already
                             $null = $server.Query($sql[0])
                             $server.Databases.Refresh()
-                            $SnapDB = Get-DbaDbSnapshot -SqlInstance $server -Snapshot $Snapname
+                            $SnapDB = Get-DbaDbSnapshot -SqlInstance $server -Snapshot $SnapName
                         } else {
-                            $SnapDB = Get-DbaDbSnapshot -SqlInstance $server -Snapshot $Snapname
+                            $SnapDB = Get-DbaDbSnapshot -SqlInstance $server -Snapshot $SnapName
                         }
 
                         $Notes = @()

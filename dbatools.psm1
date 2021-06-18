@@ -796,7 +796,10 @@ $script:xplat = @(
     'Get-DbaDbSynonym',
     'New-DbaDbSynonym',
     'Remove-DbaDbSynonym',
-    'Install-DbaDarlingData'
+    'Install-DbaDarlingData',
+    'New-DbaDbFileGroup',
+    'Remove-DbaDbFileGroup',
+    'Set-DbaDbFileGroup'
 )
 
 $script:noncoresmo = @(
@@ -842,6 +845,8 @@ $script:windowsonly = @(
     'Test-DbaMaxMemory', # can be fixed by not testing remote when linux is detected
     'Rename-DbaDatabase', # can maybebe fixed by not remoting when linux is detected
     # CM and Windows functions
+    'Get-DbaNetworkConfiguration',
+    'Set-DbaNetworkConfiguration',
     'Get-DbaExtendedProtection',
     'Set-DbaExtendedProtection',
     'Install-DbaInstance',

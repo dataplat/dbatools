@@ -68,48 +68,54 @@ function New-DbaDacOption {
         [string]$PublishXml,
         [switch]$EnableException
     )
-    if ($PScmdlet.ShouldProcess("$type", "Creating New DacOptions of $action")) {
-        if (-not $script:core) {
-            $dacfxPath = "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Dac.dll"
-            if ((Test-Path $dacfxPath) -eq $false) {
-                Stop-Function -Message 'Dac Fx library not found.' -EnableException $EnableException
-                return
-            } else {
-                try {
-                    Add-Type -Path $dacfxPath
-                    Write-Message -Level Verbose -Message "Dac Fx loaded."
-                } catch {
-                    Stop-Function -Message 'No usable version of Dac Fx found.' -ErrorRecord $_
-                    return
-                }
-            }
+    process {
+        if ($PSEdition -eq 'Core') {
+            Stop-Function -Message "PowerShell Core is not supported, please use Windows PowerShell."
+            return
         }
-
-        # Pick proper option object depending on type and action
-        if ($Action -eq 'Export') {
-            if ($Type -eq 'Dacpac') {
-                New-Object -TypeName Microsoft.SqlServer.Dac.DacExtractOptions
-            } elseif ($Type -eq 'Bacpac') {
-                New-Object -TypeName Microsoft.SqlServer.Dac.DacExportOptions
-            }
-        } elseif ($Action -eq 'Publish') {
-            if ($Type -eq 'Dacpac') {
-                $output = New-Object -TypeName Microsoft.SqlServer.Dac.PublishOptions
-                if ($PublishXml) {
+        if ($PScmdlet.ShouldProcess("$type", "Creating New DacOptions of $action")) {
+            if (-not $script:core) {
+                $dacfxPath = "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Dac.dll"
+                if ((Test-Path $dacfxPath) -eq $false) {
+                    Stop-Function -Message 'Dac Fx library not found.' -EnableException $EnableException
+                    return
+                } else {
                     try {
-                        $dacProfile = [Microsoft.SqlServer.Dac.DacProfile]::Load($PublishXml)
-                        $output.DeployOptions = $dacProfile.DeployOptions
+                        Add-Type -Path $dacfxPath
+                        Write-Message -Level Verbose -Message "Dac Fx loaded."
                     } catch {
-                        Stop-Function -Message "Could not load profile." -ErrorRecord $_
+                        Stop-Function -Message 'No usable version of Dac Fx found.' -ErrorRecord $_
                         return
                     }
-                } else {
-                    $output.DeployOptions = New-Object -TypeName Microsoft.SqlServer.Dac.DacDeployOptions
                 }
-                $output.GenerateDeploymentScript = $false
-                $output
-            } elseif ($Type -eq 'Bacpac') {
-                New-Object -TypeName Microsoft.SqlServer.Dac.DacImportOptions
+            }
+
+            # Pick proper option object depending on type and action
+            if ($Action -eq 'Export') {
+                if ($Type -eq 'Dacpac') {
+                    New-Object -TypeName Microsoft.SqlServer.Dac.DacExtractOptions
+                } elseif ($Type -eq 'Bacpac') {
+                    New-Object -TypeName Microsoft.SqlServer.Dac.DacExportOptions
+                }
+            } elseif ($Action -eq 'Publish') {
+                if ($Type -eq 'Dacpac') {
+                    $output = New-Object -TypeName Microsoft.SqlServer.Dac.PublishOptions
+                    if ($PublishXml) {
+                        try {
+                            $dacProfile = [Microsoft.SqlServer.Dac.DacProfile]::Load($PublishXml)
+                            $output.DeployOptions = $dacProfile.DeployOptions
+                        } catch {
+                            Stop-Function -Message "Could not load profile." -ErrorRecord $_
+                            return
+                        }
+                    } else {
+                        $output.DeployOptions = New-Object -TypeName Microsoft.SqlServer.Dac.DacDeployOptions
+                    }
+                    $output.GenerateDeploymentScript = $false
+                    $output
+                } elseif ($Type -eq 'Bacpac') {
+                    New-Object -TypeName Microsoft.SqlServer.Dac.DacImportOptions
+                }
             }
         }
     }

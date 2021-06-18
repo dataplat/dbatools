@@ -10,5 +10,9 @@ Internal function. Takes a best guess at the NetBIOS name of a server.
         [PSCredential]$SqlCredential
     )
     $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
-    $server.ComputerName
+    if ($server.IsClustered) {
+        $server.ComputerNamePhysicalNetBIOS
+    } else {
+        $server.ComputerName
+    }
 }

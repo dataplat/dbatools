@@ -273,7 +273,7 @@ function Import-DbaCsv {
         [switch]$KeepIdentity,
         [switch]$KeepNulls,
         [string[]]$Column,
-        [hashtable[]]$ColumnMap,
+        [hashtable]$ColumnMap,
         [switch]$KeepOrdinalOrder,
         [switch]$AutoCreateTable,
         [switch]$NoProgress,
