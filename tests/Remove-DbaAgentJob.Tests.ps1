@@ -22,7 +22,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             $null = Start-DbaAgentJob -SqlInstance $script:instance3 -Job dbatoolsci_testjob
         }
         AfterAll {
-            if (Get-DbaAgentSchedule -SqlInstance $script:instance3 -Schedule dbatoolsci_daily) { Remove-DbaAgentSchedule -SqlInstance $script:instance3 -Schedule dbatoolsci_daily }
+            if (Get-DbaAgentSchedule -SqlInstance $script:instance3 -Schedule dbatoolsci_daily) { Remove-DbaAgentSchedule -SqlInstance $script:instance3 -Schedule dbatoolsci_daily -Confirm:$false }
         }
         $null = Remove-DbaAgentJob -SqlInstance $script:instance3 -Job dbatoolsci_testjob
         It "Should have deleted job: dbatoolsci_testjob" {
@@ -42,7 +42,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             $null = New-DbaAgentJobStep -SqlInstance $script:instance3 -Job dbatoolsci_testjob_schedule -StepId 1 -StepName dbatoolsci_step1 -Subsystem TransactSql -Command 'select 1'
         }
         AfterAll {
-            if (Get-DbaAgentSchedule -SqlInstance $script:instance3 -Schedule dbatoolsci_weekly) { Remove-DbaAgentSchedule -SqlInstance $script:instance3 -Schedule dbatoolsci_weekly }
+            if (Get-DbaAgentSchedule -SqlInstance $script:instance3 -Schedule dbatoolsci_weekly) { Remove-DbaAgentSchedule -SqlInstance $script:instance3 -Schedule dbatoolsci_weekly -Confirm:$false }
         }
         $null = Remove-DbaAgentJob -SqlInstance $script:instance3 -Job dbatoolsci_testjob_schedule -KeepUnusedSchedule
         It "Should have deleted job: dbatoolsci_testjob_schedule" {
