@@ -33,7 +33,7 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
             $results = Get-DbaAgDatabase -SqlInstance $script:instance3 -Database $dbname
             $results.AvailabilityGroup | Should -Be $agname
             $results.Name | Should -Be $dbname
-            $results.Replica | Should -Not -Be $null
+            $results.LocalReplicaRole | Should -Not -Be $null
         }
     }
 } #$script:instance2 for appveyor

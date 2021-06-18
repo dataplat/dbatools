@@ -349,13 +349,13 @@ function Copy-DbaDbTableData {
 
                         #replacing table name
                         if ($newTableParts.Name) {
-                            $rX = "(CREATE TABLE \[$([regex]::Escape($schemaNameToReplace))\]\.\[)$([regex]::Escape($tableNameToReplace))(\]\()"
-                            $tablescript = $tablescript -replace $rX, "`${1}$($newTableParts.Name)`${2}"
+                            $rX = "(CREATE|ALTER)( TABLE \[$([regex]::Escape($schemaNameToReplace))\]\.\[)$([regex]::Escape($tableNameToReplace))(\])"
+                            $tablescript = $tablescript -replace $rX, "`${1}`${2}$($newTableParts.Name)`${3}"
                         }
                         #replacing table schema
                         if ($newTableParts.Schema) {
-                            $rX = "(CREATE TABLE \[)$([regex]::Escape($schemaNameToReplace))(\]\.\[$([regex]::Escape($newTableParts.Name))\]\()"
-                            $tablescript = $tablescript -replace $rX, "`${1}$($newTableParts.Schema)`${2}"
+                            $rX = "(CREATE|ALTER)( TABLE \[)$([regex]::Escape($schemaNameToReplace))(\]\.\[$([regex]::Escape($newTableParts.Name))\])"
+                            $tablescript = $tablescript -replace $rX, "`${1}`${2}$($newTableParts.Schema)`${3}"
                         }
 
                         if ($PSCmdlet.ShouldProcess($destServer, "Creating new table: $DestinationTable")) {

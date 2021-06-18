@@ -1,15 +1,15 @@
 ﻿[
     {
         "Name":  "Add-DbaAgDatabase",
-        "Description":  "Adds a database to an availability group on a SQL Server instance.\n\nBefore joining the replica databases to the availability group, the databases will be initialized with automatic seeding or full/log backup.",
+        "Description":  "Adds database(s) to an Availability Group on a SQL Server instance.\n\nAfter checking for prerequisites, the commands runs these five steps for every database:\nStep 1: Setting seeding mode if needed.\n    If -SeedingMode is used and the current seeding mode of the replica is not in the desired mode, the seeding mode of the replica is changed.\n    The seeding mode will not be changed back but stay in this mode.\n    If the seeding mode is changed to Automatic, the necessary rigths to create databases will be granted.\nStep 2: Running backup and restore if needed.\n    Action is only taken for replicas with a desired seeding mode of Manual and where the database does not yet exist.\n    If -UseLastBackup is used, the restore will be performed based on the backup history of the database.\n    Otherwise a full and log backup will be taken at the primary and those will be restored at the replica.\nStep 3: Add the database to the Availability Group on the primary replica.\nStep 4: Add the database to the Availability Group on the secondary replicas.\nStep 5: Wait for the database to finish joining the Availability Group on the secondary replicas.\n\nUse Test-DbaAvailabilityGroup with -AddDatabase to test if all prerequisites are met.\n\nIn case you need a special setup for the database at the replicas, please do the backup restore part\n\nIf you have special requirements for the setup for the database at the replicas,\nperform the backup and restore part with Backup-DbaDatabase and Restore-DbaDatabase in advance.\nPlease make sure that the last log backup has been restored before running Add-DbaAgDatabase.\n\nKnown limitations:\n\nIt is not possible to use this command to add the database to a newly added replica,\nbecause the command fails if the database is already part of the Availability Group.\nThis limitation will be removed in a later version.",
         "Tags":  [
                      "AvailabilityGroup",
                      "HA",
                      "AG"
                  ],
-        "Synopsis":  "Adds a database to an availability group on a SQL Server instance.",
+        "Synopsis":  "Adds database(s) to an Availability Group on a SQL Server instance.",
         "Alias":  "",
-        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net | Andreas Jordan (@JordanOrdix), ordix.de",
         "CommandName":  "Add-DbaAgDatabase",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Add-DbaAgDatabase",
@@ -17,9 +17,9 @@
         "Params":  [
                        [
                            "SqlInstance",
-                           "The target SQL Server instance or instances. Server version must be SQL Server version 2012 or higher.\nThis should be the primary replica.",
+                           "The primary replica of the Availability Group. Server version must be SQL Server version 2012 or higher.",
                            "",
-                           false,
+                           true,
                            "false",
                            "",
                            ""
@@ -35,7 +35,7 @@
                        ],
                        [
                            "AvailabilityGroup",
-                           "The availability group where the databases will be added.",
+                           "The name of the Availability Group where the databases will be added.",
                            "",
                            true,
                            "false",
@@ -44,16 +44,16 @@
                        ],
                        [
                            "Database",
-                           "The database or databases to add.",
+                           "The database(s) to add.",
                            "",
-                           false,
+                           true,
                            "false",
                            "",
                            ""
                        ],
                        [
                            "Secondary",
-                           "Not required - the command will figure this out. But if you\u0027d like to be explicit about replicas, this will help.",
+                           "Not required - the command will figure this out. But use this parameter if secondary replicas listen on a non default port.",
                            "",
                            false,
                            "false",
@@ -73,18 +73,18 @@
                            "InputObject",
                            "Enables piping from Get-DbaDatabase, Get-DbaDbSharePoint and more.",
                            "",
-                           false,
+                           true,
                            "true (ByValue)",
                            "",
                            ""
                        ],
                        [
                            "SeedingMode",
-                           "Specifies how the secondary replica will be initially seeded.\nAutomatic enables direct seeding. This method will seed the secondary replica over the network. This method does not require you to backup and restore a copy of the primary database on the replica.\nManual requires you to create a backup of the database on the primary replica and manually restore that backup on the secondary replica.\nIf not specified, the setting from the availability group replica will be used. Otherwise the setting will be updated.",
+                           "Specifies how the secondary replica will be initially seeded.\nAutomatic enables direct seeding. This method will seed the secondary replica over the network. This method does not require you to backup and restore a copy of the primary database on the replica.\nManual uses full and log backup to initially transfer the data to the secondary replica. The command skips this if the database is found in restoring state at the secondary replica.\nIf not specified, the setting from the availability group replica will be used. Otherwise the setting will be updated.",
                            "",
                            false,
                            "false",
-                           "Manual",
+                           "",
                            "Automatic,Manual"
                        ],
                        [
@@ -98,7 +98,7 @@
                        ],
                        [
                            "UseLastBackup",
-                           "Use the last full and log backup of database. A log backup must be the last backup.",
+                           "Use the last full and log backup of the database. A log backup must be the last backup.",
                            "",
                            false,
                            "false",
@@ -133,7 +133,7 @@
                            ""
                        ]
                    ],
-        "Syntax":  "Add-DbaAgDatabase [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [-AvailabilityGroup] \u003cString\u003e [[-Database] \u003cString[]\u003e] [[-Secondary] \u003cDbaInstanceParameter[]\u003e] [[-SecondarySqlCredential] \u003cPSCredential\u003e] [[-InputObject] \u003cDatabase[]\u003e] [[-SeedingMode] \u003cString\u003e] [[-SharedPath] \u003cString\u003e] [-UseLastBackup] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Add-DbaAgDatabase [-SqlInstance] \u003cDbaInstanceParameter\u003e [-SqlCredential \u003cPSCredential\u003e] -AvailabilityGroup \u003cString\u003e -Database \u003cString[]\u003e [-Secondary \u003cDbaInstanceParameter[]\u003e] [-SecondarySqlCredential \u003cPSCredential\u003e] [-SeedingMode \u003cString\u003e] [-SharedPath \u003cString\u003e] [-UseLastBackup] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\nAdd-DbaAgDatabase [-AvailabilityGroup] \u003cString\u003e [-Secondary \u003cDbaInstanceParameter[]\u003e] [-SecondarySqlCredential \u003cPSCredential\u003e] -InputObject \u003cDatabase[]\u003e [-SeedingMode \u003cString\u003e] [-SharedPath \u003cString\u003e] [-UseLastBackup] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Add-DbaAgListener",
@@ -9193,7 +9193,7 @@
     },
     {
         "Name":  "Export-DbaRepServerSetting",
-        "Description":  "Exports replication server settings to file.",
+        "Description":  "Exports replication server settings to file.\n\nAll replication commands need SSMS 17 installed and are therefore currently not supported.\nHave a look at this issue to get more information: https://github.com/sqlcollaborative/dbatools/issues/7428",
         "Tags":  "Replication",
         "Synopsis":  "Exports replication server settings to file.",
         "Alias":  "",
@@ -12087,13 +12087,13 @@
     },
     {
         "Name":  "Get-DbaAgDatabase",
-        "Description":  "Gets availability group databases from a SQL Server instance.\n\nDefault view provides most common set of properties for information on the database in an availability group.\n\nInformation returned on the database will be specific to that replica, whether it is primary or a secondary.",
+        "Description":  "Gets availability group databases from one or more SQL Server instances.\n\nDefault view provides most common set of properties for information on the database in an availability group.\n\nInformation returned on the database will be specific to that replica, whether it is primary or a secondary.",
         "Tags":  [
                      "AvailabilityGroup",
                      "HA",
                      "AG"
                  ],
-        "Synopsis":  "Gets availability group databases from a SQL Server instance.",
+        "Synopsis":  "Gets availability group databases from one or more SQL Server instances.",
         "Alias":  "",
         "Author":  "Shawn Melton (@wsmelton), https://wsmelton.github.io",
         "CommandName":  "Get-DbaAgDatabase",
@@ -17915,27 +17915,9 @@
                            "false",
                            "False",
                            ""
-                       ],
-                       [
-                           "WhatIf",
-                           "Shows what would happen if the command were to run. No actions are actually performed.",
-                           "wi",
-                           false,
-                           "false",
-                           "",
-                           ""
-                       ],
-                       [
-                           "Confirm",
-                           "Prompts you for confirmation before executing any changing operations within the command.",
-                           "cf",
-                           false,
-                           "false",
-                           "",
-                           ""
                        ]
                    ],
-        "Syntax":  "Get-DbaDbSequence [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cString[]\u003e] [[-Name] \u003cString[]\u003e] [[-Schema] \u003cString[]\u003e] [[-InputObject] \u003cDatabase[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Get-DbaDbSequence [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cString[]\u003e] [[-Name] \u003cString[]\u003e] [[-Schema] \u003cString[]\u003e] [[-InputObject] \u003cDatabase[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Get-DbaDbServiceBrokerService",
@@ -23571,7 +23553,7 @@
     },
     {
         "Name":  "Get-DbaRepDistributor",
-        "Description":  "This function locates and enumerates distributor information for a given SQL Server instance.",
+        "Description":  "This function locates and enumerates distributor information for a given SQL Server instance.\n\nAll replication commands need SSMS 17 installed and are therefore currently not supported.\nHave a look at this issue to get more information: https://github.com/sqlcollaborative/dbatools/issues/7428",
         "Tags":  "Replication",
         "Synopsis":  "Gets the information about a replication distributor for a given SQL Server instance.",
         "Alias":  "",
@@ -23613,7 +23595,7 @@
     },
     {
         "Name":  "Get-DbaRepPublication",
-        "Description":  "Quickly find all transactional, merge, and snapshot publications on a specific server or database.",
+        "Description":  "Quickly find all transactional, merge, and snapshot publications on a specific server or database.\n\nAll replication commands need SSMS 17 installed and are therefore currently not supported.\nHave a look at this issue to get more information: https://github.com/sqlcollaborative/dbatools/issues/7428",
         "Tags":  "Replication",
         "Synopsis":  "Displays all publications for a server or database.",
         "Alias":  "",
@@ -23673,7 +23655,7 @@
     },
     {
         "Name":  "Get-DbaRepServer",
-        "Description":  "Gets a replication server object",
+        "Description":  "Gets a replication server object\n\nAll replication commands need SSMS 17 installed and are therefore currently not supported.\nHave a look at this issue to get more information: https://github.com/sqlcollaborative/dbatools/issues/7428",
         "Tags":  "Replication",
         "Synopsis":  "Gets a replication server object",
         "Alias":  "",
@@ -30080,15 +30062,6 @@
                            ""
                        ],
                        [
-                           "ConnectionTimeout",
-                           "Timeout for the database connection in seconds. Default is 0",
-                           "",
-                           false,
-                           "false",
-                           "0",
-                           ""
-                       ],
-                       [
                            "CommandTimeout",
                            "Timeout for the database connection in seconds. Default is 300.",
                            "",
@@ -30161,7 +30134,7 @@
                            ""
                        ]
                    ],
-        "Syntax":  "Invoke-DbaDbDataMasking [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cString[]\u003e] [-FilePath] \u003cObject\u003e [[-Locale] \u003cString\u003e] [[-CharacterString] \u003cString\u003e] [[-Table] \u003cString[]\u003e] [[-Column] \u003cString[]\u003e] [[-ExcludeTable] \u003cString[]\u003e] [[-ExcludeColumn] \u003cString[]\u003e] [[-MaxValue] \u003cInt32\u003e] [[-ModulusFactor] \u003cInt32\u003e] [-ExactLength] [[-ConnectionTimeout] \u003cInt32\u003e] [[-CommandTimeout] \u003cInt32\u003e] [[-BatchSize] \u003cInt32\u003e] [[-Retry] \u003cInt32\u003e] [[-DictionaryFilePath] \u003cString[]\u003e] [[-DictionaryExportPath] \u003cString\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Invoke-DbaDbDataMasking [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cString[]\u003e] [-FilePath] \u003cObject\u003e [[-Locale] \u003cString\u003e] [[-CharacterString] \u003cString\u003e] [[-Table] \u003cString[]\u003e] [[-Column] \u003cString[]\u003e] [[-ExcludeTable] \u003cString[]\u003e] [[-ExcludeColumn] \u003cString[]\u003e] [[-MaxValue] \u003cInt32\u003e] [[-ModulusFactor] \u003cInt32\u003e] [-ExactLength] [[-CommandTimeout] \u003cInt32\u003e] [[-BatchSize] \u003cInt32\u003e] [[-Retry] \u003cInt32\u003e] [[-DictionaryFilePath] \u003cString[]\u003e] [[-DictionaryExportPath] \u003cString\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Invoke-DbaDbDbccCheckConstraint",
@@ -45259,6 +45232,87 @@
         "Syntax":  "Remove-DbaEndpoint [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Endpoint] \u003cString[]\u003e] [-AllEndpoints] [[-InputObject] \u003cEndpoint[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
+        "Name":  "Remove-DbaLinkedServer",
+        "Description":  "Removes a linked server.",
+        "Tags":  [
+                     "Security",
+                     "Server"
+                 ],
+        "Synopsis":  "Removes a linked server.",
+        "Alias":  "",
+        "Author":  "Adam Lancaster https://github.com/lancasteradam",
+        "CommandName":  "Remove-DbaLinkedServer",
+        "Availability":  "Windows, Linux, macOS",
+        "Links":  "https://dbatools.io/Remove-DbaLinkedServer",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eRemove-DbaLinkedServer -SqlInstance sql01 -LinkedServer linkedServer1 -Confirm:$false\nRemoves the linked server \"linkedServer1\" from the sql01 instance.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003e$linkedServer1 = Get-DbaLinkedServer -SqlInstance sql01 -LinkedServer linkedServer1\nPS C:\\\u003e$linkedServer1 | Remove-DbaLinkedServer -Confirm:$false\nPasses in a linked server via pipeline and removes it from the sql01 instance.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eConnect-DbaInstance -SqlInstance sql01 | Remove-DbaLinkedServer -LinkedServer linkedServer1 -Confirm:$false\nRemoves the linked server \"linkedServer1\" from the sql01 instance, which is passed in via pipeline.",
+        "Params":  [
+                       [
+                           "SqlInstance",
+                           "The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function\r\nto be executed against multiple SQL Server instances.",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "SqlCredential",
+                           "Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).\nWindows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.\nFor MFA support, please use Connect-DbaInstance.",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "LinkedServer",
+                           "The name(s) of the linked server(s).",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "InputObject",
+                           "Allows piping from Connect-DbaInstance and Get-DbaLinkedServer.",
+                           "",
+                           false,
+                           "true (ByValue)",
+                           "",
+                           ""
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "",
+                           false,
+                           "false",
+                           "False",
+                           ""
+                       ],
+                       [
+                           "WhatIf",
+                           "Shows what would happen if the command were to run. No actions are actually performed.",
+                           "wi",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "Confirm",
+                           "Prompts you for confirmation before executing any changing operations within the command.",
+                           "cf",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ]
+                   ],
+        "Syntax":  "Remove-DbaLinkedServer [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-LinkedServer] \u003cString[]\u003e] [[-InputObject] \u003cObject[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+    },
+    {
         "Name":  "Remove-DbaLogin",
         "Description":  "Tries a bunch of different ways to remove a Login or two or more.",
         "Tags":  [
@@ -55925,6 +55979,116 @@
         "Syntax":  "Test-DbaAgentJobOwner [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Job] \u003cObject[]\u003e] [[-ExcludeJob] \u003cObject[]\u003e] [[-Login] \u003cString\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
+        "Name":  "Test-DbaAvailabilityGroup",
+        "Description":  "Tests the health of an Availability Group.\n\nCan also test whether all prerequisites for Add-DbaAgDatabase are met.",
+        "Tags":  [
+                     "AvailabilityGroup",
+                     "HA",
+                     "AG",
+                     "Test"
+                 ],
+        "Synopsis":  "Tests the health of an Availability Group and prerequisites for changing it.",
+        "Alias":  "",
+        "Author":  "Andreas Jordan (@JordanOrdix), ordix.de",
+        "CommandName":  "Test-DbaAvailabilityGroup",
+        "Availability":  "Windows, Linux, macOS",
+        "Links":  "https://dbatools.io/Test-DbaAvailabilityGroup",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eTest-DbaAvailabilityGroup -SqlInstance SQL2016 -AvailabilityGroup TestAG1\nTest Availability Group TestAG1 with SQL2016 as the primary replica.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eTest-DbaAvailabilityGroup -SqlInstance SQL2016 -AvailabilityGroup TestAG1 -AddDatabase AdventureWorks -SeedingMode Automatic\nTest if database AdventureWorks can be added to the Availability Group TestAG1 with automatic seeding.",
+        "Params":  [
+                       [
+                           "SqlInstance",
+                           "The primary replica of the Availability Group.",
+                           "",
+                           true,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "SqlCredential",
+                           "Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).\nWindows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.\nFor MFA support, please use Connect-DbaInstance.",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "AvailabilityGroup",
+                           "The name of the Availability Group to test.",
+                           "",
+                           true,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "Secondary",
+                           "Not required - the command will figure this out. But use this parameter if secondary replicas listen on a non default port.",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "SecondarySqlCredential",
+                           "Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).\nWindows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.\nFor MFA support, please use Connect-DbaInstance.",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "AddDatabase",
+                           "Test whether all prerequisites for Add-DbaAgDatabase to add these databases to the Availability Group are met.\nUse Secondary, SecondarySqlCredential, SeedingMode, SharedPath and UseLastBackup with the same values that will be used with Add-DbaAgDatabase later.",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "SeedingMode",
+                           "Only used when AddDatabase is used. See documentation at Add-DbaAgDatabase for more details.",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           "Automatic,Manual"
+                       ],
+                       [
+                           "SharedPath",
+                           "Only used when AddDatabase is used. See documentation at Add-DbaAgDatabase for more details.",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "UseLastBackup",
+                           "Only used when AddDatabase is used. See documentation at Add-DbaAgDatabase for more details.",
+                           "",
+                           false,
+                           "false",
+                           "False",
+                           ""
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "",
+                           false,
+                           "false",
+                           "False",
+                           ""
+                       ]
+                   ],
+        "Syntax":  "Test-DbaAvailabilityGroup [-SqlInstance] \u003cDbaInstanceParameter\u003e [-SqlCredential \u003cPSCredential\u003e] -AvailabilityGroup \u003cString\u003e [-Secondary \u003cDbaInstanceParameter[]\u003e] [-SecondarySqlCredential \u003cPSCredential\u003e] [-AddDatabase \u003cString[]\u003e] [-SeedingMode \u003cString\u003e] [-SharedPath \u003cString\u003e] [-UseLastBackup] [-EnableException] [\u003cCommonParameters\u003e]"
+    },
+    {
         "Name":  "Test-DbaBackupInformation",
         "Description":  "Input is normally from a backup history object generated from `Format-DbaBackupInformation`. This is then parse to check that it\u0027s valid for restore. Tests performed include:\n  - Checking unbroken LSN chain\n  - If the target database exists and WithReplace has been provided\n  - If any files already exist, but owned by other databases\n  - Creates any new folders required\n  - That the backup files exists at the location specified, and can be seen by the Sql Instance\n  - If no errors are found then the objects for that database will me marked as Verified",
         "Tags":  [
@@ -58251,7 +58415,7 @@
     },
     {
         "Name":  "Test-DbaRepLatency",
-        "Description":  "Creates tracer tokens to determine latency between the publisher/distributor and the distributor/subscriber\nfor all transactional publications for a server, database, or publication.",
+        "Description":  "Creates tracer tokens to determine latency between the publisher/distributor and the distributor/subscriber\nfor all transactional publications for a server, database, or publication.\n\nAll replication commands need SSMS 17 installed and are therefore currently not supported.\nHave a look at this issue to get more information: https://github.com/sqlcollaborative/dbatools/issues/7428",
         "Tags":  "Replication",
         "Synopsis":  "Displays replication latency for all transactional publications for a server or database.",
         "Alias":  "",

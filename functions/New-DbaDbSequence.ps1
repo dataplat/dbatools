@@ -139,6 +139,7 @@ function New-DbaDbSequence {
                     }
 
                     $newSequence = New-Object Microsoft.SqlServer.Management.Smo.Sequence -ArgumentList $db, $Name, $Schema
+                    $newSequence.StartValue = $StartWith
                     $newSequence.IncrementValue = $IncrementBy
                     $newSequence.IsCycleEnabled = $Cycle.IsPresent
 
@@ -154,10 +155,6 @@ function New-DbaDbSequence {
                     } else {
                         # system integer type
                         $newSequence.DataType = New-Object Microsoft.SqlServer.Management.Smo.DataType $IntegerType
-                    }
-
-                    if (Test-Bound StartWith) {
-                        $newSequence.StartValue = $StartWith
                     }
 
                     if (Test-Bound MinValue) {
@@ -180,8 +177,7 @@ function New-DbaDbSequence {
                     }
 
                     $newSequence.Create()
-                    $db.Refresh()
-                    $db.Sequences | Where-Object { $_.Schema -eq $Schema -and $_.Name -eq $Name }
+                    $db | Get-DbaDbSequence -Name $newSequence.Name -Schema $newSequence.Schema
                 } catch {
                     Stop-Function -Message "Failure on $($db.Parent.Name) to create the sequence $Name in the $Schema schema in the database $($db.Name)" -ErrorRecord $_ -Continue
                 }

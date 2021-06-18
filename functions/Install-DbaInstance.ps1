@@ -613,7 +613,7 @@ function Install-DbaInstance {
             if ($canonicVersion -gt '10.0') {
                 $execParams += '/IACCEPTSQLSERVERLICENSETERMS'
             }
-            if ($canonicVersion -ge '13.0' -and (-Not $configNode.SQLTEMPDBFILECOUNT)) {
+            if ($canonicVersion -ge '13.0' -and ($configNode.ACTION -in 'Install', 'CompleteImage', 'Rebuilddatabase', 'InstallFailoverCluster', 'CompleteFailoverCluster') -and (-not $configNode.SQLTEMPDBFILECOUNT)) {
                 # configure the number of cores
                 $cpuInfo = Get-DbaCmObject -ComputerName $fullComputerName -Credential $Credential -ClassName Win32_processor -EnableException:$EnableException
                 # trying to read NumberOfLogicalProcessors property. If it's not available, read NumberOfCores
@@ -625,7 +625,7 @@ function Install-DbaInstance {
                 if ($cores -gt 8) {
                     $cores = 8
                 }
-                if ($cores -and $configNode.ACTION -ne "AddNode") {
+                if ($cores) {
                     $configNode.SQLTEMPDBFILECOUNT = $cores
                 }
             }
