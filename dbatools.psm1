@@ -799,7 +799,9 @@ $script:xplat = @(
     'Install-DbaDarlingData',
     'New-DbaDbFileGroup',
     'Remove-DbaDbFileGroup',
-    'Set-DbaDbFileGroup'
+    'Set-DbaDbFileGroup',
+    'Remove-DbaLinkedServer',
+    'Test-DbaAvailabilityGroup'
 )
 
 $script:noncoresmo = @(
