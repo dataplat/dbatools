@@ -463,7 +463,7 @@ function New-DbaAgentSchedule {
                                 if ($Force) {
                                     if ($PSCmdlet.ShouldProcess($instance, "Removing the schedule $Schedule on $instance")) {
                                         # Removing schedule
-                                        Remove-DbaAgentSchedule -SqlInstance $instance -SqlCredential $SqlCredential -Schedule $Schedule -Force:$Force
+                                        Remove-DbaAgentSchedule -SqlInstance $instance -SqlCredential $SqlCredential -Schedule $Schedule -Force:$Force -Confirm:$false
                                     }
                                 } else {
                                     Stop-Function -Message "Schedule $Schedule already exists for job $j on instance $instance" -Target $instance -ErrorRecord $_ -Continue
