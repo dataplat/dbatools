@@ -16,16 +16,17 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     Context "Command actually works" {
         $oldPort = (Get-DbaTcpPort -SqlInstance $script:instance2).Port
         $newPort = $oldPort + 1000
-
+        $instance = [DbaInstance]$script:instance2
         It "Should change the port" {
             $result = Set-DbaTcpPort -SqlInstance $script:instance2 -Port $newPort -Confirm:$false
             $result.Changes | Should -Match 'Changed TcpPort'
             $result.RestartNeeded | Should -Be $true
             $result.Restarted | Should -Be $false
 
+            $null = Restart-DbaService -ComputerName $instance.ComputerName -InstanceName $instance.InstanceName -Type Engine -Force
+
             $setPort = (Get-DbaTcpPort -SqlInstance $script:instance2).Port
             $setPort | Should -Be $newPort
-            # Restart-DbaService -ComputerName $script:instance2.ComputerName -InstanceName $script:instance2.InstanceName -Type Engine -Force
         }
 
         It "Should change the port back to the old value" {
@@ -34,9 +35,10 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $result.RestartNeeded | Should -Be $true
             $result.Restarted | Should -Be $false
 
+            $null = Restart-DbaService -ComputerName $instance.ComputerName -InstanceName $instance.InstanceName -Type Engine -Force
+
             $setPort = (Get-DbaTcpPort -SqlInstance $script:instance2).Port
-            $setPort | Should -Be $newPort
-            # Restart-DbaService -ComputerName $script:instance2.ComputerName -InstanceName $script:instance2.InstanceName -Type Engine -Force
+            $setPort | Should -Be $oldPort
         }
     }
 }
