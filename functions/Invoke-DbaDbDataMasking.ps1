@@ -62,9 +62,6 @@ function Invoke-DbaDbDataMasking {
     .PARAMETER ExactLength
         Mask string values to the same length. So 'Tate' will be replaced with 4 random characters.
 
-    .PARAMETER ConnectionTimeout
-        Timeout for the database connection in seconds. Default is 0
-
     .PARAMETER CommandTimeout
         Timeout for the database connection in seconds. Default is 300.
 
@@ -145,7 +142,6 @@ function Invoke-DbaDbDataMasking {
         [int]$MaxValue,
         [int]$ModulusFactor,
         [switch]$ExactLength,
-        [int]$ConnectionTimeout,
         [int]$CommandTimeout,
         [int]$BatchSize,
         [int]$Retry,
@@ -180,11 +176,6 @@ function Invoke-DbaDbDataMasking {
         if (-not $ModulusFactor) {
             $ModulusFactor = 10
             Write-Message -Level Verbose -Message "Modulus factor set to $ModulusFactor"
-        }
-
-        if (-not $ConnectionTimeout) {
-            $ConnectionTimeout = 0
-            Write-Message -Level Verbose -Message "Connection time-out set to $ConnectionTimeout"
         }
 
         if (-not $CommandTimeout) {
@@ -367,7 +358,15 @@ function Invoke-DbaDbDataMasking {
 
                         $query = "CREATE NONCLUSTERED INDEX [$($maskingIndexName)] ON [$($dbTable.Schema)].[$($dbTable.Name)]([$($identityColumn)])"
 
-                        Invoke-DbaQuery -SqlInstance $server -SqlCredential $SqlCredential -Database $db.Name -Query $query
+                        $queryParams = @{
+                            SqlInstance   = $server
+                            SqlCredential = $SqlCredential
+                            Database      = $db.Name
+                            Query         = $query
+                            QueryTimeout  = $CommandTimeout
+                        }
+
+                        Invoke-DbaQuery @queryParams
                     } catch {
                         Stop-Function -Message "Could not add identity index to table [$($dbTable.Schema)].[$($dbTable.Name)]" -Continue
                     }
@@ -1025,7 +1024,16 @@ function Invoke-DbaDbDataMasking {
 
                                                 Write-Message -Level Verbose -Message "Executing batch $batchNr/$totalBatches"
 
-                                                Invoke-DbaQuery -SqlInstance $instance -SqlCredential $SqlCredential -Database $db.Name -Query $stringBuilder.ToString() -EnableException
+                                                $queryParams = @{
+                                                    SqlInstance     = $instance
+                                                    SqlCredential   = $SqlCredential
+                                                    Database        = $db.Name
+                                                    Query           = $stringBuilder.ToString()
+                                                    EnableException = $EnableException
+                                                    QueryTimeout    = $CommandTimeout
+                                                }
+
+                                                Invoke-DbaQuery @queryParams
                                             } catch {
                                                 $maskingErrorFlag = $true
                                                 Stop-Function -Message "Error updating $($tableobject.Schema).$($tableobject.Name): $_ `n$($stringBuilder.ToString())" -Target $stringBuilder.ToString() -Continue -ErrorRecord $_
@@ -1053,7 +1061,16 @@ function Invoke-DbaDbDataMasking {
 
                                             Write-Message -Level Verbose -Message "Executing batch $batchNr/$totalBatches"
 
-                                            Invoke-DbaQuery -SqlInstance $instance -SqlCredential $SqlCredential -Database $db.Name -Query $stringBuilder.ToString() -EnableException
+                                            $queryParams = @{
+                                                SqlInstance     = $instance
+                                                SqlCredential   = $SqlCredential
+                                                Database        = $db.Name
+                                                Query           = $stringBuilder.ToString()
+                                                EnableException = $EnableException
+                                                QueryTimeout    = $CommandTimeout
+                                            }
+
+                                            Invoke-DbaQuery @queryParams
                                         } catch {
                                             $maskingErrorFlag = $true
                                             Stop-Function -Message "Error updating $($tableobject.Schema).$($tableobject.Name): $_`n$($stringBuilder.ToString())" -Target $stringBuilder.ToString() -Continue -ErrorRecord $_

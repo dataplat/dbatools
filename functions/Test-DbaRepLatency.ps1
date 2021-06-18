@@ -7,6 +7,9 @@ function Test-DbaRepLatency {
         Creates tracer tokens to determine latency between the publisher/distributor and the distributor/subscriber
         for all transactional publications for a server, database, or publication.
 
+        All replication commands need SSMS 17 installed and are therefore currently not supported.
+        Have a look at this issue to get more information: https://github.com/sqlcollaborative/dbatools/issues/7428
+
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.
 
@@ -77,6 +80,22 @@ function Test-DbaRepLatency {
         [switch]$DisplayTokenHistory,
         [switch]$EnableException
     )
+
+    begin {
+        try {
+            Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Replication.dll" -ErrorAction Stop
+            Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Rmo.dll" -ErrorAction Stop
+        } catch {
+            $repdll = [System.Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.Replication")
+            $rmodll = [System.Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.Rmo")
+
+            if ($null -eq $repdll -or $null -eq $rmodll) {
+                Write-Message -Level Warning -Message 'All replication commands need SSMS 17 installed and are therefore currently not supported.'
+                Stop-Function -Message "Could not load replication libraries" -ErrorRecord $_
+                return
+            }
+        }
+    }
 
     process {
 
