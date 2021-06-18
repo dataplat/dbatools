@@ -800,7 +800,6 @@ $script:xplat = @(
     'New-DbaDbFileGroup',
     'Remove-DbaDbFileGroup',
     'Set-DbaDbFileGroup',
-    'Get-DbaLinkedServer',
     'Remove-DbaLinkedServer',
     'Test-DbaAvailabilityGroup'
 )
