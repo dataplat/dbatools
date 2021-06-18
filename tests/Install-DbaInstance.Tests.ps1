@@ -86,6 +86,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
                 "[$mainNode]"
                 'SQLSVCACCOUNT="foo\bar"'
                 'FEATURES="SQLEngine,AS"'
+                'ACTION="Install"'
             ) | Set-Content -Path TestDrive:\Configuration.ini -Force
             It "Should install SQL$version with all features enabled" {
                 $result = Install-DbaInstance -Version $version -Path TestDrive: -EnableException -Confirm:$false -Feature All
