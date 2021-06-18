@@ -42332,26 +42332,26 @@
     },
     {
         "Name":  "Remove-DbaAgentSchedule",
-        "Description":  "Remove-DbaAgentSchedule removes a job in the SQL Server Agent.",
+        "Description":  "Removes the schedules that have passed through the pipeline.\n\nIf not used with a pipeline, Get-DbaAgentSchedule will be executed with the parameters provided\nand the returned schedules will be removed.",
         "Tags":  [
                      "Agent",
                      "Job",
                      "Schedule"
                  ],
-        "Synopsis":  "Remove-DbaAgentSchedule removes a job schedule.",
+        "Synopsis":  "Removes job schedules.",
         "Alias":  "",
         "Author":  "Sander Stad (@sqlstad), sqlstad.nl",
         "CommandName":  "Remove-DbaAgentSchedule",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Remove-DbaAgentSchedule",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eRemove-DbaAgentSchedule -SqlInstance sql1 -Schedule weekly\nRemove the schedule weekly\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eRemove-DbaAgentSchedule -SqlInstance sql1 -Schedule weekly -Force\nRemove the schedule weekly from the job even if the schedule is being used by another job.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eRemove-DbaAgentSchedule -SqlInstance sql1 -Schedule daily, weekly\nRemove multiple schedule\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eRemove-DbaAgentSchedule -SqlInstance sql1, sql2, sql3 -Schedule daily, weekly\nRemove the schedule on multiple servers for multiple schedules\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003esql1, sql2, sql3 | Remove-DbaAgentSchedule -Schedule daily, weekly\nRemove the schedule on multiple servers using pipe line\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eGet-DbaAgentSchedule -SqlInstance sql1 -Schedule sched1, sched2, sched3 | Remove-DbaAgentSchedule\nRemove the schedules using a pipeline\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003eRemove-DbaAgentSchedule -SqlInstance sql1, sql2, sql3 -ScheduleUid \u0027bf57fa7e-7720-4936-85a0-87d279db7eb7\u0027\nRemove the schedules usingthe schdule uid",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eRemove-DbaAgentSchedule -SqlInstance sql1 -Schedule weekly\nRemove the schedule weekly.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eRemove-DbaAgentSchedule -SqlInstance sql1 -Schedule weekly -Force\nRemove the schedule weekly even if the schedule is being used by jobs.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eRemove-DbaAgentSchedule -SqlInstance sql1 -Schedule daily, weekly\nRemove multiple schedules.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eRemove-DbaAgentSchedule -SqlInstance sql1, sql2, sql3 -Schedule daily, weekly\nRemove the schedule on multiple servers for multiple schedules.\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eGet-DbaAgentSchedule -SqlInstance sql1 -Schedule sched1, sched2, sched3 | Remove-DbaAgentSchedule\nRemove the schedules using a pipeline.\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eRemove-DbaAgentSchedule -SqlInstance sql1, sql2, sql3 -ScheduleUid \u0027bf57fa7e-7720-4936-85a0-87d279db7eb7\u0027\nRemove the schedules using the schedule uid.",
         "Params":  [
                        [
                            "SqlInstance",
                            "The target SQL Server instance or instances. You must have sysadmin access and server version must be SQL Server version 2000 or greater.",
                            "",
                            true,
-                           "true (ByValue)",
+                           "false",
                            "",
                            ""
                        ],
@@ -42366,7 +42366,7 @@
                        ],
                        [
                            "Schedule",
-                           "The name of the job schedule.",
+                           "The name of the job schedule.\nPlease note that there can be several schedules with the same name. These differ then only in the Id or the ScheduleUid.",
                            "Schedules,Name",
                            false,
                            "false",
@@ -42375,7 +42375,7 @@
                        ],
                        [
                            "ScheduleUid",
-                           "The unique identifier of the schedule",
+                           "The unique identifier of the schedule.",
                            "Uid",
                            false,
                            "false",
@@ -42383,8 +42383,17 @@
                            ""
                        ],
                        [
+                           "Id",
+                           "The Id of the schedule.",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
                            "InputObject",
-                           "A collection of schedule (such as returned by Get-DbaAgentSchedule), to be removed.",
+                           "A collection of schedules (such as returned by Get-DbaAgentSchedule), to be removed.",
                            "",
                            true,
                            "true (ByValue)",
@@ -42402,7 +42411,7 @@
                        ],
                        [
                            "Force",
-                           "The force parameter will ignore some errors in the parameters and assume defaults.\r\nIt will also remove the any present schedules with the same name for the specific job.",
+                           "Remove the schedules even if they where used in one or more jobs.",
                            "",
                            false,
                            "false",
@@ -42428,7 +42437,7 @@
                            ""
                        ]
                    ],
-        "Syntax":  "Remove-DbaAgentSchedule -SqlInstance \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-Schedule \u003cString[]\u003e] [-ScheduleUid \u003cString[]\u003e] [-EnableException] [-Force] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\nRemove-DbaAgentSchedule [-SqlCredential \u003cPSCredential\u003e] [-ScheduleUid \u003cString[]\u003e] -InputObject \u003cScheduleBase[]\u003e [-EnableException] [-Force] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Remove-DbaAgentSchedule [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-Schedule \u003cString[]\u003e] [-ScheduleUid \u003cString[]\u003e] [-Id \u003cInt32[]\u003e] [-EnableException] [-Force] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\nRemove-DbaAgentSchedule -InputObject \u003cScheduleBase[]\u003e [-EnableException] [-Force] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Remove-DbaAgListener",
