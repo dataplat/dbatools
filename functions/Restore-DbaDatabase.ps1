@@ -588,18 +588,9 @@ function Restore-DbaDatabase {
                             }
                         }
                     }
-                    $BackupHistory += $F | Select-Object *, @{ Name = "ServerName"; Expression = { $_.SqlInstance } }, @{ Name = "BackupStartDate"; Expression = { $_.Start -as [DateTime] } }
-                }
-                # Fix #5036 by implementing a deep copy of the FileList
-                foreach ($bhEntry in $BackupHistory) {
-                    $bhEntry.FileList = foreach ($flEntry in $bhEntry.FileList) {
-                        [PSCustomObject]@{
-                            Type         = $flEntry.Type
-                            FileType     = $flEntry.FileType
-                            LogicalName  = $flEntry.LogicalName
-                            PhysicalName = $flEntry.PhysicalName
-                        }
-                    }
+                    # Fix #5036 by implementing a deep copy of the FileList
+                    #$f.FileList = $f.FileList | Select-Object *
+                    $BackupHistory += $f | Select-Object *, @{ Name = "ServerName"; Expression = { $_.SqlInstance } }, @{ Name = "BackupStartDate"; Expression = { $_.Start -as [DateTime] } }
                 }
             } else {
                 $files = @()
