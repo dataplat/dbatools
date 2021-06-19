@@ -589,7 +589,7 @@ function Restore-DbaDatabase {
                         }
                     }
                     # Fix #5036 by implementing a deep copy of the FileList
-                    #$f.FileList = $f.FileList | Select-Object *
+                    $f.FileList = $f.FileList | Select-Object *
                     $BackupHistory += $f | Select-Object *, @{ Name = "ServerName"; Expression = { $_.SqlInstance } }, @{ Name = "BackupStartDate"; Expression = { $_.Start -as [DateTime] } }
                 }
             } else {
