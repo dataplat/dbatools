@@ -17,7 +17,8 @@ $TestsRunGroups = @{
         'Update-DbaServiceAccount',
         'Enable-DbaAgHadr',
         'Disable-DbaAgHadr',
-        'Reset-DbaAdmin'
+        'Reset-DbaAdmin',
+        'Set-DbaTcpPort'
     )
     # do not run on appveyor
     "appveyor_disabled" = @(

@@ -6,6 +6,9 @@ function Get-DbaRepDistributor {
     .DESCRIPTION
         This function locates and enumerates distributor information for a given SQL Server instance.
 
+        All replication commands need SSMS 17 installed and are therefore currently not supported.
+        Have a look at this issue to get more information: https://github.com/sqlcollaborative/dbatools/issues/7428
+
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.
 
@@ -54,6 +57,7 @@ function Get-DbaRepDistributor {
             $rmodll = [System.Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.Rmo")
 
             if ($null -eq $repdll -or $null -eq $rmodll) {
+                Write-Message -Level Warning -Message 'All replication commands need SSMS 17 installed and are therefore currently not supported.'
                 Stop-Function -Message "Could not load replication libraries" -ErrorRecord $_
                 return
             }
