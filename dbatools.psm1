@@ -492,7 +492,6 @@ $script:xplat = @(
     'New-DbaServiceMasterKey',
     'Remove-DbaDbCertificate',
     'Remove-DbaDbMasterKey',
-    'New-DbaConnectionStringBuilder',
     'Get-DbaInstanceProperty',
     'Get-DbaInstanceUserOption',
     'New-DbaConnectionString',
@@ -828,6 +827,7 @@ $script:noncoresmo = @(
 )
 $script:windowsonly = @(
     # solvable filesystem issues or other workarounds
+    'New-DbaConnectionStringBuilder',
     'Copy-DbaBackupDevice',
     'Install-DbaSqlWatch',
     'Uninstall-DbaSqlWatch',
