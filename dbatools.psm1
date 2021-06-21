@@ -805,6 +805,7 @@ $script:xplat = @(
 
 $script:noncoresmo = @(
     # SMO issues
+    'New-DbaConnectionStringBuilder',
     'Export-DbaUser',
     'Get-DbaSsisExecutionHistory',
     'Get-DbaRepDistributor',
@@ -827,7 +828,6 @@ $script:noncoresmo = @(
 )
 $script:windowsonly = @(
     # solvable filesystem issues or other workarounds
-    'New-DbaConnectionStringBuilder',
     'Copy-DbaBackupDevice',
     'Install-DbaSqlWatch',
     'Uninstall-DbaSqlWatch',
