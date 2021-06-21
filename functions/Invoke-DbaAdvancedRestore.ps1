@@ -304,8 +304,7 @@ function Invoke-DbaAdvancedRestore {
                     $restore.Devices.Add($device)
                 }
                 Write-Message -Level Verbose -Message "Performing restore action"
-                $confirmMessage = "`n Restore Database $database on $SqlInstance `n from files: $RestoreFileNames `n with these file moves: `n $LogicalFileMovesString `n $ConfirmPointInTime `n"
-                if ($Pscmdlet.ShouldProcess("$database on $SqlInstance `n `n", $confirmMessage)) {
+                if ($Pscmdlet.ShouldProcess($SqlInstance, "Restoring $database to $SqlInstance based on these files: $($backup.FullName -join ', ')")) {
                     try {
                         $restoreComplete = $true
                         if ($KeepCDC -and $restore.NoRecovery -eq $false) {
