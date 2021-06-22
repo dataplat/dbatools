@@ -36386,7 +36386,7 @@
         "Alias":  "",
         "Author":  "zippy1981 | Chrissy LeMaire (@cl)",
         "CommandName":  "New-DbaConnectionStringBuilder",
-        "Availability":  "Windows, Linux, macOS",
+        "Availability":  "Windows only",
         "Links":  "https://dbatools.io/New-DbaConnectionStringBuilder",
         "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eNew-DbaConnectionStringBuilder\nReturns an empty ConnectionStringBuilder\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003e\"Data Source=localhost,1433;Initial Catalog=AlwaysEncryptedSample;UID=sa;PWD=alwaysB3Encrypt1ng;Application Name=Always Encrypted Sample MVC App;Column Encryption Setting=enabled\" | \r\nNew-DbaConnectionStringBuilder\nReturns a connection string builder that can be used to connect to the local sql server instance on the default port.",
         "Params":  [
@@ -44552,25 +44552,25 @@
     },
     {
         "Name":  "Remove-DbaDbSequence",
-        "Description":  "Removes a sequence in the database(s) specified.",
+        "Description":  "Removes the sequences that have passed through the pipeline.\n\nIf not used with a pipeline, Get-DbaDbSequence will be executed with the parameters provided\nand the returned sequences will be removed.",
         "Tags":  [
                      "Data",
                      "Sequence",
                      "Table"
                  ],
-        "Synopsis":  "Removes a sequence.",
+        "Synopsis":  "Removes sequences.",
         "Alias":  "",
         "Author":  "Adam Lancaster https://github.com/lancasteradam",
         "CommandName":  "Remove-DbaDbSequence",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Remove-DbaDbSequence",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eRemove-DbaDbSequence -SqlInstance sqldev01 -Database TestDB -Name TestSequence\nRemoves the sequence TestSequence in the TestDB database on the sqldev01 instance.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaDatabase -SqlInstance sqldev01 -Database TestDB | Remove-DbaDbSequence -Name TestSequence -Schema TestSchema\nUsing a pipeline this command Removes the sequence named TestSchema.TestSequence in the TestDB database on the sqldev01 instance.",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eRemove-DbaDbSequence -SqlInstance sqldev01 -Database TestDB -Name TestSequence\nRemoves the sequence TestSequence in the TestDB database on the sqldev01 instance.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaDbSequence -SqlInstance SRV1 | Out-GridView -Title \u0027Select sequence(s) to drop\u0027 -OutputMode Multiple | Remove-DbaDbSequence\nUsing a pipeline this command gets all sequences on SRV1, lets the user select those to remove and then removes the selected sequences.",
         "Params":  [
                        [
                            "SqlInstance",
-                           "The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function\r\nto be executed against multiple SQL Server instances.",
+                           "The target SQL Server instance or instances.",
                            "",
-                           false,
+                           true,
                            "false",
                            "",
                            ""
@@ -44595,27 +44595,27 @@
                        ],
                        [
                            "Name",
-                           "The name of the sequence.",
+                           "The name(s) of the sequence(s).",
                            "",
-                           true,
+                           false,
                            "false",
                            "",
                            ""
                        ],
                        [
                            "Schema",
-                           "The name of the schema for the sequence. The default is dbo.",
+                           "The name(s) of the schema for the sequence(s).",
                            "",
                            false,
                            "false",
-                           "dbo",
+                           "",
                            ""
                        ],
                        [
                            "InputObject",
-                           "Allows piping from Get-DbaDatabase.",
+                           "Allows piping from Get-DbaDbSequence.",
                            "",
-                           false,
+                           true,
                            "true (ByValue)",
                            "",
                            ""
@@ -44640,7 +44640,7 @@
                        ],
                        [
                            "Confirm",
-                           "Prompts you for confirmation before executing any changing operations within the command.",
+                           "Prompts you for confirmation before executing any changing operations within the command.\r\nThis is the default. Use -Confirm:$false to suppress these prompts.",
                            "cf",
                            false,
                            "false",
@@ -44648,7 +44648,7 @@
                            ""
                        ]
                    ],
-        "Syntax":  "Remove-DbaDbSequence [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cString[]\u003e] [-Name] \u003cString\u003e [[-Schema] \u003cString\u003e] [[-InputObject] \u003cDatabase[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Remove-DbaDbSequence [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-Database \u003cString[]\u003e] [-Name \u003cString[]\u003e] [-Schema \u003cString[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\nRemove-DbaDbSequence -InputObject \u003cSequence[]\u003e [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Remove-DbaDbSnapshot",
