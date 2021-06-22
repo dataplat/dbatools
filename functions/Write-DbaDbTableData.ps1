@@ -368,15 +368,6 @@ function Write-DbaDbTableData {
 
         #endregion Utility Functions
 
-        #region Connect to server
-        try {
-            $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
-        } catch {
-            Stop-Function -Message "Error occurred while establishing connection to $SqlInstance" -Category ConnectionError -ErrorRecord $_ -Target $SqlInstance
-            return
-        }
-        #endregion Connect to server
-
         #region Prepare type for bulk copy
         if (-not $Truncate) { $ConfirmPreference = "None" }
 
@@ -419,6 +410,15 @@ function Write-DbaDbTableData {
         $tableName = $fqtnObj.Name
 
         $quotedFQTN = New-Object System.Text.StringBuilder
+
+        #region Connect to server
+        try {
+            $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $databaseName
+        } catch {
+            Stop-Function -Message "Error occurred while establishing connection to $SqlInstance" -Category ConnectionError -ErrorRecord $_ -Target $SqlInstance
+            return
+        }
+        #endregion Connect to server
 
         if ($server.ServerType -ne 'SqlAzureDatabase') {
             <#
@@ -519,7 +519,7 @@ function Write-DbaDbTableData {
             }
         }
         # Create SqlBulkCopy object - Database name needs to be appended as not set in $server.ConnectionContext
-        $bulkCopy = New-Object Data.SqlClient.SqlBulkCopy("$($server.ConnectionContext.ConnectionString);Database=$databaseName", $bulkCopyOptions)
+        $bulkCopy = New-Object Data.SqlClient.SqlBulkCopy($server.ConnectionContext.SqlConnectionObject, $bulkCopyOptions, $null)
 
         $bulkCopy.DestinationTableName = $fqtn
         $bulkCopy.BatchSize = $BatchSize
