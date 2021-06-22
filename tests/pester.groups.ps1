@@ -56,6 +56,7 @@ $TestsRunGroups = @{
         'Test-DbaAgentJobOwner',
         'Stop-DbaXESession',
         'Get-DbaPrivilege',
+        'Get-DbaPermission',
         # strange pester issues
         'Find-DbaAgentJob',
         'Remove-DbaDatabaseSafely',
