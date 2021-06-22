@@ -246,7 +246,7 @@ function New-DbaLogShippingSecondaryDatabase {
 
             # For versions prior to SQL Server 2014, adding a monitor works in a different way.
             # The next section makes sure the settings are being synchronized with earlier versions
-            if ($MonitorServer -and ($ServerSecondary.Version.Major -lt 12)) {
+            if ($MonitorServer -and ($SqlInstance.Version.Major -lt 12)) {
                 # Get the details of the primary database
                 $query = "SELECT * FROM msdb.dbo.log_shipping_monitor_secondary WHERE primary_database = '$PrimaryDatabase' AND primary_server = '$PrimaryServer'"
                 $lsDetails = $ServerSecondary.Query($query)
@@ -258,7 +258,7 @@ function New-DbaLogShippingSecondaryDatabase {
                     ,@secondary_id = '$($lsDetails.secondary_id)'
                     ,@primary_server = '$($lsDetails.primary_server)'
                     ,@primary_database = '$($lsDetails.primary_database)'
-                    ,@restore_threshold = $($lsDetails.restore_threshold)
+                    ,@restore_threshold = $RestoreThreshold
                     ,@threshold_alert = $([int]$lsDetails.threshold_alert)
                     ,@threshold_alert_enabled = $([int]$lsDetails.threshold_alert_enabled)
                     ,@history_retention_period = $([int]$lsDetails.history_retention_period)
