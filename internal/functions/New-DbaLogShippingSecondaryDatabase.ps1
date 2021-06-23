@@ -258,7 +258,7 @@ function New-DbaLogShippingSecondaryDatabase {
                     ,@secondary_id = '$($lsDetails.secondary_id)'
                     ,@primary_server = '$($lsDetails.primary_server)'
                     ,@primary_database = '$($lsDetails.primary_database)'
-                    ,@restore_threshold = $($lsDetails.restore_threshold)
+                    ,@restore_threshold = $RestoreThreshold
                     ,@threshold_alert = $([int]$lsDetails.threshold_alert)
                     ,@threshold_alert_enabled = $([int]$lsDetails.threshold_alert_enabled)
                     ,@history_retention_period = $([int]$lsDetails.history_retention_period)
