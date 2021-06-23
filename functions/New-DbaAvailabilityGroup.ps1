@@ -608,43 +608,33 @@ function New-DbaAvailabilityGroup {
 
         # Add databases
         Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Adding databases"
-        $dbdone = $false
-        do {
-            foreach ($second in $secondaries) {
-                if ($SeedingMode -eq 'Automatic') {
-                    $done = $false
+        if ($Database) {
+            if ($Pscmdlet.ShouldProcess($server.Name, "Adding databases to Availability Group.")) {
+                if ($Force) {
                     try {
-                        if ($Pscmdlet.ShouldProcess($second.Name, "Seeding mode is automatic. Adding CreateAnyDatabase permissions to availability group.")) {
-                            do {
-                                $second.Refresh()
-                                $second.AvailabilityGroups.Refresh()
-                                if (Get-DbaAvailabilityGroup -SqlInstance $second -AvailabilityGroup $Name) {
-                                    $null = $second.Query("ALTER AVAILABILITY GROUP [$Name] GRANT CREATE ANY DATABASE")
-                                    $done = $true
-                                } else {
-                                    $wait++
-                                    Start-Sleep -Seconds 1
-                                }
-                            } while ($wait -lt 20 -and $done -eq $false)
-                        }
+                        Get-DbaDatabase -SqlInstance $secondaries -Database $Database -EnableException | Remove-DbaDatabase -EnableException
                     } catch {
-                        # Log the exception but keep going
-                        Stop-Function -Message "Failure" -ErrorRecord $_
+                        Stop-Function -Message "Failed to remove databases from secondary replicas." -ErrorRecord $_
                     }
                 }
-                if ($Database) {
-                    $null = Add-DbaAgDatabase -SqlInstance $Primary -SqlCredential $PrimarySqlCredential -AvailabilityGroup $Name -Database $Database -SeedingMode $SeedingMode -SharedPath $SharedPath -UseLastBackup:$UseLastBackup -Secondary $Secondary -SecondarySqlCredential $SecondarySqlCredential
+
+                $addDatabaseParams = @{
+                    SqlInstance       = $server
+                    AvailabilityGroup = $Name
+                    Database          = $Database
+                    Secondary         = $secondaries
+                    UseLastBackup     = $UseLastBackup
+                    EnableException   = $true
+                }
+                if ($SeedingMode) { $addDatabaseParams['SeedingMode'] = $SeedingMode }
+                if ($SharedPath) { $addDatabaseParams['SharedPath'] = $SharedPath }
+                try {
+                    $null = Add-DbaAgDatabase @addDatabaseParams
+                } catch {
+                    Stop-Function -Message "Failed to add databases to Availability Group." -ErrorRecord $_
                 }
             }
-
-            if (-not $Database -or (Get-DbaAgDatabase -SqlInstance $Primary -SqlCredential $PrimarySqlCredential -AvailabilityGroup $Name -Database $Database)) {
-                $dbdone = $true
-            } else {
-                $null = Add-DbaAgDatabase -SqlInstance $Primary -SqlCredential $PrimarySqlCredential -AvailabilityGroup $Name -Database $Database -SeedingMode $SeedingMode -SharedPath $SharedPath -UseLastBackup:$UseLastBackup -Secondary $Secondary -SecondarySqlCredential $SecondarySqlCredential -WarningAction SilentlyContinue
-                $dbwait++
-                Start-Sleep -Seconds 1
-            }
-        } while ($dbwait -lt 20 -and $dbdone -eq $false)
+        }
 
         # Get results
         Get-DbaAvailabilityGroup -SqlInstance $Primary -SqlCredential $PrimarySqlCredential -AvailabilityGroup $Name

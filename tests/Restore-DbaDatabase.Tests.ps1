@@ -143,6 +143,16 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         }
     }
 
+    Context "Replace databasename in Restored File, but don't change backup history #5036" {
+        $bh = Get-DbaBackupInformation -Path $script:appveyorlabrepo\singlerestore\singlerestore.bak -SqlInstance $script:instance2
+        $firstPhysicalName = $bh.FileList.PhysicalName[0]
+
+        $null = $bh | Restore-DbaDatabase -SqlInstance $script:instance2 -DatabaseName Pestering -replaceDbNameInFile -WithReplace -OutputScriptOnly
+        It "Should not change the PhysicalName in the FileList of the backup history" {
+            $bh.FileList.PhysicalName[0] | Should be $firstPhysicalName
+        }
+    }
+
     Context "Database is properly removed (name change)" {
         $results = Remove-DbaDatabase -Confirm:$false -SqlInstance $script:instance2 -Database pestering
         It "Should say the status was dropped" {

@@ -17,23 +17,40 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     Context "works as expected" {
 
         It "should export some text matching create table" {
-            $results = Get-DbaDbTable -SqlInstance $script:instance2 -Database msdb | select -First 1 | Export-DbaScript -Passthru
+            $results = Get-DbaDbTable -SqlInstance $script:instance2 -Database msdb | Select-Object -First 1 | Export-DbaScript -Passthru
             $results -match "CREATE TABLE"
         }
         It "should include BatchSeparator based on the Formatting.BatchSeparator configuration" {
-            $results = Get-DbaDbTable -SqlInstance $script:instance2 -Database msdb | select -First 1 | Export-DbaScript -Passthru
+            $results = Get-DbaDbTable -SqlInstance $script:instance2 -Database msdb | Select-Object -First 1 | Export-DbaScript -Passthru
             $results -match "(Get-DbatoolsConfigValue -FullName 'Formatting.BatchSeparator')"
         }
 
         It "should include the defined BatchSeparator" {
-            $results = Get-DbaDbTable -SqlInstance $script:instance2 -Database msdb | select -First 1 | Export-DbaScript -Passthru -BatchSeparator "MakeItSo"
+            $results = Get-DbaDbTable -SqlInstance $script:instance2 -Database msdb | Select-Object -First 1 | Export-DbaScript -Passthru -BatchSeparator "MakeItSo"
             $results -match "MakeItSo"
         }
 
         It "should not accept non-SMO objects" {
-            $results = Get-DbaDbTable -SqlInstance $script:instance2 -Database msdb | select -First 1 | Export-DbaScript -Passthru -BatchSeparator "MakeItSo"
+            $null = Get-DbaDbTable -SqlInstance $script:instance2 -Database msdb | Select-Object -First 1 | Export-DbaScript -Passthru -BatchSeparator "MakeItSo"
             $null = [pscustomobject]@{ Invalid = $true } | Export-DbaScript -WarningVariable invalid -WarningAction Continue
             $invalid -match "not a SQL Management Object"
+        }
+
+        It "should not accept non-SMO objects" {
+            $null = Get-DbaDbTable -SqlInstance $script:instance2 -Database msdb | Select-Object -First 1 | Export-DbaScript -Passthru -BatchSeparator "MakeItSo"
+            $null = [pscustomobject]@{ Invalid = $true } | Export-DbaScript -WarningVariable invalid -WarningAction Continue
+            $invalid -match "not a SQL Management Object"
+        }
+        It "should not append when using NoPrefix (#7455)" {
+            if (-not (Test-Path C:\temp)) { $null = mkdir C:\temp }
+            $null = Get-DbaDbTable -SqlInstance $script:instance2 -Database msdb | Select-Object -First 1 | Export-DbaScript -NoPrefix -FilePath C:\temp\msdb.txt
+            $linecount1 = (Get-Content C:\temp\msdb.txt).Count
+            $null = Get-DbaDbTable -SqlInstance $script:instance2 -Database msdb | Select-Object -First 1 | Export-DbaScript -NoPrefix -FilePath C:\temp\msdb.txt
+            $linecount2 = (Get-Content C:\temp\msdb.txt).Count
+            $linecount1 | Should -Be $linecount2
+            $null = Get-DbaDbTable -SqlInstance $script:instance2 -Database msdb | Select-Object -First 1 | Export-DbaScript -NoPrefix -FilePath C:\temp\msdb.txt -Append
+            $linecount3 = (Get-Content C:\temp\msdb.txt).Count
+            $linecount1 | Should -Not -Be $linecount3
         }
     }
 }
