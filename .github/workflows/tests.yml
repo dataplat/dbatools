@@ -36,4 +36,3 @@ jobs:
           Import-Module ./dbatools.psm1 -Force
           $commands = Get-XPlatVariable | Where-Object { $PSItem -notmatch "Copy-","Migration" } | Sort-Object
           $commands
-          docker images -q
