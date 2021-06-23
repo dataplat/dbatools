@@ -17,3 +17,10 @@ jobs:
           # setup two containers and expose ports
           docker run -p 1433:1433 -p 5022:5022 --network localnet --hostname dockersql1 --name dockersql1 -d dbatools/sqlinstance
           docker run -p 14333:1433 -p 5023:5023  --network localnet --hostname dockersql2 --name dockersql2 -d dbatools/sqlinstance2
+
+      - name:  🐋 Download other docker image
+        run: |
+          docker pull mcr.microsoft.com/mssql/server:2019-latest
+          docker run -e "ACCEPT_EULA=Y" -e "SA_PASSWORD=<YourStrong@Passw0rd>" \
+          -p 14335:1433 --name sql1 -h sql1 \
+          -d mcr.microsoft.com/mssql/server:2019-latest
