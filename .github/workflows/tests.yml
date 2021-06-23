@@ -13,10 +13,25 @@ jobs:
       - uses: actions/checkout@v2
 
       - name:  Download docker images
+        run: mkdir -p ~/image-cache
+
+      - id: image-cache
+        uses: actions/cache@v1
+        with:
+            path: ~/image-cache
+            key: image-cache-${{ runner.os }}
+
+      - if: steps.image-cache.outputs.cache-hit != 'true'
         run: |
           docker pull dbatools/sqlinstance
           docker pull dbatools/sqlinstance2
+          docker save $(docker images -q) -o ~/image-cache/docker.tar
 
+      - if: steps.image-cache.outputs.cache-hit == 'true'
+        run: docker load -i ~/image-cache/docker.tar
+
+      - name:  Download docker images
+        run: |
           # create a shared network
           docker network create localnet
 
@@ -39,3 +54,4 @@ jobs:
           Import-Module ./dbatools.psm1 -Force
           $commands = Get-XPlatVariable | Where-Object { $PSItem -notmatch "Copy-","Migration" } | Sort-Object
           $commands
+          docker images -q
