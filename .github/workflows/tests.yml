@@ -12,7 +12,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      - name:  Download docker images - extra word
+      - name:  Setup cacher
         run: mkdir -p  ~/cache
 
       - id: image-cache
@@ -21,16 +21,18 @@ jobs:
             path:  ~/cache
             key: docker-image-cache-${{ runner.os }}
 
+      - name:  Download docker images
       - if: steps.image-cache.outputs.cache-hit != 'true'
         run: |
           docker pull dbatools/sqlinstance
           docker pull dbatools/sqlinstance2
           docker save $(docker images -q dbatools/sqlinstance*) -o  ~/cache/docker.tar
 
+      - name:  Unzip docker images
       - if: steps.image-cache.outputs.cache-hit == 'true'
         run: docker load -i  ~/cache/docker.tar
 
-      - name:  Download docker images
+      - name:  Create containers
         run: |
           # create a shared network
           docker network create localnet
