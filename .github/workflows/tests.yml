@@ -6,10 +6,11 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      - name: Download docker images
-      - run: |
+      - name:  🐋 Download docker images
+        run: |
           docker pull dbatools/sqlinstance
           docker pull dbatools/sqlinstance2
+
           # create a shared network
           docker network create localnet
 
