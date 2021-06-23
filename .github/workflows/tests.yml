@@ -1,0 +1,19 @@
+name: Run Cross Platform Tests
+on: [pull_request]
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: Download docker images
+      - run: |
+          docker pull dbatools/sqlinstance
+          docker pull dbatools/sqlinstance2
+          # create a shared network
+          docker network create localnet
+
+          # setup two containers and expose ports
+          docker run -p 1433:1433 -p 5022:5022 --network localnet --hostname dockersql1 --name dockersql1 -d dbatools/sqlinstance
+          docker run -p 14333:1433 -p 5023:5023  --network localnet --hostname dockersql2 --name dockersql2 -d dbatools/sqlinstance2
