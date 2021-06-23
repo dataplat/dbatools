@@ -29,13 +29,13 @@ jobs:
           #docker pull mcr.microsoft.com/mssql/server:2019-latest
           #docker run -e "ACCEPT_EULA=Y" -e "SA_PASSWORD=dbatools.IO" -p 14335:1433 --name sql1 -h sql1 -d mcr.microsoft.com/mssql/server:2019-latest
 
-      - name: 👥 Clone dbatools repo
+      - name: 👥 Clone appveyor repo
         working-directory: /tmp
         run: |
-          gh repo clone sqlcollaborative/dbatools
+          gh repo clone sqlcollaborative/appveyor-lab
 
       - name: Get list, run test
         run: |
-          Import-Module /tmp/dbatools/dbatools.psm1 -Force
+          Import-Module ./dbatools.psm1 -Force
           $commands = Get-XPlatVariable | Where-Object { $PSItem -notmatch "Copy-","Migration" } | Sort-Object
           $commands
