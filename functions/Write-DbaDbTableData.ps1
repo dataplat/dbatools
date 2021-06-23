@@ -518,7 +518,7 @@ function Write-DbaDbTableData {
                 }
             }
         }
-        # Create SqlBulkCopy object - Database name needs to be appended as not set in $server.ConnectionContext
+        Write-Message -Level Verbose -Message "Creating SqlBulkCopy object"
         $bulkCopy = New-Object Data.SqlClient.SqlBulkCopy($server.ConnectionContext.SqlConnectionObject, $bulkCopyOptions, $null)
 
         $bulkCopy.DestinationTableName = $fqtn
