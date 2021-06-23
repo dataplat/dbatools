@@ -12,7 +12,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      - name:  Download docker images
+      - name:  Download docker images - extra word
         run: mkdir -p  ~/cache
 
       - id: image-cache
