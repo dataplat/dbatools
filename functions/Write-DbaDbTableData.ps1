@@ -676,6 +676,7 @@ function Write-DbaDbTableData {
         }
     }
     end {
+        if (Test-FunctionInterrupt) { return }
         #region ConvertTo-DbaDataTable wrapper
         $dataTable = $steppablePipeline.End()
         if ($dataTable[0].Rows.Count -gt 0) {
