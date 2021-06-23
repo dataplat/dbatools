@@ -37,6 +37,9 @@ function Copy-DbaLinkedServer {
     .PARAMETER UpgradeSqlClient
         Upgrade any SqlClient Linked Server to the current Version
 
+    .PARAMETER ExcludePassword
+        Copies the linked server without any sensitive information.
+
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
 
@@ -88,6 +91,7 @@ function Copy-DbaLinkedServer {
         [object[]]$LinkedServer,
         [object[]]$ExcludeLinkedServer,
         [switch]$UpgradeSqlClient,
+        [switch]$ExcludePassword,
         [switch]$Force,
         [switch]$EnableException
     )
@@ -107,7 +111,9 @@ function Copy-DbaLinkedServer {
             )
 
             Write-Message -Level Verbose -Message "Collecting Linked Server logins and passwords on $($sourceServer.Name)."
-            $sourcelogins = Get-DecryptedObject -SqlInstance $sourceServer -Type LinkedServer
+            if (-not $ExcludePassword) {
+                $sourcelogins = Get-DecryptedObject -SqlInstance $sourceServer -Type LinkedServer
+            }
 
             $serverlist = $sourceServer.LinkedServers
 
