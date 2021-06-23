@@ -20,8 +20,6 @@ jobs:
         with:
             path:  ~/cache
             key: docker-image-cache-${{ runner.os }}
-
-      - name:  Download docker images
       - if: steps.image-cache.outputs.cache-hit != 'true'
         run: |
           docker pull dbatools/sqlinstance
