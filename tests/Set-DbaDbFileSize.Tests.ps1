@@ -15,13 +15,13 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 
 Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
-        $newdb = New-DbaDatabase -SqlInstance $script:instance1 -Name newdb
+        $newdb = New-DbaDatabase -SqlInstance $script:instance2 -Name newdb
     }
     AfterAll {
         $newdb | Remove-DbaDatabase -Confirm:$false
     }
     Context "Should return file information for only newdb" {
-        $results = Set-DbaDbFileSize -SqlInstance $script:instance1 -Database newdb
+        $results = Set-DbaDbFileSize -SqlInstance $script:instance2 -Database newdb
         foreach ($result in $results) {
             It "returns the proper info" {
                 $result.Database | Should -Be "newdb"
@@ -32,7 +32,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     }
 
     Context "Supports piping" {
-        $results = Get-DbaDatabase $script:instance1 -Database newdb | Set-DbaDbFileSize
+        $results = Get-DbaDatabase $script:instance2 -Database newdb | Set-DbaDbFileSize
         foreach ($result in $results) {
             It "returns only newdb files" {
                 $result.Database | Should -Be "newdb"
