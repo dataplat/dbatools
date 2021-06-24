@@ -154,14 +154,14 @@ function Copy-DbaCredential {
                     if (!$force) {
                         $copyCredentialStatus.Status = "Skipping"
                         $copyCredentialStatus.Notes = "Already exists on destination"
-                        if ($Pscmdlet.ShouldProcess($destServer.Name, "Skipping $identity, already exists")) {
+                        if ($Pscmdlet.ShouldProcess($destServer.Name, "Skipping $credentialName, already exists")) {
                             $copyCredentialStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                         }
 
                         Write-Message -Level Verbose -Message "$credentialName exists $($destServer.Name). Skipping."
                         continue
                     } else {
-                        if ($Pscmdlet.ShouldProcess($destinstance.Name, "Dropping $identity")) {
+                        if ($Pscmdlet.ShouldProcess($destinstance.Name, "Dropping $credentialName")) {
                             $destServer.Credentials[$credentialName].Drop()
                             $destServer.Credentials.Refresh()
                         }
