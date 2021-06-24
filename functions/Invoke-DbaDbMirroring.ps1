@@ -365,7 +365,7 @@ function Invoke-DbaDbMirroring {
                     Stop-Function -Continue -Message "Failure with the new last part" -ErrorRecord $_
                 }
             }
-write-warning HELLO
+
             if ($Pscmdlet.ShouldProcess("console", "Showing results")) {
                 $results = [pscustomobject]@{
                     Primary  = $Primary
