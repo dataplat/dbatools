@@ -16,10 +16,10 @@ jobs:
         run: |
           # create a shared network
           docker network create localnet
-
+          docker volume create shared
           # setup two containers and expose ports
-          docker run -p 1433:1433 -p 5022:5022 --network localnet --hostname dockersql1 --name dockersql1 -d dbatools/sqlinstance
-          docker run -p 14333:1433 -p 5023:5023  --network localnet --hostname dockersql2 --name dockersql2 -d dbatools/sqlinstance2
+          docker run -p 1433:1433 -p 5022:5022 --network localnet --hostname dockersql1 --name dockersql1 -d dbatools/sqlinstance --mount source=shared,target=/shared
+          docker run -p 14333:1433 -p 5023:5023  --network localnet --hostname dockersql2 --name dockersql2 -d dbatools/sqlinstance2 --mount source=shared,target=/shared
 
       - name: Download other docker image
         run: |
@@ -35,4 +35,5 @@ jobs:
         run: |
           Import-Module ./dbatools.psm1 -Force
           $commands = Get-XPlatVariable | Where-Object { $PSItem -notmatch "Copy-","Migration" } | Sort-Object
-          $commands
+          New-DbaDatabase -SqlInstance localhost
+          Start-DbaMigration -Source localhost -Destination localhost:14333 -BackupRestore -SharedPath /shared -ErrorAction Stop
