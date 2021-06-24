@@ -16,6 +16,9 @@ function Get-DbaDbFileSize {
 
         For MFA support, please use Connect-DbaInstance.
 
+    .PARAMETER Database
+        The name of the target databases
+
     .PARAMETER InputObject
         Allows piping from Get-DbaDatabase
 
@@ -30,6 +33,9 @@ function Get-DbaDbFileSize {
         Website: https://dbatools.io
         Copyright: (c) 2021 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
+
+    .LINK
+        https://dbatools.io/Get-DbaDbFileSize
 
     .EXAMPLE
         PS C:\> Get-DbaDbFileSize -SqlInstance sql2017, sql2016, sql2012

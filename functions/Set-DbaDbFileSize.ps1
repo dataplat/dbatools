@@ -43,6 +43,9 @@ function Set-DbaDbFileSize {
         Copyright: (c) 2021 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
+    .LINK
+        https://dbatools.io/Set-DbaDbFileSize
+
     .EXAMPLE
         PS C:\> Set-DbaDbFileSize -SqlInstance sql2017, sql2016, sql2012
 
