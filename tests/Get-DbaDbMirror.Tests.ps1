@@ -4,11 +4,11 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
+        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
         [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'EnableException'
         $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
         It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
         }
     }
 }
@@ -28,17 +28,17 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
         $null = $server.Query("CREATE DATABASE $db2")
     }
     AfterAll {
-        $null = Remove-DbaDatabase -Confirm:$false -SqlInstance $script:instance2, $script:instance3 -Database $db1 -ErrorAction SilentlyContinue
+        $null = Get-DbaDbMirror -SqlInstance $script:instance2, $script:instance3 | Remove-DbaDbMirror -Confirm:$false
+        $null = Remove-DbaDatabase -Confirm:$false -SqlInstance $script:instance2, $script:instance3 -Database $db1, $db2 -ErrorAction SilentlyContinue
     }
 
     It "returns more than one database" {
-        $null = Invoke-DbaDbMirroring -Primary $script:instance2 -Mirror $script:instance3 -Database $db1, $db2 -Confirm:$false -Force -SharedPath C:\temp
-        (Get-DbaDbMirror -SqlInstance $script:instance3).Count | Should -Be 2
+        $null = Invoke-DbaDbMirroring -Primary $script:instance2 -Mirror $script:instance3 -Database $db1, $db2 -Confirm:$false -Force -SharedPath C:\temp -WarningAction Continue
+        (Get-DbaDbMirror -SqlInstance $script:instance2, $script:instance3).Count | Should -Be 2
     }
 
 
     It "returns just one database" {
-        $null = Invoke-DbaDbMirroring -Primary $script:instance2 -Mirror $script:instance3 -Database $db1, $db2 -Confirm:$false -Force -SharedPath C:\temp
         (Get-DbaDbMirror -SqlInstance $script:instance3 -Database $db2).Count | Should -Be 1
     }
 }
