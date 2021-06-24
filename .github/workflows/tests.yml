@@ -27,7 +27,7 @@ jobs:
         run: |
           gh repo clone sqlcollaborative/appveyor-lab
 
-      - name: Get list, run test
+      - name: Run tests
         run: |
           Import-Module ./dbatools.psm1 -Force
           $commands = Get-XPlatVariable | Where-Object { $PSItem -notmatch "Copy-","Migration" } | Sort-Object
@@ -54,5 +54,5 @@ jobs:
           # Test Mirroring
           $newdb = New-DbaDatabase -SqlInstance localhost
           $null = Invoke-DbaDbMirroring -Primary localhost -Mirror localhost:14333 -Database $newdb.Name -Confirm:$false -Force -SharedPath /shared -WarningAction SilentlyContinue
-          #$error | select *
+          $error | select *
           $null = Get-DbaDbMirror -SqlInstance localhost
