@@ -16,6 +16,7 @@ jobs:
         run: |
           # create a shared network
           docker network create localnet
+          # create a shared volume
           docker volume create shared
           # setup two containers and expose ports
           docker run -p 1433:1433 -p 5022:5022 --network localnet --hostname dockersql1 --name dockersql1 --mount 'source=shared,target=/shared' -d dbatools/sqlinstance
@@ -35,7 +36,8 @@ jobs:
           $PSDefaultParameterValues["*:SqlCredential"] = $cred
           $PSDefaultParameterValues["*:SourceSqlCredential"] = $cred
           $PSDefaultParameterValues["*:DestinationSqlCredential"] = $cred
-          New-DbaDatabase -SqlInstance localhost
+
+          # test migration
           $params = @{
             Source        = "localhost"
             Destination   = "localhost:14333"
@@ -45,3 +47,6 @@ jobs:
             ErrorAction   = "Stop"
           }
           Start-DbaMigration @params
+
+          # Test Mirroring
+          $newdb = New-DbaDatabase -SqlInstance localhost -Name newdb
