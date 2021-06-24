@@ -111,7 +111,16 @@ function Copy-DbaLinkedServer {
             )
 
             Write-Message -Level Verbose -Message "Collecting Linked Server logins and passwords on $($sourceServer.Name)."
-            if (-not $ExcludePassword) {
+            if ($ExcludePassword) {
+                $sourcelogins = @()
+                foreach ($svr in $sourceServer.LinkedServers) {
+                    $sourcelogins += [pscustomobject]@{
+                        Name     = $sourcelogin.Name
+                        Identity = $sourcelogin.LinkedServerLogins.RemoteUser
+                        Password = $null
+                    }
+                }
+            } else {
                 $sourcelogins = Get-DecryptedObject -SqlInstance $sourceServer -Type LinkedServer
             }
 
@@ -232,8 +241,10 @@ function Copy-DbaLinkedServer {
 
                             if ($currentlogin.RemoteUser.length -ne 0) {
                                 try {
-                                    $currentlogin.SetRemotePassword($login.Password)
-                                    $currentlogin.Alter()
+                                    if ($login.Password) {
+                                        $currentlogin.SetRemotePassword($login.Password)
+                                        $currentlogin.Alter()
+                                    }
 
                                     $copyLinkedServer.Status = "Successful"
                                     $copyLinkedServer | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
