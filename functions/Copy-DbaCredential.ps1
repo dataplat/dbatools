@@ -174,7 +174,7 @@ function Copy-DbaCredential {
                     $sqlcredentialName = $credentialName.Replace("'", "''")
                     $identity = $currentCred.Identity.Replace("'", "''")
                     $password = $currentCred.Password.Replace("'", "''")
-                    if ($Pscmdlet.ShouldProcess($destinstance.Name, "Copying $identity")) {
+                    if ($Pscmdlet.ShouldProcess($destinstance.Name, "Copying $identity ($credentialName)")) {
                         $destServer.Query("CREATE CREDENTIAL [$sqlcredentialName] WITH IDENTITY = N'$identity', SECRET = N'$password'")
                         $destServer.Credentials.Refresh()
                         Write-Message -Level Verbose -Message "$credentialName successfully copied"
