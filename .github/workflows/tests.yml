@@ -30,5 +30,16 @@ jobs:
         run: |
           Import-Module ./dbatools.psm1 -Force
           $commands = Get-XPlatVariable | Where-Object { $PSItem -notmatch "Copy-","Migration" } | Sort-Object
+
+          $cred = ConvertTo-SecureString "dbatools.IO" -AsPlainText -Force
+          $PSDefaultParameterValues["*:SqlCredential"] = $cred
           New-DbaDatabase -SqlInstance localhost
-          Start-DbaMigration -Source localhost -Destination localhost:14333 -BackupRestore -SharedPath /shared -ErrorAction Stop
+          $params = @{
+            Source        = "localhost"
+            Destination   = "localhost:14333"
+            BackupRestore = $true
+            SharedPath    = "/shared"
+            Exclude       = "LinkedServers", "Credentials"
+            ErrorAction   = "Stop"
+          }
+          Start-DbaMigration @params
