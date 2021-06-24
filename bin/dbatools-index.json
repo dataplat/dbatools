@@ -5551,7 +5551,16 @@
                        ],
                        [
                            "UpgradeSqlClient",
-                           "Upgrade any SqlClient Linked Server to the current Version",
+                           "Upgrade any SqlClient Linked Server to the current version",
+                           "",
+                           false,
+                           "false",
+                           "False",
+                           ""
+                       ],
+                       [
+                           "ExcludePassword",
+                           "Copies the logins but does not access, decrypt or create sensitive information",
                            "",
                            false,
                            "false",
@@ -5595,7 +5604,7 @@
                            ""
                        ]
                    ],
-        "Syntax":  "Copy-DbaLinkedServer [-Source] \u003cDbaInstanceParameter\u003e [[-SourceSqlCredential] \u003cPSCredential\u003e] [-Destination] \u003cDbaInstanceParameter[]\u003e [[-DestinationSqlCredential] \u003cPSCredential\u003e] [[-LinkedServer] \u003cObject[]\u003e] [[-ExcludeLinkedServer] \u003cObject[]\u003e] [-UpgradeSqlClient] [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Copy-DbaLinkedServer [-Source] \u003cDbaInstanceParameter\u003e [[-SourceSqlCredential] \u003cPSCredential\u003e] [-Destination] \u003cDbaInstanceParameter[]\u003e [[-DestinationSqlCredential] \u003cPSCredential\u003e] [[-LinkedServer] \u003cObject[]\u003e] [[-ExcludeLinkedServer] \u003cObject[]\u003e] [-UpgradeSqlClient] [-ExcludePassword] [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Copy-DbaLogin",
@@ -16814,7 +16823,7 @@
         "CommandName":  "Get-DbaDbMirror",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Get-DbaDbMirror",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaDbMirror -SqlInstance localhost\nGets properties of database mirrors and mirror witnesses on localhost\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaDbMirror -SqlInstance localhost, sql2016\nGets properties of database mirrors and mirror witnesses on localhost and sql2016 SQL Server instances",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaDbMirror -SqlInstance localhost\nGets properties of database mirrors and mirror witnesses on localhost\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaDbMirror -SqlInstance localhost, sql2016\nGets properties of database mirrors and mirror witnesses on localhost and sql2016 SQL Server instances\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaDbMirror -SqlInstance localhost, sql2016 -Database mymirror\nGets properties of database mirrors and mirror witnesses on localhost and sql2016 SQL Server instances for databases named mymirror",
         "Params":  [
                        [
                            "SqlInstance",
@@ -16835,6 +16844,15 @@
                            ""
                        ],
                        [
+                           "Database",
+                           "The name of the target databases",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
                            "EnableException",
                            "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
                            "",
@@ -16844,7 +16862,7 @@
                            ""
                        ]
                    ],
-        "Syntax":  "Get-DbaDbMirror [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Get-DbaDbMirror [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cString[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Get-DbaDbMirrorMonitor",
