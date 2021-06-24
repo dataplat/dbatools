@@ -19,7 +19,7 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
         $null = Get-DbaProcess -SqlInstance $script:instance2 | Where-Object Program -Match dbatools | Stop-DbaProcess -Confirm:$false -WarningAction SilentlyContinue
         $server = Connect-DbaInstance -SqlInstance $script:instance2
         $db1 = "dbatoolsci_mirroring"
-        $db1 = "dbatoolsci_mirroring_db2"
+        $db2 = "dbatoolsci_mirroring_db2"
 
         Remove-DbaDbMirror -SqlInstance $script:instance2 -Database $db1, $db2 -Confirm:$false
         Remove-DbaDatabase -SqlInstance $script:instance2 -Database $db1, $db2 -Confirm:$false
