@@ -16,6 +16,9 @@ function Set-DbaDbFileSize {
 
         For MFA support, please use Connect-DbaInstance.
 
+    .PARAMETER Database
+        The name of the target databases
+
     .PARAMETER GrowthType
         The growth type, MB by default - valid values are MB, KB, GB or TB. MB by default
 
