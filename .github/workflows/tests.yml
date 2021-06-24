@@ -54,4 +54,5 @@ jobs:
           # Test Mirroring
           $newdb = New-DbaDatabase -SqlInstance localhost -Name newdb
           Invoke-DbaDbMirroring -Primary localhost -Mirror localhost:14333 -Database newdb -Confirm:$false -Force -SharedPath /shared
+          $error | select *
           Get-DbaDbMirror -SqlInstance localhost
