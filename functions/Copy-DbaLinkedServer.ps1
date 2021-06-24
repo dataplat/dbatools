@@ -234,12 +234,12 @@ function Copy-DbaLinkedServer {
                     $lslogins = $sourcelogins | Where-Object { $_.Name -eq $linkedServerName }
 
                     foreach ($login in $lslogins) {
-                        if ($Pscmdlet.ShouldProcess($destinstance, "Migrating $($login.Login)")) {
-                            $currentlogin = $destlogins | Where-Object { $_.RemoteUser -eq $login.Identity }
+                        $currentlogin = $destlogins | Where-Object { $_.RemoteUser -eq $login.Identity }
 
-                            $copyLinkedServer.Type = $login.Identity
+                        $copyLinkedServer.Type = $login.Identity
 
-                            if ($currentlogin.RemoteUser.length -ne 0) {
+                        if ($currentlogin.RemoteUser.length -ne 0) {
+                            if ($Pscmdlet.ShouldProcess($destinstance, "Migrating linked server identity $($login.Identity)")) {
                                 try {
                                     if ($login.Password) {
                                         $currentlogin.SetRemotePassword($login.Password)
