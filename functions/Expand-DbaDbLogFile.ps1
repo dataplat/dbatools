@@ -207,8 +207,15 @@ function Expand-DbaDbLogFile {
             #control the iteration number
             $databaseProgressbar = 0;
 
-            Write-Message -Level Verbose -Message "Resolving NetBIOS name."
-            $sourcenetbios = Resolve-NetBiosName $server
+            Write-Message -Level Verbose -Message "Resolving FullComputerName name."
+            try {
+                # We don't have windows credentials here, so Resolve-DbaNetworkName has to respect that and work like Resolve-NetBiosName did before.
+                $resolved = Resolve-DbaNetworkName -ComputerName $server -EnableException
+                $fullComputerName = $resolved.FullComputerName
+            } catch {
+                Write-Message -Level Verbose -Message "Error occurred while resolving $server, so we use ComputerName as the fallback."
+                $fullComputerName = $server.ComputerName
+            }
 
             $databases = $server.Databases | Where-Object IsAccessible
             Write-Message -Level Verbose -Message "Number of databases found: $($databases.Count)."
@@ -261,7 +268,8 @@ function Expand-DbaDbLogFile {
                         Write-Message -Level Verbose -Message "Get TLog drive free space"
 
                         try {
-                            [object]$AllDrivesFreeDiskSpace = Get-DbaDiskSpace -ComputerName $sourcenetbios | Select-Object Name, SizeInKB
+                            # That would need a Credential, but we don't have one...
+                            [object]$AllDrivesFreeDiskSpace = Get-DbaDiskSpace -ComputerName $fullComputerName | Select-Object Name, SizeInKB
 
                             #Verify path using Split-Path on $logfile.FileName in backwards. This way we will catch the LUNs. Example: "K:\Log01" as LUN name. Need to add final backslash if not there
                             $DrivePath = Split-Path $logfile.FileName -parent

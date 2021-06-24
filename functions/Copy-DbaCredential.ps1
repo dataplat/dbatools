@@ -193,7 +193,7 @@ function Copy-DbaCredential {
         try {
             $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential -MinimumVersion 9
         } catch {
-            Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance
+            Stop-Function -Message "Error occurred while establishing connection to $Source" -Category ConnectionError -ErrorRecord $_ -Target $Source
             return
         }
 
@@ -201,15 +201,21 @@ function Copy-DbaCredential {
             Write-Message -Level Verbose -Message "You are using SQL credentials and this script requires Windows admin access to the $Source server. Trying anyway."
         }
 
-        $sourceNetBios = Resolve-NetBiosName $sourceServer
+        try {
+            $resolved = Resolve-DbaNetworkName -ComputerName $Source -Credential $Credential -EnableException
+            $sourceFullComputerName = $resolved.FullComputerName
+        } catch {
+            Stop-Function -Message "Error occurred while resolving $Source" -Category ConnectionError -ErrorRecord $_ -Target $Source
+            return
+        }
 
         Invoke-SmoCheck -SqlInstance $sourceServer
 
-        Write-Message -Level Verbose -Message "Checking if Remote Registry is enabled on $source"
+        Write-Message -Level Verbose -Message "Checking if Remote Registry is enabled on $Source"
         try {
-            Invoke-Command2 -ComputerName $sourceNetBios -Credential $credential -ScriptBlock { Get-ItemProperty -Path "HKLM:\SOFTWARE\" }
+            Invoke-Command2 -ComputerName $sourceFullComputerName -Credential $Credential -ScriptBlock { Get-ItemProperty -Path "HKLM:\SOFTWARE\" }
         } catch {
-            Stop-Function -Message "Can't connect to registry on $source" -Target $sourceNetBios -ErrorRecord $_
+            Stop-Function -Message "Can't connect to registry on $Source" -Target $sourceFullComputerName -ErrorRecord $_
             return
         }
     }
