@@ -205,6 +205,7 @@ function Invoke-DbaDbMirroring {
                 Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Validating mirror setup"
                 # Thanks to https://github.com/mmessano/PowerShell/blob/master/SQL-ConfigureDatabaseMirroring.ps1 for the tips
 
+                $params.Database = $dbName
                 $validation = Invoke-DbMirrorValidation @params
 
                 if ((Test-Bound -ParameterName SharedPath) -and -not $validation.AccessibleShare) {
@@ -215,8 +216,10 @@ function Invoke-DbaDbMirroring {
                     Stop-Function -Continue -Message "This mirroring configuration is not supported. Because the principal server instance, $source, is $($source.EngineEdition) Edition, the mirror server instance must also be $($source.EngineEdition) Edition."
                 }
 
-                if ($validation.MirroringStatus -ne "None") {
-                    Stop-Function -Continue -Message "Cannot setup mirroring on database ($dbName) due to its current mirroring state: $($primarydb.MirroringStatus)"
+                foreach ($status in $validation.MirroringStatus) {
+                    if ($status -ne "None") {
+                        Stop-Function -Continue -Message "Cannot setup mirroring on database ($dbName) due to its current mirroring state on primary: $status"
+                    }
                 }
 
                 if ($primarydb.Status -ne "Normal") {
@@ -362,20 +365,20 @@ function Invoke-DbaDbMirroring {
                     Stop-Function -Continue -Message "Failure with the new last part" -ErrorRecord $_
                 }
             }
-        }
-
-        if ($Pscmdlet.ShouldProcess("console", "Showing results")) {
-            $results = [pscustomobject]@{
-                Primary  = $Primary
-                Mirror   = $Mirror -join ", "
-                Witness  = $Witness
-                Database = $primarydb.Name
-                Status   = "Success"
-            }
-            if ($Witness) {
-                $results | Select-DefaultView -Property Primary, Mirror, Witness, Database, Status
-            } else {
-                $results | Select-DefaultView -Property Primary, Mirror, Database, Status
+write-warning HELLO
+            if ($Pscmdlet.ShouldProcess("console", "Showing results")) {
+                $results = [pscustomobject]@{
+                    Primary  = $Primary
+                    Mirror   = $Mirror -join ", "
+                    Witness  = $Witness
+                    Database = $primarydb.Name
+                    Status   = "Success"
+                }
+                if ($Witness) {
+                    $results | Select-DefaultView -Property Primary, Mirror, Witness, Database, Status
+                } else {
+                    $results | Select-DefaultView -Property Primary, Mirror, Database, Status
+                }
             }
         }
     }
