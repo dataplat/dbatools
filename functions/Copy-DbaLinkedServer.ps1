@@ -35,10 +35,10 @@ function Copy-DbaLinkedServer {
         The linked server(s) to exclude - this list is auto-populated from the server
 
     .PARAMETER UpgradeSqlClient
-        Upgrade any SqlClient Linked Server to the current Version
+        Upgrade any SqlClient Linked Server to the current version
 
     .PARAMETER ExcludePassword
-        Copies the linked server without any sensitive information.
+        Copies the logins but does not access, decrypt or create sensitive information
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
