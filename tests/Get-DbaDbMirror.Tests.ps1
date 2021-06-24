@@ -23,7 +23,6 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
 
         Remove-DbaDbMirror -SqlInstance $script:instance2, $script:instance3 -Database $db1, $db2 -Confirm:$false
         Remove-DbaDatabase -SqlInstance $script:instance2, $script:instance3 -Database $db1, $db2 -Confirm:$false
-        $null = Get-DbaDatabase -SqlInstance $script:instance2, $script:instance3 -Database $db1, $db2 | Remove-DbaDatabase -Confirm:$false
         $null = $server.Query("CREATE DATABASE $db1")
         $null = $server.Query("CREATE DATABASE $db2")
     }
