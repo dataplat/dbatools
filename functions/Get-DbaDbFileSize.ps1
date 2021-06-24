@@ -63,7 +63,7 @@ function Get-DbaDbFileSize {
         }
 
         if ($SqlInstance) {
-            $InputObject = Get-DbaDatabase -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $Database | Where-Object IsAccessible
+            $InputObject = Get-DbaDatabase -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $Database -OnlyAccessible
         }
 
         foreach ($db in $InputObject) {
