@@ -191,7 +191,7 @@ function Invoke-DbaDbMirroring {
             foreach ($currentmirror in $Mirror) {
                 $stepCounter = 0
                 try {
-                    $dest = Connect-SqlInstance -SqlInstance $currentmirror -SqlCredential $currentmirrorSqlCredential
+                    $dest = Connect-SqlInstance -SqlInstance $currentmirror -SqlCredential $MirrorSqlCredential
 
                     if ($Witness) {
                         $witserver = Connect-SqlInstance -SqlInstance $Witness -SqlCredential $WitnessSqlCredential
@@ -250,7 +250,7 @@ function Invoke-DbaDbMirroring {
                     if ($Pscmdlet.ShouldProcess("$currentmirror", "Restoring full and log backups of $primarydb from $Primary")) {
                         foreach ($currentmirrorinstance in $currentmirror) {
                             try {
-                                $null = $allbackups | Restore-DbaDatabase -SqlInstance $currentmirrorinstance -SqlCredential $currentmirrorSqlCredential -WithReplace -NoRecovery -TrustDbBackupHistory -EnableException
+                                $null = $allbackups | Restore-DbaDatabase -SqlInstance $currentmirrorinstance -SqlCredential $MirrorSqlCredential -WithReplace -NoRecovery -TrustDbBackupHistory -EnableException
                             } catch {
                                 Stop-Function -Message "Failure" -ErrorRecord $_ -Target $dest -Continue
                             }
