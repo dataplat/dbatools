@@ -12,8 +12,33 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
         }
     }
 }
-<#
-    Integration test should appear below and are custom to the command you are writing.
-    Read https://github.com/sqlcollaborative/dbatools/blob/development/contributing.md#tests
-    for more guidence.
-#>
+
+
+Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
+    BeforeAll {
+        $null = Get-DbaProcess -SqlInstance $script:instance2 | Where-Object Program -Match dbatools | Stop-DbaProcess -Confirm:$false -WarningAction SilentlyContinue
+        $server = Connect-DbaInstance -SqlInstance $script:instance2
+        $db1 = "dbatoolsci_mirroring"
+        $db1 = "dbatoolsci_mirroring_db2"
+
+        Remove-DbaDbMirror -SqlInstance $script:instance2 -Database $db1, $db2 -Confirm:$false
+        Remove-DbaDatabase -SqlInstance $script:instance2 -Database $db1, $db2 -Confirm:$false
+        $null = Get-DbaDatabase -SqlInstance $script:instance2 -Database $db1, $db2 | Remove-DbaDatabase -Confirm:$false
+        $null = $server.Query("CREATE DATABASE $db1")
+        $null = $server.Query("CREATE DATABASE $db2")
+    }
+    AfterAll {
+        $null = Remove-DbaDatabase -Confirm:$false -SqlInstance $script:instance2, $script:instance3 -Database $db1 -ErrorAction SilentlyContinue
+    }
+
+    It "returns more than one database" {
+        $null = Invoke-DbaDbMirroring -Primary $script:instance2 -Mirror $script:instance3 -Database $db1 -Confirm:$false -Force -SharedPath C:\temp
+        (Get-DbaDbMirror -SqlInstance $script:instance2).Count | Should -Be 2
+    }
+
+
+    It "returns just one database" {
+        $null = Invoke-DbaDbMirroring -Primary $script:instance2 -Mirror $script:instance3 -Database $db1 -Confirm:$false -Force -SharedPath C:\temp
+        (Get-DbaDbMirror -SqlInstance $script:instance2 -Database $db2).Count | Should -Be 1
+    }
+}
