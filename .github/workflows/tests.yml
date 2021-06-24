@@ -52,7 +52,7 @@ jobs:
           #Start-DbaMigration @params
 
           # Test Mirroring
-          $newdb = New-DbaDatabase -SqlInstance localhost -Name newdb
-          $null = Invoke-DbaDbMirroring -Primary localhost -Mirror localhost:14333 -Database newdb -Confirm:$false -Force -SharedPath /shared -WarningAction SilentlyContinue
-          $error | select *
+          $newdb = New-DbaDatabase -SqlInstance localhost
+          $null = Invoke-DbaDbMirroring -Primary localhost -Mirror localhost:14333 -Database $newdb.Name -Confirm:$false -Force -SharedPath /shared -WarningAction SilentlyContinue
+          #$error | select *
           $null = Get-DbaDbMirror -SqlInstance localhost
