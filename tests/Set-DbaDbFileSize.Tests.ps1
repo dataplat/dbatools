@@ -14,23 +14,28 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 }
 
 Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
-
-    Context "Should return file information for only msdb" {
-        $results = Set-DbaDbFileSize -SqlInstance $script:instance1 -Database msdb
+    BeforeAll {
+        $newdb = New-DbaDatabase -SqlInstance $script:instance1 -Name newdb
+    }
+    AfterAll {
+        $newdb | Remove-DbaDatabase -Confirm:$false
+    }
+    Context "Should return file information for only newdb" {
+        $results = Set-DbaDbFileSize -SqlInstance $script:instance1 -Database newdb
         foreach ($result in $results) {
             It "returns the proper info" {
-                $result.Database | Should -Be "msdb"
+                $result.Database | Should -Be "newdb"
                 $result.GrowthType | Should -Be "MB"
                 $result.Growth | Should -Be "64"
             }
         }
     }
 
-    Context "Should return file information for only msdb" {
-        $results = Get-DbaDatabase $script:instance1 -Database msdb | Set-DbaDbFileSize
+    Context "Supports piping" {
+        $results = Get-DbaDatabase $script:instance1 -Database newdb | Set-DbaDbFileSize
         foreach ($result in $results) {
-            It "returns only msdb files" {
-                $result.Database | Should -Be "msdb"
+            It "returns only newdb files" {
+                $result.Database | Should -Be "newdb"
             }
         }
     }
