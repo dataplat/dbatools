@@ -83,7 +83,7 @@ function Invoke-DbMirrorValidation {
         }
 
         if ($Primary) {
-            $InputObject += Get-DbaDatabase -SqlInstance $Primary -SqlCredential $SqlCredential -Database $Database
+            $InputObject += Get-DbaDatabase -SqlInstance $Primary -SqlCredential $PrimarySqlCredential -Database $Database
         }
 
         foreach ($db in $InputObject) {
