@@ -83,7 +83,7 @@ function Invoke-DbMirrorValidation {
         }
 
         if ($Primary) {
-            $InputObject += Get-DbaDatabase -SqlInstance $Primary -SqlCredential $SqlCredential -Database $Database
+            $InputObject += Get-DbaDatabase -SqlInstance $Primary -SqlCredential $PrimarySqlCredential -Database $Database
         }
 
         foreach ($db in $InputObject) {
@@ -121,7 +121,7 @@ function Invoke-DbMirrorValidation {
             }
 
             if ($db.MirroringStatus -ne [Microsoft.SqlServer.Management.Smo.MirroringStatus]::None) {
-                Write-Message -Level Verbose -Message "Cannot setup mirroring on database ($dbName) due to its current mirroring state (this one): $($db.MirroringStatus)"
+                Write-Message -Level Verbose -Message "Cannot setup mirroring on database ($dbName) due to its current mirroring state: $($db.MirroringStatus)"
                 $canmirror = $false
             }
 
