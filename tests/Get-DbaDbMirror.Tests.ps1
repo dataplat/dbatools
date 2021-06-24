@@ -32,13 +32,13 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
     }
 
     It "returns more than one database" {
-        $null = Invoke-DbaDbMirroring -Primary $script:instance2 -Mirror $script:instance3 -Database $db1 -Confirm:$false -Force -SharedPath C:\temp
+        $null = Invoke-DbaDbMirroring -Primary $script:instance2 -Mirror $script:instance3 -Database $db1, $db2 -Confirm:$false -Force -SharedPath C:\temp
         (Get-DbaDbMirror -SqlInstance $script:instance2).Count | Should -Be 2
     }
 
 
     It "returns just one database" {
-        $null = Invoke-DbaDbMirroring -Primary $script:instance2 -Mirror $script:instance3 -Database $db1 -Confirm:$false -Force -SharedPath C:\temp
+        $null = Invoke-DbaDbMirroring -Primary $script:instance2 -Mirror $script:instance3 -Database $db1, $db2 -Confirm:$false -Force -SharedPath C:\temp
         (Get-DbaDbMirror -SqlInstance $script:instance2 -Database $db2).Count | Should -Be 1
     }
 }
