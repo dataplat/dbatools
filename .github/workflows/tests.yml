@@ -38,6 +38,7 @@ jobs:
           $PSDefaultParameterValues["*:DestinationSqlCredential"] = $cred
           $PSDefaultParameterValues["*:PrimarySqlCredential"] = $cred
           $PSDefaultParameterValues["*:MirrorSqlCredential"] = $cred
+          $PSDefaultParameterValues["*:WitnessSqlCredential"] = $cred
 
           # test migration
           $params = @{
