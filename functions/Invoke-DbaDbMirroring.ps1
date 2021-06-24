@@ -191,7 +191,7 @@ function Invoke-DbaDbMirroring {
             foreach ($currentmirror in $Mirror) {
                 $stepCounter = 0
                 try {
-                    $dest = Connect-SqlInstance -SqlInstance $currentmirror -SqlCredential $currentmirrorSqlCredential
+                    $dest = Connect-SqlInstance -SqlInstance $currentmirror -SqlCredential $MirrorSqlCredential
 
                     if ($Witness) {
                         $witserver = Connect-SqlInstance -SqlInstance $Witness -SqlCredential $WitnessSqlCredential
@@ -205,6 +205,7 @@ function Invoke-DbaDbMirroring {
                 Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Validating mirror setup"
                 # Thanks to https://github.com/mmessano/PowerShell/blob/master/SQL-ConfigureDatabaseMirroring.ps1 for the tips
 
+                $params.Database = $dbName
                 $validation = Invoke-DbMirrorValidation @params
 
                 if ((Test-Bound -ParameterName SharedPath) -and -not $validation.AccessibleShare) {
@@ -215,8 +216,10 @@ function Invoke-DbaDbMirroring {
                     Stop-Function -Continue -Message "This mirroring configuration is not supported. Because the principal server instance, $source, is $($source.EngineEdition) Edition, the mirror server instance must also be $($source.EngineEdition) Edition."
                 }
 
-                if ($validation.MirroringStatus -ne "None") {
-                    Stop-Function -Continue -Message "Cannot setup mirroring on database ($dbName) due to its current mirroring state: $($primarydb.MirroringStatus)"
+                foreach ($status in $validation.MirroringStatus) {
+                    if ($status -ne "None") {
+                        Stop-Function -Continue -Message "Cannot setup mirroring on database ($dbName) due to its current mirroring state on primary: $status"
+                    }
                 }
 
                 if ($primarydb.Status -ne "Normal") {
@@ -247,7 +250,7 @@ function Invoke-DbaDbMirroring {
                     if ($Pscmdlet.ShouldProcess("$currentmirror", "Restoring full and log backups of $primarydb from $Primary")) {
                         foreach ($currentmirrorinstance in $currentmirror) {
                             try {
-                                $null = $allbackups | Restore-DbaDatabase -SqlInstance $currentmirrorinstance -SqlCredential $currentmirrorSqlCredential -WithReplace -NoRecovery -TrustDbBackupHistory -EnableException
+                                $null = $allbackups | Restore-DbaDatabase -SqlInstance $currentmirrorinstance -SqlCredential $MirrorSqlCredential -WithReplace -NoRecovery -TrustDbBackupHistory -EnableException
                             } catch {
                                 Stop-Function -Message "Failure" -ErrorRecord $_ -Target $dest -Continue
                             }
@@ -317,18 +320,20 @@ function Invoke-DbaDbMirroring {
                 $serviceAccounts = $source.ServiceAccount, $dest.ServiceAccount, $witserver.ServiceAccount | Select-Object -Unique
 
                 foreach ($account in $serviceAccounts) {
-                    if ($Pscmdlet.ShouldProcess("primary, mirror and witness (if specified)", "Creating login $account and granting CONNECT ON ENDPOINT")) {
-                        $null = New-DbaLogin -SqlInstance $source -Login $account -WarningAction SilentlyContinue
-                        $null = New-DbaLogin -SqlInstance $dest -Login $account -WarningAction SilentlyContinue
-                        try {
-                            $null = $source.Query("GRANT CONNECT ON ENDPOINT::$primaryendpoint TO [$account]")
-                            $null = $dest.Query("GRANT CONNECT ON ENDPOINT::$currentmirrorendpoint TO [$account]")
-                            if ($witserver) {
-                                $null = New-DbaLogin -SqlInstance $witserver -Login $account -WarningAction SilentlyContinue
-                                $witserver.Query("GRANT CONNECT ON ENDPOINT::$witnessendpoint TO [$account]")
+                    if ($account) {
+                        if ($Pscmdlet.ShouldProcess("primary, mirror and witness (if specified)", "Creating login $account and granting CONNECT ON ENDPOINT")) {
+                            $null = New-DbaLogin -SqlInstance $source -Login $account -WarningAction SilentlyContinue
+                            $null = New-DbaLogin -SqlInstance $dest -Login $account -WarningAction SilentlyContinue
+                            try {
+                                $null = $source.Query("GRANT CONNECT ON ENDPOINT::$primaryendpoint TO [$account]")
+                                $null = $dest.Query("GRANT CONNECT ON ENDPOINT::$currentmirrorendpoint TO [$account]")
+                                if ($witserver) {
+                                    $null = New-DbaLogin -SqlInstance $witserver -Login $account -WarningAction SilentlyContinue
+                                    $witserver.Query("GRANT CONNECT ON ENDPOINT::$witnessendpoint TO [$account]")
+                                }
+                            } catch {
+                                Stop-Function -Continue -Message "Failure" -ErrorRecord $_
                             }
-                        } catch {
-                            Stop-Function -Continue -Message "Failure" -ErrorRecord $_
                         }
                     }
                 }
@@ -362,20 +367,20 @@ function Invoke-DbaDbMirroring {
                     Stop-Function -Continue -Message "Failure with the new last part" -ErrorRecord $_
                 }
             }
-        }
 
-        if ($Pscmdlet.ShouldProcess("console", "Showing results")) {
-            $results = [pscustomobject]@{
-                Primary  = $Primary
-                Mirror   = $Mirror -join ", "
-                Witness  = $Witness
-                Database = $primarydb.Name
-                Status   = "Success"
-            }
-            if ($Witness) {
-                $results | Select-DefaultView -Property Primary, Mirror, Witness, Database, Status
-            } else {
-                $results | Select-DefaultView -Property Primary, Mirror, Database, Status
+            if ($Pscmdlet.ShouldProcess("console", "Showing results")) {
+                $results = [pscustomobject]@{
+                    Primary  = $Primary
+                    Mirror   = $Mirror -join ", "
+                    Witness  = $Witness
+                    Database = $primarydb.Name
+                    Status   = "Success"
+                }
+                if ($Witness) {
+                    $results | Select-DefaultView -Property Primary, Mirror, Witness, Database, Status
+                } else {
+                    $results | Select-DefaultView -Property Primary, Mirror, Database, Status
+                }
             }
         }
     }
