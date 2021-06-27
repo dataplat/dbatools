@@ -971,41 +971,6 @@ function Connect-DbaInstance {
                     Add-Member -InputObject $server -NotePropertyName ComputerName -NotePropertyValue $computerName -Force
                 }
 
-                if (-not $server.FullComputerName) {
-                    # To set the source of FullComputerName to something else than the default use this config parameter:
-                    # Set-DbatoolsConfig -FullName commands.connect-dbainstance.smo.fullcomputername.source -Value 'server.ComputerName'
-                    # Set-DbatoolsConfig -FullName commands.connect-dbainstance.smo.fullcomputername.source -Value 'resolve.FullComputerName'
-                    # If the config parameter is not used, then the ComputerName of the input object is used.
-                    $fullComputerName = $null
-                    $fullComputerNameSource = Get-DbatoolsConfigValue -FullName commands.connect-dbainstance.smo.fullcomputername.source
-                    if ($fullComputerNameSource) {
-                        Write-Message -Level Debug -Message "Setting FullComputerName based on $fullComputerNameSource"
-                        $object, $property = $fullComputerNameSource -split '\.'
-                        if ($object -eq 'resolve') {
-                            $value = $null
-                            try {
-                                Write-Message -Level Debug -Message "Trying to use Resolve-DbaNetworkName"
-                                $value = (Resolve-DbaNetworkName -ComputerName $instance.ComputerName -EnableException).$property
-                            } catch {
-                                Write-Message -Level Debug -Message "Failed to use Resolve-DbaNetworkName"
-                            }
-                        } else {
-                            $value = (Get-Variable -Name $object).Value.$property
-                        }
-                        if ($value) {
-                            $fullComputerName = $value
-                            Write-Message -Level Debug -Message "FullComputerName will be set to $fullComputerName"
-                        } else {
-                            Write-Message -Level Debug -Message "No value found for FullComputerName, so will use the default"
-                        }
-                    }
-                    if (-not $fullComputerName) {
-                        $fullComputerName = $instance.ComputerName
-                        Write-Message -Level Debug -Message "FullComputerName will be set to $fullComputerName"
-                    }
-                    Add-Member -InputObject $server -NotePropertyName FullComputerName -NotePropertyValue $fullComputerName -Force
-                }
-
                 if (-not $server.IsAzure) {
                     Add-Member -InputObject $server -NotePropertyName IsAzure -NotePropertyValue (Test-Azure -SqlInstance $instance) -Force
                     Add-Member -InputObject $server -NotePropertyName DbaInstanceName -NotePropertyValue $instance.InstanceName -Force
