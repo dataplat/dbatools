@@ -287,7 +287,7 @@ function Copy-DbaLinkedServer {
 
         Write-Message -Level Verbose -Message "Checking if Remote Registry is enabled on $Source."
         try {
-            Invoke-Command2 -Raw -Credential $Credential -ComputerName $sourceFullComputerName -ScriptBlock { Get-ItemProperty -Path "HKLM:\SOFTWARE\" } -ErrorAction Stop
+            Invoke-Command2 -Raw -ComputerName $sourceFullComputerName -ScriptBlock { Get-ItemProperty -Path "HKLM:\SOFTWARE\" } -ErrorAction Stop
         } catch {
             Stop-Function -Message "Can't connect to registry on $Source." -Target $sourceFullComputerName -ErrorRecord $_
             return
