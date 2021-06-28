@@ -8,14 +8,16 @@ function Resolve-DbaComputerName {
         Default is to return the FullComputerName, but can also return other properties returned by Resolve-DbaNetworkName.
     #>
     [CmdletBinding()]
+    [OutputType([String])]
     param (
         [Parameter(Mandatory)]
         [DbaInstanceParameter]$ComputerName,
         [PSCredential]$Credential,
         [ValidateSet('ComputerName', 'IPAddress', 'DNSHostname', 'DNSDomain', 'Domain', 'DNSHostEntry', 'FQDN', 'FullComputerName')]
-        [string]$Property = 'FullComputerName'
+        [String]$Property = 'FullComputerName'
     )
 
+    [String]$output = $null
     try {
         $resolved = Resolve-DbaNetworkName -ComputerName $ComputerName -Credential $Credential -EnableException
         $output = $resolved.$Property
