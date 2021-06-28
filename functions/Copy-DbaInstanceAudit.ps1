@@ -185,17 +185,9 @@ function Copy-DbaInstanceAudit {
                     } else {
                         Write-Message -Level Verbose -Message "Force specified. Creating directory."
 
-                        try {
-                            # We don't have windows credentials here, so Resolve-DbaNetworkName has to respect that and work like Resolve-NetBiosName did before.
-                            $resolved = Resolve-DbaNetworkName -ComputerName $destServer -EnableException
-                            $destFullComputerName = $resolved.FullComputerName
-                        } catch {
-                            Write-Message -Level Verbose -Message "Error occurred while resolving $destServer, so we use ComputerName as the fallback."
-                            $destFullComputerName = $destServer.ComputerName
-                        }
-
+                        $resolvedComputerName = Resolve-DbaComputerName -ComputerName $destServer
                         $root = $currentAudit.Filepath.Substring(0, 3)
-                        $rootUnc = Join-AdminUnc $destFullComputerName $root
+                        $rootUnc = Join-AdminUnc $resolvedComputerName $root
 
                         if ((Test-Path $rootUnc) -eq $true) {
                             if ($Pscmdlet.ShouldProcess($destinstance, "Creating directory $($currentAudit.Filepath)")) {

@@ -201,21 +201,14 @@ function Copy-DbaCredential {
             Write-Message -Level Verbose -Message "You are using SQL credentials and this script requires Windows admin access to the $Source server. Trying anyway."
         }
 
-        try {
-            $resolved = Resolve-DbaNetworkName -ComputerName $Source -Credential $Credential -EnableException
-            $sourceFullComputerName = $resolved.FullComputerName
-        } catch {
-            Stop-Function -Message "Error occurred while resolving $Source" -Category ConnectionError -ErrorRecord $_ -Target $Source
-            return
-        }
-
         Invoke-SmoCheck -SqlInstance $sourceServer
 
         Write-Message -Level Verbose -Message "Checking if Remote Registry is enabled on $Source"
+        $resolvedComputerName = Resolve-DbaComputerName -ComputerName $Source -Credential $Credential
         try {
-            Invoke-Command2 -ComputerName $sourceFullComputerName -Credential $Credential -ScriptBlock { Get-ItemProperty -Path "HKLM:\SOFTWARE\" }
+            $null = Invoke-Command2 -ComputerName $resolvedComputerName -Credential $Credential -ScriptBlock { Get-ItemProperty -Path "HKLM:\SOFTWARE\" }
         } catch {
-            Stop-Function -Message "Can't connect to registry on $Source" -Target $sourceFullComputerName -ErrorRecord $_
+            Stop-Function -Message "Can't connect to registry on $Source" -Target $resolvedComputerName -ErrorRecord $_
             return
         }
     }

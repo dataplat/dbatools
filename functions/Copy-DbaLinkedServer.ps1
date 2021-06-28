@@ -275,21 +275,13 @@ function Copy-DbaLinkedServer {
             Stop-Function -Message "Not a sysadmin on $source. Quitting." -Target $sourceServer
             return
         }
-        Write-Message -Level Verbose -Message "Getting FullComputerName name for $source."
-        try {
-            # We don't have windows credentials here, so Resolve-DbaNetworkName has to respect that and work like Resolve-NetBiosName did before.
-            $resolved = Resolve-DbaNetworkName -ComputerName $sourceServer -EnableException
-            $sourceFullComputerName = $resolved.FullComputerName
-        } catch {
-            Write-Message -Level Verbose -Message "Error occurred while resolving $destServer, so we use ComputerName as the fallback."
-            $sourceFullComputerName = $sourceServer.ComputerName
-        }
 
         Write-Message -Level Verbose -Message "Checking if Remote Registry is enabled on $Source."
+        $resolvedComputerName = Resolve-DbaComputerName -ComputerName $Source
         try {
-            Invoke-Command2 -Raw -ComputerName $sourceFullComputerName -ScriptBlock { Get-ItemProperty -Path "HKLM:\SOFTWARE\" } -ErrorAction Stop
+            $null = Invoke-Command2 -ComputerName $resolvedComputerName -ScriptBlock { Get-ItemProperty -Path "HKLM:\SOFTWARE\" }
         } catch {
-            Stop-Function -Message "Can't connect to registry on $Source." -Target $sourceFullComputerName -ErrorRecord $_
+            Stop-Function -Message "Can't connect to registry on $Source." -Target $resolvedComputerName -ErrorRecord $_
             return
         }
     }
