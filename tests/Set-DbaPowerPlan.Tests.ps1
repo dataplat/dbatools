@@ -35,8 +35,8 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $results | Should Not Be Null
             $results.ActivePowerPlan -eq 'Balanced' | Should Be $true
         }
-        It "Should accept Piped input from Test-DbaPowerPlan" {
-            $results = Test-DbaPowerPlan -ComputerName $env:COMPUTERNAME | Set-DbaPowerPlan
+        It "Should accept Piped input for ComputerName" {
+            $results = $env:COMPUTERNAME | Set-DbaPowerPlan
             $results | Should Not Be Null
             $results.ActivePowerPlan -eq 'High Performance' | Should Be $true
         }
