@@ -110,7 +110,7 @@ function Test-DbaConnectionAuthScheme {
                     ComputerName = $results.ComputerName
                     InstanceName = $results.InstanceName
                     SqlInstance  = $results.SqlInstance
-                    Result       = ($server.AuthScheme -eq $auth)
+                    Result       = ($results.AuthScheme -eq $auth)
                 } | Select-DefaultView -Property SqlInstance, Result
             } else {
                 Select-DefaultView -InputObject $results -Property ComputerName, InstanceName, SqlInstance, Transport, AuthScheme
