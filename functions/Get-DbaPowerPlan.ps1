@@ -5,12 +5,16 @@ function Get-DbaPowerPlan {
 
     .DESCRIPTION
         Gets the Power Plan settings on a computer against best practices recommendations.
+        To display all available Power Plans on a computer, use the parameter List.
 
     .PARAMETER ComputerName
         The server(s) to check Power Plan settings on.
 
     .PARAMETER Credential
         Specifies a PSCredential object to use in authenticating to the server(s), instead of the current user account.
+
+    .PARAMETER List
+        Return all available Power Plans.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -38,11 +42,17 @@ function Get-DbaPowerPlan {
 
         Gets the Power Plan settings for sql2017 using an alternative credential
 
+    .EXAMPLE
+        PS C:\> Get-DbaPowerPlan -ComputerName sql2017 -List
+
+        Gets all available Power Plans on sql2017
+
     #>
     param (
         [parameter(Mandatory, ValueFromPipeline)]
         [DbaInstance[]]$ComputerName,
         [PSCredential]$Credential,
+        [switch]$List,
         [switch]$EnableException
     )
 
@@ -79,19 +89,32 @@ function Get-DbaPowerPlan {
                 }
             }
 
-            $powerPlan = $powerPlans | Where-Object IsActive -eq 'True' | Select-Object ElementName, InstanceID
-            $powerPlan.InstanceID = $powerPlan.InstanceID.Split('{')[1].Split('}')[0]
+            if ($List) {
+                foreach ($powerPlan in $powerPlans) {
+                    $powerPlan.InstanceID = $powerPlan.InstanceID.Split('{')[1].Split('}')[0]
+                    [PSCustomObject]@{
+                        ComputerName = $computer
+                        InstanceId   = $powerPlan.InstanceID
+                        PowerPlan    = $powerPlan.ElementName
+                        IsActive     = $powerPlan.IsActive
+                        Credential   = $Credential
+                    } | Select-DefaultView -Property ComputerName, PowerPlan, IsActive
+                }
+            } else {
+                $powerPlan = $powerPlans | Where-Object IsActive -eq 'True' | Select-Object ElementName, InstanceID
+                $powerPlan.InstanceID = $powerPlan.InstanceID.Split('{')[1].Split('}')[0]
 
-            if ($null -eq $powerPlan.InstanceID) {
-                $powerPlan.ElementName = "Unknown"
+                if ($null -eq $powerPlan.InstanceID) {
+                    $powerPlan.ElementName = "Unknown"
+                }
+
+                [PSCustomObject]@{
+                    ComputerName = $computer
+                    InstanceId   = $powerPlan.InstanceID
+                    PowerPlan    = $powerPlan.ElementName
+                    Credential   = $Credential
+                } | Select-DefaultView -Property ComputerName, PowerPlan
             }
-
-            [PSCustomObject]@{
-                ComputerName = $computer
-                InstanceId   = $powerPlan.InstanceID
-                PowerPlan    = $powerPlan.ElementName
-                Credential   = $Credential
-            } | Select-DefaultView -ExcludeProperty Credential, InstanceId
         }
     }
 }

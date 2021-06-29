@@ -4,7 +4,8 @@ function Test-DbaPowerPlan {
         Checks the Power Plan settings for compliance with best practices, which recommend High Performance for SQL Server.
 
     .DESCRIPTION
-        Checks the Power Plan settings on a computer against best practices recommendations. If one server is checked, only $true or $false is returned. If multiple servers are checked, each server's name and an isBestPractice field are returned.
+        Checks the Power Plan settings on a computer against best practices recommendations.
+        Each server's name, the active and the recommended Power Plan and an isBestPractice field are returned.
 
         References:
         https://support.microsoft.com/en-us/kb/2207548
@@ -51,7 +52,7 @@ function Test-DbaPowerPlan {
     #>
     param (
         [parameter(ValueFromPipeline)]
-        [DbaInstance[]]$ComputerName = $env:COMPUTERNAME,
+        [DbaInstance[]]$ComputerName,
         [PSCredential]$Credential,
         [string]$CustomPowerPlan,
         [parameter(ValueFromPipeline)]
@@ -61,88 +62,90 @@ function Test-DbaPowerPlan {
 
     begin {
         $bpPowerPlan = [PSCustomObject]@{
-            InstanceID  = '8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c'
-            ElementName = $null
+            InstanceID = '8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c'
+            PowerPlan  = $null
+        }
+
+        # As we need all Power Plans per computer to have the active Power Plan and the best practice Power Plan,
+        # we build a hash table with the computer name as key and the array of Power Plan objects from Get-DbaPowerPlan -List as value.
+        $powerPlanHashTable = @{ }
+        foreach ($computer in $ComputerName) {
+            try {
+                $powerPlanHashTable.$computer = Get-DbaPowerPlan -ComputerName $computer -Credential $Credential -List -EnableException
+            } catch {
+                Stop-Function -Message "Can't get Power Plan Info for $computer. Check logs for more details." -Continue -ErrorRecord $_ -Target $computer
+            }
         }
     }
 
     process {
-        if (Test-Bound -ParameterName ComputerName) {
-            $InputObject += Get-DbaPowerPlan -ComputerName $ComputerName -Credential $Credential
-        }
-
-        foreach ($powerPlan in $InputObject) {
-            $computer = $powerPlan.ComputerName
-            $Credential = $powerPlan.Credential
-
-            $server = Resolve-DbaNetworkName -ComputerName $computer -Credential $Credential
-
-            $computerResolved = $server.FullComputerName
-
-            if (-not $computerResolved) {
-                Stop-Function -Message "Couldn't resolve hostname. Skipping." -Continue
-            }
-
-            $splatDbaCmObject = @{
-                ComputerName    = $computerResolved
-                EnableException = $true
-            }
-
-            if (Test-Bound "Credential") {
-                $splatDbaCmObject["Credential"] = $Credential
-            }
-
-            Write-Message -Level Verbose -Message "Getting Power Plan information from $computer."
-
-            try {
-                $powerPlans = Get-DbaCmObject @splatDbaCmObject -ClassName Win32_PowerPlan -Namespace "root\cimv2\power" | Select-Object ElementName, InstanceId, IsActive
-            } catch {
-                if ($_.Exception -match "namespace") {
-                    Stop-Function -Message "Can't get Power Plan Info for $computer. Unsupported operating system." -Continue -ErrorRecord $_ -Target $computer
-                } else {
+        # As piped input we accept output from Get-DbaPowerPlan -List with all the needed information,
+        # Get-DbaPowerPlan with just the active Power Plan or just a computer name.
+        # In the later two cases, we have to run Get-DbaPowerPlan -List to get the needed information.
+        foreach ($object in $InputObject) {
+            if ($null -ne $object.IsActive -and $null -ne $object.PowerPlan) {
+                # We have an output from Get-DbaPowerPlan -List,
+                # so we add that Power Plan to the array of Power Plans for that computer.
+                # We have to initialize the array if it is the first Power Plan for this computer.
+                $computer = $object.ComputerName
+                if ($null -eq $powerPlanHashTable.$computer) {
+                    $powerPlanHashTable.$computer = @( )
+                }
+                $powerPlanHashTable.$computer += $object
+            } elseif ($null -ne $object.PowerPlan) {
+                # We have an output from Get-DbaPowerPlan,
+                # so we need to get all Power Plans with Get-DbaPowerPlan -List.
+                $computer = $object.ComputerName
+                try {
+                    $powerPlanHashTable.$computer = Get-DbaPowerPlan -ComputerName $computer -Credential $object.Credential -List -EnableException
+                } catch {
+                    Stop-Function -Message "Can't get Power Plan Info for $computer. Check logs for more details." -Continue -ErrorRecord $_ -Target $computer
+                }
+            } else {
+                $computer = $object
+                try {
+                    $powerPlanHashTable.$computer = Get-DbaPowerPlan -ComputerName $computer -Credential $Credential -List -EnableException
+                } catch {
                     Stop-Function -Message "Can't get Power Plan Info for $computer. Check logs for more details." -Continue -ErrorRecord $_ -Target $computer
                 }
             }
+        }
+    }
 
-            $powerPlan = $powerPlans | Where-Object IsActive -eq 'True' | Select-Object ElementName, InstanceID
-            $powerPlan.InstanceID = $powerPlan.InstanceID.Split('{')[1].Split('}')[0]
-
-            if ($null -eq $powerPlan.InstanceID) {
-                $powerPlan.ElementName = "Unknown"
-            }
+    end {
+        foreach ($computer in $powerPlanHashTable.Keys) {
+            $powerPlans = $powerPlanHashTable.$computer
             if ($CustomPowerPlan) {
-                $bpPowerPlan.ElementName = $CustomPowerPlan
-                $bpPowerPlan.InstanceID = $($powerPlans | Where-Object {
-                        $_.ElementName -eq $CustomPowerPlan
-                    }).InstanceID
+                $bpPowerPlan.PowerPlan = $CustomPowerPlan
+                $bpPowerPlan.InstanceID = ($powerPlans | Where-Object { $_.PowerPlan -eq $CustomPowerPlan }).InstanceID
+                if ($null -eq $bpPowerplan.InstanceID) {
+                    $bpPowerPlan.PowerPlan = "You do not have the Power Plan '$CustomPowerPlan' installed on this machine."
+                }
             } else {
-                $bpPowerPlan.ElementName = $($powerPlans | Where-Object {
-                        $_.InstanceID.Split('{')[1].Split('}')[0] -eq $bpPowerPlan.InstanceID
-                    }).ElementName
-                if ($null -eq $bpPowerplan.ElementName) {
-                    $bpPowerPlan.ElementName = "You do not have the high performance plan installed on this machine."
+                $bpPowerPlan.PowerPlan = ($powerPlans | Where-Object { $_.InstanceID -eq $bpPowerPlan.InstanceID }).PowerPlan
+                if ($null -eq $bpPowerplan.PowerPlan) {
+                    $bpPowerPlan.PowerPlan = "You do not have the high performance plan installed on this machine."
                 }
             }
 
-            Write-Message -Level Verbose -Message "Recommended GUID is $($bpPowerPlan.InstanceID) and you have $($powerPlan.InstanceID)."
+            $activePowerPlan = $powerPlans | Where-Object IsActive -eq 'True'
+            Write-Message -Level Verbose -Message "Recommended GUID is $($bpPowerPlan.InstanceID) and you have $($activePowerPlan.InstanceID)."
 
-            if ($null -eq $powerPlan.InstanceID) {
-                $powerPlan.ElementName = "Unknown"
-            }
-
-            if ($powerPlan.InstanceID -eq $bpPowerPlan.InstanceID) {
+            if ($activePowerPlan.InstanceID -eq $bpPowerPlan.InstanceID) {
                 $isBestPractice = $true
             } else {
                 $isBestPractice = $false
             }
 
             [PSCustomObject]@{
-                ComputerName         = $computer
-                ActivePowerPlan      = $powerPlan.ElementName
-                RecommendedPowerPlan = $bpPowerPlan.ElementName
-                isBestPractice       = $isBestPractice
-                Credential           = $Credential
-            } | Select-DefaultView -ExcludeProperty Credential
+                ComputerName          = $computer
+                ActiveInstanceId      = $activePowerPlan.InstanceID
+                ActivePowerPlan       = $activePowerPlan.PowerPlan
+                RecommendedInstanceId = $bpPowerPlan.InstanceID
+                RecommendedPowerPlan  = $bpPowerPlan.PowerPlan
+                IsBestPractice        = $isBestPractice
+                Credential            = $Credential
+            } | Select-DefaultView -Property ComputerName, ActivePowerPlan, RecommendedPowerPlan, IsBestPractice
         }
     }
 }
