@@ -18,10 +18,14 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         It "Should return result for the server" {
             $results = Test-DbaPowerPlan -ComputerName $script:instance2
             $results | Should Not Be Null
+            $results.RecommendedPowerPlan | Should Be 'High performance'
+            $results.RecommendedInstanceId | Should Be '8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c'
+            $results.ActivePowerPlan | Should Be 'High performance'
         }
-        It "Should state 'Balanced' plan does not meet best practice" {
+        It "Use 'Balanced' plan as best practice" {
+            $null = Set-DbaPowerPlan -ComputerName $env:COMPUTERNAME -PowerPlan Balanced
             $results = Test-DbaPowerPlan -ComputerName $script:instance2 -CustomPowerPlan 'Balanced'
-            $results.isBestPractice | Should Be $false
+            $results.IsBestPractice | Should Be $true
         }
     }
 }
