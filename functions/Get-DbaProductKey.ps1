@@ -1,7 +1,8 @@
 function Get-DbaProductKey {
     <#
     .SYNOPSIS
-        Gets SQL Server Product Keys from local or destination SQL Servers. Works with SQL Server 2008-2019
+        Gets SQL Server Product Keys from local or destination SQL Servers. Works with SQL Server 2008-2014
+        More information about wrong results on newer versions: https://github.com/sqlcollaborative/dbatools/issues/6587
 
     .DESCRIPTION
         This command find the product key for all installed instances. Clustered instances are supported as well.
@@ -151,6 +152,9 @@ function Get-DbaProductKey {
                 } else {
                     try {
                         $sqlkey = Unlock-SqlInstanceKey $binarykey $versionMajor
+                        if ($versionMajor -ge 13) {
+                            $sqlkey += " (Probably wrong key, see issue #6587 on GitHub for more information)"
+                        }
                     } catch {
                         $sqlkey = "Unable to unlock key"
                     }
