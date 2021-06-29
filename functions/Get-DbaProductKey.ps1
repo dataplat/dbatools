@@ -1,7 +1,7 @@
 function Get-DbaProductKey {
     <#
     .SYNOPSIS
-        Gets SQL Server Product Keys from local or destination SQL Servers. Works with SQL Server 2008-2014
+        Gets SQL Server Product Keys from local or destination SQL Servers. Works with SQL Server 2008-2014.
         More information about wrong results on newer versions: https://github.com/sqlcollaborative/dbatools/issues/6587
 
     .DESCRIPTION
@@ -152,9 +152,6 @@ function Get-DbaProductKey {
                 } else {
                     try {
                         $sqlkey = Unlock-SqlInstanceKey $binarykey $versionMajor
-                        if ($versionMajor -ge 13) {
-                            $sqlkey += " (Probably wrong key, see issue #6587 on GitHub for more information)"
-                        }
                     } catch {
                         $sqlkey = "Unable to unlock key"
                     }
@@ -194,6 +191,11 @@ function Get-DbaProductKey {
                 $servicePack = $server.ProductLevel
                 $versionMajor = $server.VersionMajor
                 Write-Message -Level Debug -Message "$instance $instanceName version is $($server.VersionMajor)"
+
+                if ($versionMajor -ge 13) {
+                    Write-Message -Level Warning -Message "Instance $($server.DomainInstanceName) is not supported because version is 2016 or newer. See documentation for details."
+                    continue
+                }
 
                 try {
                     $results = Invoke-Command2 -ComputerName $computer.ComputerName -Credential $Credential -ScriptBlock $scriptBlock -ArgumentList $server.VersionMajor, $instanceReg, $server.Edition
