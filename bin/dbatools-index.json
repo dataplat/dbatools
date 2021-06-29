@@ -22837,7 +22837,7 @@
         "Name":  "Get-DbaProductKey",
         "Description":  "This command find the product key for all installed instances. Clustered instances are supported as well.\n\nUses key decoder by Jakob Bindslet (http://goo.gl/1jiwcB)",
         "Tags":  "ProductKey",
-        "Synopsis":  "Gets SQL Server Product Keys from local or destination SQL Servers. Works with SQL Server 2008-2019",
+        "Synopsis":  "Gets SQL Server Product Keys from local or destination SQL Servers. Works with SQL Server 2008-2014.\nMore information about wrong results on newer versions: https://github.com/sqlcollaborative/dbatools/issues/6587",
         "Alias":  "",
         "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "CommandName":  "Get-DbaProductKey",
