@@ -118,11 +118,11 @@ function Test-DbaPowerPlan {
     end {
         foreach ($computer in $powerPlanHashTable.Keys) {
             $powerPlans = $powerPlanHashTable.$computer
-            if ($CustomPowerPlan) {
-                $bpPowerPlan.PowerPlan = $CustomPowerPlan
-                $bpPowerPlan.InstanceID = ($powerPlans | Where-Object { $_.PowerPlan -eq $CustomPowerPlan }).InstanceID
+            if ($PowerPlan) {
+                $bpPowerPlan.PowerPlan = $PowerPlan
+                $bpPowerPlan.InstanceID = ($powerPlans | Where-Object { $_.PowerPlan -eq $PowerPlan }).InstanceID
                 if ($null -eq $bpPowerplan.InstanceID) {
-                    $bpPowerPlan.PowerPlan = "You do not have the Power Plan '$CustomPowerPlan' installed on this machine."
+                    $bpPowerPlan.PowerPlan = "You do not have the Power Plan '$PowerPlan' installed on this machine."
                 }
             } else {
                 $bpPowerPlan.PowerPlan = ($powerPlans | Where-Object { $_.InstanceID -eq $bpPowerPlan.InstanceID }).PowerPlan
