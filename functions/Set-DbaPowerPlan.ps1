@@ -6,7 +6,7 @@ function Set-DbaPowerPlan {
     .DESCRIPTION
         Sets the SQL Server OS's Power Plan. Defaults to High Performance which is best practice.
 
-        If your organization uses a custom power plan that is considered best practice, specify -CustomPowerPlan.
+        If your organization uses a different power plan that is considered best practice, specify -PowerPlan.
 
         References:
         https://support.microsoft.com/en-us/kb/2207548
@@ -18,8 +18,9 @@ function Set-DbaPowerPlan {
     .PARAMETER Credential
         Specifies a PSCredential object to use in authenticating to the server(s), instead of the current user account.
 
-    .PARAMETER CustomPowerPlan
-        Specifies the name of a custom Power Plan to use. Use Get-DbaPowerPlan -List to get all available Power Plans on a computer.
+    .PARAMETER PowerPlan
+        If your organization uses a different Power Plan that's considered best practice, specify it here.
+        Use Get-DbaPowerPlan -List to get all available Power Plans on a computer.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -51,7 +52,7 @@ function Set-DbaPowerPlan {
         Sets the Power Plan to High Performance. Skips it if its already set.
 
     .EXAMPLE
-        PS C:\> 'Server1', 'Server2' | Set-DbaPowerPlan -CustomPowerPlan Balanced
+        PS C:\> 'Server1', 'Server2' | Set-DbaPowerPlan -PowerPlan Balanced
 
         Sets the Power Plan to Balanced for Server1 and Server2. Skips it if its already set.
 
@@ -62,9 +63,9 @@ function Set-DbaPowerPlan {
         Connects using alternative Windows credential and sets the Power Plan to High Performance. Skips it if its already set.
 
     .EXAMPLE
-        PS C:\> Set-DbaPowerPlan -ComputerName sqlcluster -CustomPowerPlan 'Maximum Performance'
+        PS C:\> Set-DbaPowerPlan -ComputerName sqlcluster -PowerPlan 'Maximum Performance'
 
-        Sets the Power Plan to the custom power plan called "Maximum Performance". Skips it if its already set.
+        Sets the Power Plan to "Maximum Performance". Skips it if its already set.
 
     #>
     [CmdletBinding(SupportsShouldProcess)]
@@ -72,8 +73,8 @@ function Set-DbaPowerPlan {
         [parameter(ValueFromPipeline)]
         [DbaInstance[]]$ComputerName,
         [PSCredential]$Credential,
-        [Alias("PowerPlan")]
-        [string]$CustomPowerPlan,
+        [Alias("CustomPowerPlan")]
+        [string]$PowerPlan,
         [switch]$EnableException
     )
 

@@ -5,7 +5,9 @@ function Test-DbaPowerPlan {
 
     .DESCRIPTION
         Checks the Power Plan settings on a computer against best practices recommendations.
-        Each server's name, the active and the recommended Power Plan and an isBestPractice field are returned.
+        Each server's name, the active and the recommended Power Plan and an IsBestPractice field are returned.
+
+        If your organization uses a different Power Plan that is considered best practice, specify -PowerPlan.
 
         References:
         https://support.microsoft.com/en-us/kb/2207548
@@ -17,8 +19,8 @@ function Test-DbaPowerPlan {
     .PARAMETER Credential
         Specifies a PSCredential object to use in authenticating to the server(s), instead of the current user account.
 
-    .PARAMETER CustomPowerPlan
-        If your organization uses a custom power plan that's considered best practice, specify it here.
+    .PARAMETER PowerPlan
+        If your organization uses a different power plan that's considered best practice, specify it here.
 
     .PARAMETER InputObject
         Enables piping from Get-DbaPowerPlan
@@ -45,16 +47,17 @@ function Test-DbaPowerPlan {
         Checks the Power Plan settings for sqlserver2014a and indicates whether or not it complies with best practices.
 
     .EXAMPLE
-        PS C:\> Test-DbaPowerPlan -ComputerName sqlserver2014a -CustomPowerPlan 'Maximum Performance'
+        PS C:\> Test-DbaPowerPlan -ComputerName sqlserver2014a -PowerPlan 'Maximum Performance'
 
-        Checks the Power Plan settings for sqlserver2014a and indicates whether or not it is set to the custom plan "Maximum Performance".
+        Checks the Power Plan settings for sqlserver2014a and indicates whether or not it is set to the Power Plan "Maximum Performance".
 
     #>
     param (
         [parameter(ValueFromPipeline)]
         [DbaInstance[]]$ComputerName,
         [PSCredential]$Credential,
-        [string]$CustomPowerPlan,
+        [Alias("CustomPowerPlan")]
+        [string]$PowerPlan,
         [parameter(ValueFromPipeline)]
         [pscustomobject[]]$InputObject,
         [switch]$EnableException
