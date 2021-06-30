@@ -20,10 +20,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 #>
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     BeforeAll {
-        $powerPlan = Test-DbaPowerPlan -ComputerName $env:COMPUTERNAME
-        if ($powerPlan.PowerPlan -ne 'Balanced') {
-            $null = Set-DbaPowerPlan -ComputerName $env:COMPUTERNAME -CustomPowerPlan 'Balanced'
-        }
+        $null = Set-DbaPowerPlan -ComputerName $env:COMPUTERNAME -CustomPowerPlan 'Balanced'
     }
     Context "Command actually works" {
         It "Should return result for the server" {

@@ -82,7 +82,7 @@ function Set-DbaPowerPlan {
         foreach ($computer in $ComputerName) {
             try {
                 Write-Message -Level Verbose -Message "Getting and testing Power Plans on $computer."
-                $change = Test-DbaPowerPlan -ComputerName $computer -Credential $Credential -CustomPowerPlan $CustomPowerPlan -EnableException
+                $change = Test-DbaPowerPlan -ComputerName $computer -Credential $Credential -PowerPlan $PowerPlan -EnableException
             } catch {
                 Stop-Function -Message "Can't get Power Plan Info for $computer. Check logs for more details." -Continue -ErrorRecord $_ -Target $computer
             }
