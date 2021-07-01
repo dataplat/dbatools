@@ -41,7 +41,7 @@ function Get-ObjectNameParts {
         if ($t.Contains(']]')) {
             for ($i = 0; $i -le 65535; $i++) {
                 $hexStr = '{0:X4}' -f $i
-                $fixChar = [regex]::Unescape("\u$($hexStr)")
+                $fixChar = [regex]::Unescape("\u$hexStr")
                 if (!$t.Contains($fixChar)) {
                     $t = $t.Replace(']]', $fixChar)
                     break
@@ -54,7 +54,7 @@ function Get-ObjectNameParts {
         if ($t.Contains('..')) {
             for ($i = 0; $i -le 65535; $i++) {
                 $hexStr = '{0:X4}' -f $i
-                $fixSchema = [regex]::Unescape("\u$($hexStr)")
+                $fixSchema = [regex]::Unescape("\u$hexStr")
                 if (!$t.Contains($fixSchema)) {
                     $t = $t.Replace('..', ".$fixSchema.")
                     break
