@@ -57,12 +57,8 @@ Describe "$CommandName Integration Tests" -Tag 'IntegrationTests' {
         }
     }
     Context "Test wrong names" {
-        It "Should not return parts for 'schema1...table1'" {
-            (Get-ObjectNameParts -ObjectName 'schema1...table1').Parsed | Should Be $false
-        }
-
-        It "Should not return parts for 'sche..ma2.table2'" {
-            (Get-ObjectNameParts -ObjectName 'sche..ma2.table2').Parsed | Should Be $false
+        It "Should not return parts for 'part1.part2.part3.part4'" {
+            (Get-ObjectNameParts -ObjectName 'part1.part2.part3.part4').Parsed | Should Be $false
         }
     }
 }
