@@ -376,7 +376,7 @@ function Write-DbaDbTableData {
         #region Resolve Full Qualified Table Name
         $fqtnObj = Get-ObjectNameParts -ObjectName $Table
 
-        if ($fqtnObj.$parsed) {
+        if (-not $fqtnObj.Parsed) {
             Stop-Function -Message "Unable to parse $($fqtnObj.InputValue) as a valid tablename."
             return
         }
@@ -408,6 +408,12 @@ function Write-DbaDbTableData {
         }
 
         $tableName = $fqtnObj.Name
+
+        if ($tableName.StartsWith('#')) {
+            Write-Message -Level Verbose -Message "The table $tableName should be in dbo.tempdb so we ignore input database and schema."
+            $databaseName = 'tempdb'
+            $schemaName = 'dbo'
+        }
 
         $quotedFQTN = New-Object System.Text.StringBuilder
 
@@ -484,8 +490,18 @@ function Write-DbaDbTableData {
                 return
             }
 
-            $targetTable = $databaseObject.Tables | Where-Object { $_.Name -eq $tableName -and $_.Schema -eq $schemaName }
-            $tableExists = $targetTable.Count -eq 1
+            if ($tableName.StartsWith('#')) {
+                try {
+                    Write-Message -Level Verbose -Message "The table $tableName should be in tempdb and we try to find it."
+                    $null = $databaseObject.Query("SELECT TOP(1) 1 FROM [$tableName]")
+                    $tableExists = $true
+                } catch {
+                    $tableExists = $false
+                }
+            } else {
+                $targetTable = $databaseObject.Tables | Where-Object { $_.Name -eq $tableName -and $_.Schema -eq $schemaName }
+                $tableExists = $targetTable.Count -eq 1
+            }
         } catch {
             Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
         }
