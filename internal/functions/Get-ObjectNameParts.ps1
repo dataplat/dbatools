@@ -111,7 +111,11 @@ function Get-ObjectNameParts {
 
         if ($fixSchema) {
             $dbName = $dbName.Replace($fixSchema, '')
-            $schema = 'dbo'
+            if ($schema -eq $fixSchema) {
+                $schema = $null
+            } else {
+                $schema = $dbName.Replace($fixSchema, '')
+            }
             $name = $name.Replace($fixSchema, '')
         }
 
