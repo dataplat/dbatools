@@ -169,7 +169,7 @@ function Get-DbaService {
                 $namespaces = Get-DbaCmObject -ComputerName $resolvedComputerName -Credential $Credential -Namespace root\Microsoft\SQLServer -Query "Select Name FROM __NAMESPACE WHERE Name Like 'ComputerManagement%'" -EnableException | Sort-Object Name -Descending
                 Write-Message -Level Verbose -Message "The following namespaces have been found: $($namespaces.Name -join ', ')."
             } catch {
-                Write-Message -Level Verbose -Message "No namespaces found in relevant namespace on $computer. Please note that this function is available from SQL 2005 up."
+                Write-Message -Level Verbose -Message "No namespaces found in relevant namespace on $computer."
             }
 
             foreach ($namespace in $namespaces) {
@@ -269,7 +269,7 @@ function Get-DbaService {
             if ($outputServices) {
                 $outputServices | Select-DefaultView -Property $defaults -TypeName DbaSqlService
             } else {
-                Write-Message -Level Verbose -Message "No services found in relevant namespaces on $computer. Please note that this function is available from SQL 2005 up."
+                Write-Message -Level Verbose -Message "No services found in relevant namespaces on $computer."
             }
         }
     }
