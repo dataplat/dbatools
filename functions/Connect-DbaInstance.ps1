@@ -184,7 +184,8 @@ function Connect-DbaInstance {
     .EXAMPLE
         PS C:\> $server = Connect-DbaInstance -SqlInstance sql2014 -ClientName "my connection"
 
-        Creates an SMO Server object that connects using Windows Authentication and uses the client name "my connection". So when you open up profiler or use extended events, you can search for "my connection".
+        Creates an SMO Server object that connects using Windows Authentication and uses the client name "my connection".
+        So when you open up profiler or use extended events, you can search for "my connection".
 
     .EXAMPLE
         PS C:\> $server = Connect-DbaInstance -SqlInstance sql2014 -AppendConnectionString "Packet Size=4096;AttachDbFilename=C:\MyFolder\MyDataFile.mdf;User Instance=true;"
