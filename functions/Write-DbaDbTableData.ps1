@@ -410,7 +410,7 @@ function Write-DbaDbTableData {
         $tableName = $fqtnObj.Name
 
         if ($tableName.StartsWith('#')) {
-            Write-Message -Level Verbose -Message "The table $tableName should be in dbo.tempdb so we ignore input database and schema."
+            Write-Message -Level Verbose -Message "The table $tableName should be in tempdb.dbo so we ignore input database and schema."
             $databaseName = 'tempdb'
             $schemaName = 'dbo'
         }
