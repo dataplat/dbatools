@@ -67,13 +67,20 @@ function Set-DbaPowerPlan {
 
         Sets the Power Plan to "Maximum Performance". Skips it if its already set.
 
+    .EXAMPLE
+        PS C:\> Get-DbaPowerPlan -ComputerName oldserver | Set-DbaPowerPlan -ComputerName newserver1, newserver2
+
+        Uses the Power Plan of oldserver as best practice and sets the Power Plan of newserver1 and newserver2 accordingly.
+
     #>
     [CmdletBinding(SupportsShouldProcess)]
     param (
-        [parameter(ValueFromPipeline)]
+        [parameter(Mandatory, ValueFromPipelineByPropertyName, ValueFromPipeline)]
         [DbaInstance[]]$ComputerName,
+        [parameter(ValueFromPipelineByPropertyName)]
         [PSCredential]$Credential,
-        [Alias("CustomPowerPlan")]
+        [parameter(ValueFromPipelineByPropertyName)]
+        [Alias("CustomPowerPlan", "RecommendedPowerPlan")]
         [string]$PowerPlan,
         [switch]$EnableException
     )
@@ -81,7 +88,7 @@ function Set-DbaPowerPlan {
     process {
         foreach ($computer in $ComputerName) {
             try {
-                Write-Message -Level Verbose -Message "Getting and testing Power Plans on $computer."
+                Write-Message -Level Verbose -Message "Getting and testing Power Plans on $computer using '$PowerPlan' as best practice."
                 $change = Test-DbaPowerPlan -ComputerName $computer -Credential $Credential -PowerPlan $PowerPlan -EnableException
             } catch {
                 Stop-Function -Message "Can't get Power Plan Info for $computer. Check logs for more details." -Continue -ErrorRecord $_ -Target $computer
@@ -99,6 +106,7 @@ function Set-DbaPowerPlan {
             if ($change.IsBestPractice) {
                 if ($Pscmdlet.ShouldProcess($computer, "Stating power plan is already set to $powerPlanRequested, won't change.")) {
                     Write-Message -Level Verbose -Message "PowerPlan on $computer is already set to $powerPlanRequested. Skipping."
+                    $output
                 }
             } else {
                 if ($Pscmdlet.ShouldProcess($computer, "Changing Power Plan from $powerPlan to $powerPlanRequested")) {
@@ -128,9 +136,9 @@ function Set-DbaPowerPlan {
                     } catch {
                         Stop-Function -Message "Failed to connect to $computer." -ErrorRecord $_ -Target $computer -Continue
                     }
+                    $output
                 }
             }
-            $output
         }
     }
 }
