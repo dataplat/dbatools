@@ -227,7 +227,8 @@ function Connect-DbaInstance {
         This tells Connect-DbaInstance to login to the database using the method that works best with Azure.
 
     .EXAMPLE
-        PS C:\> $server = Connect-DbaInstance -ConnectionString "Data Source=TCP:mydb.database.windows.net,1433;User ID=sqladmin;Password=adfasdf;MultipleActiveResultSets=False;Connect Timeout=30;Encrypt=True;TrustServerCertificate=False;"
+        PS C:\> $connstring = "Data Source=TCP:mydb.database.windows.net,1433;User ID=sqladmin;Password=adfasdf;Connect Timeout=30;"
+        PS C:\> $server = Connect-DbaInstance -ConnectionString $connstring
         PS C:\> Invoke-DbaQuery -SqlInstance $server -Query "select 1 as test"
 
         Logs into Azure using a preconstructed connstring, then performs a sample query.
