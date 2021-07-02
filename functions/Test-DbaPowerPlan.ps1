@@ -22,9 +22,6 @@ function Test-DbaPowerPlan {
     .PARAMETER PowerPlan
         If your organization uses a different power plan that's considered best practice, specify it here.
 
-    .PARAMETER InputObject
-        Enables piping from Get-DbaPowerPlan
-
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -51,15 +48,25 @@ function Test-DbaPowerPlan {
 
         Checks the Power Plan settings for sqlserver2014a and indicates whether or not it is set to the Power Plan "Maximum Performance".
 
+    .EXAMPLE
+        PS C:\> 'newserver1', 'newserver2' | Test-DbaPowerPlan
+
+        Checks the Power Plan settings for newserver1 and newserver2 and indicates whether or not they comply with best practices.
+
+    .EXAMPLE
+        PS C:\> Get-DbaPowerPlan -ComputerName oldserver | Test-DbaPowerPlan -ComputerName newserver1, newserver2
+
+        Uses the Power Plan of oldserver as best practice and tests the Power Plan of newserver1 and newserver2 against that.
+
     #>
     param (
-        [parameter(ValueFromPipeline)]
+        [parameter(Mandatory, ValueFromPipelineByPropertyName, ValueFromPipeline)]
         [DbaInstance[]]$ComputerName,
+        [parameter(ValueFromPipelineByPropertyName)]
         [PSCredential]$Credential,
+        [parameter(ValueFromPipelineByPropertyName)]
         [Alias("CustomPowerPlan")]
         [string]$PowerPlan,
-        [parameter(ValueFromPipeline)]
-        [pscustomobject[]]$InputObject,
         [switch]$EnableException
     )
 
@@ -68,65 +75,29 @@ function Test-DbaPowerPlan {
             InstanceID = '8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c'
             PowerPlan  = $null
         }
-
-        # As we need all Power Plans per computer to have the active Power Plan and the best practice Power Plan,
-        # we build a hash table with the computer name as key and the array of Power Plan objects from Get-DbaPowerPlan -List as value.
-        $powerPlanHashTable = @{ }
-        foreach ($computer in $ComputerName) {
-            try {
-                $powerPlanHashTable.$computer = Get-DbaPowerPlan -ComputerName $computer -Credential $Credential -List -EnableException
-            } catch {
-                Stop-Function -Message "Can't get Power Plan Info for $computer. Check logs for more details." -Continue -ErrorRecord $_ -Target $computer
-            }
-        }
     }
 
     process {
-        # As piped input we accept output from Get-DbaPowerPlan -List with all the needed information,
-        # Get-DbaPowerPlan with just the active Power Plan or just a computer name.
-        # In the later two cases, we have to run Get-DbaPowerPlan -List to get the needed information.
-        foreach ($object in $InputObject) {
-            if ($null -ne $object.IsActive -and $null -ne $object.PowerPlan) {
-                # We have an output from Get-DbaPowerPlan -List,
-                # so we add that Power Plan to the array of Power Plans for that computer.
-                # We have to initialize the array if it is the first Power Plan for this computer.
-                $computer = $object.ComputerName
-                if ($null -eq $powerPlanHashTable.$computer) {
-                    $powerPlanHashTable.$computer = @( )
-                }
-                $powerPlanHashTable.$computer += $object
-            } elseif ($null -ne $object.PowerPlan) {
-                # We have an output from Get-DbaPowerPlan,
-                # so we need to get all Power Plans with Get-DbaPowerPlan -List.
-                $computer = $object.ComputerName
-                try {
-                    $powerPlanHashTable.$computer = Get-DbaPowerPlan -ComputerName $computer -Credential $object.Credential -List -EnableException
-                } catch {
-                    Stop-Function -Message "Can't get Power Plan Info for $computer. Check logs for more details." -Continue -ErrorRecord $_ -Target $computer
-                }
-            } else {
-                $computer = $object
-                try {
-                    $powerPlanHashTable.$computer = Get-DbaPowerPlan -ComputerName $computer -Credential $Credential -List -EnableException
-                } catch {
-                    Stop-Function -Message "Can't get Power Plan Info for $computer. Check logs for more details." -Continue -ErrorRecord $_ -Target $computer
-                }
+        foreach ($computer in $ComputerName) {
+            try {
+                Write-Message -Level Verbose -Message "Getting Power Plans for $computer."
+                $powerPlans = Get-DbaPowerPlan -ComputerName $computer -Credential $Credential -List -EnableException
+            } catch {
+                Stop-Function -Message "Can't get Power Plan Info for $computer. Check logs for more details." -Continue -ErrorRecord $_ -Target $computer
             }
-        }
-    }
 
-    end {
-        foreach ($computer in $powerPlanHashTable.Keys) {
-            $powerPlans = $powerPlanHashTable.$computer
             if ($PowerPlan) {
+                Write-Message -Level Verbose -Message "Using Power Plan '$PowerPlan' as best practice."
                 $bpPowerPlan.PowerPlan = $PowerPlan
                 $bpPowerPlan.InstanceID = ($powerPlans | Where-Object { $_.PowerPlan -eq $PowerPlan }).InstanceID
                 if ($null -eq $bpPowerplan.InstanceID) {
+                    Write-Message -Level Verbose -Message "Unable to find Power Plan '$PowerPlan' on $computer."
                     $bpPowerPlan.PowerPlan = "You do not have the Power Plan '$PowerPlan' installed on this machine."
                 }
             } else {
                 $bpPowerPlan.PowerPlan = ($powerPlans | Where-Object { $_.InstanceID -eq $bpPowerPlan.InstanceID }).PowerPlan
                 if ($null -eq $bpPowerplan.PowerPlan) {
+                    Write-Message -Level Verbose -Message "Unable to find Power Plan 'High performance' on $computer."
                     $bpPowerPlan.PowerPlan = "You do not have the high performance plan installed on this machine."
                 }
             }
