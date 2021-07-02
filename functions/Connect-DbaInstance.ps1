@@ -284,7 +284,8 @@ function Connect-DbaInstance {
         PS C:\> $azureAccount = Connect-AzAccount -Credential $azureCredential
         PS C:\> $azureToken = (Get-AzAccessToken -ResourceUrl https://database.windows.net).Token
         PS C:\> $azureInstance = "YOURSERVER.database.windows.net"
-        PS C:\> $server = Connect-DbaInstance -SqlInstance $azureInstance -AccessToken $azureToken
+        PS C:\> $azureDatabase = "MYDATABASE"
+        PS C:\> $server = Connect-DbaInstance -SqlInstance $azureInstance -Database $azureDatabase -AccessToken $azureToken
         PS C:\> Invoke-DbaQuery -SqlInstance $server -Query "select 1 as test"
 
         Connect to an Azure SQL Database or an Azure SQL Managed Instance with an AccessToken.
