@@ -184,7 +184,8 @@ function Connect-DbaInstance {
     .EXAMPLE
         PS C:\> $server = Connect-DbaInstance -SqlInstance sql2014 -ClientName "my connection"
 
-        Creates an SMO Server object that connects using Windows Authentication and uses the client name "my connection". So when you open up profiler or use extended events, you can search for "my connection".
+        Creates an SMO Server object that connects using Windows Authentication and uses the client name "my connection".
+        So when you open up profiler or use extended events, you can search for "my connection".
 
     .EXAMPLE
         PS C:\> $server = Connect-DbaInstance -SqlInstance sql2014 -AppendConnectionString "Packet Size=4096;AttachDbFilename=C:\MyFolder\MyDataFile.mdf;User Instance=true;"
@@ -227,7 +228,8 @@ function Connect-DbaInstance {
         This tells Connect-DbaInstance to login to the database using the method that works best with Azure.
 
     .EXAMPLE
-        PS C:\> $server = Connect-DbaInstance -ConnectionString "Data Source=TCP:mydb.database.windows.net,1433;User ID=sqladmin;Password=adfasdf;MultipleActiveResultSets=False;Connect Timeout=30;Encrypt=True;TrustServerCertificate=False;"
+        PS C:\> $connstring = "Data Source=TCP:mydb.database.windows.net,1433;User ID=sqladmin;Password=adfasdf;Connect Timeout=30;"
+        PS C:\> $server = Connect-DbaInstance -ConnectionString $connstring
         PS C:\> Invoke-DbaQuery -SqlInstance $server -Query "select 1 as test"
 
         Logs into Azure using a preconstructed connstring, then performs a sample query.
@@ -258,12 +260,6 @@ function Connect-DbaInstance {
         When connecting from a non-Azure workstation or an Azure VM without .NET 4.7.2 and higher, logs into Azure using Universal with MFA Support, then performs a sample query.
 
     .EXAMPLE
-        PS C:\> $server = Connect-DbaInstance -SqlInstance psdbatools.database.windows.net -Thumbprint FF6361E82F21664F64A2576BB49EAC429BD5ABB6 -Store CurrentUser -Tenant tenant-guid -SqlCredential app-id-guid-here -Database abc
-        PS C:\> Invoke-DbaQuery -SqlInstance $server -Query "select 1 as test"
-
-        Logs into Azure using Universal with MFA Support with a certificate, then performs a sample query. Note that you will be prompted for a password but the password can be left blank and the certificate will be used instead.
-
-    .EXAMPLE
         PS C:\> Set-DbatoolsConfig -FullName sql.connection.experimental -Value $true
         PS C:\> $sqlcred = Get-Credential sqladmin
         PS C:\> $server = Connect-DbaInstance -SqlInstance sql2014 -SqlCredential $sqlcred
@@ -284,7 +280,8 @@ function Connect-DbaInstance {
         PS C:\> $azureAccount = Connect-AzAccount -Credential $azureCredential
         PS C:\> $azureToken = (Get-AzAccessToken -ResourceUrl https://database.windows.net).Token
         PS C:\> $azureInstance = "YOURSERVER.database.windows.net"
-        PS C:\> $server = Connect-DbaInstance -SqlInstance $azureInstance -AccessToken $azureToken
+        PS C:\> $azureDatabase = "MYDATABASE"
+        PS C:\> $server = Connect-DbaInstance -SqlInstance $azureInstance -Database $azureDatabase -AccessToken $azureToken
         PS C:\> Invoke-DbaQuery -SqlInstance $server -Query "select 1 as test"
 
         Connect to an Azure SQL Database or an Azure SQL Managed Instance with an AccessToken.
