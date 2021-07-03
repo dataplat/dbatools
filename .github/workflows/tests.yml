@@ -40,6 +40,12 @@ jobs:
           $PSDefaultParameterValues["*:MirrorSqlCredential"] = $cred
           $PSDefaultParameterValues["*:WitnessSqlCredential"] = $cred
 
+          # Test Mirroring
+          $newdb = New-DbaDatabase -SqlInstance localhost
+          Invoke-DbaDbMirroring -Primary localhost -Mirror localhost:14333 -Database $newdb.Name -Confirm:$false -Force -SharedPath /shared -WarningAction SilentlyContinue -ErrorAction Stop | Out-Host
+
+          Get-DbaDbMirror -SqlInstance localhost | Out-Host
+
           # Test Migration
           $params = @{
             Source        = "localhost"
@@ -49,14 +55,8 @@ jobs:
             Exclude       = "LinkedServers", "Credentials"
             ErrorAction   = "Stop"
           }
-          Start-DbaMigration @params | Out-Host
+          Start-DbaMigration @params | Select-Object -First 300 | Out-Host
 
           # do it again with experimental connection
-          Set-DbatoolsConfig -FullName sql.connection.experimental -Value $true
-          Start-DbaMigration @params -Force | Out-Host
-
-          # Test Mirroring
-          $newdb = New-DbaDatabase -SqlInstance localhost
-          $null = Invoke-DbaDbMirroring -Primary localhost -Mirror localhost:14333 -Database $newdb.Name -Confirm:$false -Force -SharedPath /shared -WarningAction SilentlyContinue
-
-          Get-DbaDbMirror -SqlInstance localhost | Out-Host
+          $null = Set-DbatoolsConfig -FullName sql.connection.experimental -Value $true
+          Start-DbaMigration @params  -Force | Select-Object -Last 300 | Out-Host
