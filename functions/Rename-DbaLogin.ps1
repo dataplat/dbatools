@@ -99,10 +99,11 @@ function Rename-DbaLogin {
             }
 
             if ($Pscmdlet.ShouldProcess($SqlInstance, "Changing Login name from  [$Login] to [$NewLogin]")) {
+                $output = @()
                 try {
                     $dbenums = $currentLogin.EnumDatabaseMappings()
-                    $currentLogin.rename($NewLogin)
-                    [pscustomobject]@{
+                    $null = $currentLogin.rename($NewLogin)
+                    $output += [pscustomobject]@{
                         ComputerName  = $server.ComputerName
                         InstanceName  = $server.ServiceName
                         SqlInstance   = $server.DomainInstanceName
@@ -122,7 +123,7 @@ function Rename-DbaLogin {
                         NewLogin      = $NewLogin
                         Status        = "Failure"
                     }
-                    Stop-Function -Message "Failure" -ErrorRecord $_ -Target $login
+                    Stop-Function -Message "Failure" -ErrorRecord $_ -Target $login -Continue
                 }
             }
 
@@ -136,8 +137,8 @@ function Rename-DbaLogin {
                         if ($Pscmdlet.ShouldProcess($SqlInstance, "Changing database $db user $user from [$Login] to [$NewLogin]")) {
                             try {
                                 $oldname = $user.name
-                                $user.Rename($NewLogin)
-                                [pscustomobject]@{
+                                $null = $user.Rename($NewLogin)
+                                $output += [pscustomobject]@{
                                     ComputerName = $server.ComputerName
                                     InstanceName = $server.ServiceName
                                     SqlInstance  = $server.DomainInstanceName
@@ -146,7 +147,6 @@ function Rename-DbaLogin {
                                     NewUser      = $NewLogin
                                     Status       = "Successful"
                                 }
-
                             } catch {
                                 Write-Message -Level Warning -Message "Rolling back update to login: $Login"
                                 $currentLogin.rename($Login)
@@ -160,12 +160,14 @@ function Rename-DbaLogin {
                                     NewUser      = $oldname
                                     Status       = "Failure to rename. Rolled back change."
                                 }
-                                Stop-Function -Message "Failure" -ErrorRecord $_ -Target $NewLogin
+                                Stop-Function -Message "Failure" -ErrorRecord $_ -Target $NewLogin -Continue
                             }
                         }
                     }
                 }
             }
+
+            $output
         }
     }
 }
