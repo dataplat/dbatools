@@ -84,6 +84,8 @@ function Get-DbaPowerPlan {
             } catch {
                 if ($_.Exception -match "namespace") {
                     Stop-Function -Message "Can't get Power Plan Info for $computer. Unsupported operating system." -Continue -ErrorRecord $_ -Target $computer
+                } elseif ($_.Exception -match "credentials are known to not work") {
+                    Stop-Function -Message "Can't get Power Plan Info for $computer. Login failure for $($Credential.UserName)." -Continue -ErrorRecord $_ -Target $computer
                 } else {
                     Stop-Function -Message "Can't get Power Plan Info for $computer. Check logs for more details." -Continue -ErrorRecord $_ -Target $computer
                 }

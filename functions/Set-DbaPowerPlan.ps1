@@ -91,7 +91,13 @@ function Set-DbaPowerPlan {
                 Write-Message -Level Verbose -Message "Getting and testing Power Plans on $computer using '$PowerPlan' as best practice."
                 $change = Test-DbaPowerPlan -ComputerName $computer -Credential $Credential -PowerPlan $PowerPlan -EnableException
             } catch {
-                Stop-Function -Message "Can't get Power Plan Info for $computer. Check logs for more details." -Continue -ErrorRecord $_ -Target $computer
+                if ($_.Exception -match "namespace") {
+                    Stop-Function -Message "Can't get Power Plan Info for $computer. Unsupported operating system." -Continue -ErrorRecord $_ -Target $computer
+                } elseif ($_.Exception -match "credentials are known to not work") {
+                    Stop-Function -Message "Can't get Power Plan Info for $computer. Login failure for $($Credential.UserName)." -Continue -ErrorRecord $_ -Target $computer
+                } else {
+                    Stop-Function -Message "Can't get Power Plan Info for $computer. Check logs for more details." -Continue -ErrorRecord $_ -Target $computer
+                }
             }
 
             $instanceId = $change.ActiveInstanceId
