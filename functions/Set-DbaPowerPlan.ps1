@@ -94,13 +94,22 @@ function Set-DbaPowerPlan {
                 Stop-Function -Message "Can't get Power Plan Info for $computer. Check logs for more details." -Continue -ErrorRecord $_ -Target $computer
             }
 
+            $instanceId = $change.ActiveInstanceId
             $powerPlan = $change.ActivePowerPlan
+            $instanceIdRequested = $change.RecommendedInstanceId
             $powerPlanRequested = $change.RecommendedPowerPlan
+
+            if ($null -eq $instanceIdRequested) {
+                Stop-Function -Message "You do not have the Power Plan '$PowerPlan' installed on $computer. Skipping." -Continue -Target $computer
+            }
+
             $output = [PSCustomObject]@{
-                ComputerName      = $computer
-                PreviousPowerPlan = $powerPlan
-                ActivePowerPlan   = $powerPlan
-                IsChanged         = $false
+                ComputerName       = $computer
+                PreviousInstanceId = $instanceId
+                PreviousPowerPlan  = $powerPlan
+                ActiveInstanceId   = $instanceId
+                ActivePowerPlan    = $powerPlan
+                IsChanged          = $false
             }
 
             if ($change.IsBestPractice) {
@@ -110,7 +119,7 @@ function Set-DbaPowerPlan {
                 }
             } else {
                 if ($Pscmdlet.ShouldProcess($computer, "Changing Power Plan from $powerPlan to $powerPlanRequested")) {
-                    [System.Guid]$powerPlanGuid = $change.RecommendedInstanceId
+                    [System.Guid]$powerPlanGuid = $instanceIdRequested
                     $scriptBlock = {
                         Param ($Guid)
                         $powerSetActiveSchemeDefinition = '[DllImport("powrprof.dll", CharSet = CharSet.Auto)] public static extern uint PowerSetActiveScheme(IntPtr RootPowerKey, Guid SchemeGuid);'
@@ -132,11 +141,12 @@ function Set-DbaPowerPlan {
                             Stop-Function -Message "Couldn't set the requested Power Plan '$powerPlanRequested' on $computer (ReturnCode: $returnCode)." -Category ConnectionError -Target $computer -Continue
                         }
                         $output.IsChanged = $true
+                        $output.ActiveInstanceId = $instanceIdRequested
                         $output.ActivePowerPlan = $powerPlanRequested
                     } catch {
                         Stop-Function -Message "Failed to connect to $computer." -ErrorRecord $_ -Target $computer -Continue
                     }
-                    $output
+                    $output | Select-DefaultView -Property ComputerName, PreviousPowerPlan, ActivePowerPlan, IsChanged
                 }
             }
         }
