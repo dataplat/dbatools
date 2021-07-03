@@ -102,7 +102,8 @@ function Get-DbaDbOrphanUser {
                                     SqlInstance  = $server.DomainInstanceName
                                     DatabaseName = $db.Name
                                     User         = $user.Name
-                                }
+                                    UserSMO      = $user
+                                } | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, DatabaseName, User
                             }
                         } else {
                             Write-Message -Level Verbose -Message "No orphan users found on database '$db'."
