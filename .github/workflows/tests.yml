@@ -49,14 +49,14 @@ jobs:
             Exclude       = "LinkedServers", "Credentials"
             ErrorAction   = "Stop"
           }
-          Start-DbaMigration @params
+          Start-DbaMigration @params | Out-Host
 
           # do it again with experimental connection
           Set-DbatoolsConfig -FullName sql.connection.experimental -Value $true
-          Start-DbaMigration @params
+          Start-DbaMigration @params -Force | Out-Host
 
           # Test Mirroring
           $newdb = New-DbaDatabase -SqlInstance localhost
           $null = Invoke-DbaDbMirroring -Primary localhost -Mirror localhost:14333 -Database $newdb.Name -Confirm:$false -Force -SharedPath /shared -WarningAction SilentlyContinue
 
-          Get-DbaDbMirror -SqlInstance localhost
+          Get-DbaDbMirror -SqlInstance localhost | Out-Host
