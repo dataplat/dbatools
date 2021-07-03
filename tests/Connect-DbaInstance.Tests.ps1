@@ -79,10 +79,12 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
 
         It "connects using a connection object" {
+            Set-DbatoolsConfig -FullName commands.connect-dbainstance.smo.computername.source -Value 'instance.ComputerName'
             [System.Data.SqlClient.SqlConnection]$sqlconnection = "Data Source=$script:instance1;Initial Catalog=tempdb;Integrated Security=True;"
             $server = Connect-DbaInstance -SqlInstance $sqlconnection
-            $server.ComputerName -eq ([DbaInstance]$script:instance1).ComputerName | Should Be $true
+            $server.ComputerName | Should Be ([DbaInstance]$script:instance1).ComputerName
             $server.Databases.Name.Count -gt 0 | Should Be $true
+            Set-DbatoolsConfig -FullName commands.connect-dbainstance.smo.computername.source -Value $null
         }
 
         It "connects - instance2" {
@@ -96,10 +98,12 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
 
         It "connects using a connection object - instance2" {
+            Set-DbatoolsConfig -FullName commands.connect-dbainstance.smo.computername.source -Value 'instance.ComputerName'
             [System.Data.SqlClient.SqlConnection]$sqlconnection = "Data Source=$script:instance2;Initial Catalog=tempdb;Integrated Security=True;"
             $server = Connect-DbaInstance -SqlInstance $sqlconnection
-            $server.ComputerName -eq ([DbaInstance]$script:instance2).ComputerName | Should Be $true
+            $server.ComputerName | Should Be ([DbaInstance]$script:instance2).ComputerName
             $server.Databases.Name.Count -gt 0 | Should Be $true
+            Set-DbatoolsConfig -FullName commands.connect-dbainstance.smo.computername.source -Value $null
         }
 
         It "sets connectioncontext parameters that are provided" {
