@@ -148,6 +148,7 @@ function Remove-DbaDbOrphanUser {
                         if ($StackSource -eq "Repair-DbaDbOrphanUser") {
                             Write-Message -Level Verbose -Message "Call origin: Repair-DbaDbOrphanUser."
                             #Will use collection from parameter ($User)
+                            $users = $User
                         } else {
                             Write-Message -Level Verbose -Message "Validating users on database $db."
 
