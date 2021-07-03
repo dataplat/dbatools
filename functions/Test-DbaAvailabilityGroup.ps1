@@ -153,6 +153,11 @@ function Test-DbaAvailabilityGroup {
         foreach ($dbName in $AddDatabase) {
             $db = $server.Databases[$dbName]
 
+            if ($SeedingMode -eq 'Automatic' -and $server.VersionMajor -lt 13) {
+                Stop-Function -Message "Automatic seeding mode only supported in SQL Server 2016 and above" -Target $server
+                return
+            }
+
             if (-not $db) {
                 Stop-Function -Message "Database $db is not found on $server." -Continue
             }
