@@ -15,18 +15,16 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 
 Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     Context "Should return file information" {
-        $results = Get-DbaDbFileSize -SqlInstance $script:instance2
+        $result = Get-DbaDbFileGrowth -SqlInstance $script:instance2
         It "returns information about msdb files" {
-            $results.Database -contains "msdb" | Should -Be $true
+            $result.Database -contains "msdb" | Should -Be $true
         }
     }
 
     Context "Should return file information for only msdb" {
-        $results = Get-DbaDbFileSize -SqlInstance $script:instance2 -Database msdb
-        foreach ($result in $results) {
-            It "returns only msdb files" {
-                $result.Database | Should -Be "msdb"
-            }
+        $result = Get-DbaDbFileGrowth -SqlInstance $script:instance2 -Database msdb | Select-Object -First 1
+        It "returns only msdb files" {
+            $result.Database | Should -Be "msdb"
         }
     }
 }

@@ -1,4 +1,4 @@
-function Get-DbaDbFileSize {
+function Get-DbaDbFileGrowth {
     <#
     .SYNOPSIS
         Gets database growth and growth type
@@ -35,10 +35,10 @@ function Get-DbaDbFileSize {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaDbFileSize
+        https://dbatools.io/Get-DbaDbFileGrowth
 
     .EXAMPLE
-        PS C:\> Get-DbaDbFileSize -SqlInstance sql2017, sql2016, sql2012
+        PS C:\> Get-DbaDbFileGrowth -SqlInstance sql2017, sql2016, sql2012
 
         Gets all database file growths on sql2017, sql2016, sql2012
 
@@ -57,30 +57,34 @@ function Get-DbaDbFileSize {
         [switch]$EnableException
     )
     process {
-        if ((Test-Bound Database) -and -not (Test-Bound SqlInstance)) {
-            Stop-Function -Message "You must specify SqlInstance when specifying Database"
-            return
+        $dbs = Get-DbaDbFile @PSBoundParameters
+        foreach ($db in $dbs) {
+            $db | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, Database, MaxSize, GrowthType, Growth, 'LogicalName as File', 'PhysicalName as FileName', State
         }
-
-        if ($SqlInstance) {
-            $InputObject = Get-DbaDatabase -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $Database -OnlyAccessible
-        }
-
-        foreach ($db in $InputObject) {
-            $allfiles = @($db.FileGroups.Files, $db.LogFiles)
-            foreach ($file in $allfiles) {
-                [pscustomobject]@{
-                    ComputerName = $db.ComputerName
-                    InstanceName = $db.InstanceName
-                    SqlInstance  = $db.SqlInstance
-                    Database     = $db.Name
-                    GrowthType   = $file.GrowthType
-                    Growth       = $file.Growth
-                    File         = $file.Name
-                    FileName     = $file.FileName
-                    Status       = $db.Status
-                }
-            }
-        }
+        <#
+        ComputerName             : WORKSTATION
+        InstanceName             : MSSQLSERVER
+        SqlInstance              : WORKSTATION
+        Database                 : master
+        FileGroupName            :
+        ID                       : 2
+        Type                     : 1
+        TypeDescription          : LOG
+        LogicalName              : mastlog
+        PhysicalName             : C:\Program Files\Microsoft SQL
+                                Server\MSSQL15.MSSQLSERVER\MSSQL\DATA\mastlog.ldf
+        State                    : ONLINE
+        MaxSize                  : Unlimited
+        Growth                   : 10
+        GrowthType               : Percent
+        NextGrowthEventSize      : 204.80 KB
+        Size                     : 2.00 MB
+        UsedSpace                : 1.14 MB
+        AvailableSpace           : 880.00 KB
+        IsOffline                : False
+        IsReadOnly               : False
+        IsReadOnlyMedia          : False
+        IsSparse                 : False
+        #>
     }
 }

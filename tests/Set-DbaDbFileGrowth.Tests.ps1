@@ -21,7 +21,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         $newdb | Remove-DbaDatabase -Confirm:$false
     }
     Context "Should return file information for only newdb" {
-        $result = Set-DbaDbFileSize -SqlInstance $script:instance2 -Database newdb | Select-Object -First 1
+        $result = Set-DbaDbFileGrowth -SqlInstance $script:instance2 -Database newdb | Select-Object -First 1
         It "returns the proper info" {
             $result.Database | Should -Be "newdb"
             $result.GrowthType | Should -Be "MB"
@@ -30,7 +30,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     }
 
     Context "Supports piping" {
-        $result = Get-DbaDatabase $script:instance2 -Database newdb | Set-DbaDbFileSize | Select-Object -First 1
+        $result = Get-DbaDatabase $script:instance2 -Database newdb | Set-DbaDbFileGrowth | Select-Object -First 1
         It "returns only newdb files" {
             $result.Database | Should -Be "newdb"
         }

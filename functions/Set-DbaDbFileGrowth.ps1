@@ -1,14 +1,14 @@
-function Set-DbaDbFileSize {
+function Set-DbaDbFileGrowth {
     <#
     .SYNOPSIS
         Sets databases to a non-default growth and growth type. 64MB by default.
 
-        To get the file size, use Get-DbaDbFile.
+        To get the file growth, use Get-DbaDbFile.
 
     .DESCRIPTION
         Sets databases to a non-default growth and growth type. 64MB by default.
 
-        To get the file size, use Get-DbaDbFile.
+        To get the file growth, use Get-DbaDbFile.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.
@@ -51,20 +51,20 @@ function Set-DbaDbFileSize {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Set-DbaDbFileSize
+        https://dbatools.io/Set-DbaDbFileGrowth
 
     .EXAMPLE
-        PS C:\> Set-DbaDbFileSize -SqlInstance sql2017, sql2016, sql2012
+        PS C:\> Set-DbaDbFileGrowth -SqlInstance sql2017, sql2016, sql2012
 
         Sets all non-default sized database files on sql2017, sql2016, sql2012 to 64MB.
 
     .EXAMPLE
-        PS C:\> Get-DbaDatabase -SqlInstance sql2016 -Database test | Set-DbaDbFileSize -GrowthType GB -Growth 1
+        PS C:\> Get-DbaDatabase -SqlInstance sql2016 -Database test | Set-DbaDbFileGrowth -GrowthType GB -Growth 1
 
         Sets the test database on sql2016 to a growth of 1GB
 
     .EXAMPLE
-        PS C:\> Set-DbaDbFileSize -SqlInstance sql2017, sql2016, sql2012 -Database test -WhatIf
+        PS C:\> Set-DbaDbFileGrowth -SqlInstance sql2017, sql2016, sql2012 -Database test -WhatIf
 
         Shows what would happen if the command were executed
     #>
@@ -98,26 +98,18 @@ function Set-DbaDbFileSize {
         foreach ($db in $InputObject) {
             $allfiles = @($db.FileGroups.Files, $db.LogFiles)
             foreach ($file in $allfiles) {
-                if ($PSCmdlet.ShouldProcess($db.Parent, "Setting filegrowth for $($file.Name) in $($db.name) to $($Growth)$($GrowthType)")) {
+                if ($PSCmdlet.ShouldProcess($db.Parent.Name, "Setting filegrowth for $($file.Name) in $($db.name) to $($Growth)$($GrowthType)")) {
                     # SMO gave me some weird errors so I'm just gonna go with T-SQL
                     try {
                         $sql = "ALTER DATABASE $db MODIFY FILE ( NAME = N'$($file.Name)', FILEGROWTH = $($Growth)$($GrowthType) )"
                         Write-Message -Level Verbose -Message $sql
                         $db.Query($sql)
                         $db.Refresh()
+                        $db.Parent.Refresh()
+                        # this is a bit repetitive but had to be done to accomodate WhatIf
+                        $db | Get-DbaDbFileGrowth | Where File -eq $file.Name
                     } catch {
                         Stop-Function -Message "Could not modify $db on $($db.Parent.Name)" -ErrorRecord $_ -Continue
-                    }
-                    [pscustomobject]@{
-                        ComputerName = $db.ComputerName
-                        InstanceName = $db.InstanceName
-                        SqlInstance  = $db.SqlInstance
-                        Database     = $db.Name
-                        GrowthType   = $GrowthType
-                        Growth       = $Growth
-                        File         = $file.Name
-                        FileName     = $file.FileName
-                        Status       = $db.Status
                     }
                 }
             }
