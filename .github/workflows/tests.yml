@@ -42,7 +42,7 @@ jobs:
 
           # Test Mirroring
           $newdb = New-DbaDatabase -SqlInstance localhost
-          Invoke-DbaDbMirroring -Primary localhost -Mirror localhost:14333 -Database $newdb.Name -Confirm:$false -Force -SharedPath /shared -WarningAction SilentlyContinue -ErrorAction Stop | Out-Host
+          Invoke-DbaDbMirroring -Primary localhost -Mirror localhost:14333 -Database $newdb.Name -Confirm:$false -Force -SharedPath /shared -WarningAction SilentlyContinue -ErrorAction Stop -EnableException | Out-Host
 
           Get-DbaDbMirror -SqlInstance localhost | Out-Host
 
