@@ -24,8 +24,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         $result = Set-DbaDbFileGrowth -SqlInstance $script:instance2 -Database newdb | Select-Object -First 1
         It "returns the proper info" {
             $result.Database | Should -Be "newdb"
-            $result.GrowthType | Should -Be "MB"
-            $result.Growth | Should -Be "64"
+            $result.GrowthType | Should -Be "kb"
         }
     }
 
