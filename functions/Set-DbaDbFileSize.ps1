@@ -3,8 +3,12 @@ function Set-DbaDbFileSize {
     .SYNOPSIS
         Sets databases to a non-default growth and growth type. 64MB by default.
 
+        To get the file size, use Get-DbaDbFile.
+
     .DESCRIPTION
         Sets databases to a non-default growth and growth type. 64MB by default.
+
+        To get the file size, use Get-DbaDbFile.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.
@@ -100,6 +104,7 @@ function Set-DbaDbFileSize {
                         $sql = "ALTER DATABASE $db MODIFY FILE ( NAME = N'$($file.Name)', FILEGROWTH = $($Growth)$($GrowthType) )"
                         Write-Message -Level Verbose -Message $sql
                         $db.Query($sql)
+                        $db.Refresh()
                     } catch {
                         Stop-Function -Message "Could not modify $db on $($db.Parent.Name)" -ErrorRecord $_ -Continue
                     }

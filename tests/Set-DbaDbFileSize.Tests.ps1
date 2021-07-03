@@ -21,22 +21,18 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         $newdb | Remove-DbaDatabase -Confirm:$false
     }
     Context "Should return file information for only newdb" {
-        $results = Set-DbaDbFileSize -SqlInstance $script:instance2 -Database newdb
-        foreach ($result in $results) {
-            It "returns the proper info" {
-                $result.Database | Should -Be "newdb"
-                $result.GrowthType | Should -Be "MB"
-                $result.Growth | Should -Be "64"
-            }
+        $result = Set-DbaDbFileSize -SqlInstance $script:instance2 -Database newdb | Select-Object -First 1
+        It "returns the proper info" {
+            $result.Database | Should -Be "newdb"
+            $result.GrowthType | Should -Be "MB"
+            $result.Growth | Should -Be "64"
         }
     }
 
     Context "Supports piping" {
-        $results = Get-DbaDatabase $script:instance2 -Database newdb | Set-DbaDbFileSize
-        foreach ($result in $results) {
-            It "returns only newdb files" {
-                $result.Database | Should -Be "newdb"
-            }
+        $result = Get-DbaDatabase $script:instance2 -Database newdb | Set-DbaDbFileSize | Select-Object -First 1
+        It "returns only newdb files" {
+            $result.Database | Should -Be "newdb"
         }
     }
 }
