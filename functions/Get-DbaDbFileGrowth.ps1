@@ -62,11 +62,6 @@ function Get-DbaDbFileGrowth {
         [switch]$EnableException
     )
     process {
-        if (Test-Bound -Not Database, InputObject) {
-            Stop-Function -Message "You must specify InputObject or Database"
-            return
-        }
-
         if ((Test-Bound Database) -and -not (Test-Bound SqlInstance)) {
             Stop-Function -Message "You must specify SqlInstance when specifying Database"
             return
