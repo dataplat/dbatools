@@ -457,6 +457,8 @@ $script:xplat = @(
     'Find-DbaDbGrowthEvent',
     'Test-DbaLinkedServerConnection',
     'Get-DbaDbFile',
+    'Get-DbaDbFileGrowth',
+    'Set-DbaDbFileGrowth',
     'Read-DbaTransactionLog',
     'Get-DbaDbTable',
     'Invoke-DbaDbShrink',
