@@ -43,7 +43,12 @@ function Get-DbaDbFileGrowth {
         Gets all database file growths on sql2017, sql2016, sql2012
 
     .EXAMPLE
-        PS C:\> Get-DbaDatabase -SqlInstance sql2016 -Database test
+        PS C:\> Get-DbaDbFileGrowth -SqlInstance sql2017, sql2016, sql2012 -Database pubs
+
+        Gets the database file growth info for pubs on sql2017, sql2016, sql2012
+
+    .EXAMPLE
+        PS C:\> Get-DbaDatabase -SqlInstance sql2016 -Database test | Get-DbaDbFileGrowth
 
         Gets the test database file growth information on sql2016
     #>
@@ -57,34 +62,19 @@ function Get-DbaDbFileGrowth {
         [switch]$EnableException
     )
     process {
+        if (Test-Bound -Not Database, InputObject) {
+            Stop-Function -Message "You must specify InputObject or Database"
+            return
+        }
+
+        if ((Test-Bound Database) -and -not (Test-Bound SqlInstance)) {
+            Stop-Function -Message "You must specify SqlInstance when specifying Database"
+            return
+        }
+
         $dbs = Get-DbaDbFile @PSBoundParameters
         foreach ($db in $dbs) {
             $db | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, Database, MaxSize, GrowthType, Growth, 'LogicalName as File', 'PhysicalName as FileName', State
         }
-        <#
-        ComputerName             : WORKSTATION
-        InstanceName             : MSSQLSERVER
-        SqlInstance              : WORKSTATION
-        Database                 : master
-        FileGroupName            :
-        ID                       : 2
-        Type                     : 1
-        TypeDescription          : LOG
-        LogicalName              : mastlog
-        PhysicalName             : C:\Program Files\Microsoft SQL
-                                Server\MSSQL15.MSSQLSERVER\MSSQL\DATA\mastlog.ldf
-        State                    : ONLINE
-        MaxSize                  : Unlimited
-        Growth                   : 10
-        GrowthType               : Percent
-        NextGrowthEventSize      : 204.80 KB
-        Size                     : 2.00 MB
-        UsedSpace                : 1.14 MB
-        AvailableSpace           : 880.00 KB
-        IsOffline                : False
-        IsReadOnly               : False
-        IsReadOnlyMedia          : False
-        IsSparse                 : False
-        #>
     }
 }

@@ -24,7 +24,7 @@ function Set-DbaDbFileGrowth {
         The name of the target databases
 
     .PARAMETER GrowthType
-        The growth type, MB by default - valid values are MB, KB, GB or TB. MB by default
+        The growth type, MB by default - valid values are MB, KB, GB or TB.
 
     .PARAMETER Growth
         The growth value. 64 by default.
@@ -54,14 +54,19 @@ function Set-DbaDbFileGrowth {
         https://dbatools.io/Set-DbaDbFileGrowth
 
     .EXAMPLE
-        PS C:\> Set-DbaDbFileGrowth -SqlInstance sql2017, sql2016, sql2012
+        PS C:\> Set-DbaDbFileGrowth -SqlInstance sql2016 -Database test  -GrowthType GB -Growth 1
 
-        Sets all non-default sized database files on sql2017, sql2016, sql2012 to 64MB.
+        Sets the test database on sql2016 to a growth of 1GB
 
     .EXAMPLE
         PS C:\> Get-DbaDatabase -SqlInstance sql2016 -Database test | Set-DbaDbFileGrowth -GrowthType GB -Growth 1
 
         Sets the test database on sql2016 to a growth of 1GB
+
+    .EXAMPLE
+        PS C:\> Get-DbaDatabase | Set-DbaDbFileGrowth -SqlInstance sql2017, sql2016, sql2012
+
+        Sets all database files on sql2017, sql2016, sql2012 to 64MB.
 
     .EXAMPLE
         PS C:\> Set-DbaDbFileGrowth -SqlInstance sql2017, sql2016, sql2012 -Database test -WhatIf
@@ -106,8 +111,8 @@ function Set-DbaDbFileGrowth {
                         $db.Query($sql)
                         $db.Refresh()
                         $db.Parent.Refresh()
-                        # this is a bit repetitive but had to be done to accomodate WhatIf
-                        $db | Get-DbaDbFileGrowth | Where File -eq $file.Name
+                        # this executes Get-DbaDbFileGrowth a bunch of times because it's in a loop, but it's needed to keep the output results in the WhatIf
+                        $db | Get-DbaDbFileGrowth | Where-Object File -eq $file.Name
                     } catch {
                         Stop-Function -Message "Could not modify $db on $($db.Parent.Name)" -ErrorRecord $_ -Continue
                     }
