@@ -102,7 +102,7 @@ function Rename-DbaLogin {
                 $output = @()
                 try {
                     $dbenums = $currentLogin.EnumDatabaseMappings()
-                    $null = $currentLogin.rename($NewLogin)
+                    $null = $currentLogin.Rename($NewLogin)
                     $output += [pscustomobject]@{
                         ComputerName  = $server.ComputerName
                         InstanceName  = $server.ServiceName
@@ -110,6 +110,8 @@ function Rename-DbaLogin {
                         Database      = $null
                         PreviousLogin = $Login
                         NewLogin      = $NewLogin
+                        PreviousUser  = $null
+                        NewUser       = $null
                         Status        = "Successful"
                     }
                 } catch {
@@ -121,6 +123,8 @@ function Rename-DbaLogin {
                         Database      = $null
                         PreviousLogin = $Login
                         NewLogin      = $NewLogin
+                        PreviousUser  = $null
+                        NewUser       = $null
                         Status        = "Failure"
                     }
                     Stop-Function -Message "Failure" -ErrorRecord $_ -Target $login -Continue
@@ -139,28 +143,33 @@ function Rename-DbaLogin {
                                 $oldname = $user.name
                                 $null = $user.Rename($NewLogin)
                                 $output += [pscustomobject]@{
-                                    ComputerName = $server.ComputerName
-                                    InstanceName = $server.ServiceName
-                                    SqlInstance  = $server.DomainInstanceName
-                                    Database     = $db.name
-                                    PreviousUser = $oldname
-                                    NewUser      = $NewLogin
-                                    Status       = "Successful"
+                                    ComputerName  = $server.ComputerName
+                                    InstanceName  = $server.ServiceName
+                                    SqlInstance   = $server.DomainInstanceName
+                                    Database      = $db.name
+                                    PreviousLogin = $null
+                                    NewLogin      = $null
+                                    PreviousUser  = $oldname
+                                    NewUser       = $NewLogin
+                                    Status        = "Successful"
                                 }
                             } catch {
                                 Write-Message -Level Warning -Message "Rolling back update to login: $Login"
-                                $currentLogin.rename($Login)
+                                $null = $currentLogin.Rename($Login)
 
                                 [pscustomobject]@{
-                                    ComputerName = $server.ComputerName
-                                    InstanceName = $server.ServiceName
-                                    SqlInstance  = $server.DomainInstanceName
-                                    Database     = $db.name
-                                    PreviousUser = $NewLogin
-                                    NewUser      = $oldname
-                                    Status       = "Failure to rename. Rolled back change."
+                                    ComputerName  = $server.ComputerName
+                                    InstanceName  = $server.ServiceName
+                                    SqlInstance   = $server.DomainInstanceName
+                                    Database      = $db.name
+                                    PreviousLogin = $null
+                                    NewLogin      = $null
+                                    PreviousUser  = $NewLogin
+                                    NewUser       = $oldname
+                                    Status        = "Failure to rename. Rolled back change."
                                 }
-                                Stop-Function -Message "Failure" -ErrorRecord $_ -Target $NewLogin -Continue
+                                Stop-Function -Message "Failure" -ErrorRecord $_ -Target $NewLogin
+                                return
                             }
                         }
                     }
