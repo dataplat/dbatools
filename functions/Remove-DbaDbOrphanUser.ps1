@@ -154,7 +154,7 @@ function Remove-DbaDbOrphanUser {
 
                             $users = (Get-DbaDbOrphanUser -SqlInstance $server -Database $db.Name).SMOUser
                             if ($User.Count -gt 0) {
-                                $users = $UsersToWork | Where-Object { $User -contains $_.Name }
+                                $users = $users | Where-Object { $User -contains $_.Name }
                             }
                         }
 
