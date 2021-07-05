@@ -1,7 +1,7 @@
 function Remove-DbaDbView {
     <#
     .SYNOPSIS
-        Removes a database view from database(s) for each instance(s) of SQL Server.
+        Removes a database view(s) from each database and SQL Server instance.
 
     .DESCRIPTION
         The Remove-DbaDbView removes view(s) from database(s) for each instance(s) of SQL Server.
