@@ -91,15 +91,11 @@ function Remove-DbaDbView {
             return
         }
 
-        if ($SqlInstance) {
-            $InputObject = Get-DbaDbView @PSBoundParameters
-        }
-
         foreach ($vw in $InputObject) {
 
             if ($Pscmdlet.ShouldProcess($vw.SqlInstance, "Removing the view $vw in the database $($vw.Parent.Name)")) {
                 try {
-                    $viewToDrop.Drop()
+                    $vw.Drop()
                 } catch {
                     Stop-Function -Message "Failure on $($vw.SqlInstance) to drop the view $vw in the database $($vw.Parent.Name)" -ErrorRecord $_ -Continue
                 }
