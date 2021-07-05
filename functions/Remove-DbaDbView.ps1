@@ -16,14 +16,24 @@ function Remove-DbaDbView {
 
         For MFA support, please use Connect-DbaInstance.
 
+    .PARAMETER Database
+        The target database(s).
+
+    .PARAMETER View
+        The name(s) of the view(s).
+
+    .PARAMETER Schema
+        The name(s) of the schema for the view(s).
+
     .PARAMETER InputObject
-        Enables piped input from Get-DbaDbView
+        Allows piping from Get-DbaDbView.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
 
     .PARAMETER Confirm
         Prompts you for confirmation before executing any changing operations within the command.
+        This is the default. Use -Confirm:$false to suppress these prompts.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -49,28 +59,62 @@ function Remove-DbaDbView {
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High')]
     param (
+        [Parameter(ParameterSetName = 'NonPipeline', Mandatory = $true, Position = 0)]
         [DbaInstanceParameter[]]$SqlInstance,
+        [Parameter(ParameterSetName = 'NonPipeline')]
         [PSCredential]$SqlCredential,
-        [parameter(ValueFromPipeline)]
+        [Parameter(ParameterSetName = 'NonPipeline')]
+        [string[]]$Database,
+        [Parameter(ParameterSetName = 'NonPipeline')]
+        [string[]]$View,
+        [Parameter(ParameterSetName = 'NonPipeline')]
+        [string[]]$Schema,
+        [parameter(ValueFromPipeline, ParameterSetName = 'Pipeline', Mandatory = $true)]
         [Microsoft.SqlServer.Management.Smo.View[]]$InputObject,
+        [Parameter(ParameterSetName = 'NonPipeline')][Parameter(ParameterSetName = 'Pipeline')]
         [switch]$EnableException
     )
 
+    begin {
+        $views = @( )
+    }
+
     process {
-
-        if (-not $InputObject -and -not $SqlInstance) {
-            Stop-Function -Message "You must pipe in a view, database, or server or specify a SqlInstance"
-            return
+        if ($SqlInstance) {
+            $params = $PSBoundParameters
+            $null = $params.Remove('WhatIf')
+            $null = $params.Remove('Confirm')
+            $views = Get-DbaDbView @params
+        } else {
+            $views += $InputObject
         }
+    }
 
-        foreach ($vw in $InputObject) {
-
-            if ($Pscmdlet.ShouldProcess($vw.SqlInstance, "Removing the view $vw in the database $($vw.Parent.Name)")) {
-                try {
-                    $vw.Drop()
-                } catch {
-                    Stop-Function -Message "Failure on $($vw.SqlInstance) to drop the view $vw in the database $($vw.Parent.Name)" -ErrorRecord $_ -Continue
+    end {
+        # We have to delete in the end block to prevent "Collection was modified; enumeration operation may not execute." if directly piped from Get-DbaDbView.
+        foreach ($viewItem in $views) {
+            if ($PSCmdlet.ShouldProcess($viewItem.Parent.Parent.Name, "Removing the view $($viewItem.Schema).$($viewItem.Name) in the database $($viewItem.Parent.Name) on $($viewItem.Parent.Parent.Name)")) {
+                $output = [pscustomobject]@{
+                    ComputerName   = $viewItem.Parent.Parent.ComputerName
+                    InstanceName   = $viewItem.Parent.Parent.ServiceName
+                    SqlInstance    = $viewItem.Parent.Parent.DomainInstanceName
+                    Database       = $viewItem.Parent.Name
+                    View           = "$($viewItem.Schema).$($viewItem.Name)"
+                    ViewName       = $viewItem.Name
+                    ViewSchema     = $viewItem.Schema
+                    Status         = $null
+                    IsRemoved      = $false
                 }
+                try {
+                    $viewItem.Drop()
+                    $output.Status = "Dropped"
+                    $output.IsRemoved = $true
+                } catch {
+                    Stop-Function -Message "Failed removing the view $($viewItem.Schema).$($viewItem.Name) in the database $($viewItem.Parent.Name) on $($viewItem.Parent.Parent.Name)" -ErrorRecord $_
+                    $output.Status = (Get-ErrorMessage -Record $_)
+                    $output.IsRemoved = $false
+                }
+                $output
             }
         }
     }

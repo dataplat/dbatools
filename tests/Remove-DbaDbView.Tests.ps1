@@ -1,44 +1,48 @@
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
+Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
 
-Describe "$CommandName Unit Tests" -Tags "UnitTests" {
+Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'InputObject', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
+        [array]$params = ([Management.Automation.CommandMetaData]$ExecutionContext.SessionState.InvokeCommand.GetCommand($CommandName, 'Function')).Parameters.Keys
+        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'View', 'Schema', 'InputObject', 'EnableException'
         It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+            Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
+Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
+
     BeforeAll {
-        $server = Connect-DbaInstance -SqlInstance $script:instance2
-        $view1 = "dbatoolssci_view1_$(Get-Random)"
-        $view2 = "dbatoolssci_view2_$(Get-Random)"
+
+        $instance2 = Connect-DbaInstance -SqlInstance $script:instance2
+        $null = Get-DbaProcess -SqlInstance $instance2 | Where-Object Program -match dbatools | Stop-DbaProcess -Confirm:$false
         $dbname1 = "dbatoolsci_$(Get-Random)"
-        $null = New-DbaDatabase -SqlInstance $server -Name $dbname1
+        $null = New-DbaDatabase -SqlInstance $instance2 -Name $newDbName
+
+        $view1 = "dbatoolssci_view1_$(Get-Random)"
+        $schema1 = "dbatoolssci_schema1_$(Get-Random)"
+        $null = $instance2.Query("CREATE VIEW $schema1.$view1 (a) AS (SELECT @@VERSION );" , $dbname1)
+        $null = $instance2.Query("CREATE VIEW $view2 (b) AS (SELECT * from $view1);", $dbname1)
     }
+
     AfterAll {
-        $null = Remove-DbaDatabase -SqlInstance $server -Database $dbname1 -confirm:$false
+        $null = $dbname1 | Remove-DbaDatabase -Confirm:$false
     }
 
-    Context "Functionality" {
-        It 'Accepts input from Get-DbaDbView' {
-            $null = $server.Query("CREATE VIEW $view1 (a) AS (SELECT @@VERSION );" , $dbname1)
-            $null = $server.Query("CREATE VIEW $view2 (b) AS (SELECT * from $view1);", $dbname1)
-            $result0 = Get-DbaDbView -SqlInstance $server -Database $dbname1 -View $view1, $view2
-            $result1 = Get-DbaDbView -SqlInstance $server -Database $dbname1 -View $view2
-            $result1 | Remove-DbaDbView -Confirm:$false
-            $result2 = Get-DbaDbView -SqlInstance $server -Database $dbname1 -View $view1, $view2
+    Context "commands work as expected" {
 
-            $result0.Count | Should Be 2
-            $result1.Count | Should Be 1
-            $result2.Count | Should Be 1
-            $result2.Name -contains $view2  | Should Be $false
+        #It "removes a view" {
+        #    (Get-DbaDbView -SqlInstance $instance2 -Database $dbname1 -View $view1 -Schema $schema1) | Should -Not -BeNullOrEmpty
+        #    Remove-DbaDbView -SqlInstance $instance2 -Database $dbname1 -View $view1 -Schema $schema1 -Confirm:$false
+        #    (Get-DbaDbView -SqlInstance $instance2 -Database $dbname1 -View $view1 -Schema $schema1) | Should -BeNullOrEmpty
+        #}
+
+        It "supports piping view" {
+            (Get-DbaDbView -SqlInstance $instance2 -Database $dbname1 -View $view2 -Schema $schema1) | Should -Not -BeNullOrEmpty
+            Get-DbaDbView -SqlInstance $instance2 -Database $dbname1 -View $view2 -Schema $schema1 | Remove-DbaDbView -Confirm:$false
+            (Get-DbaDbView -SqlInstance $instance2 -Database $dbname1 -View $view2 -Schema $schema1) | Should -BeNullOrEmpty
         }
-
     }
 }
