@@ -198,7 +198,7 @@ function Import-DbaCsv {
 
         Imports the entire comma-delimited housing.csv to the SQL "markets" database on a SQL Server named sql001, using the first row as column names.
 
-        Since a table name was not specified, the table name is automatically determined from filename as "housing".
+        Because the switch -AutoCreateTable is used, the table to import into gets created. The name is determined by the filename used. In this case, the table is named "housing"
 
     .EXAMPLE
         PS C:\> Import-DbaCsv -Path .\housing.csv -SqlInstance sql001 -Database markets -Table housing -Delimiter "`t" -NoHeaderRow
