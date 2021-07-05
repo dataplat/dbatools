@@ -22,9 +22,6 @@ function Remove-DbaDbView {
     .PARAMETER View
         The name(s) of the view(s).
 
-    .PARAMETER Schema
-        The name(s) of the schema for the view(s).
-
     .PARAMETER InputObject
         Allows piping from Get-DbaDbView.
 
@@ -67,8 +64,6 @@ function Remove-DbaDbView {
         [string[]]$Database,
         [Parameter(ParameterSetName = 'NonPipeline')]
         [string[]]$View,
-        [Parameter(ParameterSetName = 'NonPipeline')]
-        [string[]]$Schema,
         [parameter(ValueFromPipeline, ParameterSetName = 'Pipeline', Mandatory = $true)]
         [Microsoft.SqlServer.Management.Smo.View[]]$InputObject,
         [Parameter(ParameterSetName = 'NonPipeline')][Parameter(ParameterSetName = 'Pipeline')]
