@@ -27,11 +27,17 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 
     Context "Functionality" {
         It 'Accepts input from Get-DbaDbView' {
-            $result0 = Get-DbaDbView -SqlInstance $script:instance2 -Database $dbname1 -View $view2
-            $result0 | Remove-DbaDbView -Confirm:$false
-            $result1 = Get-DbaDbView -SqlInstance $script:instance2 -Database $dbname1
+            $null = $server.Query("CREATE VIEW $view1 (a) AS (SELECT @@VERSION );" , $dbname1)
+            $null = $server.Query("CREATE VIEW $view2 (b) AS (SELECT * from $view1);", $dbname1)
+            $result0 = Get-DbaDbView -SqlInstance $server -Database $dbname1 -View $view1, $view2
+            $result1 = Get-DbaDbView -SqlInstance $server -Database $dbname1 -View $view2
+            $result1 | Remove-DbaDbView -Confirm:$false
+            $result2 = Get-DbaDbView -SqlInstance $server -Database $dbname1 -View $view1, $view2
 
-            $result1.Name -contains $view2  | Should Be $false
+            $result0.Count | Should Be 2
+            $result1.Count | Should Be 1
+            $result2.Count | Should Be 1
+            $result2.Name -contains $view2  | Should Be $false
         }
 
     }
