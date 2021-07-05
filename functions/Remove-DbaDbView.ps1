@@ -86,15 +86,19 @@ function Remove-DbaDbView {
 
     process {
 
+        if (-not $InputObject -and -not $SqlInstance) {
+            Stop-Function -Message "You must pipe in a view, database, or server or specify a SqlInstance"
+            return
+        }
+
         if ($SqlInstance) {
-            $InputObject = Get-DbaDbView -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $Database -View $View -ExcludeSystemView -ExcludeDatabase $ExcludeDatabase
+            $InputObject = Get-DbaDbView @PSBoundParameters
         }
 
         foreach ($vw in $InputObject) {
 
             if ($Pscmdlet.ShouldProcess($vw.SqlInstance, "Removing the view $vw in the database $($vw.Parent.Name)")) {
                 try {
-                    $viewToDrop = $vw.Parent.Views | Where-Object { $_.Name -eq $vw.Name }
                     $viewToDrop.Drop()
                 } catch {
                     Stop-Function -Message "Failure on $($vw.SqlInstance) to drop the view $vw in the database $($vw.Parent.Name)" -ErrorRecord $_ -Continue
