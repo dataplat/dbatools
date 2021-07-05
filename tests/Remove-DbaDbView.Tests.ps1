@@ -26,30 +26,6 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     }
 
     Context "Functionality" {
-        It 'Removes user views' {
-            $null = $server.Query("CREATE VIEW $view1 (a) AS (SELECT @@VERSION );" , $dbname1)
-            $null = $server.Query("CREATE VIEW $view2 (b) AS (SELECT * from $view1);", $dbname1)
-            $result0 = Get-DbaDbView -SqlInstance $script:instance2 -Database $dbname1 -ExcludeSystemView
-            Remove-DbaDbView -SqlInstance $script:instance2 -Database $dbname1 -Confirm:$false
-            $result1 = Get-DbaDbView -SqlInstance $script:instance2 -Database $dbname1 -ExcludeSystemView
-
-            $result0.Count | Should BeGreaterThan $result1.Count
-            $result1.Name -contains $view1  | Should Be $false
-            $result1.Name -contains $view2  | Should Be $false
-        }
-
-        It 'Accepts a list of views' {
-            $null = $server.Query("CREATE VIEW $view1 (a) AS (SELECT @@VERSION );" , $dbname1)
-            $null = $server.Query("CREATE VIEW $view2 (b) AS (SELECT * from $view1);", $dbname1)
-            $result0 = Get-DbaDbView -SqlInstance $script:instance2 -Database $dbname1
-            Remove-DbaDbView -SqlInstance $script:instance2 -Database $dbname1 -View $view1 -Confirm:$false
-            $result1 = Get-DbaDbView -SqlInstance $script:instance2 -Database $dbname1
-
-            $result0.Count | Should BeGreaterThan $result1.Count
-            $result1.Name -contains $view1  | Should Be $false
-            $result1.Name -contains $view2  | Should Be $true
-        }
-
         It 'Accepts input from Get-DbaDbView' {
             $result0 = Get-DbaDbView -SqlInstance $script:instance2 -Database $dbname1 -View $view2
             $result0 | Remove-DbaDbView -Confirm:$false
