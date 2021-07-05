@@ -16,15 +16,6 @@ function Remove-DbaDbView {
 
         For MFA support, please use Connect-DbaInstance.
 
-    .PARAMETER Database
-        The database(s) to process. This list is auto-populated from the server. If unspecified, all databases will be processed.
-
-    .PARAMETER ExcludeDatabase
-        The database(s) to exclude. This list is auto-populated from the server.
-
-    .PARAMETER View
-        The view(s) to process. If unspecified, all views will be processed.
-
     .PARAMETER InputObject
         Enables piped input from Get-DbaDbView
 
@@ -51,22 +42,6 @@ function Remove-DbaDbView {
         https://dbatools.io/Remove-DbaDbView
 
     .EXAMPLE
-        PS C:\> Remove-DbaDbView -SqlInstance localhost -Database dbname -View view1, view2
-
-        Removes views view1 and view2 from the database dbname on the local default SQL Server instance.
-
-    .EXAMPLE
-        PS C:\> Remove-DbaDbView -SqlInstance localhost, sql2016 -Database db1, db2 -View view1, view2, view3
-
-        Removes view1, view2, view3 from db1 and db2 on the local and sql2016 SQL Server instances.
-
-    .EXAMPLE
-        PS C:\> $servers = Get-Content C:\servers.txt
-        PS C:\> $servers | Remove-DbaDbView -Database db1, db2 -View view1
-
-        Removes view1 from db1 and db2 on the servers in C:\servers.txt file.
-
-    .EXAMPLE
         PS C:\> $views = Get-DbaDbView -SqlInstance localhost, sql2016 -Database db1, db2 -View view1, view2, view3
         PS C:\> $views | Remove-DbaDbView
 
@@ -76,9 +51,6 @@ function Remove-DbaDbView {
     param (
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [object[]]$Database,
-        [object[]]$ExcludeDatabase,
-        [string[]]$View,
         [parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.View[]]$InputObject,
         [switch]$EnableException
