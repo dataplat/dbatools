@@ -189,7 +189,7 @@ function Repair-DbaInstanceName {
                 Write-Message -Level Warning -Message "Can't contact $instance using Get-Service. This means the script will not be able to automatically restart SQL services."
             }
 
-            if ($nametest.Warnings.length -gt 0) {
+            if ($nametest.Warnings -ne 'N/A') {
                 $reportingservice = Get-Service -ComputerName $instance.ComputerName -DisplayName "SQL Server Reporting Services ($instanceName)" -ErrorAction SilentlyContinue
 
                 if ($reportingservice.Status -eq "Running") {

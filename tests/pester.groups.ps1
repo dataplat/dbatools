@@ -17,7 +17,8 @@ $TestsRunGroups = @{
         'Update-DbaServiceAccount',
         'Enable-DbaAgHadr',
         'Disable-DbaAgHadr',
-        'Reset-DbaAdmin'
+        'Reset-DbaAdmin',
+        'Set-DbaTcpPort'
     )
     # do not run on appveyor
     "appveyor_disabled" = @(
@@ -55,6 +56,7 @@ $TestsRunGroups = @{
         'Test-DbaAgentJobOwner',
         'Stop-DbaXESession',
         'Get-DbaPrivilege',
+        'Get-DbaPermission',
         # strange pester issues
         'Find-DbaAgentJob',
         'Remove-DbaDatabaseSafely',

@@ -12,8 +12,33 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
         }
     }
 }
-<#
-    Integration test should appear below and are custom to the command you are writing.
-    Read https://github.com/sqlcollaborative/dbatools/blob/development/contributing.md#tests
-    for more guidence.
-#>
+Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
+    Context "Command actually works" {
+        $oldPort = (Get-DbaTcpPort -SqlInstance $script:instance2).Port
+        $newPort = $oldPort + 1000
+        $instance = [DbaInstance]$script:instance2
+        It "Should change the port" {
+            $result = Set-DbaTcpPort -SqlInstance $script:instance2 -Port $newPort -Confirm:$false
+            $result.Changes | Should -Match 'Changed TcpPort'
+            $result.RestartNeeded | Should -Be $true
+            $result.Restarted | Should -Be $false
+
+            $null = Restart-DbaService -ComputerName $instance.ComputerName -InstanceName $instance.InstanceName -Type Engine -Force
+
+            $setPort = (Get-DbaTcpPort -SqlInstance $script:instance2).Port
+            $setPort | Should -Be $newPort
+        }
+
+        It "Should change the port back to the old value" {
+            $result = Set-DbaTcpPort -SqlInstance $script:instance2 -Port $oldPort -Confirm:$false
+            $result.Changes | Should -Match 'Changed TcpPort'
+            $result.RestartNeeded | Should -Be $true
+            $result.Restarted | Should -Be $false
+
+            $null = Restart-DbaService -ComputerName $instance.ComputerName -InstanceName $instance.InstanceName -Type Engine -Force
+
+            $setPort = (Get-DbaTcpPort -SqlInstance $script:instance2).Port
+            $setPort | Should -Be $oldPort
+        }
+    }
+}

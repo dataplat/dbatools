@@ -17,6 +17,9 @@ function Get-DbaDbMirror {
 
         For MFA support, please use Connect-DbaInstance.
 
+    .PARAMETER Database
+        The name of the target databases
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -42,17 +45,23 @@ function Get-DbaDbMirror {
         PS C:\> Get-DbaDbMirror -SqlInstance localhost, sql2016
 
         Gets properties of database mirrors and mirror witnesses on localhost and sql2016 SQL Server instances
+
+    .EXAMPLE
+        PS C:\> Get-DbaDbMirror -SqlInstance localhost, sql2016 -Database mymirror
+
+        Gets properties of database mirrors and mirror witnesses on localhost and sql2016 SQL Server instances for databases named mymirror
     #>
     [CmdletBinding()]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
+        [string[]]$Database,
         [switch]$EnableException
     )
     process {
         foreach ($instance in $SqlInstance) {
-            $dbs = Get-DbaDatabase -SqlInstance $instance -SqlCredential $SqlCredential
+            $dbs = Get-DbaDatabase -SqlInstance $instance -SqlCredential $SqlCredential -Database $Database
             $partners = $dbs | Where-Object MirroringPartner
             $partners | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, Name, MirroringSafetyLevel, MirroringStatus, MirroringPartner, MirroringPartnerInstance, MirroringFailoverLogSequenceNumber, MirroringID, MirroringRedoQueueMaxSize, MirroringRoleSequence, MirroringSafetySequence, MirroringTimeout, MirroringWitness, MirroringWitnessStatus
 

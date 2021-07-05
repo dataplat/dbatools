@@ -242,16 +242,18 @@ function Copy-DbaRegServer {
             # Add Groups
             foreach ($fromSubGroup in $sourceGroup.ServerGroups) {
                 $fromSubGroupName = $fromSubGroup.Name
-                $toSubGroup = $destinationGroup.ServerGroups[$fromSubGroupName]
+                if ($Pscmdlet.ShouldProcess($destinstance, "Copying group $fromSubGroupName")) {
+                    $toSubGroup = $destinationGroup.ServerGroups[$fromSubGroupName]
 
-                $copyGroupStatus = [pscustomobject]@{
-                    SourceServer      = $sourceServer.Name
-                    DestinationServer = $destServer.Name
-                    Name              = $fromSubGroupName
-                    Type              = "CMS Group"
-                    Status            = $null
-                    Notes             = $null
-                    DateTime          = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
+                    $copyGroupStatus = [pscustomobject]@{
+                        SourceServer      = $sourceServer.Name
+                        DestinationServer = $destServer.Name
+                        Name              = $fromSubGroupName
+                        Type              = "CMS Group"
+                        Status            = $null
+                        Notes             = $null
+                        DateTime          = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
+                    }
                 }
 
                 if ($null -ne $toSubGroup) {

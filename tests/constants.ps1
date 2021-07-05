@@ -8,10 +8,25 @@ if (Test-Path "$PSScriptRoot\constants.local.ps1") {
     $script:instance3 = "dbatools3"
     $script:instances = @($script:instance1, $script:instance2)
 
-    $SqlCred = [PSCredential]::new('sa',(ConvertTo-SecureString $env:SA_PASSWORD -AsPlainText -Force))
+    $SqlCred = [PSCredential]::new('sa', (ConvertTo-SecureString $env:SA_PASSWORD -AsPlainText -Force))
     $PSDefaultParameterValues = @{
         "*:SqlCredential" = $sqlCred
     }
+} elseif ($env:GITHUB_WORKSPACE) {
+    $script:dbatoolsci_computer = "localhost"
+    $script:instance1 = "localhost"
+    $script:instance2 = "localhost:14333"
+    $script:instance2SQLUserName = $null # placeholders for -SqlCredential testing
+    $script:instance2SQLPassword = $null
+    $script:instance3 = "localhost"
+    $script:instance2_detailed = "localhost,14333" #Just to make sure things parse a port properly
+    $script:appveyorlabrepo = "/tmp/appveyor-lab"
+    $instances = @($script:instance1, $script:instance2)
+    $ssisserver = "localhost\sql2016"
+    $script:azureblob = "https://dbatools.blob.core.windows.net/sql"
+    $script:azureblobaccount = "dbatools"
+    $script:azureserver = 'psdbatools.database.windows.net'
+    $script:azuresqldblogin = "appveyor@clemairegmail.onmicrosoft.com"
 } else {
     $script:dbatoolsci_computer = "localhost"
     $script:instance1 = "localhost\sql2008r2sp2"

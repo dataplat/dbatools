@@ -154,12 +154,14 @@ function Copy-DbaCredential {
                     if (!$force) {
                         $copyCredentialStatus.Status = "Skipping"
                         $copyCredentialStatus.Notes = "Already exists on destination"
-                        $copyCredentialStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                        if ($Pscmdlet.ShouldProcess($destServer.Name, "Skipping $credentialName, already exists")) {
+                            $copyCredentialStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                        }
 
                         Write-Message -Level Verbose -Message "$credentialName exists $($destServer.Name). Skipping."
                         continue
                     } else {
-                        if ($Pscmdlet.ShouldProcess($destinstance.Name, "Dropping $identity")) {
+                        if ($Pscmdlet.ShouldProcess($destinstance.Name, "Dropping $credentialName")) {
                             $destServer.Credentials[$credentialName].Drop()
                             $destServer.Credentials.Refresh()
                         }
@@ -172,14 +174,13 @@ function Copy-DbaCredential {
                     $sqlcredentialName = $credentialName.Replace("'", "''")
                     $identity = $currentCred.Identity.Replace("'", "''")
                     $password = $currentCred.Password.Replace("'", "''")
-                    if ($Pscmdlet.ShouldProcess($destinstance.Name, "Copying $identity")) {
+                    if ($Pscmdlet.ShouldProcess($destinstance.Name, "Copying $identity ($credentialName)")) {
                         $destServer.Query("CREATE CREDENTIAL [$sqlcredentialName] WITH IDENTITY = N'$identity', SECRET = N'$password'")
                         $destServer.Credentials.Refresh()
                         Write-Message -Level Verbose -Message "$credentialName successfully copied"
+                        $copyCredentialStatus.Status = "Successful"
+                        $copyCredentialStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                     }
-
-                    $copyCredentialStatus.Status = "Successful"
-                    $copyCredentialStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                 } catch {
                     $copyCredentialStatus.Status = "Failed"
                     $copyCredentialStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject

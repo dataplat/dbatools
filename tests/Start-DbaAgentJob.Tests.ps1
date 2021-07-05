@@ -17,7 +17,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     Context "Start a job" {
         BeforeAll {
             $jobs = "dbatoolsci_job_$(Get-Random)", "dbatoolsci_job_$(Get-Random)", "dbatoolsci_job_$(Get-Random)"
-            $jobName1,$jobName2,$jobName3 = $jobs
+            $jobName1, $jobName2, $jobName3 = $jobs
             foreach ($job in $jobs) {
                 $null = New-DbaAgentJob -SqlInstance $script:instance2, $script:instance3 -Job $job
                 $null = New-DbaAgentJobStep -SqlInstance $script:instance2, $script:instance3 -Job $job -StepName "step1_$(Get-Random)" -Subsystem TransactSql -Command "WAITFOR DELAY '00:05:00'"

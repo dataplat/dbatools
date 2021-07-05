@@ -11,7 +11,7 @@
     RootModule             = 'dbatools.psm1'
 
     # Version number of this module.
-    ModuleVersion          = '1.0.156'
+    ModuleVersion          = '1.0.168'
 
     # ID used to uniquely identify this module
     GUID                   = '9d139310-ce45-41ce-8e8b-d76335aa1789'
@@ -192,11 +192,12 @@
         'Find-DbaDbGrowthEvent',
         'Test-DbaLinkedServerConnection',
         'Get-DbaDbFile',
+        'Get-DbaDbFileGrowth',
+        'Set-DbaDbFileGrowth',
         'Read-DbaTransactionLog',
         'Get-DbaDbTable',
         'Invoke-DbaDbShrink',
         'Get-DbaEstimatedCompletionTime',
-        'Get-DbaLinkedServer',
         'New-DbaAgentJob',
         'Get-DbaLogin',
         'New-DbaScriptingOption',
@@ -471,7 +472,7 @@
         'Get-DbatoolsChangeLog',
         'Get-DbaXESessionTargetFile',
         'Add-DbaDbRoleMember',
-        'Get-DbaDbFilegroup',
+        'Get-DbaDbFileGroup',
         'Get-DbaDbObjectTrigger',
         'Get-DbaDbRole',
         'New-DbaDbRole',
@@ -522,6 +523,9 @@
         'New-DbaDbFileGroup',
         'Remove-DbaDbFileGroup',
         'Set-DbaDbFileGroup',
+        'Get-DbaLinkedServer',
+        'Remove-DbaLinkedServer',
+        'Test-DbaAvailabilityGroup',
         # noncoresmo
         # SMO issues
         'Export-DbaUser',

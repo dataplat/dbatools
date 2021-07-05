@@ -457,6 +457,8 @@ $script:xplat = @(
     'Find-DbaDbGrowthEvent',
     'Test-DbaLinkedServerConnection',
     'Get-DbaDbFile',
+    'Get-DbaDbFileGrowth',
+    'Set-DbaDbFileGrowth',
     'Read-DbaTransactionLog',
     'Get-DbaDbTable',
     'Invoke-DbaDbShrink',
@@ -492,7 +494,6 @@ $script:xplat = @(
     'New-DbaServiceMasterKey',
     'Remove-DbaDbCertificate',
     'Remove-DbaDbMasterKey',
-    'New-DbaConnectionStringBuilder',
     'Get-DbaInstanceProperty',
     'Get-DbaInstanceUserOption',
     'New-DbaConnectionString',
@@ -799,11 +800,14 @@ $script:xplat = @(
     'Install-DbaDarlingData',
     'New-DbaDbFileGroup',
     'Remove-DbaDbFileGroup',
-    'Set-DbaDbFileGroup'
+    'Set-DbaDbFileGroup',
+    'Remove-DbaLinkedServer',
+    'Test-DbaAvailabilityGroup'
 )
 
 $script:noncoresmo = @(
     # SMO issues
+    'New-DbaConnectionStringBuilder',
     'Export-DbaUser',
     'Get-DbaSsisExecutionHistory',
     'Get-DbaRepDistributor',

@@ -368,15 +368,6 @@ function Write-DbaDbTableData {
 
         #endregion Utility Functions
 
-        #region Connect to server
-        try {
-            $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
-        } catch {
-            Stop-Function -Message "Error occurred while establishing connection to $SqlInstance" -Category ConnectionError -ErrorRecord $_ -Target $SqlInstance
-            return
-        }
-        #endregion Connect to server
-
         #region Prepare type for bulk copy
         if (-not $Truncate) { $ConfirmPreference = "None" }
 
@@ -385,7 +376,7 @@ function Write-DbaDbTableData {
         #region Resolve Full Qualified Table Name
         $fqtnObj = Get-ObjectNameParts -ObjectName $Table
 
-        if ($fqtnObj.$parsed) {
+        if (-not $fqtnObj.Parsed) {
             Stop-Function -Message "Unable to parse $($fqtnObj.InputValue) as a valid tablename."
             return
         }
@@ -418,7 +409,22 @@ function Write-DbaDbTableData {
 
         $tableName = $fqtnObj.Name
 
+        if ($tableName.StartsWith('#')) {
+            Write-Message -Level Verbose -Message "The table $tableName should be in tempdb.dbo so we ignore input database and schema."
+            $databaseName = 'tempdb'
+            $schemaName = 'dbo'
+        }
+
         $quotedFQTN = New-Object System.Text.StringBuilder
+
+        #region Connect to server
+        try {
+            $server = Connect-DbaInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $databaseName -NonPooledConnection
+        } catch {
+            Stop-Function -Message "Error occurred while establishing connection to $SqlInstance" -Category ConnectionError -ErrorRecord $_ -Target $SqlInstance
+            return
+        }
+        #endregion Connect to server
 
         if ($server.ServerType -ne 'SqlAzureDatabase') {
             <#
@@ -484,8 +490,18 @@ function Write-DbaDbTableData {
                 return
             }
 
-            $targetTable = $databaseObject.Tables | Where-Object { $_.Name -eq $tableName -and $_.Schema -eq $schemaName }
-            $tableExists = $targetTable.Count -eq 1
+            if ($tableName.StartsWith('#')) {
+                try {
+                    Write-Message -Level Verbose -Message "The table $tableName should be in tempdb and we try to find it."
+                    $null = $databaseObject.Query("SELECT TOP(1) 1 FROM [$tableName]")
+                    $tableExists = $true
+                } catch {
+                    $tableExists = $false
+                }
+            } else {
+                $targetTable = $databaseObject.Tables | Where-Object { $_.Name -eq $tableName -and $_.Schema -eq $schemaName }
+                $tableExists = $targetTable.Count -eq 1
+            }
         } catch {
             Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
         }
@@ -518,8 +534,8 @@ function Write-DbaDbTableData {
                 }
             }
         }
-        # Create SqlBulkCopy object - Database name needs to be appended as not set in $server.ConnectionContext
-        $bulkCopy = New-Object Data.SqlClient.SqlBulkCopy("$($server.ConnectionContext.ConnectionString);Database=$databaseName", $bulkCopyOptions)
+        Write-Message -Level Verbose -Message "Creating SqlBulkCopy object"
+        $bulkCopy = New-Object Data.SqlClient.SqlBulkCopy($server.ConnectionContext.SqlConnectionObject, $bulkCopyOptions, $null)
 
         $bulkCopy.DestinationTableName = $fqtn
         $bulkCopy.BatchSize = $BatchSize
@@ -676,6 +692,7 @@ function Write-DbaDbTableData {
         }
     }
     end {
+        if (Test-FunctionInterrupt) { return }
         #region ConvertTo-DbaDataTable wrapper
         $dataTable = $steppablePipeline.End()
         if ($dataTable[0].Rows.Count -gt 0) {
