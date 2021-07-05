@@ -90,15 +90,15 @@ function Remove-DbaDbView {
         foreach ($viewItem in $views) {
             if ($PSCmdlet.ShouldProcess($viewItem.Parent.Parent.Name, "Removing the view $($viewItem.Schema).$($viewItem.Name) in the database $($viewItem.Parent.Name) on $($viewItem.Parent.Parent.Name)")) {
                 $output = [pscustomobject]@{
-                    ComputerName   = $viewItem.Parent.Parent.ComputerName
-                    InstanceName   = $viewItem.Parent.Parent.ServiceName
-                    SqlInstance    = $viewItem.Parent.Parent.DomainInstanceName
-                    Database       = $viewItem.Parent.Name
-                    View           = "$($viewItem.Schema).$($viewItem.Name)"
-                    ViewName       = $viewItem.Name
-                    ViewSchema     = $viewItem.Schema
-                    Status         = $null
-                    IsRemoved      = $false
+                    ComputerName = $viewItem.Parent.Parent.ComputerName
+                    InstanceName = $viewItem.Parent.Parent.ServiceName
+                    SqlInstance  = $viewItem.Parent.Parent.DomainInstanceName
+                    Database     = $viewItem.Parent.Name
+                    View         = "$($viewItem.Schema).$($viewItem.Name)"
+                    ViewName     = $viewItem.Name
+                    ViewSchema   = $viewItem.Schema
+                    Status       = $null
+                    IsRemoved    = $false
                 }
                 try {
                     $viewItem.Drop()
