@@ -134,7 +134,7 @@ function Repair-DbaDbOrphanUser {
 
                         Write-Message -Level Verbose -Message "Validating users on database '$db'."
 
-                        $UsersToWork = (Get-DbaDbOrphanUser -SqlInstance $server -Database $db.Name).SMOUser
+                        $UsersToWork = (Get-DbaDbOrphanUser -SqlInstance $server -Database $db.Name).SmoUser
                         if ($Users.Count -gt 0) {
                             $UsersToWork = $UsersToWork | Where-Object { $Users -contains $_.Name }
                         }

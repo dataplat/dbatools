@@ -102,7 +102,7 @@ function Get-DbaDbOrphanUser {
                                     SqlInstance  = $server.DomainInstanceName
                                     DatabaseName = $db.Name
                                     User         = $user.Name
-                                    SMOUser      = $user
+                                    SmoUser      = $user
                                 } | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, DatabaseName, User
                             }
                         } else {

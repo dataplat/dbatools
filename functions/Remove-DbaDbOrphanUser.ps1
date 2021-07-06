@@ -152,7 +152,7 @@ function Remove-DbaDbOrphanUser {
                         } else {
                             Write-Message -Level Verbose -Message "Validating users on database $db."
 
-                            $users = (Get-DbaDbOrphanUser -SqlInstance $server -Database $db.Name).SMOUser
+                            $users = (Get-DbaDbOrphanUser -SqlInstance $server -Database $db.Name).SmoUser
                             if ($User.Count -gt 0) {
                                 $users = $users | Where-Object { $User -contains $_.Name }
                             }

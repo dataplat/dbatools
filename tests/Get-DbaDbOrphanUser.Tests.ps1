@@ -53,7 +53,7 @@ CREATE USER [dbatoolsci_orphan3] FROM LOGIN [dbatoolsci_orphan3];
     }
     It "has the correct properties" {
         $result = $results[0]
-        $ExpectedProps = 'ComputerName,InstanceName,SqlInstance,DatabaseName,User,SMOUser'.Split(',')
+        $ExpectedProps = 'ComputerName,InstanceName,SqlInstance,DatabaseName,User,SmoUser'.Split(',')
         ($result.PsObject.Properties.Name | Sort-Object) | Should Be ($ExpectedProps | Sort-Object)
     }
 }
