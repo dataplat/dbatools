@@ -60,7 +60,9 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 
     It "Removes Orphan Users" {
         $results0 = Get-DbaDbUser -SqlInstance $script:instance2 -Database $dbname, msdb
+
         $null = Remove-DbaDbOrphanUser -SqlInstance $script:instance2
+        $results1 = Get-DbaDbUser -SqlInstance $script:instance2 -Database $dbname, msdb
 
         $results0.Name -contains $login1 | Should Be $true
         $results0.Name -contains $login2 | Should Be $true
