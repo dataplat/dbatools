@@ -11,7 +11,7 @@
     RootModule             = 'dbatools.psm1'
 
     # Version number of this module.
-    ModuleVersion          = '1.0.163'
+    ModuleVersion          = '1.0.169'
 
     # ID used to uniquely identify this module
     GUID                   = '9d139310-ce45-41ce-8e8b-d76335aa1789'
@@ -192,6 +192,8 @@
         'Find-DbaDbGrowthEvent',
         'Test-DbaLinkedServerConnection',
         'Get-DbaDbFile',
+        'Get-DbaDbFileGrowth',
+        'Set-DbaDbFileGrowth',
         'Read-DbaTransactionLog',
         'Get-DbaDbTable',
         'Invoke-DbaDbShrink',
@@ -245,6 +247,7 @@
         'Get-DbaDbMailLog',
         'Get-DbaDbMailHistory',
         'Get-DbaDbView',
+        'Remove-DbaDbView',
         'Get-DbaDbUdf',
         'Get-DbaDbPartitionFunction',
         'Get-DbaDbPartitionScheme',
@@ -470,7 +473,7 @@
         'Get-DbatoolsChangeLog',
         'Get-DbaXESessionTargetFile',
         'Add-DbaDbRoleMember',
-        'Get-DbaDbFilegroup',
+        'Get-DbaDbFileGroup',
         'Get-DbaDbObjectTrigger',
         'Get-DbaDbRole',
         'New-DbaDbRole',

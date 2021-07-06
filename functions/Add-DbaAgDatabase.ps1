@@ -193,6 +193,7 @@ function Add-DbaAgDatabase {
                 Write-Progress @progress
                 $testSplat = @{
                     SqlInstance            = $SqlInstance
+                    SqlCredential          = $SqlCredential
                     Secondary              = $Secondary
                     SecondarySqlCredential = $SecondarySqlCredential
                     AvailabilityGroup      = $AvailabilityGroup
@@ -404,7 +405,7 @@ function Add-DbaAgDatabase {
                     }
 
                     # With automatic seeding, .JoinAvailablityGroup() is not needed, just wait for the magic to happen
-                    if ($ag.AvailabilityReplicas[$replicaName].SeedingMode -eq 'Manual') {
+                    if ($ag.AvailabilityReplicas[$replicaName].SeedingMode -ne 'Automatic') {
                         try {
                             $progress['CurrentOperation'] = "Joining database $($db.Name) on replica $replicaName."
                             Write-Message -Level Verbose -Message $progress['CurrentOperation']

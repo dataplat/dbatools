@@ -202,6 +202,8 @@ function Get-DbaRandomizedValue {
                         $Max = 9223372036854775807
                         Write-Message -Level Verbose -Message "Max value for data type is empty or too big. Reset to $Max"
                     }
+
+                    $script:faker.Random.Long($Min, $Max)
                 }
 
                 { $psitem -in 'bit', 'bool' } {

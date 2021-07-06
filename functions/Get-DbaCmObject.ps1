@@ -431,10 +431,10 @@ function Get-DbaCmObject {
                             $parameters = @{
                                 ScriptBlock  = ([System.Management.Automation.ScriptBlock]::Create($scp_string))
                                 ComputerName = $ComputerName
-                                ErrorAction  = 'Stop'
+                                Raw          = $true
                             }
                             if ($Credential) { $parameters["Credential"] = $Credential }
-                            Invoke-Command @parameters
+                            Invoke-Command2 @parameters
 
                             Write-Message -Level Verbose -Message "[$computer] Accessing computer using PowerShell Remoting - Success"
                             $connection.ReportSuccess('PowerShellRemoting')

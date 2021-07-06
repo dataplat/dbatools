@@ -1,0 +1,58 @@
+name: Run Cross Platform Tests
+on: [push]
+defaults:
+  run:
+    shell: pwsh
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name:  Setup docker images
+        run: |
+          # create a shared network
+          docker network create localnet
+          # create a shared volume
+          docker volume create shared
+          # setup two containers and expose ports
+          docker run -p 1433:1433 -p 5022:5022 --network localnet --hostname dockersql1 --name dockersql1 --mount 'source=shared,target=/shared' -d dbatools/sqlinstance
+          docker run -p 14333:1433 -p 5023:5023  --network localnet --hostname dockersql2 --name dockersql2 --mount 'source=shared,target=/shared' -d dbatools/sqlinstance2
+
+      - name: 👥 Clone appveyor repo
+        working-directory: /tmp
+        run: |
+          gh repo clone sqlcollaborative/appveyor-lab
+
+      - name: Run tests
+        run: |
+          Import-Module ./dbatools.psm1 -Force
+          $commands = Get-XPlatVariable | Where-Object { $PSItem -notmatch "Copy-","Migration" } | Sort-Object
+          $password = ConvertTo-SecureString "dbatools.IO" -AsPlainText -Force
+          $cred = New-Object -TypeName System.Management.Automation.PSCredential -ArgumentList "sqladmin", $password
+          $PSDefaultParameterValues["*:SqlCredential"] = $cred
+          $PSDefaultParameterValues["*:SourceSqlCredential"] = $cred
+          $PSDefaultParameterValues["*:DestinationSqlCredential"] = $cred
+          $PSDefaultParameterValues["*:PrimarySqlCredential"] = $cred
+          $PSDefaultParameterValues["*:MirrorSqlCredential"] = $cred
+          $PSDefaultParameterValues["*:WitnessSqlCredential"] = $cred
+
+          # test migration
+          $params = @{
+            Source        = "localhost"
+            Destination   = "localhost:14333"
+            BackupRestore = $true
+            SharedPath    = "/shared"
+            Exclude       = "LinkedServers", "Credentials"
+            ErrorAction   = "Stop"
+          }
+          #Start-DbaMigration @params
+
+          # Test Mirroring
+          $newdb = New-DbaDatabase -SqlInstance localhost
+          $null = Invoke-DbaDbMirroring -Primary localhost -Mirror localhost:14333 -Database $newdb.Name -Confirm:$false -Force -SharedPath /shared -WarningAction SilentlyContinue
+          #$error | select *
+          Get-DbaDbMirror -SqlInstance localhost

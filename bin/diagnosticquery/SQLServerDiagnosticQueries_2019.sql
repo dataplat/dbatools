@@ -1,7 +1,7 @@
 
 -- SQL Server 2019 Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: June 17, 2021
+-- Last Modified: July 5, 2021
 -- https://glennsqlperformance.com/ 
 -- https://sqlserverperformance.wordpress.com/
 -- YouTube: https://bit.ly/2PkoAM1 
@@ -836,7 +836,7 @@ ORDER BY db.[name] OPTION (RECOMPILE);
 -- What compatibility level are the databases on? 
 -- What is the Page Verify Option? (should be CHECKSUM)
 -- Is Auto Update Statistics Asynchronously enabled?
--- What is target_recovery_time_in_seconds?
+-- What is target_recovery_time_in_seconds? (should be 60 for user databases)
 -- Is Delayed Durability enabled?
 -- Make sure auto_shrink and auto_close are not enabled!
 
