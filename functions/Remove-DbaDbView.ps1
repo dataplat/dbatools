@@ -7,7 +7,7 @@ function Remove-DbaDbView {
         Removes a database view(s), with supported piping from Get-DbaDbView.
 
     .PARAMETER SqlInstance
-        The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.
+        The target SQL Server instance or instances.
 
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
@@ -47,6 +47,11 @@ function Remove-DbaDbView {
 
     .LINK
         https://dbatools.io/Remove-DbaDbView
+
+    .EXAMPLE
+        PS C:\> Remove-DbaDbView -SqlInstance localhost, sql2016 -Database db1, db2 -View view1, view2, view3
+
+        Removes view1, view2, view3 from db1 and db2 on the local and sql2016 SQL Server instances.
 
     .EXAMPLE
         PS C:\> $views = Get-DbaDbView -SqlInstance localhost, sql2016 -Database db1, db2 -View view1, view2, view3

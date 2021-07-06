@@ -28,7 +28,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     }
 
     AfterAll {
-        $null = $dbname1 | Remove-DbaDatabase -Confirm:$false
+        $null = Remove-DbaDatabase -SqlInstance $instance2 -Name $dbname1 -Confirm:$false
     }
 
     Context "commands work as expected" {
