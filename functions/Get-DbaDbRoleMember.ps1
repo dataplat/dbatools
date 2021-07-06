@@ -162,8 +162,8 @@ function Get-DbaDbRoleMember {
                             Role         = $dbRole.Name
                             UserName     = $user.Name
                             Login        = $user.Login
-                            SMORole      = $dbRole
-                            SMOUser      = $user
+                            SmoRole      = $dbRole
+                            SmoUser      = $user
                         }
                     }
                 }
