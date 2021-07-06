@@ -80,12 +80,11 @@ $scriptBlock = {
                 $root = New-Item $path -ItemType Directory -Force -ErrorAction Stop
             } else { $root = Get-Item -Path $path }
 
-            try { [int]$num_Error = (Get-ChildItem -Path $root.FullName -Filter "dbatools_$($pid)_error_*.xml" | Sort-Object LastWriteTime -Descending | Select-Object -First 1 -ExpandProperty Name | Select-String -Pattern "(\d+)" -AllMatches).Matches[1].Value }
-            catch { }
-            try { [int]$num_Message = (Get-ChildItem -Path $root.FullName -Filter "dbatools_$($pid)_message_*.log" | Sort-Object LastWriteTime -Descending | Select-Object -First 1 -ExpandProperty Name | Select-String -Pattern "(\d+)" -AllMatches).Matches[1].Value }
-            catch { }
-            if (-not ($num_Error)) { $num_Error = 0 }
-            if (-not ($num_Message)) { $num_Message = 0 }
+            $errorFiles = Get-ChildItem -Path $root.FullName -Filter "dbatools_$($pid)_error_*.xml" | Sort-Object LastWriteTime -Descending
+            [int]$num_Error = if ($errorFiles) { (Select-String -InputObject $errorFiles[0].Name -Pattern "(\d+)" -AllMatches).Matches[1].Value } else { 0 }
+
+            $messageFiles = Get-ChildItem -Path $root.FullName -Filter "dbatools_$($pid)_message_*.xml" | Sort-Object LastWriteTime -Descending
+            [int]$num_Message = if ($messageFiles) { (Select-String -InputObject $messageFiles[0].Name -Pattern "(\d+)" -AllMatches).Matches[1].Value } else { 0 }
 
             #region Process Errors
             while ([Sqlcollaborative.Dbatools.Message.LogHost]::OutQueueError.Count -gt 0) {
