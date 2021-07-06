@@ -247,6 +247,7 @@
         'Get-DbaDbMailLog',
         'Get-DbaDbMailHistory',
         'Get-DbaDbView',
+        'Remove-DbaDbView',
         'Get-DbaDbUdf',
         'Get-DbaDbPartitionFunction',
         'Get-DbaDbPartitionScheme',
