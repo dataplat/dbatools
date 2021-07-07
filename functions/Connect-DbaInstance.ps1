@@ -448,6 +448,19 @@ function Connect-DbaInstance {
     }
     process {
         if (Test-FunctionInterrupt) { return }
+        if ($Tenant -and -not $AccessToken) {
+            Write-Message -Level Verbose "Tenant detected, switching to experimental code path"
+            try {
+                Set-DbatoolsConfig -FullName sql.connection.experimental -Value $true
+                $AccessToken = (New-DbaAzAccessToken -Type RenewableServicePrincipal -Subtype AzureSqlDb -Tenant $Tenant -Credential $SqlCredential -EnableException).GetAccessToken()
+                $PSBoundParameters.Tenant = $Tenant = $null
+                $PSBoundParameters.SqlCredential = $SqlCredential = $null
+                $PSBoundParameters.AccessToken = $AccessToken
+            } catch {
+                Stop-Function -Message "Failed to get access token for Azure SQL DB" -ErrorRecord $_
+                return
+            }
+        }
 
         Write-Message -Level Debug -Message "Starting process block"
         foreach ($instance in $SqlInstance) {
