@@ -92,7 +92,7 @@ function Invoke-Command2 {
                 Authentication = $Authentication
                 Name           = $sessionName
                 ErrorAction    = 'Stop'
-                UseSSL         = (Get-DbatoolsConfigValue -FullName 'PSRemoting.PsSession.UseSSL' -Fallback $false)
+                UseSSL         = $UseSSL
             }
             if (Test-Windows -NoWarn) {
                 $psSessionOptionsSplat = @{
