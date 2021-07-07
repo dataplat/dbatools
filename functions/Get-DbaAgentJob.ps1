@@ -149,17 +149,20 @@ function Get-DbaAgentJob {
             }
 
             foreach ($agentJob in $jobs) {
+                $defaults = 'ComputerName', 'InstanceName', 'SqlInstance', 'Name', 'StartDate', 'Category', 'OwnerLoginName', 'CurrentRunStatus', 'CurrentRunRetryAttempt', 'Enabled', 'LastRunDate', 'LastRunOutcome', 'HasSchedule', 'OperatorToEmail', 'CreateDate'
+
                 $currentJobId = $agentJob.JobId
                 if ($currentJobId -in $jobExecutionResults.JobId) {
                     $agentJobStartDate = [DbaDateTime]($jobExecutionResults | Where-Object JobId -eq $currentJobId).StartDate
                     Add-Member -Force -InputObject $agentJob -MemberType NoteProperty -Name StartDate -Value $agentJobStartDate
+                    $defaults += 'StartDate'
                 }
 
                 Add-Member -Force -InputObject $agentJob -MemberType NoteProperty -Name ComputerName -value $agentJob.Parent.Parent.ComputerName
                 Add-Member -Force -InputObject $agentJob -MemberType NoteProperty -Name InstanceName -value $agentJob.Parent.Parent.ServiceName
                 Add-Member -Force -InputObject $agentJob -MemberType NoteProperty -Name SqlInstance -value $agentJob.Parent.Parent.DomainInstanceName
 
-                Select-DefaultView -InputObject $agentJob -Property ComputerName, InstanceName, SqlInstance, Name, Category, OwnerLoginName, CurrentRunStatus, CurrentRunRetryAttempt, 'IsEnabled as Enabled', LastRunDate, LastRunOutcome, HasSchedule, OperatorToEmail, 'DateCreated as CreateDate'
+                Select-DefaultView -InputObject $agentJob -Property $defaults
             }
         }
     }
