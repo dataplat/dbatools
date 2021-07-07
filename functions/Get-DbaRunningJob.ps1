@@ -61,11 +61,9 @@ function Get-DbaRunningJob {
         [switch]$EnableException
     )
     process {
-        $defaults = 'ComputerName', 'InstanceName', 'SqlInstance', 'Name', 'StartDate', 'Category', 'OwnerLoginName', 'CurrentRunStatus', 'CurrentRunRetryAttempt', 'Enabled', 'LastRunDate', 'LastRunOutcome', 'HasSchedule', 'OperatorToEmail', 'CreateDate'
-
         if ($SqlInstance) {
-            Get-DbaAgentJob -SqlInstance $SqlInstance -SqlCredential $SqlCredential -IncludeExecution | Where-Object CurrentRunStatus -ne 'Idle' | Select-Object -Property $defaults
+            Get-DbaAgentJob -SqlInstance $SqlInstance -SqlCredential $SqlCredential -IncludeExecution | Where-Object CurrentRunStatus -ne 'Idle'
         }
-        $InputObject | Where-Object CurrentRunStatus -ne 'Idle' | Select-Object -Property $defaults
+        $InputObject | Where-Object CurrentRunStatus -ne 'Idle'
     }
 }
