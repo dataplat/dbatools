@@ -2,7 +2,7 @@
 name: "\U0001F41B Bug report"
 about: Found errors or unexpected behavior using dbatools module
 title: "[Bug]"
-labels: bugs_life
+labels: bugs_life, triage-required
 assignees: ''
 
 ---
