@@ -217,12 +217,10 @@ function Set-DbaAgentSchedule {
             # If the FrequencyInterval is set for the daily FrequencyType
             if ($FrequencyType -in 4, 'Daily') {
                 # Create the interval to hold the value(s)
-                [int]$Interval = 0
+                [int]$interval = 1
 
-                # Create the interval to hold the value(s)
-                switch ($FrequencyInterval) {
-                    "EveryDay" { $Interval = 1 }
-                    default { $Interval = 1 }
+                if ($FrequencyInterval -and $FrequencyInterval[0].GetType().Name -eq 'Int32') {
+                    $interval = $FrequencyInterval[0]
                 }
             }
 
@@ -266,8 +264,6 @@ function Set-DbaAgentSchedule {
                         { [int]$_ -ge 1 -and [int]$_ -le 31 } { $interval = [int]$item }
                     }
                 }
-
-
             }
 
             # If the FrequencyInterval is set for the relative monthly FrequencyInterval
