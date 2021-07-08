@@ -219,7 +219,7 @@ function New-DbaAgentSchedule {
         }
 
         # Check if the interval is valid
-        if (($FrequencyType -in 4, "Daily") -and (($FrequencyInterval -lt 1 -or $FrequencyInterval -ge 365) -and -not $FrequencyInterval -eq "EveryDay")) {
+        if (($FrequencyType -in 4, "Daily") -and (($FrequencyInterval -lt 1 -or $FrequencyInterval -ge 365) -and -not $FrequencyInterval -eq "EveryDay") -and -not $Force) {
             Stop-Function -Message "The frequency interval $FrequencyInterval requires a frequency interval to be between 1 and 365." -Target $SqlInstance
             return
         }
@@ -247,14 +247,11 @@ function New-DbaAgentSchedule {
         # If the FrequencyInterval is set for the daily FrequencyType
         if ($FrequencyType -in 4, 'Daily') {
             # Create the interval to hold the value(s)
-            [int]$interval = 0
+            [int]$interval = 1
 
-            # Create the interval to hold the value(s)
-            switch ($FrequencyInterval) {
-                "EveryDay" { $interval = 1 }
-                default { $interval = 1 }
+            if ($FrequencyInterval -and $FrequencyInterval[0].GetType().Name -eq 'Int32') {
+                $interval = $FrequencyInterval[0]
             }
-
         }
 
         # If the FrequencyInterval is set for the weekly FrequencyType
@@ -302,8 +299,6 @@ function New-DbaAgentSchedule {
                     { [int]$_ -ge 1 -and [int]$_ -le 31 } { $interval = [int]$item }
                 }
             }
-
-
         }
 
         # If the FrequencyInterval is set for the relative monthly FrequencyInterval
