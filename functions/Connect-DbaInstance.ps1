@@ -448,7 +448,7 @@ function Connect-DbaInstance {
     }
     process {
         if (Test-FunctionInterrupt) { return }
-        if ($Tenant -and -not $AccessToken) {
+        if ($Tenant -and -not $AccessToken -and $SqlCredential.UserName -match '^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$') {
             Write-Message -Level Verbose "Tenant detected, switching to experimental code path"
             try {
                 Set-DbatoolsConfig -FullName sql.connection.experimental -Value $true
