@@ -1,0 +1,31 @@
+name: Feature Request - New Command
+description: File a feature report for a new command or functionalty
+labels: [feature, new-command, triage-required]
+body:
+  - type: markdown
+    id: intro-md
+    attributes:
+      value: |
+        Thanks for taking the time to fill out this feature request! dbatools is testing out a beta of the [new Issues Forms](https://github.blog/changelog/2021-06-23-whats-new-with-github-issues/).
+        Feature request will be reviewed by the maintainers and if accepted will be labeled to indicate.
+  - type: textarea
+    attributes:
+      label: "Summarize Command's Functionality'"
+      description: "Please provide a clear/concise description of what problem this command will solve."
+    validations:
+      required: true
+  - type: dropdown
+    id: existing-command
+    attributes:
+      label: "Is there a command that is similiar or close to what you are looking for?"
+      options:
+        - "Yes"
+        - "No"
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: "Technical Details"
+      description: "Provide links to concepts, example code or write-ups of the desired functionality."
+    validations:
+      required: false
