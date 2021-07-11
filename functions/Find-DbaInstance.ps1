@@ -1023,7 +1023,7 @@ function Find-DbaInstance {
                 if ($DiscoveryType -band ([Sqlcollaborative.Dbatools.Discovery.DbaInstanceDiscoveryType]::DataSourceEnumeration)) {
                     try {
                         # Discover instances
-                        foreach ($instance in ([System.Data.Sql.SqlDataSourceEnumerator]::Instance.GetDataSources())) {
+                        foreach ($instance in ([Microsoft.Data.Sql.SqlDataSourceEnumerator]::Instance.GetDataSources())) {
                             if ($instance.InstanceName -ne [System.DBNull]::Value) {
                                 $steppablePipeline.Process("$($instance.Servername)\$($instance.InstanceName)")
                             } else {

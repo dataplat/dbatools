@@ -69,8 +69,6 @@ $scriptBlock = {
             'Microsoft.SqlServer.SqlWmiManagement',
             'Microsoft.SqlServer.Management.RegisteredServers',
             'Microsoft.SqlServer.Management.Collector',
-            'Microsoft.SqlServer.ConnectionInfoExtended',
-            'Microsoft.SqlServer.Management.IntegrationServices',
             'Microsoft.SqlServer.SqlClrProvider',
             'Microsoft.SqlServer.SqlTDiagm',
             'Microsoft.SqlServer.SString',
@@ -100,6 +98,9 @@ $scriptBlock = {
         $null = try {
             Import-Module $assemblyPath
         } catch {
+            #Write-Warning $assemblyPath
+            #Write-Warning "$psitem"
+            #Write-Warning "~~~~~~~~~~~~~~~~~~~`n`n"
             try {
                 [Reflection.Assembly]::LoadFrom($assemblyPath)
             } catch {
@@ -119,6 +120,9 @@ $scriptBlock = {
         $null = try {
             Import-Module $assemblyPath
         } catch {
+            #Write-Warning $assemblyPath
+            #Write-Warning "$psitem"
+            #Write-Warning "~~~~~~~~~~~~~~~~~~~`n`n"
             try {
                 [Reflection.Assembly]::LoadFrom($assemblyPath)
             } catch {

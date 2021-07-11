@@ -124,7 +124,7 @@ function New-DbaDacProfile {
         }
 
         function Get-ServerName ($connString) {
-            $builder = New-Object System.Data.Common.DbConnectionStringBuilder
+            $builder = New-Object Microsoft.Data.Common.DbConnectionStringBuilder
             $builder.set_ConnectionString($connString)
             $instance = $builder['data source']
 

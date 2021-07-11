@@ -134,9 +134,9 @@ function Reset-DbaAdmin {
             )
             try {
                 $connstring = "Data Source=$instance;Integrated Security=True;Connect Timeout=20;Application Name=Reset-DbaAdmin"
-                $conn = New-Object System.Data.SqlClient.SqlConnection $connstring
+                $conn = New-Object Microsoft.Data.SqlClient.SqlConnection $connstring
                 $conn.Open()
-                $cmd = New-Object system.data.sqlclient.sqlcommand($null, $conn)
+                $cmd = New-Object Microsoft.Data.sqlclient.sqlcommand($null, $conn)
                 $cmd.CommandText = $sql
                 $cmd.ExecuteNonQuery() | Out-Null
                 $cmd.Dispose()

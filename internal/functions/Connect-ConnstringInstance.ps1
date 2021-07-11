@@ -55,7 +55,7 @@ function Connect-ConnstringInstance {
         }
         # Build connection string
         $connstring = New-DbaConnectionString @boundparams -ClientName "dbatools PowerShell module - dbatools.io"
-        $sqlconn = New-Object System.Data.SqlClient.SqlConnection $connstring
+        $sqlconn = New-Object Microsoft.Data.SqlClient.SqlConnection $connstring
         $serverconn = New-Object Microsoft.SqlServer.Management.Common.ServerConnection $sqlconn
         $null = $serverconn.Connect()
         New-Object Microsoft.SqlServer.Management.Smo.Server $serverconn

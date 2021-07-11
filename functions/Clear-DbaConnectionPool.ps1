@@ -60,16 +60,16 @@ function Clear-DbaConnectionPool {
                 if (-not $computer.IsLocalhost) {
                     Write-Message -Level Verbose -Message "Clearing all pools on remote computer $computer"
                     if (Test-Bound 'Credential') {
-                        Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock { [System.Data.SqlClient.SqlConnection]::ClearAllPools() }
+                        Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock { [Microsoft.Data.SqlClient.SqlConnection]::ClearAllPools() }
                     } else {
-                        Invoke-Command2 -ComputerName $computer -ScriptBlock { [System.Data.SqlClient.SqlConnection]::ClearAllPools() }
+                        Invoke-Command2 -ComputerName $computer -ScriptBlock { [Microsoft.Data.SqlClient.SqlConnection]::ClearAllPools() }
                     }
                 } else {
                     Write-Message -Level Verbose -Message "Clearing all local pools"
                     if (Test-Bound 'Credential') {
-                        Invoke-Command2 -Credential $Credential -ScriptBlock { [System.Data.SqlClient.SqlConnection]::ClearAllPools() }
+                        Invoke-Command2 -Credential $Credential -ScriptBlock { [Microsoft.Data.SqlClient.SqlConnection]::ClearAllPools() }
                     } else {
-                        Invoke-Command2 -ScriptBlock { [System.Data.SqlClient.SqlConnection]::ClearAllPools() }
+                        Invoke-Command2 -ScriptBlock { [Microsoft.Data.SqlClient.SqlConnection]::ClearAllPools() }
                     }
                 }
             } catch {
