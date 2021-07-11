@@ -612,7 +612,7 @@ function Connect-DbaInstance {
                         $copyContext = $true
                     }
                     if ($ApplicationIntent -and $inputObject.ConnectionContext.ApplicationIntent -ne $ApplicationIntent) {
-                        Write-Message -Level Verbose -Message "Parameter ApplicationIntent passed in, and it's not the same as currently in ConnectionContext.ApplicationIntent, so we copy the connection context and set the ApplicationIntent"
+                        Write-Message -Level Verbose -Message "ApplicationIntent provided. Does not match ConnectionContext.ApplicationIntent, copying ConnectionContext and setting the ApplicationIntent"
                         $copyContext = $true
                     }
                     if ($NonPooledConnection -and -not $inputObject.ConnectionContext.NonPooledConnection) {
