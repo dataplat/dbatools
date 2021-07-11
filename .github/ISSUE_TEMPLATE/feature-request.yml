@@ -10,7 +10,7 @@ body:
         Feature request will be reviewed by the maintainers and if accepted will be labeled to indicate.
   - type: textarea
     attributes:
-      label: "Summarize Functionality'"
+      label: "Summarize Functionality"
       description: "Please provide a clear/concise description of what problem this feature will solve."
     validations:
       required: true
