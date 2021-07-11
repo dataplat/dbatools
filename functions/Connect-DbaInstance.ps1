@@ -608,8 +608,8 @@ function Connect-DbaInstance {
                         Write-Message -Level Verbose -Message "Parameter Database passed in, and it's not the same as currently in ConnectionContext.CurrentDatabase, so we copy the connection context and set the CurrentDatabase"
                         $copyContext = $true
                     }
-                    if ($ApplicationIntent) {
-                        Write-Message -Level Verbose -Message "Parameter ApplicationIntent passed in, so we copy the connection context and set the ApplicationIntent"
+                    if ($ApplicationIntent -and $inputObject.ConnectionContext.ApplicationIntent -ne $ApplicationIntent) {
+                        Write-Message -Level Verbose -Message "Parameter ApplicationIntent passed in, and it's not the same as currently in ConnectionContext.ApplicationIntent, so we copy the connection context and set the ApplicationIntent"
                         $copyContext = $true
                     }
                     if ($NonPooledConnection -and -not $inputObject.ConnectionContext.NonPooledConnection) {
