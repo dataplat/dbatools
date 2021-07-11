@@ -61,6 +61,7 @@ body:
     id: host-detail
     attributes:
       label: "What PowerShell host was used when producing this error"
+      multiple: true
       options:
         - PowerShell Core (pwsh.exe)
         - Windows PowerShell (powershell.exe)
