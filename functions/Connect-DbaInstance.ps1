@@ -616,7 +616,7 @@ function Connect-DbaInstance {
                         $copyContext = $true
                     }
                     if ($NonPooledConnection -and -not $inputObject.ConnectionContext.NonPooledConnection) {
-                        Write-Message -Level Verbose -Message "Parameter NonPooledConnection passed in and we currently have a pooled connection, so we copy the connection context and set NonPooledConnection"
+                        Write-Message -Level Verbose -Message "NonPooledConnection provided. Does not match ConnectionContext.NonPooledConnection, copying ConnectionContext and setting NonPooledConnection"
                         $copyContext = $true
                     }
                     if (Test-Bound -Parameter StatementTimeout -and $inputObject.ConnectionContext.StatementTimeout -ne $StatementTimeout) {
