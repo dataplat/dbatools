@@ -206,7 +206,7 @@ function Invoke-DbaQuery {
                             if (Test-PsVersion -Maximum 4) {
                                 $uri = [uri]$item
                             } else {
-                                $uri = [uri]::New($item)
+                                $uri = New-Object uri -ArgumentList $item
                             }
                             $uriScheme = $uri.Scheme
                         } catch {
@@ -247,7 +247,7 @@ function Invoke-DbaQuery {
                                                 return
                                             }
                                         } else {
-                                            if ([uri]::New($path).Scheme -ne 'file') {
+                                            if ((New-Object uri -ArgumentList $path).Scheme -ne 'file') {
                                                 Stop-Function -Message "Could not resolve path $path as filesystem object"
                                                 return
                                             }
