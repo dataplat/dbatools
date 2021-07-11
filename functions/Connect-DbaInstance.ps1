@@ -620,7 +620,7 @@ function Connect-DbaInstance {
                         $copyContext = $true
                     }
                     if (Test-Bound -Parameter StatementTimeout -and $inputObject.ConnectionContext.StatementTimeout -ne $StatementTimeout) {
-                        Write-Message -Level Verbose -Message "Parameter StatementTimeout passed in, and it's not the same as currently in ConnectionContext.StatementTimeout, so we copy the connection context and set the StatementTimeout"
+                        Write-Message -Level Verbose -Message "StatementTimeout provided. Does not match ConnectionContext.StatementTimeout, copying ConnectionContext and setting the StatementTimeout"
                         $copyContext = $true
                     }
                     if ($copyContext) {
