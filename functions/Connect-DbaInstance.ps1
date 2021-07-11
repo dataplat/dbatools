@@ -107,6 +107,9 @@ function Connect-DbaInstance {
     .PARAMETER StatementTimeout
         Sets the number of seconds a statement is given to run before failing with a timeout error.
 
+        The default is read from the configuration 'sql.execution.timeout' that is currently set to 0 (unlimited).
+        If you want to change this to 10 minutes, use: Set-DbatoolsConfig -FullName 'sql.execution.timeout' -Value 600
+
     .PARAMETER TrustServerCertificate
         When this switch is enabled, the channel will be encrypted while bypassing walking the certificate chain to validate trust.
 
