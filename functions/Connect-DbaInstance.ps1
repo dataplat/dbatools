@@ -605,7 +605,7 @@ function Connect-DbaInstance {
                     # We do not test for SqlCredential as this would change the behavior compared to the legacy code path
                     $copyContext = $false
                     if ($Database -and $inputObject.ConnectionContext.CurrentDatabase -ne $Database) {
-                        Write-Message -Level Verbose -Message "Parameter Database passed in, and it's not the same as currently in ConnectionContext.CurrentDatabase, so we copy the connection context"
+                        Write-Message -Level Verbose -Message "Parameter Database passed in, and it's not the same as currently in ConnectionContext.CurrentDatabase, so we copy the connection context and set the CurrentDatabase"
                         $copyContext = $true
                     }
                     if ($ApplicationIntent) {
@@ -616,8 +616,8 @@ function Connect-DbaInstance {
                         Write-Message -Level Verbose -Message "Parameter NonPooledConnection passed in and we currently have a pooled connection, so we copy the connection context and set NonPooledConnection"
                         $copyContext = $true
                     }
-                    if (Test-Bound -Parameter StatementTimeout) {
-                        Write-Message -Level Verbose -Message "Parameter StatementTimeout passed in, so we copy the connection context and set the StatementTimeout"
+                    if (Test-Bound -Parameter StatementTimeout -and $inputObject.ConnectionContext.StatementTimeout -ne $StatementTimeout) {
+                        Write-Message -Level Verbose -Message "Parameter StatementTimeout passed in, and it's not the same as currently in ConnectionContext.StatementTimeout, so we copy the connection context and set the StatementTimeout"
                         $copyContext = $true
                     }
                     if ($copyContext) {
@@ -900,10 +900,8 @@ function Connect-DbaInstance {
                         Write-Message -Level Debug -Message "Setting ConnectionContext.SqlExecutionModes to '$SqlExecutionModes'"
                         $server.ConnectionContext.SqlExecutionModes = $SqlExecutionModes
                     }
-                    if ($null -ne $StatementTimeout) {
-                        Write-Message -Level Debug -Message "Setting ConnectionContext.StatementTimeout to '$StatementTimeout'"
-                        $server.ConnectionContext.StatementTimeout = $StatementTimeout
-                    }
+                    Write-Message -Level Debug -Message "Setting ConnectionContext.StatementTimeout to '$StatementTimeout'"
+                    $server.ConnectionContext.StatementTimeout = $StatementTimeout
                 }
 
                 $maskedConnString = Hide-ConnectionString $server.ConnectionContext.ConnectionString
