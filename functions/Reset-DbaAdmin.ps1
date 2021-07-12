@@ -19,7 +19,7 @@ function Reset-DbaAdmin {
 
         If failures occur at any point, a best attempt is made to restart the SQL Server.
 
-        In order to make this script as portable as possible, System.Data.SqlClient and Get-WmiObject are used (as opposed to requiring the Failover Cluster Admin tools or SMO).
+        In order to make this script as portable as possible, Microsoft.Data.SqlClient and Get-WmiObject are used (as opposed to requiring the Failover Cluster Admin tools or SMO).
 
         If using this function against a remote SQL Server, ensure WinRM is configured and accessible. If this is not possible, run the script locally.
 

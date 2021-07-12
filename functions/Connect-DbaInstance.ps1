@@ -856,7 +856,7 @@ function Connect-DbaInstance {
                         # TODO: How do we get a ConnectionString without this?
                         Write-Message -Level Debug -Message "Building SqlConnection from SqlConnectionInfo.ConnectionString"
                         $connectionString = $sqlConnectionInfo.ConnectionString -replace 'Integrated Security=True;', ''
-                        $sqlConnection = New-Object -TypeName System.Data.SqlClient.SqlConnection -ArgumentList $connectionString
+                        $sqlConnection = New-Object -TypeName Microsoft.Data.SqlClient.SqlConnection -ArgumentList $connectionString
                         Write-Message -Level Debug -Message "SqlConnection was build"
                         $sqlConnection.AccessToken = $AccessToken
                         Write-Message -Level Debug -Message "Building ServerConnection from SqlConnection"
@@ -1453,7 +1453,7 @@ function Connect-DbaInstance {
                         $message = $originalException.ToString()
                     }
                     $message = ($message -Split '-->')[0]
-                    $message = ($message -Split 'at System.Data.SqlClient')[0]
+                    $message = ($message -Split 'at Microsoft.Data.SqlClient')[0]
                     $message = ($message -Split 'at System.Data.ProviderBase')[0]
 
                     Stop-Function -Message "Can't connect to $instance" -ErrorRecord $_ -Continue

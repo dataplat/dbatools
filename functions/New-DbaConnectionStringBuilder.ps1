@@ -1,10 +1,10 @@
 function New-DbaConnectionStringBuilder {
     <#
     .SYNOPSIS
-        Returns a System.Data.SqlClient.SqlConnectionStringBuilder with the string specified
+        Returns a Microsoft.Data.SqlClient.SqlConnectionStringBuilder with the string specified
 
     .DESCRIPTION
-        Creates a System.Data.SqlClient.SqlConnectionStringBuilder from a connection string.
+        Creates a Microsoft.Data.SqlClient.SqlConnectionStringBuilder from a connection string.
 
     .PARAMETER ConnectionString
         A Connection String
