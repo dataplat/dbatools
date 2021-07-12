@@ -58,6 +58,8 @@ $scriptBlock = {
         )
     } else {
         $names = @(
+            'Microsoft.Data.SqlClient',
+            'Microsoft.Data.SqlClient.SNI.x64',
             'Microsoft.SqlServer.Smo',
             'Microsoft.SqlServer.SmoExtended',
             'Microsoft.SqlServer.ConnectionInfo',

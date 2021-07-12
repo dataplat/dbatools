@@ -1301,9 +1301,6 @@ function Connect-DbaInstance {
                 # https://docs.microsoft.com/en-us/sql/relational-databases/security/encryption/configure-always-encrypted-using-powershell?view=sql-server-2017
                 $sqlconn = New-Object Microsoft.Data.SqlClient.SqlConnection $connstring
                 $serverconn = New-Object Microsoft.SqlServer.Management.Common.ServerConnection $sqlconn
-                # a big bug in Microsoft.Data.SqlClient makes the servername "Microsoft.Data.SqlClient" in the connstring
-                # so we will reset it
-                $serverconn.ConnectionString = $sqlconn.ConnectionString
                 $null = $serverconn.Connect()
                 Write-Message -Level Debug -Message "will build server with [Microsoft.SqlServer.Management.Common.ServerConnection]serverconn (serverconn.ServerInstance = '$($serverconn.ServerInstance)')"
                 $server = New-Object Microsoft.SqlServer.Management.Smo.Server $serverconn
