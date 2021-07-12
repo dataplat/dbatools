@@ -4,9 +4,9 @@ configuration: "Debug"
 
 build_script:
  - ps: Set-Service wuauserv -StartupType Manual #otherwise, choco command exits with code 1058
- - ps: choco install dotnet-5.0-sdk | Out-Null
- - ps: choco install dotnetcore-sdk | Out-Null
- - ps: Push-Location bin\projects\dbatools; dotnet build; Pop-Location
+ - ps: choco install dotnet-5.0-sdk | Out-String | Out-Null
+ - ps: choco install dotnetcore-sdk | Out-String | Out-Null
+ - ps: Push-Location bin\projects\dbatools; dotnet build; Pop-Location | Out-String | Out-Null
 
 
 version: 0.9.{build}
