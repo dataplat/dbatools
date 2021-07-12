@@ -1,14 +1,14 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <RootNamespace>Sqlcollaborative.Dbatools</RootNamespace>
-    <TargetFrameworks>net452;netcoreapp2.1</TargetFrameworks>
+    <TargetFrameworks>net462;netcoreapp3.1</TargetFrameworks>
     <AssemblyTitle>dbatools</AssemblyTitle>
     <Company>sqlcollaborative</Company>
     <Product>dbatools</Product>
     <Description>The dbatools PowerShell Module library</Description>
-    <Copyright>Copyright ©  2019</Copyright>
-    <AssemblyVersion>0.10.0.71</AssemblyVersion>
-    <FileVersion>0.10.0.71</FileVersion>
+    <Copyright>Copyright ©  2021</Copyright>
+    <AssemblyVersion>0.10.0.72</AssemblyVersion>
+    <FileVersion>0.10.0.72</FileVersion>
     <AssemblyName>dbatools</AssemblyName>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
@@ -39,10 +39,11 @@
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Microsoft.Management.Infrastructure" Version="1.0.0" />
+    <PackageReference Include="Microsoft.Data.SqlClient" Version="3.0.0" />
+    <PackageReference Include="Microsoft.Management.Infrastructure" Version="2.0.0" />
   </ItemGroup>
-  <ItemGroup Condition=" '$(TargetFramework)' == 'netcoreapp2.1'">
-    <PackageReference Include="System.Data.SqlClient " Version="4.5.1" />
+  <ItemGroup Condition=" '$(TargetFramework)' == 'netcoreapp3.1'">
+    <PackageReference Include="Microsoft.Data.SqlClient " Version="3.0.0" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="System.Management.Automation, Version=3.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">

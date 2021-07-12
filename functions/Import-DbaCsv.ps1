@@ -540,9 +540,9 @@ function Import-DbaCsv {
                     try {
                         # Create SqlBulkCopy using default options, or options specified in command line.
                         if ($bulkCopyOptions) {
-                            $bulkcopy = New-Object Data.SqlClient.SqlBulkCopy($sqlconn, $bulkCopyOptions, $transaction)
+                            $bulkcopy = New-Object Microsoft.Data.SqlClient.SqlBulkCopy($sqlconn, $bulkCopyOptions, $transaction)
                         } else {
-                            $bulkcopy = New-Object Data.SqlClient.SqlBulkCopy($sqlconn, ([Microsoft.Data.SqlClient.SqlBulkCopyOptions]::Default), $transaction)
+                            $bulkcopy = New-Object Microsoft.Data.SqlClient.SqlBulkCopy($sqlconn, ([Microsoft.Data.SqlClient.SqlBulkCopyOptions]::Default), $transaction)
                         }
 
                         $bulkcopy.DestinationTableName = "[$schema].[$table]"

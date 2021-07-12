@@ -80,14 +80,14 @@ function New-DbaConnectionStringBuilder {
         [Alias('MARS')]
         [switch]$MultipleActiveResultSets,
         [Alias('AlwaysEncrypted')]
-        [Data.SqlClient.SqlConnectionColumnEncryptionSetting]$ColumnEncryptionSetting =
-        [Data.SqlClient.SqlConnectionColumnEncryptionSetting]::Enabled,
+        [Microsoft.Data.SqlClient.SqlConnectionColumnEncryptionSetting]$ColumnEncryptionSetting =
+        [Microsoft.Data.SqlClient.SqlConnectionColumnEncryptionSetting]::Enabled,
         [string]$WorkstationId = $env:COMPUTERNAME
     )
     process {
         foreach ($cs in $ConnectionString) {
             if ($Pscmdlet.ShouldProcess($cs, "Creating new connection string")) {
-                $builder = New-Object Data.SqlClient.SqlConnectionStringBuilder $cs
+                $builder = New-Object Microsoft.Data.SqlClient.SqlConnectionStringBuilder $cs
                 if ($builder.ApplicationName -eq ".Net SqlClient Data Provider") {
                     $builder['Application Name'] = $ApplicationName
                 }
@@ -112,8 +112,8 @@ function New-DbaConnectionStringBuilder {
                 if ($MultipleActiveResultSets -eq $true) {
                     $builder['MultipleActiveResultSets'] = $true
                 }
-                if ($ColumnEncryptionSetting -eq [Data.SqlClient.SqlConnectionColumnEncryptionSetting]::Enabled) {
-                    $builder['Column Encryption Setting'] = [Data.SqlClient.SqlConnectionColumnEncryptionSetting]::Enabled
+                if ($ColumnEncryptionSetting -eq [Microsoft.Data.SqlClient.SqlConnectionColumnEncryptionSetting]::Enabled) {
+                    $builder['Column Encryption Setting'] = [Microsoft.Data.SqlClient.SqlConnectionColumnEncryptionSetting]::Enabled
                 }
                 $builder
             }

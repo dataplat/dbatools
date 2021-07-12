@@ -3994,7 +3994,7 @@
             </summary>
             <param name="Entry">The result of a dns resolution, to be used for targetting the default instance</param>
         </member>
-        <member name="M:Sqlcollaborative.Dbatools.Parameter.DbaInstanceParameter.#ctor(System.Data.SqlClient.SqlConnection)">
+        <member name="M:Sqlcollaborative.Dbatools.Parameter.DbaInstanceParameter.#ctor(Microsoft.Data.SqlClient.SqlConnection)">
             <summary>
             Creates a DBA Instance Parameter from an established SQL Connection
             </summary>

@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <RootNamespace>Sqlcollaborative.Dbatools</RootNamespace>
-    <TargetFramework>net452</TargetFramework>
+    <TargetFramework>net462</TargetFramework>
     <ProjectTypeGuids>{3AC096D0-A1C2-E12C-1390-A8335801FDAB};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>
     <VSToolsPath Condition="'$(VSToolsPath)' == ''">$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)</VSToolsPath>
@@ -10,7 +10,7 @@
     <TestProjectType>UnitTest</TestProjectType>
     <AssemblyTitle>dbatools.Tests</AssemblyTitle>
     <Product>dbatools.Tests</Product>
-    <Copyright>Copyright ©  2017</Copyright>
+    <Copyright>Copyright ©  2021</Copyright>
     <OutputPath>bin\$(Configuration)\</OutputPath>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
