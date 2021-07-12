@@ -1353,7 +1353,7 @@
         </member>
         <member name="F:Sqlcollaborative.Dbatools.Connection.ManagementConnection.WindowsCredentialsAreBad">
             <summary>
-            Whether the default windows credentials are known to not work against the target.
+            Whether the default windows credentials failed against the target.
             </summary>
         </member>
         <member name="F:Sqlcollaborative.Dbatools.Connection.ManagementConnection.UseWindowsCredentials">

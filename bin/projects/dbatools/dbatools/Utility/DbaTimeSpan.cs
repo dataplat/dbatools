@@ -208,7 +208,7 @@ namespace Sqlcollaborative.Dbatools.Utility
         internal static TimeSpan ParseTimeSpan(string Value)
         {
             if (String.IsNullOrWhiteSpace(Value))
-                throw new ArgumentNullException("Cannot parse empty string!");
+                throw new ArgumentNullException("Cannot parse empty string");
 
             try { return TimeSpan.Parse(Value, CultureInfo.CurrentCulture); }
             catch { }

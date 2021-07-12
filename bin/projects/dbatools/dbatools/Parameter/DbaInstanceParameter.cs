@@ -275,7 +275,7 @@ namespace Sqlcollaborative.Dbatools.Parameter
                 string instanceName = tempString.Substring(2);
 
                 if (!Utility.Validation.IsValidInstanceName(instanceName))
-                    throw new ArgumentException(String.Format("Failed to interpret instance name: '{0}' is not a legal name!", instanceName));
+                    throw new ArgumentException(String.Format("Failed to interpret instance name: '{0}' is not a legal name", instanceName));
 
                 _InstanceName = instanceName;
 
