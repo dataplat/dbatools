@@ -8,7 +8,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
         [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ApplicationIntent', 'AzureUnsupported', 'BatchSeparator', 'ClientName', 'ConnectTimeout', 'EncryptConnection', 'FailoverPartner', 'LockTimeout', 'MaxPoolSize', 'MinPoolSize', 'MinimumVersion', 'MultipleActiveResultSets', 'MultiSubnetFailover', 'NetworkProtocol', 'NonPooledConnection', 'PacketSize', 'PooledConnectionLifetime', 'SqlExecutionModes', 'StatementTimeout', 'TrustServerCertificate', 'WorkstationId', 'AppendConnectionString', 'SqlConnectionOnly', 'AzureDomain', 'AuthenticationType', 'Tenant', 'Thumbprint', 'Store', 'AccessToken', 'DisableException'
         $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
         It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
+            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should -Be 0
         }
     }
     Context "Validate alias" {
@@ -56,53 +56,53 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         $server = Connect-DbaInstance -SqlInstance $script:instance1 -ApplicationIntent ReadOnly
 
         It "returns the proper name" {
-            $server.Name -eq $script:instance1 | Should Be $true
+            $server.Name -eq $script:instance1 | Should -Be $true
         }
 
         It "returns more than one database" {
-            $server.Databases.Name.Count -gt 0 | Should Be $true
+            $server.Databases.Name.Count -gt 0 | Should -Be $true
         }
 
         It "returns the connection with ApplicationIntent of ReadOnly" {
-            $server.ConnectionContext.ConnectionString -match "ApplicationIntent=ReadOnly" | Should Be $true
+            $server.ConnectionContext.ConnectionString -match "ApplicationIntent=ReadOnly" | Should -Be $true
         }
 
         It "sets StatementTimeout to 0" {
             $server = Connect-DbaInstance -SqlInstance $script:instance1 -StatementTimeout 0
 
-            $server.ConnectionContext.StatementTimeout | Should Be 0
+            $server.ConnectionContext.StatementTimeout | Should -Be 0
         }
 
         It "connects using a connection string" {
             $server = Connect-DbaInstance -SqlInstance "Data Source=$script:instance1;Initial Catalog=tempdb;Integrated Security=True;"
-            $server.Databases.Name.Count -gt 0 | Should Be $true
+            $server.Databases.Name.Count -gt 0 | Should -Be $true
         }
 
         It "connects using a connection object" {
             Set-DbatoolsConfig -FullName commands.connect-dbainstance.smo.computername.source -Value 'instance.ComputerName'
             [Microsoft.Data.SqlClient.SqlConnection]$sqlconnection = "Data Source=$script:instance1;Initial Catalog=tempdb;Integrated Security=True;"
             $server = Connect-DbaInstance -SqlInstance $sqlconnection
-            $server.ComputerName | Should Be ([DbaInstance]$script:instance1).ComputerName
-            $server.Databases.Name.Count -gt 0 | Should Be $true
+            $server.ComputerName | Should -Be ([DbaInstance]$script:instance1).ComputerName
+            $server.Databases.Name.Count -gt 0 | Should -Be $true
             Set-DbatoolsConfig -FullName commands.connect-dbainstance.smo.computername.source -Value $null
         }
 
         It "connects - instance2" {
             $server = Connect-DbaInstance -SqlInstance $script:instance2
-            $server.Databases.Name.Count -gt 0 | Should Be $true
+            $server.Databases.Name.Count -gt 0 | Should -Be $true
         }
 
         It "connects using a connection string - instance2" {
             $server = Connect-DbaInstance -SqlInstance "Data Source=$script:instance2;Initial Catalog=tempdb;Integrated Security=True;"
-            $server.Databases.Name.Count -gt 0 | Should Be $true
+            $server.Databases.Name.Count -gt 0 | Should -Be $true
         }
 
         It "connects using a connection object - instance2" {
             Set-DbatoolsConfig -FullName commands.connect-dbainstance.smo.computername.source -Value 'instance.ComputerName'
             [Microsoft.Data.SqlClient.SqlConnection]$sqlconnection = "Data Source=$script:instance2;Initial Catalog=tempdb;Integrated Security=True;"
             $server = Connect-DbaInstance -SqlInstance $sqlconnection
-            $server.ComputerName | Should Be ([DbaInstance]$script:instance2).ComputerName
-            $server.Databases.Name.Count -gt 0 | Should Be $true
+            $server.ComputerName | Should -Be ([DbaInstance]$script:instance2).ComputerName
+            $server.Databases.Name.Count -gt 0 | Should -Be $true
             Set-DbatoolsConfig -FullName commands.connect-dbainstance.smo.computername.source -Value $null
         }
 
@@ -131,7 +131,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
                     $propName = $param.Key
                 }
 
-                $server.ConnectionContext.$propName | Should Be $param.Value
+                $server.ConnectionContext.$propName | Should -Be $param.Value
             }
         }
     }
