@@ -24,6 +24,8 @@ function Connect-DbaInstance {
     .PARAMETER SqlCredential
         Credential object used to connect to the SQL Server Instance as a different user. This can be a Windows or SQL Server account. Windows users are determined by the existence of a backslash, so if you are intending to use an alternative Windows connection instead of a SQL login, ensure it contains a backslash.
 
+        Note that PowerShell Core does currently not support authenticating with a Windows account different from the one you are running the PowerShell session, please use Windows PowerShell instead.
+
     .PARAMETER Database
         The database(s) to process. This list is auto-populated from the server.
 
@@ -689,6 +691,12 @@ function Connect-DbaInstance {
                         }
                     }
                     Write-Message -Level Verbose -Message "authentication method is '$authType'"
+
+                    # This was found in #7514. For a fix we need to use new libraries and new ways of connecting - so this will take some time.
+                    if ($PSEdition -eq 'Core' -and $authType -eq 'local ad') {
+                        Stop-Function -Message "PowerShell Core (including your version $($PSVersionTable.PSVersion)) does currently not support authenticating with a Windows account different from the one you are running the PowerShell session, please use Windows PowerShell."
+                        return
+                    }
 
                     # Best way to get connection pooling to work is to use SqlConnectionInfo -> ServerConnection -> Server
                     $sqlConnectionInfo = New-Object -TypeName Microsoft.SqlServer.Management.Common.SqlConnectionInfo -ArgumentList $serverName
@@ -1403,6 +1411,12 @@ function Connect-DbaInstance {
                                 }
                             } else {
                                 $formatteduser = $SqlCredential.UserName
+                            }
+
+                            # This was found in #7514. For a fix we need to use new libraries and new ways of connecting - so this will take some time.
+                            if ($PSEdition -eq 'Core') {
+                                Stop-Function -Message "PowerShell Core (including your version $($PSVersionTable.PSVersion)) does currently not support authenticating with a Windows account different from the one you are running the PowerShell session, please use Windows PowerShell."
+                                return
                             }
 
                             $server.ConnectionContext.LoginSecure = $true
