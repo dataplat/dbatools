@@ -254,10 +254,11 @@ function Install-DbaDarlingData {
                         } catch {
                             Write-Message -Level Warning -Message "Could not execute at least one portion of $scriptName in $Database on $instance." -ErrorRecord $_
                             $scriptError = $true
+                            $theerror = $PSItem
                         }
 
                         if ($scriptError) {
-                            $baseres.Status = 'Error'
+                            $baseres.Status = "Error: $theerror"
                         } elseif ($script.BaseName -in $allprocedures) {
                             $baseres.Status = 'Updated'
                         } else {

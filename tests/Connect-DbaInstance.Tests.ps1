@@ -64,7 +64,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
 
         It "returns the connection with ApplicationIntent of ReadOnly" {
-            $server.ConnectionContext.ConnectionString -match "ApplicationIntent=ReadOnly" | Should Be $true
+            $server.ConnectionContext.ConnectionString -match "Intent=ReadOnly" | Should Be $true
         }
 
         It "sets StatementTimeout to 0" {

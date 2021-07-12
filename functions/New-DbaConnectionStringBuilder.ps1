@@ -88,7 +88,7 @@ function New-DbaConnectionStringBuilder {
         foreach ($cs in $ConnectionString) {
             if ($Pscmdlet.ShouldProcess($cs, "Creating new connection string")) {
                 $builder = New-Object Microsoft.Data.SqlClient.SqlConnectionStringBuilder $cs
-                if ($builder.ApplicationName -eq ".Net SqlClient Data Provider") {
+                if ($builder.ApplicationName -eq "Framework Microsoft SqlClient Data Provider") {
                     $builder['Application Name'] = $ApplicationName
                 }
                 if (![string]::IsNullOrWhiteSpace($DataSource)) {
