@@ -111,6 +111,9 @@ function New-DbaConnectionString {
     .PARAMETER WorkstationId
         Sets the name of the workstation connecting to SQL Server.
 
+    .PARAMETER Legacy
+        Use this switch to create a connection string using System.Data.SqlClient instead of Microsoft.Data.SqlClient.
+
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
 
@@ -209,6 +212,7 @@ function New-DbaConnectionString {
         [int]$StatementTimeout,
         [switch]$TrustServerCertificate,
         [string]$WorkstationId,
+        [switch]$Legacy,
         [string]$AppendConnectionString
     )
     begin {
@@ -299,7 +303,11 @@ function New-DbaConnectionString {
                         $connstring = $connStringBuilder.ConnectionString
                         # TODO: Should we check the other parameters and change the connection string accordingly?
                     } else {
-                        $connStringBuilder = New-Object -TypeName Microsoft.Data.SqlClient.SqlConnectionStringBuilder
+                        if ($Legacy) {
+                            $connStringBuilder = New-Object -TypeName System.Data.SqlClient.SqlConnectionStringBuilder
+                        } else {
+                            $connStringBuilder = New-Object -TypeName Microsoft.Data.SqlClient.SqlConnectionStringBuilder
+                        }
                         $connStringBuilder['Data Source'] = $instance.FullSmoName
                         if ($ApplicationIntent) { $connStringBuilder['ApplicationIntent'] = $ApplicationIntent }
                         if ($ClientName) { $connStringBuilder['Application Name'] = $ClientName }
