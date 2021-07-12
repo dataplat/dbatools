@@ -60,7 +60,7 @@ function Invoke-DbaAsync {
         [System.Collections.IDictionary]
         $SqlParameters,
 
-        [Microsoft.Data.CommandType]
+        [System.Data.CommandType]
         $CommandType = 'Text',
 
         [switch]

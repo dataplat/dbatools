@@ -1066,7 +1066,7 @@ function Connect-DbaInstance {
             if ($isConnectionString) {
                 try {
                     # ensure it's in the proper format
-                    $sb = New-Object Microsoft.Data.Common.DbConnectionStringBuilder
+                    $sb = New-Object System.Data.Common.DbConnectionStringBuilder
                     $sb.ConnectionString = $connstring
                 } catch {
                     $isConnectionString = $false

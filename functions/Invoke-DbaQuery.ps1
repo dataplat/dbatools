@@ -136,7 +136,7 @@ function Invoke-DbaQuery {
         [ValidateSet("DataSet", "DataTable", "DataRow", "PSObject", "PSObjectArray", "SingleValue")]
         [string]$As = "DataRow",
         [System.Collections.IDictionary]$SqlParameters,
-        [Microsoft.Data.CommandType]$CommandType = 'Text',
+        [System.Data.CommandType]$CommandType = 'Text',
         [switch]$AppendServerInstance,
         [switch]$MessagesToOutput,
         [parameter(ValueFromPipeline)]
