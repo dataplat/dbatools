@@ -215,7 +215,7 @@ function New-DbaAgentSchedule {
         }
 
         # Check if the interval for daily frequency is valid
-        if (($FrequencyType -eq 4) -and ($FrequencyInterval -lt 1 -or $FrequencyInterval -ge 365) -and (-not $FrequencyInterval -eq "EveryDay") -and (-not $Force)) {
+        if (($FrequencyType -eq 4) -and ($FrequencyInterval -lt 1 -or $FrequencyInterval -ge 365) -and (-not ($FrequencyInterval -eq "EveryDay")) -and (-not $Force)) {
             Stop-Function -Message "The daily frequency type requires a frequency interval to be between 1 and 365 or 'EveryDay'." -Target $SqlInstance
             return
         }
