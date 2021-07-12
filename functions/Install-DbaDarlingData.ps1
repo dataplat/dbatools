@@ -249,12 +249,12 @@ function Install-DbaDarlingData {
                     if ($Pscmdlet.ShouldProcess($instance, "installing/updating $scriptName in $database")) {
                         try {
                             foreach ($query in ($sql -Split "\nGO\b")) {
-                                $null = $db.Query($query)
+                                $null = $db.Invoke($query)
                             }
                         } catch {
                             Write-Message -Level Warning -Message "Could not execute at least one portion of $scriptName in $Database on $instance." -ErrorRecord $_
                             $scriptError = $true
-                            $theerror = $PSItem
+                            $theerror = Get-ErrorMessage -Record $_
                         }
 
                         if ($scriptError) {
