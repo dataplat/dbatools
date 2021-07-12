@@ -2385,7 +2385,7 @@
                        ],
                        [
                            "StatementTimeout",
-                           "Sets the number of seconds a statement is given to run before failing with a timeout error.",
+                           "Sets the number of seconds a statement is given to run before failing with a timeout error.\nThe default is read from the configuration \u0027sql.execution.timeout\u0027 that is currently set to 0 (unlimited).\r\nIf you want to change this to 10 minutes, use: Set-DbatoolsConfig -FullName \u0027sql.execution.timeout\u0027 -Value 600",
                            "",
                            false,
                            "false",
@@ -5722,7 +5722,7 @@
                        ],
                        [
                            "KillActiveConnection",
-                           "If this switch and -Force are enabled, all active connections and sessions on Destination will be killed.\nA login cannot be dropped when it has active connections on the instance.",
+                           "A login cannot be dropped when it has active connections on the instance. If this switch is enabled, all active connections and sessions on Destination will be killed.",
                            "",
                            false,
                            "false",
@@ -12373,6 +12373,15 @@
                            ""
                        ],
                        [
+                           "IncludeExecution",
+                           "Include Execution details if the job is currently running",
+                           "",
+                           false,
+                           "false",
+                           "False",
+                           ""
+                       ],
+                       [
                            "EnableException",
                            "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
                            "",
@@ -12382,7 +12391,7 @@
                            ""
                        ]
                    ],
-        "Syntax":  "Get-DbaAgentJob [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Job] \u003cString[]\u003e] [[-ExcludeJob] \u003cString[]\u003e] [[-Database] \u003cString[]\u003e] [[-Category] \u003cString[]\u003e] [[-ExcludeCategory] \u003cString[]\u003e] [-ExcludeDisabledJobs] [-EnableException] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Get-DbaAgentJob [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Job] \u003cString[]\u003e] [[-ExcludeJob] \u003cString[]\u003e] [[-Database] \u003cString[]\u003e] [[-Category] \u003cString[]\u003e] [[-ExcludeCategory] \u003cString[]\u003e] [-ExcludeDisabledJobs] [-IncludeExecution] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Get-DbaAgentJobCategory",
