@@ -14,47 +14,47 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 }
 
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
+    BeforeAll {
+        $random = Get-Random
+        $job1Instance1 = New-DbaAgentJob -SqlInstance $script:instance1 -Job "dbatoolsci_job_1_$random"
+        $job1Instance2 = New-DbaAgentJob -SqlInstance $script:instance2 -Job "dbatoolsci_job_1_$random"
+        $agentStep1 = New-DbaAgentJobStep -SqlInstance $script:instance1 -Job $job1Instance1 -StepName "Step 1" -OnFailAction QuitWithFailure -OnSuccessAction QuitWithSuccess
+        $agentStep1 = New-DbaAgentJobStep -SqlInstance $script:instance2 -Job $job1Instance2 -StepName "Step 1" -OnFailAction QuitWithFailure -OnSuccessAction QuitWithSuccess
+
+        $instance1 = Connect-DbaInstance -SqlInstance $script:instance1
+        $instance2 = Connect-DbaInstance -SqlInstance $script:instance2
+
+        $login = "db$random"
+        $plaintext = "BigOlPassword!"
+        $password = ConvertTo-SecureString $plaintext -AsPlainText -Force
+
+        $null = Invoke-Command2 -ScriptBlock { net user $login $plaintext /add *>&1 } -ComputerName $instance2.ComputerName
+
+        $credential = New-DbaCredential -SqlInstance $script:instance2 -Name "dbatoolsci_$random" -Identity "$($instance2.ComputerName)\$login" -Password $password
+
+        $agentProxyInstance2 = New-DbaAgentProxy -SqlInstance $instance2 -Name "dbatoolsci_proxy_1_$random" -ProxyCredential "dbatoolsci_$random" -Subsystem PowerShell
+
+        $newDbName = "dbatoolsci_newdb_$random"
+        $newDb = New-DbaDatabase -SqlInstance $instance2 -Name $newDbName
+
+        $userName = "user_$random"
+        $password = 'MyV3ry$ecur3P@ssw0rd'
+        $securePassword = ConvertTo-SecureString $password -AsPlainText -Force
+        $newDBLogin = New-DbaLogin -SqlInstance $instance2 -Login $userName -Password $securePassword -Force
+        $null = New-DbaDbUser -SqlInstance $instance2 -Database $newDbName -Login $userName
+    }
+
+    AfterAll {
+        Remove-DbaDatabase -SqlInstance $instance2 -Database "dbatoolsci_newdb_$random" -Confirm:$false
+        Remove-DbaLogin -SqlInstance $instance2 -Login "user_$random" -Confirm:$false
+        Remove-DbaAgentJob -SqlInstance $script:instance1 -Job "dbatoolsci_job_1_$random"
+        Remove-DbaAgentJob -SqlInstance $script:instance2 -Job "dbatoolsci_job_1_$random"
+        $null = Invoke-Command2 -ScriptBlock { net user $args /delete *>&1 } -ArgumentList $login -ComputerName $instance2.ComputerName
+        $credential.Drop()
+        $agentProxyInstance2.Drop()
+    }
+
     Context "command works" {
-        BeforeAll {
-            $random = Get-Random
-            $job1Instance1 = New-DbaAgentJob -SqlInstance $script:instance1 -Job "dbatoolsci_job_1_$random"
-            $job1Instance2 = New-DbaAgentJob -SqlInstance $script:instance2 -Job "dbatoolsci_job_1_$random"
-            $agentStep1 = New-DbaAgentJobStep -SqlInstance $script:instance1 -Job $job1Instance1 -StepName "Step 1" -OnFailAction QuitWithFailure -OnSuccessAction QuitWithSuccess
-            $agentStep1 = New-DbaAgentJobStep -SqlInstance $script:instance2 -Job $job1Instance2 -StepName "Step 1" -OnFailAction QuitWithFailure -OnSuccessAction QuitWithSuccess
-
-            $instance1 = Connect-DbaInstance -SqlInstance $script:instance1
-            $instance2 = Connect-DbaInstance -SqlInstance $script:instance2
-
-            $login = "db$random"
-            $plaintext = "BigOlPassword!"
-            $password = ConvertTo-SecureString $plaintext -AsPlainText -Force
-
-            $null = Invoke-Command2 -ScriptBlock { net user $login $plaintext /add *>&1 } -ComputerName $instance2.ComputerName
-
-            $credential = New-DbaCredential -SqlInstance $script:instance2 -Name "dbatoolsci_$random" -Identity "$($instance2.ComputerName)\$login" -Password $password
-
-            $agentProxyInstance2 = New-DbaAgentProxy -SqlInstance $instance2 -Name "dbatoolsci_proxy_1_$random" -ProxyCredential "dbatoolsci_$random" -Subsystem PowerShell
-
-            $newDbName = "dbatoolsci_newdb_$random"
-            $newDb = New-DbaDatabase -SqlInstance $instance2 -Name $newDbName
-
-            $userName = "user_$random"
-            $password = 'MyV3ry$ecur3P@ssw0rd'
-            $securePassword = ConvertTo-SecureString $password -AsPlainText -Force
-            $newDBLogin = New-DbaLogin -SqlInstance $instance2 -Login $userName -Password $securePassword -Force
-            $null = New-DbaDbUser -SqlInstance $instance2 -Database $newDbName -Login $userName
-        }
-
-        AfterAll {
-            Remove-DbaDatabase -SqlInstance $instance2 -Database "dbatoolsci_newdb_$random" -Confirm:$false
-            Remove-DbaLogin -SqlInstance $instance2 -Login "user_$random" -Confirm:$false
-            Remove-DbaAgentJob -SqlInstance $script:instance1 -Job "dbatoolsci_job_1_$random"
-            Remove-DbaAgentJob -SqlInstance $script:instance2 -Job "dbatoolsci_job_1_$random"
-            $null = Invoke-Command2 -ScriptBlock { net user $args /delete *>&1 } -ArgumentList $login -ComputerName $instance2.ComputerName
-            $credential.Drop()
-            $agentProxyInstance2.Drop()
-        }
-
         It "Change the job step name" {
             $results = Get-DbaAgentJob -SqlInstance $script:instance2 -Job $job1Instance2
             $results.JobSteps | Where-Object Id -eq 1 | Select-Object -ExpandProperty Name | Should -Be "Step 1"
