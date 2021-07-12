@@ -16,13 +16,13 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     Context "Testing DarlingData installer with download" {
         BeforeAll {
             $database = "dbatoolsci_dd_$(Get-Random)"
-            $server = Connect-DbaInstance -SqlInstance $script:instance2
+            $server = Connect-DbaInstance -SqlInstance $script:instance3
             $server.Query("CREATE DATABASE $database")
 
-            $resultsDownload = Install-DbaDarlingData -SqlInstance $script:instance2 -Database $database -Branch master -Force -Verbose:$false
+            $resultsDownload = Install-DbaDarlingData -SqlInstance $script:instance3 -Database $database -Branch master -Force -Verbose:$false
         }
         AfterAll {
-            Remove-DbaDatabase -SqlInstance $script:instance2 -Database $database -Confirm:$false
+            Remove-DbaDatabase -SqlInstance $script:instance3 -Database $database -Confirm:$false
         }
 
         It "Installs to specified database: $database" {
@@ -40,7 +40,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             ($result.PsObject.Properties.Name | Sort-Object) | Should Be ($ExpectedProps | Sort-Object)
         }
         It "Shows status of Updated" {
-            $resultsDownload = Install-DbaDarlingData -SqlInstance $script:instance2 -Database $database -Verbose:$false
+            $resultsDownload = Install-DbaDarlingData -SqlInstance $script:instance3 -Database $database -Verbose:$false
             $resultsDownload[0].Status -eq 'Updated' | Should -Be $true
         }
     }
@@ -81,3 +81,4 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         }
     }
 }
+# $script:instance2
