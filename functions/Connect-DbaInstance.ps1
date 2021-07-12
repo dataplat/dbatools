@@ -107,6 +107,9 @@ function Connect-DbaInstance {
     .PARAMETER StatementTimeout
         Sets the number of seconds a statement is given to run before failing with a timeout error.
 
+        The default is read from the configuration 'sql.execution.timeout' that is currently set to 0 (unlimited).
+        If you want to change this to 10 minutes, use: Set-DbatoolsConfig -FullName 'sql.execution.timeout' -Value 600
+
     .PARAMETER TrustServerCertificate
         When this switch is enabled, the channel will be encrypted while bypassing walking the certificate chain to validate trust.
 
@@ -605,19 +608,19 @@ function Connect-DbaInstance {
                     # We do not test for SqlCredential as this would change the behavior compared to the legacy code path
                     $copyContext = $false
                     if ($Database -and $inputObject.ConnectionContext.CurrentDatabase -ne $Database) {
-                        Write-Message -Level Verbose -Message "Parameter Database passed in, and it's not the same as currently in ConnectionContext.CurrentDatabase, so we copy the connection context"
+                        Write-Message -Level Verbose -Message "Database provided. Does not match ConnectionContext.CurrentDatabase, copying ConnectionContext and setting the CurrentDatabase"
                         $copyContext = $true
                     }
-                    if ($ApplicationIntent) {
-                        Write-Message -Level Verbose -Message "Parameter ApplicationIntent passed in, so we copy the connection context and set the ApplicationIntent"
+                    if ($ApplicationIntent -and $inputObject.ConnectionContext.ApplicationIntent -ne $ApplicationIntent) {
+                        Write-Message -Level Verbose -Message "ApplicationIntent provided. Does not match ConnectionContext.ApplicationIntent, copying ConnectionContext and setting the ApplicationIntent"
                         $copyContext = $true
                     }
                     if ($NonPooledConnection -and -not $inputObject.ConnectionContext.NonPooledConnection) {
-                        Write-Message -Level Verbose -Message "Parameter NonPooledConnection passed in and we currently have a pooled connection, so we copy the connection context and set NonPooledConnection"
+                        Write-Message -Level Verbose -Message "NonPooledConnection provided. Does not match ConnectionContext.NonPooledConnection, copying ConnectionContext and setting NonPooledConnection"
                         $copyContext = $true
                     }
-                    if (Test-Bound -Parameter StatementTimeout) {
-                        Write-Message -Level Verbose -Message "Parameter StatementTimeout passed in, so we copy the connection context and set the StatementTimeout"
+                    if (Test-Bound -Parameter StatementTimeout -and $inputObject.ConnectionContext.StatementTimeout -ne $StatementTimeout) {
+                        Write-Message -Level Verbose -Message "StatementTimeout provided. Does not match ConnectionContext.StatementTimeout, copying ConnectionContext and setting the StatementTimeout"
                         $copyContext = $true
                     }
                     if ($copyContext) {
@@ -900,10 +903,8 @@ function Connect-DbaInstance {
                         Write-Message -Level Debug -Message "Setting ConnectionContext.SqlExecutionModes to '$SqlExecutionModes'"
                         $server.ConnectionContext.SqlExecutionModes = $SqlExecutionModes
                     }
-                    if ($null -ne $StatementTimeout) {
-                        Write-Message -Level Debug -Message "Setting ConnectionContext.StatementTimeout to '$StatementTimeout'"
-                        $server.ConnectionContext.StatementTimeout = $StatementTimeout
-                    }
+                    Write-Message -Level Debug -Message "Setting ConnectionContext.StatementTimeout to '$StatementTimeout'"
+                    $server.ConnectionContext.StatementTimeout = $StatementTimeout
                 }
 
                 $maskedConnString = Hide-ConnectionString $server.ConnectionContext.ConnectionString
