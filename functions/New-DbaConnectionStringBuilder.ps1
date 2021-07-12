@@ -125,7 +125,7 @@ function New-DbaConnectionStringBuilder {
             if ($Password) {
                 $builder['Password'] = $Password
             }
-            if ($PSBoundParameters.WorkstationId) {
+            if ($WorkstationId) {
                 $builder['Workstation ID'] = $WorkstationId
             }
             if ($MultipleActiveResultSets -eq $true) {
