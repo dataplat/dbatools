@@ -10,11 +10,6 @@ build_script:
 
 version: 0.9.{build}
 
-cache:
-  - C:\ProgramData\chocolatey\bin -> appveyor.yml
-  - C:\ProgramData\chocolatey\lib -> appveyor.yml
-  - C:\Program Files\WindowsPowerShell\Modules\PSScriptAnalyzer -> appveyor.yml
-  - C:\Program Files\WindowsPowerShell\Modules\Pester -> appveyor.yml
 
 #shallow_clone: true
 clone_depth: 100
