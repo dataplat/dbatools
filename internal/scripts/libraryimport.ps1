@@ -35,12 +35,12 @@ $scriptBlock = {
     #region Names
     if ($PSVersionTable.PSEdition -eq "Core") {
         $names = @(
+            'Microsoft.Data.SqlClient',
             'Microsoft.Data.Tools.Sql.BatchParser',
             'Microsoft.SqlServer.ConnectionInfo',
             'Microsoft.SqlServer.Management.Dmf',
             'Microsoft.SqlServer.Management.PSProvider',
             'Microsoft.SqlServer.Management.PSSnapins',
-            'Microsoft.SqlServer.Management.Sdk.Sfc',
             'Microsoft.SqlServer.Management.XEvent',
             'Microsoft.SqlServer.Management.XEventDbScoped',
             'Microsoft.SqlServer.Management.XEventDbScopedEnum',
