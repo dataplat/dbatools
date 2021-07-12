@@ -1,0 +1,611 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>dbatools</name>
+    </assembly>
+    <members>
+        <member name="T:Sqlcollaborative.Dbatools.Commands.SelectDbaObjectCommand">
+            <summary>
+            Implements the Select-DbaObject command
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Commands.SelectDbaObjectCommand.InputObject">
+            <summary>
+            The actual input object that is being processed
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Commands.SelectDbaObjectCommand.Property">
+            <summary>
+            The properties to select. Supports fancy DSL
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Commands.SelectDbaObjectCommand.ExcludeProperty">
+            <summary>
+            Properties to skip
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Commands.SelectDbaObjectCommand.ExpandProperty">
+            <summary>
+            A property to expand.
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Commands.SelectDbaObjectCommand.Alias">
+            <summary>
+            Allow users to specify an alias property as part of the select
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Commands.SelectDbaObjectCommand.ScriptProperty">
+            <summary>
+            Specify script properties at runtime as part of the select
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Commands.SelectDbaObjectCommand.ScriptMethod">
+            <summary>
+            Specify script methods at runtime as part of the select
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Commands.SelectDbaObjectCommand.Unique">
+            <summary>
+            Whether to exclude duplicates
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Commands.SelectDbaObjectCommand.Last">
+            <summary>
+            The last number of items to pick
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Commands.SelectDbaObjectCommand.First">
+            <summary>
+            Pick the first n items.
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Commands.SelectDbaObjectCommand.Skip">
+            <summary>
+            Skip n items before picking items
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Commands.SelectDbaObjectCommand.SkipLast">
+            <summary>
+            Skip the last n items
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Commands.SelectDbaObjectCommand.Wait">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Commands.SelectDbaObjectCommand.Index">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Commands.SelectDbaObjectCommand.ShowProperty">
+            <summary>
+            THe properties to display by default
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Commands.SelectDbaObjectCommand.ShowExcludeProperty">
+            <summary>
+            The properties to NOT display by default
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Commands.SelectDbaObjectCommand.TypeName">
+            <summary>
+            The typename to assign to the psobject
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Commands.SelectDbaObjectCommand.KeepInputObject">
+            <summary>
+            Keep the original input object, just add to it.
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Commands.SelectDbaObjectCommand._NonclonedProperties">
+            <summary>
+            List of properties to NOT clone into the hashtable used against Select-Object
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Commands.SelectDbaObjectCommand._NoAdjustment">
+            <summary>
+            Whether some adjustments to the object need to be done or whether the Select-Object output can be simply passed through.
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Commands.SelectDbaObjectCommand._DisplayPropertySet">
+            <summary>
+            The set controlling what properties will be shown by default
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Commands.SelectDbaObjectCommand._Pipeline">
+            <summary>
+            THe pipeline that is wrapped around Select-Object
+            </summary>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Commands.SelectDbaObjectCommand.BeginProcessing">
+            <summary>
+            Implements the begin action of the command
+            </summary>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Commands.SelectDbaObjectCommand.ProcessRecord">
+            <summary>
+            Implements the process action of the command
+            </summary>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Commands.SelectDbaObjectCommand.EndProcessing">
+            <summary>
+            Implements the end action of the command
+            </summary>
+        </member>
+        <member name="T:Sqlcollaborative.Dbatools.Commands.SetDbatoolsConfigCommand">
+            <summary>
+            Implements the Set-PSFConfig command
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Commands.SetDbatoolsConfigCommand.FullName">
+            <summary>
+            The full name of the setting
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Commands.SetDbatoolsConfigCommand.Module">
+            <summary>
+            The name of the module the setting belongs to.
+            Is optional due to just specifying a name is legal, in which case the first name segment becomes the module name.
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Commands.SetDbatoolsConfigCommand.Name">
+            <summary>
+            The name of the setting within a module.
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Commands.SetDbatoolsConfigCommand.Value">
+            <summary>
+            The value to apply.
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Commands.SetDbatoolsConfigCommand.PersistedValue">
+            <summary>
+            The persisted value to apply.
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Commands.SetDbatoolsConfigCommand.PersistedType">
+            <summary>
+            The persisted type to apply.
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Commands.SetDbatoolsConfigCommand.Description">
+            <summary>
+            Add documentation to the setting.
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Commands.SetDbatoolsConfigCommand.Validation">
+            <summary>
+            The validation script to use.
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Commands.SetDbatoolsConfigCommand.Handler">
+            <summary>
+            The handling script to apply when changing the value.
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Commands.SetDbatoolsConfigCommand.Hidden">
+            <summary>
+            Whether the setting should be hidden from casual discovery.
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Commands.SetDbatoolsConfigCommand.Default">
+            <summary>
+            Whether the setting should be applied only when nothing exists yet.
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Commands.SetDbatoolsConfigCommand.Initialize">
+            <summary>
+            Whether this is the configuration initialization call.
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Commands.SetDbatoolsConfigCommand.SimpleExport">
+            <summary>
+            Enabling this will cause the module to use friendly json notation on export to file.
+            This may result in loss of data precision, but is more userfriendly.
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Commands.SetDbatoolsConfigCommand.ModuleExport">
+            <summary>
+            Whether this setting applies to module scope file export.
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Commands.SetDbatoolsConfigCommand.DisableValidation">
+            <summary>
+            Do not apply the validation script when changing values.
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Commands.SetDbatoolsConfigCommand.DisableHandler">
+            <summary>
+            Do not run the handler script when changing values.
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Commands.SetDbatoolsConfigCommand.PassThru">
+            <summary>
+            Return the changed configuration setting.
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Commands.SetDbatoolsConfigCommand.Register">
+            <summary>
+            Registers the configuration setting into the user scope.
+            As if running Register-PSFConfig.
+            Only applies when updating an existing setting.
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Commands.SetDbatoolsConfigCommand.EnableException">
+            <summary>
+            Enable throwing exceptions.
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Commands.SetDbatoolsConfigCommand._Config">
+            <summary>
+            The configuration item changed
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Commands.SetDbatoolsConfigCommand._KillIt">
+            <summary>
+            Whether execution should be terminated silently.
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Commands.SetDbatoolsConfigCommand._Initialize">
+            <summary>
+            Whether this is an initialization execution.
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Commands.SetDbatoolsConfigCommand._Persisted">
+            <summary>
+            Whether persisted values need to be restored.
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Commands.SetDbatoolsConfigCommand._Exists">
+            <summary>
+            Whether the setting already exists.
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Commands.SetDbatoolsConfigCommand._PolicyEnforced">
+            <summary>
+            The setting to be affected was enforced by policy and cannot be changed by the user.
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Commands.SetDbatoolsConfigCommand._NameModule">
+            <summary>
+            Processed name of module.
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Commands.SetDbatoolsConfigCommand._NameName">
+            <summary>
+            Processed name of setting within module.
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Commands.SetDbatoolsConfigCommand._NameFull">
+            <summary>
+            Processed full name of setting.
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Commands.SetDbatoolsConfigCommand._ValidationErrorMessage">
+            <summary>
+            The reason validation failed.
+            Filled by ApplyValue.
+            </summary>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Commands.SetDbatoolsConfigCommand.BeginProcessing">
+            <summary>
+            Implements the begin action of Set-PSFConfig
+            </summary>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Commands.SetDbatoolsConfigCommand.ProcessRecord">
+            <summary>
+            Implements the process action of Set-PSFConfig
+            </summary>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Commands.SetDbatoolsConfigCommand.ApplyValue(System.Object)">
+            <summary>
+            Applies a value to a configuration item, invoking validation and handler scriptblocks.
+            </summary>
+            <param name="Value">The value to apply</param>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Commands.SetDbatoolsConfigCommand.ApplyCommonSettings">
+            <summary>
+            Abstracts out 
+            </summary>
+        </member>
+        <member name="T:Sqlcollaborative.Dbatools.Commands.WriteMessageCommand">
+            <summary>
+            Implements the Write-Message command, performing message handling and loggin
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Commands.WriteMessageCommand.Level">
+            <summary>
+            This parameter represents the verbosity of the message. The lower the number, the more important it is for a human user to read the message.
+            By default, the levels are distributed like this:
+            - 1-3 Direct verbose output to the user (using Write-Host)
+            - 4-6 Output only visible when requesting extra verbosity (using Write-Verbose)
+            - 1-9 Debugging information, written using Write-Debug
+            
+            In addition, it is possible to select the level "Warning" which moves the message out of the configurable range:
+            The user will always be shown this message, unless he silences the entire verbosity.
+            
+            Possible levels:
+            Critical (1), Important / Output / Host (2), Significant (3), VeryVerbose (4), Verbose (5), SomewhatVerbose (6), System (7), Debug (8), InternalComment (9), Warning (666)
+            Either one of the strings or its respective number will do as input.
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Commands.WriteMessageCommand.Message">
+            <summary>
+            The message to write/log. The function name and timestamp will automatically be prepended.
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Commands.WriteMessageCommand.Tag">
+            <summary>
+            Tags to add to the message written.
+            This allows filtering and grouping by category of message, targeting specific messages.
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Commands.WriteMessageCommand.FunctionName">
+            <summary>
+            The name of the calling function.
+            Will be automatically set, but can be overridden when necessary.
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Commands.WriteMessageCommand.ModuleName">
+            <summary>
+            The name of the module, the calling function is part of.
+            Will be automatically set, but can be overridden when necessary.
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Commands.WriteMessageCommand.File">
+            <summary>
+            The file in which Write-Message was called.
+            Will be automatically set, but can be overridden when necessary.
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Commands.WriteMessageCommand.Line">
+            <summary>
+            The line on which Write-Message was called.
+            Will be automatically set, but can be overridden when necessary.
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Commands.WriteMessageCommand.ErrorRecord">
+            <summary>
+            If an error record should be noted with the message, add the full record here.
+            Especially designed for use with Warning-mode, it can legally be used in either mode.
+            The error will be added to the $Error variable and enqued in the logging/debugging system.
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Commands.WriteMessageCommand.Exception">
+            <summary>
+            Allows specifying an inner exception as input object. This will be passed on to the logging and used for messages.
+            When specifying both ErrorRecord AND Exception, Exception wins, but ErrorRecord is still used for record metadata.
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Commands.WriteMessageCommand.Once">
+            <summary>
+            Setting this parameter will cause this function to write the message only once per session.
+            The string passed here and the calling function's name are used to create a unique ID, which is then used to register the action in the configuration system.
+            Thus will the lockout only be written if called once and not burden the system unduly.
+            This lockout will be written as a hidden value, to see it use Get-DbaConfig -Force.
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Commands.WriteMessageCommand.OverrideExceptionMessage">
+            <summary>
+            Disables automatic appending of exception messages.
+            Use in cases where you already have a speaking message interpretation and do not need the original message.
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Commands.WriteMessageCommand.Target">
+            <summary>
+            Add the object the message is all about, in order to simplify debugging / troubleshooting.
+            For example, when calling this from a function targeting a remote computer, the computername could be specified here, allowing all messages to easily be correlated to the object processed.
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Commands.WriteMessageCommand.EnableException">
+            <summary>
+            This parameters disables user-friendly warnings and enables the throwing of exceptions.
+            This is less user friendly, but allows catching exceptions in calling scripts.
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Commands.WriteMessageCommand.Breakpoint">
+            <summary>
+            Enables breakpoints on the current message. By default, setting '-Debug' will NOT cause an interrupt on the current position.
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Commands.WriteMessageCommand._timestamp">
+            <summary>
+            The start time of the cmdlet
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Commands.WriteMessageCommand._silent">
+            <summary>
+            Whether this cmdlet is run in silent mode
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Commands.WriteMessageCommand._fromStopFunction">
+            <summary>
+            Whether this cmdlet was called by Stop-Function
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Commands.WriteMessageCommand._callStack">
+            <summary>
+            The current callstack
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Commands.WriteMessageCommand._stackDepth">
+            <summary>
+            How many items exist on the callstack
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Commands.WriteMessageCommand._message">
+            <summary>
+            The message to write
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Commands.WriteMessageCommand._messageSimple">
+            <summary>
+            The message simplified without timestamps. Used for logging.
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Commands.WriteMessageCommand._messageColor">
+            <summary>
+            The message to write in color
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Commands.WriteMessageCommand._messageDeveloper">
+            <summary>
+            Non-colored version of developermode
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Commands.WriteMessageCommand._messageDeveloperColor">
+            <summary>
+            Colored version of developermode
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Commands.WriteMessageCommand._writeHostScript">
+            <summary>
+            Scriptblock that writes the host messages
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Commands.WriteMessageCommand._Tags">
+            <summary>
+            List of tags to process
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Commands.WriteMessageCommand._isDebug">
+            <summary>
+            Whether debug mode is enabled
+            </summary>
+        </member>
+        <member name="P:Sqlcollaborative.Dbatools.Commands.WriteMessageCommand._errorQualifiedMessage">
+            <summary>
+            The input message with the error content included if desired
+            </summary>
+        </member>
+        <member name="P:Sqlcollaborative.Dbatools.Commands.WriteMessageCommand._MessageSystem">
+            <summary>
+            The final message to use for internal logging
+            </summary>
+        </member>
+        <member name="P:Sqlcollaborative.Dbatools.Commands.WriteMessageCommand._MessageStreams">
+            <summary>
+            The final message to use for writing to streams, such as verbose or warning
+            </summary>
+        </member>
+        <member name="P:Sqlcollaborative.Dbatools.Commands.WriteMessageCommand._MessageHost">
+            <summary>
+            The final message to use for host messages (write using Write-HostColor)
+            </summary>
+        </member>
+        <member name="P:Sqlcollaborative.Dbatools.Commands.WriteMessageCommand._BreadCrumbsString">
+            <summary>
+            Provide breadcrumb queue of the callstack
+            </summary>
+        </member>
+        <member name="P:Sqlcollaborative.Dbatools.Commands.WriteMessageCommand._BreadCrumbsStringColored">
+            <summary>
+            Provide a breadcrumb queue of the callstack in color tags
+            </summary>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Commands.WriteMessageCommand.BeginProcessing">
+            <summary>
+            Processes the begin phase of the cmdlet
+            </summary>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Commands.WriteMessageCommand.ProcessRecord">
+            <summary>
+            Processes the process phase of the cmdlet
+            </summary>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Commands.WriteMessageCommand.ResolveTarget(System.Object)">
+            <summary>
+            Processes the target transform rules on an input object
+            </summary>
+            <param name="Item">The item to transform</param>
+            <returns>The transformed object</returns>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Commands.WriteMessageCommand.ResolveException(System.Exception)">
+            <summary>
+            Processes the specified exception specified
+            </summary>
+            <param name="Item">The exception to process</param>
+            <returns>The transformed exception</returns>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Commands.WriteMessageCommand.ResolveLevel(Sqlcollaborative.Dbatools.Message.MessageLevel)">
+            <summary>
+            Processs the input level and apply policy and rules
+            </summary>
+            <param name="Level">The original level of the message</param>
+            <returns>The processed level</returns>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Commands.WriteMessageCommand.GetMessage">
+            <summary>
+            Builds the message item for display of Verbose, Warning and Debug streams
+            </summary>
+            <returns>The message to return</returns>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Commands.WriteMessageCommand.GetMessageSimple">
+            <summary>
+            Builds the base message for internal system use.
+            </summary>
+            <returns>The message to return</returns>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Commands.WriteMessageCommand.GetMessageColor">
+            <summary>
+            Builds the message item if needed and returns it
+            </summary>
+            <returns>The message to return</returns>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Commands.WriteMessageCommand.GetMessageDeveloper">
+            <summary>
+            Non-host output in developermode
+            </summary>
+            <returns>The string to write on messages that don't go straight to Write-HostColor</returns>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Commands.WriteMessageCommand.GetMessageDeveloperColor">
+            <summary>
+            Host output in developermode
+            </summary>
+            <returns>The string to write on messages that go straight to Write-HostColor</returns>
+        </member>
+        <member name="T:Sqlcollaborative.Dbatools.Computer.DiskSpace">
+            <summary>
+            Data Container for the output of Get-DbaDiskSpace
+            </summary>
+        </member>
+        <member name="P:Sqlcollaborative.Dbatools.Computer.DiskSpace.ComputerName">
+            <summary>
+            The computer that was scanned
+            </summary>
+        </member>
+        <member name="P:Sqlcollaborative.Dbatools.Computer.DiskSpace.Name">
+            <summary>
+            Name of the disk
+            </summary>
+        </member>
+        <member name="P:Sqlcollaborative.Dbatools.Computer.DiskSpace.Label">
+            <summary>
+            Label of the disk
+            </summary>
+        </member>
+        <member name="P:Sqlcollaborative.Dbatools.Computer.DiskSpace.Capacity">
+            <summary>
+            What's the total capacity of the disk?
+            </summary>
+        </member>
+        <member name="P:Sqlcollaborative.Dbatools.Computer.DiskSpace.Free">
+            <summary>
+            How much is still free?
+            </summary>
+        </member>
+        <member name="P:Sqlcollaborative.Dbatools.Computer.DiskSpace.PercentFree">
+            <summary>
+            How much is still free
+            </summary>
+        </member>
+        <member name="P:Sqlcollaborative.Dbatools.Computer.DiskSpace.BlockSize">
+            <summary>
+            What blocksize is the object set to
+            </summary>
+        </member>
+        <member name="P:Sqlcollaborative.Dbatools.Computer.DiskSpace.FileSystem">
+            <summary>
+   
