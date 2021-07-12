@@ -43,17 +43,5 @@ if (-not(Test-Path 'C:\Users\appveyor\Documents\DbatoolsExport')) {
 Write-Host -Object "appveyor.prep: Install opencover.portable" -ForegroundColor DarkGreen
 choco install opencover.portable | Out-Null
 
-#Get new version of dotnet
-Write-Host "Downloading latest .NET Core SDK..."
-
-(New-Object System.Net.WebClient).DownloadFile('https://go.microsoft.com/fwlink/?linkid=841686','dotnet-core-sdk.exe')
-# Invoke-WebRequest "https://go.microsoft.com/fwlink/?linkid=841686" -OutFile "dotnet-core-sdk.exe"
-
-Write-Host "Installing .NET Core SDK..."
-
-Invoke-Command -ScriptBlock { ./dotnet-core-sdk.exe /S /v/qn }
-
-Write-Host "Installation succeeded." -ForegroundColor Green
-
 $sw.Stop()
 Update-AppveyorTest -Name "appveyor.prep" -Framework NUnit -FileName "appveyor.prep.ps1" -Outcome Passed -Duration $sw.ElapsedMilliseconds

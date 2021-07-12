@@ -1,5 +1,5 @@
 ﻿# See http://www.appveyor.com/docs/appveyor-yml for many more options
-image: Previous Visual Studio 2015
+image: Visual Studio 2019
 configuration: "Debug"
 
 build_script:
