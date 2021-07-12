@@ -2,6 +2,12 @@
 image: Previous Visual Studio 2015
 configuration: "Debug"
 
+build_script:
+ - ps: Set-Service wuauserv -StartupType Manual #otherwise, choco command exits with code 1058
+ - ps: choco install dotnet-5.0-sdk | Out-String | Out-Null
+ - ps: choco install dotnetcore-sdk | Out-String | Out-Null
+ - ps: Push-Location bin\projects\dbatools; dotnet build ;Pop-Location
+
 version: 0.9.{build}
 
 cache:

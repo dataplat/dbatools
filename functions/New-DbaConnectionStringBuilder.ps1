@@ -85,7 +85,7 @@ function New-DbaConnectionStringBuilder {
         [ValidateSet("Enabled")]
         [string]$ColumnEncryptionSetting,
         [switch]$Legacy,
-        [string]$WorkstationId
+        [string]$WorkstationId = $env:COMPUTERNAME
     )
     process {
         if ($SqlCredential -and ($Username -or $Password)) {

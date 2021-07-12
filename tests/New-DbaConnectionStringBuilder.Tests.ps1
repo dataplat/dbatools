@@ -5,7 +5,7 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
         [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'ConnectionString', 'ApplicationName', 'DataSource', 'InitialCatalog', 'IntegratedSecurity', 'UserName', 'Password', 'MultipleActiveResultSets', 'ColumnEncryptionSetting', 'WorkstationId', 'Legacy'
+        [object[]]$knownParameters = 'ConnectionString', 'ApplicationName', 'DataSource', 'InitialCatalog', 'IntegratedSecurity', 'UserName', 'Password', 'MultipleActiveResultSets', 'ColumnEncryptionSetting', 'WorkstationId', 'Legacy', 'SqlCredential'
         $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
         It "Should only contain our specific parameters" {
             (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
@@ -86,7 +86,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         }
     }
     Context "Set IntegratedSecurity" {
-        $results = New-DbaConnectionStringBuilder -IntegratedSecurity $True
+        $results = New-DbaConnectionStringBuilder -IntegratedSecurity
         It "Should have a `"Integrated Security Setting`" value of `"True`"" {
             $results.IntegratedSecurity | Should Be $True
         }
