@@ -103,7 +103,7 @@ function Get-DbaComputerCertificate {
                 $storename = [System.Security.Cryptography.X509Certificates.StoreLocation]::$Store
                 $foldername = [System.Security.Cryptography.X509Certificates.StoreName]::$Folder
                 $flags = [System.Security.Cryptography.X509Certificates.OpenFlags]::$Flag
-                $certstore = [System.Security.Cryptography.X509Certificates.X509Store]::New($foldername, $storename)
+                $certstore = New-Object System.Security.Cryptography.X509Certificates.X509Store -ArgumentList $foldername, $storename
                 $certstore.Open($flags)
 
                 $certstore
