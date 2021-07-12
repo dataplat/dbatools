@@ -291,7 +291,7 @@ function New-DbaConnectionString {
                 if ($Pscmdlet.ShouldProcess($instance, "Making a new Connection String")) {
                     if ($instance.Type -like "Server") {
                         Write-Message -Level Debug -Message "server object passed in, connection string is: $($instance.InputObject.ConnectionContext.ConnectionString)"
-                        $connStringBuilder = New-Object -TypeName System.Data.SqlClient.SqlConnectionStringBuilder -ArgumentList $instance.InputObject.ConnectionContext.ConnectionString
+                        $connStringBuilder = New-Object -TypeName Microsoft.Data.SqlClient.SqlConnectionStringBuilder -ArgumentList $instance.InputObject.ConnectionContext.ConnectionString
                         # In Azure, check for a database change
                         if ((Test-Azure -SqlInstance $instance) -and $Database) {
                             $connStringBuilder['Initial Catalog'] = $Database
@@ -299,7 +299,7 @@ function New-DbaConnectionString {
                         $connstring = $connStringBuilder.ConnectionString
                         # TODO: Should we check the other parameters and change the connection string accordingly?
                     } else {
-                        $connStringBuilder = New-Object -TypeName System.Data.SqlClient.SqlConnectionStringBuilder
+                        $connStringBuilder = New-Object -TypeName Microsoft.Data.SqlClient.SqlConnectionStringBuilder
                         $connStringBuilder['Data Source'] = $instance.FullSmoName
                         if ($ApplicationIntent) { $connStringBuilder['ApplicationIntent'] = $ApplicationIntent }
                         if ($ClientName) { $connStringBuilder['Application Name'] = $ClientName }
