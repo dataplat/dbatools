@@ -234,7 +234,7 @@ function Get-DbaUserPermission {
                     Write-Message -Level Verbose -Message "Building data table for server objects"
 
                     try {
-                        $serverDT = $db.Query($serverSQL)
+                        $serverDT = Invoke-DbaQuery -SqlInstance $server -Database $db.Name -Query $serverSQL
                     } catch {
                         # here to avoid an empty catch
                         $null = 1
@@ -264,7 +264,7 @@ function Get-DbaUserPermission {
 
                 Write-Message -Level Verbose -Message "Building data table for $db objects"
                 try {
-                    $dbDT = $db.Query($dbSQL)
+                    $dbDT = Invoke-DbaQuery -SqlInstance $server -Database $db.Name -Query $dbSQL
                 } catch {
                     # here to avoid an empty catch
                     $null = 1
