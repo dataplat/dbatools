@@ -10,6 +10,7 @@
     <AssemblyVersion>0.10.0.72</AssemblyVersion>
     <FileVersion>0.10.0.72</FileVersion>
     <AssemblyName>dbatools</AssemblyName>
+    <SkipFunctionsDepsCopy>false</SkipFunctionsDepsCopy>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugType>full</DebugType>
