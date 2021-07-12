@@ -33,12 +33,26 @@ function Set-DbaAgentSchedule {
 
     .PARAMETER FrequencyType
         A value indicating when a job is to be executed.
-        Allowed values are 1, "Once", 4, "Daily", 8, "Weekly", 16, "Monthly", 32, "MonthlyRelative", 64, "AgentStart", 128 or "IdleComputer"
+
+        Allowed values: 'Once', 'OneTime', 'Daily', 'Weekly', 'Monthly', 'MonthlyRelative', 'AgentStart', 'AutoStart', 'IdleComputer', 'OnIdle'
+
+        The following synonyms provide flexibility to the allowed values for this function parameter:
+        Once=OneTime
+        AgentStart=AutoStart
+        IdleComputer=OnIdle
+
+        If force is used the default will be "Once".
 
     .PARAMETER FrequencyInterval
         The days that a job is executed
-        Allowed values are 1, "Sunday", 2, "Monday", 4, "Tuesday", 8, "Wednesday", 16, "Thursday", 32, "Friday", 64, "Saturday", 62, "Weekdays", 65, "Weekend", 127, "EveryDay".
-        If 62, "Weekdays", 65, "Weekend", 127, "EveryDay" is used it overwrites any other value that has been passed before.
+
+        Allowed values for FrequencyType 'Daily': EveryDay or a number between 1 and 365.
+        Allowed values for FrequencyType 'Weekly': Sunday, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Weekdays, Weekend or EveryDay.
+        Allowed values for FrequencyType 'Monthly': Numbers 1 to 31 for each day of the month.
+
+        If "Weekdays", "Weekend" or "EveryDay" is used it over writes any other value that has been passed before.
+
+        If force is used the default will be 1.
 
     .PARAMETER FrequencySubdayType
         Specifies the units for the subday FrequencyInterval.
@@ -135,7 +149,7 @@ function Set-DbaAgentSchedule {
         [string]$NewName,
         [switch]$Enabled,
         [switch]$Disabled,
-        [ValidateSet(1, "Once", 4, "Daily", 8, "Weekly", 16, "Monthly", 32, "MonthlyRelative", 64, "AgentStart", 128, "IdleComputer")]
+        [ValidateSet('Once', 'OneTime', 'Daily', 'Weekly', 'Monthly', 'MonthlyRelative', 'AgentStart', 'AutoStart', 'IdleComputer', 'OnIdle', 1, 4, 8, 16, 32, 64, 128)]
         [object]$FrequencyType,
         [object[]]$FrequencyInterval,
         [ValidateSet(1, "Time", 2, "Seconds", 4, "Minutes", 8, "Hours")]
@@ -156,16 +170,20 @@ function Set-DbaAgentSchedule {
         if ($Force) { $ConfirmPreference = 'none' }
 
         # Check of the FrequencyType value is of type string and set the integer value
-        if ($FrequencyType -notin 0, 1, 4, 8, 16, 32, 64, 128) {
+        if ($FrequencyType -notin 1, 4, 8, 16, 32, 64, 128) {
             [int]$FrequencyType =
             switch ($FrequencyType) {
                 "Once" { 1 }
+                "OneTime" { 1 }
                 "Daily" { 4 }
                 "Weekly" { 8 }
                 "Monthly" { 16 }
                 "MonthlyRelative" { 32 }
                 "AgentStart" { 64 }
+                "AutoStart" { 64 }
                 "IdleComputer" { 128 }
+                "OnIdle" { 128 }
+                default { 1 }
             }
         }
 
@@ -181,9 +199,9 @@ function Set-DbaAgentSchedule {
             }
         }
 
-        # Check if the interval is valid
-        if ($null -eq $FrequencyInterval -and ($FrequencyType -eq 4) -and ($FrequencyInterval -lt 1 -or $FrequencyInterval -ge 365)) {
-            Stop-Function -Message "The interval $FrequencyInterval needs to be higher than 1 and lower than 365 when using a daily frequency the interval." -Target $SqlInstance
+        # Check if the interval for daily frequency is valid
+        if (($FrequencyType -in 4) -and ($FrequencyInterval -lt 1 -or $FrequencyInterval -ge 365) -and (-not $FrequencyInterval -eq "EveryDay") -and (-not $Force)) {
+            Stop-Function -Message "The daily frequency type requires a frequency interval to be between 1 and 365 or 'EveryDay'." -Target $SqlInstance
             return
         }
 
@@ -214,7 +232,7 @@ function Set-DbaAgentSchedule {
             [int]$Interval = 0
 
             # If the FrequencyInterval is set for the daily FrequencyType
-            if ($FrequencyType -in 4, 'Daily') {
+            if ($FrequencyType -eq 4) {
                 # Create the interval to hold the value(s)
                 [int]$interval = 1
 

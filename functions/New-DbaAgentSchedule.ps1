@@ -41,8 +41,9 @@ function New-DbaAgentSchedule {
     .PARAMETER FrequencyInterval
         The days that a job is executed
 
-        Allowed values: Sunday, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Weekdays, Weekend or EveryDay.
-        The other allowed values are the numbers 1 to 31 for each day of the month.
+        Allowed values for FrequencyType 'Daily': EveryDay or a number between 1 and 365.
+        Allowed values for FrequencyType 'Weekly': Sunday, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Weekdays, Weekend or EveryDay.
+        Allowed values for FrequencyType 'Monthly': Numbers 1 to 31 for each day of the month.
 
         If "Weekdays", "Weekend" or "EveryDay" is used it over writes any other value that has been passed before.
 
@@ -172,37 +173,33 @@ function New-DbaAgentSchedule {
         [int]$interval = 0
 
         # Translate FrequencyType value from string to the integer value
-        if (!$FrequencyType -or $FrequencyType) {
-            [int]$FrequencyType =
-            switch ($FrequencyType) {
-                "Once" { 1 }
-                "OneTime" { 1 }
-                "Daily" { 4 }
-                "Weekly" { 8 }
-                "Monthly" { 16 }
-                "MonthlyRelative" { 32 }
-                "AgentStart" { 64 }
-                "AutoStart" { 64 }
-                "IdleComputer" { 128 }
-                "OnIdle" { 128 }
-                default { 1 }
-            }
+        [int]$FrequencyType =
+        switch ($FrequencyType) {
+            "Once" { 1 }
+            "OneTime" { 1 }
+            "Daily" { 4 }
+            "Weekly" { 8 }
+            "Monthly" { 16 }
+            "MonthlyRelative" { 32 }
+            "AgentStart" { 64 }
+            "AutoStart" { 64 }
+            "IdleComputer" { 128 }
+            "OnIdle" { 128 }
+            default { 1 }
         }
 
         # Translate FrequencySubdayType value from string to the integer value
-        if (!$FrequencySubdayType -or $FrequencySubdayType) {
-            [int]$FrequencySubdayType =
-            switch ($FrequencySubdayType) {
-                "Once" { 1 }
-                "Time" { 1 }
-                "Seconds" { 2 }
-                "Second" { 2 }
-                "Minutes" { 4 }
-                "Minute" { 4 }
-                "Hours" { 8 }
-                "Hour" { 8 }
-                default { 1 }
-            }
+        [int]$FrequencySubdayType =
+        switch ($FrequencySubdayType) {
+            "Once" { 1 }
+            "Time" { 1 }
+            "Seconds" { 2 }
+            "Second" { 2 }
+            "Minutes" { 4 }
+            "Minute" { 4 }
+            "Hours" { 8 }
+            "Hour" { 8 }
+            default { 1 }
         }
 
         # Check if the relative FrequencyInterval value is of type string and set the integer value
@@ -217,9 +214,9 @@ function New-DbaAgentSchedule {
             default { 0 }
         }
 
-        # Check if the interval is valid
-        if (($FrequencyType -in 4, "Daily") -and (($FrequencyInterval -lt 1 -or $FrequencyInterval -ge 365) -and -not $FrequencyInterval -eq "EveryDay") -and -not $Force) {
-            Stop-Function -Message "The frequency interval $FrequencyInterval requires a frequency interval to be between 1 and 365." -Target $SqlInstance
+        # Check if the interval for daily frequency is valid
+        if (($FrequencyType -eq 4) -and ($FrequencyInterval -lt 1 -or $FrequencyInterval -ge 365) -and (-not $FrequencyInterval -eq "EveryDay") -and (-not $Force)) {
+            Stop-Function -Message "The daily frequency type requires a frequency interval to be between 1 and 365 or 'EveryDay'." -Target $SqlInstance
             return
         }
 
@@ -244,7 +241,7 @@ function New-DbaAgentSchedule {
         }
 
         # If the FrequencyInterval is set for the daily FrequencyType
-        if ($FrequencyType -in 4, 'Daily') {
+        if ($FrequencyType -eq 4) {
             # Create the interval to hold the value(s)
             [int]$interval = 1
 
