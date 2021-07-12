@@ -1,14 +1,12 @@
 ﻿# See http://www.appveyor.com/docs/appveyor-yml for many more options
-image: Visual Studio 2019
+image: Previous Visual Studio 2015
 configuration: "Debug"
 
 build_script:
+ - ps: choco install dotnet-5.0-sdk | Out-Null
+ - ps: choco install dotnetcore-sdk | Out-Null
  - ps: Push-Location bin\projects\dbatools; dotnet build; Pop-Location
 
-after_build:
-    # Removed to prevent credential exposure
-    # - ps: Push-AppveyorArtifact msbuild.binlog
-    # - ps: Push-AppveyorArtifact msbuild.log
 
 version: 0.9.{build}
 
