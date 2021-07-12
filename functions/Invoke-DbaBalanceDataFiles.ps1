@@ -176,10 +176,10 @@ function Invoke-DbaBalanceDataFiles {
                                 WHERE	DB_NAME(database_id) = '$($db.Name)'
                                 GROUP BY SUBSTRING(physical_name, 0, 4)"
                     # Execute the query
-                    $dbDiskUsage = $Server.Query($query)
+                    $dbDiskUsage = Invoke-DbaQuery -SqlInstance $server -Query $query
 
                     # Get the free space for each drive
-                    $result = $Server.Query("xp_fixeddrives")
+                    $result = Invoke-DbaQuery -SqlInstance $server -Query "xp_fixeddrives"
                     $MbFreeColName = $result[0].psobject.Properties.Name[1]
                     $diskFreeSpace = $result | Select-Object Drive, @{ Name = 'FreeMB'; Expression = { $_.$MbFreeColName } }
 
