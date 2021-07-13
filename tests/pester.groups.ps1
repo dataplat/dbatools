@@ -70,7 +70,9 @@ $TestsRunGroups = @{
         # doesn't work on appveyor but so works locally D:
         'Read-DbaXeFile',
         'Find-DbaCommand',
-        'Watch-DbaDbLogin'
+        'Watch-DbaDbLogin',
+        # times out
+        'Copy-DbaResourceGovernor'
     )
     # do not run everywhere
     "disabled"          = @()
