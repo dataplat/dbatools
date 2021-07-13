@@ -37,6 +37,6 @@ $params = @{
 }
 
 # Test BackupRestore
-#Invoke-DbaDbMirroring @params | Out-Host
+Invoke-DbaDbMirroring @params | Out-Host
 
-#Get-DbaDbMirror -SqlInstance localhost | Out-Host
+Get-DbaDbMirror -SqlInstance localhost | Out-Host
