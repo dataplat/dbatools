@@ -35162,12 +35162,12 @@
                        ],
                        [
                            "FrequencyInterval",
-                           "The days that a job is executed\nAllowed values: Sunday, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Weekdays, Weekend or EveryDay.\r\nThe other allowed values are the numbers 1 to 31 for each day of the month.\nIf \"Weekdays\", \"Weekend\" or \"EveryDay\" is used it over writes any other value that has been passed before.\nIf force is used the default will be 1.",
+                           "The days that a job is executed\nAllowed values for FrequencyType \u0027Daily\u0027: EveryDay or a number between 1 and 365.\r\nAllowed values for FrequencyType \u0027Weekly\u0027: Sunday, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Weekdays, Weekend or EveryDay.\r\nAllowed values for FrequencyType \u0027Monthly\u0027: Numbers 1 to 31 for each day of the month.\nIf \"Weekdays\", \"Weekend\" or \"EveryDay\" is used it over writes any other value that has been passed before.\nIf force is used the default will be 1.",
                            "",
                            false,
                            "false",
                            "",
-                           "EveryDay,Weekdays,Weekend,Sunday,Monday,Tuesday,Wednesday,Thursday,Friday,Saturday,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31"
+                           ""
                        ],
                        [
                            "FrequencySubdayType",
@@ -49643,21 +49643,21 @@
                        ],
                        [
                            "FrequencyType",
-                           "A value indicating when a job is to be executed.\r\nAllowed values are 1, \"Once\", 4, \"Daily\", 8, \"Weekly\", 16, \"Monthly\", 32, \"MonthlyRelative\", 64, \"AgentStart\", 128 or \"IdleComputer\"",
+                           "A value indicating when a job is to be executed.\nAllowed values: \u0027Once\u0027, \u0027OneTime\u0027, \u0027Daily\u0027, \u0027Weekly\u0027, \u0027Monthly\u0027, \u0027MonthlyRelative\u0027, \u0027AgentStart\u0027, \u0027AutoStart\u0027, \u0027IdleComputer\u0027, \u0027OnIdle\u0027\nThe following synonyms provide flexibility to the allowed values for this function parameter:\r\nOnce=OneTime\r\nAgentStart=AutoStart\r\nIdleComputer=OnIdle\nIf force is used the default will be \"Once\".",
                            "",
                            false,
                            "false",
                            "",
-                           "1,Once,4,Daily,8,Weekly,16,Monthly,32,MonthlyRelative,64,AgentStart,128,IdleComputer"
+                           "Once,OneTime,Daily,Weekly,Monthly,MonthlyRelative,AgentStart,AutoStart,IdleComputer,OnIdle,1,4,8,16,32,64,128"
                        ],
                        [
                            "FrequencyInterval",
-                           "The days that a job is executed\r\nAllowed values are 1, \"Sunday\", 2, \"Monday\", 4, \"Tuesday\", 8, \"Wednesday\", 16, \"Thursday\", 32, \"Friday\", 64, \"Saturday\", 62, \"Weekdays\", 65, \"Weekend\", 127, \"EveryDay\".\r\nIf 62, \"Weekdays\", 65, \"Weekend\", 127, \"EveryDay\" is used it overwrites any other value that has been passed before.",
+                           "The days that a job is executed\nAllowed values for FrequencyType \u0027Daily\u0027: EveryDay or a number between 1 and 365.\r\nAllowed values for FrequencyType \u0027Weekly\u0027: Sunday, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Weekdays, Weekend or EveryDay.\r\nAllowed values for FrequencyType \u0027Monthly\u0027: Numbers 1 to 31 for each day of the month.\nIf \"Weekdays\", \"Weekend\" or \"EveryDay\" is used it over writes any other value that has been passed before.\nIf force is used the default will be 1.",
                            "",
                            false,
                            "false",
                            "",
-                           "EveryDay,Weekdays,Weekend,Sunday,Monday,Tuesday,Wednesday,Thursday,Friday,Saturday,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,62,64,65,127"
+                           ""
                        ],
                        [
                            "FrequencySubdayType",
