@@ -16,7 +16,7 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
         $PSDefaultParameterValues["*:WitnessSqlCredential"] = $cred
         $PSDefaultParameterValues["*:Confirm"] = $false
         $PSDefaultParameterValues["*:SharedPath"] = "/shared"
-        $ProgressPreference = "SilentlyContinue"
+        $global:ProgressPreference = "SilentlyContinue"
 
         Import-Module ./dbatools.psm1 -Force
         $null = Get-XPlatVariable | Where-Object { $PSItem -notmatch "Copy-", "Migration" } | Sort-Object
