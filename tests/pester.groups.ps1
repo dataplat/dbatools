@@ -35,7 +35,20 @@ $TestsRunGroups = @{
         'Get-DbaUserPermission',
         'Invoke-DbaBalanceDataFiles',
         'Invoke-DbaWhoisActive',
-        'Install-DbaDarlingData'
+        'Install-DbaDarlingData',
+        # previous tests that were failing on older versions too
+        'Remove-DbaAvailabilityGroup',
+        'Set-DbaAgReplica',
+        'Read-DbaAuditFile',
+        'Sync-DbaLoginPermission',
+        'Export-DbaDacPackage',
+        'Read-DbaXEFile',
+        'Stop-DbaXESession',
+        'Test-DbaTempDbConfig',
+        'New-DbaDbUser',
+        'Stop-DbaXESession',
+        'New-DbaLogin',
+        'Watch-DbaDbLogin'
     )
     # do not run everywhere
     "disabled"          = @()
