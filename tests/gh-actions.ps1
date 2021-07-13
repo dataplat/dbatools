@@ -24,13 +24,12 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
     It "migrates" {
         $params = @{
             BackupRestore = $true
-            Exclude       = "LinkedServers", "Credentials", "DataCollector", "EndPoints", "PolicyManagement", "ResourceGovernor"
+            Exclude       = "LinkedServers", "Credentials", "DataCollector", "EndPoints", "PolicyManagement", "ResourceGovernor", "BackupDevices"
         }
 
         $results = Start-DbaMigration @params
 
         foreach ($result in $results) {
-            $result.DestinationServer | Should -Be "localhost,14333"
             $result.Status | Should -BeIn "Successful", "Failed", "Skipped"
         }
     }
@@ -45,6 +44,6 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
         }
 
         Invoke-DbaDbMirroring @params | Select-Object -ExpandProperty Status | Should -Be "Success"
-        Get-DbaDbMirror | Select-Object -ExpandProperty MirroringStatus | Should -Be "Synchronizing"
+        Get-DbaDbMirror | Select-Object -ExpandProperty MirroringPartner | Should -Be "TCP://dockersql2:5022"
     }
 }
