@@ -50,4 +50,9 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
             $results.Object -in "SERVER", "Northwind"
         }
     }
+
+    It "attempts to balance" {
+        $results = Invoke-DbaBalanceDataFiles -Database "Northwind" -Force
+        $results.Database | Should -Be "Northwind"
+    }
 }
