@@ -35,7 +35,7 @@ $scriptBlock = {
     #region Names
     if ($PSVersionTable.PSEdition -eq "Core") {
         $names = @(
-            'Microsoft.Data.SqlClient',
+            'win\Microsoft.Data.SqlClient',
             'Microsoft.Data.Tools.Sql.BatchParser',
             'Microsoft.SqlServer.ConnectionInfo',
             'Microsoft.SqlServer.Management.Dmf',
@@ -112,6 +112,10 @@ $scriptBlock = {
     }
 
     foreach ($name in $names) {
+
+        if ($name.StartsWith("win\") -and $isLinux) {
+            $name = $name.Replace("win\", "")
+        }
         $x64only = 'Microsoft.SqlServer.Replication', 'Microsoft.SqlServer.XEvent.Linq', 'Microsoft.SqlServer.BatchParser', 'Microsoft.SqlServer.Rmo', 'Microsoft.SqlServer.BatchParserClient'
         if ($name -in $x64only -and $env:PROCESSOR_ARCHITECTURE -eq "x86") {
             Write-Verbose -Message "Skipping $name. x86 not supported for this library."
