@@ -220,7 +220,7 @@ function Install-DbaDarlingData {
             if ($PSCmdlet.ShouldProcess($database, "Installing DarlingData procedures in $database on $instance")) {
                 Write-Message -Level Verbose -Message "Starting installing/updating the DarlingData stored procedures in $database on $instance."
                 $allprocedures_query = "SELECT name FROM sys.procedures WHERE is_ms_shipped = 0"
-                $allprocedures = ($server.Query($allprocedures_query, $Database)).Name
+                $allprocedures = ($server.Databases[$database].ExecuteWithResults($allprocedures_query).Tables).Name
 
                 # Install/Update each FRK stored procedure
 
