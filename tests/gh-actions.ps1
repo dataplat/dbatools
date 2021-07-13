@@ -1,3 +1,5 @@
+$password = ConvertTo-SecureString "dbatools.IO" -AsPlainText -Force
+$cred = New-Object -TypeName System.Management.Automation.PSCredential -ArgumentList "sqladmin", $password
 $PSDefaultParameterValues["*:SqlCredential"] = $cred
 $PSDefaultParameterValues["*:SourceSqlCredential"] = $cred
 $PSDefaultParameterValues["*:DestinationSqlCredential"] = $cred
@@ -9,8 +11,7 @@ $PSDefaultParameterValues["*:Confirm"] = $false
 
 Import-Module ./dbatools.psm1 -Force
 $commands = Get-XPlatVariable | Where-Object { $PSItem -notmatch "Copy-", "Migration" } | Sort-Object
-$password = ConvertTo-SecureString "dbatools.IO" -AsPlainText -Force
-$cred = New-Object -TypeName System.Management.Automation.PSCredential -ArgumentList "sqladmin", $password
+
 
 # test migration
 $params = @{
