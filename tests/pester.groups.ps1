@@ -26,53 +26,16 @@ $TestsRunGroups = @{
         'Install-DbaSqlWatch',
         'Uninstall-DbaSqlWatch',
         'Get-DbaExecutionPlan',
-        # weird too often
-        'Add-DbaComputerCertificate',
-        'Get-DbaComputerCertificate',
-        'Get-DbaMsdtc',
-        # a bug in SMO prevents availability group scripting :(
-        'Export-DbaAvailabilityGroup',
         # Non-useful info from newly started sql servers
         'Get-DbaCpuRingBuffer',
         'Get-DbaLatchStatistic',
-        # these work but fail too often on appveyor
-        # will revisit once they get their new data center
-        'Remove-DbaAvailabilityGroup',
-        'Get-DbaSuspectPage',
-        'Reset-DbaAdmin',
-        'Remove-DbaAgDatabase',
-        'Export-DbaDacPackage',
-        'Set-DbaAgReplica',
-        'Test-DbaOptimizeForAdHoc',
-        'Test-DbaDbRecoveryModel',
-        'Set-DbaDbState',
-        'Test-DbaDeprecatedFeature',
-        'Test-DbaInstanceName',
-        'Test-DbaTempDbConfig',
-        'Measure-DbaDbVirtualLogFile',
-        'Test-DbaAgentJobOwner',
-        'Resume-DbaAgDbDataMovement',
-        'Get-DbaDbMasterKey',
-        'Test-DbaAgentJobOwner',
-        'Stop-DbaXESession',
-        'Get-DbaPrivilege',
-        'Get-DbaPermission',
-        # strange pester issues
-        'Find-DbaAgentJob',
-        'Remove-DbaDatabaseSafely',
-        'Set-DbaDbOwner',
-        'Test-DbaManagementObject',
-        'Test-DbaMaxDop',
-        'New-DbaLogin',
-        'New-DbaDbUser',
-        'Get-DbaLastGoodCheckDb',
-        'Read-DbaAuditFile',
-        # doesn't work on appveyor but so works locally D:
-        'Read-DbaXeFile',
-        'Find-DbaCommand',
-        'Watch-DbaDbLogin',
         # times out
-        'Copy-DbaResourceGovernor'
+        'Copy-DbaResourceGovernor',
+        # fails on newer version of SMO
+        'Get-DbaUserPermission',
+        'Invoke-DbaBalanceDataFiles',
+        'Invoke-DbaWhoisActive',
+        'Install-DbaDarlingData'
     )
     # do not run everywhere
     "disabled"          = @()
