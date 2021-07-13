@@ -29,4 +29,7 @@ jobs:
 
       - name: Run tests
         run: |
-          ./tests/gh-actions.ps1
+          $results = Invoke-Pester ./tests/gh-actions.ps1 -Output Detailed -PassThru
+          if ($results.Result -ne "Passed") {
+              throw "There were $($results.FailedCount) failed tests."
+          }

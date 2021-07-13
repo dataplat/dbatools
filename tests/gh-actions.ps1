@@ -1,42 +1,50 @@
-$password = ConvertTo-SecureString "dbatools.IO" -AsPlainText -Force
-$cred = New-Object -TypeName System.Management.Automation.PSCredential -ArgumentList "sqladmin", $password
-$PSDefaultParameterValues["*:SqlCredential"] = $cred
-$PSDefaultParameterValues["*:SourceSqlCredential"] = $cred
-$PSDefaultParameterValues["*:DestinationSqlCredential"] = $cred
-$PSDefaultParameterValues["*:PrimarySqlCredential"] = $cred
-$PSDefaultParameterValues["*:MirrorSqlCredential"] = $cred
-$PSDefaultParameterValues["*:WitnessSqlCredential"] = $cred
-$PSDefaultParameterValues["*:Confirm"] = $false
+Describe "Integration Tests" -Tag "IntegrationTests" {
+    BeforeAll {
+        $password = ConvertTo-SecureString "dbatools.IO" -AsPlainText -Force
+        $cred = New-Object -TypeName System.Management.Automation.PSCredential -ArgumentList "sqladmin", $password
 
+        $PSDefaultParameterValues["*:SqlInstance"] = "localhost"
+        $PSDefaultParameterValues["*:Source"] = "localhost"
+        $PSDefaultParameterValues["*:Destination"] = "localhost:14333"
+        $PSDefaultParameterValues["*:Primary"] = "localhost"
+        $PSDefaultParameterValues["*:Mirror"] = "localhost:14333"
+        $PSDefaultParameterValues["*:SqlCredential"] = $cred
+        $PSDefaultParameterValues["*:SourceSqlCredential"] = $cred
+        $PSDefaultParameterValues["*:DestinationSqlCredential"] = $cred
+        $PSDefaultParameterValues["*:PrimarySqlCredential"] = $cred
+        $PSDefaultParameterValues["*:MirrorSqlCredential"] = $cred
+        $PSDefaultParameterValues["*:WitnessSqlCredential"] = $cred
+        $PSDefaultParameterValues["*:Confirm"] = $false
+        $PSDefaultParameterValues["*:SharedPath"] = "/shared"
 
-Import-Module ./dbatools.psm1 -Force
-$commands = Get-XPlatVariable | Where-Object { $PSItem -notmatch "Copy-", "Migration" } | Sort-Object
+        Import-Module ./dbatools.psm1 -Force
+        $null = Get-XPlatVariable | Where-Object { $PSItem -notmatch "Copy-", "Migration" } | Sort-Object
+    }
 
+    It "migrates" {
+        $params = @{
+            BackupRestore = $true
+            Exclude       = "LinkedServers", "Credentials", "DataCollector", "EndPoints", "PolicyManagement", "ResourceGovernor"
+        }
 
-# test migration
-$params = @{
-    Source        = "localhost"
-    Destination   = "localhost:14333"
-    BackupRestore = $true
-    SharedPath    = "/shared"
-    Exclude       = "LinkedServers", "Credentials", "DataCollector", "EndPoints", "PolicyManagement", "ResourceGovernor"
+        $results = Start-DbaMigration @params
+
+        foreach ($result in $results) {
+            $result.DestinationServer | Should -Be "localhost,14333"
+            $result.Status | Should -BeIn "Success", "Failed", "Skipped"
+        }
+    }
+
+    It "sets up a mirror" {
+        $newdb = New-DbaDatabase
+
+        $params = @{
+            Database      = $newdb.Name
+            Force         = $true
+            WarningAction = "SilentlyContinue"
+        }
+
+        Invoke-DbaDbMirroring @params | Select-Object -ExpandProperty Status | Should -Be "Success"
+        Get-DbaDbMirror | Select-Object -ExpandProperty MirroringStatus | Should -Be "Synchronizing"
+    }
 }
-
-Start-DbaMigration @params | Out-Host
-
-# Test Mirroring
-$newdb = New-DbaDatabase -SqlInstance localhost
-
-$params = @{
-    Primary       = "localhost"
-    Mirror        = "localhost:14333"
-    Database      = $newdb.Name
-    Force         = $true
-    SharedPath    = "/shared"
-    WarningAction = "SilentlyContinue"
-}
-
-# Test BackupRestore
-Invoke-DbaDbMirroring @params | Out-Host
-
-Get-DbaDbMirror -SqlInstance localhost | Out-Host
