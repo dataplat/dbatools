@@ -43,4 +43,11 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
         Invoke-DbaDbMirroring @params | Select-Object -ExpandProperty Status | Should -Be "Success"
         Get-DbaDbMirror | Select-Object -ExpandProperty MirroringPartner | Should -Be "TCP://dockersql2:5022"
     }
+
+    It "gets some permissions" {
+        $results = Get-DbaUserPermission -Database "Northwind"
+        foreach ($result in $results) {
+            $results.Object -in "SERVER", "Northwind"
+        }
+    }
 }
