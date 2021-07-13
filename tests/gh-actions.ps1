@@ -31,7 +31,7 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
 
         foreach ($result in $results) {
             $result.DestinationServer | Should -Be "localhost,14333"
-            $result.Status | Should -BeIn "Success", "Failed", "Skipped"
+            $result.Status | Should -BeIn "Successful", "Failed", "Skipped"
         }
     }
 
