@@ -204,7 +204,7 @@ function Invoke-DbaDbClone {
                 if ($Pscmdlet.ShouldProcess($instance, "Update statistics in $($db.Name)")) {
                     try {
                         Write-Message -Level Verbose -Message "Updating statistics"
-                        $null = $db.Query($sqlStats)
+                        $null = $db.Invoke($sqlStats)
                     } catch {
                         Stop-Function -Message "Failure" -ErrorRecord $_ -Target $server -Continue
                     }
@@ -222,7 +222,7 @@ function Invoke-DbaDbClone {
                         try {
                             $sql = "DBCC CLONEDATABASE('$dbName','$clonedb') $sqlWith"
                             Write-Message -Level Debug -Message "Sql Statement: $sql"
-                            $null = $db.Query($sql)
+                            $null = $db.Invoke($sql)
                             $server.Databases.Refresh()
                             Get-DbaDatabase -SqlInstance $server -Database $clonedb
                         } catch {

@@ -19,7 +19,7 @@ function Reset-DbaAdmin {
 
         If failures occur at any point, a best attempt is made to restart the SQL Server.
 
-        In order to make this script as portable as possible, System.Data.SqlClient and Get-WmiObject are used (as opposed to requiring the Failover Cluster Admin tools or SMO).
+        In order to make this script as portable as possible, Microsoft.Data.SqlClient and Get-WmiObject are used (as opposed to requiring the Failover Cluster Admin tools or SMO).
 
         If using this function against a remote SQL Server, ensure WinRM is configured and accessible. If this is not possible, run the script locally.
 
@@ -134,9 +134,9 @@ function Reset-DbaAdmin {
             )
             try {
                 $connstring = "Data Source=$instance;Integrated Security=True;Connect Timeout=20;Application Name=Reset-DbaAdmin"
-                $conn = New-Object System.Data.SqlClient.SqlConnection $connstring
+                $conn = New-Object Microsoft.Data.SqlClient.SqlConnection $connstring
                 $conn.Open()
-                $cmd = New-Object system.data.sqlclient.sqlcommand($null, $conn)
+                $cmd = New-Object Microsoft.Data.sqlclient.sqlcommand($null, $conn)
                 $cmd.CommandText = $sql
                 $cmd.ExecuteNonQuery() | Out-Null
                 $cmd.Dispose()

@@ -6,12 +6,12 @@ Register-DbaMessageTransform -TargetType 'Microsoft.SqlServer.Management.Smo.Ser
 }
 
 Register-DbaMessageTransform -ExceptionTypeFilter '*' -ScriptBlock {
-    if ($args[0] -is [System.Data.SqlClient.SqlException]) { return $args[0] }
+    if ($args[0] -is [Microsoft.Data.SqlClient.SqlException]) { return $args[0] }
 
     $item = $args[0]
     while ($item.InnerException) {
         $item = $item.InnerException
-        if ($item -is [System.Data.SqlClient.SqlException]) { return $item }
+        if ($item -is [Microsoft.Data.SqlClient.SqlException]) { return $item }
     }
 
     return $args[0]

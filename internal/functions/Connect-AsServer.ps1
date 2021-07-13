@@ -51,7 +51,7 @@ Connects to SSAS on the local server
         $message = $_.Exception.InnerException
         $message = $message.ToString()
         $message = ($message -Split '-->')[0]
-        $message = ($message -Split 'at System.Data.SqlClient')[0]
+        $message = ($message -Split 'at Microsoft.Data.SqlClient')[0]
         $message = ($message -Split 'at System.Data.ProviderBase')[0]
         throw "Can't connect to $asserver`: $message "
     }

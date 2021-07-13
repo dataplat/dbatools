@@ -366,7 +366,7 @@ function Connect-DbaInstance {
                 [string]$ConnectionString
             )
             try {
-                $connStringBuilder = New-Object System.Data.SqlClient.SqlConnectionStringBuilder $ConnectionString
+                $connStringBuilder = New-Object Microsoft.Data.SqlClient.SqlConnectionStringBuilder $ConnectionString
                 if ($connStringBuilder.Password) {
                     $connStringBuilder.Password = ''.Padleft(8, '*')
                 }
@@ -487,7 +487,7 @@ function Connect-DbaInstance {
                   - New-DbaCustomError
                   - Remove-DbaCustomError
                 Additional possibilities as input to SqlInstance:
-                * A smo connection object [System.Data.SqlClient.SqlConnection] (InputObject is used to build smo server object)
+                * A smo connection object [Microsoft.Data.SqlClient.SqlConnection] (InputObject is used to build smo server object)
                 * A smo registered server object [Microsoft.SqlServer.Management.RegisteredServers.RegisteredServer] (FullSmoName und InputObject.ConnectionString are used to build smo server object)
                 * A connections string [String] (FullSmoName und InputObject are used to build smo server object)
                 Limitations of these additional possibilities:
@@ -825,7 +825,7 @@ function Connect-DbaInstance {
                         # TODO: How do we get a ConnectionString without this?
                         Write-Message -Level Debug -Message "Building SqlConnection from SqlConnectionInfo.ConnectionString"
                         $connectionString = $sqlConnectionInfo.ConnectionString -replace 'Integrated Security=True;', ''
-                        $sqlConnection = New-Object -TypeName System.Data.SqlClient.SqlConnection -ArgumentList $connectionString
+                        $sqlConnection = New-Object -TypeName Microsoft.Data.SqlClient.SqlConnection -ArgumentList $connectionString
                         Write-Message -Level Debug -Message "SqlConnection was build"
                         $sqlConnection.AccessToken = $AccessToken
                         Write-Message -Level Debug -Message "Building ServerConnection from SqlConnection"
@@ -1136,7 +1136,7 @@ function Connect-DbaInstance {
                     $maskedConnString = Hide-ConnectionString $azureconnstring
                     Write-Message -Level Verbose -Message "Connecting to $maskedConnString"
                     try {
-                        $sqlconn = New-Object System.Data.SqlClient.SqlConnection $azureconnstring
+                        $sqlconn = New-Object Microsoft.Data.SqlClient.SqlConnection $azureconnstring
                     } catch {
                         Write-Message -Level Warning "Connection to $instance not supported yet. Please use MFA instead."
                         continue
@@ -1209,8 +1209,9 @@ function Connect-DbaInstance {
             Write-Message -Level Debug -Message "Input Object was anything else, so not full smo and we have to go on and build one"
             if ($instance.Type -like "SqlConnection") {
                 Write-Message -Level Debug -Message "instance.Type -like SqlConnection"
-                Write-Message -Level Debug -Message "will build server with [System.Data.SqlClient.SqlConnection]instance.InputObject (instance.InputObject.DataSource = '$($instance.InputObject.DataSource)')   "
+                Write-Message -Level Debug -Message "will build server with [Microsoft.Data.SqlClient.SqlConnection]instance.InputObject (instance.InputObject.DataSource = '$($instance.InputObject.DataSource)')   "
                 $server = New-Object Microsoft.SqlServer.Management.Smo.Server($instance.InputObject)
+                $server.ConnectionContext.ConnectionString = $instance.InputObject.ConnectionString
                 Write-Message -Level Debug -Message "server was build with server.Name = '$($server.Name)'"
 
                 if ($server.ConnectionContext.IsOpen -eq $false) {
@@ -1268,7 +1269,7 @@ function Connect-DbaInstance {
                 Write-Message -Level Debug -Message "isConnectionString is true"
                 # this is the way, as recommended by Microsoft
                 # https://docs.microsoft.com/en-us/sql/relational-databases/security/encryption/configure-always-encrypted-using-powershell?view=sql-server-2017
-                $sqlconn = New-Object System.Data.SqlClient.SqlConnection $connstring
+                $sqlconn = New-Object Microsoft.Data.SqlClient.SqlConnection $connstring
                 $serverconn = New-Object Microsoft.SqlServer.Management.Common.ServerConnection $sqlconn
                 $null = $serverconn.Connect()
                 Write-Message -Level Debug -Message "will build server with [Microsoft.SqlServer.Management.Common.ServerConnection]serverconn (serverconn.ServerInstance = '$($serverconn.ServerInstance)')"
@@ -1423,7 +1424,7 @@ function Connect-DbaInstance {
                         $message = $originalException.ToString()
                     }
                     $message = ($message -Split '-->')[0]
-                    $message = ($message -Split 'at System.Data.SqlClient')[0]
+                    $message = ($message -Split 'at Microsoft.Data.SqlClient')[0]
                     $message = ($message -Split 'at System.Data.ProviderBase')[0]
 
                     Stop-Function -Message "Can't connect to $instance" -ErrorRecord $_ -Continue

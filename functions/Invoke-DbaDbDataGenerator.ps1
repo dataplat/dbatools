@@ -431,7 +431,7 @@ function Invoke-DbaDbDataGenerator {
 
                         try {
                             $transaction = $sqlconn.BeginTransaction()
-                            $sqlcmd = New-Object System.Data.SqlClient.SqlCommand($insertQuery, $sqlconn, $transaction)
+                            $sqlcmd = New-Object Microsoft.Data.SqlClient.SqlCommand($insertQuery, $sqlconn, $transaction)
                             $null = $sqlcmd.ExecuteNonQuery()
                         } catch {
                             Write-Message -Level VeryVerbose -Message "$insertQuery"

@@ -654,7 +654,7 @@ namespace Sqlcollaborative.Dbatools.Utility
         internal static DateTime ParseDateTime(string Value)
         {
             if (String.IsNullOrWhiteSpace(Value))
-                throw new ArgumentNullException("Cannot parse empty string!");
+                throw new ArgumentNullException("Cannot parse empty string");
 
             try { return DateTime.Parse(Value, CultureInfo.CurrentCulture); }
             catch { }

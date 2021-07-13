@@ -67,19 +67,13 @@ function Get-DbaRepDistributor {
         if (Test-FunctionInterrupt) { return }
 
         foreach ($instance in $SqlInstance) {
-
-            # connect to the instance
-            try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
-            } catch {
-                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
-            }
-
             Write-Message -Level Verbose -Message "Attempting to retrieve distributor information from $instance"
 
             # Connect to the distributor of the instance
             try {
-                $distributor = New-Object Microsoft.SqlServer.Replication.ReplicationServer $server.ConnectionContext.SqlConnectionObject
+                $sqlconn = New-SqlConnection -SqlInstance $instance -SqlCredential $SqlCredential
+
+                $distributor = New-Object Microsoft.SqlServer.Replication.ReplicationServer $sqlconn
             } catch {
                 Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }

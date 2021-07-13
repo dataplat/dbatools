@@ -29,7 +29,7 @@ Describe "Get-DbaManagementObject Integration Test" -Tag "IntegrationTests" {
         ($result.PsObject.Properties.Name | Sort-Object) | Should Be ($ExpectedProps | Sort-Object)
     }
 
-    $results = Get-DbaManagementObject -ComputerName $env:COMPUTERNAME -VersionNumber 10
+    $results = Get-DbaManagementObject -ComputerName $env:COMPUTERNAME -VersionNumber 16
     It "Returns the version specified" {
         $results | Should Not Be $null
     }
