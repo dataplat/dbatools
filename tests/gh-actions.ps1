@@ -16,6 +16,7 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
         $PSDefaultParameterValues["*:WitnessSqlCredential"] = $cred
         $PSDefaultParameterValues["*:Confirm"] = $false
         $PSDefaultParameterValues["*:SharedPath"] = "/shared"
+        $PSDefaultParameterValues["*:ProgressPreference"] = "SilentlyContinue"
 
         Import-Module ./dbatools.psm1 -Force
         $null = Get-XPlatVariable | Where-Object { $PSItem -notmatch "Copy-", "Migration" } | Sort-Object
@@ -29,9 +30,7 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
 
         $results = Start-DbaMigration @params
 
-        foreach ($result in $results) {
-            $result.Status | Should -BeIn "Successful", "Failed", "Skipped"
-        }
+        $results.Status | Should -Contain "Successful", "Failed", "Skipped"
     }
 
     It "sets up a mirror" {
