@@ -41,7 +41,6 @@ $TestsRunGroups = @{
         'Set-DbaAgReplica',
         'Read-DbaAuditFile',
         'Sync-DbaLoginPermission',
-        'Export-DbaDacPackage',
         'Read-DbaXEFile',
         'Stop-DbaXESession',
         'Test-DbaTempDbConfig',
@@ -49,7 +48,8 @@ $TestsRunGroups = @{
         'Stop-DbaXESession',
         'New-DbaLogin',
         'Watch-DbaDbLogin',
-        'ConvertTo-DbaXESession'
+        'ConvertTo-DbaXESession',
+        'Test-DbaInstanceName'
     )
     # do not run everywhere
     "disabled"          = @()
