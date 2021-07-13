@@ -229,17 +229,14 @@ function New-DbaConnectionString {
         foreach ($instance in $SqlInstance) {
 
             <#
-            In order to be able to test new functions in various environments, the switch "experimental" is introduced.
-            This switch can be set with "Set-DbatoolsConfig -FullName sql.connection.experimental -Value $true" for the active session
-            and within this function leads to the following code path being used.
+            The new code path (formerly known as experimental) is now the default.
+            To have a quick way to switch back in case any problems occur, the switch "legacy" is introduced: Set-DbatoolsConfig -FullName sql.connection.legacy -Value $true
             All the sub paths inside the following if clause will end with a continue, so the normal code path is not used.
             #>
-            if (Get-DbatoolsConfigValue -FullName sql.connection.experimental) {
+            if (-not (Get-DbatoolsConfigValue -FullName sql.connection.legacy)) {
                 <#
                 Maybe more docs...
                 #>
-                Write-Message -Level Debug -Message "sql.connection.experimental is used"
-
                 Write-Message -Level Debug -Message "We have to build a connect string, using these parameters: $($PSBoundParameters.Keys)"
 
                 # Test for unsupported parameters
@@ -362,9 +359,12 @@ function New-DbaConnectionString {
                 }
             }
             <#
-            This is the end of the experimental code path.
-            All session without the configuration "sql.connection.experimental" set to $true will run through the following code.
+            This is the end of the new default code path.
+            All session with the configuration "sql.connection.legacy" set to $true will run through the following code.
+            To use the legacy code path: Set-DbatoolsConfig -FullName sql.connection.legacy -Value $true
             #>
+
+            Write-Message -Level Debug -Message "sql.connection.legacy is used"
 
             if ($Pscmdlet.ShouldProcess($instance, "Making a new Connection String")) {
                 if ($instance.ComputerName -match "database\.windows\.net" -or $instance.InputObject.ComputerName -match "database\.windows\.net") {
