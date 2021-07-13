@@ -16,6 +16,7 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
         $PSDefaultParameterValues["*:WitnessSqlCredential"] = $cred
         $PSDefaultParameterValues["*:Confirm"] = $false
         $PSDefaultParameterValues["*:SharedPath"] = "/shared"
+        #$PSDefaultParameterValues["*:WarningAction"] = "SilentlyContinue"
         $global:ProgressPreference = "SilentlyContinue"
 
         Import-Module ./dbatools.psm1 -Force
@@ -55,4 +56,120 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
         $results = Invoke-DbaBalanceDataFiles -Database "Northwind" -Force
         $results.Database | Should -Be "Northwind"
     }
+
+    It "converts to an XE Session" {
+        $sql = "-- Create a Queue
+                declare @rc int
+                declare @TraceID int
+                declare @maxfilesize bigint
+                set @maxfilesize = 5
+                exec @rc = sp_trace_create @TraceID output, 0, N'/tmp/', @maxfilesize, NULL
+
+                -- Set the events
+                declare @on bit
+                set @on = 1
+                exec sp_trace_setevent @TraceID, 14, 1, @on
+                exec sp_trace_setevent @TraceID, 14, 9, @on
+                exec sp_trace_setevent @TraceID, 14, 10, @on
+                exec sp_trace_setevent @TraceID, 14, 11, @on
+                exec sp_trace_setevent @TraceID, 14, 6, @on
+                exec sp_trace_setevent @TraceID, 14, 12, @on
+                exec sp_trace_setevent @TraceID, 14, 14, @on
+                exec sp_trace_setevent @TraceID, 15, 11, @on
+                exec sp_trace_setevent @TraceID, 15, 6, @on
+                exec sp_trace_setevent @TraceID, 15, 9, @on
+                exec sp_trace_setevent @TraceID, 15, 10, @on
+                exec sp_trace_setevent @TraceID, 15, 12, @on
+                exec sp_trace_setevent @TraceID, 15, 13, @on
+                exec sp_trace_setevent @TraceID, 15, 14, @on
+                exec sp_trace_setevent @TraceID, 15, 15, @on
+                exec sp_trace_setevent @TraceID, 15, 16, @on
+                exec sp_trace_setevent @TraceID, 15, 17, @on
+                exec sp_trace_setevent @TraceID, 15, 18, @on
+                exec sp_trace_setevent @TraceID, 17, 1, @on
+                exec sp_trace_setevent @TraceID, 17, 9, @on
+                exec sp_trace_setevent @TraceID, 17, 10, @on
+                exec sp_trace_setevent @TraceID, 17, 11, @on
+                exec sp_trace_setevent @TraceID, 17, 6, @on
+                exec sp_trace_setevent @TraceID, 17, 12, @on
+                exec sp_trace_setevent @TraceID, 17, 14, @on
+                exec sp_trace_setevent @TraceID, 10, 9, @on
+                exec sp_trace_setevent @TraceID, 10, 2, @on
+                exec sp_trace_setevent @TraceID, 10, 10, @on
+                exec sp_trace_setevent @TraceID, 10, 6, @on
+                exec sp_trace_setevent @TraceID, 10, 11, @on
+                exec sp_trace_setevent @TraceID, 10, 12, @on
+                exec sp_trace_setevent @TraceID, 10, 13, @on
+                exec sp_trace_setevent @TraceID, 10, 14, @on
+                exec sp_trace_setevent @TraceID, 10, 15, @on
+                exec sp_trace_setevent @TraceID, 10, 16, @on
+                exec sp_trace_setevent @TraceID, 10, 17, @on
+                exec sp_trace_setevent @TraceID, 10, 18, @on
+                exec sp_trace_setevent @TraceID, 12, 1, @on
+                exec sp_trace_setevent @TraceID, 12, 9, @on
+                exec sp_trace_setevent @TraceID, 12, 11, @on
+                exec sp_trace_setevent @TraceID, 12, 6, @on
+                exec sp_trace_setevent @TraceID, 12, 10, @on
+                exec sp_trace_setevent @TraceID, 12, 12, @on
+                exec sp_trace_setevent @TraceID, 12, 13, @on
+                exec sp_trace_setevent @TraceID, 12, 14, @on
+                exec sp_trace_setevent @TraceID, 12, 15, @on
+                exec sp_trace_setevent @TraceID, 12, 16, @on
+                exec sp_trace_setevent @TraceID, 12, 17, @on
+                exec sp_trace_setevent @TraceID, 12, 18, @on
+                exec sp_trace_setevent @TraceID, 13, 1, @on
+                exec sp_trace_setevent @TraceID, 13, 9, @on
+                exec sp_trace_setevent @TraceID, 13, 11, @on
+                exec sp_trace_setevent @TraceID, 13, 6, @on
+                exec sp_trace_setevent @TraceID, 13, 10, @on
+                exec sp_trace_setevent @TraceID, 13, 12, @on
+                exec sp_trace_setevent @TraceID, 13, 14, @on
+
+                -- Set the Filters
+                declare @intfilter int
+                declare @bigintfilter bigint
+
+                exec sp_trace_setfilter @TraceID, 10, 0, 7, N'SQL Server Profiler - 934a8575-0dc1-4937-bde1-edac1cb9691f'
+                -- Set the trace status to start
+                exec sp_trace_setstatus @TraceID, 1
+
+                -- display trace id for future references
+                select TraceID=@TraceID"
+        $server = Connect-DbaInstance
+        $traceid = ($server.Query($sql)).TraceID
+
+        $null = Get-DbaTrace -Id $traceid | ConvertTo-DbaXESession -Name "dbatoolsci-session"
+        $results = Start-DbaXESession -Session "dbatoolsci-session"
+        $results.Name | Should Be  "dbatoolsci-session"
+        $results.Status | Should Be "Running"
+        $results.Targets.Name | Should Be "package0.event_file"
+    }
 }
+
+
+<#
+# fails on newer version of SMO
+'Get-DbaUserPermission',
+'Invoke-DbaBalanceDataFiles',
+'Invoke-DbaWhoisActive',
+'Install-DbaDarlingData',
+'Remove-DbaAvailabilityGroup',
+'Set-DbaAgReplica',
+'Read-DbaAuditFile',
+'Sync-DbaLoginPermission',
+'Read-DbaXEFile',
+'Stop-DbaXESession',
+'Test-DbaTempDbConfig',
+'New-DbaDbUser',
+'Stop-DbaXESession',
+'New-DbaLogin',
+'Watch-DbaDbLogin',
+'ConvertTo-DbaXESession',
+'Test-DbaInstanceName',
+'Test-DbaDeprecatedFeature',
+'Remove-DbaDatabaseSafely',
+'Get-DbaDbMasterKey',
+'Get-DbaPermission',
+'Test-DbaManagementObject',
+'Export-DbaDacPackage'
+#>
