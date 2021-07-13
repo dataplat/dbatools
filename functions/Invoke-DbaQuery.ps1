@@ -351,7 +351,7 @@ function Invoke-DbaQuery {
             }
             $conncontext = $server.ConnectionContext
             try {
-                if (-not (Get-DbatoolsConfigValue -FullName sql.connection.experimental)) {
+                if (Get-DbatoolsConfigValue -FullName sql.connection.legacy) {
                     if ($Database -and $conncontext.DatabaseName -ne $Database) {
                         #$conncontext = $server.ConnectionContext.Copy()
                         #$conncontext.DatabaseName = $Database
