@@ -45,11 +45,11 @@ namespace Sqlcollaborative.Dbatools.Parameter
             foreach (string key in Hashtable.Keys)
             {
                 if (String.IsNullOrEmpty(key))
-                    throw new ArgumentNullException("Cannot convert a null or empty string as key!");
+                    throw new ArgumentNullException("Cannot convert a null or empty string as key");
                 if (Hashtable[key] == null)
-                    throw new ArgumentNullException(String.Format("There is no value defined for key '{0}'!", key));
+                    throw new ArgumentNullException(String.Format("There is no value defined for key '{0}'", key));
                 if (!(Hashtable[key] is ScriptBlock))
-                    throw new ArgumentException(String.Format("The value for the key '{0}' was not a scriptblock!", key));
+                    throw new ArgumentException(String.Format("The value for the key '{0}' was not a scriptblock", key));
 
                 Value[key] = (ScriptBlock)Hashtable[key];
             }
@@ -65,7 +65,7 @@ namespace Sqlcollaborative.Dbatools.Parameter
             foreach (string value in StringValue.Split(','))
             {
                 if (!Regex.IsMatch(value, " => ", RegexOptions.IgnoreCase))
-                    throw new ArgumentException(String.Format("Invalid input string, could not evaluate '{0}' as scriptmethod!", value));
+                    throw new ArgumentException(String.Format("Invalid input string, could not evaluate '{0}' as scriptmethod", value));
                 Match match = Regex.Match(value, "^(.*?) => (.*?)$", RegexOptions.IgnoreCase);
                 Value[match.Groups[1].Value.Trim()] = ScriptBlock.Create(match.Groups[2].Value.Trim());
             }

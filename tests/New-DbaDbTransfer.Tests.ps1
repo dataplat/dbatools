@@ -125,7 +125,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
         It "Should properly assign dest server parameters from server object" {
             $dest = Connect-DbaInstance -SqlInstance $script:instance2 -Database msdb
-            $connStringBuilder = New-Object System.Data.SqlClient.SqlConnectionStringBuilder $dest.ConnectionContext.ConnectionString
+            $connStringBuilder = New-Object Microsoft.Data.SqlClient.SqlConnectionStringBuilder $dest.ConnectionContext.ConnectionString
             $transfer = New-DbaDbTransfer -SqlInstance $script:instance1 -Database $dbName -DestinationSqlInstance $dest
             $transfer.DestinationDatabase | Should -Be $connStringBuilder['Initial Catalog']
             $transfer.DestinationLoginSecure | Should -Be $connStringBuilder['Integrated Security']

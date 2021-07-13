@@ -103,7 +103,7 @@ function Get-DbaManagementObject {
             }
             <# DO NOT use Write-Message as this is inside of a script block #>
             Write-Verbose -Message "Looking for SMO in the Global Assembly Cache"
-            $smolist = (Get-ChildItem -Path "$env:SystemRoot\assembly\GAC_MSIL\Microsoft.SqlServer.Smo" | Sort-Object Name -Descending).Name
+            $smolist = (Get-ChildItem -Path "$env:SystemRoot\assembly\GAC_MSIL\Microsoft.SqlServer.Smo*" | Sort-Object Name -Descending).Name
 
             foreach ($version in $smolist) {
                 $array = $version.Split("__")

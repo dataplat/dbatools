@@ -35,12 +35,12 @@ $scriptBlock = {
     #region Names
     if ($PSVersionTable.PSEdition -eq "Core") {
         $names = @(
+            'win\Microsoft.Data.SqlClient',
             'Microsoft.Data.Tools.Sql.BatchParser',
             'Microsoft.SqlServer.ConnectionInfo',
             'Microsoft.SqlServer.Management.Dmf',
             'Microsoft.SqlServer.Management.PSProvider',
             'Microsoft.SqlServer.Management.PSSnapins',
-            'Microsoft.SqlServer.Management.Sdk.Sfc',
             'Microsoft.SqlServer.Management.XEvent',
             'Microsoft.SqlServer.Management.XEventDbScoped',
             'Microsoft.SqlServer.Management.XEventDbScopedEnum',
@@ -54,10 +54,12 @@ $scriptBlock = {
             'Microsoft.SqlServer.Types',
             'Microsoft.SqlServer.Management.RegisteredServers',
             'Microsoft.SqlTools.Hosting',
-            'Microsoft.SqlTools.ManagedBatchParser'
+            'Microsoft.SqlTools.ManagedBatchParser',
+            'Microsoft.SqlServer.Management.Dmf'
         )
     } else {
         $names = @(
+            'Microsoft.Data.SqlClient',
             'Microsoft.SqlServer.Smo',
             'Microsoft.SqlServer.SmoExtended',
             'Microsoft.SqlServer.ConnectionInfo',
@@ -69,8 +71,6 @@ $scriptBlock = {
             'Microsoft.SqlServer.SqlWmiManagement',
             'Microsoft.SqlServer.Management.RegisteredServers',
             'Microsoft.SqlServer.Management.Collector',
-            'Microsoft.SqlServer.ConnectionInfoExtended',
-            'Microsoft.SqlServer.Management.IntegrationServices',
             'Microsoft.SqlServer.SqlClrProvider',
             'Microsoft.SqlServer.SqlTDiagm',
             'Microsoft.SqlServer.SString',
@@ -100,6 +100,9 @@ $scriptBlock = {
         $null = try {
             Import-Module $assemblyPath
         } catch {
+            #Write-Warning $assemblyPath
+            #Write-Warning "$psitem"
+            #Write-Warning "~~~~~~~~~~~~~~~~~~~`n`n"
             try {
                 [Reflection.Assembly]::LoadFrom($assemblyPath)
             } catch {
@@ -109,6 +112,9 @@ $scriptBlock = {
     }
 
     foreach ($name in $names) {
+        if ($name.StartsWith("win\") -and ($isLinux -or $IsMacOS)) {
+            $name = $name.Replace("win\", "")
+        }
         $x64only = 'Microsoft.SqlServer.Replication', 'Microsoft.SqlServer.XEvent.Linq', 'Microsoft.SqlServer.BatchParser', 'Microsoft.SqlServer.Rmo', 'Microsoft.SqlServer.BatchParserClient'
         if ($name -in $x64only -and $env:PROCESSOR_ARCHITECTURE -eq "x86") {
             Write-Verbose -Message "Skipping $name. x86 not supported for this library."
@@ -119,6 +125,9 @@ $scriptBlock = {
         $null = try {
             Import-Module $assemblyPath
         } catch {
+            #Write-Warning $assemblyPath
+            #Write-Warning "$psitem"
+            #Write-Warning "~~~~~~~~~~~~~~~~~~~`n`n"
             try {
                 [Reflection.Assembly]::LoadFrom($assemblyPath)
             } catch {

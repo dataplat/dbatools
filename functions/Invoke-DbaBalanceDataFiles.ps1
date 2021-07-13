@@ -176,10 +176,19 @@ function Invoke-DbaBalanceDataFiles {
                                 WHERE	DB_NAME(database_id) = '$($db.Name)'
                                 GROUP BY SUBSTRING(physical_name, 0, 4)"
                     # Execute the query
-                    $dbDiskUsage = $Server.Query($query)
+                    try {
+                        $dbDiskUsage = $Server.Query($query)
+                    } catch {
+                        $errormsg = Get-ErrorMessage -Record $PSItem
+                        Stop-Function -Message "$errormsg" -ErrorRecord $_ -Target $instance -Continue
+                    }
 
                     # Get the free space for each drive
-                    $result = $Server.Query("xp_fixeddrives")
+                    try {
+                        $result = $Server.Query("xp_fixeddrives")
+                    } catch {
+                        Stop-Function -Message "Error occurred while finding free space on drives" -ErrorRecord $_ -Target $instance -Continue
+                    }
                     $MbFreeColName = $result[0].psobject.Properties.Name[1]
                     $diskFreeSpace = $result | Select-Object Drive, @{ Name = 'FreeMB'; Expression = { $_.$MbFreeColName } }
 

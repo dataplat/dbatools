@@ -520,7 +520,7 @@ function Write-DbaDbTableData {
                 $optionValue = $true
             }
             if ($optionValue -eq $true) {
-                $bulkCopyOptions += $([Data.SqlClient.SqlBulkCopyOptions]::$option).value__
+                $bulkCopyOptions += $([Microsoft.Data.SqlClient.SqlBulkCopyOptions]::$option).value__
             }
         }
 
@@ -534,8 +534,9 @@ function Write-DbaDbTableData {
                 }
             }
         }
+
         Write-Message -Level Verbose -Message "Creating SqlBulkCopy object"
-        $bulkCopy = New-Object Data.SqlClient.SqlBulkCopy($server.ConnectionContext.SqlConnectionObject, $bulkCopyOptions, $null)
+        $bulkCopy = New-Object Microsoft.Data.SqlClient.SqlBulkCopy($server.ConnectionContext.SqlConnectionObject.ConnectionString, $bulkCopyOptions)
 
         $bulkCopy.DestinationTableName = $fqtn
         $bulkCopy.BatchSize = $BatchSize

@@ -54,7 +54,7 @@ namespace Sqlcollaborative.Dbatools.Utility
         public DbaValidateScriptAttribute(ScriptBlock scriptBlock)
         {
             if (scriptBlock == null) {
-                throw new ArgumentNullException("scriptBlock", "Need to specify a scriptblock!");
+                throw new ArgumentNullException("scriptBlock", "Need to specify a scriptblock");
             }
             this.ScriptBlock = ScriptBlock;
         }

@@ -168,7 +168,7 @@ function Invoke-DbaAsync {
         # Only execute non-empty statements
         $Pieces = $Pieces | Where-Object { $_.Trim().Length -gt 0 }
         foreach ($piece in $Pieces) {
-            $cmd = New-Object system.Data.SqlClient.SqlCommand($piece, $conn)
+            $cmd = New-Object Microsoft.Data.SqlClient.SqlCommand($piece, $conn)
             $cmd.CommandType = $CommandType
             $cmd.CommandTimeout = $QueryTimeout
 
@@ -182,8 +182,8 @@ function Invoke-DbaAsync {
                 } > $null
             }
 
-            $ds = New-Object system.Data.DataSet
-            $da = New-Object system.Data.SqlClient.SqlDataAdapter($cmd)
+            $ds = New-Object System.Data.DataSet
+            $da = New-Object Microsoft.Data.SqlClient.SqlDataAdapter($cmd)
 
             if ($MessagesToOutput) {
                 $defaultrunspace = [System.Management.Automation.Runspaces.Runspace]::DefaultRunspace
@@ -194,7 +194,7 @@ function Invoke-DbaAsync {
                 $scriptBlock = {
                     param ($da, $ds, $conn, $queue )
                     $conn.FireInfoMessageEventOnUserErrors = $false
-                    $handler = [System.Data.SqlClient.SqlInfoMessageEventHandler] { $queue.Enqueue($_) }
+                    $handler = [Microsoft.Data.SqlClient.SqlInfoMessageEventHandler] { $queue.Enqueue($_) }
                     $conn.add_InfoMessage($handler)
                     $Err = $null
                     try {
@@ -243,7 +243,7 @@ function Invoke-DbaAsync {
                 #Following EventHandler is used for PRINT and RAISERROR T-SQL statements. Executed when -Verbose parameter specified by caller and no -MessageToOutput
                 if ($PSBoundParameters.Verbose) {
                     $conn.FireInfoMessageEventOnUserErrors = $false
-                    $handler = [System.Data.SqlClient.SqlInfoMessageEventHandler] { Write-Verbose -Message "$($_)" }
+                    $handler = [Microsoft.Data.SqlClient.SqlInfoMessageEventHandler] { Write-Verbose -Message "$($_)" }
                     $conn.add_InfoMessage($handler)
                 }
                 try {

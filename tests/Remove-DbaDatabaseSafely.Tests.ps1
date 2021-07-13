@@ -13,16 +13,18 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     }
 }
 
-Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
+Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     BeforeAll {
-        $null = Get-DbaProcess -SqlInstance $script:instance1, $script:instance2 -Program 'dbatools PowerShell module - dbatools.io' | Stop-DbaProcess -WarningAction SilentlyContinue
-        $db1 = "dbatoolsci_safely"
-        $db2 = "dbatoolsci_safely_otherInstance"
-        $server = Connect-DbaInstance -SqlInstance $script:instance3
-        $server.Query("CREATE DATABASE $db1")
-        $server = Connect-DbaInstance -SqlInstance $script:instance2
-        $server.Query("CREATE DATABASE $db1")
-        $server.Query("CREATE DATABASE $db2")
+        try {
+            $null = Get-DbaProcess -SqlInstance $script:instance1, $script:instance2 -Program 'dbatools PowerShell module - dbatools.io' | Stop-DbaProcess -WarningAction SilentlyContinue
+            $db1 = "dbatoolsci_safely"
+            $db2 = "dbatoolsci_safely_otherInstance"
+            $server = Connect-DbaInstance -SqlInstance $script:instance3
+            $server.Query("CREATE DATABASE $db1")
+            $server = Connect-DbaInstance -SqlInstance $script:instance2
+            $server.Query("CREATE DATABASE $db1")
+            $server.Query("CREATE DATABASE $db2")
+        } catch { }
     }
     AfterAll {
         $null = Remove-DbaDatabase -Confirm:$false -SqlInstance $script:instance2 -Database $db1, $db2
@@ -31,21 +33,21 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         $null = Remove-DbaAgentJob -Confirm:$false -SqlInstance $script:instance3 -Job 'Rationalised Database Restore Script for dbatoolsci_safely_otherInstance'
     }
     Context "Command actually works" {
-        $results = Remove-DbaDatabaseSafely -SqlInstance $script:instance2 -Database $db1 -BackupFolder C:\temp -NoDbccCheckDb
         It "Should have database name of $db1" {
+            $results = Remove-DbaDatabaseSafely -SqlInstance $script:instance2 -Database $db1 -BackupFolder C:\temp -NoDbccCheckDb
             foreach ($result in $results) {
                 $result.DatabaseName | Should Be $db1
             }
         }
 
-        $results = Remove-DbaDatabaseSafely -SqlInstance $script:instance1 -Database $db1 -BackupFolder C:\temp -NoDbccCheckDb -WarningAction SilentlyContinue -WarningVariable warn
         It "should warn and quit" {
+            $results = Remove-DbaDatabaseSafely -SqlInstance $script:instance1 -Database $db1 -BackupFolder C:\temp -NoDbccCheckDb -WarningAction SilentlyContinue -WarningVariable warn
             $results | Should Be $null
             $warn -match 'Express Edition' | Should Be $true
         }
 
-        $results = Remove-DbaDatabaseSafely -SqlInstance $script:instance2 -Database $db2 -BackupFolder c:\temp -NoDbccCheckDb -Destination $script:instance3
         It "Should restore to another server" {
+            $results = Remove-DbaDatabaseSafely -SqlInstance $script:instance2 -Database $db2 -BackupFolder c:\temp -NoDbccCheckDb -Destination $script:instance3
             foreach ($result in $results) {
                 $result.SqlInstance | Should Be $script:instance2
                 $result.TestingInstance | Should Be $script:instance3

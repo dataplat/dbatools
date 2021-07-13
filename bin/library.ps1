@@ -1,5 +1,5 @@
 # Current library Version the module expects
-$currentLibraryVersion = New-Object System.Version(0, 10, 0, 71)
+$currentLibraryVersion = New-Object System.Version(0, 10, 0, 72)
 
 <#
 Library Versioning 101:
@@ -13,7 +13,7 @@ Revision: Tracks all changes. Every single update to the library - bugfix, featu
 Updating the library version number:
 When changing the library version number, it is necessary to do so in TWO places:
 - At the top of this very library.ps1
-- Within AssemblyInfo.cs
+- Within dbatools.csproj
 These two locations MUST have matching version numbers, otherwise it will keep building the library and complaining about version mismatch!
 #>
 
@@ -36,9 +36,9 @@ Mostly for developers working on the library.
 
 $dll =
 if ($PSVersionTable.PSVersion.Major -ge 6) {
-    Join-Path $psModuleRoot "bin\netcoreapp2.1\dbatools.dll"
+    Join-Path $psModuleRoot "bin\netcoreapp3.1\dbatools.dll"
 } else {
-    Join-Path $psModuleRoot "bin\net452\dbatools.dll"
+    Join-Path $psModuleRoot "bin\net462\dbatools.dll"
 }
 
 $ImportLibrary = $true # Always import the library, because it contains some internal cmdlets.

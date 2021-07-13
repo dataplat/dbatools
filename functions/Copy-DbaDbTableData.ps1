@@ -227,7 +227,7 @@ function Copy-DbaDbTableData {
                 $optionValue = $true
             }
             if ($optionValue -eq $true) {
-                $bulkCopyOptions += $([Data.SqlClient.SqlBulkCopyOptions]::$option).value__
+                $bulkCopyOptions += $([Microsoft.Data.SqlClient.SqlBulkCopyOptions]::$option).value__
             }
         }
     }
@@ -414,7 +414,7 @@ function Copy-DbaDbTableData {
                         if ($server.ConnectionContext.IsOpen -eq $false) {
                             $server.ConnectionContext.SqlConnectionObject.Open()
                         }
-                        $bulkCopy = New-Object Data.SqlClient.SqlBulkCopy("$connstring;Database=$DestinationDatabase", $bulkCopyOptions)
+                        $bulkCopy = New-Object Microsoft.Data.SqlClient.SqlBulkCopy("$connstring;Database=$DestinationDatabase", $bulkCopyOptions)
                         $bulkCopy.DestinationTableName = $fqtndest
                         $bulkCopy.EnableStreaming = $true
                         $bulkCopy.BatchSize = $BatchSize

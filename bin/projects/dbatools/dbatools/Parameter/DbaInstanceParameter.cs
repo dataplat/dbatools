@@ -193,7 +193,7 @@ namespace Sqlcollaborative.Dbatools.Parameter
                             return DbaInstanceInputType.Linked;
                         case "microsoft.sqlserver.management.registeredservers.registeredserver":
                             return DbaInstanceInputType.RegisteredServer;
-                        case "system.data.sqlclient.sqlconnection":
+                        case "microsoft.data.sqlclient.sqlconnection":
                             return DbaInstanceInputType.SqlConnection;
                         default:
                             return DbaInstanceInputType.Default;
@@ -275,7 +275,7 @@ namespace Sqlcollaborative.Dbatools.Parameter
                 string instanceName = tempString.Substring(2);
 
                 if (!Utility.Validation.IsValidInstanceName(instanceName))
-                    throw new ArgumentException(String.Format("Failed to interpret instance name: '{0}' is not a legal name!", instanceName));
+                    throw new ArgumentException(String.Format("Failed to interpret instance name: '{0}' is not a legal name", instanceName));
 
                 _InstanceName = instanceName;
 
@@ -283,7 +283,7 @@ namespace Sqlcollaborative.Dbatools.Parameter
             }
 
             if (UtilityHost.IsLike(tempString, "*.WORKGROUP"))
-            tempString = Regex.Replace(tempString, @"\.WORKGROUP$", "", RegexOptions.IgnoreCase);
+                tempString = Regex.Replace(tempString, @"\.WORKGROUP$", "", RegexOptions.IgnoreCase);
 
             // Named Pipe path notation interpretation
             if (Regex.IsMatch(tempString, @"^\\\\[^\\]+\\pipe\\([^\\]+\\){0,1}[t]{0,1}sql\\query$", RegexOptions.IgnoreCase))
@@ -308,8 +308,8 @@ namespace Sqlcollaborative.Dbatools.Parameter
             // Connection String interpretation
             try
             {
-                System.Data.SqlClient.SqlConnectionStringBuilder connectionString =
-                    new System.Data.SqlClient.SqlConnectionStringBuilder(tempString);
+                Microsoft.Data.SqlClient.SqlConnectionStringBuilder connectionString =
+                    new Microsoft.Data.SqlClient.SqlConnectionStringBuilder(tempString);
                 DbaInstanceParameter tempParam = new DbaInstanceParameter(connectionString.DataSource);
                 _ComputerName = tempParam.ComputerName;
                 if (tempParam.InstanceName != "MSSQLSERVER")
@@ -496,7 +496,7 @@ namespace Sqlcollaborative.Dbatools.Parameter
         /// Creates a DBA Instance Parameter from an established SQL Connection
         /// </summary>
         /// <param name="Connection">The connection to reuse</param>
-        public DbaInstanceParameter(System.Data.SqlClient.SqlConnection Connection)
+        public DbaInstanceParameter(Microsoft.Data.SqlClient.SqlConnection Connection)
         {
             InputObject = Connection;
             DbaInstanceParameter tempParam = new DbaInstanceParameter(Connection.DataSource);
@@ -550,10 +550,10 @@ namespace Sqlcollaborative.Dbatools.Parameter
                     try
                     {
                         if (tempInput.Properties["ComputerName"] != null)
-                                _ComputerName = (string)tempInput.Properties["ComputerName"].Value;
+                            _ComputerName = (string)tempInput.Properties["ComputerName"].Value;
 
                         if ((tempInput.Properties["NetPort"] != null) && ((Int32)tempInput.Properties["NetPort"].Value != 1433))
-                                _Port = (Int32)tempInput.Properties["NetPort"].Value;
+                            _Port = (Int32)tempInput.Properties["NetPort"].Value;
 
                         if ((tempInput.Properties["DbaInstanceName"] != null) && ((string)tempInput.Properties["DbaInstanceName"].Value != "MSSQLSERVER"))
                             _InstanceName = (string)tempInput.Properties["DbaInstanceName"].Value;
@@ -561,8 +561,8 @@ namespace Sqlcollaborative.Dbatools.Parameter
                         if (String.IsNullOrEmpty(_ComputerName))
                         {
                             if (tempInput.Properties["NetName"] != null)
-                                _ComputerName = (string)tempInput.Properties["NetName"].Value;	
-                            else	
+                                _ComputerName = (string)tempInput.Properties["NetName"].Value;
+                            else
                                 _ComputerName = (new DbaInstanceParameter((string)tempInput.Properties["DomainInstanceName"].Value)).ComputerName;
                             _InstanceName = (string)tempInput.Properties["InstanceName"].Value;
                             PSObject tempObject = new PSObject(tempInput.Properties["ConnectionContext"].Value);
@@ -618,7 +618,7 @@ namespace Sqlcollaborative.Dbatools.Parameter
                     {
                         //Pass the ServerName property of the SMO object to the string constrtuctor,
                         //so we don't have to re-invent the wheel on instance name / port parsing
-                        DbaInstanceParameter parm = new DbaInstanceParameter((string) tempInput.Properties["ServerName"].Value);
+                        DbaInstanceParameter parm = new DbaInstanceParameter((string)tempInput.Properties["ServerName"].Value);
                         _ComputerName = parm.ComputerName;
 
                         if (parm.InstanceName != "MSSQLSERVER")

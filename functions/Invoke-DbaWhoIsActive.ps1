@@ -272,7 +272,7 @@ function Invoke-DbaWhoIsActive {
 
             Write-Message -Level Verbose -Message "Collecting sp_whoisactive data from server: $instance"
             try {
-                $sqlConnection = New-Object System.Data.SqlClient.SqlConnection
+                $sqlConnection = New-Object Microsoft.Data.SqlClient.SqlConnection
                 $sqlConnection.ConnectionString = $server.ConnectionContext.ConnectionString
                 $sqlConnection.Open()
 
@@ -283,7 +283,7 @@ function Invoke-DbaWhoIsActive {
                     $sqlConnection.ChangeDatabase($Database)
                 }
 
-                $sqlCommand = New-Object System.Data.SqlClient.SqlCommand
+                $sqlCommand = New-Object Microsoft.Data.SqlClient.SqlCommand
                 $sqlCommand.CommandType = "StoredProcedure"
                 $sqlCommand.CommandText = "dbo.sp_WhoIsActive"
                 $sqlCommand.Connection = $sqlConnection
@@ -306,8 +306,8 @@ function Invoke-DbaWhoIsActive {
                     }
                 }
 
-                $dataTable = New-Object system.Data.DataSet
-                $dataAdapter = New-Object system.Data.SqlClient.SqlDataAdapter($sqlCommand)
+                $dataTable = New-Object System.Data.DataSet
+                $dataAdapter = New-Object Microsoft.Data.SqlClient.SqlDataAdapter($sqlCommand)
                 $dataAdapter.fill($dataTable) | Out-Null
                 $dataTable.Tables.Rows
             } catch {
