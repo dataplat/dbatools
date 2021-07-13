@@ -28,7 +28,7 @@ namespace Sqlcollaborative.Dbatools.Parameter
         [DataRow(" \n \t")]
         [DataRow(" \v\t\t ")]
         [DataRow(null)]
-        [ExpectedException(typeof(BloodyHellGiveMeSomethingToWorkWithException), "Bloody hell! Don't give me an empty string for an instance name!")]
+        [ExpectedException(typeof(BloodyHellGiveMeSomethingToWorkWithException), "Bloody hell! Don't give me an empty string for an instance name")]
         [TestMethod]
         public void TestEmptyString(string whitespace)
         {

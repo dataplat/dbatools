@@ -209,10 +209,10 @@ namespace Sqlcollaborative.Dbatools.Configuration
         public void ResetValue()
         {
             if (!Initialized)
-                throw new InvalidOperationException("Object has not been initialized yet and thus has no state to revert to!");
+                throw new InvalidOperationException("Object has not been initialized yet and thus has no state to revert to");
 
             if (PolicyEnforced)
-                throw new UnauthorizedAccessException("This setting has been enforced by policy and cannot be changed, not even reverted to default!");
+                throw new UnauthorizedAccessException("This setting has been enforced by policy and cannot be changed, not even reverted to default");
 
             Value = DefaultValue;
         }

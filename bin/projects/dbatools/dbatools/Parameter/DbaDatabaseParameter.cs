@@ -51,7 +51,7 @@ namespace Sqlcollaborative.Dbatools.Parameter
         public DbaDatabaseParameter(object Item)
         {
             if (Item == null)
-                throw new ArgumentException("Input must not be null!");
+                throw new ArgumentException("Input must not be null");
 
             InputObject = Item;
             PSObject tempInput = new PSObject(Item);

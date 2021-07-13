@@ -15,38 +15,38 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     Context "Testing DarlingData installer with download" {
         BeforeAll {
-            $database = "dbatoolsci_dd_$(Get-Random)"
-            $server = Connect-DbaInstance -SqlInstance $script:instance2
+            $database = "dbatoolsci_darling_$(Get-Random)"
+            $server = Connect-DbaInstance -SqlInstance $script:instance3
             $server.Query("CREATE DATABASE $database")
 
-            $resultsDownload = Install-DbaDarlingData -SqlInstance $script:instance2 -Database $database -Branch master -Force -Verbose:$false
+            $resultsDownload = Install-DbaDarlingData -SqlInstance $script:instance3 -Database $database -Branch master -Force -Verbose:$false
         }
         AfterAll {
-            Remove-DbaDatabase -SqlInstance $script:instance2 -Database $database -Confirm:$false
+            Remove-DbaDatabase -SqlInstance $script:instance3 -Database $database -Confirm:$false
         }
 
         It "Installs to specified database: $database" {
-            $resultsDownload[0].Database -eq $database | Should Be $true
+            $resultsDownload[0].Database | Should -Be $database
         }
         It "Shows status of Installed" {
-            $resultsDownload[0].Status -eq "Installed" | Should Be $true
+            $resultsDownload[0].Status | Should -Be "Installed"
         }
         It "At least installed sp_humanevents and sp_pressuredetector" {
-            'sp_humanevents', 'sp_pressuredetector' | Should BeIn $resultsDownload.Name
+            'sp_humanevents', 'sp_pressuredetector' | Should -BeIn $resultsDownload.Name
         }
         It "has the correct properties" {
             $result = $resultsDownload[0]
             $ExpectedProps = 'SqlInstance,InstanceName,ComputerName,Name,Status,Database'.Split(',')
-            ($result.PsObject.Properties.Name | Sort-Object) | Should Be ($ExpectedProps | Sort-Object)
+            ($result.PsObject.Properties.Name | Sort-Object) | Should -Be ($ExpectedProps | Sort-Object)
         }
         It "Shows status of Updated" {
-            $resultsDownload = Install-DbaDarlingData -SqlInstance $script:instance2 -Database $database -Verbose:$false
-            $resultsDownload[0].Status -eq 'Updated' | Should -Be $true
+            $resultsDownload = Install-DbaDarlingData -SqlInstance $script:instance3 -Database $database -Verbose:$false
+            $resultsDownload[0].Status | Should -Be 'Updated'
         }
     }
     Context "Testing First Responder Kit installer with LocalFile" {
         BeforeAll {
-            $database = "dbatoolsci_dd_$(Get-Random)"
+            $database = "dbatoolsci_darling_$(Get-Random)"
             $server = Connect-DbaInstance -SqlInstance $script:instance3
             $server.Query("CREATE DATABASE $database")
 
@@ -62,22 +62,23 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         }
 
         It "Installs to specified database: $database" {
-            $resultsLocalFile[0].Database -eq $database | Should -Be $true
+            $resultsLocalFile[0].Database | Should -Be $database
         }
         It "Shows status of Installed" {
-            $resultsLocalFile[0].Status -eq "Installed" | Should -Be $true
+            $resultsLocalFile[0].Status | Should -Be "Installed"
         }
         It "At least installed sp_humanevents and sp_pressuredetector" {
-            'sp_humanevents', 'sp_pressuredetector' | Should BeIn $resultsLocalFile.Name
+            'sp_humanevents', 'sp_pressuredetector' | Should -BeIn $resultsLocalFile.Name
         }
         It "Has the correct properties" {
             $result = $resultsLocalFile[0]
             $ExpectedProps = 'SqlInstance,InstanceName,ComputerName,Name,Status,Database'.Split(',')
-            ($result.PsObject.Properties.Name | Sort-Object) | Should Be ($ExpectedProps | Sort-Object)
+            ($result.PsObject.Properties.Name | Sort-Object) | Should -Be ($ExpectedProps | Sort-Object)
         }
         It "Shows status of Updated" {
             $resultsLocalFile = Install-DbaDarlingData -SqlInstance $script:instance3 -Database $database
-            $resultsLocalFile[0].Status -eq 'Updated' | Should -Be $true
+            $resultsLocalFile[0].Status | Should -Be 'Updated'
         }
     }
 }
+# $script:instance2

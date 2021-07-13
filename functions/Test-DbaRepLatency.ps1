@@ -125,7 +125,8 @@ function Test-DbaRepLatency {
                 $transPub.DatabaseName = $publication.Database
 
                 # Set the Name and DatabaseName properties for the publication, and set the ConnectionContext property to the connection created in step 1.
-                $transPub.ConnectionContext = $server.ConnectionContext.SqlConnectionObject
+                $transsqlconn = New-SqlConnection -SqlInstance $instance -SqlCredential $SqlCredential
+                $transPub.ConnectionContext = $transsqlconn
 
                 # Call the LoadProperties method to get the properties of the object. If this method returns false, either the publication properties in Step 3 were defined incorrectly or the publication does not exist.
                 if (!$transPub.LoadProperties()) {
@@ -141,9 +142,8 @@ function Test-DbaRepLatency {
 `           ##################################################################################
 
             $repServer = New-Object Microsoft.SqlServer.Replication.ReplicationServer
-
-            # Set the Name and DatabaseName properties for the Replication Server, and set the ConnectionContext property to the connection created in step 1.
-            $repServer.ConnectionContext = $server.ConnectionContext.SqlConnectionObject
+            $sqlconn = New-SqlConnection -SqlInstance $instance -SqlCredential $SqlCredential
+            $repServer.ConnectionContext = $sqlconn
 
             $distributionServer = $repServer.DistributionServer
             $distributionDatabase = $repServer.DistributionDatabase
@@ -165,7 +165,8 @@ function Test-DbaRepLatency {
                 $pubMon.PublisherName = $publication.Server
                 $pubMon.PublicationDBName = $publication.Database
 
-                $pubMon.ConnectionContext = $distServer.ConnectionContext.SqlConnectionObject;
+                $distsqlconn = New-SqlConnection -SqlInstance $DistributionServer -SqlCredential $SqlCredential
+                $pubMon.ConnectionContext = $distsqlconn
 
 
                 # Call the LoadProperties method to get the properties of the object. If this method returns false, either the publication monitor properties in Step 3 were defined incorrectly or the publication does not exist.
@@ -235,7 +236,6 @@ function Test-DbaRepLatency {
                             $pubMon.CleanUpTracerTokenHistory($tracerTokenId)
 
                         }
-
                     }
                 }
             }

@@ -235,7 +235,7 @@ function New-DbaDbTransfer {
             $transfer.DestinationLoginSecure = $true
         }
         if ($connString) {
-            $connStringBuilder = New-Object System.Data.SqlClient.SqlConnectionStringBuilder $connString
+            $connStringBuilder = New-Object Microsoft.Data.SqlClient.SqlConnectionStringBuilder $connString
             if ($srv = $connStringBuilder['Data Source']) { $transfer.DestinationServer = $srv }
             else { $transfer.DestinationServer = 'localhost' }
             if ($uName = $connStringBuilder['User ID']) { $transfer.DestinationLogin = $uName }

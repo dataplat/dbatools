@@ -62,7 +62,7 @@ namespace Sqlcollaborative.Dbatools.Utility
         {
             Options = RegexOptions.IgnoreCase;
             if (String.IsNullOrEmpty(regexPattern)) {
-                throw new ArgumentNullException("regexPattern", "Must specify a pattern!");
+                throw new ArgumentNullException("regexPattern", "Must specify a pattern");
             }
 
             RegexPattern = regexPattern;
