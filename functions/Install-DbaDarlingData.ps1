@@ -220,7 +220,7 @@ function Install-DbaDarlingData {
             if ($PSCmdlet.ShouldProcess($database, "Installing DarlingData procedures in $database on $instance")) {
                 Write-Message -Level Verbose -Message "Starting installing/updating the DarlingData stored procedures in $database on $instance."
                 $allprocedures_query = "SELECT name FROM sys.procedures WHERE is_ms_shipped = 0"
-                $allprocedures = ($server.Databases[$database].ExecuteWithResults($allprocedures_query).Tables).Name
+                $allprocedures = ($server.Query($allprocedures_query, $Database)).Name
 
                 # Install/Update each FRK stored procedure
 
@@ -249,16 +249,15 @@ function Install-DbaDarlingData {
                     if ($Pscmdlet.ShouldProcess($instance, "installing/updating $scriptName in $database")) {
                         try {
                             foreach ($query in ($sql -Split "\nGO\b")) {
-                                $null = $db.Invoke($query)
+                                $null = $db.Query($query)
                             }
                         } catch {
                             Write-Message -Level Warning -Message "Could not execute at least one portion of $scriptName in $Database on $instance." -ErrorRecord $_
                             $scriptError = $true
-                            $theerror = Get-ErrorMessage -Record $_
                         }
 
                         if ($scriptError) {
-                            $baseres.Status = "Error: $theerror"
+                            $baseres.Status = 'Error'
                         } elseif ($script.BaseName -in $allprocedures) {
                             $baseres.Status = 'Updated'
                         } else {
