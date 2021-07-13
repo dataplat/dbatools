@@ -53,7 +53,8 @@ $TestsRunGroups = @{
         'Test-DbaDeprecatedFeature',
         'Remove-DbaDatabaseSafely',
         'Get-DbaDbMasterKey',
-        'Get-DbaPermission'
+        'Get-DbaPermission',
+        'Test-DbaManagementObject'
     )
     # do not run everywhere
     "disabled"          = @()
