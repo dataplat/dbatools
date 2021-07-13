@@ -49,7 +49,8 @@ $TestsRunGroups = @{
         'New-DbaLogin',
         'Watch-DbaDbLogin',
         'ConvertTo-DbaXESession',
-        'Test-DbaInstanceName'
+        'Test-DbaInstanceName',
+        'Test-DbaDeprecatedFeature'
     )
     # do not run everywhere
     "disabled"          = @()
