@@ -54,7 +54,8 @@ $scriptBlock = {
             'Microsoft.SqlServer.Types',
             'Microsoft.SqlServer.Management.RegisteredServers',
             'Microsoft.SqlTools.Hosting',
-            'Microsoft.SqlTools.ManagedBatchParser'
+            'Microsoft.SqlTools.ManagedBatchParser',
+            'Microsoft.SqlServer.Management.Dmf'
         )
     } else {
         $names = @(
@@ -111,8 +112,7 @@ $scriptBlock = {
     }
 
     foreach ($name in $names) {
-
-        if ($name.StartsWith("win\") -and $isLinux) {
+        if ($name.StartsWith("win\") -and ($isLinux -or $IsMacOS)) {
             $name = $name.Replace("win\", "")
         }
         $x64only = 'Microsoft.SqlServer.Replication', 'Microsoft.SqlServer.XEvent.Linq', 'Microsoft.SqlServer.BatchParser', 'Microsoft.SqlServer.Rmo', 'Microsoft.SqlServer.BatchParserClient'
