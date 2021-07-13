@@ -165,50 +165,10 @@ function Reset-DbaAdmin {
                 $ipaddr = "."
                 $hostName = $env:COMPUTERNAME
                 $baseaddress = $env:COMPUTERNAME
-            }
-
-            # If server is not local, get IP address and NetBios name in case CNAME records were referenced in the SQL hostname
-            if ($baseaddress -ne $env:COMPUTERNAME) {
-                # Test for WinRM #Test-WinRM neh
-                winrm id -r:$baseaddress 2>$null | Out-Null
-                if ($LastExitCode -ne 0) {
-                    Stop-Function -Continue -Message "Remote PowerShell access not enabled on on $instance or access denied. Quitting."
-                }
-
-                # Test Connection first using ping class which requires ICMP access then failback to tcp if pings are blocked
-                Write-Message -Level Verbose -Message "Testing connection to $baseaddress"
-                $ping = New-Object System.Net.NetworkInformation.Ping
-                $timeout = 1000 #milliseconds
-                $reply = $ping.Send($baseaddress, $timeout)
-                if ($reply.Status -ne 'Success') {
-                    Write-Message -Level Verbose -Message "First attempt using ICMP failed. Trying to connect using sockets. This may take up to 20 seconds."
-                    $tcp = New-Object System.Net.Sockets.TcpClient
-                    try {
-                        $tcp.Connect($baseaddress, 135)
-                        $tcp.Close()
-                        $tcp.Dispose()
-                    } catch {
-                        Stop-Function -Continue -ErrorRecord $_ -Message "Can't connect to $baseaddress either via ping or tcp (WMI port 135)"
-                    }
-                }
-                Write-Message -Level Verbose -Message "Resolving IP address."
-                try {
-                    $hostentry = [System.Net.Dns]::GetHostEntry($baseaddress)
-                    $ipaddr = ($hostentry | Where-Object  -NotLike '169.*' | Select-Object -First 1).IPAddressToString
-                } catch {
-                    Stop-Function -Continue -ErrorRecord $_ -Message "Could not resolve SqlServer IP or NetBIOS name"
-                }
-
-                Write-Message -Level Verbose -Message "Resolving NetBIOS name."
-                try {
-                    # this is required otherwise, the ip is returned
-                    $hostName = (Get-WmiObject -Class Win32_NetworkAdapterConfiguration -Filter IPEnabled=TRUE -ComputerName $ipaddr -ErrorAction Stop).PSComputerName
-                    if ($null -eq $hostName) {
-                        $hostName = (nbtstat -A $ipaddr | Where-Object { $_ -match '\<00\>  UNIQUE' } | ForEach-Object { $_.SubString(4, 14) }).Trim()
-                    }
-                } catch {
-                    Stop-Function -Continue -ErrorRecord $_ -Message "Could not access remote WMI object. Check permissions and firewall."
-                }
+            } else {
+                $resolved = Resolve-DbaNetworkName -ComputerName $baseaddress
+                $ipaddr = $resolved.IPAddress
+                $hostName = $resolved.FullComputerName
             }
 
             # Setup remote session if server is not local
