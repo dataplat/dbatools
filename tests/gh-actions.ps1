@@ -35,6 +35,7 @@ $params = @{
     WarningAction = "SilentlyContinue"
 }
 
-Invoke-DbaDbMirroring @params | Out-Host
+# Test BackupRestore
+#Invoke-DbaDbMirroring @params | Out-Host
 
-Get-DbaDbMirror -SqlInstance localhost | Out-Host
+#Get-DbaDbMirror -SqlInstance localhost | Out-Host
