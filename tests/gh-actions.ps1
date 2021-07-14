@@ -16,7 +16,7 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
         $PSDefaultParameterValues["*:WitnessSqlCredential"] = $cred
         $PSDefaultParameterValues["*:Confirm"] = $false
         $PSDefaultParameterValues["*:SharedPath"] = "/shared"
-        #$PSDefaultParameterValues["*:WarningAction"] = "SilentlyContinue"
+        $PSDefaultParameterValues["*:WarningAction"] = "SilentlyContinue"
         $global:ProgressPreference = "SilentlyContinue"
 
         Import-Module ./dbatools.psm1 -Force
@@ -38,7 +38,6 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
         $params = @{
             Database      = $newdb.Name
             Force         = $true
-            WarningAction = "SilentlyContinue"
         }
 
         Invoke-DbaDbMirroring @params | Select-Object -ExpandProperty Status | Should -Be "Success"
