@@ -217,7 +217,7 @@ function Invoke-DbaBalanceDataFiles {
                     Write-Message -Message "Processing database $db" -Level Verbose
 
                     # Check the datafiles of the database
-                    $dataFiles = Get-DbaDbFile -SqlInstance $instance -Database $db | Where-Object { $_.TypeDescription -eq 'ROWS' }
+                    $dataFiles = Get-DbaDbFile -SqlInstance $server -Database $db | Where-Object { $_.TypeDescription -eq 'ROWS' }
                     if ($dataFiles.Count -eq 1) {
                         # Set the success flag
                         $success = $false
