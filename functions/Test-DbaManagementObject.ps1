@@ -73,7 +73,7 @@ function Test-DbaManagementObject {
             try {
                 Invoke-Command2 -ComputerName $computer -ScriptBlock $scriptBlock -Credential $Credential -ArgumentList $VersionNumber -ErrorAction Stop
             } catch {
-                Stop-Function -Continue -Message "Failure" -ErrorRecord $_ -Target $computer -Continue
+                Stop-Function -Continue -Message "Failure" -ErrorRecord $_ -Target $computer
             }
         }
     }
