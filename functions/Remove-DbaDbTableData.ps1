@@ -233,18 +233,18 @@ function Remove-DbaDbTableData {
 
             foreach ($db in $dbDatabases) {
 
-                $instance = $db.Parent
+                $server = $db.Parent
 
-                if (Test-Bound LogBackupPath -and $instance.DatabaseEngineType -ne "SqlAzureDatabase") {
-                    $pathCheck = Test-DbaPath -SqlInstance $instance -Path $LogBackupPath
+                if (Test-Bound LogBackupPath -and $server.DatabaseEngineType -ne "SqlAzureDatabase") {
+                    $pathCheck = Test-DbaPath -SqlInstance $server -Path $LogBackupPath
                     if (-not $pathCheck) {
-                        Stop-Function -Message "The service account for $instance is not able to create log backups in $LogBackupPath."
+                        Stop-Function -Message "The service account for $server is not able to create log backups in $LogBackupPath."
                         return
                     }
                 }
 
                 # warn the caller if the database is using one of these configurations for on-prem
-                if ($instance.DatabaseEngineType -ne "SqlAzureDatabase") {
+                if ($server.DatabaseEngineType -ne "SqlAzureDatabase") {
 
                     $isDbLogShipping = $db.Query("SELECT COUNT(1) FROM msdb.dbo.log_shipping_monitor_primary WHERE primary_database = '$($db.Name)'")
 
@@ -302,7 +302,7 @@ function Remove-DbaDbTableData {
                             $iterationCount += 1
 
                             #If the db is in Azure then we won't do a checkpoint or a log backup since those are automatically managed.
-                            if ($instance.DatabaseEngineType -ne "SqlAzureDatabase") {
+                            if ($server.DatabaseEngineType -ne "SqlAzureDatabase") {
 
                                 if ($db.RecoveryModel -eq "Simple") {
                                     try {
@@ -321,9 +321,9 @@ function Remove-DbaDbTableData {
 
                                     if (Test-Bound LogBackupPath) {
                                         $timestamp = Get-Date -Format $LogBackupTimeStampFormat
-                                        $logBackupsArray += Backup-DbaDatabase -SqlInstance $instance -Database $db.Name -Type Log -FilePath "$LogBackupPath\$($db.Name)_$($timestamp)_$($iterationCount).trn"
+                                        $logBackupsArray += Backup-DbaDatabase -SqlInstance $server -Database $db.Name -Type Log -FilePath "$LogBackupPath\$($db.Name)_$($timestamp)_$($iterationCount).trn"
                                     } elseif (Test-Bound AzureBaseUrl) {
-                                        $logBackupsArray += Backup-DbaDatabase -SqlInstance $instance -Database $db.Name -Type Log -AzureBaseUrl $AzureBaseUrl -AzureCredential $AzureCredential
+                                        $logBackupsArray += Backup-DbaDatabase -SqlInstance $server -Database $db.Name -Type Log -AzureBaseUrl $AzureBaseUrl -AzureCredential $AzureCredential
                                     }
                                 }
                             }

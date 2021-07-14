@@ -185,7 +185,7 @@ function New-DbaDatabase {
 
             # validate the collation
             if ($Collation) {
-                $collations = Get-DbaAvailableCollation -SqlInstance $instance
+                $collations = Get-DbaAvailableCollation -SqlInstance $server
 
                 if ($collations.Name -notcontains $Collation) {
                     Stop-Function -Message "$Collation is not a valid collation on $instance" -Target $instance -Continue
