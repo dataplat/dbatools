@@ -188,13 +188,13 @@ function Install-DbaDarlingData {
                     $null = New-Item -Path $LocalCachedCopy -ItemType Container
                 }
                 if ($Procedure -eq 'All' -or $Procedure -contains 'Human') {
-                    Copy-Item -Path "$zipFolder\sp_humanevents\sp_humanevents.sql" -Destination $LocalCachedCopy
+                    Copy-Item -Path "$zipFolder\sp_HumanEvents\sp_HumanEvents.sql" -Destination $LocalCachedCopy
                 }
                 if ($procedure -eq 'All' -or $Procedure -contains 'Pressure') {
-                    Copy-Item -Path "$zipFolder\sp_pressuredetector\sp_pressuredetector.sql" -Destination $LocalCachedCopy
+                    Copy-Item -Path "$zipFolder\sp_PressureDetector\sp_PressureDetector.sql" -Destination $LocalCachedCopy
                 }
                 if ($Procedure -eq 'All' -or $Procedure -contains 'Quickie') {
-                    Copy-Item -Path "$zipFolder\sp_quickiestore\sp_quickiestore.sql" -Destination $LocalCachedCopy
+                    Copy-Item -Path "$zipFolder\sp_QuickieStore\sp_QuickieStore.sql" -Destination $LocalCachedCopy
                 }
             }
         }
