@@ -128,26 +128,3 @@ aka "The guy who made most of The Library that Failed to import"
     }
     #endregion Add Code
 }
-
-#region Version Warning
-
-$dbaToolsVersion =
-@(foreach ($_ in $dbaToolsAssembly.CustomAttributes) {
-        if ($_ -is [Reflection.AssemblyFileVersionAttribute]) {
-            $_.ConstructorArguments.Value
-            break
-        }
-    }) -ne $null -as [Version]
-if ($currentLibraryVersion -ne $dbaToolsVersion) {
-    Write-Verbose @"
-A version missmatch between the dbatools library loaded and the one expected by
-this module. This usually happens when you update the dbatools module and use
-Remove-Module / Import-Module in order to load the latest version without
-starting a new PowerShell instance.
-
-Please restart the console to apply the library update, or unexpected behavior will likely occur.
-
-If the issues continue to persist, please Remove-Item '$script:PSModuleRoot\bin\dbatools.dll'
-"@
-}
-#endregion Version Warning
