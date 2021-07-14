@@ -138,13 +138,15 @@ function Reset-DbaAdmin {
                 $conn.Open()
                 $cmd = New-Object Microsoft.Data.sqlclient.sqlcommand($null, $conn)
                 $cmd.CommandText = $sql
-                $cmd.ExecuteNonQuery() | Out-Null
+                $null = $cmd.ExecuteNonQuery()
+                $true
+            } catch {
+                Stop-Function -Message "Failure" -ErrorRecord $_ -EnableException $EnableException
+                $false
+            } finally {
                 $cmd.Dispose()
                 $conn.Close()
                 $conn.Dispose()
-                $true
-            } catch {
-                Stop-Function -Message "Failure" -ErrorRecord $_
             }
         }
         #endregion Utility functions
