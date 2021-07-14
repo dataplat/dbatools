@@ -596,9 +596,6 @@ function Connect-DbaInstance {
                     }
                     if ($copyContext) {
                         $connContext = $inputObject.ConnectionContext.Copy()
-                        if ($Database) {
-                            $connContext = $connContext.GetDatabaseConnection($Database)
-                        }
                         if ($ApplicationIntent) {
                             $connContext.ApplicationIntent = $ApplicationIntent
                         }
@@ -607,6 +604,9 @@ function Connect-DbaInstance {
                         }
                         if (Test-Bound -Parameter StatementTimeout) {
                             $connContext.StatementTimeout = $StatementTimeout
+                        }
+                        if ($Database) {
+                            $connContext = $connContext.GetDatabaseConnection($Database)
                         }
                         $server = New-Object -TypeName Microsoft.SqlServer.Management.Smo.Server -ArgumentList $connContext
                     } else {
