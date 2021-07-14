@@ -140,9 +140,9 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
 
         $null = Get-DbaTrace -Id $traceid | ConvertTo-DbaXESession -Name "dbatoolsci-session"
         $results = Start-DbaXESession -Session "dbatoolsci-session"
-        $results.Name | Should Be  "dbatoolsci-session"
-        $results.Status | Should Be "Running"
-        $results.Targets.Name | Should Be "package0.event_file"
+        $results.Name | Should -Be  "dbatoolsci-session"
+        $results.Status | Should -Be "Running"
+        $results.Targets.Name | Should -Be "package0.event_file"
     }
 }
 
