@@ -123,14 +123,14 @@ function Remove-DbaDbData {
 
             foreach ($db in $dbDatabases) {
                 if ($Pscmdlet.ShouldProcess($db.Name, "Removing all data on $($db.Parent.Name)")) {
-                    Write-Message -Level Verbose -Message "Truncating tables in $db on instance $instance"
-                    $instance = $db.Parent
+                    $server = $db.Parent
+                    Write-Message -Level Verbose -Message "Truncating tables in $db on instance $server"
                     try {
 
                         # Collect up the objects we need to drop and recreate
                         $objects = @()
-                        $objects += Get-DbaDbForeignKey -SqlInstance $instance -Database $db.Name
-                        $objects += Get-DbaDbView -SqlInstance $instance -Database $db.Name -ExcludeSystemView
+                        $objects += Get-DbaDbForeignKey -SqlInstance $server -Database $db.Name
+                        $objects += Get-DbaDbView -SqlInstance $server -Database $db.Name -ExcludeSystemView
 
                         # Script out the create statements for objects
                         $createOptions = New-DbaScriptingOption
@@ -144,29 +144,29 @@ function Remove-DbaDbData {
                         $dropOptions.ScriptDrops = $true
                         $null = $objects | Export-DbaScript -FilePath "$Path\$($db.Name)_Drop.Sql" -ScriptingOptionsObject $dropOptions
                     } catch {
-                        Stop-Function -Message "Issue scripting out the drop\create scripts for objects in $db on instance $instance" -ErrorRecord $_
+                        Stop-Function -Message "Issue scripting out the drop\create scripts for objects in $db on instance $server" -ErrorRecord $_
                         return
                     }
 
                     try {
                         if ($objects) {
-                            Invoke-DbaQuery -SqlInstance $instance -Database $db.Name -File "$Path\$($db.Name)_Drop.Sql"
+                            Invoke-DbaQuery -SqlInstance $server -Database $db.Name -File "$Path\$($db.Name)_Drop.Sql"
                         }
 
                         $db.Tables | ForEach-Object { $_.TruncateData() }
 
                         if ($objects) {
-                            Invoke-DbaQuery -SqlInstance $instance -Database $db.Name -File "$Path\$($db.Name)_Create.Sql"
+                            Invoke-DbaQuery -SqlInstance $server -Database $db.Name -File "$Path\$($db.Name)_Create.Sql"
                         }
                     } catch {
-                        Write-Message -Level warning -Message "Issue truncating tables in $db on instance $instance"
-                        Invoke-DbaQuery -SqlInstance $instance -Database $db.Name -File "$Path\$($db.Name)_Create.Sql"
+                        Write-Message -Level warning -Message "Issue truncating tables in $db on instance $server"
+                        Invoke-DbaQuery -SqlInstance $server -Database $db.Name -File "$Path\$($db.Name)_Create.Sql"
                     }
                     if ($objects) {
                         try {
                             Remove-Item "$Path\$($db.Name)_Drop.Sql", "$Path\$($db.Name)_Create.Sql" -ErrorAction Stop
                         } catch {
-                            Write-Message -Level warning -Message "Unable to clear up output files for $instance.$db"
+                            Write-Message -Level warning -Message "Unable to clear up output files for $db on $server"
                         }
                     }
                 }

@@ -161,7 +161,7 @@ function New-DbaDbSnapshot {
             }
             #Checks for path existence, left the length test because test-bound wasn't working for some reason
             if ($Path.Length -gt 0) {
-                if (!(Test-DbaPath -SqlInstance $instance -Path $Path)) {
+                if (!(Test-DbaPath -SqlInstance $server -Path $Path)) {
                     Stop-Function -Message "$instance cannot access the directory $Path" -ErrorRecord $_ -Target $instance -Continue -EnableException $EnableException
                 }
             }
