@@ -14,12 +14,12 @@ function Join-AdminUnc {
 
     )
 
-    if (!$filepath) { return }
+    if (!$filepath -or $IsLinux -or $IsMacOs) { return }
     if ($filepath.StartsWith("\\")) { return $filepath }
 
     $servername = $servername.Split("\")[0]
 
-    if ($filepath.length -gt 0 -and $filepath -ne [System.DbNull]::Value -and -not $IsLinux) {
+    if ($filepath.length -gt 0 -and $filepath -ne [System.DbNull]::Value) {
         $newpath = Join-Path "\\$servername\" $filepath.replace(':', '$')
         return $newpath
     } else { return }
