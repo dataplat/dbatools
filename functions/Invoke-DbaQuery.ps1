@@ -38,7 +38,7 @@ function Invoke-DbaQuery {
         PSObject and PSObjectArray output introduces overhead but adds flexibility for working with results: https://forums.powershell.org/t/dealing-with-dbnull/2328/2
 
     .PARAMETER SqlParameters
-        Specifies a hashtable of parameters for parameterized SQL queries.  http://blog.codinghorror.com/give-me-parameterized-sql-or-give-me-death/
+        Specifies a hashtable of parameters or output from New-DbaSqlParameter for parameterized SQL queries.  http://blog.codinghorror.com/give-me-parameterized-sql-or-give-me-death/
 
     .PARAMETER AppendServerInstance
         If this switch is enabled, the SQL Server instance will be appended to PSObject and DataRow output.
@@ -135,8 +135,7 @@ function Invoke-DbaQuery {
         [Microsoft.SqlServer.Management.Smo.SqlSmoObject[]]$SqlObject,
         [ValidateSet("DataSet", "DataTable", "DataRow", "PSObject", "PSObjectArray", "SingleValue")]
         [string]$As = "DataRow",
-        # do not cast -- we need this to accommodate different object types
-        $SqlParameters,
+        [psobject[]]$SqlParameters,
         [System.Data.CommandType]$CommandType = 'Text',
         [switch]$AppendServerInstance,
         [switch]$MessagesToOutput,

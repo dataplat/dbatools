@@ -214,4 +214,19 @@ SELECT @@servername as dbname
         $results[3].b | Should -Be 4
         $results[4].c | Should -Be 7
     }
+
+    It "supports using SqlParameters as Microsoft.Data.SqlClient.SqlParameter (#7434)" {
+        $null = Invoke-DbaQuery -SqlInstance $script:instance2 -Database tempdb -Query "CREATE OR ALTER PROC [dbo].[my_proc]
+                    @json_result nvarchar(max) output
+                AS
+                BEGIN
+                set @json_result = (
+                    select 'sample' as 'example'
+                    for json path, without_array_wrapper
+                );
+                END"
+        $output = New-DbaSqlParameter -ParameterName json_result -SqlDbType NVarChar -Size -1 -Direction Output
+        Invoke-DbaQuery -SqlInstance localhost -Database master -CommandType StoredProcedure -Query my_proc -SqlParameters $output
+        $output.Value | Should -Be '{"example":"sample"}'
+    }
 }

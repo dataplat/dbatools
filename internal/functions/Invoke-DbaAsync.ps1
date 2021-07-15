@@ -57,7 +57,7 @@ function Invoke-DbaAsync {
         [string]
         $As = "DataRow",
 
-        $SqlParameters,
+        [psobject[]]$SqlParameters,
 
         [System.Data.CommandType]
         $CommandType = 'Text',
@@ -172,12 +172,12 @@ function Invoke-DbaAsync {
             $cmd.CommandTimeout = $QueryTimeout
 
             if ($null -ne $SqlParameters) {
-                if ($SqlParameters | Get-Member -Type Method ResetSqlDbType) {
-                    foreach ($sqlparm in $SqlParameters) {
-                        $null = $cmd.Parameters.Add($sqlparm)
+                if (($SqlParameters | Select-Object -First 1) -is [Microsoft.Data.SqlClient.SqlParameter]) {
+                    foreach ($sqlparam in $SqlParameters) {
+                        $null = $cmd.Parameters.Add($sqlparam)
                     }
                 } else {
-                    $SqlParameters.GetEnumerator() | ForEach-Object {
+                    ($SqlParameters | Select-Object -First 1).GetEnumerator() | ForEach-Object {
                         if ($null -ne $_.Value) {
                             $cmd.Parameters.AddWithValue($_.Key, $_.Value)
                         } else {

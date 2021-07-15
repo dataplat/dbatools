@@ -69,6 +69,11 @@ function New-DbaSqlParameter {
     .PARAMETER Value
         Sets the value of the parameter.
 
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+
     .NOTES
         Tags: Query
         Author: Chrissy LeMaire (@cl), netnerds.net
@@ -80,9 +85,11 @@ function New-DbaSqlParameter {
         https://dbatools.io/New-DbaSqlParameter
 
     .EXAMPLE
-        PS C:\> New-DbaSqlParameter -ParameterName ID -SqlDbType Int -Value 10
+        PS C:\> $output = New-DbaSqlParameter -ParameterName json_result -SqlDbType NVarChar -Size -1 -Direction Output
+        PS C:\> Invoke-DbaQuery -SqlInstance localhost -Database master -CommandType StoredProcedure -Query my_proc -SqlParameters $output
+        PS C:\> $output.Value
 
-
+        No idea lol
     #>
     [CmdletBinding()]
     param(
@@ -98,6 +105,7 @@ function New-DbaSqlParameter {
         [switch]$IsNullable,
         [int]$LocaleId,
         [string]$Offset,
+        [Alias("Name")]
         [string]$ParameterName,
         [string]$Precision,
         [string]$Scale,
@@ -113,7 +121,8 @@ function New-DbaSqlParameter {
         [string]$SqlValue,
         [string]$TypeName,
         [string]$UdtTypeName,
-        [object]$Value
+        [object]$Value,
+        [switch]$EnableException
     )
     $param = New-Object Microsoft.Data.SqlClient.SqlParameter
 
