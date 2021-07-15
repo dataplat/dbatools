@@ -91,7 +91,7 @@ function New-DbaSqlParameter {
 
     .EXAMPLE
         PS C:\> $output = New-DbaSqlParameter -ParameterName json_result -SqlDbType NVarChar -Size -1 -Direction Output
-        PS C:\> Invoke-DbaQuery -SqlInstance localhost -Database master -CommandType StoredProcedure -Query my_proc -SqlParameters $output
+        PS C:\> Invoke-DbaQuery -SqlInstance localhost -Database master -CommandType StoredProcedure -Query my_proc -SqlParameter $output
         PS C:\> $output.Value
 
         Creates an output parameter and uses it to invoke a stored procedure.
