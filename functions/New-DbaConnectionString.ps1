@@ -292,7 +292,12 @@ function New-DbaConnectionString {
                 if ($Pscmdlet.ShouldProcess($instance, "Making a new Connection String")) {
                     if ($instance.Type -like "Server") {
                         Write-Message -Level Debug -Message "server object passed in, connection string is: $($instance.InputObject.ConnectionContext.ConnectionString)"
-                        $connStringBuilder = New-Object -TypeName Microsoft.Data.SqlClient.SqlConnectionStringBuilder -ArgumentList $instance.InputObject.ConnectionContext.ConnectionString
+                        if ($Legacy) {
+                            $converted = $instance.InputObject.ConnectionContext.ConnectionString | Convert-ConnectionString
+                            $connStringBuilder = New-Object -TypeName System.Data.SqlClient.SqlConnectionStringBuilder -ArgumentList $converted
+                        } else {
+                            $connStringBuilder = New-Object -TypeName Microsoft.Data.SqlClient.SqlConnectionStringBuilder -ArgumentList $instance.InputObject.ConnectionContext.ConnectionString
+                        }
                         # In Azure, check for a database change
                         if ((Test-Azure -SqlInstance $instance) -and $Database) {
                             $connStringBuilder['Initial Catalog'] = $Database
@@ -355,8 +360,11 @@ function New-DbaConnectionString {
                             # Why adding tcp:?
                             #$connStringBuilder['Data Source'] = "tcp:$($instance.ComputerName),$($instance.Port)"
                         }
-
-                        $connstring = $connStringBuilder.ConnectionString
+                        if ($Legacy) {
+                            $connstring = $connStringBuilder.ConnectionString
+                        } else {
+                            $connstring = $connStringBuilder.ToString()
+                        }
                         if ($AppendConnectionString) {
                             # TODO: Check if new connection string is still valid
                             $connstring = "$connstring;$AppendConnectionString"
