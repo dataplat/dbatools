@@ -26,6 +26,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     AfterAll {
         try {
             $null = $db.Query("DROP PROCEDURE dbo.dbatoolsci_procedure_example")
+            $null = $db.Query("DROP PROCEDURE dbo.my_proc")
         } catch {
             $null = 1
         }

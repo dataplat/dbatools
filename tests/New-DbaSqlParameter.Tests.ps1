@@ -27,7 +27,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     }
     AfterAll {
         try {
-            $null = $db.Query("DROP PROCEDURE dbo.my_proc")
+            $null = Invoke-DbaQuery -SqlInstance $script:instance2 -Database tempdb -Query "DROP PROCEDURE dbo.my_proc"
         } catch {
             $null = 1
         }
