@@ -32,7 +32,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             $null = 1
         }
     }
-    It "supports using SqlParameters as Microsoft.Data.SqlClient.SqlParameter (#7434)" {
+    It "creates a usable sql parameter" {
         $output = New-DbaSqlParameter -ParameterName json_result -SqlDbType NVarChar -Size -1 -Direction Output
         Invoke-DbaQuery -SqlInstance localhost -Database master -CommandType StoredProcedure -Query my_proc -SqlParameters $output
         $output.Value | Should -Be '{"example":"sample"}'

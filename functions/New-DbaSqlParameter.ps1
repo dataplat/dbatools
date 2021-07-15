@@ -85,11 +85,16 @@ function New-DbaSqlParameter {
         https://dbatools.io/New-DbaSqlParameter
 
     .EXAMPLE
+        PS C:\> New-DbaSqlParameter -ParameterName json_result -SqlDbType NVarChar -Size -1 -Direction Output
+
+        Creates a SqlParameter object that can be used with Invoke-DbaQuery
+
+    .EXAMPLE
         PS C:\> $output = New-DbaSqlParameter -ParameterName json_result -SqlDbType NVarChar -Size -1 -Direction Output
         PS C:\> Invoke-DbaQuery -SqlInstance localhost -Database master -CommandType StoredProcedure -Query my_proc -SqlParameters $output
         PS C:\> $output.Value
 
-        No idea lol
+        Creates an output parameter and uses it to invoke a stored procedure.
     #>
     [CmdletBinding()]
     param(
