@@ -747,8 +747,8 @@ function Restore-DbaDatabase {
                 Restore-DbaDatabase -SqlInstance $RestoreInstance -Recover -DatabaseName $DatabaseName -OutputScriptOnly:$OutputScriptOnly
             }
             # refresh the SMO as we probably used T-SQL, but only if we already got a SMO
-            if ($SqlInstance -is [Microsoft.SqlServer.Management.Smo.Server]) {
-                $SqlInstance.Databases.Refresh()
+            if ($SqlInstance.InputObject -is [Microsoft.SqlServer.Management.Smo.Server]) {
+                $SqlInstance.InputObject.Databases.Refresh()
             }
         }
     }
