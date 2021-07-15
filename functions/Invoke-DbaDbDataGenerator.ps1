@@ -214,12 +214,13 @@ function Invoke-DbaDbDataGenerator {
                                     if ($columnMaskInfo) {
                                         # Generate a new value
                                         try {
+                                            # TODO: $columnobject is not set here, so should this be $columnMaskInfo?
+                                            # TODO: Is SubType correct or should this be Type? In my example config for "CREATE TABLE test (a varchar(20))", Type is varchar, SubType is String
                                             if ($columnobject.SubType -in $supportedDataTypes) {
-                                                $newValue = Get-DbaRandomizedValue -DataType $columnMaskInfo.SubType -Locale $Locale
+                                                $newValue = Get-DbaRandomizedValue -DataType $columnMaskInfo.SubType -Locale $Locale -Min $columnMaskInfo.MinValue -Max $columnMaskInfo.MaxValue
                                             } else {
-                                                $newValue = Get-DbaRandomizedValue -RandomizerType $columnMaskInfo.MaskingType -RandomizerSubtype $columnMaskInfo.SubType -Locale $Locale
+                                                $newValue = Get-DbaRandomizedValue -RandomizerType $columnMaskInfo.MaskingType -RandomizerSubtype $columnMaskInfo.SubType -Locale $Locale -Min $columnMaskInfo.MinValue -Max $columnMaskInfo.MaxValue
                                             }
-
                                         } catch {
                                             Stop-Function -Message "Failure" -Target $columnMaskInfo -Continue -ErrorRecord $_
                                         }
@@ -246,10 +247,12 @@ function Invoke-DbaDbDataGenerator {
                                         try {
                                             $columnValue = $null
 
+                                            # TODO: $columnobject is not set here, so should this be $columnMaskInfo?
+                                            # TODO: Is SubType correct or should this be Type? In my example config for "CREATE TABLE test (a varchar(20))", Type is varchar, SubType is String
                                             if ($columnobject.SubType -in $supportedDataTypes) {
-                                                $newValue = Get-DbaRandomizedValue -DataType $columnMaskInfo.SubType -Locale $Locale
+                                                $newValue = Get-DbaRandomizedValue -DataType $columnMaskInfo.SubType -Locale $Locale -Min $columnobject.MinValue -Max $columnobject.MaxValue
                                             } else {
-                                                $newValue = Get-DbaRandomizedValue -RandomizerType $columnMaskInfo.MaskingType -RandomizerSubtype $columnMaskInfo.SubType -Locale $Locale
+                                                $newValue = Get-DbaRandomizedValue -RandomizerType $columnMaskInfo.MaskingType -RandomizerSubtype $columnMaskInfo.SubType -Locale $Locale -Min $columnobject.MinValue -Max $columnobject.MaxValue
                                             }
 
                                         } catch {
@@ -384,10 +387,11 @@ function Invoke-DbaDbDataGenerator {
                                     try {
                                         $columnValue = $null
 
+                                        # TODO: Is SubType correct or should this be Type? In my example config for "CREATE TABLE test (a varchar(20))", Type is varchar, SubType is String
                                         if ($columnobject.SubType -in $supportedDataTypes) {
-                                            $columnValue = Get-DbaRandomizedValue -DataType $columnobject.SubType -CharacterString $charstring -Locale $Locale
+                                            $columnValue = Get-DbaRandomizedValue -DataType $columnobject.SubType -CharacterString $charstring -Locale $Locale -Min $columnobject.MinValue -Max $columnobject.MaxValue
                                         } else {
-                                            $columnValue = Get-DbaRandomizedValue -RandomizerType $columnobject.MaskingType -RandomizerSubtype $columnobject.SubType -CharacterString $charstring -Locale $Locale
+                                            $columnValue = Get-DbaRandomizedValue -RandomizerType $columnobject.MaskingType -RandomizerSubtype $columnobject.SubType -CharacterString $charstring -Locale $Locale -Min $columnobject.MinValue -Max $columnobject.MaxValue
                                         }
 
                                     } catch {
