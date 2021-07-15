@@ -513,6 +513,7 @@ $script:xplat = @(
     'Get-DbaDbMailHistory',
     'Get-DbaDbView',
     'Remove-DbaDbView',
+    'New-DbaSqlParameter',
     'Get-DbaDbUdf',
     'Get-DbaDbPartitionFunction',
     'Get-DbaDbPartitionScheme',

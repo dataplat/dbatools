@@ -55,7 +55,10 @@ $TestsRunGroups = @{
         'Get-DbaDbMasterKey',
         'Get-DbaPermission',
         'Test-DbaManagementObject',
-        'Export-DbaDacPackage'
+        'Export-DbaDacPackage',
+        'New-DbaDbTransfer',
+        'Remove-DbaAgDatabase',
+        'New-DbaDbTable'
     )
     # do not run everywhere
     "disabled"          = @()
