@@ -446,8 +446,8 @@ function Install-DbaInstance {
             Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Resolving computer name"
             $resolvedName = Resolve-DbaNetworkName -ComputerName $computer -Credential $Credential
             if ($computer.IsLocalHost) {
-                # Don't resolve the localhost as this might add a domain that is later not recognized by .IsLocalHost anymore (#6976).
-                $fullComputerName = $computer.ComputerName
+                # Don't add a domain to localhost as this might add a domain that is later not recognized by .IsLocalHost anymore (#6976).
+                $fullComputerName = $resolvedName.ComputerName
             } else {
                 $fullComputerName = $resolvedName.FullComputerName
             }
