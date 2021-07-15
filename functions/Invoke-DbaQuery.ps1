@@ -37,7 +37,7 @@ function Invoke-DbaQuery {
 
         PSObject and PSObjectArray output introduces overhead but adds flexibility for working with results: https://forums.powershell.org/t/dealing-with-dbnull/2328/2
 
-    .PARAMETER SqlParameters
+    .PARAMETER SqlParameter
         Specifies a hashtable of parameters or output from New-DbaSqlParameter for parameterized SQL queries.  http://blog.codinghorror.com/give-me-parameterized-sql-or-give-me-death/
 
     .PARAMETER AppendServerInstance
@@ -93,7 +93,7 @@ function Invoke-DbaQuery {
         Runs the sql commands stored in rebuild.sql against all accessible databases of the instances "server1", "server1\nordwind" and "server2"
 
     .EXAMPLE
-        PS C:\> Invoke-DbaQuery -SqlInstance . -Query 'SELECT * FROM users WHERE Givenname = @name' -SqlParameters @{ Name = "Maria" }
+        PS C:\> Invoke-DbaQuery -SqlInstance . -Query 'SELECT * FROM users WHERE Givenname = @name' -SqlParameter @{ Name = "Maria" }
 
         Executes a simple query against the users table using SQL Parameters.
         This avoids accidental SQL Injection and is the safest way to execute queries with dynamic content.
@@ -106,7 +106,7 @@ function Invoke-DbaQuery {
         Executes a query with ReadOnly application intent on aglistener1.
 
     .EXAMPLE
-        PS C:\> Invoke-DbaQuery -SqlInstance "server1" -Database tempdb -Query "Example_SP" -SqlParameters @{ Name = "Maria" } -CommandType StoredProcedure
+        PS C:\> Invoke-DbaQuery -SqlInstance "server1" -Database tempdb -Query "Example_SP" -SqlParameter @{ Name = "Maria" } -CommandType StoredProcedure
 
         Executes a stored procedure Example_SP using SQL Parameters
 
@@ -115,9 +115,16 @@ function Invoke-DbaQuery {
             "StartDate" = $startdate;
             "EndDate" = $enddate;
         };
-        PS C:\> Invoke-DbaQuery -SqlInstance "server1" -Database tempdb -Query "Example_SP" -SqlParameters $QueryParameters -CommandType StoredProcedure
+        PS C:\> Invoke-DbaQuery -SqlInstance "server1" -Database tempdb -Query "Example_SP" -SqlParameter $QueryParameters -CommandType StoredProcedure
 
         Executes a stored procedure Example_SP using multiple SQL Parameters
+
+    .EXAMPLE
+        PS C:\> $output = New-DbaSqlParameter -ParameterName json_result -SqlDbType NVarChar -Size -1 -Direction Output
+        PS C:\> Invoke-DbaQuery -SqlInstance localhost -Database master -CommandType StoredProcedure -Query my_proc -SqlParameters $output
+        PS C:\> $output.Value
+
+        Creates an output parameter and uses it to invoke a stored procedure.
     #>
     [CmdletBinding(DefaultParameterSetName = "Query")]
     param (
@@ -138,7 +145,8 @@ function Invoke-DbaQuery {
         [Microsoft.SqlServer.Management.Smo.SqlSmoObject[]]$SqlObject,
         [ValidateSet("DataSet", "DataTable", "DataRow", "PSObject", "PSObjectArray", "SingleValue")]
         [string]$As = "DataRow",
-        [psobject[]]$SqlParameters,
+        [Alias("SqlParameters")]
+        [psobject[]]$SqlParameter,
         [System.Data.CommandType]$CommandType = 'Text',
         [switch]$AppendServerInstance,
         [switch]$MessagesToOutput,
@@ -156,8 +164,8 @@ function Invoke-DbaQuery {
             CommandType = $CommandType
         }
 
-        if (Test-Bound -ParameterName "SqlParameters") {
-            $splatInvokeDbaSqlAsync["SqlParameters"] = $SqlParameters
+        if (Test-Bound -ParameterName "SqlParameter") {
+            $splatInvokeDbaSqlAsync["SqlParameter"] = $SqlParameter
         }
         if (Test-Bound -ParameterName "AppendServerInstance") {
             $splatInvokeDbaSqlAsync["AppendServerInstance"] = $AppendServerInstance
