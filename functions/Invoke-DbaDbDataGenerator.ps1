@@ -373,13 +373,11 @@ function Invoke-DbaDbDataGenerator {
                                     }
 
                                     if (($columnobject.MinValue -or $columnobject.MaxValue) -and ($columnobject.ColumnType -match 'date')) {
-                                        $nowmin = $columnobject.MinValue
-                                        $nowmax = $columnobject.MaxValue
-                                        if (-not $nowmin) {
-                                            $nowmin = (Get-Date -Date $nowmax).AddDays(-365)
+                                        if (-not $columnobject.MinValue) {
+                                            $columnobject.MinValue = (Get-Date -Date $columnobject.MaxValue).AddDays(-365)
                                         }
-                                        if (-not $nowmax) {
-                                            $nowmax = (Get-Date -Date $nowmin).AddDays(365)
+                                        if (-not $columnobject.MaxValue) {
+                                            $columnobject.MaxValue = (Get-Date -Date $columnobject.MinValue).AddDays(365)
                                         }
                                     }
 
