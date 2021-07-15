@@ -36,8 +36,8 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
     It "sets up a mirror" {
         $newdb = New-DbaDatabase
         $params = @{
-            Database      = $newdb.Name
-            Force         = $true
+            Database = $newdb.Name
+            Force    = $true
         }
 
         Invoke-DbaDbMirroring @params | Select-Object -ExpandProperty Status | Should -Be "Success"
@@ -139,19 +139,47 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
 
         $null = Get-DbaTrace -Id $traceid | ConvertTo-DbaXESession -Name "dbatoolsci-session"
         $results = Start-DbaXESession -Session "dbatoolsci-session"
-        $results.Name | Should -Be  "dbatoolsci-session"
+        $results.Name | Should -Be "dbatoolsci-session"
         $results.Status | Should -Be "Running"
         $results.Targets.Name | Should -Be "package0.event_file"
+    }
+
+    It "installs darling data" {
+        $results = Install-DbaDarlingData
+        $results.Database | Select-Object -First 1 | Should -Be "master"
+    }
+
+    It "tests the instance name" {
+        $results = Test-DbaInstanceName
+        $results.RenameRequired | Should -Be $true
+    }
+
+    It "creates a new database user" {
+        $results = New-DbaDbUser -Database msdb -Username sqladmin -IncludeSystem
+        $results.Name | Should -Be sqladmin
+    }
+
+    It "returns some permission" {
+        Get-DbaPermission -Database tempdb | Should -Not -Be $null
+    }
+
+    It "returns the master key" {
+        (Get-DbaDbMasterKey).Database | Should -Be "master"
+    }
+
+    It "stops an xe session" {
+        (Stop-DbaXESession -Session "dbatoolsci-session").Name | Should -Be "dbatoolsci-session"
+    }
+
+    It "tests tempdb configs" {
+        (Test-DbaTempDbConfig).Rule | Should -Contain "File Growth in Percent"
     }
 }
 
 
 <#
 # fails on newer version of SMO
-'Get-DbaUserPermission',
-'Invoke-DbaBalanceDataFiles',
 'Invoke-DbaWhoisActive',
-'Install-DbaDarlingData',
 'Remove-DbaAvailabilityGroup',
 'Set-DbaAgReplica',
 'Read-DbaAuditFile',
@@ -159,16 +187,8 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
 'Read-DbaXEFile',
 'Stop-DbaXESession',
 'Test-DbaTempDbConfig',
-'New-DbaDbUser',
-'Stop-DbaXESession',
-'New-DbaLogin',
 'Watch-DbaDbLogin',
-'ConvertTo-DbaXESession',
-'Test-DbaInstanceName',
-'Test-DbaDeprecatedFeature',
 'Remove-DbaDatabaseSafely',
-'Get-DbaDbMasterKey',
-'Get-DbaPermission',
 'Test-DbaManagementObject',
 'Export-DbaDacPackage'
 #>
