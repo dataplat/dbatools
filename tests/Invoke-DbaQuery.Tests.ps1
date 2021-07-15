@@ -238,7 +238,7 @@ SELECT @@servername as dbname
         AS
         BEGIN
             SELECT 'fixedval' as somevalue, @somevalue as 'input param'
-            SELECT @newid = select '12345'
+            SELECT @newid = '12345'
         END"
         $outparam = New-DbaSqlParameter -Direction Output -Size -1
         $sqlparams = @{
@@ -253,12 +253,14 @@ SELECT @@servername as dbname
 
     It "supports complex types, such as datatables (#7434)" {
         $null = Invoke-DbaQuery -SqlInstance $script:instance2 -Database tempdb -Query "
+IF NOT EXISTS (SELECT * FROM sys.types WHERE name = N'dbatools_tabletype')
 CREATE TYPE dbatools_tabletype AS TABLE(
     somestring varchar(50),
     somedate datetime2(7)
-);
+)
+GO
 CREATE OR ALTER PROCEDURE usp_Insertsomething
-    @sometable varchar(10),
+    @sometable dbatools_tabletype READONLY,
     @newid varchar(50) OUTPUT
 AS
 BEGIN
@@ -284,6 +286,5 @@ END"
         $result.Count | Should -Be 2
         $result[0].somestring | Should -Be 'string1'
         (Get-Date -Date $result[1].somedate -f 'yyyy-MM-ddTHH:mm:ss') | Should -Be '2021-07-15T02:03:00'
-        $result.somevalue | Should -Be 'fixedval'
     }
 }
