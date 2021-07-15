@@ -25,10 +25,8 @@ function Invoke-DbaAsync {
 
             PSObject and PSObjectArray output introduces overhead but adds flexibility for working with results: http://powershell.org/wp/forums/topic/dealing-with-dbnull/
 
-        .PARAMETER SqlParameters
-            Specifies a hashtable of parameters for parameterized SQL queries.  http://blog.codinghorror.com/give-me-parameterized-sql-or-give-me-death/
-
-            Example:
+        .PARAMETER SqlParameter
+            Specifies a hashtable of parameters or output from New-DbaSqlParameter for parameterized SQL queries.  http://blog.codinghorror.com/give-me-parameterized-sql-or-give-me-death/
 
         .PARAMETER AppendServerInstance
             If this switch is enabled, the SQL Server instance will be appended to PSObject and DataRow output.
@@ -57,8 +55,8 @@ function Invoke-DbaAsync {
         [string]
         $As = "DataRow",
 
-        [System.Collections.IDictionary]
-        $SqlParameters,
+        [Alias("SqlParameters")]
+        [psobject[]]$SqlParameter,
 
         [System.Data.CommandType]
         $CommandType = 'Text',
@@ -75,6 +73,13 @@ function Invoke-DbaAsync {
     )
 
     begin {
+        if ($PSBoundParameters.SqlParameter) {
+            $first = $SqlParameter | Select-Object -First 1
+            if ($first -isnot [Microsoft.Data.SqlClient.SqlParameter] -and ($first -isnot [System.Collections.IDictionary] -or $SqlParameter -is [System.Collections.IDictionary[]])) {
+                Stop-Function -Message "SqlParameter only accepts a single hashtable or Microsoft.Data.SqlClient.SqlParameter"
+                return
+            }
+        }
         function Resolve-SqlError {
             param($Err)
             if ($Err) {
@@ -159,6 +164,7 @@ function Invoke-DbaAsync {
 
     }
     process {
+        if (Test-FunctionInterrupt) { return }
         $Conn = $SQLConnection.SqlConnectionObject
 
 
@@ -172,14 +178,24 @@ function Invoke-DbaAsync {
             $cmd.CommandType = $CommandType
             $cmd.CommandTimeout = $QueryTimeout
 
-            if ($null -ne $SqlParameters) {
-                $SqlParameters.GetEnumerator() | ForEach-Object {
-                    if ($null -ne $_.Value) {
-                        $cmd.Parameters.AddWithValue($_.Key, $_.Value)
-                    } else {
-                        $cmd.Parameters.AddWithValue($_.Key, [DBNull]::Value)
+            if ($null -ne $SqlParameter) {
+                if (($SqlParameter | Select-Object -First 1) -is [Microsoft.Data.SqlClient.SqlParameter]) {
+                    foreach ($sqlparam in $SqlParameter) {
+                        $null = $cmd.Parameters.Add($sqlparam)
                     }
-                } > $null
+                } else {
+                    ($SqlParameter | Select-Object -First 1).GetEnumerator() | ForEach-Object {
+                        if ($null -ne $_.Value) {
+                            if (($_.Value -is [Microsoft.Data.SqlClient.SqlParameter])) {
+                                $cmd.Parameters.Add($_.Value)
+                            } else {
+                                $cmd.Parameters.AddWithValue($_.Key, $_.Value)
+                            }
+                        } else {
+                            $cmd.Parameters.AddWithValue($_.Key, [DBNull]::Value)
+                        }
+                    } > $null
+                }
             }
 
             $ds = New-Object System.Data.DataSet
