@@ -121,7 +121,10 @@ function Invoke-DbaQuery {
     #>
     [CmdletBinding(DefaultParameterSetName = "Query")]
     param (
-        [parameter(ValueFromPipeline)]
+        [Parameter(ValueFromPipeline)]
+        [Parameter(ParameterSetName = 'Query', Position = 0)]
+        [Parameter(ParameterSetName = 'File', Position = 0)]
+        [Parameter(ParameterSetName = 'SMO', Position = 0)]
         [DbaInstance[]]$SqlInstance,
         [PsCredential]$SqlCredential,
         [string]$Database,
