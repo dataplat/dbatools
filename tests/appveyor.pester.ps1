@@ -228,6 +228,7 @@ if (-not $Finalize) {
                 Update-AppveyorTest -Name $appvTestName -Framework NUnit -FileName $f.FullName -Outcome "Failed" -Duration $PesterRun.Time.TotalMilliseconds
             } else {
                 Update-AppveyorTest -Name $appvTestName -Framework NUnit -FileName $f.FullName -Outcome "Passed" -Duration $PesterRun.Time.TotalMilliseconds
+                break
             }
         }
     }
