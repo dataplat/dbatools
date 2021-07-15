@@ -11,7 +11,7 @@ function Restore-DbaDatabase {
         The function defaults to working on a remote instance. This means that all paths passed in must be relative to the remote instance.
         XpDirTree will be used to perform the file scans
 
-        Various means can be used to pass in a list of files to be considered. The default is to non recursively scan the folder
+        Various means can be used to pass in a list of files to be considered. The default is to not recursively scan the folder
         passed in.
 
     .PARAMETER SqlInstance
@@ -130,7 +130,7 @@ function Restore-DbaDatabase {
         If specified, prevents the XpDirTree process from recursing (its default behaviour)
 
     .PARAMETER DirectoryRecurse
-        If specified the specified directory will be recursed into
+        If specified the specified directory will be recursed into (overriding the default behaviour)
 
     .PARAMETER Continue
         If specified we will to attempt to recover more transaction log backups onto  database(s) in Recovering or Standby states
