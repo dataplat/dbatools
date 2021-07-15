@@ -248,6 +248,7 @@ function Invoke-DbaDbDataGenerator {
 
                                         # Generate a new value
                                         try {
+                                            # TODO: Why is this set here?
                                             $columnValue = $null
 
                                             if ($PSBoundParameters.MaxValue -and $columnMaskInfo.SubType -eq 'String' -and $columnMaskInfo.MaxValue -gt $MaxValue) {
@@ -391,6 +392,7 @@ function Invoke-DbaDbDataGenerator {
                                     }
 
                                     try {
+                                        # TODO: I think this is not needed, as $columnValue is set in both branches of the following if.
                                         $columnValue = $null
 
                                         if ($PSBoundParameters.MaxValue -and $columnobject.SubType -eq 'String' -and $columnobject.MaxValue -gt $MaxValue) {
