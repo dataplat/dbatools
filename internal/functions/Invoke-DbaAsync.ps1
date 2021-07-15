@@ -25,10 +25,8 @@ function Invoke-DbaAsync {
 
             PSObject and PSObjectArray output introduces overhead but adds flexibility for working with results: http://powershell.org/wp/forums/topic/dealing-with-dbnull/
 
-        .PARAMETER SqlParameters
-            Specifies a hashtable of parameters for parameterized SQL queries.  http://blog.codinghorror.com/give-me-parameterized-sql-or-give-me-death/
-
-            Example:
+        .PARAMETER SqlParameter
+            Specifies a hashtable of parameters or output from New-DbaSqlParameter for parameterized SQL queries.  http://blog.codinghorror.com/give-me-parameterized-sql-or-give-me-death/
 
         .PARAMETER AppendServerInstance
             If this switch is enabled, the SQL Server instance will be appended to PSObject and DataRow output.
