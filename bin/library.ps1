@@ -75,11 +75,11 @@ if ($ImportLibrary) {
                 $start = Get-Date
 
                 try {
-                    Write-Verbose -Message "Found library, trying to copy & import"
+                    Write-Verbose -Message "Found library at $dll, import"
                     $dbaToolsAssembly = Import-Module -Name "$dll"
                 } catch {
                     Write-Verbose -Message "Failed to copy and import, attempting to import straight from the module directory"
-                    $script:DllRoot = Resolve-Path -Path $script:DllRoot
+                    $script:DllRoot = Resolve-Path -Path bin
                     Import-Module -Name "$(Join-Path -Path $script:DllRoot -ChildPath dbatools.dll)" -ErrorAction Stop
                 }
                 Write-Verbose -Message "Total duration: $((Get-Date) - $start)"
@@ -128,26 +128,3 @@ aka "The guy who made most of The Library that Failed to import"
     }
     #endregion Add Code
 }
-
-#region Version Warning
-
-$dbaToolsVersion =
-@(foreach ($_ in $dbaToolsAssembly.CustomAttributes) {
-        if ($_ -is [Reflection.AssemblyFileVersionAttribute]) {
-            $_.ConstructorArguments.Value
-            break
-        }
-    }) -ne $null -as [Version]
-if ($currentLibraryVersion -ne $dbaToolsVersion) {
-    Write-Verbose @"
-A version missmatch between the dbatools library loaded and the one expected by
-this module. This usually happens when you update the dbatools module and use
-Remove-Module / Import-Module in order to load the latest version without
-starting a new PowerShell instance.
-
-Please restart the console to apply the library update, or unexpected behavior will likely occur.
-
-If the issues continue to persist, please Remove-Item '$script:PSModuleRoot\bin\dbatools.dll'
-"@
-}
-#endregion Version Warning
