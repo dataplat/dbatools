@@ -5,7 +5,7 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
         [array]$params = ([Management.Automation.CommandMetaData]$ExecutionContext.SessionState.InvokeCommand.GetCommand($CommandName, 'Function')).Parameters.Keys
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Name', 'Collation', 'Recoverymodel', 'Owner', 'DataFilePath', 'LogFilePath', 'PrimaryFilesize', 'PrimaryFileGrowth', 'PrimaryFileMaxSize', 'LogSize', 'LogGrowth', 'LogMaxSize', 'SecondaryFilesize', 'SecondaryFileGrowth', 'SecondaryFileMaxSize', 'SecondaryFileCount', 'DefaultFileGroup', 'EnableException'
+        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Name', 'Collation', 'Recoverymodel', 'Owner', 'DataFilePath', 'LogFilePath', 'PrimaryFilesize', 'PrimaryFileGrowth', 'PrimaryFileMaxSize', 'LogSize', 'LogGrowth', 'LogMaxSize', 'SecondaryFilesize', 'SecondaryFileGrowth', 'SecondaryFileMaxSize', 'SecondaryFileCount', 'DefaultFileGroup', 'EnableException', 'SecondaryDataFileSuffix', 'LogFileSuffix', 'DataFileSuffix'
         It "Should only contain our specific parameters" {
             Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params | Should -BeNullOrEmpty
         }

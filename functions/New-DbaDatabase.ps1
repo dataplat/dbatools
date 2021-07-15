@@ -76,6 +76,15 @@ function New-DbaDatabase {
     .PARAMETER DefaultFileGroup
         Sets the default file group. Either primary or secondary.
 
+    .PARAMETER DataFileSuffix
+        The data file suffix. Defaults to "_PRIMARY"
+
+    .PARAMETER LogFileSuffix
+        The log file suffix. Defaults to "_Log"
+
+    .PARAMETER SecondaryDataFileSuffix
+        The secondary data file suffix. Defaults to "_MainData"
+
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
 
@@ -156,6 +165,9 @@ function New-DbaDatabase {
         [int32]$SecondaryFileCount,
         [ValidateSet('Primary', 'Secondary')]
         [string]$DefaultFileGroup,
+        [string]$DataFileSuffix = "_PRIMARY",
+        [string]$LogFileSuffix = "_Log",
+        [string]$SecondaryDataFileSuffix = "_MainData",
         [switch]$EnableException
     )
 
@@ -257,7 +269,7 @@ function New-DbaDatabase {
 
                     #add the primary file
                     try {
-                        $primaryfilename = $dbName + "_PRIMARY"
+                        $primaryfilename = $dbName + $DataFileSuffix
                         Write-Message -Message "Creating file name $primaryfilename in filegroup PRIMARY" -Level Verbose
 
                         # if PrimaryFilesize and PrimaryFileMaxSize were passed in then check the size of the modeldev file; if larger than our $PrimaryFilesize setting use that instead
@@ -300,7 +312,7 @@ function New-DbaDatabase {
                     }
 
                     try {
-                        $logname = $dbName + "_Log"
+                        $logname = $dbName + $LogFileSuffix
                         Write-Message -Message "Creating log $logname" -Level Verbose
 
                         # if LogSize and LogMaxSize were passed in then check the size of the modellog file; if larger than our $LogSize setting use that instead
@@ -343,7 +355,7 @@ function New-DbaDatabase {
                     if ($DefaultFileGroup -eq "Secondary" -or (Test-Bound -ParameterName SecondaryFileMaxSize, SecondaryFileGrowth, SecondaryFilesize, SecondaryFileCount)) {
                         #add the Secondary data file group
                         try {
-                            $secondaryfilegroupname = $dbName + "_MainData"
+                            $secondaryfilegroupname = $dbName + $SecondaryDataFileSuffix
                             Write-Message -Message "Creating Secondary filegroup $secondaryfilegroupname" -Level Verbose
 
                             $secondaryfg = New-Object Microsoft.SqlServer.Management.Smo.Filegroup($newdb, $secondaryfilegroupname)
