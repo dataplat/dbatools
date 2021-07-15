@@ -230,4 +230,60 @@ SELECT @@servername as dbname
         Invoke-DbaQuery -SqlInstance $script:instance2 -Database tempdb -CommandType StoredProcedure -Query my_proc -SqlParameters $output
         $output.Value | Should -Be '{"example":"sample"}'
     }
+
+    It "supports using multiple and mixed params, even with different names (#7434)" {
+        $null = Invoke-DbaQuery -SqlInstance $script:instance2 -Database tempdb -Query "CREATE OR ALTER PROCEDURE usp_Insertsomething
+    @somevalue varchar(10),
+    @newid varchar(50) OUTPUT
+        AS
+        BEGIN
+            SELECT 'fixedval' as somevalue, @somevalue as 'input param'
+            SELECT @newid = select '12345'
+        END"
+        $outparam = New-DbaSqlParameter -Direction Output -Size -1
+        $sqlparams = @{
+            'newid' = $outparam
+            'somevalue' = 'asd'
+        }
+        $result = Invoke-DbaQuery -SqlInstance $script:instance2 -Database tempdb -Query "EXEC usp_Insertsomething @somevalue, @newid output" -SqlParameters $sqlparams
+        $outparam.Value | Should -Be '12345'
+        $result.'input param' | Should -Be 'asd'
+        $result.somevalue | Should -Be 'fixedval'
+    }
+
+    It "supports complex types, such as datatables (#7434)" {
+        $null = Invoke-DbaQuery -SqlInstance $script:instance2 -Database tempdb -Query "
+CREATE TYPE dbatools_tabletype AS TABLE(
+    somestring varchar(50),
+    somedate datetime2(7)
+);
+CREATE OR ALTER PROCEDURE usp_Insertsomething
+    @sometable varchar(10),
+    @newid varchar(50) OUTPUT
+AS
+BEGIN
+    SELECT * FROM @sometable ORDER BY somestring
+    SELECT @newid = '12345'
+END"
+        $outparam = New-DbaSqlParameter -Direction Output -Size -1
+        $inparam = @()
+        $inparam += [pscustomobject]@{
+            somestring = 'string1'
+            somedate = '2021-07-15T01:02:00'
+        }
+        $inparam += [pscustomobject]@{
+            somestring = 'string2'
+            somedate = '2021-07-15T02:03:00'
+        }
+        $sqlparams = @{
+            'newid' = $outparam
+            'sometable' = New-DbaSqlParameter -SqlDbType structured -Value (ConvertTo-DbaDataTable -InputObject $inparam) -TypeName 'dbatools_tabletype'
+        }
+        $result = Invoke-DbaQuery -SqlInstance $script:instance2 -Database tempdb -Query "EXEC usp_Insertsomething @sometable, @newid output" -SqlParameters $sqlparams
+        $outparam.Value | Should -Be '12345'
+        $result.Count | Should -Be 2
+        $result[0].somestring | Should -Be 'string1'
+        (Get-Date -Date $result[1].somedate -f 'yyyy-MM-ddTHH:mm:ss') | Should -Be '2021-07-15T02:03:00'
+        $result.somevalue | Should -Be 'fixedval'
+    }
 }
