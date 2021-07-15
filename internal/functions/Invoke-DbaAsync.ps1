@@ -186,7 +186,11 @@ function Invoke-DbaAsync {
                 } else {
                     ($SqlParameter | Select-Object -First 1).GetEnumerator() | ForEach-Object {
                         if ($null -ne $_.Value) {
-                            $cmd.Parameters.AddWithValue($_.Key, $_.Value)
+                            if (($_.Value -is [Microsoft.Data.SqlClient.SqlParameter])) {
+                                $cmd.Parameters.Add($_.Value)
+                            } else {
+                                $cmd.Parameters.AddWithValue($_.Key, $_.Value)
+                            }
                         } else {
                             $cmd.Parameters.AddWithValue($_.Key, [DBNull]::Value)
                         }
