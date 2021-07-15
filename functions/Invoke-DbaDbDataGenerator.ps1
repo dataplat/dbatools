@@ -214,7 +214,7 @@ function Invoke-DbaDbDataGenerator {
                                     if ($columnMaskInfo) {
                                         # Generate a new value
                                         try {
-                                            if ($null -ne $MaxValue -and $columnMaskInfo.SubType -eq 'String' -and $columnMaskInfo.MaxValue -gt $MaxValue) {
+                                            if ($PSBoundParameters.MaxValue -and $columnMaskInfo.SubType -eq 'String' -and $columnMaskInfo.MaxValue -gt $MaxValue) {
                                                 $columnMaskInfo.MaxValue = $MaxValue
                                             }
                                             # TODO: $columnobject is not set here, so should this be $columnMaskInfo?
@@ -250,7 +250,7 @@ function Invoke-DbaDbDataGenerator {
                                         try {
                                             $columnValue = $null
 
-                                            if ($null -ne $MaxValue -and $columnMaskInfo.SubType -eq 'String' -and $columnMaskInfo.MaxValue -gt $MaxValue) {
+                                            if ($PSBoundParameters.MaxValue -and $columnMaskInfo.SubType -eq 'String' -and $columnMaskInfo.MaxValue -gt $MaxValue) {
                                                 $columnMaskInfo.MaxValue = $MaxValue
                                             }
                                             # TODO: $columnobject is not set here, so should this be $columnMaskInfo?
@@ -393,7 +393,7 @@ function Invoke-DbaDbDataGenerator {
                                     try {
                                         $columnValue = $null
 
-                                        if ($null -ne $MaxValue -and $columnobject.SubType -eq 'String' -and $columnobject.MaxValue -gt $MaxValue) {
+                                        if ($PSBoundParameters.MaxValue -and $columnobject.SubType -eq 'String' -and $columnobject.MaxValue -gt $MaxValue) {
                                             $columnobject.MaxValue = $MaxValue
                                         }
                                         # TODO: Is SubType correct or should this be Type? In my example config for "CREATE TABLE test (a varchar(20))", Type is varchar, SubType is String
