@@ -256,9 +256,9 @@ function Invoke-DbaDbDataGenerator {
                                             # TODO: $columnobject is not set here, so should this be $columnMaskInfo?
                                             # TODO: Is SubType correct or should this be Type? In my example config for "CREATE TABLE test (a varchar(20))", Type is varchar, SubType is String
                                             if ($columnobject.SubType -in $supportedDataTypes) {
-                                                $newValue = Get-DbaRandomizedValue -DataType $columnMaskInfo.SubType -Locale $Locale -Min $columnobject.MinValue -Max $columnobject.MaxValue
+                                                $newValue = Get-DbaRandomizedValue -DataType $columnMaskInfo.SubType -Locale $Locale -Min $columnMaskInfo.MinValue -Max $columnMaskInfo.MaxValue
                                             } else {
-                                                $newValue = Get-DbaRandomizedValue -RandomizerType $columnMaskInfo.MaskingType -RandomizerSubtype $columnMaskInfo.SubType -Locale $Locale -Min $columnobject.MinValue -Max $columnobject.MaxValue
+                                                $newValue = Get-DbaRandomizedValue -RandomizerType $columnMaskInfo.MaskingType -RandomizerSubtype $columnMaskInfo.SubType -Locale $Locale -Min $columnMaskInfo.MinValue -Max $columnMaskInfo.MaxValue
                                             }
 
                                         } catch {
