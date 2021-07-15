@@ -100,9 +100,7 @@ function New-DbaSqlParameter {
     param(
         [ValidateSet("None", "IgnoreCase", "IgnoreNonSpace", "IgnoreKanaType", "IgnoreWidth", "BinarySort2", "BinarySort")]
         [string]$CompareInfo,
-        [ValidateSet("AnsiString", "Binary", "Byte", "Boolean", "Currency", "Date", "DateTime", "Decimal", "Double", "Guid", "Int16", "Int32", "Int64", "Object,
-        SByte", "Single", "String", "Time", "UInt16", "UInt32", "UInt64", "VarNumeric", "AnsiStringFixedLength", "StringFixedLength", "Xml,
-        DateTime2", "DateTimeOffset")]
+        [ValidateSet("AnsiString", "Binary", "Byte", "Boolean", "Currency", "Date", "DateTime", "Decimal", "Double", "Guid", "Int16", "Int32", "Int64", "Object", "SByte", "Single", "String", "Time", "UInt16", "UInt32", "UInt64", "VarNumeric", "AnsiStringFixedLength", "StringFixedLength", "Xml", "DateTime2", "DateTimeOffset")]
         [string]$DbType,
         [ValidateSet("Input", "Output", "InputOutput", "ReturnValue")]
         [string]$Direction,
@@ -119,9 +117,7 @@ function New-DbaSqlParameter {
         [switch]$SourceColumnNullMapping,
         [ValidateSet("Original", "Current", "Proposed", "Default")]
         [string]$SourceVersion,
-        [ValidateSet("BigInt", "Binary", "Bit", "Char", "DateTime", "Decimal", "Float", "Image", "Int", "Money", "NChar", "NText", "NVarChar", "Real,
-        UniqueIdentifier", "SmallDateTime", "SmallInt", "SmallMoney", "Text", "Timestamp", "TinyInt", "VarBinary", "VarChar", "Variant", "Xml,
-        Udt", "Structured", "Date", "Time", "DateTime2", "DateTimeOffset")]
+        [ValidateSet("BigInt", "Binary", "Bit", "Char", "DateTime", "Decimal", "Float", "Image", "Int", "Money", "NChar", "NText", "NVarChar", "Real", "UniqueIdentifier", "SmallDateTime", "SmallInt", "SmallMoney", "Text", "Timestamp", "TinyInt", "VarBinary", "VarChar", "Variant", "Xml", "Udt", "Structured", "Date", "Time", "DateTime2", "DateTimeOffset")]
         [string]$SqlDbType,
         [string]$SqlValue,
         [string]$TypeName,
