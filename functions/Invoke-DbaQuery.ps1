@@ -159,6 +159,14 @@ function Invoke-DbaQuery {
     begin {
         Write-Message -Level Debug -Message "Bound parameters: $($PSBoundParameters.Keys -join ", ")"
 
+        if ($PSBoundParameters.SqlParameter) {
+            $first = $SqlParameter | Select-Object -First 1
+            if ($first -isnot [Microsoft.Data.SqlClient.SqlParameter] -and ($first -isnot [System.Collections.IDictionary] -or $SqlParameter.Count -gt 1)) {
+                Stop-Function -Message "SqlParameter only accepts a single hashtable or Microsoft.Data.SqlClient.SqlParameter"
+                return
+            }
+        }
+
         $splatInvokeDbaSqlAsync = @{
             As          = $As
             CommandType = $CommandType
