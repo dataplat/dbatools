@@ -135,7 +135,8 @@ function Invoke-DbaQuery {
         [Microsoft.SqlServer.Management.Smo.SqlSmoObject[]]$SqlObject,
         [ValidateSet("DataSet", "DataTable", "DataRow", "PSObject", "PSObjectArray", "SingleValue")]
         [string]$As = "DataRow",
-        [System.Collections.IDictionary]$SqlParameters,
+        # do not cast -- we need this to accommodate different object types
+        $SqlParameters,
         [System.Data.CommandType]$CommandType = 'Text',
         [switch]$AppendServerInstance,
         [switch]$MessagesToOutput,
