@@ -226,7 +226,7 @@ SELECT @@servername as dbname
                 );
                 END"
         $output = New-DbaSqlParameter -ParameterName json_result -SqlDbType NVarChar -Size -1 -Direction Output
-        Invoke-DbaQuery -SqlInstance localhost -Database master -CommandType StoredProcedure -Query my_proc -SqlParameters $output
+        Invoke-DbaQuery -SqlInstance localhost -Database tempdb -CommandType StoredProcedure -Query my_proc -SqlParameters $output
         $output.Value | Should -Be '{"example":"sample"}'
     }
 }
