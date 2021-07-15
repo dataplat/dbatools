@@ -153,7 +153,8 @@ function Get-DbaAgentJob {
 
                 $currentJobId = $agentJob.JobId
                 if ($currentJobId -in $jobExecutionResults.JobId) {
-                    $agentJobStartDate = [DbaDateTime]($jobExecutionResults | Where-Object JobId -eq $currentJobId).StartDate
+                    $agentJobStartDate = [DbaDateTime]($jobExecutionResults | Where-Object { $_.JobId -eq $currentJobId -and $null -ne $_.StartDate).StartDate
+
                     Add-Member -Force -InputObject $agentJob -MemberType NoteProperty -Name StartDate -Value $agentJobStartDate
                     $defaults += 'StartDate'
                 }
