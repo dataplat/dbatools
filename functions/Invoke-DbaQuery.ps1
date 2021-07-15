@@ -161,7 +161,7 @@ function Invoke-DbaQuery {
 
         if ($PSBoundParameters.SqlParameter) {
             $first = $SqlParameter | Select-Object -First 1
-            if ($first -isnot [Microsoft.Data.SqlClient.SqlParameter] -and ($first -isnot [System.Collections.IDictionary] -or $SqlParameter.Count -gt 1)) {
+            if ($first -isnot [Microsoft.Data.SqlClient.SqlParameter] -and ($first -isnot [System.Collections.IDictionary] -or $SqlParameter -is [System.Collections.IDictionary[]])) {
                 Stop-Function -Message "SqlParameter only accepts a single hashtable or Microsoft.Data.SqlClient.SqlParameter"
                 return
             }
