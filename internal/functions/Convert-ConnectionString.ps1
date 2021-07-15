@@ -12,16 +12,13 @@ function Convert-ConnectionString {
     )
 
     foreach ($connstring in $ConnectionString) {
-        $array = $connstring.Split(';')
-        foreach ($item in $array) {
-            $connstring = $connstring.Replace("Application Intent", "ApplicationIntent")
-            $connstring = $connstring.Replace("Connect Retry Count", "ConnectRetryCount")
-            $connstring = $connstring.Replace("Connect Retry Interval", "ConnectRetryInterval")
-            $connstring = $connstring.Replace("Pool Blocking Period", "PoolBlockingPeriod")
-            $connstring = $connstring.Replace("Multiple Active Result Sets", "MultipleActiveResultSets")
-            $connstring = $connstring.Replace("Multiple Subnet Failover", "MultiSubnetFailover")
-            $connstring = $connstring.Replace("Trust Server Certificate", "TrustServerCertificate")
-        }
+        $connstring = $connstring.Replace("Application Intent", "ApplicationIntent")
+        $connstring = $connstring.Replace("Connect Retry Count", "ConnectRetryCount")
+        $connstring = $connstring.Replace("Connect Retry Interval", "ConnectRetryInterval")
+        $connstring = $connstring.Replace("Pool Blocking Period", "PoolBlockingPeriod")
+        $connstring = $connstring.Replace("Multiple Active Result Sets", "MultipleActiveResultSets")
+        $connstring = $connstring.Replace("Multiple Subnet Failover", "MultiSubnetFailover")
+        $connstring = $connstring.Replace("Trust Server Certificate", "TrustServerCertificate")
         $connstring
     }
 }
