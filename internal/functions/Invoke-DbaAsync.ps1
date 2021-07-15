@@ -57,6 +57,7 @@ function Invoke-DbaAsync {
         [string]
         $As = "DataRow",
 
+        [Alias("SqlParameters")]
         [psobject[]]$SqlParameter,
 
         [System.Data.CommandType]
