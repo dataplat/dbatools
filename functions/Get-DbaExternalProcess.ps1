@@ -6,6 +6,10 @@ function Get-DbaExternalProcess {
     .DESCRIPTION
         Gets OS processes created by SQL Server
 
+        Helps when finding hung sessions with External Wait Types
+
+        https://web.archive.org/web/20201027122300/http://vickyharp.com/2013/12/killing-sessions-with-external-wait-types/
+
     .PARAMETER ComputerName
         The target SQL Server host computer
 
@@ -29,17 +33,15 @@ function Get-DbaExternalProcess {
         https://dbatools.io/Get-DbaExternalProcess
 
     .EXAMPLE
-        PS C:\> Get-DbaExternalProcess
+        PS C:\> Get-DbaExternalProcess -ComputerName SERVER01, SERVER02
 
-        xyz
+        Gets OS processes created by SQL Server on SERVER01 and SERVER02
 
-    .EXAMPLE
-        PS C:\>
     #>
     [CmdletBinding()]
     param (
-        [parameter(ValueFromPipeline)]
-        [DbaInstanceParameter[]]$ComputerName = $env:COMPUTERNAME,
+        [parameter(ValueFromPipeline, Mandatory)]
+        [DbaInstanceParameter[]]$ComputerName,
         [PSCredential]$Credential,
         [switch]$EnableException
     )
@@ -51,13 +53,14 @@ function Get-DbaExternalProcess {
                 foreach ($process in $processes) {
                     [PSCustomObject]@{
                         ComputerName   = $computer
+                        Credential     = $Credential
                         ProcessId      = $process.ProcessId
                         Name           = $process.Name
                         HandleCount    = $process.HandleCount
                         WorkingSetSize = $process.WorkingSetSize
                         VirtualSize    = $process.VirtualSize
                         CimObject      = $process
-                    }
+                    } | Select-DefaultView -Properties ComputerName, ProcessId, Name, HandleCount, WorkingSetSize, VirtualSize, CimObject
                 }
             } catch {
                 Stop-Function -Message "Failure for $computer" -ErrorRecord $_
