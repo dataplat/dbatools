@@ -630,6 +630,8 @@
         'Get-DbaFeature',
         'Update-DbaServiceAccount',
         'Remove-DbaClientAlias',
+        'Stop-DbaExternalProcess',
+        'Get-DbaExternalProcess',
         'Disable-DbaAgHadr',
         'Enable-DbaAgHadr',
         'Stop-DbaService',
