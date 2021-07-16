@@ -19,6 +19,12 @@ function Stop-DbaExternalProcess {
     .PARAMETER ProcessId
         The process ID of the OS process to kill
 
+    .PARAMETER WhatIf
+        Shows what would happen if the command were to run. No actions are actually performed.
+
+    .PARAMETER Confirm
+        Prompts you for confirmation before executing any changing operations within the command.
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -33,7 +39,7 @@ function Stop-DbaExternalProcess {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Set-DbaExternalProcess
+        https://dbatools.io/Stop-DbaExternalProcess
 
     .EXAMPLE
         PS C:\> Get-DbaExternalProcess -ComputerName SQL01 | Stop-DbaExternalProcess
@@ -60,21 +66,23 @@ function Stop-DbaExternalProcess {
     process {
         try {
             # gotta add ToString(), otherwise it returns null after the process is killed
-            $name = (Get-DbaCmObject -ComputerName $computer -Credential $Credential -ClassName win32_process | Where-Object ProcessId -eq $ProcessId).Name.ToString()
+            $name = (Get-DbaCmObject -ComputerName $ComputerName -Credential $Credential -ClassName win32_process | Where-Object ProcessId -eq $ProcessId).ProcessName
+            $name = "$name".ToString()
 
-            Invoke-Command2 -ComputerName $ComputerName -Credential $Credential -ScriptBlock {
-                Stop-Process -Id $args[0] -Force -Confirm:$false
-            } -ArgumentList $ProcessId -ErrorAction Stop
+            if ($Pscmdlet.ShouldProcess($ComputerName, "Killing PID $ProcessId ($name)")) {
+                Invoke-Command2 -ComputerName $ComputerName -Credential $Credential -ScriptBlock {
+                    Stop-Process -Id $args -Force -Confirm:$false
+                } -ArgumentList $ProcessId -ErrorAction Stop
 
-            [PSCustomObject]@{
-                ComputerName = $ComputerName
-                ProcessId    = $ProcessId
-                Name         = $Name
-                Status       = "Stopped"
+                [PSCustomObject]@{
+                    ComputerName = $ComputerName
+                    ProcessId    = $ProcessId
+                    Name         = $Name
+                    Status       = "Stopped"
+                }
             }
-
         } catch {
-            Stop-Function -Message "Error killing $ProcessId on $computer" -ErrorRecord $_ -Continue
+            Stop-Function -Message "Error killing $ProcessId on $ComputerName" -ErrorRecord $_ -Continue
         }
     }
 }

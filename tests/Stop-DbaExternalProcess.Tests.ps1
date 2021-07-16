@@ -29,6 +29,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             -- To update the currently configured value for this feature.
             RECONFIGURE;
             GO"
+
             $query = @"
             xp_cmdshell 'powershell -command ""sleep 20""'
 "@
@@ -36,7 +37,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         }
 
         It "returns results" {
-            $results = Get-DbaExternalProcess -ComputerName localhost | Stop-DbaExternalProcess
+            $results = Get-DbaExternalProcess -ComputerName localhost | Stop-DbaExternalProcess -Confirm:$false
             $results.ComputerName | Should -Be "localhost"
             $results.Name | Should -Be "cmd.exe"
             $results.ProcessId | Should -Not -Be $null
