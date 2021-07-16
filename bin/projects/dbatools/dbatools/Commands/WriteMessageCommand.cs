@@ -1,4 +1,4 @@
-﻿using Sqlcollaborative.Dbatools.Message;
+using Sqlcollaborative.Dbatools.Message;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -345,7 +345,7 @@ else { Write-HostColor -String $string -DefaultColor ([Sqlcollaborative.Dbatools
                 foreach (string item in Tag)
                     _Tags.Add(item);
 
-            _isDebug = (_callStack.Count() > 1) && _callStack.ElementAt(_callStack.Count() - 2).InvocationInfo.BoundParameters.ContainsKey("Debug");
+            _isDebug = (_callStack.Count() > 1) && _callStack.ElementAt(_callStack.Count() - 2).InvocationInfo.BoundParameters.ContainsKey("Debug") && ((SwitchParameter)_callStack.ElementAt(_callStack.Count() - 2).InvocationInfo.BoundParameters["Debug"]).ToBool();
             #endregion Resolving Meta Information
         }
 
@@ -480,7 +480,7 @@ else { Write-HostColor -String $string -DefaultColor ([Sqlcollaborative.Dbatools
 
             if ((MessageHost.MaximumVerbose >= (int)Level) && (MessageHost.MinimumVerbose <= (int)Level))
             {
-                if ((_callStack.Count() > 1) && _callStack.ElementAt(_callStack.Count() - 2).InvocationInfo.BoundParameters.ContainsKey("Verbose"))
+                if ((_callStack.Count() > 1) && _callStack.ElementAt(_callStack.Count() - 2).InvocationInfo.BoundParameters.ContainsKey("Verbose") && ((SwitchParameter)_callStack.ElementAt(_callStack.Count() - 2).InvocationInfo.BoundParameters["Verbose"]).ToBool())
                     InvokeCommand.InvokeScript(@"$VerbosePreference = 'Continue'");
                 //SessionState.PSVariable.Set("VerbosePreference", ActionPreference.Continue);
 
@@ -601,7 +601,7 @@ else { Write-HostColor -String $string -DefaultColor ([Sqlcollaborative.Dbatools
         }
 
         /// <summary>
-        /// Processs the input level and apply policy and rules
+        /// Processes the input level and apply policy and rules
         /// </summary>
         /// <param name="Level">The original level of the message</param>
         /// <returns>The processed level</returns>
