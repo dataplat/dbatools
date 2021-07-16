@@ -650,6 +650,7 @@
         'Get-DbaComputerCertificate',
         'Add-DbaComputerCertificate',
         'Backup-DbaComputerCertificate',
+        'Test-DbaComputerCertificateExpiration',
         'Get-DbaNetworkCertificate',
         'Set-DbaNetworkCertificate',
         'Remove-DbaDbLogshipping',
