@@ -6,6 +6,8 @@ function Test-DbaComputerCertificateExpiration {
     .DESCRIPTION
         Tests for certificates that are expiring soon
 
+        By default, it tests candidates that are ideal for using with SQL Server's network encryption
+
     .PARAMETER ComputerName
         The target SQL Server instance or instances. Defaults to localhost. If target is a cluster, you must specify the distinct nodes.
 
@@ -22,7 +24,11 @@ function Test-DbaComputerCertificateExpiration {
         The path to a certificate - basically changes the path into a certificate object
 
     .PARAMETER Type
-        The type of certificates to return. All or Service. Default is Service since this is SQL specific.
+        The type of certificates to return. All, Service or SQL Server.
+
+        All is all certificates
+        Service is certificates that are candidates for SQL Server services (But may be for IIS, etc)
+        SQL Server is certificates currently in use by SQL Server
 
     .PARAMETER Thumbprint
         Return certificate based on thumbprint
@@ -68,7 +74,7 @@ function Test-DbaComputerCertificateExpiration {
         [PSCredential]$Credential,
         [string[]]$Store = "LocalMachine",
         [string[]]$Folder = "My",
-        [ValidateSet("All", "Service")]
+        [ValidateSet("All", "Service", "SQL Server")]
         [string]$Type = "Service",
         [string]$Path,
         [string[]]$Thumbprint,
@@ -78,10 +84,15 @@ function Test-DbaComputerCertificateExpiration {
     process {
         foreach ($computer in $computername) {
             try {
-                $parms = $PSBoundParameters
-                $null = $parms.Remove("ComputerName")
-                $null = $parms.Remove("Threshold")
-                $certs = Get-DbaComputerCertificate @parms
+                if ($Type -eq "SQL Server") {
+                    $certs = Get-DbaNetworkCertificate -ComputerName $computer -Credential $Credential -EnableException:$true
+                } else {
+                    $parms = $PSBoundParameters
+                    $null = $parms.Remove("ComputerName")
+                    $null = $parms.Remove("Threshold")
+                    $null = $parms.Remove("EnableException")
+                    $certs = Get-DbaComputerCertificate @parms -EnableException:$true
+                }
 
                 foreach ($cert in $certs) {
                     $expiration = $cert.NotAfter.Date.Subtract((Get-Date)).Days
