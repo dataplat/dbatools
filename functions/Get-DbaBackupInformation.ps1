@@ -147,7 +147,7 @@ function Get-DbaBackupInformation {
         [parameter(ParameterSetName = "Create")]
         [Switch]$NoXpDirTree,
         [parameter(ParameterSetName = "Create")]
-        [Switch]$NoXpDirRecurse= $false,
+        [Switch]$NoXpDirRecurse = $false,
         [parameter(ParameterSetName = "Create")]
         [switch]$DirectoryRecurse,
         [switch]$EnableException,
