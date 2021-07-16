@@ -217,10 +217,8 @@ function Invoke-DbaDbDataGenerator {
                                             if ($PSBoundParameters.MaxValue -and $columnMaskInfo.SubType -eq 'String' -and $columnMaskInfo.MaxValue -gt $MaxValue) {
                                                 $columnMaskInfo.MaxValue = $MaxValue
                                             }
-                                            # TODO: $columnobject is not set here, so should this be $columnMaskInfo?
-                                            # TODO: Is SubType correct or should this be Type? In my example config for "CREATE TABLE test (a varchar(20))", Type is varchar, SubType is String
-                                            if ($columnobject.SubType -in $supportedDataTypes) {
-                                                $newValue = Get-DbaRandomizedValue -DataType $columnMaskInfo.SubType -Locale $Locale -Min $columnMaskInfo.MinValue -Max $columnMaskInfo.MaxValue
+                                            if ($columnMaskInfo.ColumnType -in $supportedDataTypes) {
+                                                $newValue = Get-DbaRandomizedValue -DataType $columnMaskInfo.ColumnType -Locale $Locale -Min $columnMaskInfo.MinValue -Max $columnMaskInfo.MaxValue
                                             } else {
                                                 $newValue = Get-DbaRandomizedValue -RandomizerType $columnMaskInfo.MaskingType -RandomizerSubtype $columnMaskInfo.SubType -Locale $Locale -Min $columnMaskInfo.MinValue -Max $columnMaskInfo.MaxValue
                                             }
@@ -248,16 +246,11 @@ function Invoke-DbaDbDataGenerator {
 
                                         # Generate a new value
                                         try {
-                                            # TODO: Why is this set here?
-                                            $columnValue = $null
-
                                             if ($PSBoundParameters.MaxValue -and $columnMaskInfo.SubType -eq 'String' -and $columnMaskInfo.MaxValue -gt $MaxValue) {
                                                 $columnMaskInfo.MaxValue = $MaxValue
                                             }
-                                            # TODO: $columnobject is not set here, so should this be $columnMaskInfo?
-                                            # TODO: Is SubType correct or should this be Type? In my example config for "CREATE TABLE test (a varchar(20))", Type is varchar, SubType is String
-                                            if ($columnobject.SubType -in $supportedDataTypes) {
-                                                $newValue = Get-DbaRandomizedValue -DataType $columnMaskInfo.SubType -Locale $Locale -Min $columnMaskInfo.MinValue -Max $columnMaskInfo.MaxValue
+                                            if ($columnMaskInfo.ColumnType -in $supportedDataTypes) {
+                                                $newValue = Get-DbaRandomizedValue -DataType $columnMaskInfo.ColumnType -Locale $Locale -Min $columnMaskInfo.MinValue -Max $columnMaskInfo.MaxValue
                                             } else {
                                                 $newValue = Get-DbaRandomizedValue -RandomizerType $columnMaskInfo.MaskingType -RandomizerSubtype $columnMaskInfo.SubType -Locale $Locale -Min $columnMaskInfo.MinValue -Max $columnMaskInfo.MaxValue
                                             }
@@ -301,7 +294,7 @@ function Invoke-DbaDbDataGenerator {
 
                     $insertQuery = ""
 
-                    if ($Pscmdlet.ShouldProcess($instance, "Generating data $($tablecolumns.Name -join ', ') in $($data.Rows.Count) rows in $($db.Name).$($tableobject.Schema).$($tableobject.Name)")) {
+                    if ($Pscmdlet.ShouldProcess($instance, "Generating data for columns $($tablecolumns.Name -join ', ') in $($tableobject.Rows) rows in $($db.Name).$($tableobject.Schema).$($tableobject.Name)")) {
                         $elapsed = [System.Diagnostics.Stopwatch]::StartNew()
 
                         Write-ProgressHelper -StepNumber ($stepcounter++) -TotalSteps $tables.Tables.Count -Activity "Generating data" -Message "Inserting $($tableobject.Rows) rows in $($tableobject.Schema).$($tableobject.Name) in $($db.Name) on $instance"
@@ -392,15 +385,11 @@ function Invoke-DbaDbDataGenerator {
                                     }
 
                                     try {
-                                        # TODO: I think this is not needed, as $columnValue is set in both branches of the following if.
-                                        $columnValue = $null
-
                                         if ($PSBoundParameters.MaxValue -and $columnobject.SubType -eq 'String' -and $columnobject.MaxValue -gt $MaxValue) {
                                             $columnobject.MaxValue = $MaxValue
                                         }
-                                        # TODO: Is SubType correct or should this be Type? In my example config for "CREATE TABLE test (a varchar(20))", Type is varchar, SubType is String
-                                        if ($columnobject.SubType -in $supportedDataTypes) {
-                                            $columnValue = Get-DbaRandomizedValue -DataType $columnobject.SubType -CharacterString $charstring -Locale $Locale -Min $columnobject.MinValue -Max $columnobject.MaxValue
+                                        if ($columnobject.ColumnType -in $supportedDataTypes) {
+                                            $columnValue = Get-DbaRandomizedValue -DataType $columnobject.ColumnType -CharacterString $charstring -Locale $Locale -Min $columnobject.MinValue -Max $columnobject.MaxValue
                                         } else {
                                             $columnValue = Get-DbaRandomizedValue -RandomizerType $columnobject.MaskingType -RandomizerSubtype $columnobject.SubType -CharacterString $charstring -Locale $Locale -Min $columnobject.MinValue -Max $columnobject.MaxValue
                                         }
