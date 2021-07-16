@@ -34,7 +34,7 @@ function Test-DbaComputerCertificateExpiration {
         Return certificate based on thumbprint
 
     .PARAMETER Threshold
-        Number of days before expiration to warn
+        Number of days before expiration to warn. Defaults to 30.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
