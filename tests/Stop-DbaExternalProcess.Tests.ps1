@@ -14,15 +14,33 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 }
 
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
-    Context "Can get a certificate" {
+    Context "Can stop an external process" {
         BeforeAll {
-            $null = Add-DbaComputerCertificate -Path $script:appveyorlabrepo\certificates\localhost.crt -Confirm:$false
-            $thumbprint = "29C469578D6C6211076A09CEE5C5797EEA0C2713"
-        }
-        AfterAll {
-            Remove-DbaComputerCertificate -Thumbprint $thumbprint -Confirm:$false
+            $null = Invoke-DbaQuery -SqlInstance $script:instance1 -Query "
+            -- To allow advanced options to be changed.
+            EXECUTE sp_configure 'show advanced options', 1;
+            GO
+            -- To update the currently configured value for advanced options.
+            RECONFIGURE;
+            GO
+            -- To enable the feature.
+            EXECUTE sp_configure 'xp_cmdshell', 1;
+            GO
+            -- To update the currently configured value for this feature.
+            RECONFIGURE;
+            GO"
+            $query = @"
+            xp_cmdshell 'powershell -command ""sleep 20""'
+"@
+            Start-Process -FilePath sqlcmd -ArgumentList "-S $script:instance1 -Q `"$query`"" -NoNewWindow -RedirectStandardOutput null
         }
 
-
+        It "returns results" {
+            $results = Get-DbaExternalProcess -ComputerName localhost | Stop-DbaExternalProcess
+            $results.ComputerName | Should -Be "localhost"
+            $results.Name | Should -Be "cmd.exe"
+            $results.ProcessId | Should -Not -Be $null
+            $results.Status | Should -Be "Stopped"
+        }
     }
 }

@@ -14,12 +14,32 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 }
 
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
-    Context "Can get a certificate" {
+    Context "Can get an external process" {
         BeforeAll {
-            Start-Process { } -ArgumentList $PSScriptRoot\$CommandName.Tests.ps1
+            $null = Invoke-DbaQuery -SqlInstance $script:instance1 -Query "
+            -- To allow advanced options to be changed.
+            EXECUTE sp_configure 'show advanced options', 1;
+            GO
+            -- To update the currently configured value for advanced options.
+            RECONFIGURE;
+            GO
+            -- To enable the feature.
+            EXECUTE sp_configure 'xp_cmdshell', 1;
+            GO
+            -- To update the currently configured value for this feature.
+            RECONFIGURE;
+            GO"
+            $query = @"
+            xp_cmdshell 'powershell -command ""sleep 20""'
+"@
+            Start-Process -FilePath sqlcmd -ArgumentList "-S $script:instance1 -Q `"$query`"" -NoNewWindow -RedirectStandardOutput null
         }
-        AfterAll {
-            Remove-DbaComputerCertificate -Thumbprint $thumbprint -Confirm:$false
+
+        It "returns a process" {
+            $results = Get-DbaExternalProcess -ComputerName localhost
+            $results.ComputerName | Should -Be "localhost"
+            $results.Name | Should -Be "cmd.exe"
+            $results.ProcessId | Should -Not -Be $null
         }
     }
 }
