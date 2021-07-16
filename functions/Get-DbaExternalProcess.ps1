@@ -60,10 +60,10 @@ function Get-DbaExternalProcess {
                         WorkingSetSize = $process.WorkingSetSize
                         VirtualSize    = $process.VirtualSize
                         CimObject      = $process
-                    } | Select-DefaultView -Properties ComputerName, ProcessId, Name, HandleCount, WorkingSetSize, VirtualSize, CimObject
+                    } | Select-DefaultView -Property ComputerName, ProcessId, Name, HandleCount, WorkingSetSize, VirtualSize, CimObject
                 }
             } catch {
-                Stop-Function -Message "Failure for $computer" -ErrorRecord $_
+                Stop-Function -Message "Failure for $computer" -ErrorRecord $_ -Continue
             }
         }
     }
