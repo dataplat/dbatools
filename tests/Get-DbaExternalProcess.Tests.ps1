@@ -36,7 +36,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         }
 
         It "returns a process" {
-            $results = Get-DbaExternalProcess -ComputerName localhost
+            $results = Get-DbaExternalProcess -ComputerName localhost | Select-Object -First 1
             $results.ComputerName | Should -Be "localhost"
             $results.Name | Should -Be "cmd.exe"
             $results.ProcessId | Should -Not -Be $null
