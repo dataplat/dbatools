@@ -206,5 +206,5 @@ function Get-AllTestsIndications($Path, $ModuleBase) {
     }
     # add dbatools.Tests.ps1 always
     $evaluated["$ModuleBase\tests\dbatools.Tests.ps1"] = 1
-    $evaluated.Keys
+    Get-Item $evaluated.GetEnumerator().Name
 }

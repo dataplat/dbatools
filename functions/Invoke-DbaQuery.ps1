@@ -120,6 +120,22 @@ function Invoke-DbaQuery {
         Executes a stored procedure Example_SP using multiple SQL Parameters
 
     .EXAMPLE
+        PS C:\> $inparam = @()
+        PS C:\> $inparam += [pscustomobject]@{
+        >>     somestring = 'string1'
+        >>     somedate = '2021-07-15T01:02:00'
+        >> }
+        PS C:\> $inparam += [pscustomobject]@{
+        >>     somestring = 'string2'
+        >>     somedate = '2021-07-15T02:03:00'
+        >> }
+        >> $inparamAsDataTable = ConvertTo-DbaDataTable -InputObject $inparam
+        PS C:\> New-DbaSqlParameter -SqlDbType structured -Value $inparamAsDataTable -TypeName 'dbatools_tabletype'
+        PS C:\> Invoke-DbaQuery -SqlInstance localhost -Database master -CommandType StoredProcedure -Query my_proc -SqlParameter $inparamAsDataTable
+
+        Creates an TVP input parameter and uses it to invoke a stored procedure.
+
+    .EXAMPLE
         PS C:\> $output = New-DbaSqlParameter -ParameterName json_result -SqlDbType NVarChar -Size -1 -Direction Output
         PS C:\> Invoke-DbaQuery -SqlInstance localhost -Database master -CommandType StoredProcedure -Query my_proc -SqlParameter $output
         PS C:\> $output.Value
