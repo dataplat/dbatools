@@ -531,13 +531,13 @@
         # noncoresmo
         # SMO issues
         'Export-DbaUser',
-        'Get-DbaSsisExecutionHistory',
+        #'Get-DbaSsisExecutionHistory',
         'Get-DbaRepDistributor',
         'Copy-DbaPolicyManagement',
         'Copy-DbaDataCollector',
-        'Copy-DbaSsisCatalog',
-        'New-DbaSsisCatalog',
-        'Get-DbaSsisEnvironmentVariable',
+        #'Copy-DbaSsisCatalog',
+        #'New-DbaSsisCatalog',
+        #'Get-DbaSsisEnvironmentVariable',
         'Get-DbaPbmCategory',
         'Get-DbaPbmCategorySubscription',
         'Get-DbaPbmCondition',
