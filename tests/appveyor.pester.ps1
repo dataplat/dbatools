@@ -212,14 +212,25 @@ if (-not $Finalize) {
         }
         # Pester 4.0 outputs already what file is being ran. If we remove write-host from every test, we can time
         # executions for each test script (i.e. Executing Get-DbaFoo .... Done (40 seconds))
-        Add-AppveyorTest -Name $f.Name -Framework NUnit -FileName $f.FullName -Outcome Running
-        $PesterRun = Invoke-Pester @PesterSplat
-        $PesterRun | Export-Clixml -Path "$ModuleBase\PesterResults$PSVersion$Counter.xml"
-        $outcome = "Passed"
-        if ($PesterRun.FailedCount -gt 0) {
-            $outcome = "Failed"
+        $trialNo = 1
+        while ($trialNo -le 3) {
+            if ($trialNo -eq 1) {
+                $appvTestName = $f.Name
+            } else {
+                $appvTestName = "$f.Name, attempt #$trialNo"
+            }
+            Add-AppveyorTest -Name $appvTestName -Framework NUnit -FileName $f.FullName -Outcome Running
+            $PesterRun = Invoke-Pester @PesterSplat
+            $PesterRun | Export-Clixml -Path "$ModuleBase\PesterResults$PSVersion$Counter.xml"
+            $outcome = "Passed"
+            if ($PesterRun.FailedCount -gt 0) {
+                $trialno += 1
+                Update-AppveyorTest -Name $appvTestName -Framework NUnit -FileName $f.FullName -Outcome "Failed" -Duration $PesterRun.Time.TotalMilliseconds
+            } else {
+                Update-AppveyorTest -Name $appvTestName -Framework NUnit -FileName $f.FullName -Outcome "Passed" -Duration $PesterRun.Time.TotalMilliseconds
+                break
+            }
         }
-        Update-AppveyorTest -Name $f.Name -Framework NUnit -FileName $f.FullName -Outcome $outcome -Duration $PesterRun.Time.TotalMilliseconds
     }
     # Gather support package as an artifact
     # New-DbatoolsSupportPackage -Path $ModuleBase - turns out to be too heavy
