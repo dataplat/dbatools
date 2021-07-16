@@ -910,6 +910,8 @@ $script:windowsonly = @(
     'Restart-DbaService',
     'New-DbaClientAlias',
     'Get-DbaClientAlias',
+    'Stop-DbaExternalProcess',
+    'Get-DbaExternalProcess',
     'Remove-DbaNetworkCertificate',
     'Enable-DbaForceNetworkEncryption',
     'Disable-DbaForceNetworkEncryption',
