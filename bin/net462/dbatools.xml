@@ -531,7 +531,7 @@
         </member>
         <member name="M:Sqlcollaborative.Dbatools.Commands.WriteMessageCommand.ResolveLevel(Sqlcollaborative.Dbatools.Message.MessageLevel)">
             <summary>
-            Processs the input level and apply policy and rules
+            Processes the input level and apply policy and rules
             </summary>
             <param name="Level">The original level of the message</param>
             <returns>The processed level</returns>
