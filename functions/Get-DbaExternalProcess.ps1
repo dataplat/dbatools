@@ -46,9 +46,10 @@ function Get-DbaExternalProcess {
         [switch]$EnableException
     )
     process {
-        foreach ($computer in $computername) {
+        foreach ($computer in $ComputerName) {
             try {
-                $processes = Get-DbaCmObject -ComputerName $computer -Credential $Credential -ClassName win32_process | Where-Object ParentProcessId -eq (Get-DbaCmObject -ComputerName $computer -Credential $Credential -ClassName win32_process | Where-Object ProcessName -eq "sqlservr.exe").ProcessId | Select-DefaultView -Property 'PSComputer as ComputerName', ProcessId, Name, HandleCount, WorkingSetSize, VirtualSize
+                $sqlpid = (Get-DbaCmObject -ComputerName $computer -Credential $Credential -ClassName win32_process | Where-Object ProcessName -eq "sqlservr.exe").ProcessId
+                $processes = Get-DbaCmObject -ComputerName $computer -Credential $Credential -ClassName win32_process | Where-Object ParentProcessId -eq $sqlpid
 
                 foreach ($process in $processes) {
                     [PSCustomObject]@{

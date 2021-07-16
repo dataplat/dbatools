@@ -77,7 +77,7 @@ function Stop-DbaExternalProcess {
                 [PSCustomObject]@{
                     ComputerName = $ComputerName
                     ProcessId    = $ProcessId
-                    Name         = $Name
+                    Name         = $name
                     Status       = "Stopped"
                 }
             }
