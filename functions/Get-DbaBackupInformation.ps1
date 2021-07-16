@@ -39,7 +39,10 @@ function Get-DbaBackupInformation {
         If provided only backup originating from this destination will be returned. This SQL instance will not be connected to or involved in this work
 
     .PARAMETER NoXpDirTree
-        If this switch is set, then Files will be parsed as locally files. This can cause failures if the running user can see files that the parsing SQL Instance cannot
+        If this switch is set, then Files will be parsed as local files. This can cause failures if the running user can see files that the parsing SQL Instance cannot
+
+    .PARAMETER NoXpDirRecurse
+        If this switch is set, then xp_dirtree will not recurse down folders
 
     .PARAMETER DirectoryRecurse
         If specified the provided path/directory will be traversed (only applies if not using XpDirTree)
@@ -144,6 +147,8 @@ function Get-DbaBackupInformation {
         [parameter(ParameterSetName = "Create")]
         [Switch]$NoXpDirTree,
         [parameter(ParameterSetName = "Create")]
+        [Switch]$NoXpDirRecurse= $false,
+        [parameter(ParameterSetName = "Create")]
         [switch]$DirectoryRecurse,
         [switch]$EnableException,
         [switch]$MaintenanceSolution,
@@ -231,11 +236,11 @@ function Get-DbaBackupInformation {
                             Write-Message -Level Verbose -Message "Skipping Log Backups as requested"
                         } else {
                             Write-Message -Level Verbose -Message "OLA - Getting folder contents"
-                            $Files += Get-XpDirTreeRestoreFile -Path $f -SqlInstance $server
+                            $Files += Get-XpDirTreeRestoreFile -Path $f -SqlInstance $server -NoRecurse:$NoXpDirRecurse
                         }
                     } else {
                         Write-Message -Message "Testing a folder $f" -Level Verbose
-                        $Files += $Check = Get-XpDirTreeRestoreFile -Path $f -SqlInstance $server
+                        $Files += $Check = Get-XpDirTreeRestoreFile -Path $f -SqlInstance $server -NoRecurse:$NoXpDirRecurse
                         if ($null -eq $check) {
                             Write-Message -Message "Nothing returned from $f" -Level Verbose
                         }

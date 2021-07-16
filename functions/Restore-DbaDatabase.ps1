@@ -126,7 +126,7 @@ function Restore-DbaDatabase {
         Number of I/O buffers to use to perform the operation.
         Refer to https://msdn.microsoft.com/en-us/library/ms178615.aspx for more detail
 
-    .PARAMETER XpDirectoryRecurse
+    .PARAMETER NoXpDirRecurse
         If specified, prevents the XpDirTree process from recursing (its default behaviour)
 
     .PARAMETER DirectoryRecurse
@@ -366,6 +366,7 @@ function Restore-DbaDatabase {
         [parameter(ParameterSetName = "Restore")][switch]$WithReplace,
         [parameter(ParameterSetName = "Restore")][switch]$KeepReplication,
         [parameter(ParameterSetName = "Restore")][Switch]$XpDirTree,
+        [parameter(ParameterSetName = "Restore")][Switch]$NoXpDirRecurse = $false,
         [switch]$OutputScriptOnly,
         [parameter(ParameterSetName = "Restore")][switch]$VerifyOnly,
         [parameter(ParameterSetName = "Restore")][switch]$MaintenanceSolutionBackup,
@@ -605,7 +606,7 @@ function Restore-DbaDatabase {
                 if ($BackupHistory.GetType().ToString() -eq 'Sqlcollaborative.Dbatools.Database.BackupHistory') {
                     $BackupHistory = @($BackupHistory)
                 }
-                $BackupHistory += Get-DbaBackupInformation -SqlInstance $RestoreInstance -SqlCredential $SqlCredential -Path $files -DirectoryRecurse:$DirectoryRecurse -MaintenanceSolution:$MaintenanceSolutionBackup -IgnoreDiffBackup:$IgnoreDiffBackup -IgnoreLogBackup:$IgnoreLogBackup -AzureCredential $AzureCredential
+                $BackupHistory += Get-DbaBackupInformation -SqlInstance $RestoreInstance -SqlCredential $SqlCredential -Path $files -DirectoryRecurse:$DirectoryRecurse -MaintenanceSolution:$MaintenanceSolutionBackup -IgnoreDiffBackup:$IgnoreDiffBackup -IgnoreLogBackup:$IgnoreLogBackup -AzureCredential $AzureCredential -NoXpDirRecurse:$NoXpDirRecurse
             }
             if ($PSCmdlet.ParameterSetName -eq "RestorePage") {
                 if (-not (Test-DbaPath -SqlInstance $RestoreInstance -Path $PageRestoreTailFolder)) {
