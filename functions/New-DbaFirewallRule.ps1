@@ -96,7 +96,7 @@ function New-DbaFirewallRule {
         As -Auto is not used, the command only creates a rule for the instance and no rule for the SQL Server Browser.
 
     #>
-    [CmdletBinding()]
+    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "High")]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
@@ -212,25 +212,27 @@ function New-DbaFirewallRule {
             }
 
             # Run the command for the instance
-            try {
-                $commandResult = Invoke-Command2 -ComputerName $instance.ComputerName -Credential $Credential -ScriptBlock $cmdScriptBlock -ArgumentList $config
-            } catch {
-                Stop-Function -Message "Failed to execute command on $($instance.ComputerName) for instance $($instance.InstanceName)." -Target $instance -ErrorRecord $_ -Continue
-            }
+            if ($PSCmdlet.ShouldProcess($instance, "Creating firewall rule for instance $($instance.InstanceName) on $($instance.ComputerName)")) {
+                try {
+                    $commandResult = Invoke-Command2 -ComputerName $instance.ComputerName -Credential $Credential -ScriptBlock $cmdScriptBlock -ArgumentList $config
+                } catch {
+                    Stop-Function -Message "Failed to execute command on $($instance.ComputerName) for instance $($instance.InstanceName)." -Target $instance -ErrorRecord $_ -Continue
+                }
 
-            # Output information
-            [PSCustomObject]@{
-                ComputerName = $instance.ComputerName
-                InstanceName = $instance.InstanceName
-                SqlInstance  = $instance.SqlFullName.Trim('[]')
-                DisplayName  = $config['DisplayName']
-                Successful   = $commandResult.Successful
-                Status       = $commandResult.CimInstance.Status
-                Warning      = $commandResult.Warning
-                Error        = $commandResult.Error
-                Exception    = $commandResult.Exception
-                Details      = $commandResult
-            } | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, DisplayName, Successful, Status, Warning, Error, Exception
+                # Output information
+                [PSCustomObject]@{
+                    ComputerName = $instance.ComputerName
+                    InstanceName = $instance.InstanceName
+                    SqlInstance  = $instance.SqlFullName.Trim('[]')
+                    DisplayName  = $config['DisplayName']
+                    Successful   = $commandResult.Successful
+                    Status       = $commandResult.CimInstance.Status
+                    Warning      = $commandResult.Warning
+                    Error        = $commandResult.Error
+                    Exception    = $commandResult.Exception
+                    Details      = $commandResult
+                } | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, DisplayName, Successful, Status, Warning, Error, Exception
+            }
 
             # Firewall rule for the instance is in place, let's see if we need one for the SQL Server Browser
             if ($browserNeeded) {
@@ -252,25 +254,27 @@ function New-DbaFirewallRule {
                 }
 
                 # Run the command for the browser
-                try {
-                    $commandResult = Invoke-Command2 -ComputerName $instance.ComputerName -Credential $Credential -ScriptBlock $cmdScriptBlock -ArgumentList $config
-                } catch {
-                    Stop-Function -Message "Failed to execute command on $($instance.ComputerName) for instance $($instance.InstanceName)." -Target $instance -ErrorRecord $_ -Continue
-                }
+                if ($PSCmdlet.ShouldProcess($instance, "Creating firewall rule for SQL Server Browser on $($instance.ComputerName)")) {
+                    try {
+                        $commandResult = Invoke-Command2 -ComputerName $instance.ComputerName -Credential $Credential -ScriptBlock $cmdScriptBlock -ArgumentList $config
+                    } catch {
+                        Stop-Function -Message "Failed to execute command on $($instance.ComputerName) for instance $($instance.InstanceName)." -Target $instance -ErrorRecord $_ -Continue
+                    }
 
-                # Output information
-                [PSCustomObject]@{
-                    ComputerName = $instance.ComputerName
-                    InstanceName = $instance.InstanceName
-                    SqlInstance  = $instance.SqlFullName.Trim('[]')
-                    DisplayName  = $config['DisplayName']
-                    Successful   = $commandResult.Successful
-                    Status       = $commandResult.CimInstance.Status
-                    Warning      = $commandResult.Warning
-                    Error        = $commandResult.Error
-                    Exception    = $commandResult.Exception
-                    Details      = $commandResult
-                } | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, DisplayName, Successful, Status, Warning, Error, Exception
+                    # Output information
+                    [PSCustomObject]@{
+                        ComputerName = $instance.ComputerName
+                        InstanceName = $instance.InstanceName
+                        SqlInstance  = $instance.SqlFullName.Trim('[]')
+                        DisplayName  = $config['DisplayName']
+                        Successful   = $commandResult.Successful
+                        Status       = $commandResult.CimInstance.Status
+                        Warning      = $commandResult.Warning
+                        Error        = $commandResult.Error
+                        Exception    = $commandResult.Exception
+                        Details      = $commandResult
+                    } | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, DisplayName, Successful, Status, Warning, Error, Exception
+                }
             }
         }
     }
