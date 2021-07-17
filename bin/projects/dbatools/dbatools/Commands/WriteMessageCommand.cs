@@ -497,7 +497,7 @@ else { Write-HostColor -String $string -DefaultColor ([Sqlcollaborative.Dbatools
                         InvokeCommand.InvokeScript(false, ScriptBlock.Create(@"$DebugPreference = 'Inquire'"), null, null);
                     else
                     {
-                        restoreInquire = (ActionPreference)GetVariableValue("DebugPreference") == ActionPreference.Inquire;;
+                        restoreInquire = (ActionPreference)GetVariableValue("DebugPreference") == ActionPreference.Inquire;
                         InvokeCommand.InvokeScript(false, ScriptBlock.Create(@"$DebugPreference = 'Continue'"), null, null);
                     }
                     WriteDebug(String.Format("{0} | {1}", Line, _MessageStreams));
