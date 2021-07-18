@@ -345,6 +345,12 @@ function Restore-DbaDatabase {
         Restores 'database' to 'server1' and moves the files to new locations. The format for the $FileStructure HashTable is the file logical name as the Key, and the new location as the Value.
 
     .EXAMPLE
+        PS C:\> $filemap = Get-DbaDbFileMapping -SqlInstance sql2016 -Database test
+        PS C:\> Get-ChildItem \\nas\db\backups\test | Restore-DbaDatabase -SqlInstance sql2019 -Database test -FileMapping $filemap.FileMapping
+
+        Restores test to sql2019 using the file structure built from the existing database on sql2016
+
+    .EXAMPLE
         PS C:\> Restore-DbaDatabase -SqlInstance server1 -Path \\ServerName\ShareName\File -DatabaseName database -DatabaseName database -StopMark OvernightStart -StopBefore -StopAfterDate Get-Date('21:00 10/05/2020')
 
         Restores the backups from \\ServerName\ShareName\File as database, stops before the first 'OvernightStop' mark that occurs after '21:00 10/05/2020'.
@@ -369,7 +375,7 @@ function Restore-DbaDatabase {
         [switch]$OutputScriptOnly,
         [parameter(ParameterSetName = "Restore")][switch]$VerifyOnly,
         [parameter(ParameterSetName = "Restore")][switch]$MaintenanceSolutionBackup,
-        [parameter(ParameterSetName = "Restore")][hashtable]$FileMapping,
+        [parameter(ParameterSetName = "Restore", ValueFromPipelineByPropertyname)][hashtable]$FileMapping,
         [parameter(ParameterSetName = "Restore")][switch]$IgnoreLogBackup,
         [parameter(ParameterSetName = "Restore")][switch]$IgnoreDiffBackup,
         [parameter(ParameterSetName = "Restore")][switch]$UseDestinationDefaultDirectories,
