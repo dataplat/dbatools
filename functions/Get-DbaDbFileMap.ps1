@@ -67,12 +67,14 @@ function Get-DbaDbFileMap {
             if ($db.IsAccessible) {
                 Write-Message -Level Verbose -Message "Processing database: $db"
                 $fileMap = @{}
+
                 foreach ($file in $db.FileGroups.Files) {
                     $fileMap[$file.Name] = $file.FileName
                 }
                 foreach ($file in $db.LogFiles) {
                     $fileMap[$file.Name] = $file.FileName
                 }
+
                 [PSCustomObject]@{
                     ComputerName = $db.ComputerName
                     InstanceName = $db.InstanceName
