@@ -70,6 +70,9 @@ function Get-DbaFirewallRule {
             $group = $args[0]
 
             try {
+                if (-not (Get-Command -Name Get-NetFirewallRuleX -ErrorAction SilentlyContinue)) {
+                    throw 'The module NetSecurity with the command Get-NetFirewallRule is missing on the target computer, so Get-DbaFirewallRule is not supported.'
+                }
                 $successful = $true
                 $rules = Get-NetFirewallRule -Group $group -WarningVariable warn -ErrorVariable err -WarningAction SilentlyContinue -ErrorAction SilentlyContinue
                 if ($warn.Count -gt 0) {
