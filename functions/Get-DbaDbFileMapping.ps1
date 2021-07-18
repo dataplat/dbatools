@@ -1,4 +1,4 @@
-function Get-DbaDbFileMap {
+function Get-DbaDbFileMapping {
     <#
     .SYNOPSIS
         Provides an easy way to build the FileMapping Hashtable for Restore-DbaDatabase from an existing database
@@ -36,11 +36,11 @@ function Get-DbaDbFileMap {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaDbFileMap
+        https://dbatools.io/Get-DbaDbFileMapping
 
     .EXAMPLE
-        PS C:\> $filemap = Get-DbaDbFileMap -SqlInstance sql2016 -Database test
-        PS C:\> Get-ChildItem \\nas\db\backups\test | Restore-DbaDatabase -SqlInstance sql2019 -Database test -FileMapping $filemap.FileMap
+        PS C:\> $filemap = Get-DbaDbFileMapping -SqlInstance sql2016 -Database test
+        PS C:\> Get-ChildItem \\nas\db\backups\test | Restore-DbaDatabase -SqlInstance sql2019 -Database test -FileMapping $filemap.FileMapping
 
         Restores test to sql2019 using the file structure built from the existing database on sql2016
     #>
@@ -48,7 +48,7 @@ function Get-DbaDbFileMap {
     param ([parameter(ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [object[]]$Database,
+        [string[]]$Database,
         [parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
         [switch]$EnableException
@@ -80,7 +80,7 @@ function Get-DbaDbFileMap {
                     InstanceName = $db.InstanceName
                     SqlInstance  = $db.SqlInstance
                     Database     = $db.Name
-                    FileMap      = $fileMap
+                    FileMapping  = $fileMap
                 }
             } else {
                 Write-Message -Level Verbose -Message "Skipping processing of database: $db as database is not accessible"
