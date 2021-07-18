@@ -591,6 +591,7 @@ function New-DbaAvailabilityGroup {
                 } catch {
                     Stop-Function -Message "Failure" -ErrorRecord $_ -Target $second -Continue
                 }
+                $second.AvailabilityGroups.Refresh()
             }
         }
 

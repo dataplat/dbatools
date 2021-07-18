@@ -17,6 +17,7 @@ function Select-DefaultView {
         [psobject]
         $InputObject,
 
+        [Alias("Properties")]
         [string[]]
         $Property,
 
