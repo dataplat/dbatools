@@ -37,6 +37,9 @@ function Import-DbaXESessionTemplate {
 
         This path is relative to the destination directory
 
+    .PARAMETER StartUpState
+        Specifies the start up state of the session. The default is Off.
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -57,6 +60,11 @@ function Import-DbaXESessionTemplate {
         PS C:\> Import-DbaXESessionTemplate -SqlInstance sql2017 -Template db_query_wait_stats
 
         Creates a new XESession named db_query_wait_stats from the dbatools repository to the SQL Server sql2017.
+
+    .EXAMPLE
+        PS C:\> Import-DbaXESessionTemplate -SqlInstance sql2017 -Template db_query_wait_stats -StartUpState On
+
+        Creates a new XESession named db_query_wait_stats from the dbatools repository to the SQL Server sql2017, starts the XESession and sets the StartUpState to On so that it starts on the next server restart.
 
     .EXAMPLE
         PS C:\> Import-DbaXESessionTemplate -SqlInstance sql2017 -Template db_query_wait_stats -Name "Query Wait Stats"
@@ -87,6 +95,8 @@ function Import-DbaXESessionTemplate {
         [string[]]$Template,
         [string]$TargetFilePath,
         [string]$TargetFileMetadataPath,
+        [ValidateSet("On", "Off")]
+        [string]$StartUpState = "Off",
         [switch]$EnableException
     )
     begin {
@@ -200,7 +210,16 @@ function Import-DbaXESessionTemplate {
                     if ($file -eq $tempfile) {
                         Remove-Item $tempfile -ErrorAction SilentlyContinue
                     }
-                    Get-DbaXESession -SqlInstance $server -Session $session.Name
+                    if ($StartUpState -eq "On") {
+                        $newsession = Get-DbaXESession -SqlInstance $server -Session $session.Name
+                        if (-not $newsession.AutoStart) {
+                            $newsession.AutoStart = $true
+                            $newsession.Alter()
+                        }
+                        $newsession | Start-DbaXESession
+                    } else {
+                        Get-DbaXESession -SqlInstance $server -Session $session.Name
+                    }
                 } catch {
                     Stop-Function -Message "Failure" -ErrorRecord $_ -Target $store -Continue
                 }
