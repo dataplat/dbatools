@@ -66,7 +66,7 @@ function Get-DbaDbFileMap {
         foreach ($db in $InputObject) {
             if ($db.IsAccessible) {
                 Write-Message -Level Verbose -Message "Processing database: $db"
-                $fileMap = @{}
+                $fileMap = @{ }
 
                 foreach ($file in $db.FileGroups.Files) {
                     $fileMap[$file.Name] = $file.FileName
