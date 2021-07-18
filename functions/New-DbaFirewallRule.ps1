@@ -119,7 +119,7 @@ function New-DbaFirewallRule {
             $firewallRuleParameters = $args[0]
 
             try {
-                if (-not (Get-Command -Name New-NetFirewallRuleX -ErrorAction SilentlyContinue)) {
+                if (-not (Get-Command -Name New-NetFirewallRule -ErrorAction SilentlyContinue)) {
                     throw 'The module NetSecurity with the command New-NetFirewallRule is missing on the target computer, so New-DbaFirewallRule is not supported.'
                 }
                 $successful = $true

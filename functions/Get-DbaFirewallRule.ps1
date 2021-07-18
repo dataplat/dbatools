@@ -70,7 +70,7 @@ function Get-DbaFirewallRule {
             $group = $args[0]
 
             try {
-                if (-not (Get-Command -Name Get-NetFirewallRuleX -ErrorAction SilentlyContinue)) {
+                if (-not (Get-Command -Name Get-NetFirewallRule -ErrorAction SilentlyContinue)) {
                     throw 'The module NetSecurity with the command Get-NetFirewallRule is missing on the target computer, so Get-DbaFirewallRule is not supported.'
                 }
                 $successful = $true
@@ -139,6 +139,7 @@ function Get-DbaFirewallRule {
                         LocalPort    = $rule.LocalPort
                         Program      = $rule.Program
                         Rule         = $rule
+                        Credential   = $Credential
                     } | Select-DefaultView -Property ComputerName, DisplayName, Name, Protocol, LocalPort, Program
                 }
             } else {
