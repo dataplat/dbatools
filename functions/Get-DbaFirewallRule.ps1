@@ -82,7 +82,12 @@ function Get-DbaFirewallRule {
                     $warn = $null
                 }
                 if ($err.Count -gt 0) {
-                    $successful = $false
+                    if ($err.Count -eq 1 -and $err[0] -match 'No MSFT_NetFirewallRule objects found') {
+                        $verbose = "No objects found. Detailed error message: $($err[0])"
+                        $err = $null
+                    } else {
+                        $successful = $false
+                    }
                 } else {
                     # Change from an empty System.Collections.ArrayList to $null for better readability
                     $err = $null
@@ -103,6 +108,7 @@ function Get-DbaFirewallRule {
                 [PSCustomObject]@{
                     Successful = $successful
                     Rules      = $rulesWithDetails
+                    Verbose    = $verbose
                     Warning    = $warn
                     Error      = $err
                     Exception  = $null
@@ -111,6 +117,7 @@ function Get-DbaFirewallRule {
                 [PSCustomObject]@{
                     Successful = $false
                     Rules      = $null
+                    Verbose    = $null
                     Warning    = $null
                     Error      = $null
                     Exception  = $_
@@ -130,6 +137,11 @@ function Get-DbaFirewallRule {
 
             # Output information
             if ($commandResult.Successful) {
+                if ($commandResult.Verbose) {
+                    foreach ($message in $commandResult.Verbose) {
+                        Write-Message -Level Verbose -Message $message
+                    }
+                }
                 foreach ($rule in $commandResult.Rules) {
                     [PSCustomObject]@{
                         ComputerName = $instance.ComputerName
