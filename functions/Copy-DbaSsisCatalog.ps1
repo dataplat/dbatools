@@ -110,6 +110,14 @@ function Copy-DbaSsisCatalog {
     begin {
         $ISNamespace = "Microsoft.SqlServer.Management.IntegrationServices"
 
+        $dll = [System.Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.Management.IntegrationServices")
+
+        if ($null -eq $dll) {
+            Write-Message -Level Warning -Message "All SSIS commands need SQL Server Management Studio installed and are therefore currently not supported."
+            Stop-Function -Message "Could not load Integration Services libraries" -ErrorRecord $_
+            return
+        }
+
         if ($Force) { $ConfirmPreference = 'none' }
 
         function Get-RemoteIntegrationService {
