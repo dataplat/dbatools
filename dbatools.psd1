@@ -174,6 +174,7 @@
         'Get-DbaDbQueryStoreOption',
         'Set-DbaDbQueryStoreOption',
         'Restore-DbaDatabase',
+        'Get-DbaDbFileMapping',
         'Copy-DbaDbQueryStoreOption',
         'Get-DbaExecutionPlan',
         'Export-DbaExecutionPlan',
