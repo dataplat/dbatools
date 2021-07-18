@@ -214,12 +214,14 @@ function Invoke-DbaDbDataGenerator {
                                     if ($columnMaskInfo) {
                                         # Generate a new value
                                         try {
-                                            if ($columnobject.SubType -in $supportedDataTypes) {
-                                                $newValue = Get-DbaRandomizedValue -DataType $columnMaskInfo.SubType -Locale $Locale
-                                            } else {
-                                                $newValue = Get-DbaRandomizedValue -RandomizerType $columnMaskInfo.MaskingType -RandomizerSubtype $columnMaskInfo.SubType -Locale $Locale
+                                            if ($PSBoundParameters.MaxValue -and $columnMaskInfo.SubType -eq 'String' -and $columnMaskInfo.MaxValue -gt $MaxValue) {
+                                                $columnMaskInfo.MaxValue = $MaxValue
                                             }
-
+                                            if ($columnMaskInfo.ColumnType -in $supportedDataTypes) {
+                                                $newValue = Get-DbaRandomizedValue -DataType $columnMaskInfo.ColumnType -Locale $Locale -Min $columnMaskInfo.MinValue -Max $columnMaskInfo.MaxValue
+                                            } else {
+                                                $newValue = Get-DbaRandomizedValue -RandomizerType $columnMaskInfo.MaskingType -RandomizerSubtype $columnMaskInfo.SubType -Locale $Locale -Min $columnMaskInfo.MinValue -Max $columnMaskInfo.MaxValue
+                                            }
                                         } catch {
                                             Stop-Function -Message "Failure" -Target $columnMaskInfo -Continue -ErrorRecord $_
                                         }
@@ -244,12 +246,13 @@ function Invoke-DbaDbDataGenerator {
 
                                         # Generate a new value
                                         try {
-                                            $columnValue = $null
-
-                                            if ($columnobject.SubType -in $supportedDataTypes) {
-                                                $newValue = Get-DbaRandomizedValue -DataType $columnMaskInfo.SubType -Locale $Locale
+                                            if ($PSBoundParameters.MaxValue -and $columnMaskInfo.SubType -eq 'String' -and $columnMaskInfo.MaxValue -gt $MaxValue) {
+                                                $columnMaskInfo.MaxValue = $MaxValue
+                                            }
+                                            if ($columnMaskInfo.ColumnType -in $supportedDataTypes) {
+                                                $newValue = Get-DbaRandomizedValue -DataType $columnMaskInfo.ColumnType -Locale $Locale -Min $columnMaskInfo.MinValue -Max $columnMaskInfo.MaxValue
                                             } else {
-                                                $newValue = Get-DbaRandomizedValue -RandomizerType $columnMaskInfo.MaskingType -RandomizerSubtype $columnMaskInfo.SubType -Locale $Locale
+                                                $newValue = Get-DbaRandomizedValue -RandomizerType $columnMaskInfo.MaskingType -RandomizerSubtype $columnMaskInfo.SubType -Locale $Locale -Min $columnMaskInfo.MinValue -Max $columnMaskInfo.MaxValue
                                             }
 
                                         } catch {
@@ -291,7 +294,7 @@ function Invoke-DbaDbDataGenerator {
 
                     $insertQuery = ""
 
-                    if ($Pscmdlet.ShouldProcess($instance, "Generating data $($tablecolumns.Name -join ', ') in $($data.Rows.Count) rows in $($db.Name).$($tableobject.Schema).$($tableobject.Name)")) {
+                    if ($Pscmdlet.ShouldProcess($instance, "Generating data for columns $($tablecolumns.Name -join ', ') in $($tableobject.Rows) rows in $($db.Name).$($tableobject.Schema).$($tableobject.Name)")) {
                         $elapsed = [System.Diagnostics.Stopwatch]::StartNew()
 
                         Write-ProgressHelper -StepNumber ($stepcounter++) -TotalSteps $tables.Tables.Count -Activity "Generating data" -Message "Inserting $($tableobject.Rows) rows in $($tableobject.Schema).$($tableobject.Name) in $($db.Name) on $instance"
@@ -373,23 +376,22 @@ function Invoke-DbaDbDataGenerator {
                                     }
 
                                     if (($columnobject.MinValue -or $columnobject.MaxValue) -and ($columnobject.ColumnType -match 'date')) {
-                                        $nowmin = $columnobject.MinValue
-                                        $nowmax = $columnobject.MaxValue
-                                        if (-not $nowmin) {
-                                            $nowmin = (Get-Date -Date $nowmax).AddDays(-365)
+                                        if (-not $columnobject.MinValue) {
+                                            $columnobject.MinValue = (Get-Date -Date $columnobject.MaxValue).AddDays(-365)
                                         }
-                                        if (-not $nowmax) {
-                                            $nowmax = (Get-Date -Date $nowmin).AddDays(365)
+                                        if (-not $columnobject.MaxValue) {
+                                            $columnobject.MaxValue = (Get-Date -Date $columnobject.MinValue).AddDays(365)
                                         }
                                     }
 
                                     try {
-                                        $columnValue = $null
-
-                                        if ($columnobject.SubType -in $supportedDataTypes) {
-                                            $columnValue = Get-DbaRandomizedValue -DataType $columnobject.SubType -CharacterString $charstring -Locale $Locale
+                                        if ($PSBoundParameters.MaxValue -and $columnobject.SubType -eq 'String' -and $columnobject.MaxValue -gt $MaxValue) {
+                                            $columnobject.MaxValue = $MaxValue
+                                        }
+                                        if ($columnobject.ColumnType -in $supportedDataTypes) {
+                                            $columnValue = Get-DbaRandomizedValue -DataType $columnobject.ColumnType -CharacterString $charstring -Locale $Locale -Min $columnobject.MinValue -Max $columnobject.MaxValue
                                         } else {
-                                            $columnValue = Get-DbaRandomizedValue -RandomizerType $columnobject.MaskingType -RandomizerSubtype $columnobject.SubType -CharacterString $charstring -Locale $Locale
+                                            $columnValue = Get-DbaRandomizedValue -RandomizerType $columnobject.MaskingType -RandomizerSubtype $columnobject.SubType -CharacterString $charstring -Locale $Locale -Min $columnobject.MinValue -Max $columnobject.MaxValue
                                         }
 
                                     } catch {
