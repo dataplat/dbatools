@@ -120,7 +120,7 @@ function New-DbaFirewallRule {
 
             try {
                 $successful = $true
-                $cimInstance = New-NetFirewallRuleX @firewallRuleParameters -WarningVariable warn -ErrorVariable err -WarningAction SilentlyContinue -ErrorAction SilentlyContinue
+                $cimInstance = New-NetFirewallRule @firewallRuleParameters -WarningVariable warn -ErrorVariable err -WarningAction SilentlyContinue -ErrorAction SilentlyContinue
                 if ($warn.Count -gt 0) {
                     $successful = $false
                 } else {
