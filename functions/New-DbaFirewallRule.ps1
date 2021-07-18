@@ -9,6 +9,11 @@ function New-DbaFirewallRule {
         This is basically a wrapper around New-NetFirewallRule executed at the target computer.
         So this only works if New-NetFirewallRule works on the target computer.
 
+        Both DisplayName and Name are set to the same value by default, since DisplayName is required
+        but only Name uniquely defines the rule, thus avoiding duplicate rules with different settings.
+        The error 'Cannot create a file when that file already exists.' will be returned
+        if a rule with the same Name already exist.
+
         The functionality is currently limited to creating rules for a default instance, a named instance, and the SQL Server Browser.
         Help to extend the functionality is welcome.
 
@@ -26,6 +31,7 @@ function New-DbaFirewallRule {
 
         The firewall rule for the instance itself will have the following configuration (parameters for New-NetFirewallRule):
             DisplayName = 'SQL Server default instance' or 'SQL Server instance <InstanceName>'
+            Name        = 'SQL Server default instance' or 'SQL Server instance <InstanceName>'
             Group       = 'SQL Server'
             Enabled     = 'True'
             Direction   = 'Inbound'
@@ -36,6 +42,7 @@ function New-DbaFirewallRule {
         If the instane is using a dynamic port or a static port other than 1433,
         a firewall rule for the SQL Server Browser will be added with the following configuration (parameters for New-NetFirewallRule):
             DisplayName = 'SQL Server Browser'
+            Name        = 'SQL Server Browser'
             Group       = 'SQL Server'
             Enabled     = 'True'
             Direction   = 'Inbound'
@@ -113,7 +120,7 @@ function New-DbaFirewallRule {
 
             try {
                 $successful = $true
-                $cimInstance = New-NetFirewallRule @firewallRuleParameters -WarningVariable warn -ErrorVariable err -WarningAction SilentlyContinue -ErrorAction SilentlyContinue
+                $cimInstance = New-NetFirewallRuleX @firewallRuleParameters -WarningVariable warn -ErrorVariable err -WarningAction SilentlyContinue -ErrorAction SilentlyContinue
                 if ($warn.Count -gt 0) {
                     $successful = $false
                 } else {
@@ -168,8 +175,10 @@ function New-DbaFirewallRule {
                 # Test for default or named instance
                 if ($instance.InstanceName -eq 'MSSQLSERVER') {
                     $config['DisplayName'] = 'SQL Server default instance'
+                    $config['Name'] = 'SQL Server default instance'
                 } else {
                     $config['DisplayName'] = "SQL Server instance $($instance.InstanceName)"
+                    $config['Name'] = "SQL Server instance $($instance.InstanceName)"
                     $browserNeeded = $true
                 }
 
@@ -239,6 +248,7 @@ function New-DbaFirewallRule {
                 # Apply the defaults
                 $config = @{
                     DisplayName = 'SQL Server Browser'
+                    Name        = 'SQL Server Browser'
                     Group       = 'SQL Server'
                     Enabled     = 'True'
                     Direction   = 'Inbound'

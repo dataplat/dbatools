@@ -14,26 +14,33 @@ Describe "$CommandName Unit Tests" -Tags "UnitTests" {
 }
 
 Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
-    $results = New-DbaFirewallRule -SqlInstance $script:instance2 -Auto -Confirm:$false
+    $resultsNew = New-DbaFirewallRule -SqlInstance $script:instance2 -Auto -Confirm:$false
+    $resultsGet = Get-DbaFirewallRule -SqlInstance $script:instance2 -Confirm:$false
     $instanceName = ([DbaInstanceParameter]$script:instance2).InstanceName
 
-    It "creates two firewall rules" {
-        $results.Count | Should -Be 2
+    It "New creates two firewall rules" {
+        $resultsNew.Count | Should -Be 2
     }
 
-    It "creates first firewall rule for SQL Server instance" {
-        $results[0].DisplayName | Should -Be "SQL Server instance $instanceName"
-        $results[0].Successful | Should -Be $true
-        $results[0].Warning | Should -Be $null
-        $results[0].Error | Should -Be $null
-        $results[0].Exception | Should -Be $null
+    It "New creates first firewall rule for SQL Server instance" {
+        $resultsNew[0].DisplayName | Should -Be "SQL Server instance $instanceName"
+        $resultsNew[0].Successful | Should -Be $true
+        $resultsNew[0].Warning | Should -Be $null
+        $resultsNew[0].Error | Should -Be $null
+        $resultsNew[0].Exception | Should -Be $null
     }
 
-    It "creates second firewall rule for SQL Server Browser" {
-        $results[1].DisplayName | Should -Be "SQL Server Browser"
-        $results[1].Successful | Should -Be $true
-        $results[1].Warning | Should -Be $null
-        $results[1].Error | Should -Be $null
-        $results[1].Exception | Should -Be $null
+    It "New creates second firewall rule for SQL Server Browser" {
+        $resultsNew[1].DisplayName | Should -Be "SQL Server Browser"
+        $resultsNew[1].Successful | Should -Be $true
+        $resultsNew[1].Warning | Should -Be $null
+        $resultsNew[1].Error | Should -Be $null
+        $resultsNew[1].Exception | Should -Be $null
     }
+
+    It "Get returns two firewall rules" {
+        $resultsGet.Count | Should -Be 2
+    }
+
+    # More tests will be added later
 }
