@@ -15,7 +15,7 @@ Describe "$CommandName Unit Tests" -Tags "UnitTests" {
 
 Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
     $resultsNew = New-DbaFirewallRule -SqlInstance $script:instance2 -Auto -Confirm:$false
-    $resultsGet = Get-DbaFirewallRule -SqlInstance $script:instance2 -Confirm:$false
+    $resultsGet = Get-DbaFirewallRule -SqlInstance $script:instance2
     $instanceName = ([DbaInstanceParameter]$script:instance2).InstanceName
 
     It "New creates two firewall rules" {
