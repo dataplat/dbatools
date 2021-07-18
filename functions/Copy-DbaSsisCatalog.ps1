@@ -4,9 +4,13 @@ function Copy-DbaSsisCatalog {
         Copy-DbaSsisCatalog migrates Folders, SSIS projects, and environments from one SQL Server to another.
 
     .DESCRIPTION
+        Copy-DbaSsisCatalog migrates Folders, SSIS projects, and environments from one SQL Server to another.
+
         By default, all folders, projects, and environments are copied. The -Project parameter can be specified to copy only one project, if desired.
 
         The parameters get more granular from the Folder level. For example, specifying -Folder will only deploy projects/environments from within that folder.
+
+        Note: All SSIS commands need SQL Server Management Studio installed and are therefore currently not supported.
 
     .PARAMETER Source
         Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2012 or higher.
@@ -110,9 +114,12 @@ function Copy-DbaSsisCatalog {
     begin {
         $ISNamespace = "Microsoft.SqlServer.Management.IntegrationServices"
 
-        $dll = [System.Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.Management.IntegrationServices")
+        $dll = Get-ChildItem "C:\Program Files (x86)\Microsoft SQL Server Management Studio*\Common*\IDE\CommonExtensions\Microsoft\SSIS\*\Binn\Microsoft.SqlServer.Management.IntegrationServices.dll" -ErrorAction SilentlyContinue | Select-Object -First 1
 
-        if ($null -eq $dll) {
+        if ($dll) {
+            $loaddll = [System.Reflection.Assembly]::LoadFrom($($dll.FullName))
+        }
+        if ($null -eq $loaddll) {
             Write-Message -Level Warning -Message "All SSIS commands need SQL Server Management Studio installed and are therefore currently not supported."
             Stop-Function -Message "Could not load Integration Services libraries" -ErrorRecord $_
             return
@@ -293,9 +300,7 @@ function Copy-DbaSsisCatalog {
         $sourceFolders = $sourceCatalog.Folders
     }
     process {
-        if (Test-FunctionInterrupt) {
-            return
-        }
+        if (Test-FunctionInterrupt) { return }
         foreach ($destinstance in $Destination) {
             try {
                 $destinationConnection = Connect-SqlInstance -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential -MinimumVersion 1

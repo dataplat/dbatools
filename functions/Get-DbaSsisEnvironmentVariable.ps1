@@ -5,8 +5,12 @@ function Get-DbaSsisEnvironmentVariable {
 
     .DESCRIPTION
         This command gets all variables from specified environment from SSIS Catalog. All sensitive values are decrypted.
+
         The function communicates directly with SSISDB database, "SQL Server Integration Services" service isn't queried there.
+
         Each parameter (besides SqlInstance and SqlCredential) acts as the filter to only include or exclude particular element
+
+        Note: All SSIS commands need SQL Server Management Studio installed and are therefore currently not supported.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.
@@ -120,8 +124,19 @@ function Get-DbaSsisEnvironmentVariable {
         [object[]]$FolderExclude,
         [switch]$EnableException
     )
-
+    begin {
+        $dll = Get-ChildItem "C:\Program Files (x86)\Microsoft SQL Server Management Studio*\Common*\IDE\CommonExtensions\Microsoft\SSIS\*\Binn\Microsoft.SqlServer.Management.IntegrationServices.dll" -ErrorAction SilentlyContinue | Select-Object -First 1
+        if ($dll) {
+            $loaddll = [System.Reflection.Assembly]::LoadFrom($($dll.FullName))
+        }
+        if ($null -eq $loaddll) {
+            Write-Message -Level Warning -Message "All SSIS commands need SQL Server Management Studio installed and are therefore currently not supported."
+            Stop-Function -Message "Could not load Integration Services libraries" -ErrorRecord $_
+            return
+        }
+    }
     process {
+        if (Test-FunctionInterrupt) { return }
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 11

@@ -4,7 +4,11 @@ function New-DbaSsisCatalog {
         Enables the SSIS Catalog on a SQL Server 2012+
 
     .DESCRIPTION
+        Enables the SSIS Catalog on a SQL Server 2012+
+
         After installing the SQL Server Engine and SSIS you still have to enable the SSIS Catalog. This function will enable the catalog and gives the option of supplying the password.
+
+        Note: All SSIS commands need SQL Server Management Studio installed and are therefore currently not supported.
 
     .PARAMETER SqlInstance
         SQL Server you wish to run the function on.
@@ -71,6 +75,16 @@ function New-DbaSsisCatalog {
         [switch]$EnableException
     )
     begin {
+        $dll = Get-ChildItem "C:\Program Files (x86)\Microsoft SQL Server Management Studio*\Common*\IDE\CommonExtensions\Microsoft\SSIS\*\Binn\Microsoft.SqlServer.Management.IntegrationServices.dll" -ErrorAction SilentlyContinue | Select-Object -First 1
+        if ($dll) {
+            $loaddll = [System.Reflection.Assembly]::LoadFrom($($dll.FullName))
+        }
+        if ($null -eq $loaddll) {
+            Write-Message -Level Warning -Message "All SSIS commands need SQL Server Management Studio installed and are therefore currently not supported."
+            Stop-Function -Message "Could not load Integration Services libraries" -ErrorRecord $_
+            return
+        }
+
         if (-not $SecurePassword -and -not $Credential) {
             Stop-Function -Message "You must specify either -SecurePassword or -Credential"
             return
