@@ -74,6 +74,7 @@ function Get-DbaFirewallRule {
                     throw 'The module NetSecurity with the command Get-NetFirewallRule is missing on the target computer, so Get-DbaFirewallRule is not supported.'
                 }
                 $successful = $true
+                $verbose = @( )
                 $rules = Get-NetFirewallRule -Group $group -WarningVariable warn -ErrorVariable err -WarningAction SilentlyContinue -ErrorAction SilentlyContinue
                 if ($warn.Count -gt 0) {
                     $successful = $false
@@ -83,7 +84,7 @@ function Get-DbaFirewallRule {
                 }
                 if ($err.Count -gt 0) {
                     if ($err.Count -eq 1 -and $err[0] -match 'No MSFT_NetFirewallRule objects found') {
-                        $verbose = "No objects found. Detailed error message: $($err[0])"
+                        $verbose += "No objects found. Detailed error message: $($err[0])"
                         $err = $null
                     } else {
                         $successful = $false
