@@ -50,6 +50,11 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
         $resultsGet.Count | Should -Be 2
     }
 
+    It "Get returns firewall rules for SQL Server" {
+        $resultsGet[0].DisplayName | Should -Match 'SQL Server.*instance'
+        $resultsGet[1].DisplayName | Should -Match 'SQL Server.*Browser'
+    }
+
     It "Get returns one firewall rule for SQL Server instance" {
         $resultInstance = $resultsGet | Where-Object { $_.DisplayName -eq "SQL Server instance $instanceName" }
         $resultInstance.Count | Should -Be 1
@@ -71,7 +76,7 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
 
     It "Remove removes all firewall rules" {
         $resultRemoveAll = Remove-DbaFirewallRule -SqlInstance $script:instance2 -Confirm:$false
-        $resultRemoveAll.Count | Should -Be $null
-        (Get-DbaFirewallRule -SqlInstance $script:instance2).Count | Should -Be $null
+        $resultRemoveAll | Should -Be $null
+        (Get-DbaFirewallRule -SqlInstance $script:instance2).Count | Should -Be 0
     }
 }
