@@ -61,15 +61,15 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
     }
 
     It "Get returns one firewall rule for SQL Server instance" {
-        $resultInstance = $resultsGet | Where-Object DisplayName -eq "SQL Server instance $instanceName"
+        $resultInstance = $resultsGet | Where-Object Protocol -eq "TCP"
         $resultInstance.Count | Should -Be 1
-        $resultInstance.Protocol | Should -Be "TCP"
+        $resultInstance.DisplayName | Should -Be "SQL Server instance $instanceName"
     }
 
     It "Get returns one firewall rule for SQL Server Browser" {
-        $resultBrowser = $resultsGet | Where-Object DisplayName -eq "SQL Server Browser"
+        $resultBrowser = $resultsGet | Where-Object Protocol -eq "UDP"
         $resultBrowser.Count | Should -Be 1
-        $resultBrowser.Protocol | Should -Be "UDP"
+        $resultBrowser.DisplayName | Should -Be "SQL Server Browser"
         $resultBrowser.LocalPort | Should -Be "1434"
     }
 
