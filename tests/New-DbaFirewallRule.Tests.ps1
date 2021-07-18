@@ -24,6 +24,11 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
 
     $resultsNew = New-DbaFirewallRule -SqlInstance $script:instance2 -Auto -Confirm:$false
     $resultsGet = Get-DbaFirewallRule -SqlInstance $script:instance2
+    $resultRemoveBrowser = $resultsGet | Where-Object { $_.DisplayName -eq "SQL Server Browser" } | Remove-DbaFirewallRule -Confirm:$false
+    $numberOfRulesAfterBrowserRemove = (Get-DbaFirewallRule -SqlInstance $script:instance2).Count
+    $resultRemoveAll = Remove-DbaFirewallRule -SqlInstance $script:instance2 -Confirm:$false
+    $numberOfRulesAfterAllRemove = (Get-DbaFirewallRule -SqlInstance $script:instance2).Count
+
     $instanceName = ([DbaInstanceParameter]$script:instance2).InstanceName
 
     It "New creates two firewall rules" {
@@ -51,32 +56,31 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
     }
 
     It "Get returns firewall rules for SQL Server" {
-        $resultsGet[0].DisplayName | Should -Match 'SQL Server.*instance'
-        $resultsGet[1].DisplayName | Should -Match 'SQL Server.*Browser'
+        $resultsGet[0].DisplayName | Should -Be "SQL Server instance $instanceName"
+        $resultsGet[1].DisplayName | Should -Be "SQL Server Browser"
     }
 
     It "Get returns one firewall rule for SQL Server instance" {
-        $resultInstance = $resultsGet | Where-Object { $_.DisplayName -eq "SQL Server instance $instanceName" }
+        $resultInstance = $resultsGet | Where-Object DisplayName -eq "SQL Server instance $instanceName"
         $resultInstance.Count | Should -Be 1
         $resultInstance.Protocol | Should -Be "TCP"
     }
 
     It "Get returns one firewall rule for SQL Server Browser" {
-        $resultBrowser = $resultsGet | Where-Object { $_.DisplayName -eq "SQL Server Browser" }
+        $resultBrowser = $resultsGet | Where-Object DisplayName -eq "SQL Server Browser"
         $resultBrowser.Count | Should -Be 1
         $resultBrowser.Protocol | Should -Be "UDP"
         $resultBrowser.LocalPort | Should -Be "1434"
     }
 
     It "Remove removes firewall rule for SQL Server Browser from pipeline" {
-        $resultRemoveBrowser = $resultsGet | Where-Object { $_.DisplayName -eq "SQL Server Browser" } | Remove-DbaFirewallRule -Confirm:$false
         $resultRemoveBrowser.Count | Should -Be $null
-        (Get-DbaFirewallRule -SqlInstance $script:instance2).Count | Should -Be 1
+        $numberOfRulesAfterBrowserRemove | Should -Be 1
     }
 
     It "Remove removes all firewall rules" {
         $resultRemoveAll = Remove-DbaFirewallRule -SqlInstance $script:instance2 -Confirm:$false
         $resultRemoveAll | Should -Be $null
-        (Get-DbaFirewallRule -SqlInstance $script:instance2).Count | Should -Be 0
+        $numberOfRulesAfterAllRemove | Should -Be 0
     }
 }
