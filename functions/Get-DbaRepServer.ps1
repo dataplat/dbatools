@@ -63,7 +63,7 @@ function Get-DbaRepServer {
 
             if ($null -eq $repdll -or $null -eq $rmodll) {
                 Write-Message -Level Warning -Message 'All replication commands need SQL Server Management Studio installed and are therefore currently not supported.'
-                Stop-Function -Message "Could not load replication libraries" -ErrorRecord $_
+                Stop-Function -Message "Could not load replication libraries"
                 return
             }
         }

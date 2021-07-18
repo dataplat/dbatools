@@ -121,7 +121,7 @@ function Copy-DbaSsisCatalog {
         }
         if ($null -eq $loaddll) {
             Write-Message -Level Warning -Message "All SSIS commands need SQL Server Management Studio installed and are therefore currently not supported."
-            Stop-Function -Message "Could not load Integration Services libraries" -ErrorRecord $_
+            Stop-Function -Message "Could not load Integration Services libraries"
             return
         }
 
