@@ -4,6 +4,8 @@ function Get-DbaSsisExecutionHistory {
         Get-DbaSsisHistory Retreives SSIS project and package execution History, and environments from one SQL Server to another.
 
     .DESCRIPTION
+        Get-DbaSsisHistory Retreives SSIS project and package execution History, and environments from one SQL Server to another.
+
         This command gets execution history for SSIS executison given one or more instances and can be filtered by Project, Environment,Folder or Status.
 
     .PARAMETER SqlInstance
