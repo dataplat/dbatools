@@ -53,7 +53,6 @@ function Get-DbaDbFileMap {
         [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
         [switch]$EnableException
     )
-
     process {
         if (Test-Bound -not 'SqlInstance', 'InputObject') {
             Write-Message -Level Warning -Message "You must specify either a SQL instance or supply an InputObject"
