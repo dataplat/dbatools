@@ -194,7 +194,6 @@ if (($PSVersionTable.PSVersion.Major -le 5) -or $script:isWindows) {
     Write-ImportTime -Text "Unblocking Files"
 }
 
-
 $script:DllRoot = (Resolve-Path -Path "$script:PSModuleRoot\bin\").ProviderPath
 
 <#
@@ -808,7 +807,8 @@ $script:xplat = @(
     'Test-DbaAvailabilityGroup',
     'Export-DbaUser',
     'Get-DbaSsisExecutionHistory',
-    'New-DbaConnectionStringBuilder'
+    'New-DbaConnectionStringBuilder',
+    'Install-DbaMaintenanceSolution'
 )
 
 $script:noncoresmo = @(
@@ -825,17 +825,17 @@ $script:noncoresmo = @(
     'Get-DbaRepPublication',
     'Test-DbaRepLatency',
     'Export-DbaRepServerSetting',
-    'Get-DbaRepServer',
-    'Move-DbaDbFile'
+    'Get-DbaRepServer'
 )
 $script:windowsonly = @(
-    # filesystem (\\ related)
+    # filesystem (\\ related),
+    'Move-DbaDbFile'
     'Copy-DbaBackupDevice',
-
+    # uses DACPAC
     'Install-DbaSqlWatch',
     'Uninstall-DbaSqlWatch',
+    # Registry
     'Get-DbaRegistryRoot',
-    'Install-DbaMaintenanceSolution',
     'New-DbatoolsSupportPackage',
     'Export-DbaScript',
     'Get-DbaAgentJobOutputFile',
