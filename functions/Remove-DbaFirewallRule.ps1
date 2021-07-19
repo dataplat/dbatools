@@ -88,6 +88,7 @@ function Remove-DbaFirewallRule {
             $firewallRuleName = $args[0]
 
             try {
+                $successful = $true
                 $null = Remove-NetFirewallRule -Name $firewallRuleName -WarningVariable warn -ErrorVariable err -WarningAction SilentlyContinue -ErrorAction SilentlyContinue
                 if ($warn.Count -gt 0) {
                     $successful = $false
@@ -139,7 +140,7 @@ function Remove-DbaFirewallRule {
                     $rule.ComputerName = (Resolve-DbaNetworkName -ComputerName $rule.ComputerName).ComputerName
                     Write-Message -Level Verbose -Message "Executing Invoke-Command2 with ComputerName = $($rule.ComputerName) and ArgumentList $($rule.Name)."
                     $commandResult = Invoke-Command2 -ComputerName $rule.ComputerName -Credential $rule.Credential -ScriptBlock $cmdScriptBlock -ArgumentList $rule.Name
-                    Write-Message -Level Verbose -Message "We have $($commandResult.Count) result(s)."
+                    Write-Message -Level Verbose -Message "We have $($commandResult.Count) result that is $($commandResult.Successful)."
                 } catch {
                     Stop-Function -Message "Failed to execute command on $($rule.ComputerName)." -Target $instance -ErrorRecord $_ -Continue
                 }
