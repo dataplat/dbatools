@@ -825,22 +825,22 @@ $script:noncoresmo = @(
     'Get-DbaRepPublication',
     'Test-DbaRepLatency',
     'Export-DbaRepServerSetting',
+    'New-DbatoolsSupportPackage',
+    'Export-DbaScript',
+    'Get-DbaAgentJobOutputFile',
+    'Set-DbaAgentJobOutputFile',
     'Get-DbaRepServer'
 )
 $script:windowsonly = @(
     # filesystem (\\ related),
     'Move-DbaDbFile'
     'Copy-DbaBackupDevice',
-    # uses DACPAC
+    # uses sqlpackage.exe
     'Install-DbaSqlWatch',
     'Uninstall-DbaSqlWatch',
+    'New-DbaDacProfile',
     # Registry
     'Get-DbaRegistryRoot',
-    'New-DbatoolsSupportPackage',
-    'Export-DbaScript',
-    'Get-DbaAgentJobOutputFile',
-    'Set-DbaAgentJobOutputFile',
-    'New-DbaDacProfile',
     'Import-DbaXESessionTemplate',
     'Export-DbaXESessionTemplate',
     'Import-DbaSpConfigure',
