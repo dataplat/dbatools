@@ -487,7 +487,7 @@ function Write-DbaDbTableData {
                 For some reasons SMO wants an initial pull when talking to Azure Sql DB
                 This will throw and be caught, and then we can continue as normal.
 
-                This is the error:
+                Might be our init which _should_ recognize Azure but still does this
                 WARNING: [16:10:18][Write-DbaDbTableData] Failure | unknown property LastBackupDate
             #>
             try {
