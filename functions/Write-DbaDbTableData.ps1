@@ -439,12 +439,7 @@ function Write-DbaDbTableData {
 
         #region Connect to server
         try {
-            if ($SqlInstance.IsConnectionString) {
-                Write-Message -Level Verbose -Message "Nonpooled connections are not supported with connectionstrings, using pooled connection"
-                $server = Connect-DbaInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $databaseName
-            } else {
-                $server = Connect-DbaInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $databaseName -NonPooledConnection
-            }
+            $server = Connect-DbaInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $databaseName -NonPooledConnection
         } catch {
             Stop-Function -Message "Error occurred while establishing connection to $SqlInstance" -Category ConnectionError -ErrorRecord $_ -Target $SqlInstance
             return
@@ -552,7 +547,7 @@ function Write-DbaDbTableData {
         }
 
         Write-Message -Level Verbose -Message "Creating SqlBulkCopy object"
-        $bulkCopy = New-Object Microsoft.Data.SqlClient.SqlBulkCopy($server.ConnectionContext.SqlConnectionObject.ConnectionString, $bulkCopyOptions)
+        $bulkCopy = New-Object Microsoft.Data.SqlClient.SqlBulkCopy($server.ConnectionContext.ConnectionString, $bulkCopyOptions)
 
         $bulkCopy.DestinationTableName = $fqtn
         $bulkCopy.BatchSize = $BatchSize

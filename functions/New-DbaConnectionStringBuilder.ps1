@@ -39,6 +39,9 @@ function New-DbaConnectionStringBuilder {
     .PARAMETER WorkstationID
         Set the Workstation Id that is associated with the connection.
 
+    .PARAMETER NonPooledConnection
+        If this switch is enabled, a non-pooled connection will be requested.
+
     .PARAMETER Legacy
         Use this switch to create a connection string using System.Data.SqlClient instead of Microsoft.Data.SqlClient.
 
@@ -85,9 +88,11 @@ function New-DbaConnectionStringBuilder {
         [ValidateSet("Enabled")]
         [string]$ColumnEncryptionSetting,
         [switch]$Legacy,
+        [switch]$NonPooledConnection,
         [string]$WorkstationId = $env:COMPUTERNAME
     )
     process {
+        $pooled = (-not $NonPooledConnection)
         if ($SqlCredential -and ($Username -or $Password)) {
             Stop-Function -Message "You can only specify SQL Credential or Username/Password, not both."
             return
@@ -133,6 +138,9 @@ function New-DbaConnectionStringBuilder {
             }
             if ($ColumnEncryptionSetting -eq "Enabled") {
                 $builder['Column Encryption Setting'] = "Enabled"
+            }
+            if ($pooled) {
+                $builder['Pooled'] = $pooled
             }
             $builder
         }
