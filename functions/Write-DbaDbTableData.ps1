@@ -487,15 +487,15 @@ function Write-DbaDbTableData {
                 For some reasons SMO wants an initial pull when talking to Azure Sql DB
                 This will throw and be caught, and then we can continue as normal.
 
-                THIS IS NO LONGER TRUE BUT I'M LEAVING IT JUST IN CASE
-
-                try {
-                    $null = $server.Databases
-                } catch {
-                    # here to avoid an empty catch
-                    $null = 1
-                }
+                This is the error:
+                WARNING: [16:10:18][Write-DbaDbTableData] Failure | unknown property LastBackupDate
             #>
+            try {
+                $null = $server.Databases | Where-Object Name -eq $databaseName
+            } catch {
+                # here to avoid an empty catch
+                $null = 1
+            }
         }
         try {
             # This works for both onprem and azure
