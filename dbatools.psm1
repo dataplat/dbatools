@@ -13,6 +13,12 @@ if (($PSVersionTable.PSVersion.Major -lt 6) -or ($PSVersionTable.Platform -and $
     $script:isWindows = $false
 }
 
+if ($IsLinux -or $IsMacOS) {
+    # this doesn't exist by default
+    # https://github.com/PowerShell/PowerShell/issues/1262
+    $env:COMPUTERNAME = hostname
+}
+
 if ('Sqlcollaborative.Dbatools.dbaSystem.DebugHost' -as [Type]) {
     # If we've already got for module import,
     [Sqlcollaborative.Dbatools.dbaSystem.DebugHost]::ImportTimeEntries.Clear() # clear it (since we're clearly re-importing)
@@ -817,7 +823,9 @@ $script:xplat = @(
     'Import-DbaSpConfigure',
     'Export-DbaSpConfigure',
     'Test-DbaMaxMemory',
-    'Install-DbaMaintenanceSolution'
+    'Install-DbaMaintenanceSolution',
+    'Get-DbaManagementObject',
+    'Test-DbaManagementObject'
 )
 
 $script:noncoresmo = @(
@@ -966,10 +974,7 @@ $script:windowsonly = @(
     'Install-DbaSqlWatch',
     'Uninstall-DbaSqlWatch',
     'New-DbaDacProfile',
-    'Export-DbaDacPackage'
-    # No GAC
-    'Get-DbaManagementObject',
-    'Test-DbaManagementObject',
+    'Export-DbaDacPackage',
     # Unknown
     'Get-DbaErrorLog'
 )
