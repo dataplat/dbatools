@@ -92,7 +92,7 @@ function New-DbaConnectionStringBuilder {
         [string]$WorkstationId = $env:COMPUTERNAME
     )
     process {
-        $pooled = (-not $NonPooledConnection)
+        $pooling = (-not $NonPooledConnection)
         if ($SqlCredential -and ($Username -or $Password)) {
             Stop-Function -Message "You can only specify SQL Credential or Username/Password, not both."
             return
@@ -139,8 +139,8 @@ function New-DbaConnectionStringBuilder {
             if ($ColumnEncryptionSetting -eq "Enabled") {
                 $builder['Column Encryption Setting'] = "Enabled"
             }
-            if ($pooled) {
-                $builder['Pooled'] = $pooled
+            if ($pooling) {
+                $builder['Pooling'] = $pooling
             }
             $builder
         }
