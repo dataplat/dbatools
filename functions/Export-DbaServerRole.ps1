@@ -156,7 +156,11 @@ function Export-DbaServerRole {
         $outsql = @()
         $outputFileArray = @()
         $roleCollection = New-Object System.Collections.ArrayList
-        $executingUser = [Security.Principal.WindowsIdentity]::GetCurrent().Name
+        if ($IsLinux -or $IsMacOs) {
+            $executingUser = $env:USER
+        } else {
+            $executingUser = [Security.Principal.WindowsIdentity]::GetCurrent().Name
+        }
         $commandName = $MyInvocation.MyCommand.Name
 
         $roleSQL = "SELECT

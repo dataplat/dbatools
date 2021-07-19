@@ -138,9 +138,9 @@ function Backup-DbaDbMasterKey {
 
             $time = (Get-Date -Format yyyMMddHHmmss)
             $dbName = $db.name
-            $Path = $Path.TrimEnd("\")
+            $Path = $Path.TrimEnd("\").TrimEnd("/")
             $fileinstance = $instance.ToString().Replace('\', '$')
-            $filename = "$Path\$fileinstance-$dbName-$time.key"
+            $filename = [IO.Path]::Combine($Path, "$fileinstance-$dbName-$time.key")
 
             if ($Pscmdlet.ShouldProcess($instance, "Backing up master key to $filename")) {
                 try {

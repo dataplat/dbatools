@@ -26,7 +26,7 @@ $scriptBlock = {
         }
 
         if (-not (Test-Path $DllRoot)) {
-            $null = New-Item -Path $DllRoot -ItemType Directory -ErrorAction Ignore
+            $null = New-Item -Path $DllRoot -ItemType Directory -ErrorAction Ignore -Force
         }
 
         Copy-Item -Path "$ModuleRoot\bin\smo\$Name.dll" -Destination $DllRoot

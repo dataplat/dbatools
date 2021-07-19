@@ -100,7 +100,8 @@ function Import-DbaXESessionTemplate {
         [switch]$EnableException
     )
     begin {
-        $metadata = Import-Clixml "$script:PSModuleRoot\bin\xetemplates-metadata.xml"
+        $xmlpath = Join-DbaPath $script:PSModuleRoot "bin" "xetemplates-metadata.xml"
+        $metadata = Import-Clixml $xmlpath
     }
     process {
         if ((Test-Bound -ParameterName Path -Not) -and (Test-Bound -ParameterName Template -Not)) {
@@ -121,10 +122,10 @@ function Import-DbaXESessionTemplate {
 
             $SqlConn = $server.ConnectionContext.SqlConnectionObject
             $SqlStoreConnection = New-Object Microsoft.SqlServer.Management.Sdk.Sfc.SqlStoreConnection $SqlConn
-            $store = New-Object  Microsoft.SqlServer.Management.XEvent.XEStore $SqlStoreConnection
+            $store = New-Object Microsoft.SqlServer.Management.XEvent.XEStore $SqlStoreConnection
 
             foreach ($file in $template) {
-                $templatepath = "$script:PSModuleRoot\bin\xetemplates\$file.xml"
+                $templatepath = Join-DbaPath $script:PSModuleRoot "bin" "xetemplates" "$file.xml"
                 if ((Test-Path $templatepath)) {
                     $Path += $templatepath
                 } else {
@@ -146,10 +147,16 @@ function Import-DbaXESessionTemplate {
                     Write-Message -Level Verbose -Message "TargetFileMetadataPath specified, changing all metadata file locations in $file for $instance."
 
                     # Handle whatever people specify
-                    $TargetFilePath = $TargetFilePath.TrimEnd("\")
-                    $TargetFileMetadataPath = $TargetFileMetadataPath.TrimEnd("\")
-                    $TargetFilePath = "$TargetFilePath\"
-                    $TargetFileMetadataPath = "$TargetFileMetadataPath\"
+                    $TargetFilePath = $TargetFilePath.TrimEnd("\").TrimEnd("/")
+                    $TargetFileMetadataPath = $TargetFileMetadataPath.TrimEnd("\").TrimEnd("/")
+                    if ((Test-HostOSLinux -SqlInstance $server)) {
+                        write-warning linux
+                        $TargetFilePath = "$TargetFilePath/".$file.TrimEnd("\").TrimEnd("/")
+                        $TargetFileMetadataPath = "$TargetFileMetadataPath/"
+                    } else {
+                        $TargetFilePath = "$TargetFilePath\"
+                        $TargetFileMetadataPath = "$TargetFileMetadataPath\"
+                    }
 
                     # Perform replace
                     $xelphrase = 'name="filename" value="'
@@ -160,8 +167,8 @@ function Import-DbaXESessionTemplate {
                         $contents = Get-Content $file -ErrorAction Stop
                         $contents = $contents.Replace($xelphrase, "$xelphrase$TargetFilePath")
                         $contents = $contents.Replace($xemphrase, "$xemphrase$TargetFileMetadataPath")
-                        $temp = ([System.IO.Path]::GetTempPath()).TrimEnd("").TrimEnd("\")
-                        $tempfile = "$temp\$basename"
+                        $temp = ([System.IO.Path]::GetTempPath()).TrimEnd("").TrimEnd("\").TrimEnd("/")
+                        $tempfile = Join-DbaPath $temp $basename
                         $null = Set-Content -Path $tempfile -Value $contents -Encoding UTF8
                         $xml = [xml](Get-Content $tempfile -ErrorAction Stop)
                         $file = $tempfile
@@ -204,7 +211,7 @@ function Import-DbaXESessionTemplate {
                 }
 
                 try {
-                    Write-Message -Level Verbose -Message "Importing $file as $Name "
+                    Write-Message -Level Verbose -Message "Importing $file as $Name"
                     $session = $store.CreateSessionFromTemplate($Name, $file)
                     $session.Create()
                     if ($file -eq $tempfile) {
