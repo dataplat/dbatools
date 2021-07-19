@@ -57,19 +57,19 @@ function Import-DbaXESessionTemplate {
         https://dbatools.io/Import-DbaXESessionTemplate
 
     .EXAMPLE
-        PS C:\> Import-DbaXESessionTemplate -SqlInstance sql2017 -Template db_query_wait_stats
+        PS C:\> Import-DbaXESessionTemplate -SqlInstance sql2017 -Template "15 Second IO Error"
 
-        Creates a new XESession named db_query_wait_stats from the dbatools repository to the SQL Server sql2017.
-
-    .EXAMPLE
-        PS C:\> Import-DbaXESessionTemplate -SqlInstance sql2017 -Template db_query_wait_stats -StartUpState On
-
-        Creates a new XESession named db_query_wait_stats from the dbatools repository to the SQL Server sql2017, starts the XESession and sets the StartUpState to On so that it starts on the next server restart.
+        Creates a new XESession named "15 Second IO Error" from the dbatools repository to the SQL Server sql2017.
 
     .EXAMPLE
-        PS C:\> Import-DbaXESessionTemplate -SqlInstance sql2017 -Template db_query_wait_stats -Name "Query Wait Stats"
+        PS C:\> Import-DbaXESessionTemplate -SqlInstance sql2017 -Template "Index Page Splits" -StartUpState On
 
-        Creates a new XESession named "Query Wait Stats" using the db_query_wait_stats template.
+        Creates a new XESession named "Index Page Splits" from the dbatools repository to the SQL Server sql2017, starts the XESession and sets the StartUpState to On so that it starts on the next server restart.
+
+    .EXAMPLE
+        PS C:\> Import-DbaXESessionTemplate -SqlInstance sql2017 -Template "Query Wait Statistics" -Name "Query Wait Stats" | Start-DbaXESession
+
+        Creates a new XESession named "Query Wait Stats" using the Query Wait Statistics template, then immediately starts it.
 
     .EXAMPLE
         PS C:\> Get-DbaXESession -SqlInstance sql2017 -Session 'Database Health 2014' | Remove-DbaXESession
