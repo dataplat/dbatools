@@ -15,11 +15,11 @@ Describe "$CommandName Unit Tests" -Tags "UnitTests" {
 
 Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
-        $null = Remove-DbaFirewallRule -SqlInstance $script:instance2 -Confirm:$false
+        #$null = Remove-DbaFirewallRule -SqlInstance $script:instance2 -Confirm:$false
     }
 
     AfterAll {
-        $null = Remove-DbaFirewallRule -SqlInstance $script:instance2 -Confirm:$false
+        #$null = Remove-DbaFirewallRule -SqlInstance $script:instance2 -Confirm:$false
     }
 
     $resultsNew = New-DbaFirewallRule -SqlInstance $script:instance2 -Auto -Confirm:$false
