@@ -331,7 +331,11 @@ function Get-DbaDbBackupHistory {
                             Write-Message -Level Verbose -Message "No Diff found"
                         }
                         try {
-                            [bigint]$tlogStartDsn = $fullDb.FirstLsn.ToString()
+                            if ($fullDb.FirstLsn) {
+                                [bigint]$tlogStartDsn = $fullDb.FirstLsn.ToString()
+                            } else {
+                                [bigint]$tlogStartDsn = 0
+                            }
                         } catch {
                             continue
                         }
@@ -391,7 +395,7 @@ function Get-DbaDbBackupHistory {
                             if (-not $LastFull) {
                                 Write-Message -Message "Found backups from multiple recovery forks for $($db.name) on $($server.name), this may affect your results" -Level Warning
                                 foreach ($result in $results) {
-                                    Write-Message -Message "Between $($result.MinDate)/$($result.FirstLsn) and $($result.MaxDate)/$($result.FinalLsn) $($result.database_name) was on Recovery Fork GUID $($result.RecFork) ($($result.backupcount) backups)"   -Level Warning
+                                    Write-Message -Message "Between $($result.MinDate)/$($result.FirstLsn) and $($result.MaxDate)/$($result.FinalLsn) $($result.database_name) was on Recovery Fork GUID $($result.RecFork) ($($result.backupcount) backups)" -Level Warning
                                 }
                             }
                         }
