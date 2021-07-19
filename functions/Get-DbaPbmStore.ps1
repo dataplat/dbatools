@@ -61,7 +61,7 @@ function Get-DbaPbmStore {
     )
 
     process {
-        if ($IsLinux -or $IsMacOS) {
+        if ($PSVersionTable.PSEdition -eq "Core") {
             Stop-Function -Message "This command is not supported on Linux or macOS"
             return
         }

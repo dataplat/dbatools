@@ -311,7 +311,10 @@ function Export-DbaInstance {
                 Get-ChildItem -ErrorAction Ignore -Path "$exportPath\endpoints.sql"
             }
 
-            if ($Exclude -notcontains 'PolicyManagement') {
+            if ($Exclude -notcontains 'PolicyManagement' -and $PSVersionTable.PSEdition -eq "Core") {
+                Write-Message -Level Verbose -Message "Skipping Policy Management -- not supported by PowerShell Core"
+            }
+            if ($Exclude -notcontains 'PolicyManagement' -and $PSVersionTable.PSEdition -ne "Core") {
                 Write-Message -Level Verbose -Message "Exporting Policy Management"
                 Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Exporting Policy Management"
 
@@ -321,11 +324,9 @@ function Export-DbaInstance {
 
                 # the policy objects are a different set of classes and are not compatible with the SMO object usage in Export-DbaScript
 
-                if (-not $IsLinux -and -not $IsMacOS) {
-                    $policyObjects += Get-DbaPbmCondition -SqlInstance $server
-                    $policyObjects += Get-DbaPbmObjectSet -SqlInstance $server
-                    $policyObjects += Get-DbaPbmPolicy -SqlInstance $server
-                }
+                $policyObjects += Get-DbaPbmCondition -SqlInstance $server
+                $policyObjects += Get-DbaPbmObjectSet -SqlInstance $server
+                $policyObjects += Get-DbaPbmPolicy -SqlInstance $server
 
                 foreach ($policyObject in $policyObjects) {
                     $tsqlScript = $policyObject.ScriptCreate()

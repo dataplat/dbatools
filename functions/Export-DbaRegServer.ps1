@@ -103,7 +103,8 @@ function Export-DbaRegServer {
             }
 
             if (-not (Test-Path $FilePath) ) {
-                $null = Test-ExportDirectory -Path $FilePath
+                $null = Test-ExportDirectory -Path (Split-Path -Path $FilePath)
+                "" | Set-Content -Path $FilePath
             } elseif (-not $Overwrite.IsPresent) {
                 Stop-Function -Message "Use the -Overwrite parameter if the file $FilePath should be overwritten."
                 return
