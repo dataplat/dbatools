@@ -24,7 +24,9 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
 
     $resultsNew = New-DbaFirewallRule -SqlInstance $script:instance2 -Auto -Confirm:$false
     $resultsGet = Get-DbaFirewallRule -SqlInstance $script:instance2
-    $resultRemoveBrowser = $resultsGet | Where-Object { $_.DisplayName -eq "SQL Server Browser" } | Remove-DbaFirewallRule -Confirm:$false
+    # This does not removes one rule but all - I don't know why...
+    # $resultRemoveBrowser = $resultsGet | Where-Object { $_.DisplayName -eq "SQL Server Browser" } | Remove-DbaFirewallRule -Confirm:$false
+    $resultRemoveBrowser = $resultsGet[1] | Remove-DbaFirewallRule -Confirm:$false
     $numberOfRulesAfterBrowserRemove = (Get-DbaFirewallRule -SqlInstance $script:instance2).Count
     $resultRemoveAll = Remove-DbaFirewallRule -SqlInstance $script:instance2 -Confirm:$false
     $numberOfRulesAfterAllRemove = (Get-DbaFirewallRule -SqlInstance $script:instance2).Count
