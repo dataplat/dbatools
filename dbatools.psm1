@@ -824,8 +824,7 @@ $script:xplat = @(
     'Export-DbaSpConfigure',
     'Test-DbaMaxMemory',
     'Install-DbaMaintenanceSolution',
-    'Get-DbaManagementObject',
-    'Test-DbaManagementObject'
+    'Get-DbaManagementObject'
 )
 
 $script:noncoresmo = @(
@@ -852,6 +851,8 @@ $script:windowsonly = @(
     'Watch-DbaXESession',
     # Registry
     'Get-DbaRegistryRoot',
+    # GAC
+    'Test-DbaManagementObject',
     # CM and Windows functions
     'Rename-DbaDatabase',
     'Get-DbaNetworkConfiguration',
