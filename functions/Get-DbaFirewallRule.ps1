@@ -94,6 +94,7 @@ function Get-DbaFirewallRule {
                     $err = $null
                 }
                 if ($successful) {
+                    $verbose += "Get-NetFirewallRule was successful, we have $($rules.Count) rules."
                     $rulesWithDetails = @( )
                     foreach ($rule in $rules) {
                         $rulesWithDetails += [PSCustomObject]@{
