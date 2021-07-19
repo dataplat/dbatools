@@ -79,6 +79,7 @@ function Remove-DbaXESession {
         [PSCredential]$SqlCredential,
         [parameter(Mandatory, ParameterSetName = 'Session')]
         [Alias("Sessions")]
+        [Alias("Name")]
         [object[]]$Session,
         [parameter(Mandatory, ParameterSetName = 'All')]
         [switch]$AllSessions,
