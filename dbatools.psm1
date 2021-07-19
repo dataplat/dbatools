@@ -805,14 +805,14 @@ $script:xplat = @(
     'Remove-DbaDbFileGroup',
     'Set-DbaDbFileGroup',
     'Remove-DbaLinkedServer',
-    'Test-DbaAvailabilityGroup'
+    'Test-DbaAvailabilityGroup',
+    'Export-DbaUser',
+    'Get-DbaSsisExecutionHistory',
+    'New-DbaConnectionStringBuilder'
 )
 
 $script:noncoresmo = @(
     # SMO issues
-    'New-DbaConnectionStringBuilder',
-    'Export-DbaUser',
-    'Get-DbaSsisExecutionHistory',
     'Get-DbaRepDistributor',
     'Copy-DbaPolicyManagement',
     'Copy-DbaDataCollector',
@@ -829,8 +829,9 @@ $script:noncoresmo = @(
     'Move-DbaDbFile'
 )
 $script:windowsonly = @(
-    # solvable filesystem issues or other workarounds
+    # filesystem (\\ related)
     'Copy-DbaBackupDevice',
+
     'Install-DbaSqlWatch',
     'Uninstall-DbaSqlWatch',
     'Get-DbaRegistryRoot',
