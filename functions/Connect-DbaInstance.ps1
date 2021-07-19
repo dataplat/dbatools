@@ -331,9 +331,9 @@ function Connect-DbaInstance {
         }
         function Test-Azure {
             Param (
-                [DbaInstanceParameter[]]$SqlInstance
+                [DbaInstanceParameter]$SqlInstance
             )
-            if ($SqlInstance.ComputerName -match $AzureDomain) {
+            if ($SqlInstance.ComputerName -match $AzureDomain -or $instance.InputObject.ComputerName -match $AzureDomain) {
                 Write-Message -Level Debug -Message "Test for Azure is positive"
                 return $true
             } else {
@@ -426,10 +426,7 @@ function Connect-DbaInstance {
     }
     process {
         if (Test-FunctionInterrupt) { return }
-        if ((Test-Azure -SqlInstance $SqlInstance)) {
-            Write-Message -Level Verbose -Message "Azure detected"
-            $IsAzure = $true
-        }
+
         # if tenant is specified with a GUID username such as 21f5633f-6776-4bab-b878-bbd5e3e5ed72 (for clientid)
         if ($Tenant -and -not $AccessToken -and $SqlCredential.UserName -match '^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$') {
             Write-Message -Level Verbose "Tenant detected, getting access token"
@@ -447,6 +444,13 @@ function Connect-DbaInstance {
 
         Write-Message -Level Debug -Message "Starting process block"
         foreach ($instance in $SqlInstance) {
+            Write-Message -Level Debug -Message "Immediately checking for Azure"
+            if ((Test-Azure -SqlInstance $instance)) {
+                Write-Message -Level Verbose -Message "Azure detected"
+                $IsAzure = $true
+            } else {
+                $IsAzure = $false
+            }
             Write-Message -Level Debug -Message "Starting loop for '$instance': ComputerName = '$($instance.ComputerName)', InstanceName = '$($instance.InstanceName)', IsLocalHost = '$($instance.IsLocalHost)', Type = '$($instance.Type)'"
 
             <#
@@ -557,11 +561,6 @@ function Connect-DbaInstance {
                     $inputObjectType = 'ConnectionString'
                     $serverName = $instance.FullSmoName
                     $connectionString = $instance.InputObject
-
-                    if ($ConnectionString -match $AzureDomain) {
-                        Write-Message -Level Verbose -Message "Azure detected"
-                        $isAzure = $true
-                    }
                 } else {
                     Write-Message -Level Verbose -Message "String is passed in, will build server object from instance object and other parameters, do some checks and then return the server object"
                     $inputObjectType = 'String'
@@ -1056,8 +1055,7 @@ function Connect-DbaInstance {
             }
 
             # Gracefully handle Azure connections
-            $isAzure = $false
-            if ($connstring -match $AzureDomain -or $instance.ComputerName -match $AzureDomain -or $instance.InputObject.ComputerName -match $AzureDomain) {
+            if ($isAzure) {
                 Write-Message -Level Debug -Message "We are about to connect to Azure"
 
                 # Test for AzureUnsupported, moved here from Connect-SqlInstance
@@ -1085,7 +1083,7 @@ function Connect-DbaInstance {
                         Write-Message -Level Debug -Message "Different databases: Database = '$Database', currentdb = '$currentdb', so we build a new connection"
                     }
                 }
-                $isAzure = $true
+
                 # Use available command to build the proper connection string
                 # but first, clean up passed params so that they match
                 $boundparams = $PSBoundParameters
