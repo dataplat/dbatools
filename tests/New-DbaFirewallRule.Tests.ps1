@@ -26,12 +26,6 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
     $resultsGet = Get-DbaFirewallRule -SqlInstance $script:instance2
     $resultsRemoveBrowser = $resultsGet | Where-Object { $_.DisplayName -eq "SQL Server Browser" } | Remove-DbaFirewallRule -Confirm:$false
     $resultsRemove = Remove-DbaFirewallRule -SqlInstance $script:instance2 -Confirm:$false
-    # This does not removes one rule but all - I don't know why...
-    # $resultRemoveBrowser = $resultsGet | Where-Object { $_.DisplayName -eq "SQL Server Browser" } | Remove-DbaFirewallRule -Confirm:$false
-    #$resultRemoveBrowser = $resultsGet[1] | Remove-DbaFirewallRule -Confirm:$false
-    #$rulesAfterBrowserRemove = Get-DbaFirewallRule -SqlInstance $script:instance2
-    #$resultRemoveAll = Remove-DbaFirewallRule -SqlInstance $script:instance2 -Confirm:$false
-    #$rulesAfterAllRemove = Get-DbaFirewallRule -SqlInstance $script:instance2
 
     $instanceName = ([DbaInstanceParameter]$script:instance2).InstanceName
 
@@ -59,30 +53,18 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
         $resultsGet.Count | Should -Be 2
     }
 
-    It "returns firewall rules for SQL Server" {
-        $resultsGet[0].DisplayName | Should -Be "SQL Server instance $instanceName"
-        $resultsGet[1].DisplayName | Should -Be "SQL Server Browser"
-    }
-
     It "returns one firewall rule for SQL Server instance" {
-        # This does not return one rule but $null - I don't know why...
-        # $resultInstance = $resultsGet | Where-Object Protocol -eq "TCP"
-        # $resultInstance.Count | Should -Be 1
-        $resultsGet[0].DisplayName | Should -Be "SQL Server instance $instanceName"
-        $resultsGet[0].Protocol | Should -Be "TCP"
+        $resultInstance = $resultsGet | Where-Object DisplayName -eq "SQL Server instance $instanceName"
+        $resultInstance.Protocol | Should -Be "TCP"
     }
 
     It "returns one firewall rule for SQL Server Browser" {
-        # This does not return one rule but $null - I don't know why...
-        # $resultBrowser = $resultsGet | Where-Object Protocol -eq "UDP"
-        # $resultBrowser.Count | Should -Be 1
-        $resultsGet[1].DisplayName | Should -Be "SQL Server Browser"
-        $resultsGet[1].Protocol | Should -Be "UDP"
-        $resultsGet[1].LocalPort | Should -Be "1434"
+        $resultInstance = $resultsGet | Where-Object DisplayName -eq "SQL Server Browser"
+        $resultInstance.Protocol | Should -Be "UDP"
+        $resultInstance.LocalPort | Should -Be "1434"
     }
 
     It "removes firewall rule for Browser" {
-        $resultsRemoveBrowser.Count | Should -Be 1
         $resultsRemoveBrowser.IsRemoved | Should -Be $true
     }
 
@@ -99,7 +81,6 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
     }
 
     It "removes other firewall rule" {
-        $resultsRemove.Count | Should -Be 1
         $resultsRemove.IsRemoved | Should -Be $true
     }
 
