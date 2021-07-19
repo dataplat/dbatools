@@ -211,6 +211,26 @@ function Write-DbaDbTableData {
         # Null variable to make sure upper-scope variables don't interfere later
         $steppablePipeline = $null
 
+        if (-not $PSBoundParameters.Database) {
+            if ($server.ConnectionContext.DatabaseName) {
+                $Database = $server.ConnectionContext.DatabaseName
+                $PSBoundParameters.Database = $server.ConnectionContext.DatabaseName
+                $databaseName = $server.ConnectionContext.DatabaseName
+            }
+
+            if ($SqlInstance.IsConnectionString) {
+                foreach ($item in $SqlInstance.InputObject.Split(';').Trim()) {
+                    $key = $item.Split('=').Trim() | Select-Object -First 1
+                    $value = $item.Split('=').Trim() | Select-Object -Last 1
+                    if ($key -eq 'Database') {
+                        $Database = $value
+                        $PSBoundParameters.Database = $value
+                        $databaseName = $value
+                    }
+                }
+            }
+        }
+
         #region Utility Functions
         function Invoke-BulkCopy {
             <#
@@ -466,27 +486,31 @@ function Write-DbaDbTableData {
             <#
                 For some reasons SMO wants an initial pull when talking to Azure Sql DB
                 This will throw and be caught, and then we can continue as normal.
+
+                THIS IS NO LONGER TRUE BUT I'M LEAVING IT JUST IN CASE
+
+                try {
+                    $null = $server.Databases
+                } catch {
+                    # here to avoid an empty catch
+                    $null = 1
+                }
             #>
-            try {
-                $null = $server.Databases
-            } catch {
-                # here to avoid an empty catch
-                $null = 1
-            }
         }
         try {
-            $databaseObject = $server.Databases[$databaseName]
+            # This works for both onprem and azure
+            $databaseObject = $server.Databases | Where-Object Name -eq $databaseName
             #endregion Get database
 
             #region Prepare database and bulk operations
             if ($null -eq $databaseObject) {
-                Stop-Function -Message "$databaseName does not exist." -Target $SqlInstance
+                Stop-Function -Message "Database $databaseName does not exist." -Target $SqlInstance
                 return
             }
 
             $databaseObject.Tables.Refresh()
             if ($schemaName -notin $databaseObject.Schemas.Name) {
-                Stop-Function -Message "Schema does not exist."
+                Stop-Function -Message "Schema $schemaName does not exist."
                 return
             }
 
