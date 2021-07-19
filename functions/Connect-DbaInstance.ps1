@@ -331,9 +331,9 @@ function Connect-DbaInstance {
         }
         function Test-Azure {
             Param (
-                [DbaInstanceParameter[]]$SqlInstance
+                [DbaInstanceParameter]$SqlInstance
             )
-            if ($SqlInstance.ComputerName -match $AzureDomain) {
+            if ($SqlInstance.ComputerName -match $AzureDomain -or $instance.InputObject.ComputerName -match $AzureDomain) {
                 Write-Message -Level Debug -Message "Test for Azure is positive"
                 return $true
             } else {
@@ -426,6 +426,7 @@ function Connect-DbaInstance {
     }
     process {
         if (Test-FunctionInterrupt) { return }
+
         # if tenant is specified with a GUID username such as 21f5633f-6776-4bab-b878-bbd5e3e5ed72 (for clientid)
         if ($Tenant -and -not $AccessToken -and $SqlCredential.UserName -match '^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$') {
             Write-Message -Level Verbose "Tenant detected, getting access token"
@@ -443,6 +444,13 @@ function Connect-DbaInstance {
 
         Write-Message -Level Debug -Message "Starting process block"
         foreach ($instance in $SqlInstance) {
+            Write-Message -Level Debug -Message "Immediately checking for Azure"
+            if ((Test-Azure -SqlInstance $instance)) {
+                Write-Message -Level Verbose -Message "Azure detected"
+                $IsAzure = $true
+            } else {
+                $IsAzure = $false
+            }
             Write-Message -Level Debug -Message "Starting loop for '$instance': ComputerName = '$($instance.ComputerName)', InstanceName = '$($instance.InstanceName)', IsLocalHost = '$($instance.IsLocalHost)', Type = '$($instance.Type)'"
 
             <#
@@ -567,7 +575,7 @@ function Connect-DbaInstance {
                         Write-Message -Level Warning -Message "Additional parameters are passed in, but they will be ignored"
                     }
                 } elseif ($inputObjectType -in 'SqlConnection', 'RegisteredServer', 'ConnectionString' ) {
-                    if (Test-Bound -ParameterName $ignoredParameters, 'Database', 'ApplicationIntent', 'NonPooledConnection', 'StatementTimeout') {
+                    if (Test-Bound -ParameterName $ignoredParameters, 'ApplicationIntent', 'StatementTimeout') {
                         Write-Message -Level Warning -Message "Additional parameters are passed in, but they will be ignored"
                     }
                 }
@@ -621,11 +629,11 @@ function Connect-DbaInstance {
                     # Test for unsupported parameters
                     # TODO: Thumbprint and Store are not used in legacy code path and should be removed.
                     if ($Thumbprint) {
-                        Stop-Function -Message "Parameter Thumbprint is not supported."
+                        Stop-Function -Message "Parameter Thumbprint is not supported at this time."
                         return
                     }
                     if ($Store) {
-                        Stop-Function -Message "Parameter Store is not supported."
+                        Stop-Function -Message "Parameter Store is not supported at this time."
                         return
                     }
 
@@ -1036,6 +1044,9 @@ function Connect-DbaInstance {
             if ($isConnectionString) {
                 try {
                     # ensure it's in the proper format
+                    if ($Database -or $NonPooledConnection) {
+                        $connstring = ($connstring | New-DbaConnectionStringBuilder -Database $Database -NonPooledConnection:$NonPooledConnection).ToString()
+                    }
                     $sb = New-Object System.Data.Common.DbConnectionStringBuilder
                     $sb.ConnectionString = $connstring
                 } catch {
@@ -1044,8 +1055,7 @@ function Connect-DbaInstance {
             }
 
             # Gracefully handle Azure connections
-            $isAzure = $false
-            if ($connstring -match $AzureDomain -or $instance.ComputerName -match $AzureDomain -or $instance.InputObject.ComputerName -match $AzureDomain) {
+            if ($isAzure) {
                 Write-Message -Level Debug -Message "We are about to connect to Azure"
 
                 # Test for AzureUnsupported, moved here from Connect-SqlInstance
@@ -1073,7 +1083,7 @@ function Connect-DbaInstance {
                         Write-Message -Level Debug -Message "Different databases: Database = '$Database', currentdb = '$currentdb', so we build a new connection"
                     }
                 }
-                $isAzure = $true
+
                 # Use available command to build the proper connection string
                 # but first, clean up passed params so that they match
                 $boundparams = $PSBoundParameters
