@@ -193,7 +193,7 @@ function Export-DbaInstance {
             # Ensure the export dir exists.
             if (-not (Test-Path $exportPath)) {
                 try {
-                    $null = New-Item -ItemType Directory -Path $exportPath -ErrorAction Stop
+                    $null = New-Item -ItemType Directory -Path $exportPath -Force -ErrorAction Stop
                 } catch {
                     Stop-Function -Message "Failure" -ErrorRecord $_
                     return
