@@ -27,9 +27,9 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
     # This does not removes one rule but all - I don't know why...
     # $resultRemoveBrowser = $resultsGet | Where-Object { $_.DisplayName -eq "SQL Server Browser" } | Remove-DbaFirewallRule -Confirm:$false
     $resultRemoveBrowser = $resultsGet[1] | Remove-DbaFirewallRule -Confirm:$false
-    $numberOfRulesAfterBrowserRemove = (Get-DbaFirewallRule -SqlInstance $script:instance2).Count
+    #$rulesAfterBrowserRemove = Get-DbaFirewallRule -SqlInstance $script:instance2
     $resultRemoveAll = Remove-DbaFirewallRule -SqlInstance $script:instance2 -Confirm:$false
-    $numberOfRulesAfterAllRemove = (Get-DbaFirewallRule -SqlInstance $script:instance2).Count
+    #$rulesAfterAllRemove = Get-DbaFirewallRule -SqlInstance $script:instance2
 
     $instanceName = ([DbaInstanceParameter]$script:instance2).InstanceName
 
@@ -80,13 +80,13 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
     }
 
     It "removes firewall rule for SQL Server Browser from pipeline" {
-        $resultRemoveBrowser.Count | Should -Be $null
-        $numberOfRulesAfterBrowserRemove | Should -Be 1
+        $resultRemoveBrowser.Count | Should -Be 1
+        #$rulesAfterBrowserRemove.Count | Should -Be 1
+        #$rulesAfterBrowserRemove | Should -Be $null
     }
 
     It "removes all firewall rules" {
-        $resultRemoveAll = Remove-DbaFirewallRule -SqlInstance $script:instance2 -Confirm:$false
-        $resultRemoveAll | Should -Be $null
-        $numberOfRulesAfterAllRemove | Should -Be 0
+        $resultRemoveAll.Count | Should -Be 1
+        #$numberOfRulesAfterAllRemove | Should -Be 0
     }
 }
