@@ -439,7 +439,12 @@ function Write-DbaDbTableData {
 
         #region Connect to server
         try {
-            $server = Connect-DbaInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $databaseName -NonPooledConnection
+            if ($SqlInstance.IsConnectionString) {
+                Write-Message -Level Verbose -Message "Nonpooled connections are not supported with connectionstrings, using pooled connection"
+                $server = Connect-DbaInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $databaseName
+            } else {
+                $server = Connect-DbaInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $databaseName -NonPooledConnection
+            }
         } catch {
             Stop-Function -Message "Error occurred while establishing connection to $SqlInstance" -Category ConnectionError -ErrorRecord $_ -Target $SqlInstance
             return
@@ -482,23 +487,10 @@ function Write-DbaDbTableData {
 
 
         #region Get database
-        if ($server.ServerType -eq 'SqlAzureDatabase') {
-            <#
-                For some reasons SMO wants an initial pull when talking to Azure Sql DB
-                This will throw and be caught, and then we can continue as normal.
-
-                Might be our init which _should_ recognize Azure but still does this
-                WARNING: [16:10:18][Write-DbaDbTableData] Failure | unknown property LastBackupDate
-            #>
-            try {
-                $null = $server.Databases | Where-Object Name -eq $databaseName
-            } catch {
-                # here to avoid an empty catch
-                $null = 1
-            }
-        }
+        # we used to do a try catch on $server.Databases if $server.ServerType -eq 'SqlAzureDatabase' here
+        # but it seems this was fixed in the newest SMO
         try {
-            # This works for both onprem and azure
+            # This works for both onprem and azure -- using a hash only works for onprem
             $databaseObject = $server.Databases | Where-Object Name -eq $databaseName
             #endregion Get database
 

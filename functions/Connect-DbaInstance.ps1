@@ -553,6 +553,11 @@ function Connect-DbaInstance {
                     $inputObjectType = 'ConnectionString'
                     $serverName = $instance.FullSmoName
                     $connectionString = $instance.InputObject
+
+                    if ($ConnectionString -match $AzureDomain) {
+                        Write-Message -Level Verbose -Message "Azure detected"
+                        $isAzure = $true
+                    }
                 } else {
                     Write-Message -Level Verbose -Message "String is passed in, will build server object from instance object and other parameters, do some checks and then return the server object"
                     $inputObjectType = 'String'
@@ -567,7 +572,7 @@ function Connect-DbaInstance {
                         Write-Message -Level Warning -Message "Additional parameters are passed in, but they will be ignored"
                     }
                 } elseif ($inputObjectType -in 'SqlConnection', 'RegisteredServer', 'ConnectionString' ) {
-                    if (Test-Bound -ParameterName $ignoredParameters, 'Database', 'ApplicationIntent', 'NonPooledConnection', 'StatementTimeout') {
+                    if (Test-Bound -ParameterName $ignoredParameters, 'ApplicationIntent', 'NonPooledConnection', 'StatementTimeout') {
                         Write-Message -Level Warning -Message "Additional parameters are passed in, but they will be ignored"
                     }
                 }
@@ -621,11 +626,11 @@ function Connect-DbaInstance {
                     # Test for unsupported parameters
                     # TODO: Thumbprint and Store are not used in legacy code path and should be removed.
                     if ($Thumbprint) {
-                        Stop-Function -Message "Parameter Thumbprint is not supported."
+                        Stop-Function -Message "Parameter Thumbprint is not supported at this time."
                         return
                     }
                     if ($Store) {
-                        Stop-Function -Message "Parameter Store is not supported."
+                        Stop-Function -Message "Parameter Store is not supported at this time."
                         return
                     }
 
@@ -1036,6 +1041,9 @@ function Connect-DbaInstance {
             if ($isConnectionString) {
                 try {
                     # ensure it's in the proper format
+                    if ($Database) {
+                        $connstring = ($connstring | New-DbaConnectionStringBuilder -Database $Database).ToString()
+                    }
                     $sb = New-Object System.Data.Common.DbConnectionStringBuilder
                     $sb.ConnectionString = $connstring
                 } catch {
