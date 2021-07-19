@@ -194,7 +194,6 @@ if (($PSVersionTable.PSVersion.Major -le 5) -or $script:isWindows) {
     Write-ImportTime -Text "Unblocking Files"
 }
 
-
 $script:DllRoot = (Resolve-Path -Path "$script:PSModuleRoot\bin\").ProviderPath
 
 <#
@@ -805,14 +804,24 @@ $script:xplat = @(
     'Remove-DbaDbFileGroup',
     'Set-DbaDbFileGroup',
     'Remove-DbaLinkedServer',
-    'Test-DbaAvailabilityGroup'
+    'Test-DbaAvailabilityGroup',
+    'Export-DbaUser',
+    'Get-DbaSsisExecutionHistory',
+    'New-DbaConnectionStringBuilder',
+    'New-DbatoolsSupportPackage',
+    'Export-DbaScript',
+    'Get-DbaAgentJobOutputFile',
+    'Set-DbaAgentJobOutputFile',
+    'Import-DbaXESessionTemplate',
+    'Export-DbaXESessionTemplate',
+    'Import-DbaSpConfigure',
+    'Export-DbaSpConfigure',
+    'Test-DbaMaxMemory',
+    'Install-DbaMaintenanceSolution'
 )
 
 $script:noncoresmo = @(
     # SMO issues
-    'New-DbaConnectionStringBuilder',
-    'Export-DbaUser',
-    'Get-DbaSsisExecutionHistory',
     'Get-DbaRepDistributor',
     'Copy-DbaPolicyManagement',
     'Copy-DbaDataCollector',
@@ -825,30 +834,18 @@ $script:noncoresmo = @(
     'Get-DbaRepPublication',
     'Test-DbaRepLatency',
     'Export-DbaRepServerSetting',
-    'Get-DbaRepServer',
-    'Move-DbaDbFile'
+    'Get-DbaRepServer'
 )
 $script:windowsonly = @(
-    # solvable filesystem issues or other workarounds
+    # filesystem (\\ related),
+    'Move-DbaDbFile'
     'Copy-DbaBackupDevice',
-    'Install-DbaSqlWatch',
-    'Uninstall-DbaSqlWatch',
-    'Get-DbaRegistryRoot',
-    'Install-DbaMaintenanceSolution',
-    'New-DbatoolsSupportPackage',
-    'Export-DbaScript',
-    'Get-DbaAgentJobOutputFile',
-    'Set-DbaAgentJobOutputFile',
-    'New-DbaDacProfile',
-    'Import-DbaXESessionTemplate',
-    'Export-DbaXESessionTemplate',
-    'Import-DbaSpConfigure',
-    'Export-DbaSpConfigure',
     'Read-DbaXEFile',
     'Watch-DbaXESession',
-    'Test-DbaMaxMemory', # can be fixed by not testing remote when linux is detected
-    'Rename-DbaDatabase', # can maybebe fixed by not remoting when linux is detected
+    # Registry
+    'Get-DbaRegistryRoot',
     # CM and Windows functions
+    'Rename-DbaDatabase',
     'Get-DbaNetworkConfiguration',
     'Set-DbaNetworkConfiguration',
     'Get-DbaExtendedProtection',
@@ -962,15 +959,19 @@ $script:windowsonly = @(
     # WPF
     'Show-DbaInstanceFileSystem',
     'Show-DbaDbList',
-    # AD?
+    # AD
     'Test-DbaWindowsLogin',
     'Find-DbaLoginInGroup',
-    # 3rd party non-core DLL or exe
-    'Export-DbaDacPackage', # relies on sqlpackage.exe
-    # Unknown
-    'Get-DbaErrorLog',
+    # 3rd party non-core DLL or sqlpackage.exe
+    'Install-DbaSqlWatch',
+    'Uninstall-DbaSqlWatch',
+    'New-DbaDacProfile',
+    'Export-DbaDacPackage'
+    # No GAC
     'Get-DbaManagementObject',
-    'Test-DbaManagementObject'
+    'Test-DbaManagementObject',
+    # Unknown
+    'Get-DbaErrorLog'
 )
 
 # If a developer or appveyor calls the psm1 directly, they want all functions

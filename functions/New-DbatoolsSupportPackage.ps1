@@ -6,7 +6,7 @@ function New-DbatoolsSupportPackage {
     .DESCRIPTION
         This function creates an extensive debugging package that can help with reproducing and fixing issues.
 
-        The file will be created on the desktop by default and will contain quite a bit of information:
+        The file will be created on the desktop (or in the home directory if $home/Desktop does not exist) by default and will contain quite a bit of information:
         - OS Information
         - Hardware Information (CPU, Ram, things like that)
         - .NET Information
@@ -61,6 +61,9 @@ function New-DbatoolsSupportPackage {
         [switch]$EnableException
     )
     begin {
+        if (-not (Test-Path $Path)) {
+            $Path = $home
+        }
         Write-Message -Level InternalComment -Message "Starting"
         Write-Message -Level Verbose -Message "Bound parameters: $($PSBoundParameters.Keys -join ", ")"
 
@@ -125,7 +128,7 @@ function New-DbatoolsSupportPackage {
         $stepCounter = 0
         if ($Pscmdlet.ShouldProcess("Creating a Support Package for diagnosing Dbatools")) {
 
-            $filePathXml = "$($Path.Trim('\'))\dbatools_support_pack_$(Get-Date -Format "yyyy_MM_dd-HH_mm_ss").xml"
+            $filePathXml = [IO.Path]::Combine($Path, "dbatools_support_pack_$(Get-Date -Format "yyyy_MM_dd-HH_mm_ss").xml")
             $filePathZip = $filePathXml -replace "\.xml$", ".zip"
 
             Write-Message -Level Critical -Message @"
@@ -168,22 +171,21 @@ Ideally start a new console, perform the minimal steps required to reproduce the
 
             $data = [pscustomobject]$hash
 
-            try { $data | Export-Clixml -Path $filePathXml -ErrorAction Stop }
-            catch {
+            try {
+                $data | Export-Clixml -Path $filePathXml -ErrorAction Stop
+            } catch {
                 Stop-Function -Message "Failed to export dump to file." -ErrorRecord $_ -Target $filePathXml
                 return
             }
 
-            try { Compress-Archive -Path $filePathXml -DestinationPath $filePathZip -ErrorAction Stop }
-            catch {
+            try {
+                Compress-Archive -Path $filePathXml -DestinationPath $filePathZip -ErrorAction Stop
+                Get-ChildItem -Path $filePathZip
+            } catch {
                 Stop-Function -Message "Failed to pack dump-file into a zip archive. Please do so manually before submitting the results as the unpacked xml file will be rather large." -ErrorRecord $_ -Target $filePathZip
                 return
             }
-
             Remove-Item -Path $filePathXml -ErrorAction Ignore
-            if ($PassThru) {
-                Get-Item $filePathZip
-            }
         }
     }
     end {

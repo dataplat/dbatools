@@ -193,7 +193,7 @@ function Export-DbaInstance {
             # Ensure the export dir exists.
             if (-not (Test-Path $exportPath)) {
                 try {
-                    $null = New-Item -ItemType Directory -Path $exportPath -ErrorAction Stop
+                    $null = New-Item -ItemType Directory -Path $exportPath -Force -ErrorAction Stop
                 } catch {
                     Stop-Function -Message "Failure" -ErrorRecord $_
                     return
@@ -311,7 +311,10 @@ function Export-DbaInstance {
                 Get-ChildItem -ErrorAction Ignore -Path "$exportPath\endpoints.sql"
             }
 
-            if ($Exclude -notcontains 'PolicyManagement') {
+            if ($Exclude -notcontains 'PolicyManagement' -and $PSVersionTable.PSEdition -eq "Core") {
+                Write-Message -Level Verbose -Message "Skipping Policy Management -- not supported by PowerShell Core"
+            }
+            if ($Exclude -notcontains 'PolicyManagement' -and $PSVersionTable.PSEdition -ne "Core") {
                 Write-Message -Level Verbose -Message "Exporting Policy Management"
                 Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Exporting Policy Management"
 
@@ -320,6 +323,7 @@ function Export-DbaInstance {
                 $policyObjects = @()
 
                 # the policy objects are a different set of classes and are not compatible with the SMO object usage in Export-DbaScript
+
                 $policyObjects += Get-DbaPbmCondition -SqlInstance $server
                 $policyObjects += Get-DbaPbmObjectSet -SqlInstance $server
                 $policyObjects += Get-DbaPbmPolicy -SqlInstance $server

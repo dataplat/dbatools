@@ -54,6 +54,10 @@ function Get-DbaRepServer {
         [switch]$EnableException
     )
     begin {
+        if ($PSVersionTable.PSEdition -eq "Core") {
+            Stop-Function -Message "This command is not yet supported in PowerShell Core"
+            return
+        }
         try {
             Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Replication.dll" -ErrorAction Stop
             Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Rmo.dll" -ErrorAction Stop
