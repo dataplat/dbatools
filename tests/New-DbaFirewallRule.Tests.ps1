@@ -24,11 +24,12 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
 
     $resultsNew = New-DbaFirewallRule -SqlInstance $script:instance2 -Auto -Confirm:$false
     $resultsGet = Get-DbaFirewallRule -SqlInstance $script:instance2
+    $resultsRemove = Remove-DbaFirewallRule -SqlInstance $script:instance2 -Confirm:$false
     # This does not removes one rule but all - I don't know why...
     # $resultRemoveBrowser = $resultsGet | Where-Object { $_.DisplayName -eq "SQL Server Browser" } | Remove-DbaFirewallRule -Confirm:$false
-    $resultRemoveBrowser = $resultsGet[1] | Remove-DbaFirewallRule -Confirm:$false
+    #$resultRemoveBrowser = $resultsGet[1] | Remove-DbaFirewallRule -Confirm:$false
     #$rulesAfterBrowserRemove = Get-DbaFirewallRule -SqlInstance $script:instance2
-    $resultRemoveAll = Remove-DbaFirewallRule -SqlInstance $script:instance2 -Confirm:$false
+    #$resultRemoveAll = Remove-DbaFirewallRule -SqlInstance $script:instance2 -Confirm:$false
     #$rulesAfterAllRemove = Get-DbaFirewallRule -SqlInstance $script:instance2
 
     $instanceName = ([DbaInstanceParameter]$script:instance2).InstanceName
@@ -79,14 +80,22 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
         $resultsGet[1].LocalPort | Should -Be "1434"
     }
 
-    It "removes firewall rule for SQL Server Browser from pipeline" {
-        $resultRemoveBrowser.Count | Should -Be 1
-        #$rulesAfterBrowserRemove.Count | Should -Be 1
-        #$rulesAfterBrowserRemove | Should -Be $null
+    It "removes all firewall rules" {
+        $resultsRemove.Count | Should -Be 2
+        $resultsRemove[0].IsRemoved | Should -Be $true
+        $resultsRemove[1].IsRemoved | Should -Be $true
     }
 
-    It "removes all firewall rules" {
-        $resultRemoveAll.Count | Should -Be 1
-        #$numberOfRulesAfterAllRemove | Should -Be 0
+    It "removes without warnings" {
+        $resultsRemove[0].Warning | Should -Be $null
     }
+
+    It "removes without errors" {
+        $resultsRemove[0].Error | Should -Be $null
+    }
+
+    It "removes without exception" {
+        $resultsRemove[0].Exception | Should -Be $null
+    }
+
 }
