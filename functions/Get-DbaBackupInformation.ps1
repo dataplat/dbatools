@@ -39,7 +39,7 @@ function Get-DbaBackupInformation {
         If provided only backup originating from this destination will be returned. This SQL instance will not be connected to or involved in this work
 
     .PARAMETER NoXpDirTree
-        If this switch is set, then Files will be parsed as local files. This can cause failures if the running user can see files that the parsing SQL Instance cannot
+        If specified, this switch will cause the files to be parsed as local files to the SQL Server Instance provided. Errors may be observed when the SQL Server Instance cannot access the files being parsed.
 
     .PARAMETER NoXpDirRecurse
         If specified, this switch changes xp_dirtree behavior to not recurse the folder structure.
