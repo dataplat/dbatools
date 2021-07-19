@@ -808,6 +808,15 @@ $script:xplat = @(
     'Export-DbaUser',
     'Get-DbaSsisExecutionHistory',
     'New-DbaConnectionStringBuilder',
+    'New-DbatoolsSupportPackage',
+    'Export-DbaScript',
+    'Get-DbaAgentJobOutputFile',
+    'Set-DbaAgentJobOutputFile',
+    'Import-DbaXESessionTemplate',
+    'Export-DbaXESessionTemplate',
+    'Import-DbaSpConfigure',
+    'Export-DbaSpConfigure',
+    'Test-DbaMaxMemory',
     'Install-DbaMaintenanceSolution'
 )
 
@@ -825,31 +834,18 @@ $script:noncoresmo = @(
     'Get-DbaRepPublication',
     'Test-DbaRepLatency',
     'Export-DbaRepServerSetting',
-    'New-DbatoolsSupportPackage',
-    'Export-DbaScript',
-    'Get-DbaAgentJobOutputFile',
-    'Set-DbaAgentJobOutputFile',
     'Get-DbaRepServer'
 )
 $script:windowsonly = @(
     # filesystem (\\ related),
     'Move-DbaDbFile'
     'Copy-DbaBackupDevice',
-    # uses sqlpackage.exe
-    'Install-DbaSqlWatch',
-    'Uninstall-DbaSqlWatch',
-    'New-DbaDacProfile',
-    # Registry
-    'Get-DbaRegistryRoot',
-    'Import-DbaXESessionTemplate',
-    'Export-DbaXESessionTemplate',
-    'Import-DbaSpConfigure',
-    'Export-DbaSpConfigure',
     'Read-DbaXEFile',
     'Watch-DbaXESession',
-    'Test-DbaMaxMemory', # can be fixed by not testing remote when linux is detected
-    'Rename-DbaDatabase', # can maybebe fixed by not remoting when linux is detected
+    # Registry
+    'Get-DbaRegistryRoot',
     # CM and Windows functions
+    'Rename-DbaDatabase',
     'Get-DbaNetworkConfiguration',
     'Set-DbaNetworkConfiguration',
     'Get-DbaExtendedProtection',
@@ -963,15 +959,19 @@ $script:windowsonly = @(
     # WPF
     'Show-DbaInstanceFileSystem',
     'Show-DbaDbList',
-    # AD?
+    # AD
     'Test-DbaWindowsLogin',
     'Find-DbaLoginInGroup',
-    # 3rd party non-core DLL or exe
-    'Export-DbaDacPackage', # relies on sqlpackage.exe
-    # Unknown
-    'Get-DbaErrorLog',
+    # 3rd party non-core DLL or sqlpackage.exe
+    'Install-DbaSqlWatch',
+    'Uninstall-DbaSqlWatch',
+    'New-DbaDacProfile',
+    'Export-DbaDacPackage'
+    # No GAC
     'Get-DbaManagementObject',
-    'Test-DbaManagementObject'
+    'Test-DbaManagementObject',
+    # Unknown
+    'Get-DbaErrorLog'
 )
 
 # If a developer or appveyor calls the psm1 directly, they want all functions
