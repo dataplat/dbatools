@@ -136,9 +136,10 @@ function Remove-DbaFirewallRule {
             }
             if ($PSCmdlet.ShouldProcess($rule.ComputerName, "Removing firewall rule $displayName")) {
                 try {
+                    $rule.ComputerName = (Resolve-DbaNetworkName -ComputerName $rule.ComputerName).ComputerName
                     Write-Message -Level Verbose -Message "Executing Invoke-Command2 with ComputerName = $($rule.ComputerName) and ArgumentList $($rule.Name)."
                     $commandResult = Invoke-Command2 -ComputerName $rule.ComputerName -Credential $rule.Credential -ScriptBlock $cmdScriptBlock -ArgumentList $rule.Name
-                    Write-Message -Level Verbose -Message "We have a $($commandResult.Count) result(s)."
+                    Write-Message -Level Verbose -Message "We have $($commandResult.Count) result(s)."
                 } catch {
                     Stop-Function -Message "Failed to execute command on $($rule.ComputerName)." -Target $instance -ErrorRecord $_ -Continue
                 }
