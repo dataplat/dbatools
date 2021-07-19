@@ -426,6 +426,10 @@ function Connect-DbaInstance {
     }
     process {
         if (Test-FunctionInterrupt) { return }
+        if ((Test-Azure -SqlInstance $SqlInstance)) {
+            Write-Message -Level Verbose -Message "Azure detected"
+            $IsAzure = $true
+        }
         # if tenant is specified with a GUID username such as 21f5633f-6776-4bab-b878-bbd5e3e5ed72 (for clientid)
         if ($Tenant -and -not $AccessToken -and $SqlCredential.UserName -match '^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$') {
             Write-Message -Level Verbose "Tenant detected, getting access token"
