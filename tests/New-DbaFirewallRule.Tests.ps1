@@ -24,6 +24,7 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
 
     $resultsNew = New-DbaFirewallRule -SqlInstance $script:instance2 -Auto -Confirm:$false
     $resultsGet = Get-DbaFirewallRule -SqlInstance $script:instance2
+    $resultsRemoveBrowser = $resultsGet | Where-Object { $_.DisplayName -eq "SQL Server Browser" } | Remove-DbaFirewallRule -Confirm:$false
     $resultsRemove = Remove-DbaFirewallRule -SqlInstance $script:instance2 -Confirm:$false
     # This does not removes one rule but all - I don't know why...
     # $resultRemoveBrowser = $resultsGet | Where-Object { $_.DisplayName -eq "SQL Server Browser" } | Remove-DbaFirewallRule -Confirm:$false
@@ -80,23 +81,38 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
         $resultsGet[1].LocalPort | Should -Be "1434"
     }
 
-    It "removes all firewall rules" {
-        #$resultsRemove.Count | Should -Be 2
-        #$resultsRemove[0].IsRemoved | Should -Be $true
-        #$resultsRemove[1].IsRemoved | Should -Be $true
-        $resultsRemove | Should -Be $null
+    It "removes firewall rule for Browser" {
+        $resultsRemoveBrowser.Count | Should -Be 1
+        $resultsRemoveBrowser.IsRemoved | Should -Be $true
     }
 
-    It "removes without warnings" {
-        $resultsRemove[0].Warning | Should -Be $null
+    It "removes firewall rule for Browser without warnings" {
+        $resultsRemoveBrowser.Warning | Should -Be $null
     }
 
-    It "removes without errors" {
-        $resultsRemove[0].Error | Should -Be $null
+    It "removes firewall rule for Browser without errors" {
+        $resultsRemoveBrowser.Error | Should -Be $null
     }
 
-    It "removes without exception" {
-        $resultsRemove[0].Exception | Should -Be $null
+    It "removes firewall rule for Browser without exception" {
+        $resultsRemoveBrowser.Exception | Should -Be $null
+    }
+
+    It "removes other firewall rule" {
+        $resultsRemove.Count | Should -Be 1
+        $resultsRemove.IsRemoved | Should -Be $true
+    }
+
+    It "removes other firewall rule without warnings" {
+        $resultsRemove.Warning | Should -Be $null
+    }
+
+    It "removes other firewall rule without errors" {
+        $resultsRemove.Error | Should -Be $null
+    }
+
+    It "removes other firewall rule without exception" {
+        $resultsRemove.Exception | Should -Be $null
     }
 
 }
