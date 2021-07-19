@@ -42,7 +42,7 @@ function Get-DbaBackupInformation {
         If this switch is set, then Files will be parsed as local files. This can cause failures if the running user can see files that the parsing SQL Instance cannot
 
     .PARAMETER NoXpDirRecurse
-        If this switch is set, then xp_dirtree will not recurse down folders
+        If specified, this switch changes xp_dirtree behavior to not recurse the folder structure.
 
     .PARAMETER DirectoryRecurse
         If specified the provided path/directory will be traversed (only applies if not using XpDirTree)
