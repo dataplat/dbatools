@@ -572,7 +572,7 @@ function Connect-DbaInstance {
                         Write-Message -Level Warning -Message "Additional parameters are passed in, but they will be ignored"
                     }
                 } elseif ($inputObjectType -in 'SqlConnection', 'RegisteredServer', 'ConnectionString' ) {
-                    if (Test-Bound -ParameterName $ignoredParameters, 'ApplicationIntent', 'NonPooledConnection', 'StatementTimeout') {
+                    if (Test-Bound -ParameterName $ignoredParameters, 'ApplicationIntent', 'StatementTimeout') {
                         Write-Message -Level Warning -Message "Additional parameters are passed in, but they will be ignored"
                     }
                 }
@@ -1041,8 +1041,8 @@ function Connect-DbaInstance {
             if ($isConnectionString) {
                 try {
                     # ensure it's in the proper format
-                    if ($Database) {
-                        $connstring = ($connstring | New-DbaConnectionStringBuilder -Database $Database).ToString()
+                    if ($Database -or $NonPooledConnection) {
+                        $connstring = ($connstring | New-DbaConnectionStringBuilder -Database $Database -NonPooledConnection:$NonPooledConnection).ToString()
                     }
                     $sb = New-Object System.Data.Common.DbConnectionStringBuilder
                     $sb.ConnectionString = $connstring
