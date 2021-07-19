@@ -320,9 +320,12 @@ function Export-DbaInstance {
                 $policyObjects = @()
 
                 # the policy objects are a different set of classes and are not compatible with the SMO object usage in Export-DbaScript
-                $policyObjects += Get-DbaPbmCondition -SqlInstance $server
-                $policyObjects += Get-DbaPbmObjectSet -SqlInstance $server
-                $policyObjects += Get-DbaPbmPolicy -SqlInstance $server
+
+                if (-not $IsLinux -and -not $IsMacOS) {
+                    $policyObjects += Get-DbaPbmCondition -SqlInstance $server
+                    $policyObjects += Get-DbaPbmObjectSet -SqlInstance $server
+                    $policyObjects += Get-DbaPbmPolicy -SqlInstance $server
+                }
 
                 foreach ($policyObject in $policyObjects) {
                     $tsqlScript = $policyObject.ScriptCreate()

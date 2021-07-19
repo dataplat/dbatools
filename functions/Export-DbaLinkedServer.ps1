@@ -86,6 +86,12 @@ function Export-DbaLinkedServer {
     }
     process {
         if (Test-FunctionInterrupt) { return }
+
+        if ($IsLinux -or $IsMacOS) {
+            Stop-Function -Message "This command is not supported on Linux or macOS"
+            return
+        }
+
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9

@@ -116,7 +116,7 @@ function Backup-DbaServiceMasterKey {
 
             $time = (Get-Date -Format yyyMMddHHmmss)
             $Path = $Path.TrimEnd("\")
-            $fileinstance = $instance.ToString().Replace('\', '$').Replace('/', '$')
+            $fileinstance = $instance.ToString().Replace('\', '$')
             $filename = [IO.Path]::Combine($Path, "$fileinstance-SMK-$time.key")
 
             if ($Pscmdlet.ShouldProcess($instance, "Backing up service master key to $filename")) {
