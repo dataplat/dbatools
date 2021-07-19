@@ -11,7 +11,7 @@ function Restore-DbaDatabase {
         The function defaults to working on a remote instance. This means that all paths passed in must be relative to the remote instance.
         XpDirTree will be used to perform the file scans
 
-        Various means can be used to pass in a list of files to be considered. The default is to non recursively scan the folder
+        Various means can be used to pass in a list of files to be considered. The default is to recursively scan the folder
         passed in.
 
     .PARAMETER SqlInstance
@@ -27,7 +27,7 @@ function Restore-DbaDatabase {
     .PARAMETER Path
         Path to SQL Server backup files.
 
-        Paths passed in as strings will be scanned using the desired method, default is a non recursive folder scan
+        Paths passed in as strings will be scanned using the desired method, default is a recursive folder scan
         Accepts multiple paths separated by ','
 
         Or it can consist of FileInfo objects, such as the output of Get-ChildItem or Get-Item. This allows you to work with
@@ -126,11 +126,11 @@ function Restore-DbaDatabase {
         Number of I/O buffers to use to perform the operation.
         Refer to https://msdn.microsoft.com/en-us/library/ms178615.aspx for more detail
 
-    .PARAMETER XpNoRecurse
+    .PARAMETER NoXpDirRecurse
         If specified, prevents the XpDirTree process from recursing (its default behaviour)
 
     .PARAMETER DirectoryRecurse
-        If specified the specified directory will be recursed into
+        If specified the specified directory will be recursed into (overriding the default behaviour)
 
     .PARAMETER Continue
         If specified we will to attempt to recover more transaction log backups onto  database(s) in Recovering or Standby states
@@ -272,7 +272,7 @@ function Restore-DbaDatabase {
         Will attempt to restore the backups from http://demo.blob.core.windows.net/backups/dbbackup.bak if a SAS credential with the name http://demo.blob.core.windows.net/backups exists on server1\instance1
 
     .EXAMPLE
-        PS C:\> $File = Get-ChildItem c:\backups, \\server1\backups -recurse
+        PS C:\> $File = Get-ChildItem c:\backups, \\server1\backups
         PS C:\> $File | Restore-DbaDatabase -SqlInstance Server1\Instance -UseDestinationDefaultDirectories
 
         This will take all of the files found under the folders c:\backups and \\server1\backups, and pipeline them into
@@ -372,6 +372,7 @@ function Restore-DbaDatabase {
         [parameter(ParameterSetName = "Restore")][switch]$WithReplace,
         [parameter(ParameterSetName = "Restore")][switch]$KeepReplication,
         [parameter(ParameterSetName = "Restore")][Switch]$XpDirTree,
+        [parameter(ParameterSetName = "Restore")][Switch]$NoXpDirRecurse,
         [switch]$OutputScriptOnly,
         [parameter(ParameterSetName = "Restore")][switch]$VerifyOnly,
         [parameter(ParameterSetName = "Restore")][switch]$MaintenanceSolutionBackup,
@@ -611,7 +612,7 @@ function Restore-DbaDatabase {
                 if ($BackupHistory.GetType().ToString() -eq 'Sqlcollaborative.Dbatools.Database.BackupHistory') {
                     $BackupHistory = @($BackupHistory)
                 }
-                $BackupHistory += Get-DbaBackupInformation -SqlInstance $RestoreInstance -SqlCredential $SqlCredential -Path $files -DirectoryRecurse:$DirectoryRecurse -MaintenanceSolution:$MaintenanceSolutionBackup -IgnoreDiffBackup:$IgnoreDiffBackup -IgnoreLogBackup:$IgnoreLogBackup -AzureCredential $AzureCredential
+                $BackupHistory += Get-DbaBackupInformation -SqlInstance $RestoreInstance -SqlCredential $SqlCredential -Path $files -DirectoryRecurse:$DirectoryRecurse -MaintenanceSolution:$MaintenanceSolutionBackup -IgnoreDiffBackup:$IgnoreDiffBackup -IgnoreLogBackup:$IgnoreLogBackup -AzureCredential $AzureCredential -NoXpDirRecurse:$NoXpDirRecurse
             }
             if ($PSCmdlet.ParameterSetName -eq "RestorePage") {
                 if (-not (Test-DbaPath -SqlInstance $RestoreInstance -Path $PageRestoreTailFolder)) {
