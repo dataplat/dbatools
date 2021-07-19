@@ -60,7 +60,8 @@ function ConvertTo-DbaXESession {
         [switch]$EnableException
     )
     begin {
-        $rawsql = Get-Content "$script:PSModuleRoot\bin\sp_SQLskills_ConvertTraceToEEs.sql" -Raw
+        $rawpath = [IO.Path]::Combine($script:PSModuleRoot, "bin", "sp_SQLskills_ConvertTraceToEEs.sql")
+        $rawsql = Get-Content $rawpath -Raw
     }
     process {
         foreach ($trace in $InputObject) {
