@@ -9,6 +9,9 @@ function Join-DbaPath {
     .PARAMETER Path
         The basepath to join on.
 
+    .PARAMETER SqlInstance
+        Optional -- tests to see if destination SQL Server is Linux or Windows
+
     .PARAMETER Child
         Any number of child paths to add.
 
