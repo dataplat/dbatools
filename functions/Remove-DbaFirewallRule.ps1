@@ -150,6 +150,24 @@ function Remove-DbaFirewallRule {
                     Stop-Function -Message "Failed to execute command on $($rule.ComputerName)." -Target $instance -ErrorRecord $_ -Continue
                 }
 
+                if ($commandResult.Successful) {
+                    $status = 'The rule was successfully removed.'
+                } else {
+                    $status = 'Failure.'
+                }
+                if ($commandResult.Warning) {
+                    Write-Message -Level Verbose -Message "commandResult.Warning: $($commandResult.Warning)."
+                    $status += " Warning: $($commandResult.Warning)."
+                }
+                if ($commandResult.Error) {
+                    Write-Message -Level Verbose -Message "commandResult.Error: $($commandResult.Error)."
+                    $status += " Error: $($commandResult.Error)."
+                }
+                if ($commandResult.Exception) {
+                    Write-Message -Level Verbose -Message "commandResult.Exception: $($commandResult.Exception)."
+                    $status += " Exception: $($commandResult.Exception)."
+                }
+
                 # Output information
                 [PSCustomObject]@{
                     ComputerName = $rule.ComputerName
@@ -158,10 +176,8 @@ function Remove-DbaFirewallRule {
                     DisplayName  = $rule.DisplayName
                     Type         = $rule.Type
                     IsRemoved    = $commandResult.Successful
-                    Warning      = $commandResult.Warning
-                    Error        = $commandResult.Error
-                    Exception    = $commandResult.Exception
-                } | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, DisplayName, Type, IsRemoved, Warning, Error, Exception
+                    Status       = $status
+                } | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, DisplayName, Type, IsRemoved, Status
             }
         }
     }

@@ -9,25 +9,14 @@ function New-DbaFirewallRule {
         This is basically a wrapper around New-NetFirewallRule executed at the target computer.
         So this only works if New-NetFirewallRule works on the target computer.
 
-        Both DisplayName and Name are set to the same value by default, since DisplayName is required
+        Both DisplayName and Name are set to the same value, since DisplayName is required
         but only Name uniquely defines the rule, thus avoiding duplicate rules with different settings.
-        The error 'Cannot create a file when that file already exists.' will be returned
-        if a rule with the same Name already exist.
+        The names and the group for all rules are fixed to be able to get them back with Get-DbaFirewallRule.
 
-        The functionality is currently limited to creating rules for a default instance, a named instance, and the SQL Server Browser.
-        Help to extend the functionality is welcome.
+        The functionality is currently limited. Help to extend the functionality is welcome.
 
         As long as you can read this note here, there may be breaking changes in future versions.
         So please review your scripts using this command after updating dbatools.
-
-    .PARAMETER SqlInstance
-        The target SQL Server instance or instances.
-
-    .PARAMETER Credential
-        Credential object used to connect to the Computer as a different user.
-
-    .PARAMETER Auto
-        If this switch is enabled, the configuration is determined automatically.
 
         The firewall rule for the instance itself will have the following configuration (parameters for New-NetFirewallRule):
             DisplayName = 'SQL Server default instance' or 'SQL Server instance <InstanceName>'
@@ -36,25 +25,43 @@ function New-DbaFirewallRule {
             Enabled     = 'True'
             Direction   = 'Inbound'
             Protocol    = 'TCP'
-            LocalPort   = <Port> (for instances with static port)
-            Program     = <Path ending with MSSQL\Binn\sqlservr.exe> (for instances with dynamic port)
+            LocalPort   = '<Port>' (for instances with static port)
+            Program     = '<Path ending with MSSQL\Binn\sqlservr.exe>' (for instances with dynamic port)
 
-        If the instane is using a dynamic port or a static port other than 1433,
-        a firewall rule for the SQL Server Browser will be added with the following configuration (parameters for New-NetFirewallRule):
+        The firewall rule for the SQL Server Browser will have the following configuration (parameters for New-NetFirewallRule):
             DisplayName = 'SQL Server Browser'
             Name        = 'SQL Server Browser'
             Group       = 'SQL Server'
             Enabled     = 'True'
             Direction   = 'Inbound'
             Protocol    = 'UPD'
-            LocalPort   = 1434
+            LocalPort   = '1434'
+
+    .PARAMETER SqlInstance
+        The target SQL Server instance or instances.
+
+    .PARAMETER Credential
+        Credential object used to connect to the Computer as a different user.
+
+    .PARAMETER Type
+        Creates firewall rules for the given type(s).
+        Valid values are:
+            Engine - for the SQL Server instance
+            Browser - for the SQL Server Browser
+        If this parameter is not used, the firewall rule for the SQL Server instance will be created
+        and in case the instance is listening on a port other than 1433,
+        also the firewall rule for the SQL Server Browser will be created if not already in place.
 
     .PARAMETER Configuration
         A hashtable with custom configuration parameters that are used when calling New-NetFirewallRule.
-        If used together with -Auto, these will override the default settings.
-        If used without -Auto, you have to specify all parameters needed by New-NetFirewallRule.
+        These will override the default settings.
+        Parameters Name, DisplayName and Group are not allowed here and will be silently ignored.
 
         https://docs.microsoft.com/en-us/powershell/module/netsecurity/new-netfirewallrule
+
+    .PARAMETER Force
+        If the rule to be created already exists, a warning is displayed.
+        If this switch is enabled, the rule will be deleted and created again.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -79,28 +86,20 @@ function New-DbaFirewallRule {
         https://dbatools.io/New-DbaFirewallRule
 
     .EXAMPLE
-        PS C:\> New-DbaFirewallRule -SqlInstance SRV1, SRV1\TEST -Auto
+        PS C:\> New-DbaFirewallRule -SqlInstance SRV1, SRV1\TEST
 
         Automatically configures the needed firewall rules for both the default instance and the instance named TEST on SRV1.
 
     .EXAMPLE
-        PS C:\> New-DbaFirewallRule -SqlInstance SRV1, SRV1\TEST -Auto -Configuration @{ Profile = 'Domain', Group = 'SQL' }
+        PS C:\> New-DbaFirewallRule -SqlInstance SRV1, SRV1\TEST -Configuration @{ Profile = 'Domain' }
 
         Automatically configures the needed firewall rules for both the default instance and the instance named TEST on SRV1,
-        but configures the firewall rule for the domain profile only and uses the group name 'SQL' instead of the default 'SQL Server'.
+        but configures the firewall rule for the domain profile only.
 
     .EXAMPLE
-        PS C:\> $fwConf = @{
-        >>     DisplayName = 'SQL Server'
-        >>     Enabled     = 'True'
-        >>     Direction   = 'Inbound'
-        >>     Protocol    = 'TCP'
-        >>     LocalPort   = 14331
-        >> }
-        PS C:\> New-DbaFirewallRule -SqlInstance SRV2\DEMO -Configuration $fwConf
+        PS C:\> New-DbaFirewallRule -SqlInstance SRV1\TEST -Type Engine -Force -Confirm:$false
 
-        Creates a firewall rule with the given configuration for the DEMO instance on SRV2.
-        As -Auto is not used, the command only creates a rule for the instance and no rule for the SQL Server Browser.
+        Creates or recreates the firewall rule for the instance TEST on SRV1. Does not prompt for confirmation.
 
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "High")]
@@ -108,21 +107,36 @@ function New-DbaFirewallRule {
         [parameter(Mandatory, ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$Credential,
-        [switch]$Auto,
+        [ValidateSet('Engine', 'Browser')]
+        [string[]]$Type,
         [hashtable]$Configuration,
+        [switch]$Force,
         [switch]$EnableException
     )
 
     begin {
+        if ($Configuration) {
+            foreach ($notAllowedKey in 'Name', 'DisplayName', 'Group') {
+                if ($notAllowedKey -in $Configuration.Keys) {
+                    Write-Message -Level Verbose -Message "Key $notAllowedKey is not allowed in Configuration and will be removed."
+                    $Configuration.Remove($notAllowedKey)
+                }
+            }
+        }
+
         $cmdScriptBlock = {
             # This scriptblock will be processed by Invoke-Command2.
             $firewallRuleParameters = $args[0]
+            $force = $args[1]
 
             try {
                 if (-not (Get-Command -Name New-NetFirewallRule -ErrorAction SilentlyContinue)) {
                     throw 'The module NetSecurity with the command New-NetFirewallRule is missing on the target computer, so New-DbaFirewallRule is not supported.'
                 }
                 $successful = $true
+                if ($force) {
+                    $null = Remove-NetFirewallRule -Name $firewallRuleParameters.Name -WarningAction SilentlyContinue -ErrorAction SilentlyContinue
+                }
                 $cimInstance = New-NetFirewallRule @firewallRuleParameters -WarningVariable warn -ErrorVariable err -WarningAction SilentlyContinue -ErrorAction SilentlyContinue
                 if ($warn.Count -gt 0) {
                     $successful = $false
@@ -156,32 +170,39 @@ function New-DbaFirewallRule {
     }
 
     process {
-        if (-not $Auto -and -not $Configuration) {
-            Stop-Function -Message "If -Auto is not used, you have to provide the exact configuration of the firewall rule with -Configuration."
-            return
-        }
-
         foreach ($instance in $SqlInstance) {
-            $config = @{ }
+            $rules = @( )
             $programNeeded = $false
             $browserNeeded = $false
+            if ($PSBoundParameters.Type) {
+                $browserOptional = $false
+            } else {
+                $browserOptional = $true
+            }
 
-            if ($Auto) {
+            # Create rule for instance
+            if (-not $PSBoundParameters.Type -or 'Engine' -in $PSBoundParameters.Type) {
                 # Apply the defaults
-                $config = @{
-                    Group     = 'SQL Server'
-                    Enabled   = 'True'
-                    Direction = 'Inbound'
-                    Protocol  = 'TCP'
+                $rule = @{
+                    Type         = 'Engine'
+                    InstanceName = $instance.InstanceName
+                    Config       = @{
+                        Group     = 'SQL Server'
+                        Enabled   = 'True'
+                        Direction = 'Inbound'
+                        Protocol  = 'TCP'
+                    }
                 }
 
                 # Test for default or named instance
                 if ($instance.InstanceName -eq 'MSSQLSERVER') {
-                    $config['DisplayName'] = 'SQL Server default instance'
-                    $config['Name'] = 'SQL Server default instance'
+                    $rule.Config.DisplayName = 'SQL Server default instance'
+                    $rule.Config.Name = 'SQL Server default instance'
+                    $rule.SqlInstance = $instance.ComputerName
                 } else {
-                    $config['DisplayName'] = "SQL Server instance $($instance.InstanceName)"
-                    $config['Name'] = "SQL Server instance $($instance.InstanceName)"
+                    $rule.Config.DisplayName = "SQL Server instance $($instance.InstanceName)"
+                    $rule.Config.Name = "SQL Server instance $($instance.InstanceName)"
+                    $rule.SqlInstance = $instance.ComputerName + '\' + $instance.InstanceName
                     $browserNeeded = $true
                 }
 
@@ -193,11 +214,13 @@ function New-DbaFirewallRule {
                 }
 
                 if ($tcpIpAddresses.Count -gt 1) {
+                    # I would have to test this, so I better not support this in the first version.
+                    # As LocalPort is [<String[]>], $tcpIpAddresses.TcpPort will probably just work with the current implementation.
                     Stop-Function -Message "SQL Server instance $instance listens on more than one IP addresses. This is currently not supported by this command." -Continue
                 }
 
                 if ($tcpIpAddresses.TcpPort -ne '') {
-                    $config['LocalPort'] = $tcpIpAddresses.TcpPort
+                    $rule.Config.LocalPort = $tcpIpAddresses.TcpPort
                     if ($tcpIpAddresses.TcpPort -ne '1433') {
                         $browserNeeded = $true
                     }
@@ -212,81 +235,90 @@ function New-DbaFirewallRule {
                     } catch {
                         Stop-Function -Message "Failed." -Target $instance -ErrorRecord $_ -Continue
                     }
-                    $config['Program'] = $service.BinaryPath -replace '^"?(.*sqlservr.exe).*$', '$1'
-                }
-            }
-
-            # Apply the given configuration
-            if ($Configuration) {
-                foreach ($param in $Configuration.Keys) {
-                    $config[$param] = $Configuration[$param]
-                }
-            }
-
-            # Run the command for the instance
-            if ($PSCmdlet.ShouldProcess($instance, "Creating firewall rule for instance $($instance.InstanceName) on $($instance.ComputerName)")) {
-                try {
-                    $commandResult = Invoke-Command2 -ComputerName $instance.ComputerName -Credential $Credential -ScriptBlock $cmdScriptBlock -ArgumentList $config
-                } catch {
-                    Stop-Function -Message "Failed to execute command on $($instance.ComputerName) for instance $($instance.InstanceName)." -Target $instance -ErrorRecord $_ -Continue
+                    $rule.Config.Program = $service.BinaryPath -replace '^"?(.*sqlservr.exe).*$', '$1'
                 }
 
-                # Output information
-                [PSCustomObject]@{
-                    ComputerName = $instance.ComputerName
-                    InstanceName = $instance.InstanceName
-                    SqlInstance  = $instance.SqlFullName.Trim('[]')
-                    DisplayName  = $config['DisplayName']
-                    Successful   = $commandResult.Successful
-                    Status       = $commandResult.CimInstance.Status
-                    Warning      = $commandResult.Warning
-                    Error        = $commandResult.Error
-                    Exception    = $commandResult.Exception
-                    Details      = $commandResult
-                } | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, DisplayName, Successful, Status, Warning, Error, Exception
+                $rules += $rule
             }
 
-            # Firewall rule for the instance is in place, let's see if we need one for the SQL Server Browser
-            if ($browserNeeded) {
+            # Create rule for Browser
+            if ((-not $PSBoundParameters.Type -and $browserNeeded) -or 'Browser' -in $PSBoundParameters.Type) {
                 # Apply the defaults
-                $config = @{
-                    DisplayName = 'SQL Server Browser'
-                    Name        = 'SQL Server Browser'
-                    Group       = 'SQL Server'
-                    Enabled     = 'True'
-                    Direction   = 'Inbound'
-                    Protocol    = 'UDP'
-                    LocalPort   = 1434
-                }
-
-                # Apply the given configuration
-                if ($Configuration) {
-                    foreach ($param in $Configuration.Keys) {
-                        $config[$param] = $Configuration[$param]
+                $rule = @{
+                    Type         = 'Browser'
+                    InstanceName = $null
+                    SqlInstance  = $null
+                    Config       = @{
+                        DisplayName = 'SQL Server Browser'
+                        Name        = 'SQL Server Browser'
+                        Group       = 'SQL Server'
+                        Enabled     = 'True'
+                        Direction   = 'Inbound'
+                        Protocol    = 'UDP'
+                        LocalPort   = '1434'
                     }
                 }
 
-                # Run the command for the browser
-                if ($PSCmdlet.ShouldProcess($instance, "Creating firewall rule for SQL Server Browser on $($instance.ComputerName)")) {
+                $rules += $rule
+            }
+
+            foreach ($rule in $rules) {
+                # Apply the given configuration
+                if ($Configuration) {
+                    foreach ($param in $Configuration.Keys) {
+                        $rule.Config.$param = $Configuration.$param
+                    }
+                }
+
+                # Run the command for the instance
+                if ($PSCmdlet.ShouldProcess($instance, "Creating firewall rule for instance $($instance.InstanceName) on $($instance.ComputerName)")) {
                     try {
-                        $commandResult = Invoke-Command2 -ComputerName $instance.ComputerName -Credential $Credential -ScriptBlock $cmdScriptBlock -ArgumentList $config
+                        $commandResult = Invoke-Command2 -ComputerName $instance.ComputerName -Credential $Credential -ScriptBlock $cmdScriptBlock -ArgumentList $rule.Config, $Force
                     } catch {
                         Stop-Function -Message "Failed to execute command on $($instance.ComputerName) for instance $($instance.InstanceName)." -Target $instance -ErrorRecord $_ -Continue
+                    }
+
+                    if ($commandResult.Error.Count -eq 1 -and $commandResult.Error[0] -match 'Cannot create a file when that file already exists') {
+                        $status = 'The desired rule already exists. Use -Force to remove and recreate the rule.'
+                        $commandResult.Error = $null
+                        if ($rule.Type -eq 'Browser' -and $browserOptional) {
+                            $commandResult.Successful = $true
+                        }
+                    } elseif ($commandResult.CimInstance.Status -match 'The rule was parsed successfully from the store') {
+                        $status = 'The rule was successfully created.'
+                    } else {
+                        $status = $commandResult.CimInstance.Status
+                    }
+
+                    if ($commandResult.Warning) {
+                        Write-Message -Level Verbose -Message "commandResult.Warning: $($commandResult.Warning)."
+                        $status += " Warning: $($commandResult.Warning)."
+                    }
+                    if ($commandResult.Error) {
+                        Write-Message -Level Verbose -Message "commandResult.Error: $($commandResult.Error)."
+                        $status += " Error: $($commandResult.Error)."
+                    }
+                    if ($commandResult.Exception) {
+                        Write-Message -Level Verbose -Message "commandResult.Exception: $($commandResult.Exception)."
+                        $status += " Exception: $($commandResult.Exception)."
                     }
 
                     # Output information
                     [PSCustomObject]@{
                         ComputerName = $instance.ComputerName
-                        InstanceName = $instance.InstanceName
-                        SqlInstance  = $instance.SqlFullName.Trim('[]')
-                        DisplayName  = $config['DisplayName']
+                        InstanceName = $rule.InstanceName
+                        SqlInstance  = $rule.SqlInstance
+                        DisplayName  = $rule.Config.DisplayName
+                        Name         = $rule.Config.Name
+                        Type         = $rule.Type
+                        Protocol     = $rule.Config.Protocol
+                        LocalPort    = $rule.Config.LocalPort
+                        Program      = $rule.Config.Program
+                        RuleConfig   = $rule.Config
                         Successful   = $commandResult.Successful
-                        Status       = $commandResult.CimInstance.Status
-                        Warning      = $commandResult.Warning
-                        Error        = $commandResult.Error
-                        Exception    = $commandResult.Exception
+                        Status       = $status
                         Details      = $commandResult
-                    } | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, DisplayName, Successful, Status, Warning, Error, Exception
+                    } | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, DisplayName, Type, Successful, Status, Protocol, LocalPort, Program
                 }
             }
         }

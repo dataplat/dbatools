@@ -15,17 +15,17 @@ Describe "$CommandName Unit Tests" -Tags "UnitTests" {
 
 Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
-        #$null = Remove-DbaFirewallRule -SqlInstance $script:instance2 -Confirm:$false
+        $null = Remove-DbaFirewallRule -SqlInstance $script:instance2 -Confirm:$false
     }
 
     AfterAll {
-        #$null = Remove-DbaFirewallRule -SqlInstance $script:instance2 -Confirm:$false
+        $null = Remove-DbaFirewallRule -SqlInstance $script:instance2 -Confirm:$false
     }
 
-    $resultsNew = New-DbaFirewallRule -SqlInstance $script:instance2 -Auto -Confirm:$false
+    $resultsNew = New-DbaFirewallRule -SqlInstance $script:instance2  -Confirm:$false
     $resultsGet = Get-DbaFirewallRule -SqlInstance $script:instance2
-    $resultsRemoveBrowser = $resultsGet | Where-Object { $_.DisplayName -eq "SQL Server Browser" } | Remove-DbaFirewallRule -Confirm:$false
-    $resultsRemove = Remove-DbaFirewallRule -SqlInstance $script:instance2 -Confirm:$false
+    $resultsRemoveBrowser = $resultsGet | Where-Object { $_.Type -eq "Browser" } | Remove-DbaFirewallRule -Confirm:$false
+    $resultsRemove = Remove-DbaFirewallRule -SqlInstance $script:instance2 -Type AllOnComputer -Confirm:$false
 
     $instanceName = ([DbaInstanceParameter]$script:instance2).InstanceName
 
@@ -34,19 +34,17 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
     }
 
     It "creates first firewall rule for SQL Server instance" {
-        $resultsNew[0].DisplayName | Should -Be "SQL Server instance $instanceName"
         $resultsNew[0].Successful | Should -Be $true
-        $resultsNew[0].Warning | Should -Be $null
-        $resultsNew[0].Error | Should -Be $null
-        $resultsNew[0].Exception | Should -Be $null
+        $resultsNew[0].Type | Should -Be 'Engine'
+        $resultsNew[0].DisplayName | Should -Be "SQL Server instance $instanceName"
+        $resultsNew[0].Status | Should -Be 'The rule was successfully created.'
     }
 
     It "creates second firewall rule for SQL Server Browser" {
-        $resultsNew[1].DisplayName | Should -Be "SQL Server Browser"
         $resultsNew[1].Successful | Should -Be $true
-        $resultsNew[1].Warning | Should -Be $null
-        $resultsNew[1].Error | Should -Be $null
-        $resultsNew[1].Exception | Should -Be $null
+        $resultsNew[1].Type | Should -Be 'Browser'
+        $resultsNew[1].DisplayName | Should -Be 'SQL Server instance Browser'
+        $resultsNew[1].Status | Should -Be 'The rule was successfully created.'
     }
 
     It "returns two firewall rules" {
@@ -54,46 +52,25 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
     }
 
     It "returns one firewall rule for SQL Server instance" {
-        $resultInstance = $resultsGet | Where-Object DisplayName -eq "SQL Server instance $instanceName"
+        $resultInstance = $resultsGet | Where-Object Type -eq 'Engine'
         $resultInstance.Protocol | Should -Be "TCP"
     }
 
     It "returns one firewall rule for SQL Server Browser" {
-        $resultInstance = $resultsGet | Where-Object DisplayName -eq "SQL Server Browser"
-        $resultInstance.Protocol | Should -Be "UDP"
-        $resultInstance.LocalPort | Should -Be "1434"
+        $resultBrowser = $resultsGet | Where-Object DisplayName -eq 'Browser'
+        $resultBrowser.Protocol | Should -Be 'UDP'
+        $resultBrowser.LocalPort | Should -Be '1434'
     }
 
     It "removes firewall rule for Browser" {
+        $resultsRemoveBrowser.Type | Should -Be 'Browser'
         $resultsRemoveBrowser.IsRemoved | Should -Be $true
-    }
-
-    It "removes firewall rule for Browser without warnings" {
-        $resultsRemoveBrowser.Warning | Should -Be $null
-    }
-
-    It "removes firewall rule for Browser without errors" {
-        $resultsRemoveBrowser.Error | Should -Be $null
-    }
-
-    It "removes firewall rule for Browser without exception" {
-        $resultsRemoveBrowser.Exception | Should -Be $null
+        $resultsRemoveBrowser.Status | Should -Be 'The rule was successfully removed.'
     }
 
     It "removes other firewall rule" {
+        $resultsRemove.Type | Should -Be 'Engine'
         $resultsRemove.IsRemoved | Should -Be $true
+        $resultsRemove.Status | Should -Be 'The rule was successfully removed.'
     }
-
-    It "removes other firewall rule without warnings" {
-        $resultsRemove.Warning | Should -Be $null
-    }
-
-    It "removes other firewall rule without errors" {
-        $resultsRemove.Error | Should -Be $null
-    }
-
-    It "removes other firewall rule without exception" {
-        $resultsRemove.Exception | Should -Be $null
-    }
-
 }
