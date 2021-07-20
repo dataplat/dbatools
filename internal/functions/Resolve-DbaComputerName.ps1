@@ -6,6 +6,7 @@ function Resolve-DbaComputerName {
         Resolves the computer based on the ComputerName of the input DbaInstanceParameter.
         Designed to get the FullComputerName needed for Invoke-Command2.
         Default is to return the FullComputerName, but can also return other properties returned by Resolve-DbaNetworkName.
+        But if ComputerName is the local host, always returns the property ComputerName.
     #>
     [CmdletBinding()]
     [OutputType([String])]
@@ -20,16 +21,24 @@ function Resolve-DbaComputerName {
     [String]$output = $null
     try {
         $resolved = Resolve-DbaNetworkName -ComputerName $ComputerName -Credential $Credential -EnableException
-        $output = $resolved.$Property
     } catch {
         Write-Message -Level Debug -Message "First approach to resolve '$ComputerName' failed" -ErrorRecord $_
         try {
             $resolved = Resolve-DbaNetworkName -ComputerName $ComputerName -Credential $Credential -Turbo -EnableException
-            $output = $resolved.$Property
         } catch {
             Write-Message -Level Debug -Message "Second approach to resolve '$ComputerName' failed" -ErrorRecord $_
-            $output = $ComputerName.ComputerName
+            $resolved = $null
         }
+    }
+    if ($null -eq $resolved) {
+        Write-Message -Level Debug -Message "Resolving failed, so we use input ComputerName."
+        $output = $ComputerName.ComputerName
+    } elseif ($ComputerName.IsLocalHost) {
+        Write-Message -Level Debug -Message "$ComputerName is the local host, so we use ComputerName."
+        $output = $resolved.ComputerName
+    } else {
+        Write-Message -Level Debug -Message "$ComputerName is not the the local host, so we use $Property."
+        $output = $resolved.$Property
     }
     Write-Message -Level Verbose -Message "Resolved '$ComputerName' to '$output'"
     $output
