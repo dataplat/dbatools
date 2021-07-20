@@ -150,7 +150,6 @@ function Import-DbaXESessionTemplate {
                     $TargetFilePath = $TargetFilePath.TrimEnd("\").TrimEnd("/")
                     $TargetFileMetadataPath = $TargetFileMetadataPath.TrimEnd("\").TrimEnd("/")
                     if ((Test-HostOSLinux -SqlInstance $server)) {
-                        write-warning linux
                         $TargetFilePath = "$TargetFilePath/".$file.TrimEnd("\").TrimEnd("/")
                         $TargetFileMetadataPath = "$TargetFileMetadataPath/"
                     } else {
