@@ -110,7 +110,7 @@ function New-DbaDbMasterKey {
 
                     Select-DefaultView -InputObject $masterkey -Property ComputerName, InstanceName, SqlInstance, Database, CreateDate, DateLastModified, IsEncryptedByServer
                 } catch {
-                    Stop-Function -Message "Failed to create master key in $db on $instance. Exception: $($_.Exception.InnerException)" -Target $masterkey -ErrorRecord $_ -Continue
+                    Stop-Function -Message "Failed to create master key in $db on $instance" -Target $masterkey -ErrorRecord $_ -Continue
                 }
             }
         }
