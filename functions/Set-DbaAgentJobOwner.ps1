@@ -4,8 +4,12 @@ function Set-DbaAgentJobOwner {
         Sets SQL Agent job owners with a desired login if jobs do not match that owner.
 
     .DESCRIPTION
-        This function alters SQL Agent Job ownership to match a specified login if their current owner does not match the target login. By default, the target login will be 'sa',
-        but the the user may specify a different login for ownership. This be applied to all jobs or only to a select collection of jobs.
+        This function alters SQL Agent Job ownership to match a specified login if their current owner does not match the target login.
+
+        By default, the target login will be 'sa',
+        but the the user may specify a different login for ownership.
+
+        This be applied to all local (non MultiServer) jobs or only to a select collection of jobs.
 
         Best practice reference: https://www.itprotoday.com/sql-server-tip-assign-ownership-jobs-sysadmin-account
 
@@ -110,7 +114,7 @@ function Set-DbaAgentJobOwner {
             if ($Job) {
                 $jobcollection = $server.JobServer.Jobs | Where-Object { $Job -contains $_.Name }
             } else {
-                $jobcollection = $server.JobServer.Jobs
+                $jobcollection = $server.JobServer.Jobs | Where-Object JobType -eq Local
             }
 
             if ($ExcludeJob) {
