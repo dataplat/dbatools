@@ -5,7 +5,7 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 Describe "$CommandName Unit Tests" -Tags "UnitTests" {
     Context "Validate parameters" {
         [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'SqlInstance', 'Credential', 'Auto', 'Configuration', 'EnableException'
+        [object[]]$knownParameters = 'SqlInstance', 'Credential', 'Type', 'Configuration', 'Force', 'EnableException'
         $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
         It "Should only contain our specific parameters" {
             (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
@@ -43,7 +43,7 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
     It "creates second firewall rule for SQL Server Browser" {
         $resultsNew[1].Successful | Should -Be $true
         $resultsNew[1].Type | Should -Be 'Browser'
-        $resultsNew[1].DisplayName | Should -Be 'SQL Server instance Browser'
+        $resultsNew[1].DisplayName | Should -Be 'SQL Server Browser'
         $resultsNew[1].Status | Should -Be 'The rule was successfully created.'
     }
 
@@ -57,7 +57,7 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
     }
 
     It "returns one firewall rule for SQL Server Browser" {
-        $resultBrowser = $resultsGet | Where-Object DisplayName -eq 'Browser'
+        $resultBrowser = $resultsGet | Where-Object Type -eq 'Browser'
         $resultBrowser.Protocol | Should -Be 'UDP'
         $resultBrowser.LocalPort | Should -Be '1434'
     }
