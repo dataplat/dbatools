@@ -5,13 +5,13 @@ function Remove-DbaFirewallRule {
 
     .DESCRIPTION
         Removes firewall rules for SQL Server instances from the target computer.
+        As the group and the names of the firewall rules are fixed, this command
+        only works for rules created with New-DbaFirewallRule.
 
         This is basically a wrapper around Remove-NetFirewallRule executed at the target computer.
         So this only works if Remove-NetFirewallRule works on the target computer.
 
-        The functionality is currently limited to removing all rules from a given group
-        or removing all rules piped in from Get-DbaFirewallRule.
-        Help to extend the functionality is welcome.
+        The functionality is currently limited. Help to extend the functionality is welcome.
 
         As long as you can read this note here, there may be breaking changes in future versions.
         So please review your scripts using this command after updating dbatools.
@@ -22,12 +22,18 @@ function Remove-DbaFirewallRule {
     .PARAMETER Credential
         Credential object used to connect to the Computer as a different user.
 
-    .PARAMETER Group
-        Returns firewall rules from the given group.
-        Defaults to 'SQL Server'.
+    .PARAMETER Type
+        Removes firewall rules for the given type(s).
+        Valid values are:
+            Engine - for the SQL Server instance
+            Browser - for the SQL Server Browser
+            AllOnComputer - for all firewall rules on the target computer related to SQL Server
+        The default is 'Engine'.
+        As the Browser might be needed by other instances, the firewall rule for the SQL Server Browser is
+        never removed with the firewall rule of the instance but only removed if 'Browser' is used.
 
     .PARAMETER InputObject
-        The output object from Get-DbaFirewallRule.
+        The output object(s) from Get-DbaFirewallRule.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -54,17 +60,22 @@ function Remove-DbaFirewallRule {
     .EXAMPLE
         PS C:\> Remove-DbaFirewallRule -SqlInstance SRV1
 
-        Removes all firewall rules from SRV1 related to SQL Server.
+        Removes the firewall rule for the default instance on SRV1.
 
     .EXAMPLE
-        PS C:\> Get-DbaFirewallRule -SqlInstance SRV1 | Where-Object Name -eq 'SQL Server default instance' | Remove-DbaFirewallRule
+        PS C:\> Remove-DbaFirewallRule -SqlInstance SRV1\SQL2016 -Type Engine, Browser
 
-        Removes the firewall rule for the default instance from SRV1.
+        Removes the firewall rule for the instance SQL2016 on SRV1 and the firewall rule for the SQL Server Browser.
 
     .EXAMPLE
-        PS C:\> Get-DbaFirewallRule -SqlInstance SRV1 -Group 'SQL' -Confirm:$false
+        PS C:\> Get-DbaFirewallRule -SqlInstance SRV1 -Type AllOnComputer | Where-Object Type -eq 'Engine' | Remove-DbaFirewallRule
 
-        Removes all firewall rules in group 'SQL' from SRV1. Does not prompt for confirmation.
+        Removes the firewall rules for all instance from SRV1. Leaves the firewall rule for the SQL Server Browser in place.
+
+    .EXAMPLE
+        PS C:\> Remove-DbaFirewallRule -SqlInstance SRV1 -Confirm:$false
+
+        Removes the firewall rule for the default instance on SRV1. Does not prompt for confirmation.
 
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "High", DefaultParameterSetName = 'NonPipeline')]
@@ -74,7 +85,8 @@ function Remove-DbaFirewallRule {
         [Parameter(ParameterSetName = 'NonPipeline')]
         [PSCredential]$Credential,
         [Parameter(ParameterSetName = 'NonPipeline')]
-        [string]$Group = 'SQL Server',
+        [ValidateSet('Engine', 'Browser', 'AllOnComputer')]
+        [string[]]$Type = 'Engine',
         [parameter(ValueFromPipeline, ParameterSetName = 'Pipeline', Mandatory = $true)]
         [object[]]$InputObject,
         [Parameter(ParameterSetName = 'NonPipeline')][Parameter(ParameterSetName = 'Pipeline')]
@@ -123,24 +135,17 @@ function Remove-DbaFirewallRule {
         foreach ($instance in $SqlInstance) {
             try {
                 Write-Message -Level Verbose -Message "Get firewall rules from $($instance.ComputerName)."
-                $InputObject = Get-DbaFirewallRule -SqlInstance $instance -Credential $Credential -Group $Group -EnableException
+                $InputObject = Get-DbaFirewallRule -SqlInstance $instance -Credential $Credential -Type $Type -EnableException
             } catch {
                 Stop-Function -Message "Failed to collect firewall rules from $($instance.ComputerName)." -Target $instance -ErrorRecord $_ -Continue
             }
         }
 
         foreach ($rule in $InputObject) {
-            # Run the command for the instance
-            $displayName = $rule.DisplayName
-            if ($rule.Name -ne $rule.DisplayName) {
-                $displayName += " ($($rule.Name))"
-            }
-            if ($PSCmdlet.ShouldProcess($rule.ComputerName, "Removing firewall rule $displayName")) {
+            if ($PSCmdlet.ShouldProcess($rule.ComputerName, "Removing firewall rule $($rule.Name)")) {
                 try {
-                    #$rule.ComputerName = (Resolve-DbaNetworkName -ComputerName $rule.ComputerName).ComputerName
-                    Write-Message -Level Verbose -Message "Executing Invoke-Command2 with ComputerName = $($rule.ComputerName) and ArgumentList $($rule.Name)."
+                    Write-Message -Level Debug -Message "Executing Invoke-Command2 with ComputerName = $($rule.ComputerName) and ArgumentList $($rule.Name)."
                     $commandResult = Invoke-Command2 -ComputerName $rule.ComputerName -Credential $rule.Credential -ScriptBlock $cmdScriptBlock -ArgumentList $rule.Name
-                    Write-Message -Level Verbose -Message "We have $($commandResult.Count) result that is $($commandResult.Successful)."
                 } catch {
                     Stop-Function -Message "Failed to execute command on $($rule.ComputerName)." -Target $instance -ErrorRecord $_ -Continue
                 }
@@ -148,13 +153,15 @@ function Remove-DbaFirewallRule {
                 # Output information
                 [PSCustomObject]@{
                     ComputerName = $rule.ComputerName
+                    InstanceName = $rule.InstanceName
+                    SqlInstance  = $rule.SqlInstance
                     DisplayName  = $rule.DisplayName
-                    Name         = $rule.Name
+                    Type         = $rule.Type
                     IsRemoved    = $commandResult.Successful
                     Warning      = $commandResult.Warning
                     Error        = $commandResult.Error
                     Exception    = $commandResult.Exception
-                } | Select-DefaultView -Property ComputerName, DisplayName, Name, IsRemoved, Warning, Error, Exception
+                } | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, DisplayName, Type, IsRemoved, Warning, Error, Exception
             }
         }
     }
