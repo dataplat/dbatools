@@ -60,6 +60,7 @@ function Get-DbaManagementObject {
         }
         $scriptBlock = {
             $VersionNumber = [int]$args[0]
+            $remote = $args[1]
             <# DO NOT use Write-Message as this is inside of a script block #>
             Write-Verbose -Message "Checking currently loaded SMO version"
             $loadedversion = [AppDomain]::CurrentDomain.GetAssemblies() | Where-Object { $_.Fullname -like "Microsoft.SqlServer.SMO,*" }
@@ -72,39 +73,44 @@ function Get-DbaManagementObject {
                     }
                 }
             }
-            <# DO NOT use Write-Message as this is inside of a script block #>
-            Write-Verbose -Message "Looking for included smo library"
-            $localversion = [version](Get-ChildItem -Path $(Join-DbaPath $script:PSModuleRoot bin smo Microsoft.SqlServer.Smo.dll)).VersionInfo.ProductVersion
 
-            foreach ($version in $localversion) {
-                if ($VersionNumber -eq 0) {
-                    <# DO NOT use Write-Message as this is inside of a script block #>
-                    Write-Verbose -Message "Did not pass a version"
-                    [PSCustomObject]@{
-                        ComputerName = $env:COMPUTERNAME
-                        Version      = $localversion
-                        Loaded       = $loadedversion -contains $localversion
-                        LoadTemplate = "Add-Type -Path $(Join-DbaPath $script:PSModuleRoot bin smo Microsoft.SqlServer.Smo.dll)"
-                    }
-                } else {
-                    <# DO NOT use Write-Message as this is inside of a script block #>
-                    Write-Verbose -Message "Passed version $VersionNumber, looking for that specific version"
-                    if ($localversion.ToString().StartsWith("$VersionNumber.")) {
+            if (-not $remote) {
+                <# DO NOT use Write-Message as this is inside of a script block #>
+                Write-Verbose -Message "Looking for included smo library"
+                $localversion = [version](Get-ChildItem -Path $(Join-DbaPath $script:PSModuleRoot bin smo Microsoft.SqlServer.Smo.dll)).VersionInfo.ProductVersion
+
+                foreach ($version in $localversion) {
+                    if ($VersionNumber -eq 0) {
                         <# DO NOT use Write-Message as this is inside of a script block #>
-                        Write-Verbose -Message "Found the Version $VersionNumber"
+                        Write-Verbose -Message "Did not pass a version"
                         [PSCustomObject]@{
                             ComputerName = $env:COMPUTERNAME
                             Version      = $localversion
                             Loaded       = $loadedversion -contains $localversion
                             LoadTemplate = "Add-Type -Path $(Join-DbaPath $script:PSModuleRoot bin smo Microsoft.SqlServer.Smo.dll)"
                         }
+                    } else {
+                        <# DO NOT use Write-Message as this is inside of a script block #>
+                        Write-Verbose -Message "Passed version $VersionNumber, looking for that specific version"
+                        if ($localversion.ToString().StartsWith("$VersionNumber.")) {
+                            <# DO NOT use Write-Message as this is inside of a script block #>
+                            Write-Verbose -Message "Found the Version $VersionNumber"
+                            [PSCustomObject]@{
+                                ComputerName = $env:COMPUTERNAME
+                                Version      = $localversion
+                                Loaded       = $loadedversion -contains $localversion
+                                LoadTemplate = "Add-Type -Path $(Join-DbaPath $script:PSModuleRoot bin smo Microsoft.SqlServer.Smo.dll)"
+                            }
+                        }
                     }
                 }
             }
+
             <# DO NOT use Write-Message as this is inside of a script block #>
             if (-not $IsLinux -and -not $IsMacOs) {
-                $smolist = (Get-ChildItem -Path "$env:SystemRoot\assembly\GAC_MSIL\Microsoft.SqlServer.Smo*" -ErrorAction Stop | Sort-Object Name -Descending).Name
+                $smolist = (Get-ChildItem -Path "$env:SystemRoot\assembly\GAC_MSIL\Microsoft.SqlServer.Smo" -ErrorAction Stop | Sort-Object Name -Descending).Name
                 $second = $false
+
                 if (-not $smoList) {
                     $smoList = (Get-ChildItem -Path "$($env:SystemRoot)\Microsoft.NET\assembly\GAC_MSIL\Microsoft.SqlServer.Smo" -Filter "*$number.*" -ErrorAction SilentlyContinue | Where-Object FullName -match "_$number" | Sort-Object Name -Descending).Name
                     $second = $true
@@ -156,7 +162,7 @@ function Get-DbaManagementObject {
                     Invoke-Expression -Command "$scriptBlock" -ErrorAction Stop
                 } else {
                     Write-Message -Level Verbose -Message "Executing scriptblock against $computer"
-                    Invoke-Command2 -ComputerName $computer -ScriptBlock $scriptBlock -Credential $Credential -ArgumentList $VersionNumber -ErrorAction Stop
+                    Invoke-Command2 -ComputerName $computer -ScriptBlock $scriptBlock -Credential $Credential -ArgumentList $VersionNumber, $true -ErrorAction Stop
                 }
             } catch {
                 Stop-Function -Continue -Message "Failure" -ErrorRecord $_ -Target $ComputerName
