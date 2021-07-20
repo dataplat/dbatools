@@ -153,7 +153,7 @@ function Backup-DbaDbCertificate {
             }
 
             $actualPath = "$actualPath".TrimEnd('\').TrimEnd('/')
-            $fullCertName = [IO.Path]::Combine($actualPath, "$certName$Suffix")
+            $fullCertName = (Join-DbaPath -SqlInstance $server $actualPath "$certName$Suffix")
             $exportPathKey = "$fullCertName.pvk"
 
             if (!(Test-DbaPath -SqlInstance $server -Path $actualPath)) {
@@ -174,8 +174,8 @@ function Backup-DbaDbCertificate {
                         $cert.export(
                             $exportPathCert,
                             $exportPathKey,
-                            [System.Runtime.InteropServices.marshal]::PtrToStringAuto([System.Runtime.InteropServices.marshal]::SecureStringToBSTR($EncryptionPassword)),
-                            [System.Runtime.InteropServices.marshal]::PtrToStringAuto([System.Runtime.InteropServices.marshal]::SecureStringToBSTR($DecryptionPassword))
+                            ($EncryptionPassword | ConvertFrom-SecurePass),
+                            ($DecryptionPassword | ConvertFrom-SecurePass)
                         )
                     } elseif ($EncryptionPassword.Length -gt 0 -and $DecryptionPassword.Length -eq 0) {
                         Write-Message -Level Verbose -Message "Only encryption password passed in. Will export both cer and pvk."
@@ -183,7 +183,7 @@ function Backup-DbaDbCertificate {
                         $cert.export(
                             $exportPathCert,
                             $exportPathKey,
-                            [System.Runtime.InteropServices.marshal]::PtrToStringAuto([System.Runtime.InteropServices.marshal]::SecureStringToBSTR($EncryptionPassword))
+                            ($EncryptionPassword | ConvertFrom-SecurePass)
                         )
                     } else {
                         Write-Message -Level Verbose -Message "No passwords passed in. Will export just cer."
