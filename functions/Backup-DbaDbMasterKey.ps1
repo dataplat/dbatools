@@ -131,7 +131,7 @@ function Backup-DbaDbMasterKey {
                 $SecurePassword = Read-Host -AsSecureString -Prompt "You must enter Service Key password for $instance"
                 $SecurePassword2 = Read-Host -AsSecureString -Prompt "Type the password again"
 
-                if (([System.Runtime.InteropServices.marshal]::PtrToStringAuto([System.Runtime.InteropServices.marshal]::SecureStringToBSTR($SecurePassword))) -ne ([System.Runtime.InteropServices.marshal]::PtrToStringAuto([System.Runtime.InteropServices.marshal]::SecureStringToBSTR($SecurePassword2)))) {
+                if (($SecurePassword | ConvertFrom-SecurePass) -ne ($SecurePassword2 | ConvertFrom-SecurePass)) {
                     Stop-Function -Message "Passwords do not match" -Continue
                 }
             }
@@ -144,7 +144,7 @@ function Backup-DbaDbMasterKey {
 
             if ($Pscmdlet.ShouldProcess($instance, "Backing up master key to $filename")) {
                 try {
-                    $masterkey.Export($filename, [System.Runtime.InteropServices.marshal]::PtrToStringAuto([System.Runtime.InteropServices.marshal]::SecureStringToBSTR($SecurePassword)))
+                    $masterkey.Export($filename, ($SecurePassword | ConvertFrom-SecurePass))
                     $status = "Success"
                 } catch {
                     $status = "Failure"
