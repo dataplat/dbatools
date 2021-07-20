@@ -21,27 +21,37 @@ function Join-DbaPath {
     [CmdletBinding()]
     param (
         [Parameter(Mandatory = $true, Position = 0)]
-        [string]
-        $Path,
-
+        [string]$Path,
+        [dbainstanceparameter]$SqlInstance,
         [Parameter(ValueFromRemainingArguments = $true)]
-        [string[]]
-        $Child
+        [string[]]$Child
     )
 
-    return @($path) + $Child -join
-    [IO.Path]::DirectorySeparatorChar -replace
-    '\\|/', [IO.Path]::DirectorySeparatorChar
-
-    $resultingPath = $Path
-    if (($PSVersionTable.PSVersion.Major -ge 6) -and (-not $script:isWindows)) {
-        $resultingPath = $resultingPath.Replace("\", "/")
-    } else {
-        $resultingPath = $resultingPath.Replace("/", "\")
+    if (-not $SqlInstance) {
+        return @($path) + $Child -join
+        [IO.Path]::DirectorySeparatorChar -replace
+        '\\|/', [IO.Path]::DirectorySeparatorChar
     }
 
-    foreach ($childItem in $Child) {
-        $resultingPath = [IO.Path]::Combine($resultingPath, $childItem)
+    $resultingPath = $Path
+
+    if (Test-HostOSLinux -SqlInstance $SqlInstance) {
+        Write-Message -Level Verbose -Message "Linux detected on remote server"
+        $resultingPath = $resultingPath.Replace("\", "/")
+
+        foreach ($childItem in $Child) {
+            $resultingPath = ($resultingPath, $childItem) -join '/'
+        }
+    } else {
+        if (($PSVersionTable.PSVersion.Major -ge 6) -and (-not $script:isWindows)) {
+            $resultingPath = $resultingPath.Replace("\", "/")
+        } else {
+            $resultingPath = $resultingPath.Replace("/", "\")
+        }
+
+        foreach ($childItem in $Child) {
+            $resultingPath = [IO.Path]::Combine($resultingPath, $childItem)
+        }
     }
 
     $resultingPath
