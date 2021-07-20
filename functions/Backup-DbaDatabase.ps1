@@ -549,7 +549,7 @@ function Backup-DbaDatabase {
                 }
             }
 
-            if ($AzureBaseUrl -or $AzureCredential) {
+            if ($AzureBaseUrl -or $AzureCredential -or $IsLinux -or $IsMacOs) {
                 $slash = "/"
             } else {
                 $slash = "\"

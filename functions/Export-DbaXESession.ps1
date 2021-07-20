@@ -144,7 +144,11 @@ function Export-DbaXESession {
         $null = Test-ExportDirectory -Path $Path
         $instanceArray = @()
         $SessionCollection = New-Object System.Collections.ArrayList
-        $executingUser = [Security.Principal.WindowsIdentity]::GetCurrent().Name
+        if ($IsLinux -or $IsMacOs) {
+            $executingUser = $env:USER
+        } else {
+            $executingUser = [Security.Principal.WindowsIdentity]::GetCurrent().Name
+        }
         $commandName = $MyInvocation.MyCommand.Name
     }
     process {

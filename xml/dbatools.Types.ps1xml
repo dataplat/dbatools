@@ -11,6 +11,7 @@ param (
     $Query,
     $AllTables = $false
 )
+$Query = $Query.Replace("	", " ")
 if ($AllTables) { ($this.ExecuteWithResults($Query)).Tables }
 else { ($this.ExecuteWithResults($Query)).Tables[0] }
 </Script>
@@ -21,6 +22,7 @@ else { ($this.ExecuteWithResults($Query)).Tables[0] }
 param (
     $Command
 )
+$Command = $Command.Replace("	", " ")
 $this.ExecuteNonQuery($Command)
 </Script>
 </ScriptMethod>
@@ -39,6 +41,7 @@ param (
     $Database,
     $AllTables = $false
 )
+$Query = $Query.Replace("	", " ")
 if (-not $Database) {
     if ($this.ConnectionContext.DatabaseEngineType -eq "SqlAzureDatabase") {
         $Database = $this.ConnectionContext.ExecuteScalar("select db_name()")
@@ -65,6 +68,7 @@ param (
     $Command,
     $Database
 )
+$Command = $Command.Replace("	", " ")
 if (-not $Database) {
     if ($this.ConnectionContext.DatabaseEngineType -eq "SqlAzureDatabase") {
         $Database = $this.ConnectionContext.ExecuteScalar("select db_name()")

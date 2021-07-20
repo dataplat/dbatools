@@ -11,7 +11,7 @@
     RootModule             = 'dbatools.psm1'
 
     # Version number of this module.
-    ModuleVersion          = '1.0.169'
+    ModuleVersion          = '1.0.173'
 
     # ID used to uniquely identify this module
     GUID                   = '9d139310-ce45-41ce-8e8b-d76335aa1789'
@@ -174,6 +174,7 @@
         'Get-DbaDbQueryStoreOption',
         'Set-DbaDbQueryStoreOption',
         'Restore-DbaDatabase',
+        'Get-DbaDbFileMapping',
         'Copy-DbaDbQueryStoreOption',
         'Get-DbaExecutionPlan',
         'Export-DbaExecutionPlan',
@@ -248,6 +249,7 @@
         'Get-DbaDbMailHistory',
         'Get-DbaDbView',
         'Remove-DbaDbView',
+        'New-DbaSqlParameter',
         'Get-DbaDbUdf',
         'Get-DbaDbPartitionFunction',
         'Get-DbaDbPartitionScheme',
@@ -534,9 +536,6 @@
         'Get-DbaRepDistributor',
         'Copy-DbaPolicyManagement',
         'Copy-DbaDataCollector',
-        'Copy-DbaSsisCatalog',
-        'New-DbaSsisCatalog',
-        'Get-DbaSsisEnvironmentVariable',
         'Get-DbaPbmCategory',
         'Get-DbaPbmCategorySubscription',
         'Get-DbaPbmCondition',
@@ -629,6 +628,8 @@
         'Get-DbaFeature',
         'Update-DbaServiceAccount',
         'Remove-DbaClientAlias',
+        'Stop-DbaExternalProcess',
+        'Get-DbaExternalProcess',
         'Disable-DbaAgHadr',
         'Enable-DbaAgHadr',
         'Stop-DbaService',
@@ -649,6 +650,7 @@
         'Get-DbaComputerCertificate',
         'Add-DbaComputerCertificate',
         'Backup-DbaComputerCertificate',
+        'Test-DbaComputerCertificateExpiration',
         'Get-DbaNetworkCertificate',
         'Set-DbaNetworkCertificate',
         'Remove-DbaDbLogshipping',

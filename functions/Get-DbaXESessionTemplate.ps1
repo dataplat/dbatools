@@ -77,13 +77,14 @@ function Get-DbaXESessionTemplate {
         [switch]$EnableException
     )
     begin {
-        $metadata = Import-Clixml "$script:PSModuleRoot\bin\xetemplates-metadata.xml"
+        $xmlpath = Join-DbaPath $script:PSModuleRoot "bin" "xetemplates-metadata.xml"
+        $metadata = Import-Clixml $xmlpath
         # In case people really want a "like" search, which is slower
         $Pattern = $Pattern.Replace("*", ".*").Replace("..*", ".*")
     }
     process {
         foreach ($directory in $Path) {
-            $files = Get-ChildItem "$directory\*.xml"
+            $files = Get-ChildItem "$(Join-DbaPath $directory *.xml)"
 
             if ($Template) {
                 $files = $files | Where-Object BaseName -in $Template

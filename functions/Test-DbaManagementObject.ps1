@@ -50,7 +50,10 @@ function Test-DbaManagementObject {
     begin {
         $scriptBlock = {
             foreach ($number in $args) {
-                $smoList = (Get-ChildItem -Path "$($env:SystemRoot)\assembly\GAC_MSIL\Microsoft.SqlServer.Smo" -Filter "$number.*" | Sort-Object Name -Descending).Name
+                $smoList = (Get-ChildItem -Path "$($env:SystemRoot)\assembly\GAC_MSIL\Microsoft.SqlServer.Smo" -Filter "*$number.*" -ErrorAction SilentlyContinue | Sort-Object Name -Descending).Name
+                if (-not $smoList) {
+                    $smoList = (Get-ChildItem -Path "$($env:SystemRoot)\Microsoft.NET\assembly\GAC_MSIL\Microsoft.SqlServer.Smo" -Filter "*$number.*" -ErrorAction SilentlyContinue | Where-Object FullName -match "_$number" | Sort-Object Name -Descending).Name
+                }
 
                 if ($smoList) {
                     [pscustomobject]@{
@@ -73,7 +76,7 @@ function Test-DbaManagementObject {
             try {
                 Invoke-Command2 -ComputerName $computer -ScriptBlock $scriptBlock -Credential $Credential -ArgumentList $VersionNumber -ErrorAction Stop
             } catch {
-                Stop-Function -Continue -Message "Failure" -ErrorRecord $_ -Target $computer -Continue
+                Stop-Function -Continue -Message "Failure" -ErrorRecord $_ -Target $computer
             }
         }
     }

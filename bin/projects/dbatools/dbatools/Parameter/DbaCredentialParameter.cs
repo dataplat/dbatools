@@ -306,7 +306,7 @@ namespace Sqlcollaborative.Dbatools.Parameter
             if (TargetType.FullName == "System.Net.NetworkCredential")
                 return GetNetworkCredential();
 
-            throw new NotSupportedException(String.Format("Converting from {0} to {1} is not supported!", GetType().FullName, TargetType.FullName));
+            throw new NotSupportedException(String.Format("Converting from {0} to {1} is not supported", GetType().FullName, TargetType.FullName));
         }
         #endregion Interface Implementation
     }

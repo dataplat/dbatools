@@ -123,7 +123,7 @@ function Convert-UserNameToSID ([string] `$Acc ) {
                                             Write-Verbose "Added $acc to Batch Logon Privileges on $env:ComputerName"
                                         } else {
                                             <# DO NOT use Write-Message as this is inside of a script block #>
-                                            Write-Warning "$acc already has Batch Logon Privilege on $env:ComputerName"
+                                            Write-Verbose "$acc already has Batch Logon Privilege on $env:ComputerName"
                                         }
                                     }
                                 }
@@ -144,7 +144,7 @@ function Convert-UserNameToSID ([string] `$Acc ) {
                                             Write-Verbose "Added $acc to Instant File Initialization Privileges on $env:ComputerName"
                                         } else {
                                             <# DO NOT use Write-Message as this is inside of a script block #>
-                                            Write-Warning "$acc already has Instant File Initialization Privilege on $env:ComputerName"
+                                            Write-Verbose "$acc already has Instant File Initialization Privilege on $env:ComputerName"
                                         }
                                     }
                                 }
@@ -165,7 +165,7 @@ function Convert-UserNameToSID ([string] `$Acc ) {
                                             Write-Verbose "Added $acc to Lock Pages in Memory Privileges on $env:ComputerName"
                                         } else {
                                             <# DO NOT use Write-Message as this is inside of a script block #>
-                                            Write-Warning "$acc already has Lock Pages in Memory Privilege on $env:ComputerName"
+                                            Write-Verbose "$acc already has Lock Pages in Memory Privilege on $env:ComputerName"
                                         }
                                     }
                                 }
@@ -186,7 +186,7 @@ function Convert-UserNameToSID ([string] `$Acc ) {
                                             Write-Verbose "Added $acc to Write to Security Log Privileges on $env:ComputerName"
                                         } else {
                                             <# DO NOT use Write-Message as this is inside of a script block #>
-                                            Write-Warning "$acc already has Write To Security Audit Privilege on $env:ComputerName"
+                                            Write-Verbose "$acc already has Write To Security Audit Privilege on $env:ComputerName"
                                         }
                                     }
                                 }

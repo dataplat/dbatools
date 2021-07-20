@@ -201,7 +201,7 @@ function Export-DbaDacPackage {
             foreach ($db in $dbs) {
                 $resultstime = [diagnostics.stopwatch]::StartNew()
                 $dbName = $db.name
-                $connstring = $server.ConnectionContext.ConnectionString
+                $connstring = $server.ConnectionContext.ConnectionString | Convert-ConnectionString
                 if ($connstring -notmatch 'Database=') {
                     $connstring = "$connstring;Database=$dbName"
                 }

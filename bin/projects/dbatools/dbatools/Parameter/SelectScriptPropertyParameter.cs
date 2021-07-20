@@ -35,7 +35,7 @@ namespace Sqlcollaborative.Dbatools.Parameter
         {
             InputObject = StringValue;
             if (!Regex.IsMatch(StringValue, " := "))
-                throw new ArgumentException(String.Format("Failed to parse '{0}' as ScriptProperty!", StringValue));
+                throw new ArgumentException(String.Format("Failed to parse '{0}' as ScriptProperty", StringValue));
             if (Regex.IsMatch(StringValue, " := .*? =: "))
             {
                 Match match = Regex.Match(StringValue, "^(.*?) := (.*?) =: (.*?)$");
@@ -79,7 +79,7 @@ namespace Sqlcollaborative.Dbatools.Parameter
                         throw new ArgumentException(String.Format("{0}: Malformed Hashtable, cannot convert to scriptproperty", key));
                 }
                 else
-                    throw new ArgumentException(String.Format("{0}: Unable to parse input as scriptproperty!", key));
+                    throw new ArgumentException(String.Format("{0}: Unable to parse input as scriptproperty", key));
             }
         }
 

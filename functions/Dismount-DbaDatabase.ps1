@@ -174,7 +174,7 @@ function Dismount-DbaDatabase {
                             Write-Message -Level Verbose -Message "Successfully removed $db from  detach from $ag on $server."
                         } catch {
                             if ($_.Exception.InnerException) {
-                                $exception = $_.Exception.InnerException.ToString() -Split "System.Data.SqlClient.SqlException: "
+                                $exception = $_.Exception.InnerException.ToString() -Split "Microsoft.Data.SqlClient.SqlException: "
                                 $exception = " | $(($exception[1] -Split "at Microsoft.SqlServer.Management.Common.ConnectionManager")[0])".TrimEnd()
                             }
 

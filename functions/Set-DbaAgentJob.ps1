@@ -352,7 +352,7 @@ function Set-DbaAgentJob {
                         if ($PSCmdlet.ShouldProcess($instance, "Creating job category on $instance")) {
                             try {
                                 # Create the category
-                                New-DbaAgentJobCategory -SqlInstance $instance -Category $Category
+                                New-DbaAgentJobCategory -SqlInstance $server -Category $Category
 
                                 Write-Message -Message "Setting job category to $Category" -Level Verbose
                                 $currentjob.Category = $Category

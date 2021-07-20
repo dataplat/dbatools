@@ -111,6 +111,9 @@ function New-DbaConnectionString {
     .PARAMETER WorkstationId
         Sets the name of the workstation connecting to SQL Server.
 
+    .PARAMETER Legacy
+        Use this switch to create a connection string using System.Data.SqlClient instead of Microsoft.Data.SqlClient.
+
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
 
@@ -209,6 +212,7 @@ function New-DbaConnectionString {
         [int]$StatementTimeout,
         [switch]$TrustServerCertificate,
         [string]$WorkstationId,
+        [switch]$Legacy,
         [string]$AppendConnectionString
     )
     begin {
@@ -229,17 +233,14 @@ function New-DbaConnectionString {
         foreach ($instance in $SqlInstance) {
 
             <#
-            In order to be able to test new functions in various environments, the switch "experimental" is introduced.
-            This switch can be set with "Set-DbatoolsConfig -FullName sql.connection.experimental -Value $true" for the active session
-            and within this function leads to the following code path being used.
+            The new code path (formerly known as experimental) is now the default.
+            To have a quick way to switch back in case any problems occur, the switch "legacy" is introduced: Set-DbatoolsConfig -FullName sql.connection.legacy -Value $true
             All the sub paths inside the following if clause will end with a continue, so the normal code path is not used.
             #>
-            if (Get-DbatoolsConfigValue -FullName sql.connection.experimental) {
+            if (-not (Get-DbatoolsConfigValue -FullName sql.connection.legacy)) {
                 <#
                 Maybe more docs...
                 #>
-                Write-Message -Level Debug -Message "sql.connection.experimental is used"
-
                 Write-Message -Level Debug -Message "We have to build a connect string, using these parameters: $($PSBoundParameters.Keys)"
 
                 # Test for unsupported parameters
@@ -291,7 +292,12 @@ function New-DbaConnectionString {
                 if ($Pscmdlet.ShouldProcess($instance, "Making a new Connection String")) {
                     if ($instance.Type -like "Server") {
                         Write-Message -Level Debug -Message "server object passed in, connection string is: $($instance.InputObject.ConnectionContext.ConnectionString)"
-                        $connStringBuilder = New-Object -TypeName System.Data.SqlClient.SqlConnectionStringBuilder -ArgumentList $instance.InputObject.ConnectionContext.ConnectionString
+                        if ($Legacy) {
+                            $converted = $instance.InputObject.ConnectionContext.ConnectionString | Convert-ConnectionString
+                            $connStringBuilder = New-Object -TypeName System.Data.SqlClient.SqlConnectionStringBuilder -ArgumentList $converted
+                        } else {
+                            $connStringBuilder = New-Object -TypeName Microsoft.Data.SqlClient.SqlConnectionStringBuilder -ArgumentList $instance.InputObject.ConnectionContext.ConnectionString
+                        }
                         # In Azure, check for a database change
                         if ((Test-Azure -SqlInstance $instance) -and $Database) {
                             $connStringBuilder['Initial Catalog'] = $Database
@@ -299,7 +305,11 @@ function New-DbaConnectionString {
                         $connstring = $connStringBuilder.ConnectionString
                         # TODO: Should we check the other parameters and change the connection string accordingly?
                     } else {
-                        $connStringBuilder = New-Object -TypeName System.Data.SqlClient.SqlConnectionStringBuilder
+                        if ($Legacy) {
+                            $connStringBuilder = New-Object -TypeName System.Data.SqlClient.SqlConnectionStringBuilder
+                        } else {
+                            $connStringBuilder = New-Object -TypeName Microsoft.Data.SqlClient.SqlConnectionStringBuilder
+                        }
                         $connStringBuilder['Data Source'] = $instance.FullSmoName
                         if ($ApplicationIntent) { $connStringBuilder['ApplicationIntent'] = $ApplicationIntent }
                         if ($ClientName) { $connStringBuilder['Application Name'] = $ClientName }
@@ -350,8 +360,11 @@ function New-DbaConnectionString {
                             # Why adding tcp:?
                             #$connStringBuilder['Data Source'] = "tcp:$($instance.ComputerName),$($instance.Port)"
                         }
-
-                        $connstring = $connStringBuilder.ConnectionString
+                        if ($Legacy) {
+                            $connstring = $connStringBuilder.ConnectionString
+                        } else {
+                            $connstring = $connStringBuilder.ToString()
+                        }
                         if ($AppendConnectionString) {
                             # TODO: Check if new connection string is still valid
                             $connstring = "$connstring;$AppendConnectionString"
@@ -362,9 +375,12 @@ function New-DbaConnectionString {
                 }
             }
             <#
-            This is the end of the experimental code path.
-            All session without the configuration "sql.connection.experimental" set to $true will run through the following code.
+            This is the end of the new default code path.
+            All session with the configuration "sql.connection.legacy" set to $true will run through the following code.
+            To use the legacy code path: Set-DbatoolsConfig -FullName sql.connection.legacy -Value $true
             #>
+
+            Write-Message -Level Debug -Message "sql.connection.legacy is used"
 
             if ($Pscmdlet.ShouldProcess($instance, "Making a new Connection String")) {
                 if ($instance.ComputerName -match "database\.windows\.net" -or $instance.InputObject.ComputerName -match "database\.windows\.net") {

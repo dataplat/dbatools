@@ -6,7 +6,7 @@ function Get-DbaRepServer {
     .DESCRIPTION
         Gets a replication server object
 
-        All replication commands need SSMS 17 installed and are therefore currently not supported.
+        All replication commands need SQL Server Management Studio installed and are therefore currently not supported.
         Have a look at this issue to get more information: https://github.com/sqlcollaborative/dbatools/issues/7428
 
     .PARAMETER SqlInstance
@@ -54,6 +54,10 @@ function Get-DbaRepServer {
         [switch]$EnableException
     )
     begin {
+        if ($PSVersionTable.PSEdition -eq "Core") {
+            Stop-Function -Message "This command is not yet supported in PowerShell Core"
+            return
+        }
         try {
             Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Replication.dll" -ErrorAction Stop
             Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Rmo.dll" -ErrorAction Stop
@@ -62,8 +66,8 @@ function Get-DbaRepServer {
             $rmodll = [System.Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.Rmo")
 
             if ($null -eq $repdll -or $null -eq $rmodll) {
-                Write-Message -Level Warning -Message 'All replication commands need SSMS 17 installed and are therefore currently not supported.'
-                Stop-Function -Message "Could not load replication libraries" -ErrorRecord $_
+                Write-Message -Level Warning -Message 'All replication commands need SQL Server Management Studio installed and are therefore currently not supported.'
+                Stop-Function -Message "Could not load replication libraries"
                 return
             }
         }
@@ -72,8 +76,9 @@ function Get-DbaRepServer {
         if (Test-FunctionInterrupt) { return }
         foreach ($instance in $SqlInstance) {
             try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
-                New-Object Microsoft.SqlServer.Replication.ReplicationServer $server.ConnectionContext.SqlConnectionObject
+                # use System.Data instead of Microsoft.Data
+                $sqlconn = New-SqlConnection -SqlInstance $instance -SqlCredential $SqlCredential
+                New-Object Microsoft.SqlServer.Replication.ReplicationServer $sqlconn
             } catch {
                 Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }

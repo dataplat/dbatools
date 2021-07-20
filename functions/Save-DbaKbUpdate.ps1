@@ -71,8 +71,13 @@ function Save-DbaKbUpdate {
         [switch]$EnableException
     )
     process {
-        if ($Name.Count -gt 0 -and $PSBoundParameters.FilePath) {
+        if ($Name.Count -gt 1 -and $PSBoundParameters.FilePath) {
             Stop-Function -Message "You can only specify one KB when using FilePath"
+            return
+        }
+
+        if ($Architecture -eq "All" -and $PSBoundParameters.FilePath) {
+            Stop-Function -Message "You can only specify one Architecture when using FilePath"
             return
         }
 
@@ -85,46 +90,37 @@ function Save-DbaKbUpdate {
             $InputObject += Get-DbaKbUpdate -Name $kb
         }
 
-        foreach ($item in $InputObject.Link) {
-            if ($item.Count -gt 1 -and $Architecture -ne "All") {
-                $templinks = $item | Where-Object { $PSItem -match "$($Architecture)_" }
-                if ($templinks) {
-                    $item = $templinks
-                } else {
-                    Write-Message -Level Warning -Message "Could not find architecture match, downloading all"
-                }
+        foreach ($link in $InputObject.Link) {
+            if ($Architecture -ne "All" -and $link -notmatch "$($Architecture)_") {
+                continue
             }
 
-            foreach ($link in $item) {
-                if (-not $PSBoundParameters.FilePath) {
-                    $FilePath = Split-Path -Path $link -Leaf
-                } else {
-                    $Path = Split-Path -Path $FilePath
+            $fileName = Split-Path -Path $link -Leaf
+            if ($PSBoundParameters.FilePath) {
+                $file = $FilePath
+            } else {
+                $file = "$Path$([IO.Path]::DirectorySeparatorChar)$fileName"
+            }
+
+            if ((Get-Command Start-BitsTransfer -ErrorAction Ignore)) {
+                Start-BitsTransfer -Source $link -Destination $file
+            } else {
+                # IWR is crazy slow for large downloads
+                $currentVersionTls = [Net.ServicePointManager]::SecurityProtocol
+                $currentSupportableTls = [Math]::Max($currentVersionTls.value__, [Net.SecurityProtocolType]::Tls.value__)
+                $availableTls = [enum]::GetValues('Net.SecurityProtocolType') | Where-Object { $_ -gt $currentSupportableTls }
+                $availableTls | ForEach-Object {
+                    [Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor $_
                 }
 
-                $file = "$Path$([IO.Path]::DirectorySeparatorChar)$FilePath"
+                Write-Progress -Activity "Downloading $fileName" -Id 1
+                (New-Object Net.WebClient).DownloadFile($link, $file)
+                Write-Progress -Activity "Downloading $fileName" -Id 1 -Completed
 
-                if ((Get-Command Start-BitsTransfer -ErrorAction Ignore)) {
-                    Start-BitsTransfer -Source $link -Destination $file
-                } else {
-                    # IWR is crazy slow for large downloads
-                    $currentVersionTls = [Net.ServicePointManager]::SecurityProtocol
-                    $currentSupportableTls = [Math]::Max($currentVersionTls.value__, [Net.SecurityProtocolType]::Tls.value__)
-                    $availableTls = [enum]::GetValues('Net.SecurityProtocolType') | Where-Object { $_ -gt $currentSupportableTls }
-                    $availableTls | ForEach-Object {
-                        [Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor $_
-                    }
-
-                    Write-Progress -Activity "Downloading $FilePath" -Id 1
-                    (New-Object Net.WebClient).DownloadFile($link, $file)
-                    Write-Progress -Activity "Downloading $FilePath" -Id 1 -Completed
-
-
-                    [Net.ServicePointManager]::SecurityProtocol = $currentVersionTls
-                }
-                if (Test-Path -Path $file) {
-                    Get-ChildItem -Path $file
-                }
+                [Net.ServicePointManager]::SecurityProtocol = $currentVersionTls
+            }
+            if (Test-Path -Path $file) {
+                Get-ChildItem -Path $file
             }
         }
     }

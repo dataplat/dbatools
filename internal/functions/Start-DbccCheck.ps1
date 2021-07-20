@@ -36,7 +36,7 @@ function Start-DbccCheck {
             try {
                 $newmessage = ($message -split "at Microsoft.SqlServer.Management.Common.ConnectionManager.ExecuteTSql")[0]
                 $newmessage = ($newmessage -split "Microsoft.SqlServer.Management.Common.ExecutionFailureException:")[1]
-                $newmessage = ($newmessage -replace "An exception occurred while executing a Transact-SQL statement or batch. ---> System.Data.SqlClient.SqlException:").Trim()
+                $newmessage = ($newmessage -replace "An exception occurred while executing a Transact-SQL statement or batch. ---> Microsoft.Data.SqlClient.SqlException:").Trim()
                 $message = $newmessage
             } catch {
                 $null

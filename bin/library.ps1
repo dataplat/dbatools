@@ -1,5 +1,5 @@
 # Current library Version the module expects
-$currentLibraryVersion = New-Object System.Version(0, 10, 0, 71)
+$currentLibraryVersion = New-Object System.Version(0, 10, 0, 72)
 
 <#
 Library Versioning 101:
@@ -13,7 +13,7 @@ Revision: Tracks all changes. Every single update to the library - bugfix, featu
 Updating the library version number:
 When changing the library version number, it is necessary to do so in TWO places:
 - At the top of this very library.ps1
-- Within AssemblyInfo.cs
+- Within dbatools.csproj
 These two locations MUST have matching version numbers, otherwise it will keep building the library and complaining about version mismatch!
 #>
 
@@ -36,9 +36,9 @@ Mostly for developers working on the library.
 
 $dll =
 if ($PSVersionTable.PSVersion.Major -ge 6) {
-    Join-Path $psModuleRoot "bin\netcoreapp2.1\dbatools.dll"
+    Join-Path $psModuleRoot "bin\netcoreapp3.1\dbatools.dll"
 } else {
-    Join-Path $psModuleRoot "bin\net452\dbatools.dll"
+    Join-Path $psModuleRoot "bin\net462\dbatools.dll"
 }
 
 $ImportLibrary = $true # Always import the library, because it contains some internal cmdlets.
@@ -75,11 +75,11 @@ if ($ImportLibrary) {
                 $start = Get-Date
 
                 try {
-                    Write-Verbose -Message "Found library, trying to copy & import"
+                    Write-Verbose -Message "Found library at $dll, import"
                     $dbaToolsAssembly = Import-Module -Name "$dll"
                 } catch {
                     Write-Verbose -Message "Failed to copy and import, attempting to import straight from the module directory"
-                    $script:DllRoot = Resolve-Path -Path $script:DllRoot
+                    $script:DllRoot = Resolve-Path -Path bin
                     Import-Module -Name "$(Join-Path -Path $script:DllRoot -ChildPath dbatools.dll)" -ErrorAction Stop
                 }
                 Write-Verbose -Message "Total duration: $((Get-Date) - $start)"
@@ -128,26 +128,3 @@ aka "The guy who made most of The Library that Failed to import"
     }
     #endregion Add Code
 }
-
-#region Version Warning
-
-$dbaToolsVersion =
-@(foreach ($_ in $dbaToolsAssembly.CustomAttributes) {
-        if ($_ -is [Reflection.AssemblyFileVersionAttribute]) {
-            $_.ConstructorArguments.Value
-            break
-        }
-    }) -ne $null -as [Version]
-if ($currentLibraryVersion -ne $dbaToolsVersion) {
-    Write-Verbose @"
-A version missmatch between the dbatools library loaded and the one expected by
-this module. This usually happens when you update the dbatools module and use
-Remove-Module / Import-Module in order to load the latest version without
-starting a new PowerShell instance.
-
-Please restart the console to apply the library update, or unexpected behavior will likely occur.
-
-If the issues continue to persist, please Remove-Item '$script:PSModuleRoot\bin\dbatools.dll'
-"@
-}
-#endregion Version Warning

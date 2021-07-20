@@ -29,10 +29,10 @@ function Get-BulkRowsCopiedCount {
     #>
     [OutputType([int])]
     param (
-        [System.Data.SqlClient.SqlBulkCopy] $BulkCopy
+        [Microsoft.Data.SqlClient.SqlBulkCopy] $BulkCopy
     )
     $BindingFlags = [Reflection.BindingFlags] "NonPublic,GetField,Instance"
-    $rowsCopiedField = [System.Data.SqlClient.SqlBulkCopy].GetField("_rowsCopied", $BindingFlags)
+    $rowsCopiedField = [Microsoft.Data.SqlClient.SqlBulkCopy].GetField("_rowsCopied", $BindingFlags)
     try {
         return [int]$rowsCopiedField.GetValue($BulkCopy)
     } catch {

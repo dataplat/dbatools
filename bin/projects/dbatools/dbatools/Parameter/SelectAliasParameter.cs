@@ -57,7 +57,7 @@ namespace Sqlcollaborative.Dbatools.Parameter
             foreach (string value in StringValue.Split(','))
             {
                 if (!Regex.IsMatch(value, " as ", RegexOptions.IgnoreCase))
-                    throw new ArgumentException(String.Format("Invalid input string, could not evaluate '{0}' as alias!", value));
+                    throw new ArgumentException(String.Format("Invalid input string, could not evaluate '{0}' as alias", value));
                 Match match = Regex.Match(value, "^(.*?) as (.*?)$", RegexOptions.IgnoreCase);
                 Value[match.Groups[2].Value.Trim()] = match.Groups[1].Value.Trim();
             }

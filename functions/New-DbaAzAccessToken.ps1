@@ -236,8 +236,8 @@ function New-DbaAzAccessToken {
 
                     # thanks to Jose M Jurado - MSFT for this code
                     # https://blogs.msdn.microsoft.com/azuresqldbsupport/2018/05/10/lesson-learned-49-does-azure-sql-database-support-azure-active-directory-connections-using-service-principals/
-                    $cred = [Microsoft.IdentityModel.Clients.ActiveDirectory.ClientCredential]::New($Credential.UserName, $Credential.GetNetworkCredential().Password)
-                    $context = [Microsoft.IdentityModel.Clients.ActiveDirectory.AuthenticationContext]::New("https://login.windows.net/$Tenant")
+                    $cred = New-Object Microsoft.IdentityModel.Clients.ActiveDirectory.ClientCredential -ArgumentList $Credential.UserName, $Credential.GetNetworkCredential().Password
+                    $context = New-Object Microsoft.IdentityModel.Clients.ActiveDirectory.AuthenticationContext -ArgumentList "https://login.windows.net/$Tenant"
                     $result = $context.AcquireTokenAsync($Config.Resource, $cred)
 
                     if ($result.Result.AccessToken) {

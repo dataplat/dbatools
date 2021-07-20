@@ -85,6 +85,11 @@ function Export-DbaCredential {
     process {
         if (Test-FunctionInterrupt) { return }
 
+        if ($IsLinux -or $IsMacOS) {
+            Stop-Function -Message "This command is not supported on Linux or macOS"
+            return
+        }
+
         if (-not $InputObject -and -not $SqlInstance) {
             Stop-Function -Message "You must pipe in a Credential or specify a SqlInstance"
             return

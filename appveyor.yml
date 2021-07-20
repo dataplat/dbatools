@@ -3,12 +3,10 @@ image: Previous Visual Studio 2015
 configuration: "Debug"
 
 build_script:
- - ps: Push-Location bin\projects\dbatools; dotnet build; Pop-Location
-
-after_build:
-    # Removed to prevent credential exposure
-    # - ps: Push-AppveyorArtifact msbuild.binlog
-    # - ps: Push-AppveyorArtifact msbuild.log
+ - ps: Set-Service wuauserv -StartupType Manual #otherwise, choco command exits with code 1058
+ - ps: choco install dotnet-5.0-sdk | Out-String | Out-Null
+ - ps: choco install dotnetcore-sdk | Out-String | Out-Null
+ - ps: Push-Location bin\projects\dbatools; dotnet build ;Pop-Location
 
 version: 0.9.{build}
 
@@ -79,7 +77,7 @@ environment:
 clone_folder: c:\github\dbatools
 
 before_test:
-  # turn tests\ (at least) to CRLF, as it's faster to do this on the zipball rather than checking out the repo
+  # turn tests directory (at least) to CRLF, as it's faster to do this on the zipball rather than checking out the repo
   - cmd: pushd C:\github\dbatools\tests & unix2dos -q  *.ps1 & popd
   # grab appveyor lab files and needed requirements for tests in CI
   - ps: .\Tests\appveyor.prep.ps1
@@ -98,5 +96,5 @@ test_script:
 after_test:
   - ps: .\Tests\appveyor.post.ps1
 
-# on_finish:
+#on_finish:
 #- ps: $blockRdp = $true; iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
