@@ -20,10 +20,11 @@ function Join-DbaPath {
     #>
     [CmdletBinding()]
     param (
-        [Parameter(Mandatory = $true, Position = 0)]
+        [Parameter(Mandatory, Position = 0)]
         [string]$Path,
+        [Parameter(Position = 1)]
         [dbainstanceparameter]$SqlInstance,
-        [Parameter(ValueFromRemainingArguments = $true)]
+        [Parameter(ValueFromRemainingArguments)]
         [string[]]$Child
     )
 
