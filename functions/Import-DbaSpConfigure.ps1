@@ -114,8 +114,7 @@ function Import-DbaSpConfigure {
         [switch]$EnableException
     )
     begin {
-
-        if ($Path.length -eq 0) {
+        if (-not $PSBoundParameters.Path -and $PSBoundParameters.Source) {
             try {
                 $sourceserver = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
             } catch {
@@ -123,7 +122,7 @@ function Import-DbaSpConfigure {
                 return
             }
 
-            if (!(Test-SqlSa -SqlInstance $sourceserver -SqlCredential $SourceSqlCredential)) {
+            if (-not (Test-SqlSa -SqlInstance $sourceserver -SqlCredential $SourceSqlCredential)) {
                 Stop-Function -Message "Not a sysadmin on $sourceserver. Quitting." -Category PermissionDenied -ErrorRecord $_ -Target $server -Continue
             }
 
@@ -134,7 +133,7 @@ function Import-DbaSpConfigure {
                 return
             }
 
-            if (!(Test-SqlSa -SqlInstance $destserver -SqlCredential $DestinationSqlCredential)) {
+            if (-not (Test-SqlSa -SqlInstance $destserver -SqlCredential $DestinationSqlCredential)) {
                 Stop-Function -Message "Not a sysadmin on $destserver. Quitting." -Category PermissionDenied -ErrorRecord $_ -Target $server -Continue
             }
 
@@ -151,7 +150,7 @@ function Import-DbaSpConfigure {
                 Stop-Function -Message "Not a sysadmin on $server. Quitting." -Category PermissionDenied -ErrorRecord $_ -Target $server -Continue
             }
 
-            if ((Test-Path $Path) -eq $false) {
+            if (-not (Test-Path $Path)) {
                 Stop-Function -Message "File $Path Not Found" -Category InvalidArgument -Target $Path -Continue
             }
         }
@@ -159,7 +158,8 @@ function Import-DbaSpConfigure {
         if ($Force) { $ConfirmPreference = 'none' }
     }
     process {
-        if ($Path.length -eq 0) {
+        if (Test-FunctionInterrupt) { return }
+        if (-not $PSBoundParameters.Path) {
             if ($Pscmdlet.ShouldProcess($destination, "Export sp_configure")) {
                 $sqlfilename = Export-DbaSpConfigure $sourceserver
             }
@@ -231,7 +231,9 @@ function Import-DbaSpConfigure {
         }
     }
     end {
-        if ($Path.length -gt 0) {
+        if (Test-FunctionInterrupt) { return }
+
+        if ($PSBoundParameters.Path) {
             $server.ConnectionContext.Disconnect()
         } else {
             $sourceserver.ConnectionContext.Disconnect()

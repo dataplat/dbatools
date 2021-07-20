@@ -63,6 +63,10 @@ function Get-DbaPbmCondition {
         [switch]$EnableException
     )
     process {
+        if ($PSVersionTable.PSEdition -eq "Core") {
+            Stop-Function -Message "This command is not yet supported in PowerShell Core"
+            return
+        }
         foreach ($instance in $SqlInstance) {
             $InputObject += Get-DbaPbmStore -SqlInstance $instance -SqlCredential $SqlCredential
         }

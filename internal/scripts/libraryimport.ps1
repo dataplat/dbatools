@@ -26,7 +26,7 @@ $scriptBlock = {
         }
 
         if (-not (Test-Path $DllRoot)) {
-            $null = New-Item -Path $DllRoot -ItemType Directory -ErrorAction Ignore
+            $null = New-Item -Path $DllRoot -ItemType Directory -ErrorAction Ignore -Force
         }
 
         Copy-Item -Path "$ModuleRoot\bin\smo\$Name.dll" -Destination $DllRoot
@@ -55,7 +55,8 @@ $scriptBlock = {
             'Microsoft.SqlServer.Management.RegisteredServers',
             'Microsoft.SqlTools.Hosting',
             'Microsoft.SqlTools.ManagedBatchParser',
-            'Microsoft.SqlServer.Management.Dmf'
+            'Microsoft.SqlServer.Management.Dmf',
+            'Microsoft.Identity.Client'
         )
     } else {
         $names = @(
@@ -80,7 +81,8 @@ $scriptBlock = {
             'Microsoft.SqlServer.Dmf',
             'Microsoft.SqlServer.Dmf.Common',
             'Microsoft.SqlServer.Types',
-            'Microsoft.SqlServer.XEvent.Linq'
+            'Microsoft.SqlServer.XEvent.Linq',
+            'Microsoft.Identity.Client'
         )
     }
     #endregion Names

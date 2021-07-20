@@ -36,10 +36,12 @@ function Join-DbaPath {
     $resultingPath = $Path
     if (($PSVersionTable.PSVersion.Major -ge 6) -and (-not $script:isWindows)) {
         $resultingPath = $resultingPath.Replace("\", "/")
-    } else { $resultingPath = $resultingPath.Replace("/", "\") }
+    } else {
+        $resultingPath = $resultingPath.Replace("/", "\")
+    }
 
     foreach ($childItem in $Child) {
-        $resultingPath = Join-Path -Path $resultingPath -ChildPath $childItem
+        $resultingPath = [IO.Path]::Combine($resultingPath, $childItem)
     }
 
     $resultingPath

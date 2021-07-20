@@ -73,6 +73,7 @@ function Export-DbaXESessionTemplate {
     }
     process {
         if (Test-FunctionInterrupt) { return }
+
         foreach ($instance in $SqlInstance) {
             try {
                 $InputObject += Get-DbaXESession -SqlInstance $instance -SqlCredential $SqlCredential -Session $Session -EnableException
@@ -89,7 +90,7 @@ function Export-DbaXESessionTemplate {
             }
 
             if (-not $PSBoundParameters.FilePath) {
-                $FilePath = "$Path\$xesname.xml"
+                $FilePath = Join-DbaPath $Path "$xesname.xml"
             }
             Write-Message -Level Verbose -Message "Wrote $xesname to $FilePath"
             [Microsoft.SqlServer.Management.XEvent.XEStore]::SaveSessionToTemplate($xes, $FilePath, $true)

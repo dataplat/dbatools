@@ -139,7 +139,7 @@ if (($HasPester -and $HasScriptAnalyzer -and ($PesterVersion -ge $MinimumPesterV
 $ModuleBase = Split-Path -Path $PSScriptRoot -Parent
 
 if (-not(Test-Path "$ModuleBase\.git" -Type Container)) {
-    New-Item -Type Container -Path "$ModuleBase\.git"
+    New-Item -Type Container -Path "$ModuleBase\.git" -Force
 }
 
 #removes previously imported dbatools, if any
