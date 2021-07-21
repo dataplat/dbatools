@@ -95,7 +95,7 @@ function Read-DbaXEFile {
                 Stop-Function -Continue -Message "$currentfile cannot be accessed from $($env:COMPUTERNAME). Does $whoami have access?"
             }
 
-            if ($raw) {
+            if ($Raw) {
                 return (Read-SqlXEvent -FileName $currentfile)
             }
 

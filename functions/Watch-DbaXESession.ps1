@@ -22,7 +22,7 @@ function Watch-DbaXESession {
         Only return a specific session. Options for this parameter are auto-populated from the server.
 
     .PARAMETER Raw
-        If this switch is enabled, the Microsoft.SqlServer.XEvent.Linq.QueryableXEventData enumeration object is returned.
+        If this switch is enabled, the enumeration object is returned.
 
     .PARAMETER InputObject
         Accepts an XESession object returned by Get-DbaXESession.
