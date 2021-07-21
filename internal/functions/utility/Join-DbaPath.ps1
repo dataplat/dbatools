@@ -9,6 +9,9 @@ function Join-DbaPath {
     .PARAMETER Path
         The basepath to join on.
 
+    .PARAMETER SqlInstance
+        Optional -- tests to see if destination SQL Server is Linux or Windows
+
     .PARAMETER Child
         Any number of child paths to add.
 
@@ -20,28 +23,38 @@ function Join-DbaPath {
     #>
     [CmdletBinding()]
     param (
-        [Parameter(Mandatory = $true, Position = 0)]
-        [string]
-        $Path,
-
-        [Parameter(ValueFromRemainingArguments = $true)]
-        [string[]]
-        $Child
+        [Parameter(Mandatory, Position = 0)]
+        [string]$Path,
+        [dbainstanceparameter]$SqlInstance,
+        [Parameter(ValueFromRemainingArguments)]
+        [string[]]$Child
     )
 
-    return @($path) + $Child -join
-    [IO.Path]::DirectorySeparatorChar -replace
-    '\\|/', [IO.Path]::DirectorySeparatorChar
-
-    $resultingPath = $Path
-    if (($PSVersionTable.PSVersion.Major -ge 6) -and (-not $script:isWindows)) {
-        $resultingPath = $resultingPath.Replace("\", "/")
-    } else {
-        $resultingPath = $resultingPath.Replace("/", "\")
+    if (-not $SqlInstance) {
+        return @($path) + $Child -join
+        [IO.Path]::DirectorySeparatorChar -replace
+        '\\|/', [IO.Path]::DirectorySeparatorChar
     }
 
-    foreach ($childItem in $Child) {
-        $resultingPath = [IO.Path]::Combine($resultingPath, $childItem)
+    $resultingPath = $Path
+
+    if (Test-HostOSLinux -SqlInstance $SqlInstance) {
+        Write-Message -Level Verbose -Message "Linux detected on remote server"
+        $resultingPath = $resultingPath.Replace("\", "/")
+
+        foreach ($childItem in $Child) {
+            $resultingPath = ($resultingPath, $childItem) -join '/'
+        }
+    } else {
+        if (($PSVersionTable.PSVersion.Major -ge 6) -and (-not $script:isWindows)) {
+            $resultingPath = $resultingPath.Replace("\", "/")
+        } else {
+            $resultingPath = $resultingPath.Replace("/", "\")
+        }
+
+        foreach ($childItem in $Child) {
+            $resultingPath = [IO.Path]::Combine($resultingPath, $childItem)
+        }
     }
 
     $resultingPath

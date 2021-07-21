@@ -123,7 +123,7 @@ function New-DbaDbCertificate {
                         $smocert.ActiveForServiceBrokerDialog = $ActiveForServiceBrokerDialog
 
                         if ($SecurePassword) {
-                            $smocert.Create(([System.Runtime.InteropServices.marshal]::PtrToStringAuto([System.Runtime.InteropServices.marshal]::SecureStringToBSTR($SecurePassword))))
+                            $smocert.Create(($SecurePassword | ConvertFrom-SecurePass))
                         } else {
                             $smocert.Create()
                         }
