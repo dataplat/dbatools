@@ -386,7 +386,7 @@ function Copy-DbaDatabase {
                     }
                     $d.logical = $file.Name
 
-                    $d.remotefilename = Join-AdminUNC $destNetBios $d.physical
+                    $d.remotefilename = Join-AdminUNC $destFullComputerName $d.physical
                     $destinstancefiles.add($file.Name, $d)
 
                     # Source File Structure
@@ -394,7 +394,7 @@ function Copy-DbaDatabase {
                     }
                     $s.logical = $file.Name
                     $s.physical = $file.filename
-                    $s.remotefilename = Join-AdminUNC $sourceNetBios $s.physical
+                    $s.remotefilename = Join-AdminUNC $sourceFullComputerName $s.physical
                     $sourcefiles.add($file.Name, $s)
                 }
 
@@ -428,7 +428,7 @@ function Copy-DbaDatabase {
                             $d.physical = "$directory\$fileName"
                         }
                         $d.logical = $logical
-                        $d.remotefilename = Join-AdminUNC $destNetBios $d.physical
+                        $d.remotefilename = Join-AdminUNC $destFullComputerName $d.physical
                         $destinstancefiles.add($logical, $d)
 
                         # Source File Structure
@@ -441,7 +441,7 @@ function Copy-DbaDatabase {
 
                         $s.logical = $logical
                         $s.physical = $physical
-                        $s.remotefilename = Join-AdminUNC $sourceNetBios $s.physical
+                        $s.remotefilename = Join-AdminUNC $sourceFullComputerName $s.physical
                         $sourcefiles.add($logical, $s)
                     }
                 }
@@ -471,14 +471,14 @@ function Copy-DbaDatabase {
                         $d.physical = "$directory\$fileName"
                     }
                     $d.logical = $file.Name
-                    $d.remotefilename = Join-AdminUNC $destNetBios $d.physical
+                    $d.remotefilename = Join-AdminUNC $destFullComputerName $d.physical
                     $destinstancefiles.add($file.Name, $d)
 
                     $s = @{
                     }
                     $s.logical = $file.Name
                     $s.physical = $file.filename
-                    $s.remotefilename = Join-AdminUNC $sourceNetBios $s.physical
+                    $s.remotefilename = Join-AdminUNC $sourceFullComputerName $s.physical
                     $sourcefiles.add($file.Name, $s)
                 }
 
@@ -776,13 +776,9 @@ function Copy-DbaDatabase {
 
         Invoke-SmoCheck -SqlInstance $sourceServer
 
-        # Try to fix #6600, but not sure which of DNSHostEntry, FQDN or FullComputerName would be the best to use.
-        try {
-            $sourceNetBios = (Resolve-DbaNetworkName -ComputerName $sourceServer.ComputerName -EnableException).FullComputerName
-        } catch {
-            $sourceNetBios = $sourceServer.ComputerName
-        }
-        Write-Message -Level Verbose -Message "Using $sourceNetBios as sourceNetBios."
+        # Fix #6600
+        $sourceFullComputerName = Resolve-DbaComputerName -ComputerName $sourceServer.ComputerName
+        Write-Message -Level Verbose -Message "Using $sourceFullComputerName as sourceFullComputerName."
 
         Write-Message -Level Verbose -Message "Ensuring user databases exist (counting databases)."
 
@@ -863,13 +859,9 @@ function Copy-DbaDatabase {
                 }
             }
 
-            # Try to fix #6600, but not sure which of DNSHostEntry, FQDN or FullComputerName would be the best to use.
-            try {
-                $destNetBios = (Resolve-DbaNetworkName -ComputerName $destserver.ComputerName -EnableException).FullComputerName
-            } catch {
-                $destNetBios = $destserver.ComputerName
-            }
-            Write-Message -Level Verbose -Message "Using $destNetBios as destNetBios."
+            # Fix #6600
+            $destFullComputerName = Resolve-DbaComputerName -ComputerName $destserver.ComputerName
+            Write-Message -Level Verbose -Message "Using $destFullComputerName as destFullComputerName."
 
             Write-Message -Level Verbose -Message "Performing SMO version check."
             Invoke-SmoCheck -SqlInstance $destServer
@@ -926,7 +918,7 @@ function Copy-DbaDatabase {
 
             if ($DetachAttach -eq $true) {
                 Write-Message -Level Verbose -Message "Checking access to remote directories."
-                $remoteSourcePath = Join-AdminUNC $sourceNetBios (Get-SqlDefaultPaths -SqlInstance $sourceServer -filetype data)
+                $remoteSourcePath = Join-AdminUNC $sourceFullComputerName (Get-SqlDefaultPaths -SqlInstance $sourceServer -filetype data)
 
                 if ((Test-Path $remoteSourcePath) -ne $true -and $DetachAttach) {
                     Write-Message -Level Warning -Message "Can't access remote Sql directories on $source which is required to perform detach/copy/attach."
@@ -935,7 +927,7 @@ function Copy-DbaDatabase {
                     return
                 }
 
-                $remoteDestPath = Join-AdminUNC $destNetBios (Get-SqlDefaultPaths -SqlInstance $destServer -filetype data)
+                $remoteDestPath = Join-AdminUNC $destFullComputerName (Get-SqlDefaultPaths -SqlInstance $destServer -filetype data)
                 If ((Test-Path $remoteDestPath) -ne $true -and $DetachAttach) {
                     Write-Message -Level Warning -Message "Can't access remote Sql directories on $destinstance which is required to perform detach/copy/attach."
                     Write-Message -Level Warning -Message "You can manually try accessing $remoteDestPath to diagnose any issues."
