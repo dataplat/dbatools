@@ -37,7 +37,7 @@ function Get-DbaInstalledPatch {
 
         Gets the SQL Server patches from a list of computers in C:\Monitoring\Servers.txt.
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [Parameter(ValueFromPipeline)]
@@ -78,7 +78,7 @@ function Get-DbaInstalledPatch {
                         DisplayName     = $patch.DisplayName
                         InstallDate     = [dbadate][datetime]::ParseExact($patch.InstallDate, 'yyyyMMdd', $null)
                         DisplayVersion  = $patch.DisplayVersion
-                        InstanceVersion	= $level.PatchLevel
+                        InstanceVersion    = $level.PatchLevel
                     }
                 }
             }
