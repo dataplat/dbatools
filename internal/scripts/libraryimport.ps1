@@ -59,7 +59,8 @@ $scriptBlock = {
             'Microsoft.SqlServer.Management.Dmf',
             'Microsoft.SqlServer.XE.Core',
             'Microsoft.Identity.Client',
-            'Microsoft.SqlServer.XEvent.XELite'
+            'Microsoft.SqlServer.XEvent.XELite',
+            'SqlServer.XEvent'
         )
     } else {
         $names = @(
@@ -87,7 +88,8 @@ $scriptBlock = {
             'Microsoft.SqlServer.Types',
             'Microsoft.SqlServer.XEvent.Linq',
             'Microsoft.Identity.Client',
-            'Microsoft.SqlServer.XEvent.XELite'
+            'Microsoft.SqlServer.XEvent.XELite',
+            'SqlServer.XEvent'
         )
     }
     #endregion Names

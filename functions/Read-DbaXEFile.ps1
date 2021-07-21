@@ -9,9 +9,6 @@ function Read-DbaXEFile {
     .PARAMETER Path
         The path to the *.xem or *.xem file. This is relative to the computer executing the command. UNC paths are supported.
 
-    .PARAMETER Exact
-        If this switch is enabled, only an exact search will be used for the Path. By default, this command will add a wildcard to the Path because Eventing uses the file name as a template and adds characters.
-
     .PARAMETER Raw
         If this switch is enabled, the Microsoft.SqlServer.XEvent.Linq.PublishedEvent enumeration object will be returned.
 
@@ -52,17 +49,9 @@ function Read-DbaXEFile {
         [parameter(Mandatory, ValueFromPipeline)]
         [Alias('FullName')]
         [object[]]$Path,
-        [switch]$Exact,
         [switch]$Raw,
         [switch]$EnableException
     )
-    begin {
-        # there's sometimes a compat issue with XE.Core. Until we get this resolved with the new dlls, here's a potential workaround.
-        $hasdll = [AppDomain]::CurrentDomain.GetAssemblies() | Where-Object Fullname -like "Microsoft.SqlServer.XEvent.Linq,*"
-        if (-not $hasdll.Location) {
-            Stop-Function -Message "Could not load XEvent DLLs. This is a known issue and will be resolved as time allows."
-        }
-    }
     process {
         if (Test-FunctionInterrupt) { return }
         foreach ($file in $path) {
@@ -98,15 +87,6 @@ function Read-DbaXEFile {
                 }
             }
 
-            if (-not $Exact) {
-                $currentfile = $currentfile.Replace('.xel', '*.xel')
-                $currentfile = $currentfile.Replace('.xem', '*.xem')
-
-                if ($currentfile -notmatch "xel" -and $currentfile -notmatch "xem") {
-                    $currentfile = "$currentfile*.xel"
-                }
-            }
-
             $accessible = Test-Path -Path $currentfile
             $whoami = whoami
 
@@ -115,11 +95,15 @@ function Read-DbaXEFile {
                 Stop-Function -Continue -Message "$currentfile cannot be accessed from $($env:COMPUTERNAME). Does $whoami have access?"
             }
 
-            if ($raw) {
-                return New-Object Microsoft.SqlServer.XEvent.Linq.QueryableXEventData($currentfile)
+            if ($Raw) {
+                return (Read-SqlXEvent -FileName $currentfile)
             }
 
-            $enum = New-Object Microsoft.SqlServer.XEvent.Linq.QueryableXEventData($currentfile)
+            # use the Read-SqlXEvent cmdlet from Microsoft
+            # because the underlying Class uses Tasks
+            # which is hard to handle in PowerShell
+
+            $enum = Read-SqlXEvent -FileName $currentfile
             $newcolumns = ($enum.Fields.Name | Select-Object -Unique)
 
             $actions = ($enum.Actions.Name | Select-Object -Unique)
@@ -138,17 +122,16 @@ function Read-DbaXEFile {
                     $null = $hash.Add($column, $event.$column)
                 }
 
-                foreach ($action in $event.Actions) {
-                    $hash[$action.Name] = $action.Value
+                foreach ($key in $event.Actions.Keys) {
+                    $hash[$key] = $event.Actions[$key]
                 }
 
-                foreach ($field in $event.Fields) {
-                    $hash[$field.Name] = $field.Value
+                foreach ($key in $event.Fields.Keys) {
+                    $hash[$key] = $event.Fields[$key]
                 }
 
                 [pscustomobject]$hash
             }
-            $enum.Dispose()
         }
     }
 }

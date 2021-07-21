@@ -9,11 +9,8 @@ function Read-DbaAuditFile {
     .PARAMETER Path
         The path to the *.sqlaudit file. This is relative to the computer executing the command. UNC paths are supported.
 
-    .PARAMETER Exact
-        If this switch is enabled, only an exact search will be used for the Path. By default, this command will add a wildcard to the Path because Eventing uses the file name as a template and adds characters.
-
     .PARAMETER Raw
-        If this switch is enabled, the Microsoft.SqlServer.XEvent.Linq.PublishedEvent enumeration object will be returned.
+        If this switch is enabled, the enumeration object will be returned.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -52,12 +49,11 @@ function Read-DbaAuditFile {
         [parameter(Mandatory, ValueFromPipeline)]
         [Alias('FullName')]
         [object[]]$Path,
-        [switch]$Exact,
         [switch]$Raw,
         [switch]$EnableException
     )
     process {
-        foreach ($file in $path) {
+        foreach ($file in $Path) {
             # in order to ensure CSV gets all fields, all columns will be
             # collected and output in the first (all all subsequent) object
             $columns = @("name", "timestamp")
@@ -72,7 +68,7 @@ function Read-DbaAuditFile {
                     return
                 }
 
-                if ($file.FullName.Length -eq 0) {
+                if (-not $file.FullName) {
                     Stop-Function -Message "This Audit does not have an associated file."
                     return
                 }
@@ -86,14 +82,6 @@ function Read-DbaAuditFile {
                 }
             }
 
-            if (-not $Exact) {
-                $currentFile = $currentFile.Replace('.sqlaudit', '*.sqlaudit')
-
-                if ($currentFile -notmatch "sqlaudit") {
-                    $currentFile = "$currentFile*.sqlaudit"
-                }
-            }
-
             $accessible = Test-Path -Path $currentFile
             $whoami = whoami
 
@@ -102,35 +90,39 @@ function Read-DbaAuditFile {
                 Stop-Function -Continue -Message "$currentFile cannot be accessed from $($env:COMPUTERNAME). Does $whoami have access?"
             }
 
-            if ($raw) {
-                return New-Object Microsoft.SqlServer.XEvent.Linq.QueryableXEventData($currentFile)
+            if ($Raw) {
+                return (Read-SqlXEvent -FileName $currentfile)
             }
 
-            $enum = New-Object Microsoft.SqlServer.XEvent.Linq.QueryableXEventData($currentFile)
-            $newColumns = ($enum.Fields.Name | Select-Object -Unique)
+            # use the Read-SqlXEvent cmdlet from Microsoft
+            # because the underlying Class uses Tasks
+            # which is hard to handle in PowerShell
+
+            $enum = Read-SqlXEvent -FileName $currentfile
+            $newcolumns = ($enum.Fields.Name | Select-Object -Unique)
 
             $actions = ($enum.Actions.Name | Select-Object -Unique)
             foreach ($action in $actions) {
-                $newColumns += ($action -Split '\.')[-1]
+                $newcolumns += ($action -Split '\.')[-1]
             }
 
-            $newColumns = $newColumns | Sort-Object
-            $columns = ($columns += $newColumns) | Select-Object -Unique
+            $newcolumns = $newcolumns | Sort-Object
+            $columns = ($columns += $newcolumns) | Select-Object -Unique
 
             # Make it selectable, otherwise it's a weird enumeration
-            foreach ($event in (New-Object Microsoft.SqlServer.XEvent.Linq.QueryableXEventData($currentFile))) {
+            foreach ($event in $enum) {
                 $hash = [ordered]@{ }
 
                 foreach ($column in $columns) {
                     $null = $hash.Add($column, $event.$column)
                 }
 
-                foreach ($action in $event.Actions) {
-                    $hash[$action.Name] = $action.Value
+                foreach ($key in $event.Actions.Keys) {
+                    $hash[$key] = $event.Actions[$key]
                 }
 
-                foreach ($field in $event.Fields) {
-                    $hash[$field.Name] = $field.Value
+                foreach ($key in $event.Fields.Keys) {
+                    $hash[$key] = $event.Fields[$key]
                 }
 
                 [pscustomobject]$hash
