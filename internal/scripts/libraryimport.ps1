@@ -42,6 +42,7 @@ $scriptBlock = {
             'Microsoft.SqlServer.Management.PSProvider',
             'Microsoft.SqlServer.Management.PSSnapins',
             'Microsoft.SqlServer.Management.XEvent',
+            'Microsoft.SqlServer.XEvent.Linq',
             'Microsoft.SqlServer.Management.XEventDbScoped',
             'Microsoft.SqlServer.Management.XEventDbScopedEnum',
             'Microsoft.SqlServer.Management.XEventEnum',
@@ -56,7 +57,9 @@ $scriptBlock = {
             'Microsoft.SqlTools.Hosting',
             'Microsoft.SqlTools.ManagedBatchParser',
             'Microsoft.SqlServer.Management.Dmf',
-            'Microsoft.Identity.Client'
+            'Microsoft.SqlServer.XE.Core',
+            'Microsoft.Identity.Client',
+            'Microsoft.SqlServer.XEvent.XELite'
         )
     } else {
         $names = @(
@@ -66,6 +69,7 @@ $scriptBlock = {
             'Microsoft.SqlServer.ConnectionInfo',
             'Microsoft.SqlServer.BatchParser',
             'Microsoft.SqlServer.BatchParserClient',
+            'Microsoft.SqlServer.XE.Core',
             'Microsoft.SqlServer.Management.XEvent',
             'Microsoft.SqlServer.Management.XEventDbScoped',
             'Microsoft.SqlServer.Management.Sdk.Sfc',
@@ -82,7 +86,8 @@ $scriptBlock = {
             'Microsoft.SqlServer.Dmf.Common',
             'Microsoft.SqlServer.Types',
             'Microsoft.SqlServer.XEvent.Linq',
-            'Microsoft.Identity.Client'
+            'Microsoft.Identity.Client',
+            'Microsoft.SqlServer.XEvent.XELite'
         )
     }
     #endregion Names
