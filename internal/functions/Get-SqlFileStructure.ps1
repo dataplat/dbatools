@@ -23,23 +23,8 @@ function Get-SqlFileStructure {
     $destination = $destserver.DomainInstanceName
 
     # Here we need it for Join-AdminUnc, so FullComputerName would be best with fallback to ComputerName
-    try {
-        # We don't have windows credentials here, so Resolve-DbaNetworkName has to respect that and work like Resolve-NetBiosName did before.
-        $resolved = Resolve-DbaNetworkName -ComputerName $sourceserver -EnableException
-        $sourceFullComputerName = $resolved.FullComputerName
-    } catch {
-        Write-Message -Level Verbose -Message "Error occurred while resolving $sourceserver, so we use ComputerName as the fallback."
-        $sourceFullComputerName = $sourceServer.ComputerName
-    }
-
-    try {
-        # We don't have windows credentials here, so Resolve-DbaNetworkName has to respect that and work like Resolve-NetBiosName did before.
-        $resolved = Resolve-DbaNetworkName -ComputerName $destserver -EnableException
-        $destFullComputerName = $resolved.FullComputerName
-    } catch {
-        Write-Message -Level Verbose -Message "Error occurred while resolving $destserver, so we use ComputerName as the fallback."
-        $destFullComputerName = $destserver.ComputerName
-    }
+    $sourceFullComputerName = Resolve-DbaComputerName -ComputerName $sourceserver
+    $destFullComputerName = Resolve-DbaComputerName -ComputerName $destserver
 
     $dbcollection = @{ };
 

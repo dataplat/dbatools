@@ -30,13 +30,7 @@ function Get-DecryptedObject {
         return
     }
 
-    try {
-        $resolved = Resolve-DbaNetworkName -ComputerName $server -Credential $Credential -EnableException
-        $fullComputerName = $resolved.FullComputerName
-    } catch {
-        Stop-Function -Message "Error occurred while resolving $server" -Category ConnectionError -ErrorRecord $_ -Target $server
-        return
-    }
+    $fullComputerName = Resolve-DbaComputerName -ComputerName $server -Credential $Credential
     $instance = $server.InstanceName
     $serviceInstanceId = $server.ServiceInstanceId
 

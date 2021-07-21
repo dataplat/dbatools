@@ -114,13 +114,7 @@ function Export-DbaLinkedServer {
             }
 
             Write-Message -Level Verbose -Message "Getting FullComputerName name for $instance."
-            try {
-                $resolved = Resolve-DbaNetworkName -ComputerName $instance -Credential $Credential -EnableException
-                $fullComputerName = $resolved.FullComputerName
-            } catch {
-                Stop-Function -Message "Error occurred while resolving $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance
-                return
-            }
+            $fullComputerName = Resolve-DbaComputerName -ComputerName $instance -Credential $Credential
 
             Write-Message -Level Verbose -Message "Checking if Remote Registry is enabled on $instance."
             try {
