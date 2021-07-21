@@ -846,6 +846,10 @@ function Connect-DbaInstance {
                     }
 
                     if ($authType -eq 'local ad') {
+                        if ($isLinux -or $IsMacOS) {
+                            Stop-Function -Message "Cannot use Windows credentials to connect when host is Linux or OS X. Use kinit instead. See https://github.com/sqlcollaborative/dbatools/issues/7602 for more info."
+                            return
+                        }
                         Write-Message -Level Debug -Message "ConnectAsUser will be set to '$true'"
                         $serverConnection.ConnectAsUser = $true
 
