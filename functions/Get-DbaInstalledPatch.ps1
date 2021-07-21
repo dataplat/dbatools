@@ -46,7 +46,7 @@ function Get-DbaInstalledPatch {
         [switch]$EnableException
     )
     process {
-        foreach ($computer in $ComputerName) {
+        foreach ($computer in $ComputerName.ComputerName) {
             try {
                 $patches = Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock {
                     Get-ChildItem -Path HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall | Get-ItemProperty | Sort-Object -Property @{
