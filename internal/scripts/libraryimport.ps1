@@ -42,6 +42,7 @@ $scriptBlock = {
             'Microsoft.SqlServer.Management.PSProvider',
             'Microsoft.SqlServer.Management.PSSnapins',
             'Microsoft.SqlServer.Management.XEvent',
+            'Microsoft.SqlServer.XEvent.Linq',
             'Microsoft.SqlServer.Management.XEventDbScoped',
             'Microsoft.SqlServer.Management.XEventDbScopedEnum',
             'Microsoft.SqlServer.Management.XEventEnum',
