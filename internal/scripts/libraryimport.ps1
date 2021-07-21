@@ -43,6 +43,7 @@ $scriptBlock = {
             'Microsoft.SqlServer.Management.PSSnapins',
             'Microsoft.SqlServer.Management.XEvent',
             'Microsoft.SqlServer.XEvent.Linq',
+            'Microsoft.SqlServer.XEvent.Linq',
             'Microsoft.SqlServer.Management.XEventDbScoped',
             'Microsoft.SqlServer.Management.XEventDbScopedEnum',
             'Microsoft.SqlServer.Management.XEventEnum',
@@ -57,6 +58,7 @@ $scriptBlock = {
             'Microsoft.SqlTools.Hosting',
             'Microsoft.SqlTools.ManagedBatchParser',
             'Microsoft.SqlServer.Management.Dmf',
+            'Microsoft.SqlServer.XE.Core',
             'Microsoft.Identity.Client'
         )
     } else {
@@ -67,6 +69,7 @@ $scriptBlock = {
             'Microsoft.SqlServer.ConnectionInfo',
             'Microsoft.SqlServer.BatchParser',
             'Microsoft.SqlServer.BatchParserClient',
+            'Microsoft.SqlServer.XE.Core',
             'Microsoft.SqlServer.Management.XEvent',
             'Microsoft.SqlServer.Management.XEventDbScoped',
             'Microsoft.SqlServer.Management.Sdk.Sfc',
