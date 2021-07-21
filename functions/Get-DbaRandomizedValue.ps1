@@ -172,13 +172,13 @@ function Get-DbaRandomizedValue {
             }
         }
 
-        if (-not $Min) {
+        if ($null -eq $Min) {
             if ($DataType.ToLower() -notlike "date*" -and $RandomizerType.ToLower() -notlike "date*") {
                 $Min = 1
             }
         }
 
-        if (-not $Max) {
+        if ($null -eq $Max) {
             if ($DataType.ToLower() -notlike "date*" -and $RandomizerType.ToLower() -notlike "date*") {
                 $Max = 255
             }
@@ -202,6 +202,8 @@ function Get-DbaRandomizedValue {
                         $Max = 9223372036854775807
                         Write-Message -Level Verbose -Message "Max value for data type is empty or too big. Reset to $Max"
                     }
+
+                    $script:faker.Random.Long($Min, $Max)
                 }
 
                 { $psitem -in 'bit', 'bool' } {

@@ -37,6 +37,9 @@ function Import-DbaXESessionTemplate {
 
         This path is relative to the destination directory
 
+    .PARAMETER StartUpState
+        Specifies the start up state of the session. The default is Off.
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -54,14 +57,19 @@ function Import-DbaXESessionTemplate {
         https://dbatools.io/Import-DbaXESessionTemplate
 
     .EXAMPLE
-        PS C:\> Import-DbaXESessionTemplate -SqlInstance sql2017 -Template db_query_wait_stats
+        PS C:\> Import-DbaXESessionTemplate -SqlInstance sql2017 -Template "15 Second IO Error"
 
-        Creates a new XESession named db_query_wait_stats from the dbatools repository to the SQL Server sql2017.
+        Creates a new XESession named "15 Second IO Error" from the dbatools repository to the SQL Server sql2017.
 
     .EXAMPLE
-        PS C:\> Import-DbaXESessionTemplate -SqlInstance sql2017 -Template db_query_wait_stats -Name "Query Wait Stats"
+        PS C:\> Import-DbaXESessionTemplate -SqlInstance sql2017 -Template "Index Page Splits" -StartUpState On
 
-        Creates a new XESession named "Query Wait Stats" using the db_query_wait_stats template.
+        Creates a new XESession named "Index Page Splits" from the dbatools repository to the SQL Server sql2017, starts the XESession and sets the StartUpState to On so that it starts on the next server restart.
+
+    .EXAMPLE
+        PS C:\> Import-DbaXESessionTemplate -SqlInstance sql2017 -Template "Query Wait Statistics" -Name "Query Wait Stats" | Start-DbaXESession
+
+        Creates a new XESession named "Query Wait Stats" using the Query Wait Statistics template, then immediately starts it.
 
     .EXAMPLE
         PS C:\> Get-DbaXESession -SqlInstance sql2017 -Session 'Database Health 2014' | Remove-DbaXESession
@@ -87,10 +95,13 @@ function Import-DbaXESessionTemplate {
         [string[]]$Template,
         [string]$TargetFilePath,
         [string]$TargetFileMetadataPath,
+        [ValidateSet("On", "Off")]
+        [string]$StartUpState = "Off",
         [switch]$EnableException
     )
     begin {
-        $metadata = Import-Clixml "$script:PSModuleRoot\bin\xetemplates-metadata.xml"
+        $xmlpath = Join-DbaPath $script:PSModuleRoot "bin" "xetemplates-metadata.xml"
+        $metadata = Import-Clixml $xmlpath
     }
     process {
         if ((Test-Bound -ParameterName Path -Not) -and (Test-Bound -ParameterName Template -Not)) {
@@ -111,10 +122,10 @@ function Import-DbaXESessionTemplate {
 
             $SqlConn = $server.ConnectionContext.SqlConnectionObject
             $SqlStoreConnection = New-Object Microsoft.SqlServer.Management.Sdk.Sfc.SqlStoreConnection $SqlConn
-            $store = New-Object  Microsoft.SqlServer.Management.XEvent.XEStore $SqlStoreConnection
+            $store = New-Object Microsoft.SqlServer.Management.XEvent.XEStore $SqlStoreConnection
 
             foreach ($file in $template) {
-                $templatepath = "$script:PSModuleRoot\bin\xetemplates\$file.xml"
+                $templatepath = Join-DbaPath $script:PSModuleRoot "bin" "xetemplates" "$file.xml"
                 if ((Test-Path $templatepath)) {
                     $Path += $templatepath
                 } else {
@@ -136,10 +147,15 @@ function Import-DbaXESessionTemplate {
                     Write-Message -Level Verbose -Message "TargetFileMetadataPath specified, changing all metadata file locations in $file for $instance."
 
                     # Handle whatever people specify
-                    $TargetFilePath = $TargetFilePath.TrimEnd("\")
-                    $TargetFileMetadataPath = $TargetFileMetadataPath.TrimEnd("\")
-                    $TargetFilePath = "$TargetFilePath\"
-                    $TargetFileMetadataPath = "$TargetFileMetadataPath\"
+                    $TargetFilePath = $TargetFilePath.TrimEnd("\").TrimEnd("/")
+                    $TargetFileMetadataPath = $TargetFileMetadataPath.TrimEnd("\").TrimEnd("/")
+                    if ((Test-HostOSLinux -SqlInstance $server)) {
+                        $TargetFilePath = "$TargetFilePath/".$file.TrimEnd("\").TrimEnd("/")
+                        $TargetFileMetadataPath = "$TargetFileMetadataPath/"
+                    } else {
+                        $TargetFilePath = "$TargetFilePath\"
+                        $TargetFileMetadataPath = "$TargetFileMetadataPath\"
+                    }
 
                     # Perform replace
                     $xelphrase = 'name="filename" value="'
@@ -150,8 +166,8 @@ function Import-DbaXESessionTemplate {
                         $contents = Get-Content $file -ErrorAction Stop
                         $contents = $contents.Replace($xelphrase, "$xelphrase$TargetFilePath")
                         $contents = $contents.Replace($xemphrase, "$xemphrase$TargetFileMetadataPath")
-                        $temp = ([System.IO.Path]::GetTempPath()).TrimEnd("").TrimEnd("\")
-                        $tempfile = "$temp\$basename"
+                        $temp = ([System.IO.Path]::GetTempPath()).TrimEnd("").TrimEnd("\").TrimEnd("/")
+                        $tempfile = Join-DbaPath $temp $basename
                         $null = Set-Content -Path $tempfile -Value $contents -Encoding UTF8
                         $xml = [xml](Get-Content $tempfile -ErrorAction Stop)
                         $file = $tempfile
@@ -194,13 +210,22 @@ function Import-DbaXESessionTemplate {
                 }
 
                 try {
-                    Write-Message -Level Verbose -Message "Importing $file as $Name "
+                    Write-Message -Level Verbose -Message "Importing $file as $Name"
                     $session = $store.CreateSessionFromTemplate($Name, $file)
                     $session.Create()
                     if ($file -eq $tempfile) {
                         Remove-Item $tempfile -ErrorAction SilentlyContinue
                     }
-                    Get-DbaXESession -SqlInstance $server -Session $session.Name
+                    if ($StartUpState -eq "On") {
+                        $newsession = Get-DbaXESession -SqlInstance $server -Session $session.Name
+                        if (-not $newsession.AutoStart) {
+                            $newsession.AutoStart = $true
+                            $newsession.Alter()
+                        }
+                        $newsession | Start-DbaXESession
+                    } else {
+                        Get-DbaXESession -SqlInstance $server -Session $session.Name
+                    }
                 } catch {
                     Stop-Function -Message "Failure" -ErrorRecord $_ -Target $store -Continue
                 }

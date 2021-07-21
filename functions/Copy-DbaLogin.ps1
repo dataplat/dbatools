@@ -61,9 +61,7 @@ function Copy-DbaLogin {
         Include object-level permissions for each user associated with copied login.
 
     .PARAMETER KillActiveConnection
-        If this switch and -Force are enabled, all active connections and sessions on Destination will be killed.
-
-        A login cannot be dropped when it has active connections on the instance.
+        A login cannot be dropped when it has active connections on the instance. If this switch is enabled, all active connections and sessions on Destination will be killed.
 
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
@@ -224,7 +222,8 @@ function Copy-DbaLogin {
                 continue
             }
 
-            $serverName = Resolve-NetBiosName $sourceServer
+            # Here we don't need the FullComputerName, but only the machine name to compare to the host part of the login name. So ComputerName should be fine.
+            $serverName = $sourceServer.ComputerName
 
             $currentLogin = $DestServer.ConnectionContext.truelogin
 
@@ -327,7 +326,7 @@ function Copy-DbaLogin {
                             $activeConnections | ForEach-Object { $destServer.KillProcess($_.Spid) }
                             Write-Message -Level Verbose -Message "-KillActiveConnection was provided. There are $($activeConnections.Count) active connections killed."
                         } elseif ($activeConnections) {
-                            Write-Message -Level Verbose -Message "There are $($activeConnections.Count) active connections found for the login $newUserName. Utilize -KillActiveConnection with -Force to kill the connections."
+                            Write-Message -Level Verbose -Message "There are $($activeConnections.Count) active connections found for the login $newUserName. Utilize -KillActiveConnection to kill the connections."
                         }
                         try {
                             $destServer.Logins.Item($newUserName).Drop()
@@ -405,9 +404,9 @@ function Copy-DbaLogin {
 
             foreach ($destinstance in $Destination) {
                 try {
-                    $destServer = Connect-SqlInstance -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential
+                    $destServer = Connect-SqlInstance -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential -AzureUnsupported
                 } catch {
-                    Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
+                    Stop-Function -Message "Error occurred while establishing connection to $destinstance" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
                 }
 
                 $destVersionMajor = $destServer.VersionMajor

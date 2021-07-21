@@ -6,6 +6,9 @@ function Get-DbaRepDistributor {
     .DESCRIPTION
         This function locates and enumerates distributor information for a given SQL Server instance.
 
+        All replication commands need SQL Server Management Studio installed and are therefore currently not supported.
+        Have a look at this issue to get more information: https://github.com/sqlcollaborative/dbatools/issues/7428
+
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.
 
@@ -54,28 +57,22 @@ function Get-DbaRepDistributor {
             $rmodll = [System.Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.Rmo")
 
             if ($null -eq $repdll -or $null -eq $rmodll) {
-                Stop-Function -Message "Could not load replication libraries" -ErrorRecord $_
+                Write-Message -Level Warning -Message 'All replication commands need SQL Server Management Studio installed and are therefore currently not supported.'
+                Stop-Function -Message "Could not load replication libraries"
                 return
             }
         }
     }
     process {
         if (Test-FunctionInterrupt) { return }
-
         foreach ($instance in $SqlInstance) {
-
-            # connect to the instance
-            try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
-            } catch {
-                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
-            }
-
             Write-Message -Level Verbose -Message "Attempting to retrieve distributor information from $instance"
 
             # Connect to the distributor of the instance
             try {
-                $distributor = New-Object Microsoft.SqlServer.Replication.ReplicationServer $server.ConnectionContext.SqlConnectionObject
+                $sqlconn = New-SqlConnection -SqlInstance $instance -SqlCredential $SqlCredential
+
+                $distributor = New-Object Microsoft.SqlServer.Replication.ReplicationServer $sqlconn
             } catch {
                 Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }

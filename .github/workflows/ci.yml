@@ -1,4 +1,4 @@
-name: CI
+name: Cross Platform Import
 on: [pull_request]
 
 jobs:

@@ -137,8 +137,8 @@ function Start-DbaAgentJob {
             )
             [string]$server = $currentjob.Parent.Parent.Name
             [string]$currentStep = $currentjob.CurrentRunStep
-            [int]$currentStepId = $currentstep.Split('()')[0].Trim()
-            [string]$currentStepName = $currentstep.Split('()')[1]
+            [int]$currentStepId, [string]$currentStepName = $currentstep.Split(' ', 2)
+            $currentStepName = $currentStepName.Substring(1, $currentStepName.Length - 2)
             [string]$currentRunStatus = $currentjob.CurrentRunStatus
             [int]$jobStepsCount = $currentjob.JobSteps.Count
             [int]$currentStepRetryAttempts = $currentjob.CurrentRunRetryAttempt

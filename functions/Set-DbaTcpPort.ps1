@@ -72,81 +72,48 @@ function Set-DbaTcpPort {
         [switch]$EnableException
     )
 
-    begin {
-        if (-not $IpAddress) {
-            $IpAddress = '0.0.0.0'
-        } else {
-            if ($SqlInstance.Count -gt 1) {
-                Stop-Function -Message "-IpAddress switch cannot be used with a collection of serveraddresses" -Target $SqlInstance
-                return
-            }
-        }
-        $scriptblock = {
-            $computerName = $args[0]
-            $wmiInstanceName = $args[1]
-            $port = $args[2]
-            $IpAddress = $args[3]
-            $sqlInstanceName = $args[4]
-
-            $wmi = New-Object Microsoft.SqlServer.Management.Smo.Wmi.ManagedComputer $computerName
-            $wmiinstance = $wmi.ServerInstances | Where-Object {
-                $_.Name -eq $wmiInstanceName
-            }
-            $tcp = $wmiinstance.ServerProtocols | Where-Object {
-                $_.DisplayName -eq 'TCP/IP'
-            }
-            $IpAddress = $tcp.IpAddresses | Where-Object {
-                $_.IpAddress -eq $IpAddress
-            }
-            $tcpPort = $IpAddress.IpAddressProperties | Where-Object {
-                $_.Name -eq 'TcpPort'
-            }
-
-            $oldPort = $tcpPort.Value
-            try {
-                $tcpPort.value = $port
-                $tcp.Alter()
-                [pscustomobject]@{
-                    ComputerName       = $computerName
-                    InstanceName       = $wmiInstanceName
-                    SqlInstance        = $sqlInstanceName
-                    PreviousPortNumber = $oldPort
-                    PortNumber         = $Port
-                    Status             = "Success"
-                }
-            } catch {
-                [pscustomobject]@{
-                    ComputerName       = $computerName
-                    InstanceName       = $wmiInstanceName
-                    SqlInstance        = $sqlInstanceName
-                    PreviousPortNumber = $oldPort
-                    PortNumber         = $Port
-                    Status             = "Failed: $_"
-                }
-            }
-        }
-    }
     process {
         if (Test-FunctionInterrupt) {
             return
         }
 
-        foreach ($instance in $SqlInstance) {
-            $wmiInstanceName = $instance.InstanceName
-            $computerName = $instance.ComputerName
-            $resolvedComputerName = (Resolve-DbaNetworkName -ComputerName $computerName).FullComputerName
+        if ('0.0.0.0' -eq $IpAddress) {
+            $IpAddress = $null
+        }
 
-            if ($Pscmdlet.ShouldProcess($computerName, "Setting port to $Port for $wmiInstanceName")) {
+        if ($IpAddress -and $SqlInstance.Count -gt 1) {
+            Stop-Function -Message "-IpAddress switch cannot be used with a collection of serveraddresses" -Target $SqlInstance
+            return
+        }
+
+        foreach ($instance in $SqlInstance) {
+            if (-not $IpAddress) {
+                if ($Pscmdlet.ShouldProcess($instance, "Setting port to $Port for IPAll of $instance")) {
+                    Set-DbaNetworkConfiguration -SqlInstance $instance -Credential $Credential -StaticPortForIPAll $Port -EnableException:$EnableException -Confirm:$false
+                }
+            } else {
                 try {
-                    Write-Message -Level Verbose -Message "Trying Invoke-ManagedComputerCommand with ComputerName = '$resolvedComputerName'"
-                    Invoke-ManagedComputerCommand -ComputerName $resolvedComputerName -ScriptBlock $scriptblock -ArgumentList $computerName, $wmiInstanceName, $port, $IpAddress, $instance.InputObject -Credential $Credential
+                    $netConf = Get-DbaNetworkConfiguration -SqlInstance $instance -Credential $Credential -OutputType Full -EnableException
                 } catch {
-                    try {
-                        Write-Message -Level Verbose -Message "Fallback: Trying Invoke-ManagedComputerCommand with ComputerName = '$computerName'"
-                        Invoke-ManagedComputerCommand -ComputerName $computerName -ScriptBlock $scriptblock -ArgumentList $computerName, $wmiInstanceName, $port, $IpAddress, $instance.InputObject -Credential $Credential
-                    } catch {
-                        Stop-Function -Message "Failure setting port to $Port for $wmiInstanceName on $computerName" -Continue
+                    Stop-Function -Message "Failed to collect network configuration from $($instance.ComputerName) for instance $($instance.InstanceName)." -Target $instance -ErrorRecord $_ -Continue
+                }
+
+                $netConf.TcpIpEnabled = $true
+                $netConf.TcpIpProperties.Enabled = $true
+                $netConf.TcpIpProperties.ListenAll = $false
+                foreach ($ip in $IpAddress) {
+                    $ipConf = $netConf.TcpIpAddresses | Where-Object { $_.IpAddress -eq $ip }
+                    if ($ipConf) {
+                        $ipConf.Enabled = $true
+                        $ipConf.TcpDynamicPorts = ''
+                        $ipConf.TcpPort = "$Port"  # change if [int[]]: $Port -join ','
+                    } else {
+                        Write-Message -Level Warning -Message "IP address $ip not found, skipping."
                     }
+                }
+
+                if ($Pscmdlet.ShouldProcess($instance, "Setting port to $Port for IP address $IpAddress of $instance")) {
+                    $netConf | Set-DbaNetworkConfiguration -Credential $Credential -EnableException:$EnableException -Confirm:$false
                 }
             }
         }

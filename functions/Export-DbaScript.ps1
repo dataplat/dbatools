@@ -148,9 +148,11 @@ function Export-DbaScript {
     )
     begin {
         $null = Test-ExportDirectory -Path $Path
-        if ($IsWindows -ne $false) {
+        if ($IsLinux -or $IsMacOs) {
+            $executingUser = $env:USER
+        } else {
             $executingUser = [Security.Principal.WindowsIdentity]::GetCurrent().Name
-        } else { $executingUser = $env:USER }
+        }
         $commandName = $MyInvocation.MyCommand.Name
         $prefixArray = @()
 
@@ -158,10 +160,6 @@ function Export-DbaScript {
         $appendToScript = $false
         if ($Append) {
             $appendToScript = $true
-
-            if ($ScriptingOptionsObject) {
-                $ScriptingOptionsObject.AppendToFile = $true
-            }
         }
 
         if ($ScriptingOptionsObject) {
@@ -192,6 +190,15 @@ function Export-DbaScript {
 
             if ($shorttype -eq "Configuration") {
                 Write-Message -Level Warning -Message "Support for $shorttype is limited at this time."
+            }
+
+            if ($shorttype -eq "AvailabilityGroup") {
+                Write-Message -Level Verbose -Message "Invoking .Script() as a workaround for https://github.com/sqlcollaborative/dbatools/issues/5913."
+                try {
+                    $null = $InputObject.Script()
+                } catch {
+                    Write-Message -Level Verbose -Message "Invoking .Script() failed: $_"
+                }
             }
 
             # Find the server object to pass on to the function
@@ -243,11 +250,10 @@ function Export-DbaScript {
                             Stop-Function -Message "File already exists. If you want to overwrite it remove the -NoClobber parameter. If you want to append data, please Use -Append parameter." -Target $scriptPath -Continue
                         }
                         #Only at the first output we use the passed variables Append & NoClobber. For this execution the next ones need to use -Append
-                        if ($null -ne $prefix) {
-                            $prefix | Out-File -FilePath $scriptPath -Encoding $encoding -Append:$appendToScript -NoClobber:$NoClobber
-                            $prefixArray += $scriptPath
-                            Write-Message -Level Verbose -Message "Writing prefix to file $scriptPath"
-                        }
+                        # Empty $prefix will clean file in case $appendToScript is not set.
+                        Write-Message -Level Verbose -Message "Writing (maybe empty) prefix to file $scriptPath"
+                        $prefix | Out-File -FilePath $scriptPath -Encoding $encoding -Append:$appendToScript -NoClobber:$NoClobber
+                        $prefixArray += $scriptPath
                     }
                 }
 
@@ -277,7 +283,7 @@ function Export-DbaScript {
                         if ($ScriptingOptionsObject) {
                             if ($scriptBatchTerminator) {
                                 # Option to script batch terminator via ScriptingOptionsObject needs to write to file only
-                                $ScriptingOptionsObject.AppendToFile = (($null -ne $prefix) -or $appendToScript )
+                                $ScriptingOptionsObject.AppendToFile = $true
                                 $ScriptingOptionsObject.ToFileOnly = $true
                                 if (-not  $ScriptingOptionsObject.FileName) {
                                     $ScriptingOptionsObject.FileName = $scriptPath

@@ -33,7 +33,7 @@ function Invoke-ManagedComputerCommand {
         [PSCredential]$Credential,
         [Parameter(Mandatory)]
         [scriptblock]$ScriptBlock,
-        [string[]]$ArgumentList,
+        [object[]]$ArgumentList,
         [switch]$EnableException # Left in for legacy but this command needs to throw
     )
 

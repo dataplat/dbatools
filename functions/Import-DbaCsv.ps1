@@ -273,7 +273,7 @@ function Import-DbaCsv {
         [switch]$KeepIdentity,
         [switch]$KeepNulls,
         [string[]]$Column,
-        [hashtable[]]$ColumnMap,
+        [hashtable]$ColumnMap,
         [switch]$KeepOrdinalOrder,
         [switch]$AutoCreateTable,
         [switch]$NoProgress,
@@ -334,8 +334,8 @@ function Import-DbaCsv {
                 [string]$Delimiter,
                 [Parameter(Mandatory)]
                 [bool]$FirstRowHeader,
-                [System.Data.SqlClient.SqlConnection]$sqlconn,
-                [System.Data.SqlClient.SqlTransaction]$transaction
+                [Microsoft.Data.SqlClient.SqlConnection]$sqlconn,
+                [Microsoft.Data.SqlClient.SqlTransaction]$transaction
             )
             $reader = New-Object LumenWorks.Framework.IO.Csv.CsvReader(
                 (New-Object System.IO.StreamReader($Path, [System.Text.Encoding]::$Encoding)),
@@ -360,7 +360,7 @@ function Import-DbaCsv {
             }
 
             $sql = "BEGIN CREATE TABLE [$schema].[$table] ($($sqldatatypes -join ' NULL,')) END"
-            $sqlcmd = New-Object System.Data.SqlClient.SqlCommand($sql, $sqlconn, $transaction)
+            $sqlcmd = New-Object Microsoft.Data.SqlClient.SqlCommand($sql, $sqlconn, $transaction)
 
             try {
                 $null = $sqlcmd.ExecuteNonQuery()
@@ -465,7 +465,7 @@ function Import-DbaCsv {
 
                 # Ensure Schema exists
                 $sql = "select count(*) from [$Database].sys.schemas where name='$schema'"
-                $sqlcmd = New-Object System.Data.SqlClient.SqlCommand($sql, $sqlconn, $transaction)
+                $sqlcmd = New-Object Microsoft.Data.SqlClient.SqlCommand($sql, $sqlconn, $transaction)
 
                 # If Schema doesn't exist create it
                 # Defaulting to dbo.
@@ -475,7 +475,7 @@ function Import-DbaCsv {
                     }
                     $sql = "CREATE SCHEMA [$schema] AUTHORIZATION dbo"
                     if ($PSCmdlet.ShouldProcess($instance, "Creating schema $schema")) {
-                        $sqlcmd = New-Object System.Data.SqlClient.SqlCommand($sql, $sqlconn, $transaction)
+                        $sqlcmd = New-Object Microsoft.Data.SqlClient.SqlCommand($sql, $sqlconn, $transaction)
                         try {
                             $null = $sqlcmd.ExecuteNonQuery()
                         } catch {
@@ -486,10 +486,10 @@ function Import-DbaCsv {
 
                 # Ensure table or view exists
                 $sql = "select count(*) from [$Database].sys.tables where name = '$table' and schema_id=schema_id('$schema')"
-                $sqlcmd = New-Object System.Data.SqlClient.SqlCommand($sql, $sqlconn, $transaction)
+                $sqlcmd = New-Object Microsoft.Data.SqlClient.SqlCommand($sql, $sqlconn, $transaction)
 
                 $sql2 = "select count(*) from [$Database].sys.views where name = '$table' and schema_id=schema_id('$schema')"
-                $sqlcmd2 = New-Object System.Data.SqlClient.SqlCommand($sql2, $sqlconn, $transaction)
+                $sqlcmd2 = New-Object Microsoft.Data.SqlClient.SqlCommand($sql2, $sqlconn, $transaction)
 
                 # Create the table if required. Remember, this will occur within a transaction, so if the script fails, the
                 # new table will no longer exist.
@@ -514,7 +514,7 @@ function Import-DbaCsv {
                 if ($Truncate) {
                     $sql = "TRUNCATE TABLE [$schema].[$table]"
                     if ($PSCmdlet.ShouldProcess($instance, "Performing TRUNCATE TABLE [$schema].[$table] on $Database")) {
-                        $sqlcmd = New-Object System.Data.SqlClient.SqlCommand($sql, $sqlconn, $transaction)
+                        $sqlcmd = New-Object Microsoft.Data.SqlClient.SqlCommand($sql, $sqlconn, $transaction)
                         try {
                             $null = $sqlcmd.ExecuteNonQuery()
                         } catch {
@@ -527,12 +527,12 @@ function Import-DbaCsv {
                 Write-Message -Level Verbose -Message "Starting bulk copy for $(Split-Path $file -Leaf)"
 
                 # Setup bulk copy options
-                [int]$bulkCopyOptions = ([System.Data.SqlClient.SqlBulkCopyOptions]::Default)
+                [int]$bulkCopyOptions = ([Microsoft.Data.SqlClient.SqlBulkCopyOptions]::Default)
                 $options = "TableLock", "CheckConstraints", "FireTriggers", "KeepIdentity", "KeepNulls"
                 foreach ($option in $options) {
                     $optionValue = Get-Variable $option -ValueOnly -ErrorAction SilentlyContinue
                     if ($optionValue -eq $true) {
-                        $bulkCopyOptions += $([System.Data.SqlClient.SqlBulkCopyOptions]::$option).value__
+                        $bulkCopyOptions += $([Microsoft.Data.SqlClient.SqlBulkCopyOptions]::$option).value__
                     }
                 }
 
@@ -540,9 +540,9 @@ function Import-DbaCsv {
                     try {
                         # Create SqlBulkCopy using default options, or options specified in command line.
                         if ($bulkCopyOptions) {
-                            $bulkcopy = New-Object Data.SqlClient.SqlBulkCopy($sqlconn, $bulkCopyOptions, $transaction)
+                            $bulkcopy = New-Object Microsoft.Data.SqlClient.SqlBulkCopy($sqlconn, $bulkCopyOptions, $transaction)
                         } else {
-                            $bulkcopy = New-Object Data.SqlClient.SqlBulkCopy($sqlconn, ([System.Data.SqlClient.SqlBulkCopyOptions]::Default), $transaction)
+                            $bulkcopy = New-Object Microsoft.Data.SqlClient.SqlBulkCopy($sqlconn, ([Microsoft.Data.SqlClient.SqlBulkCopyOptions]::Default), $transaction)
                         }
 
                         $bulkcopy.DestinationTableName = "[$schema].[$table]"

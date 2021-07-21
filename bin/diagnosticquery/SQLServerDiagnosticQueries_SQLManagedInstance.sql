@@ -1,7 +1,7 @@
 
 -- SQL Managed Instance Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: April 22, 2021
+-- Last Modified: July 8, 2021
 -- https://glennsqlperformance.com/
 -- https://sqlserverperformance.wordpress.com/
 -- YouTube: https://bit.ly/2PkoAM1 
@@ -38,10 +38,10 @@
 IF NOT EXISTS (SELECT * WHERE CONVERT(varchar(128), SERVERPROPERTY('EngineEdition')) = 8)
 	BEGIN
 		DECLARE @ProductVersion varchar(128) = CONVERT(varchar(128), SERVERPROPERTY('EngineEdition'));
-		RAISERROR ('Script does not match the EngineEdition [%s] of this instance. Many of these queries may not work on this version.' , 18 , 16 , @ProductVersion);
+		RAISERROR ('This script does not match the EngineEdition [%s] of this instance. Some of these queries may not work on this version.' , 18 , 16 , @ProductVersion);
 	END
 	ELSE
-		PRINT N'You are using SQL Managed Instance for this diagnostic information script';
+		PRINT N'You are using Azure SQL Managed Instance for this diagnostic information script';
 	
 
 -- Instance level queries *******************************
@@ -187,8 +187,8 @@ WHERE node_state_desc <> N'ONLINE DAC' OPTION (RECOMPILE);
 
 
 -- Server Resource Statistics (Query 7) (Server Resource Stats)
-SELECT TOP(250) resource_type, resource_name, sku, hardware_generation, 
-virtual_core_count, avg_cpu_percent, io_requests, 
+SELECT TOP(250) resource_type, resource_name, sku AS [Service Tier], 
+hardware_generation, virtual_core_count, avg_cpu_percent, io_requests, 
 CONVERT(DECIMAL(18,2), io_bytes_read/1048576.0) AS [MB Read],
 CONVERT(DECIMAL(18,2), io_bytes_read * 1./(io_bytes_read + io_bytes_written) * 100.) AS [Read Percentage],
 CONVERT(DECIMAL(18,2), io_bytes_written/1048576.0) AS [MB Written],
@@ -201,6 +201,10 @@ ORDER BY end_time DESC OPTION (RECOMPILE);
 ------
 
 -- Shows recent resource usage, in 15-second slices
+
+-- sys.server_resource_stats (Azure SQL Database)
+-- https://bit.ly/3qUgHiz
+
 
 -- SQL Managed Instance Pricing
 -- https://bit.ly/2XlEE2u 

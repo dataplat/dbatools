@@ -5299,56 +5299,56 @@ GO
 
         Out-file -FilePath $testfilepath -Encoding utf8 -InputObject $spWhoisActive -Force
         Compress-Archive -Path $testfilepath -DestinationPath $testzippath -CompressionLevel Fastest -Force
-        $null = Install-DbaWhoIsActive -SqlInstance $script:instance1 -LocalFile $testzippath -Database Master
-        $null = Install-DbaWhoIsActive -SqlInstance $script:instance1 -LocalFile $testzippath -Database tempdb
+        $null = Install-DbaWhoIsActive -SqlInstance $script:instance2 -LocalFile $testzippath -Database Master
+        $null = Install-DbaWhoIsActive -SqlInstance $script:instance2 -LocalFile $testzippath -Database tempdb
     }
     AfterAll {
         Remove-Item -Path $testfilepath -Force -ErrorAction SilentlyContinue
-        Invoke-DbaQuery -SqlInstance $script:instance1 -Database Master -Query 'DROP PROCEDURE [dbo].[sp_WhoIsActive];'
-        Invoke-DbaQuery -SqlInstance $script:instance1 -Database Tempdb -Query 'DROP PROCEDURE [dbo].[sp_WhoIsActive];'
+        Invoke-DbaQuery -SqlInstance $script:instance2 -Database Master -Query 'DROP PROCEDURE [dbo].[sp_WhoIsActive];'
+        Invoke-DbaQuery -SqlInstance $script:instance2 -Database Tempdb -Query 'DROP PROCEDURE [dbo].[sp_WhoIsActive];'
     }
     Context "Should Execute SPWhoisActive" {
-        $results = Invoke-DbaWhoIsActive -SqlInstance $script:instance1 -Help
+        $results = Invoke-DbaWhoIsActive -SqlInstance $script:instance2 -Help
         It "Should execute and return Help" {
             $results | Should Not Be $null
         }
 
-        $results = Invoke-DbaWhoIsActive -SqlInstance $script:instance1
+        $results = Invoke-DbaWhoIsActive -SqlInstance $script:instance2
         It "Should execute with no parameters in default location" {
             $results | Should Be $Null
         }
 
-        $results = Invoke-DbaWhoIsActive -SqlInstance $script:instance1 -Database Tempdb
+        $results = Invoke-DbaWhoIsActive -SqlInstance $script:instance2 -Database Tempdb
         It "Should execute with no parameters against alternate install location" {
             $results | Should Be $Null
         }
 
-        $results = Invoke-DbaWhoIsActive -SqlInstance $script:instance1 -ShowOwnSpid
+        $results = Invoke-DbaWhoIsActive -SqlInstance $script:instance2 -ShowOwnSpid
         It "Should execute with ShowOwnSpid" {
             $results | Should Not Be $Null
         }
 
-        $results = Invoke-DbaWhoIsActive -SqlInstance $script:instance1 -ShowSystemSpids
+        $results = Invoke-DbaWhoIsActive -SqlInstance $script:instance2 -ShowSystemSpids
         It "Should execute with ShowSystemSpids" {
             $results | Should Not Be $Null
         }
 
-        $results = Invoke-DbaWhoIsActive -SqlInstance $script:instance1 -ShowSleepingSpids 2
+        $results = Invoke-DbaWhoIsActive -SqlInstance $script:instance2 -ShowSleepingSpids 2
         It "Should execute with ShowSleepingSpids" {
             $results | Should Not Be $Null
         }
 
-        $results = Invoke-DbaWhoIsActive -SqlInstance $script:instance1 -Database Tempdb -GetAverageTime
+        $results = Invoke-DbaWhoIsActive -SqlInstance $script:instance2 -Database Tempdb -GetAverageTime
         It "Should execute with averagetime" {
             $results | Should Be $Null
         }
 
-        $results = Invoke-DbaWhoIsActive -SqlInstance $script:instance1 -GetOuterCommand -FindBlockLeaders
+        $results = Invoke-DbaWhoIsActive -SqlInstance $script:instance2 -GetOuterCommand -FindBlockLeaders
         It "Should execute with GetOuterCommand and FindBlockLeaders" {
             $results | Should Be $Null
         }
 
-        $results = Invoke-DbaWhoIsActive -SqlInstance $script:instance1 -NotFilter 0 -NotFilterType Program
+        $results = Invoke-DbaWhoIsActive -SqlInstance $script:instance2 -NotFilter 0 -NotFilterType Program
         It "Should execute with NotFilter and NotFilterType" {
             $results | Should Be $Null
         }

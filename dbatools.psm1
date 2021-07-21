@@ -13,6 +13,12 @@ if (($PSVersionTable.PSVersion.Major -lt 6) -or ($PSVersionTable.Platform -and $
     $script:isWindows = $false
 }
 
+if ($IsLinux -or $IsMacOS) {
+    # this doesn't exist by default
+    # https://github.com/PowerShell/PowerShell/issues/1262
+    $env:COMPUTERNAME = hostname
+}
+
 if ('Sqlcollaborative.Dbatools.dbaSystem.DebugHost' -as [Type]) {
     # If we've already got for module import,
     [Sqlcollaborative.Dbatools.dbaSystem.DebugHost]::ImportTimeEntries.Clear() # clear it (since we're clearly re-importing)
@@ -193,7 +199,6 @@ if (($PSVersionTable.PSVersion.Major -le 5) -or $script:isWindows) {
     Get-ChildItem -Path (Resolve-Path "$script:PSModuleRoot\bin\") -Filter "*.dll" -Recurse | Unblock-File -ErrorAction Ignore
     Write-ImportTime -Text "Unblocking Files"
 }
-
 
 $script:DllRoot = (Resolve-Path -Path "$script:PSModuleRoot\bin\").ProviderPath
 
@@ -439,6 +444,7 @@ $script:xplat = @(
     'Get-DbaDbQueryStoreOption',
     'Set-DbaDbQueryStoreOption',
     'Restore-DbaDatabase',
+    'Get-DbaDbFileMapping',
     'Copy-DbaDbQueryStoreOption',
     'Get-DbaExecutionPlan',
     'Export-DbaExecutionPlan',
@@ -457,6 +463,8 @@ $script:xplat = @(
     'Find-DbaDbGrowthEvent',
     'Test-DbaLinkedServerConnection',
     'Get-DbaDbFile',
+    'Get-DbaDbFileGrowth',
+    'Set-DbaDbFileGrowth',
     'Read-DbaTransactionLog',
     'Get-DbaDbTable',
     'Invoke-DbaDbShrink',
@@ -492,7 +500,6 @@ $script:xplat = @(
     'New-DbaServiceMasterKey',
     'Remove-DbaDbCertificate',
     'Remove-DbaDbMasterKey',
-    'New-DbaConnectionStringBuilder',
     'Get-DbaInstanceProperty',
     'Get-DbaInstanceUserOption',
     'New-DbaConnectionString',
@@ -511,6 +518,8 @@ $script:xplat = @(
     'Get-DbaDbMailLog',
     'Get-DbaDbMailHistory',
     'Get-DbaDbView',
+    'Remove-DbaDbView',
+    'New-DbaSqlParameter',
     'Get-DbaDbUdf',
     'Get-DbaDbPartitionFunction',
     'Get-DbaDbPartitionScheme',
@@ -799,19 +808,30 @@ $script:xplat = @(
     'Install-DbaDarlingData',
     'New-DbaDbFileGroup',
     'Remove-DbaDbFileGroup',
-    'Set-DbaDbFileGroup'
+    'Set-DbaDbFileGroup',
+    'Remove-DbaLinkedServer',
+    'Test-DbaAvailabilityGroup',
+    'Export-DbaUser',
+    'Get-DbaSsisExecutionHistory',
+    'New-DbaConnectionStringBuilder',
+    'New-DbatoolsSupportPackage',
+    'Export-DbaScript',
+    'Get-DbaAgentJobOutputFile',
+    'Set-DbaAgentJobOutputFile',
+    'Import-DbaXESessionTemplate',
+    'Export-DbaXESessionTemplate',
+    'Import-DbaSpConfigure',
+    'Export-DbaSpConfigure',
+    'Test-DbaMaxMemory',
+    'Install-DbaMaintenanceSolution',
+    'Get-DbaManagementObject'
 )
 
 $script:noncoresmo = @(
     # SMO issues
-    'Export-DbaUser',
-    'Get-DbaSsisExecutionHistory',
     'Get-DbaRepDistributor',
     'Copy-DbaPolicyManagement',
     'Copy-DbaDataCollector',
-    'Copy-DbaSsisCatalog',
-    'New-DbaSsisCatalog',
-    'Get-DbaSsisEnvironmentVariable',
     'Get-DbaPbmCategory',
     'Get-DbaPbmCategorySubscription',
     'Get-DbaPbmCondition',
@@ -821,30 +841,25 @@ $script:noncoresmo = @(
     'Get-DbaRepPublication',
     'Test-DbaRepLatency',
     'Export-DbaRepServerSetting',
-    'Get-DbaRepServer',
-    'Move-DbaDbFile'
+    'Get-DbaRepServer'
 )
 $script:windowsonly = @(
-    # solvable filesystem issues or other workarounds
+    # filesystem (\\ related),
+    'Move-DbaDbFile'
     'Copy-DbaBackupDevice',
-    'Install-DbaSqlWatch',
-    'Uninstall-DbaSqlWatch',
-    'Get-DbaRegistryRoot',
-    'Install-DbaMaintenanceSolution',
-    'New-DbatoolsSupportPackage',
-    'Export-DbaScript',
-    'Get-DbaAgentJobOutputFile',
-    'Set-DbaAgentJobOutputFile',
-    'New-DbaDacProfile',
-    'Import-DbaXESessionTemplate',
-    'Export-DbaXESessionTemplate',
-    'Import-DbaSpConfigure',
-    'Export-DbaSpConfigure',
     'Read-DbaXEFile',
     'Watch-DbaXESession',
-    'Test-DbaMaxMemory', # can be fixed by not testing remote when linux is detected
-    'Rename-DbaDatabase', # can maybebe fixed by not remoting when linux is detected
+    # Registry
+    'Get-DbaRegistryRoot',
+    # GAC
+    'Test-DbaManagementObject',
     # CM and Windows functions
+    'Get-DbaFirewallRule',
+    'New-DbaFirewallRule',
+    'Remove-DbaFirewallRule',
+    'Rename-DbaDatabase',
+    'Get-DbaNetworkConfiguration',
+    'Set-DbaNetworkConfiguration',
     'Get-DbaExtendedProtection',
     'Set-DbaExtendedProtection',
     'Install-DbaInstance',
@@ -902,6 +917,8 @@ $script:windowsonly = @(
     'Restart-DbaService',
     'New-DbaClientAlias',
     'Get-DbaClientAlias',
+    'Stop-DbaExternalProcess',
+    'Get-DbaExternalProcess',
     'Remove-DbaNetworkCertificate',
     'Enable-DbaForceNetworkEncryption',
     'Disable-DbaForceNetworkEncryption',
@@ -915,6 +932,7 @@ $script:windowsonly = @(
     'Get-DbaComputerCertificate',
     'Add-DbaComputerCertificate',
     'Backup-DbaComputerCertificate',
+    'Test-DbaComputerCertificateExpiration',
     'Get-DbaNetworkCertificate',
     'Set-DbaNetworkCertificate',
     'Remove-DbaDbLogshipping',
@@ -953,15 +971,16 @@ $script:windowsonly = @(
     # WPF
     'Show-DbaInstanceFileSystem',
     'Show-DbaDbList',
-    # AD?
+    # AD
     'Test-DbaWindowsLogin',
     'Find-DbaLoginInGroup',
-    # 3rd party non-core DLL or exe
-    'Export-DbaDacPackage', # relies on sqlpackage.exe
+    # 3rd party non-core DLL or sqlpackage.exe
+    'Install-DbaSqlWatch',
+    'Uninstall-DbaSqlWatch',
+    'New-DbaDacProfile',
+    'Export-DbaDacPackage',
     # Unknown
-    'Get-DbaErrorLog',
-    'Get-DbaManagementObject',
-    'Test-DbaManagementObject'
+    'Get-DbaErrorLog'
 )
 
 # If a developer or appveyor calls the psm1 directly, they want all functions

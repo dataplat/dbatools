@@ -79,6 +79,9 @@ function Write-DbaDbTableData {
     .PARAMETER BulkCopyTimeOut
         Value in seconds for the BulkCopy operations timeout. The default is 30 seconds.
 
+    .PARAMETER ColumnMap
+        By default, the bulk insert tries to automap columns. When it doesn't work as desired, this parameter will help. Check out the examples for more information.
+
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
 
@@ -159,6 +162,14 @@ function Write-DbaDbTableData {
 
         This is an example of the type conversion in action. All process properties are converted, including special types like TimeSpan. Script properties are resolved before the type conversion starts thanks to ConvertTo-DbaDataTable.
 
+    .EXAMPLE
+        PS C:\> $server = Connect-DbaInstance -SqlInstance SRV1
+        PS C:\> $server.Invoke("CREATE TABLE tempdb.dbo.test (col1 INT, col2 VARCHAR(100))")
+        PS C:\> $data = Invoke-DbaQuery -SqlInstance $server -Query "SELECT 123 AS value1, 'Hello world' AS value2" -As DataSet
+        PS C:\> $data | Write-DbaDbTableData -SqlInstance $server -Table 'tempdb.dbo.test' -ColumnMap @{ value1 = 'col1' ; value2 = 'col2' }
+
+        The dataset column 'value1' is inserted into SQL column 'col1' and dataset column value2 is inserted into the SQL Column 'col2'. All other columns are ignored and therefore null or default values.
+
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low")]
     param (
@@ -191,6 +202,7 @@ function Write-DbaDbTableData {
         [switch]$Truncate,
         [ValidateNotNull()]
         [int]$BulkCopyTimeOut = 5000,
+        [hashtable]$ColumnMap,
         [switch]$EnableException,
         [switch]$UseDynamicStringLength
     )
@@ -198,6 +210,26 @@ function Write-DbaDbTableData {
     begin {
         # Null variable to make sure upper-scope variables don't interfere later
         $steppablePipeline = $null
+
+        if (-not $PSBoundParameters.Database) {
+            if ($server.ConnectionContext.DatabaseName) {
+                $Database = $server.ConnectionContext.DatabaseName
+                $PSBoundParameters.Database = $server.ConnectionContext.DatabaseName
+                $databaseName = $server.ConnectionContext.DatabaseName
+            }
+
+            if ($SqlInstance.IsConnectionString) {
+                foreach ($item in $SqlInstance.InputObject.Split(';').Trim()) {
+                    $key = $item.Split('=').Trim() | Select-Object -First 1
+                    $value = $item.Split('=').Trim() | Select-Object -Last 1
+                    if ($key -eq 'Database') {
+                        $Database = $value
+                        $PSBoundParameters.Database = $value
+                        $databaseName = $value
+                    }
+                }
+            }
+        }
 
         #region Utility Functions
         function Invoke-BulkCopy {
@@ -235,8 +267,16 @@ function Write-DbaDbTableData {
             }
 
             if ($Pscmdlet.ShouldProcess($SqlInstance, "Writing $rowCount rows to $Fqtn")) {
-                foreach ($prop in $DataTable.Columns.ColumnName) {
-                    $null = $bulkCopy.ColumnMappings.Add($prop, $prop)
+                if ($ColumnMap) {
+                    foreach ($columnname in $ColumnMap) {
+                        foreach ($key in $columnname.Keys) {
+                            $null = $bulkCopy.ColumnMappings.Add($key, $columnname[$key])
+                        }
+                    }
+                } else {
+                    foreach ($prop in $DataTable.Columns.ColumnName) {
+                        $null = $bulkCopy.ColumnMappings.Add($prop, $prop)
+                    }
                 }
 
                 $bulkCopy.WriteToServer($DataTable)
@@ -348,15 +388,6 @@ function Write-DbaDbTableData {
 
         #endregion Utility Functions
 
-        #region Connect to server
-        try {
-            $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
-        } catch {
-            Stop-Function -Message "Error occurred while establishing connection to $SqlInstance" -Category ConnectionError -ErrorRecord $_ -Target $SqlInstance
-            return
-        }
-        #endregion Connect to server
-
         #region Prepare type for bulk copy
         if (-not $Truncate) { $ConfirmPreference = "None" }
 
@@ -365,7 +396,7 @@ function Write-DbaDbTableData {
         #region Resolve Full Qualified Table Name
         $fqtnObj = Get-ObjectNameParts -ObjectName $Table
 
-        if ($fqtnObj.$parsed) {
+        if (-not $fqtnObj.Parsed) {
             Stop-Function -Message "Unable to parse $($fqtnObj.InputValue) as a valid tablename."
             return
         }
@@ -398,7 +429,22 @@ function Write-DbaDbTableData {
 
         $tableName = $fqtnObj.Name
 
+        if ($tableName.StartsWith('#')) {
+            Write-Message -Level Verbose -Message "The table $tableName should be in tempdb.dbo so we ignore input database and schema."
+            $databaseName = 'tempdb'
+            $schemaName = 'dbo'
+        }
+
         $quotedFQTN = New-Object System.Text.StringBuilder
+
+        #region Connect to server
+        try {
+            $server = Connect-DbaInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $databaseName -NonPooledConnection
+        } catch {
+            Stop-Function -Message "Error occurred while establishing connection to $SqlInstance" -Category ConnectionError -ErrorRecord $_ -Target $SqlInstance
+            return
+        }
+        #endregion Connect to server
 
         if ($server.ServerType -ne 'SqlAzureDatabase') {
             <#
@@ -436,36 +482,37 @@ function Write-DbaDbTableData {
 
 
         #region Get database
-        if ($server.ServerType -eq 'SqlAzureDatabase') {
-            <#
-                For some reasons SMO wants an initial pull when talking to Azure Sql DB
-                This will throw and be caught, and then we can continue as normal.
-            #>
-            try {
-                $null = $server.Databases
-            } catch {
-                # here to avoid an empty catch
-                $null = 1
-            }
-        }
+        # we used to do a try catch on $server.Databases if $server.ServerType -eq 'SqlAzureDatabase' here
+        # but it seems this was fixed in the newest SMO
         try {
-            $databaseObject = $server.Databases[$databaseName]
+            # This works for both onprem and azure -- using a hash only works for onprem
+            $databaseObject = $server.Databases | Where-Object Name -eq $databaseName
             #endregion Get database
 
             #region Prepare database and bulk operations
             if ($null -eq $databaseObject) {
-                Stop-Function -Message "$databaseName does not exist." -Target $SqlInstance
+                Stop-Function -Message "Database $databaseName does not exist." -Target $SqlInstance
                 return
             }
 
             $databaseObject.Tables.Refresh()
             if ($schemaName -notin $databaseObject.Schemas.Name) {
-                Stop-Function -Message "Schema does not exist."
+                Stop-Function -Message "Schema $schemaName does not exist."
                 return
             }
 
-            $targetTable = $databaseObject.Tables | Where-Object { $_.Name -eq $tableName -and $_.Schema -eq $schemaName }
-            $tableExists = $targetTable.Count -eq 1
+            if ($tableName.StartsWith('#')) {
+                try {
+                    Write-Message -Level Verbose -Message "The table $tableName should be in tempdb and we try to find it."
+                    $null = $databaseObject.Query("SELECT TOP(1) 1 FROM [$tableName]")
+                    $tableExists = $true
+                } catch {
+                    $tableExists = $false
+                }
+            } else {
+                $targetTable = $databaseObject.Tables | Where-Object { $_.Name -eq $tableName -and $_.Schema -eq $schemaName }
+                $tableExists = $targetTable.Count -eq 1
+            }
         } catch {
             Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
         }
@@ -484,7 +531,7 @@ function Write-DbaDbTableData {
                 $optionValue = $true
             }
             if ($optionValue -eq $true) {
-                $bulkCopyOptions += $([Data.SqlClient.SqlBulkCopyOptions]::$option).value__
+                $bulkCopyOptions += $([Microsoft.Data.SqlClient.SqlBulkCopyOptions]::$option).value__
             }
         }
 
@@ -498,8 +545,9 @@ function Write-DbaDbTableData {
                 }
             }
         }
-        # Create SqlBulkCopy object - Database name needs to be appended as not set in $server.ConnectionContext
-        $bulkCopy = New-Object Data.SqlClient.SqlBulkCopy("$($server.ConnectionContext.ConnectionString);Database=$databaseName", $bulkCopyOptions)
+
+        Write-Message -Level Verbose -Message "Creating SqlBulkCopy object"
+        $bulkCopy = New-Object Microsoft.Data.SqlClient.SqlBulkCopy($server.ConnectionContext.ConnectionString, $bulkCopyOptions)
 
         $bulkCopy.DestinationTableName = $fqtn
         $bulkCopy.BatchSize = $BatchSize
@@ -656,6 +704,7 @@ function Write-DbaDbTableData {
         }
     }
     end {
+        if (Test-FunctionInterrupt) { return }
         #region ConvertTo-DbaDataTable wrapper
         $dataTable = $steppablePipeline.End()
         if ($dataTable[0].Rows.Count -gt 0) {

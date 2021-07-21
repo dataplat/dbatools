@@ -91,8 +91,11 @@ function Copy-DbaDbTableData {
     .PARAMETER Truncate
         If this switch is enabled, the destination table will be truncated after prompting for confirmation.
 
-    .PARAMETER BulkCopyTimeOut
+    .PARAMETER BulkCopyTimeout
         Value in seconds for the BulkCopy operations timeout. The default is 5000 seconds.
+
+    .PARAMETER CommandTimeout
+        Gets or sets the wait time (in seconds) before terminating the attempt to execute the reader and bulk copy operation. The default is 0 seconds (no timeout).
 
     .PARAMETER InputObject
         Enables piping of Table objects from Get-DbaDbTable
@@ -206,7 +209,8 @@ function Copy-DbaDbTableData {
         [switch]$KeepIdentity,
         [switch]$KeepNulls,
         [switch]$Truncate,
-        [int]$BulkCopyTimeOut = 5000,
+        [int]$BulkCopyTimeout = 5000,
+        [int]$CommandTimeout = 0,
         [Parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.TableViewBase[]]$InputObject,
         [switch]$EnableException
@@ -223,7 +227,7 @@ function Copy-DbaDbTableData {
                 $optionValue = $true
             }
             if ($optionValue -eq $true) {
-                $bulkCopyOptions += $([Data.SqlClient.SqlBulkCopyOptions]::$option).value__
+                $bulkCopyOptions += $([Microsoft.Data.SqlClient.SqlBulkCopyOptions]::$option).value__
             }
         }
     }
@@ -345,13 +349,13 @@ function Copy-DbaDbTableData {
 
                         #replacing table name
                         if ($newTableParts.Name) {
-                            $rX = "(CREATE TABLE \[$([regex]::Escape($schemaNameToReplace))\]\.\[)$([regex]::Escape($tableNameToReplace))(\]\()"
-                            $tablescript = $tablescript -replace $rX, "`${1}$($newTableParts.Name)`${2}"
+                            $rX = "(CREATE|ALTER)( TABLE \[$([regex]::Escape($schemaNameToReplace))\]\.\[)$([regex]::Escape($tableNameToReplace))(\])"
+                            $tablescript = $tablescript -replace $rX, "`${1}`${2}$($newTableParts.Name)`${3}"
                         }
                         #replacing table schema
                         if ($newTableParts.Schema) {
-                            $rX = "(CREATE TABLE \[)$([regex]::Escape($schemaNameToReplace))(\]\.\[$([regex]::Escape($newTableParts.Name))\]\()"
-                            $tablescript = $tablescript -replace $rX, "`${1}$($newTableParts.Schema)`${2}"
+                            $rX = "(CREATE|ALTER)( TABLE \[)$([regex]::Escape($schemaNameToReplace))(\]\.\[$([regex]::Escape($newTableParts.Name))\])"
+                            $tablescript = $tablescript -replace $rX, "`${1}`${2}$($newTableParts.Schema)`${3}"
                         }
 
                         if ($PSCmdlet.ShouldProcess($destServer, "Creating new table: $DestinationTable")) {
@@ -405,17 +409,17 @@ function Copy-DbaDbTableData {
                     }
                     if ($Pscmdlet.ShouldProcess($server, "Copy data from $sourceLabel")) {
                         $cmd = $server.ConnectionContext.SqlConnectionObject.CreateCommand()
-                        $cmd.CommandTimeout = 0
+                        $cmd.CommandTimeout = $CommandTimeout
                         $cmd.CommandText = $Query
                         if ($server.ConnectionContext.IsOpen -eq $false) {
                             $server.ConnectionContext.SqlConnectionObject.Open()
                         }
-                        $bulkCopy = New-Object Data.SqlClient.SqlBulkCopy("$connstring;Database=$DestinationDatabase", $bulkCopyOptions)
+                        $bulkCopy = New-Object Microsoft.Data.SqlClient.SqlBulkCopy("$connstring;Database=$DestinationDatabase", $bulkCopyOptions)
                         $bulkCopy.DestinationTableName = $fqtndest
                         $bulkCopy.EnableStreaming = $true
                         $bulkCopy.BatchSize = $BatchSize
                         $bulkCopy.NotifyAfter = $NotifyAfter
-                        $bulkCopy.BulkCopyTimeOut = $BulkCopyTimeOut
+                        $bulkCopy.BulkCopyTimeout = $BulkCopyTimeout
 
                         # The legacy bulk copy library uses a 4 byte integer to track the RowsCopied, so the only option is to use
                         # integer wrap so that copy operations of row counts greater than [int32]::MaxValue will report accurate numbers.

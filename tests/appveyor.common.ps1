@@ -84,6 +84,15 @@ function Get-TestsForBuildScenario {
         if ($AllTests.Count -eq 0) {
             throw "something went wrong, nothing to test"
         }
+        $testsThatDependOn = @()
+        foreach($t in $AllTests) {
+            # get tests for other functions that rely upon rely upon the selected ones
+            $testsThatDependOn += Get-AllTestsIndications -Path $t -ModuleBase $ModuleBase
+        }
+        if (-not($Silent)) {
+            $AllTests = (($testsThatDependOn + $AllTests) | Select-Object -Unique)
+            Write-Host -ForegroundColor DarkGreen "Commit message: Extended to $($AllTests.Count) for all the dependencies"
+        }
     } else {
         $TestsToRun = "*.Tests.*"
     }
@@ -125,4 +134,77 @@ function Get-TestsForBuildScenario {
         throw "something went wrong, nothing to test"
     }
     return $AllScenarioTests
+}
+
+function Get-TestIndications($Path, $ModuleBase, $eval) {
+    # takes a test file path and figures out what to run for tests (i.e. functions that depend on this)
+    $CBHRex = [regex]'(?smi)<#(.*)#>'
+    $everything = (Get-Module dbatools).ExportedCommands.Values
+    $everyfunction = $everything.Name
+    $funcs = @()
+    $leaf = Split-Path $path -Leaf
+    # assuming Get-DbaFoo.Tests.ps1 wants coverage for "Get-DbaFoo"
+    # but allowing also Get-DbaFoo.one.Tests.ps1 and Get-DbaFoo.two.Tests.ps1
+    $func_name += ($leaf -replace '^([^.]+)(.+)?.Tests.ps1', '$1')
+    if ($func_name -in $everyfunction) {
+        $funcs += $func_name
+        $f = $everything | Where-Object Name -eq $func_name
+        # hacky, I know, but every occurrence of any function plus a space kinda denotes usage !?
+        $searchme = "$f "
+        foreach($f in $everything) {
+            $source = $f.Definition
+            $CBH = $CBHRex.match($source).Value
+            # This fails very hard sometimes
+            if ($source -and $CBH) {
+                $cmdonly = $source.Replace($CBH, '')
+                if ($cmdonly.contains($searchme)) {
+                    $funcs += $f.Name
+                }
+            }
+        }
+    }
+    $testpaths = @()
+    $allfiles = Get-ChildItem -File -Path "$ModuleBase\tests" -Filter '*.ps1'
+    foreach ($f in $funcs) {
+        # exclude always used functions ?!
+        if ($f -in ('Connect-SqlInstance', 'Select-DefaultView', 'Stop-Function', 'Write-Message')) { continue }
+        # can I find a correspondence to a physical file (again, on the convenience of having Get-DbaFoo.ps1 actually defining Get-DbaFoo)?
+        $res = $allfiles | Where-Object { $_.Name -like "$($f).*Tests.ps1" }
+        if ($res.count -gt 0) {
+            $testpaths += $res.FullName
+        }
+    }
+    foreach($item in $testpaths) {
+        $eval[$item] = 1
+    }
+    return $eval
+}
+
+function Get-AllTestsIndications($Path, $ModuleBase) {
+    # takes a test file path and figures out what to run for tests (i.e. functions that depend on this, till the top level is reached)
+    $baseTests = $Path
+    $evaluated = @{}
+    $evaluated = Get-TestIndications -Path $baseTests -ModuleBase $ModuleBase -eval $evaluated
+    $seen = @{}
+    while ($true) {
+        $currKeys = @()
+        foreach($k in $evaluated.Keys) {
+            $currKeys += $k
+        }
+        foreach($key in $currKeys) {
+            #write-host -fore Yellow "eval $key"
+            if ($key -in $seen.Keys) {
+                #write-host -fore Yellow "skipping $key, already seen"
+            } else {
+                $evaluated = Get-TestIndications -Path $key -ModuleBase $ModuleBase -eval $evaluated
+                $seen[$key] = 1
+            }
+        }
+        if ($evaluated.Keys.Count -eq $currKeys.Count) {
+            break
+        }
+    }
+    # add dbatools.Tests.ps1 always
+    $evaluated["$ModuleBase\tests\dbatools.Tests.ps1"] = 1
+    Get-Item $evaluated.GetEnumerator().Name
 }

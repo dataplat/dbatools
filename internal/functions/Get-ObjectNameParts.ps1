@@ -41,15 +41,27 @@ function Get-ObjectNameParts {
         if ($t.Contains(']]')) {
             for ($i = 0; $i -le 65535; $i++) {
                 $hexStr = '{0:X4}' -f $i
-                $char = [regex]::Unescape("\u$($HexStr)")
-                if (!$ObjectName.Contains($Char)) {
-                    $fixChar = $Char
+                $fixChar = [regex]::Unescape("\u$hexStr")
+                if (!$t.Contains($fixChar)) {
                     $t = $t.Replace(']]', $fixChar)
-                    Break
+                    break
                 }
             }
         } else {
             $fixChar = $null
+        }
+        #If the dbo schema is empty as in database..table, it has to filled temorarily to let the regex work.
+        if ($t.Contains('..')) {
+            for ($i = 0; $i -le 65535; $i++) {
+                $hexStr = '{0:X4}' -f $i
+                $fixSchema = [regex]::Unescape("\u$hexStr")
+                if (!$t.Contains($fixSchema)) {
+                    $t = $t.Replace('..', ".$fixSchema.")
+                    break
+                }
+            }
+        } else {
+            $fixSchema = $null
         }
         $splitName = [regex]::Matches($t, "(\[.+?\])|([^\.]+)").Value
         $dotcount = $splitName.Count
@@ -96,6 +108,17 @@ function Get-ObjectNameParts {
                 $name = $name.Replace($fixChar, ']')
             }
         }
+
+        if ($fixSchema) {
+            $dbName = $dbName.Replace($fixSchema, '')
+            if ($schema -eq $fixSchema) {
+                $schema = $null
+            } else {
+                $schema = $dbName.Replace($fixSchema, '')
+            }
+            $name = $name.Replace($fixSchema, '')
+        }
+
         $fqtns = [PSCustomObject] @{
             InputValue = $ObjectName
             Database   = $dbName

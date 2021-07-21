@@ -6,6 +6,9 @@ function Export-DbaRepServerSetting {
     .DESCRIPTION
         Exports replication server settings to file.
 
+        All replication commands need SQL Server Management Studio installed and are therefore currently not supported.
+        Have a look at this issue to get more information: https://github.com/sqlcollaborative/dbatools/issues/7428
+
     .PARAMETER SqlInstance
         The target SQL Server instance or instances
 
@@ -103,7 +106,8 @@ function Export-DbaRepServerSetting {
             $rmodll = [System.Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.Rmo")
 
             if ($null -eq $repdll -or $null -eq $rmodll) {
-                Stop-Function -Message "Could not load replication libraries" -ErrorRecord $_
+                Write-Message -Level Warning -Message 'All replication commands need SQL Server Management Studio installed and are therefore currently not supported.'
+                Stop-Function -Message "Could not load replication libraries"
                 return
             }
         }

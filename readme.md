@@ -1,3 +1,5 @@
+[![Open in Visual Studio Code](https://open.vscode.dev/badges/open-in-vscode.svg)](https://open.vscode.dev/sqlcollaborative/dbatools)
+
 ## Getting Started
 
 <img align="left" src=bin/dbatools.png alt="dbatools logo">  dbatools is PowerShell module that you may think of like a command-line SQL Server Management Studio. The project initially started out as just `Start-SqlMigration.ps1`, but has now grown into a collection of [over 500 commands](https://dbatools.io/commands) that help automate SQL Server tasks and encourage best practices.
@@ -54,7 +56,7 @@ $old = $instance = "localhost"
 $allservers = $old, $new
 
 # Alternatively, use Registered Servers
-$allservers = Get-DbaCmsRegServer -SqlInstance $instance
+$allservers = Get-DbaRegServer -SqlInstance $instance
 
 # Need to restore a database? It can be as simple as this:
 Restore-DbaDatabase -SqlInstance $instance -Path "C:\temp\AdventureWorks2012-Full Database Backup.bak"

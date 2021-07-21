@@ -109,7 +109,7 @@ function Backup-DbaServiceMasterKey {
                 $SecurePassword = Read-Host -AsSecureString -Prompt "You must enter an encryption password for $instance"
                 $SecurePassword2 = Read-Host -AsSecureString -Prompt "Type the password again"
 
-                if (([System.Runtime.InteropServices.marshal]::PtrToStringAuto([System.Runtime.InteropServices.marshal]::SecureStringToBSTR($SecurePassword))) -ne ([System.Runtime.InteropServices.marshal]::PtrToStringAuto([System.Runtime.InteropServices.marshal]::SecureStringToBSTR($SecurePassword2)))) {
+                if (($SecurePassword | ConvertFrom-SecurePass) -ne ($SecurePassword2 | ConvertFrom-SecurePass)) {
                     Stop-Function -Message "Passwords do not match" -Continue
                 }
             }
@@ -117,11 +117,11 @@ function Backup-DbaServiceMasterKey {
             $time = (Get-Date -Format yyyMMddHHmmss)
             $Path = $Path.TrimEnd("\")
             $fileinstance = $instance.ToString().Replace('\', '$')
-            $filename = "$Path\$fileinstance-SMK-$time.key"
+            $filename = Join-DbaPath -SqlInstance $server $Path "$fileinstance-SMK-$time.key"
 
             if ($Pscmdlet.ShouldProcess($instance, "Backing up service master key to $filename")) {
                 try {
-                    $masterkey.Export($filename, [System.Runtime.InteropServices.marshal]::PtrToStringAuto([System.Runtime.InteropServices.marshal]::SecureStringToBSTR($SecurePassword)))
+                    $masterkey.Export($filename, ($SecurePassword | ConvertFrom-SecurePass))
                     $status = "Success"
                 } catch {
                     $status = "Failure"

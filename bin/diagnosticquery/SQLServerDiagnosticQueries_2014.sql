@@ -1,7 +1,7 @@
 
 -- SQL Server 2014 Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: May 21, 2021
+-- Last Modified: July 1, 2021
 -- https://glennsqlperformance.com/
 -- https://sqlserverperformance.wordpress.com/
 -- YouTube: https://bit.ly/2PkoAM1 
@@ -1633,25 +1633,21 @@ ORDER BY [BufferCount] DESC OPTION (RECOMPILE);
 -- It can help identify possible candidates for data compression
 
 
--- Get Table names, row counts, and compression status for clustered index or heap  (Query 65) (Table Sizes)
-SELECT SCHEMA_NAME(o.Schema_ID) AS [Schema Name], OBJECT_NAME(p.object_id) AS [ObjectName], 
-SUM(p.Rows) AS [RowCount], p.data_compression_desc AS [Compression Type]
-FROM sys.partitions AS p WITH (NOLOCK)
-INNER JOIN sys.objects AS o WITH (NOLOCK)
+-- Get Schema names, Table names, object size, row counts, and compression status for clustered index or heap  (Query 65) (Table Sizes)
+SELECT SCHEMA_NAME(o.Schema_ID) AS [Schema Name], OBJECT_NAME(p.object_id) AS [Object Name],
+CAST(SUM(ps.reserved_page_count) * 8.0 / 1024 AS DECIMAL(19,2)) AS [Object Size (MB)],
+SUM(p.Rows) AS [Row Count], 
+p.data_compression_desc AS [Compression Type]
+FROM sys.objects AS o WITH (NOLOCK)
+INNER JOIN sys.partitions AS p WITH (NOLOCK)
 ON p.object_id = o.object_id
-WHERE index_id < 2 --ignore the partitions from the non-clustered index if any
-AND OBJECT_NAME(p.object_id) NOT LIKE N'sys%'
-AND OBJECT_NAME(p.object_id) NOT LIKE N'spt_%'
-AND OBJECT_NAME(p.object_id) NOT LIKE N'queue_%' 
-AND OBJECT_NAME(p.object_id) NOT LIKE N'filestream_tombstone%' 
-AND OBJECT_NAME(p.object_id) NOT LIKE N'fulltext%'
-AND OBJECT_NAME(p.object_id) NOT LIKE N'ifts_comp_fragment%'
-AND OBJECT_NAME(p.object_id) NOT LIKE N'filetable_updates%'
-AND OBJECT_NAME(p.object_id) NOT LIKE N'xml_index_nodes%'
-AND OBJECT_NAME(p.object_id) NOT LIKE N'sqlagent_job%'
-AND OBJECT_NAME(p.object_id) NOT LIKE N'plan_persist%'
-GROUP BY  SCHEMA_NAME(o.Schema_ID), p.object_id, data_compression_desc
-ORDER BY SUM(p.Rows) DESC OPTION (RECOMPILE);
+INNER JOIN sys.dm_db_partition_stats AS ps WITH (NOLOCK)
+ON p.object_id = ps.object_id
+WHERE ps.index_id < 2 -- ignore the partitions from the non-clustered indexes if any
+AND p.index_id < 2    -- ignore the partitions from the non-clustered indexes if any
+AND o.type_desc = N'USER_TABLE'
+GROUP BY  SCHEMA_NAME(o.Schema_ID), p.object_id, ps.reserved_page_count, p.data_compression_desc
+ORDER BY SUM(ps.reserved_page_count) DESC, SUM(p.Rows) DESC OPTION (RECOMPILE);
 ------
 
 -- Gives you an idea of table sizes, and possible data compression opportunities
@@ -1789,25 +1785,8 @@ ORDER BY s.user_updates DESC OPTION (RECOMPILE);						 -- Order by writes
 -- Show which indexes in the current database are most active for Writes
 
 
--- Get in-memory OLTP index usage (Query 72) (XTP Index Usage)
-SELECT OBJECT_NAME(i.[object_id]) AS [Object Name], i.index_id, i.[name] AS [Index Name],
-       i.[type_desc], xis.scans_started, xis.scans_retries, 
-	   xis.rows_touched, xis.rows_returned
-FROM sys.dm_db_xtp_index_stats AS xis WITH (NOLOCK)
-INNER JOIN sys.indexes AS i WITH (NOLOCK)
-ON i.[object_id] = xis.[object_id] 
-AND i.index_id = xis.index_id 
-ORDER BY OBJECT_NAME(i.[object_id]) OPTION (RECOMPILE);
-------
 
--- This gives you some index usage statistics for in-memory OLTP
--- Returns no data if you are not using in-memory OLTP
-
--- Guidelines for Using Indexes on Memory-Optimized Tables
--- https://bit.ly/2GCP8lF
-
-
--- Get lock waits for current database (Query 73) (Lock Waits)
+-- Get lock waits for current database (Query 72) (Lock Waits)
 SELECT o.name AS [table_name], i.name AS [index_name], ios.index_id, ios.partition_number,
 		SUM(ios.row_lock_wait_count) AS [total_row_lock_waits], 
 		SUM(ios.row_lock_wait_in_ms) AS [total_row_lock_wait_in_ms],
@@ -1829,15 +1808,16 @@ ORDER BY total_lock_wait_in_ms DESC OPTION (RECOMPILE);
 -- This query is helpful for troubleshooting blocking and deadlocking issues
 
 
--- Get input buffer information for the current database (Query 74) (Input Buffer)
+-- Get input buffer information for the current database (Query 73) (Input Buffer)
 SELECT es.session_id, DB_NAME(es.database_id) AS [Database Name],
-es.login_time, es.cpu_time, es.logical_reads,
-es.[status], ib.event_info AS [Input Buffer]
+	   es.login_time, es.cpu_time, es.logical_reads,
+	   es.[status], ib.event_info AS [Input Buffer]
 FROM sys.dm_exec_sessions AS es WITH (NOLOCK)
 CROSS APPLY sys.dm_exec_input_buffer(es.session_id, NULL) AS ib
 WHERE es.database_id = DB_ID()
 AND es.session_id > 50
 AND es.session_id <> @@SPID OPTION (RECOMPILE);
+------
 
 -- Gives you input buffer information from all non-system sessions for the current database
 -- Replaces DBCC INPUTBUFFER
@@ -1846,8 +1826,11 @@ AND es.session_id <> @@SPID OPTION (RECOMPILE);
 -- New DMF for retrieving input buffer in SQL Server
 -- https://bit.ly/2uHKMbz
 
+-- sys.dm_exec_input_buffer (Transact-SQL)
+-- https://bit.ly/2J5Hf9q
 
--- Look at recent Full backups for the current database (Query 75) (Recent Full Backups)
+
+-- Look at recent Full backups for the current database (Query 74) (Recent Full Backups)
 SELECT TOP (30) bs.machine_name, bs.server_name, bs.database_name AS [Database Name], bs.recovery_model,
 CONVERT (BIGINT, bs.backup_size / 1048576 ) AS [Uncompressed Backup Size (MB)],
 CONVERT (BIGINT, bs.compressed_backup_size / 1048576 ) AS [Compressed Backup Size (MB)],
@@ -1863,12 +1846,14 @@ AND bs.[type] = 'D' -- Change to L if you want Log backups
 ORDER BY bs.backup_finish_date DESC OPTION (RECOMPILE);
 ------
 
+-- Things to look at:
 -- Are your backup sizes and times changing over time?
 -- Are you using backup compression?
 -- Are you using backup checksums?
 -- Are you doing copy_only backups?
 -- Are you doing encrypted backups?
 -- Have you done any backup tuning with striped backups, or changing the parameters of the backup command?
+-- Where are the backups going to?
 
 
 -- Microsoft Visual Studio Dev Essentials

@@ -19,23 +19,17 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         $instance2 = Connect-DbaInstance -SqlInstance $script:instance2
         $null = Get-DbaProcess -SqlInstance $instance2 | Where-Object Program -match dbatools | Stop-DbaProcess -Confirm:$false
         $newDbName = "dbatoolsci_newdb_$random"
-        $newDb = New-DbaDatabase -SqlInstance $instance2 -Name $newDbName
+        $null = New-DbaDatabase -SqlInstance $instance2 -Name $newDbName
 
-        $sequence = New-DbaDbSequence -SqlInstance $instance2 -Database $newDbName -Name "Sequence1_$random" -Schema "Schema_$random"
-        $sequence2 = New-DbaDbSequence -SqlInstance $instance2 -Database $newDbName -Name "Sequence2_$random" -Schema "Schema_$random"
+        $null = New-DbaDbSequence -SqlInstance $instance2 -Database $newDbName -Name "Sequence1_$random" -Schema "Schema_$random"
+        $null = New-DbaDbSequence -SqlInstance $instance2 -Database $newDbName -Name "Sequence2_$random" -Schema "Schema_$random"
     }
 
     AfterAll {
-        $null = $newDb | Remove-DbaDatabase -Confirm:$false
+        $null = Remove-DbaDatabase -Confirm:$false -SqlInstance $instance2 -Database $newDbName
     }
 
     Context "commands work as expected" {
-
-        It "validates required Database param" {
-            $sequence = Remove-DbaDbSequence -SqlInstance $instance2 -Name SequenceTest -ErrorVariable error
-            $sequence | Should -BeNullOrEmpty
-            $error | Should -Match "Database is required when SqlInstance is specified"
-        }
 
         It "removes a sequence" {
             (Get-DbaDbSequence -SqlInstance $instance2 -Database $newDbName -Name "Sequence1_$random" -Schema "Schema_$random") | Should -Not -BeNullOrEmpty
@@ -45,7 +39,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
 
         It "supports piping sequences" {
             (Get-DbaDbSequence -SqlInstance $instance2 -Database $newDbName -Name "Sequence2_$random" -Schema "Schema_$random") | Should -Not -BeNullOrEmpty
-            Get-DbaDatabase -SqlInstance $instance2 -Database $newDbName | Remove-DbaDbSequence -Confirm:$false -Name "Sequence2_$random" -Schema "Schema_$random"
+            Get-DbaDbSequence -SqlInstance $instance2 -Database $newDbName -Name "Sequence2_$random" -Schema "Schema_$random" | Remove-DbaDbSequence -Confirm:$false
             (Get-DbaDbSequence -SqlInstance $instance2 -Database $newDbName -Name "Sequence2_$random" -Schema "Schema_$random") | Should -BeNullOrEmpty
         }
     }

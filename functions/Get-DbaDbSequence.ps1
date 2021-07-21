@@ -82,7 +82,7 @@ function Get-DbaDbSequence {
         Finds all the sequences in the sch schema on the localhost instance.
 
     #>
-    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'Low')]
+    [CmdletBinding()]
     param (
         [parameter(ValueFromPipeline)]
         [DbaInstance[]]$SqlInstance,

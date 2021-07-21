@@ -35,7 +35,10 @@ function Copy-DbaLinkedServer {
         The linked server(s) to exclude - this list is auto-populated from the server
 
     .PARAMETER UpgradeSqlClient
-        Upgrade any SqlClient Linked Server to the current Version
+        Upgrade any SqlClient Linked Server to the current version
+
+    .PARAMETER ExcludePassword
+        Copies the logins but does not access, decrypt or create sensitive information
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
@@ -88,6 +91,7 @@ function Copy-DbaLinkedServer {
         [object[]]$LinkedServer,
         [object[]]$ExcludeLinkedServer,
         [switch]$UpgradeSqlClient,
+        [switch]$ExcludePassword,
         [switch]$Force,
         [switch]$EnableException
     )
@@ -107,7 +111,18 @@ function Copy-DbaLinkedServer {
             )
 
             Write-Message -Level Verbose -Message "Collecting Linked Server logins and passwords on $($sourceServer.Name)."
-            $sourcelogins = Get-DecryptedObject -SqlInstance $sourceServer -Type LinkedServer
+            if ($ExcludePassword) {
+                $sourcelogins = @()
+                foreach ($svr in $sourceServer.LinkedServers) {
+                    $sourcelogins += [pscustomobject]@{
+                        Name     = $sourcelogin.Name
+                        Identity = $sourcelogin.LinkedServerLogins.RemoteUser
+                        Password = $null
+                    }
+                }
+            } else {
+                $sourcelogins = Get-DecryptedObject -SqlInstance $sourceServer -Type LinkedServer
+            }
 
             $serverlist = $sourceServer.LinkedServers
 
@@ -219,15 +234,17 @@ function Copy-DbaLinkedServer {
                     $lslogins = $sourcelogins | Where-Object { $_.Name -eq $linkedServerName }
 
                     foreach ($login in $lslogins) {
-                        if ($Pscmdlet.ShouldProcess($destinstance, "Migrating $($login.Login)")) {
-                            $currentlogin = $destlogins | Where-Object { $_.RemoteUser -eq $login.Identity }
+                        $currentlogin = $destlogins | Where-Object { $_.RemoteUser -eq $login.Identity }
 
-                            $copyLinkedServer.Type = $login.Identity
+                        $copyLinkedServer.Type = $login.Identity
 
-                            if ($currentlogin.RemoteUser.length -ne 0) {
+                        if ($currentlogin.RemoteUser.length -ne 0) {
+                            if ($Pscmdlet.ShouldProcess($destinstance, "Migrating linked server identity $($login.Identity)")) {
                                 try {
-                                    $currentlogin.SetRemotePassword($login.Password)
-                                    $currentlogin.Alter()
+                                    if ($login.Password) {
+                                        $currentlogin.SetRemotePassword($login.Password)
+                                        $currentlogin.Alter()
+                                    }
 
                                     $copyLinkedServer.Status = "Successful"
                                     $copyLinkedServer | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
@@ -258,14 +275,13 @@ function Copy-DbaLinkedServer {
             Stop-Function -Message "Not a sysadmin on $source. Quitting." -Target $sourceServer
             return
         }
-        Write-Message -Level Verbose -Message "Getting NetBios name for $source."
-        $sourceNetBios = Resolve-NetBiosName $sourceserver
 
-        Write-Message -Level Verbose -Message "Checking if Remote Registry is enabled on $source."
+        Write-Message -Level Verbose -Message "Checking if Remote Registry is enabled on $Source."
+        $resolvedComputerName = Resolve-DbaComputerName -ComputerName $Source
         try {
-            Invoke-Command2 -Raw -Credential $Credential -ComputerName $sourceNetBios -ScriptBlock { Get-ItemProperty -Path "HKLM:\SOFTWARE\" } -ErrorAction Stop
+            $null = Invoke-Command2 -ComputerName $resolvedComputerName -ScriptBlock { Get-ItemProperty -Path "HKLM:\SOFTWARE\" }
         } catch {
-            Stop-Function -Message "Can't connect to registry on $source." -Target $sourceNetBios -ErrorRecord $_
+            Stop-Function -Message "Can't connect to registry on $Source." -Target $resolvedComputerName -ErrorRecord $_
             return
         }
     }

@@ -92,7 +92,7 @@ function Export-DbaRegServer {
     )
     begin {
         $null = Test-ExportDirectory -Path $Path
-        $timeNow = (Get-Date -UFormat "%m%d%Y%H%M%S")
+        $timeNow = Get-Date -UFormat (Get-DbatoolsConfigValue -FullName formatting.uformat)
 
         # ValidateScript in the above param block relies on the order of the params specified by the user,
         # so the creation of the file path and $Overwrite are evaluated here
@@ -103,7 +103,8 @@ function Export-DbaRegServer {
             }
 
             if (-not (Test-Path $FilePath) ) {
-                New-Item -Path $FilePath.DirectoryName -ItemType "directory" -Force | Out-Null # make sure the parent dir exists
+                $null = Test-ExportDirectory -Path (Split-Path -Path $FilePath)
+                "" | Set-Content -Path $FilePath
             } elseif (-not $Overwrite.IsPresent) {
                 Stop-Function -Message "Use the -Overwrite parameter if the file $FilePath should be overwritten."
                 return
@@ -149,7 +150,7 @@ function Export-DbaRegServer {
 
                     if (-not $PSBoundParameters.ContainsKey("FilePath")) {
                         $ExportFileName = $null
-                        $serverName = $object.SqlInstance.Replace('\', '$');
+                        $serverName = $object.SqlInstance.Replace('\', '$')
 
                         if ($object -is [Microsoft.SqlServer.Management.RegisteredServers.RegisteredServer]) {
                             $ExportFileName = "$serverName-regserver-$regname-$timeNow.xml"

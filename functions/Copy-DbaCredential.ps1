@@ -154,12 +154,14 @@ function Copy-DbaCredential {
                     if (!$force) {
                         $copyCredentialStatus.Status = "Skipping"
                         $copyCredentialStatus.Notes = "Already exists on destination"
-                        $copyCredentialStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                        if ($Pscmdlet.ShouldProcess($destServer.Name, "Skipping $credentialName, already exists")) {
+                            $copyCredentialStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                        }
 
                         Write-Message -Level Verbose -Message "$credentialName exists $($destServer.Name). Skipping."
                         continue
                     } else {
-                        if ($Pscmdlet.ShouldProcess($destinstance.Name, "Dropping $identity")) {
+                        if ($Pscmdlet.ShouldProcess($destinstance.Name, "Dropping $credentialName")) {
                             $destServer.Credentials[$credentialName].Drop()
                             $destServer.Credentials.Refresh()
                         }
@@ -172,14 +174,13 @@ function Copy-DbaCredential {
                     $sqlcredentialName = $credentialName.Replace("'", "''")
                     $identity = $currentCred.Identity.Replace("'", "''")
                     $password = $currentCred.Password.Replace("'", "''")
-                    if ($Pscmdlet.ShouldProcess($destinstance.Name, "Copying $identity")) {
+                    if ($Pscmdlet.ShouldProcess($destinstance.Name, "Copying $identity ($credentialName)")) {
                         $destServer.Query("CREATE CREDENTIAL [$sqlcredentialName] WITH IDENTITY = N'$identity', SECRET = N'$password'")
                         $destServer.Credentials.Refresh()
                         Write-Message -Level Verbose -Message "$credentialName successfully copied"
+                        $copyCredentialStatus.Status = "Successful"
+                        $copyCredentialStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                     }
-
-                    $copyCredentialStatus.Status = "Successful"
-                    $copyCredentialStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                 } catch {
                     $copyCredentialStatus.Status = "Failed"
                     $copyCredentialStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
@@ -192,7 +193,7 @@ function Copy-DbaCredential {
         try {
             $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential -MinimumVersion 9
         } catch {
-            Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance
+            Stop-Function -Message "Error occurred while establishing connection to $Source" -Category ConnectionError -ErrorRecord $_ -Target $Source
             return
         }
 
@@ -200,15 +201,14 @@ function Copy-DbaCredential {
             Write-Message -Level Verbose -Message "You are using SQL credentials and this script requires Windows admin access to the $Source server. Trying anyway."
         }
 
-        $sourceNetBios = Resolve-NetBiosName $sourceServer
-
         Invoke-SmoCheck -SqlInstance $sourceServer
 
-        Write-Message -Level Verbose -Message "Checking if Remote Registry is enabled on $source"
+        Write-Message -Level Verbose -Message "Checking if Remote Registry is enabled on $Source"
+        $resolvedComputerName = Resolve-DbaComputerName -ComputerName $Source -Credential $Credential
         try {
-            Invoke-Command2 -ComputerName $sourceNetBios -Credential $credential -ScriptBlock { Get-ItemProperty -Path "HKLM:\SOFTWARE\" }
+            $null = Invoke-Command2 -ComputerName $resolvedComputerName -Credential $Credential -ScriptBlock { Get-ItemProperty -Path "HKLM:\SOFTWARE\" }
         } catch {
-            Stop-Function -Message "Can't connect to registry on $source" -Target $sourceNetBios -ErrorRecord $_
+            Stop-Function -Message "Can't connect to registry on $Source" -Target $resolvedComputerName -ErrorRecord $_
             return
         }
     }

@@ -1,17 +1,40 @@
 function Add-DbaAgDatabase {
     <#
     .SYNOPSIS
-        Adds a database to an availability group on a SQL Server instance.
+        Adds database(s) to an Availability Group on a SQL Server instance.
 
     .DESCRIPTION
-        Adds a database to an availability group on a SQL Server instance.
+        Adds database(s) to an Availability Group on a SQL Server instance.
 
-        Before joining the replica databases to the availability group, the databases will be initialized with automatic seeding or full/log backup.
+        After checking for prerequisites, the commands runs these five steps for every database:
+        Step 1: Setting seeding mode if needed.
+            If -SeedingMode is used and the current seeding mode of the replica is not in the desired mode, the seeding mode of the replica is changed.
+            The seeding mode will not be changed back but stay in this mode.
+            If the seeding mode is changed to Automatic, the necessary rigths to create databases will be granted.
+        Step 2: Running backup and restore if needed.
+            Action is only taken for replicas with a desired seeding mode of Manual and where the database does not yet exist.
+            If -UseLastBackup is used, the restore will be performed based on the backup history of the database.
+            Otherwise a full and log backup will be taken at the primary and those will be restored at the replica.
+        Step 3: Add the database to the Availability Group on the primary replica.
+        Step 4: Add the database to the Availability Group on the secondary replicas.
+        Step 5: Wait for the database to finish joining the Availability Group on the secondary replicas.
+
+        Use Test-DbaAvailabilityGroup with -AddDatabase to test if all prerequisites are met.
+
+        In case you need a special setup for the database at the replicas, please do the backup restore part
+
+        If you have special requirements for the setup for the database at the replicas,
+        perform the backup and restore part with Backup-DbaDatabase and Restore-DbaDatabase in advance.
+        Please make sure that the last log backup has been restored before running Add-DbaAgDatabase.
+
+        Known limitations:
+
+        It is not possible to use this command to add the database to a newly added replica,
+        because the command fails if the database is already part of the Availability Group.
+        This limitation will be removed in a later version.
 
    .PARAMETER SqlInstance
-        The target SQL Server instance or instances. Server version must be SQL Server version 2012 or higher.
-
-        This should be the primary replica.
+        The primary replica of the Availability Group. Server version must be SQL Server version 2012 or higher.
 
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
@@ -21,13 +44,13 @@ function Add-DbaAgDatabase {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        The database or databases to add.
+        The database(s) to add.
 
     .PARAMETER AvailabilityGroup
-        The availability group where the databases will be added.
+        The name of the Availability Group where the databases will be added.
 
     .PARAMETER Secondary
-        Not required - the command will figure this out. But if you'd like to be explicit about replicas, this will help.
+        Not required - the command will figure this out. But use this parameter if secondary replicas listen on a non default port.
 
     .PARAMETER SecondarySqlCredential
         Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
@@ -44,7 +67,7 @@ function Add-DbaAgDatabase {
 
         Automatic enables direct seeding. This method will seed the secondary replica over the network. This method does not require you to backup and restore a copy of the primary database on the replica.
 
-        Manual requires you to create a backup of the database on the primary replica and manually restore that backup on the secondary replica.
+        Manual uses full and log backup to initially transfer the data to the secondary replica. The command skips this if the database is found in restoring state at the secondary replica.
 
         If not specified, the setting from the availability group replica will be used. Otherwise the setting will be updated.
 
@@ -56,7 +79,7 @@ function Add-DbaAgDatabase {
         NOTE: If a backup / restore is performed, the backups will be left in tact on the network share.
 
     .PARAMETER UseLastBackup
-        Use the last full and log backup of database. A log backup must be the last backup.
+        Use the last full and log backup of the database. A log backup must be the last backup.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
@@ -71,7 +94,7 @@ function Add-DbaAgDatabase {
 
     .NOTES
         Tags: AvailabilityGroup, HA, AG
-        Author: Chrissy LeMaire (@cl), netnerds.net
+        Author: Chrissy LeMaire (@cl), netnerds.net | Andreas Jordan (@JordanOrdix), ordix.de
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
@@ -101,174 +124,375 @@ function Add-DbaAgDatabase {
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'Low')]
     param (
-        [DbaInstanceParameter[]]$SqlInstance,
+        [Parameter(ParameterSetName = 'NonPipeline', Mandatory = $true, Position = 0)]
+        [DbaInstanceParameter]$SqlInstance,
+        [Parameter(ParameterSetName = 'NonPipeline')]
         [PSCredential]$SqlCredential,
-        [parameter(Mandatory)]
+        [Parameter(ParameterSetName = 'NonPipeline', Mandatory = $true)]
+        [Parameter(ParameterSetName = 'Pipeline', Mandatory = $true, Position = 0)]
         [string]$AvailabilityGroup,
+        [Parameter(ParameterSetName = 'NonPipeline', Mandatory = $true)]
         [string[]]$Database,
+        [Parameter(ParameterSetName = 'NonPipeline')]
+        [Parameter(ParameterSetName = 'Pipeline')]
         [DbaInstanceParameter[]]$Secondary,
+        [Parameter(ParameterSetName = 'NonPipeline')]
+        [Parameter(ParameterSetName = 'Pipeline')]
         [PSCredential]$SecondarySqlCredential,
-        [parameter(ValueFromPipeline)]
+        [parameter(ValueFromPipeline, ParameterSetName = 'Pipeline', Mandatory = $true)]
         [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
+        [Parameter(ParameterSetName = 'NonPipeline')]
+        [Parameter(ParameterSetName = 'Pipeline')]
         [ValidateSet('Automatic', 'Manual')]
-        [string]$SeedingMode = 'Manual',
+        [string]$SeedingMode,
+        [Parameter(ParameterSetName = 'NonPipeline')]
+        [Parameter(ParameterSetName = 'Pipeline')]
         [string]$SharedPath,
+        [Parameter(ParameterSetName = 'NonPipeline')]
+        [Parameter(ParameterSetName = 'Pipeline')]
         [switch]$UseLastBackup,
+        [Parameter(ParameterSetName = 'NonPipeline')]
+        [Parameter(ParameterSetName = 'Pipeline')]
         [switch]$EnableException
     )
+
+    begin {
+        # We have three while loops, that need a timeout to not loop forever if somethings goes wrong:
+        # while ($agDb.State -ne 'Existing')         - should only take milliseconds, so we set a default timeout of one minute
+        # while ($replicaAgDb.State -ne 'Existing')  - should only take milliseconds, so we set a default timeout of one minute
+        # while ($stillWaiting)                      - can take a long time with automatic seeding, but progress is displayed, so we set a default timeout of one day
+        # We will use two timeout configuration values, as we don't want to add more timeout parameters to the command. We will store the timeouts in seconds.
+        # The timout for synchronization can be set to a lower value to end the command even when the synchronization is not finished yet.
+        # The synchronization will continue even the command or the powershell session stops.
+        # Even when the SQL Server instance is restarted, the synchronization will continue after the restart.
+        # Set-DbatoolsConfig -FullName commands.add-dbaagdatabase.timeout.existing -Value 60
+        # Set-DbatoolsConfig -FullName commands.add-dbaagdatabase.timeout.synchronization -Value 86400
+        $timeoutExisting = Get-DbatoolsConfigValue -FullName commands.add-dbaagdatabase.timeout.existing -Fallback 60
+        $timeoutSynchronization = Get-DbatoolsConfigValue -FullName commands.add-dbaagdatabase.timeout.synchronization -Fallback 86400
+
+        # While in a while loop, configure the time in milliseconds to wait for the next test:
+        # Set-DbatoolsConfig -FullName commands.add-dbaagdatabase.wait.while -Value 100
+        $waitWhile = Get-DbatoolsConfigValue -FullName commands.add-dbaagdatabase.wait.while -Fallback 100
+
+        # With automatic seeding we add the current seeding progress in verbose output and a progress bar. This can be disabled:
+        # Set-DbatoolsConfig -FullName commands.add-dbaagdatabase.report.seeding -Value $true
+        $reportSeeding = Get-DbatoolsConfigValue -FullName commands.add-dbaagdatabase.report.seeding -Fallback $true
+    }
+
     process {
-        if (Test-Bound -Not SqlInstance, InputObject) {
-            Stop-Function -Message "You must supply either -SqlInstance or an Input Object"
-            return
-        }
+        # We store information for the progress bar in a hashtable suitable for splatting.
+        $progress = @{ }
+        $progress['Id'] = Get-Random
+        $progress['Activity'] = "Adding database(s) to Availability Group $AvailabilityGroup."
 
-        if ((Test-Bound -ParameterName SqlInstance)) {
-            if ((Test-Bound -Not -ParameterName Database) -or (Test-Bound -Not -ParameterName AvailabilityGroup)) {
-                Stop-Function -Message "You must specify one or more databases and one Availability Group when using the SqlInstance parameter."
-                return
+        $testResult = @( )
+
+        foreach ($dbName in $Database) {
+            try {
+                $progress['Status'] = "Test prerequisites for joining database $dbName."
+                Write-Progress @progress
+                $testSplat = @{
+                    SqlInstance            = $SqlInstance
+                    SqlCredential          = $SqlCredential
+                    Secondary              = $Secondary
+                    SecondarySqlCredential = $SecondarySqlCredential
+                    AvailabilityGroup      = $AvailabilityGroup
+                    AddDatabase            = $dbName
+                    UseLastBackup          = $UseLastBackup
+                    EnableException        = $true
+                }
+                if ($SeedingMode) { $testSplat['SeedingMode'] = $SeedingMode }
+                if ($SharedPath) { $testSplat['SharedPath'] = $SharedPath }
+                $testResult += Test-DbaAvailabilityGroup @testSplat
+            } catch {
+                Stop-Function -Message "Testing prerequisites for joining database $dbName to Availability Group $AvailabilityGroup failed." -ErrorRecord $_ -Continue
             }
-        }
-
-        foreach ($instance in $SqlInstance) {
-            $InputObject += Get-DbaDatabase -SqlInstance $instance -SqlCredential $SqlCredential -Database $Database
         }
 
         foreach ($db in $InputObject) {
-            $allbackups = @{
+            try {
+                $progress['Status'] = "Test prerequisites for joining database $($db.Name)."
+                Write-Progress @progress
+                $testSplat = @{
+                    SqlInstance            = $db.Parent
+                    Secondary              = $Secondary
+                    SecondarySqlCredential = $SecondarySqlCredential
+                    AvailabilityGroup      = $AvailabilityGroup
+                    AddDatabase            = $db.Name
+                    UseLastBackup          = $UseLastBackup
+                    EnableException        = $true
+                }
+                if ($SeedingMode) { $testSplat['SeedingMode'] = $SeedingMode }
+                if ($SharedPath) { $testSplat['SharedPath'] = $SharedPath }
+                $testResult += Test-DbaAvailabilityGroup @testSplat
+            } catch {
+                Stop-Function -Message "Testing prerequisites for joining database $($db.Name) to Availability Group $AvailabilityGroup failed." -ErrorRecord $_ -Continue
             }
+        }
 
-            $primary = $db.Parent
-            # check primary, should be run against primary
-            $ag = Get-DbaAvailabilityGroup -SqlInstance $primary -AvailabilityGroup $AvailabilityGroup
+        Write-Message -Level Verbose -Message "Test for prerequisites returned $($testResult.Count) databases that will be joined to the Availability Group $AvailabilityGroup."
 
-            if (-not $ag.Parent) {
-                Stop-Function -Message "Availability Group $AvailabilityGroup not found on $($primary.Name)" -Continue
-            }
+        foreach ($result in $testResult) {
+            $server = $result.PrimaryServerSMO
+            $ag = $result.AvailabilityGroupSMO
+            $db = $result.DatabaseSMO
+            $replicaServerSMO = $result.ReplicaServerSMO
+            $restoreNeeded = $result.RestoreNeeded
+            $backups = $result.Backups
+            $replicaAgDbSMO = @{ }
+            $targetSynchronizationState = @{ }
+            $output = @( )
 
-            if ($ag.AvailabilityDatabases.Name -contains $db.Name) {
-                Stop-Function -Message "$($db.Name) is already joined to $($ag.Name)" -Continue
-            }
+            $progress['Activity'] = "Adding database $($db.Name) to Availability Group $AvailabilityGroup."
 
-            if ($SeedingMode -eq "Automatic" -and $primary.VersionMajor -lt 13) {
-                Stop-Function -Message "Automatic seeding mode only supported in SQL Server 2016 and above" -Continue
-            }
+            $progress['Status'] = "Step 1/5: Setting seeding mode if needed."
+            Write-Message -Level Verbose -Message $progress['Status']
+            Write-Progress @progress
 
-            if (-not $Secondary) {
-                try {
-                    $secondarynames = ($ag.AvailabilityReplicas | Where-Object Role -eq Secondary).Name
-                    if ($secondarynames) {
-                        $secondaryInstances = $secondarynames | Connect-DbaInstance -SqlCredential $SecondarySqlCredential
-                    }
-                } catch {
-                    Stop-Function -Message "Failure connecting to secondary instance" -ErrorRecord $_ -Continue
-                }
-            } else {
-                $secondaryInstances = Connect-DbaInstance -SqlInstance $Secondary -SqlCredential $SecondarySqlCredential
-            }
-
-            if ($SeedingMode -eq "Manual") {
-                if (((Get-DbaDatabase -SqlInstance $ag.Parent -Database $db.Name).LastFullBackup).Year -eq 1) {
-                    Stop-Function -Message "Cannot add $($db.Name) to $($ag.Name) on $($ag.Parent.Name). An initial full backup must be created first." -Continue
-                }
-                if ($UseLastBackup) {
-                    $allbackups[$db] = Get-DbaDbBackupHistory -SqlInstance $primarydb.Parent -Database $primarydb.Name -IncludeCopyOnly -Last -EnableException
-                    if ($allbackups[$db].Type -notcontains 'Log') {
-                        Stop-Function -Message "Cannot add $($db.Name) to $($ag.Name) on $($ag.Parent.Name). A log backup must be the last backup taken." -Continue
-                    }
-                }
-            }
-
-            if ($SeedingMode -eq "Automatic") {
-                # first check
-                if ($Pscmdlet.ShouldProcess($primary, "Backing up $db to NUL")) {
-                    $null = Backup-DbaDatabase -BackupFileName NUL -SqlInstance $primary -SqlCredential $SqlCredential -Database $db.Name
-                }
-            }
-
-            if ($Pscmdlet.ShouldProcess($ag.Parent.Name, "Adding availability group $db to $($primary.Name)")) {
-                try {
-                    $agdb = New-Object Microsoft.SqlServer.Management.Smo.AvailabilityDatabase($ag, $db.Name)
-                    # something is up with .net create(), force a stop
-                    Invoke-Create -Object $agdb
-                    Get-DbaAgDatabase -SqlInstance $ag.Parent -Database $db.Name
-                } catch {
-                    Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
-                }
-            }
-
-            foreach ($secondaryInstance in $secondaryInstances) {
-
-                try {
-                    $secondaryInstanceReplicaName = $secondaryInstance.NetName
-                } catch {
-                    $secondaryInstanceReplicaName = $secondaryInstance.ComputerName
-                }
-
-                if ($secondaryInstance.InstanceName) {
-                    $secondaryInstanceReplicaName = $secondaryInstanceReplicaName, $secondaryInstance.InstanceName -join "\"
-                }
-
-                $agreplica = Get-DbaAgReplica -SqlInstance $primary -SqlCredential $SqlCredential -AvailabilityGroup $ag.name -Replica $secondaryInstanceReplicaName
-
-                if (-not $agreplica) {
-                    Stop-Function -Continue -Message "Secondary replica $($secondaryInstanceReplicaName) for availability group $($ag.name) not found on $($primary.Name)"
-                }
-
-                if ($SeedingMode -and $secondaryInstance.VersionMajor -ge 13) {
-                    $agreplica.SeedingMode = $SeedingMode
-                    $agreplica.Alter()
-                }
-                $agreplica.Refresh()
-                $SeedingModeReplica = $agreplica.SeedingMode
-
-                $primarydb = Get-DbaDatabase -SqlInstance $primary -SqlCredential $SqlCredential -Database $db.name
-
-                if ($SeedingModeReplica -ne 'Automatic') {
-                    try {
-                        if (-not $allbackups[$db]) {
-                            $fullbackup = $primarydb | Backup-DbaDatabase -BackupDirectory $SharedPath -Type Full -EnableException
-                            $logbackup = $primarydb | Backup-DbaDatabase -BackupDirectory $SharedPath -Type Log -EnableException
-                            $allbackups[$db] = $fullbackup, $logbackup
-                            Write-Message -Level Verbose -Message "Backups still exist on $SharedPath"
-                        }
-                        if ($Pscmdlet.ShouldProcess("$Secondary", "restoring full and log backups of $primarydb from $primary")) {
-                            # keep going to ensure output is shown even if dbs aren't added well.
-                            $null = $allbackups[$db] | Restore-DbaDatabase -SqlInstance $secondaryInstance -WithReplace -NoRecovery -TrustDbBackupHistory -EnableException
-                        }
-                    } catch {
-                        Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
-                    }
-                }
-
-                $replicadb = Get-DbaAgDatabase -SqlInstance $secondaryInstance -Database $db.Name -AvailabilityGroup $ag.Name
-                if (-not $replicadb.IsJoined) {
-                    if ($Pscmdlet.ShouldProcess($ag.Parent.Name, "Joining availability group $db to $($db.Parent.Name)")) {
-                        $timeout = 1
-                        do {
+            if ($SeedingMode) {
+                Write-Message -Level Verbose -Message "Setting seeding mode to $SeedingMode."
+                $failure = $false
+                foreach ($replicaName in $replicaServerSMO.Keys) {
+                    $replica = $ag.AvailabilityReplicas[$replicaName]
+                    if ($replica.SeedingMode -ne $SeedingMode) {
+                        if ($Pscmdlet.ShouldProcess($server, "Setting seeding mode for replica $replica to $SeedingMode")) {
                             try {
-                                Write-Progress -Activity "Trying to add $($replicadb.Name) to $($secondaryInstance.Name)" -Id 1 -PercentComplete ($timeout * 10)
-                                $timeout++
-                                if ($timeout -ne 1) {
-                                    Start-Sleep -Seconds 3
+                                Write-Message -Level Verbose -Message "Setting seeding mode for replica $replica to $SeedingMode."
+                                $replica.SeedingMode = $SeedingMode
+                                $replica.Alter()
+                                if ($SeedingMode -eq 'Automatic') {
+                                    Write-Message -Level Verbose -Message "Setting GrantAvailabilityGroupCreateDatabasePrivilege on server $($replicaServerSMO[$replicaName]) for Availability Group $AvailabilityGroup."
+                                    $replicaServerSMO[$replicaName].GrantAvailabilityGroupCreateDatabasePrivilege($AvailabilityGroup)
+                                    $replicaServerSMO[$replicaName].Alter()
                                 }
-                                $replicadb.Refresh()
-                                $replicadb.JoinAvailablityGroup()
                             } catch {
-                                Write-Message -Level Verbose -Message "Error joining database to availability group" -ErrorRecord $_
+                                $failure = $true
+                                Stop-Function -Message "Failed setting seeding mode for replica $replica to $SeedingMode." -ErrorRecord $_ -Continue
                             }
-                        } while (-not $replicadb.IsJoined -and $timeout -lt 10)
-                        Write-Progress -Activity "Trying to add $($replicadb.Name) to $($secondaryInstance.Name)" -Id 1 -Complete
-
-                        if ($replicadb.IsJoined) {
-                            $replicadb
-                        } else {
-                            Stop-Function -Continue -Message "Could not join $($replicadb.Name) to $($secondaryInstance.Name)"
                         }
                     }
-                } else {
-                    $replicadb
+                }
+                if ($failure) {
+                    Stop-Function -Message "Failed setting seeding mode to $SeedingMode." -Continue
                 }
             }
+
+            $progress['Status'] = "Step 2/5: Running backup and restore if needed."
+            Write-Message -Level Verbose -Message $progress['Status']
+            Write-Progress @progress
+
+            if ($restoreNeeded.Count -gt 0) {
+                if (-not $backups) {
+                    if ($Pscmdlet.ShouldProcess($server, "Taking full and log backup of database $($db.Name)")) {
+                        try {
+                            Write-Message -Level Verbose -Message "Taking full and log backup of database $($db.Name)."
+                            $fullbackup = $db | Backup-DbaDatabase -BackupDirectory $SharedPath -Type Full -EnableException
+                            $logbackup = $db | Backup-DbaDatabase -BackupDirectory $SharedPath -Type Log -EnableException
+                            $backups = $fullbackup, $logbackup
+                        } catch {
+                            Stop-Function -Message "Failed to take full and log backup of database $($db.Name)." -ErrorRecord $_ -Continue
+                        }
+                    }
+                }
+                $failure = $false
+                foreach ($replicaName in $restoreNeeded.Keys) {
+                    if ($Pscmdlet.ShouldProcess($replicaServerSMO[$replicaName], "Restore database $($db.Name) to replica $replicaName")) {
+                        try {
+                            Write-Message -Level Verbose -Message "Restore database $($db.Name) to replica $replicaName."
+                            $null = $backups | Restore-DbaDatabase -SqlInstance $replicaServerSMO[$replicaName] -NoRecovery -TrustDbBackupHistory -EnableException
+                        } catch {
+                            $failure = $true
+                            Stop-Function -Message "Failed to restore database $($db.Name) to replica $replicaName." -ErrorRecord $_ -Continue
+                        }
+                    }
+                }
+                if ($failure) {
+                    Stop-Function -Message "Failed to restore database $($db.Name)." -Continue
+                }
+            }
+
+            $progress['Status'] = "Step 3/5: Add the database to the Availability Group on the primary replica."
+            Write-Message -Level Verbose -Message $progress['Status']
+
+            if ($Pscmdlet.ShouldProcess($server, "Add database $($db.Name) to Availability Group $AvailabilityGroup on the primary replica")) {
+                try {
+                    $progress['CurrentOperation'] = "State of AvailabilityDatabase for $($db.Name) on is not yet known."
+                    Write-Message -Level Verbose -Message "Object of type AvailabilityDatabase for $($db.Name) will be created. $($progress['CurrentOperation'])"
+                    Write-Progress @progress
+
+                    $agDb = New-Object Microsoft.SqlServer.Management.Smo.AvailabilityDatabase($ag, $db.Name)
+                    $progress['CurrentOperation'] = "State of AvailabilityDatabase for $($db.Name) is $($agDb.State)."
+                    Write-Message -Level Verbose -Message "Object of type AvailabilityDatabase for $($db.Name) is created. $($progress['CurrentOperation'])"
+                    Write-Progress @progress
+
+                    $agDb.Create()
+                    $progress['CurrentOperation'] = "State of AvailabilityDatabase for $($db.Name) is $($agDb.State)."
+                    Write-Message -Level Verbose -Message "Method Create of AvailabilityDatabase for $($db.Name) is executed. $($progress['CurrentOperation'])"
+                    Write-Progress @progress
+
+                    # Wait for state to become Existing
+                    # https://docs.microsoft.com/en-us/dotnet/api/microsoft.sqlserver.management.smo.sqlsmostate
+                    $timeout = (Get-Date).AddSeconds($timeoutExisting)
+                    while ($agDb.State -ne 'Existing') {
+                        $progress['CurrentOperation'] = "State of AvailabilityDatabase for $($db.Name) is $($agDb.State), waiting for Existing."
+                        Write-Message -Level Verbose -Message $progress['CurrentOperation']
+                        Write-Progress @progress
+
+                        if ((Get-Date) -gt $timeout) {
+                            Stop-Function -Message "Failed to add database $($db.Name) to Availability Group $AvailabilityGroup. Timeout of $timeoutExisting seconds is reached. State of AvailabilityDatabase for $($db.Name) is still $($agDb.State)." -Continue
+                        }
+                        Start-Sleep -Milliseconds $waitWhile
+                        $agDb.Refresh()
+                    }
+
+                    # Get customized SMO for the output
+                    $output += Get-DbaAgDatabase -SqlInstance $server -AvailabilityGroup $AvailabilityGroup -Database $db.Name -EnableException
+                } catch {
+                    Stop-Function -Message "Failed to add database $($db.Name) to Availability Group $AvailabilityGroup" -ErrorRecord $_ -Continue
+                }
+            }
+
+            $progress['Status'] = "Step 4/5: Add the database to the Availability Group on the secondary replicas."
+            Write-Message -Level Verbose -Message $progress['Status']
+
+            $failure = $false
+            foreach ($replicaName in $replicaServerSMO.Keys) {
+                if ($Pscmdlet.ShouldProcess($replicaServerSMO[$replicaName], "Add database $($db.Name) to Availability Group $AvailabilityGroup on replica $replicaName")) {
+                    $progress['CurrentOperation'] = "State of AvailabilityDatabase for $($db.Name) on replica $replicaName is not yet known."
+                    Write-Message -Level Verbose -Message $progress['CurrentOperation']
+                    Write-Progress @progress
+
+                    try {
+                        $replicaAgDb = Get-DbaAgDatabase -SqlInstance $replicaServerSMO[$replicaName] -AvailabilityGroup $AvailabilityGroup -Database $db.Name -EnableException
+                    } catch {
+                        $failure = $true
+                        Stop-Function -Message "Failed to get database $($db.Name) on replica $replicaName." -ErrorRecord $_ -Continue
+                    }
+
+                    # Save SMO in array for the output
+                    $output += $replicaAgDb
+                    # Save SMO in hashtable for further processing
+                    $replicaAgDbSMO[$replicaName] = $replicaAgDb
+                    # Save target targetSynchronizationState for further processing
+                    # https://docs.microsoft.com/en-us/dotnet/api/microsoft.sqlserver.management.smo.availabilityreplicaavailabilitymode
+                    # https://docs.microsoft.com/en-us/dotnet/api/microsoft.sqlserver.management.smo.availabilitydatabasesynchronizationstate
+                    $availabilityMode = $ag.AvailabilityReplicas[$replicaName].AvailabilityMode
+                    if ($availabilityMode -eq 'AsynchronousCommit') {
+                        $targetSynchronizationState[$replicaName] = 'Synchronizing'
+                    } elseif ($availabilityMode -eq 'SynchronousCommit') {
+                        $targetSynchronizationState[$replicaName] = 'Synchronized'
+                    } else {
+                        $failure = $true
+                        Stop-Function -Message "Unexpected value '$availabilityMode' for AvailabilityMode on replica $replicaName." -Continue
+                    }
+
+                    $progress['CurrentOperation'] = "State of AvailabilityDatabase for $($db.Name) on replica $replicaName is $($replicaAgDb.State)."
+                    Write-Message -Level Verbose -Message $progress['CurrentOperation']
+                    Write-Progress @progress
+
+                    # https://docs.microsoft.com/en-us/dotnet/api/microsoft.sqlserver.management.smo.sqlsmostate
+                    $timeout = (Get-Date).AddSeconds($timeoutExisting)
+                    while ($replicaAgDb.State -ne 'Existing') {
+                        $progress['CurrentOperation'] = "State of AvailabilityDatabase for $($db.Name) on replica $replicaName is $($replicaAgDb.State), waiting for Existing."
+                        Write-Message -Level Verbose -Message $progress['CurrentOperation']
+                        Write-Progress @progress
+
+                        if ((Get-Date) -gt $timeout) {
+                            Stop-Function -Message "Failed to add database $($db.Name) on replica $replicaName. Timeout of $timeoutExisting seconds is reached. State of AvailabilityDatabase for $db is still $($replicaAgDb.State)." -Continue
+                        }
+                        Start-Sleep -Milliseconds $waitWhile
+                        $replicaAgDb.Refresh()
+                    }
+
+                    # With automatic seeding, .JoinAvailablityGroup() is not needed, just wait for the magic to happen
+                    if ($ag.AvailabilityReplicas[$replicaName].SeedingMode -ne 'Automatic') {
+                        try {
+                            $progress['CurrentOperation'] = "Joining database $($db.Name) on replica $replicaName."
+                            Write-Message -Level Verbose -Message $progress['CurrentOperation']
+                            Write-Progress @progress
+
+                            $replicaAgDb.JoinAvailablityGroup()
+                        } catch {
+                            $failure = $true
+                            Stop-Function -Message "Failed to join database $($db.Name) on replica $replicaName." -ErrorRecord $_ -Continue
+                        }
+                    }
+                }
+            }
+            if ($failure) {
+                Stop-Function -Message "Failed to add or join database $($db.Name)." -Continue
+            }
+
+            # Now we have configured everything and we only have to wait...
+
+            $progress['Status'] = "Step 5/5: Wait for the database to finish joining the Availability Group on the secondary replicas."
+            $progress['CurrentOperation'] = ''
+            Write-Message -Level Verbose -Message $progress['Status']
+            Write-Progress @progress
+
+            if ($Pscmdlet.ShouldProcess($server, "Wait for the database $($db.Name) to finish joining the Availability Group $AvailabilityGroup on the secondary replicas.")) {
+                # We need to setup a progress bar for every replica to display them all at once.
+                $syncProgressId = @{ }
+                foreach ($replicaName in $replicaServerSMO.Keys) {
+                    $syncProgressId[$replicaName] = Get-Random
+                }
+
+                $stillWaiting = $true
+                $timeout = (Get-Date).AddSeconds($timeoutSynchronization)
+                while ($stillWaiting) {
+                    $stillWaiting = $false
+                    $failure = $false
+                    foreach ($replicaName in $replicaServerSMO.Keys) {
+                        if (-not $replicaAgDbSMO[$replicaName].IsJoined -or $replicaAgDbSMO[$replicaName].SynchronizationState -ne $targetSynchronizationState[$replicaName]) {
+                            $stillWaiting = $true
+                        }
+
+                        $syncProgress = @{ }
+                        $syncProgress['Id'] = $syncProgressId[$replicaName]
+                        $syncProgress['ParentId'] = $progress['Id']
+                        $syncProgress['Activity'] = "Adding database(s) to Availability Group $AvailabilityGroup."
+                        if ($replicaAgDbSMO[$replicaName].SynchronizationState -ne $targetSynchronizationState[$replicaName]) {
+                            $syncProgress['Status'] = "IsJoined is $($replicaAgDbSMO[$replicaName].IsJoined), SynchronizationState is $($replicaAgDbSMO[$replicaName].SynchronizationState), waiting for $($targetSynchronizationState[$replicaName])."
+                        } else {
+                            $syncProgress['Status'] = "IsJoined is $($replicaAgDbSMO[$replicaName].IsJoined), SynchronizationState is $($replicaAgDbSMO[$replicaName].SynchronizationState), replica is in desired state."
+                        }
+                        if ($ag.AvailabilityReplicas[$replicaName].SeedingMode -eq 'Automatic' -and $reportSeeding) {
+                            $seedingStats = $server.Query("SELECT * FROM sys.dm_hadr_physical_seeding_stats WHERE local_database_name = '$($db.Name)' AND remote_machine_name = '$($ag.AvailabilityReplicas[$replicaName].EndpointUrl)'")
+                            if ($seedingStats) {
+                                if ($seedingStats.failure_message -ne [DBNull]::Value) {
+                                    $failure = $true
+                                    Stop-Function -Message "Failed while seeding database $($db.Name) to $replicaName. failure_message: $($seedingStats.failure_message)." -Continue
+                                }
+
+                                $syncProgress['PercentComplete'] = [int]($seedingStats.transferred_size_bytes * 100.0 / $seedingStats.database_size_bytes)
+                                $syncProgress['SecondsRemaining'] = [int](($seedingStats.estimate_time_complete_utc - (Get-Date).ToUniversalTime()).TotalSeconds)
+                                $syncProgress['CurrentOperation'] = "Seeding state: $($seedingStats.internal_state_desc), $([int]($seedingStats.transferred_size_bytes/1024/1024)) out of $([int]($seedingStats.database_size_bytes/1024/1024)) MB transferred."
+                            }
+                        }
+                        Write-Message -Level Verbose -Message ($syncProgress['Status'] + $syncProgress['CurrentOperation'])
+                        Write-Progress @syncProgress
+                    }
+                    if ($failure) {
+                        $stillWaiting = $false
+                        Stop-Function -Message "Failed while seeding database $($db.Name)." -Continue
+                    }
+
+                    if ((Get-Date) -gt $timeout) {
+                        $stillWaiting = $false
+                        $failure = $true
+                        Stop-Function -Message "Failed to join or synchronize database $($db.Name). Timeout of $timeoutSynchronization seconds is reached. $progressOperation" -Continue
+                    }
+                    Start-Sleep -Milliseconds $waitWhile
+
+                    foreach ($replicaName in $replicaServerSMO.Keys) {
+                        $replicaAgDbSMO[$replicaName].Refresh()
+                    }
+                }
+                if ($failure) {
+                    Stop-Function -Message "Failed to join or synchronize database $($db.Name)." -Continue
+                }
+            }
+            $output
         }
     }
 }

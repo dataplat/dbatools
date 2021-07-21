@@ -34,6 +34,12 @@ function Get-DbaAgentJob {
     .PARAMETER ExcludeCategory
         Categories to exclude - jobs associated with these categories will not be returned.
 
+    .PARAMETER IncludeExecution
+        Include Execution details if the job is currently running
+
+    .PARAMETER Type
+        The type of job: MultiServer or Local. Defaults to both MultiServer and Local.
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -101,6 +107,9 @@ function Get-DbaAgentJob {
         [string[]]$Category,
         [string[]]$ExcludeCategory,
         [switch]$ExcludeDisabledJobs,
+        [switch]$IncludeExecution,
+        [ValidateSet("MultiServer", "Local")]
+        [string[]]$Type = @("MultiServer", "Local"),
         [switch]$EnableException
     )
 
@@ -113,7 +122,17 @@ function Get-DbaAgentJob {
                 Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
-            $jobs = $server.JobServer.Jobs
+            if (Test-Bound 'IncludeExecution') {
+                $query = "SELECT [job].[job_id] as [JobId], [activity].[start_execution_date] AS [StartDate]
+                FROM [msdb].[dbo].[sysjobs_view] as [job]
+                    INNER JOIN [msdb].[dbo].[sysjobactivity] AS [activity] ON [job].[job_id] = [activity].[job_id]
+                WHERE [activity].[run_requested_date] IS NOT NULL
+                    AND [activity].[stop_execution_date] IS NULL;"
+
+                $jobExecutionResults = $server.Query($query)
+            }
+
+            $jobs = $server.JobServer.Jobs | Where-Object JobType -in $Type
 
             if ($Job) {
                 $jobs = $jobs | Where-Object Name -In $Job
@@ -135,11 +154,21 @@ function Get-DbaAgentJob {
             }
 
             foreach ($agentJob in $jobs) {
+                $defaults = 'ComputerName', 'InstanceName', 'SqlInstance', 'Name', 'Category', 'OwnerLoginName', 'CurrentRunStatus', 'CurrentRunRetryAttempt', 'IsEnabled as Enabled', 'LastRunDate', 'LastRunOutcome', 'HasSchedule', 'OperatorToEmail', 'DateCreated as CreateDate'
+
+                $currentJobId = $agentJob.JobId
+                if ($currentJobId -in $jobExecutionResults.JobId) {
+                    $agentJobStartDate = [DbaDateTime]($jobExecutionResults | Where-Object { $_.JobId -eq $currentJobId -and $null -ne $_.StartDate }).StartDate
+
+                    Add-Member -Force -InputObject $agentJob -MemberType NoteProperty -Name StartDate -Value $agentJobStartDate
+                    $defaults += 'StartDate'
+                }
+
                 Add-Member -Force -InputObject $agentJob -MemberType NoteProperty -Name ComputerName -value $agentJob.Parent.Parent.ComputerName
                 Add-Member -Force -InputObject $agentJob -MemberType NoteProperty -Name InstanceName -value $agentJob.Parent.Parent.ServiceName
                 Add-Member -Force -InputObject $agentJob -MemberType NoteProperty -Name SqlInstance -value $agentJob.Parent.Parent.DomainInstanceName
 
-                Select-DefaultView -InputObject $agentJob -Property ComputerName, InstanceName, SqlInstance, Name, Category, OwnerLoginName, CurrentRunStatus, CurrentRunRetryAttempt, 'IsEnabled as Enabled', LastRunDate, LastRunOutcome, HasSchedule, OperatorToEmail, 'DateCreated as CreateDate'
+                Select-DefaultView -InputObject $agentJob -Property $defaults
             }
         }
     }

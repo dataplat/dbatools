@@ -445,7 +445,12 @@ function Install-DbaInstance {
             # resolve names
             Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Resolving computer name"
             $resolvedName = Resolve-DbaNetworkName -ComputerName $computer -Credential $Credential
-            $fullComputerName = $resolvedName.FullComputerName
+            if ($computer.IsLocalHost) {
+                # Don't add a domain to localhost as this might add a domain that is later not recognized by .IsLocalHost anymore (#6976).
+                $fullComputerName = $resolvedName.ComputerName
+            } else {
+                $fullComputerName = $resolvedName.FullComputerName
+            }
             # test if the restart is needed
             Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Checking for pending restarts"
             try {
@@ -613,7 +618,7 @@ function Install-DbaInstance {
             if ($canonicVersion -gt '10.0') {
                 $execParams += '/IACCEPTSQLSERVERLICENSETERMS'
             }
-            if ($canonicVersion -ge '13.0' -and (-Not $configNode.SQLTEMPDBFILECOUNT)) {
+            if ($canonicVersion -ge '13.0' -and ($configNode.ACTION -in 'Install', 'CompleteImage', 'Rebuilddatabase', 'InstallFailoverCluster', 'CompleteFailoverCluster') -and (-not $configNode.SQLTEMPDBFILECOUNT)) {
                 # configure the number of cores
                 $cpuInfo = Get-DbaCmObject -ComputerName $fullComputerName -Credential $Credential -ClassName Win32_processor -EnableException:$EnableException
                 # trying to read NumberOfLogicalProcessors property. If it's not available, read NumberOfCores
@@ -625,7 +630,7 @@ function Install-DbaInstance {
                 if ($cores -gt 8) {
                     $cores = 8
                 }
-                if ($cores -and $configNode.ACTION -ne "AddNode") {
+                if ($cores) {
                     $configNode.SQLTEMPDBFILECOUNT = $cores
                 }
             }

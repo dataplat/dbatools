@@ -11,7 +11,7 @@ function Restore-DbaDatabase {
         The function defaults to working on a remote instance. This means that all paths passed in must be relative to the remote instance.
         XpDirTree will be used to perform the file scans
 
-        Various means can be used to pass in a list of files to be considered. The default is to non recursively scan the folder
+        Various means can be used to pass in a list of files to be considered. The default is to recursively scan the folder
         passed in.
 
     .PARAMETER SqlInstance
@@ -27,7 +27,7 @@ function Restore-DbaDatabase {
     .PARAMETER Path
         Path to SQL Server backup files.
 
-        Paths passed in as strings will be scanned using the desired method, default is a non recursive folder scan
+        Paths passed in as strings will be scanned using the desired method, default is a recursive folder scan
         Accepts multiple paths separated by ','
 
         Or it can consist of FileInfo objects, such as the output of Get-ChildItem or Get-Item. This allows you to work with
@@ -126,11 +126,11 @@ function Restore-DbaDatabase {
         Number of I/O buffers to use to perform the operation.
         Refer to https://msdn.microsoft.com/en-us/library/ms178615.aspx for more detail
 
-    .PARAMETER XpNoRecurse
+    .PARAMETER NoXpDirRecurse
         If specified, prevents the XpDirTree process from recursing (its default behaviour)
 
     .PARAMETER DirectoryRecurse
-        If specified the specified directory will be recursed into
+        If specified the specified directory will be recursed into (overriding the default behaviour)
 
     .PARAMETER Continue
         If specified we will to attempt to recover more transaction log backups onto  database(s) in Recovering or Standby states
@@ -272,7 +272,7 @@ function Restore-DbaDatabase {
         Will attempt to restore the backups from http://demo.blob.core.windows.net/backups/dbbackup.bak if a SAS credential with the name http://demo.blob.core.windows.net/backups exists on server1\instance1
 
     .EXAMPLE
-        PS C:\> $File = Get-ChildItem c:\backups, \\server1\backups -recurse
+        PS C:\> $File = Get-ChildItem c:\backups, \\server1\backups
         PS C:\> $File | Restore-DbaDatabase -SqlInstance Server1\Instance -UseDestinationDefaultDirectories
 
         This will take all of the files found under the folders c:\backups and \\server1\backups, and pipeline them into
@@ -345,6 +345,12 @@ function Restore-DbaDatabase {
         Restores 'database' to 'server1' and moves the files to new locations. The format for the $FileStructure HashTable is the file logical name as the Key, and the new location as the Value.
 
     .EXAMPLE
+        PS C:\> $filemap = Get-DbaDbFileMapping -SqlInstance sql2016 -Database test
+        PS C:\> Get-ChildItem \\nas\db\backups\test | Restore-DbaDatabase -SqlInstance sql2019 -Database test -FileMapping $filemap.FileMapping
+
+        Restores test to sql2019 using the file structure built from the existing database on sql2016
+
+    .EXAMPLE
         PS C:\> Restore-DbaDatabase -SqlInstance server1 -Path \\ServerName\ShareName\File -DatabaseName database -DatabaseName database -StopMark OvernightStart -StopBefore -StopAfterDate Get-Date('21:00 10/05/2020')
 
         Restores the backups from \\ServerName\ShareName\File as database, stops before the first 'OvernightStop' mark that occurs after '21:00 10/05/2020'.
@@ -366,10 +372,11 @@ function Restore-DbaDatabase {
         [parameter(ParameterSetName = "Restore")][switch]$WithReplace,
         [parameter(ParameterSetName = "Restore")][switch]$KeepReplication,
         [parameter(ParameterSetName = "Restore")][Switch]$XpDirTree,
+        [parameter(ParameterSetName = "Restore")][Switch]$NoXpDirRecurse,
         [switch]$OutputScriptOnly,
         [parameter(ParameterSetName = "Restore")][switch]$VerifyOnly,
         [parameter(ParameterSetName = "Restore")][switch]$MaintenanceSolutionBackup,
-        [parameter(ParameterSetName = "Restore")][hashtable]$FileMapping,
+        [parameter(ParameterSetName = "Restore", ValueFromPipelineByPropertyname)][hashtable]$FileMapping,
         [parameter(ParameterSetName = "Restore")][switch]$IgnoreLogBackup,
         [parameter(ParameterSetName = "Restore")][switch]$IgnoreDiffBackup,
         [parameter(ParameterSetName = "Restore")][switch]$UseDestinationDefaultDirectories,
@@ -580,7 +587,7 @@ function Restore-DbaDatabase {
                             } else {
                                 $null = $f.BackupPath -match '(http|https)://[^/]*/[^/]*'
                             }
-                            if (Get-DbaCredential -SqlInstance $RestoreInstance -name $matches[0].trim('/') ) {
+                            if (Get-DbaCredential -SqlInstance $RestoreInstance -Name $matches[0].trim('/') ) {
                                 Write-Message -Message "We have a SAS credential to use with $($f.BackupPath)" -Level Verbose
                             } else {
                                 Stop-Function -Message "A URL to a backup has been passed in, but no credential can be found to access it"
@@ -588,7 +595,9 @@ function Restore-DbaDatabase {
                             }
                         }
                     }
-                    $BackupHistory += $F | Select-Object *, @{ Name = "ServerName"; Expression = { $_.SqlInstance } }, @{ Name = "BackupStartDate"; Expression = { $_.Start -as [DateTime] } }
+                    # Fix #5036 by implementing a deep copy of the FileList
+                    $f.FileList = $f.FileList | Select-Object *
+                    $BackupHistory += $f | Select-Object *, @{ Name = "ServerName"; Expression = { $_.SqlInstance } }, @{ Name = "BackupStartDate"; Expression = { $_.Start -as [DateTime] } }
                 }
             } else {
                 $files = @()
@@ -603,7 +612,7 @@ function Restore-DbaDatabase {
                 if ($BackupHistory.GetType().ToString() -eq 'Sqlcollaborative.Dbatools.Database.BackupHistory') {
                     $BackupHistory = @($BackupHistory)
                 }
-                $BackupHistory += Get-DbaBackupInformation -SqlInstance $RestoreInstance -SqlCredential $SqlCredential -Path $files -DirectoryRecurse:$DirectoryRecurse -MaintenanceSolution:$MaintenanceSolutionBackup -IgnoreDiffBackup:$IgnoreDiffBackup -IgnoreLogBackup:$IgnoreLogBackup -AzureCredential $AzureCredential
+                $BackupHistory += Get-DbaBackupInformation -SqlInstance $RestoreInstance -SqlCredential $SqlCredential -Path $files -DirectoryRecurse:$DirectoryRecurse -MaintenanceSolution:$MaintenanceSolutionBackup -IgnoreDiffBackup:$IgnoreDiffBackup -IgnoreLogBackup:$IgnoreLogBackup -AzureCredential $AzureCredential -NoXpDirRecurse:$NoXpDirRecurse
             }
             if ($PSCmdlet.ParameterSetName -eq "RestorePage") {
                 if (-not (Test-DbaPath -SqlInstance $RestoreInstance -Path $PageRestoreTailFolder)) {
@@ -677,7 +686,7 @@ function Restore-DbaDatabase {
                 return
             }
             $pathSep = Get-DbaPathSep -Server $RestoreInstance
-            $null = $BackupHistory | Format-DbaBackupInformation -DataFileDirectory $DestinationDataDirectory -LogFileDirectory $DestinationLogDirectory -DestinationFileStreamDirectory $DestinationFileStreamDirectory -DatabaseFileSuffix $DestinationFileSuffix -DatabaseFilePrefix $DestinationFilePrefix -DatabaseNamePrefix $RestoredDatabaseNamePrefix -ReplaceDatabaseName $DatabaseName -Continue:$Continue -ReplaceDbNameInFile:$ReplaceDbNameInFile -FileMapping $FileMapping -PathSep $pathSep
+            $BackupHistory = $BackupHistory | Format-DbaBackupInformation -DataFileDirectory $DestinationDataDirectory -LogFileDirectory $DestinationLogDirectory -DestinationFileStreamDirectory $DestinationFileStreamDirectory -DatabaseFileSuffix $DestinationFileSuffix -DatabaseFilePrefix $DestinationFilePrefix -DatabaseNamePrefix $RestoredDatabaseNamePrefix -ReplaceDatabaseName $DatabaseName -Continue:$Continue -ReplaceDbNameInFile:$ReplaceDbNameInFile -FileMapping $FileMapping -PathSep $pathSep
 
             if (Test-Bound -ParameterName FormatBackupInformation) {
                 Set-Variable -Name $FormatBackupInformation -Value $BackupHistory -Scope Global
@@ -728,7 +737,7 @@ function Restore-DbaDatabase {
 
             if ($PSCmdlet.ParameterSetName -eq "RestorePage" -and $RestoreInstance.Edition -notlike '*Enterprise*') {
                 Write-Message -Message "Taking Tail log backup for page restore for non-Enterprise" -Level Verbose
-                $TailBackup = Backup-DbaDatabase -SqlInstance $RestoreInstance -Database $DatabaseName -Type Log -BackupDirectory $PageRestoreTailFolder -Norecovery -CopyOnly
+                $TailBackup = Backup-DbaDatabase -SqlInstance $RestoreInstance -Database $DatabaseName -Type Log -BackupDirectory $PageRestoreTailFolder -NoRecovery -CopyOnly
             }
             try {
                 $FilteredBackupHistory | Where-Object { $_.IsVerified -eq $true } | Invoke-DbaAdvancedRestore -SqlInstance $RestoreInstance -WithReplace:$WithReplace -RestoreTime $RestoreTime -StandbyDirectory $StandbyDirectory -NoRecovery:$NoRecovery -Continue:$Continue -OutputScriptOnly:$OutputScriptOnly -BlockSize $BlockSize -MaxTransferSize $MaxTransferSize -BufferCount $Buffercount -KeepCDC:$KeepCDC -VerifyOnly:$VerifyOnly -PageRestore $PageRestore -EnableException -AzureCredential $AzureCredential -KeepReplication:$KeepReplication -StopMark:$StopMark -StopAfterDate:$StopAfterDate -StopBefore:$StopBefore -ExecuteAs $ExecuteAs
@@ -738,15 +747,15 @@ function Restore-DbaDatabase {
             if ($PSCmdlet.ParameterSetName -eq "RestorePage") {
                 if ($RestoreInstance.Edition -like '*Enterprise*') {
                     Write-Message -Message "Taking Tail log backup for page restore for Enterprise" -Level Verbose
-                    $TailBackup = Backup-DbaDatabase -SqlInstance $RestoreInstance -Database $DatabaseName -Type Log -BackupDirectory $PageRestoreTailFolder -Norecovery -CopyOnly
+                    $TailBackup = Backup-DbaDatabase -SqlInstance $RestoreInstance -Database $DatabaseName -Type Log -BackupDirectory $PageRestoreTailFolder -NoRecovery -CopyOnly
                 }
                 Write-Message -Message "Restoring Tail log backup for page restore" -Level Verbose
                 $TailBackup | Restore-DbaDatabase -SqlInstance $RestoreInstance -TrustDbBackupHistory -NoRecovery -OutputScriptOnly:$OutputScriptOnly -BlockSize $BlockSize -MaxTransferSize $MaxTransferSize -BufferCount $Buffercount -Continue
                 Restore-DbaDatabase -SqlInstance $RestoreInstance -Recover -DatabaseName $DatabaseName -OutputScriptOnly:$OutputScriptOnly
             }
             # refresh the SMO as we probably used T-SQL, but only if we already got a SMO
-            if ($RestoreInstance.Equals($SqlInstance)) {
-                $RestoreInstance.Databases.Refresh()
+            if ($SqlInstance.InputObject -is [Microsoft.SqlServer.Management.Smo.Server]) {
+                $SqlInstance.InputObject.Databases.Refresh()
             }
         }
     }

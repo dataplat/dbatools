@@ -103,7 +103,7 @@ function Get-DbaHelp {
                         if ($x -eq 0) {
                             $null = $rtn.Add($val)
                         } else {
-                            $null = $rtn.Add('    -' + $val.replace("`n", '').replace("`n", ''))
+                            $null = $rtn.Add('    [' + $val.replace("`n", '').replace("`n", ''))
                         }
                         $x += 1
                     }
@@ -134,7 +134,7 @@ function Get-DbaHelp {
                         $inside = 0
                         $null = $rtn.Add('```')
                     }
-                    $null = $rtn.Add($row)
+                    $null = $rtn.Add("$row<br>")
                 }
             }
             if ($inside -eq 1) {
@@ -156,7 +156,7 @@ function Get-DbaHelp {
                         $null = $rtn.Add('### Required Parameters')
                     }
                     $null = $rtn.Add('##### -' + $el[0])
-                    $null = $rtn.Add($el[1])
+                    $null = $rtn.Add($el[1] + '<br>')
                     $null = $rtn.Add('')
                     $null = $rtn.Add('|  |  |')
                     $null = $rtn.Add('| - | - |')
@@ -183,7 +183,7 @@ function Get-DbaHelp {
                     }
 
                     $null = $rtn.Add('##### -' + $el[0])
-                    $null = $rtn.Add($el[1])
+                    $null = $rtn.Add($el[1] + '<br>')
                     $null = $rtn.Add('')
                     $null = $rtn.Add('|  |  |')
                     $null = $rtn.Add('| - | - |')
@@ -197,10 +197,10 @@ function Get-DbaHelp {
                     $null = $rtn.Add('')
                 }
             }
-
             $null = $rtn.Add('')
             $null = $rtn.Add("`n" + '&nbsp;' + "`n")
             $null = $rtn.Add('Want to see the source code for this command? Check out [' + $doc_to_render.CommandName + '](https://github.com/sqlcollaborative/dbatools/blob/master/functions/' + $doc_to_render.CommandName + '.ps1) on GitHub.')
+            $null = $rtn.Add("<br>")
             $null = $rtn.Add('Want to see the Bill Of Health for this command? Check out [' + $doc_to_render.CommandName + '](https://sqlcollaborative.github.io/boh#' + $doc_to_render.CommandName + ').')
             $null = $rtn.Add('')
 

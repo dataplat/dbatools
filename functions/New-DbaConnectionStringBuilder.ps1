@@ -1,10 +1,10 @@
 function New-DbaConnectionStringBuilder {
     <#
     .SYNOPSIS
-        Returns a System.Data.SqlClient.SqlConnectionStringBuilder with the string specified
+        Returns a Microsoft.Data.SqlClient.SqlConnectionStringBuilder with the string specified
 
     .DESCRIPTION
-        Creates a System.Data.SqlClient.SqlConnectionStringBuilder from a connection string.
+        Creates a Microsoft.Data.SqlClient.SqlConnectionStringBuilder from a connection string.
 
     .PARAMETER ConnectionString
         A Connection String
@@ -13,19 +13,22 @@ function New-DbaConnectionStringBuilder {
         The application name to tell SQL Server the connection is associated with.
 
     .PARAMETER DataSource
-        The Sql Server to connect to.
+        The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.
+
+    .PARAMETER SqlCredential
+        Credential object used to connect to the SQL Server Instance as a different user. This can be a Windows or SQL Server account. Windows users are determined by the existence of a backslash, so if you are intending to use an alternative Windows connection instead of a SQL login, ensure it contains a backslash.
 
     .PARAMETER InitialCatalog
         The initial database on the server to connect to.
 
     .PARAMETER IntegratedSecurity
-        Set to true to use windows authentication.
+        Sets to use windows authentication.
 
     .PARAMETER UserName
-        Sql User Name to connect with.
+        Sql User Name to connect with. Consider using SqlCredential instead.
 
     .PARAMETER Password
-        Password to use to connect with.
+        Password to use to connect with. Consider using SqlCredential instead.
 
     .PARAMETER MultipleActiveResultSets
         Enable Multiple Active Result Sets.
@@ -36,11 +39,11 @@ function New-DbaConnectionStringBuilder {
     .PARAMETER WorkstationID
         Set the Workstation Id that is associated with the connection.
 
-    .PARAMETER WhatIf
-        If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
+    .PARAMETER NonPooledConnection
+        If this switch is enabled, a non-pooled connection will be requested.
 
-    .PARAMETER Confirm
-        If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
+    .PARAMETER Legacy
+        Use this switch to create a connection string using System.Data.SqlClient instead of Microsoft.Data.SqlClient.
 
     .NOTES
         Tags: SqlBuild, ConnectionString, Connection
@@ -64,59 +67,82 @@ function New-DbaConnectionStringBuilder {
         Returns a connection string builder that can be used to connect to the local sql server instance on the default port.
 
     #>
-    [CmdletBinding(SupportsShouldProcess)]
+    [CmdletBinding()]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingPlainTextForPassword", "")]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingUserNameAndPassWordParams", "")]
     param (
         [Parameter(ValueFromPipeline)]
         [string[]]$ConnectionString = "",
         [string]$ApplicationName = "dbatools Powershell Module",
-        [string]$DataSource = $null,
-        [string]$InitialCatalog = $null,
-        [Nullable[bool]]$IntegratedSecurity = $null,
-        [string]$UserName = $null,
-        # No point in securestring here, the memory is never stored securely in memory.
-        [string]$Password = $null,
+        [Alias("SqlInstance")]
+        [string]$DataSource,
+        [PSCredential]$SqlCredential,
+        [Alias("Database")]
+        [string]$InitialCatalog,
+        [switch]$IntegratedSecurity,
+        [string]$UserName,
+        [string]$Password,
         [Alias('MARS')]
         [switch]$MultipleActiveResultSets,
         [Alias('AlwaysEncrypted')]
-        [Data.SqlClient.SqlConnectionColumnEncryptionSetting]$ColumnEncryptionSetting =
-        [Data.SqlClient.SqlConnectionColumnEncryptionSetting]::Enabled,
+        [ValidateSet("Enabled")]
+        [string]$ColumnEncryptionSetting,
+        [switch]$Legacy,
+        [switch]$NonPooledConnection,
         [string]$WorkstationId = $env:COMPUTERNAME
     )
     process {
+        $pooling = (-not $NonPooledConnection)
+        if ($SqlCredential -and ($Username -or $Password)) {
+            Stop-Function -Message "You can only specify SQL Credential or Username/Password, not both."
+            return
+        }
+        if ($SqlCredential) {
+            $UserName = $SqlCredential.UserName
+            $Password = $SqlCredential.GetNetworkCredential().Password
+        }
+        if (-not $UserName) {
+            $PSBoundParameters.IntegratedSecurity = $true
+        }
+
         foreach ($cs in $ConnectionString) {
-            if ($Pscmdlet.ShouldProcess($cs, "Creating new connection string")) {
-                $builder = New-Object Data.SqlClient.SqlConnectionStringBuilder $cs
-                if ($builder.ApplicationName -eq ".Net SqlClient Data Provider") {
-                    $builder['Application Name'] = $ApplicationName
-                }
-                if (![string]::IsNullOrWhiteSpace($DataSource)) {
-                    $builder['Data Source'] = $DataSource
-                }
-                if (![string]::IsNullOrWhiteSpace($InitialCatalog)) {
-                    $builder['Initial Catalog'] = $InitialCatalog
-                }
-                if (![string]::IsNullOrWhiteSpace($IntegratedSecurity)) {
-                    $builder['Integrated Security'] = $IntegratedSecurity
-                }
-                if (![string]::IsNullOrWhiteSpace($UserName)) {
-                    $builder["User ID"] = $UserName
-                }
-                if (![string]::IsNullOrWhiteSpace($Password)) {
-                    $builder['Password'] = $Password
-                }
-                if (![string]::IsNullOrWhiteSpace($WorkstationId)) {
-                    $builder['Workstation ID'] = $WorkstationId
-                }
-                if ($MultipleActiveResultSets -eq $true) {
-                    $builder['MultipleActiveResultSets'] = $true
-                }
-                if ($ColumnEncryptionSetting -eq [Data.SqlClient.SqlConnectionColumnEncryptionSetting]::Enabled) {
-                    $builder['Column Encryption Setting'] = [Data.SqlClient.SqlConnectionColumnEncryptionSetting]::Enabled
-                }
-                $builder
+            if ($Legacy) {
+                $builder = New-Object System.Data.SqlClient.SqlConnectionStringBuilder $cs
+            } else {
+                $builder = New-Object Microsoft.Data.SqlClient.SqlConnectionStringBuilder $cs
             }
+
+            if ($builder.ApplicationName -in "Framework Microsoft SqlClient Data Provider", ".Net SqlClient Data Provider") {
+                $builder['Application Name'] = $ApplicationName
+            }
+            if ($PSBoundParameters.DataSource) {
+                $builder['Data Source'] = $DataSource
+            }
+            if ($PSBoundParameters.InitialCatalog) {
+                $builder['Initial Catalog'] = $InitialCatalog
+            }
+            if ($PSBoundParameters.IntegratedSecurity) {
+                $builder['Integrated Security'] = $PSBoundParameters.IntegratedSecurity
+            }
+            if ($UserName) {
+                $builder["User ID"] = $UserName
+            }
+            if ($Password) {
+                $builder['Password'] = $Password
+            }
+            if ($WorkstationId) {
+                $builder['Workstation ID'] = $WorkstationId
+            }
+            if ($MultipleActiveResultSets -eq $true) {
+                $builder['MultipleActiveResultSets'] = $true
+            }
+            if ($ColumnEncryptionSetting -eq "Enabled") {
+                $builder['Column Encryption Setting'] = "Enabled"
+            }
+            if ($pooling) {
+                $builder['Pooling'] = $pooling
+            }
+            $builder
         }
     }
 }
