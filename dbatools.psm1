@@ -854,6 +854,9 @@ $script:windowsonly = @(
     # GAC
     'Test-DbaManagementObject',
     # CM and Windows functions
+    'Get-DbaFirewallRule',
+    'New-DbaFirewallRule',
+    'Remove-DbaFirewallRule',
     'Rename-DbaDatabase',
     'Get-DbaNetworkConfiguration',
     'Set-DbaNetworkConfiguration',
