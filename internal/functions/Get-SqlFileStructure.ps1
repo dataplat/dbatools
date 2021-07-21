@@ -22,8 +22,9 @@ function Get-SqlFileStructure {
     $destserver = Connect-SqlInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
     $destination = $destserver.DomainInstanceName
 
-    $sourcenetbios = Resolve-NetBiosName $sourceserver
-    $destnetbios = Resolve-NetBiosName $destserver
+    # Here we need it for Join-AdminUnc, so FullComputerName would be best with fallback to ComputerName
+    $sourceFullComputerName = Resolve-DbaComputerName -ComputerName $sourceserver
+    $destFullComputerName = Resolve-DbaComputerName -ComputerName $destserver
 
     $dbcollection = @{ };
 
@@ -45,14 +46,14 @@ function Get-SqlFileStructure {
                     $d.physical = "$directory\$filename"
                 }
                 $d.logical = $file.name
-                $d.remotefilename = Join-AdminUnc $destnetbios $d.physical
+                $d.remotefilename = Join-AdminUnc $destFullComputerName $d.physical
                 $destinationfiles.add($file.name, $d)
 
                 # Source File Structure
                 $s = @{ }
                 $s.logical = $file.name
                 $s.physical = $file.filename
-                $s.remotefilename = Join-AdminUnc $sourcenetbios $s.physical
+                $s.remotefilename = Join-AdminUnc $sourceFullComputerName $s.physical
                 $sourcefiles.add($file.name, $s)
             }
         }
@@ -75,7 +76,7 @@ function Get-SqlFileStructure {
                     $d.physical = "$directory\$filename"
                 }
                 $d.logical = $logical
-                $d.remotefilename = Join-AdminUnc $destnetbios $d.physical
+                $d.remotefilename = Join-AdminUnc $destFullComputerName $d.physical
                 $destinationfiles.add($logical, $d)
 
                 # Source File Structure
@@ -87,7 +88,7 @@ function Get-SqlFileStructure {
 
                 $s.logical = $logical
                 $s.physical = $physical
-                $s.remotefilename = Join-AdminUnc $sourcenetbios $s.physical
+                $s.remotefilename = Join-AdminUnc $sourceFullComputerName $s.physical
                 $sourcefiles.add($logical, $s)
             }
         }
@@ -103,13 +104,13 @@ function Get-SqlFileStructure {
                 $d.physical = "$directory\$filename"
             }
             $d.logical = $file.name
-            $d.remotefilename = Join-AdminUnc $destnetbios $d.physical
+            $d.remotefilename = Join-AdminUnc $destFullComputerName $d.physical
             $destinationfiles.add($file.name, $d)
 
             $s = @{ }
             $s.logical = $file.name
             $s.physical = $file.filename
-            $s.remotefilename = Join-AdminUnc $sourcenetbios $s.physical
+            $s.remotefilename = Join-AdminUnc $sourceFullComputerName $s.physical
             $sourcefiles.add($file.name, $s)
         }
 

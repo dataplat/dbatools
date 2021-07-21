@@ -113,14 +113,14 @@ function Export-DbaLinkedServer {
                 Stop-Function -Message "Not a sysadmin on $instance. Quitting." -Target $instance -Continue
             }
 
-            Write-Message -Level Verbose -Message "Getting NetBios name for $instance."
-            $sourceNetBios = Resolve-NetBiosName $server
+            Write-Message -Level Verbose -Message "Getting FullComputerName name for $instance."
+            $fullComputerName = Resolve-DbaComputerName -ComputerName $instance -Credential $Credential
 
             Write-Message -Level Verbose -Message "Checking if Remote Registry is enabled on $instance."
             try {
-                Invoke-Command2 -Raw -Credential $Credential -ComputerName $sourceNetBios -ScriptBlock { Get-ItemProperty -Path "HKLM:\SOFTWARE\" } -ErrorAction Stop
+                Invoke-Command2 -Raw -Credential $Credential -ComputerName $fullComputerName -ScriptBlock { Get-ItemProperty -Path "HKLM:\SOFTWARE\" } -ErrorAction Stop
             } catch {
-                Stop-Function -Message "Can't connect to registry on $instance." -Target $sourceNetBios -ErrorRecord $_
+                Stop-Function -Message "Can't connect to registry on $instance." -Target $fullComputerName -ErrorRecord $_
                 return
             }
 
