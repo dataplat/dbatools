@@ -222,7 +222,7 @@ function Copy-DbaLogin {
                 continue
             }
 
-            # Here we don't need the FullComputerName, but only the maschine name to compare to the host part of the login name. So ComputerName should be fine.
+            # Here we don't need the FullComputerName, but only the machine name to compare to the host part of the login name. So ComputerName should be fine.
             $serverName = $sourceServer.ComputerName
 
             $currentLogin = $DestServer.ConnectionContext.truelogin
