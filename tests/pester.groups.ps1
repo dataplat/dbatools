@@ -60,7 +60,8 @@ $TestsRunGroups = @{
         'Remove-DbaAgDatabase',
         'New-DbaDbTable',
         'Get-DbaDbSynonym',
-        'Get-DbaDbVirtualLogFile'
+        'Get-DbaDbVirtualLogFile',
+        'Get-DbaFile'
     )
     # do not run everywhere
     "disabled"          = @()
