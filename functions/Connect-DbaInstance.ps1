@@ -834,19 +834,19 @@ function Connect-DbaInstance {
                         Write-Message -Level Debug -Message "Building SqlConnection from SqlConnectionInfo.ConnectionString"
                         $connectionString = $sqlConnectionInfo.ConnectionString -replace 'Integrated Security=True;', ''
                         $sqlConnection = New-Object -TypeName Microsoft.Data.SqlClient.SqlConnection -ArgumentList $connectionString
-                        Write-Message -Level Debug -Message "SqlConnection was build"
+                        Write-Message -Level Debug -Message "SqlConnection was built"
                         $sqlConnection.AccessToken = $AccessToken
                         Write-Message -Level Debug -Message "Building ServerConnection from SqlConnection"
                         $serverConnection = New-Object -TypeName Microsoft.SqlServer.Management.Common.ServerConnection -ArgumentList $sqlConnection
-                        Write-Message -Level Debug -Message "ServerConnection was build"
+                        Write-Message -Level Debug -Message "ServerConnection was built"
                     } else {
                         Write-Message -Level Debug -Message "Building ServerConnection from SqlConnectionInfo"
                         $serverConnection = New-Object -TypeName Microsoft.SqlServer.Management.Common.ServerConnection -ArgumentList $sqlConnectionInfo
-                        Write-Message -Level Debug -Message "ServerConnection was build"
+                        Write-Message -Level Debug -Message "ServerConnection was built"
                     }
 
                     if ($authType -eq 'local ad') {
-                        if ($isLinux -or $IsMacOS) {
+                        if ($IsLinux -or $IsMacOS) {
                             Stop-Function -Message "Cannot use Windows credentials to connect when host is Linux or OS X. Use kinit instead. See https://github.com/sqlcollaborative/dbatools/issues/7602 for more info."
                             return
                         }
@@ -862,7 +862,7 @@ function Connect-DbaInstance {
 
                     Write-Message -Level Debug -Message "Building Server from ServerConnection"
                     $server = New-Object -TypeName Microsoft.SqlServer.Management.Smo.Server -ArgumentList $serverConnection
-                    Write-Message -Level Debug -Message "Server was build"
+                    Write-Message -Level Debug -Message "Server was built"
 
                     # Set properties of ConnectionContext that are not part of SqlConnectionInfo
                     if (Test-Bound -ParameterName 'BatchSeparator') {
@@ -1168,7 +1168,7 @@ function Connect-DbaInstance {
                     $null = $serverconn.Connect()
                     Write-Message -Level Debug -Message "will build server with [Microsoft.SqlServer.Management.Common.ServerConnection]serverconn (serverconn.ServerInstance = '$($serverconn.ServerInstance)')"
                     $server = New-Object Microsoft.SqlServer.Management.Smo.Server $serverconn
-                    Write-Message -Level Debug -Message "server was build with server.Name = '$($server.Name)'"
+                    Write-Message -Level Debug -Message "server was built with server.Name = '$($server.Name)'"
 
                     # Test for AzureUnsupported
                     if ($AzureUnsupported -and $server.DatabaseEngineType -eq "SqlAzureDatabase") {
@@ -1226,7 +1226,7 @@ function Connect-DbaInstance {
                 Write-Message -Level Debug -Message "will build server with [Microsoft.Data.SqlClient.SqlConnection]instance.InputObject (instance.InputObject.DataSource = '$($instance.InputObject.DataSource)')   "
                 $server = New-Object Microsoft.SqlServer.Management.Smo.Server($instance.InputObject)
                 $server.ConnectionContext.ConnectionString = $instance.InputObject.ConnectionString
-                Write-Message -Level Debug -Message "server was build with server.Name = '$($server.Name)'"
+                Write-Message -Level Debug -Message "server was built with server.Name = '$($server.Name)'"
 
                 if ($server.ConnectionContext.IsOpen -eq $false) {
                     Write-Message -Level Debug -Message "We connect to the server with server.ConnectionContext.Connect()"
@@ -1288,12 +1288,12 @@ function Connect-DbaInstance {
                 $null = $serverconn.Connect()
                 Write-Message -Level Debug -Message "will build server with [Microsoft.SqlServer.Management.Common.ServerConnection]serverconn (serverconn.ServerInstance = '$($serverconn.ServerInstance)')"
                 $server = New-Object Microsoft.SqlServer.Management.Smo.Server $serverconn
-                Write-Message -Level Debug -Message "server was build with server.Name = '$($server.Name)'"
+                Write-Message -Level Debug -Message "server was built with server.Name = '$($server.Name)'"
             } elseif (-not $isAzure) {
                 Write-Message -Level Debug -Message "isConnectionString is false"
                 Write-Message -Level Debug -Message "will build server with instance.FullSmoName = '$($instance.FullSmoName)'"
                 $server = New-Object Microsoft.SqlServer.Management.Smo.Server($instance.FullSmoName)
-                Write-Message -Level Debug -Message "server was build with server.Name = '$($server.Name)'"
+                Write-Message -Level Debug -Message "server was built with server.Name = '$($server.Name)'"
             }
 
             if ($AppendConnectionString) {
