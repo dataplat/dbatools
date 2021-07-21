@@ -58,7 +58,8 @@ $scriptBlock = {
             'Microsoft.SqlTools.ManagedBatchParser',
             'Microsoft.SqlServer.Management.Dmf',
             'Microsoft.SqlServer.XE.Core',
-            'Microsoft.Identity.Client'
+            'Microsoft.Identity.Client',
+            'Microsoft.SqlServer.XEvent.XELite'
         )
     } else {
         $names = @(
@@ -85,7 +86,8 @@ $scriptBlock = {
             'Microsoft.SqlServer.Dmf.Common',
             'Microsoft.SqlServer.Types',
             'Microsoft.SqlServer.XEvent.Linq',
-            'Microsoft.Identity.Client'
+            'Microsoft.Identity.Client',
+            'Microsoft.SqlServer.XEvent.XELite'
         )
     }
     #endregion Names
