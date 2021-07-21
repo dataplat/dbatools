@@ -37,6 +37,12 @@ function Get-DbaInstalledPatch {
 
         Gets the SQL Server patches from a list of computers in C:\Monitoring\Servers.txt.
 
+    .EXAMPLE
+        PS C:\> Get-DbaInstalledPatch -ComputerName SRV1 | Sort-Object InstallDate.Date
+
+        Gets the SQL Server patches from SRV1 and orders by date. Note that we use
+        a special customizable date datatype for InstallDate so you'll need InstallDate.Date
+
     #>
     [CmdletBinding()]
     param (
