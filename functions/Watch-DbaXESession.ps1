@@ -59,20 +59,20 @@ function Watch-DbaXESession {
         Exports live events to CSV. Ctrl-C may not not cancel out of this. The fastest way to do so is to stop the session.
 
     #>
-    [CmdletBinding(DefaultParameterSetName = "Default")]
+    [CmdletBinding()]
     param (
-        [parameter(ValueFromPipeline, ParameterSetName = "instance", Mandatory)]
         [DbaInstanceParameter]$SqlInstance,
         [PSCredential]$SqlCredential,
+        [Alias("Name")]
         [string]$Session,
-        [parameter(ValueFromPipeline, ParameterSetName = "piped", Mandatory)]
-        [Microsoft.SqlServer.Management.XEvent.Session]$InputObject,
+        [parameter(ValueFromPipeline)]
+        [Microsoft.SqlServer.Management.XEvent.Session[]]$InputObject,
         [switch]$Raw,
         [switch]$EnableException
     )
     process {
         if ($SqlInstance) {
-            $InputObject += Get-DbaXESession -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Session $Session
+            $InputObject = Get-DbaXESession -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Session $Session
         }
 
         foreach ($xesession in $InputObject) {
@@ -102,31 +102,27 @@ function Watch-DbaXESession {
             $columns = ($columns += $newcolumns) | Select-Object -Unique
 
             try {
-                $xevent = New-Object -TypeName Microsoft.SqlServer.XEvent.Linq.QueryableXEventData(
-                    ($server.ConnectionContext.ConnectionString),
-                    ($xesession.Name),
-                    [Microsoft.SqlServer.XEvent.Linq.EventStreamSourceOptions]::EventStream,
-                    [Microsoft.SqlServer.XEvent.Linq.EventStreamCacheOptions]::DoNotCache
-                )
-
                 if ($raw) {
-                    return $xevent
+                    return (Read-SqlXEvent -ConnectionString $server.ConnectionContext.ConnectionString -SessionName $sessionname -ErrorAction Stop)
                 }
 
-                # Format output
-                foreach ($event in $xevent) {
+                # use the Read-SqlXEvent cmdlet from Microsoft
+                # because the underlying Class uses Tasks
+                # which is hard to handle in PowerShell
+                Read-SqlXEvent -ConnectionString $server.ConnectionContext.ConnectionString -SessionName $sessionname -ErrorAction Stop | ForEach-Object -Process {
+
                     $hash = [ordered]@{ }
 
                     foreach ($column in $columns) {
-                        $null = $hash.Add($column, $event.$column) # this basically adds name and timestamp then nulls
+                        $null = $hash.Add($column, $PSItem.$column) # this basically adds name and timestamp then nulls
                     }
 
-                    foreach ($action in $event.Actions) {
-                        $hash[$action.Name] = $action.Value
+                    foreach ($key in $PSItem.Actions.Keys) {
+                        $hash[$key] = $PSItem.Actions[$key]
                     }
 
-                    foreach ($field in $event.Fields) {
-                        $hash[$field.Name] = $field.Value
+                    foreach ($key in $PSItem.Fields.Keys) {
+                        $hash[$key] = $PSItem.Fields[$key]
                     }
 
                     [PSCustomObject]($hash)
@@ -138,10 +134,6 @@ function Watch-DbaXESession {
                     Stop-Function -Message "$($xesession.Name) was stopped."
                 } else {
                     Stop-Function -Message "Failure" -ErrorRecord $_ -Target $sessionname
-                }
-            } finally {
-                if ($xevent -is [IDisposable]) {
-                    $xevent.Dispose()
                 }
             }
         }
