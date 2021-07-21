@@ -30,14 +30,14 @@ function Get-DecryptedObject {
         return
     }
 
-    $sourceNetBios = Resolve-NetBiosName $server
+    $fullComputerName = Resolve-DbaComputerName -ComputerName $server -Credential $Credential
     $instance = $server.InstanceName
     $serviceInstanceId = $server.ServiceInstanceId
 
     Write-Message -Level Verbose -Message "Get entropy from the registry - hopefully finds the right SQL server instance"
 
     try {
-        [byte[]]$entropy = Invoke-Command2 -Raw -Credential $Credential -ComputerName $sourceNetBios -argumentlist $serviceInstanceId {
+        [byte[]]$entropy = Invoke-Command2 -Raw -Credential $Credential -ComputerName $fullComputerName -argumentlist $serviceInstanceId {
             $serviceInstanceId = $args[0]
             $entropy = (Get-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Microsoft SQL Server\$serviceInstanceId\Security\" -ErrorAction Stop).Entropy
             return $entropy
@@ -49,7 +49,7 @@ function Get-DecryptedObject {
 
     Write-Message -Level Verbose -Message "Decrypt the service master key"
     try {
-        $serviceKey = Invoke-Command2 -Raw -Credential $Credential -ComputerName $sourceNetBios -ArgumentList $smkbytes, $Entropy {
+        $serviceKey = Invoke-Command2 -Raw -Credential $Credential -ComputerName $fullComputerName -ArgumentList $smkbytes, $Entropy {
             Add-Type -AssemblyName System.Security
             Add-Type -AssemblyName System.Core
             $smkbytes = $args[0]; $Entropy = $args[1]
@@ -89,7 +89,7 @@ function Get-DecryptedObject {
 
     try {
         if (-not $server.IsClustered) {
-            $connString = "Server=ADMIN:$sourceNetBios\$instance;Trusted_Connection=True;Pooling=false"
+            $connString = "Server=ADMIN:$fullComputerName\$instance;Trusted_Connection=True;Pooling=false"
         } else {
             $dacEnabled = $server.Configuration.RemoteDacConnectionsEnabled.ConfigValue
 
@@ -129,7 +129,7 @@ function Get-DecryptedObject {
     Write-Message -Level Debug -Message $sql
 
     try {
-        $results = Invoke-Command2 -ErrorAction Stop -Raw -Credential $Credential -ComputerName $sourceNetBios -ArgumentList $connString, $sql {
+        $results = Invoke-Command2 -ErrorAction Stop -Raw -Credential $Credential -ComputerName $fullComputerName -ArgumentList $connString, $sql {
             $connString = $args[0]
             $sql = $args[1]
             $conn = New-Object Microsoft.Data.SqlClient.SQLConnection($connString)
