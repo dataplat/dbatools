@@ -101,7 +101,7 @@ function New-DbaDbMasterKey {
             if ($Pscmdlet.ShouldProcess($db.Parent.Name, "Creating master key for database '$($db.Name)'")) {
                 try {
                     $masterkey = New-Object Microsoft.SqlServer.Management.Smo.MasterKey $db
-                    $masterkey.Create(([System.Runtime.InteropServices.marshal]::PtrToStringAuto([System.Runtime.InteropServices.marshal]::SecureStringToBSTR($SecurePassword))))
+                    $masterkey.Create(($SecurePassword | ConvertFrom-SecurePass))
 
                     Add-Member -Force -InputObject $masterkey -MemberType NoteProperty -Name ComputerName -value $db.Parent.ComputerName
                     Add-Member -Force -InputObject $masterkey -MemberType NoteProperty -Name InstanceName -value $db.Parent.ServiceName
@@ -110,7 +110,7 @@ function New-DbaDbMasterKey {
 
                     Select-DefaultView -InputObject $masterkey -Property ComputerName, InstanceName, SqlInstance, Database, CreateDate, DateLastModified, IsEncryptedByServer
                 } catch {
-                    Stop-Function -Message "Failed to create master key in $db on $instance. Exception: $($_.Exception.InnerException)" -Target $masterkey -ErrorRecord $_ -Continue
+                    Stop-Function -Message "Failed to create master key in $db on $instance" -Target $masterkey -ErrorRecord $_ -Continue
                 }
             }
         }

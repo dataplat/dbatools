@@ -87,9 +87,9 @@ function Get-DbaXESession {
 
                 if ($files) {
                     foreach ($file in $files) {
-                        if ($file -notmatch ':\\' -and $file -notmatch '\\\\') {
-                            $directory = $server.ErrorLogPath.TrimEnd("\")
-                            $file = "$directory\$file"
+                        if ($file -notmatch ':\\' -and $file -notmatch '\\\\' -and $file -notmatch '\/') {
+                            $directory = $server.ErrorLogPath.TrimEnd("\/")
+                            $file = (Join-DbaPath -SqlInstance $server $directory $file)
                         }
                         $filecollection += $file
                         $remotefile += Join-AdminUnc -servername $server.ComputerName -filepath $file

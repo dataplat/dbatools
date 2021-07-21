@@ -37,6 +37,9 @@ function Get-DbaAgentJob {
     .PARAMETER IncludeExecution
         Include Execution details if the job is currently running
 
+    .PARAMETER Type
+        The type of job: MultiServer or Local. Defaults to both MultiServer and Local.
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -105,6 +108,8 @@ function Get-DbaAgentJob {
         [string[]]$ExcludeCategory,
         [switch]$ExcludeDisabledJobs,
         [switch]$IncludeExecution,
+        [ValidateSet("MultiServer", "Local")]
+        [string[]]$Type = @("MultiServer", "Local"),
         [switch]$EnableException
     )
 
@@ -127,7 +132,7 @@ function Get-DbaAgentJob {
                 $jobExecutionResults = $server.Query($query)
             }
 
-            $jobs = $server.JobServer.Jobs
+            $jobs = $server.JobServer.Jobs | Where-Object JobType -in $Type
 
             if ($Job) {
                 $jobs = $jobs | Where-Object Name -In $Job
