@@ -25,7 +25,7 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
     $resultsNew = New-DbaFirewallRule -SqlInstance $script:instance2  -Confirm:$false
     $resultsGet = Get-DbaFirewallRule -SqlInstance $script:instance2
     $resultsRemoveBrowser = $resultsGet | Where-Object { $_.Type -eq "Browser" } | Remove-DbaFirewallRule -Confirm:$false
-    $resultsRemove = Remove-DbaFirewallRule -SqlInstance $script:instance2 -Type AllOnComputer -Confirm:$false
+    $resultsRemove = Remove-DbaFirewallRule -SqlInstance $script:instance2 -Type AllInstance -Confirm:$false
 
     $instanceName = ([DbaInstanceParameter]$script:instance2).InstanceName
 

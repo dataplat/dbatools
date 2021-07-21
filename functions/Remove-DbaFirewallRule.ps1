@@ -27,7 +27,7 @@ function Remove-DbaFirewallRule {
         Valid values are:
             Engine - for the SQL Server instance
             Browser - for the SQL Server Browser
-            AllOnComputer - for all firewall rules on the target computer related to SQL Server
+            AllInstance - for all firewall rules on the target computer related to SQL Server
         The default is 'Engine'.
         As the Browser might be needed by other instances, the firewall rule for the SQL Server Browser is
         never removed with the firewall rule of the instance but only removed if 'Browser' is used.
@@ -68,7 +68,7 @@ function Remove-DbaFirewallRule {
         Removes the firewall rule for the instance SQL2016 on SRV1 and the firewall rule for the SQL Server Browser.
 
     .EXAMPLE
-        PS C:\> Get-DbaFirewallRule -SqlInstance SRV1 -Type AllOnComputer | Where-Object Type -eq 'Engine' | Remove-DbaFirewallRule
+        PS C:\> Get-DbaFirewallRule -SqlInstance SRV1 -Type AllInstance | Where-Object Type -eq 'Engine' | Remove-DbaFirewallRule
 
         Removes the firewall rules for all instance from SRV1. Leaves the firewall rule for the SQL Server Browser in place.
 
@@ -85,7 +85,7 @@ function Remove-DbaFirewallRule {
         [Parameter(ParameterSetName = 'NonPipeline')]
         [PSCredential]$Credential,
         [Parameter(ParameterSetName = 'NonPipeline')]
-        [ValidateSet('Engine', 'Browser', 'AllOnComputer')]
+        [ValidateSet('Engine', 'Browser', 'AllInstance')]
         [string[]]$Type = 'Engine',
         [parameter(ValueFromPipeline, ParameterSetName = 'Pipeline', Mandatory = $true)]
         [object[]]$InputObject,

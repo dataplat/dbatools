@@ -27,7 +27,7 @@ function Get-DbaFirewallRule {
         Valid values are:
             Engine - for the SQL Server instance
             Browser - for the SQL Server Browser
-            AllOnComputer - for all firewall rules on the target computer related to SQL Server
+            AllInstance - for all firewall rules on the target computer related to SQL Server
         If this parameter is not used, the firewall rule for the SQL Server instance will be returned
         and in case the instance is listening on a port other than 1433,
         also the firewall rule for the SQL Server Browser will be returned.
@@ -67,10 +67,10 @@ function Get-DbaFirewallRule {
         As the Browser is not bound to a specific instance, only the computer part of SqlInstance is used.
 
     .EXAMPLE
-        PS C:\> Get-DbaFirewallRule -SqlInstance SRV1\SQL2016 -Type AllOnComputer
+        PS C:\> Get-DbaFirewallRule -SqlInstance SRV1\SQL2016 -Type AllInstance
 
         Returns all firewall rules on the computer SRV1 related to SQL Server.
-        The value "AllOnComputer" only uses the computer name part of SqlInstance.
+        The value "AllInstance" only uses the computer name part of SqlInstance.
 
     #>
     [CmdletBinding()]
@@ -78,7 +78,7 @@ function Get-DbaFirewallRule {
         [parameter(Mandatory, ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$Credential,
-        [ValidateSet('Engine', 'Browser', 'AllOnComputer')]
+        [ValidateSet('Engine', 'Browser', 'AllInstance')]
         [string[]]$Type,
         [switch]$EnableException
     )
@@ -204,7 +204,7 @@ function Get-DbaFirewallRule {
 
             # What rules should we output?
             $outputRules = @( )
-            if ('AllOnComputer' -in $Type) {
+            if ('AllInstance' -in $Type) {
                 Write-Message -Level Verbose -Message 'Returning all rules for target computer'
                 $outputRules += $rules
             } elseif ($null -eq $Type) {
