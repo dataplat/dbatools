@@ -120,11 +120,6 @@ function Export-DbaDacPackage {
     process {
         if (Test-FunctionInterrupt) { return }
 
-        if ($PSEdition -eq 'Core') {
-            Stop-Function -Message "PowerShell Core is not supported, please use Windows PowerShell."
-            return
-        }
-
         if ((Test-Bound -Not -ParameterName Database) -and (Test-Bound -Not -ParameterName ExcludeDatabase) -and (Test-Bound -Not -ParameterName AllUserDatabases)) {
             Stop-Function -Message "You must specify databases to execute against using either -Database, -ExcludeDatabase or -AllUserDatabases"
             return
@@ -262,7 +257,7 @@ function Export-DbaDacPackage {
 
                     try {
                         $startprocess = New-Object System.Diagnostics.ProcessStartInfo
-                        if ($IsLinux) {
+                        if ($IsLinux -or $IsMacOS) {
                             $startprocess.FileName = "$script:PSModuleRoot/bin/smo/coreclr/sqlpackage"
                         } else {
                             $startprocess.FileName = "$script:PSModuleRoot\bin\smo\sqlpackage.exe"

@@ -181,11 +181,6 @@ function Publish-DbaDacPackage {
             return
         }
 
-        if ($PSEdition -eq 'Core') {
-            Stop-Function -Message "PowerShell Core is not supported, please use Windows PowerShell."
-            return
-        }
-
         if (-not (Test-Path -Path $Path)) {
             Stop-Function -Message "$Path not found."
             return
