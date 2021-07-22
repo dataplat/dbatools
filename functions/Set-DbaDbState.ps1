@@ -173,7 +173,11 @@ function Set-DbaDbState {
                     # this can be helpful only for SINGLE_USER databases
                     # but since $immediate is called, it does no more harm
                     # than the immediate rollback
-                    $SqlInstance.KillAllProcesses($dbName)
+                    try {
+                        $SqlInstance.KillAllProcesses($dbName)
+                    } catch {
+                        Write-Message -Level Verbose -Message "KillAllProcesses failed, moving on to WITH ROLLBACK IMMEDIATE"
+                    }
                 }
                 $null = $SqlInstance.Query($sql)
             } catch {
