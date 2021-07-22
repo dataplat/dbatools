@@ -130,6 +130,9 @@ function Publish-DbaDacPackage {
             Stop-Function -Message "You must specify either SqlInstance or ConnectionString."
             return
         }
+        if ($ConnectionString) {
+            $ConnectionString = $ConnectionString | Convert-ConnectionString
+        }
         if ($Type -eq 'Dacpac') {
             if ((Test-Bound -ParameterName ScriptOnly) -or (Test-Bound -ParameterName GenerateDeploymentReport)) {
                 $defaultColumns = 'ComputerName', 'InstanceName', 'SqlInstance', 'Database', 'Dacpac', 'PublishXml', 'Result', 'DatabaseScriptPath', 'MasterDbScriptPath', 'DeploymentReport', 'DeployOptions', 'SqlCmdVariableValues'
@@ -219,7 +222,7 @@ function Publish-DbaDacPackage {
             } catch {
                 Stop-Function -Message "Failure." -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
-            $ConnectionString += $server.ConnectionContext.ConnectionString.Replace('"', "'")
+            $ConnectionString += $server.ConnectionContext.ConnectionString.Replace('"', "'") | Convert-ConnectionString
         }
 
         #Use proper class to load the object
@@ -261,6 +264,7 @@ function Publish-DbaDacPackage {
         }
 
         foreach ($connString in $ConnectionString) {
+            $connString = $connString | Convert-ConnectionString
             $cleaninstance = Get-ServerName $connString
             $instance = $cleaninstance.ToString().Replace('--', '\')
 
