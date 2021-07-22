@@ -69,10 +69,6 @@ function New-DbaDacOption {
         [switch]$EnableException
     )
     process {
-        if ($PSEdition -eq 'Core') {
-            Stop-Function -Message "PowerShell Core is not supported, please use Windows PowerShell."
-            return
-        }
         if ($PScmdlet.ShouldProcess("$type", "Creating New DacOptions of $action")) {
             if (-not $script:core) {
                 $dacfxPath = "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Dac.dll"
