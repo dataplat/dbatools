@@ -262,7 +262,11 @@ function Export-DbaDacPackage {
 
                     try {
                         $startprocess = New-Object System.Diagnostics.ProcessStartInfo
-                        $startprocess.FileName = "$script:PSModuleRoot\bin\smo\sqlpackage.exe"
+                        if ($IsLinux) {
+                            $startprocess.FileName = "$script:PSModuleRoot/bin/smo/coreclr/sqlpackage"
+                        } else {
+                            $startprocess.FileName = "$script:PSModuleRoot\bin\smo\sqlpackage.exe"
+                        }
                         $startprocess.Arguments = $sqlPackageArgs
                         $startprocess.RedirectStandardError = $true
                         $startprocess.RedirectStandardOutput = $true
