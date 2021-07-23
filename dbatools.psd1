@@ -371,6 +371,7 @@
         'Get-DbatoolsChangeLog',
         'Get-DbatoolsConfig',
         'Get-DbatoolsConfigValue',
+        'Get-DbatoolsError',
         'Get-DbatoolsLog',
         'Get-DbatoolsPath',
         'Get-DbaTopResourceUsage',
