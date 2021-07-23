@@ -451,7 +451,8 @@ function Connect-DbaInstance {
 
             } catch {
                 $errormessage = Get-ErrorMessage -Record $_
-                Write-Message -Level Verbose -Message "Failed to get access token for Azure SQL DB ($errormessage)"
+                Stop-Function -Message "Failed to get access token for Azure SQL DB ($errormessage)"
+                return
             }
         }
 
