@@ -11,6 +11,9 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
+      - uses: Azure/login@v1.1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
 
       - name:  Setup docker images
         run: |
