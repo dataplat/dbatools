@@ -16,7 +16,9 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     Context "Gets an error" {
         It "returns a dbatools error" {
-            $null = Connect-DbaInstance -SqlInstance nothing -ConnectTimeout 1 -ErrorAction SilentlyContinue
+            try {
+                $null = Connect-DbaInstance -SqlInstance nothing -ConnectTimeout 1 -ErrorAction Stop
+            } catch {}
             Get-DbatoolsError | Should -Not -BeNullOrEmpty
         }
     }
