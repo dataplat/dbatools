@@ -11,6 +11,9 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
+      - uses: Azure/login@v1.1
+        with:
+          creds: '{"clientId":"${{ secrets.CLIENTID }}","clientSecret":"${{ secrets.CLIENTSECRET }}","subscriptionId":"${{ secrets.SUBSCRIPTIONID }}","tenantId":"${{ secrets.TENANTID }}"}'
 
       - name:  Setup docker images
         run: |
@@ -26,10 +29,6 @@ jobs:
         working-directory: /tmp
         run: |
           gh repo clone sqlcollaborative/appveyor-lab
-
-       - uses: Azure/login@v1.1
-        with:
-          creds: '{"clientId":"${{ secrets.CLIENTID }}","clientSecret":"${{ secrets.CLIENTSECRET }}","subscriptionId":"${{ secrets.SUBSCRIPTIONID }}","tenantId":"${{ secrets.TENANTID }}"}'
 
       - name: Run tests
         env:
