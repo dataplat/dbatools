@@ -243,6 +243,8 @@ function Connect-DbaInstance {
 
         When connecting from a non-Azure workstation, logs into Azure using Universal with MFA Support with a username and password, then performs a sample query.
 
+        Note that generating access tokens is not supported on Core, so when using Tenant on Core, we rewrite the connection string with Active Directory Service Principal authentication instead.
+
     .EXAMPLE
         PS C:\> $cred = Get-Credential guid-app-id-here # appid for username, clientsecret for password
         PS C:\> Set-DbatoolsConfig -FullName azure.tenantid -Value 'guidheremaybename' -Passthru | Register-DbatoolsConfig
@@ -266,6 +268,11 @@ function Connect-DbaInstance {
         Connect to an Azure SQL Database or an Azure SQL Managed Instance with an AccessToken.
         Note that the token is valid for only one hour and cannot be renewed automatically.
 
+    .EXAMPLE
+        PS C:\> $token = (New-DbaAzAccessToken -Type RenewableServicePrincipal -Subtype AzureSqlDb -Tenant $tenantid -Credential $cred).GetAccessToken()
+        PS C:\> Connect-DbaInstance -SqlInstance sample.database.windows.net -Accesstoken $token
+
+        Uses dbatools to generate the access token for an Azure SQL Database, then logs in using that AccessToken.
     #>
     [CmdletBinding()]
     param (
@@ -429,12 +436,19 @@ function Connect-DbaInstance {
 
         # if tenant is specified with a GUID username such as 21f5633f-6776-4bab-b878-bbd5e3e5ed72 (for clientid)
         if ($Tenant -and -not $AccessToken -and $SqlCredential.UserName -match '^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$') {
-            Write-Message -Level Verbose "Tenant detected, getting access token"
+
             try {
-                $AccessToken = (New-DbaAzAccessToken -Type RenewableServicePrincipal -Subtype AzureSqlDb -Tenant $Tenant -Credential $SqlCredential -ErrorAction Stop).GetAccessToken()
-                $PSBoundParameters.Tenant = $Tenant = $null
-                $PSBoundParameters.SqlCredential = $SqlCredential = $null
-                $PSBoundParameters.AccessToken = $AccessToken
+                if ($PSVersionTable.PSEdition -eq "Core") {
+                    Write-Message -Level Verbose "Generating access tokens is not supported on Core. Will try connection string with Active Directory Service Principal instead. See https://github.com/sqlcollaborative/dbatools/pull/7610 for more information."
+                    $tryconnstring = $true
+                } else {
+                    Write-Message -Level Verbose "Tenant detected, getting access token"
+                    $AccessToken = (New-DbaAzAccessToken -Type RenewableServicePrincipal -Subtype AzureSqlDb -Tenant $Tenant -Credential $SqlCredential -ErrorAction Stop).GetAccessToken()
+                    $PSBoundParameters.Tenant = $Tenant = $null
+                    $PSBoundParameters.SqlCredential = $SqlCredential = $null
+                    $PSBoundParameters.AccessToken = $AccessToken
+                }
+
             } catch {
                 $errormessage = Get-ErrorMessage -Record $_
                 Stop-Function -Message "Failed to get access token for Azure SQL DB ($errormessage)"
@@ -444,6 +458,15 @@ function Connect-DbaInstance {
 
         Write-Message -Level Debug -Message "Starting process block"
         foreach ($instance in $SqlInstance) {
+            if ($tryconnstring) {
+                $azureserver = $instance.InputObject
+                if ($Database) {
+                    $instance = [DbaInstanceParameter]"Server=$azureserver; Authentication=Active Directory Service Principal; Database=$Database; User Id=$($SqlCredential.UserName); Password=$($SqlCredential.GetNetworkCredential().Password)"
+                } else {
+                    $instance = [DbaInstanceParameter]"Server=$azureserver; Authentication=Active Directory Service Principal; User Id=$($SqlCredential.UserName); Password=$($SqlCredential.GetNetworkCredential().Password)"
+                }
+            }
+
             Write-Message -Level Debug -Message "Immediately checking for Azure"
             if ((Test-Azure -SqlInstance $instance)) {
                 Write-Message -Level Verbose -Message "Azure detected"
