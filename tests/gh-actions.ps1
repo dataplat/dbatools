@@ -178,7 +178,9 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
     It "connects to Azure" {
         $securestring = ConvertTo-SecureString $env:CLIENTSECRET -AsPlainText -Force
         $azurecred = New-Object PSCredential -ArgumentList $env:CLIENTID, $securestring
-        Connect-DbaInstance -SqlInstance dbatooolstest.database.windows.net -SqlCredential $azurecred -Tenant $env:TENANTID
+        #Connect-DbaInstance -SqlInstance dbatooolstest.database.windows.net -SqlCredential $azurecred -Tenant $env:TENANTID
+        $connstring = "Server=dbatoolstest.database.windows.net; Authentication=Active Directory Service Principal; Database=test; User Id=$env:CLIENTID; Password=$env:CLIENTSECRET;"
+        Connect-DbaInstance -SqlInstance $connstring
     }
 }
 
