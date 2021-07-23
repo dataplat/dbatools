@@ -493,6 +493,7 @@ $script:xplat = @(
     'Get-DbaInstanceAudit',
     'Get-DbaInstanceAuditSpecification',
     'Get-DbaProductKey',
+    'Get-DbatoolsError',
     'Get-DbatoolsLog',
     'Restore-DbaDbCertificate',
     'New-DbaDbCertificate',
