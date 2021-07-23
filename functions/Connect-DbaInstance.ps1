@@ -243,6 +243,8 @@ function Connect-DbaInstance {
 
         When connecting from a non-Azure workstation, logs into Azure using Universal with MFA Support with a username and password, then performs a sample query.
 
+        Note that generating access tokens is not supported on Core, so when using Tenant on Core, we rewrite the connection string with Active Directory Service Principal authentication instead.
+
     .EXAMPLE
         PS C:\> $cred = Get-Credential guid-app-id-here # appid for username, clientsecret for password
         PS C:\> Set-DbatoolsConfig -FullName azure.tenantid -Value 'guidheremaybename' -Passthru | Register-DbatoolsConfig
@@ -266,6 +268,11 @@ function Connect-DbaInstance {
         Connect to an Azure SQL Database or an Azure SQL Managed Instance with an AccessToken.
         Note that the token is valid for only one hour and cannot be renewed automatically.
 
+    .EXAMPLE
+        PS C:\> $token = (New-DbaAzAccessToken -Type RenewableServicePrincipal -Subtype AzureSqlDb -Tenant $tenantid -Credential $cred).GetAccessToken()
+        PS C:\> Connect-DbaInstance -SqlInstance sample.database.windows.net -Accesstoken $token
+
+        Uses dbatools to generate the access token for an Azure SQL Database, then logs in using that AccessToken.
     #>
     [CmdletBinding()]
     param (
@@ -432,7 +439,7 @@ function Connect-DbaInstance {
 
             try {
                 if ($PSVersionTable.PSEdition -eq "Core") {
-                    Write-Message -Level Verbose "Generating access tokens is not supported on Core. Will try connection string with Active Directory Service Principal instead."
+                    Write-Message -Level Verbose "Generating access tokens is not supported on Core. Will try connection string with Active Directory Service Principal instead. See https://github.com/sqlcollaborative/dbatools/pull/7610 for more information."
                     $tryconnstring = $true
                 } else {
                     Write-Message -Level Verbose "Tenant detected, getting access token"
