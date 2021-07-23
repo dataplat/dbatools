@@ -13,7 +13,7 @@ jobs:
       - uses: actions/checkout@v2
       - uses: Azure/login@v1.1
         with:
-          creds: '{"clientId":"${{ secrets.CLIENTID }}","clientSecret":"${{ secrets.CLIENTSECRET }}","subscriptionId":"${{ secrets.SUBSCRIPTIONID }}","tenantId":"${{ secrets.TENANTID }}"}'
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
 
       - name:  Setup docker images
         run: |
