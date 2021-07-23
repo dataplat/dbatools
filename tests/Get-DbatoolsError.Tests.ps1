@@ -15,10 +15,6 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     Context "Gets an error" {
-        It "doesn't return non-dbatools errors" {
-            $null = Get-ChildItem doesntexist -ErrorAction SilentlyContinue
-            Get-DbatoolsError | Should -BeNullOrEmpty
-        }
         It "returns a dbatools error" {
             $null = Connect-DbaInstance -SqlInstance nothing -ConnectTimeout 1 -ErrorAction SilentlyContinue
             Get-DbatoolsError | Should -Not -BeNullOrEmpty
