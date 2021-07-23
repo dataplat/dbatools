@@ -429,21 +429,36 @@ function Connect-DbaInstance {
 
         # if tenant is specified with a GUID username such as 21f5633f-6776-4bab-b878-bbd5e3e5ed72 (for clientid)
         if ($Tenant -and -not $AccessToken -and $SqlCredential.UserName -match '^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$') {
-            Write-Message -Level Verbose "Tenant detected, getting access token"
+
             try {
-                $AccessToken = (New-DbaAzAccessToken -Type RenewableServicePrincipal -Subtype AzureSqlDb -Tenant $Tenant -Credential $SqlCredential -ErrorAction Stop).GetAccessToken()
-                $PSBoundParameters.Tenant = $Tenant = $null
-                $PSBoundParameters.SqlCredential = $SqlCredential = $null
-                $PSBoundParameters.AccessToken = $AccessToken
+                if ($PSVersionTable.PSEdition -eq "Core") {
+                    Write-Message -Level Verbose "Generating access tokens is not supported on Core. Will try connection string with Active Directory Service Principal instead."
+                    $tryconnstring = $true
+                } else {
+                    Write-Message -Level Verbose "Tenant detected, getting access token"
+                    $AccessToken = (New-DbaAzAccessToken -Type RenewableServicePrincipal -Subtype AzureSqlDb -Tenant $Tenant -Credential $SqlCredential -ErrorAction Stop).GetAccessToken()
+                    $PSBoundParameters.Tenant = $Tenant = $null
+                    $PSBoundParameters.SqlCredential = $SqlCredential = $null
+                    $PSBoundParameters.AccessToken = $AccessToken
+                }
+
             } catch {
                 $errormessage = Get-ErrorMessage -Record $_
-                Stop-Function -Message "Failed to get access token for Azure SQL DB ($errormessage)"
-                return
+                Write-Message -Level Verbose -Message "Failed to get access token for Azure SQL DB ($errormessage)"
             }
         }
 
         Write-Message -Level Debug -Message "Starting process block"
         foreach ($instance in $SqlInstance) {
+            if ($tryconnstring) {
+                $azureserver = $instance.InputObject
+                if ($Database) {
+                    $instance = [DbaInstanceParameter]"Server=$azureserver; Authentication=Active Directory Service Principal; Database=$Database; User Id=$($SqlCredential.UserName); Password=$($SqlCredential.GetNetworkCredential().Password)"
+                } else {
+                    $instance = [DbaInstanceParameter]"Server=$azureserver; Authentication=Active Directory Service Principal; User Id=$($SqlCredential.UserName); Password=$($SqlCredential.GetNetworkCredential().Password)"
+                }
+            }
+
             Write-Message -Level Debug -Message "Immediately checking for Azure"
             if ((Test-Azure -SqlInstance $instance)) {
                 Write-Message -Level Verbose -Message "Azure detected"
