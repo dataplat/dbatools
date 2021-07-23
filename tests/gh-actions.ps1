@@ -174,6 +174,12 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
     It "tests tempdb configs" {
         (Test-DbaTempDbConfig).Rule | Should -Contain "File Growth in Percent"
     }
+
+    It "connects to Azure" {
+        $securestring = ConvertTo-SecureString $env:CLIENTSECRET -AsPlainText -Force
+        $azurecred = New-Object PSCredential -ArgumentList $env:CLIENTID, $securestring
+        Connect-DbaInstance -SqlInstance dbatooolstest.database.windows.net -SqlCredential $azurecred -Tenant $env:TENANTID
+    }
 }
 
 
