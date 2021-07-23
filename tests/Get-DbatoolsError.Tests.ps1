@@ -20,7 +20,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             Get-DbatoolsError | Should -BeNullOrEmpty
         }
         It "returns a dbatools error" {
-            $null = Connect-DbaInstance -SqlInstance nothing -ConnectTimeout 1
+            $null = Connect-DbaInstance -SqlInstance nothing -ConnectTimeout 1 -ErrorAction SilentlyContinue
             Get-DbatoolsError | Should -Not -BeNullOrEmpty
         }
     }
