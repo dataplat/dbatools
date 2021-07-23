@@ -163,7 +163,8 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
         Get-DbaPermission -Database tempdb | Should -Not -Be $null
     }
 
-    It "returns the master key" {
+    # Takes two minutes in GH, very boring
+    It -Skip "returns the master key" {
         (Get-DbaDbMasterKey).Database | Should -Be "master"
     }
 
@@ -173,6 +174,14 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
 
     It "tests tempdb configs" {
         (Test-DbaTempDbConfig).Rule | Should -Contain "File Growth in Percent"
+    }
+
+    It "connects to Azure" {
+        $PSDefaultParameterValues.Clear()
+        $securestring = ConvertTo-SecureString $env:CLIENTSECRET -AsPlainText -Force
+        $azurecred = New-Object PSCredential -ArgumentList $env:CLIENTID, $securestring
+        Connect-DbaInstance -SqlInstance dbatoolstest.database.windows.net -SqlCredential $azurecred -Tenant $env:TENANTID | Select-Object -ExpandProperty ComputerName | Should -Be "dbatoolstest.database.windows.net"
+        Connect-DbaInstance -SqlInstance "Server=dbatoolstest.database.windows.net; Authentication=Active Directory Service Principal; Database=test; User Id=$env:CLIENTID; Password=$env:CLIENTSECRET;" | Select-Object -ExpandProperty ComputerName | Should -Be "dbatoolstest.database.windows.net"
     }
 }
 

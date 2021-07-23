@@ -58,12 +58,14 @@ $scriptBlock = {
             'Microsoft.SqlTools.ManagedBatchParser',
             'Microsoft.SqlServer.Management.Dmf',
             'Microsoft.SqlServer.XE.Core',
+            'System.Net.Http',
             'Microsoft.Identity.Client',
             'Microsoft.SqlServer.XEvent.XELite',
             'SqlServer.XEvent'
         )
     } else {
         $names = @(
+            'System.Net.Http',
             'Microsoft.Data.SqlClient',
             'Microsoft.SqlServer.Smo',
             'Microsoft.SqlServer.SmoExtended',

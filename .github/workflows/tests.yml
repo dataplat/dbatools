@@ -28,6 +28,10 @@ jobs:
           gh repo clone sqlcollaborative/appveyor-lab
 
       - name: Run tests
+        env:
+          TENANTID: ${{secrets.TENANTID}}
+          CLIENTID: ${{secrets.CLIENTID}}
+          CLIENTSECRET: ${{secrets.CLIENTSECRET}}
         run: |
           $results = Invoke-Pester ./tests/gh-actions.ps1 -Output Detailed -PassThru
           if ($results.Result -ne "Passed") {
