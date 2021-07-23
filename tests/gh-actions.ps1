@@ -163,7 +163,8 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
         Get-DbaPermission -Database tempdb | Should -Not -Be $null
     }
 
-    It "returns the master key" {
+    # Takes two minutes in GH, very boring
+    It -Skip "returns the master key" {
         (Get-DbaDbMasterKey).Database | Should -Be "master"
     }
 
