@@ -21,7 +21,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         $newDbName = "dbatoolsci_newdb_$random"
         $db = New-DbaDatabase -SqlInstance $instance2 -Name $newDbName
         $db.Invoke("EXEC sys.sp_addextendedproperty @name=N'dbatoolz', @value=N'woo'")
-        $masterdb = Get-DbaDatabase -SqlInstance $instance2 -Name master
+        $masterdb = Get-DbaDatabase -SqlInstance $instance2 -Database master
         $masterdb.Invoke("EXEC sys.sp_addextendedproperty @name=N'mastertoolz', @value=N'woo2'")
     }
 
