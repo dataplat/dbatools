@@ -67,6 +67,11 @@ function Get-DbaDbTable {
         Return only information on the table MyTable from the database MyDB
 
     .EXAMPLE
+        PS C:\> Get-DbaDbTable -SqlInstance DEV01 -Database MyDB -Table MyTable -Schema MySchema
+
+        Return only information on the table MyTable from the database MyDB and only from the schema MySchema
+
+    .EXAMPLE
         PS C:\> Get-DbaDbTable -SqlInstance DEV01 -Table MyTable
 
         Returns information on table called MyTable if it exists in any database on the server, under any schema
