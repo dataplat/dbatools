@@ -34,6 +34,9 @@ function Get-DbaDbTable {
         Any actual usage of the ] must be escaped by duplicating the ] character.
         The correct way to find a table Name] in schema Schema.Name is by passing [Schema.Name].[Name]]]
 
+    .PARAMETER Schema
+        Only return tables from the specified schema
+
     .PARAMETER InputObject
         Enables piping from Get-DbaDatabase
 
@@ -62,6 +65,11 @@ function Get-DbaDbTable {
         PS C:\> Get-DbaDbTable -SqlInstance DEV01 -Database MyDB -Table MyTable
 
         Return only information on the table MyTable from the database MyDB
+
+    .EXAMPLE
+        PS C:\> Get-DbaDbTable -SqlInstance DEV01 -Database MyDB -Table MyTable -Schema MySchema
+
+        Return only information on the table MyTable from the database MyDB and only from the schema MySchema
 
     .EXAMPLE
         PS C:\> Get-DbaDbTable -SqlInstance DEV01 -Table MyTable
@@ -94,6 +102,7 @@ function Get-DbaDbTable {
         [string[]]$ExcludeDatabase,
         [switch]$IncludeSystemDBs,
         [string[]]$Table,
+        [string[]]$Schema,
         [parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
         [switch]$EnableException
@@ -152,6 +161,10 @@ function Get-DbaDbTable {
                 }
             } else {
                 $tables = $db.Tables
+            }
+
+            if ($Schema) {
+                $tables = $tables | Where-Object Schema -in $Schema
             }
 
             foreach ($sqlTable in $tables) {
