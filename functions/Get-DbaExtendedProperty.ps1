@@ -1,4 +1,4 @@
-function Get-DbaDbExtendedProperty {
+function Get-DbaExtendedProperty {
     <#
     .SYNOPSIS
         Gets database extended properties
@@ -42,20 +42,20 @@ function Get-DbaDbExtendedProperty {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaDbExtendedProperty
+        https://dbatools.io/Get-DbaExtendedProperty
 
     .EXAMPLE
-        PS C:\> Get-DbaDbExtendedProperty -SqlInstance sql2016
+        PS C:\> Get-DbaExtendedProperty -SqlInstance sql2016
 
         Gets all extended properties
 
     .EXAMPLE
-        PS C:\> Get-DbaDbExtendedProperty -SqlInstance Server1 -Database db1
+        PS C:\> Get-DbaExtendedProperty -SqlInstance Server1 -Database db1
 
         Gets the extended properties for the db1 database
 
     .EXAMPLE
-        PS C:\> Get-DbaDbExtendedProperty -SqlInstance Server1 -Database db1 -Property cert1
+        PS C:\> Get-DbaExtendedProperty -SqlInstance Server1 -Database db1 -Property cert1
 
         Gets the cert1 extended properties within the db1 database
 
@@ -73,19 +73,14 @@ function Get-DbaDbExtendedProperty {
     )
     process {
         if ($SqlInstance) {
-            $InputObject += Get-DbaDatabase -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $Database -ExcludeDatabase $ExcludeDatabase
+            $InputObject += Get-DbaDatabase -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $Database -ExcludeDatabase $ExcludeDatabase | Where-Object IsAccessible
         }
 
-        foreach ($db in $InputObject) {
-            if (-not $db.IsAccessible) {
-                Write-Message -Level Warning -Message "$db is not accessible, skipping"
-                continue
-            }
-
-            $props = $db.ExtendedProperties
+        foreach ($object in $InputObject) {
+            $props = $object.ExtendedProperties
 
             if ($null -eq $props) {
-                Write-Message -Message "No extended properties exist in the $db database on $instance" -Target $db -Level Verbose
+                Write-Message -Message "No extended properties exist in the $object database on $instance" -Target $object -Level Verbose
                 continue
             }
 
@@ -94,10 +89,10 @@ function Get-DbaDbExtendedProperty {
             }
 
             foreach ($prop in $props) {
-                Add-Member -Force -InputObject $prop -MemberType NoteProperty -Name ComputerName -value $db.ComputerName
-                Add-Member -Force -InputObject $prop -MemberType NoteProperty -Name InstanceName -value $db.InstanceName
-                Add-Member -Force -InputObject $prop -MemberType NoteProperty -Name SqlInstance -value $db.SqlInstance
-                Add-Member -Force -InputObject $prop -MemberType NoteProperty -Name Database -value $db.Name
+                Add-Member -Force -InputObject $prop -MemberType NoteProperty -Name ComputerName -value $object.ComputerName
+                Add-Member -Force -InputObject $prop -MemberType NoteProperty -Name InstanceName -value $object.InstanceName
+                Add-Member -Force -InputObject $prop -MemberType NoteProperty -Name SqlInstance -value $object.SqlInstance
+                Add-Member -Force -InputObject $prop -MemberType NoteProperty -Name Database -value $object.Name
 
                 Select-DefaultView -InputObject $prop -Property ComputerName, InstanceName, SqlInstance, Database, Name, Value
             }

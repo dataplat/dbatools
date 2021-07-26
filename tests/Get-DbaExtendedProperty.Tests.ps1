@@ -32,18 +32,18 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     Context "commands work as expected" {
 
         It "finds an extended property on an instance" {
-            $ep = Get-DbaDbExtendedProperty -SqlInstance $instance2
+            $ep = Get-DbaExtendedProperty -SqlInstance $instance2
             $ep.Count | Should -BeGreaterThan 0
         }
 
         It "finds a sequence in a single database" {
-            $ep = Get-DbaDbExtendedProperty -SqlInstance $instance2 -Database $db.Name
+            $ep = Get-DbaExtendedProperty -SqlInstance $instance2 -Database $db.Name
             $ep.Parent.Name | Select-Object -Unique | Should -Be $db.Name
             $ep.Count | Should -Be 1
         }
 
         It "supports piping databases" {
-            $ep = $db | Get-DbaDbExtendedProperty -Name dbatoolz
+            $ep = $db | Get-DbaExtendedProperty -Name dbatoolz
             $ep.Name | Should -Be "dbatoolz"
         }
     }
