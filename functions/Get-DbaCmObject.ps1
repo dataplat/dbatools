@@ -430,7 +430,7 @@ function Get-DbaCmObject {
 
                             $parameters = @{
                                 ScriptBlock  = ([System.Management.Automation.ScriptBlock]::Create($scp_string))
-                                ComputerName = $ComputerName
+                                ComputerName = $computer
                                 Raw          = $true
                             }
                             if ($Credential) { $parameters["Credential"] = $Credential }
