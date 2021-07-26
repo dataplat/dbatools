@@ -90,10 +90,32 @@ function Get-DbaExtendedProperty {
                 $props = $props | Where-Object Name -in $Property
             }
 
+            # Since the inputobject is so generic, we need to re-build these properties
+            $computername = $object.ComputerName
+            $instancename = $object.InstanceName
+            $sqlname = $object.SqlInstance
+
+            if (-not $computername -or -not $instancename -or -not $sqlname) {
+                $server = Get-ServerParent $object
+                $servername = $server.Query("SELECT @@servername as servername").servername
+
+                if (-not $computername) {
+                    $computername = ([DbaInstanceParameter]$servername).ComputerName
+                }
+
+                if (-not $instancename) {
+                    $instancename = ([DbaInstanceParameter]$servername).InstanceName
+                }
+
+                if (-not $sqlname) {
+                    $sqlname = $servername
+                }
+            }
+
             foreach ($prop in $props) {
-                Add-Member -Force -InputObject $prop -MemberType NoteProperty -Name ComputerName -Value $object.ComputerName
-                Add-Member -Force -InputObject $prop -MemberType NoteProperty -Name InstanceName -Value $object.InstanceName
-                Add-Member -Force -InputObject $prop -MemberType NoteProperty -Name SqlInstance -Value $object.SqlInstance
+                Add-Member -Force -InputObject $prop -MemberType NoteProperty -Name ComputerName -Value $computername
+                Add-Member -Force -InputObject $prop -MemberType NoteProperty -Name InstanceName -Value $instancename
+                Add-Member -Force -InputObject $prop -MemberType NoteProperty -Name SqlInstance -Value $sqlname
                 Add-Member -Force -InputObject $prop -MemberType NoteProperty -Name Parent -Value $object.Name
                 Add-Member -Force -InputObject $prop -MemberType NoteProperty -Name Type -Value $object.GetType().Name
 
