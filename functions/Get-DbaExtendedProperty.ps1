@@ -1,10 +1,12 @@
 function Get-DbaExtendedProperty {
     <#
     .SYNOPSIS
-        Gets database extended properties
+        Gets extended properties
 
     .DESCRIPTION
-        Gets database extended properties
+        Gets extended properties
+
+        This command works out of the box with databases but you can add or get extended properties from any object. Just pipe it in it'll grab the properties and print them out.
 
     .PARAMETER SqlInstance
         The target SQL Server instance
@@ -68,19 +70,19 @@ function Get-DbaExtendedProperty {
         [string[]]$ExcludeDatabase,
         [string[]]$Property,
         [parameter(ValueFromPipeline)]
-        [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
+        [psobject[]]$InputObject,
         [switch]$EnableException
     )
     process {
         if ($SqlInstance) {
-            $InputObject += Get-DbaDatabase -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $Database -ExcludeDatabase $ExcludeDatabase | Where-Object IsAccessible
+            $InputObject = Get-DbaDatabase -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $Database -ExcludeDatabase $ExcludeDatabase | Where-Object IsAccessible
         }
 
         foreach ($object in $InputObject) {
             $props = $object.ExtendedProperties
 
             if ($null -eq $props) {
-                Write-Message -Message "No extended properties exist in the $object database on $instance" -Target $object -Level Verbose
+                Write-Message -Message "No extended properties exist in the $object on $instance" -Target $object -Level Verbose
                 continue
             }
 
@@ -89,12 +91,13 @@ function Get-DbaExtendedProperty {
             }
 
             foreach ($prop in $props) {
-                Add-Member -Force -InputObject $prop -MemberType NoteProperty -Name ComputerName -value $object.ComputerName
-                Add-Member -Force -InputObject $prop -MemberType NoteProperty -Name InstanceName -value $object.InstanceName
-                Add-Member -Force -InputObject $prop -MemberType NoteProperty -Name SqlInstance -value $object.SqlInstance
-                Add-Member -Force -InputObject $prop -MemberType NoteProperty -Name Database -value $object.Name
+                Add-Member -Force -InputObject $prop -MemberType NoteProperty -Name ComputerName -Value $object.ComputerName
+                Add-Member -Force -InputObject $prop -MemberType NoteProperty -Name InstanceName -Value $object.InstanceName
+                Add-Member -Force -InputObject $prop -MemberType NoteProperty -Name SqlInstance -Value $object.SqlInstance
+                Add-Member -Force -InputObject $prop -MemberType NoteProperty -Name Parent -Value $object.Name
+                Add-Member -Force -InputObject $prop -MemberType NoteProperty -Name Type -Value $object.GetType().Name
 
-                Select-DefaultView -InputObject $prop -Property ComputerName, InstanceName, SqlInstance, Database, Name, Value
+                Select-DefaultView -InputObject $prop -Property ComputerName, InstanceName, SqlInstance, Parent, Type, Name, Value
             }
         }
     }
