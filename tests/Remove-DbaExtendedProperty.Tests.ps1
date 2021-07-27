@@ -5,7 +5,7 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
         [array]$params = ([Management.Automation.CommandMetaData]$ExecutionContext.SessionState.InvokeCommand.GetCommand($CommandName, 'Function')).Parameters.Keys
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'Name', 'InputObject', 'EnableException'
+        [object[]]$knownParameters = 'InputObject', 'EnableException'
         It "Should only contain our specific parameters" {
             Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params | Should -BeNullOrEmpty
         }
@@ -20,9 +20,6 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         $null = Get-DbaProcess -SqlInstance $instance2 | Where-Object Program -match dbatools | Stop-DbaProcess -Confirm:$false
         $newDbName = "dbatoolsci_newdb_$random"
         $db = New-DbaDatabase -SqlInstance $instance2 -Name $newDbName
-        $db.Query("EXEC sys.sp_addextendedproperty @name=N'dbatoolz', @value=N'woo'")
-        #$tempdb = Get-DbaDatabase -SqlInstance $script:instance2 -Database tempdb
-        #$tempdb.Query("EXEC sys.sp_addextendedproperty @name=N'temptoolz', @value=N'woo2'")
     }
 
     AfterAll {
@@ -30,21 +27,11 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     }
 
     Context "commands work as expected" {
-
-        It "finds an extended property on an instance" {
-            $ep = Get-DbaExtendedProperty -SqlInstance $instance2
-            $ep.Count | Should -BeGreaterThan 0
-        }
-
-        It "finds a sequence in a single database" {
-            $ep = Get-DbaExtendedProperty -SqlInstance $instance2 -Database $db.Name
-            $ep.Parent.Name | Select-Object -Unique | Should -Be $db.Name
-            $ep.Count | Should -Be 1
-        }
-
-        It "supports piping databases" {
-            $ep = $db | Get-DbaExtendedProperty -Name dbatoolz
-            $ep.Name | Should -Be "dbatoolz"
+        It "works" {
+            $ep = $db | Add-DbaExtendedProperty -Name "Test_Database_Name" -Value $newDbName
+            $results = $ep | Remove-DbaExtendedProperty -Confirm:$false
+            $results.Name | Should -Be "Test_Database_Name"
+            $results.Status | Should -Be "Dropped"
         }
     }
 }
