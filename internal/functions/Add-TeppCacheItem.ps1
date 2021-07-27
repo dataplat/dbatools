@@ -24,7 +24,9 @@ function Add-TeppCacheItem {
     param (
         [Parameter(Mandatory)]
         [DbaInstanceParameter]$SqlInstance,
+        [Parameter(Mandatory)]
         [string]$Type,
+        [Parameter(Mandatory)]
         [string]$Name
     )
     try {
