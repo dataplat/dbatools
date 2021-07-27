@@ -18522,7 +18522,7 @@
         "CommandName":  "Get-DbaDbTable",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Get-DbaDbTable",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaDbTable -SqlInstance DEV01 -Database Test1\nReturn all tables in the Test1 database\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaDbTable -SqlInstance DEV01 -Database MyDB -Table MyTable\nReturn only information on the table MyTable from the database MyDB\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaDbTable -SqlInstance DEV01 -Table MyTable\nReturns information on table called MyTable if it exists in any database on the server, under any schema\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaDbTable -SqlInstance DEV01 -Table dbo.[First.Table]\nReturns information on table called First.Table on schema dbo if it exists in any database on the server\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003e\u0027localhost\u0027,\u0027localhost\\namedinstance\u0027 | Get-DbaDbTable -Database DBA -Table Commandlog\nReturns information on the CommandLog table in the DBA database on both instances localhost and the named instance localhost\\namedinstance\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eGet-DbaDbTable -SqlInstance DEV01 -Table \"[[DbName]]].[Schema.With.Dots].[`\"[Process]]`\"]\" -Verbose\nFor the instance Dev01 Returns information for a table named: \"[Process]\" in schema named: Schema.With.Dots in database named: [DbName]\r\nThe Table name, Schema name and Database name must be wrapped in square brackets [ ]\r\nSpecial charcters like \" must be escaped by a ` charcter.\r\nIn addition any actual instance of the ] character must be escaped by being duplicated.",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaDbTable -SqlInstance DEV01 -Database Test1\nReturn all tables in the Test1 database\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaDbTable -SqlInstance DEV01 -Database MyDB -Table MyTable\nReturn only information on the table MyTable from the database MyDB\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaDbTable -SqlInstance DEV01 -Database MyDB -Table MyTable -Schema MySchema\nReturn only information on the table MyTable from the database MyDB and only from the schema MySchema\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaDbTable -SqlInstance DEV01 -Table MyTable\nReturns information on table called MyTable if it exists in any database on the server, under any schema\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eGet-DbaDbTable -SqlInstance DEV01 -Table dbo.[First.Table]\nReturns information on table called First.Table on schema dbo if it exists in any database on the server\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003e\u0027localhost\u0027,\u0027localhost\\namedinstance\u0027 | Get-DbaDbTable -Database DBA -Table Commandlog\nReturns information on the CommandLog table in the DBA database on both instances localhost and the named instance localhost\\namedinstance\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003eGet-DbaDbTable -SqlInstance DEV01 -Table \"[[DbName]]].[Schema.With.Dots].[`\"[Process]]`\"]\" -Verbose\nFor the instance Dev01 Returns information for a table named: \"[Process]\" in schema named: Schema.With.Dots in database named: [DbName]\r\nThe Table name, Schema name and Database name must be wrapped in square brackets [ ]\r\nSpecial charcters like \" must be escaped by a ` charcter.\r\nIn addition any actual instance of the ] character must be escaped by being duplicated.",
         "Params":  [
                        [
                            "SqlInstance",
@@ -18579,6 +18579,15 @@
                            ""
                        ],
                        [
+                           "Schema",
+                           "Only return tables from the specified schema",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
                            "InputObject",
                            "Enables piping from Get-DbaDatabase",
                            "",
@@ -18597,7 +18606,7 @@
                            ""
                        ]
                    ],
-        "Syntax":  "Get-DbaDbTable [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cString[]\u003e] [[-ExcludeDatabase] \u003cString[]\u003e] [-IncludeSystemDBs] [[-Table] \u003cString[]\u003e] [[-InputObject] \u003cDatabase[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Get-DbaDbTable [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cString[]\u003e] [[-ExcludeDatabase] \u003cString[]\u003e] [-IncludeSystemDBs] [[-Table] \u003cString[]\u003e] [[-Schema] \u003cString[]\u003e] [[-InputObject] \u003cDatabase[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Get-DbaDbTrigger",
