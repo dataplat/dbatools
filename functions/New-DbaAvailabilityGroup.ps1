@@ -637,6 +637,11 @@ function New-DbaAvailabilityGroup {
             }
         }
 
+        Add-TeppCacheItem -SqlInstance $server -Type availabilitygroup -Name $Name
+        foreach ($second in $secondaries) {
+            Add-TeppCacheItem -SqlInstance $second -Type availabilitygroup -Name $Name
+        }
+
         # Get results
         Get-DbaAvailabilityGroup -SqlInstance $Primary -SqlCredential $PrimarySqlCredential -AvailabilityGroup $Name
     }

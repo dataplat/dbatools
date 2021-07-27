@@ -408,6 +408,8 @@ function New-DbaAgentJob {
                 }
             }
 
+            Add-TeppCacheItem -SqlInstance $server -Type job -Name $Job
+
             # Return the job
             $currentjob
         }

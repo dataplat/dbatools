@@ -535,6 +535,8 @@ function New-DbaLogin {
                             $server.Logins.Refresh()
                         }
 
+                        Add-TeppCacheItem -SqlInstance $server -Type login -Name $loginName
+
                         Get-DbaLogin -SqlInstance $server -Login $loginName
 
                     } catch {
