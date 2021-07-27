@@ -294,7 +294,7 @@ function Connect-DbaInstance {
         [int]$MinPoolSize,
         [int]$MinimumVersion,
         [switch]$MultipleActiveResultSets,
-        [switch]$MultiSubnetFailover,
+        [switch]$MultiSubnetFailover = (Get-DbatoolsConfigValue -FullName 'sql.connection.multisubnetfailover'),
         [ValidateSet('TcpIp', 'NamedPipes', 'Multiprotocol', 'AppleTalk', 'BanyanVines', 'Via', 'SharedMemory', 'NWLinkIpxSpx')]
         [string]$NetworkProtocol = (Get-DbatoolsConfigValue -FullName 'sql.connection.protocol'),
         [switch]$NonPooledConnection,
@@ -704,15 +704,15 @@ function Connect-DbaInstance {
                     #AdditionalParameters   Property   string AdditionalParameters {get;set;}
                     if ($AppendConnectionString) {
                         Write-Message -Level Debug -Message "AdditionalParameters will be appended by ';$AppendConnectionString'"
-                        $sqlConnectionInfo.AdditionalParameters += ";$AppendConnectionString"
+                        $sqlConnectionInfo.AdditionalParameters += "$AppendConnectionString"
                     }
                     if ($FailoverPartner) {
                         Write-Message -Level Debug -Message "AdditionalParameters will be appended by ';FailoverPartner=$FailoverPartner'"
-                        $sqlConnectionInfo.AdditionalParameters += ";FailoverPartner=$FailoverPartner"
+                        $sqlConnectionInfo.AdditionalParameters += "FailoverPartner=$FailoverPartner"
                     }
                     if ($MultiSubnetFailover) {
                         Write-Message -Level Debug -Message "AdditionalParameters will be appended by ';MultiSubnetFailover=True'"
-                        $sqlConnectionInfo.AdditionalParameters += ';MultiSubnetFailover=True'
+                        $sqlConnectionInfo.AdditionalParameters += 'MultiSubnetFailover=True'
                     }
 
                     #ApplicationIntent      Property   string ApplicationIntent {get;set;}
