@@ -154,6 +154,7 @@ function Remove-DbaAgentSchedule {
                         }
                     }
                     Write-Message -Level Verbose -Message "Removing the schedule $($sched.Name) with id $($sched.Id) and uid $($sched.ScheduleUid) on $($sched.Parent.Parent.Name)"
+                    Remove-TeppCacheItem -SqlInstance $sched.Parent.Parent -Type schedule -Name $sched.Name
                     $sched.Drop()
                     $output.Status = "Dropped"
                     $output.IsRemoved = $true
