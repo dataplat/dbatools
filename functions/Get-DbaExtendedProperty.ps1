@@ -77,7 +77,7 @@ function Get-DbaExtendedProperty {
     .EXAMPLE
         PS C:\> Get-DbaExtendedProperty -SqlInstance sql2016
 
-        Gets all extended properties
+        Gets all extended properties on all databases
 
     .EXAMPLE
         PS C:\> Get-DbaExtendedProperty -SqlInstance Server1 -Database db1
@@ -85,10 +85,19 @@ function Get-DbaExtendedProperty {
         Gets the extended properties for the db1 database
 
     .EXAMPLE
-        PS C:\> Get-DbaExtendedProperty -SqlInstance Server1 -Database db1 -Name cert1
+        PS C:\> Get-DbaExtendedProperty -SqlInstance Server1 -Database db1 -Name info1, info2
 
-        Gets the cert1 extended properties within the db1 database
+        Gets the info1 and info2 extended properties within the db1 database
 
+    .EXAMPLE
+        PS C:\> Get-DbaDbStoredProcedure -SqlInstance localhost -Database tempdb | Get-DbaExtendedProperty
+
+        Get the extended properties for all stored procedures in the tempdb database
+
+    .EXAMPLE
+        PS C:\> Get-DbaDbTable -SqlInstance localhost -Database mydb -Table mytable | Get-DbaExtendedProperty
+
+        Get the extended properties for the mytable table in the mydb database
     #>
     [CmdletBinding()]
     param (
