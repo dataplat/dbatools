@@ -35,7 +35,7 @@ function Add-TeppCacheItem {
         }
         if ($serverName -in [Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Cache[$Type].Keys) {
             if ($Name -notin [Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Cache[$Type][$serverName]) {
-                [Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Cache[$Type][$serverName] = $Name, [Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Cache[$Type][$serverName] | Sort-Object
+                [Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Cache[$Type][$serverName] = @([Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Cache[$Type][$serverName]) + $Name | Sort-Object
                 Write-Message -Level Debug -Message "$Name added to cache for $Type on $serverName."
             } else {
                 Write-Message -Level Debug -Message "$Name already in cache for $Type on $serverName."
