@@ -126,8 +126,8 @@
         "CountryCode": "All",
         "Pattern": "\\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,6}\\b",
         "Description": "",
-        "MaskingType": "Finance",
-        "MaskingSubType": "CreditCardNumber"
+        "MaskingType": "Internet",
+        "MaskingSubType": "Email"
     },
     {
         "Name": "IBAN Number",
