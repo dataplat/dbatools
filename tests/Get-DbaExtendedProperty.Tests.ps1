@@ -20,9 +20,9 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         $null = Get-DbaProcess -SqlInstance $instance2 | Where-Object Program -match dbatools | Stop-DbaProcess -Confirm:$false
         $newDbName = "dbatoolsci_newdb_$random"
         $db = New-DbaDatabase -SqlInstance $instance2 -Name $newDbName
-        $db.Invoke("EXEC sys.sp_addextendedproperty @name=N'dbatoolz', @value=N'woo'")
-        $tempdb = Get-DbaDatabase -SqlInstance $instance2 -Database tempdb
-        $tempdb.Invoke("EXEC sys.sp_addextendedproperty @name=N'temptoolz', @value=N'woo2'")
+        $db.Query("EXEC sys.sp_addextendedproperty @name=N'dbatoolz', @value=N'woo'")
+        $tempdb = Get-DbaDatabase -SqlInstance $script:instance2 -Database tempdb
+        $tempdb.Query("EXEC sys.sp_addextendedproperty @name=N'temptoolz', @value=N'woo2'")
     }
 
     AfterAll {
