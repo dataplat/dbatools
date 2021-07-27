@@ -8,6 +8,37 @@ function Get-DbaExtendedProperty {
 
         This command works out of the box with databases but you can add or get extended properties from any object. Just pipe it in it'll grab the properties and print them out.
 
+        You can get extended properties on all these different types of objects:
+
+        Aggregate
+        Assembly
+        Column
+        Constraint
+        Contract
+        Database
+        Event Notification
+        Filegroup
+        Function
+        Index
+        Logical File Name
+        Message Type
+        Parameter
+        Partition Function
+        Partition Scheme
+        Procedure
+        Queue
+        Remote Service Binding
+        Route
+        Rule
+        Schema
+        Service
+        Synonym
+        Table
+        Trigger
+        Type
+        View
+        Xml Schema Collection
+
     .PARAMETER SqlInstance
         The target SQL Server instance
 
@@ -21,7 +52,7 @@ function Get-DbaExtendedProperty {
     .PARAMETER Database
         Get extended properties from specific database
 
-    .PARAMETER Property
+    .PARAMETER Name
         Get specific extended properties by name
 
     .PARAMETER InputObject
@@ -54,7 +85,7 @@ function Get-DbaExtendedProperty {
         Gets the extended properties for the db1 database
 
     .EXAMPLE
-        PS C:\> Get-DbaExtendedProperty -SqlInstance Server1 -Database db1 -Property cert1
+        PS C:\> Get-DbaExtendedProperty -SqlInstance Server1 -Database db1 -Name cert1
 
         Gets the cert1 extended properties within the db1 database
 
@@ -64,7 +95,8 @@ function Get-DbaExtendedProperty {
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [string[]]$Database,
-        [string[]]$Property,
+        [Alias("Property")]
+        [string[]]$Name,
         [parameter(ValueFromPipeline)]
         [psobject[]]$InputObject,
         [switch]$EnableException
@@ -82,8 +114,8 @@ function Get-DbaExtendedProperty {
                 continue
             }
 
-            if ($Property) {
-                $props = $props | Where-Object Name -in $Property
+            if ($Name) {
+                $props = $props | Where-Object Name -in $Name
             }
 
             # Since the inputobject is so generic, we need to re-build these properties
