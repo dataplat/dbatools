@@ -21,8 +21,8 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         $newDbName = "dbatoolsci_newdb_$random"
         $db = New-DbaDatabase -SqlInstance $instance2 -Name $newDbName
         $db.Query("EXEC sys.sp_addextendedproperty @name=N'dbatoolz', @value=N'woo'")
-        $tempdb = Get-DbaDatabase -SqlInstance $script:instance2 -Database tempdb
-        $tempdb.Query("EXEC sys.sp_addextendedproperty @name=N'temptoolz', @value=N'woo2'")
+        #$tempdb = Get-DbaDatabase -SqlInstance $script:instance2 -Database tempdb
+        #$tempdb.Query("EXEC sys.sp_addextendedproperty @name=N'temptoolz', @value=N'woo2'")
     }
 
     AfterAll {
