@@ -441,6 +441,7 @@ function New-DbaDatabase {
                         }
                     }
 
+                    [Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Cache["database"][$instance.FullSmoName.ToLowerInvariant()] += $dbName
                     Get-DbaDatabase -SqlInstance $server -Database $dbName
                 }
             }
