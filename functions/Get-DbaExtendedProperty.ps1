@@ -56,7 +56,7 @@ function Get-DbaExtendedProperty {
         Get specific extended properties by name
 
     .PARAMETER InputObject
-        Enables piping from Get-DbaDatabase
+        Enables piping from Get-Dba* commands
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -133,7 +133,7 @@ function Get-DbaExtendedProperty {
             $sqlname = $object.SqlInstance
 
             if (-not $computername -or -not $instancename -or -not $sqlname) {
-                $server = Get-ServerParent $object
+                $server = Get-ConnectionParent $object
                 $servername = $server.Query("SELECT @@servername as servername").servername
 
                 if (-not $computername) {
@@ -153,10 +153,12 @@ function Get-DbaExtendedProperty {
                 Add-Member -Force -InputObject $prop -MemberType NoteProperty -Name ComputerName -Value $computername
                 Add-Member -Force -InputObject $prop -MemberType NoteProperty -Name InstanceName -Value $instancename
                 Add-Member -Force -InputObject $prop -MemberType NoteProperty -Name SqlInstance -Value $sqlname
-                Add-Member -Force -InputObject $prop -MemberType NoteProperty -Name Parent -Value $object.Name
+                Add-Member -Force -InputObject $prop -MemberType NoteProperty -Name ParentName -Value $object.Name
                 Add-Member -Force -InputObject $prop -MemberType NoteProperty -Name Type -Value $object.GetType().Name
+                Add-Member -Force -InputObject $prop -MemberType NoteProperty -Name Server -Value $server
 
-                Select-DefaultView -InputObject $prop -Property ComputerName, InstanceName, SqlInstance, Parent, Type, Name, Value
+
+                Select-DefaultView -InputObject $prop -Property ComputerName, InstanceName, SqlInstance, ParentName, Type, Name, Value
             }
         }
     }
