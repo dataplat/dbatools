@@ -40,6 +40,9 @@ function Set-DbaExtendedProperty {
     .PARAMETER InputObject
         Enables piping from Get-DbaExtendedProperty
 
+    .PARAMETER Value
+       The new value for the extended property
+
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
 

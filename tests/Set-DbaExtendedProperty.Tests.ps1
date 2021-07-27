@@ -28,10 +28,9 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     }
 
     Context "commands work as expected" {
-
         It "works" {
             $ep = Get-DbaExtendedProperty -SqlInstance $instance2 -Name "Test_Database_Name"
-            $newep = $ep | Set-DbaExtendedProperty -Name "Test_Database_Name" -Value "Test_Database_Value"
+            $newep = $ep | Set-DbaExtendedProperty -Value "Test_Database_Value"
             $newep.Name | Should -Be "Test_Database_Name"
             $newep.Value | Should -Be "Test_Database_Value"
         }

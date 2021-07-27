@@ -31,7 +31,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             $ep = $db | Add-DbaExtendedProperty -Name "Test_Database_Name" -Value "Sup"
             $ep.Name | Should -Be "Test_Database_Name"
             $ep.ParentName | Should -Be $db.Name
-            $results.Value | Should -Be "Sup"
+            $ep.Value | Should -Be "Sup"
         }
     }
 }
