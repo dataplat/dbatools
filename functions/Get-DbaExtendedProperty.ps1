@@ -21,9 +21,6 @@ function Get-DbaExtendedProperty {
     .PARAMETER Database
         Get extended properties from specific database
 
-    .PARAMETER ExcludeDatabase
-        Database(s) to ignore when retrieving extended properties
-
     .PARAMETER Property
         Get specific extended properties by name
 
@@ -67,7 +64,6 @@ function Get-DbaExtendedProperty {
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [string[]]$Database,
-        [string[]]$ExcludeDatabase,
         [string[]]$Property,
         [parameter(ValueFromPipeline)]
         [psobject[]]$InputObject,
@@ -75,7 +71,7 @@ function Get-DbaExtendedProperty {
     )
     process {
         if ($SqlInstance) {
-            $InputObject = Get-DbaDatabase -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $Database -ExcludeDatabase $ExcludeDatabase | Where-Object IsAccessible
+            $InputObject = Get-DbaDatabase -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $Database | Where-Object IsAccessible
         }
 
         foreach ($object in $InputObject) {
