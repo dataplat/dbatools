@@ -5,7 +5,7 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
         [array]$params = ([Management.Automation.CommandMetaData]$ExecutionContext.SessionState.InvokeCommand.GetCommand($CommandName, 'Function')).Parameters.Keys
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'Property', 'InputObject', 'EnableException'
+        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'Property', 'InputObject', 'EnableException'
         It "Should only contain our specific parameters" {
             Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params | Should -BeNullOrEmpty
         }
@@ -21,8 +21,8 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         $newDbName = "dbatoolsci_newdb_$random"
         $db = New-DbaDatabase -SqlInstance $instance2 -Name $newDbName
         $db.Invoke("EXEC sys.sp_addextendedproperty @name=N'dbatoolz', @value=N'woo'")
-        $masterdb = Get-DbaDatabase -SqlInstance $instance2 -Database master
-        $masterdb.Invoke("EXEC sys.sp_addextendedproperty @name=N'mastertoolz', @value=N'woo2'")
+        $tempdb = Get-DbaDatabase -SqlInstance $instance2 -Database tempdb
+        $tempdb.Invoke("EXEC sys.sp_addextendedproperty @name=N'temptoolz', @value=N'woo2'")
     }
 
     AfterAll {
