@@ -541,6 +541,8 @@ function New-DbaAgentSchedule {
 
                             }
 
+                            Add-TeppCacheItem -SqlInstance $server -Type schedule -Name $Schedule
+
                             $JobSchedule
                         }
                     }
