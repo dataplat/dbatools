@@ -551,7 +551,9 @@ function Import-DbaCsv {
                         $bulkCopy.NotifyAfter = $NotifyAfter
                         $bulkCopy.EnableStreaming = $true
 
-                        if (-not $KeepOrdinalOrder -and -not $AutoCreateTable) {
+                        $quotematch = (Get-Content -Path $file -TotalCount 1 -ErrorAction Stop).ToString()
+
+                        if ((-not $KeepOrdinalOrder -and -not $AutoCreateTable) -or ($quotematch -match "'" -or $quotematch -match '"')) {
                             if ($ColumnMap) {
                                 Write-Message -Level Verbose -Message "ColumnMap was supplied. Additional auto-mapping will not be attempted."
                             } else {
@@ -559,8 +561,9 @@ function Import-DbaCsv {
                                     $ColumnMap = @{ }
                                     $firstline = Get-Content -Path $file -TotalCount 1 -ErrorAction Stop
                                     $firstline -split $Delimiter | ForEach-Object {
-                                        Write-Message -Level Verbose -Message "Adding $PSItem to ColumnMap"
-                                        $ColumnMap.Add($PSItem, $PSItem)
+                                        $trimmed = $PSItem.Trim('"')
+                                        Write-Message -Level Verbose -Message "Adding $trimmed to ColumnMap"
+                                        $ColumnMap.Add($trimmed, $trimmed)
                                     }
                                 } catch {
                                     # oh well, we tried
