@@ -19,6 +19,9 @@ function Set-DbaAgentOperator {
     .PARAMETER Operator
         Name of the operator in SQL Agent.
 
+    .PARAMETER Name
+        The new name of the agent operator.
+
     .PARAMETER EmailAddress
         The email address the SQL Agent will use to email alerts to the operator.
 
@@ -97,8 +100,8 @@ function Set-DbaAgentOperator {
     param (
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [parameter(Mandatory)]
-        [string]$Operator,
+        [string[]]$Operator,
+        [string]$Name,
         [string]$EmailAddress,
         [string]$NetSendAddress,
         [string]$PagerAddress,
@@ -110,16 +113,20 @@ function Set-DbaAgentOperator {
         [string]$SundayEndTime,
         [string]$WeekdayStartTime,
         [string]$WeekdayEndTime,
-        [switch]$IsFailsafeOperator = $false,
+        [switch]$IsFailsafeOperator,
         [string]$FailsafeNotificationMethod = "NotifyEmail",
-        [switch]$Force = $false,
         [parameter(ValueFromPipeline)]
-        [Microsoft.SqlServer.Management.Smo.Server[]]$InputObject,
+        [Microsoft.SqlServer.Management.Smo.Agent.Operator[]]$InputObject,
         [switch]$EnableException
     )
     process {
-        if ($null -eq $EmailAddress -and $null -eq $NetSendAddress -and $null -eq $PagerAddress) {
+        if (-not $PSBoundParameters.EmailAddress -and -not $PSBoundParameters.NetSendAddress -and -not $PSBoundParameters.PagerAddress) {
             Stop-Function -Message "You must specify either an EmailAddress, NetSendAddress, or a PagerAddress to be able to create an operator."
+            return
+        }
+
+        if (-not $PSBoundParameters.InputObject -and -not $PSBoundParameters.Operator) {
+            Stop-Function -Message "You must specify either operator or pipe in a list of operators"
             return
         }
 
@@ -243,69 +250,103 @@ function Set-DbaAgentOperator {
 
         if ($SqlInstance) {
             try {
-                $InputObject += Get-DbaAgentOperator -SqlInstance $SqlIntance -SqlCredential $SqlCredential -Operator $Operator -EnableException
+                $InputObject += Get-DbaAgentOperator -SqlInstance $SqlIntance -SqlCredential $SqlCredential -Operator $($op.Name) -EnableException
             } catch {
                 Stop-Function -Message "Failed" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
         }
 
         foreach ($op in $InputObject) {
-            if ($Pscmdlet.ShouldProcess($server, "Creating Operator $operator")) {
-                $server = $op | Get-ConnectionParent
-                try {
-                    if ($EmailAddress) {
+            $server = $op | Get-ConnectionParent
+            try {
+                if ($Name) {
+                    if ($Pscmdlet.ShouldProcess($server, "Updating Operator $($op.Name) Name to $Name")) {
+                        # instead of using .Rename(), we will execute a sql script to avoid enumeration problems when piping
+                        $sql = "EXEC msdb.dbo.sp_update_operator @name=N'$($op.Name)', @new_name=N'$Name'"
+                        try {
+                            Invoke-DbaQuery -SqlInstance $server -Query "$sql" -EnableException
+                        } catch {
+                            Stop-Function -Message "Failed on $($server.name)" -ErrorRecord $_ -Target $server -Continue
+                        }
+                        $server.JobServer.Operators.Refresh()
+                        $op = Get-DbaAgentOperator -SqlInstance $server -Operator $Name
+                    }
+                }
+
+                if ($EmailAddress) {
+                    if ($Pscmdlet.ShouldProcess($server, "Updating Operator $($op.Name) EmailAddress to $EmailAddress")) {
                         $op.EmailAddress = $EmailAddress
                     }
+                }
 
-                    if ($NetSendAddress) {
+                if ($NetSendAddress) {
+                    if ($Pscmdlet.ShouldProcess($server, "Updating Operator $($op.Name) NetSendAddress to $NetSendAddress")) {
                         $op.NetSendAddress = $NetSendAddress
                     }
+                }
 
-                    if ($PagerAddress) {
+                if ($PagerAddress) {
+                    if ($Pscmdlet.ShouldProcess($server, "Updating Operator $($op.Name) PagerAddress to $PagerAddress")) {
                         $op.PagerAddress = $PagerAddress
                     }
+                }
 
-                    if ($Interval) {
+                if ($Interval) {
+                    if ($Pscmdlet.ShouldProcess($server, "Updating Operator $($op.Name) PagerDays to $Interval")) {
                         $op.PagerDays = $Interval
                     }
+                }
 
-                    if ($SaturdayStartTime) {
+                if ($SaturdayStartTime) {
+                    if ($Pscmdlet.ShouldProcess($server, "Updating Operator $($op.Name) SaturdayPagerStartTime to $SaturdayStartTime")) {
                         $op.SaturdayPagerStartTime = $SaturdayStartTime
                     }
+                }
 
-                    if ($SaturdayEndTime) {
+                if ($SaturdayEndTime) {
+                    if ($Pscmdlet.ShouldProcess($server, "Updating Operator $($op.Name) SaturdayPagerEndTime to $SaturdayEndTime")) {
                         $op.SaturdayPagerEndTime = $SaturdayEndTime
                     }
+                }
 
-                    if ($SundayStartTime) {
+                if ($SundayStartTime) {
+                    if ($Pscmdlet.ShouldProcess($server, "Updating Operator $($op.Name) SundayPagerStartTime to $SundayStartTime")) {
                         $op.SundayPagerStartTime = $SundayStartTime
                     }
+                }
 
-                    if ($SundayEndTime) {
+                if ($SundayEndTime) {
+                    if ($Pscmdlet.ShouldProcess($server, "Updating Operator $($op.Name) SundayPagerEndTime to $SundayEndTime")) {
                         $op.SundayPagerEndTime = $SundayEndTime
                     }
+                }
 
-                    if ($WeekdayStartTime) {
+                if ($WeekdayStartTime) {
+                    if ($Pscmdlet.ShouldProcess($server, "Updating Operator $($op.Name) WeekdayPagerStartTime to $WeekdayStartTime")) {
                         $op.WeekdayPagerStartTime = $WeekdayStartTime
                     }
+                }
 
-                    if ($WeekdayEndTime) {
+                if ($WeekdayEndTime) {
+                    if ($Pscmdlet.ShouldProcess($server, "Updating Operator $($op.Name) WeekdayPagerEndTime to $WeekdayEndTime")) {
                         $op.WeekdayPagerEndTime = $WeekdayEndTime
                     }
-                    ### Need to support updating name!
-                    $op.Alter()
+                }
 
-                    if ($IsFailsafeOperator) {
+                if ($IsFailsafeOperator) {
+                    if ($Pscmdlet.ShouldProcess($server, "Updating FailSafe Operator to $operator")) {
                         $server.JobServer.AlertSystem.FailSafeOperator = $Operator
                         $server.JobServer.AlertSystem.FailSafeOperator.NotificationMethod = $FailsafeNotificationMethod
                         $server.JobServer.AlertSystem.Alter()
                     }
-
-                    Write-Message -Level Verbose -Message "Updating Operator $operator"
-                    Get-DbaAgentOperator -SqlInstance $server -Operator $Operator
-                } catch {
-                    Stop-Function -Message "Issue creating operator." -Category InvalidOperation -ErrorRecord $_ -Target $server
                 }
+
+                if ($Pscmdlet.ShouldProcess($server, "Committing changes for Operator $($op.Name)")) {
+                    $op.Alter()
+                    $op
+                }
+            } catch {
+                Stop-Function -Message "Issue creating operator." -Category InvalidOperation -ErrorRecord $_ -Target $server
             }
         }
     }
