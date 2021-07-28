@@ -107,7 +107,6 @@ function Remove-DbaAvailabilityGroup {
                         AvailabilityGroup = $ag.Name
                         Status            = "Removed"
                     }
-                    Remove-TeppCacheItem -SqlInstance $ag.Parent -Type availabilitygroup -Name $ag.Name
                 } catch {
                     Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
                 }
