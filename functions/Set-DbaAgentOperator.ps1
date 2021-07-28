@@ -1,13 +1,13 @@
-function New-DbaAgentOperator {
+function Set-DbaAgentOperator {
     <#
     .SYNOPSIS
-        Creates a new operator on an instance.
+        Updates/modifies agent operators on an instance.
 
     .DESCRIPTION
-        If the operator already exists on the destination, it will not be created unless -Force is used.
+        Updates/modifies agent operators on an instance.
 
     .PARAMETER SqlInstance
-        The target SQL Server instance or instances. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
+        The target SQL Server instance or instances.
 
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
@@ -18,6 +18,9 @@ function New-DbaAgentOperator {
 
     .PARAMETER Operator
         Name of the operator in SQL Agent.
+
+    .PARAMETER Name
+        The new name of the agent operator.
 
     .PARAMETER EmailAddress
         The email address the SQL Agent will use to email alerts to the operator.
@@ -64,9 +67,6 @@ function New-DbaAgentOperator {
     .PARAMETER Confirm
         Prompts you for confirmation before executing any changing operations within the command.
 
-    .PARAMETER Force
-        If this switch is enabled, the Operator will be dropped and recreated on instance.
-
     .PARAMETER InputObject
         SMO Server Objects (pipeline input from Connect-DbaInstance)
 
@@ -80,20 +80,19 @@ function New-DbaAgentOperator {
         Author: Tracy Boggiano (@TracyBoggiano), databasesuperhero.com
 
         Website: https://dbatools.io
-        Copyright: (c) 2018 by dbatools, licensed under MIT
+        Copyright: (c) 2021 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/New-DbaAgentOperator
+        https://dbatools.io/Set-DbaAgentOperator
 
     .EXAMPLE
-        PS:\> New-DbaAgentOperator -SqlInstance sql01 -Operator DBA -EmailAddress operator@operator.com -PagerDay Everyday -Force
+        PS:\> Set-DbaAgentOperator -SqlInstance sql01 -Operator DBA -EmailAddress operator@operator.com -PagerDay Everyday
 
-        This sets a new operator named DBA with the above email address with default values to alerts everyday
-        for all hours of the day.
+        This sets the operator named DBA with the above email address with default values to alerts everyday for all hours of the day.
 
     .EXAMPLE
-        PS:\> New-DbaAgentOperator -SqlInstance sql01 -Operator DBA -EmailAddress operator@operator.com -NetSendAddress dbauser1 -PagerAddress dbauser1@pager.dbatools.io -PagerDay Everyday -SaturdayStartTime 070000 -SaturdayEndTime 180000 -SundayStartTime 080000 -SundayEndTime 170000 -WeekdayStartTime 060000 -WeekdayEndTime 190000
+        PS:\> Set-DbaAgentOperator -SqlInstance sql01 -Operator DBA -EmailAddress operator@operator.com -NetSendAddress dbauser1 -PagerAddress dbauser1@pager.dbatools.io -PagerDay Everyday -SaturdayStartTime 070000 -SaturdayEndTime 180000 -SundayStartTime 080000 -SundayEndTime 170000 -WeekdayStartTime 060000 -WeekdayEndTime 190000
 
         Creates a new operator named DBA on the sql01 instance with email address operator@operator.com, net send address of dbauser1, pager address of dbauser1@pager.dbatools.io, page day as every day, Saturday start time of 7am, Saturday end time of 6pm, Sunday start time of 8am, Sunday end time of 5pm, Weekday start time of 6am, and Weekday end time of 7pm.
     #>
@@ -101,8 +100,8 @@ function New-DbaAgentOperator {
     param (
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [parameter(Mandatory)]
-        [string]$Operator,
+        [string[]]$Operator,
+        [string]$Name,
         [string]$EmailAddress,
         [string]$NetSendAddress,
         [string]$PagerAddress,
@@ -114,21 +113,20 @@ function New-DbaAgentOperator {
         [string]$SundayEndTime,
         [string]$WeekdayStartTime,
         [string]$WeekdayEndTime,
-        [switch]$IsFailsafeOperator = $false,
+        [switch]$IsFailsafeOperator,
         [string]$FailsafeNotificationMethod = "NotifyEmail",
-        [switch]$Force = $false,
         [parameter(ValueFromPipeline)]
-        [Microsoft.SqlServer.Management.Smo.Server[]]$InputObject,
+        [Microsoft.SqlServer.Management.Smo.Agent.Operator[]]$InputObject,
         [switch]$EnableException
     )
-
-    begin {
-        if ($Force) { $ConfirmPreference = 'none' }
-    }
-
     process {
-        if ($null -eq $EmailAddress -and $null -eq $NetSendAddress -and $null -eq $PagerAddress) {
+        if (-not $PSBoundParameters.EmailAddress -and -not $PSBoundParameters.NetSendAddress -and -not $PSBoundParameters.PagerAddress) {
             Stop-Function -Message "You must specify either an EmailAddress, NetSendAddress, or a PagerAddress to be able to create an operator."
+            return
+        }
+
+        if (-not $PSBoundParameters.InputObject -and -not $PSBoundParameters.Operator) {
+            Stop-Function -Message "You must specify either operator or pipe in a list of operators"
             return
         }
 
@@ -165,24 +163,18 @@ function New-DbaAgentOperator {
 
         if ($PagerDay -in ('Everyday', 'Saturday', 'Weekends')) {
             # Check the start time
-            if (-not $SaturdayStartTime -and $Force) {
+            if (-not $SaturdayStartTime) {
                 $SaturdayStartTime = '000000'
-                Write-Message -Message "Saturday Start time was not set. Force is being used. Setting it to $SaturdayStartTime" -Level Verbose
-            } elseif (-not $SaturdayStartTime) {
-                Stop-Function -Message "Please enter Saturday start time or use -Force to use defaults."
-                return
+                Write-Message -Message "Saturday Start time was not set. Setting it to $SaturdayStartTime" -Level Verbose
             } elseif ($SaturdayStartTime -notmatch $RegexTime) {
                 Stop-Function -Message "Start time $SaturdayStartTime needs to match between '000000' and '235959'"
                 return
             }
 
             # Check the end time
-            if (-not $SaturdayEndTime -and $Force) {
+            if (-not $SaturdayEndTime) {
                 $SaturdayEndTime = '235959'
-                Write-Message -Message "Saturday End time was not set. Force is being used. Setting it to $SaturdayEndTime" -Level Verbose
-            } elseif (-not $SaturdayEndTime) {
-                Stop-Function -Message "Please enter a Saturday end time or use -Force to use defaults."
-                return
+                Write-Message -Message "Saturday End time was not set. Setting it to $SaturdayEndTime" -Level Verbose
             } elseif ($SaturdayEndTime -notmatch $RegexTime) {
                 Stop-Function -Message "End time $SaturdayEndTime needs to match between '000000' and '235959'"
                 return
@@ -191,24 +183,18 @@ function New-DbaAgentOperator {
 
         if ($PagerDay -in ('Everyday', 'Sunday', 'Weekends')) {
             # Check the start time
-            if (-not $SundayStartTime -and $Force) {
+            if (-not $SundayStartTime) {
                 $SundayStartTime = '000000'
-                Write-Message -Message "Sunday Start time was not set. Force is being used. Setting it to $SundayStartTime" -Level Verbose
-            } elseif (-not $SundayStartTime) {
-                Stop-Function -Message "Please enter a Sunday start time or use -Force to use defaults."
-                return
+                Write-Message -Message "Sunday Start time was not set. Setting it to $SundayStartTime" -Level Verbose
             } elseif ($SundayStartTime -notmatch $RegexTime) {
                 Stop-Function -Message "Start time $SundayStartTime needs to match between '000000' and '235959'"
                 return
             }
 
             # Check the end time
-            if (-not $SundayEndTime -and $Force) {
+            if (-not $SundayEndTime) {
                 $SundayEndTime = '235959'
-                Write-Message -Message "Sunday End time was not set. Force is being used. Setting it to $SundayEndTime" -Level Verbose
-            } elseif (-not $SundayEndTime) {
-                Stop-Function -Message "Please enter a Sunday End Time or use -Force to use defaults."
-                return
+                Write-Message -Message "Sunday End time was not set. Setting it to $SundayEndTime" -Level Verbose
             } elseif ($SundayEndTime -notmatch $RegexTime) {
                 Stop-Function -Message "Sunday End time $SundayEndTime needs to match between '000000' and '235959'"
                 return
@@ -217,24 +203,18 @@ function New-DbaAgentOperator {
 
         if ($PagerDay -in ('Everyday', 'Weekdays', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday')) {
             # Check the start time
-            if (-not $WeekdayStartTime -and $Force) {
+            if (-not $WeekdayStartTime) {
                 $WeekdayStartTime = '000000'
-                Write-Message -Message "Weekday Start time was not set. Force is being used. Setting it to $WeekdayStartTime" -Level Verbose
-            } elseif (-not $WeekdayStartTime) {
-                Stop-Function -Message "Please enter Weekday Start Time or use -Force to use defaults."
-                return
+                Write-Message -Message "Weekday Start time was not set. Setting it to $WeekdayStartTime" -Level Verbose
             } elseif ($WeekdayStartTime -notmatch $RegexTime) {
                 Stop-Function -Message "Weekday Start time $WeekdayStartTime needs to match between '000000' and '235959'"
                 return
             }
 
             # Check the end time
-            if (-not $WeekdayEndTime -and $Force) {
+            if (-not $WeekdayEndTime) {
                 $WeekdayEndTime = '235959'
-                Write-Message -Message "Weekday End time was not set. Force is being used. Setting it to $WeekdayEndTime" -Level Verbose
-            } elseif (-not $WeekdayEndTime) {
-                Stop-Function -Message "Please enter a Weekday End Time or use -Force to use defaults."
-                return
+                Write-Message -Message "Weekday End time was not set. Setting it to $WeekdayEndTime" -Level Verbose
             } elseif ($WeekdayEndTime -notmatch $RegexTime) {
                 Stop-Function -Message "Weekday End time $WeekdayEndTime needs to match between '000000' and '235959'"
                 return
@@ -242,7 +222,7 @@ function New-DbaAgentOperator {
         }
 
         if ($IsFailsafeOperator -and ($FailsafeNotificationMethod -notin ('NotifyMail', 'NotifyPager'))) {
-            Stop-Function -Message "You must specify a notifiation method for the failsafe operator."
+            Stop-Function -Message "You must specify a notification method for the failsafe operator."
             return
         }
 
@@ -268,99 +248,105 @@ function New-DbaAgentOperator {
             $WeekdayEndTime = $WeekdayEndTime.Insert(4, ':').Insert(2, ':')
         }
 
-        foreach ($instance in $SqlInstance) {
+        if ($SqlInstance) {
             try {
-                $InputObject += Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
+                $InputObject += Get-DbaAgentOperator -SqlInstance $SqlIntance -SqlCredential $SqlCredential -Operator $($op.Name) -EnableException
             } catch {
                 Stop-Function -Message "Failed" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
         }
 
-        foreach ($server in $InputObject) {
-            $failsafe = $server.JobServer.AlertSystem | Select-Object FailsafeOperator
-
-            if ((Get-DbaAgentOperator -SqlInstance $server -Operator $Operator).Count -ne 0) {
-                if ($force -eq $false) {
-                    if ($Pscmdlet.ShouldProcess($server, "Operator $operator exists at $server. Use -Force to drop and and create it.")) {
-                        Write-Message -Level Verbose -Message "Operator $operator exists at $server. Use -Force to drop and create."
-                    }
-                    continue
-                } else {
-                    if ($failsafe.FailsafeOperator -eq $operator -and $IsFailsafeOperator) {
-                        Write-Message -Level Verbose -Message "$operator is the failsafe operator. Skipping drop."
-                        continue
-                    }
-
-                    if ($Pscmdlet.ShouldProcess($server, "Dropping operator $operator")) {
+        foreach ($op in $InputObject) {
+            $server = $op | Get-ConnectionParent
+            try {
+                if ($Name) {
+                    if ($Pscmdlet.ShouldProcess($server, "Updating Operator $($op.Name) Name to $Name")) {
+                        # instead of using .Rename(), we will execute a sql script to avoid enumeration problems when piping
+                        $sql = "EXEC msdb.dbo.sp_update_operator @name=N'$($op.Name)', @new_name=N'$Name'"
                         try {
-                            Write-Message -Level Verbose -Message "Dropping Operator $operator"
-                            $server.JobServer.Operators[$operator].Drop()
+                            Invoke-DbaQuery -SqlInstance $server -Query "$sql" -EnableException
                         } catch {
-                            Stop-Function -Message "Issue dropping operator" -Category InvalidOperation -ErrorRecord $_ -Target $server -Continue
+                            Stop-Function -Message "Failed on $($server.name)" -ErrorRecord $_ -Target $server -Continue
                         }
+                        $server.JobServer.Operators.Refresh()
+                        $op = Get-DbaAgentOperator -SqlInstance $server -Operator $Name
                     }
                 }
-            }
 
-            if ($Pscmdlet.ShouldProcess($server, "Creating Operator $operator")) {
-                try {
-                    $JobServer = $server.JobServer
-                    $operators = $JobServer.Operators
-                    $operators = New-Object Microsoft.SqlServer.Management.Smo.Agent.Operator( $JobServer, $Operator)
-
-                    if ($EmailAddress) {
-                        $operators.EmailAddress = $EmailAddress
+                if ($EmailAddress) {
+                    if ($Pscmdlet.ShouldProcess($server, "Updating Operator $($op.Name) EmailAddress to $EmailAddress")) {
+                        $op.EmailAddress = $EmailAddress
                     }
+                }
 
-                    if ($NetSendAddress) {
-                        $operators.NetSendAddress = $NetSendAddress
+                if ($NetSendAddress) {
+                    if ($Pscmdlet.ShouldProcess($server, "Updating Operator $($op.Name) NetSendAddress to $NetSendAddress")) {
+                        $op.NetSendAddress = $NetSendAddress
                     }
+                }
 
-                    if ($PagerAddress) {
-                        $operators.PagerAddress = $PagerAddress
+                if ($PagerAddress) {
+                    if ($Pscmdlet.ShouldProcess($server, "Updating Operator $($op.Name) PagerAddress to $PagerAddress")) {
+                        $op.PagerAddress = $PagerAddress
                     }
+                }
 
-                    if ($Interval) {
-                        $operators.PagerDays = $Interval
+                if ($Interval) {
+                    if ($Pscmdlet.ShouldProcess($server, "Updating Operator $($op.Name) PagerDays to $Interval")) {
+                        $op.PagerDays = $Interval
                     }
+                }
 
-                    if ($SaturdayStartTime) {
-                        $operators.SaturdayPagerStartTime = $SaturdayStartTime
+                if ($SaturdayStartTime) {
+                    if ($Pscmdlet.ShouldProcess($server, "Updating Operator $($op.Name) SaturdayPagerStartTime to $SaturdayStartTime")) {
+                        $op.SaturdayPagerStartTime = $SaturdayStartTime
                     }
+                }
 
-                    if ($SaturdayEndTime) {
-                        $operators.SaturdayPagerEndTime = $SaturdayEndTime
+                if ($SaturdayEndTime) {
+                    if ($Pscmdlet.ShouldProcess($server, "Updating Operator $($op.Name) SaturdayPagerEndTime to $SaturdayEndTime")) {
+                        $op.SaturdayPagerEndTime = $SaturdayEndTime
                     }
+                }
 
-                    if ($SundayStartTime) {
-                        $operators.SundayPagerStartTime = $SundayStartTime
+                if ($SundayStartTime) {
+                    if ($Pscmdlet.ShouldProcess($server, "Updating Operator $($op.Name) SundayPagerStartTime to $SundayStartTime")) {
+                        $op.SundayPagerStartTime = $SundayStartTime
                     }
+                }
 
-                    if ($SundayEndTime) {
-                        $operators.SundayPagerEndTime = $SundayEndTime
+                if ($SundayEndTime) {
+                    if ($Pscmdlet.ShouldProcess($server, "Updating Operator $($op.Name) SundayPagerEndTime to $SundayEndTime")) {
+                        $op.SundayPagerEndTime = $SundayEndTime
                     }
+                }
 
-                    if ($WeekdayStartTime) {
-                        $operators.WeekdayPagerStartTime = $WeekdayStartTime
+                if ($WeekdayStartTime) {
+                    if ($Pscmdlet.ShouldProcess($server, "Updating Operator $($op.Name) WeekdayPagerStartTime to $WeekdayStartTime")) {
+                        $op.WeekdayPagerStartTime = $WeekdayStartTime
                     }
+                }
 
-                    if ($WeekdayEndTime) {
-                        $operators.WeekdayPagerEndTime = $WeekdayEndTime
+                if ($WeekdayEndTime) {
+                    if ($Pscmdlet.ShouldProcess($server, "Updating Operator $($op.Name) WeekdayPagerEndTime to $WeekdayEndTime")) {
+                        $op.WeekdayPagerEndTime = $WeekdayEndTime
                     }
+                }
 
-                    $operators.Create()
-
-                    if ($IsFailsafeOperator) {
+                if ($IsFailsafeOperator) {
+                    if ($Pscmdlet.ShouldProcess($server, "Updating FailSafe Operator to $operator")) {
                         $server.JobServer.AlertSystem.FailSafeOperator = $Operator
                         $server.JobServer.AlertSystem.FailSafeOperator.NotificationMethod = $FailsafeNotificationMethod
                         $server.JobServer.AlertSystem.Alter()
                     }
-
-                    Write-Message -Level Verbose -Message "Creating Operator $operator"
-                    Get-DbaAgentOperator -SqlInstance $server -Operator $Operator
-                } catch {
-                    Stop-Function -Message "Issue creating operator." -Category InvalidOperation -ErrorRecord $_ -Target $server
                 }
+
+                if ($Pscmdlet.ShouldProcess($server, "Committing changes for Operator $($op.Name)")) {
+                    $op.Alter()
+                    $op
+                }
+            } catch {
+                Stop-Function -Message "Issue creating operator." -Category InvalidOperation -ErrorRecord $_ -Target $server
             }
         }
     }
