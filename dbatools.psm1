@@ -825,7 +825,12 @@ $script:xplat = @(
     'Export-DbaSpConfigure',
     'Test-DbaMaxMemory',
     'Install-DbaMaintenanceSolution',
-    'Get-DbaManagementObject'
+    'Get-DbaManagementObject',
+    'Set-DbaAgentOperator',
+    'Remove-DbaExtendedProperty',
+    'Get-DbaExtendedProperty',
+    'Set-DbaExtendedProperty',
+    'Add-DbaExtendedProperty'
 )
 
 $script:noncoresmo = @(
