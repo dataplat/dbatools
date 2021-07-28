@@ -364,6 +364,7 @@ function Invoke-DbaAdvancedRestore {
                                 $restore.PercentCompleteNotification = 1
                                 $restore.SqlRestore($server)
                                 Write-Progress -id 2 -ParentId 1 -Activity "Restore $($backup.FullName -Join ',')" -Completed
+                                Add-TeppCacheItem -SqlInstance $server -Type database -Name $database
                             }
                             Write-Progress -id 1 -Activity "Restoring $database to $SqlInstance - Backup $BackupCnt of $($Backups.count)" -percentcomplete $outerProgress -status ([System.String]::Format("Progress: {0:N2} %", $outerProgress))
                         }

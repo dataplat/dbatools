@@ -281,10 +281,10 @@ function Get-DbaAgentSchedule {
             foreach ($currentschedule in $scheduleCollection) {
                 $description = Get-ScheduleDescription -CurrentSchedule $currentschedule
 
-                $currentschedule | Add-Member -Type NoteProperty -Name ComputerName -Value $server.ComputerName
-                $currentschedule | Add-Member -Type NoteProperty -Name InstanceName -Value $server.ServiceName
-                $currentschedule | Add-Member -Type NoteProperty -Name SqlInstance -Value $server.DomainInstanceName
-                $currentschedule | Add-Member -Type NoteProperty -Name Description -Value $description
+                $currentschedule | Add-Member -Type NoteProperty -Name ComputerName -Value $server.ComputerName -Force
+                $currentschedule | Add-Member -Type NoteProperty -Name InstanceName -Value $server.ServiceName -Force
+                $currentschedule | Add-Member -Type NoteProperty -Name SqlInstance -Value $server.DomainInstanceName -Force
+                $currentschedule | Add-Member -Type NoteProperty -Name Description -Value $description -Force
 
                 Select-DefaultView -InputObject $currentschedule -Property $defaults
             }
