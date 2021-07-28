@@ -202,7 +202,7 @@ function New-DbaAgentOperator {
                 return
             }
 
-            # Check the end time                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  `1"
+            # Check the end time
             if (-not $SundayEndTime -and $Force) {
                 $SundayEndTime = '235959'
                 Write-Message -Message "Sunday End time was not set. Force is being used. Setting it to $SundayEndTime" -Level Verbose
