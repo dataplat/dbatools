@@ -13,3 +13,6 @@ Set-DbatoolsConfig -FullName 'commands.get-dbaregserver.includelocal' -Value $fa
 
 # Initialize-CredSSP
 Set-DbatoolsConfig -FullName 'commands.initialize-credssp.bypass' -Value $false -Initialize -Validation bool -Description "Do not attempt to configure CredSSP authentication, use existing configuration as-is"
+
+# Test-ElevationRequirement
+Set-DbatoolsConfig -FullName 'commands.test-elevationrequirement.disable' -Value $false -Initialize -Validation bool -Description "Disable elevation (run as admin) requirement"
