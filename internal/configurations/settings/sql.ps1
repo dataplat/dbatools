@@ -10,6 +10,9 @@ Set-DbatoolsConfig -FullName 'sql.connection.packetsize' -Value 4096 -Initialize
 # The default network protocol for all connections unless otherwise specified
 Set-DbatoolsConfig -FullName 'sql.connection.protocol' -Value $null -Initialize -Validation string -Handler { } -Description "Network protocol"
 
+# Sets connect to use MultiSubnetFailover each time
+Set-DbatoolsConfig -FullName 'sql.connection.multisubnetfailover' -Value $false -Initialize -Validation bool -Handler { } -Description "Use MultiSubnetFailover by default"
+
 # How long to wait for results
 Set-DbatoolsConfig -FullName 'sql.execution.timeout' -Value 0 -Initialize -Validation integer -Handler { } -Description "Statement timeout"
 
