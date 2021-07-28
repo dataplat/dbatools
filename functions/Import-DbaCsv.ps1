@@ -556,6 +556,7 @@ function Import-DbaCsv {
                                 Write-Message -Level Verbose -Message "ColumnMap was supplied. Additional auto-mapping will not be attempted."
                             } else {
                                 try {
+                                    $firstline = Get-Content -Path $file -TotalCount 1 -ErrorAction Stop
                                     $firstline -split $Delimiter | ForEach-Object- {
                                         $ColumnMap.Add($PSItem, $PSItem)
                                     }
