@@ -60,6 +60,9 @@ function Test-ElevationRequirement {
         [bool]$EnableException = $EnableException
     )
 
+    if (Get-DbatoolsConfigValue -FullName 'commands.test-elevationrequirement.disable') {
+        return $true
+    }
     $isElevated = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
     $testResult = $true
     if ($ComputerName.IsLocalHost -and (-not $isElevated)) { $testResult = $false }
