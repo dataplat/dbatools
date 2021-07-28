@@ -551,6 +551,7 @@ function Import-DbaCsv {
                         $bulkCopy.NotifyAfter = $NotifyAfter
                         $bulkCopy.EnableStreaming = $true
 
+                        # If the first column has quotes, then we have to setup a column map
                         $quotematch = (Get-Content -Path $file -TotalCount 1 -ErrorAction Stop).ToString()
 
                         if ((-not $KeepOrdinalOrder -and -not $AutoCreateTable) -or ($quotematch -match "'" -or $quotematch -match '"')) {
