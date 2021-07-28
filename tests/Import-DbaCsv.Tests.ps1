@@ -20,12 +20,22 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
 
     $path = "$script:appveyorlabrepo\csv\SuperSmall.csv"
     $CommaSeparatedWithHeader = "$script:appveyorlabrepo\csv\CommaSeparatedWithHeader.csv"
+    $col1 = "$script:appveyorlabrepo\csv\cols.csv"
+    $col2 = "$script:appveyorlabrepo\csv\col2.csv"
 
 
     Context "Works as expected" {
         $results = $path | Import-DbaCsv -SqlInstance $script:instance1 -Database tempdb -Delimiter `t -NotifyAfter 50000 -WarningVariable warn
         It "accepts piped input and doesn't add rows if the table does not exist" {
             $results | Should -Be $null
+        }
+
+        It "creates the right columnmap (#7630)" {
+            $null = Import-DbaCsv -SqlInstance $script:instance1 -Path $col1 -Database tempdb -AutoCreateTable -Table cols
+            $null = Import-DbaCsv -SqlInstance $script:instance1 -Path $col2 -Database tempdb -Table cols
+            $results = Invoke-DbaQuery -SqlInstance $script:instance1 -Database tempdb -Query "select * from cols"
+            $results | Where-Object third -notmatch "three" | Should -BeNullOrEmpty
+            $results | Where-Object first -notmatch "one" | Should -BeNullOrEmpty
         }
 
         if (-not $env:appveyor) {
