@@ -100,6 +100,8 @@ function Remove-DbaLogin {
 
                     $currentlogin.Drop()
 
+                    Remove-TeppCacheItem -SqlInstance $server -Type login -Name $currentlogin.name
+
                     [pscustomobject]@{
                         ComputerName = $server.ComputerName
                         InstanceName = $server.ServiceName

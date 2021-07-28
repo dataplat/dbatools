@@ -541,6 +541,8 @@ function New-DbaAgentSchedule {
 
                             }
 
+                            Add-TeppCacheItem -SqlInstance $server -Type schedule -Name $Schedule
+
                             $JobSchedule
                         }
                     }
@@ -620,6 +622,8 @@ function New-DbaAgentSchedule {
                     } catch {
                         Stop-Function -Message "Something went wrong adding the schedule." -Target $instance -ErrorRecord $_ -Continue
                     }
+
+                    Add-TeppCacheItem -SqlInstance $server -Type schedule -Name $Schedule
 
                     # Output the job schedule
                     $JobSchedule

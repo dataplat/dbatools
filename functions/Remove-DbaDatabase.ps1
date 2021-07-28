@@ -103,6 +103,7 @@ function Remove-DbaDatabase {
                 if ($Pscmdlet.ShouldProcess("$db on $server", "KillDatabase")) {
                     $server.KillDatabase($db.name)
                     $server.Refresh()
+                    Remove-TeppCacheItem -SqlInstance $server -Type database -Name $db.name
 
                     [pscustomobject]@{
                         ComputerName = $server.ComputerName

@@ -441,6 +441,7 @@ function New-DbaDatabase {
                         }
                     }
 
+                    Add-TeppCacheItem -SqlInstance $server -Type database -Name $dbName
                     Get-DbaDatabase -SqlInstance $server -Database $dbName
                 }
             }
