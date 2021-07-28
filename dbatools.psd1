@@ -694,7 +694,12 @@
         'Watch-DbaDbLogin',
         'Watch-DbatoolsUpdate',
         'Watch-DbaXESession',
-        'Write-DbaDbTableData'
+        'Write-DbaDbTableData',
+        'Set-DbaAgentOperator',
+        'Remove-DbaExtendedProperty',
+        'Get-DbaExtendedProperty',
+        'Set-DbaExtendedProperty',
+        'Add-DbaExtendedProperty'
     )
 
     # Cmdlets to export from this module
