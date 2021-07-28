@@ -121,7 +121,7 @@ function Set-DbaPowerPlan {
             if ($change.IsBestPractice) {
                 if ($Pscmdlet.ShouldProcess($computer, "Stating power plan is already set to $powerPlanRequested, won't change.")) {
                     Write-Message -Level Verbose -Message "PowerPlan on $computer is already set to $powerPlanRequested. Skipping."
-                    $output
+                    $output | Select-DefaultView -Property ComputerName, PreviousPowerPlan, ActivePowerPlan, IsChanged
                 }
             } else {
                 if ($Pscmdlet.ShouldProcess($computer, "Changing Power Plan from $powerPlanActive to $powerPlanRequested")) {
