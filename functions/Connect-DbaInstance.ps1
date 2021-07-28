@@ -703,16 +703,16 @@ function Connect-DbaInstance {
 
                     #AdditionalParameters   Property   string AdditionalParameters {get;set;}
                     if ($AppendConnectionString) {
-                        Write-Message -Level Debug -Message "AdditionalParameters will be appended by ';$AppendConnectionString'"
-                        $sqlConnectionInfo.AdditionalParameters += "$AppendConnectionString"
+                        Write-Message -Level Debug -Message "AdditionalParameters will be appended by '$AppendConnectionString;'"
+                        $sqlConnectionInfo.AdditionalParameters += "$AppendConnectionString;"
                     }
                     if ($FailoverPartner) {
-                        Write-Message -Level Debug -Message "AdditionalParameters will be appended by ';FailoverPartner=$FailoverPartner'"
-                        $sqlConnectionInfo.AdditionalParameters += "FailoverPartner=$FailoverPartner"
+                        Write-Message -Level Debug -Message "AdditionalParameters will be appended by 'FailoverPartner=$FailoverPartner;'"
+                        $sqlConnectionInfo.AdditionalParameters += "FailoverPartner=$FailoverPartner;"
                     }
                     if ($MultiSubnetFailover) {
-                        Write-Message -Level Debug -Message "AdditionalParameters will be appended by ';MultiSubnetFailover=True'"
-                        $sqlConnectionInfo.AdditionalParameters += 'MultiSubnetFailover=True'
+                        Write-Message -Level Debug -Message "AdditionalParameters will be appended by 'MultiSubnetFailover=True;'"
+                        $sqlConnectionInfo.AdditionalParameters += 'MultiSubnetFailover=True;'
                     }
 
                     #ApplicationIntent      Property   string ApplicationIntent {get;set;}
