@@ -114,7 +114,7 @@ function Set-DbaPowerPlan {
                 PreviousInstanceId = $instanceId
                 PreviousPowerPlan  = $powerPlanActive
                 ActiveInstanceId   = $instanceId
-                ActivePowerPlan    = $powerPlan
+                ActivePowerPlan    = $powerPlanActive
                 IsChanged          = $false
             }
 
