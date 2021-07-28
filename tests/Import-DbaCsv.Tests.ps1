@@ -35,7 +35,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             $null = Import-DbaCsv -SqlInstance $script:instance1 -Path $col2 -Database tempdb -Table cols
             $results = Invoke-DbaQuery -SqlInstance $script:instance1 -Database tempdb -Query "select * from cols"
             $results | Where-Object third -notmatch "three" | Should -BeNullOrEmpty
-            $results | Where-Object first -notmatch "one" | Should -BeNullOrEmpty
+            $results | Where-Object firstcol -notmatch "one" | Should -BeNullOrEmpty
         }
 
         if (-not $env:appveyor) {
