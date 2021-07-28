@@ -15,9 +15,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     BeforeAll {
         $instance2 = Connect-DbaInstance -SqlInstance $script:instance2 -Database msdb
-        $instance2.Invoke("EXEC msdb.dbo.sp_add_operator @name=N'dbatools dba',
-		@enabled=1,
-		@pager_days=0")
+        $instance2.Invoke("EXEC msdb.dbo.sp_add_operator @name=N'dbatools dba', @enabled=1, @pager_days=0")
     }
 
     AfterAll {
