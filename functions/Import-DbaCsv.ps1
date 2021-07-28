@@ -551,16 +551,24 @@ function Import-DbaCsv {
                         $bulkCopy.NotifyAfter = $NotifyAfter
                         $bulkCopy.EnableStreaming = $true
 
-                        if (-not $KeepOrdinalOrder -and -not $AutoCreateTable) {
+                        # If the first column has quotes, then we have to setup a column map
+                        $quotematch = (Get-Content -Path $file -TotalCount 1 -ErrorAction Stop).ToString()
+
+                        if ((-not $KeepOrdinalOrder -and -not $AutoCreateTable) -or ($quotematch -match "'" -or $quotematch -match '"')) {
                             if ($ColumnMap) {
                                 Write-Message -Level Verbose -Message "ColumnMap was supplied. Additional auto-mapping will not be attempted."
                             } else {
                                 try {
-                                    $firstline -split $Delimiter | ForEach-Object- {
-                                        $ColumnMap.Add($PSItem, $PSItem)
+                                    $ColumnMap = @{ }
+                                    $firstline = Get-Content -Path $file -TotalCount 1 -ErrorAction Stop
+                                    $firstline -split $Delimiter | ForEach-Object {
+                                        $trimmed = $PSItem.Trim('"')
+                                        Write-Message -Level Verbose -Message "Adding $trimmed to ColumnMap"
+                                        $ColumnMap.Add($trimmed, $trimmed)
                                     }
                                 } catch {
                                     # oh well, we tried
+                                    Write-Message -Level Verbose -Message "Couldn't auto create ColumnMap :("
                                     $ColumnMap = $null
                                 }
                             }
