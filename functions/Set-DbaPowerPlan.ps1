@@ -101,7 +101,7 @@ function Set-DbaPowerPlan {
             }
 
             $instanceId = $change.ActiveInstanceId
-            $powerPlan = $change.ActivePowerPlan
+            $powerPlanActive = $change.ActivePowerPlan
             $instanceIdRequested = $change.RecommendedInstanceId
             $powerPlanRequested = $change.RecommendedPowerPlan
 
@@ -112,7 +112,7 @@ function Set-DbaPowerPlan {
             $output = [PSCustomObject]@{
                 ComputerName       = $computer
                 PreviousInstanceId = $instanceId
-                PreviousPowerPlan  = $powerPlan
+                PreviousPowerPlan  = $powerPlanActive
                 ActiveInstanceId   = $instanceId
                 ActivePowerPlan    = $powerPlan
                 IsChanged          = $false
@@ -124,7 +124,7 @@ function Set-DbaPowerPlan {
                     $output
                 }
             } else {
-                if ($Pscmdlet.ShouldProcess($computer, "Changing Power Plan from $powerPlan to $powerPlanRequested")) {
+                if ($Pscmdlet.ShouldProcess($computer, "Changing Power Plan from $powerPlanActive to $powerPlanRequested")) {
                     [System.Guid]$powerPlanGuid = $instanceIdRequested
                     $scriptBlock = {
                         Param ($Guid)
