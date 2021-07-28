@@ -36,6 +36,11 @@ function Update-DbaServiceAccount {
         NETWORKSERVICE
         LOCALSYSTEM
 
+    .PARAMETER NoRestart
+        Do not immediately restart the service after changing the password.
+
+        **Note that the changes will not go into effect until you restart the SQL Services**
+
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
 
@@ -82,6 +87,14 @@ function Update-DbaServiceAccount {
 
         Configures SQL Server engine service on the machine sql1 to run under MyDomain\sqluser1. Will request user to input the account password.
 
+
+    .EXAMPLE
+        PS C:\> Get-DbaService sql1 -Type Engine -Instance MSSQLSERVER | Update-DbaServiceAccount -Username 'MyDomain\sqluser1' -NoRestart
+
+        Configures SQL Server engine service on the machine sql1 to run under MyDomain\sqluser1. Will request user to input the account password.
+
+        Will not restart, which means the changes will not go into effect, so you will still have to restart during your planned outage window.
+
     #>
     [CmdletBinding(SupportsShouldProcess, DefaultParameterSetName = "ServiceName" )]
     param (
@@ -101,6 +114,7 @@ function Update-DbaServiceAccount {
         [securestring]$PreviousPassword = (New-Object System.Security.SecureString),
         [Alias("Password", "NewPassword")]
         [securestring]$SecurePassword = (New-Object System.Security.SecureString),
+        [switch]$NoRestart,
         [switch]$EnableException
     )
     begin {
@@ -223,7 +237,7 @@ function Update-DbaServiceAccount {
                     $outStatus = 'Successful'
                     $outMessage = 'No changes made - running in -WhatIf mode.'
                 }
-                if ($serviceObject.ServiceType -eq 'Engine' -and $actionType -eq 'Account' -and $outStatus -eq 'Successful' -and $agent.State -eq 'Running') {
+                if ($serviceObject.ServiceType -eq 'Engine' -and $actionType -eq 'Account' -and $outStatus -eq 'Successful' -and $agent.State -eq 'Running' -and -not $NoRestart) {
                     #Restart SQL Agent after SQL Engine has been restarted
                     if ($PsCmdlet.ShouldProcess($serviceObject, "Starting SQL Agent after Engine account change on $($svc.ComputerName)")) {
                         $res = Start-DbaService -ComputerName $svc.ComputerName -Type Agent -InstanceName $serviceObject.InstanceName
@@ -231,6 +245,9 @@ function Update-DbaServiceAccount {
                             Write-Message -Level Warning -Message "Failed to restart SQL Agent after changing credentials. $($res.Message)"
                         }
                     }
+                }
+                if ($NoRestart) {
+                    Write-Message -Level Warning -Message "Changes will not go into effect until you restart. Please restart the services manually during your designated outage window."
                 }
                 $serviceObject = Get-DbaService -ComputerName $svc.ComputerName -ServiceName $svc.ServiceName -Credential $Credential -EnableException:$EnableException
                 Add-Member -Force -InputObject $serviceObject -NotePropertyName Message -NotePropertyValue $outMessage
