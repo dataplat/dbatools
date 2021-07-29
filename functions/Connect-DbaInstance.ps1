@@ -965,7 +965,7 @@ function Connect-DbaInstance {
                 if ($SqlConnectionOnly) {
                     Write-Message -Level Debug -Message "We return only SqlConnection in server.ConnectionContext.SqlConnectionObject"
                     Write-Message -Level Debug -Message "Adding to connection hash"
-                    $script:connectionhash[$instance] = $server.ConnectionContext.SqlConnectionObject
+                    $script:connectionhash[$instance.InputObject] = $server.ConnectionContext.SqlConnectionObject
                     $server.ConnectionContext.SqlConnectionObject
                     continue
                 }
@@ -1069,7 +1069,7 @@ function Connect-DbaInstance {
                 }
 
                 Write-Message -Level Debug -Message "Adding to connection hash"
-                $script:connectionhash[$instance] = $server
+                $script:connectionhash[$instance.InputObject] = $server
                 Write-Message -Level Debug -Message "We are finished with this instance"
                 continue
             }
@@ -1128,7 +1128,7 @@ function Connect-DbaInstance {
                     if ('' -eq $Database) {
                         Write-Message -Level Debug -Message "No database specified, so return instance.InputObject"
                         Write-Message -Level Debug -Message "Adding to connection hash"
-                        $script:connectionhash[$instance] = $instance.InputObject
+                        $script:connectionhash[$instance.InputObject] = $instance.InputObject
                         $instance.InputObject
                         continue
                     }
@@ -1136,7 +1136,7 @@ function Connect-DbaInstance {
                     if ($currentdb -eq $Database) {
                         Write-Message -Level Debug -Message "Same database specified, so return instance.InputObject"
                         Write-Message -Level Debug -Message "Adding to connection hash"
-                        $script:connectionhash[$instance] = $instance.InputObject
+                        $script:connectionhash[$instance.InputObject] = $instance.InputObject
                         $instance.InputObject
                         continue
                     } else {
@@ -1246,7 +1246,7 @@ function Connect-DbaInstance {
                     }#>
 
                     Write-Message -Level Debug -Message "Adding to connection hash"
-                    $script:connectionhash[$instance] = $server
+                    $script:connectionhash[$instance.InputObject] = $server
                     $server
                     continue
                 } catch {
@@ -1263,7 +1263,7 @@ function Connect-DbaInstance {
                 }
                 if ($SqlConnectionOnly) {
                     Write-Message -Level Debug -Message "Adding to connection hash"
-                    $script:connectionhash[$instance] = $instance.InputObject.ConnectionContext.SqlConnectionObject
+                    $script:connectionhash[$instance.InputObject] = $instance.InputObject.ConnectionContext.SqlConnectionObject
                     $instance.InputObject.ConnectionContext.SqlConnectionObject
                     continue
                 } else {
@@ -1307,7 +1307,7 @@ function Connect-DbaInstance {
                     }
                     Write-Message -Level Debug -Message "We return server.ConnectionContext.SqlConnectionObject"
                     Write-Message -Level Debug -Message "Adding to connection hash"
-                    $script:connectionhash[$instance] = $server.ConnectionContext.SqlConnectionObject
+                    $script:connectionhash[$instance.InputObject] = $server.ConnectionContext.SqlConnectionObject
                     $server.ConnectionContext.SqlConnectionObject
                     continue
                 } else {
@@ -1338,7 +1338,7 @@ function Connect-DbaInstance {
                     }
                     Write-Message -Level Debug -Message "We return server with server.Name = '$($server.Name)'"
                     Write-Message -Level Debug -Message "Adding to connection hash"
-                    $script:connectionhash[$instance] = $server
+                    $script:connectionhash[$instance.InputObject] = $server
                     $server
                     continue
                 }
@@ -1563,7 +1563,7 @@ function Connect-DbaInstance {
             if ($SqlConnectionOnly) {
                 Write-Message -Level Debug -Message "SqlConnectionOnly, so returning server.ConnectionContext.SqlConnectionObject"
                 Write-Message -Level Debug -Message "Adding to connection hash"
-                $script:connectionhash[$instance] = $server.ConnectionContext.SqlConnectionObject
+                $script:connectionhash[$instance.InputObject] = $server.ConnectionContext.SqlConnectionObject
                 $server.ConnectionContext.SqlConnectionObject
                 continue
             } else {
@@ -1609,7 +1609,7 @@ function Connect-DbaInstance {
 
             Write-Message -Level Debug -Message "We return server with server.Name = '$($server.Name)'"
             Write-Message -Level Debug -Message "Adding to connection hash"
-            $script:connectionhash[$instance] = $server
+            $script:connectionhash[$instance.InputObject] = $server
             $server
             continue
         }
