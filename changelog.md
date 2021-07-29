@@ -39,7 +39,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 * Avoid errors on importing on x86 processors [#5785](https://github.com/sqlcollaborative/dbatools/pull/5785)
 
 ### Removed
-* Remove "LATEST" from buildreference in `Get-DbaBuild` [#5379](https://github.com/sqlcollaborative/dbatools/issues/5379)
+* Remove "LATEST" from buildreference in `Get-DbaBuildReference` [#5379](https://github.com/sqlcollaborative/dbatools/issues/5379)
 * Remove fallbacks for `Expand-Archive` [#5731](https://github.com/sqlcollaborative/dbatools/pull/5731)
 
 ### Changed
@@ -249,7 +249,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ## [0.9.814] - 2019-04-29
 ### Fixed
 * `Copy-DbaAgentSchedule` does not overwrite schedules that already exist, even with `-Force` supplied [#5412](https://github.com/sqlcollaborative/dbatools/issues/5412)
-* `Get-DbaBuild` missing 13.0.5270 [#5408](https://github.com/sqlcollaborative/dbatools/issues/5408)
+* `Get-DBABuildReference` missing 13.0.5270 [#5408](https://github.com/sqlcollaborative/dbatools/issues/5408)
 ### Added
 * Azure AccessToken support
 
@@ -656,7 +656,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ## [0.9.731] - 2018-12-23
 ### Fixed
 * Excessive error messages & conflicting parameters in Restore-DbaDatabase
-* Warning with no output in Get-DbaBuild [#4794](https://github.com/sqlcollaborative/dbatools/issues/4794)
+* Warning with no output in Get-DbaBuildReference [#4794](https://github.com/sqlcollaborative/dbatools/issues/4794)
 * Invalid type conversion in Get-DbaDependency [#4768](https://github.com/sqlcollaborative/dbatools/issues/4768)
 
 ### Changed
