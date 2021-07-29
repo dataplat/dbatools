@@ -1,4 +1,4 @@
-function Get-ConnectedInstance {
+function Get-DbaConnectedInstance {
     <#
     .SYNOPSIS
         Get a list of all connected instances.
@@ -15,10 +15,10 @@ function Get-ConnectedInstance {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-ConnectedInstance
+        https://dbatools.io/Get-DbaConnectedInstance
 
     .EXAMPLE
-        PS C:\> Get-ConnectedInstance
+        PS C:\> Get-DbaConnectedInstance
 
         Gets all connections
 
@@ -26,6 +26,11 @@ function Get-ConnectedInstance {
     [CmdletBinding()]
     param ()
     process {
-        $global:connectionhash
+        foreach ($key in $script:connectionhash.Keys) {
+            [pscustomobject]@{
+                SqlInstance = $key
+                Connection  = $script:connectionhash[$key]
+            }
+        }
     }
 }

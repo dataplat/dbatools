@@ -964,7 +964,8 @@ function Connect-DbaInstance {
 
                 if ($SqlConnectionOnly) {
                     Write-Message -Level Debug -Message "We return only SqlConnection in server.ConnectionContext.SqlConnectionObject"
-                    $global:connectionhash[$instance] = $server.ConnectionContext.SqlConnectionObject
+                    Write-Message -Level Debug -Message "Adding to connection hash"
+                    $script:connectionhash[$instance] = $server.ConnectionContext.SqlConnectionObject
                     $server.ConnectionContext.SqlConnectionObject
                     continue
                 }
@@ -1067,6 +1068,8 @@ function Connect-DbaInstance {
                     }
                 }
 
+                Write-Message -Level Debug -Message "Adding to connection hash"
+                $script:connectionhash[$instance] = $server
                 Write-Message -Level Debug -Message "We are finished with this instance"
                 continue
             }
@@ -1124,14 +1127,16 @@ function Connect-DbaInstance {
                     Write-Message -Level Debug -Message "Connection is already open, test if database has to be changed"
                     if ('' -eq $Database) {
                         Write-Message -Level Debug -Message "No database specified, so return instance.InputObject"
-                        $global:connectionhash[$instance] = $instance.InputObject
+                        Write-Message -Level Debug -Message "Adding to connection hash"
+                        $script:connectionhash[$instance] = $instance.InputObject
                         $instance.InputObject
                         continue
                     }
                     $currentdb = $instance.InputObject.ConnectionContext.ExecuteScalar("select db_name()")
                     if ($currentdb -eq $Database) {
                         Write-Message -Level Debug -Message "Same database specified, so return instance.InputObject"
-                        $global:connectionhash[$instance] = $instance.InputObject
+                        Write-Message -Level Debug -Message "Adding to connection hash"
+                        $script:connectionhash[$instance] = $instance.InputObject
                         $instance.InputObject
                         continue
                     } else {
@@ -1240,7 +1245,8 @@ function Connect-DbaInstance {
                         Add-Member -InputObject $server -NotePropertyName Databases -NotePropertyValue @{ $currentdb.Name = $currentdb } -Force
                     }#>
 
-                    $global:connectionhash[$instance] = $server
+                    Write-Message -Level Debug -Message "Adding to connection hash"
+                    $script:connectionhash[$instance] = $server
                     $server
                     continue
                 } catch {
@@ -1256,7 +1262,8 @@ function Connect-DbaInstance {
                     $instance.InputObject.ConnectionContext.Connect()
                 }
                 if ($SqlConnectionOnly) {
-                    $global:connectionhash[$instance] = $instance.InputObject.ConnectionContext.SqlConnectionObject
+                    Write-Message -Level Debug -Message "Adding to connection hash"
+                    $script:connectionhash[$instance] = $instance.InputObject.ConnectionContext.SqlConnectionObject
                     $instance.InputObject.ConnectionContext.SqlConnectionObject
                     continue
                 } else {
@@ -1299,7 +1306,8 @@ function Connect-DbaInstance {
                         Stop-Function -Target $instance -Message "Azure SQL Database not supported" -Continue
                     }
                     Write-Message -Level Debug -Message "We return server.ConnectionContext.SqlConnectionObject"
-                    $global:connectionhash[$instance] = $server.ConnectionContext.SqlConnectionObject
+                    Write-Message -Level Debug -Message "Adding to connection hash"
+                    $script:connectionhash[$instance] = $server.ConnectionContext.SqlConnectionObject
                     $server.ConnectionContext.SqlConnectionObject
                     continue
                 } else {
@@ -1329,7 +1337,8 @@ function Connect-DbaInstance {
                         [Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Cache["sqlinstance"] += $instance.FullSmoName.ToLowerInvariant()
                     }
                     Write-Message -Level Debug -Message "We return server with server.Name = '$($server.Name)'"
-                    $global:connectionhash[$instance] = $server
+                    Write-Message -Level Debug -Message "Adding to connection hash"
+                    $script:connectionhash[$instance] = $server
                     $server
                     continue
                 }
@@ -1553,7 +1562,8 @@ function Connect-DbaInstance {
 
             if ($SqlConnectionOnly) {
                 Write-Message -Level Debug -Message "SqlConnectionOnly, so returning server.ConnectionContext.SqlConnectionObject"
-                $global:connectionhash[$instance] = $server.ConnectionContext.SqlConnectionObject
+                Write-Message -Level Debug -Message "Adding to connection hash"
+                $script:connectionhash[$instance] = $server.ConnectionContext.SqlConnectionObject
                 $server.ConnectionContext.SqlConnectionObject
                 continue
             } else {
@@ -1598,7 +1608,8 @@ function Connect-DbaInstance {
             }
 
             Write-Message -Level Debug -Message "We return server with server.Name = '$($server.Name)'"
-            $global:connectionhash[$instance] = $server
+            Write-Message -Level Debug -Message "Adding to connection hash"
+            $script:connectionhash[$instance] = $server
             $server
             continue
         }
