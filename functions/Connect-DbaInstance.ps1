@@ -147,6 +147,12 @@ function Connect-DbaInstance {
         Connect to an Azure SQL Database or an Azure SQL Managed Instance with an AccessToken, that has to be generated with Get-AzAccessToken.
         Note that the token is valid for only one hour and cannot be renewed automatically.
 
+    .PARAMETER DedicatedAdminConnection
+        Connects using "ADMIN:" to create a dedicated admin connection (DAC).
+        If the instance is on a remote server, the remote access has to be enabled via "sp_configure 'remote admin connections', 1".
+        The parameter NonPooledConnection will be set to request a non-pooled connection.
+        The connection will not be closed if the variable holding the Server SMO is going ot of scope, so it is very important to call .ConnectionContext.Disconnect() to close the connection.
+
     .PARAMETER DisableException
         By default in most of our commands, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
 
@@ -316,6 +322,7 @@ function Connect-DbaInstance {
         [ValidateSet('CurrentUser', 'LocalMachine')]
         [string]$Store = (Get-DbatoolsConfigValue -FullName 'azure.certificate.store'),
         [string]$AccessToken,
+        [switch]$DedicatedAdminConnection,
         [switch]$DisableException
     )
     begin {
@@ -600,6 +607,17 @@ function Connect-DbaInstance {
                 } elseif ($inputObjectType -in 'SqlConnection', 'RegisteredServer', 'ConnectionString' ) {
                     if (Test-Bound -ParameterName $ignoredParameters, 'ApplicationIntent', 'StatementTimeout') {
                         Write-Message -Level Warning -Message "Additional parameters are passed in, but they will be ignored"
+                    }
+                }
+
+                if ($DedicatedAdminConnection) {
+                    Write-Message -Level Debug -Message "Parameter DedicatedAdminConnection is used."
+                    if ($serverName) {
+                        Write-Message -Level Debug -Message "serverName will be changed. NonPooledConnection will be set."
+                        $serverName = 'ADMIN:' + $serverName
+                        $NonPooledConnection = $true
+                    } else {
+                        Write-Message -Level Debug -Message "serverName is not set, so no change and no dedicated admin connection."
                     }
                 }
 
