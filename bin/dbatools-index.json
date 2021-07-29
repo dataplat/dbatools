@@ -13402,16 +13402,16 @@
         "Syntax":  "Get-DbaBackupInformation -Path \u003cObject[]\u003e -SqlInstance \u003cDbaInstanceParameter\u003e [-SqlCredential \u003cPSCredential\u003e] [-DatabaseName \u003cString[]\u003e] [-SourceInstance \u003cString[]\u003e] [-NoXpDirTree] [-NoXpDirRecurse] [-DirectoryRecurse] [-EnableException] [-MaintenanceSolution] [-IgnoreLogBackup] [-IgnoreDiffBackup] [-ExportPath \u003cString\u003e] [-AzureCredential \u003cString\u003e] [-Anonymise] [-NoClobber] [-PassThru] [\u003cCommonParameters\u003e]\nGet-DbaBackupInformation -Path \u003cObject[]\u003e [-DatabaseName \u003cString[]\u003e] [-SourceInstance \u003cString[]\u003e] [-EnableException] [-MaintenanceSolution] [-IgnoreLogBackup] [-IgnoreDiffBackup] [-ExportPath \u003cString\u003e] [-AzureCredential \u003cString\u003e] [-Import] [-Anonymise] [-NoClobber] [-PassThru] [\u003cCommonParameters\u003e]"
     },
     {
-        "Name":  "Get-DbaBuildReference",
+        "Name":  "Get-DbaBuild",
         "Description":  "Returns info about the specific build of a SQL instance, including the SP, the CU and the reference KB, wherever possible.\nIt also includes End Of Support dates as specified on Microsoft Life Cycle Policy",
         "Tags":  "SqlBuild",
         "Synopsis":  "Returns SQL Server Build infos on a SQL instance",
         "Alias":  "",
         "Author":  "Simone Bizzotto (@niphold) | Friedrich Weinmann (@FredWeinmann)",
-        "CommandName":  "Get-DbaBuildReference",
+        "CommandName":  "Get-DbaBuild",
         "Availability":  "Windows, Linux, macOS",
-        "Links":  "https://dbatools.io/Get-DbaBuildReference",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaBuildReference -Build \"12.00.4502\"\nReturns information about a build identified by  \"12.00.4502\" (which is SQL 2014 with SP1 and CU11)\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaBuildReference -Build \"12.00.4502\" -Update\nReturns information about a build trying to fetch the most up to date index online. When the online version is newer, the local one gets overwritten\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaBuildReference -Build \"12.0.4502\",\"10.50.4260\"\nReturns information builds identified by these versions strings\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaRegServer -SqlInstance sqlserver2014a | Get-DbaBuildReference\nIntegrate with other cmdlets to have builds checked for all your registered servers on sqlserver2014a",
+        "Links":  "https://dbatools.io/Get-DbaBuild",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaBuild -Build \"12.00.4502\"\nReturns information about a build identified by  \"12.00.4502\" (which is SQL 2014 with SP1 and CU11)\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaBuild -Build \"12.00.4502\" -Update\nReturns information about a build trying to fetch the most up to date index online. When the online version is newer, the local one gets overwritten\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaBuild -Build \"12.0.4502\",\"10.50.4260\"\nReturns information builds identified by these versions strings\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaRegServer -SqlInstance sqlserver2014a | Get-DbaBuild\nIntegrate with other cmdlets to have builds checked for all your registered servers on sqlserver2014a",
         "Params":  [
                        [
                            "Build",
@@ -13495,7 +13495,7 @@
                            ""
                        ]
                    ],
-        "Syntax":  "Get-DbaBuildReference [[-Build] \u003cVersion[]\u003e] [[-Kb] \u003cString[]\u003e] [[-MajorVersion] \u003cString\u003e] [[-ServicePack] \u003cString\u003e] [[-CumulativeUpdate] \u003cString\u003e] [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [-Update] [-EnableException] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Get-DbaBuild [[-Build] \u003cVersion[]\u003e] [[-Kb] \u003cString[]\u003e] [[-MajorVersion] \u003cString\u003e] [[-ServicePack] \u003cString\u003e] [[-CumulativeUpdate] \u003cString\u003e] [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [-Update] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Get-DbaClientAlias",

@@ -37,7 +37,7 @@ function Update-DbaBuildReference {
     )
 
     begin {
-        function Get-DbaBuildReferenceIndexOnline {
+        function Get-DbaBuildIndexOnline {
             [CmdletBinding()]
             param (
                 [bool]
@@ -94,7 +94,7 @@ function Update-DbaBuildReference {
                 $offline_time = $data_time
             }
         }
-        $WebContent = Get-DbaBuildReferenceIndexOnline -EnableException $EnableException
+        $WebContent = Get-DbaBuildIndexOnline -EnableException $EnableException
         if ($null -ne $WebContent) {
             $webdata_content = $WebContent.Content | ConvertFrom-Json
             $webdata_time = Get-Date $webdata_content.LastUpdated

@@ -196,7 +196,7 @@
         'Get-DbaAvailableCollation',
         'Get-DbaBackupDevice',
         'Get-DbaBackupInformation',
-        'Get-DbaBuildReference',
+        'Get-DbaBuild',
         'Get-DbaClientAlias',
         'Get-DbaClientProtocol',
         'Get-DbaCmConnection',

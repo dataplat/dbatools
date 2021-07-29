@@ -119,7 +119,7 @@ function Test-DbaBuild {
 
     begin {
         #region Helper functions
-        function Get-DbaBuildReferenceIndex {
+        function Get-DbaBuildIndex {
             [CmdletBinding()]
 
             $DbatoolsData = Get-DbatoolsConfigValue -Name 'Path.DbatoolsData'
@@ -183,14 +183,14 @@ function Test-DbaBuild {
             $hiddenProps += 'MinimumBuild'
         }
         if ($Build) {
-            $BuildVersions = Get-DbaBuildReference -Build $Build -Update:$Update -EnableException:$EnableException
+            $BuildVersions = Get-DbaBuild -Build $Build -Update:$Update -EnableException:$EnableException
         } elseif ($SqlInstance) {
-            $BuildVersions = Get-DbaBuildReference -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Update:$Update -EnableException:$EnableException
+            $BuildVersions = Get-DbaBuild -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Update:$Update -EnableException:$EnableException
         }
         # Moving it down here to only trigger after -Update was properly called
         if (!$IdxRef) {
             try {
-                $IdxRef = Get-DbaBuildReferenceIndex
+                $IdxRef = Get-DbaBuildIndex
             } catch {
                 Stop-Function -Message "Error loading SQL build reference" -ErrorRecord $_
                 return

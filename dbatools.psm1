@@ -323,6 +323,7 @@ $forever = @{
     'Start-SqlMigration'      = 'Start-DbaMigration'
     'Write-DbaDataTable'      = 'Write-DbaDbTableData'
     'Get-DbaDbModule'         = 'Get-DbaModule'
+    'Get-DbaBuildReference'   = 'Get-DbaBuild'
 }
 foreach ($_ in $forever.GetEnumerator()) {
     Set-Alias -Name $_.Key -Value $_.Value
@@ -785,7 +786,7 @@ $script:xplat = @(
     'Get-DbaDbLogSpace',
     'Export-DbaDbRole',
     'Export-DbaServerRole',
-    'Get-DbaBuildReference',
+    'Get-DbaBuild',
     'Update-DbaBuildReference',
     'Install-DbaFirstResponderKit',
     'Install-DbaWhoIsActive',

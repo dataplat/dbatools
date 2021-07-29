@@ -89,17 +89,17 @@ function Get-SqlInstanceUpdate {
                 #Cumulative update is present - installing CU
                 if (Test-Bound -Parameter ServicePack) {
                     #Service pack is present - using it as a reference
-                    $targetKB = Get-DbaBuildReference -MajorVersion $currentMajorNumber -ServicePack $ServicePack -CumulativeUpdate $CumulativeUpdate
+                    $targetKB = Get-DbaBuild -MajorVersion $currentMajorNumber -ServicePack $ServicePack -CumulativeUpdate $CumulativeUpdate
                 } else {
                     #Service pack not present - using current SP level
                     $targetSP = $currentVersion.SPLevel
-                    $targetKB = Get-DbaBuildReference -MajorVersion $currentMajorNumber -ServicePack $targetSP -CumulativeUpdate $CumulativeUpdate
+                    $targetKB = Get-DbaBuild -MajorVersion $currentMajorNumber -ServicePack $targetSP -CumulativeUpdate $CumulativeUpdate
                 }
             } elseif ($ServicePack -gt 0) {
                 #Service pack number was passed without CU - installing service pack
-                $targetKB = Get-DbaBuildReference -MajorVersion $currentMajorNumber -ServicePack $ServicePack
+                $targetKB = Get-DbaBuild -MajorVersion $currentMajorNumber -ServicePack $ServicePack
             } elseif ($KB) {
-                $targetKB = Get-DbaBuildReference -KB $KB
+                $targetKB = Get-DbaBuild -KB $KB
                 if ($targetKB -and $currentMajorNumber -ne $targetKB.NameLevel) {
                     Write-Message -Level Debug -Message "$($targetKB.NameLevel) is not a target Major version $($currentMajorNumber), skipping"
                     continue
@@ -109,7 +109,7 @@ function Get-SqlInstanceUpdate {
                 $latestCU = Test-DbaBuild -Build $currentVersion.BuildLevel -MaxBehind '0CU'
                 if (!$latestCU.Compliant) {
                     #more recent build is found, get KB number depending on what is the current upgrade $Type
-                    $targetKB = Get-DbaBuildReference -Build $latestCU.BuildTarget
+                    $targetKB = Get-DbaBuild -Build $latestCU.BuildTarget
                     $targetSP = $targetKB.SPLevel
                     if ($Type -eq 'CumulativeUpdate') {
                         if ($currentVersion.SPLevel -ne $latestCU.SPTarget) {
@@ -119,7 +119,7 @@ function Get-SqlInstanceUpdate {
                         $targetLevel = "$($targetKB.SPLevel)$($targetKB.CULevel)"
                         Write-Message -Level Debug -Message "Found a latest Cumulative Update $targetLevel (KB$($targetKB.KBLevel))"
                     } elseif ($Type -eq 'ServicePack') {
-                        $targetKB = Get-DbaBuildReference -MajorVersion $targetKB.NameLevel -ServicePack $targetSP
+                        $targetKB = Get-DbaBuild -MajorVersion $targetKB.NameLevel -ServicePack $targetSP
                         $targetLevel = $targetKB.SPLevel
                         if ($currentVersion.SPLevel -eq $latestCU.SPTarget) {
                             Write-Message -Message "No need to update $currentMajorVersion to $targetLevel - it's already on the latest SP version" -Level Verbose
