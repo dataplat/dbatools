@@ -56,6 +56,11 @@ function Get-DbaDbCompression {
 
         Returns objects size and current compression level for objects in all databases except the TestDatabase database.
 
+    .EXAMPLE
+        PS C:\> Get-DbaDbCompression -SqlInstance localhost -ExcludeDatabase TestDatabases -Table table1, table2
+
+        Returns objects size and current compression level for table1 and table2 in all databases except the TestDatabase database.
+
     #>
     [CmdletBinding(DefaultParameterSetName = "Default")]
     param (

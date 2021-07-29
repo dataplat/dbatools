@@ -71,9 +71,9 @@ function Set-DbaDbCompression {
         Set the compression run time to 60 minutes and will start the compression of tables/indexes that have a difference of 25% or higher between current and recommended.
 
     .EXAMPLE
-        PS C:\> Set-DbaDbCompression -SqlInstance ServerA -Database DBName -CompressionType Page
+        PS C:\> Set-DbaDbCompression -SqlInstance ServerA -Database DBName -CompressionType Page -Table table1, table2
 
-        Utilizes Page compression for all objects in DBName on ServerA with no time limit.
+        Utilizes Page compression for tables table1 and table2 in DBName on ServerA with no time limit.
 
     .EXAMPLE
         PS C:\> Set-DbaDbCompression -SqlInstance ServerA -Database DBName -PercentCompression 25 | Out-GridView
