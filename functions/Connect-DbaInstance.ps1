@@ -149,9 +149,9 @@ function Connect-DbaInstance {
 
     .PARAMETER DedicatedAdminConnection
         Connects using "ADMIN:" to create a dedicated admin connection (DAC).
-        If the instance is on a remote server, the remote access has to be enabled via "sp_configure 'remote admin connections', 1".
+        If the instance is on a remote server, the remote access has to be enabled via "Set-DbaSpConfigure -Name RemoteDacConnectionsEnabled -Value $true" or "sp_configure 'remote admin connections', 1".
         The parameter NonPooledConnection will be set to request a non-pooled connection.
-        The connection will not be closed if the variable holding the Server SMO is going ot of scope, so it is very important to call .ConnectionContext.Disconnect() to close the connection.
+        The connection will not be closed if the variable holding the Server SMO is going out of scope, so it is very important to call .ConnectionContext.Disconnect() to close the connection.
 
     .PARAMETER DisableException
         By default in most of our commands, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -927,6 +927,9 @@ function Connect-DbaInstance {
                 try {
                     $null = $server.ConnectionContext.ExecuteWithResults("SELECT 'dbatools is opening a new connection'")
                 } catch {
+                    if ($DedicatedAdminConnection) {
+                        Write-Message -Level Warning -Message "Failed to open dedicated admin connection (DAC) to $instance. Only one DAC connection is allowed, so maybe another DAC is still open."
+                    }
                     Stop-Function -Target $instance -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Continue
                 }
                 Write-Message -Level Debug -Message "We have a connected server object"
