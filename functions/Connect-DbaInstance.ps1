@@ -375,20 +375,6 @@ function Connect-DbaInstance {
                 }
             }
         }
-        function Hide-ConnectionString {
-            Param (
-                [string]$ConnectionString
-            )
-            try {
-                $connStringBuilder = New-Object Microsoft.Data.SqlClient.SqlConnectionStringBuilder $ConnectionString
-                if ($connStringBuilder.Password) {
-                    $connStringBuilder.Password = ''.Padleft(8, '*')
-                }
-                return $connStringBuilder.ConnectionString
-            } catch {
-                return "Failed to mask the connection string`: $($_.Exception.Message)"
-            }
-        }
         #endregion Utility functions
 
         #region Ensure Credential integrity
@@ -670,17 +656,17 @@ function Connect-DbaInstance {
                     # Test for unsupported parameters
                     # TODO: Thumbprint and Store are not used in legacy code path and should be removed.
                     if ($Thumbprint) {
-                        Stop-Function -Message "Parameter Thumbprint is not supported at this time."
+                        Stop-Function -Target $instance -Message "Parameter Thumbprint is not supported at this time."
                         return
                     }
                     if ($Store) {
-                        Stop-Function -Message "Parameter Store is not supported at this time."
+                        Stop-Function -Target $instance -Message "Parameter Store is not supported at this time."
                         return
                     }
 
                     # Identify authentication method
                     if ($AuthenticationType -ne 'Auto') {
-                        Stop-Function -Message 'AuthenticationType "AD Universal with MFA Support" is only supported in the legacy code path. Run "Set-DbatoolsConfig -FullName sql.connection.legacy -Value $true" to deactivate the new code path and use the legacy code path.'
+                        Stop-Function -Target $instance -Message 'AuthenticationType "AD Universal with MFA Support" is only supported in the legacy code path. Run "Set-DbatoolsConfig -FullName sql.connection.legacy -Value $true" to deactivate the new code path and use the legacy code path.'
                         return
                     } else {
                         if (Test-Azure -SqlInstance $instance) {
@@ -888,7 +874,7 @@ function Connect-DbaInstance {
 
                     if ($authType -eq 'local ad') {
                         if ($IsLinux -or $IsMacOS) {
-                            Stop-Function -Message "Cannot use Windows credentials to connect when host is Linux or OS X. Use kinit instead. See https://github.com/sqlcollaborative/dbatools/issues/7602 for more info."
+                            Stop-Function -Target $instance -Message "Cannot use Windows credentials to connect when host is Linux or OS X. Use kinit instead. See https://github.com/sqlcollaborative/dbatools/issues/7602 for more info."
                             return
                         }
                         Write-Message -Level Debug -Message "ConnectAsUser will be set to '$true'"
@@ -941,17 +927,17 @@ function Connect-DbaInstance {
                 try {
                     $null = $server.ConnectionContext.ExecuteWithResults("SELECT 'dbatools is opening a new connection'")
                 } catch {
-                    Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+                    Stop-Function -Target $instance -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Continue
                 }
                 Write-Message -Level Debug -Message "We have a connected server object"
 
                 if ($AzureUnsupported -and $server.DatabaseEngineType -eq "SqlAzureDatabase") {
-                    Stop-Function -Message "Azure SQL Database not supported" -Continue
+                    Stop-Function -Target $instance -Message "Azure SQL Database not supported" -Continue
                 }
 
                 if ($MinimumVersion -and $server.VersionMajor) {
                     if ($server.VersionMajor -lt $MinimumVersion) {
-                        Stop-Function -Message "SQL Server version $MinimumVersion required - $server not supported." -Continue
+                        Stop-Function -Target $instance -Message "SQL Server version $MinimumVersion required - $server not supported." -Continue
                     }
                 }
 
@@ -1071,7 +1057,7 @@ function Connect-DbaInstance {
             Write-Message -Level Debug -Message "sql.connection.legacy is used"
 
             if ($AccessToken) {
-                Stop-Function -Message 'AccessToken is only supported in the new default code path. Use the new default code path by executing: Set-DbatoolsConfig -FullName sql.connection.legacy -Value $false -Passthru | Register-DbatoolsConfig'
+                Stop-Function -Target $instance -Message 'AccessToken is only supported in the new default code path. Use the new default code path by executing: Set-DbatoolsConfig -FullName sql.connection.legacy -Value $false -Passthru | Register-DbatoolsConfig'
                 return
             }
 
@@ -1106,7 +1092,7 @@ function Connect-DbaInstance {
                 # Test for AzureUnsupported, moved here from Connect-SqlInstance
                 if ($instance.InputObject.GetType().Name -eq 'Server') {
                     if ($AzureUnsupported -and $instance.InputObject.DatabaseEngineType -eq "SqlAzureDatabase") {
-                        Stop-Function -Message "Azure SQL Database is not supported by this command."
+                        Stop-Function -Target $instance -Message "Azure SQL Database is not supported by this command."
                         continue
                     }
                 }
@@ -1156,7 +1142,7 @@ function Connect-DbaInstance {
 
                 if ($Tenant -or $AuthenticationType -eq "AD Universal with MFA Support") {
                     if ($Thumbprint) {
-                        Stop-Function -Message "Thumbprint is unsupported at this time. Sorry, some DLLs were all messed up."
+                        Stop-Function -Target $instance -Message "Thumbprint is unsupported at this time. Sorry, some DLLs were all messed up."
                         return
                     }
 
@@ -1168,17 +1154,17 @@ function Connect-DbaInstance {
                     }
 
                     if (-not $azurevm -and (-not $SqlCredential -and $Tenant)) {
-                        Stop-Function -Message "When using Tenant, SqlCredential must be specified."
+                        Stop-Function -Target $instance -Message "When using Tenant, SqlCredential must be specified."
                         return
                     }
 
                     if (-not $Database) {
-                        Stop-Function -Message "When using AD Universal with MFA Support, database must be specified."
+                        Stop-Function -Target $instance -Message "When using AD Universal with MFA Support, database must be specified."
                         return
                     }
 
                     if (-not $SqlCredential) {
-                        Stop-Function -Message "When using Tenant, SqlCredential must be specified."
+                        Stop-Function -Target $instance -Message "When using Tenant, SqlCredential must be specified."
                         return
                     }
                     Write-Message -Level Verbose -Message "Creating renewable token"
@@ -1213,7 +1199,7 @@ function Connect-DbaInstance {
 
                     # Test for AzureUnsupported
                     if ($AzureUnsupported -and $server.DatabaseEngineType -eq "SqlAzureDatabase") {
-                        Stop-Function -Message "Azure SQL Database is not supported by this command."
+                        Stop-Function -Target $instance -Message "Azure SQL Database is not supported by this command."
                         continue
                     }
 
@@ -1232,7 +1218,7 @@ function Connect-DbaInstance {
                     $server
                     continue
                 } catch {
-                    Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
+                    Stop-Function -Target $instance -Message "Failure" -ErrorRecord $_ -Continue
                 }
             }
 
@@ -1278,12 +1264,12 @@ function Connect-DbaInstance {
                     if ($MinimumVersion -and $server.VersionMajor) {
                         Write-Message -Level Debug -Message "We test MinimumVersion"
                         if ($server.versionMajor -lt $MinimumVersion) {
-                            Stop-Function -Message "SQL Server version $MinimumVersion required - $server not supported." -Continue
+                            Stop-Function -Target $instance -Message "SQL Server version $MinimumVersion required - $server not supported." -Continue
                         }
                     }
 
                     if ($AzureUnsupported -and $server.DatabaseEngineType -eq "SqlAzureDatabase") {
-                        Stop-Function -Message "Azure SQL Database not supported" -Continue
+                        Stop-Function -Target $instance -Message "Azure SQL Database not supported" -Continue
                     }
                     Write-Message -Level Debug -Message "We return server.ConnectionContext.SqlConnectionObject"
                     $server.ConnectionContext.SqlConnectionObject
@@ -1301,12 +1287,12 @@ function Connect-DbaInstance {
                     if ($MinimumVersion -and $server.VersionMajor) {
                         Write-Message -Level Debug -Message "We test MinimumVersion"
                         if ($server.versionMajor -lt $MinimumVersion) {
-                            Stop-Function -Message "SQL Server version $MinimumVersion required - $server not supported." -Continue
+                            Stop-Function -Target $instance -Message "SQL Server version $MinimumVersion required - $server not supported." -Continue
                         }
                     }
 
                     if ($AzureUnsupported -and $server.DatabaseEngineType -eq "SqlAzureDatabase") {
-                        Stop-Function -Message "Azure SQL Database not supported" -Continue
+                        Stop-Function -Target $instance -Message "Azure SQL Database not supported" -Continue
                     }
 
                     [Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::SetInstance($instance.FullSmoName.ToLowerInvariant(), $server.ConnectionContext.Copy(), ($server.ConnectionContext.FixedServerRoles -match "SysAdmin"))
@@ -1482,7 +1468,7 @@ function Connect-DbaInstance {
                     $message = ($message -Split 'at Microsoft.Data.SqlClient')[0]
                     $message = ($message -Split 'at System.Data.ProviderBase')[0]
 
-                    Stop-Function -Message "Can't connect to $instance" -ErrorRecord $_ -Continue
+                    Stop-Function -Target $instance -Message "Can't connect to $instance" -ErrorRecord $_ -Continue
                 }
             }
 
@@ -1573,12 +1559,12 @@ function Connect-DbaInstance {
 
             if ($MinimumVersion -and $server.VersionMajor) {
                 if ($server.versionMajor -lt $MinimumVersion) {
-                    Stop-Function -Message "SQL Server version $MinimumVersion required - $server not supported." -Continue
+                    Stop-Function -Target $instance -Message "SQL Server version $MinimumVersion required - $server not supported." -Continue
                 }
             }
 
             if ($AzureUnsupported -and $server.DatabaseEngineType -eq "SqlAzureDatabase") {
-                Stop-Function -Message "Azure SQL Database not supported" -Continue
+                Stop-Function -Target $instance -Message "Azure SQL Database not supported" -Continue
             }
 
             Write-Message -Level Debug -Message "We return server with server.Name = '$($server.Name)'"
