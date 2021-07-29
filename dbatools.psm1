@@ -1085,3 +1085,6 @@ $onRemoveScript = {
 }
 $ExecutionContext.SessionState.Module.OnRemove += $onRemoveScript
 Register-EngineEvent -SourceIdentifier ([System.Management.Automation.PsEngineEvent]::Exiting) -Action $onRemoveScript
+
+# Create collection for servers
+$global:connectionhash = @{ }
