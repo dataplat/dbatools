@@ -831,7 +831,8 @@ $script:xplat = @(
     'Remove-DbaExtendedProperty',
     'Get-DbaExtendedProperty',
     'Set-DbaExtendedProperty',
-    'Add-DbaExtendedProperty'
+    'Add-DbaExtendedProperty',
+    'Get-DbaOleDbProvider'
 )
 
 $script:noncoresmo = @(
