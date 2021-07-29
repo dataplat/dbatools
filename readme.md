@@ -115,7 +115,7 @@ $old | Get-DbaLastGoodCheckDb | Out-GridView
 Start-Process https://dbatools.io/builds
 
 # You can use the same JSON the website uses to check the status of your own environment
-$allservers | Get-DbaBuildReference
+$allservers | Get-DbaBuild
 
 # We evaluated 37,545 SQL Server stored procedures on 9 servers in 8.67 seconds!
 $new | Find-DbaStoredProcedure -Pattern dbatools

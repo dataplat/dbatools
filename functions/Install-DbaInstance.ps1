@@ -369,7 +369,7 @@ function Install-DbaInstance {
             return
         }
         # getting a numeric version for further comparison
-        #$canonicVersion = (Get-DbaBuildReference -MajorVersion $Version).BuildLevel
+        #$canonicVersion = (Get-DbaBuild -MajorVersion $Version).BuildLevel
         [version]$canonicVersion = switch ($Version) {
             2008 { '10.0' }
             2008R2 { '10.50' }
