@@ -157,14 +157,12 @@ function Stop-Function {
         $Line = $callStack.Position.StartLineNumber
     }
 
-    if ($callStack.Arguments -and $FunctionName -match "Connect-.*Instance") {
+    if ($Target -and $FunctionName -match "Connect-.*Instance") {
         # $callStack.Arguments is a string, what?
-        $instancestring = $callStack.Arguments.Trim("{}").Split(",") | Where-Object { $PSItem -match "SqlInstance" }
-        if ($instancestring) {
-            $instance = $instancestring.Split("=") | Select-Object -Last 1
-        }
-        if ($instance) {
-            $Message = "[$instance] connection failure: $Message"
+        $instance = $Target
+        $isconnstring = ([DbaInstanceParameter]$instance).IsConnectionString
+        if ($isconnstring) {
+            $instance = Hide-ConnectionString $instance
         }
     }
     #endregion Initialize information on the calling command
