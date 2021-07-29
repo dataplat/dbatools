@@ -146,10 +146,24 @@ function Stop-Function {
 
     #region Initialize information on the calling command
     $callStack = (Get-PSCallStack)[1]
-    if (-not $FunctionName) { $FunctionName = $callStack.Command }
     $ModuleName = "dbatools"
-    if (-not $File) { $File = $callStack.Position.File }
-    if (-not $Line) { $Line = $callStack.Position.StartLineNumber }
+    if (-not $FunctionName) {
+        $FunctionName = $callStack.Command
+    }
+    if (-not $File) {
+        $File = $callStack.Position.File
+    }
+    if (-not $Line) {
+        $Line = $callStack.Position.StartLineNumber
+    }
+
+    if ($Target -and $FunctionName -match "Connect-.*Instance") {
+        $instance = $Target
+        $isconnstring = ([DbaInstanceParameter]$instance).IsConnectionString
+        if ($isconnstring) {
+            $instance = Hide-ConnectionString $instance
+        }
+    }
     #endregion Initialize information on the calling command
 
     #region Apply Transforms
@@ -169,7 +183,6 @@ function Stop-Function {
             if ($tempException -ne $ErrorRecord[$int].Exception) {
                 $ErrorRecord[$int] = New-Object System.Management.Automation.ErrorRecord($tempException, $ErrorRecord[$int].FullyQualifiedErrorId, $ErrorRecord[$int].CategoryInfo.Category, $ErrorRecord[$int].TargetObject)
             }
-
             $int++
         }
     }
@@ -183,9 +196,19 @@ function Stop-Function {
         if ($ErrorRecord) {
             foreach ($record in $ErrorRecord) {
                 $msg = Get-ErrorMessage -Record $record
-                if (-not $Exception) { $newException = New-Object System.Exception($msg, $record.Exception) }
-                else { $newException = $Exception }
-                if ($record.CategoryInfo.Category) { $Category = $record.CategoryInfo.Category }
+                if ($instance) {
+                    $msg = "Error connecting to [$instance]: $msg"
+                }
+                if (-not $Exception) {
+                    $newException = New-Object System.Exception($msg, $record.Exception)
+                } else {
+                    $newException = $Exception
+                }
+
+                if ($record.CategoryInfo.Category) {
+                    $Category = $record.CategoryInfo.Category
+                }
+
                 $records += New-Object System.Management.Automation.ErrorRecord($newException, "$($ModuleName)_$FunctionName", $Category, $Target)
             }
         } else {
@@ -193,26 +216,34 @@ function Stop-Function {
         }
 
         # Manage Debugging
-        if ($EnableException) { Write-Message -Level Warning -Message $Message -EnableException $EnableException -FunctionName $FunctionName -Target $Target -ErrorRecord $records -Tag $Tag -ModuleName $ModuleName -OverrideExceptionMessage:$OverrideExceptionMessage -File $File -Line $Line 3>$null }
-        else { Write-Message -Level Warning -Message $Message -EnableException $EnableException -FunctionName $FunctionName -Target $Target -ErrorRecord $records -Tag $Tag -ModuleName $ModuleName -OverrideExceptionMessage:$OverrideExceptionMessage -File $File -Line $Line }
+        if ($EnableException) {
+            Write-Message -Level Warning -Message $Message -EnableException $EnableException -FunctionName $FunctionName -Target $Target -ErrorRecord $records -Tag $Tag -ModuleName $ModuleName -OverrideExceptionMessage:$OverrideExceptionMessage -File $File -Line $Line 3>$null
+        } else {
+            Write-Message -Level Warning -Message $Message -EnableException $EnableException -FunctionName $FunctionName -Target $Target -ErrorRecord $records -Tag $Tag -ModuleName $ModuleName -OverrideExceptionMessage:$OverrideExceptionMessage -File $File -Line $Line
+        }
     } else {
         $exception = New-Object System.Exception($Message)
         $records += New-Object System.Management.Automation.ErrorRecord($Exception, "dbatools_$FunctionName", $Category, $Target)
 
         # Manage Debugging
-        if ($EnableException) { Write-Message -Level Warning -Message $Message -EnableException $EnableException -FunctionName $FunctionName -Target $Target -ErrorRecord $records -Tag $Tag -ModuleName $ModuleName -OverrideExceptionMessage:$true -File $File -Line $Line 3>$null}
-        else { Write-Message -Level Warning -Message $Message -EnableException $EnableException -FunctionName $FunctionName -Target $Target -ErrorRecord $records -Tag $Tag -ModuleName $ModuleName -OverrideExceptionMessage:$true -File $File -Line $Line }
+        if ($EnableException) {
+            Write-Message -Level Warning -Message $Message -EnableException $EnableException -FunctionName $FunctionName -Target $Target -ErrorRecord $records -Tag $Tag -ModuleName $ModuleName -OverrideExceptionMessage:$true -File $File -Line $Line 3>$null
+        } else {
+            Write-Message -Level Warning -Message $Message -EnableException $EnableException -FunctionName $FunctionName -Target $Target -ErrorRecord $records -Tag $Tag -ModuleName $ModuleName -OverrideExceptionMessage:$true -File $File -Line $Line }
     }
     #endregion Message Handling
-
-
 
     #region EnableException Mode
     if ($EnableException) {
         if ($SilentlyContinue) {
-            foreach ($record in $records) { Write-Error -Message $record -Category $Category -TargetObject $Target -Exception $record.Exception -ErrorId "dbatools_$FunctionName" -ErrorAction Continue }
-            if ($ContinueLabel) { continue $ContinueLabel }
-            else { Continue }
+            foreach ($record in $records) {
+                Write-Error -Message $record -Category $Category -TargetObject $Target -Exception $record.Exception -ErrorId "dbatools_$FunctionName" -ErrorAction Continue
+            }
+            if ($ContinueLabel) {
+                continue $ContinueLabel
+            } else {
+                continue
+            }
         }
 
         # Extra insurance that it'll stop
@@ -230,8 +261,11 @@ function Stop-Function {
         }
 
         if ($Continue) {
-            if ($ContinueLabel) { continue $ContinueLabel }
-            else { Continue }
+            if ($ContinueLabel) {
+                continue $ContinueLabel
+            } else {
+                continue
+            }
         } else {
             # Make sure the function knows it should be stopping
             Set-Variable -Name "__dbatools_interrupt_function_78Q9VPrM6999g6zo24Qn83m09XF56InEn4hFrA8Fwhu5xJrs6r" -Scope 1 -Value $true
