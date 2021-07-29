@@ -22,6 +22,9 @@ function Get-DbaDbCompression {
     .PARAMETER ExcludeDatabase
         The database(s) to exclude - this list is auto populated from the server.
 
+    .PARAMETER Table
+        The table(s) to process. If unspecified, all tables will be processed.
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -59,8 +62,9 @@ function Get-DbaDbCompression {
         [parameter(Mandatory, ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [object[]]$Database,
-        [object[]]$ExcludeDatabase,
+        [string[]]$Database,
+        [string[]]$ExcludeDatabase,
+        [string[]]$Table,
         [switch]$EnableException
     )
 
@@ -88,7 +92,13 @@ function Get-DbaDbCompression {
 
             foreach ($db in $dbs) {
                 try {
-                    foreach ($obj in $server.Databases[$($db.name)].Tables) {
+                    $tables = $server.Databases[$($db.name)].Tables
+
+                    if ($Table) {
+                        $tables = $tables | Where-Object Name -in $Table
+                    }
+
+                    foreach ($obj in $tables) {
                         if ($obj.HasHeapIndex) {
                             foreach ($p in $obj.PhysicalPartitions) {
                                 [pscustomobject]@{
@@ -133,7 +143,6 @@ function Get-DbaDbCompression {
                 } catch {
                     Stop-Function -Message "Unable to query $instance - $db" -Target $db -ErrorRecord $_ -Continue
                 }
-
             }
         }
     }

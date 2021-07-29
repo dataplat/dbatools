@@ -28,6 +28,9 @@ function Set-DbaDbCompression {
     .PARAMETER ExcludeDatabase
         The database(s) to exclude - this list is auto populated from the server.
 
+    .PARAMETER Table
+        The table(s) to process. If unspecified, all tables will be processed.
+
     .PARAMETER CompressionType
         Control the compression type applied. Default is 'Recommended' which uses the Tiger Team query to use the most appropriate setting per object. Other option is to compress all objects to either Row or Page.
 
@@ -104,9 +107,11 @@ function Set-DbaDbCompression {
         [parameter(Mandatory, ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [object[]]$Database,
-        [object[]]$ExcludeDatabase,
-        [ValidateSet("Recommended", "Page", "Row", "None")]$CompressionType = "Recommended",
+        [string[]]$Database,
+        [string[]]$ExcludeDatabase,
+        [string[]]$Table,
+        [ValidateSet("Recommended", "Page", "Row", "None")]
+        [string]$CompressionType = "Recommended",
         [int]$MaxRunTime = 0,
         [int]$PercentCompression = 0,
         $InputObject,
@@ -156,7 +161,7 @@ function Set-DbaDbCompression {
                             $compressionSuggestion = $InputObject | Where-Object { $_.Database -eq $db.name }
                         } else {
                             Write-Message -Level Verbose -Message "Testing database for compression suggestions for $instance.$db"
-                            $compressionSuggestion = Test-DbaDbCompression -SqlInstance $server -Database $db.Name
+                            $compressionSuggestion = Test-DbaDbCompression -SqlInstance $server -Database $db.Name -Table $Table
                         }
                     }
                 } catch {
@@ -191,8 +196,14 @@ function Set-DbaDbCompression {
                         }
                     } else {
                         if ($Pscmdlet.ShouldProcess($db, "Applying $CompressionType compression")) {
-                            Write-Message -Level Verbose -Message "Applying $CompressionType compression to all objects in $($db.name)"
-                            foreach ($obj in $server.Databases[$($db.name)].Tables | Where-Object { !$_.IsMemoryOptimized -and !$_.HasSparseColumn }) {
+                            Write-Message -Level Verbose -Message "Applying $CompressionType compression to objects in $($db.name)"
+                            $tables = $server.Databases[$($db.name)].Tables
+
+                            if ($Table) {
+                                $tables = $tables | Where-Object Name -in $Table
+                            }
+
+                            foreach ($obj in $tables | Where-Object { !$_.IsMemoryOptimized -and !$_.HasSparseColumn }) {
                                 if ($MaxRunTime -ne 0 -and ($(Get-Date) - $starttime).TotalMinutes -ge $MaxRunTime) {
                                     Write-Message -Level Verbose -Message "Reached max run time of $MaxRunTime"
                                     break
