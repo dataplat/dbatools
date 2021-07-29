@@ -148,10 +148,9 @@ function Connect-DbaInstance {
         Note that the token is valid for only one hour and cannot be renewed automatically.
 
     .PARAMETER DedicatedAdminConnection
-        Connects using "ADMIN:" to create a dedicated admin connection (DAC).
+        Connects using "ADMIN:" to create a dedicated admin connection (DAC) as a non-pooled connection.
         If the instance is on a remote server, the remote access has to be enabled via "Set-DbaSpConfigure -Name RemoteDacConnectionsEnabled -Value $true" or "sp_configure 'remote admin connections', 1".
-        The parameter NonPooledConnection will be set to request a non-pooled connection.
-        The connection will not be closed if the variable holding the Server SMO is going out of scope, so it is very important to call .ConnectionContext.Disconnect() to close the connection.
+        The connection will not be closed if the variable holding the Server SMO is going out of scope, so it is very important to call .ConnectionContext.Disconnect() to close the connection. See example.
 
     .PARAMETER DisableException
         By default in most of our commands, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -279,6 +278,18 @@ function Connect-DbaInstance {
         PS C:\> Connect-DbaInstance -SqlInstance sample.database.windows.net -Accesstoken $token
 
         Uses dbatools to generate the access token for an Azure SQL Database, then logs in using that AccessToken.
+
+    .EXAMPLE
+        PS C:\> $server = Connect-DbaInstance -SqlInstance srv1 -DedicatedAdminConnection
+        PS C:\> $dbaProcess = Get-DbaProcess -SqlInstance $server -ExcludeSystemSpids
+        PS C:\> $killedProcess = $dbaProcess | Out-GridView -OutputMode Multiple | Stop-DbaProcess
+        PS C:\> $server.ConnectionContext.Disconnect()
+
+        Creates a dedicated admin connection (DAC) to the default instance on server srv1.
+        Receives all non-system processes from the instance using the DAC.
+        Opens a grid view to let the user select processes to be stopped.
+        Closes the connection.
+
     #>
     [CmdletBinding()]
     param (
@@ -590,21 +601,20 @@ function Connect-DbaInstance {
                     if (Test-Bound -ParameterName $ignoredParameters) {
                         Write-Message -Level Warning -Message "Additional parameters are passed in, but they will be ignored"
                     }
-                } elseif ($inputObjectType -in 'SqlConnection', 'RegisteredServer', 'ConnectionString' ) {
+                } elseif ($inputObjectType -in 'RegisteredServer', 'ConnectionString' ) {
                     if (Test-Bound -ParameterName $ignoredParameters, 'ApplicationIntent', 'StatementTimeout') {
+                        Write-Message -Level Warning -Message "Additional parameters are passed in, but they will be ignored"
+                    }
+                } elseif ($inputObjectType -in 'SqlConnection' ) {
+                    if (Test-Bound -ParameterName $ignoredParameters, 'ApplicationIntent', 'StatementTimeout', 'DedicatedAdminConnection') {
                         Write-Message -Level Warning -Message "Additional parameters are passed in, but they will be ignored"
                     }
                 }
 
-                if ($DedicatedAdminConnection) {
-                    Write-Message -Level Debug -Message "Parameter DedicatedAdminConnection is used."
-                    if ($serverName) {
-                        Write-Message -Level Debug -Message "serverName will be changed. NonPooledConnection will be set."
-                        $serverName = 'ADMIN:' + $serverName
-                        $NonPooledConnection = $true
-                    } else {
-                        Write-Message -Level Debug -Message "serverName is not set, so no change and no dedicated admin connection."
-                    }
+                if ($DedicatedAdminConnection -and $serverName) {
+                    Write-Message -Level Debug -Message "Parameter DedicatedAdminConnection is used, so serverName will be changed and NonPooledConnection will be set."
+                    $serverName = 'ADMIN:' + $serverName
+                    $NonPooledConnection = $true
                 }
 
                 # Create smo server object
@@ -629,6 +639,10 @@ function Connect-DbaInstance {
                         Write-Message -Level Verbose -Message "StatementTimeout provided. Does not match ConnectionContext.StatementTimeout, copying ConnectionContext and setting the StatementTimeout"
                         $copyContext = $true
                     }
+                    if ($DedicatedAdminConnection -and $inputObject.ConnectionContext.ServerInstance -notmatch '^ADMIN:') {
+                        Write-Message -Level Verbose -Message "DedicatedAdminConnection provided. Does not match ConnectionContext.ServerInstance, copying ConnectionContext and setting the ServerInstance"
+                        $copyContext = $true
+                    }
                     if ($copyContext) {
                         $connContext = $inputObject.ConnectionContext.Copy()
                         if ($ApplicationIntent) {
@@ -639,6 +653,10 @@ function Connect-DbaInstance {
                         }
                         if (Test-Bound -Parameter StatementTimeout) {
                             $connContext.StatementTimeout = $StatementTimeout
+                        }
+                        if ($DedicatedAdminConnection -and $inputObject.ConnectionContext.ServerInstance -notmatch '^ADMIN:') {
+                            $connContext.ServerInstance = 'ADMIN:' + $connContext.ServerInstance
+                            $connContext.NonPooledConnection = $true
                         }
                         if ($Database) {
                             $connContext = $connContext.GetDatabaseConnection($Database)
