@@ -699,7 +699,8 @@
         'Remove-DbaExtendedProperty',
         'Get-DbaExtendedProperty',
         'Set-DbaExtendedProperty',
-        'Add-DbaExtendedProperty'
+        'Add-DbaExtendedProperty',
+        'Get-DbaOleDbProvider'
     )
 
     # Cmdlets to export from this module
