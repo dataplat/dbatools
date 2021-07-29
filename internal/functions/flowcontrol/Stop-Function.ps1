@@ -158,7 +158,6 @@ function Stop-Function {
     }
 
     if ($Target -and $FunctionName -match "Connect-.*Instance") {
-        # $callStack.Arguments is a string, what?
         $instance = $Target
         $isconnstring = ([DbaInstanceParameter]$instance).IsConnectionString
         if ($isconnstring) {
