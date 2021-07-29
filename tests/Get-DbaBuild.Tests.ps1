@@ -133,8 +133,8 @@ Describe "$CommandName Unit Test" -Tags Unittest {
     }
     Context "Passing just -Update works, see #6823" {
         It 'works with -Update' {
-            function Get-DbaBuildIndexOnline { }
-            Mock Get-DbaBuildIndexOnline -MockWith { } -ModuleName dbatools
+            function Get-DbaBuildReferenceIndexOnline { }
+            Mock Get-DbaBuildReferenceIndexOnline -MockWith { } -ModuleName dbatools
             Get-DbaBuild -Update -WarningVariable warnings 3>$null
             $warnings | Should -BeNullOrEmpty
         }

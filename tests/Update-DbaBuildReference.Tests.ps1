@@ -15,12 +15,12 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 Describe "$CommandName Unit Test" -Tags Unittest {
     Context "not much" {
         It "calls the internal function" {
-            function Get-DbaBuildIndexOnline { }
-            Mock Get-DbaBuildIndexOnline -MockWith { } -ModuleName dbatools
+            function Get-DbaBuildReferenceIndexOnline { }
+            Mock Get-DbaBuildReferenceIndexOnline -MockWith { } -ModuleName dbatools
             { Update-DbaBuildReference -EnableException -ErrorAction Stop } | Should -Not -Throw
         }
         It "errors out when cannot download" {
-            Mock Get-DbaBuildIndexOnline -MockWith { throw "cannot download" } -ModuleName dbatools
+            Mock Get-DbaBuildReferenceIndexOnline -MockWith { throw "cannot download" } -ModuleName dbatools
             { Update-DbaBuildReference -EnableException -ErrorAction Stop } | Should -Throw
         }
     }
