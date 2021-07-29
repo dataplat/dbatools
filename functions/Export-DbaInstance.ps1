@@ -33,6 +33,7 @@ function Export-DbaInstance {
         All Custom Errors (User Defined Messages).
         All Server Roles.
         All Availability Groups.
+        All OLEDB Providers.
 
         The exported files are written to a folder with a naming convention of "machinename$instance-yyyyMMddHHmmss".
 
@@ -91,6 +92,7 @@ function Export-DbaInstance {
         ServerRoles
         AvailabilityGroups
         ReplicationSettings
+        OleDbProvider
 
     .PARAMETER BatchSeparator
         Batch separator for scripting output. "GO" by default based on (Get-DbatoolsConfigValue -FullName 'formatting.batchseparator').
@@ -153,7 +155,7 @@ function Export-DbaInstance {
         [string]$Path = (Get-DbatoolsConfigValue -FullName 'Path.DbatoolsExport'),
         [switch]$NoRecovery,
         [switch]$IncludeDbMasterKey,
-        [ValidateSet('AgentServer', 'Audits', 'AvailabilityGroups', 'BackupDevices', 'CentralManagementServer', 'Credentials', 'CustomErrors', 'DatabaseMail', 'Databases', 'Endpoints', 'ExtendedEvents', 'LinkedServers', 'Logins', 'PolicyManagement', 'ReplicationSettings', 'ResourceGovernor', 'ServerAuditSpecifications', 'ServerRoles', 'SpConfigure', 'SysDbUserObjects', 'SystemTriggers')]
+        [ValidateSet('AgentServer', 'Audits', 'AvailabilityGroups', 'BackupDevices', 'CentralManagementServer', 'Credentials', 'CustomErrors', 'DatabaseMail', 'Databases', 'Endpoints', 'ExtendedEvents', 'LinkedServers', 'Logins', 'PolicyManagement', 'ReplicationSettings', 'ResourceGovernor', 'ServerAuditSpecifications', 'ServerRoles', 'SpConfigure', 'SysDbUserObjects', 'SystemTriggers', 'OleDbProvider')]
         [string[]]$Exclude,
         [string]$BatchSeparator = (Get-DbatoolsConfigValue -FullName 'formatting.batchseparator'),
         [Microsoft.SqlServer.Management.Smo.ScriptingOptions]$ScriptingOption,
@@ -391,9 +393,17 @@ function Export-DbaInstance {
             if ($Exclude -notcontains 'AvailabilityGroups') {
                 Write-Message -Level Verbose -Message "Exporting availability group"
                 Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Exporting availability groups"
-                $null = Get-DbaAvailabilityGroup -SqlInstance $server -WarningAction SilentlyContinue | Export-DbaScript -FilePath "$exportPath\DbaAvailabilityGroups.sql" -BatchSeparator $BatchSeparator -NoPrefix:$NoPrefix -ScriptingOptionsObject $ScriptingOption
-                Get-ChildItem -ErrorAction Ignore -Path "$exportPath\DbaAvailabilityGroups.sql"
+                $null = Get-DbaAvailabilityGroup -SqlInstance $server -WarningAction SilentlyContinue | Export-DbaScript -FilePath "$exportPath\AvailabilityGroups.sql" -BatchSeparator $BatchSeparator -NoPrefix:$NoPrefix -ScriptingOptionsObject $ScriptingOption
+                Get-ChildItem -ErrorAction Ignore -Path "$exportPath\AvailabilityGroups.sql"
             }
+
+            if ($Exclude -notcontains 'OleDbProvider') {
+                Write-Message -Level Verbose -Message "Exporting OLEDB Providers"
+                Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Exporting OLEDB Providers"
+                $null = Get-DbaOleDbProvider -SqlInstance $server -WarningAction SilentlyContinue | Export-DbaScript -FilePath "$exportPath\OleDbProvider.sql" -BatchSeparator $BatchSeparator -NoPrefix:$NoPrefix -ScriptingOptionsObject $ScriptingOption
+                Get-ChildItem -ErrorAction Ignore -Path "$exportPath\oledbprovider.sql"
+            }
+
 
             Write-Progress -Activity "Performing Instance Export for $instance" -Completed
         }
