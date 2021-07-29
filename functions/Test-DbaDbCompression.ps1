@@ -145,8 +145,8 @@ function Test-DbaDbCompression {
         [parameter(Mandatory, ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [object[]]$Database,
-        [object[]]$ExcludeDatabase,
+        [string[]]$Database,
+        [string[]]$ExcludeDatabase,
         [string[]]$Schema,
         [string[]]$Table,
         [int]$ResultSize,
