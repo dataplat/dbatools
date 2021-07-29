@@ -104,44 +104,44 @@ Describe "$CommandName Unit Test" -Tags Unittest {
     }
     Context "Params mutual exclusion" {
         It "Doesn't accept 'Build', 'Kb', 'SqlInstance" {
-            { Get-DbaBuildReference -Build '10.0.1600' -Kb '4052908' -SqlInstance 'localhost' -EnableException -ErrorAction Stop } | Should -Throw
+            { Get-DbaBuild -Build '10.0.1600' -Kb '4052908' -SqlInstance 'localhost' -EnableException -ErrorAction Stop } | Should -Throw
         }
         It "Doesn't accept 'Build', 'Kb'" {
-            { Get-DbaBuildReference -Build '10.0.1600' -Kb '4052908' -EnableException -ErrorAction Stop } | Should -Throw
+            { Get-DbaBuild -Build '10.0.1600' -Kb '4052908' -EnableException -ErrorAction Stop } | Should -Throw
         }
         It "Doesn't accept 'Build', 'SqlInstance'" {
-            { Get-DbaBuildReference -Build '10.0.1600' -SqlInstance 'localhost' -EnableException -ErrorAction Stop } | Should -Throw
+            { Get-DbaBuild -Build '10.0.1600' -SqlInstance 'localhost' -EnableException -ErrorAction Stop } | Should -Throw
         }
         It "Doesn't accept 'Build', 'SqlInstance'" {
-            { Get-DbaBuildReference -Build '10.0.1600' -SqlInstance 'localhost' -EnableException -ErrorAction Stop } | Should -Throw
+            { Get-DbaBuild -Build '10.0.1600' -SqlInstance 'localhost' -EnableException -ErrorAction Stop } | Should -Throw
         }
         It "Doesn't accept 'Build', 'MajorVersion'" {
-            { Get-DbaBuildReference -Build '10.0.1600' -MajorVersion '2016' -EnableException -ErrorAction Stop } | Should -Throw
+            { Get-DbaBuild -Build '10.0.1600' -MajorVersion '2016' -EnableException -ErrorAction Stop } | Should -Throw
         }
         It "Doesn't accept 'Build', 'ServicePack'" {
-            { Get-DbaBuildReference -Build '10.0.1600' -ServicePack 'SP2' -EnableException -ErrorAction Stop } | Should -Throw
+            { Get-DbaBuild -Build '10.0.1600' -ServicePack 'SP2' -EnableException -ErrorAction Stop } | Should -Throw
         }
         It "Doesn't accept 'Build', 'CumulativeUpdate'" {
-            { Get-DbaBuildReference -Build '10.0.1600' -CumulativeUpdate 'CU2' -EnableException -ErrorAction Stop } | Should -Throw
+            { Get-DbaBuild -Build '10.0.1600' -CumulativeUpdate 'CU2' -EnableException -ErrorAction Stop } | Should -Throw
         }
         It "Doesn't accept 'ServicePack' without 'MajorVersion'" {
-            { Get-DbaBuildReference -ServicePack 'SP2' -EnableException -ErrorAction Stop } | Should -Throw
+            { Get-DbaBuild -ServicePack 'SP2' -EnableException -ErrorAction Stop } | Should -Throw
         }
         It "Doesn't accept 'CumulativeUpdate' without 'MajorVersion'" {
-            { Get-DbaBuildReference -CumulativeUpdate 'CU2' -EnableException -ErrorAction Stop } | Should -Throw
+            { Get-DbaBuild -CumulativeUpdate 'CU2' -EnableException -ErrorAction Stop } | Should -Throw
         }
     }
     Context "Passing just -Update works, see #6823" {
         It 'works with -Update' {
             function Get-DbaBuildReferenceIndexOnline { }
             Mock Get-DbaBuildReferenceIndexOnline -MockWith { } -ModuleName dbatools
-            Get-DbaBuildReference -Update -WarningVariable warnings 3>$null
+            Get-DbaBuild -Update -WarningVariable warnings 3>$null
             $warnings | Should -BeNullOrEmpty
         }
     }
     Context "Retired KBs" {
         It 'Handles retired KBs' {
-            $result = Get-DbaBuildReference -Build '13.0.5479'
+            $result = Get-DbaBuild -Build '13.0.5479'
             $result.Warning | Should -Be 'This version has been officially retired by Microsoft'
         }
     }
@@ -195,20 +195,20 @@ Describe "$commandname Integration Tests" -Tags 'IntegrationTests' {
             $server2 = Connect-DbaInstance -SqlInstance $script:instance2
         }
         It "works when instances are piped" {
-            $res = @($server1, $server2) | Get-DbaBuildReference
+            $res = @($server1, $server2) | Get-DbaBuild
             $res.Count | Should -Be 2
         }
         It "doesn't work when passed both piped instances and, e.g., -Kb (params mutual exclusion)" {
-            { @($server1, $server2) | Get-DbaBuildReference -Kb -EnableException } | Should -Throw
+            { @($server1, $server2) | Get-DbaBuild -Kb -EnableException } | Should -Throw
         }
     }
     Context "Test retrieving version from instances" {
-        $results = Get-DbaBuildReference -SqlInstance $script:instance1, $script:instance2
+        $results = Get-DbaBuild -SqlInstance $script:instance1, $script:instance2
         It "Should return an exact match" {
             $results | Should -Not -BeNullOrEmpty
             foreach ($r in $results) {
                 $r.MatchType | Should -Be "Exact"
-                $buildMatch = Get-DbaBuildReference -Build $r.BuildLevel
+                $buildMatch = Get-DbaBuild -Build $r.BuildLevel
                 $buildMatch | Should -Not -BeNullOrEmpty
                 foreach ($b in $buildMatch) {
                     $b.MatchType | Should -Be "Exact"
@@ -216,7 +216,7 @@ Describe "$commandname Integration Tests" -Tags 'IntegrationTests' {
                 }
                 if ($r.KBLevel) {
                     #can be a RTM which has no corresponding KB
-                    $kbMatch = Get-DbaBuildReference -KB ($r.KBLevel | Select-Object -First 1)
+                    $kbMatch = Get-DbaBuild -KB ($r.KBLevel | Select-Object -First 1)
                     $kbMatch | Should -Not -BeNullOrEmpty
                     foreach ($m in $kbMatch) {
                         $m.MatchType | Should -Be "Exact"
@@ -224,7 +224,7 @@ Describe "$commandname Integration Tests" -Tags 'IntegrationTests' {
                     }
                 }
                 $spLevel = $r.SPLevel | Where-Object { $_ -ne 'LATEST' }
-                $versionMatch = Get-DbaBuildReference -MajorVersion $r.NameLevel -ServicePack $spLevel -CumulativeUpdate $r.CULevel
+                $versionMatch = Get-DbaBuild -MajorVersion $r.NameLevel -ServicePack $spLevel -CumulativeUpdate $r.CULevel
                 $versionMatch | Should -Not -BeNullOrEmpty
                 foreach ($v in $versionMatch) {
                     $v.MatchType | Should -Be "Exact"

@@ -21,7 +21,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             (($results | Get-Member -MemberType NoteProperty).name | Sort-Object) | Should Be ($ExpectedProps | Sort-Object)
         }
         It "Should return that returns a valid build" {
-            $(Get-DbaBuildReference -Build ($results | Where-Object {$_.name -eq 'ResourceVersionString'}).Value).MatchType | Should Be "Exact"
+            $(Get-DbaBuild -Build ($results | Where-Object {$_.name -eq 'ResourceVersionString'}).Value).MatchType | Should Be "Exact"
         }
         It "Should have DisableDefaultConstraintCheck set false" {
             ($results | Where-Object {$_.name -eq 'DisableDefaultConstraintCheck'}).Value | Should Be $False

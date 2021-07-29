@@ -316,7 +316,7 @@ function Get-SQLInstanceComponent {
                 $newVersion = New-Object -TypeName System.Version -ArgumentList ($newVersion.Major , ($newVersion.Minor - $newVersion.Minor % 10), $newVersion.Build)
                 Write-Message -Level Debug -Message "Converted version $($result.Version) to $newVersion"
                 # Find a proper build reference and replace Version property
-                $result.Version = Get-DbaBuildReference -Build $newVersion -EnableException
+                $result.Version = Get-DbaBuild -Build $newVersion -EnableException
                 $result | Select-Object -ExcludeProperty Log
             }
         }

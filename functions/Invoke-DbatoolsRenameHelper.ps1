@@ -176,7 +176,7 @@ function Invoke-DbatoolsRenameHelper {
             'Get-DbaRegisteredServerStore'      = 'Get-DbaRegServerStore'
             'Get-DbaRestoreHistory'             = 'Get-DbaDbRestoreHistory'
             'Get-DbaRoleMember'                 = 'Get-DbaDbRoleMember'
-            'Get-DbaSqlBuildReference'          = 'Get-DbaBuildReference'
+            'Get-DbaSqlBuildReference'          = 'Get-DbaBuild'
             'Get-DbaSqlFeature'                 = 'Get-DbaFeature'
             'Get-DbaSqlInstanceProperty'        = 'Get-DbaInstanceProperty'
             'Get-DbaSqlInstanceUserOption'      = 'Get-DbaInstanceUserOption'

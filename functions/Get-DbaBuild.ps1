@@ -1,4 +1,4 @@
-function Get-DbaBuildReference {
+function Get-DbaBuild {
     <#
     .SYNOPSIS
         Returns SQL Server Build infos on a SQL instance
@@ -52,25 +52,25 @@ function Get-DbaBuildReference {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaBuildReference
+        https://dbatools.io/Get-DbaBuild
 
     .EXAMPLE
-        PS C:\> Get-DbaBuildReference -Build "12.00.4502"
+        PS C:\> Get-DbaBuild -Build "12.00.4502"
 
         Returns information about a build identified by  "12.00.4502" (which is SQL 2014 with SP1 and CU11)
 
     .EXAMPLE
-        PS C:\> Get-DbaBuildReference -Build "12.00.4502" -Update
+        PS C:\> Get-DbaBuild -Build "12.00.4502" -Update
 
         Returns information about a build trying to fetch the most up to date index online. When the online version is newer, the local one gets overwritten
 
     .EXAMPLE
-        PS C:\> Get-DbaBuildReference -Build "12.0.4502","10.50.4260"
+        PS C:\> Get-DbaBuild -Build "12.0.4502","10.50.4260"
 
         Returns information builds identified by these versions strings
 
     .EXAMPLE
-        PS C:\> Get-DbaRegServer -SqlInstance sqlserver2014a | Get-DbaBuildReference
+        PS C:\> Get-DbaRegServer -SqlInstance sqlserver2014a | Get-DbaBuild
 
         Integrate with other cmdlets to have builds checked for all your registered servers on sqlserver2014a
 

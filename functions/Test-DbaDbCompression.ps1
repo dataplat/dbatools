@@ -242,7 +242,7 @@ function Test-DbaDbCompression {
             }
 
             $Server.ConnectionContext.StatementTimeout = 0
-            $sqlVersion = $(Get-DbaBuildReference -SqlInstance $server).Build.Major
+            $sqlVersion = $(Get-DbaBuild -SqlInstance $server).Build.Major
 
             $sqlVersionRestrictions = @()
 

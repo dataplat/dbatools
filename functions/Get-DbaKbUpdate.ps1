@@ -191,7 +191,7 @@ function Get-DbaKbUpdate {
                     $links = $downloaddialog | Select-String -AllMatches -Pattern "(http[s]?\://download\.windowsupdate\.com\/[^\'\""]*)" | Select-Object -Unique
 
                     foreach ($link in $links) {
-                        $build = Get-DbaBuildReference -Kb "KB$kb" -WarningAction SilentlyContinue
+                        $build = Get-DbaBuild -Kb "KB$kb" -WarningAction SilentlyContinue
                         $properties = $baseproperties
 
                         if (-not $build.NameLevel) {
