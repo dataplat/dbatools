@@ -87,7 +87,7 @@ function Get-DbaDbExtentDiff {
 
         foreach ($instance in $SqlInstance) {
             try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -NonPooled
+                $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential -NonPooledConnection
             } catch {
                 Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
@@ -167,6 +167,9 @@ function Get-DbaDbExtentDiff {
                     }
                 }
             }
+
+            # Close non-pooled connection as this is not done automatically. If it is a reused Server SMO, connection will be opened again automatically on next request.
+            $server.ConnectionContext.Disconnect()
         }
     }
 }
