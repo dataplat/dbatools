@@ -119,7 +119,7 @@ function Test-DbaBuild {
 
     begin {
         #region Helper functions
-        function Get-DbaBuildIndex {
+        function Get-DbaBuildReferenceIndex {
             [CmdletBinding()]
 
             $DbatoolsData = Get-DbatoolsConfigValue -Name 'Path.DbatoolsData'
@@ -190,7 +190,7 @@ function Test-DbaBuild {
         # Moving it down here to only trigger after -Update was properly called
         if (!$IdxRef) {
             try {
-                $IdxRef = Get-DbaBuildIndex
+                $IdxRef = Get-DbaBuildReferenceIndex
             } catch {
                 Stop-Function -Message "Error loading SQL build reference" -ErrorRecord $_
                 return

@@ -178,7 +178,7 @@ function Get-DbaBuild {
         #endregion verifying parameters
 
         #region Helper functions
-        function Get-DbaBuildIndex {
+        function Get-DbaBuildReferenceIndex {
             [CmdletBinding()]
             param (
                 [string]
@@ -350,7 +350,7 @@ function Get-DbaBuild {
         $moduledirectory = $script:PSModuleRoot
 
         try {
-            $IdxRef = Get-DbaBuildIndex -Moduledirectory $moduledirectory -Update $Update -EnableException $EnableException
+            $IdxRef = Get-DbaBuildReferenceIndex -Moduledirectory $moduledirectory -Update $Update -EnableException $EnableException
         } catch {
             Stop-Function -Message "Error loading SQL build reference" -ErrorRecord $_
             return
