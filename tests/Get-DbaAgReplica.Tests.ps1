@@ -36,10 +36,11 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
             $results.AvailabilityMode | Should -Be 'SynchronousCommit'
         }
 
-        It "Passes EnableException to Get-DbaAvailabilityGroup" {
-            $results = Get-DbaAgReplica -SqlInstance invalidSQLHostName -ErrorVariable error
+        # Skipping because this adds like 30 seconds to test times
+        It -Skip "Passes EnableException to Get-DbaAvailabilityGroup" {
+            $results = Get-DbaAgReplica -SqlInstance invalidSQLHostName -ErrorVariable agerror
             $results | Should -BeNullOrEmpty
-            ($error | Where-Object Message -eq "The network path was not found") | Should -Not -BeNullOrEmpty
+            ($agerror | Where-Object Message -match "The network path was not found") | Should -Not -BeNullOrEmpty
 
             { Get-DbaAgReplica -SqlInstance invalidSQLHostName -EnableException } | Should -Throw
         }
