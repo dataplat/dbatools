@@ -28,7 +28,7 @@ function Get-DbaConnectedInstance {
     process {
         foreach ($key in $script:connectionhash.Keys) {
             [pscustomobject]@{
-                SqlInstance = $key
+                SqlInstance = (Hide-ConnectionString -ConnectionString $key)
                 Connection  = $script:connectionhash[$key]
             }
         }
