@@ -23,6 +23,14 @@ function New-DbaAvailabilityGroup {
         - If a backup / restore is performed, the backups will be left intact on the network share.
         - If you're using SQL Server on Linux and a fully qualified domain name is required, please use the FQDN to create a proper Endpoint
 
+        PLEASE NOTE THE CHANGED DEFAULTS:
+        Starting with version 1.1.x we changed the defaults of the following parameters to have the same defaults
+        as the T-SQL command "CREATE AVAILABILITY GROUP" and the wizard in SQL Server Management Studio:
+        * ClusterType from External to Wsfc (Windows Server Failover Cluster).
+        * FailureConditionLevel from OnServerDown (Level 1) to OnCriticalServerErrors (Level 3).
+        * ConnectionModeInSecondaryRole from AllowAllConnections (ALL) to AllowNoConnections (NO).
+        To change these defaults we have introduced configuration parameters for all of them, see documentation of the parameters for details.
+
         Thanks for this, Thomas Stringer! https://blogs.technet.microsoft.com/heyscriptingguy/2013/04/29/set-up-an-alwayson-availability-group-with-powershell/
 
     .PARAMETER Primary
@@ -53,13 +61,20 @@ function New-DbaAvailabilityGroup {
 
     .PARAMETER ClusterType
         Cluster type of the Availability Group. Only supported in SQL Server 2017 and above.
-        Options include: External, Wsfc or None. None by default.
+        Options include: Wsfc, External or None.
+
+        Defaults to Wsfc (Windows Server Failover Cluster).
+
+        The default can be changed with:
+        Set-DbatoolsConfig -FullName 'AvailabilityGroups.Default.ClusterType' -Value '...' -Passthru | Register-DbatoolsConfig
 
     .PARAMETER AutomatedBackupPreference
         Specifies how replicas in the primary role are treated in the evaluation to pick the desired replica to perform a backup.
 
     .PARAMETER FailureConditionLevel
         Specifies the different conditions that can trigger an automatic failover in Availability Group.
+
+        Defaults to OnCriticalServerErrors (Level 3).
 
         From https://docs.microsoft.com/en-us/sql/t-sql/statements/create-availability-group-transact-sql:
             Level 1 = OnServerDown
@@ -131,7 +146,13 @@ function New-DbaAvailabilityGroup {
         Specifies the connection intent modes of an Availability Replica in primary role. AllowAllConnections by default.
 
     .PARAMETER ConnectionModeInSecondaryRole
-        Specifies the connection modes of an Availability Replica in secondary role. AllowAllConnections by default.
+        Specifies the connection modes of an Availability Replica in secondary role.
+        Options include: AllowNoConnections (Alias: No), AllowReadIntentConnectionsOnly (Alias: Read-intent only),  AllowAllConnections (Alias: Yes)
+
+        Defaults to AllowNoConnections.
+
+        The default can be changed with:
+        Set-DbatoolsConfig -FullName 'AvailabilityGroups.Default.ConnectionModeInSecondaryRole' -Value '...' -Passthru | Register-DbatoolsConfig
 
     .PARAMETER ReadonlyRoutingConnectionUrl
         Sets the read only routing connection url for the availability replica.
@@ -202,7 +223,7 @@ function New-DbaAvailabilityGroup {
         Creates a basic availability group named BAG1 on sql2016std and does not confirm when setting up
 
     .EXAMPLE
-        PS C:\> New-DbaAvailabilityGroup -Primary sql2016b -Name AG1 -ClusterType Wsfc -Dhcp -Database db1 -UseLastBackup
+        PS C:\> New-DbaAvailabilityGroup -Primary sql2016b -Name AG1 -Dhcp -Database db1 -UseLastBackup
 
         Creates an availability group on sql2016b with the name ag1. Uses the last backups available to add the database db1 to the AG.
 
@@ -251,8 +272,8 @@ function New-DbaAvailabilityGroup {
         [parameter(Mandatory)]
         [string]$Name,
         [switch]$DtcSupport,
-        [ValidateSet('External', 'Wsfc', 'None')]
-        [string]$ClusterType = 'External',
+        [ValidateSet('Wsfc', 'External', 'None')]
+        [string]$ClusterType = (Get-DbatoolsConfigValue -FullName 'AvailabilityGroups.Default.ClusterType' -Fallback 'Wsfc'),
         [ValidateSet('None', 'Primary', 'Secondary', 'SecondaryOnly')]
         [string]$AutomatedBackupPreference = 'Secondary',
         [ValidateSet('OnAnyQualifiedFailureCondition', 'OnCriticalServerErrors', 'OnModerateServerErrors', 'OnServerDown', 'OnServerUnresponsive')]
@@ -276,8 +297,8 @@ function New-DbaAvailabilityGroup {
         [int]$BackupPriority = 50,
         [ValidateSet('AllowAllConnections', 'AllowReadWriteConnections')]
         [string]$ConnectionModeInPrimaryRole = 'AllowAllConnections',
-        [ValidateSet('AllowAllConnections', 'AllowNoConnections', 'AllowReadIntentConnectionsOnly', 'No', 'Read-intent only', 'Yes')]
-        [string]$ConnectionModeInSecondaryRole = 'AllowAllConnections',
+        [ValidateSet('AllowNoConnections', 'AllowReadIntentConnectionsOnly', 'AllowAllConnections', 'No', 'Read-intent only', 'Yes')]
+        [string]$ConnectionModeInSecondaryRole = (Get-DbatoolsConfigValue -FullName 'AvailabilityGroups.Default.ConnectionModeInSecondaryRole' -Fallback 'AllowNoConnections'),
         [ValidateSet('Automatic', 'Manual')]
         [string]$SeedingMode = 'Manual',
         [string]$Endpoint,

@@ -54,7 +54,13 @@ function Add-DbaAgReplica {
         Specifies the connection intent mode of an Availability Replica in primary role. AllowAllConnections by default.
 
     .PARAMETER ConnectionModeInSecondaryRole
-        Specifies the connection intent mode of an Availability Replica in secondary role. AllowAllConnections by default.
+        Specifies the connection modes of an Availability Replica in secondary role.
+        Options include: AllowNoConnections, AllowReadIntentConnectionsOnly,  AllowAllConnections
+
+        Defaults to AllowNoConnections.
+
+        The default can be changed with:
+        Set-DbatoolsConfig -FullName 'AvailabilityGroups.Default.ConnectionModeInSecondaryRole' -Value '...' -Passthru | Register-DbatoolsConfig
 
     .PARAMETER ReadOnlyRoutingList
         Sets the read only routing ordered list of replica server names to use when redirecting read-only connections through this availability replica.
@@ -131,8 +137,8 @@ function Add-DbaAgReplica {
         [int]$BackupPriority = 50,
         [ValidateSet('AllowAllConnections', 'AllowReadWriteConnections')]
         [string]$ConnectionModeInPrimaryRole = 'AllowAllConnections',
-        [ValidateSet('AllowAllConnections', 'AllowNoConnections', 'AllowReadIntentConnectionsOnly')]
-        [string]$ConnectionModeInSecondaryRole = 'AllowAllConnections',
+        [ValidateSet('AllowNoConnections', 'AllowReadIntentConnectionsOnly', 'AllowAllConnections')]
+        [string]$ConnectionModeInSecondaryRole = (Get-DbatoolsConfigValue -FullName 'AvailabilityGroups.Default.ConnectionModeInSecondaryRole' -Fallback 'AllowNoConnections'),
         [ValidateSet('Automatic', 'Manual')]
         [string]$SeedingMode,
         [string]$Endpoint,
