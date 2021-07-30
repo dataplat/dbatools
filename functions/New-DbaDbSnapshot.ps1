@@ -247,20 +247,25 @@ function New-DbaDbSnapshot {
                     }
                     foreach ($file in $fg.Files) {
                         $counter += 1
-                        $basename = [IO.Path]::GetFileNameWithoutExtension($file.FileName)
+                        # Linux can't handle windows paths, so split it
+                        $basename = [IO.Path]::GetFileNameWithoutExtension((Split-Path $file.FileName -Leaf))
                         $basePath = Split-Path $file.FileName -Parent
                         # change path if specified
                         if ($Path.Length -gt 0) {
                             $basePath = $Path
                         }
+
                         # we need to avoid cases where basename is the same for multiple FG
                         $fName = [IO.Path]::Combine($basePath, ("{0}_{1}_{2:0000}_{3:000}" -f $basename, $DefaultSuffix, (Get-Date).MilliSecond, $counter))
                         # fixed extension is hardcoded as "ss", which seems a "de-facto" standard
                         $fName = [IO.Path]::ChangeExtension($fName, "ss")
+                        Write-Message -Level Debug -Message "$fName"
 
-                        # change slashes for Linux
+                        # change slashes for Linux, change slashes for Windows
                         if ($server.HostPlatform -eq 'Linux') {
                             $fName = $fName.Replace("\", "/")
+                        } else {
+                            $fName = $fName.Replace("/", "\")
                         }
                         $CustomFileStructure[$fg.Name] += @{ 'name' = $file.name; 'filename' = $fName }
                     }
