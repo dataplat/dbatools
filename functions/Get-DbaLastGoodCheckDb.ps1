@@ -96,7 +96,8 @@ function Get-DbaLastGoodCheckDb {
         [switch]$EnableException
     )
     process {
-        if (Test-Bound SqlInstance, InputObject -Not -Min 1 -Max 1) {
+        # When piping in a Server SMO, then it will be bound on both $SqlInstance and $InputObject, so I will not change the test for now.
+        if (Test-Bound -not 'SqlInstance', 'InputObject') {
             Stop-Function -Message "You must supply either -SqlInstance or an Input Object"
             return
         }
