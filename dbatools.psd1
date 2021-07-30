@@ -700,7 +700,9 @@
         'Get-DbaExtendedProperty',
         'Set-DbaExtendedProperty',
         'Add-DbaExtendedProperty',
-        'Get-DbaOleDbProvider'
+        'Get-DbaOleDbProvider',
+        'Get-DbaConnectedInstance',
+        'Disconnect-DbaInstance'
     )
 
     # Cmdlets to export from this module
