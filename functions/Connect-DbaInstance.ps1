@@ -283,7 +283,7 @@ function Connect-DbaInstance {
         PS C:\> $server = Connect-DbaInstance -SqlInstance srv1 -DedicatedAdminConnection
         PS C:\> $dbaProcess = Get-DbaProcess -SqlInstance $server -ExcludeSystemSpids
         PS C:\> $killedProcess = $dbaProcess | Out-GridView -OutputMode Multiple | Stop-DbaProcess
-        PS C:\> $server.ConnectionContext.Disconnect()
+        PS C:\> $server | Disconnect-DbaInstance
 
         Creates a dedicated admin connection (DAC) to the default instance on server srv1.
         Receives all non-system processes from the instance using the DAC.
@@ -963,9 +963,8 @@ function Connect-DbaInstance {
                 }
 
                 if ($SqlConnectionOnly) {
+                    $null = Add-ConnectionHashValue -Key $server.ConnectionContext.ConnectionString -Value $server.ConnectionContext.SqlConnectionObject
                     Write-Message -Level Debug -Message "We return only SqlConnection in server.ConnectionContext.SqlConnectionObject"
-                    Write-Message -Level Debug -Message "Adding to connection hash"
-                    $script:connectionhash[$server.ConnectionContext.ConnectionString] = $server.ConnectionContext.SqlConnectionObject
                     $server.ConnectionContext.SqlConnectionObject
                     continue
                 }
@@ -1068,8 +1067,7 @@ function Connect-DbaInstance {
                     }
                 }
 
-                Write-Message -Level Debug -Message "Adding to connection hash"
-                $script:connectionhash[$server.ConnectionContext.ConnectionString] = $server
+                $null = Add-ConnectionHashValue -Key $server.ConnectionContext.ConnectionString -Value $server
                 Write-Message -Level Debug -Message "We are finished with this instance"
                 continue
             }
@@ -1240,9 +1238,7 @@ function Connect-DbaInstance {
                     if ($currentdb) {
                         Add-Member -InputObject $server -NotePropertyName Databases -NotePropertyValue @{ $currentdb.Name = $currentdb } -Force
                     }#>
-
-                    Write-Message -Level Debug -Message "Adding to connection hash"
-                    $script:connectionhash[$server.ConnectionContext.ConnectionString] = $server
+                    $null = Add-ConnectionHashValue -Key $server.ConnectionContext.ConnectionString -Value $server
                     $server
                     continue
                 } catch {
@@ -1258,8 +1254,7 @@ function Connect-DbaInstance {
                     $instance.InputObject.ConnectionContext.Connect()
                 }
                 if ($SqlConnectionOnly) {
-                    Write-Message -Level Debug -Message "Adding to connection hash"
-                    $script:connectionhash[$instance.InputObject.ConnectionContext.ConnectionString] = $instance.InputObject.ConnectionContext.SqlConnectionObject
+                    $null = Add-ConnectionHashValue -Key $instance.InputObject.ConnectionContext.ConnectionString -Value $instance.InputObject.ConnectionContext.SqlConnectionObject
                     $instance.InputObject.ConnectionContext.SqlConnectionObject
                     continue
                 } else {
@@ -1301,9 +1296,9 @@ function Connect-DbaInstance {
                     if ($AzureUnsupported -and $server.DatabaseEngineType -eq "SqlAzureDatabase") {
                         Stop-Function -Target $instance -Message "Azure SQL Database not supported" -Continue
                     }
+                    $null = Add-ConnectionHashValue -Key $server.ConnectionContext.ConnectionString -Value $server.ConnectionContext.SqlConnectionObject
+
                     Write-Message -Level Debug -Message "We return server.ConnectionContext.SqlConnectionObject"
-                    Write-Message -Level Debug -Message "Adding to connection hash"
-                    $script:connectionhash[$server.ConnectionContext.ConnectionString] = $server.ConnectionContext.SqlConnectionObject
                     $server.ConnectionContext.SqlConnectionObject
                     continue
                 } else {
@@ -1332,9 +1327,8 @@ function Connect-DbaInstance {
                     if ([Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Cache["sqlinstance"] -notcontains $instance.FullSmoName.ToLowerInvariant()) {
                         [Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Cache["sqlinstance"] += $instance.FullSmoName.ToLowerInvariant()
                     }
+                    $null = Add-ConnectionHashValue -Key $server.ConnectionContext.ConnectionString -Value $server
                     Write-Message -Level Debug -Message "We return server with server.Name = '$($server.Name)'"
-                    Write-Message -Level Debug -Message "Adding to connection hash"
-                    $script:connectionhash[$server.ConnectionContext.ConnectionString] = $server
                     $server
                     continue
                 }
@@ -1557,9 +1551,8 @@ function Connect-DbaInstance {
             }
 
             if ($SqlConnectionOnly) {
+                $null = Add-ConnectionHashValue -Key $server.ConnectionContext.ConnectionString -Value $server.ConnectionContext.SqlConnectionObject
                 Write-Message -Level Debug -Message "SqlConnectionOnly, so returning server.ConnectionContext.SqlConnectionObject"
-                Write-Message -Level Debug -Message "Adding to connection hash"
-                $script:connectionhash[$server.ConnectionContext.ConnectionString] = $server.ConnectionContext.SqlConnectionObject
                 $server.ConnectionContext.SqlConnectionObject
                 continue
             } else {
@@ -1603,9 +1596,8 @@ function Connect-DbaInstance {
                 Stop-Function -Target $instance -Message "Azure SQL Database not supported" -Continue
             }
 
+            $null = Add-ConnectionHashValue -Key $server.ConnectionContext.ConnectionString -Value $server
             Write-Message -Level Debug -Message "We return server with server.Name = '$($server.Name)'"
-            Write-Message -Level Debug -Message "Adding to connection hash"
-            $script:connectionhash[$server.ConnectionContext.ConnectionString] = $server
             $server
             continue
         }

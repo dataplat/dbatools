@@ -56,39 +56,55 @@ function Disconnect-DbaInstance {
         [switch]$EnableException
     )
     process {
-        foreach ($object in $InputObject) {
-            try {
-                if ($object.ConnectionObject) {
-                    $server = $object.ConnectionObject
-                } else {
-                    $server = $object
-                }
-                if ($server.ConnectionContext) {
-                    if ($Pscmdlet.ShouldProcess($server.Name, "Disconnecting SQL Connection")) {
-                        $server.ConnectionContext.Disconnect()
-                        [pscustomobject]@{
-                            SqlInstance      = [dbainstanceparameter]$server
-                            ConnectionString = (Hide-ConnectionString -ConnectionString $server.ConnectionContext.ConnectionString)
-                            ConnectionType   = $server.GetType().FullName
-                            State            = "Disconnected"
-                        } | Select-DefaultView -Property SqlInstance, ConnectionType, State
-                    }
-                }
-                if ($server.GetType().Name -eq "SqlConnection") {
-                    if ($Pscmdlet.ShouldProcess($server.Name, "Closing SQL Connection")) {
-                        if ($server.State -eq "Open") {
-                            $server.Close()
+        # to avoid enumeration problems when piped
+        $objects += $InputObject
+    }
+    end {
+        foreach ($object in $objects) {
+            if ($object.ConnectionObject) {
+                $servers = $object.ConnectionObject
+            } else {
+                $servers = $object
+            }
+            foreach ($server in $servers) {
+                try {
+                    if ($server.ConnectionContext) {
+                        if ($Pscmdlet.ShouldProcess($server.Name, "Disconnecting SQL Connection")) {
+                            $null = $server.ConnectionContext.Disconnect()
+                            if ($script:connectionhash[$server.ConnectionContext.ConnectionString]) {
+                                Write-Message -Level Verbose -Message "removing from connection hash"
+                                $null = $script:connectionhash.Remove($server.ConnectionContext.ConnectionString)
+                            }
                             [pscustomobject]@{
-                                SqlInstance      = [dbainstanceparameter]$server.ConnectionString
-                                ConnectionString = (Hide-ConnectionString -ConnectionString $server.ConnectionString)
+                                SqlInstance      = $server.Name
+                                ConnectionString = (Hide-ConnectionString -ConnectionString $server.ConnectionContext.ConnectionString)
                                 ConnectionType   = $server.GetType().FullName
                                 State            = "Disconnected"
                             } | Select-DefaultView -Property SqlInstance, ConnectionType, State
                         }
                     }
+                    if ($server.GetType().Name -eq "SqlConnection") {
+                        if ($Pscmdlet.ShouldProcess($server.DataSource, "Closing SQL Connection")) {
+                            if ($server.State -eq "Open") {
+                                $null = $server.Close()
+                            }
+
+                            if ($script:connectionhash[$server.ConnectionString]) {
+                                Write-Message -Level Verbose -Message "removing from connection hash"
+                                $null = $script:connectionhash.Remove($server.ConnectionString)
+                            }
+
+                            [pscustomobject]@{
+                                SqlInstance      = $server.DataSource
+                                ConnectionString = (Hide-ConnectionString -ConnectionString $server.ConnectionString)
+                                ConnectionType   = $server.GetType().FullName
+                                State            = $server.State
+                            } | Select-DefaultView -Property SqlInstance, ConnectionType, State
+                        }
+                    }
+                } catch {
+                    Stop-Function -Message "Failed to disconnect $object" -ErrorRecord $PSItem -Continue
                 }
-            } catch {
-                Stop-Function -Message "Failed to disconnect $object" -ErrorRecord $PSItem -Continue
             }
         }
     }

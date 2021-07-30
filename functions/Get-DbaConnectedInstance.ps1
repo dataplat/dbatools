@@ -22,17 +22,27 @@ function Get-DbaConnectedInstance {
 
         Gets all connected SQL Server instances
 
+    .EXAMPLE
+        PS C:\> Get-DbaConnectedInstance | Select *
+
+        Gets all connected SQL Server instances and shows the associated connectionstrings as well
+
     #>
     [CmdletBinding()]
     param ()
     process {
         foreach ($key in $script:connectionhash.Keys) {
-            [pscustomobject]@{
-                SqlInstance      = [dbainstanceparameter]$key
-                ConnectionString = (Hide-ConnectionString -ConnectionString $key)
-                ConnectionObject = $script:connectionhash[$key]
-                ConnectionType   = $script:connectionhash[$key].GetType().FullName
+            if ($script:connectionhash[$key].DataSource) {
+                $instance = $script:connectionhash[$key] | Select-Object -First 1 -ExpandProperty DataSource
+            } else {
+                $instance = $script:connectionhash[$key] | Select-Object -First 1 -ExpandProperty Name
             }
+            [pscustomobject]@{
+                SqlInstance      = $instance
+                ConnectionObject = $script:connectionhash[$key]
+                ConnectionType   = $script:connectionhash[$key][0].GetType().FullName
+                ConnectionString = (Hide-ConnectionString -ConnectionString $key)
+            } | Select-DefaultView -Property SqlInstance, ConnectionObject, ConnectionType
         }
     }
 }
