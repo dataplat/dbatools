@@ -176,6 +176,10 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
         (Test-DbaTempDbConfig).Rule | Should -Contain "File Growth in Percent"
     }
 
+    It "creates a snapshot" {
+        (New-DbaDbSnapshot -Database pubs).SnapshotOf | Should -Be "pubs"
+    }
+
     It "connects to Azure" {
         $PSDefaultParameterValues.Clear()
         $securestring = ConvertTo-SecureString $env:CLIENTSECRET -AsPlainText -Force
