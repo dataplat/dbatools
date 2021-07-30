@@ -42,7 +42,7 @@ function Get-DbaConnectedInstance {
                 ConnectionObject = $script:connectionhash[$key]
                 ConnectionType   = $script:connectionhash[$key][0].GetType().FullName
                 ConnectionString = (Hide-ConnectionString -ConnectionString $key)
-            } | Select-DefaultView -Property SqlInstance, ConnectionObject, ConnectionType
+            } | Select-DefaultView -Property SqlInstance, ConnectionType, ConnectionObject
         }
     }
 }
