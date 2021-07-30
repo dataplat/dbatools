@@ -1,7 +1,7 @@
 function Get-DbaConnectedInstance {
     <#
     .SYNOPSIS
-        Get a list of all connected instances.
+        Get a list of all connected instances
 
     .DESCRIPTION
         Get a list of all connected instances
@@ -20,7 +20,7 @@ function Get-DbaConnectedInstance {
     .EXAMPLE
         PS C:\> Get-DbaConnectedInstance
 
-        Gets all connections
+        Gets all connected SQL Server instances
 
     #>
     [CmdletBinding()]

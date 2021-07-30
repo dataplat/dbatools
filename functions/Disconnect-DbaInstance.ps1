@@ -1,13 +1,13 @@
 function Disconnect-DbaInstance {
     <#
     .SYNOPSIS
-        Disconnects or closes a connected instance
+        Disconnects or closes a connection to a SQL Server instance
 
     .DESCRIPTION
-        Disconnects or closes a connected instance
+        Disconnects or closes a connection to a SQL Server instance
 
     .PARAMETER InputObject
-        The server object to disconnet
+        The server object to disconnect
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
@@ -35,6 +35,11 @@ function Disconnect-DbaInstance {
         PS C:\> Get-DbaConnectedInstance | Disconnect-DbaInstance
 
         Disconnects all connected instances
+
+    .EXAMPLE
+        PS C:\> Get-DbaConnectedInstance | Out-GridView -Passthru | Disconnect-DbaInstance
+
+        Disconnects selected SQL Server instances
 
     .EXAMPLE
         PS C:\> $server = Connect-DbaInstance -SqlInstance sql01
