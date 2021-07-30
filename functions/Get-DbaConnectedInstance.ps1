@@ -37,12 +37,22 @@ function Get-DbaConnectedInstance {
             } else {
                 $instance = $script:connectionhash[$key] | Select-Object -First 1 -ExpandProperty Name
             }
+            $value = $script:connectionhash[$key][0]
+            if (-not $value) {
+                $script:connectionhash[$key]
+            }
+            if ($value.ConnectionContext.NonPooledConnection -or $value.NonPooledConnection) {
+                $pooling = $false
+            } else {
+                $pooling = $true
+            }
             [pscustomobject]@{
                 SqlInstance      = $instance
                 ConnectionObject = $script:connectionhash[$key]
                 ConnectionType   = $script:connectionhash[$key][0].GetType().FullName
+                Pooled           = $pooling
                 ConnectionString = (Hide-ConnectionString -ConnectionString $key)
-            } | Select-DefaultView -Property SqlInstance, ConnectionType, ConnectionObject
+            } | Select-DefaultView -Property SqlInstance, ConnectionType, ConnectionObject, Pooled
         }
     }
 }
