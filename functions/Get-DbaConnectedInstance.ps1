@@ -49,7 +49,7 @@ function Get-DbaConnectedInstance {
             [pscustomobject]@{
                 SqlInstance      = $instance
                 ConnectionObject = $script:connectionhash[$key]
-                ConnectionType   = $script:connectionhash[$key][0].GetType().FullName
+                ConnectionType   = $value.GetType().FullName
                 Pooled           = $pooling
                 ConnectionString = (Hide-ConnectionString -ConnectionString $key)
             } | Select-DefaultView -Property SqlInstance, ConnectionType, ConnectionObject, Pooled
