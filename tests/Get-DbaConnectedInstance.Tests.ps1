@@ -4,7 +4,7 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 
 Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
-        $db = Get-DbaDatabase -SqlInstance $script:instance1 -Database $dbname
+        $null = Get-DbaDatabase -SqlInstance $script:instance1
     }
     Context "gets connected objects" {
         It "returns some results" {

@@ -31,6 +31,7 @@ function Get-DbaConnectedInstance {
                 SqlInstance      = [dbainstanceparameter]$key
                 ConnectionString = (Hide-ConnectionString -ConnectionString $key)
                 ConnectionObject = $script:connectionhash[$key]
+                ConnectionType   = $script:connectionhash[$key].GetType().FullName
             }
         }
     }
