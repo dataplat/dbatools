@@ -65,6 +65,9 @@ function Export-DbaInstance {
     .PARAMETER NoRecovery
         If this switch is used, databases will be left in the No Recovery state to enable further backups to be added.
 
+    .PARAMETER AzureCredential
+        Optional AzureCredential to connect to blob storage holding the backups
+
     .PARAMETER IncludeDbMasterKey
         Exports the db master key then logs into the server to copy it to the $Path
 
@@ -154,6 +157,7 @@ function Export-DbaInstance {
         [Alias("FilePath")]
         [string]$Path = (Get-DbatoolsConfigValue -FullName 'Path.DbatoolsExport'),
         [switch]$NoRecovery,
+        [string]$AzureCredential,
         [switch]$IncludeDbMasterKey,
         [ValidateSet('AgentServer', 'Audits', 'AvailabilityGroups', 'BackupDevices', 'CentralManagementServer', 'Credentials', 'CustomErrors', 'DatabaseMail', 'Databases', 'Endpoints', 'ExtendedEvents', 'LinkedServers', 'Logins', 'PolicyManagement', 'ReplicationSettings', 'ResourceGovernor', 'ServerAuditSpecifications', 'ServerRoles', 'SpConfigure', 'SysDbUserObjects', 'SystemTriggers', 'OleDbProvider')]
         [string[]]$Exclude,
@@ -288,7 +292,7 @@ function Export-DbaInstance {
             if ($Exclude -notcontains 'Databases') {
                 Write-Message -Level Verbose -Message "Exporting database restores"
                 Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Exporting database restores"
-                Get-DbaDbBackupHistory -SqlInstance $server -Last -WarningAction SilentlyContinue | Restore-DbaDatabase -SqlInstance $server -NoRecovery:$NoRecovery -WithReplace -OutputScriptOnly -WarningAction SilentlyContinue | Out-File -FilePath "$exportPath\databases.sql"
+                Get-DbaDbBackupHistory -SqlInstance $server -Last -WarningAction SilentlyContinue | Restore-DbaDatabase -SqlInstance $server -NoRecovery:$NoRecovery -WithReplace -OutputScriptOnly -WarningAction SilentlyContinue -AzureCredential $AzureCredential | Out-File -FilePath "$exportPath\databases.sql"
                 Get-ChildItem -ErrorAction Ignore -Path "$exportPath\databases.sql"
             }
 
