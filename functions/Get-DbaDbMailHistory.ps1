@@ -70,7 +70,7 @@ function Get-DbaDbMailHistory {
         foreach ($instance in $SqlInstance) {
 
             try {
-                $server = Connect-DbalInstance -SqlInstance $instance -SqlCredential $SqlCredential
+                $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential
             } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
