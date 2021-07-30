@@ -6,8 +6,10 @@ function Disconnect-DbaInstance {
     .DESCRIPTION
         Disconnects or closes a connection to a SQL Server instance
 
+        To clear all of your connection pools, use Clear-DbaConnectionPool
+
     .PARAMETER InputObject
-        The server object to disconnect
+        The server object to disconnect from, usually piped in from Get-DbaConnectedInstance
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
