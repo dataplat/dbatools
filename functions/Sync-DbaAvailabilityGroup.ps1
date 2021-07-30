@@ -156,7 +156,7 @@ function Sync-DbaAvailabilityGroup {
         $allcombos = @()
     }
     process {
-        if (Test-Bound -Not Primary, InputObject) {
+        if (Test-Bound Primary, InputObject -Not -Min 1 -Max 1) {
             Stop-Function -Message "You must supply either -Primary or an Input Object"
             return
         }

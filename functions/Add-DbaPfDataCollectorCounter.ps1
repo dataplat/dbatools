@@ -84,6 +84,11 @@ function Add-DbaPfDataCollectorCounter {
         }
     }
     process {
+        if (Test-Bound ComputerName, InputObject -Not -Min 1 -Max 1) {
+            Stop-Function -Message "You must supply either -ComputerName or an Input Object"
+            return
+        }
+
         if ($InputObject.Credential -and (Test-Bound -ParameterName Credential -Not)) {
             $Credential = $InputObject.Credential
         }

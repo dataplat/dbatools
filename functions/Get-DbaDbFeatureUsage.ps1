@@ -71,6 +71,11 @@ function Get-DbaDbFeatureUsage {
     }
 
     process {
+        if (Test-Bound SqlInstance, InputObject -Not -Min 1 -Max 1) {
+            Stop-Function -Message "You must supply either -SqlInstance or an Input Object"
+            return
+        }
+
         foreach ($instance in $SqlInstance) {
             $InputObject += Get-DbaDatabase -SqlInstance $instance -SqlCredential $SqlCredential -Database $Database -ExcludeDatabase $ExcludeDatabase
         }

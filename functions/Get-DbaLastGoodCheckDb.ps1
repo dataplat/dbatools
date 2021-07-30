@@ -96,8 +96,8 @@ function Get-DbaLastGoodCheckDb {
         [switch]$EnableException
     )
     process {
-        if (Test-Bound -not 'SqlInstance', 'InputObject') {
-            Write-Message -Level Warning -Message "You must specify either a SQL instance or supply an InputObject"
+        if (Test-Bound SqlInstance, InputObject -Not -Min 1 -Max 1) {
+            Stop-Function -Message "You must supply either -SqlInstance or an Input Object"
             return
         }
 

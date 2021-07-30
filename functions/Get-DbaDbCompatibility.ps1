@@ -69,9 +69,9 @@ function Get-DbaDbCompatibility {
         [switch]$EnableException
     )
     process {
-        if (Test-Bound -not 'SqlInstance', 'InputObject') {
-            Write-Message -Level Warning -Message "You must specify either a SQL instance or pipe a database collection"
-            continue
+        if (Test-Bound SqlInstance, InputObject -Not -Min 1 -Max 1) {
+            Stop-Function -Message "You must specify either a SQL instance or pipe a database collection"
+            return
         }
 
         if ($SqlInstance) {

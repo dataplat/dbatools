@@ -93,8 +93,8 @@ function Add-DbaDbRoleMember {
     )
 
     process {
-        if (-not $InputObject -and -not $SqlInstance) {
-            Stop-Function -Message "You must pipe in a role, database, or server or specify a SqlInstance"
+        if (Test-Bound SqlInstance, InputObject -Not -Min 1 -Max 1) {
+            Stop-Function -Message "You must either pipe in a role, database, or server or specify a SqlInstance"
             return
         }
 

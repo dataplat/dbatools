@@ -117,7 +117,7 @@ function Invoke-DbaDbUpgrade {
     }
     process {
 
-        if (Test-Bound -not 'SqlInstance', 'InputObject') {
+        if (Test-Bound SqlInstance, InputObject -Not -Min 1 -Max 1) {
             Write-Message -Level Warning -Message "You must specify either a SQL instance or pipe a database collection"
             continue
         }
