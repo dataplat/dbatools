@@ -61,6 +61,16 @@ function New-DbaAvailabilityGroup {
     .PARAMETER FailureConditionLevel
         Specifies the different conditions that can trigger an automatic failover in Availability Group.
 
+        From https://docs.microsoft.com/en-us/sql/t-sql/statements/create-availability-group-transact-sql:
+            Level 1 = OnServerDown
+            Level 2 = OnServerUnresponsive
+            Level 3 = OnCriticalServerErrors (the default in CREATE AVAILABILITY GROUP and in this command)
+            Level 4 = OnModerateServerErrors
+            Level 5 = OnAnyQualifiedFailureCondition
+
+        The default can be changed with:
+        Set-DbatoolsConfig -FullName 'AvailabilityGroups.Default.FailureConditionLevel' -Value 'On...' -Passthru | Register-DbatoolsConfig
+
     .PARAMETER HealthCheckTimeout
         This setting used to specify the length of time, in milliseconds, that the SQL Server resource DLL should wait for information returned by the sp_server_diagnostics stored procedure before reporting the Always On Failover Cluster Instance (FCI) as unresponsive.
 
@@ -246,7 +256,7 @@ function New-DbaAvailabilityGroup {
         [ValidateSet('None', 'Primary', 'Secondary', 'SecondaryOnly')]
         [string]$AutomatedBackupPreference = 'Secondary',
         [ValidateSet('OnAnyQualifiedFailureCondition', 'OnCriticalServerErrors', 'OnModerateServerErrors', 'OnServerDown', 'OnServerUnresponsive')]
-        [string]$FailureConditionLevel = "OnServerDown",
+        [string]$FailureConditionLevel = (Get-DbatoolsConfigValue -FullName 'AvailabilityGroups.Default.FailureConditionLevel' -Fallback 'OnCriticalServerErrors'),
         [int]$HealthCheckTimeout = 30000,
         [switch]$Basic,
         [switch]$DatabaseHealthTrigger,
