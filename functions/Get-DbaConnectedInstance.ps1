@@ -37,10 +37,7 @@ function Get-DbaConnectedInstance {
             } else {
                 $instance = $script:connectionhash[$key] | Select-Object -First 1 -ExpandProperty Name
             }
-            $value = $script:connectionhash[$key][0]
-            if (-not $value) {
-                $script:connectionhash[$key]
-            }
+            $value = $script:connectionhash[$key] | Select-Object -First 1
             if ($value.ConnectionContext.NonPooledConnection -or $value.NonPooledConnection) {
                 $pooling = $false
             } else {
