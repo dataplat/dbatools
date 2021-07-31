@@ -361,12 +361,12 @@
                        ],
                        [
                            "ConnectionModeInSecondaryRole",
-                           "Specifies the connection intent mode of an Availability Replica in secondary role. AllowAllConnections by default.",
+                           "Specifies the connection modes of an Availability Replica in secondary role.\r\nOptions include: AllowNoConnections, AllowReadIntentConnectionsOnly,  AllowAllConnections\nDefaults to AllowNoConnections.\nThe default can be changed with:\r\nSet-DbatoolsConfig -FullName \u0027AvailabilityGroups.Default.ConnectionModeInSecondaryRole\u0027 -Value \u0027...\u0027 -Passthru | Register-DbatoolsConfig",
                            "",
                            false,
                            "false",
-                           "AllowAllConnections",
-                           "AllowAllConnections,AllowNoConnections,AllowReadIntentConnectionsOnly"
+                           "(Get-DbatoolsConfigValue -FullName \u0027AvailabilityGroups.Default.ConnectionModeInSecondaryRole\u0027 -Fallback \u0027AllowNoConnections\u0027)",
+                           "AllowNoConnections,AllowReadIntentConnectionsOnly,AllowAllConnections"
                        ],
                        [
                            "SeedingMode",
@@ -2288,7 +2288,7 @@
         "CommandName":  "Connect-DbaInstance",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Connect-DbaInstance",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eConnect-DbaInstance -SqlInstance sql2014\nCreates an SMO Server object that connects using Windows Authentication\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003e$wincred = Get-Credential ad\\sqladmin\nPS C:\\\u003e Connect-DbaInstance -SqlInstance sql2014 -SqlCredential $wincred\nCreates an SMO Server object that connects using alternative Windows credentials\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003e$sqlcred = Get-Credential sqladmin\nPS C:\\\u003e $server = Connect-DbaInstance -SqlInstance sql2014 -SqlCredential $sqlcred\nLogin to sql2014 as SQL login sqladmin.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003e$server = Connect-DbaInstance -SqlInstance sql2014 -ClientName \"my connection\"\nCreates an SMO Server object that connects using Windows Authentication and uses the client name \"my connection\".\r\nSo when you open up profiler or use extended events, you can search for \"my connection\".\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003e$server = Connect-DbaInstance -SqlInstance sql2014 -AppendConnectionString \"Packet Size=4096;AttachDbFilename=C:\\MyFolder\\MyDataFile.mdf;User Instance=true;\"\nCreates an SMO Server object that connects to sql2014 using Windows Authentication, then it sets the packet size (this can also be done via -PacketSize) and other connection attributes.\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003e$server = Connect-DbaInstance -SqlInstance sql2014 -NetworkProtocol TcpIp -MultiSubnetFailover\nCreates an SMO Server object that connects using Windows Authentication that uses TCP/IP and has MultiSubnetFailover enabled.\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003e$server = Connect-DbaInstance sql2016 -ApplicationIntent ReadOnly\nConnects with ReadOnly ApplicationIntent.\n-------------------------- EXAMPLE 8 --------------------------\nPS C:\\\u003e$server = Connect-DbaInstance -SqlInstance myserver.database.windows.net -Database mydb -SqlCredential me@mydomain.onmicrosoft.com -DisableException\nPS C:\\\u003e Invoke-DbaQuery -SqlInstance $server -Query \"select 1 as test\"\nLogs into Azure SQL DB using AAD / Azure Active Directory, then performs a sample query.\n-------------------------- EXAMPLE 9 --------------------------\nPS C:\\\u003e$server = Connect-DbaInstance -SqlInstance psdbatools.database.windows.net -Database dbatools -DisableException\nPS C:\\\u003e Invoke-DbaQuery -SqlInstance $server -Query \"select 1 as test\"\nLogs into Azure SQL DB using AAD Integrated Auth, then performs a sample query.\n-------------------------- EXAMPLE 10 --------------------------\nPS C:\\\u003e$server = Connect-DbaInstance -SqlInstance \"myserver.public.cust123.database.windows.net,3342\" -Database mydb -SqlCredential me@mydomain.onmicrosoft.com -DisableException\nPS C:\\\u003e Invoke-DbaQuery -SqlInstance $server -Query \"select 1 as test\"\nLogs into Azure SQL Managed instance using AAD / Azure Active Directory, then performs a sample query.\n-------------------------- EXAMPLE 11 --------------------------\nPS C:\\\u003e$server = Connect-DbaInstance -SqlInstance db.mycustomazure.com -Database mydb -AzureDomain mycustomazure.com -DisableException\nPS C:\\\u003e Invoke-DbaQuery -SqlInstance $server -Query \"select 1 as test\"\nIn the event your AzureSqlDb is not on a database.windows.net domain, you can set a custom domain using the AzureDomain parameter.\r\nThis tells Connect-DbaInstance to login to the database using the method that works best with Azure.\n-------------------------- EXAMPLE 12 --------------------------\nPS C:\\\u003e$connstring = \"Data Source=TCP:mydb.database.windows.net,1433;User ID=sqladmin;Password=adfasdf;Connect Timeout=30;\"\nPS C:\\\u003e $server = Connect-DbaInstance -ConnectionString $connstring\r\nPS C:\\\u003e Invoke-DbaQuery -SqlInstance $server -Query \"select 1 as test\"\nLogs into Azure using a preconstructed connstring, then performs a sample query.\r\nConnectionString is an alias of SqlInstance, so you can use -SqlInstance $connstring as well.\n-------------------------- EXAMPLE 13 --------------------------\nPS C:\\\u003e$cred = Get-Credential guid-app-id-here # appid for username, clientsecret for password\nPS C:\\\u003e $server = Connect-DbaInstance -SqlInstance psdbatools.database.windows.net -Database abc -SqCredential $cred -Tenant guidheremaybename\r\nPS C:\\\u003e Invoke-DbaQuery -SqlInstance $server -Query \"select 1 as test\"\nWhen connecting from a non-Azure workstation, logs into Azure using Universal with MFA Support with a username and password, then performs a sample query.\nNote that generating access tokens is not supported on Core, so when using Tenant on Core, we rewrite the connection string with Active Directory Service Principal authentication instead.\n-------------------------- EXAMPLE 14 --------------------------\nPS C:\\\u003e$cred = Get-Credential guid-app-id-here # appid for username, clientsecret for password\nPS C:\\\u003e Set-DbatoolsConfig -FullName azure.tenantid -Value \u0027guidheremaybename\u0027 -Passthru | Register-DbatoolsConfig\r\nPS C:\\\u003e Set-DbatoolsConfig -FullName azure.appid -Value $cred.Username -Passthru | Register-DbatoolsConfig\r\nPS C:\\\u003e Set-DbatoolsConfig -FullName azure.clientsecret -Value $cred.Password -Passthru | Register-DbatoolsConfig # requires securestring\r\nPS C:\\\u003e Set-DbatoolsConfig -FullName sql.connection.database -Value abc -Passthru | Register-DbatoolsConfig\r\nPS C:\\\u003e Connect-DbaInstance -SqlInstance psdbatools.database.windows.net\nPermanently sets some app id config values. To set them temporarily (just for a session), remove -Passthru | Register-DbatoolsConfig\r\nWhen connecting from a non-Azure workstation or an Azure VM without .NET 4.7.2 and higher, logs into Azure using Universal with MFA Support, then performs a sample query.\n-------------------------- EXAMPLE 15 --------------------------\nPS C:\\\u003e$azureCredential = Get-Credential -Message \u0027Azure Credential\u0027\nPS C:\\\u003e $azureAccount = Connect-AzAccount -Credential $azureCredential\r\nPS C:\\\u003e $azureToken = (Get-AzAccessToken -ResourceUrl https://database.windows.net).Token\r\nPS C:\\\u003e $azureInstance = \"YOURSERVER.database.windows.net\"\r\nPS C:\\\u003e $azureDatabase = \"MYDATABASE\"\r\nPS C:\\\u003e $server = Connect-DbaInstance -SqlInstance $azureInstance -Database $azureDatabase -AccessToken $azureToken\r\nPS C:\\\u003e Invoke-DbaQuery -SqlInstance $server -Query \"select 1 as test\"\nConnect to an Azure SQL Database or an Azure SQL Managed Instance with an AccessToken.\r\nNote that the token is valid for only one hour and cannot be renewed automatically.\n-------------------------- EXAMPLE 16 --------------------------\nPS C:\\\u003e$token = (New-DbaAzAccessToken -Type RenewableServicePrincipal -Subtype AzureSqlDb -Tenant $tenantid -Credential $cred).GetAccessToken()\nPS C:\\\u003e Connect-DbaInstance -SqlInstance sample.database.windows.net -Accesstoken $token\nUses dbatools to generate the access token for an Azure SQL Database, then logs in using that AccessToken.\n-------------------------- EXAMPLE 17 --------------------------\nPS C:\\\u003e$server = Connect-DbaInstance -SqlInstance srv1 -DedicatedAdminConnection\nPS C:\\\u003e $dbaProcess = Get-DbaProcess -SqlInstance $server -ExcludeSystemSpids\r\nPS C:\\\u003e $killedProcess = $dbaProcess | Out-GridView -OutputMode Multiple | Stop-DbaProcess\r\nPS C:\\\u003e $server.ConnectionContext.Disconnect()\nCreates a dedicated admin connection (DAC) to the default instance on server srv1.\r\nReceives all non-system processes from the instance using the DAC.\r\nOpens a grid view to let the user select processes to be stopped.\r\nCloses the connection.",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eConnect-DbaInstance -SqlInstance sql2014\nCreates an SMO Server object that connects using Windows Authentication\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003e$wincred = Get-Credential ad\\sqladmin\nPS C:\\\u003e Connect-DbaInstance -SqlInstance sql2014 -SqlCredential $wincred\nCreates an SMO Server object that connects using alternative Windows credentials\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003e$sqlcred = Get-Credential sqladmin\nPS C:\\\u003e $server = Connect-DbaInstance -SqlInstance sql2014 -SqlCredential $sqlcred\nLogin to sql2014 as SQL login sqladmin.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003e$server = Connect-DbaInstance -SqlInstance sql2014 -ClientName \"my connection\"\nCreates an SMO Server object that connects using Windows Authentication and uses the client name \"my connection\".\r\nSo when you open up profiler or use extended events, you can search for \"my connection\".\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003e$server = Connect-DbaInstance -SqlInstance sql2014 -AppendConnectionString \"Packet Size=4096;AttachDbFilename=C:\\MyFolder\\MyDataFile.mdf;User Instance=true;\"\nCreates an SMO Server object that connects to sql2014 using Windows Authentication, then it sets the packet size (this can also be done via -PacketSize) and other connection attributes.\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003e$server = Connect-DbaInstance -SqlInstance sql2014 -NetworkProtocol TcpIp -MultiSubnetFailover\nCreates an SMO Server object that connects using Windows Authentication that uses TCP/IP and has MultiSubnetFailover enabled.\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003e$server = Connect-DbaInstance sql2016 -ApplicationIntent ReadOnly\nConnects with ReadOnly ApplicationIntent.\n-------------------------- EXAMPLE 8 --------------------------\nPS C:\\\u003e$server = Connect-DbaInstance -SqlInstance myserver.database.windows.net -Database mydb -SqlCredential me@mydomain.onmicrosoft.com -DisableException\nPS C:\\\u003e Invoke-DbaQuery -SqlInstance $server -Query \"select 1 as test\"\nLogs into Azure SQL DB using AAD / Azure Active Directory, then performs a sample query.\n-------------------------- EXAMPLE 9 --------------------------\nPS C:\\\u003e$server = Connect-DbaInstance -SqlInstance psdbatools.database.windows.net -Database dbatools -DisableException\nPS C:\\\u003e Invoke-DbaQuery -SqlInstance $server -Query \"select 1 as test\"\nLogs into Azure SQL DB using AAD Integrated Auth, then performs a sample query.\n-------------------------- EXAMPLE 10 --------------------------\nPS C:\\\u003e$server = Connect-DbaInstance -SqlInstance \"myserver.public.cust123.database.windows.net,3342\" -Database mydb -SqlCredential me@mydomain.onmicrosoft.com -DisableException\nPS C:\\\u003e Invoke-DbaQuery -SqlInstance $server -Query \"select 1 as test\"\nLogs into Azure SQL Managed instance using AAD / Azure Active Directory, then performs a sample query.\n-------------------------- EXAMPLE 11 --------------------------\nPS C:\\\u003e$server = Connect-DbaInstance -SqlInstance db.mycustomazure.com -Database mydb -AzureDomain mycustomazure.com -DisableException\nPS C:\\\u003e Invoke-DbaQuery -SqlInstance $server -Query \"select 1 as test\"\nIn the event your AzureSqlDb is not on a database.windows.net domain, you can set a custom domain using the AzureDomain parameter.\r\nThis tells Connect-DbaInstance to login to the database using the method that works best with Azure.\n-------------------------- EXAMPLE 12 --------------------------\nPS C:\\\u003e$connstring = \"Data Source=TCP:mydb.database.windows.net,1433;User ID=sqladmin;Password=adfasdf;Connect Timeout=30;\"\nPS C:\\\u003e $server = Connect-DbaInstance -ConnectionString $connstring\r\nPS C:\\\u003e Invoke-DbaQuery -SqlInstance $server -Query \"select 1 as test\"\nLogs into Azure using a preconstructed connstring, then performs a sample query.\r\nConnectionString is an alias of SqlInstance, so you can use -SqlInstance $connstring as well.\n-------------------------- EXAMPLE 13 --------------------------\nPS C:\\\u003e$cred = Get-Credential guid-app-id-here # appid for username, clientsecret for password\nPS C:\\\u003e $server = Connect-DbaInstance -SqlInstance psdbatools.database.windows.net -Database abc -SqCredential $cred -Tenant guidheremaybename\r\nPS C:\\\u003e Invoke-DbaQuery -SqlInstance $server -Query \"select 1 as test\"\nWhen connecting from a non-Azure workstation, logs into Azure using Universal with MFA Support with a username and password, then performs a sample query.\nNote that generating access tokens is not supported on Core, so when using Tenant on Core, we rewrite the connection string with Active Directory Service Principal authentication instead.\n-------------------------- EXAMPLE 14 --------------------------\nPS C:\\\u003e$cred = Get-Credential guid-app-id-here # appid for username, clientsecret for password\nPS C:\\\u003e Set-DbatoolsConfig -FullName azure.tenantid -Value \u0027guidheremaybename\u0027 -Passthru | Register-DbatoolsConfig\r\nPS C:\\\u003e Set-DbatoolsConfig -FullName azure.appid -Value $cred.Username -Passthru | Register-DbatoolsConfig\r\nPS C:\\\u003e Set-DbatoolsConfig -FullName azure.clientsecret -Value $cred.Password -Passthru | Register-DbatoolsConfig # requires securestring\r\nPS C:\\\u003e Set-DbatoolsConfig -FullName sql.connection.database -Value abc -Passthru | Register-DbatoolsConfig\r\nPS C:\\\u003e Connect-DbaInstance -SqlInstance psdbatools.database.windows.net\nPermanently sets some app id config values. To set them temporarily (just for a session), remove -Passthru | Register-DbatoolsConfig\r\nWhen connecting from a non-Azure workstation or an Azure VM without .NET 4.7.2 and higher, logs into Azure using Universal with MFA Support, then performs a sample query.\n-------------------------- EXAMPLE 15 --------------------------\nPS C:\\\u003e$azureCredential = Get-Credential -Message \u0027Azure Credential\u0027\nPS C:\\\u003e $azureAccount = Connect-AzAccount -Credential $azureCredential\r\nPS C:\\\u003e $azureToken = (Get-AzAccessToken -ResourceUrl https://database.windows.net).Token\r\nPS C:\\\u003e $azureInstance = \"YOURSERVER.database.windows.net\"\r\nPS C:\\\u003e $azureDatabase = \"MYDATABASE\"\r\nPS C:\\\u003e $server = Connect-DbaInstance -SqlInstance $azureInstance -Database $azureDatabase -AccessToken $azureToken\r\nPS C:\\\u003e Invoke-DbaQuery -SqlInstance $server -Query \"select 1 as test\"\nConnect to an Azure SQL Database or an Azure SQL Managed Instance with an AccessToken.\r\nNote that the token is valid for only one hour and cannot be renewed automatically.\n-------------------------- EXAMPLE 16 --------------------------\nPS C:\\\u003e$token = (New-DbaAzAccessToken -Type RenewableServicePrincipal -Subtype AzureSqlDb -Tenant $tenantid -Credential $cred).GetAccessToken()\nPS C:\\\u003e Connect-DbaInstance -SqlInstance sample.database.windows.net -Accesstoken $token\nUses dbatools to generate the access token for an Azure SQL Database, then logs in using that AccessToken.\n-------------------------- EXAMPLE 17 --------------------------\nPS C:\\\u003e$server = Connect-DbaInstance -SqlInstance srv1 -DedicatedAdminConnection\nPS C:\\\u003e $dbaProcess = Get-DbaProcess -SqlInstance $server -ExcludeSystemSpids\r\nPS C:\\\u003e $killedProcess = $dbaProcess | Out-GridView -OutputMode Multiple | Stop-DbaProcess\r\nPS C:\\\u003e $server | Disconnect-DbaInstance\nCreates a dedicated admin connection (DAC) to the default instance on server srv1.\r\nReceives all non-system processes from the instance using the DAC.\r\nOpens a grid view to let the user select processes to be stopped.\r\nCloses the connection.",
         "Params":  [
                        [
                            "SqlInstance",
@@ -7112,6 +7112,57 @@
         "Syntax":  "Disable-DbaTraceFlag [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [-TraceFlag] \u003cInt32[]\u003e [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
+        "Name":  "Disconnect-DbaInstance",
+        "Description":  "Disconnects or closes a connection to a SQL Server instance\n\nTo clear all of your connection pools, use Clear-DbaConnectionPool",
+        "Tags":  "Connection",
+        "Synopsis":  "Disconnects or closes a connection to a SQL Server instance",
+        "Alias":  "",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
+        "CommandName":  "Disconnect-DbaInstance",
+        "Availability":  "Windows, Linux, macOS",
+        "Links":  "https://dbatools.io/Disconnect-DbaInstance",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaConnectedInstance | Disconnect-DbaInstance\nDisconnects all connected instances\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaConnectedInstance | Out-GridView -Passthru | Disconnect-DbaInstance\nDisconnects selected SQL Server instances\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003e$server = Connect-DbaInstance -SqlInstance sql01\nPS C:\\\u003e $server | Disconnect-DbaInstance\nDisconnects the $server connection",
+        "Params":  [
+                       [
+                           "InputObject",
+                           "The server object to disconnect from, usually piped in from Get-DbaConnectedInstance",
+                           "",
+                           false,
+                           "true (ByValue)",
+                           "",
+                           ""
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "",
+                           false,
+                           "false",
+                           "False",
+                           ""
+                       ],
+                       [
+                           "WhatIf",
+                           "Shows what would happen if the command were to run. No actions are actually performed.",
+                           "wi",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "Confirm",
+                           "Prompts you for confirmation before executing any changing operations within the command.",
+                           "cf",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ]
+                   ],
+        "Syntax":  "Disconnect-DbaInstance [[-InputObject] \u003cPSObject[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+    },
+    {
         "Name":  "Dismount-DbaDatabase",
         "Description":  "This command detaches one or more SQL Server databases. If necessary, -Force can be used to break mirrors and remove databases from availability groups prior to detaching.",
         "Tags":  "Database",
@@ -8577,6 +8628,15 @@
                            ""
                        ],
                        [
+                           "AzureCredential",
+                           "Optional AzureCredential to connect to blob storage holding the backups",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
                            "IncludeDbMasterKey",
                            "Exports the db master key then logs into the server to copy it to the $Path",
                            "",
@@ -8649,7 +8709,7 @@
                            ""
                        ]
                    ],
-        "Syntax":  "Export-DbaInstance [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Credential] \u003cPSCredential\u003e] [[-Path] \u003cString\u003e] [-NoRecovery] [-IncludeDbMasterKey] [[-Exclude] \u003cString[]\u003e] [[-BatchSeparator] \u003cString\u003e] [[-ScriptingOption] \u003cScriptingOptions\u003e] [-NoPrefix] [-ExcludePassword] [-Force] [-EnableException] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Export-DbaInstance [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Credential] \u003cPSCredential\u003e] [[-Path] \u003cString\u003e] [-NoRecovery] [[-AzureCredential] \u003cString\u003e] [-IncludeDbMasterKey] [[-Exclude] \u003cString[]\u003e] [[-BatchSeparator] \u003cString\u003e] [[-ScriptingOption] \u003cScriptingOptions\u003e] [-NoPrefix] [-ExcludePassword] [-Force] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Export-DbaLinkedServer",
@@ -13976,6 +14036,22 @@
                        ]
                    ],
         "Syntax":  "Get-DbaComputerSystem [[-ComputerName] \u003cDbaInstanceParameter[]\u003e] [[-Credential] \u003cPSCredential\u003e] [-IncludeAws] [-EnableException] [\u003cCommonParameters\u003e]"
+    },
+    {
+        "Name":  "Get-DbaConnectedInstance",
+        "Description":  "Get a list of all connected instances",
+        "Tags":  "Connection",
+        "Synopsis":  "Get a list of all connected instances",
+        "Alias":  "",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
+        "CommandName":  "Get-DbaConnectedInstance",
+        "Availability":  "Windows, Linux, macOS",
+        "Links":  "https://dbatools.io/Get-DbaConnectedInstance",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaConnectedInstance\nGets all connected SQL Server instances\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaConnectedInstance | Select *\nGets all connected SQL Server instances and shows the associated connectionstrings as well",
+        "Params":  [
+
+                   ],
+        "Syntax":  "Get-DbaConnectedInstance [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Get-DbaConnection",
@@ -35599,7 +35675,7 @@
     },
     {
         "Name":  "New-DbaAvailabilityGroup",
-        "Description":  "Automates the creation of availability groups.\n\n* Checks prerequisites\n* Creates Availability Group and adds primary replica\n* Grants cluster permissions if necessary\n* Adds secondary replica if supplied\n* Adds databases if supplied\n    * Performs backup/restore if seeding mode is manual\n    * Performs backup to NUL if seeding mode is automatic\n* Adds listener to primary if supplied\n* Joins secondaries to availability group\n* Grants endpoint connect permissions to service accounts\n* Grants CreateAnyDatabase permissions if seeding mode is automatic\n* Returns Availability Group object from primary\n\nNOTES:\n- If a backup / restore is performed, the backups will be left intact on the network share.\n- If you\u0027re using SQL Server on Linux and a fully qualified domain name is required, please use the FQDN to create a proper Endpoint\n\nThanks for this, Thomas Stringer! https://blogs.technet.microsoft.com/heyscriptingguy/2013/04/29/set-up-an-alwayson-availability-group-with-powershell/",
+        "Description":  "Automates the creation of availability groups.\n\n* Checks prerequisites\n* Creates Availability Group and adds primary replica\n* Grants cluster permissions if necessary\n* Adds secondary replica if supplied\n* Adds databases if supplied\n    * Performs backup/restore if seeding mode is manual\n    * Performs backup to NUL if seeding mode is automatic\n* Adds listener to primary if supplied\n* Joins secondaries to availability group\n* Grants endpoint connect permissions to service accounts\n* Grants CreateAnyDatabase permissions if seeding mode is automatic\n* Returns Availability Group object from primary\n\nNOTES:\n- If a backup / restore is performed, the backups will be left intact on the network share.\n- If you\u0027re using SQL Server on Linux and a fully qualified domain name is required, please use the FQDN to create a proper Endpoint\n\nPLEASE NOTE THE CHANGED DEFAULTS:\nStarting with version 1.1.x we changed the defaults of the following parameters to have the same defaults\nas the T-SQL command \"CREATE AVAILABILITY GROUP\" and the wizard in SQL Server Management Studio:\n* ClusterType from External to Wsfc (Windows Server Failover Cluster).\n* FailureConditionLevel from OnServerDown (Level 1) to OnCriticalServerErrors (Level 3).\n* ConnectionModeInSecondaryRole from AllowAllConnections (ALL) to AllowNoConnections (NO).\nTo change these defaults we have introduced configuration parameters for all of them, see documentation of the parameters for details.\n\nThanks for this, Thomas Stringer! https://blogs.technet.microsoft.com/heyscriptingguy/2013/04/29/set-up-an-alwayson-availability-group-with-powershell/",
         "Tags":  [
                      "AvailabilityGroup",
                      "HA",
@@ -35611,7 +35687,7 @@
         "CommandName":  "New-DbaAvailabilityGroup",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/New-DbaAvailabilityGroup",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eNew-DbaAvailabilityGroup -Primary sql2016a -Name SharePoint\nCreates a new availability group on sql2016a named SharePoint\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eNew-DbaAvailabilityGroup -Primary sql2016a -Name SharePoint -Secondary sql2016b\nCreates a new availability group on sql2016a named SharePoint with a secondary replica, sql2016b\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eNew-DbaAvailabilityGroup -Primary sql2016std -Name BAG1 -Basic -Confirm:$false\nCreates a basic availability group named BAG1 on sql2016std and does not confirm when setting up\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eNew-DbaAvailabilityGroup -Primary sql2016b -Name AG1 -ClusterType Wsfc -Dhcp -Database db1 -UseLastBackup\nCreates an availability group on sql2016b with the name ag1. Uses the last backups available to add the database db1 to the AG.\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eNew-DbaAvailabilityGroup -Primary sql2017 -Name SharePoint -ClusterType None -FailoverMode Manual\nCreates a new availability group on sql2017 named SharePoint with a cluster type of none and a failover mode of manual\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eNew-DbaAvailabilityGroup -Primary sql1 -Secondary sql2 -Name ag1 -Database pubs -ClusterType None -SeedingMode Automatic -FailoverMode Manual\nCreates a new availability group with a primary replica on sql1 and a secondary on sql2. Automatically adds the database pubs.\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003eNew-DbaAvailabilityGroup -Primary sql1 -Secondary sql2 -Name ag1 -Database pubs -EndpointUrl \u0027TCP://sql1.specialnet.local:5022\u0027, \u0027TCP://sql2.specialnet.local:5022\u0027\nCreates a new availability group with a primary replica on sql1 and a secondary on sql2 with custom endpoint urls. Automatically adds the database pubs.\n-------------------------- EXAMPLE 8 --------------------------\nPS C:\\\u003e$cred = Get-Credential sqladmin\nPS C:\\\u003e $params = @{\r\n\u003e\u003e Primary = \"sql1\"\r\n\u003e\u003e PrimarySqlCredential = $cred\r\n\u003e\u003e Secondary = \"sql2\"\r\n\u003e\u003e SecondarySqlCredential = $cred\r\n\u003e\u003e Name = \"test-ag\"\r\n\u003e\u003e Database = \"pubs\"\r\n\u003e\u003e ClusterType = \"None\"\r\n\u003e\u003e SeedingMode = \"Automatic\"\r\n\u003e\u003e FailoverMode = \"Manual\"\r\n\u003e\u003e Confirm = $false\r\n\u003e\u003e }\r\nPS C:\\\u003e New-DbaAvailabilityGroup @params\nThis exact command was used to create an availability group on docker!",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eNew-DbaAvailabilityGroup -Primary sql2016a -Name SharePoint\nCreates a new availability group on sql2016a named SharePoint\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eNew-DbaAvailabilityGroup -Primary sql2016a -Name SharePoint -Secondary sql2016b\nCreates a new availability group on sql2016a named SharePoint with a secondary replica, sql2016b\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eNew-DbaAvailabilityGroup -Primary sql2016std -Name BAG1 -Basic -Confirm:$false\nCreates a basic availability group named BAG1 on sql2016std and does not confirm when setting up\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eNew-DbaAvailabilityGroup -Primary sql2016b -Name AG1 -Dhcp -Database db1 -UseLastBackup\nCreates an availability group on sql2016b with the name ag1. Uses the last backups available to add the database db1 to the AG.\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eNew-DbaAvailabilityGroup -Primary sql2017 -Name SharePoint -ClusterType None -FailoverMode Manual\nCreates a new availability group on sql2017 named SharePoint with a cluster type of none and a failover mode of manual\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eNew-DbaAvailabilityGroup -Primary sql1 -Secondary sql2 -Name ag1 -Database pubs -ClusterType None -SeedingMode Automatic -FailoverMode Manual\nCreates a new availability group with a primary replica on sql1 and a secondary on sql2. Automatically adds the database pubs.\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003eNew-DbaAvailabilityGroup -Primary sql1 -Secondary sql2 -Name ag1 -Database pubs -EndpointUrl \u0027TCP://sql1.specialnet.local:5022\u0027, \u0027TCP://sql2.specialnet.local:5022\u0027\nCreates a new availability group with a primary replica on sql1 and a secondary on sql2 with custom endpoint urls. Automatically adds the database pubs.\n-------------------------- EXAMPLE 8 --------------------------\nPS C:\\\u003e$cred = Get-Credential sqladmin\nPS C:\\\u003e $params = @{\r\n\u003e\u003e Primary = \"sql1\"\r\n\u003e\u003e PrimarySqlCredential = $cred\r\n\u003e\u003e Secondary = \"sql2\"\r\n\u003e\u003e SecondarySqlCredential = $cred\r\n\u003e\u003e Name = \"test-ag\"\r\n\u003e\u003e Database = \"pubs\"\r\n\u003e\u003e ClusterType = \"None\"\r\n\u003e\u003e SeedingMode = \"Automatic\"\r\n\u003e\u003e FailoverMode = \"Manual\"\r\n\u003e\u003e Confirm = $false\r\n\u003e\u003e }\r\nPS C:\\\u003e New-DbaAvailabilityGroup @params\nThis exact command was used to create an availability group on docker!",
         "Params":  [
                        [
                            "Primary",
@@ -35669,12 +35745,12 @@
                        ],
                        [
                            "ClusterType",
-                           "Cluster type of the Availability Group. Only supported in SQL Server 2017 and above.\r\nOptions include: External, Wsfc or None. None by default.",
+                           "Cluster type of the Availability Group. Only supported in SQL Server 2017 and above.\r\nOptions include: Wsfc, External or None.\nDefaults to Wsfc (Windows Server Failover Cluster).\nThe default can be changed with:\r\nSet-DbatoolsConfig -FullName \u0027AvailabilityGroups.Default.ClusterType\u0027 -Value \u0027...\u0027 -Passthru | Register-DbatoolsConfig",
                            "",
                            false,
                            "false",
-                           "External",
-                           "External,Wsfc,None"
+                           "(Get-DbatoolsConfigValue -FullName \u0027AvailabilityGroups.Default.ClusterType\u0027 -Fallback \u0027Wsfc\u0027)",
+                           "Wsfc,External,None"
                        ],
                        [
                            "AutomatedBackupPreference",
@@ -35687,11 +35763,11 @@
                        ],
                        [
                            "FailureConditionLevel",
-                           "Specifies the different conditions that can trigger an automatic failover in Availability Group.",
+                           "Specifies the different conditions that can trigger an automatic failover in Availability Group.\nDefaults to OnCriticalServerErrors (Level 3).\nFrom https://docs.microsoft.com/en-us/sql/t-sql/statements/create-availability-group-transact-sql:\r\n    Level 1 = OnServerDown\r\n    Level 2 = OnServerUnresponsive\r\n    Level 3 = OnCriticalServerErrors (the default in CREATE AVAILABILITY GROUP and in this command)\r\n    Level 4 = OnModerateServerErrors\r\n    Level 5 = OnAnyQualifiedFailureCondition\nThe default can be changed with:\r\nSet-DbatoolsConfig -FullName \u0027AvailabilityGroups.Default.FailureConditionLevel\u0027 -Value \u0027On...\u0027 -Passthru | Register-DbatoolsConfig",
                            "",
                            false,
                            "false",
-                           "OnServerDown",
+                           "(Get-DbatoolsConfigValue -FullName \u0027AvailabilityGroups.Default.FailureConditionLevel\u0027 -Fallback \u0027OnCriticalServerErrors\u0027)",
                            "OnAnyQualifiedFailureCondition,OnCriticalServerErrors,OnModerateServerErrors,OnServerDown,OnServerUnresponsive"
                        ],
                        [
@@ -35804,12 +35880,12 @@
                        ],
                        [
                            "ConnectionModeInSecondaryRole",
-                           "Specifies the connection modes of an Availability Replica in secondary role. AllowAllConnections by default.",
+                           "Specifies the connection modes of an Availability Replica in secondary role.\r\nOptions include: AllowNoConnections (Alias: No), AllowReadIntentConnectionsOnly (Alias: Read-intent only),  AllowAllConnections (Alias: Yes)\nDefaults to AllowNoConnections.\nThe default can be changed with:\r\nSet-DbatoolsConfig -FullName \u0027AvailabilityGroups.Default.ConnectionModeInSecondaryRole\u0027 -Value \u0027...\u0027 -Passthru | Register-DbatoolsConfig",
                            "",
                            false,
                            "false",
-                           "AllowAllConnections",
-                           "AllowAllConnections,AllowNoConnections,AllowReadIntentConnectionsOnly,No,Read-intent only,Yes"
+                           "(Get-DbatoolsConfigValue -FullName \u0027AvailabilityGroups.Default.ConnectionModeInSecondaryRole\u0027 -Fallback \u0027AllowNoConnections\u0027)",
+                           "AllowNoConnections,AllowReadIntentConnectionsOnly,AllowAllConnections,No,Read-intent only,Yes"
                        ],
                        [
                            "SeedingMode",
