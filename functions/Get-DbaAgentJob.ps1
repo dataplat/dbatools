@@ -122,13 +122,16 @@ function Get-DbaAgentJob {
                 Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
-            if (Test-Bound 'IncludeExecution') {
-                $query = "SELECT [job].[job_id] as [JobId], [activity].[start_execution_date] AS [StartDate]
+            $defaults = 'ComputerName', 'InstanceName', 'SqlInstance', 'Name', 'Category', 'OwnerLoginName', 'CurrentRunStatus', 'CurrentRunRetryAttempt', 'IsEnabled as Enabled', 'LastRunDate', 'LastRunOutcome', 'HasSchedule', 'OperatorToEmail', 'DateCreated as CreateDate'
+            if ($IncludeExecution) {
+                $defaults += 'StartDate'
+
+                $query = "SELECT [job].[job_id] AS [JobId], MAX([activity].[start_execution_date]) AS [StartDate]
                 FROM [msdb].[dbo].[sysjobs_view] as [job]
                     INNER JOIN [msdb].[dbo].[sysjobactivity] AS [activity] ON [job].[job_id] = [activity].[job_id]
-                WHERE [activity].[run_requested_date] IS NOT NULL
-                    AND [activity].[start_execution_date] IS NOT NULL
-                    AND [activity].[stop_execution_date] IS NULL;"
+                WHERE [activity].[start_execution_date] IS NOT NULL
+                    AND [activity].[stop_execution_date] IS NULL
+                GROUP BY [job].[job_id];"
 
                 $jobExecutionResults = $server.Query($query)
             }
@@ -155,20 +158,13 @@ function Get-DbaAgentJob {
             }
 
             foreach ($agentJob in $jobs) {
-                $defaults = 'ComputerName', 'InstanceName', 'SqlInstance', 'Name', 'Category', 'OwnerLoginName', 'CurrentRunStatus', 'CurrentRunRetryAttempt', 'IsEnabled as Enabled', 'LastRunDate', 'LastRunOutcome', 'HasSchedule', 'OperatorToEmail', 'DateCreated as CreateDate'
-
-                $currentJobId = $agentJob.JobId
-                if ($currentJobId -in $jobExecutionResults.JobId) {
-                    $agentJobStartDate = [DbaDateTime]($jobExecutionResults | Where-Object JobId -eq $currentJobId | Sort-Object StartDate -Descending | Select-Object -First 1).StartDate
-
+                Add-Member -Force -InputObject $agentJob -MemberType NoteProperty -Name ComputerName -Value $agentJob.Parent.Parent.ComputerName
+                Add-Member -Force -InputObject $agentJob -MemberType NoteProperty -Name InstanceName -Value $agentJob.Parent.Parent.ServiceName
+                Add-Member -Force -InputObject $agentJob -MemberType NoteProperty -Name SqlInstance -Value $agentJob.Parent.Parent.DomainInstanceName
+                if ($IncludeExecution -and $agentJob.CurrentRunStatus -eq 'Executing') {
+                    $agentJobStartDate = ($jobExecutionResults | Where-Object JobId -eq $agentJob.JobId).StartDate
                     Add-Member -Force -InputObject $agentJob -MemberType NoteProperty -Name StartDate -Value $agentJobStartDate
-                    $defaults += 'StartDate'
                 }
-
-                Add-Member -Force -InputObject $agentJob -MemberType NoteProperty -Name ComputerName -value $agentJob.Parent.Parent.ComputerName
-                Add-Member -Force -InputObject $agentJob -MemberType NoteProperty -Name InstanceName -value $agentJob.Parent.Parent.ServiceName
-                Add-Member -Force -InputObject $agentJob -MemberType NoteProperty -Name SqlInstance -value $agentJob.Parent.Parent.DomainInstanceName
-
                 Select-DefaultView -InputObject $agentJob -Property $defaults
             }
         }
