@@ -5,7 +5,7 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
         [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'ExcludeSystemUdf', 'EnableException'
+        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'ExcludeSystemUdf', 'Schema', 'ExcludeSchema', 'Name', 'ExcludeName', 'EnableException'
         $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
         It "Should only contain our specific parameters" {
             (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
@@ -45,7 +45,7 @@ END;
     }
 
     Context "User Functions are correctly located" {
-        $results1 = Get-DbaDbUdf -SqlInstance $script:instance2 -Database master | Where-object {$_.name -eq 'dbatoolssci_ISOweek'} | Select-Object *
+        $results1 = Get-DbaDbUdf -SqlInstance $script:instance2 -Database master -Name dbatoolssci_ISOweek | Select-Object *
         $results2 = Get-DbaDbUdf -SqlInstance $script:instance2
 
         It "Should execute and return results" {
@@ -70,7 +70,7 @@ END;
         }
 
         It "Should not Throw an Error" {
-            {Get-DbaDbUdf -SqlInstance $script:instance2 -ExcludeDatabase master -ExcludeSystemUdf } | Should -not -Throw
+            { Get-DbaDbUdf -SqlInstance $script:instance2 -ExcludeDatabase master -ExcludeSystemUdf } | Should -not -Throw
         }
     }
 }
