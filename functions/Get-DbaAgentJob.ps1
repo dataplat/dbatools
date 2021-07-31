@@ -127,6 +127,7 @@ function Get-DbaAgentJob {
                 FROM [msdb].[dbo].[sysjobs_view] as [job]
                     INNER JOIN [msdb].[dbo].[sysjobactivity] AS [activity] ON [job].[job_id] = [activity].[job_id]
                 WHERE [activity].[run_requested_date] IS NOT NULL
+                    AND [activity].[start_execution_date] IS NOT NULL
                     AND [activity].[stop_execution_date] IS NULL;"
 
                 $jobExecutionResults = $server.Query($query)
@@ -158,7 +159,7 @@ function Get-DbaAgentJob {
 
                 $currentJobId = $agentJob.JobId
                 if ($currentJobId -in $jobExecutionResults.JobId) {
-                    $agentJobStartDate = [DbaDateTime]($jobExecutionResults | Where-Object { $_.JobId -eq $currentJobId -and $null -ne $_.StartDate }).StartDate
+                    $agentJobStartDate = [DbaDateTime]($jobExecutionResults | Where-Object JobId -eq $currentJobId | Sort-Object StartDate -Descending | Select-Object -First 1).StartDate
 
                     Add-Member -Force -InputObject $agentJob -MemberType NoteProperty -Name StartDate -Value $agentJobStartDate
                     $defaults += 'StartDate'
