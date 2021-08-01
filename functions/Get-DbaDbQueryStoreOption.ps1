@@ -73,10 +73,9 @@ function Get-DbaDbQueryStoreOption {
     process {
         foreach ($instance in $SqlInstance) {
             try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 13
+                $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 13
             } catch {
-                Write-Message -Level Warning -Message "Can't connect to $instance. Moving on."
-                continue
+                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
             # We have to exclude all the system databases since they cannot have the Query Store feature enabled
