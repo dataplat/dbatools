@@ -120,23 +120,23 @@ function Get-DbaDbUdf {
                     continue
                 }
                 if (Test-Bound -ParameterName ExcludeSystemUdf) {
-                    $userDefinedFunctions = $userDefinedFunctions | Where-Object { $_.IsSystemObject -eq $false }
+                    $userDefinedFunctions = $userDefinedFunctions | Where-Object IsSystemObject -eq $false
                 }
 
                 if ($Schema) {
-                    $userDefinedFunctions = $userDefinedFunctions | Where-Object { $_.Schema -in $Schema }
+                    $userDefinedFunctions = $userDefinedFunctions | Where-Object Schema -in $Schema
                 }
 
                 if ($ExcludeSchema) {
-                    $userDefinedFunctions = $userDefinedFunctions | Where-Object { $_.Schema -notin $ExcludeSchema }
+                    $userDefinedFunctions = $userDefinedFunctions | Where-Object Schema -notin $ExcludeSchema
                 }
 
                 if ($Name) {
-                    $userDefinedFunctions = $userDefinedFunctions | Where-Object { $_.Name -in $Name }
+                    $userDefinedFunctions = $userDefinedFunctions | Where-Object Name -in $Name
                 }
 
                 if ($ExcludeName) {
-                    $userDefinedFunctions = $userDefinedFunctions | Where-Object { $_.Name -notin $ExcludeName }
+                    $userDefinedFunctions = $userDefinedFunctions | Where-Object Name -notin $ExcludeName
                 }
 
                 $userDefinedFunctions | ForEach-Object {
