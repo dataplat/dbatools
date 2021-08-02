@@ -57150,6 +57150,15 @@
                            ""
                        ],
                        [
+                           "DisableJobOnDestination",
+                           "If this switch is enabled, the newly migrated job will be disabled on the destination server.",
+                           "",
+                           false,
+                           "false",
+                           "False",
+                           ""
+                       ],
+                       [
                            "InputObject",
                            "Enables piping from Get-DbaAvailabilityGroup.",
                            "",
@@ -57195,7 +57204,7 @@
                            ""
                        ]
                    ],
-        "Syntax":  "Sync-DbaAvailabilityGroup [[-Primary] \u003cDbaInstanceParameter\u003e] [[-PrimarySqlCredential] \u003cPSCredential\u003e] [[-Secondary] \u003cDbaInstanceParameter[]\u003e] [[-SecondarySqlCredential] \u003cPSCredential\u003e] [[-AvailabilityGroup] \u003cString\u003e] [[-Exclude] \u003cString[]\u003e] [[-Login] \u003cString[]\u003e] [[-ExcludeLogin] \u003cString[]\u003e] [[-Job] \u003cString[]\u003e] [[-ExcludeJob] \u003cString[]\u003e] [[-InputObject] \u003cAvailabilityGroup[]\u003e] [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Sync-DbaAvailabilityGroup [[-Primary] \u003cDbaInstanceParameter\u003e] [[-PrimarySqlCredential] \u003cPSCredential\u003e] [[-Secondary] \u003cDbaInstanceParameter[]\u003e] [[-SecondarySqlCredential] \u003cPSCredential\u003e] [[-AvailabilityGroup] \u003cString\u003e] [[-Exclude] \u003cString[]\u003e] [[-Login] \u003cString[]\u003e] [[-ExcludeLogin] \u003cString[]\u003e] [[-Job] \u003cString[]\u003e] [[-ExcludeJob] \u003cString[]\u003e] [-DisableJobOnDestination] [[-InputObject] \u003cAvailabilityGroup[]\u003e] [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Sync-DbaLoginPermission",
