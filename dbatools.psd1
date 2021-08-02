@@ -723,7 +723,8 @@
         'Detach-DbaDatabase',
         'Start-SqlMigration',
         'Write-DbaDataTable',
-        'Get-DbaDbModule'
+        'Get-DbaDbModule',
+        'Get-DbaBuildReference'
     )
 
     # List of all modules packaged with this module
