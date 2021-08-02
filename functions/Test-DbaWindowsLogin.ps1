@@ -153,7 +153,7 @@ function Test-DbaWindowsLogin {
                 $exists = $false
                 try {
                     $loginBinary = [byte[]]$login.Sid
-                    $SID = New-Object Security.Principal.SecurityIdentifier($loginBinary,0)
+                    $SID = New-Object Security.Principal.SecurityIdentifier($loginBinary, 0)
                     $SIDForAD = $SID.Value
                     Write-Message -Message "SID for AD is $SIDForAD" -Level Debug
                     $u = Get-DbaADObject -ADObject "$domain\$SIDForAD" -Type User -IdentityType Sid -EnableException
@@ -247,7 +247,7 @@ function Test-DbaWindowsLogin {
                 $exists = $false
                 try {
                     $loginBinary = [byte[]]$login.Sid
-                    $SID = New-Object Security.Principal.SecurityIdentifier($loginBinary,0)
+                    $SID = New-Object Security.Principal.SecurityIdentifier($loginBinary, 0)
                     $SIDForAD = $SID.Value
                     Write-Message -Message "SID for AD is $SIDForAD" -Level Debug
                     $u = Get-DbaADObject -ADObject "$domain\$SIDForAD" -Type Group -IdentityType Sid -EnableException
