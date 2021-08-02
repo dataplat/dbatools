@@ -152,7 +152,11 @@ function Test-DbaWindowsLogin {
                 Write-Message -Message "Parsing Login $adLogin." -Level Verbose
                 $exists = $false
                 try {
-                    $u = Get-DbaADObject -ADObject $adLogin -Type User -EnableException
+                    $loginBinary = [byte[]]$login.Sid
+                    $SID = New-Object Security.Principal.SecurityIdentifier($loginBinary,0)
+                    $SIDForAD = $SID.Value
+                    Write-Message -Message "SID for AD is $SIDForAD" -Level Debug
+                    $u = Get-DbaADObject -ADObject "$domain\$SIDForAD" -Type User -IdentityType Sid -EnableException
                     if ($null -eq $u -and $adLogin -like '*$') {
                         Write-Message -Message "Parsing Login as computer" -Level Verbose
                         $u = Get-DbaADObject -ADObject $adLogin -Type Computer -EnableException
@@ -169,6 +173,10 @@ function Test-DbaWindowsLogin {
                         Write-Message -Message "SID mismatch detected for $adLogin." -Level Warning
                         Write-Message -Message "SID mismatch detected for $adLogin (MSSQL: $loginSid, AD: $foundSid)." -Level Debug
                         $exists = $false
+                    }
+                    if ($u.SamAccountName -ne $username) {
+                        Write-Message -Message "SamAccountName mismatch detected for $adLogin." -Level Warning
+                        Write-Message -Message "SamAccountName mismatch detected for $adLogin (MSSQL: $username, AD: $($u.SamAccountName))." -Level Debug
                     }
                 } catch {
                     Write-Message -Message "AD Searcher Error for $username." -Level Warning
@@ -238,7 +246,11 @@ function Test-DbaWindowsLogin {
                 Write-Message -Message "Parsing Login $adLogin on $server." -Level Verbose
                 $exists = $false
                 try {
-                    $u = Get-DbaADObject -ADObject $adLogin -Type Group -EnableException
+                    $loginBinary = [byte[]]$login.Sid
+                    $SID = New-Object Security.Principal.SecurityIdentifier($loginBinary,0)
+                    $SIDForAD = $SID.Value
+                    Write-Message -Message "SID for AD is $SIDForAD" -Level Debug
+                    $u = Get-DbaADObject -ADObject "$domain\$SIDForAD" -Type Group -IdentityType Sid -EnableException
                     $foundUser = $u.GetUnderlyingObject()
                     $foundSid = $foundUser.objectSid.Value -join ''
                     if ($foundUser) {
@@ -248,6 +260,10 @@ function Test-DbaWindowsLogin {
                         Write-Message -Message "SID mismatch detected for $adLogin." -Level Warning
                         Write-Message -Message "SID mismatch detected for $adLogin (MSSQL: $loginSid, AD: $foundSid)." -Level Debug
                         $exists = $false
+                    }
+                    if ($u.SamAccountName -ne $groupName) {
+                        Write-Message -Message "SamAccountName mismatch detected for $adLogin." -Level Warning
+                        Write-Message -Message "SamAccountName mismatch detected for $adLogin (MSSQL: $groupName, AD: $($u.SamAccountName))." -Level Debug
                     }
                 } catch {
                     Write-Message -Message "AD Searcher Error for $groupName on $server" -Level Warning
