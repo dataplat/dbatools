@@ -18931,6 +18931,42 @@
                            ""
                        ],
                        [
+                           "Schema",
+                           "The schema(s) to process. If unspecified, all schemas will be processed.",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "ExcludeSchema",
+                           "The schema(s) to exclude.",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "Name",
+                           "The name(s) of the user defined functions to process. If unspecified, all user defined functions will be processed.",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "ExcludeName",
+                           "The name(s) of the user defined functions to exclude.",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
                            "EnableException",
                            "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
                            "",
@@ -18940,7 +18976,7 @@
                            ""
                        ]
                    ],
-        "Syntax":  "Get-DbaDbUdf [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cObject[]\u003e] [[-ExcludeDatabase] \u003cObject[]\u003e] [-ExcludeSystemUdf] [-EnableException] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Get-DbaDbUdf [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cObject[]\u003e] [[-ExcludeDatabase] \u003cObject[]\u003e] [-ExcludeSystemUdf] [[-Schema] \u003cString[]\u003e] [[-ExcludeSchema] \u003cString[]\u003e] [[-Name] \u003cString[]\u003e] [[-ExcludeName] \u003cString[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Get-DbaDbUser",
@@ -53143,6 +53179,88 @@
                        ]
                    ],
         "Syntax":  "Set-DbaDbState [-SqlCredential \u003cPSCredential\u003e] [-Database \u003cObject[]\u003e] [-ExcludeDatabase \u003cObject[]\u003e] [-AllDatabases] [-ReadOnly] [-ReadWrite] [-Online] [-Offline] [-Emergency] [-Detached] [-SingleUser] [-RestrictedUser] [-MultiUser] [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\nSet-DbaDbState -SqlInstance \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-Database \u003cObject[]\u003e] [-ExcludeDatabase \u003cObject[]\u003e] [-AllDatabases] [-ReadOnly] [-ReadWrite] [-Online] [-Offline] [-Emergency] [-Detached] [-SingleUser] [-RestrictedUser] [-MultiUser] [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\nSet-DbaDbState [-SqlCredential \u003cPSCredential\u003e] [-Database \u003cObject[]\u003e] [-ExcludeDatabase \u003cObject[]\u003e] [-AllDatabases] [-ReadOnly] [-ReadWrite] [-Online] [-Offline] [-Emergency] [-Detached] [-SingleUser] [-RestrictedUser] [-MultiUser] [-Force] [-EnableException] -InputObject \u003cPSObject[]\u003e [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+    },
+    {
+        "Name":  "Set-DbaDefaultPath",
+        "Description":  "Sets the default SQL Server paths for data, logs, and backups\n\nTo change the error log location, use Set-DbaStartupParameter",
+        "Tags":  [
+                     "Data",
+                     "Logs",
+                     "Backups"
+                 ],
+        "Synopsis":  "Sets the default SQL Server paths for data, logs, and backups",
+        "Alias":  "",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
+        "CommandName":  "Set-DbaDefaultPath",
+        "Availability":  "Windows, Linux, macOS",
+        "Links":  "https://dbatools.io/Set-DbaDefaultPath",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eSet-DbaDefaultPath -SqlInstance sql01\\sharepoint -Type Data, Backup -Path C:\\mssql\\sharepoint\\data\nSets the data and backup default paths on sql01\\sharepoint to C:\\mssql\\sharepoint\\data\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eSet-DbaDefaultPath -SqlInstance sql01\\sharepoint -Type Data, Log -Path C:\\mssql\\sharepoint\\data -WhatIf\nShows what what happen if the command would have run",
+        "Params":  [
+                       [
+                           "SqlInstance",
+                           "The target SQL Server instance or instances.",
+                           "",
+                           true,
+                           "true (ByPropertyName)",
+                           "",
+                           ""
+                       ],
+                       [
+                           "SqlCredential",
+                           "Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).\nWindows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.\nFor MFA support, please use Connect-DbaInstance.",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "Type",
+                           "The type of path to modify. Options include: Data, Log and Backup.",
+                           "",
+                           false,
+                           "true (ByPropertyName)",
+                           "",
+                           "Data,Backup,Log"
+                       ],
+                       [
+                           "Path",
+                           "The path on the destination SQL Server",
+                           "",
+                           true,
+                           "true (ByPropertyName)",
+                           "",
+                           ""
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "",
+                           false,
+                           "false",
+                           "False",
+                           ""
+                       ],
+                       [
+                           "WhatIf",
+                           "Shows what would happen if the command were to run. No actions are actually performed.",
+                           "wi",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "Confirm",
+                           "Prompts you for confirmation before executing any changing operations within the command.",
+                           "cf",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ]
+                   ],
+        "Syntax":  "Set-DbaDefaultPath [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Type] \u003cString[]\u003e] [-Path] \u003cString\u003e [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Set-DbaEndpoint",
