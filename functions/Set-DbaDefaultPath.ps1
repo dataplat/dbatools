@@ -82,19 +82,19 @@ function Set-DbaDefaultPath {
                 Stop-Function -Message "Path $Path is not accessible on $($server.Name)" -Target $instance -Continue
             }
 
-            if ($Type -contains  "Data") {
+            if ($Type -contains "Data") {
                 if ($Pscmdlet.ShouldProcess($server.Name, "Changing DefaultFile to $Path")) {
                     $server.DefaultFile = $Path
                 }
             }
 
-            if ($Type -contains  "Log") {
+            if ($Type -contains "Log") {
                 if ($Pscmdlet.ShouldProcess($server.Name, "Changing DefaultLog to $Path")) {
                     $server.DefaultLog = $Path
                 }
             }
 
-            if ($Type -contains  "Backup") {
+            if ($Type -contains "Backup") {
                 if ($Pscmdlet.ShouldProcess($server.Name, "Changing BackupDirectory to $Path")) {
                     $server.BackupDirectory = $Path
                 }
