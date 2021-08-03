@@ -138,6 +138,16 @@ function Get-DbaOperatingSystem {
                 $IsWsfc = $null
             }
 
+            try {
+                $installDate = [DbaDateTime]$os.InstallDate
+                $lastBootTime = [DbaDateTime]$os.LastBootUpTime
+                $localDateTime = [DbaDateTime]$os.LocalDateTime
+            } catch {
+                $installDate = [dbadate]($os.ConverttoDateTime($os.InstallDate))
+                $lastBootTime = [dbadate]($os.ConverttoDateTime($os.LastBootUpTime))
+                $localDateTime = [dbadate]($os.ConverttoDateTime($os.LocalDateTime))
+            }
+
             [PSCustomObject]@{
                 ComputerName             = $computerResolved
                 Manufacturer             = $os.Manufacturer
@@ -147,9 +157,9 @@ function Get-DbaOperatingSystem {
                 Build                    = $os.BuildNumber
                 OSVersion                = $os.caption
                 SPVersion                = $os.servicepackmajorversion
-                InstallDate              = [DbaDateTime]$os.InstallDate
-                LastBootTime             = [DbaDateTime]$os.LastBootUpTime
-                LocalDateTime            = [DbaDateTime]$os.LocalDateTime
+                InstallDate              = $installDate
+                LastBootTime             = $lastBootTime
+                LocalDateTime            = $localDateTime
                 PowerShellVersion        = $PowerShellVersion
                 TimeZone                 = $tz.Caption
                 TimeZoneStandard         = $tz.StandardName
