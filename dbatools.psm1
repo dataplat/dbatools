@@ -834,7 +834,8 @@ $script:xplat = @(
     'Add-DbaExtendedProperty',
     'Get-DbaOleDbProvider',
     'Get-DbaConnectedInstance',
-    'Disconnect-DbaInstance'
+    'Disconnect-DbaInstance',
+    'Set-DbaDefaultPath'
 )
 
 $script:noncoresmo = @(

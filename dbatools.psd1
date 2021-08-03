@@ -702,7 +702,8 @@
         'Add-DbaExtendedProperty',
         'Get-DbaOleDbProvider',
         'Get-DbaConnectedInstance',
-        'Disconnect-DbaInstance'
+        'Disconnect-DbaInstance',
+        'Set-DbaDefaultPath'
     )
 
     # Cmdlets to export from this module
