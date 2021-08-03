@@ -1,10 +1,12 @@
 function Set-DbaDefaultPath {
     <#
     .SYNOPSIS
-        Sets the default SQL Server paths for data, logs, error logs and backups
+        Sets the default SQL Server paths for data, logs, and backups
 
     .DESCRIPTION
-        Sets the default SQL Server paths for data, logs, error logs and backups
+        Sets the default SQL Server paths for data, logs, and backups
+
+        To change the error log location, use Set-DbaStartupParameter
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.
@@ -17,7 +19,7 @@ function Set-DbaDefaultPath {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Type
-        The type of path to modify. Options include: Data, Logs, ErrorLog, and Backups.
+        The type of path to modify. Options include: Data, Log and Backup.
 
     .PARAMETER Path
         The path on the destination SQL Server
@@ -45,12 +47,12 @@ function Set-DbaDefaultPath {
         https://dbatools.io/Set-DbaDefaultPath
 
     .EXAMPLE
-        PS C:\> Set-DbaDefaultPath -SqlInstance sql01\sharepoint -Type Data, ErrorLog -Path C:\mssql\sharepoint\data
+        PS C:\> Set-DbaDefaultPath -SqlInstance sql01\sharepoint -Type Data, Backup -Path C:\mssql\sharepoint\data
 
-        Sets the data and error log default paths on sql01\sharepoint to C:\mssql\sharepoint\data
+        Sets the data and backup default paths on sql01\sharepoint to C:\mssql\sharepoint\data
 
     .EXAMPLE
-        PS C:\> Set-DbaDefaultPath -SqlInstance sql01\sharepoint -Type Data, ErrorLog -Path C:\mssql\sharepoint\data -WhatIf
+        PS C:\> Set-DbaDefaultPath -SqlInstance sql01\sharepoint -Type Data, Log -Path C:\mssql\sharepoint\data -WhatIf
 
         Shows what what happen if the command would have run
     #>
@@ -60,7 +62,7 @@ function Set-DbaDefaultPath {
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [parameter(ValueFromPipelineByPropertyName)]
-        [ValidateSet('Data', 'Backup', 'Log', 'ErrorLog')]
+        [ValidateSet('Data', 'Backup', 'Log')]
         [string[]]$Type,
         [parameter(Mandatory, ValueFromPipelineByPropertyName)]
         [string]$Path,
@@ -98,16 +100,10 @@ function Set-DbaDefaultPath {
                 }
             }
 
-            if ($Type -contains "ErrorLog") {
-                if ($Pscmdlet.ShouldProcess($server.Name, "Changing ErrorlogPath to $Path")) {
-                    $server.ErrorlogPath = $Path
-                }
-            }
-
             if ($Pscmdlet.ShouldProcess($server.Name, "Committing changes")) {
                 try {
                     $server.Alter()
-                    if ($Type -contains "Data" -or $Type -contains "Log" -or $Type -contains "ErrorLog") {
+                    if ($Type -contains "Data" -or $Type -contains "Log") {
                         Write-Message -Level Warning -Message "You must restart the SQL Service on $instance for changes to take effect"
                     }
                     [PSCustomObject]@{
@@ -117,7 +113,6 @@ function Set-DbaDefaultPath {
                         Data         = $server.DefaultFile
                         Log          = $server.DefaultLog
                         Backup       = $server.BackupDirectory
-                        ErrorLog     = $server.ErrorlogPath
                     }
                 } catch {
                     Stop-Function -Message "Error occurred while committing changes to $instance" -ErrorRecord $_ -Target $instance -Continue
