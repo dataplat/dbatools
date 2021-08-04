@@ -1,10 +1,10 @@
-function Remove-DbaDbUdf {
+function Remove-DbaDbTable {
     <#
     .SYNOPSIS
-        Removes a database user defined function(s) from each database and SQL Server instance.
+        Removes a database table(s) from each database and SQL Server instance.
 
     .DESCRIPTION
-        Removes a database user defined function(s), with supported piping from Get-DbaDbUdf.
+        Removes a database table(s), with supported piping from Get-DbaDbTable.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.
@@ -20,25 +20,16 @@ function Remove-DbaDbUdf {
         The target database(s).
 
     .PARAMETER ExcludeDatabase
-        The database(s) to exclude - this list is auto populated from the server
+        The database(s) to exclude - this list is auto populated from the server.
 
-    .PARAMETER ExcludeSystemUdf
-        This switch removes all system objects from the UDF collection
+    .PARAMETER IncludeSystemDBs
+        If this switch is enabled, tables can be removed from system databases.
 
-    .PARAMETER Schema
-        The schema(s) to process. If unspecified, all schemas will be processed.
-
-    .PARAMETER ExcludeSchema
-        The schema(s) to exclude.
-
-    .PARAMETER Name
-        The name(s) of the user defined functions to process. If unspecified, all user defined functions will be processed.
-
-    .PARAMETER ExcludeName
-        The name(s) of the user defined functions to exclude.
+    .PARAMETER IncludeSystemDBs
+        If this switch is enabled, tables can be removed from system databases.
 
     .PARAMETER InputObject
-        Allows piping from Get-DbaDbUdf.
+        Allows piping from Get-DbaDbTable.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
@@ -53,7 +44,7 @@ function Remove-DbaDbUdf {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: Udf, Database
+        Tags: Table, Database
         Author: Mikey Bronowski (@MikeyBronowski), https://bronowski.it
 
         Website: https://dbatools.io
@@ -61,16 +52,16 @@ function Remove-DbaDbUdf {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Remove-DbaDbUdf
+        https://dbatools.io/Remove-DbaDbTable
 
     .EXAMPLE
-        PS C:\> Remove-DbaDbUdf -SqlInstance localhost, sql2016 -Database db1, db2 -Name udf1, udf2, udf3
+        PS C:\> Remove-DbaDbTable -SqlInstance localhost, sql2016 -Database db1, db2 -Table udf1, udf2, udf3
 
         Removes udf1, udf2, udf3 from db1 and db2 on the local and sql2016 SQL Server instances.
 
     .EXAMPLE
-        PS C:\> $udfs = Get-DbaDbUdf -SqlInstance localhost, sql2016 -Database db1, db2 -Name udf1, udf2, udf3
-        PS C:\> $udfs | Remove-DbaDbUdf
+        PS C:\> $udfs = Get-DbaDbTable -SqlInstance localhost, sql2016 -Database db1, db2 -Table udf1, udf2, udf3
+        PS C:\> $udfs | Remove-DbaDbTable
 
         Removes udf1, udf2, udf3 from db1 and db2 on the local and sql2016 SQL Server instances.
     #>
@@ -78,24 +69,19 @@ function Remove-DbaDbUdf {
     param (
         [Parameter(ParameterSetName = 'NonPipeline', Mandatory = $true, Position = 0)]
         [DbaInstanceParameter[]]$SqlInstance,
-        [Parameter(ParameterSetName = 'NonPipeline')]
+        #[Parameter(ParameterSetName = 'NonPipeline')]
         [PSCredential]$SqlCredential,
         [Parameter(ParameterSetName = 'NonPipeline')]
         [string[]]$Database,
         [Parameter(ParameterSetName = 'NonPipeline')]
-        [object[]]$ExcludeDatabase,
+        [string[]]$ExcludeDatabase,
         [Parameter(ParameterSetName = 'NonPipeline')]
-        [switch]$ExcludeSystemUdf,
+        [switch]$IncludeSystemDBs,
         [Parameter(ParameterSetName = 'NonPipeline')]
-        [string[]]$Schema,
+        [string[]]$Table,
         [Parameter(ParameterSetName = 'NonPipeline')]
-        [string[]]$ExcludeSchema,
-        [Parameter(ParameterSetName = 'NonPipeline')]
-        [string[]]$Name,
-        [Parameter(ParameterSetName = 'NonPipeline')]
-        [string[]]$ExcludeName,
         [parameter(ValueFromPipeline, ParameterSetName = 'Pipeline', Mandatory = $true)]
-        [Microsoft.SqlServer.Management.Smo.UserDefinedFunction[]]$InputObject,
+        [Microsoft.SqlServer.Management.Smo.Table[]]$InputObject,
         [Parameter(ParameterSetName = 'NonPipeline')][Parameter(ParameterSetName = 'Pipeline')]
         [switch]$EnableException
     )
@@ -109,24 +95,24 @@ function Remove-DbaDbUdf {
             $params = $PSBoundParameters
             $null = $params.Remove('WhatIf')
             $null = $params.Remove('Confirm')
-            $udfs = Get-DbaDbUdf @params
+            $udfs = Get-DbaDbTable @params
         } else {
             $udfs += $InputObject
         }
     }
 
     end {
-        # We have to delete in the end block to prevent "Collection was modified; enumeration operation may not execute." if directly piped from Get-DbaDbUdf.
+        # We have to delete in the end block to prevent "Collection was modified; enumeration operation may not execute." if directly piped from Get-DbaDbTable.
         foreach ($udfItem in $udfs) {
-            if ($PSCmdlet.ShouldProcess($udfItem.Parent.Parent.Name, "Removing the user defined function $($udfItem.Schema).$($udfItem.Name) in the database $($udfItem.Parent.Name) on $($udfItem.Parent.Parent.Name)")) {
+            if ($PSCmdlet.ShouldProcess($udfItem.Parent.Parent.Name, "Removing the table $($udfItem.Schema).$($udfItem.Name) in the database $($udfItem.Parent.Name) on $($udfItem.Parent.Parent.Name)")) {
                 $output = [pscustomobject]@{
                     ComputerName = $udfItem.Parent.Parent.ComputerName
                     InstanceName = $udfItem.Parent.Parent.ServiceName
                     SqlInstance  = $udfItem.Parent.Parent.DomainInstanceName
                     Database     = $udfItem.Parent.Name
-                    Udf          = "$($udfItem.Schema).$($udfItem.Name)"
-                    UdfName      = $udfItem.Name
-                    UdfSchema    = $udfItem.Schema
+                    Table          = "$($udfItem.Schema).$($udfItem.Name)"
+                    udfName      = $udfItem.Name
+                    udfSchema    = $udfItem.Schema
                     Status       = $null
                     IsRemoved    = $false
                 }
@@ -135,7 +121,7 @@ function Remove-DbaDbUdf {
                     $output.Status = "Dropped"
                     $output.IsRemoved = $true
                 } catch {
-                    Stop-Function -Message "Failed removing the user defined function $($udfItem.Schema).$($udfItem.Name) in the database $($udfItem.Parent.Name) on $($udfItem.Parent.Parent.Name)" -ErrorRecord $_
+                    Stop-Function -Message "Failed removing the table $($udfItem.Schema).$($udfItem.Name) in the database $($udfItem.Parent.Name) on $($udfItem.Parent.Parent.Name)" -ErrorRecord $_
                     $output.Status = (Get-ErrorMessage -Record $_)
                     $output.IsRemoved = $false
                 }
