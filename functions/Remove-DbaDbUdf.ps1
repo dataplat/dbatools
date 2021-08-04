@@ -94,7 +94,6 @@ function Remove-DbaDbUdf {
         [string[]]$Name,
         [Parameter(ParameterSetName = 'NonPipeline')]
         [string[]]$ExcludeName,
-        [Parameter(ParameterSetName = 'NonPipeline')]
         [parameter(ValueFromPipeline, ParameterSetName = 'Pipeline', Mandatory = $true)]
         [Microsoft.SqlServer.Management.Smo.UserDefinedFunction[]]$InputObject,
         [Parameter(ParameterSetName = 'NonPipeline')][Parameter(ParameterSetName = 'Pipeline')]
