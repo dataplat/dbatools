@@ -835,7 +835,9 @@ $script:xplat = @(
     'Get-DbaOleDbProvider',
     'Get-DbaConnectedInstance',
     'Disconnect-DbaInstance',
-    'Set-DbaDefaultPath'
+    'Set-DbaDefaultPath',
+    'New-DbaDacProfile',
+    'Export-DbaDacPackage'
 )
 
 $script:noncoresmo = @(
@@ -989,8 +991,6 @@ $script:windowsonly = @(
     # 3rd party non-core DLL or sqlpackage.exe
     'Install-DbaSqlWatch',
     'Uninstall-DbaSqlWatch',
-    'New-DbaDacProfile',
-    'Export-DbaDacPackage',
     # Unknown
     'Get-DbaErrorLog'
 )
@@ -1008,7 +1008,6 @@ if (-not $script:multiFileImport) {
             }
         } else {
             $script:xplat
-
             $script:windowsonly
             $script:noncoresmo
         })
