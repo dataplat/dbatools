@@ -112,8 +112,11 @@ function Get-DbaDbUdf {
             }
 
             foreach ($db in $databases) {
+
                 $userDefinedFunctions = $db.UserDefinedFunctions
+
                 if (!$userDefinedFunctions) {
+                    Write-Message -Message "No User Defined Functions exist in the $db database on $instance" -Target $db -Level Verbose
                     continue
                 }
                 if (Test-Bound -ParameterName ExcludeSystemUdf) {
