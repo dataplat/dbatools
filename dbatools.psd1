@@ -246,6 +246,7 @@
         'Get-DbaDbMemoryUsage',
         'Get-DbaDbMirror',
         'Get-DbaDbMirrorMonitor',
+        'Remove-DbaDbUdf',
         'Get-DbaDbObjectTrigger',
         'Get-DbaDbOrphanUser',
         'Get-DbaDbPageInfo',
