@@ -91,8 +91,6 @@ function Get-DbaDbUdf {
         [string[]]$ExcludeSchema,
         [string[]]$Name,
         [string[]]$ExcludeName,
-        [Parameter(ValueFromPipeline)]
-        [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
         [switch]$EnableException
     )
 
