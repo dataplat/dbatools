@@ -90,9 +90,14 @@ function Get-DbaInstanceInstallDate {
                 Write-Message -Level Verbose -Message "Getting Install Date for: $instance"
                 $sql = "SELECT create_date FROM sys.server_principals WHERE sid = 0x010100000000000512000000"
                 [DbaDateTime]$sqlInstallDate = $server.Query($sql, 'master', $true).create_date
-
             } else {
                 Write-Message -Level Verbose -Message "Getting Install Date for: $instance"
+                $sql = "SELECT schemadate FROM sysservers"
+                [DbaDateTime]$sqlInstallDate = $server.Query($sql, 'master', $true).create_date
+            }
+
+            if (-not $sqlInstallDate -or $sqlInstallDate -is [System.DBNull]) {
+                Write-Message -Level Verbose -Message "Trying again to get Install Date for: $instance"
                 $sql = "SELECT schemadate FROM sysservers"
                 [DbaDateTime]$sqlInstallDate = $server.Query($sql, 'master', $true).create_date
             }
