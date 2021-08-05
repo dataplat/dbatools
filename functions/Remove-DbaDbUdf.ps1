@@ -20,10 +20,10 @@ function Remove-DbaDbUdf {
         The target database(s).
 
     .PARAMETER ExcludeDatabase
-        The database(s) to exclude - this list is auto populated from the server
+        The database(s) to exclude - this list is auto populated from the server.
 
     .PARAMETER ExcludeSystemUdf
-        This switch removes all system objects from the UDF collection
+        This switch removes all system objects from the UDF collection.
 
     .PARAMETER Schema
         The schema(s) to process. If unspecified, all schemas will be processed.
