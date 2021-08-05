@@ -132,7 +132,7 @@ $scriptBlock = {
         Copy-Assembly -ModuleRoot $ModuleRoot -DllRoot $DllRoot -DoCopy $DoCopy -Name $name
         $assemblyPath = "$basepath$([IO.Path]::DirectorySeparatorChar)$name.dll"
 
-        if ($assemblies.FullName -notmatch "$name,".Replace("win\", "")) {
+        if (-not (($assemblies.FullName | Out-String).Contains("$name,".Replace("win\", "")))) {
             $null = try {
                 Import-Module $assemblyPath
             } catch {
