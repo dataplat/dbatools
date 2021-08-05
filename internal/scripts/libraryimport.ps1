@@ -104,6 +104,7 @@ $scriptBlock = {
     $shared = @()
     $separator = [IO.Path]::DirectorySeparatorChar
     $shared += "third-party" + $separator + "Bogus" + $separator + "Bogus"
+    $assemblies = [System.AppDomain]::CurrentDomain.GetAssemblies()
 
     foreach ($name in $shared) {
         $assemblyPath = "$script:PSModuleRoot" + $separator + "bin\libraries" + $separator + "$name.dll"
@@ -111,9 +112,6 @@ $scriptBlock = {
         $null = try {
             Import-Module $assemblyPath
         } catch {
-            #Write-Warning $assemblyPath
-            #Write-Warning "$psitem"
-            #Write-Warning "~~~~~~~~~~~~~~~~~~~`n`n"
             try {
                 [Reflection.Assembly]::LoadFrom($assemblyPath)
             } catch {
@@ -133,16 +131,16 @@ $scriptBlock = {
         }
         Copy-Assembly -ModuleRoot $ModuleRoot -DllRoot $DllRoot -DoCopy $DoCopy -Name $name
         $assemblyPath = "$basepath$([IO.Path]::DirectorySeparatorChar)$name.dll"
-        $null = try {
-            Import-Module $assemblyPath
-        } catch {
-            #Write-Warning $assemblyPath
-            #Write-Warning "$psitem"
-            #Write-Warning "~~~~~~~~~~~~~~~~~~~`n`n"
-            try {
-                [Reflection.Assembly]::LoadFrom($assemblyPath)
+
+        if ($assemblies.FullName -notmatch "$name,") {
+            $null = try {
+                Import-Module $assemblyPath
             } catch {
-                Write-Error "Could not import $assemblyPath : $($_ | Out-String)"
+                try {
+                    [Reflection.Assembly]::LoadFrom($assemblyPath)
+                } catch {
+                    Write-Error "Could not import $assemblyPath : $($_ | Out-String)"
+                }
             }
         }
     }
