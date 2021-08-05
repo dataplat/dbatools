@@ -1,6 +1,6 @@
 function Get-DbaAgentJobOutputFile {
     <#
-    .Synopsis
+    .SYNOPSIS
         Returns the Output File for each step of one or many agent job with the Job Names provided dynamically if
         required for one or more SQL Instances
 
@@ -114,7 +114,7 @@ function Get-DbaAgentJobOutputFile {
                 Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
-            $jobs = $Server.JobServer.Jobs
+            $jobs = $server.JobServer.Jobs
             if ($Job) {
                 $jobs = $jobs | Where-Object Name -In $Job
             }
@@ -122,17 +122,17 @@ function Get-DbaAgentJobOutputFile {
                 $jobs = $jobs | Where-Object Name -NotIn $ExcludeJob
             }
             foreach ($j in $Jobs) {
-                foreach ($Step in $j.JobSteps) {
-                    if ($Step.OutputFileName) {
+                foreach ($step in $j.JobSteps) {
+                    if ($step.OutputFileName) {
                         [pscustomobject]@{
                             ComputerName         = $server.ComputerName
                             InstanceName         = $server.ServiceName
                             SqlInstance          = $server.DomainInstanceName
                             Job                  = $j.Name
-                            JobStep              = $Step.Name
-                            OutputFileName       = $Step.OutputFileName
-                            RemoteOutputFileName = Join-AdminUNC $Server.ComputerName $Step.OutputFileName
-                            StepId               = $Step.Id
+                            JobStep              = $step.Name
+                            OutputFileName       = $step.OutputFileName
+                            RemoteOutputFileName = Join-AdminUNC $server.ComputerName $step.OutputFileName
+                            StepId               = $step.Id
                         } | Select-DefaultView -ExcludeProperty StepId
                     } else {
                         Write-Message -Level Verbose -Message "$step for $j has no output file"
