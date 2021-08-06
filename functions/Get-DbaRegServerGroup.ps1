@@ -103,7 +103,7 @@ function Get-DbaRegServerGroup {
                     }
 
                     if ($currentgroup -match '\\') {
-                        $split = $currentgroup.Split('\\')
+                        $split = $currentgroup.Split('\')
                         $i = 0
                         $groupobject = $serverstore.DatabaseEngineServerGroup
                         do {
