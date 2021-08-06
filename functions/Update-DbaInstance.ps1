@@ -390,7 +390,9 @@ function Update-DbaInstance {
 
     process {
         if (Test-FunctionInterrupt) { return }
-
+        if ($Path) {
+            $Path = $Path.TrimEnd("/\")
+        }
         #Resolve all the provided names
         $resolvedComputers = @()
         $pathIsNetwork = $Path | Test-NetworkPath
