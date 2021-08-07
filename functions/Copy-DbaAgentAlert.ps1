@@ -99,7 +99,7 @@ function Copy-DbaAgentAlert {
             $sourceServer = Connect-DbaInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
             $serverAlerts = $sourceServer.JobServer.Alerts
         } catch {
-            Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $Source -Continue
+            Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $Source
             return
         }
         if ($Force) { $ConfirmPreference = 'none' }
