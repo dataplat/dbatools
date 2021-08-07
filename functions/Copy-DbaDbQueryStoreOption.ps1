@@ -89,9 +89,9 @@ function Copy-DbaDbQueryStoreOption {
 
     begin {
         try {
-            $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
+            $sourceServer = Connect-DbaInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
         } catch {
-            Stop-Function -Message "Can't connect to $Source." -ErrorRecord $_ -Target $Source
+            Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $Source
             return
         }
     }
@@ -117,9 +117,9 @@ function Copy-DbaDbQueryStoreOption {
             foreach ($destinationServer in $destinstance) {
 
                 try {
-                    $destServer = Connect-SqlInstance -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential
+                    $destServer = Connect-DbaInstance -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential
                 } catch {
-                    Stop-Function -Message "Error occurred while establishing connection to $destinstance" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
+                    Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
                 }
 
                 # We have to exclude all the system databases since they cannot have the Query Store feature enabled

@@ -96,10 +96,10 @@ function Copy-DbaAgentAlert {
     )
     begin {
         try {
-            $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
+            $sourceServer = Connect-DbaInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
             $serverAlerts = $sourceServer.JobServer.Alerts
         } catch {
-            Stop-Function -Message "Error occurred while establishing connection to $Source" -Category ConnectionError -ErrorRecord $_ -Target $Source
+            Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $Source -Continue
             return
         }
         if ($Force) { $ConfirmPreference = 'none' }
@@ -108,9 +108,9 @@ function Copy-DbaAgentAlert {
         if (Test-FunctionInterrupt) { return }
         foreach ($destinstance in $Destination) {
             try {
-                $destServer = Connect-SqlInstance -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential
+                $destServer = Connect-DbaInstance -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential
             } catch {
-                Stop-Function -Message "Error occurred while establishing connection to $destinstance" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
+                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
             }
             $destAlerts = $destServer.JobServer.Alerts
 

@@ -404,9 +404,9 @@ function Copy-DbaLogin {
 
             foreach ($destinstance in $Destination) {
                 try {
-                    $destServer = Connect-SqlInstance -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential -AzureUnsupported
+                    $destServer = Connect-DbaInstance -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential -AzureUnsupported
                 } catch {
-                    Stop-Function -Message "Error occurred while establishing connection to $destinstance" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
+                    Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
                 }
 
                 $destVersionMajor = $destServer.VersionMajor

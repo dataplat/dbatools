@@ -92,9 +92,9 @@ function Copy-DbaAgentProxy {
     )
     begin {
         try {
-            $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential -MinimumVersion 9
+            $sourceServer = Connect-DbaInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential -MinimumVersion 9
         } catch {
-            Stop-Function -Message "Error occurred while establishing connection to $Source" -Category ConnectionError -ErrorRecord $_ -Target $Source
+            Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $Source
             return
         }
         $serverProxyAccounts = $sourceServer.JobServer.ProxyAccounts
@@ -110,9 +110,9 @@ function Copy-DbaAgentProxy {
         if (Test-FunctionInterrupt) { return }
         foreach ($destinstance in $Destination) {
             try {
-                $destServer = Connect-SqlInstance -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential -MinimumVersion 9
+                $destServer = Connect-DbaInstance -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential -MinimumVersion 9
             } catch {
-                Stop-Function -Message "Error occurred while establishing connection to $destinstance" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
+                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
             }
 
             $destProxyAccounts = $destServer.JobServer.ProxyAccounts
