@@ -103,6 +103,8 @@ function Copy-DbaInstanceTrigger {
         $serverTriggers = $sourceServer.Triggers
 
         if ($Force) { $ConfirmPreference = 'none' }
+
+        $eol = [System.Environment]::NewLine
     }
     process {
         if (Test-FunctionInterrupt) { return }
@@ -163,8 +165,8 @@ function Copy-DbaInstanceTrigger {
                     try {
                         Write-Message -Level Verbose -Message "Copying server trigger $triggerName"
                         $sql = $trigger.Script() | Out-String
-                        $sql = $sql -replace "CREATE ", "`nGO`nCREATE "
-                        $sql = $sql -replace "ENABLE TRIGGER", "`nGO`nENABLE TRIGGER"
+                        $sql = $sql -replace "CREATE ", "${eol}GO${eol}CREATE "
+                        $sql = $sql -replace "ENABLE TRIGGER", "${eol}GO${eol}ENABLE TRIGGER"
                         Write-Message -Level Debug -Message $sql
 
                         foreach ($query in ($sql -split '\nGO\b')) {

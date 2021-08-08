@@ -60,7 +60,7 @@ function Invoke-TagCommand ([string]$Tag, [string]$Keyword) {
                     }
                 }
                 Write-Message -Level Warning -Message "replacing content into $($f.fullname)"
-                $out -join "`r`n" | Set-Content $f.fullname -Encoding UTF8
+                $out -join [System.Environment]::NewLine | Set-Content $f.fullname -Encoding UTF8
 
             } else {
                 Write-Message -Level Warning -Message "need to add tags"
@@ -74,7 +74,7 @@ function Invoke-TagCommand ([string]$Tag, [string]$Keyword) {
                     }
                 }
                 Write-Message -Level Warning -Message "replacing content into $($f.fullname)"
-                $out -join "`r`n" | Set-Content $f.fullname -Encoding UTF8
+                $out -join [System.Environment]::NewLine | Set-Content $f.fullname -Encoding UTF8
             }
         }
     }

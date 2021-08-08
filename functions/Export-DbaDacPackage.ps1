@@ -250,7 +250,7 @@ function Export-DbaDacPackage {
                             Unregister-Event -SourceIdentifier "msg"
                         }
                     }
-                    $finalResult = ($output.output -join "`r`n" | Out-String).Trim()
+                    $finalResult = ($output.output -join [System.Environment]::NewLine | Out-String).Trim()
                 } elseif ($PsCmdlet.ParameterSetName -eq 'CMD') {
                     if ($Type -eq 'Dacpac') { $action = 'Extract' }
                     elseif ($Type -eq 'Bacpac') { $action = 'Export' }
