@@ -306,7 +306,7 @@ function Export-DbaLogin {
                         Write-Message -Level Verbose -Message "Exporting $userName"
                     }
 
-                    $outsql += "${eol}USE master$eol"
+                    $outsql += "$($eol)USE master$eol"
                     # Getting some attributes
                     if ($DefaultDatabase) {
                         $defaultDb = $DefaultDatabase
@@ -413,7 +413,7 @@ function Export-DbaLogin {
 
                     foreach ($ownedJob in $ownedJobs) {
                         $ownedJob = $ownedJob -replace ("'", "''")
-                        $outsql += "${eol}USE msdb$eol"
+                        $outsql += "$($eol)USE msdb$eol"
                         $outsql += "EXEC msdb.dbo.sp_update_job @job_name=N'$ownedJob', @owner_login_name=N'$userName'"
                     }
                 }
@@ -423,7 +423,7 @@ function Export-DbaLogin {
                     # Securables: Connect SQL, View any database, Administer Bulk Operations, etc.
 
                     $perms = $server.EnumServerPermissions($userName)
-                    $outsql += "${eol}USE master$eol"
+                    $outsql += "$($eol)USE master$eol"
                     foreach ($perm in $perms) {
                         $permState = $perm.permissionstate
                         $permType = $perm.PermissionType
@@ -464,7 +464,7 @@ function Export-DbaLogin {
                         $sourceDb = $server.Databases[$dbName]
                         $dbUserName = $db.username
 
-                        $outsql += "${eol}USE [$dbName]$eol"
+                        $outsql += "$($eol)USE [$dbName]$eol"
 
                         $scriptOptions = New-DbaScriptingOption
                         $scriptVersion = $sourceDb.CompatibilityLevel

@@ -492,12 +492,12 @@ function Export-DbaUser {
                         $sql = "$useDatabase $outsql"
                     } else {
                         if ($useDatabase) {
-                            $sql = "$useDatabase${eol}GO$eol" + ($outsql -join "${eol}GO$eol")
+                            $sql = "$useDatabase$($eol)GO$eol" + ($outsql -join "$($eol)GO$eol")
                         } else {
-                            $sql = $outsql -join "${eol}GO$eol"
+                            $sql = $outsql -join "$($eol)GO$eol"
                         }
                         #add the final GO
-                        $sql += "${eol}GO"
+                        $sql += "$($eol)GO"
                     }
                 }
 

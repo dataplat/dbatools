@@ -276,7 +276,7 @@ function Remove-DbaDbOrphanUser {
                                         $dbUserName = "[" + $dbUserName + "]"
                                     }
 
-                                    $query = "$AlterSchemaOwner $eol$DropSchema ${eol}DROP USER " + $dbUserName
+                                    $query = "$AlterSchemaOwner $eol$DropSchema $($eol)DROP USER " + $dbUserName
 
                                     Write-Message -Level Debug -Message $query
                                 } else {

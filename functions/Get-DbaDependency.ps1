@@ -193,7 +193,7 @@ function Get-DbaDependency {
                     # I can't remember how to remove these options and their syntax is breaking stuff
                     $SQLscript = $SQLscript -replace "SET ANSI_NULLS ON", ""
                     $SQLscript = $SQLscript -replace "SET QUOTED_IDENTIFIER ON", ""
-                    $NewObject.Script = "$SQLscript ${eol}go"
+                    $NewObject.Script = "$SQLscript $($eol)go"
 
                     $NewObject
                 }

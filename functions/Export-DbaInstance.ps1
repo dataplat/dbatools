@@ -284,8 +284,8 @@ function Export-DbaInstance {
                 $null = Get-DbaInstanceTrigger -SqlInstance $server | Export-DbaScript -FilePath "$exportPath\servertriggers.sql" -BatchSeparator $BatchSeparator -ScriptingOptionsObject $ScriptingOption -NoPrefix:$NoPrefix
                 $triggers = Get-Content -Path "$exportPath\servertriggers.sql" -Raw -ErrorAction Ignore
                 if ($triggers) {
-                    $triggers = $triggers.ToString() -replace 'CREATE TRIGGER', "$BatchSeparator${eol}CREATE TRIGGER"
-                    $triggers = $triggers.ToString() -replace 'ENABLE TRIGGER', "$BatchSeparator${eol}ENABLE TRIGGER"
+                    $triggers = $triggers.ToString() -replace 'CREATE TRIGGER', "$BatchSeparator$($eol)CREATE TRIGGER"
+                    $triggers = $triggers.ToString() -replace 'ENABLE TRIGGER', "$BatchSeparator$($eol)ENABLE TRIGGER"
                     $null = $triggers | Set-Content -Path "$exportPath\servertriggers.sql" -Force
                     Get-ChildItem -ErrorAction Ignore -Path "$exportPath\servertriggers.sql"
                 }
