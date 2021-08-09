@@ -97,9 +97,9 @@ function Copy-DbaAgentServer {
 
     begin {
         try {
-            $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
+            $sourceServer = Connect-DbaInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
         } catch {
-            Stop-Function -Message "Error occurred while establishing connection to $Source" -Category ConnectionError -ErrorRecord $_ -Target $Source
+            Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $Source
             return
         }
         Invoke-SmoCheck -SqlInstance $sourceServer
@@ -111,9 +111,9 @@ function Copy-DbaAgentServer {
         if (Test-FunctionInterrupt) { return }
         foreach ($destinstance in $Destination) {
             try {
-                $destServer = Connect-SqlInstance -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential
+                $destServer = Connect-DbaInstance -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential
             } catch {
-                Stop-Function -Message "Error occurred while establishing connection to $destinstance" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
+                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
             }
             Invoke-SmoCheck -SqlInstance $destServer
             # All of these support whatif inside of them
@@ -131,7 +131,7 @@ function Copy-DbaAgentServer {
             $destServer.JobServer.Operators.Refresh()
 
             # extra reconnect to force refresh
-            $destServer = Connect-SqlInstance -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential
+            $destServer = Connect-DbaInstance -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential
 
             Copy-DbaAgentAlert -Source $sourceServer -Destination $destinstance -DestinationSqlCredentia $DestinationSqlCredential -Force:$force -IncludeDefaults
             $destServer.JobServer.Alerts.Refresh()

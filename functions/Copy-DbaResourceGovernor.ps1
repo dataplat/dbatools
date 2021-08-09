@@ -95,18 +95,18 @@ function Copy-DbaResourceGovernor {
     }
     process {
         try {
-            $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential -MinimumVersion 10
+            $sourceServer = Connect-DbaInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential -MinimumVersion 10
         } catch {
-            Stop-Function -Message "Error occurred while establishing connection to $Source" -Category ConnectionError -ErrorRecord $_ -Target $Source
+            Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $Source
             return
         }
         $sourceClassifierFunction = Get-DbaRgClassifierFunction -SqlInstance $sourceServer
 
         foreach ($destinstance in $Destination) {
             try {
-                $destServer = Connect-SqlInstance -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential -MinimumVersion 10
+                $destServer = Connect-DbaInstance -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential -MinimumVersion 10
             } catch {
-                Stop-Function -Message "Error occurred while establishing connection to $destinstance" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
+                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
             }
             $destClassifierFunction = Get-DbaRgClassifierFunction -SqlInstance $destServer
 
@@ -144,7 +144,7 @@ function Copy-DbaResourceGovernor {
                             $fullyQualifiedFunctionName = $sourceClassifierFunction.Schema + "." + $sourceClassifierFunction.Name
 
                             if (!$destClassifierFunction) {
-                                $destServer = Connect-SqlInstance -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential
+                                $destServer = Connect-DbaInstance -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential
                                 $destFunction = $destServer.Databases["master"].UserDefinedFunctions[$sourceClassifierFunction.Name]
                                 if ($destFunction) {
                                     Write-Message -Level Verbose -Message "Dropping the function with the source classifier function name."
@@ -185,7 +185,7 @@ function Copy-DbaResourceGovernor {
                                     $destServer.Query($sql)
 
                                     Write-Message -Level Verbose -Message "Dropping the destination classifier function."
-                                    $destServer = Connect-SqlInstance -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential
+                                    $destServer = Connect-DbaInstance -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential
                                     $destFunction = $destServer.Databases["master"].UserDefinedFunctions[$sourceClassifierFunction.Name]
                                     $destClassifierFunction.Drop()
 
@@ -260,7 +260,7 @@ function Copy-DbaResourceGovernor {
                             Write-Message -Level Verbose -Message "Force specified. Dropping $poolName."
 
                             try {
-                                $destServer = Connect-SqlInstance -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential
+                                $destServer = Connect-DbaInstance -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential
                                 $destPool = $destServer.ResourceGovernor.ResourcePools[$poolName]
                                 $workloadGroups = $destPool.WorkloadGroups
                                 foreach ($workloadGroup in $workloadGroups) {

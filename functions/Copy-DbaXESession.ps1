@@ -99,13 +99,13 @@ function Copy-DbaXESession {
     )
     begin {
         try {
-            $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential -MinimumVersion 11
+            $sourceServer = Connect-DbaInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential -MinimumVersion 11
 
             $sourceSqlConn = $sourceServer.ConnectionContext.SqlConnectionObject
             $sourceSqlStoreConnection = New-Object Microsoft.SqlServer.Management.Sdk.Sfc.SqlStoreConnection $sourceSqlConn
             $sourceStore = New-Object  Microsoft.SqlServer.Management.XEvent.XEStore $sourceSqlStoreConnection
         } catch {
-            Stop-Function -Message "Error occurred while establishing connection to $Source" -Category ConnectionError -ErrorRecord $_ -Target $Source
+            Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $Source
             return
         }
 
@@ -123,12 +123,12 @@ function Copy-DbaXESession {
         if (Test-FunctionInterrupt) { return }
         foreach ($destinstance in $Destination) {
             try {
-                $destServer = Connect-SqlInstance -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential -MinimumVersion 11
+                $destServer = Connect-DbaInstance -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential -MinimumVersion 11
                 $destSqlConn = $destServer.ConnectionContext.SqlConnectionObject
                 $destSqlStoreConnection = New-Object Microsoft.SqlServer.Management.Sdk.Sfc.SqlStoreConnection $destSqlConn
                 $destStore = New-Object  Microsoft.SqlServer.Management.XEvent.XEStore $destSqlStoreConnection
             } catch {
-                Stop-Function -Message "Error occurred while establishing connection to $destinstance" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
+                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
             }
 
             Write-Message -Level Verbose -Message "Migrating sessions."

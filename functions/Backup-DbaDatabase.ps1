@@ -267,9 +267,9 @@ function Backup-DbaDatabase {
 
         if ($SqlInstance) {
             try {
-                $Server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential -AzureUnsupported
+                $server = Connect-DbaInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential -AzureUnsupported
             } catch {
-                Stop-Function -Message "Cannot connect to $SqlInstance" -ErrorRecord $_
+                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $SqlInstance
                 return
             }
 
