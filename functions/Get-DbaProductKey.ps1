@@ -89,7 +89,7 @@ function Get-DbaProductKey {
 
                     if ($isNKey) {
                         $part1 = $productKey.Substring(1, $last)
-                        $part2 = $productKey.Substring(1, $productKey.Length-1)
+                        $part2 = $productKey.Substring(1, $productKey.Length - 1)
                         if ($last -eq 0) {
                             $productKey = "N" + $part2
                         } else {
