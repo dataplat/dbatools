@@ -131,7 +131,7 @@ function Copy-DbaAgentServer {
             $destServer.JobServer.Operators.Refresh()
 
             # extra reconnect to force refresh
-            $destServer = Connect-SqlInstance -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential
+            $destServer = Connect-DbaInstance -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential
 
             Copy-DbaAgentAlert -Source $sourceServer -Destination $destinstance -DestinationSqlCredentia $DestinationSqlCredential -Force:$force -IncludeDefaults
             $destServer.JobServer.Alerts.Refresh()
