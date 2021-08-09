@@ -65,146 +65,148 @@ function Update-DbaLocalCachedSoftware {
         [switch]$EnableException
     )
 
-    $dbatoolsData = Get-DbatoolsConfigValue -FullName "Path.DbatoolsData"
+    process {
+        $dbatoolsData = Get-DbatoolsConfigValue -FullName "Path.DbatoolsData"
 
-    # Set Branch, Url and LocalDirectory for known Software
-    if ($Software -eq 'MaintenanceSolution') {
-        if (-not $Branch) {
-            $Branch = 'master'
+        # Set Branch, Url and LocalDirectory for known Software
+        if ($Software -eq 'MaintenanceSolution') {
+            if (-not $Branch) {
+                $Branch = 'master'
+            }
+            if (-not $Url) {
+                $Url = "https://github.com/olahallengren/sql-server-maintenance-solution/archive/$Branch.zip"
+            }
+            if (-not $LocalDirectory) {
+                $LocalDirectory = Join-Path -Path $dbatoolsData -ChildPath "sql-server-maintenance-solution-$Branch"
+            }
+        } elseif ($Software -eq 'FirstResponderKit') {
+            if (-not $Branch) {
+                $Branch = 'main'
+            }
+            if (-not $Url) {
+                $Url = "https://github.com/BrentOzarULTD/SQL-Server-First-Responder-Kit/archive/$Branch.zip"
+            }
+            if (-not $LocalDirectory) {
+                $LocalDirectory = Join-Path -Path $dbatoolsData -ChildPath "SQL-Server-First-Responder-Kit-$Branch"
+            }
+        } elseif ($Software -eq 'DarlingData') {
+            if (-not $Branch) {
+                $Branch = 'master'
+            }
+            if (-not $Url) {
+                $Url = "https://github.com/erikdarlingdata/DarlingData/archive/$Branch.zip"
+            }
+            if (-not $LocalDirectory) {
+                $LocalDirectory = Join-Path -Path $dbatoolsData -ChildPath "DarlingData-$Branch"
+            }
         }
+
+        # Test if we now have Url and LocalDirectory
         if (-not $Url) {
-            $Url = "https://github.com/olahallengren/sql-server-maintenance-solution/archive/$Branch.zip"
-        }
-        if (-not $LocalDirectory) {
-            $LocalDirectory = Join-Path -Path $dbatoolsData -ChildPath "sql-server-maintenance-solution-$Branch"
-        }
-    } elseif ($Software -eq 'FirstResponderKit') {
-        if (-not $Branch) {
-            $Branch = 'main'
-        }
-        if (-not $Url) {
-            $Url = "https://github.com/BrentOzarULTD/SQL-Server-First-Responder-Kit/archive/$Branch.zip"
-        }
-        if (-not $LocalDirectory) {
-            $LocalDirectory = Join-Path -Path $dbatoolsData -ChildPath "SQL-Server-First-Responder-Kit-$Branch"
-        }
-    } elseif ($Software -eq 'DarlingData') {
-        if (-not $Branch) {
-            $Branch = 'master'
-        }
-        if (-not $Url) {
-            $Url = "https://github.com/erikdarlingdata/DarlingData/archive/$Branch.zip"
-        }
-        if (-not $LocalDirectory) {
-            $LocalDirectory = Join-Path -Path $dbatoolsData -ChildPath "DarlingData-$Branch"
-        }
-    }
-
-    # Test if we now have Url and LocalDirectory
-    if (-not $Url) {
-        Stop-Function -Message 'Url is missing.'
-        return
-    }
-    if (-not $LocalDirectory) {
-        Stop-Function -Message 'LocalDirectory is missing.'
-        return
-    }
-
-    # First part is download and extract and we use the temp directory for that and clean up afterwards.
-    # So we use a file and a folder with a random name to reduce potential conflicts,
-    # but name them with dbatools to be able to recognize them.
-    $temp = [System.IO.Path]::GetTempPath()
-    $random = Get-Random
-    $zipFile = Join-DbaPath -Path $temp -Child "dbatools_software_download_$random.zip"
-    $zipFolder = Join-DbaPath -Path $temp -Child "dbatools_software_download_$random"
-
-    if ($LocalFile) {
-        # No download, so we just extract the given file if it exists and is a zip file.
-        if (-not (Test-Path $LocalFile)) {
-            Stop-Function -Message "$LocalFile doesn't exist"
+            Stop-Function -Message 'Url is missing.'
             return
         }
-        if (-not ($LocalFile.EndsWith('.zip'))) {
-            Stop-Function -Message "$LocalFile has to be a zip file"
+        if (-not $LocalDirectory) {
+            Stop-Function -Message 'LocalDirectory is missing.'
             return
         }
-        if ($PSCmdlet.ShouldProcess($LocalFile, "Extracting archive to $zipFolder path")) {
-            try {
-                Unblock-File $LocalFile -ErrorAction SilentlyContinue
-                Expand-Archive -LiteralPath $LocalFile -DestinationPath $zipFolder -Force -ErrorAction Stop
-            } catch {
-                Stop-Function -Message "Unable to extract $LocalFile to $zipFolder." -ErrorRecord $_
+
+        # First part is download and extract and we use the temp directory for that and clean up afterwards.
+        # So we use a file and a folder with a random name to reduce potential conflicts,
+        # but name them with dbatools to be able to recognize them.
+        $temp = [System.IO.Path]::GetTempPath()
+        $random = Get-Random
+        $zipFile = Join-DbaPath -Path $temp -Child "dbatools_software_download_$random.zip"
+        $zipFolder = Join-DbaPath -Path $temp -Child "dbatools_software_download_$random"
+
+        if ($LocalFile) {
+            # No download, so we just extract the given file if it exists and is a zip file.
+            if (-not (Test-Path $LocalFile)) {
+                Stop-Function -Message "$LocalFile doesn't exist"
+                return
+            }
+            if (-not ($LocalFile.EndsWith('.zip'))) {
+                Stop-Function -Message "$LocalFile has to be a zip file"
+                return
+            }
+            if ($PSCmdlet.ShouldProcess($LocalFile, "Extracting archive to $zipFolder path")) {
+                try {
+                    Unblock-File $LocalFile -ErrorAction SilentlyContinue
+                    Expand-Archive -LiteralPath $LocalFile -DestinationPath $zipFolder -Force -ErrorAction Stop
+                } catch {
+                    Stop-Function -Message "Unable to extract $LocalFile to $zipFolder." -ErrorRecord $_
+                    return
+                }
+            }
+        } else {
+            # Download and extract.
+            if ($PSCmdlet.ShouldProcess($Url, "Downloading to $zipFile")) {
+                try {
+                    try {
+                        Invoke-TlsWebRequest -Uri $Url -OutFile $zipFile -UseBasicParsing -ErrorAction Stop
+                    } catch {
+                        # Try with default proxy and usersettings
+                        (New-Object System.Net.WebClient).Proxy.Credentials = [System.Net.CredentialCache]::DefaultNetworkCredentials
+                        Invoke-TlsWebRequest -Uri $Url -OutFile $zipFile -UseBasicParsing -ErrorAction Stop
+                    }
+                } catch {
+                    Stop-Function -Message "Unable to download $Url to $zipFile." -ErrorRecord $_
+                    return
+                }
+            }
+            if ($PSCmdlet.ShouldProcess($zipFile, "Extracting archive to $zipFolder path")) {
+                try {
+                    Unblock-File $zipFile -ErrorAction SilentlyContinue
+                    Expand-Archive -Path $zipFile -DestinationPath $zipFolder -Force -ErrorAction Stop
+                } catch {
+                    Stop-Function -Message "Unable to extract $zipFile to $zipFolder." -ErrorRecord $_
+                    Remove-Item -Path $zipFile -ErrorAction SilentlyContinue
+                    return
+                }
+            }
+        }
+
+        # As a safety net, we test whether the archive contained exactly the desired destination directory.
+        if ($PSCmdlet.ShouldProcess($zipFolder, "Testing for correct content")) {
+            $localDirectoryBase = Split-Path -Path $LocalDirectory
+            $localDirectoryName = Split-Path -Path $LocalDirectory -Leaf
+            $sourceDirectory = Get-ChildItem -Path $zipFolder -Directory
+            $sourceDirectoryName = $sourceDirectory.Name
+            if ((Get-ChildItem -Path $zipFolder).Count -gt 1 -or $sourceDirectoryName -ne $localDirectoryName) {
+                Stop-Function -Message "The archive does not contain the desired directory $localDirectoryName but $sourceDirectoryName."
+                Remove-Item -Path $zipFile -ErrorAction SilentlyContinue
+                Remove-Item -Path $zipFolder -Recurse -ErrorAction SilentlyContinue
                 return
             }
         }
-    } else {
-        # Download and extract.
-        if ($PSCmdlet.ShouldProcess($Url, "Downloading to $zipFile")) {
+
+        # Replace the target directory by the extracted directory.
+        if ($PSCmdlet.ShouldProcess($zipFolder, "Copying content to $LocalDirectory")) {
             try {
-                try {
-                    Invoke-TlsWebRequest -Uri $Url -OutFile $zipFile -UseBasicParsing -ErrorAction Stop
-                } catch {
-                    # Try with default proxy and usersettings
-                    (New-Object System.Net.WebClient).Proxy.Credentials = [System.Net.CredentialCache]::DefaultNetworkCredentials
-                    Invoke-TlsWebRequest -Uri $Url -OutFile $zipFile -UseBasicParsing -ErrorAction Stop
+                if (Test-Path -Path $LocalDirectory) {
+                    Remove-Item -Path $LocalDirectory -Recurse -ErrorAction Stop
                 }
             } catch {
-                Stop-Function -Message "Unable to download $Url to $zipFile." -ErrorRecord $_
-                return
-            }
-        }
-        if ($PSCmdlet.ShouldProcess($zipFile, "Extracting archive to $zipFolder path")) {
-            try {
-                Unblock-File $zipFile -ErrorAction SilentlyContinue
-                Expand-Archive -Path $zipFile -DestinationPath $zipFolder -Force -ErrorAction Stop
-            } catch {
-                Stop-Function -Message "Unable to extract $zipFile to $zipFolder." -ErrorRecord $_
+                Stop-Function -Message "Unable to remove the old target directory $LocalDirectory." -ErrorRecord $_
                 Remove-Item -Path $zipFile -ErrorAction SilentlyContinue
+                Remove-Item -Path $zipFolder -Recurse -ErrorAction SilentlyContinue
+                return
+            }
+            try {
+                Copy-Item -Path $sourceDirectory -Destination $localDirectoryBase -Recurse -ErrorAction Stop
+            } catch {
+                Stop-Function -Message "Unable to copy the directory $sourceDirectory to the target directory $localDirectoryBase." -ErrorRecord $_
+                Remove-Item -Path $zipFile -ErrorAction SilentlyContinue
+                Remove-Item -Path $zipFolder -Recurse -ErrorAction SilentlyContinue
                 return
             }
         }
-    }
 
-    # As a safety net, we test whether the archive contained exactly the desired destination directory.
-    if ($PSCmdlet.ShouldProcess($zipFolder, "Testing for correct content")) {
-        $localDirectoryBase = Split-Path -Path $LocalDirectory
-        $localDirectoryName = Split-Path -Path $LocalDirectory -Leaf
-        $sourceDirectory = Get-ChildItem -Path $zipFolder -Directory
-        $sourceDirectoryName = $sourceDirectory.Name
-        if ((Get-ChildItem -Path $zipFolder).Count -gt 1 -or $sourceDirectoryName -ne $localDirectoryName) {
-            Stop-Function -Message "The archive does not contain the desired directory $localDirectoryName but $sourceDirectoryName."
+        if ($PSCmdlet.ShouldProcess($zipFile, "Removing temporary file")) {
             Remove-Item -Path $zipFile -ErrorAction SilentlyContinue
-            Remove-Item -Path $zipFolder -Recurse -ErrorAction SilentlyContinue
-            return
         }
-    }
-
-    # Replace the target directory by the extracted directory.
-    if ($PSCmdlet.ShouldProcess($zipFolder, "Copying content to $LocalDirectory")) {
-        try {
-            if (Test-Path -Path $LocalDirectory) {
-                Remove-Item -Path $LocalDirectory -Recurse -ErrorAction Stop
-            }
-        } catch {
-            Stop-Function -Message "Unable to remove the old target directory $LocalDirectory." -ErrorRecord $_
-            Remove-Item -Path $zipFile -ErrorAction SilentlyContinue
+        if ($PSCmdlet.ShouldProcess($zipFolder, "Removing temporary folder")) {
             Remove-Item -Path $zipFolder -Recurse -ErrorAction SilentlyContinue
-            return
         }
-        try {
-            Copy-Item -Path $sourceDirectory -Destination $localDirectoryBase -Recurse -ErrorAction Stop
-        } catch {
-            Stop-Function -Message "Unable to copy the directory $sourceDirectory to the target directory $localDirectoryBase." -ErrorRecord $_
-            Remove-Item -Path $zipFile -ErrorAction SilentlyContinue
-            Remove-Item -Path $zipFolder -Recurse -ErrorAction SilentlyContinue
-            return
-        }
-    }
-
-    if ($PSCmdlet.ShouldProcess($zipFile, "Removing temporary file")) {
-        Remove-Item -Path $zipFile -ErrorAction SilentlyContinue
-    }
-    if ($PSCmdlet.ShouldProcess($zipFolder, "Removing temporary folder")) {
-        Remove-Item -Path $zipFolder -Recurse -ErrorAction SilentlyContinue
     }
 }
