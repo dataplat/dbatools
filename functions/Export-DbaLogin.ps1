@@ -214,11 +214,15 @@ function Export-DbaLogin {
             switch ($inputType) {
                 'Sqlcollaborative.Dbatools.Parameter.DbaInstanceParameter' {
                     Write-Message -Level Verbose -Message "Processing Server through InputObject"
-                    $server = Connect-SqlInstance -SqlInstance $input -SqlCredential $SqlCredential
+                    try {
+                        $server = Connect-DbaInstance -SqlInstance $input -SqlCredential $SqlCredential
+                    } catch {
+                        Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $input -Continue
+                    }
                 }
                 'Microsoft.SqlServer.Management.Smo.Server' {
                     Write-Message -Level Verbose -Message "Processing Server through InputObject"
-                    $server = Connect-SqlInstance -SqlInstance $input -SqlCredential $SqlCredential
+                    $server = Connect-DbaInstance -SqlInstance $input -SqlCredential $SqlCredential
                 }
                 'Microsoft.SqlServer.Management.Smo.Database' {
                     Write-Message -Level Verbose -Message "Processing Database through InputObject"
