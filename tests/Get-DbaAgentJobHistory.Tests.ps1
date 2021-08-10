@@ -16,7 +16,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 
 Describe "$CommandName Unittests" -Tag 'UnitTests' {
     InModuleScope 'dbatools' {
-        Mock Connect-SQLInstance -MockWith {
+        Mock Connect-DbaInstance -MockWith {
             # Thanks @Fred
             $obj = [PSCustomObject]@{
                 Name                 = 'BASEName'
@@ -92,7 +92,7 @@ Describe "$CommandName Unittests" -Tag 'UnitTests' {
             $obj.PSObject.TypeNames.Clear()
             $obj.PSObject.TypeNames.Add("Microsoft.SqlServer.Management.Smo.Server")
             return $obj
-        } #mock connect-SqlInstance
+        } #mock Connect-DbaInstance
         Context "Return values" {
 
             Mock Get-DbaAgentJobOutputFile -MockWith {
