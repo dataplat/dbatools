@@ -263,6 +263,9 @@ function Publish-DbaDacPackage {
             $cleaninstance = Get-ServerName $connString
             $instance = $cleaninstance.ToString().Replace('--', '\')
 
+            # Fix for #7704 to take care that $cleaninstance can be used as a filename:
+            $cleaninstance = $cleaninstance.Replace(':', '_')
+
             foreach ($dbName in $Database) {
                 #Set deployment properties when specified
                 if (Test-Bound -ParameterName ScriptOnly) {
