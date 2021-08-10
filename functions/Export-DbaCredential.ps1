@@ -98,7 +98,11 @@ function Export-DbaCredential {
         if (Test-Bound -ParameterName SqlInstance) {
             foreach ($instance in $SqlInstance) {
                 try {
-                    $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
+                    try {
+                        $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
+                    } catch {
+                        Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+                    }
 
                     $serverCreds = $server.Credentials
                     if (Test-Bound -ParameterName Identity) {

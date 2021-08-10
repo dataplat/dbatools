@@ -99,12 +99,11 @@ function Find-DbaTrigger {
         $everyserverstcount = 0
     }
     process {
-        foreach ($Instance in $SqlInstance) {
+        foreach ($instance in $SqlInstance) {
             try {
-                $server = Connect-SqlInstance -SqlInstance $Instance -SqlCredential $SqlCredential
+                $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential
             } catch {
-                Write-Message -Level Warning -Message "Failed to connect to: $Instance"
-                continue
+                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
             if ($server.versionMajor -lt 9) {

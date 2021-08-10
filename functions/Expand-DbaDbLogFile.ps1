@@ -183,7 +183,11 @@ function Expand-DbaDbLogFile {
         #Set base information
         Write-Message -Level Verbose -Message "Initialize the instance '$SqlInstance'."
 
-        $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
+        try {
+            $server = Connect-DbaInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
+        } catch {
+            Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $SqlInstance
+        }
 
         if ($ShrinkLogFile -eq $true) {
             if ($BackupDirectory.length -eq 0) {

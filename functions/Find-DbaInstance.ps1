@@ -501,7 +501,7 @@ function Find-DbaInstance {
                         $toDelete = @()
                         foreach ($dataSet in $masterList) {
                             try {
-                                $server = Connect-SqlInstance -SqlInstance $dataSet.FullSmoName -SqlCredential $SqlCredential
+                                $server = Connect-DbaInstance -SqlInstance $dataSet.FullSmoName -SqlCredential $SqlCredential
                                 $dataSet.SqlConnected = $true
                                 $dataSet.Confidence = 'High'
 

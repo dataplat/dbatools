@@ -16,7 +16,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 Describe "$CommandName Unittests" -Tag 'UnitTests' {
     InModuleScope 'dbatools' {
         Context "Return values" {
-            Mock Connect-SQLInstance -MockWith {
+            Mock Connect-DbaInstance -MockWith {
                 [object]@{
                     Name         = 'SQLServerName'
                     ComputerName = 'SQLServerName'
@@ -67,7 +67,7 @@ Describe "$CommandName Unittests" -Tag 'UnitTests' {
                         )
                     }
                 } #object
-            } #mock connect-SqlInstance
+            } #mock Connect-DbaInstance
             It "Gets only steps with output files" {
                 $Results = @()
                 $Results += Get-DbaAgentJobOutputFile -SqlInstance 'SQLServerName'
