@@ -1,7 +1,6 @@
 $commandname = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
-. "$PSScriptRoot\..\internal\functions\Connect-SqlInstance.ps1"
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
@@ -24,7 +23,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 
     Context "Command actually works" {
-        $instanceName = (Connect-SqlInstance -SqlInstance $script:instance2).ServiceName
+        $instanceName = (Connect-DbaInstance -SqlInstance $script:instance2).ServiceName
 
         $results = Get-DbaService -ComputerName $script:instance2
 
