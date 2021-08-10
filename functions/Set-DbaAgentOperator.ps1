@@ -227,15 +227,13 @@ function Set-DbaAgentOperator {
         if ($IsFailsafeOperator -and ($FailsafeNotificationMethod.Count -gt 1 -and ($FailsafeNotificationMethod.Contains('None') -or $FailsafeNotificationMethod.Contains('NotifyAll')))) {
             Stop-Function -Message "The failsafe operator notification methods 'None' and 'NotifyAll' cannot be specified in conjunction with any other notification method."
             return
-        }
-        else {
+        } else {
 
             [int]$failsafeNotificationMethodEnumerated = 0
 
             if ($FailsafeNotificationMethod.Contains('NotifyAll')) {
                 $failsafeNotificationMethodEnumerated += 7
-            }
-            else {
+            } else {
 
                 if ($FailsafeNotificationMethod.Contains('NotifyEmail')) {
                     $failsafeNotificationMethodEnumerated += 1
