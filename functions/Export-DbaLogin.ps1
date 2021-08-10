@@ -196,6 +196,7 @@ function Export-DbaLogin {
         }
         $commandName = $MyInvocation.MyCommand.Name
 
+        $eol = [System.Environment]::NewLine
     }
     process {
         if (Test-FunctionInterrupt) { return }
@@ -309,7 +310,7 @@ function Export-DbaLogin {
                         Write-Message -Level Verbose -Message "Exporting $userName"
                     }
 
-                    $outsql += "`r`nUSE master`r`n"
+                    $outsql += "$($eol)USE master$eol"
                     # Getting some attributes
                     if ($DefaultDatabase) {
                         $defaultDb = $DefaultDatabase
@@ -416,7 +417,7 @@ function Export-DbaLogin {
 
                     foreach ($ownedJob in $ownedJobs) {
                         $ownedJob = $ownedJob -replace ("'", "''")
-                        $outsql += "`r`nUSE msdb`r`n"
+                        $outsql += "$($eol)USE msdb$eol"
                         $outsql += "EXEC msdb.dbo.sp_update_job @job_name=N'$ownedJob', @owner_login_name=N'$userName'"
                     }
                 }
@@ -426,7 +427,7 @@ function Export-DbaLogin {
                     # Securables: Connect SQL, View any database, Administer Bulk Operations, etc.
 
                     $perms = $server.EnumServerPermissions($userName)
-                    $outsql += "`r`nUSE master`r`n"
+                    $outsql += "$($eol)USE master$eol"
                     foreach ($perm in $perms) {
                         $permState = $perm.permissionstate
                         $permType = $perm.PermissionType
@@ -467,7 +468,7 @@ function Export-DbaLogin {
                         $sourceDb = $server.Databases[$dbName]
                         $dbUserName = $db.username
 
-                        $outsql += "`r`nUSE [$dbName]`r`n"
+                        $outsql += "$($eol)USE [$dbName]$eol"
 
                         $scriptOptions = New-DbaScriptingOption
                         $scriptVersion = $sourceDb.CompatibilityLevel
@@ -554,13 +555,13 @@ function Export-DbaLogin {
             if ($NoPrefix) {
                 $prefix = $null
             } else {
-                $prefix = "/*`r`n`tCreated by $executingUser using dbatools $commandName for objects on $($login.Instance) at $(Get-Date -Format (Get-DbatoolsConfigValue -FullName 'Formatting.DateTime'))`r`n`tSee https://dbatools.io/$commandName for more information`r`n*/"
+                $prefix = "/*$eol`tCreated by $executingUser using dbatools $commandName for objects on $($login.Instance) at $(Get-Date -Format (Get-DbatoolsConfigValue -FullName 'Formatting.DateTime'))$eol`tSee https://dbatools.io/$commandName for more information$eol*/"
             }
 
             if ($BatchSeparator) {
-                $sql = $login.SQL -join "`r`n$BatchSeparator`r`n"
+                $sql = $login.SQL -join "$eol$BatchSeparator$eol"
                 #add the final GO
-                $sql += "`r`n$BatchSeparator"
+                $sql += "$eol$BatchSeparator"
             } else {
                 $sql = $login.SQL
             }

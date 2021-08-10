@@ -197,6 +197,9 @@ function Export-DbaUser {
             'Version140' = 'SQLServer2017'
             'Version150' = 'SQLServer2019'
         }
+
+        $eol = [System.Environment]::NewLine
+
     }
     process {
         if (Test-FunctionInterrupt) { return }
@@ -489,12 +492,12 @@ function Export-DbaUser {
                         $sql = "$useDatabase $outsql"
                     } else {
                         if ($useDatabase) {
-                            $sql = "$useDatabase`r`nGO`r`n" + ($outsql -join "`r`nGO`r`n")
+                            $sql = "$useDatabase$($eol)GO$eol" + ($outsql -join "$($eol)GO$eol")
                         } else {
-                            $sql = $outsql -join "`r`nGO`r`n"
+                            $sql = $outsql -join "$($eol)GO$eol"
                         }
                         #add the final GO
-                        $sql += "`r`nGO"
+                        $sql += "$($eol)GO"
                     }
                 }
 

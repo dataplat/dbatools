@@ -88,6 +88,8 @@ function Find-DbaView {
         $sql = "SELECT OBJECT_SCHEMA_NAME(vw.object_id) as ViewSchema, vw.name, m.definition as TextBody FROM sys.sql_modules m, sys.views vw WHERE m.object_id = vw.object_id"
         if (!$IncludeSystemObjects) { $sql = "$sql AND vw.is_ms_shipped = 0" }
         $everyservervwcount = 0
+
+        $eol = [System.Environment]::NewLine
     }
     process {
         foreach ($instance in $SqlInstance) {
@@ -139,7 +141,7 @@ function Find-DbaView {
                         if ($row.TextBody -match $Pattern) {
                             $vw = $db.Views | Where-Object { $_.Schema -eq $viewSchema -and $_.Name -eq $view }
 
-                            $viewText = $vw.TextBody.split("`n`r")
+                            $viewText = $vw.TextBody.split($eol)
                             $vwTextFound = $viewText | Select-String -Pattern $Pattern | ForEach-Object { "(LineNumber: $($_.LineNumber)) $($_.ToString().Trim())" }
 
                             [PSCustomObject]@{
@@ -170,7 +172,7 @@ function Find-DbaView {
                         Write-Message -Level Verbose -Message "Looking in View: $viewSchema.$view TextBody for $pattern"
                         if ($vw.TextBody -match $Pattern) {
 
-                            $viewText = $vw.TextBody.split("`n`r")
+                            $viewText = $vw.TextBody.split($eol)
                             $vwTextFound = $viewText | Select-String -Pattern $Pattern | ForEach-Object { "(LineNumber: $($_.LineNumber)) $($_.ToString().Trim())" }
 
                             [PSCustomObject]@{
