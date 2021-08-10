@@ -335,6 +335,10 @@ function Publish-DbaDacPackage {
                         if ($resultOutput -match "Failed" -and ($options.GenerateDeploymentReport -or $options.GenerateDeploymentScript)) {
                             Write-Message -Level Warning -Message "Seems like the attempt to publish/script may have failed. If scripts have not generated load dacpac into Visual Studio to check SQL is valid."
                         }
+
+                        # Fix for #7704 to take care that named pipe connections to the local host work:
+                        $instance = $instance.Replace('NP:.', '.')
+
                         $server = [dbainstance]$instance
                         if ($Type -eq 'Dacpac') {
                             $output = [pscustomobject]@{
