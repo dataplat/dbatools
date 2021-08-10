@@ -97,6 +97,8 @@ function Find-DbaTrigger {
         if (!$IncludeSystemObjects) { $sqlTableTriggers = "$sqlTableTriggers AND tr.is_ms_shipped = 0" }
 
         $everyserverstcount = 0
+
+        $eol = [System.Environment]::NewLine
     }
     process {
         foreach ($instance in $SqlInstance) {
@@ -118,7 +120,7 @@ function Find-DbaTrigger {
                     Write-Message -Level Debug -Message "Looking in Trigger: $trigger TextBody for $pattern"
                     if ($trigger.TextBody -match $Pattern) {
 
-                        $triggerText = $trigger.TextBody.split("`n`r")
+                        $triggerText = $trigger.TextBody.split($eol)
                         $trTextFound = $triggerText | Select-String -Pattern $Pattern | ForEach-Object { "(LineNumber: $($_.LineNumber)) $($_.ToString().Trim())" }
 
                         [PSCustomObject]@{
@@ -181,7 +183,7 @@ function Find-DbaTrigger {
                                 if ($row.TextBody -match $Pattern) {
                                     $tr = $db.Triggers | Where-Object name -eq $row.name
 
-                                    $triggerText = $tr.TextBody.split("`n`r")
+                                    $triggerText = $tr.TextBody.split($eol)
                                     $trTextFound = $triggerText | Select-String -Pattern $Pattern | ForEach-Object { "(LineNumber: $($_.LineNumber)) $($_.ToString().Trim())" }
 
                                     [PSCustomObject]@{
@@ -224,7 +226,7 @@ function Find-DbaTrigger {
                                         $tr = ($db.Views | Where-Object { $_.Name -eq $triggerParent -and $_.Schema -eq $triggerParentSchema }).Triggers | Where-Object name -eq $row.name
                                     }
 
-                                    $triggerText = $tr.TextBody.split("`n`r")
+                                    $triggerText = $tr.TextBody.split($eol)
                                     $trTextFound = $triggerText | Select-String -Pattern $Pattern | ForEach-Object { "(LineNumber: $($_.LineNumber)) $($_.ToString().Trim())" }
 
                                     [PSCustomObject]@{
@@ -258,7 +260,7 @@ function Find-DbaTrigger {
                                 Write-Message -Level Verbose -Message "Looking in trigger $trigger for textBody with pattern $pattern on database $db"
                                 if ($tr.TextBody -match $Pattern) {
 
-                                    $triggerText = $tr.TextBody.split("`n`r")
+                                    $triggerText = $tr.TextBody.split($eol)
                                     $trTextFound = $triggerText | Select-String -Pattern $Pattern | ForEach-Object { "(LineNumber: $($_.LineNumber)) $($_.ToString().Trim())" }
 
                                     [PSCustomObject]@{
@@ -293,7 +295,7 @@ function Find-DbaTrigger {
                                 Write-Message -Level Verbose -Message "Looking in trigger $trigger for textBody with pattern $pattern in object $($tr.Parent) at database $db"
                                 if ($tr.TextBody -match $Pattern) {
 
-                                    $triggerText = $tr.TextBody.split("`n`r")
+                                    $triggerText = $tr.TextBody.split($eol)
                                     $trTextFound = $triggerText | Select-String -Pattern $Pattern | ForEach-Object { "(LineNumber: $($_.LineNumber)) $($_.ToString().Trim())" }
 
                                     [PSCustomObject]@{

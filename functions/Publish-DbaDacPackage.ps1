@@ -328,7 +328,7 @@ function Publish-DbaDacPackage {
                                 Write-Message -Level Verbose -Message "Master database change script - $($result.MasterDbScript)."
                             }
                         }
-                        $resultOutput = ($output.output -join "`r`n" | Out-String).Trim()
+                        $resultOutput = ($output.output -join [System.Environment]::NewLine | Out-String).Trim()
                         if ($resultOutput -match "Failed" -and ($options.GenerateDeploymentReport -or $options.GenerateDeploymentScript)) {
                             Write-Message -Level Warning -Message "Seems like the attempt to publish/script may have failed. If scripts have not generated load dacpac into Visual Studio to check SQL is valid."
                         }

@@ -177,6 +177,8 @@ function Export-DbaInstance {
 
         $elapsed = [System.Diagnostics.Stopwatch]::StartNew()
         $started = Get-Date
+
+        $eol = [System.Environment]::NewLine
     }
     process {
         if (Test-FunctionInterrupt) { return }
@@ -282,8 +284,8 @@ function Export-DbaInstance {
                 $null = Get-DbaInstanceTrigger -SqlInstance $server | Export-DbaScript -FilePath "$exportPath\servertriggers.sql" -BatchSeparator $BatchSeparator -ScriptingOptionsObject $ScriptingOption -NoPrefix:$NoPrefix
                 $triggers = Get-Content -Path "$exportPath\servertriggers.sql" -Raw -ErrorAction Ignore
                 if ($triggers) {
-                    $triggers = $triggers.ToString() -replace 'CREATE TRIGGER', "$BatchSeparator`r`nCREATE TRIGGER"
-                    $triggers = $triggers.ToString() -replace 'ENABLE TRIGGER', "$BatchSeparator`r`nENABLE TRIGGER"
+                    $triggers = $triggers.ToString() -replace 'CREATE TRIGGER', "$BatchSeparator$($eol)CREATE TRIGGER"
+                    $triggers = $triggers.ToString() -replace 'ENABLE TRIGGER', "$BatchSeparator$($eol)ENABLE TRIGGER"
                     $null = $triggers | Set-Content -Path "$exportPath\servertriggers.sql" -Force
                     Get-ChildItem -ErrorAction Ignore -Path "$exportPath\servertriggers.sql"
                 }
@@ -336,7 +338,7 @@ function Export-DbaInstance {
 
                 foreach ($policyObject in $policyObjects) {
                     $tsqlScript = $policyObject.ScriptCreate()
-                    $scriptText += $tsqlScript.GetScript() + "`r`n$BatchSeparator`r`n`r`n"
+                    $scriptText += $tsqlScript.GetScript() + "$eol$BatchSeparator$eol$eol"
                 }
 
                 Set-Content -Path $outputFilePath -Value $scriptText

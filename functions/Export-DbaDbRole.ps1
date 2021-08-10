@@ -357,6 +357,8 @@ function Export-DbaDbRole {
     end {
         if (Test-FunctionInterrupt) { return }
 
+        $eol = [System.Environment]::NewLine
+
         $timeNow = $(Get-Date -Format (Get-DbatoolsConfigValue -FullName 'Formatting.DateTime'))
         foreach ($dbRole in $roleCollection) {
             $instanceName = $dbRole.Instance
@@ -367,20 +369,20 @@ function Export-DbaDbRole {
             if ($NoPrefix) {
                 $prefix = $null
             } else {
-                $prefix = "/*`n`tCreated by $executingUser using dbatools $commandName for objects on $instanceName.$databaseName at $timeNow`n`tSee https://dbatools.io/$commandName for more information`n*/"
+                $prefix = "/*$eol`tCreated by $executingUser using dbatools $commandName for objects on $instanceName.$databaseName at $timeNow$eol`tSee https://dbatools.io/$commandName for more information$eol*/"
             }
 
             if ($BatchSeparator) {
-                $sql = $dbRole.SQL -join "`r`n$BatchSeparator`r`n"
+                $sql = $dbRole.SQL -join "$eol$BatchSeparator$eol"
                 #add the final GO
-                $sql += "`r`n$BatchSeparator"
+                $sql += "$eol$BatchSeparator"
             } else {
                 $sql = $dbRole.SQL
             }
 
             if ($Passthru) {
                 if ($null -ne $prefix) {
-                    $sql = "$prefix`r`n$sql"
+                    $sql = "$prefix$eol$sql"
                 }
                 $sql
             } elseif ($Path -Or $FilePath) {
@@ -388,7 +390,7 @@ function Export-DbaDbRole {
                     $scriptPath = Get-ExportFilePath -Path $PSBoundParameters.Path -FilePath $PSBoundParameters.FilePath -Type sql -ServerName $outputFileName
                     Write-Message -Level Verbose -Message "New File $scriptPath"
                     if ($null -ne $prefix) {
-                        $sql = "$prefix`r`n$sql"
+                        $sql = "$prefix$eol$sql"
                     }
                     $sql | Out-File -Encoding $Encoding -LiteralPath $scriptPath -Append:$Append -NoClobber:$NoClobber
                     $outputFileArray += $outputFileName

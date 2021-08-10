@@ -168,6 +168,8 @@ function Export-DbaScript {
                 Write-Message -Level Warning -Message "Setting ScriptBatchTerminator to true and also having BatchSeperarator as an empty or null string may produce unintended results."
             }
         }
+
+        $eol = [System.Environment]::NewLine
     }
 
     process {
@@ -237,7 +239,7 @@ function Export-DbaScript {
                 if ($NoPrefix) {
                     $prefix = $null
                 } else {
-                    $prefix = "/*`n`tCreated by $executingUser using dbatools $commandName for objects on $serverName at $(Get-Date)`n`tSee https://dbatools.io/$commandName for more information`n*/"
+                    $prefix = "/*$eol`tCreated by $executingUser using dbatools $commandName for objects on $serverName at $(Get-Date)$eol`tSee https://dbatools.io/$commandName for more information$eol*/"
                 }
 
                 if ($passthru) {
@@ -265,16 +267,16 @@ function Export-DbaScript {
                             $ScriptingOptionsObject.FileName = $null
                             foreach ($scriptpart in $scripter.EnumScript($object)) {
                                 if ($scriptBatchTerminator) {
-                                    $scriptpart = "$scriptpart`r`n$BatchSeparator`r`n"
+                                    $scriptpart = "$scriptpart$eol$BatchSeparator$eol"
                                 }
                                 $scriptpart | Out-String
                             }
                         } else {
                             foreach ($scriptpart in $scripter.EnumScript($object)) {
                                 if ($BatchSeparator) {
-                                    $scriptpart = "$scriptpart`r`n$BatchSeparator`r`n"
+                                    $scriptpart = "$scriptpart$eol$BatchSeparator$eol"
                                 } else {
-                                    $scriptpart = "$scriptpart`r`n"
+                                    $scriptpart = "$scriptpart$eol"
                                 }
                                 $scriptpart | Out-String
                             }
@@ -297,9 +299,9 @@ function Export-DbaScript {
                                 $ScriptingOptionsObject.FileName = $null
                                 $scriptInFull = foreach ($scriptpart in $scripter.EnumScript($object)) {
                                     if ($BatchSeparator) {
-                                        $scriptpart = "$scriptpart`r`n$BatchSeparator`r`n"
+                                        $scriptpart = "$scriptpart$eol$BatchSeparator$eol"
                                     } else {
-                                        $scriptpart = "$scriptpart`r`n"
+                                        $scriptpart = "$scriptpart$eol"
                                     }
                                     $scriptpart
                                 }
@@ -309,9 +311,9 @@ function Export-DbaScript {
                         } else {
                             $scriptInFull = foreach ($scriptpart in $scripter.EnumScript($object)) {
                                 if ($BatchSeparator) {
-                                    $scriptpart = "$scriptpart`r`n$BatchSeparator`r`n"
+                                    $scriptpart = "$scriptpart$eol$BatchSeparator$eol"
                                 } else {
-                                    $scriptpart = "$scriptpart`r`n"
+                                    $scriptpart = "$scriptpart$eol"
                                 }
                                 $scriptpart
                             }

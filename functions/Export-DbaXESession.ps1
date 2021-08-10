@@ -178,31 +178,33 @@ function Export-DbaXESession {
         }
     }
     end {
+        $eol = [System.Environment]::NewLine
+
         foreach ($SessionObject in $SessionCollection) {
 
             if ($NoPrefix) {
                 $prefix = $null
             } else {
-                $prefix = "/*`n`tCreated by $executingUser using dbatools $commandName for objects on $($SessionObject.Instance) at $(Get-Date -Format (Get-DbatoolsConfigValue -FullName 'Formatting.DateTime'))`n`tSee https://dbatools.io/$commandName for more information`n*/"
+                $prefix = "/*$eol`tCreated by $executingUser using dbatools $commandName for objects on $($SessionObject.Instance) at $(Get-Date -Format (Get-DbatoolsConfigValue -FullName 'Formatting.DateTime'))$eol`tSee https://dbatools.io/$commandName for more information$eol*/"
             }
 
             if ($BatchSeparator) {
-                $sql = $SessionObject.SQL -join "`r`n$BatchSeparator`r`n"
+                $sql = $SessionObject.SQL -join "$eol$BatchSeparator$eol"
                 #add the final GO
-                $sql += "`r`n$BatchSeparator"
+                $sql += "$eol$BatchSeparator"
             } else {
                 $sql = $SessionObject.SQL
             }
 
             if ($Passthru) {
                 if ($null -ne $prefix) {
-                    $sql = "$prefix`r`n$sql"
+                    $sql = "$prefix$eol$sql"
                 }
                 $sql
             } elseif ($Path -Or $FilePath) {
                 if ($instanceArray -notcontains $($SessionObject.Instance)) {
                     if ($null -ne $prefix) {
-                        $sql = "$prefix`r`n$sql"
+                        $sql = "$prefix$eol$sql"
                     }
                     $scriptPath = Get-ExportFilePath -Path $PSBoundParameters.Path -FilePath $PSBoundParameters.FilePath -Type sql -ServerName $SessionObject.Instance
                     if ((Test-Path -Path $scriptPath) -and $NoClobber) {

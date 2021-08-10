@@ -102,7 +102,7 @@ function ConvertTo-DbaXESession {
                 Stop-Function -Message "Issue creating, dropping or executing sp_SQLskills_ConvertTraceToExtendedEvents in tempdb on $server." -Target $server -ErrorRecord $_
             }
 
-            $results = $results -join "`r`n"
+            $results = $results -join [System.Environment]::NewLine
 
             if ($OutputScriptOnly) {
                 $results
