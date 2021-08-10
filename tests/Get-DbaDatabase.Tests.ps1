@@ -49,7 +49,7 @@ Describe "$commandname Unit Tests" -Tags "UnitTests", Get-DBADatabase {
             Mock Stop-Function { } -ModuleName dbatools
             Mock Test-FunctionInterrupt { } -ModuleName dbatools
         }
-        Mock Connect-SQLInstance -MockWith {
+        Mock Connect-DbaInstance -MockWith {
             [object]@{
                 Name      = 'SQLServerName'
                 Databases = @(
@@ -98,7 +98,7 @@ Describe "$commandname Unit Tests" -Tags "UnitTests", Get-DBADatabase {
     }
     Context "Output" {
         It "Should have Last Read and Last Write Property when IncludeLastUsed switch is added" {
-            Mock Connect-SQLInstance -MockWith {
+            Mock Connect-DbaInstance -MockWith {
                 [object]@{
                     Name      = 'SQLServerName'
                     Databases = @(
@@ -136,9 +136,9 @@ Describe "$commandname Unit Tests" -Tags "UnitTests", Get-DBADatabase {
             (Get-DbaDatabase -SqlInstance SQLServerName -IncludeLastUsed).LastRead -ne $null | Should Be $true
             (Get-DbaDatabase -SqlInstance SQLServerName -IncludeLastUsed).LastWrite -ne $null | Should Be $true
         }
-        It "Validates that Connect-SqlInstance Mock has been called" {
+        It "Validates that Connect-DbaInstance Mock has been called" {
             $assertMockParams = @{
-                'CommandName' = 'Connect-SqlInstance'
+                'CommandName' = 'Connect-DbaInstance'
                 'Times'       = 2
                 'Exactly'     = $true
                 'Module'      = 'dbatools'

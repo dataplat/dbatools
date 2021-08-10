@@ -16,7 +16,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 Describe "$CommandName Unittests" -Tag 'UnitTests' {
     InModuleScope 'dbatools' {
         Context "Return values" {
-            Mock Connect-SQLInstance -MockWith {
+            Mock Connect-DbaInstance -MockWith {
                 [object]@{
                     Name      = 'SQLServerName'
                     NetName   = 'SQLServerName'
@@ -64,7 +64,7 @@ Describe "$CommandName Unittests" -Tag 'UnitTests' {
                         )
                     }
                 } #object
-            } #mock connect-SqlInstance
+            } #mock Connect-DbaInstance
 
             It "Honors the Job parameter" {
                 $Results = @()
