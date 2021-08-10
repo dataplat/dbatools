@@ -118,7 +118,8 @@ function Get-DbaTcpPort {
             #Default Execution of Get-DbaTcpPort
             if (-not $All -or ($All -and ($null -eq $someIps))) {
                 try {
-                    $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9 -NetworkProtocol TcpIp
+                    # Using "-NetworkProtocol TcpIp" does not work if $instance is a Server SMO - so we have to use a string to force a new connection:
+                    $server = Connect-DbaInstance -SqlInstance "TCP:$instance" -SqlCredential $SqlCredential -MinimumVersion 9
                 } catch {
                     Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
                 }
