@@ -1,13 +1,10 @@
 function Get-DbaProductKey {
     <#
     .SYNOPSIS
-        Gets SQL Server Product Keys from local or destination SQL Servers. Works with SQL Server 2008-2014.
-        More information about wrong results on newer versions: https://github.com/sqlcollaborative/dbatools/issues/6587
+        Gets SQL Server Product Keys from local or destination SQL Servers.
 
     .DESCRIPTION
         This command find the product key for all installed instances. Clustered instances are supported as well.
-
-        Uses key decoder by Jakob Bindslet (http://goo.gl/1jiwcB)
 
     .PARAMETER ComputerName
         The target SQL Server instance or instances.
@@ -72,6 +69,13 @@ function Get-DbaProductKey {
                         $binArray = ($data)[52 .. 66]
                     }
                     $charsArray = "B", "C", "D", "F", "G", "H", "J", "K", "M", "P", "Q", "R", "T", "V", "W", "X", "Y", "2", "3", "4", "6", "7", "8", "9"
+
+                    $isNKey = ([math]::truncate($binArray[14] / 0x6) -band 0x1) -ne 0
+                    if ($isNKey) {
+                        $binArray[14] = $binArray[14] -band 0xF7
+                    }
+                    $last = 0
+
                     for ($i = 24; $i -ge 0; $i--) {
                         $k = 0
                         for ($j = 14; $j -ge 0; $j--) {
@@ -80,10 +84,20 @@ function Get-DbaProductKey {
                             $k = $k % 24
                         }
                         $productKey = $charsArray[$k] + $productKey
-                        if (($i % 5 -eq 0) -and ($i -ne 0)) {
-                            $productKey = "-" + $productKey
+                        $last = $k
+                    }
+
+                    if ($isNKey) {
+                        $part1 = $productKey.Substring(1, $last)
+                        $part2 = $productKey.Substring(1, $productKey.Length - 1)
+                        if ($last -eq 0) {
+                            $productKey = "N" + $part2
+                        } else {
+                            $productKey = $part2.Insert($part2.IndexOf($part1) + $part1.Length, "N")
                         }
                     }
+
+                    $productKey = $productKey.Insert(20, "-").Insert(15, "-").Insert(10, "-").Insert(5, "-")
                 } catch {
                     $productkey = "Cannot decode product key."
                 }
@@ -191,11 +205,6 @@ function Get-DbaProductKey {
                 $servicePack = $server.ProductLevel
                 $versionMajor = $server.VersionMajor
                 Write-Message -Level Debug -Message "$instance $instanceName version is $($server.VersionMajor)"
-
-                if ($versionMajor -ge 13) {
-                    Write-Message -Level Warning -Message "Instance $($server.DomainInstanceName) is not supported because version is 2016 or newer. See documentation for details."
-                    continue
-                }
 
                 try {
                     $results = Invoke-Command2 -ComputerName $computer.ComputerName -Credential $Credential -ScriptBlock $scriptBlock -ArgumentList $server.VersionMajor, $instanceReg, $server.Edition
