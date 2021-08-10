@@ -411,7 +411,8 @@ function Invoke-Parallel {
                 }
             }
 
-            $ScriptBlock = $ExecutionContext.InvokeCommand.NewScriptBlock("param($($ParamsToAdd -Join ", "))`r`n" + $Scriptblock.ToString())
+            $eol = [System.Environment]::NewLine
+            $ScriptBlock = $ExecutionContext.InvokeCommand.NewScriptBlock("param($($ParamsToAdd -Join ", "))$eol" + $Scriptblock.ToString())
         } else {
             Throw "Must provide ScriptBlock or ScriptFile"; Break
         }

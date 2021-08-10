@@ -164,6 +164,8 @@ function Get-DbaDependency {
                 $options.WithDependencies = $true
                 $scripter.Options = $options
                 $scripter.Server = $Server
+
+                $eol = [System.Environment]::NewLine
             }
 
             process {
@@ -191,7 +193,7 @@ function Get-DbaDependency {
                     # I can't remember how to remove these options and their syntax is breaking stuff
                     $SQLscript = $SQLscript -replace "SET ANSI_NULLS ON", ""
                     $SQLscript = $SQLscript -replace "SET QUOTED_IDENTIFIER ON", ""
-                    $NewObject.Script = "$SQLscript `r`ngo"
+                    $NewObject.Script = "$SQLscript $($eol)go"
 
                     $NewObject
                 }
