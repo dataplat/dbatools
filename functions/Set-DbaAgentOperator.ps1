@@ -58,8 +58,10 @@ function Set-DbaAgentOperator {
         If this switch is enabled, this operator will be your failsafe operator and replace the one that existed before.
 
     .PARAMETER FailsafeNotificationMethod
-        Defines the notification method for the failsafe operator.  Value must be NotifyEmail, Pager or NotifyAll.
-        The default is NotifyEmail.
+        Defines the notification method(s) for the failsafe operator. The default is 'NotifyEmail'.
+        Valid parameter values are 'None', 'NotifyEmail', 'Pager', 'NetSend', 'NotifyAll'.
+        Values 'NotifyEmail', 'Pager', 'NetSend' can be specified in any combination.
+        Values 'None' and 'NotifyAll' cannot be specified in conjunction with any other value.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
@@ -114,7 +116,8 @@ function Set-DbaAgentOperator {
         [string]$WeekdayStartTime,
         [string]$WeekdayEndTime,
         [switch]$IsFailsafeOperator,
-        [string]$FailsafeNotificationMethod = "NotifyEmail",
+        [ValidateSet('None', 'NotifyEmail', 'Pager', 'NetSend', 'NotifyAll')]
+        [string[]]$FailsafeNotificationMethod = 'NotifyEmail',
         [parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.Agent.Operator[]]$InputObject,
         [switch]$EnableException
@@ -221,9 +224,30 @@ function Set-DbaAgentOperator {
             }
         }
 
-        if ($IsFailsafeOperator -and ($FailsafeNotificationMethod -notin ('NotifyEmail', 'Pager', 'NotifyAll'))) {
-            Stop-Function -Message "You must specify a notification method for the failsafe operator."
+        if ($IsFailsafeOperator -and ($FailsafeNotificationMethod.Count -gt 1 -and ($FailsafeNotificationMethod.Contains('None') -or $FailsafeNotificationMethod.Contains('NotifyAll')))) {
+            Stop-Function -Message "The failsafe operator notification methods 'None' and 'NotifyAll' cannot be specified in conjunction with any other notification method."
             return
+        } else {
+
+            [int]$failsafeNotificationMethodEnumerated = 0
+
+            if ($FailsafeNotificationMethod.Contains('NotifyAll')) {
+                $failsafeNotificationMethodEnumerated += 7
+            } else {
+
+                if ($FailsafeNotificationMethod.Contains('NotifyEmail')) {
+                    $failsafeNotificationMethodEnumerated += 1
+                }
+
+                if ($FailsafeNotificationMethod.Contains('Pager')) {
+                    $failsafeNotificationMethodEnumerated += 2
+                }
+
+                if ($FailsafeNotificationMethod.Contains('NetSend')) {
+                    $failsafeNotificationMethodEnumerated += 4
+                }
+            }
+
         }
 
         #Format times
@@ -336,7 +360,7 @@ function Set-DbaAgentOperator {
                 if ($IsFailsafeOperator) {
                     if ($Pscmdlet.ShouldProcess($server, "Updating FailSafe Operator to $operator")) {
                         $server.JobServer.AlertSystem.FailSafeOperator = $Operator
-                        $server.JobServer.AlertSystem.NotificationMethod = $FailsafeNotificationMethod
+                        $server.JobServer.AlertSystem.NotificationMethod = $failsafeNotificationMethodEnumerated
                         $server.JobServer.AlertSystem.Alter()
                     }
                 }
