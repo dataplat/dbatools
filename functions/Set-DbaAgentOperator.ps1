@@ -58,7 +58,7 @@ function Set-DbaAgentOperator {
         If this switch is enabled, this operator will be your failsafe operator and replace the one that existed before.
 
     .PARAMETER FailsafeNotificationMethod
-        Defines the notification method(s) for the failsafe operator. The default is 'NotifyEmail.
+        Defines the notification method(s) for the failsafe operator. The default is 'NotifyEmail'.
         Valid parameter values are 'None', 'NotifyEmail', 'Pager', 'NetSend', 'NotifyAll'.
         Values 'NotifyEmail', 'Pager', 'NetSend' can be specified in any combination.
         Values 'None' and 'NotifyAll' cannot be specified in conjunction with any other value.
