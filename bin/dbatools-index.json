@@ -12631,11 +12631,11 @@
                  ],
         "Synopsis":  "Returns the Output File for each step of one or many agent job with the Job Names provided dynamically if\nrequired for one or more SQL Instances",
         "Alias":  "",
-        "Author":  "Rob Sewell (https://sqldbawithabeard.com) | Simone Bizzotto (@niphold)",
+        "Author":  "Rob Sewell (https://sqldbawithabeard.com) | Simone Bizzotto (@niphlod)",
         "CommandName":  "Get-DbaAgentJobOutputFile",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Get-DbaAgentJobOutputFile",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaAgentJobOutputFile -SqlInstance SERVERNAME -Job \u0027The Agent Job\u0027\nThis will return the configured paths to the output files for each of the job step of the The Agent Job Job\r\non the SERVERNAME instance\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaAgentJobOutputFile -SqlInstance SERVERNAME\nThis will return the configured paths to the output files for each of the job step of all the Agent Jobs\r\non the SERVERNAME instance\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaAgentJobOutputFile -SqlInstance SERVERNAME,SERVERNAME2 -Job \u0027The Agent Job\u0027\nThis will return the configured paths to the output files for each of the job step of the The Agent Job Job\r\non the SERVERNAME instance and SERVERNAME2\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003e$Servers = \u0027SERVER\u0027,\u0027SERVER\\INSTANCE1\u0027\nGet-DbaAgentJobOutputFile -SqlInstance $Servers -Job \u0027The Agent Job\u0027 -OpenFile\nThis will return the configured paths to the output files for each of the job step of the The Agent Job Job\r\non the SERVER instance and the SERVER\\INSTANCE1 and open the files if they are available\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eGet-DbaAgentJobOutputFile -SqlInstance SERVERNAME  | Out-GridView\nThis will return the configured paths to the output files for each of the job step of all the Agent Jobs\r\non the SERVERNAME instance and Pipe them to Out-GridView\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003e(Get-DbaAgentJobOutputFile -SqlInstance SERVERNAME | Out-GridView -PassThru).FileName | Invoke-Item\nThis will return the configured paths to the output files for each of the job step of all the Agent Jobs\r\non the SERVERNAME instance and Pipe them to Out-GridView and enable you to choose the output\r\nfile and open it\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003eGet-DbaAgentJobOutputFile -SqlInstance SERVERNAME -Verbose\nThis will return the configured paths to the output files for each of the job step of all the Agent Jobs\r\non the SERVERNAME instance and also show the job steps without an output file",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaAgentJobOutputFile -SqlInstance SERVERNAME -Job \u0027The Agent Job\u0027\nThis will return the configured paths to the output files for each of the job step of the The Agent Job Job\r\non the SERVERNAME instance\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaAgentJobOutputFile -SqlInstance SERVERNAME\nThis will return the configured paths to the output files for each of the job step of all the Agent Jobs\r\non the SERVERNAME instance\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaAgentJobOutputFile -SqlInstance SERVERNAME,SERVERNAME2 -Job \u0027The Agent Job\u0027\nThis will return the configured paths to the output files for each of the job step of the The Agent Job Job\r\non the SERVERNAME instance and SERVERNAME2\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaAgentJobOutputFile -SqlInstance SERVERNAME  | Out-GridView\nThis will return the configured paths to the output files for each of the job step of all the Agent Jobs\r\non the SERVERNAME instance and Pipe them to Out-GridView\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eGet-DbaAgentJobOutputFile -SqlInstance SERVERNAME -Verbose\nThis will return the configured paths to the output files for each of the job step of all the Agent Jobs\r\non the SERVERNAME instance and also show the job steps without an output file",
         "Params":  [
                        [
                            "SqlInstance",
@@ -23352,9 +23352,9 @@
     },
     {
         "Name":  "Get-DbaProductKey",
-        "Description":  "This command find the product key for all installed instances. Clustered instances are supported as well.\n\nUses key decoder by Jakob Bindslet (http://goo.gl/1jiwcB)",
+        "Description":  "This command find the product key for all installed instances. Clustered instances are supported as well.",
         "Tags":  "ProductKey",
-        "Synopsis":  "Gets SQL Server Product Keys from local or destination SQL Servers. Works with SQL Server 2008-2014.\nMore information about wrong results on newer versions: https://github.com/sqlcollaborative/dbatools/issues/6587",
+        "Synopsis":  "Gets SQL Server Product Keys from local or destination SQL Servers.",
         "Alias":  "",
         "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "CommandName":  "Get-DbaProductKey",
@@ -50424,7 +50424,7 @@
                        ],
                        [
                            "PagerAddress",
-                           "The pager email address the SQL Agent will use to send alerts to the oeprator.",
+                           "The pager email address the SQL Agent will use to send alerts to the operator.",
                            "",
                            false,
                            "false",
@@ -50505,12 +50505,12 @@
                        ],
                        [
                            "FailsafeNotificationMethod",
-                           "Defines the notification method for the failsafe oeprator.  Value must be NotifyMail or NotifyPager.\r\nThe default is NotifyEmail.",
+                           "Defines the notification method(s) for the failsafe operator. The default is \u0027NotifyEmail\u0027.\r\nValid parameter values are \u0027None\u0027, \u0027NotifyEmail\u0027, \u0027Pager\u0027, \u0027NetSend\u0027, \u0027NotifyAll\u0027.\r\nValues \u0027NotifyEmail\u0027, \u0027Pager\u0027, \u0027NetSend\u0027 can be specified in any combination.\r\nValues \u0027None\u0027 and \u0027NotifyAll\u0027 cannot be specified in conjunction with any other value.",
                            "",
                            false,
                            "false",
                            "NotifyEmail",
-                           ""
+                           "None,NotifyEmail,Pager,NetSend,NotifyAll"
                        ],
                        [
                            "InputObject",
@@ -50549,7 +50549,7 @@
                            ""
                        ]
                    ],
-        "Syntax":  "Set-DbaAgentOperator [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Operator] \u003cString[]\u003e] [[-Name] \u003cString\u003e] [[-EmailAddress] \u003cString\u003e] [[-NetSendAddress] \u003cString\u003e] [[-PagerAddress] \u003cString\u003e] [[-PagerDay] \u003cString\u003e] [[-SaturdayStartTime] \u003cString\u003e] [[-SaturdayEndTime] \u003cString\u003e] [[-SundayStartTime] \u003cString\u003e] [[-SundayEndTime] \u003cString\u003e] [[-WeekdayStartTime] \u003cString\u003e] [[-WeekdayEndTime] \u003cString\u003e] [-IsFailsafeOperator] [[-FailsafeNotificationMethod] \u003cString\u003e] [[-InputObject] \u003cOperator[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Set-DbaAgentOperator [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Operator] \u003cString[]\u003e] [[-Name] \u003cString\u003e] [[-EmailAddress] \u003cString\u003e] [[-NetSendAddress] \u003cString\u003e] [[-PagerAddress] \u003cString\u003e] [[-PagerDay] \u003cString\u003e] [[-SaturdayStartTime] \u003cString\u003e] [[-SaturdayEndTime] \u003cString\u003e] [[-SundayStartTime] \u003cString\u003e] [[-SundayEndTime] \u003cString\u003e] [[-WeekdayStartTime] \u003cString\u003e] [[-WeekdayEndTime] \u003cString\u003e] [-IsFailsafeOperator] [[-FailsafeNotificationMethod] \u003cString[]\u003e] [[-InputObject] \u003cOperator[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Set-DbaAgentSchedule",
