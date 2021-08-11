@@ -704,7 +704,9 @@
         'Get-DbaConnectedInstance',
         'Disconnect-DbaInstance',
         'Set-DbaDefaultPath',
-        'Remove-DbaDbUdf'
+        'Remove-DbaDbUdf',
+        'Save-DbaCommunitySoftware',
+        'Update-DbaMaintenanceSolution'
     )
 
     # Cmdlets to export from this module
