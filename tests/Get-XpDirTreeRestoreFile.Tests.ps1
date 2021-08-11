@@ -1,29 +1,28 @@
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
-. "$PSScriptRoot\..\internal\functions\Connect-SqlInstance.ps1"
 
 Describe "$commandname Unit Tests" -Tag 'UnitTests' {
     InModuleScope dbatools {
-        #mock Connect-SqlInstance { $true }
+        #mock Connect-DbaInstance { $true }
         mock Test-DbaPath { $true }
 
         Context "Test Connection and User Rights" {
             It "Should throw on an invalid SQL Connection" {
                 #mock Test-SQLConnection {(1..12) | %{[System.Collections.ArrayList]$t += @{ConnectSuccess = $false}}}
-                Mock Connect-SqlInstance { throw }
+                Mock Connect-DbaInstance { throw }
                 { Get-XpDirTreeRestoreFile -path c:\dummy -SqlInstance bad\bad -EnableException } | Should Throw
             }
             It "Should throw if SQL Server can't see the path" {
                 Mock Test-DbaPath { $false }
-                Mock Connect-SqlInstance { [DbaInstanceParameter]"bad\bad" }
+                Mock Connect-DbaInstance { [DbaInstanceParameter]"bad\bad" }
                 { Get-XpDirTreeRestoreFile -path c:\dummy -SqlInstance bad\bad -EnableException } | Should Throw
             }
         }
         Context "Non recursive filestructure" {
             $array = (@{ subdirectory = 'full.bak'; depth = 1; file = 1 },
                 @{ subdirectory = 'full2.bak'; depth = 1; file = 1 })
-            Mock Connect-SqlInstance -MockWith {
+            Mock Connect-DbaInstance -MockWith {
                 $obj = [PSCustomObject]@{
                     Name                 = 'BASEName'
                     NetName              = 'BASENetName'
@@ -64,7 +63,7 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
                 @{ subdirectory = 'recurse'; depth = 1; file = 0 })
             $array2 = (@{ subdirectory = 'fulllow.bak'; depth = 1; file = 1 },
                 @{ subdirectory = 'full2low.bak'; depth = 1; file = 1 })
-            Mock Connect-SqlInstance -MockWith {
+            Mock Connect-DbaInstance -MockWith {
                 $obj = [PSCustomObject]@{
                     Name                 = 'BASEName'
                     NetName              = 'BASENetName'
