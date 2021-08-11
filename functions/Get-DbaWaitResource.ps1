@@ -73,9 +73,9 @@ function Get-DbaWaitResource {
         }
 
         try {
-            $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
+            $server = Connect-DbaInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
         } catch {
-            Write-Message -Level Warning -Message "Cannot connect to $SqlInstance"
+            Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
         }
 
         $null = $WaitResource -match '^(?<Type>[A-Z]*): (?<dbid>[0-9]*):*'

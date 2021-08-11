@@ -17,7 +17,7 @@ Describe "$commandname Unit Test" -Tags Unittest {
     InModuleScope dbatools {
         Context 'Validate functionality ' {
             It 'Server SqlInstance reported correctly' {
-                Mock Connect-SqlInstance {
+                Mock Connect-DbaInstance {
                     return @{
                         DomainInstanceName = 'ABC'
                     }
@@ -27,7 +27,7 @@ Describe "$commandname Unit Test" -Tags Unittest {
             }
 
             It 'Server under-report by 1 the memory installed on the host' {
-                Mock Connect-SqlInstance {
+                Mock Connect-DbaInstance {
                     return @{
                         PhysicalMemory = 1023
                     }
@@ -37,7 +37,7 @@ Describe "$commandname Unit Test" -Tags Unittest {
             }
 
             It 'Server reports correctly the memory installed on the host' {
-                Mock Connect-SqlInstance {
+                Mock Connect-DbaInstance {
                     return @{
                         PhysicalMemory = 1024
                     }
@@ -47,7 +47,7 @@ Describe "$commandname Unit Test" -Tags Unittest {
             }
 
             It 'Memory allocated to SQL Server instance reported' {
-                Mock Connect-SqlInstance {
+                Mock Connect-DbaInstance {
                     return @{
                         Configuration = @{
                             MaxServerMemory = @{

@@ -162,9 +162,9 @@ function Get-DbaMaintenanceSolutionLog {
             $computername = $instance.ComputerName
 
             try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
+                $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential
             } catch {
-                Stop-Function -Message "Can't connect to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
             if ($LogType -ne 'IndexOptimize') {
                 Write-Message -Level Warning -Message "Parsing $LogType is not supported at the moment"

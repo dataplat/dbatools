@@ -81,16 +81,12 @@ function Get-DbaSchemaChangeHistory {
 
     process {
         foreach ($instance in $SqlInstance) {
-
             try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
+                $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
             } catch {
-                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
-            if ($Server.Version.Major -le 8) {
-                Stop-Function -Message "This command doesn't support SQL Server 2000, sorry about that"
-                return
-            }
+
             $TraceFileQuery = "select path from sys.traces where is_default = 1"
 
             $TraceFile = $server.Query($TraceFileQuery) | Select-Object Path
