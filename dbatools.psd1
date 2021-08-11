@@ -703,7 +703,8 @@
         'Get-DbaOleDbProvider',
         'Get-DbaConnectedInstance',
         'Disconnect-DbaInstance',
-        'Set-DbaDefaultPath'
+        'Set-DbaDefaultPath',
+        'Remove-DbaDbUdf'
     )
 
     # Cmdlets to export from this module
