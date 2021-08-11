@@ -118,9 +118,10 @@ function Get-DbaTcpPort {
             #Default Execution of Get-DbaTcpPort
             if (-not $All -or ($All -and ($null -eq $someIps))) {
                 try {
-                    $server = Connect-SqlInstance -SqlInstance "TCP:$instance" -SqlCredential $SqlCredential -MinimumVersion 9
+                    # Using "-NetworkProtocol TcpIp" does not work if $instance is a Server SMO - so we have to use a string to force a new connection:
+                    $server = Connect-DbaInstance -SqlInstance "TCP:$instance" -SqlCredential $SqlCredential -MinimumVersion 9
                 } catch {
-                    Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target "TCP:$instance" -Continue
+                    Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
                 }
 
                 # WmiComputer can be unreliable :( Use T-SQL

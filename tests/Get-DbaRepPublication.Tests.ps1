@@ -1,7 +1,6 @@
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
-. "$PSScriptRoot\..\internal\functions\Connect-SqlInstance.ps1"
 
 Describe "$commandname Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
@@ -27,7 +26,7 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
                 }
             }
 
-            Mock Connect-SqlInstance -MockWith {
+            Mock Connect-DbaInstance -MockWith {
                 [object]@{
                     Name              = "MockServerName"
                     ComputerName      = 'MockComputerName'
