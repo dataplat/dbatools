@@ -45790,6 +45790,141 @@
         "Syntax":  "Remove-DbaDbTableData [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cString[]\u003e] [[-BatchSize] \u003cInt32\u003e] [[-Table] \u003cString\u003e] [[-DeleteSql] \u003cString\u003e] [[-LogBackupPath] \u003cString\u003e] [[-LogBackupTimeStampFormat] \u003cString\u003e] [[-AzureBaseUrl] \u003cString[]\u003e] [[-AzureCredential] \u003cString\u003e] [[-InputObject] \u003cObject[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
+        "Name":  "Remove-DbaDbUdf",
+        "Description":  "Removes a database user defined function(s), with supported piping from Get-DbaDbUdf.",
+        "Tags":  [
+                     "Udf",
+                     "Database"
+                 ],
+        "Synopsis":  "Removes a database user defined function(s) from each database and SQL Server instance.",
+        "Alias":  "",
+        "Author":  "Mikey Bronowski (@MikeyBronowski), https://bronowski.it",
+        "CommandName":  "Remove-DbaDbUdf",
+        "Availability":  "Windows, Linux, macOS",
+        "Links":  "https://dbatools.io/Remove-DbaDbUdf",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eRemove-DbaDbUdf -SqlInstance localhost, sql2016 -Database db1, db2 -Name udf1, udf2, udf3\nRemoves udf1, udf2, udf3 from db1 and db2 on the local and sql2016 SQL Server instances.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003e$udfs = Get-DbaDbUdf -SqlInstance localhost, sql2016 -Database db1, db2 -Name udf1, udf2, udf3\nPS C:\\\u003e $udfs | Remove-DbaDbUdf\nRemoves udf1, udf2, udf3 from db1 and db2 on the local and sql2016 SQL Server instances.",
+        "Params":  [
+                       [
+                           "SqlInstance",
+                           "The target SQL Server instance or instances.",
+                           "",
+                           true,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "SqlCredential",
+                           "Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).\nWindows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.\nFor MFA support, please use Connect-DbaInstance.",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "Database",
+                           "The target database(s).",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "ExcludeDatabase",
+                           "The database(s) to exclude - this list is auto populated from the server.",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "ExcludeSystemUdf",
+                           "This switch removes all system objects from the UDF collection.",
+                           "",
+                           false,
+                           "false",
+                           "False",
+                           ""
+                       ],
+                       [
+                           "Schema",
+                           "The schema(s) to process. If unspecified, all schemas will be processed.",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "ExcludeSchema",
+                           "The schema(s) to exclude.",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "Name",
+                           "The name(s) of the user defined functions to process. If unspecified, all user defined functions will be processed.",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "ExcludeName",
+                           "The name(s) of the user defined functions to exclude.",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "InputObject",
+                           "Allows piping from Get-DbaDbUdf.",
+                           "",
+                           true,
+                           "true (ByValue)",
+                           "",
+                           ""
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "",
+                           false,
+                           "false",
+                           "False",
+                           ""
+                       ],
+                       [
+                           "WhatIf",
+                           "Shows what would happen if the command were to run. No actions are actually performed.",
+                           "wi",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "Confirm",
+                           "Prompts you for confirmation before executing any changing operations within the command.\r\nThis is the default. Use -Confirm:$false to suppress these prompts.",
+                           "cf",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ]
+                   ],
+        "Syntax":  "Remove-DbaDbUdf [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-Database \u003cString[]\u003e] [-ExcludeDatabase \u003cObject[]\u003e] [-ExcludeSystemUdf] [-Schema \u003cString[]\u003e] [-ExcludeSchema \u003cString[]\u003e] [-Name \u003cString[]\u003e] [-ExcludeName \u003cString[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\nRemove-DbaDbUdf -InputObject \u003cUserDefinedFunction[]\u003e [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+    },
+    {
         "Name":  "Remove-DbaDbUser",
         "Description":  "If user is the owner of a schema with the same name and if if the schema does not have any underlying objects the schema will be\ndropped.  If user owns more than one schema, the owner of the schemas that does not have the same name as the user, will be\nchanged to \u0027dbo\u0027. If schemas have underlying objects, you must specify the -Force parameter so the user can be dropped.",
         "Tags":  [
@@ -48984,6 +49119,93 @@
                        ]
                    ],
         "Syntax":  "Revoke-DbaAgPermission [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Login] \u003cString[]\u003e] [[-AvailabilityGroup] \u003cString[]\u003e] [-Type] \u003cString[]\u003e [[-Permission] \u003cString[]\u003e] [[-InputObject] \u003cLogin[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+    },
+    {
+        "Name":  "Save-DbaCommunitySoftware",
+        "Description":  "Download and extract software from Github to update the local cached version of that software.\nThis command is run from inside of Install-Dba* and Update-Dba* commands to update the local cache if needed.",
+        "Tags":  "Community",
+        "Synopsis":  "Download and extract software from Github to update the local cached version of that software.",
+        "Alias":  "",
+        "Author":  "Andreas Jordan, @JordanOrdix",
+        "CommandName":  "Save-DbaCommunitySoftware",
+        "Availability":  "Windows, Linux, macOS",
+        "Links":  "https://dbatools.io/Save-DbaCommunitySoftware",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eSave-DbaCommunitySoftware -Software MaintenanceSolution\nUpdates the local cache of Ola Hallengren\u0027s Solution objects.",
+        "Params":  [
+                       [
+                           "Software",
+                           "Name of the software to download.\r\nOptions include:\r\n* MaintenanceSolution: SQL Server Maintenance Solution created by Ola Hallengren (https://ola.hallengren.com)\r\n* FirstResponderKit: First Responder Kit created by Brent Ozar (http://FirstResponderKit.org)\r\n* DarlingData: Erik Darling\u0027s stored procedures (https://www.erikdarlingdata.com)",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           "MaintenanceSolution,FirstResponderKit,DarlingData"
+                       ],
+                       [
+                           "Branch",
+                           "Specifies the branch. Defaults to master or main. Can only be used if Software is used.",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "LocalFile",
+                           "Specifies the path to a local file to install from instead of downloading from Github.",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "Url",
+                           "Specifies the URL to download from. Is not needed if Software is used.",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "LocalDirectory",
+                           "Specifies the local directory to extract the downloaded file to. Is not needed if Software is used.",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "",
+                           false,
+                           "false",
+                           "False",
+                           ""
+                       ],
+                       [
+                           "WhatIf",
+                           "If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.",
+                           "wi",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "Confirm",
+                           "If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.",
+                           "cf",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ]
+                   ],
+        "Syntax":  "Save-DbaCommunitySoftware [[-Software] \u003cString\u003e] [[-Branch] \u003cString\u003e] [[-LocalFile] \u003cString\u003e] [[-Url] \u003cString\u003e] [[-LocalDirectory] \u003cString\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Save-DbaDiagnosticQueryScript",
@@ -60603,6 +60825,105 @@
                        ]
                    ],
         "Syntax":  "Update-DbaInstance [[-ComputerName] \u003cDbaInstanceParameter[]\u003e] [-Credential \u003cPSCredential\u003e] [-Version \u003cString[]\u003e] [-Type \u003cString[]\u003e] [-InstanceName \u003cString\u003e] [-Path \u003cString[]\u003e] [-Restart] [-Continue] [-Throttle \u003cInt32\u003e] [-Authentication \u003cString\u003e] [-ExtractPath \u003cString\u003e] [-ArgumentList \u003cString[]\u003e] [-Download] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\nUpdate-DbaInstance [[-ComputerName] \u003cDbaInstanceParameter[]\u003e] [-Credential \u003cPSCredential\u003e] -KB \u003cString[]\u003e [-InstanceName \u003cString\u003e] [-Path \u003cString[]\u003e] [-Restart] [-Continue] [-Throttle \u003cInt32\u003e] [-Authentication \u003cString\u003e] [-ExtractPath \u003cString\u003e] [-ArgumentList \u003cString[]\u003e] [-Download] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+    },
+    {
+        "Name":  "Update-DbaMaintenanceSolution",
+        "Description":  "This script will download and update the latest version of SQL Server Maintenance Solution created by Ola Hallengren.\nOnly the stored procedure will be updated. All tables and jobs will stay untouched.\n\nSo this can only be used until a new version of the procedures need a new version of the tables or jobs.\nIn this case you have to completely reinstall the SQL Server Maintenance Solution with Install-DbaMaintenanceSolution.",
+        "Tags":  [
+                     "Community",
+                     "OlaHallengren"
+                 ],
+        "Synopsis":  "Download and Update SQL Server Maintenance Solution created by Ola Hallengren (https://ola.hallengren.com)",
+        "Alias":  "",
+        "Author":  "Andreas Jordan, @JordanOrdix",
+        "CommandName":  "Update-DbaMaintenanceSolution",
+        "Availability":  "Windows, Linux, macOS",
+        "Links":  "https://dbatools.io/Update-DbaMaintenanceSolution",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eUpdate-DbaMaintenanceSolution -SqlInstance RES14224 -Database DBA\nUpdates Ola Hallengren\u0027s Solution objects on RES14224 in the DBA database.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eInstall-DbaMaintenanceSolution -SqlInstance RES14224 -Database DBA -Solution Backup\nThis will update the stored procedure DatabaseBackup only, even if other parts of the solution are also installed.",
+        "Params":  [
+                       [
+                           "SqlInstance",
+                           "The target SQL Server instance onto which the Maintenance Solution will be updated.",
+                           "",
+                           true,
+                           "true (ByValue)",
+                           "",
+                           ""
+                       ],
+                       [
+                           "SqlCredential",
+                           "Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).\nWindows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.\nFor MFA support, please use Connect-DbaInstance.",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "Database",
+                           "The database where Ola Hallengren\u0027s solution is currently installed. Defaults to master.",
+                           "",
+                           false,
+                           "false",
+                           "master",
+                           ""
+                       ],
+                       [
+                           "Solution",
+                           "Specifies which portion of the Maintenance solution to update. Valid values are All (full solution), Backup, IntegrityCheck and IndexOptimize.\r\nDefaults to All, but only existing procedures will be replaced.",
+                           "",
+                           false,
+                           "false",
+                           "All",
+                           "All,Backup,IntegrityCheck,IndexOptimize,CommandExecute"
+                       ],
+                       [
+                           "LocalFile",
+                           "Specifies the path to a local file to install Ola\u0027s solution from. This *should* be the zip file as distributed by the maintainers.\r\nIf this parameter is not specified, the latest version will be downloaded from https://github.com/olahallengren/sql-server-maintenance-solution",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "Force",
+                           "If this switch is enabled, the Ola\u0027s solution will be downloaded from the internet even if previously cached.",
+                           "",
+                           false,
+                           "false",
+                           "False",
+                           ""
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "",
+                           false,
+                           "false",
+                           "False",
+                           ""
+                       ],
+                       [
+                           "WhatIf",
+                           "If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.",
+                           "wi",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "Confirm",
+                           "If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.",
+                           "cf",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ]
+                   ],
+        "Syntax":  "Update-DbaMaintenanceSolution [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cString\u003e] [[-Solution] \u003cString[]\u003e] [[-LocalFile] \u003cString\u003e] [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Update-DbaServiceAccount",
