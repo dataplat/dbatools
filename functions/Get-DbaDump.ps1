@@ -56,7 +56,11 @@ function Get-DbaDump {
 
     process {
         foreach ($instance in $SqlInstance) {
-            $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
+            try {
+                $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential
+            } catch {
+                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+            }
 
             if ($server.versionMajor -lt 11 -and (-not ($server.versionMajor -eq 10 -and $server.versionMinor -eq 50))) {
                 Stop-Function -Message "This function does not support versions lower than SQL Server 2008 R2 (v10.50). Skipping server '$instance'" -Continue

@@ -260,9 +260,9 @@ function Copy-DbaDbTableData {
 
             try {
                 # Ensuring that the default db connection is to the passed in $Database instead of the master db. This way callers don't have to remember to do 3 part queries.
-                $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $Database
+                $server = Connect-DbaInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $Database
             } catch {
-                Stop-Function -Message "Error occurred while establishing connection to $SqlInstance and database $Database" -Category ConnectionError -ErrorRecord $_ -Target $SqlInstance
+                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $SqlInstance
                 return
             }
 
@@ -308,12 +308,11 @@ function Copy-DbaDbTableData {
                 $Destination = $server
             }
 
-            foreach ($destinationServer in $Destination) {
+            foreach ($destinstance in $Destination) {
                 try {
-                    $destServer = Connect-SqlInstance -SqlInstance $destinationserver -SqlCredential $DestinationSqlCredential
+                    $destServer = Connect-DbaInstance -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential
                 } catch {
-                    Stop-Function -Message "Error occurred while establishing connection to $destinationServer" -Category ConnectionError -ErrorRecord $_ -Target $destinationserver
-                    return
+                    Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
                 }
 
                 if ($DestinationDatabase -notin $destServer.Databases.Name) {

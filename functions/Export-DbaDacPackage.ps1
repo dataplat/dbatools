@@ -182,9 +182,9 @@ function Export-DbaDacPackage {
 
         foreach ($instance in $SqlInstance) {
             try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
+                $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential
             } catch {
-                Stop-Function -Message "Error occurred while establishing connection to $instance"-Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
             if ($Database) {
                 $dbs = Get-DbaDatabase -SqlInstance $server -OnlyAccessible -Database $Database -ExcludeDatabase $ExcludeDatabase
@@ -250,7 +250,7 @@ function Export-DbaDacPackage {
                             Unregister-Event -SourceIdentifier "msg"
                         }
                     }
-                    $finalResult = ($output.output -join "`r`n" | Out-String).Trim()
+                    $finalResult = ($output.output -join [System.Environment]::NewLine | Out-String).Trim()
                 } elseif ($PsCmdlet.ParameterSetName -eq 'CMD') {
                     if ($Type -eq 'Dacpac') { $action = 'Extract' }
                     elseif ($Type -eq 'Bacpac') { $action = 'Export' }

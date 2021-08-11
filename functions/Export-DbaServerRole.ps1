@@ -318,6 +318,8 @@ function Export-DbaServerRole {
     end {
         if (Test-FunctionInterrupt) { return }
 
+        $eol = [System.Environment]::NewLine
+
         $timeNow = $(Get-Date -Format (Get-DbatoolsConfigValue -FullName 'Formatting.DateTime'))
         foreach ($role in $roleCollection) {
             $instanceName = $role.Instance
@@ -325,20 +327,20 @@ function Export-DbaServerRole {
             if ($NoPrefix) {
                 $prefix = $null
             } else {
-                $prefix = "/*`n`tCreated by $executingUser using dbatools $commandName for objects on $instanceName.$databaseName at $timeNow`n`tSee https://dbatools.io/$commandName for more information`n*/"
+                $prefix = "/*$eol`tCreated by $executingUser using dbatools $commandName for objects on $instanceName.$databaseName at $timeNow$eol`tSee https://dbatools.io/$commandName for more information$eol*/"
             }
 
             if ($BatchSeparator) {
-                $sql = $role.SQL -join "`r`n$BatchSeparator`r`n"
+                $sql = $role.SQL -join "$eol$BatchSeparator$eol"
                 #add the final GO
-                $sql += "`r`n$BatchSeparator"
+                $sql += "$eol$BatchSeparator"
             } else {
                 $sql = $role.SQL
             }
 
             if ($Passthru) {
                 if ($null -ne $prefix) {
-                    $sql = "$prefix`r`n$sql"
+                    $sql = "$prefix$eol$sql"
                 }
                 $sql
             } elseif ($Path -Or $FilePath) {
@@ -346,7 +348,7 @@ function Export-DbaServerRole {
                 if ($outputFileArray -notcontains $outputFileName) {
                     Write-Message -Level Verbose -Message "New File $outputFileName "
                     if ($null -ne $prefix) {
-                        $sql = "$prefix`r`n$sql"
+                        $sql = "$prefix$eol$sql"
                     }
                     $scriptPath = Get-ExportFilePath -Path $PSBoundParameters.Path -FilePath $PSBoundParameters.FilePath -Type sql -ServerName $outputFileName
                     $sql | Out-File -Encoding $Encoding -LiteralPath $scriptPath -Append:$Append -NoClobber:$NoClobber

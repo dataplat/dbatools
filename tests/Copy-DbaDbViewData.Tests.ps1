@@ -8,7 +8,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
             [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm') }
             [object[]]$knownParameters = 'AutoCreateTable', 'BatchSize', 'bulkCopyTimeOut', 'CheckConstraints', 'Database', 'Destination', 'DestinationDatabase', 'DestinationSqlCredential', 'DestinationTable', 'EnableException', 'FireTriggers', 'InputObject', 'KeepIdentity', 'KeepNulls', 'NoTableLock', 'NotifyAfter', 'Query', 'SqlCredential', 'SqlInstance', 'Truncate', 'View'
             $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        
+
             (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should -Be 0
         }
     }
@@ -129,18 +129,18 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         $result = Copy-DbaDbViewData -SqlInstance $script:instance1 -Database tempdb -View dbatoolsci_view_example -DestinationTable dbatoolsci_view_will_exist -AutoCreateTable
         $result.DestinationTable | Should -Be 'dbatoolsci_view_will_exist'
     }
-    
+
     It "Should warn if the source database doesn't exist" {
         $result = Copy-DbaDbViewData -SqlInstance $script:instance2 -Database tempdb_invalid -View dbatoolsci_view_example -DestinationTable dbatoolsci_doesntexist -WarningVariable tablewarning
         $result | Should -Be $null
-        $tablewarning | Should -match "cannot open database"
+        $tablewarning | Should -match "Failure"
     }
-    
+
     It "Copy data using a query that relies on the default source database" {
         $result = Copy-DbaDbViewData -SqlInstance $script:instance1 -Database tempdb -View dbatoolsci_view_example -Query "SELECT TOP (1) Id FROM dbo.dbatoolsci_view_example4 ORDER BY Id DESC" -DestinationTable dbatoolsci_example3 -Truncate
         $result.RowsCopied | Should -Be 1
     }
-    
+
     It "Copy data using a query that uses a 3 part query" {
         $result = Copy-DbaDbViewData -SqlInstance $script:instance1 -Database tempdb -View dbatoolsci_view_example -Query "SELECT TOP (1) Id FROM tempdb.dbo.dbatoolsci_view_example4 ORDER BY Id DESC" -DestinationTable dbatoolsci_example3 -Truncate
         $result.RowsCopied | Should -Be 1

@@ -95,22 +95,24 @@ function Copy-DbaInstanceTrigger {
 
     begin {
         try {
-            $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential -MinimumVersion 9
+            $sourceServer = Connect-DbaInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential -MinimumVersion 9
         } catch {
-            Stop-Function -Message "Error occurred while establishing connection to $Source" -Category ConnectionError -ErrorRecord $_ -Target $Source
+            Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $Source
             return
         }
         $serverTriggers = $sourceServer.Triggers
 
         if ($Force) { $ConfirmPreference = 'none' }
+
+        $eol = [System.Environment]::NewLine
     }
     process {
         if (Test-FunctionInterrupt) { return }
         foreach ($destinstance in $Destination) {
             try {
-                $destServer = Connect-SqlInstance -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential -MinimumVersion 9
+                $destServer = Connect-DbaInstance -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential -MinimumVersion 9
             } catch {
-                Stop-Function -Message "Error occurred while establishing connection to $destinstance" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
+                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
             }
             if ($destServer.VersionMajor -lt $sourceServer.VersionMajor) {
                 Stop-Function -Message "Migration from version $($destServer.VersionMajor) to version $($sourceServer.VersionMajor) is not supported."
@@ -163,8 +165,8 @@ function Copy-DbaInstanceTrigger {
                     try {
                         Write-Message -Level Verbose -Message "Copying server trigger $triggerName"
                         $sql = $trigger.Script() | Out-String
-                        $sql = $sql -replace "CREATE ", "`nGO`nCREATE "
-                        $sql = $sql -replace "ENABLE TRIGGER", "`nGO`nENABLE TRIGGER"
+                        $sql = $sql -replace "CREATE ", "$($eol)GO$($eol)CREATE "
+                        $sql = $sql -replace "ENABLE TRIGGER", "$($eol)GO$($eol)ENABLE TRIGGER"
                         Write-Message -Level Debug -Message $sql
 
                         foreach ($query in ($sql -split '\nGO\b')) {

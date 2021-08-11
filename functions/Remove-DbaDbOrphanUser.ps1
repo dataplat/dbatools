@@ -107,6 +107,8 @@ function Remove-DbaDbOrphanUser {
     )
     begin {
         if ($Force) { $ConfirmPreference = 'none' }
+
+        $eol = [System.Environment]::NewLine
     }
     process {
         foreach ($Instance in $SqlInstance) {
@@ -207,7 +209,7 @@ function Remove-DbaDbOrphanUser {
                                                     Write-Message -Level Verbose -Message "Parameter -Force was used! The schema '$($sch.Name)' have $NumberObjects underlying objects. We will change schema owner to 'dbo' and drop the user."
 
                                                     if ($Pscmdlet.ShouldProcess($db.Name, "Changing schema '$($sch.Name)' owner to 'dbo'. -Force used.")) {
-                                                        $AlterSchemaOwner += "ALTER AUTHORIZATION ON SCHEMA::[$($sch.Name)] TO [dbo]`r`n"
+                                                        $AlterSchemaOwner += "ALTER AUTHORIZATION ON SCHEMA::[$($sch.Name)] TO [dbo]$eol"
 
                                                         [pscustomobject]@{
                                                             ComputerName      = $server.ComputerName
@@ -247,7 +249,7 @@ function Remove-DbaDbOrphanUser {
                                                     Write-Message -Level Warning -Message "Schema '$($sch.Name)' does not have any underlying object. Ownership will be changed to 'dbo' so the user can be dropped. Remember to re-check permissions on this schema."
 
                                                     if ($Pscmdlet.ShouldProcess($db.Name, "Changing schema '$($sch.Name)' owner to 'dbo'.")) {
-                                                        $AlterSchemaOwner += "ALTER AUTHORIZATION ON SCHEMA::[$($sch.Name)] TO [dbo]`r`n"
+                                                        $AlterSchemaOwner += "ALTER AUTHORIZATION ON SCHEMA::[$($sch.Name)] TO [dbo]$eol"
 
                                                         [pscustomobject]@{
                                                             ComputerName      = $server.ComputerName
@@ -274,7 +276,7 @@ function Remove-DbaDbOrphanUser {
                                         $dbUserName = "[" + $dbUserName + "]"
                                     }
 
-                                    $query = "$AlterSchemaOwner `r`n$DropSchema `r`nDROP USER " + $dbUserName
+                                    $query = "$AlterSchemaOwner $eol$DropSchema $($eol)DROP USER " + $dbUserName
 
                                     Write-Message -Level Debug -Message $query
                                 } else {

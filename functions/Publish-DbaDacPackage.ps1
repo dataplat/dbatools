@@ -263,6 +263,9 @@ function Publish-DbaDacPackage {
             $cleaninstance = Get-ServerName $connString
             $instance = $cleaninstance.ToString().Replace('--', '\')
 
+            # Fix for #7704 to take care that $cleaninstance can be used as a filename:
+            $cleaninstance = $cleaninstance.Replace(':', '_')
+
             foreach ($dbName in $Database) {
                 #Set deployment properties when specified
                 if (Test-Bound -ParameterName ScriptOnly) {
@@ -328,10 +331,14 @@ function Publish-DbaDacPackage {
                                 Write-Message -Level Verbose -Message "Master database change script - $($result.MasterDbScript)."
                             }
                         }
-                        $resultOutput = ($output.output -join "`r`n" | Out-String).Trim()
+                        $resultOutput = ($output.output -join [System.Environment]::NewLine | Out-String).Trim()
                         if ($resultOutput -match "Failed" -and ($options.GenerateDeploymentReport -or $options.GenerateDeploymentScript)) {
                             Write-Message -Level Warning -Message "Seems like the attempt to publish/script may have failed. If scripts have not generated load dacpac into Visual Studio to check SQL is valid."
                         }
+
+                        # Fix for #7704 to take care that named pipe connections to the local host work:
+                        $instance = $instance.Replace('NP:.', '.')
+
                         $server = [dbainstance]$instance
                         if ($Type -eq 'Dacpac') {
                             $output = [pscustomobject]@{

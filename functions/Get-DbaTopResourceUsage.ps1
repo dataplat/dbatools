@@ -253,14 +253,10 @@ function Get-DbaTopResourceUsage {
 
     process {
         foreach ($instance in $SqlInstance) {
-
             try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 10
+                $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 10 -StatementTimeout 0
             } catch {
-                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
-            }
-            if ($server.ConnectionContext.StatementTimeout -ne 0) {
-                $server.ConnectionContext.StatementTimeout = 0
+                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
             if ($Type -in "All", "Duration") {
