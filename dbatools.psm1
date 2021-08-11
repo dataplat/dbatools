@@ -838,7 +838,9 @@ $script:xplat = @(
     'Set-DbaDefaultPath',
     'New-DbaDacProfile',
     'Export-DbaDacPackage',
-    'Remove-DbaDbUdf'
+    'Remove-DbaDbUdf',
+    'Save-DbaCommunitySoftware',
+    'Update-DbaMaintenanceSolution'
 )
 
 $script:noncoresmo = @(
