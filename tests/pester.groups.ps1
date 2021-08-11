@@ -62,7 +62,8 @@ $TestsRunGroups = @{
         'Get-DbaDbSynonym',
         'Get-DbaDbVirtualLogFile',
         'Get-DbaFile',
-        'Get-DbaHelpIndex'
+        'Get-DbaHelpIndex',
+        'Get-DbaExternalProcess'
     )
     # do not run everywhere
     "disabled"          = @()
