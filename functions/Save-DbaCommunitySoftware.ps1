@@ -1,4 +1,4 @@
-function Update-DbaLocalCachedSoftware {
+function Save-DbaCommunitySoftware {
     <#
     .SYNOPSIS
         Download and extract software from Github to update the local cached version of that software.
@@ -46,10 +46,10 @@ function Update-DbaLocalCachedSoftware {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-         https://dbatools.io/Update-DbaLocalCachedSoftware
+         https://dbatools.io/Save-DbaCommunitySoftware
 
     .EXAMPLE
-        PS C:\> Update-DbaLocalCachedSoftware -Software MaintenanceSolution
+        PS C:\> Save-DbaCommunitySoftware -Software MaintenanceSolution
 
         Updates the local cache of Ola Hallengren's Solution objects.
 

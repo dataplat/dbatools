@@ -98,7 +98,7 @@ function Update-DbaMaintenanceSolution {
         if ($Force -or $LocalFile -or -not (Test-Path -Path $localCachedCopy)) {
             if ($PSCmdlet.ShouldProcess('MaintenanceSolution', 'Update local cached copy of the software')) {
                 try {
-                    Update-DbaLocalCachedSoftware -Software MaintenanceSolution -LocalFile $LocalFile -EnableException
+                    Save-DbaCommunitySoftware -Software MaintenanceSolution -LocalFile $LocalFile -EnableException
                 } catch {
                     Stop-Function -Message 'Failed to update local cached copy' -ErrorRecord $_
                 }
