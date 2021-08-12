@@ -136,10 +136,8 @@ function Sync-DbaLoginPermission {
         }
 
         $allLogins = Get-DbaLogin -SqlInstance $sourceServer -Login $Login -ExcludeLogin $ExcludeLogin
-        $loginName = $allLogins.Name
-
-        if ($null -eq $loginName) {
-            Stop-Function -Message "No matching logins found for $($login -join ', ') on $Source"
+        if ($null -eq $allLogins) {
+            Stop-Function -Message "No matching logins found for $($Login -join ', ') on $Source"
             return
         }
 
