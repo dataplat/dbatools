@@ -130,7 +130,7 @@ function Sync-DbaLoginPermission {
                     continue
                 }
 
-                if ($PSCmdlet.ShouldProcess("Syncing Login $Login")) {
+                if ($PSCmdlet.ShouldProcess($dest, "Syncing permissions for login $loginName")) {
                     Write-ProgressHelper -Activity "Executing Sync-DbaLoginPermission to sync login permissions from $($sourceServer.Name)" -StepNumber ($stepCounter++) -Message "Updating permissions for $loginName on $($destServer.Name)" -TotalSteps $allLogins.Count
                     Update-SqlPermission -SourceServer $sourceServer -SourceLogin $sourceLogin -DestServer $destServer -DestLogin $destLogin
                 }
