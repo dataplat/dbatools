@@ -98,6 +98,8 @@ function Remove-DbaDbUser {
     begin {
         if ($Force) { $ConfirmPreference = 'none' }
 
+        $pipedUsers = @( )
+
         function Remove-DbUser {
             [CmdletBinding(SupportsShouldProcess)]
             param ([Microsoft.SqlServer.Management.Smo.User[]]$users)
@@ -196,17 +198,13 @@ function Remove-DbaDbUser {
 
     process {
         if ($InputObject) {
-            $server = Connect-SqlInstance -SqlInstance $InputObject.Parent.Parent.Name
-            $user = $server.Databases[$InputObject.Parent.Name].Users[$InputObject.Name]
-
-            Remove-DbUser $user
-
+            $pipedUsers += $InputObject
         } else {
             foreach ($instance in $SqlInstance) {
                 try {
-                    $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
+                    $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential
                 } catch {
-                    Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+                    Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
                 }
 
                 $databases = $server.Databases | Where-Object IsAccessible
@@ -226,5 +224,10 @@ function Remove-DbaDbUser {
                 }
             }
         }
+    }
+
+    end {
+        # We have to delete in the end block to prevent "Collection was modified; enumeration operation may not execute." if directly piped from Get-DbaDbUser.
+        Remove-DbUser $pipedUsers
     }
 }
