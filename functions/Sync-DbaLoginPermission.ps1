@@ -111,10 +111,7 @@ function Sync-DbaLoginPermission {
 
             $stepCounter = 0
             foreach ($sourceLogin in $allLogins) {
-
                 $loginName = $sourceLogin.Name
-
-
                 if ($currentLogin -eq $loginName) {
                     Write-Message -Level Verbose -Message "Sync does not modify the permissions of the current user. Skipping."
                     continue
@@ -123,7 +120,6 @@ function Sync-DbaLoginPermission {
                 # Here we don't need the FullComputerName, but only the machine name to compare to the host part of the login name. So ComputerName should be fine.
                 $serverName = $sourceServer.ComputerName
                 $userBase = ($loginName.Split("\")[0]).ToLowerInvariant()
-
                 if ($serverName -eq $userBase -or $loginName.StartsWith("NT ")) {
                     continue
                 }
