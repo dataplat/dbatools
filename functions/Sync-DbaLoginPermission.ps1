@@ -112,28 +112,28 @@ function Sync-DbaLoginPermission {
             $stepCounter = 0
             foreach ($sourceLogin in $allLogins) {
 
-                $username = $sourceLogin.Name
+                $loginName = $sourceLogin.Name
 
 
-                if ($currentLogin -eq $username) {
+                if ($currentLogin -eq $loginName) {
                     Write-Message -Level Verbose -Message "Sync does not modify the permissions of the current user. Skipping."
                     continue
                 }
 
                 # Here we don't need the FullComputerName, but only the machine name to compare to the host part of the login name. So ComputerName should be fine.
                 $serverName = $sourceServer.ComputerName
-                $userBase = ($username.Split("\")[0]).ToLowerInvariant()
+                $userBase = ($loginName.Split("\")[0]).ToLowerInvariant()
 
-                if ($serverName -eq $userBase -or $username.StartsWith("NT ")) {
+                if ($serverName -eq $userBase -or $loginName.StartsWith("NT ")) {
                     continue
                 }
 
-                if ($null -eq ($destLogin = $destServer.Logins.Item($username))) {
+                if ($null -eq ($destLogin = $destServer.Logins.Item($loginName))) {
                     continue
                 }
 
                 if ($PSCmdlet.ShouldProcess("Syncing Login $Login")) {
-                    Write-ProgressHelper -Activity "Executing Sync-DbaLoginPermission to sync login permissions from $($sourceServer.Name)" -StepNumber ($stepCounter++) -Message "Updating permissions for $username on $($destServer.Name)" -TotalSteps $allLogins.Count
+                    Write-ProgressHelper -Activity "Executing Sync-DbaLoginPermission to sync login permissions from $($sourceServer.Name)" -StepNumber ($stepCounter++) -Message "Updating permissions for $loginName on $($destServer.Name)" -TotalSteps $allLogins.Count
                     Update-SqlPermission -SourceServer $sourceServer -SourceLogin $sourceLogin -DestServer $destServer -DestLogin $destLogin
                 }
             }
