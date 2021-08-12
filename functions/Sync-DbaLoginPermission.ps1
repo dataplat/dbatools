@@ -99,6 +99,9 @@ function Sync-DbaLoginPermission {
             return
         }
 
+        # Get current login to not sync permissions for that login.
+        $currentLogin = $sourceServer.ConnectionContext.TrueLogin
+
         foreach ($dest in $Destination) {
             try {
                 $destServer = Connect-SqlInstance -SqlInstance $dest -SqlCredential $DestinationSqlCredential -MinimumVersion 8
@@ -110,7 +113,6 @@ function Sync-DbaLoginPermission {
             foreach ($sourceLogin in $allLogins) {
 
                 $username = $sourceLogin.Name
-                $currentLogin = $sourceServer.ConnectionContext.TrueLogin
 
                 Write-ProgressHelper -Activity "Executing Sync-DbaLoginPermission to sync login permissions from $($sourceServer.Name)" -StepNumber ($stepCounter++) -Message "Updating permissions for $username on $($destServer.Name)" -TotalSteps $allLogins.count
 
