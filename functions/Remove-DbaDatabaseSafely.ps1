@@ -147,19 +147,27 @@ function Remove-DbaDatabaseSafely {
             return
         }
 
-        $sourceserver = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $sqlCredential
+        try {
+            $sourceserver = Connect-DbaInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
+        } catch {
+            Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $SqlInstance -Continue
+        }
 
-        if (-not $destination) {
-            $destination = $SqlInstance
+        if (-not $Destination) {
+            $Destination = $SqlInstance
             $DestinationCredential = $SqlCredential
         }
 
-        if ($SqlInstance -ne $destination) {
+        if ($SqlInstance -ne $Destination) {
 
-            $destserver = Connect-SqlInstance -SqlInstance $destination -SqlCredential $DestinationCredential
+            try {
+                $destserver = Connect-DbaInstance -SqlInstance $Destination -SqlCredential $DestinationCredential
+            } catch {
+                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $Destination -Continue
+            }
 
-            $sourcenb = $instance.ComputerName
-            $destnb = $instance.ComputerName
+            $sourcenb = $sourceserver.ComputerName
+            $destnb = $destserver.ComputerName
 
             if ($BackupFolder.StartsWith("\\") -eq $false -and $sourcenb -ne $destnb) {
                 Stop-Function -Message "Backup folder must be a network share if the source and destination servers are not the same." -ErrorRecord $_ -Target $backupFolder

@@ -270,9 +270,9 @@ function New-DbaAgentOperator {
 
         foreach ($instance in $SqlInstance) {
             try {
-                $InputObject += Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
+                $InputObject += Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential
             } catch {
-                Stop-Function -Message "Failed" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
         }
 
