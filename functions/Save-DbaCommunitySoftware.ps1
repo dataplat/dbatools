@@ -193,7 +193,7 @@ function Save-DbaCommunitySoftware {
                 return
             }
             try {
-                Copy-Item -Path $sourceDirectory -Destination $localDirectoryBase -Recurse -ErrorAction Stop
+                Copy-Item -Path $sourceDirectory.FullName -Destination $localDirectoryBase -Recurse -ErrorAction Stop
             } catch {
                 Stop-Function -Message "Unable to copy the directory $sourceDirectory to the target directory $localDirectoryBase." -ErrorRecord $_
                 Remove-Item -Path $zipFile -ErrorAction SilentlyContinue

@@ -173,70 +173,17 @@ function Install-DbaMaintenanceSolution {
             Write-ProgressHelper -ExcludePercent -Message "If Ola Hallengren's scripts are found, we will drop and recreate them"
         }
 
-        $DbatoolsData = Get-DbatoolsConfigValue -FullName "Path.DbatoolsData"
-
-        $url = "https://github.com/olahallengren/sql-server-maintenance-solution/archive/master.zip"
-
-        $temp = ([System.IO.Path]::GetTempPath()).TrimEnd("\")
-        $zipFile = "$temp\ola-sql-server-maintenance-solution.zip"
-        $zipFolder = "$temp\ola-sql-server-maintenance-solution\"
-        $OLALocation = "OLA_SQL_MAINT_master"
-        $localCachedCopy = Join-Path -Path $DbatoolsData -ChildPath $OLALocation
-        if ($LocalFile) {
-            if (-not (Test-Path $LocalFile)) {
-                Stop-Function -Message "$LocalFile doesn't exist"
-                return
-            }
-            if (-not ($LocalFile.EndsWith('.zip'))) {
-                Stop-Function -Message "$LocalFile should be a zip file"
-                return
-            }
-        }
-
-        if ($Force -or -not (Test-Path -Path $localCachedCopy -PathType Container) -or $LocalFile) {
-            # Force was passed, or we don't have a local copy, or $LocalFile was passed
-            if ($zipFile | Test-Path) {
-                Remove-Item -Path $zipFile -ErrorAction SilentlyContinue
-            }
-            if ($zipFolder | Test-Path) {
-                Remove-Item -Path $zipFolder -Recurse -ErrorAction SilentlyContinue
-            }
-
-            $null = New-Item -ItemType Directory -Path $zipFolder -ErrorAction SilentlyContinue
-            if ($LocalFile) {
-                Unblock-File $LocalFile -ErrorAction SilentlyContinue
-                Expand-Archive -Path $LocalFile -DestinationPath $zipFolder -Force
-            } else {
-                Write-ProgressHelper -ExcludePercent -Message "Downloading and unzipping Ola's maintenance solution zip file."
-
+        # Do we need a new local cached version of the software?
+        $dbatoolsData = Get-DbatoolsConfigValue -FullName 'Path.DbatoolsData'
+        $localCachedCopy = Join-DbaPath -Path $dbatoolsData -Child 'sql-server-maintenance-solution-master'
+        if ($Force -or $LocalFile -or -not (Test-Path -Path $localCachedCopy)) {
+            if ($PSCmdlet.ShouldProcess('MaintenanceSolution', 'Update local cached copy of the software')) {
                 try {
-                    try {
-                        Invoke-TlsWebRequest $url -OutFile $zipFile -ErrorAction Stop -UseBasicParsing
-                    } catch {
-                        # Try with default proxy and usersettings
-                        (New-Object System.Net.WebClient).Proxy.Credentials = [System.Net.CredentialCache]::DefaultNetworkCredentials
-                        Invoke-TlsWebRequest $url -OutFile $zipFile -ErrorAction Stop -UseBasicParsing
-                    }
-
-                    # Unblock if there's a block
-                    Unblock-File $zipFile -ErrorAction SilentlyContinue
-
-                    Expand-Archive -Path $zipFile -DestinationPath $zipFolder -Force
-
-                    Remove-Item -Path $zipFile
+                    Save-DbaCommunitySoftware -Software MaintenanceSolution -LocalFile $LocalFile -EnableException
                 } catch {
-                    Stop-Function -Message "Couldn't download Ola's maintenance solution. Download and install manually from https://github.com/olahallengren/sql-server-maintenance-solution/archive/master.zip." -ErrorRecord $_
-                    return
+                    Stop-Function -Message 'Failed to update local cached copy' -ErrorRecord $_
                 }
             }
-
-            ## Copy it into local area
-            if (Test-Path -Path $localCachedCopy -PathType Container) {
-                Remove-Item -Path (Join-Path $localCachedCopy '*') -Recurse -ErrorAction SilentlyContinue
-            } else {
-                $null = New-Item -Path $localCachedCopy -ItemType Container
-            }
-            Copy-Item -Path $zipFolder -Destination $localCachedCopy -Recurse
         }
 
         function Get-DbaOlaWithParameters($listOfFiles) {
@@ -360,9 +307,6 @@ function Install-DbaMaintenanceSolution {
                 $required += 'Queue.sql'
                 $required += 'QueueDatabase.sql'
             }
-
-            $temp = ([System.IO.Path]::GetTempPath()).TrimEnd("\")
-            $zipFile = "$temp\ola.zip"
 
             $listOfFiles = Get-ChildItem -Filter "*.sql" -Path $localCachedCopy -Recurse | Select-Object -ExpandProperty FullName
 
