@@ -82,48 +82,6 @@ function Sync-DbaLoginPermission {
         [string[]]$ExcludeLogin,
         [switch]$EnableException
     )
-    begin {
-        function Sync-Only {
-            [CmdletBinding()]
-            param (
-                [Parameter(Mandatory)]
-                [ValidateNotNullOrEmpty()]
-                [object]$sourceServer,
-                [object]$destServer,
-                [array]$Logins,
-                [array]$Exclude
-            )
-
-            $stepCounter = 0
-            foreach ($sourceLogin in $allLogins) {
-
-                $username = $sourceLogin.Name
-                $currentLogin = $sourceServer.ConnectionContext.TrueLogin
-
-                Write-ProgressHelper -Activity "Executing Sync-DbaLoginPermission to sync login permissions from $($sourceServer.Name)" -StepNumber ($stepCounter++) -Message "Updating permissions for $username on $($destServer.Name)" -TotalSteps $allLogins.count
-
-                if ($currentLogin -eq $username) {
-                    Write-Message -Level Verbose -Message "Sync does not modify the permissions of the current user. Skipping."
-                    continue
-                }
-
-                # Here we don't need the FullComputerName, but only the machine name to compare to the host part of the login name. So ComputerName should be fine.
-                $serverName = $sourceServer.ComputerName
-                $userBase = ($username.Split("\")[0]).ToLowerInvariant()
-
-                if ($serverName -eq $userBase -or $username.StartsWith("NT ")) {
-                    continue
-                }
-
-                if ($null -eq ($destLogin = $destServer.Logins.Item($username))) {
-                    continue
-                }
-
-                Update-SqlPermission -SourceServer $sourceServer -SourceLogin $sourceLogin -DestServer $destServer -DestLogin $destLogin
-            }
-        }
-
-    }
 
     process {
         if (Test-FunctionInterrupt) { return }
@@ -149,7 +107,33 @@ function Sync-DbaLoginPermission {
             }
 
             if ($PSCmdlet.ShouldProcess("Syncing Logins $Login")) {
-                Sync-Only -SourceServer $sourceServer -DestServer $destServer
+                $stepCounter = 0
+                foreach ($sourceLogin in $allLogins) {
+
+                    $username = $sourceLogin.Name
+                    $currentLogin = $sourceServer.ConnectionContext.TrueLogin
+
+                    Write-ProgressHelper -Activity "Executing Sync-DbaLoginPermission to sync login permissions from $($sourceServer.Name)" -StepNumber ($stepCounter++) -Message "Updating permissions for $username on $($destServer.Name)" -TotalSteps $allLogins.count
+
+                    if ($currentLogin -eq $username) {
+                        Write-Message -Level Verbose -Message "Sync does not modify the permissions of the current user. Skipping."
+                        continue
+                    }
+
+                    # Here we don't need the FullComputerName, but only the machine name to compare to the host part of the login name. So ComputerName should be fine.
+                    $serverName = $sourceServer.ComputerName
+                    $userBase = ($username.Split("\")[0]).ToLowerInvariant()
+
+                    if ($serverName -eq $userBase -or $username.StartsWith("NT ")) {
+                        continue
+                    }
+
+                    if ($null -eq ($destLogin = $destServer.Logins.Item($username))) {
+                        continue
+                    }
+
+                    Update-SqlPermission -SourceServer $sourceServer -SourceLogin $sourceLogin -DestServer $destServer -DestLogin $destLogin
+                }
             }
         }
     }
