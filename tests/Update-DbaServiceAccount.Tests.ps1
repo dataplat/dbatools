@@ -1,7 +1,6 @@
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
-. "$PSScriptRoot\..\internal\functions\Connect-SqlInstance.ps1"
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
@@ -22,7 +21,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         $securePassword = ConvertTo-SecureString $password -AsPlainText -Force
         $newPassword = 'Myxtr33mly$ecur3P@ssw0rd'
         $newSecurePassword = ConvertTo-SecureString $newPassword -AsPlainText -Force
-        $server = Connect-SqlInstance -SqlInstance $script:instance2
+        $server = Connect-DbaInstance -SqlInstance $script:instance2
         $computerName = $server.NetName
         $instanceName = $server.ServiceName
         $winLogin = "$computerName\$login"

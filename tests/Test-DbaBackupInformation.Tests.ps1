@@ -18,7 +18,7 @@ Describe "$commandname Integration Tests" -Tag 'IntegrationTests' {
         Context "Everything as it should" {
             $BackupHistory = Import-CliXml $PSScriptRoot\..\tests\ObjectDefinitions\BackupRestore\RawInput\CleanFormatDbaInformation.xml
             $BackupHistory = $BackupHistory | Format-DbaBackupInformation
-            Mock Connect-SqlInstance -MockWith {
+            Mock Connect-DbaInstance -MockWith {
                 $obj = [PSCustomObject]@{
                     Name                 = 'BASEName'
                     NetName              = 'BASENetName'
@@ -65,7 +65,7 @@ Describe "$commandname Integration Tests" -Tag 'IntegrationTests' {
         Context "Not being able to see backups is bad" {
             $BackupHistory = Import-CliXml $PSScriptRoot\..\tests\ObjectDefinitions\BackupRestore\RawInput\CleanFormatDbaInformation.xml
             $BackupHistory = $BackupHistory | Format-DbaBackupInformation
-            Mock Connect-SqlInstance -MockWith {
+            Mock Connect-DbaInstance -MockWith {
                 $obj = [PSCustomObject]@{
                     Name                 = 'BASEName'
                     NetName              = 'BASENetName'
@@ -112,7 +112,7 @@ Describe "$commandname Integration Tests" -Tag 'IntegrationTests' {
             $BackupHistory = Import-CliXml $PSScriptRoot\..\tests\ObjectDefinitions\BackupRestore\RawInput\CleanFormatDbaInformation.xml
             $BackupHistory = $BackupHistory | Format-DbaBackupInformation
             $BackupHistory[1].OriginalDatabase = 'Error'
-            Mock Connect-SqlInstance -MockWith {
+            Mock Connect-DbaInstance -MockWith {
                 $obj = [PSCustomObject]@{
                     Name                 = 'BASEName'
                     NetName              = 'BASENetName'
@@ -159,7 +159,7 @@ Describe "$commandname Integration Tests" -Tag 'IntegrationTests' {
             $BackupHistory = Import-CliXml $PSScriptRoot\..\tests\ObjectDefinitions\BackupRestore\RawInput\CleanFormatDbaInformation.xml
             $BackupHistory = $BackupHistory | Format-DbaBackupInformation
             $BackupHistory[1].OriginalDatabase = 'Error'
-            Mock Connect-SqlInstance -MockWith {
+            Mock Connect-DbaInstance -MockWith {
                 $obj = [PSCustomObject]@{
                     Name                 = 'BASEName'
                     NetName              = 'BASENetName'
@@ -206,7 +206,7 @@ Describe "$commandname Integration Tests" -Tag 'IntegrationTests' {
             $BackupHistory = Import-CliXml $PSScriptRoot\..\tests\ObjectDefinitions\BackupRestore\RawInput\CleanFormatDbaInformation.xml
             $BackupHistory = $BackupHistory | Format-DbaBackupInformation
             $BackupHistory[1].OriginalDatabase = 'Error'
-            Mock Connect-SqlInstance -MockWith {
+            Mock Connect-DbaInstance -MockWith {
                 $obj = [PSCustomObject]@{
                     Name                 = 'BASEName'
                     NetName              = 'BASENetName'

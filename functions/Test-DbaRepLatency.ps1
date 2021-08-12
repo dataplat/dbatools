@@ -101,9 +101,9 @@ function Test-DbaRepLatency {
 
             # Connect to the publisher
             try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
+                $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
             } catch {
-                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
             $publicationNames = Get-DbaRepPublication -SqlInstance $server -Database $Database -SqlCredential $SqlCredentials -PublicationType "Transactional"
@@ -148,9 +148,9 @@ function Test-DbaRepLatency {
             # Step 1: Connect to the distributor
 
             try {
-                $distServer = Connect-SqlInstance -SqlInstance $DistributionServer -SqlCredential $SqlCredential -MinimumVersion 9
+                $distServer = Connect-DbaInstance -SqlInstance $DistributionServer -SqlCredential $SqlCredential -MinimumVersion 9
             } catch {
-                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $DistributionServer -Continue
+                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $DistributionServer -Continue
             }
 
             foreach ($publication in $publicationNames) {

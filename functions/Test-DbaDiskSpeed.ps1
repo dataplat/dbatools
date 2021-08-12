@@ -205,40 +205,40 @@ function Test-DbaDiskSpeed {
 
     process {
         foreach ($instance in $SqlInstance) {
+            try {
+                $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
+            } catch {
+                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+            }
 
             $sqlToRun = $sql
 
-            try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
+            # At runtime uncomment the relevant pieces in the SQL
+            if ($AggregateBy -eq 'File') {
 
-                # At runtime uncomment the relevant pieces in the SQL
-                if ($AggregateBy -eq 'File') {
+                $sqlToRun = $sqlToRun.replace("--DATABASE-SELECT", "").replace("--FILE-ALL", "")
 
-                    $sqlToRun = $sqlToRun.replace("--DATABASE-SELECT", "").replace("--FILE-ALL", "")
-
-                    if ($server.HostPlatform -eq "Linux") {
-                        $sqlToRun = $sqlToRun.replace("--FILE-LINUX", "")
-                    } else {
-                        $sqlToRun = $sqlToRun.replace("--FILE-WINDOWS", "")
-                    }
-
-                } elseif ($AggregateBy -in ('Database', 'Disk')) {
-
-                    $sqlToRun = $sqlToRun.replace("--DATABASE-OR-DISK", "")
-
-                    if ($server.HostPlatform -eq "Linux") {
-                        $sqlToRun = $sqlToRun.replace("--LINUX", "")
-                    } else {
-                        $sqlToRun = $sqlToRun.replace("--WINDOWS", "")
-                    }
-
-                    if ($AggregateBy -eq 'Database') {
-                        $sqlToRun = $sqlToRun.replace("--DATABASE-SELECT", "").replace("--DATABASE-GROUPBY", "")
-                    }
+                if ($server.HostPlatform -eq "Linux") {
+                    $sqlToRun = $sqlToRun.replace("--FILE-LINUX", "")
+                } else {
+                    $sqlToRun = $sqlToRun.replace("--FILE-WINDOWS", "")
                 }
-            } catch {
-                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+
+            } elseif ($AggregateBy -in ('Database', 'Disk')) {
+
+                $sqlToRun = $sqlToRun.replace("--DATABASE-OR-DISK", "")
+
+                if ($server.HostPlatform -eq "Linux") {
+                    $sqlToRun = $sqlToRun.replace("--LINUX", "")
+                } else {
+                    $sqlToRun = $sqlToRun.replace("--WINDOWS", "")
+                }
+
+                if ($AggregateBy -eq 'Database') {
+                    $sqlToRun = $sqlToRun.replace("--DATABASE-SELECT", "").replace("--DATABASE-GROUPBY", "")
+                }
             }
+
             Write-Message -Level Debug -Message "Executing $sqlToRun"
             $server.Query("$sqlToRun")
         }
