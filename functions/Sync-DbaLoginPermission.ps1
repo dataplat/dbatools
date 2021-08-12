@@ -114,7 +114,6 @@ function Sync-DbaLoginPermission {
 
                 $username = $sourceLogin.Name
 
-                Write-ProgressHelper -Activity "Executing Sync-DbaLoginPermission to sync login permissions from $($sourceServer.Name)" -StepNumber ($stepCounter++) -Message "Updating permissions for $username on $($destServer.Name)" -TotalSteps $allLogins.count
 
                 if ($currentLogin -eq $username) {
                     Write-Message -Level Verbose -Message "Sync does not modify the permissions of the current user. Skipping."
@@ -133,7 +132,8 @@ function Sync-DbaLoginPermission {
                     continue
                 }
 
-                if ($PSCmdlet.ShouldProcess("Syncing Logins $Login")) {
+                if ($PSCmdlet.ShouldProcess("Syncing Login $Login")) {
+                    Write-ProgressHelper -Activity "Executing Sync-DbaLoginPermission to sync login permissions from $($sourceServer.Name)" -StepNumber ($stepCounter++) -Message "Updating permissions for $username on $($destServer.Name)" -TotalSteps $allLogins.Count
                     Update-SqlPermission -SourceServer $sourceServer -SourceLogin $sourceLogin -DestServer $destServer -DestLogin $destLogin
                 }
             }
