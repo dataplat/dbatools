@@ -113,7 +113,7 @@ function Sync-DbaLoginPermission {
             foreach ($sourceLogin in $allLogins) {
                 $loginName = $sourceLogin.Name
                 if ($currentLogin -eq $loginName) {
-                    Write-Message -Level Verbose -Message "Sync does not modify the permissions of the current user. Skipping."
+                    Write-Message -Level Verbose -Message "Sync does not modify the permissions of the current login '$loginName'. Skipping."
                     continue
                 }
 
@@ -121,10 +121,12 @@ function Sync-DbaLoginPermission {
                 $serverName = $sourceServer.ComputerName
                 $userBase = ($loginName.Split("\")[0]).ToLowerInvariant()
                 if ($serverName -eq $userBase -or $loginName.StartsWith("NT ")) {
+                    Write-Message -Level Verbose -Message "Sync does not modify the permissions of host or system login '$loginName'. Skipping."
                     continue
                 }
 
                 if ($null -eq ($destLogin = $destServer.Logins.Item($loginName))) {
+                    Write-Message -Level Verbose -Message "Login '$loginName' not found on destination. Skipping."
                     continue
                 }
 
