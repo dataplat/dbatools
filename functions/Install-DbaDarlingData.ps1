@@ -149,9 +149,11 @@ function Install-DbaDarlingData {
                 $allprocedures_query = "SELECT name FROM sys.procedures WHERE is_ms_shipped = 0"
                 $allprocedures = ($server.Query($allprocedures_query, $Database)).Name
 
-                # Install/Update each FRK stored procedure
-
-                $sqlScripts = Get-ChildItem $LocalCachedCopy -Filter "sp_*.sql"
+                # We only install specific scripts that as located in different subdirectories and exclude the example
+                $sqlScripts = @( )
+                $sqlScripts += Get-ChildItem $localCachedCopy -Filter "sp_HumanEvents.sql" -Recurse
+                $sqlScripts += Get-ChildItem $localCachedCopy -Filter "sp_PressureDetector.sql" -Recurse
+                $sqlScripts += Get-ChildItem $localCachedCopy -Filter "sp_QuickieStore.sql" -Recurse
 
                 foreach ($script in $sqlScripts) {
                     $sql = Get-Content $script.FullName -Raw
