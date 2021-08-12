@@ -98,6 +98,8 @@ function Remove-DbaDbUser {
     begin {
         if ($Force) { $ConfirmPreference = 'none' }
 
+        $pipedUsers = @( )
+
         function Remove-DbUser {
             [CmdletBinding(SupportsShouldProcess)]
             param ([Microsoft.SqlServer.Management.Smo.User[]]$users)
@@ -196,8 +198,7 @@ function Remove-DbaDbUser {
 
     process {
         if ($InputObject) {
-            Remove-DbUser $InputObject
-
+            $pipedUsers += $InputObject
         } else {
             foreach ($instance in $SqlInstance) {
                 try {
@@ -223,5 +224,10 @@ function Remove-DbaDbUser {
                 }
             }
         }
+    }
+
+    end {
+        # We have to delete in the end block to prevent "Collection was modified; enumeration operation may not execute." if directly piped from Get-DbaDbUser.
+        Remove-DbUser $pipedUsers
     }
 }
