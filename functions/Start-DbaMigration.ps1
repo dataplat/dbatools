@@ -311,7 +311,7 @@ function Start-DbaMigration {
         }
 
         try {
-            $sourceserver = Connect-DbaInstance -SqlInstance $Source -SqlCredential $SqlCredential
+            $sourceserver = Connect-DbaInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
         } catch {
             Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $Source
             return
