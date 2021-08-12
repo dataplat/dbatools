@@ -123,6 +123,11 @@ function Sync-DbaLoginPermission {
             }
         }
 
+    }
+
+    process {
+        if (Test-FunctionInterrupt) { return }
+
         try {
             $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
             $allLogins = Get-DbaLogin -SqlInstance $sourceServer -Login $Login -ExcludeLogin $ExcludeLogin
@@ -131,9 +136,6 @@ function Sync-DbaLoginPermission {
             Stop-Function -Message "Error occurred while establishing connection to $Source" -Category ConnectionError -ErrorRecord $_ -Target $Source
             return
         }
-    }
-    process {
-        if (Test-FunctionInterrupt) { return }
 
         if ($null -eq $loginName) {
             Stop-Function -Message "No matching logins found for $($login -join ', ') on $Source"
