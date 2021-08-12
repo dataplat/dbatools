@@ -113,10 +113,9 @@ function Remove-DbaDbOrphanUser {
     process {
         foreach ($Instance in $SqlInstance) {
             try {
-                $server = Connect-SqlInstance -SqlInstance $Instance -SqlCredential $SqlCredential
+                $server = Connect-DbaInstance -SqlInstance $Instance -SqlCredential $SqlCredential
             } catch {
-                Write-Message -Level Warning -Message "Can't connect to $Instance or access denied. Skipping."
-                continue
+                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
             $DatabaseCollection = $server.Databases | Where-Object IsAccessible
