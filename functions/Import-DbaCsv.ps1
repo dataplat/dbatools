@@ -439,20 +439,13 @@ function Import-DbaCsv {
                 $elapsed = [System.Diagnostics.Stopwatch]::StartNew()
                 # Open Connection to SQL Server
                 try {
-                    $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -Database $Database -StatementTimeout 0 -MinimumVersion 9
-
-                    # boundary case: ensure the correct db is referenced in the $server object
-                    if ($Database -ne $server.ConnectionContext.CurrentDatabase) {
-                        Stop-Function -Message "The SqlInstance object for $instance is currently connected to the database `"$($server.ConnectionContext.CurrentDatabase)`" and does not match the parameter `"-Database $Database`". If a pre-connected SqlInstance object is passed in it must be connected to the database specified by the -Database parameter."
-                        return
-                    }
-
+                    $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential -Database $Database -StatementTimeout 0 -MinimumVersion 9
                     $sqlconn = $server.ConnectionContext.SqlConnectionObject
                     if ($sqlconn.State -ne 'Open') {
                         $sqlconn.Open()
                     }
                 } catch {
-                    Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+                    Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
                 }
 
                 if (-not $NoTransaction) {

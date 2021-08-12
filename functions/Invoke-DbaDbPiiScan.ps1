@@ -211,12 +211,10 @@ function Invoke-DbaDbPiiScan {
 
         # Loop through the instances
         foreach ($instance in $SqlInstance) {
-
-            # Try to connect to the server
             try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
+                $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
             } catch {
-                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
             $progressActivity = "Scanning databases for PII"

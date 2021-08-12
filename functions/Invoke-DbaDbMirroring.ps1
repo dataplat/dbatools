@@ -191,13 +191,17 @@ function Invoke-DbaDbMirroring {
             foreach ($currentmirror in $Mirror) {
                 $stepCounter = 0
                 try {
-                    $dest = Connect-SqlInstance -SqlInstance $currentmirror -SqlCredential $MirrorSqlCredential
-
-                    if ($Witness) {
-                        $witserver = Connect-SqlInstance -SqlInstance $Witness -SqlCredential $WitnessSqlCredential
-                    }
+                    $dest = Connect-DbaInstance -SqlInstance $currentmirror -SqlCredential $MirrorSqlCredential
                 } catch {
-                    Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+                    Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $currentmirror -Continue
+                }
+
+                if ($Witness) {
+                    try {
+                        $witserver = Connect-DbaInstance -SqlInstance $Witness -SqlCredential $WitnessSqlCredential
+                    } catch {
+                        Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $Witness -Continue
+                    }
                 }
 
                 $dbName = $primarydb.Name
