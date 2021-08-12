@@ -521,9 +521,9 @@ function Invoke-DbaDbLogShipping {
 
         # Try connecting to the instance
         try {
-            $SourceServer = Connect-SqlInstance -SqlInstance $SourceSqlInstance -SqlCredential $SourceSqlCredential
+            $sourceServer = Connect-DbaInstance -SqlInstance $SourceSqlInstance -SqlCredential $SourceSqlCredential
         } catch {
-            Stop-Function -Message "Could not connect to Sql Server instance $SourceSqlInstance" -ErrorRecord $_ -Target $SourceSqlInstance
+            Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $SourceSqlInstance
             return
         }
 
@@ -868,10 +868,9 @@ function Invoke-DbaDbLogShipping {
 
             # Try connecting to the instance
             try {
-                $DestinationServer = Connect-SqlInstance -SqlInstance $destInstance -SqlCredential $DestinationSqlCredential
+                $destinationServer = Connect-DbaInstance -SqlInstance $destInstance -SqlCredential $DestinationSqlCredential
             } catch {
-                Stop-Function -Message "Could not connect to Sql Server instance $destInstance" -ErrorRecord $_ -Target $destInstance
-                return
+                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $destInstance -Continue
             }
 
             $DestinationServerName, $DestinationInstanceName = $destInstance.FullName.Split("\")
