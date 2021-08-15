@@ -89,7 +89,7 @@ Describe "$CommandName Intigration Tests" -Tag  "IntegrationTests" {
             {Test-DbaDbRecoveryModel -SqlInstance $script:instance2 -RecoveryModel Awesome -EnableException -Database 'dontexist' } | should -Throw
         }
 
-        Mock Connect-SqlInstance { Throw } -ModuleName dbatools
+        Mock Connect-DbaInstance { Throw } -ModuleName dbatools
         It "Should Thow Error for a DB Connection Error" {
             {Test-DbaDbRecoveryModel -SqlInstance $script:instance2 -EnableException | Should -Throw }
         }

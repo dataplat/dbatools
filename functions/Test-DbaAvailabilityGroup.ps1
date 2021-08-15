@@ -89,9 +89,9 @@ function Test-DbaAvailabilityGroup {
     )
     process {
         try {
-            $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
+            $server = Connect-DbaInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
         } catch {
-            Stop-Function -Message "Failed to connect to $SqlInstance." -Category ConnectionError -ErrorRecord $_ -Target $SqlInstance
+            Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $SqlInstance
             return
         }
 
@@ -209,10 +209,10 @@ function Test-DbaAvailabilityGroup {
             $failure = $false
             foreach ($replica in $secondaryReplicas) {
                 try {
-                    $replicaServer = Connect-SqlInstance -SqlInstance $replica -SqlCredential $SecondarySqlCredential
+                    $replicaServer = Connect-DbaInstance -SqlInstance $replica -SqlCredential $SecondarySqlCredential
                 } catch {
                     $failure = $true
-                    Stop-Function -Message "Failed to connect to $replica." -Category ConnectionError -ErrorRecord $_ -Target $replica -Continue
+                    Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $replica -Continue
                 }
 
                 try {

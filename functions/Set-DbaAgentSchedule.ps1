@@ -378,27 +378,24 @@ function Set-DbaAgentSchedule {
         if (Test-FunctionInterrupt) { return }
 
         foreach ($instance in $SqlInstance) {
+            try {
+                $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential
+            } catch {
+                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+            }
 
             foreach ($j in $Job) {
-
-                # Try connecting to the instance
-                try {
-                    $Server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
-                } catch {
-                    Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
-                }
-
                 # Check if the job exists
-                if ($Server.JobServer.Jobs.Name -notcontains $j) {
+                if ($server.JobServer.Jobs.Name -notcontains $j) {
                     Write-Message -Message "Job $j doesn't exists on $instance" -Level Warning
                 } else {
                     # Check if the job schedule exists
-                    if ($Server.JobServer.Jobs[$j].JobSchedules.Name -notcontains $ScheduleName) {
+                    if ($server.JobServer.Jobs[$j].JobSchedules.Name -notcontains $ScheduleName) {
                         Stop-Function -Message "Schedule $ScheduleName doesn't exists for job $j on $instance" -Target $instance -Continue
                     } else {
                         # Get the job schedule
                         # If for some reason the there are multiple schedules with the same name, the first on is chosen
-                        $JobSchedule = $Server.JobServer.Jobs[$j].JobSchedules[$ScheduleName][0]
+                        $JobSchedule = $server.JobServer.Jobs[$j].JobSchedules[$ScheduleName][0]
 
                         # Set the frequency interval to make up for newly created schedules without an interval
                         if ($JobSchedule.FrequencyInterval -eq 0 -and $Interval -lt 1) {

@@ -233,9 +233,9 @@ function Set-DbaAgentJobStep {
         # gather the SqlInstance(s) and pipeline of connected instances
         foreach ($instance in $SqlInstance) {
             try {
-                $InputObject += Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
+                $InputObject += Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential
             } catch {
-                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
         }
 

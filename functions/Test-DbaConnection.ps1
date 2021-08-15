@@ -165,7 +165,7 @@ function Test-DbaConnection {
             }
 
             try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
+                $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential
                 $connectSuccess = $true
                 $instanceName = $server.InstanceName
                 if (-not $instanceName) {
@@ -195,7 +195,7 @@ function Test-DbaConnection {
             } catch {
                 $connectSuccess = $false
                 $instanceName = $instance.InputObject
-                Stop-Function -Message "Issue connection to SQL Server on $instance" -Category ConnectionError -Target $instance -ErrorRecord $_
+                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance
             }
 
             [PSCustomObject]@{

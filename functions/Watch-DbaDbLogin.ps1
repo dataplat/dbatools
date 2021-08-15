@@ -106,9 +106,10 @@ function Watch-DbaDbLogin {
         }
 
         try {
-            $serverDest = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
+            $serverDest = Connect-DbaInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
         } catch {
-            Stop-Function -Message "Error occurred while establishing connection to $SqlInstance" -Category ConnectionError -ErrorRecord $_ -Target $SqlInstance -Continue
+            Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $SqlInstance
+            return
         }
 
         $systemdbs = "master", "msdb", "model", "tempdb"
@@ -140,12 +141,12 @@ function Watch-DbaDbLogin {
         foreach ($instance in $servers) {
             try {
                 if ($instance -is [Microsoft.SqlServer.Management.RegisteredServers.RegisteredServer]) {
-                    $InputObject += Connect-SqlInstance -SqlInstance $instance.ServerName -SqlCredential $SqlCredential -MinimumVersion 9
+                    $InputObject += Connect-DbaInstance -SqlInstance $instance.ServerName -SqlCredential $SqlCredential -MinimumVersion 9
                 } else {
-                    $InputObject += Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
+                    $InputObject += Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
                 }
             } catch {
-                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
         }
 
