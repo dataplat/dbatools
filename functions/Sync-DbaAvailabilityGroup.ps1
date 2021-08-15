@@ -174,9 +174,9 @@ function Sync-DbaAvailabilityGroup {
             $server = $InputObject.Parent
         } else {
             try {
-                $server = Connect-SqlInstance -SqlInstance $Primary -SqlCredential $PrimarySqlCredential
+                $server = Connect-DbaInstance -SqlInstance $Primary -SqlCredential $PrimarySqlCredential
             } catch {
-                Stop-Function -Message "Error occurred while establishing connection to $Primary" -Category ConnectionError -ErrorRecord $_ -Target $Primary
+                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $Primary
                 return
             }
         }
@@ -194,10 +194,9 @@ function Sync-DbaAvailabilityGroup {
             $secondaries = @()
             foreach ($computer in $Secondary) {
                 try {
-                    $secondaries += Connect-SqlInstance -SqlInstance $computer -SqlCredential $SecondarySqlCredential
+                    $secondaries += Connect-DbaInstance -SqlInstance $computer -SqlCredential $SecondarySqlCredential
                 } catch {
-                    Stop-Function -Message "Error occurred while establishing connection to $computer" -Category ConnectionError -ErrorRecord $_ -Target $Primary
-                    return
+                    Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $computer -Continue
                 }
             }
         }

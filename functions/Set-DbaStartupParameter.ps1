@@ -208,10 +208,10 @@ function Set-DbaStartupParameter {
         foreach ($instance in $SqlInstance) {
             if (-not $Offline) {
                 try {
-                    $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
+                    $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential
                 } catch {
                     Write-Message -Level Warning -Message "Failed to connect to $instance, will try to work with just WMI. Path options will be ignored unless Force was indicated"
-                    $Server = $instance
+                    $server = $instance
                     $Offline = $true
                 }
             } else {

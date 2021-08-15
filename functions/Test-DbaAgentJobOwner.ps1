@@ -81,8 +81,11 @@ function Test-DbaAgentJobOwner {
     }
     process {
         foreach ($instance in $SqlInstance) {
-            #connect to the instance
-            $server = Connect-SqlInstance $instance -SqlCredential $SqlCredential
+            try {
+                $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential
+            } catch {
+                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+            }
 
             #Validate login
             if ($Login -and ($server.Logins.Name) -notcontains $Login) {

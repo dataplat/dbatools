@@ -122,18 +122,18 @@ function Test-DbaDiskAllocation {
                     if ($NoSqlCheck -eq $false) {
                         $sqldisk = $false
 
-                        foreach ($SqlInstance in $SqlInstances) {
+                        foreach ($instance in $SqlInstances) {
                             try {
-                                $smoserver = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
-                                $sql = "Select count(*) as Count from sys.master_files where physical_name like '$diskname%'"
-                                $sqlcount = $smoserver.Databases['master'].ExecuteWithResults($sql).Tables[0].Count
-                                if ($sqlcount -gt 0) {
-                                    $sqldisk = $true
-                                    break
-                                }
+                                $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential
                             } catch {
-                                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
-                                continue
+                                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+                            }
+
+                            $sql = "Select count(*) as Count from sys.master_files where physical_name like '$diskname%'"
+                            $sqlcount = $server.Query($sql).Count
+                            if ($sqlcount -gt 0) {
+                                $sqldisk = $true
+                                break
                             }
                         }
                     }

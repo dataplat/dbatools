@@ -122,12 +122,10 @@ function Set-DbaDbCompression {
         $starttime = Get-Date
         foreach ($instance in $SqlInstance) {
             try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 10
+                $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 10 -StatementTimeout 0
             } catch {
-                Stop-Function -Message "Failed to process Instance $instance" -ErrorRecord $_ -Target $instance -Continue
+                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
-
-            $Server.ConnectionContext.StatementTimeout = 0
 
             #The reason why we do this is because of SQL 2016 and they now allow for compression on standard edition.
             if ($server.EngineEdition -notmatch 'Enterprise' -and $server.VersionMajor -lt '13') {

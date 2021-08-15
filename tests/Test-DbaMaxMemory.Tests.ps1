@@ -27,7 +27,7 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
         }
 
         Context 'Validate functionality - Single Instance' {
-            Mock Connect-SqlInstance -MockWith {
+            Mock Connect-DbaInstance -MockWith {
                 "nothing"
             }
 
@@ -53,7 +53,7 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
 
                 $result = Test-DbaMaxMemory -SqlInstance 'ABC'
 
-                Assert-MockCalled Connect-SqlInstance -Scope It -Times 1
+                Assert-MockCalled Connect-DbaInstance -Scope It -Times 1
                 Assert-MockCalled Get-DbaService -Scope It -Times 1
                 Assert-MockCalled Get-DbaMaxMemory -Scope It -Times 1
             }
