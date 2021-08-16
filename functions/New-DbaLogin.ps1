@@ -206,6 +206,8 @@ function New-DbaLogin {
     }
 
     process {
+        if (Test-FunctionInterrupt) { return }
+
         #At least one of those should be specified
         if (!($Login -or $InputObject)) {
             Stop-Function -Message "No logins have been specified." -Category InvalidArgument -EnableException $EnableException
