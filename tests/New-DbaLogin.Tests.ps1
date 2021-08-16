@@ -1,7 +1,6 @@
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
-. "$PSScriptRoot\..\internal\functions\Connect-SqlInstance.ps1"
 . "$PSScriptRoot\..\internal\functions\Get-PasswordHash.ps1"
 . "$PSScriptRoot\..\internal\functions\Convert-HexStringToByte.ps1"
 
@@ -23,8 +22,8 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     $password = 'MyV3ry$ecur3P@ssw0rd'
     $securePassword = ConvertTo-SecureString $password -AsPlainText -Force
     $sid = '0xDBA700131337C0D30123456789ABCDEF'
-    $server1 = Connect-SqlInstance -SqlInstance $script:instance1
-    $server2 = Connect-SqlInstance -SqlInstance $script:instance2
+    $server1 = Connect-DbaInstance -SqlInstance $script:instance1
+    $server2 = Connect-DbaInstance -SqlInstance $script:instance2
     $servers = @($server1, $server2)
     $computerName = $server1.NetName
     $winLogin = "$computerName\$credLogin"

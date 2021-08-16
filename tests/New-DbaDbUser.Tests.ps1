@@ -12,7 +12,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
         }
     }
     Context "Should error out if the database does not exist" {
-        Mock Connect-SqlInstance -MockWith {
+        Mock Connect-DbaInstance -MockWith {
             $obj = [PSCustomObject]@{
                 Databases    = [String]::Empty
                 IsAccessible = $false

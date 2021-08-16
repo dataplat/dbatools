@@ -113,88 +113,15 @@ function Install-DbaDarlingData {
     begin {
         if ($Force) { $ConfirmPreference = 'none' }
 
-        $DbatoolsData = Get-DbatoolsConfigValue -FullName "Path.DbatoolsData"
-
-        if (-not $DbatoolsData) {
-            $DbatoolsData = [System.IO.Path]::GetTempPath()
-        }
-
-        $url = "https://github.com/erikdarlingdata/DarlingData/archive/$Branch.zip"
-        $temp = [System.IO.Path]::GetTempPath()
-        $zipFile = Join-Path -Path $temp -ChildPath "DarlingData-$Branch.zip"
-        $zipFolder = Join-Path -Path $temp -ChildPath "DarlingData-$Branch"
-        $LocalCachedCopy = Join-Path -Path $DbatoolsData -ChildPath "DarlingData-$Branch"
-
-        if ($Force -or -not(Test-Path -Path $LocalCachedCopy -PathType Container) -or $LocalFile) {
-            # Force was passed, or we don't have a local copy, or $LocalFile was passed
-            if (Test-Path $zipFile) {
-                if ($PSCmdlet.ShouldProcess($zipFile, "File found, dropping $zipFile")) {
-                    Remove-Item -Path $zipFile -ErrorAction SilentlyContinue
-                }
-            }
-
-            if ($LocalFile) {
-                if (-not (Test-Path $LocalFile)) {
-                    if ($PSCmdlet.ShouldProcess($LocalFile, "File does not exists, returning to prompt")) {
-                        Stop-Function -Message "$LocalFile doesn't exist"
-                        return
-                    }
-                }
-                if (Test-Path $LocalFile -PathType Container) {
-                    if ($PSCmdlet.ShouldProcess($LocalFile, "File is not a zip file, returning to prompt")) {
-                        Stop-Function -Message "$LocalFile should be a zip file"
-                        return
-                    }
-                }
-                if (Test-Windows -NoWarn) {
-                    if ($PSCmdlet.ShouldProcess($LocalFile, "Checking if Windows system, unblocking file")) {
-                        Unblock-File $LocalFile -ErrorAction SilentlyContinue
-                    }
-                }
-                if ($PSCmdlet.ShouldProcess($LocalFile, "Extracting archive to $temp path")) {
-                    Expand-Archive -Path $LocalFile -DestinationPath $temp -Force
-                }
-            } else {
-                Write-Message -Level Verbose -Message "Downloading and unzipping the DarlingData zip file."
-                if ($PSCmdlet.ShouldProcess($url, "Downloading zip file")) {
-                    try {
-                        try {
-                            Invoke-TlsWebRequest $url -OutFile $zipFile -ErrorAction Stop -UseBasicParsing
-                        } catch {
-                            # Try with default proxy and usersettings
-                            (New-Object System.Net.WebClient).Proxy.Credentials = [System.Net.CredentialCache]::DefaultNetworkCredentials
-                            Invoke-TlsWebRequest $url -OutFile $zipFile -ErrorAction Stop -UseBasicParsing
-                        }
-
-                        # Unblock if there's a block
-                        if (Test-Windows -NoWarn) {
-                            Unblock-File $zipFile -ErrorAction SilentlyContinue
-                        }
-
-                        Expand-Archive -Path $zipFile -DestinationPath $temp -Force
-                        Remove-Item -Path $zipFile
-                    } catch {
-                        Stop-Function -Message "Couldn't download the DarlingData-$Branch.zip file. Download and install manually from https://github.com/erikdarlingdata/DarlingData/archive/$Branch.zip." -ErrorRecord $_
-                        return
-                    }
-                }
-            }
-
-            ## Copy it into local area
-            if ($PSCmdlet.ShouldProcess("LocalCachedCopy", "Copying extracted files to the local module cache")) {
-                if (Test-Path -Path $LocalCachedCopy -PathType Container) {
-                    Remove-Item -Path (Join-Path $LocalCachedCopy '*') -Recurse -ErrorAction SilentlyContinue
-                } else {
-                    $null = New-Item -Path $LocalCachedCopy -ItemType Container
-                }
-                if ($Procedure -eq 'All' -or $Procedure -contains 'Human') {
-                    Copy-Item -Path "$zipFolder\sp_HumanEvents\sp_HumanEvents.sql" -Destination $LocalCachedCopy
-                }
-                if ($procedure -eq 'All' -or $Procedure -contains 'Pressure') {
-                    Copy-Item -Path "$zipFolder\sp_PressureDetector\sp_PressureDetector.sql" -Destination $LocalCachedCopy
-                }
-                if ($Procedure -eq 'All' -or $Procedure -contains 'Quickie') {
-                    Copy-Item -Path "$zipFolder\sp_QuickieStore\sp_QuickieStore.sql" -Destination $LocalCachedCopy
+        # Do we need a new local cached version of the software?
+        $dbatoolsData = Get-DbatoolsConfigValue -FullName 'Path.DbatoolsData'
+        $localCachedCopy = Join-DbaPath -Path $dbatoolsData -Child "DarlingData-$Branch"
+        if ($Force -or $LocalFile -or -not (Test-Path -Path $localCachedCopy)) {
+            if ($PSCmdlet.ShouldProcess('DarlingData', 'Update local cached copy of the software')) {
+                try {
+                    Save-DbaCommunitySoftware -Software DarlingData -Branch $Branch -LocalFile $LocalFile -EnableException
+                } catch {
+                    Stop-Function -Message 'Failed to update local cached copy' -ErrorRecord $_
                 }
             }
         }
@@ -206,9 +133,9 @@ function Install-DbaDarlingData {
         foreach ($instance in $SqlInstance) {
             if ($PSCmdlet.ShouldProcess($instance, "Connecting to $instance")) {
                 try {
-                    $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
+                    $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential
                 } catch {
-                    Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+                    Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
                 }
             }
 
@@ -222,9 +149,11 @@ function Install-DbaDarlingData {
                 $allprocedures_query = "SELECT name FROM sys.procedures WHERE is_ms_shipped = 0"
                 $allprocedures = ($server.Query($allprocedures_query, $Database)).Name
 
-                # Install/Update each FRK stored procedure
-
-                $sqlScripts = Get-ChildItem $LocalCachedCopy -Filter "sp_*.sql"
+                # We only install specific scripts that as located in different subdirectories and exclude the example
+                $sqlScripts = @( )
+                $sqlScripts += Get-ChildItem $localCachedCopy -Filter "sp_HumanEvents.sql" -Recurse
+                $sqlScripts += Get-ChildItem $localCachedCopy -Filter "sp_PressureDetector.sql" -Recurse
+                $sqlScripts += Get-ChildItem $localCachedCopy -Filter "sp_QuickieStore.sql" -Recurse
 
                 foreach ($script in $sqlScripts) {
                     $sql = Get-Content $script.FullName -Raw

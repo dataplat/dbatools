@@ -261,9 +261,9 @@ function Test-DbaLastBackup {
             }
 
             try {
-                $destserver = Connect-SqlInstance -SqlInstance $destination -SqlCredential $DestinationCredential
+                $destserver = Connect-DbaInstance -SqlInstance $Destination -SqlCredential $DestinationCredential
             } catch {
-                Stop-Function -Message "Failed to connect to: $destination." -Target $destination -Continue
+                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $Destination -Continue
             }
 
             if ($destserver.VersionMajor -lt $sourceserver.VersionMajor) {
@@ -492,7 +492,7 @@ function Test-DbaLastBackup {
                         }
                     }
 
-                    $destserver = Connect-SqlInstance -SqlInstance $destination -SqlCredential $DestinationCredential
+                    $destserver = Connect-DbaInstance -SqlInstance $Destination -SqlCredential $DestinationCredential
 
                     if (-not $NoCheck -and -not $VerifyOnly) {
                         # shouldprocess is taken care of in Start-DbccCheck

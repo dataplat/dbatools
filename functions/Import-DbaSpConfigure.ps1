@@ -116,9 +116,9 @@ function Import-DbaSpConfigure {
     begin {
         if (-not $PSBoundParameters.Path -and $PSBoundParameters.Source) {
             try {
-                $sourceserver = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
+                $sourceserver = Connect-DbaInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
             } catch {
-                Stop-Function -Message "Failed to process Instance $Source" -ErrorRecord $_ -Target $Source
+                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $Source
                 return
             }
 
@@ -127,9 +127,9 @@ function Import-DbaSpConfigure {
             }
 
             try {
-                $destserver = Connect-SqlInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
+                $destserver = Connect-DbaInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
             } catch {
-                Stop-Function -Message "Failed to process Instance $Destination" -ErrorRecord $_ -Target $Destination
+                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $Destination
                 return
             }
 
@@ -141,9 +141,10 @@ function Import-DbaSpConfigure {
             $destination = $destserver.DomainInstanceName
         } else {
             try {
-                $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
+                $server = Connect-DbaInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
             } catch {
-                Stop-Function -Message "Failed to process Instance $SqlInstance" -ErrorRecord $_ -Target $SqlInstance -Continue
+                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $SqlInstance
+                return
             }
 
             if (!(Test-SqlSa -SqlInstance $server -SqlCredential $SqlCredential)) {

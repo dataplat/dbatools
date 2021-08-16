@@ -109,9 +109,9 @@ function Remove-DbaDbLogShipping {
 
         # Try connecting to the source instance
         try {
-            $primaryServer = Connect-SqlInstance -SqlInstance $PrimarySqlInstance -SqlCredential $PrimarySqlCredential
+            $primaryServer = Connect-DbaInstance -SqlInstance $PrimarySqlInstance -SqlCredential $PrimarySqlCredential
         } catch {
-            Stop-Function -Message "Could not connect to Sql Server instance $PrimarySqlInstance" -ErrorRecord $_ -Target $PrimarySqlInstance
+            Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $PrimarySqlInstance
             return
         }
     }
@@ -150,9 +150,9 @@ function Remove-DbaDbLogShipping {
 
             # Try connecting to the destination instance
             try {
-                $secondaryServer = Connect-SqlInstance -SqlInstance $SecondarySqlInstance -SqlCredential $SecondarySqlCredential
+                $secondaryServer = Connect-DbaInstance -SqlInstance $SecondarySqlInstance -SqlCredential $SecondarySqlCredential
             } catch {
-                Stop-Function -Message "Could not connect to Sql Server instance $SecondarySqlInstance" -ErrorRecord $_ -Target $SecondarySqlInstance
+                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $SecondarySqlInstance
                 return
             }
 

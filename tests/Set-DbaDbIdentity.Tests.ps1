@@ -16,7 +16,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 }
 Describe "$commandname Integration Test" -Tag "IntegrationTests" {
     BeforeAll {
-        $server = Connect-SqlInstance -SqlInstance $script:instance2
+        $server = Connect-DbaInstance -SqlInstance $script:instance2
         $random = Get-Random
         $tableName1 = "dbatools_getdbtbl1"
         $tableName2 = "dbatools_getdbtbl2"

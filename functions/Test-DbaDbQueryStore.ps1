@@ -124,9 +124,9 @@ function Test-DbaDbQueryStore {
             }
 
             try {
-                $smo = Connect-SqlInstance -SqlInstance $dbDatabases[0].Parent -SqlCredential $SqlCredential -MinimumVersion 13
+                $server = Connect-DbaInstance -SqlInstance $dbDatabases[0].Parent -SqlCredential $SqlCredential -MinimumVersion 13
             } catch {
-                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
             if ($Database) {
@@ -185,7 +185,7 @@ function Test-DbaDbQueryStore {
 
             try {
                 Write-Message -Level Verbose -Message "Evaluating Query Store options"
-                $currentOptions = Get-DbaDbQueryStoreOption -SqlInstance $smo -Database $dbDatabases.name
+                $currentOptions = Get-DbaDbQueryStoreOption -SqlInstance $server -Database $dbDatabases.name
 
                 foreach ($db in $currentOptions) {
                     $props = $db.GetPropertySet() | Where-Object Name -NotIn ('CurrentStorageSizeInMB', 'ReadOnlyReason', 'DesiredState')
@@ -204,7 +204,7 @@ function Test-DbaDbQueryStore {
                     }
                 }
             } catch {
-                Stop-Function -Message "Unable to get Query Store data $smo" -Target $smo -ErrorRecord $_
+                Stop-Function -Message "Unable to get Query Store data $server" -Target $server -ErrorRecord $_
             }
 
             # Trace flags
@@ -218,11 +218,11 @@ function Test-DbaDbQueryStore {
             }
             try {
                 foreach ($tf in $queryStoreTF) {
-                    $tfEnabled = Get-DbaTraceFlag -SqlInstance $smo -TraceFlag $tf.TraceFlag
+                    $tfEnabled = Get-DbaTraceFlag -SqlInstance $server -TraceFlag $tf.TraceFlag
                     [PSCustomObject]@{
-                        ComputerName     = $smo.ComputerName
-                        InstanceName     = $smo.DbaInstanceName
-                        SqlInstance      = $smo.Name
+                        ComputerName     = $server.ComputerName
+                        InstanceName     = $server.DbaInstanceName
+                        SqlInstance      = $server.Name
                         Name             = ('Trace Flag {0} Enabled' -f $tf.TraceFlag)
                         Value            = if ($tfEnabled) { 'Enabled' } else { 'Disabled' }
                         RecommendedValue = $tf.TraceFlag
@@ -232,7 +232,7 @@ function Test-DbaDbQueryStore {
                     $tfEnabled = $null
                 }
             } catch {
-                Stop-Function -Message "Unable to get Trace Flag data $smo" -Target $smo -ErrorRecord $_
+                Stop-Function -Message "Unable to get Trace Flag data $server" -Target $server -ErrorRecord $_
             }
         }
     }

@@ -269,7 +269,6 @@ function Start-DbaMigration {
 
         $elapsed = [System.Diagnostics.Stopwatch]::StartNew()
         $started = Get-Date
-        $sourceserver = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
     }
 
     process {
@@ -310,6 +309,14 @@ function Start-DbaMigration {
         if ($UseLastBackup -and -not $BackupRestore) {
             $BackupRestore = $true
         }
+
+        try {
+            $sourceserver = Connect-DbaInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
+        } catch {
+            Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $Source
+            return
+        }
+
         if ($Exclude -notcontains 'SpConfigure') {
             Write-Message -Level Verbose -Message "Migrating SQL Server Configuration"
             Copy-DbaSpConfigure -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential

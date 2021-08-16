@@ -129,10 +129,9 @@ function Invoke-DbaDbUpgrade {
 
         foreach ($instance in $SqlInstance) {
             try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
-                $server.ConnectionContext.StatementTimeout = [Int32]::MaxValue
+                $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential -StatementTimeout 0
             } catch {
-                Stop-Function -Message "Failed to process Instance $Instance" -ErrorRecord $_ -Target $instance -Continue
+                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
             $InputObject += $server.Databases | Where-Object IsAccessible
         }

@@ -354,9 +354,9 @@ function New-DbaAvailabilityGroup {
         }
 
         try {
-            $server = Connect-SqlInstance -SqlInstance $Primary -SqlCredential $PrimarySqlCredential
+            $server = Connect-DbaInstance -SqlInstance $Primary -SqlCredential $PrimarySqlCredential
         } catch {
-            Stop-Function -Message "Error occurred while establishing connection to $Primary" -Category ConnectionError -ErrorRecord $_ -Target $Primary
+            Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $Primary
             return
         }
 
@@ -385,10 +385,10 @@ function New-DbaAvailabilityGroup {
             }
             foreach ($instance in $Secondary) {
                 try {
-                    $second = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SecondarySqlCredential
+                    $second = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SecondarySqlCredential
                     $secondaries += $second
                 } catch {
-                    Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance
+                    Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
                 }
 
                 if (-not $second.IsHadrEnabled) {
