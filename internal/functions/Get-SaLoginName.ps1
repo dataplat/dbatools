@@ -27,7 +27,7 @@ function Get-SaLoginName {
         [PSCredential]$SqlCredential
     )
 
-    $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
+    $server = Connect-DbaInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
     $saname = ($server.logins | Where-Object { $_.id -eq 1 }).Name
 
     return $saname

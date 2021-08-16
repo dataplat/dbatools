@@ -6,7 +6,7 @@ function Resolve-SqlIpAddress {
         [PSCredential]$SqlCredential
     )
 
-    $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
+    $server = Connect-DbaInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
     $servernetbios = $server.ComputerNamePhysicalNetBIOS
     $ipaddr = (Resolve-DbaNetworkName -ComputerName $servernetbios -Turbo).IPAddress
     return $ipaddr

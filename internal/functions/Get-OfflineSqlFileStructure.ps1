@@ -18,7 +18,7 @@ Internal function. Returns dictionary object that contains file structures for S
         [PSCredential]$SqlCredential
     )
 
-    $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
+    $server = Connect-DbaInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
 
     $destinationfiles = @{ };
     $logfiles = $filelist | Where-Object { $_.Type -eq "L" }

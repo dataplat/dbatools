@@ -14,7 +14,7 @@ function Test-SqlLoginAccess {
     )
 
     if ($SqlInstance.GetType() -ne [Microsoft.SqlServer.Management.Smo.Server]) {
-        $SqlInstance = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
+        $SqlInstance = Connect-DbaInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
     }
 
     if (($SqlInstance.Logins.Name) -notcontains $Login) {

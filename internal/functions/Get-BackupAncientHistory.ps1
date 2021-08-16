@@ -34,9 +34,10 @@ function Get-BackupAncientHistory {
     )
     begin {
         try {
-            $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
+            $server = Connect-DbaInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
         } catch {
-            Stop-Function -Message "Failed to process Instance $SqlInstance." -InnerErrorRecord $_ -Target $SqlInstance -Continue
+            Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $SqlInstance
+            return
         }
         if ($server.SoftwareVersionMajor -gt 8) {
             Write-Message -Level Warning -Message "This is not the function you're looking for. This is for SQL 2000 only, please use Get-DbaDbBackupHistory instead. It's much nicer"

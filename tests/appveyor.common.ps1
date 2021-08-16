@@ -167,7 +167,7 @@ function Get-TestIndications($Path, $ModuleBase, $eval) {
     $allfiles = Get-ChildItem -File -Path "$ModuleBase\tests" -Filter '*.ps1'
     foreach ($f in $funcs) {
         # exclude always used functions ?!
-        if ($f -in ('Connect-SqlInstance', 'Select-DefaultView', 'Stop-Function', 'Write-Message')) { continue }
+        if ($f -in ('Connect-DbaInstance', 'Select-DefaultView', 'Stop-Function', 'Write-Message')) { continue }
         # can I find a correspondence to a physical file (again, on the convenience of having Get-DbaFoo.ps1 actually defining Get-DbaFoo)?
         $res = $allfiles | Where-Object { $_.Name -like "$($f).*Tests.ps1" }
         if ($res.count -gt 0) {

@@ -17,7 +17,7 @@ function Test-SqlSa {
             return ($SqlInstance.ConnectionContext.FixedServerRoles -match "SysAdmin")
         }
 
-        $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
+        $server = Connect-DbaInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
         return ($server.ConnectionContext.FixedServerRoles -match "SysAdmin")
     } catch { return $false }
 }

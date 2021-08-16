@@ -65,7 +65,7 @@ function Get-JobList {
         [switch]$EnableException
     )
     process {
-        $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
+        $server = Connect-DbaInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
 
         $jobs = $server.JobServer.Jobs
         if ( (Test-Bound 'JobFilter') -or (Test-Bound 'StepFilter') ) {

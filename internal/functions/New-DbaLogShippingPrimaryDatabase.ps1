@@ -123,9 +123,10 @@ function New-DbaLogShippingPrimaryDatabase {
 
     # Try connecting to the instance
     try {
-        $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
+        $server = Connect-DbaInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
     } catch {
-        Stop-Function -Message "Could not connect to Sql Server instance" -Target $SqlInstance -Continue
+        Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $SqlInstance
+        return
     }
 
     # Check if the backup UNC path is correct and reachable

@@ -17,9 +17,9 @@ function Get-SqlFileStructure {
         [PSCredential]$DestinationSqlCredential
     )
 
-    $sourceserver = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
+    $sourceserver = Connect-DbaInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
     $source = $sourceserver.DomainInstanceName
-    $destserver = Connect-SqlInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
+    $destserver = Connect-DbaInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
     $destination = $destserver.DomainInstanceName
 
     # Here we need it for Join-AdminUnc, so FullComputerName would be best with fallback to ComputerName
