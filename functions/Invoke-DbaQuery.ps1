@@ -372,12 +372,12 @@ function Invoke-DbaQuery {
             Write-Message -Level Debug -Message "SqlInstance passed in, will work on: $instance"
             try {
                 $connDbaInstanceParams = @{
-                    SqlInstance   = $instance
-                    SqlCredential = $SqlCredential
-                    Database      = $Database
+                    SqlInstance         = $instance
+                    SqlCredential       = $SqlCredential
+                    Database            = $Database
+                    NonPooledConnection = $true
                 }
                 if ($ReadOnly) {
-                    # TODO: This will not work, if SqlInstance is already a server object
                     $connDbaInstanceParams.ApplicationIntent = "ReadOnly"
                 }
                 $server = Connect-DbaInstance @connDbaInstanceParams
