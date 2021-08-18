@@ -127,12 +127,15 @@ function Get-DbaDbTable {
                 }
             }
             if (!$fqtns) {
-                Stop-Function -Message "No Valid Table specified"  -ErrorRecord $_ -Target $instance -Continue
+                Stop-Function -Message "No Valid Table specified"
+                return
             }
         }
     }
 
     process {
+        if (Test-FunctionInterrupt) { return }
+
         foreach ($instance in $SqlInstance) {
             $InputObject += Get-DbaDatabase -SqlInstance $instance -SqlCredential $SqlCredential -Database $Database -ExcludeDatabase $ExcludeDatabase
         }

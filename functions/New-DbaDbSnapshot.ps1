@@ -148,6 +148,8 @@ function New-DbaDbSnapshot {
         }
     }
     process {
+        if (Test-FunctionInterrupt) { return }
+
         if (-not $InputObject -and -not $Database -and $AllDatabases -eq $false) {
             Stop-Function -Message "You must specify a -AllDatabases or -Database to continue" -EnableException $EnableException
             return

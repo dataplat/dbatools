@@ -21,6 +21,7 @@ function Test-FunctionInterrupt {
             The calling function will stop if this function returns true.
        #>
     [CmdletBinding()]
+    [OutputType([System.Boolean])]
     param (
 
     )

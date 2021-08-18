@@ -203,6 +203,7 @@ function Expand-DbaDbLogFile {
     }
 
     process {
+        if (Test-FunctionInterrupt) { return }
 
         try {
 
