@@ -169,7 +169,7 @@ function Get-DbaDbExtentDiff {
             }
 
             # Close non-pooled connection as this is not done automatically. If it is a reused Server SMO, connection will be opened again automatically on next request.
-            $server.ConnectionContext.Disconnect()
+            $server | Disconnect-DbaInstance
         }
     }
 }
