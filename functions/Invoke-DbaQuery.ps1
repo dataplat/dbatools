@@ -406,6 +406,8 @@ function Invoke-DbaQuery {
             } catch {
                 Stop-Function -Message "[$instance] Failed during execution" -ErrorRecord $_ -Target $instance -Continue
             }
+            # Close non-pooled connection as this is not done automatically. If it is a reused Server SMO, connection will be opened again automatically on next request.
+            $server | Disconnect-DbaInstance
         }
     }
 
