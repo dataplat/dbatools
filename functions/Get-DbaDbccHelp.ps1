@@ -79,6 +79,7 @@ function Get-DbaDbccHelp {
         $null = $stringBuilder.Append("DBCC HELP($Statement) WITH NO_INFOMSGS;")
     }
     process {
+        if (Test-FunctionInterrupt) { return }
 
         foreach ($instance in $SqlInstance) {
             try {

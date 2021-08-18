@@ -76,11 +76,13 @@ function Set-DbaAgentJobCategory {
 
         # Check if multiple categories are being changed
         if ($Category.Count -gt 1 -and $NewName.Count -eq 1) {
-            Stop-Function -Message "You cannot rename multiple jobs to the same name" -Target $instance
+            Stop-Function -Message "You cannot rename multiple jobs to the same name"
+            return
         }
     }
 
     process {
+        if (Test-FunctionInterrupt) { return }
 
         foreach ($instance in $SqlInstance) {
             try {

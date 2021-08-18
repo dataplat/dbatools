@@ -165,6 +165,8 @@ function Update-DbaServiceAccount {
         }
     }
     process {
+        if (Test-FunctionInterrupt) { return }
+
         if ($PsCmdlet.ParameterSetName -match 'ServiceName') {
             foreach ($Computer in $ComputerName.ComputerName) {
                 $Server = Resolve-DbaNetworkName -ComputerName $Computer -Credential $credential
