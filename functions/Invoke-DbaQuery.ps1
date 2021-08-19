@@ -372,13 +372,17 @@ function Invoke-DbaQuery {
             Write-Message -Level Debug -Message "SqlInstance passed in, will work on: $instance"
             try {
                 $connDbaInstanceParams = @{
-                    SqlInstance         = $instance
-                    SqlCredential       = $SqlCredential
-                    Database            = $Database
-                    NonPooledConnection = $true
+                    SqlInstance   = $instance
+                    SqlCredential = $SqlCredential
+                    Database      = $Database
                 }
                 if ($ReadOnly) {
                     $connDbaInstanceParams.ApplicationIntent = "ReadOnly"
+                }
+                # Test for a windows credential and request a non-pooled connection in that case to keep the security context (see #7725 for details)
+                if ($SqlCredential.UserName -like '*\*' -or $SqlCredential.UserName -like '*@*') {
+                    Write-Message -Level Verbose -Message "Windows credential detected, so requesting a non-pooled connection"
+                    $connDbaInstanceParams.NonPooledConnection = $true
                 }
                 $server = Connect-DbaInstance @connDbaInstanceParams
             } catch {
@@ -406,8 +410,10 @@ function Invoke-DbaQuery {
             } catch {
                 Stop-Function -Message "[$instance] Failed during execution" -ErrorRecord $_ -Target $instance -Continue
             }
-            # Close non-pooled connection as this is not done automatically. If it is a reused Server SMO, connection will be opened again automatically on next request.
-            $null = $server | Disconnect-DbaInstance
+            if ($connDbaInstanceParams.NonPooledConnection) {
+                # Close non-pooled connection as this is not done automatically. If it is a reused Server SMO, connection will be opened again automatically on next request.
+                $null = $server | Disconnect-DbaInstance
+            }
         }
     }
 
