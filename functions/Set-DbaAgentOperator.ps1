@@ -274,14 +274,13 @@ function Set-DbaAgentOperator {
 
         if ($SqlInstance) {
             try {
-                $InputObject += Get-DbaAgentOperator -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Operator $($op.Name) -EnableException
+                $InputObject += Get-DbaAgentOperator -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Operator $($Operator) -EnableException
             } catch {
                 Stop-Function -Message "Failed" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
         }
 
         foreach ($op in $InputObject) {
-            $server = $op | Get-ConnectionParent
             try {
                 if ($Name) {
                     if ($Pscmdlet.ShouldProcess($server, "Updating Operator $($op.Name) Name to $Name")) {
