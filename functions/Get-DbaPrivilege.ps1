@@ -203,8 +203,6 @@ function Get-DbaPrivilege {
                     }
                 }
 
-
-
                 Write-Message -Level Verbose -Message "Removing secpol file on $computer"
                 Invoke-Command2 -Raw -ComputerName $computer -Credential $Credential -ScriptBlock {
                     $temp = ([System.IO.Path]::GetTempPath()).TrimEnd(""); Remove-Item $temp\secpolByDbatools.cfg -Force > $NULL
