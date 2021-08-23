@@ -152,8 +152,8 @@ SELECT @@servername as dbname
             }
         }
         # Filter out the Verbose messages of the command Connect-DbaInstance
-        $results = $results | Where-Object Out -NotMatch '\[Connect-DbaInstance\]'
-        $results.Length | Should -BeIn 7, 8 # 6 'messages' plus the actual resultset plus maybe a message from Disconnect-DbaInstance if non-pooled connection
+        $results = $results | Where-Object Out -NotMatch '\[(Dis)?Connect-DbaInstance\]'
+        $results.Length | Should -BeIn 7 # 6 'messages' plus the actual resultset
         ($results | ForEach-Object { Get-Date -Date $_.FiredAt -Format s } | Get-Unique).Count | Should -Not -Be 1 # the first WITH NOWAIT (stmt_4) and after
         #($results[0..3]  | ForEach-Object { Get-Date -Date $_.FiredAt -f s } | Get-Unique).Count | Should -Be 1 # everything before stmt_4 is fired at the same time
         #$parsedstmt_1 = Get-Date -Date $results[0].Out.Message.split('|')[2]
