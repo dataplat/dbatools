@@ -369,19 +369,22 @@ function Invoke-DbaQuery {
             }
         }
         foreach ($instance in $SqlInstance) {
+            # Verbose output in Invoke-DbaQuery is special, because it's the only way to assure on all versions of Powershell to have separate outputs (results and messages) coming from the TSQL Query.
+            # We suppress the verbosity of all other functions in order to be sure the output is consistent with what you get, e.g., executing the same in SSMS
             Write-Message -Level Debug -Message "SqlInstance passed in, will work on: $instance"
             try {
                 $connDbaInstanceParams = @{
                     SqlInstance   = $instance
                     SqlCredential = $SqlCredential
                     Database      = $Database
+                    Verbose       = $false
                 }
                 if ($ReadOnly) {
                     $connDbaInstanceParams.ApplicationIntent = "ReadOnly"
                 }
                 # Test for a windows credential and request a non-pooled connection in that case to keep the security context (see #7725 for details)
                 if ($SqlCredential.UserName -like '*\*' -or $SqlCredential.UserName -like '*@*') {
-                    Write-Message -Level Verbose -Message "Windows credential detected, so requesting a non-pooled connection"
+                    Write-Message -Level Debug -Message "Windows credential detected, so requesting a non-pooled connection"
                     $connDbaInstanceParams.NonPooledConnection = $true
                 }
                 $server = Connect-DbaInstance @connDbaInstanceParams
@@ -412,7 +415,7 @@ function Invoke-DbaQuery {
             }
             if ($connDbaInstanceParams.NonPooledConnection) {
                 # Close non-pooled connection as this is not done automatically. If it is a reused Server SMO, connection will be opened again automatically on next request.
-                $null = $server | Disconnect-DbaInstance
+                $null = $server | Disconnect-DbaInstance -Verbose:$false
             }
         }
     }
