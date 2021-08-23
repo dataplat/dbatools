@@ -4,7 +4,7 @@ function Get-DbaPrivilege {
         Gets the users with local privileges on one or more computers.
 
     .DESCRIPTION
-        Gets the users with local privileges 'Lock Pages in Memory', 'Instant File Initialization', 'Logon as Batch', 'Generate Security Audits' or 'Logon as a service' on one or more computers.
+        Gets the users with local privileges 'Lock Pages in Memory', 'Instant File Initialization', 'Logon as Batch', 'Generate Security Audits', or 'Logon as a service' on one or more computers.
 
         Requires Local Admin rights on destination computer(s).
 
