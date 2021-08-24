@@ -92,11 +92,15 @@ function Test-DbaBackupInformation {
         $InternalHistory = @()
     }
     process {
+        if (Test-FunctionInterrupt) { return }
+
         foreach ($bh in $BackupHistory) {
             $InternalHistory += $bh
         }
     }
     end {
+        if (Test-FunctionInterrupt) { return }
+
         $RegisteredFileCheck = Get-DbaDbPhysicalFile -SqlInstance $RestoreInstance
 
         $Databases = $InternalHistory.Database | Select-Object -Unique

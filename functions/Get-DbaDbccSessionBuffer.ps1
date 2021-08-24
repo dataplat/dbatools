@@ -125,6 +125,7 @@ function Get-DbaDbccSessionBuffer {
 
     }
     process {
+        if (Test-FunctionInterrupt) { return }
 
         foreach ($instance in $SqlInstance) {
             try {

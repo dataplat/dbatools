@@ -100,12 +100,14 @@ function New-DbaDbAsymmetricKey {
     )
     begin {
         if (((Test-Bound 'KeySource') -xor (Test-Bound 'KeySourceType'))) {
-            write-message -level verbose -message 'keysource paramter check'
-            Stop-Function -Message 'Both Keysource and KeySourceType must be provided' -Continue
-            break
+            Write-Message -Level Verbose -Message 'keysource paramter check'
+            Stop-Function -Message 'Both Keysource and KeySourceType must be provided'
+            return
         }
     }
     process {
+        if (Test-FunctionInterrupt) { return }
+
         if ($SqlInstance) {
             $InputObject += Get-DbaDatabase -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $Database
         }

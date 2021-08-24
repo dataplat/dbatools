@@ -373,6 +373,8 @@ function Backup-DbaDatabase {
     }
 
     process {
+        if (Test-FunctionInterrupt) { return }
+
         if (-not $SqlInstance -and -not $InputObject) {
             Stop-Function -Message "You must specify a server and database or pipe some databases"
             return

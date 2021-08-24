@@ -116,12 +116,15 @@ function Get-DbaDbView {
                 }
             }
             if (-not $fqtns) {
-                Stop-Function -Message "No Valid View specified"  -ErrorRecord $_ -Target $instance -Continue
+                Stop-Function -Message "No Valid View specified"
+                return
             }
         }
     }
 
     process {
+        if (Test-FunctionInterrupt) { return }
+
         if (Test-Bound SqlInstance) {
             $InputObject = Get-DbaDatabase -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $Database -ExcludeDatabase $ExcludeDatabase
         }
