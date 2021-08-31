@@ -1,7 +1,7 @@
 
 -- SQL Server 2017 Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: August 9, 2021
+-- Last Modified: August 24, 2021
 -- https://glennsqlperformance.com/
 -- https://sqlserverperformance.wordpress.com/
 -- YouTube: https://bit.ly/2PkoAM1 
@@ -375,8 +375,7 @@ ORDER BY name OPTION (RECOMPILE);
 
 -- Host information (Query 11) (Host Info)
 SELECT host_platform, host_distribution, host_release, 
-       host_service_pack_level, host_sku, os_language_version,
-	   host_architecture
+       host_service_pack_level, host_sku, os_language_version
 FROM sys.dm_os_host_info WITH (NOLOCK) OPTION (RECOMPILE); 
 ------
 
