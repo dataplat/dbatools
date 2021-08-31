@@ -82,7 +82,8 @@ function Get-DbaPrivilege {
                         $_ -match "SeBatchLogonRight" -or
                         $_ -match 'SeManageVolumePrivilege' -or
                         $_ -match 'SeLockMemoryPrivilege' -or
-                        $_ -match 'SeAuditPrivilege'
+                        $_ -match 'SeAuditPrivilege' -or
+                        $_ -match 'SeServiceLogonRight'
                     }
                 }
                 if ($Priv.count -eq 0) {
