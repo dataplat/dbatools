@@ -1,3 +1,4 @@
+using namespace System.Collections.Generic;
 function Set-DbaAgReplica {
     <#
     .SYNOPSIS
@@ -48,6 +49,9 @@ function Set-DbaAgReplica {
     .PARAMETER ReadonlyRoutingConnectionUrl
         Sets the read only routing connection url for the availability replica.
 
+    .PARAMETER ReadOnlyRoutingList
+        Sets the read-only routing list for when this replica is in the primary role.
+
     .PARAMETER SeedingMode
         Specifies how the secondary replica will be initially seeded.
 
@@ -89,6 +93,18 @@ function Set-DbaAgReplica {
         PS C:\> Get-DbaAgReplica -SqlInstance sql2016 | Out-GridView -Passthru | Set-DbaAgReplica -BackupPriority 5000
 
         Sets the backup priority to 5000 for the selected availability groups.
+
+    .EXAMPLE
+        PS C:\> Get-DbaAgReplica -SqlInstance sql2016 -Replica Replica1 |
+        >> Set-DbaAgReplica -ReadOnlyRoutingList Replica2,Replica3;
+
+        Equivalent to running "ALTER AVAILABILITY GROUP... MODIFY REPLICA... (READ_ONLY_ROUTING_LIST = ('Replica2', 'Replica3'));"
+
+    .EXAMPLE
+        PS C:\> Get-DbaAgReplica -SqlInstance sql2016 -Replica Replica1 |
+        >> Set-DbaAgReplica -ReadOnlyRoutingList @(,('Replica2','Replica3'));
+
+        Equivalent to running "ALTER AVAILABILITY GROUP... MODIFY REPLICA... (READ_ONLY_ROUTING_LIST = (('Replica2', 'Replica3')));"
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'Medium')]
     param (
@@ -110,6 +126,7 @@ function Set-DbaAgReplica {
         [int]$SessionTimeout,
         [string]$EndpointUrl,
         [string]$ReadonlyRoutingConnectionUrl,
+        [object[]]$ReadOnlyRoutingList,
         [parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.AvailabilityReplica]$InputObject,
         [switch]$EnableException
@@ -175,6 +192,14 @@ function Set-DbaAgReplica {
 
                     if ($SeedingMode) {
                         $agreplica.SeedingMode = $SeedingMode
+                    }
+
+                    if ($ReadOnlyRoutingList) {
+                        $rorl = [List[IList[string]]]::new();
+                        $ReadOnlyRoutingList | foreach {
+                            $rorl.Add([List[string]] $_);
+                        }
+                        $agreplica.SetLoadBalancedReadOnlyRoutingList($rorl);
                     }
 
                     if ($SessionTimeout) {
