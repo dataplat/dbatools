@@ -4,7 +4,7 @@ function Get-DbaPrivilege {
         Gets the users with local privileges on one or more computers.
 
     .DESCRIPTION
-        Gets the users with local privileges 'Lock Pages in Memory', 'Instant File Initialization', 'Logon as Batch', or 'Generate Security Audits' on one or more computers.
+        Gets the users with local privileges 'Lock Pages in Memory', 'Instant File Initialization', 'Logon as Batch', 'Generate Security Audits' or 'Logon as a service' on one or more computers.
 
         Requires Local Admin rights on destination computer(s).
 
@@ -86,7 +86,7 @@ function Get-DbaPrivilege {
                     }
                 }
                 if ($Priv.count -eq 0) {
-                    Write-Message -Level Verbose -Message "No users with Batch Logon, Instant File Initialization, Lock Pages in Memory Rights, or Generate Security Audits on $computer"
+                    Write-Message -Level Verbose -Message "No users with Batch Logon, Instant File Initialization, Lock Pages in Memory Rights, Generate Security Audits or Logon as a service on $computer"
                 }
 
                 Write-Message -Level Verbose -Message "Getting Batch Logon Privileges on $Computer"
@@ -168,7 +168,28 @@ function Get-DbaPrivilege {
                 if ($gsa.count -eq 0) {
                     Write-Message -Level Verbose -Message "No users with Generate Security Audits Rights on $computer"
                 }
-                $users = @() + $BL + $ifi + $lpim + $gsa | Select-Object -Unique
+
+                Write-Message -Level Verbose -Message "Getting Logon as a service Privileges on $Computer"
+                $los = Invoke-Command2 -Raw -ComputerName $computer -Credential $Credential -ArgumentList $ResolveSID -ScriptBlock {
+                    param ($ResolveSID)
+                    . ([ScriptBlock]::Create($ResolveSID))
+                    $temp = ([System.IO.Path]::GetTempPath()).TrimEnd("");
+                    $losEntries = (Get-Content $temp\secpolByDbatools.cfg | Where-Object {
+                            $_ -like "SeServiceLogonRight*"
+                        })
+
+                    if ($null -ne $losEntries) {
+                        $losEntries.substring(22).split(",").replace("`*", "") | ForEach-Object {
+                            Convert-SIDToUserName -SID $_
+                        }
+                    }
+                } -ErrorAction SilentlyContinue
+
+                if ($los.count -eq 0) {
+                    Write-Message -Level Verbose -Message "No users with Logon as a service Rights on $computer"
+                }
+
+                $users = @() + $BL + $ifi + $lpim + $gsa + $los | Select-Object -Unique
                 $users | ForEach-Object {
                     [PSCustomObject]@{
                         ComputerName              = $computer
@@ -177,6 +198,7 @@ function Get-DbaPrivilege {
                         InstantFileInitialization = $ifi -contains $_
                         LockPagesInMemory         = $lpim -contains $_
                         GenerateSecurityAudit     = $gsa -contains $_
+                        LogonAsAService           = $los -contains $_
                     }
                 }
                 Write-Message -Level Verbose -Message "Removing secpol file on $computer"
