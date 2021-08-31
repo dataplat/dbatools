@@ -180,9 +180,12 @@ function Get-DbaPrivilege {
                         })
 
                     if ($null -ne $losEntries) {
-                        $losEntries.substring(22).split(",") | ForEach-Object {
-                            $_
-                            #try { $sid = $_ ; Convert-SIDToUserName -SID $sid } catch { $sid }
+                        $losEntries.Substring(22).split(",") | ForEach-Object {
+                            if ($_ -match '^\*S-') {
+                                Convert-SIDToUserName -SID $_.TrimStart('*')
+                            } else {
+                                $_
+                            }
                         }
                     }
                 } -ErrorAction SilentlyContinue
