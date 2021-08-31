@@ -212,22 +212,15 @@ function Write-DbaDbTableData {
         $steppablePipeline = $null
 
         if (-not $PSBoundParameters.Database) {
-            if ($server.ConnectionContext.DatabaseName) {
-                $Database = $server.ConnectionContext.DatabaseName
-                $PSBoundParameters.Database = $server.ConnectionContext.DatabaseName
-                $databaseName = $server.ConnectionContext.DatabaseName
-            }
-
-            if ($SqlInstance.IsConnectionString) {
-                foreach ($item in $SqlInstance.InputObject.Split(';').Trim()) {
-                    $key = $item.Split('=').Trim() | Select-Object -First 1
-                    $value = $item.Split('=').Trim() | Select-Object -Last 1
-                    if ($key -eq 'Database') {
-                        $Database = $value
-                        $PSBoundParameters.Database = $value
-                        $databaseName = $value
-                    }
-                }
+            if ($SqlInstance.ConnectionContext.DatabaseName) {
+                $Database = $SqlInstance.ConnectionContext.DatabaseName
+                $PSBoundParameters.Database = $SqlInstance.ConnectionContext.DatabaseName
+                $databaseName = $SqlInstance.ConnectionContext.DatabaseName
+            } else {
+                $dbname = (Invoke-DbaQuery -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Query "SELECT DB_NAME() AS dbname").dbname
+                $Database = $dbname
+                $PSBoundParameters.Database = $dbname
+                $databaseName = $dbname
             }
         }
 
