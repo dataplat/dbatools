@@ -23,9 +23,5 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         It "Should not warn" {
             $warn | Should Be $null
         }
-        It "Gets no results for LogonAsAService" {
-            $logonAsAServiceUsers = $results | Where-Object LogonAsAService | Select-Object -ExpandProperty User
-            $logonAsAServiceUsers | Should Be $null
-        }
     }
 }
