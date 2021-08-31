@@ -4,7 +4,7 @@ function Get-DbaPrivilege {
         Gets the users with local privileges on one or more computers.
 
     .DESCRIPTION
-        Gets the users with local privileges 'Lock Pages in Memory', 'Instant File Initialization', 'Logon as Batch', or 'Generate Security Audits' on one or more computers.
+        Gets the users with local privileges 'Lock Pages in Memory', 'Instant File Initialization', 'Logon as Batch', 'Generate Security Audits' or 'Logon as a service' on one or more computers.
 
         Requires Local Admin rights on destination computer(s).
 
@@ -74,23 +74,14 @@ function Get-DbaPrivilege {
             }
 
             try {
-                Write-Message -Level Verbose -Message "Getting Privileges on $Computer"
-                $Priv = $null
-                $Priv = Invoke-Command2 -Raw -ComputerName $computer -Credential $Credential -ScriptBlock {
-                    $temp = ([System.IO.Path]::GetTempPath()).TrimEnd(""); secedit /export /cfg $temp\secpolByDbatools.cfg > $NULL;
-                    Get-Content $temp\secpolByDbatools.cfg | Where-Object {
-                        $_ -match "SeBatchLogonRight" -or
-                        $_ -match 'SeManageVolumePrivilege' -or
-                        $_ -match 'SeLockMemoryPrivilege' -or
-                        $_ -match 'SeAuditPrivilege'
-                    }
-                }
-                if ($Priv.count -eq 0) {
-                    Write-Message -Level Verbose -Message "No users with Batch Logon, Instant File Initialization, Lock Pages in Memory Rights, or Generate Security Audits on $computer"
+                Write-Message -Level Verbose -Message "Exporting Privileges on $computer"
+                $null = Invoke-Command2 -Raw -ComputerName $computer -Credential $Credential -ScriptBlock {
+                    $temp = ([System.IO.Path]::GetTempPath()).TrimEnd("")
+                    secedit /export /cfg $temp\secpolByDbatools.cfg > $null
                 }
 
-                Write-Message -Level Verbose -Message "Getting Batch Logon Privileges on $Computer"
-                $BL = Invoke-Command2 -Raw -ComputerName $computer -Credential $Credential -ArgumentList $ResolveSID -ScriptBlock {
+                Write-Message -Level Verbose -Message "Getting Batch Logon Privileges on $computer"
+                $bl = Invoke-Command2 -Raw -ComputerName $computer -Credential $Credential -ArgumentList $ResolveSID -ScriptBlock {
                     param ($ResolveSID)
                     . ([ScriptBlock]::Create($ResolveSID))
                     $temp = ([System.IO.Path]::GetTempPath()).TrimEnd("");
@@ -99,17 +90,20 @@ function Get-DbaPrivilege {
                         })
 
                     if ($null -ne $blEntries) {
-                        $blEntries.substring(20).split(",").replace("`*", "") | ForEach-Object {
-                            Convert-SIDToUserName -SID $_
+                        $blEntries.Substring(20).Split(",") | ForEach-Object {
+                            if ($_ -match '^\*S-') {
+                                Convert-SIDToUserName -SID $_.TrimStart('*')
+                            } else {
+                                $_
+                            }
                         }
                     }
-
-                } -ErrorAction SilentlyContinue
-                if ($BL.count -eq 0) {
+                }
+                if ($bl.count -eq 0) {
                     Write-Message -Level Verbose -Message "No users with Batch Logon Rights on $computer"
                 }
 
-                Write-Message -Level Verbose -Message "Getting Instant File Initialization Privileges on $Computer"
+                Write-Message -Level Verbose -Message "Getting Instant File Initialization Privileges on $computer"
                 $ifi = Invoke-Command2 -Raw -ComputerName $computer -Credential $Credential -ArgumentList $ResolveSID -ScriptBlock {
                     param ($ResolveSID)
                     . ([ScriptBlock]::Create($ResolveSID))
@@ -119,17 +113,20 @@ function Get-DbaPrivilege {
                         })
 
                     if ($null -ne $ifiEntries) {
-                        $ifiEntries.substring(26).split(",").replace("`*", "") | ForEach-Object {
-                            Convert-SIDToUserName -SID $_
+                        $ifiEntries.Substring(26).Split(",") | ForEach-Object {
+                            if ($_ -match '^\*S-') {
+                                Convert-SIDToUserName -SID $_.TrimStart('*')
+                            } else {
+                                $_
+                            }
                         }
                     }
-
-                } -ErrorAction SilentlyContinue
+                }
                 if ($ifi.count -eq 0) {
                     Write-Message -Level Verbose -Message "No users with Instant File Initialization Rights on $computer"
                 }
 
-                Write-Message -Level Verbose -Message "Getting Lock Pages in Memory Privileges on $Computer"
+                Write-Message -Level Verbose -Message "Getting Lock Pages in Memory Privileges on $computer"
                 $lpim = Invoke-Command2 -Raw -ComputerName $computer -Credential $Credential -ArgumentList $ResolveSID -ScriptBlock {
                     param ($ResolveSID)
                     . ([ScriptBlock]::Create($ResolveSID))
@@ -139,17 +136,20 @@ function Get-DbaPrivilege {
                         })
 
                     if ($null -ne $lpimEntries) {
-                        $lpimEntries.substring(24).split(",").replace("`*", "") | ForEach-Object {
-                            Convert-SIDToUserName -SID $_
+                        $lpimEntries.Substring(24).Split(",") | ForEach-Object {
+                            if ($_ -match '^\*S-') {
+                                Convert-SIDToUserName -SID $_.TrimStart('*')
+                            } else {
+                                $_
+                            }
                         }
                     }
-                } -ErrorAction SilentlyContinue
-
+                }
                 if ($lpim.count -eq 0) {
                     Write-Message -Level Verbose -Message "No users with Lock Pages in Memory Rights on $computer"
                 }
 
-                Write-Message -Level Verbose -Message "Getting Generate Security Audits Privileges on $Computer"
+                Write-Message -Level Verbose -Message "Getting Generate Security Audits Privileges on $computer"
                 $gsa = Invoke-Command2 -Raw -ComputerName $computer -Credential $Credential -ArgumentList $ResolveSID -ScriptBlock {
                     param ($ResolveSID)
                     . ([ScriptBlock]::Create($ResolveSID))
@@ -159,29 +159,58 @@ function Get-DbaPrivilege {
                         })
 
                     if ($null -ne $gsaEntries) {
-                        $gsaEntries.substring(19).split(",").replace("`*", "") | ForEach-Object {
-                            Convert-SIDToUserName -SID $_
+                        $gsaEntries.Substring(19).Split(",") | ForEach-Object {
+                            if ($_ -match '^\*S-') {
+                                Convert-SIDToUserName -SID $_.TrimStart('*')
+                            } else {
+                                $_
+                            }
                         }
                     }
-                } -ErrorAction SilentlyContinue
-
+                }
                 if ($gsa.count -eq 0) {
                     Write-Message -Level Verbose -Message "No users with Generate Security Audits Rights on $computer"
                 }
-                $users = @() + $BL + $ifi + $lpim + $gsa | Select-Object -Unique
+
+                Write-Message -Level Verbose -Message "Getting Logon as a service Privileges on $computer"
+                $los = Invoke-Command2 -Raw -ComputerName $computer -Credential $Credential -ArgumentList $ResolveSID -ScriptBlock {
+                    param ($ResolveSID)
+                    . ([ScriptBlock]::Create($ResolveSID))
+                    $temp = ([System.IO.Path]::GetTempPath()).TrimEnd("");
+                    $losEntries = (Get-Content $temp\secpolByDbatools.cfg | Where-Object {
+                            $_ -like "SeServiceLogonRight*"
+                        })
+
+                    if ($null -ne $losEntries) {
+                        $losEntries.Substring(22).split(",") | ForEach-Object {
+                            if ($_ -match '^\*S-') {
+                                Convert-SIDToUserName -SID $_.TrimStart('*')
+                            } else {
+                                $_
+                            }
+                        }
+                    }
+                }
+                if ($los.count -eq 0) {
+                    Write-Message -Level Verbose -Message "No users with Logon as a service Rights on $computer"
+                }
+
+                $users = @() + $bl + $ifi + $lpim + $gsa + $los | Select-Object -Unique
                 $users | ForEach-Object {
                     [PSCustomObject]@{
                         ComputerName              = $computer
                         User                      = $_
-                        LogonAsBatch              = $BL -contains $_
+                        LogonAsBatch              = $bl -contains $_
                         InstantFileInitialization = $ifi -contains $_
                         LockPagesInMemory         = $lpim -contains $_
                         GenerateSecurityAudit     = $gsa -contains $_
+                        LogonAsAService           = $los -contains $_
                     }
                 }
                 Write-Message -Level Verbose -Message "Removing secpol file on $computer"
                 Invoke-Command2 -Raw -ComputerName $computer -Credential $Credential -ScriptBlock {
-                    $temp = ([System.IO.Path]::GetTempPath()).TrimEnd(""); Remove-Item $temp\secpolByDbatools.cfg -Force > $NULL
+                    $temp = ([System.IO.Path]::GetTempPath()).TrimEnd("")
+                    Remove-Item $temp\secpolByDbatools.cfg -Force
                 }
             } catch {
                 Stop-Function -Continue -Message "Failure" -ErrorRecord $_ -Target $computer
