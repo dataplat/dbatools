@@ -23201,7 +23201,7 @@
     },
     {
         "Name":  "Get-DbaPrivilege",
-        "Description":  "Gets the users with local privileges \u0027Lock Pages in Memory\u0027, \u0027Instant File Initialization\u0027, \u0027Logon as Batch\u0027, or \u0027Generate Security Audits\u0027 on one or more computers.\n\nRequires Local Admin rights on destination computer(s).",
+        "Description":  "Gets the users with local privileges \u0027Lock Pages in Memory\u0027, \u0027Instant File Initialization\u0027, \u0027Logon as Batch\u0027, \u0027Generate Security Audits\u0027 or \u0027Logon as a service\u0027 on one or more computers.\n\nRequires Local Admin rights on destination computer(s).",
         "Tags":  "Privilege",
         "Synopsis":  "Gets the users with local privileges on one or more computers.",
         "Alias":  "",
@@ -57623,9 +57623,27 @@
                            "false",
                            "False",
                            ""
+                       ],
+                       [
+                           "WhatIf",
+                           "If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.",
+                           "wi",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "Confirm",
+                           "If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.",
+                           "cf",
+                           false,
+                           "false",
+                           "",
+                           ""
                        ]
                    ],
-        "Syntax":  "Sync-DbaLoginPermission [-Source] \u003cDbaInstanceParameter\u003e [[-SourceSqlCredential] \u003cPSCredential\u003e] [-Destination] \u003cDbaInstanceParameter[]\u003e [[-DestinationSqlCredential] \u003cPSCredential\u003e] [[-Login] \u003cString[]\u003e] [[-ExcludeLogin] \u003cString[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Sync-DbaLoginPermission [-Source] \u003cDbaInstanceParameter\u003e [[-SourceSqlCredential] \u003cPSCredential\u003e] [-Destination] \u003cDbaInstanceParameter[]\u003e [[-DestinationSqlCredential] \u003cPSCredential\u003e] [[-Login] \u003cString[]\u003e] [[-ExcludeLogin] \u003cString[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Test-DbaAgentJobOwner",

@@ -16,9 +16,12 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 
     Context "Gets Instance Privilege" {
-        $results = Get-DbaPrivilege -ComputerName $env:ComputerName
+        $results = Get-DbaPrivilege -ComputerName $env:ComputerName -WarningVariable warn
         It "Gets results" {
             $results | Should Not Be $null
+        }
+        It "Should not warn" {
+            $warn | Should Be $null
         }
     }
 }
