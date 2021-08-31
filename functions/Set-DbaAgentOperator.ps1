@@ -281,6 +281,7 @@ function Set-DbaAgentOperator {
         }
 
         foreach ($op in $InputObject) {
+            $server = $op | Get-ConnectionParent
             try {
                 if ($Name) {
                     if ($Pscmdlet.ShouldProcess($server, "Updating Operator $($op.Name) Name to $Name")) {
