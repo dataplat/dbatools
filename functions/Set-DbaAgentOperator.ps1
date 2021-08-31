@@ -274,7 +274,7 @@ function Set-DbaAgentOperator {
 
         if ($SqlInstance) {
             try {
-                $InputObject += Get-DbaAgentOperator -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Operator $($op.Name) -EnableException
+                $InputObject += Get-DbaAgentOperator -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Operator $Operator -EnableException
             } catch {
                 Stop-Function -Message "Failed" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
