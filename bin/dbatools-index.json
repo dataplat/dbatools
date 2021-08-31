@@ -23201,7 +23201,7 @@
     },
     {
         "Name":  "Get-DbaPrivilege",
-        "Description":  "Gets the users with local privileges \u0027Lock Pages in Memory\u0027, \u0027Instant File Initialization\u0027, \u0027Logon as Batch\u0027, or \u0027Generate Security Audits\u0027 on one or more computers.\n\nRequires Local Admin rights on destination computer(s).",
+        "Description":  "Gets the users with local privileges \u0027Lock Pages in Memory\u0027, \u0027Instant File Initialization\u0027, \u0027Logon as Batch\u0027, \u0027Generate Security Audits\u0027 or \u0027Logon as a service\u0027 on one or more computers.\n\nRequires Local Admin rights on destination computer(s).",
         "Tags":  "Privilege",
         "Synopsis":  "Gets the users with local privileges on one or more computers.",
         "Alias":  "",
