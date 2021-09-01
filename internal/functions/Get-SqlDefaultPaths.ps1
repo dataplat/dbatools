@@ -17,13 +17,13 @@ function Get-SqlDefaultPaths {
 
     try {
         if ($SqlInstance -isnot [Microsoft.SqlServer.Management.Smo.SqlSmoObject]) {
-            $Server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
+            $Server = Connect-DbaInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
         } else {
             $server = $SqlInstance
         }
     } catch {
-        Write-Message -Lvel Warning -Message "Cannot connect to $SqlInstance"
-        break
+        Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $SqlInstance
+        return
     }
     switch ($filetype) { "mdf" { $filetype = "data" } "ldf" { $filetype = "log" } }
 

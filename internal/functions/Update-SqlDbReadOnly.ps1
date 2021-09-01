@@ -24,7 +24,7 @@ function Update-SqlDbReadOnly {
     }
 
     try {
-        $server = Connect-SqlInstance -SqlInstance $SqlInstance
+        $server = Connect-DbaInstance -SqlInstance $SqlInstance
         if ($Pscmdlet.ShouldProcess($server.Name, "Setting $DbName to readonly")) {
             if ($readonly) {
                 Stop-DbaProcess -SqlInstance $SqlInstance -Database $DbName

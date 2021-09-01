@@ -69,25 +69,27 @@ function New-DbaLogShippingPrimarySecondary {
 
     # Try connecting to the instance
     try {
-        $ServerPrimary = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
+        $serverPrimary = Connect-DbaInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
     } catch {
-        Stop-Function -Message "Could not connect to Sql Server instance" -Target $SqlInstance -Continue
+        Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $SqlInstance
+        return
     }
 
     # Try connecting to the instance
     try {
-        $ServerSecondary = Connect-SqlInstance -SqlInstance $SecondaryServer -SqlCredential $SecondarySqlCredential
+        $serverSecondary = Connect-DbaInstance -SqlInstance $SecondaryServer -SqlCredential $SecondarySqlCredential
     } catch {
-        Stop-Function -Message "Could not connect to Sql Server instance" -Target $SecondaryServer -Continue
+        Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $SecondaryServer
+        return
     }
 
     # Check if the database is present on the source sql server
-    if ($ServerPrimary.Databases.Name -notcontains $PrimaryDatabase) {
+    if ($serverPrimary.Databases.Name -notcontains $PrimaryDatabase) {
         Stop-Function -Message "Database $PrimaryDatabase is not available on instance $SqlInstance" -ErrorRecord $_ -Target $SqlInstance -Continue
     }
 
     # Check if the database is present on the destination sql server
-    if ($ServerSecondary.Databases.Name -notcontains $SecondaryDatabase) {
+    if ($serverSecondary.Databases.Name -notcontains $SecondaryDatabase) {
         Stop-Function -Message "Database $SecondaryDatabase is not available on instance $SecondaryServer" -ErrorRecord $_ -Target $SecondaryServer -Continue
     }
 
@@ -95,7 +97,7 @@ function New-DbaLogShippingPrimarySecondary {
 
     try {
         Write-Message -Message "Executing query:`n$Query" -Level Verbose
-        $Result = $ServerPrimary.Query($Query)
+        $Result = $serverPrimary.Query($Query)
         if ($Result.Count -eq 0 -or $Result[0] -ne $PrimaryDatabase) {
             Stop-Function -Message "Database $PrimaryDatabase does not exist as log shipping primary.`nPlease run New-DbaLogShippingPrimaryDatabase first."  -ErrorRecord $_ -Target $SqlInstance -Continue
         }
@@ -109,7 +111,7 @@ function New-DbaLogShippingPrimarySecondary {
         ,@secondary_server = N'$SecondaryServer'
         ,@secondary_database = N'$SecondaryDatabase' "
 
-    if ($ServerPrimary.Version.Major -gt 9) {
+    if ($serverPrimary.Version.Major -gt 9) {
         $Query += ",@overwrite = 1;"
     } else {
         $Query += ";"
@@ -120,7 +122,7 @@ function New-DbaLogShippingPrimarySecondary {
         try {
             Write-Message -Message "Configuring logshipping connecting the primary database $PrimaryDatabase to secondary database $SecondaryDatabase on $SqlInstance." -Level Verbose
             Write-Message -Message "Executing query:`n$Query" -Level Verbose
-            $ServerPrimary.Query($Query)
+            $serverPrimary.Query($Query)
         } catch {
             Write-Message -Message "$($_.Exception.InnerException.InnerException.InnerException.InnerException.Message)" -Level Warning
             Stop-Function -Message "Error executing the query.`n$($_.Exception.Message)`n$Query" -ErrorRecord $_ -Target $SqlInstance -Continue

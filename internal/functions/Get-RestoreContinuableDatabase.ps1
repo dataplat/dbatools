@@ -17,12 +17,12 @@ function Get-RestoreContinuableDatabase {
     )
 
     try {
-        $Server = Connect-SqlInstance -Sqlinstance $SqlInstance -SqlCredential $SqlCredential
+        $server = Connect-DbaInstance -Sqlinstance $SqlInstance -SqlCredential $SqlCredential
     } catch {
-        Write-Message -Level Warning -Message "Cannot connect to $SqlInstance"
-        break
+        Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $SqlInstance
+        return
     }
-    if ($Server.VersionMajor -ge 9) {
+    if ($server.VersionMajor -ge 9) {
         $sql = "select distinct db_name(database_id) as 'Database', differential_base_lsn, redo_start_lsn, redo_start_fork_guid as 'FirstRecoveryForkID' from master.sys.master_files where redo_start_lsn is not NULL"
     } else {
         $sql = "
