@@ -26,7 +26,7 @@ function Connect-ConnstringInstance {
         Sets the number of seconds a statement is given to run before failing with a timeout error.
 
     .EXAMPLE
-        Connect-SqlInstance -SqlInstance sql2014
+        Connect-DbaInstance -SqlInstance sql2014
 
         Connect to the Server sql2014 with native credentials.
     #>

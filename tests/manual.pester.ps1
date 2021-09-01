@@ -187,7 +187,7 @@ function Get-CoverageIndications($Path, $ModuleBase) {
     $allfiles = Get-ChildItem -File -Path "$ModuleBase\internal\functions", "$ModuleBase\functions" -Filter '*.ps1'
     foreach ($f in $funcs) {
         # exclude always used functions ?!
-        if ($f -in ('Connect-SqlInstance', 'Select-DefaultView', 'Stop-Function', 'Write-Message')) { continue }
+        if ($f -in ('Connect-DbaInstance', 'Select-DefaultView', 'Stop-Function', 'Write-Message')) { continue }
         # can I find a correspondence to a physical file (again, on the convenience of having Get-DbaFoo.ps1 actually defining Get-DbaFoo)?
         $res = $allfiles | Where-Object { $_.Name.Replace('.ps1', '') -eq $f }
         if ($res.count -gt 0) {

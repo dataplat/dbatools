@@ -18,8 +18,8 @@ function Update-SqlDbOwner {
         [switch]$EnableException
     )
 
-    $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
-    $destServer = Connect-SqlInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
+    $sourceServer = Connect-DbaInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
+    $destServer = Connect-DbaInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
 
     $source = $sourceServer.DomainInstanceName
     $destination = $destServer.DomainInstanceName

@@ -56,13 +56,13 @@ function Test-DbaRestoreVersion {
     try {
         if ($SqlInstance -isnot [Microsoft.SqlServer.Management.Smo.SqlSmoObject]) {
             $Newconnection = $true
-            $Server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
+            $Server = Connect-DbaInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
         } else {
             $server = $SqlInstance
         }
     } catch {
-        Write-Message -Level Warning -Message "Cannot connect to $SqlInstance"
-        break
+        Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $SqlInstance
+        return
     }
 
     if ($SystemDatabaseRestore) {

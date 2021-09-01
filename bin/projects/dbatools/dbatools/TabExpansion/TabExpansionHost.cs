@@ -57,7 +57,7 @@ namespace Sqlcollaborative.Dbatools.TabExpansion
 
         #region Utility methods
         /// <summary>
-        /// Registers a new instance or updates an already existing one. Should only be called from Connect-SqlInstance and Connect-DbaSqlServer
+        /// Registers a new instance or updates an already existing one. Should only be called from Connect-DbaInstance and Connect-DbaSqlServer
         /// </summary>
         /// <param name="InstanceName">Name of the instance connected to</param>
         /// <param name="Connection">To connection object containing the relevant information for accessing the instance</param>

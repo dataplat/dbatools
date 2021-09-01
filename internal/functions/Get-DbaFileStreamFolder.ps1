@@ -46,15 +46,14 @@ function Get-DbaFileStreamFolder {
         [switch]$EnableException
     )
 
-    begin {
-        try {
-            $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
-        } catch {
-            Stop-Function -Message "Failed to process Instance $SqlInstance." -InnerErrorRecord $_ -Target $SqlInstance -Continue
-        }
-    }
-
     process {
+        try {
+            $server = Connect-DbaInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
+        } catch {
+            Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $SqlInstance
+            return
+        }
+
         $sql = "select d.name as 'dbname', mf.Physical_Name from sys.master_files mf inner join sys.databases d on mf.database_id = d.database_id
         where mf.type=2"
         $databases = @()
