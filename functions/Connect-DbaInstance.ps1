@@ -433,6 +433,9 @@ function Connect-DbaInstance {
         $Fields2000_Login = 'CreateDate', 'DateLastModified', 'DefaultDatabase', 'DenyWindowsLogin', 'IsSystemObject', 'Language', 'LanguageAlias', 'LoginType', 'Name', 'Sid', 'WindowsLoginAccessType'
         $Fields200x_Login = $Fields2000_Login + @('AsymmetricKey', 'Certificate', 'Credential', 'ID', 'IsDisabled', 'IsLocked', 'IsPasswordExpired', 'MustChangePassword', 'PasswordExpirationEnabled', 'PasswordPolicyEnforced')
         $Fields201x_Login = $Fields200x_Login + @('PasswordHashAlgorithm')
+
+        #see #7753
+        $Fields_Job = 'LastRunOutcome', 'CurrentRunStatus', 'CurrentRunStep', 'CurrentRunRetryAttempt', 'NextRunScheduleID', 'NextRunDate', 'LastRunDate', 'JobType', 'HasStep', 'HasServer', 'CurrentRunRetryAttempt', 'HasSchedule', 'Category', 'CategoryID', 'CategoryType', 'OperatorToEmail', 'OperatorToNetSend', 'OperatorToPage'
         if ($AzureDomain) { $AzureDomain = [regex]::escape($AzureDomain) }
     }
     process {
@@ -1046,6 +1049,7 @@ function Connect-DbaInstance {
                         Write-Message -Level Debug -Message "SetDefaultInitFields will be used"
                         $initFieldsDb = New-Object System.Collections.Specialized.StringCollection
                         $initFieldsLogin = New-Object System.Collections.Specialized.StringCollection
+                        $initFieldsJob = New-Object System.Collections.Specialized.StringCollection
                         if ($server.VersionMajor -eq 8) {
                             # 2000
                             [void]$initFieldsDb.AddRange($Fields2000_Db)
@@ -1061,6 +1065,9 @@ function Connect-DbaInstance {
                         }
                         $server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Database], $initFieldsDb)
                         $server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Login], $initFieldsLogin)
+                        #see 7753
+                        [void]$initFieldsJob.AddRange($Fields_Job)
+                        $server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Agent.Job], $initFieldsJob)
                     } catch {
                         Write-Message -Level Debug -Message "SetDefaultInitFields failed with $_"
                         # perhaps a DLL issue, continue going
