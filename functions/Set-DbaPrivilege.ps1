@@ -4,7 +4,7 @@ function Set-DbaPrivilege {
         Adds the SQL Service account to local privileges on one or more computers.
 
     .DESCRIPTION
-        Adds the SQL Service account to local privileges 'Lock Pages in Memory', 'Instant File Initialization', 'Logon as Batch' on one or more computers.
+        Adds the SQL Service account to local privileges 'Lock Pages in Memory', 'Instant File Initialization', 'Logon as Batch', 'Logon as a service' on one or more computers.
 
         Requires Local Admin rights on destination computer(s).
 
@@ -16,7 +16,7 @@ function Set-DbaPrivilege {
 
     .PARAMETER Type
         Use this to choose the privilege(s) to which you want to add the SQL Service account.
-        Accepts 'IFI', 'LPIM', 'BatchLogon', and/or 'SecAudit' for local privileges 'Instant File Initialization', 'Lock Pages in Memory', 'Logon as Batch', and 'Generate Security Audits'.
+        Accepts 'IFI', 'LPIM', 'BatchLogon','SecAudit' and/or 'ServiceLogon' for local privileges 'Instant File Initialization', 'Lock Pages in Memory', 'Logon as Batch','Generate Security Audits' and 'Logon as a service'.
 
     .PARAMETER User
         If provided, will add requested permissions to this account instead of the the account under which the SQL service is running.
@@ -61,7 +61,7 @@ function Set-DbaPrivilege {
         [dbainstanceparameter[]]$ComputerName = $env:COMPUTERNAME,
         [PSCredential]$Credential,
         [Parameter(Mandatory)]
-        [ValidateSet('IFI', 'LPIM', 'BatchLogon', 'SecAudit')]
+        [ValidateSet('IFI', 'LPIM', 'BatchLogon', 'SecAudit', 'ServiceLogon')]
         [string[]]$Type,
         [switch]$EnableException,
         [string]$User
@@ -187,6 +187,27 @@ function Convert-UserNameToSID ([string] `$Acc ) {
                                         } else {
                                             <# DO NOT use Write-Message as this is inside of a script block #>
                                             Write-Verbose "$acc already has Write To Security Audit Privilege on $env:ComputerName"
+                                        }
+                                    }
+                                }
+                                if ('ServiceLogon' -in $Type) {
+                                    $SLline = Get-Content $tempfile | Where-Object { $_ -match "SeServiceLogonRight" }
+                                    ForEach ($acc in $SQLServiceAccounts) {
+                                        $SID = Convert-UserNameToSID -Acc $acc;
+                                        if (-not $SLline) {
+                                            $SLline = "SeServiceLogonRight = *$SID"
+                                            (Get-Content $tempfile) -replace "\[Privilege Rights\]", "[Privilege Rights]`n$SLline" |
+                                                Set-Content $tempfile
+                                            <# DO NOT use Write-Message as this is inside of a script block #>
+                                            Write-Verbose "Added $acc to Service Logon Privileges on $env:ComputerName"
+                                        } elseif ($SLline -notmatch $SID) {
+                                            (Get-Content $tempfile) -replace "SeServiceLogonRight = ", "SeServiceLogonRight = *$SID," |
+                                                Set-Content $tempfile
+                                            <# DO NOT use Write-Message as this is inside of a script block #>
+                                            Write-Verbose "Added $acc to Service Logon Privileges on $env:ComputerName"
+                                        } else {
+                                            <# DO NOT use Write-Message as this is inside of a script block #>
+                                            Write-Verbose "$acc already has Service Logon Privilege on $env:ComputerName"
                                         }
                                     }
                                 }
