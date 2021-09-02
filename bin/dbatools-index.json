@@ -51347,7 +51347,7 @@
         "CommandName":  "Set-DbaAgReplica",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Set-DbaAgReplica",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eSet-DbaAgReplica -SqlInstance sql2016 -Replica sql2016 -AvailabilityGroup SharePoint -BackupPriority 5000\nSets the backup priority to 5000 for the sql2016 replica for the SharePoint availability group on sql2016\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaAgReplica -SqlInstance sql2016 | Out-GridView -Passthru | Set-DbaAgReplica -BackupPriority 5000\nSets the backup priority to 5000 for the selected availability groups.",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eSet-DbaAgReplica -SqlInstance sql2016 -Replica sql2016 -AvailabilityGroup SharePoint -BackupPriority 5000\nSets the backup priority to 5000 for the sql2016 replica for the SharePoint availability group on sql2016\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaAgReplica -SqlInstance sql2016 | Out-GridView -Passthru | Set-DbaAgReplica -BackupPriority 5000\nSets the backup priority to 5000 for the selected availability groups.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaAgReplica -SqlInstance sql2016 -Replica Replica1 |\n\u003e\u003e Set-DbaAgReplica -ReadOnlyRoutingList Replica2, Replica3\nEquivalent to running \"ALTER AVAILABILITY GROUP... MODIFY REPLICA... (READ_ONLY_ROUTING_LIST = (\u0027Replica2\u0027, \u0027Replica3\u0027));\"",
         "Params":  [
                        [
                            "SqlInstance",
@@ -51467,6 +51467,15 @@
                            ""
                        ],
                        [
+                           "ReadOnlyRoutingList",
+                           "Sets the read-only routing list for when this replica is in the primary role.",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
                            "InputObject",
                            "Enables piping from Get-DbaAgReplica.",
                            "",
@@ -51503,7 +51512,7 @@
                            ""
                        ]
                    ],
-        "Syntax":  "Set-DbaAgReplica [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-AvailabilityGroup] \u003cString\u003e] [[-Replica] \u003cString\u003e] [[-AvailabilityMode] \u003cString\u003e] [[-FailoverMode] \u003cString\u003e] [[-BackupPriority] \u003cInt32\u003e] [[-ConnectionModeInPrimaryRole] \u003cString\u003e] [[-ConnectionModeInSecondaryRole] \u003cString\u003e] [[-SeedingMode] \u003cString\u003e] [[-SessionTimeout] \u003cInt32\u003e] [[-EndpointUrl] \u003cString\u003e] [[-ReadonlyRoutingConnectionUrl] \u003cString\u003e] [[-InputObject] \u003cAvailabilityReplica\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Set-DbaAgReplica [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-AvailabilityGroup] \u003cString\u003e] [[-Replica] \u003cString\u003e] [[-AvailabilityMode] \u003cString\u003e] [[-FailoverMode] \u003cString\u003e] [[-BackupPriority] \u003cInt32\u003e] [[-ConnectionModeInPrimaryRole] \u003cString\u003e] [[-ConnectionModeInSecondaryRole] \u003cString\u003e] [[-SeedingMode] \u003cString\u003e] [[-SessionTimeout] \u003cInt32\u003e] [[-EndpointUrl] \u003cString\u003e] [[-ReadonlyRoutingConnectionUrl] \u003cString\u003e] [[-ReadOnlyRoutingList] \u003cObject[]\u003e] [[-InputObject] \u003cAvailabilityReplica\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Set-DbaAvailabilityGroup",
@@ -54462,7 +54471,7 @@
     },
     {
         "Name":  "Set-DbaPrivilege",
-        "Description":  "Adds the SQL Service account to local privileges \u0027Lock Pages in Memory\u0027, \u0027Instant File Initialization\u0027, \u0027Logon as Batch\u0027 on one or more computers.\n\nRequires Local Admin rights on destination computer(s).",
+        "Description":  "Adds the SQL Service account to local privileges \u0027Lock Pages in Memory\u0027, \u0027Instant File Initialization\u0027, \u0027Logon as Batch\u0027, \u0027Logon as a service\u0027 on one or more computers.\n\nRequires Local Admin rights on destination computer(s).",
         "Tags":  "Privilege",
         "Synopsis":  "Adds the SQL Service account to local privileges on one or more computers.",
         "Alias":  "",
@@ -54492,12 +54501,12 @@
                        ],
                        [
                            "Type",
-                           "Use this to choose the privilege(s) to which you want to add the SQL Service account.\r\nAccepts \u0027IFI\u0027, \u0027LPIM\u0027, \u0027BatchLogon\u0027, and/or \u0027SecAudit\u0027 for local privileges \u0027Instant File Initialization\u0027, \u0027Lock Pages in Memory\u0027, \u0027Logon as Batch\u0027, and \u0027Generate Security Audits\u0027.",
+                           "Use this to choose the privilege(s) to which you want to add the SQL Service account.\r\nAccepts \u0027IFI\u0027, \u0027LPIM\u0027, \u0027BatchLogon\u0027,\u0027SecAudit\u0027 and/or \u0027ServiceLogon\u0027 for local privileges \u0027Instant File Initialization\u0027, \u0027Lock Pages in Memory\u0027, \u0027Logon as Batch\u0027,\u0027Generate Security Audits\u0027 and \u0027Logon \r\nas a service\u0027.",
                            "",
                            true,
                            "false",
                            "",
-                           "IFI,LPIM,BatchLogon,SecAudit"
+                           "IFI,LPIM,BatchLogon,SecAudit,ServiceLogon"
                        ],
                        [
                            "EnableException",
