@@ -197,7 +197,7 @@ function Set-DbaAgReplica {
                         foreach ($rolist in $ReadOnlyRoutingList) {
                             $null = $rorl.Add([System.Collections.Generic.List[string]] $rolist)
                         }
-                        $agreplica.SetLoadBalancedReadOnlyRoutingList($rorl)
+                        $null = $agreplica.SetLoadBalancedReadOnlyRoutingList($rorl)
                     }
 
                     if ($SessionTimeout) {
