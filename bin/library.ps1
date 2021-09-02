@@ -79,7 +79,7 @@ if ($ImportLibrary) {
                     $dbaToolsAssembly = Import-Module -Name "$dll"
                 } catch {
                     Write-Verbose -Message "Failed to copy and import, attempting to import straight from the module directory"
-                    $script:DllRoot = Resolve-Path -Path bin
+                    $script:DllRoot = Resolve-Path -Path "$($script:PSModuleRoot)\bin\"
                     Import-Module -Name "$(Join-Path -Path $script:DllRoot -ChildPath dbatools.dll)" -ErrorAction Stop
                 }
                 Write-Verbose -Message "Total duration: $((Get-Date) - $start)"
