@@ -32,5 +32,9 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
             $results.AvailabilityGroup | Should -Be $agname
             $results.BackupPriority | Should -Be 1000
         }
+        It "attempts to add a ReadOnlyRoutingList" {
+            $null = Get-DbaAgReplica -SqlInstance $script:instance3 -AvailabilityGroup $agname | Select-Object -First 1 | Set-DbaAgReplica -ReadOnlyRoutingList nondockersql -WarningVariable warn
+            $warn | Should -match "does not exist. Only availability"
+        }
     }
 } #$script:instance2 for appveyor

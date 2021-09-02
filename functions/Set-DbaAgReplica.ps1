@@ -1,4 +1,3 @@
-using namespace System.Collections.Generic;
 function Set-DbaAgReplica {
     <#
     .SYNOPSIS
@@ -96,15 +95,9 @@ function Set-DbaAgReplica {
 
     .EXAMPLE
         PS C:\> Get-DbaAgReplica -SqlInstance sql2016 -Replica Replica1 |
-        >> Set-DbaAgReplica -ReadOnlyRoutingList Replica2,Replica3;
+        >> Set-DbaAgReplica -ReadOnlyRoutingList Replica2, Replica3
 
         Equivalent to running "ALTER AVAILABILITY GROUP... MODIFY REPLICA... (READ_ONLY_ROUTING_LIST = ('Replica2', 'Replica3'));"
-
-    .EXAMPLE
-        PS C:\> Get-DbaAgReplica -SqlInstance sql2016 -Replica Replica1 |
-        >> Set-DbaAgReplica -ReadOnlyRoutingList @(,('Replica2','Replica3'));
-
-        Equivalent to running "ALTER AVAILABILITY GROUP... MODIFY REPLICA... (READ_ONLY_ROUTING_LIST = (('Replica2', 'Replica3')));"
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'Medium')]
     param (
@@ -131,6 +124,11 @@ function Set-DbaAgReplica {
         [Microsoft.SqlServer.Management.Smo.AvailabilityReplica]$InputObject,
         [switch]$EnableException
     )
+    begin {
+        if ($ReadOnlyRoutingList) {
+            $null = Add-Type -AssemblyName System.Collections
+        }
+    }
     process {
         if (Test-Bound -Not SqlInstance, InputObject) {
             Stop-Function -Message "You must supply either -SqlInstance or an Input Object"
@@ -195,11 +193,11 @@ function Set-DbaAgReplica {
                     }
 
                     if ($ReadOnlyRoutingList) {
-                        $rorl = [List[IList[string]]]::new();
-                        $ReadOnlyRoutingList | foreach {
-                            $rorl.Add([List[string]] $_);
+                        $rorl = New-Object System.Collections.Generic.List[System.Collections.Generic.IList[string]]
+                        foreach ($rolist in $ReadOnlyRoutingList) {
+                            $null = $rorl.Add([System.Collections.Generic.List[string]] $rolist)
                         }
-                        $agreplica.SetLoadBalancedReadOnlyRoutingList($rorl);
+                        $agreplica.SetLoadBalancedReadOnlyRoutingList($rorl)
                     }
 
                     if ($SessionTimeout) {
