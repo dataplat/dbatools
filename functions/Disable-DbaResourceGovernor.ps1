@@ -65,7 +65,7 @@ function Disable-DbaResourceGovernor {
             if ($PSCmdlet.ShouldProcess($instance, "Changing Resource Governor enabled from '$resourceGovernorState' to 'False' at the instance level")) {
                 try {
                     $server.ResourceGovernor.Enabled = $false
-                    $server.Alter()
+                    $server.ResourceGovernor.Alter()
                 } catch {
                     Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
                 }
