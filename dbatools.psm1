@@ -744,8 +744,7 @@ $script:xplat = @(
     'Get-DbaDbUserDefinedTableType',
     'Get-DbaDbServiceBrokerService',
     'Get-DbaDbServiceBrokerQueue ',
-    'Disable-DbaResourceGovernor',
-    'Enavble-DbaResourceGovernor',
+    'Set-DbaResourceGovernor',
     # Config system
     'Get-DbatoolsConfig',
     'Get-DbatoolsConfigValue',
