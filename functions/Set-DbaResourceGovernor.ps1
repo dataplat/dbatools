@@ -97,8 +97,7 @@ function Set-DbaResourceGovernor {
                         Stop-Function -Message "Couldn't enable Resource Governor" -ErrorRecord $_ -Continue
                     }
                 }
-            }
-            elseif ($Disabled) {
+            } elseif ($Disabled) {
                 if ($PSCmdlet.ShouldProcess($instance, "Changing Resource Governor enabled from '$resourceGovernorState' to 'False' at the instance level")) {
                     try {
                         $server.ResourceGovernor.Enabled = $false
@@ -113,13 +112,11 @@ function Set-DbaResourceGovernor {
                 if ($PSCmdlet.ShouldProcess($instance, "Changing Resource Governor Classifier Function from '$resourceGovernorClassifierFunction' to '$ClassifierFunction'")) {
                     if ($ClassifierFunction -eq "NULL") {
                         $server.ResourceGovernor.ClassifierFunction = $ClassifierFunction
-                    }
-                    else {
+                    } else {
                         $objClassifierFunction = Get-DbaDbUdf -SqlInstance $instance -Database "master" -Name $ClassifierFunction
                         if ($objClassifierFunction) {
                             $server.ResourceGovernor.ClassifierFunction = $objClassifierFunction
-                        }
-                        else {
+                        } else {
                             Stop-Function -Message "Classifier function '$ClassifierFunction' does not exist." -Category ObjectNotFound -ErrorRecord $_ -SilentlyContinue
                         }
                     }
