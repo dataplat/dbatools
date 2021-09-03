@@ -57,9 +57,14 @@ function Set-DbaResourceGovernor {
         Sets Resource Governor to disabled for the instance dev1 on sq2012.
 
     .EXAMPLE
-        PS C:\> Set-DbaResourceGovernor -SqlInstance sql2012\dev1 -ClassifierFunction 'dbo.fnRGClassifier' -Enabled
+        PS C:\> Set-DbaResourceGovernor -SqlInstance sql2012\dev1 -ClassifierFunction 'fnRGClassifier' -Enabled
 
-        Sets Resource Governor to enabled for the instance dev1 on sq2012 and sets the classifier function to be 'dbo.fnRGClassifier'.
+        Sets Resource Governor to enabled for the instance dev1 on sq2012 and sets the classifier function to be 'fnRGClassifier'.
+
+    .EXAMPLE
+        PS C:\> Set-DbaResourceGovernor -SqlInstance sql2012\dev1 -ClassifierFunction 'NULL' -Enabled
+
+        Sets Resource Governor to enabled for the instance dev1 on sq2012 and sets the classifier function to be NULL.
 
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'Low')]
@@ -106,10 +111,17 @@ function Set-DbaResourceGovernor {
             # Set Classifier Function
             if ($ClassifierFunction) {
                 if ($PSCmdlet.ShouldProcess($instance, "Changing Resource Governor Classifier Function from '$resourceGovernorClassifierFunction' to '$ClassifierFunction'")) {
-                    try {
+                    if ($ClassifierFunction -eq "NULL") {
                         $server.ResourceGovernor.ClassifierFunction = $ClassifierFunction
-                    } catch {
-                        Stop-Function -Message "Couldn't set Resource Governor classifier function to '$ClassifierFunction'" -ErrorRecord $_ -Continue
+                    }
+                    else {
+                        $objClassifierFunction = Get-DbaDbUdf -SqlInstance $instance -Database "master" -Name $ClassifierFunction
+                        if ($objClassifierFunction) {
+                            $server.ResourceGovernor.ClassifierFunction = $objClassifierFunction
+                        }
+                        else {
+                            Stop-Function -Message "Classifier function '$ClassifierFunction' does not exist." -Category ObjectNotFound -ErrorRecord $_ -SilentlyContinue
+                        }
                     }
                 }
             }

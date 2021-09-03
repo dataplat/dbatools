@@ -5,7 +5,7 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 Describe "$CommandName Unit Tests" -Tag "UnitTests" {
     Context "Validate parameters" {
         [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'Credential', 'EnableException'
+        [object[]]$knownParameters = 'SqlInstance', 'Credential', 'Enabled', 'Disabled', 'ClassifierFunction', 'EnableException'
         $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
         It "Should only contain our specific parameters" {
             (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
@@ -13,8 +13,17 @@ Describe "$CommandName Unit Tests" -Tag "UnitTests" {
     }
 }
 
-Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
+Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
+        $classifierFunction = "dbo.fnRGClassifier"
+        $createUDFQuery = "CREATE FUNCTION $classifierFunction()
+        RETURNS SYSNAME
+        WITH SCHEMABINDING
+        AS
+        BEGIN
+        RETURN DB_NAME();
+        END;"
+        Invoke-DbaQuery -SqlInstance $script:instance2 -Query $createUDFQuery -Database "master"
         Set-DbaResourceGovernor -SqlInstance $script:instance2 -Disabled -Confirm:$false
     }
     Context "Validate command functionality" {
@@ -29,9 +38,17 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
         }
 
         It "modifies resource governor classifier function" {
-            $ClassifierFunction = 'dbo.fnRGClassifier'
-            $results = Set-DbaResourceGovernor -SqlInstance $script:instance2 -ClassifierFunction $ClassifierFunction -Confirm:$false
-            $results.ClassifierFunction | Should -Be $ClassifierFunction
+            $results = Set-DbaResourceGovernor -SqlInstance $script:instance2 -ClassifierFunction $classifierFunction -Confirm:$false
+            $results.ClassifierFunction | Should -Be $classifierFunction
         }
+
+        It "removes resource governor classifier function" {
+            $results = Set-DbaResourceGovernor -SqlInstance $script:instance2 -ClassifierFunction 'NULL' -Confirm:$false
+            $results.ClassifierFunction | Should -Be ''
+        }
+    }
+    AfterAll {
+        $dropUDFQuery = "DROP FUNCTION $classifierFunction;"
+        Invoke-DbaQuery -SqlInstance $script:instance2 -Query $dropUDFQuery -Database "master"
     }
 }
