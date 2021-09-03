@@ -117,7 +117,7 @@ function Set-DbaResourceGovernor {
                         if ($objClassifierFunction) {
                             $server.ResourceGovernor.ClassifierFunction = $objClassifierFunction
                         } else {
-                            Stop-Function -Message "Classifier function '$ClassifierFunction' does not exist." -Category ObjectNotFound -ErrorRecord $_ -SilentlyContinue
+                            Stop-Function -Message "Classifier function '$ClassifierFunction' does not exist." -Category ObjectNotFound -ErrorRecord $_ -Continue
                         }
                     }
                 }
