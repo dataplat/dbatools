@@ -617,6 +617,7 @@
         'Set-DbaNetworkConfiguration',
         'Set-DbaPowerPlan',
         'Set-DbaPrivilege',
+        'Set-DbaResourceGovernor',
         'Set-DbaSpConfigure',
         'Set-DbaSpn',
         'Set-DbaStartupParameter',
