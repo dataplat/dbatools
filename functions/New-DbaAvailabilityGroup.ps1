@@ -630,7 +630,11 @@ function New-DbaAvailabilityGroup {
         if ($SeedingMode -eq 'Automatic') {
             try {
                 if ($Pscmdlet.ShouldProcess($server.Name, "Seeding mode is automatic. Adding CreateAnyDatabase permissions to availability group.")) {
-                    $null = $server.Query("ALTER AVAILABILITY GROUP [$Name] GRANT CREATE ANY DATABASE")
+                    $sql = "ALTER AVAILABILITY GROUP [$Name] GRANT CREATE ANY DATABASE"
+                    $null = $server.Query($sql)
+                    foreach ($second in $secondaries) {
+                        $null = $second.Query($sql)
+                    }
                 }
             } catch {
                 # Log the exception but keep going
