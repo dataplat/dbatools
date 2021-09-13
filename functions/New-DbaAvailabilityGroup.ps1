@@ -545,20 +545,18 @@ function New-DbaAvailabilityGroup {
         if ($ClusterType -eq 'Wsfc') {
             Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Adding endpoint connect permissions"
 
-            foreach ($second in $secondaries) {
-                if ($Pscmdlet.ShouldProcess($Primary, "Adding cluster permissions for availability group named $Name")) {
-                    Write-Message -Level Verbose -Message "WSFC Cluster requires granting [NT AUTHORITY\SYSTEM] a few things. Setting now."
-                    $sql = "GRANT ALTER ANY AVAILABILITY GROUP TO [NT AUTHORITY\SYSTEM]
-                        GRANT CONNECT SQL TO [NT AUTHORITY\SYSTEM]
-                        GRANT VIEW SERVER STATE TO [NT AUTHORITY\SYSTEM]"
-                    try {
-                        $null = $server.Query($sql)
-                        foreach ($second in $secondaries) {
-                            $null = $second.Query($sql)
-                        }
-                    } catch {
-                        Stop-Function -Message "Failure adding cluster service account permissions" -ErrorRecord $_
+            if ($Pscmdlet.ShouldProcess($Primary, "Adding cluster permissions for availability group named $Name")) {
+                Write-Message -Level Verbose -Message "WSFC Cluster requires granting [NT AUTHORITY\SYSTEM] a few things. Setting now."
+                $sql = "GRANT ALTER ANY AVAILABILITY GROUP TO [NT AUTHORITY\SYSTEM]
+                    GRANT CONNECT SQL TO [NT AUTHORITY\SYSTEM]
+                    GRANT VIEW SERVER STATE TO [NT AUTHORITY\SYSTEM]"
+                try {
+                    $null = $server.Query($sql)
+                    foreach ($second in $secondaries) {
+                        $null = $second.Query($sql)
                     }
+                } catch {
+                    Stop-Function -Message "Failure adding cluster service account permissions" -ErrorRecord $_
                 }
             }
         }
