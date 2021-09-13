@@ -12,7 +12,7 @@ function New-DbaAvailabilityGroup {
         * Adds secondary replica if supplied
         * Adds databases if supplied
             * Performs backup/restore if seeding mode is manual
-            * Performs backup to NUL if seeding mode is automatic
+            * Database has to be in full recovery mode (so at least one backup has been taken) if seeding mode is automatic
         * Adds listener to primary if supplied
         * Joins secondaries to availability group
         * Grants endpoint connect permissions to service accounts
