@@ -98,6 +98,13 @@ function Set-DbaAgReplica {
         >> Set-DbaAgReplica -ReadOnlyRoutingList Replica2, Replica3
 
         Equivalent to running "ALTER AVAILABILITY GROUP... MODIFY REPLICA... (READ_ONLY_ROUTING_LIST = ('Replica2', 'Replica3'));"
+
+    .EXAMPLE
+        PS C:\> Get-DbaAgReplica -SqlInstance sql2016 -Replica Replica1 |
+        >> Set-DbaAgReplica -ReadOnlyRoutingList @(,('Replica2','Replica3'));
+
+        Equivalent to running "ALTER AVAILABILITY GROUP... MODIFY REPLICA... (READ_ONLY_ROUTING_LIST = (('Replica2', 'Replica3')));" setting a load balanced routing list for when Replica1 is the primary replica.
+
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'Medium')]
     param (
