@@ -334,7 +334,7 @@ function Get-DbaDbBackupHistory {
                             if ($fullDb.FirstLsn) {
                                 [bigint]$tlogStartDsn = $fullDb.FirstLsn.ToString()
                             } else {
-                                [bigint]$tlogStartDsn = 0
+                                $tlogStartDsn = $null
                             }
                         } catch {
                             continue
