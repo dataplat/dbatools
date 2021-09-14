@@ -293,8 +293,9 @@ function Set-DbaAgentJob {
             #region job options
             # Settings the options for the job
             if ($NewName) {
-                Write-Message -Message "Setting job name to $NewName" -Level Verbose
-                $currentjob.Rename($NewName)
+                if ($PSCmdlet.ShouldProcess($server, "Setting job name of $($currentjob.Name) to $NewName")) {
+                    $currentjob.Rename($NewName)
+                }
             }
 
             if ($Schedule) {
@@ -305,8 +306,9 @@ function Set-DbaAgentJob {
                         $sID = $server.JobServer.SharedSchedules[$s].ID
 
                         # Add schedule to job
-                        Write-Message -Message "Adding schedule id $sID to job" -Level Verbose
-                        $currentjob.AddSharedSchedule($sID)
+                        if ($PSCmdlet.ShouldProcess($server, "Adding schedule id $sID to job $($currentjob.Name)")) {
+                            $currentjob.AddSharedSchedule($sID)
+                        }
                     } else {
                         Stop-Function -Message "Schedule $s cannot be found on instance $instance" -Target $s -Continue
                     }
@@ -320,9 +322,9 @@ function Set-DbaAgentJob {
                     # Check if the schedule is
                     if ($server.JobServer.SharedSchedules.ID -contains $sID) {
                         # Add schedule to job
-                        Write-Message -Message "Adding schedule id $sID to job" -Level Verbose
-                        $currentjob.AddSharedSchedule($sID)
-
+                        if ($PSCmdlet.ShouldProcess($server, "Adding schedule id $sID to job $($currentjob.Name)")) {
+                            $currentjob.AddSharedSchedule($sID)
+                        }
                     } else {
                         Stop-Function -Message "Schedule ID $sID cannot be found on instance $instance" -Target $sID -Continue
                     }
