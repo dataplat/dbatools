@@ -1,7 +1,7 @@
 
 -- SQL Server 2019 Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: August 4, 2021
+-- Last Modified: September 2, 2021
 -- https://glennsqlperformance.com/ 
 -- https://sqlserverperformance.wordpress.com/
 -- YouTube: https://bit.ly/2PkoAM1 
@@ -1995,11 +1995,13 @@ ORDER BY total_worker_time DESC OPTION (RECOMPILE);
 
 
 -- Determine which scalar UDFs are in-lineable (Query 79) (Inlineable UDFs)
-SELECT OBJECT_NAME(m.object_id) AS [Function Name], is_inlineable, inline_type
+SELECT OBJECT_NAME(m.object_id) AS [Function Name], is_inlineable, inline_type,
+       efs.total_worker_time
 FROM sys.sql_modules AS m WITH (NOLOCK) 
 LEFT OUTER JOIN sys.dm_exec_function_stats AS efs WITH (NOLOCK)
 ON  m.object_id = efs.object_id
 WHERE efs.type_desc = N'SQL_SCALAR_FUNCTION'
+ORDER BY efs.total_worker_time DESC
 OPTION (RECOMPILE);
 ------
 
@@ -2010,7 +2012,7 @@ OPTION (RECOMPILE);
 -- https://bit.ly/2Qt216S
 
 
--- Get QueryStore Options for this database (Query 80) (QueryStore Options)
+-- Get Query Store Options for this database (Query 80) (Query Store Options)
 SELECT actual_state_desc, desired_state_desc, [interval_length_minutes],
        current_storage_size_mb, [max_storage_size_mb], 
 	   query_capture_mode_desc, size_based_cleanup_mode_desc
