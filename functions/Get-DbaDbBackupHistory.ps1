@@ -317,28 +317,24 @@ function Get-DbaDbBackupHistory {
                     #Get the full and build upwards
                     $allBackups = @()
                     $allBackups += $fullDb = Get-DbaDbBackupHistory -SqlInstance $server -Database $db.Name -LastFull -raw:$Raw -DeviceType $DeviceType -IncludeCopyOnly:$IncludeCopyOnly -Since:$since -RecoveryFork $RecoveryFork
+                    if ($null -eq $fullDb) {
+                        Write-Message -Level Verbose -Message "No Backup found for database $($db.Name), skipping"
+                        continue
+                    }
                     if (-not $IgnoreDiffBackup) {
                         $diffDb = Get-DbaDbBackupHistory -SqlInstance $server -Database $db.Name -LastDiff -raw:$Raw -DeviceType $DeviceType -IncludeCopyOnly:$IncludeCopyOnly -Since:$since -RecoveryFork $RecoveryFork
                     }
                     if ($diffDb.LastLsn -gt $fullDb.LastLsn -and $diffDb.DatabaseBackupLSN -eq $fullDb.CheckPointLSN ) {
                         Write-Message -Level Verbose -Message "Valid Differential backup "
                         $allBackups += $diffDb
-                        $tlogStartDsn = ($diffDb.FirstLsn -as [bigint])
+                        $tlogStartDsn = $diffDb.FirstLsn
                     } else {
                         if ($IgnoreDiffBackup) {
                             Write-Message -Level Verbose -Message "Ignoring Diff backups, so using Full backup FirstLSN"
                         } else {
                             Write-Message -Level Verbose -Message "No Diff found"
                         }
-                        # Can't figure out a way around this, it pollutes $error
-                        # but if it's not at least attempted, we get an error that says:
-                        # Cannot process argument transformation on parameter 'LastLsn'.
-                        # Cannot convert null to type "System.Numerics.BigInteger".
-                        try {
-                            [bigint]$tlogStartDsn = $fullDb.FirstLsn.ToString()
-                        } catch {
-                            continue
-                        }
+                        $tlogStartDsn = $fullDb.FirstLsn
                     }
 
                     if ($IncludeCopyOnly -eq $true) {
