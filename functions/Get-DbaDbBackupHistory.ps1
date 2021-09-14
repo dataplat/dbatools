@@ -323,22 +323,14 @@ function Get-DbaDbBackupHistory {
                     if ($diffDb.LastLsn -gt $fullDb.LastLsn -and $diffDb.DatabaseBackupLSN -eq $fullDb.CheckPointLSN ) {
                         Write-Message -Level Verbose -Message "Valid Differential backup "
                         $allBackups += $diffDb
-                        $tlogStartDsn = ($diffDb.FirstLsn -as [bigint])
+                        $tlogStartDsn = $diffDb.FirstLsn
                     } else {
                         if ($IgnoreDiffBackup) {
                             Write-Message -Level Verbose -Message "Ignoring Diff backups, so using Full backup FirstLSN"
                         } else {
                             Write-Message -Level Verbose -Message "No Diff found"
                         }
-                        # Can't figure out a way around this, it pollutes $error
-                        # but if it's not at least attempted, we get an error that says:
-                        # Cannot process argument transformation on parameter 'LastLsn'.
-                        # Cannot convert null to type "System.Numerics.BigInteger".
-                        try {
-                            [bigint]$tlogStartDsn = $fullDb.FirstLsn.ToString()
-                        } catch {
-                            continue
-                        }
+                        $tlogStartDsn = $fullDb.FirstLsn
                     }
 
                     if ($IncludeCopyOnly -eq $true) {
