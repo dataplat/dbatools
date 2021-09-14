@@ -35711,7 +35711,7 @@
     },
     {
         "Name":  "New-DbaAvailabilityGroup",
-        "Description":  "Automates the creation of availability groups.\n\n* Checks prerequisites\n* Creates Availability Group and adds primary replica\n* Grants cluster permissions if necessary\n* Adds secondary replica if supplied\n* Adds databases if supplied\n    * Performs backup/restore if seeding mode is manual\n    * Performs backup to NUL if seeding mode is automatic\n* Adds listener to primary if supplied\n* Joins secondaries to availability group\n* Grants endpoint connect permissions to service accounts\n* Grants CreateAnyDatabase permissions if seeding mode is automatic\n* Returns Availability Group object from primary\n\nNOTES:\n- If a backup / restore is performed, the backups will be left intact on the network share.\n- If you\u0027re using SQL Server on Linux and a fully qualified domain name is required, please use the FQDN to create a proper Endpoint\n\nPLEASE NOTE THE CHANGED DEFAULTS:\nStarting with version 1.1.x we changed the defaults of the following parameters to have the same defaults\nas the T-SQL command \"CREATE AVAILABILITY GROUP\" and the wizard in SQL Server Management Studio:\n* ClusterType from External to Wsfc (Windows Server Failover Cluster).\n* FailureConditionLevel from OnServerDown (Level 1) to OnCriticalServerErrors (Level 3).\n* ConnectionModeInSecondaryRole from AllowAllConnections (ALL) to AllowNoConnections (NO).\nTo change these defaults we have introduced configuration parameters for all of them, see documentation of the parameters for details.\n\nThanks for this, Thomas Stringer! https://blogs.technet.microsoft.com/heyscriptingguy/2013/04/29/set-up-an-alwayson-availability-group-with-powershell/",
+        "Description":  "Automates the creation of availability groups.\n\n* Checks prerequisites\n* Creates Availability Group and adds primary replica\n* Grants cluster permissions if necessary\n* Adds secondary replica if supplied\n* Adds databases if supplied\n    * Performs backup/restore if seeding mode is manual\n    * Database has to be in full recovery mode (so at least one backup has been taken) if seeding mode is automatic\n* Adds listener to primary if supplied\n* Joins secondaries to availability group\n* Grants endpoint connect permissions to service accounts\n* Grants CreateAnyDatabase permissions if seeding mode is automatic\n* Returns Availability Group object from primary\n\nNOTES:\n- If a backup / restore is performed, the backups will be left intact on the network share.\n- If you\u0027re using SQL Server on Linux and a fully qualified domain name is required, please use the FQDN to create a proper Endpoint\n\nPLEASE NOTE THE CHANGED DEFAULTS:\nStarting with version 1.1.x we changed the defaults of the following parameters to have the same defaults\nas the T-SQL command \"CREATE AVAILABILITY GROUP\" and the wizard in SQL Server Management Studio:\n* ClusterType from External to Wsfc (Windows Server Failover Cluster).\n* FailureConditionLevel from OnServerDown (Level 1) to OnCriticalServerErrors (Level 3).\n* ConnectionModeInSecondaryRole from AllowAllConnections (ALL) to AllowNoConnections (NO).\nTo change these defaults we have introduced configuration parameters for all of them, see documentation of the parameters for details.\n\nThanks for this, Thomas Stringer! https://blogs.technet.microsoft.com/heyscriptingguy/2013/04/29/set-up-an-alwayson-availability-group-with-powershell/",
         "Tags":  [
                      "AvailabilityGroup",
                      "HA",
@@ -51347,7 +51347,7 @@
         "CommandName":  "Set-DbaAgReplica",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Set-DbaAgReplica",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eSet-DbaAgReplica -SqlInstance sql2016 -Replica sql2016 -AvailabilityGroup SharePoint -BackupPriority 5000\nSets the backup priority to 5000 for the sql2016 replica for the SharePoint availability group on sql2016\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaAgReplica -SqlInstance sql2016 | Out-GridView -Passthru | Set-DbaAgReplica -BackupPriority 5000\nSets the backup priority to 5000 for the selected availability groups.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaAgReplica -SqlInstance sql2016 -Replica Replica1 |\n\u003e\u003e Set-DbaAgReplica -ReadOnlyRoutingList Replica2, Replica3\nEquivalent to running \"ALTER AVAILABILITY GROUP... MODIFY REPLICA... (READ_ONLY_ROUTING_LIST = (\u0027Replica2\u0027, \u0027Replica3\u0027));\"",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eSet-DbaAgReplica -SqlInstance sql2016 -Replica sql2016 -AvailabilityGroup SharePoint -BackupPriority 5000\nSets the backup priority to 5000 for the sql2016 replica for the SharePoint availability group on sql2016\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaAgReplica -SqlInstance sql2016 | Out-GridView -Passthru | Set-DbaAgReplica -BackupPriority 5000\nSets the backup priority to 5000 for the selected availability groups.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaAgReplica -SqlInstance sql2016 -Replica Replica1 |\n\u003e\u003e Set-DbaAgReplica -ReadOnlyRoutingList Replica2, Replica3\nEquivalent to running \"ALTER AVAILABILITY GROUP... MODIFY REPLICA... (READ_ONLY_ROUTING_LIST = (\u0027Replica2\u0027, \u0027Replica3\u0027));\"\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaAgReplica -SqlInstance sql2016 -Replica Replica1 |\n\u003e\u003e Set-DbaAgReplica -ReadOnlyRoutingList @(,(\u0027Replica2\u0027,\u0027Replica3\u0027));\nEquivalent to running \"ALTER AVAILABILITY GROUP... MODIFY REPLICA... (READ_ONLY_ROUTING_LIST = ((\u0027Replica2\u0027, \u0027Replica3\u0027)));\" setting a load balanced routing list for when Replica1 is the primary \r\nreplica.",
         "Params":  [
                        [
                            "SqlInstance",
@@ -54546,6 +54546,93 @@
                        ]
                    ],
         "Syntax":  "Set-DbaPrivilege [[-ComputerName] \u003cDbaInstanceParameter[]\u003e] [[-Credential] \u003cPSCredential\u003e] [-Type] \u003cString[]\u003e [-EnableException] [[-User] \u003cString\u003e] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+    },
+    {
+        "Name":  "Set-DbaResourceGovernor",
+        "Description":  "In order to utilize Resource Governor, it has to be enabled for an instance and\nhave a classifier function specified. This function toggles the enabled status\nand sets the classifier function.",
+        "Tags":  "ResourceGovernor",
+        "Synopsis":  "Sets the Resource Governor feature on the specified SQL Server to be enabled or disabled,\nalong with specifying an optional classifier function.",
+        "Alias":  "",
+        "Author":  "John McCall (@lowlydba), https://www.lowlydba.com/",
+        "CommandName":  "Set-DbaResourceGovernor",
+        "Availability":  "Windows, Linux, macOS",
+        "Links":  "https://dbatools.io/Set-DbaResourceGovernor",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eSet-DbaResourceGovernor -SqlInstance sql2016 -Enabled\nSets Resource Governor to enabled for the instance sql2016.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eSet-DbaResourceGovernor -SqlInstance sql2012\\dev1 -Disabled\nSets Resource Governor to disabled for the instance dev1 on sq2012.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eSet-DbaResourceGovernor -SqlInstance sql2012\\dev1 -ClassifierFunction \u0027fnRGClassifier\u0027 -Enabled\nSets Resource Governor to enabled for the instance dev1 on sq2012 and sets the classifier function to be \u0027fnRGClassifier\u0027.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eSet-DbaResourceGovernor -SqlInstance sql2012\\dev1 -ClassifierFunction \u0027NULL\u0027 -Enabled\nSets Resource Governor to enabled for the instance dev1 on sq2012 and sets the classifier function to be NULL.",
+        "Params":  [
+                       [
+                           "SqlInstance",
+                           "The target SQL Server instance or instances.",
+                           "",
+                           true,
+                           "true (ByValue)",
+                           "",
+                           ""
+                       ],
+                       [
+                           "Credential",
+                           "Credential object used to connect to the Windows server as a different user",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "Enabled",
+                           "Enables the Resource Governor.",
+                           "",
+                           false,
+                           "false",
+                           "False",
+                           ""
+                       ],
+                       [
+                           "Disabled",
+                           "Disables the Resource Governor.",
+                           "",
+                           false,
+                           "false",
+                           "False",
+                           ""
+                       ],
+                       [
+                           "ClassifierFunction",
+                           "Sets the classifier function for Resource Governor.",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "",
+                           false,
+                           "false",
+                           "False",
+                           ""
+                       ],
+                       [
+                           "WhatIf",
+                           "Shows what would happen if the command were to run. No actions are actually performed.",
+                           "wi",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "Confirm",
+                           "Prompts you for confirmation before executing any changing operations within the command.",
+                           "cf",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ]
+                   ],
+        "Syntax":  "Set-DbaResourceGovernor [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-Credential] \u003cPSCredential\u003e] [-Enabled] [-Disabled] [[-ClassifierFunction] \u003cString\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Set-DbaSpConfigure",
