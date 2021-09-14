@@ -330,12 +330,12 @@ function Get-DbaDbBackupHistory {
                         } else {
                             Write-Message -Level Verbose -Message "No Diff found"
                         }
+                        # Can't figure out a way around this, it pollutes $error
+                        # but if it's not at least attempted, we get an error that says:
+                        # Cannot process argument transformation on parameter 'LastLsn'.
+                        # Cannot convert null to type "System.Numerics.BigInteger".
                         try {
-                            if ($fullDb.FirstLsn) {
-                                [bigint]$tlogStartDsn = $fullDb.FirstLsn.ToString()
-                            } else {
-                                [bigint]$tlogStartDsn = 0
-                            }
+                            [bigint]$tlogStartDsn = $fullDb.FirstLsn.ToString()
                         } catch {
                             continue
                         }
