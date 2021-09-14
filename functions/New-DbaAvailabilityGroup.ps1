@@ -12,7 +12,7 @@ function New-DbaAvailabilityGroup {
         * Adds secondary replica if supplied
         * Adds databases if supplied
             * Performs backup/restore if seeding mode is manual
-            * Performs backup to NUL if seeding mode is automatic
+            * Database has to be in full recovery mode (so at least one backup has been taken) if seeding mode is automatic
         * Adds listener to primary if supplied
         * Joins secondaries to availability group
         * Grants endpoint connect permissions to service accounts
@@ -545,20 +545,18 @@ function New-DbaAvailabilityGroup {
         if ($ClusterType -eq 'Wsfc') {
             Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Adding endpoint connect permissions"
 
-            foreach ($second in $secondaries) {
-                if ($Pscmdlet.ShouldProcess($Primary, "Adding cluster permissions for availability group named $Name")) {
-                    Write-Message -Level Verbose -Message "WSFC Cluster requires granting [NT AUTHORITY\SYSTEM] a few things. Setting now."
-                    $sql = "GRANT ALTER ANY AVAILABILITY GROUP TO [NT AUTHORITY\SYSTEM]
-                        GRANT CONNECT SQL TO [NT AUTHORITY\SYSTEM]
-                        GRANT VIEW SERVER STATE TO [NT AUTHORITY\SYSTEM]"
-                    try {
-                        $null = $server.Query($sql)
-                        foreach ($second in $secondaries) {
-                            $null = $second.Query($sql)
-                        }
-                    } catch {
-                        Stop-Function -Message "Failure adding cluster service account permissions" -ErrorRecord $_
+            if ($Pscmdlet.ShouldProcess($Primary, "Adding cluster permissions for availability group named $Name")) {
+                Write-Message -Level Verbose -Message "WSFC Cluster requires granting [NT AUTHORITY\SYSTEM] a few things. Setting now."
+                $sql = "GRANT ALTER ANY AVAILABILITY GROUP TO [NT AUTHORITY\SYSTEM]
+                    GRANT CONNECT SQL TO [NT AUTHORITY\SYSTEM]
+                    GRANT VIEW SERVER STATE TO [NT AUTHORITY\SYSTEM]"
+                try {
+                    $null = $server.Query($sql)
+                    foreach ($second in $secondaries) {
+                        $null = $second.Query($sql)
                     }
+                } catch {
+                    Stop-Function -Message "Failure adding cluster service account permissions" -ErrorRecord $_
                 }
             }
         }
@@ -630,7 +628,11 @@ function New-DbaAvailabilityGroup {
         if ($SeedingMode -eq 'Automatic') {
             try {
                 if ($Pscmdlet.ShouldProcess($server.Name, "Seeding mode is automatic. Adding CreateAnyDatabase permissions to availability group.")) {
-                    $null = $server.Query("ALTER AVAILABILITY GROUP [$Name] GRANT CREATE ANY DATABASE")
+                    $sql = "ALTER AVAILABILITY GROUP [$Name] GRANT CREATE ANY DATABASE"
+                    $null = $server.Query($sql)
+                    foreach ($second in $secondaries) {
+                        $null = $second.Query($sql)
+                    }
                 }
             } catch {
                 # Log the exception but keep going
