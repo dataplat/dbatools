@@ -4,10 +4,10 @@ function Set-ServiceStartMode {
         Internal function. Implements the method that changes startup mode of the SQL Server service.
 
         .DESCRIPTION
-        Accepts objects from Get-DbaSqlService and performs a corresponding action.
+        Accepts objects from Get-DbaService and performs a corresponding action.
 
-        .PARAMETER ServiceCollection
-        A collection of services from Get-DbaSqlService.
+        .PARAMETER InputObject
+        A collection of services from Get-DbaService.
 
         .PARAMETER Mode
         Startup mode of the service: Automatic, Manual or Disabled.
@@ -22,50 +22,49 @@ function Set-ServiceStartMode {
         Author: Kirill Kravtsov ( @nvarscar )
 
         dbatools PowerShell module (https://dbatools.io)
-        Copyright (C) 2017 Chrissy LeMaire
+        Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
         .EXAMPLE
-        Get-DbaSqlService -ComputerName sql1 | Set-ServiceStartMode -Mode 'Manual'
+        Get-DbaService -ComputerName sql1 | Set-ServiceStartMode -Mode 'Manual'
 
         Sets all SQL services on sql1 to Manual startup.
 
         .EXAMPLE
-        $services = Get-DbaSqlService -ComputerName sql1
-        Set-ServiceStartMode -ServiceCollection $services -Mode 'Automatic'
+        $services = Get-DbaService -ComputerName sql1
+        Set-ServiceStartMode -InputObject $services -Mode 'Automatic'
 
         Sets all SQL services on sql1 to Automatic startup.
 
-#>
-    [CmdletBinding(SupportsShouldProcess = $true)]
+    #>
+    [CmdletBinding(SupportsShouldProcess)]
     param (
         [string]$Mode,
-        [parameter(ValueFromPipeline = $true, Mandatory = $true)]
-        [object[]]$ServiceCollection
+        [parameter(ValueFromPipeline, Mandatory)]
+        [object[]]$InputObject
     )
     begin {
         $callStack = Get-PSCallStack
         if ($callStack.Length -gt 1) {
             $callerName = $callStack[1].Command
-        }
-        else {
+        } else {
             $callerName = $callStack[0].Command
         }
         $ProcessArray = @()
     }
     process {
         #Get all the objects from the pipeline before proceeding
-        $ProcessArray += $ServiceCollection
+        $ProcessArray += $InputObject
     }
     end {
-        $ProcessArray = $ProcessArray | Where-Object { (!$InstanceName -or $_.InstanceName -in $InstanceName) -and (!$Type -or $_.type -in $Type) }
         foreach ($service in $ProcessArray) {
             #Get WMI object
-            $Wmi = Get-WmiObject Win32_Service -ComputerName $service.ComputerName -filter "name='$($service.ServiceName)'"
+            $Wmi = Get-DbaCmObject -ComputerName $service.ComputerName -Namespace "root\cimv2" -Query "SELECT * FROM Win32_Service WHERE Name = '$($service.ServiceName)'" -EnableException
             if ($Pscmdlet.ShouldProcess($Wmi, "Changing the Start Mode to $Mode")) {
-                $x = $Wmi.ChangeStartMode($Mode)
+                $x = $Wmi | Invoke-CimMethod -MethodName ChangeStartMode -Arguments @{ StartMode = $Mode }
                 if ($x.ReturnValue -ne 0) {
-                    Write-Message -Level Warning -EnableException $EnableException -FunctionName $callerName -Message ("The attempt to $action the service $($job.ServiceName) on $($job.ComputerName) returned the following message: " + (Get-DbaSQLServiceErrorMessage $x.ReturnValue))
+                    Stop-Function -EnableException $EnableException -Message ("The attempt to change the start mode of $($service.ServiceName) on $($service.ComputerName) returned the following message: " + (Get-DbaServiceErrorMessage $x.ReturnValue))
+                    return
                 }
             }
         }

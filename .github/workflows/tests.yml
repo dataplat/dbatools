@@ -1,0 +1,39 @@
+name: Run Cross Platform Tests
+on: [push]
+defaults:
+  run:
+    shell: pwsh
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name:  Setup docker images
+        run: |
+          # create a shared network
+          docker network create localnet
+          # create a shared volume
+          docker volume create shared
+          # setup two containers and expose ports
+          docker run -p 1433:1433 -p 5022:5022 --network localnet --hostname dockersql1 --name dockersql1 --mount 'source=shared,target=/shared' -d dbatools/sqlinstance
+          docker run -p 14333:1433 -p 5023:5023  --network localnet --hostname dockersql2 --name dockersql2 --mount 'source=shared,target=/shared' -d dbatools/sqlinstance2
+
+      - name: 👥 Clone appveyor repo
+        working-directory: /tmp
+        run: |
+          gh repo clone sqlcollaborative/appveyor-lab
+
+      - name: Run tests
+        env:
+          TENANTID: ${{secrets.TENANTID}}
+          CLIENTID: ${{secrets.CLIENTID}}
+          CLIENTSECRET: ${{secrets.CLIENTSECRET}}
+        run: |
+          $results = Invoke-Pester ./tests/gh-actions.ps1 -Output Detailed -PassThru
+          if ($results.Result -ne "Passed") {
+              throw "There were $($results.FailedCount) failed tests."
+          }

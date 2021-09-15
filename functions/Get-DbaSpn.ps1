@@ -1,62 +1,60 @@
-#ValidationTags#FlowControl,Pipeline#
 function Get-DbaSpn {
     <#
-.SYNOPSIS
-Returns a list of set service principal names for a given computer/AD account
+    .SYNOPSIS
+        Returns a list of set service principal names for a given computer/AD account
 
-.DESCRIPTION
-Get a list of set SPNs. SPNs are set at the AD account level. You can either retrieve set SPNs for a computer, or any SPNs set for
-a given active directory account. You can query one, or both. You'll get a list of every SPN found for either search term.
+    .DESCRIPTION
+        Get a list of set SPNs. SPNs are set at the AD account level. You can either retrieve set SPNs for a computer, or any SPNs set for
+        a given active directory account. You can query one, or both. You'll get a list of every SPN found for either search term.
 
-.PARAMETER ComputerName
-The servers you want to return set SPNs for. This is defaulted automatically to localhost.
+    .PARAMETER ComputerName
+        The servers you want to return set SPNs for. This is defaulted automatically to localhost.
 
-.PARAMETER AccountName
-The accounts you want to retrieve set SPNs for.
+    .PARAMETER AccountName
+        The accounts you want to retrieve set SPNs for.
 
-.PARAMETER Credential
-User credential to connect to the remote servers or active directory.
+    .PARAMETER Credential
+        User credential to connect to the remote servers or active directory.
 
-.PARAMETER EnableException
+    .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-.NOTES
-Tags: SPN
-Author: Drew Furgiuele (@pittfurg), http://www.port1433.com
+    .NOTES
+        Tags: SPN
+        Author: Drew Furgiuele (@pittfurg), http://www.port1433.com
 
-dbatools PowerShell module (https://dbatools.io)
-Copyright (C) 2016 Chrissy LeMaire
-License: MIT https://opensource.org/licenses/MIT
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-.LINK
-https://dbatools.io/Get-DbaSpn
+    .LINK
+        https://dbatools.io/Get-DbaSpn
 
-.EXAMPLE
-Get-DbaSpn -ServerName SQLSERVERA -Credential (Get-Credential)
+    .EXAMPLE
+        PS C:\> Get-DbaSpn -ComputerName SQLSERVERA -Credential ad\sqldba
 
-Returns a custom object with SearchTerm (ServerName) and the SPNs that were found
+        Returns a custom object with SearchTerm (ServerName) and the SPNs that were found
 
-.EXAMPLE
-Get-DbaSpn -AccountName domain\account -Credential (Get-Credential)
+    .EXAMPLE
+        PS C:\> Get-DbaSpn -AccountName domain\account -Credential ad\sqldba
 
-Returns a custom object with SearchTerm (domain account) and the SPNs that were found
+        Returns a custom object with SearchTerm (domain account) and the SPNs that were found
 
-.EXAMPLE
-Get-DbaSpn -ServerName SQLSERVERA,SQLSERVERB -Credential (Get-Credential)
+    .EXAMPLE
+        PS C:\> Get-DbaSpn -ComputerName SQLSERVERA,SQLSERVERB -Credential ad\sqldba
 
-Returns a custom object with SearchTerm (ServerName) and the SPNs that were found for multiple computers
-#>
+        Returns a custom object with SearchTerm (ServerName) and the SPNs that were found for multiple computers
+
+    #>
     [cmdletbinding()]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseApprovedVerbs", "", Justification = "Internal functions are ignored")]
     param (
-        [Parameter(Mandatory = $false, ValueFromPipeline = $true)]
+        [Parameter(ValueFromPipeline)]
         [string[]]$ComputerName,
-        [Parameter(Mandatory = $false)]
         [string[]]$AccountName,
-        [Parameter(Mandatory = $false)]
         [PSCredential]$Credential,
-        [Alias('Silent')]
         [switch]$EnableException
     )
     begin {
@@ -64,28 +62,25 @@ Returns a custom object with SearchTerm (ServerName) and the SPNs that were foun
 
             ForEach ($account in $AccountName) {
                 Write-Message -Message "Looking for account $account..." -Level Verbose
-                $searchfor = 'User'
+                $searchFor = 'User'
                 if ($account.EndsWith('$')) {
-                    $searchfor = 'Computer'
+                    $searchFor = 'Computer'
                 }
                 try {
-                    $Result = Get-DbaADObject -ADObject $account -Type $searchfor -Credential $Credential -EnableException
-                }
-                catch {
+                    $result = Get-DbaADObject -ADObject $account -Type $searchFor -Credential $Credential -EnableException
+                } catch {
                     Write-Message -Message "AD lookup failure. This may be because the domain cannot be resolved for the SQL Server service account ($Account)." -Level Warning
                     continue
                 }
-                if ($Result.Count -gt 0) {
+                if ($result.Count -gt 0) {
                     try {
-                        $results = $Result.GetUnderlyingObject()
+                        $results = $result.GetUnderlyingObject()
                         $spns = $results.Properties.servicePrincipalName
-                    }
-                    catch {
+                    } catch {
                         Write-Message -Message "The SQL Service account ($Account) has been found, but you don't have enough permission to inspect its SPNs" -Level Warning
                         continue
                     }
-                }
-                else {
+                } else {
                     Write-Message -Message "The SQL Service account ($Account) has not been found" -Level Warning
                     continue
                 }
@@ -94,13 +89,13 @@ Returns a custom object with SearchTerm (ServerName) and the SPNs that were foun
                     if ($spn -match "\:") {
                         try {
                             $port = [int]($spn -Split "\:")[1]
-                        }
-                        catch {
+                        } catch {
                             $port = $null
                         }
-                        if ($spn -match "\/") {
-                            $serviceclass = ($spn -Split "\/")[0]
-                        }
+                        #Variable marked as unused by PSScriptAnalyzer
+                        # if ($spn -match "\/") {
+                        #     $serviceclass = ($spn -Split "\/")[0]
+                        # }
                     }
                     [pscustomobject] @{
                         Input        = $Account
@@ -147,8 +142,7 @@ Returns a custom object with SearchTerm (ServerName) and the SPNs that were foun
                             SPN          = $spn.RequiredSPN
                         }
                     }
-                }
-                else {
+                } else {
                     [pscustomobject] @{
                         Input        = $computer
                         AccountName  = $spn.InstanceServiceAccount

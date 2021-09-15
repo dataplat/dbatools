@@ -1,21 +1,30 @@
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
-. "$PSScriptRoot\..\internal\functions\Stop-Function.ps1"
+. "$PSScriptRoot\..\internal\functions\flowcontrol\Stop-Function.ps1"
+$PSDefaultParameterValues.Remove('*:WarningAction')
 
-Describe "$commandname Unit Tests" -Tag 'UnitTests' {
+Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+    Context "Validate parameters" {
+        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
+        [object[]]$knownParameters = 'Message', 'Category', 'ErrorRecord', 'Tag', 'FunctionName', 'File', 'Line', 'Target', 'Exception', 'OverrideExceptionMessage', 'Continue', 'SilentlyContinue', 'ContinueLabel', 'EnableException'
+        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
+        It "Should only contain our specific parameters" {
+            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        }
+    }
+
     Context "Testing non-EnableException: Explicit call" {
         try {
-            $warning = Stop-Function -Message "Nonsilent Foo" -EnableException $false -Category InvalidResult -FunctionName "Invoke-Pester" -Target "Bar" -ErrorAction Stop 3>&1
+            $warning = Stop-Function -WarningAction Continue -Message "Nonsilent Foo" -EnableException $false -Category InvalidResult -FunctionName "Invoke-Pester" -Target "Bar" -ErrorAction Stop 3>&1
             $record = $Error[0]
             $failed = $false
-        }
-        catch {
+        } catch {
             $record = $null
             $failed = $true
         }
 
-        It "Should not have failed to execute without an exception!" {
+        It "Should not have failed to execute without an exception." {
             $failed | Should Be $false
         }
 
@@ -44,19 +53,17 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
         try {
             try {
                 $null.GetType()
-            }
-            catch {
-                $warning = Stop-Function -Message "Nonsilent Foo" -EnableException $false -InnerErrorRecord $_ -FunctionName "Invoke-Pester" -Target "Bar" -ErrorAction Stop 3>&1
+            } catch {
+                $warning = Stop-Function -WarningAction Continue -Message "Nonsilent Foo" -EnableException $false -ErrorRecord $_ -FunctionName "Invoke-Pester" -Target "Bar" -ErrorAction Stop 3>&1
                 $record = $Error[0]
                 $failed = $false
             }
-        }
-        catch {
+        } catch {
             $record = $null
             $failed = $true
         }
 
-        It "Should not have failed to execute without an exception!" {
+        It "Should not have failed to execute without an exception." {
             $failed | Should Be $false
         }
 
@@ -83,9 +90,8 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
         It "Should have created an error record with the an inner NULL-invocation exception" {
             try {
                 $ExceptionName = $record.Exception.InnerException.GetType().FullName
-            }
-            catch {
-                $ExceptionName = "Meeep!"
+            } catch {
+                $ExceptionName = "Meeep."
             }
 
             $ExceptionName | Should Be "System.Management.Automation.RuntimeException"
@@ -93,7 +99,7 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
     }
 
     Context "Testing non-EnableException: Continue & ContinueLabel" {
-        Mock -CommandName "Write-Warning" -MockWith { Param ($Message) }
+        Mock -CommandName "Write-Warning" -MockWith { param ($Message) }
 
         #region Run Tests
         try {
@@ -105,8 +111,7 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
                 Stop-Function -Message "Nonsilent Foo" -EnableException $false -Category InvalidOperation -Continue -ErrorAction Stop 3>&1
                 $b++
             }
-        }
-        catch {
+        } catch {
             $failed = $true
         }
 
@@ -126,18 +131,17 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
                 }
                 $f++
             }
-        }
-        catch {
+        } catch {
             $failed2 = $true
         }
         #endregion Run Tests
 
         #region Evaluate Results
-        It "Should not have failed to execute without an exception when testing Continue without a label!" {
+        It "Should not have failed to execute without an exception when testing Continue without a label." {
             $failed | Should Be $false
         }
 
-        It "Should not have failed to execute without an exception when testing Continue with a label!" {
+        It "Should not have failed to execute without an exception when testing Continue with a label." {
             $failed2 | Should Be $false
         }
 
@@ -162,13 +166,12 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
             Stop-Function -Message "Nonsilent Foo" -EnableException $true -Category InvalidResult -FunctionName "Invoke-Pester" -Target "Bar" -ErrorAction Stop
             $record = $null
             $failed = $false
-        }
-        catch {
+        } catch {
             $record = $_
             $failed = $true
         }
 
-        It "Should not have failed to terminate with an exception!" {
+        It "Should not have failed to terminate with an exception." {
             $failed | Should Be $true
         }
 
@@ -193,19 +196,17 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
         try {
             try {
                 $null.GetType()
-            }
-            catch {
-                Stop-Function -Message "Nonsilent Foo" -EnableException $true -InnerErrorRecord $_ -FunctionName "Invoke-Pester" -Target "Bar" -ErrorAction Stop
+            } catch {
+                Stop-Function -Message "Nonsilent Foo" -EnableException $true -ErrorRecord $_ -FunctionName "Invoke-Pester" -Target "Bar" -ErrorAction Stop
                 $record = $null
                 $failed = $false
             }
-        }
-        catch {
+        } catch {
             $record = $_
             $failed = $true
         }
 
-        It "Should not have failed to terminate with an exception!" {
+        It "Should not have failed to terminate with an exception." {
             $failed | Should Be $true
         }
 
@@ -227,7 +228,7 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
     }
 
     Context "Testing silent: Continue & ContinueLabel" {
-        Mock -CommandName "Write-Error" -MockWith { Param ($Message) }
+        Mock -CommandName "Write-Error" -MockWith { param ($Message) }
 
         #region Run Tests
         try {
@@ -239,8 +240,7 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
                 Stop-Function -Message "Nonsilent Foo" -EnableException $true -Category InvalidOperation -SilentlyContinue -ErrorAction Stop
                 $b++
             }
-        }
-        catch {
+        } catch {
             $failed = $true
         }
 
@@ -260,18 +260,17 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
                 }
                 $f++
             }
-        }
-        catch {
+        } catch {
             $failed2 = $true
         }
         #endregion Run Tests
 
         #region Evaluate Results
-        It "Should not have failed to execute without an exception when testing Continue without a label!" {
+        It "Should not have failed to execute without an exception when testing Continue without a label." {
             $failed | Should Be $false
         }
 
-        It "Should not have failed to execute without an exception when testing Continue with a label!" {
+        It "Should not have failed to execute without an exception when testing Continue with a label." {
             $failed2 | Should Be $false
         }
 
@@ -291,3 +290,4 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
         #endregion Evaluate Results
     }
 }
+$PSDefaultParameterValues['*:WarningAction'] = 'SilentlyContinue'

@@ -1,71 +1,79 @@
 function Read-DbaTransactionLog {
     <#
-.SYNOPSIS
-Reads the live Transaction log from specified SQL Server Database
+    .SYNOPSIS
+        Reads the live Transaction log from specified SQL Server Database
 
-.DESCRIPTION
-Using the fn_dblog function, the live transaction log is read and returned as a PowerShell object
+    .DESCRIPTION
+        Using the fn_dblog function, the live transaction log is read and returned as a PowerShell object
 
-This function returns the whole of the log. The information is presented in the format that the logging subsystem uses.
+        This function returns the whole of the log. The information is presented in the format that the logging subsystem uses.
 
-A soft limit of 0.5GB of log as been implemented. This is based on testing. This limit can be overridden
-at the users request, but please be aware that this may have an impact on your target databases and on the
-system running this function
+        A soft limit of 0.5GB of log as been implemented. This is based on testing. This limit can be overridden
+        at the users request, but please be aware that this may have an impact on your target databases and on the
+        system running this function
 
-.PARAMETER SqlInstance
-A SQL Server instance to connect to
+    .PARAMETER SqlInstance
+        The target SQL Server instance or instances
 
-.PARAMETER SqlCredential
-A credential to use to connect to the SQL Instance rather than using Windows Authentication
+    .PARAMETER SqlCredential
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
 
-.PARAMETER Database
-Database to read the transaction log of
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
 
-.PARAMETER IgnoreLimit
-Switch to indicate that you wish to bypass the recommended limits of the function
+        For MFA support, please use Connect-DbaInstance.
 
-.PARAMETER EnableException
+    .PARAMETER Database
+        Database to read the transaction log of
+
+    .PARAMETER IgnoreLimit
+        Switch to indicate that you wish to bypass the recommended limits of the function
+
+    .PARAMETER RowLimit
+        Will limit the number of rows returned from the transaction log
+
+    .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-.NOTES
-Tags: Databases, Logs
-Author: Stuart Moore (@napalmgram), stuart-moore.com
+    .NOTES
+        Tags: Database, Log, LogFile
+        Author: Stuart Moore (@napalmgram), stuart-moore.com
 
-Website: https://dbatools.io
-Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-License: MIT https://opensource.org/licenses/MIT
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-.EXAMPLE
-$Log = Read-DbaTransactionLog -SqlInstance sql2016 -Database MyDatabase
+    .LINK
+        https://dbatools.io/Read-DbaTransactionLog
 
-Will read the contents of the transaction log of MyDatabase on SQL Server Instance sql2016 into the local PowerShell object $Log
+    .EXAMPLE
+        PS C:\> $Log = Read-DbaTransactionLog -SqlInstance sql2016 -Database MyDatabase
 
-.EXAMPLE
-$Log = Read-DbaTransactionLog -SqlInstance sql2016 -Database MyDatabase -IgnoreLimit
+        Will read the contents of the transaction log of MyDatabase on SQL Server Instance sql2016 into the local PowerShell object $Log
 
-Will read the contents of the transaction log of MyDatabase on SQL Server Instance sql2016 into the local PowerShell object $Log, ignoring the recommnedation of not returning more that 0.5GB of log
+    .EXAMPLE
+        PS C:\> $Log = Read-DbaTransactionLog -SqlInstance sql2016 -Database MyDatabase -IgnoreLimit
 
-#>
+        Will read the contents of the transaction log of MyDatabase on SQL Server Instance sql2016 into the local PowerShell object $Log, ignoring the recommendation of not returning more that 0.5GB of log
+
+    #>
     [CmdletBinding(DefaultParameterSetName = "Default")]
-    Param (
-        [parameter(Position = 0, Mandatory = $true)]
-        [Alias("ServerInstance", "SqlServer")]
+    param (
+        [parameter(Mandatory)]
         [DbaInstanceParameter]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [parameter(Mandatory = $true)]
+        [parameter(Mandatory)]
         [object]$Database,
         [Switch]$IgnoreLimit,
-        [Alias('Silent')]
+        [int]$RowLimit = 0,
         [switch]$EnableException
     )
 
     try {
-        $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
-    }
-    catch {
-        Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+        $server = Connect-DbaInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
+    } catch {
+        Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $SqlInstance
         return
     }
 
@@ -74,15 +82,23 @@ Will read the contents of the transaction log of MyDatabase on SQL Server Instan
         return
     }
 
-    if ($server.databases[$Database].Status -ne 'Normal') {
+    if ('Normal' -notin ($server.databases[$Database].Status -split ',')) {
         Stop-Function -Message "$Database is not in a normal State, command will not run."
         return
     }
 
+    if ($RowLimit -gt 0) {
+        Write-Message -Message "Limiting results to $RowLimit rows" -Level Verbose
+        $RowLimitSql = " TOP $RowLimit "
+        $IgnoreLimit = $true
+    } else {
+        $RowLimitSql = ""
+    }
+
+
     if ($IgnoreLimit) {
         Write-Message -Level Verbose -Message "Please be aware that ignoring the recommended limits may impact on the performance of the SQL Server database and the calling system"
-    }
-    else {
+    } else {
         #Warn if more than 0.5GB of live log. Dodgy conversion as SMO returns the value in an unhelpful format :(
         $SqlSizeCheck = "select
                                 sum(FileProperty(sf.name,'spaceused')*8/1024) as 'SizeMb'
@@ -95,7 +111,7 @@ Will read the contents of the transaction log of MyDatabase on SQL Server Instan
         }
     }
 
-    $sql = "select * from fn_dblog(NULL,NULL)"
+    $sql = "select $RowLimitSql * from fn_dblog(NULL,NULL)"
     Write-Message -Level Debug -Message $sql
     Write-Message -Level Verbose -Message "Starting Log retrieval"
     $server.Query($sql, $Database)

@@ -382,7 +382,7 @@ namespace Sqlcollaborative.Dbatools.Connection
         public PSCredential Credentials;
 
         /// <summary>
-        /// Whether the default windows credentials are known to not work against the target.
+        /// Whether the default windows credentials failed against the target.
         /// </summary>
         public bool WindowsCredentialsAreBad;
 
@@ -468,7 +468,7 @@ namespace Sqlcollaborative.Dbatools.Connection
                 {
                     if (EnableCredentialFailover && (Credentials != null))
                         return Credentials;
-                    throw new PSArgumentException("Windows authentication was used, but is known to not work!",
+                    throw new PSArgumentException("Windows authentication was used, but failed",
                         "Credential");
                 }
                 return null;
@@ -488,10 +488,10 @@ namespace Sqlcollaborative.Dbatools.Connection
                                 if ((Credentials != null) || !WindowsCredentialsAreBad)
                                     return Credentials;
                                 throw new PSArgumentException(
-                                    "Specified credentials are known to not work! Credential failover is enabled but there are no known working credentials.",
+                                    "Specified credentials are invalid. Credential failover is enabled but there are no known working credentials.",
                                     "Credential");
                             }
-                            throw new PSArgumentException("Specified credentials are known to not work!",
+                            throw new PSArgumentException("Specified credentials failed",
                                 "Credential");
                         }
                     }
@@ -626,7 +626,7 @@ namespace Sqlcollaborative.Dbatools.Connection
 
             // Do not try to use disabled protocols
 
-            throw new PSInvalidOperationException("No connectiontypes left to try.");
+            throw new PSInvalidOperationException("Multiple protocol connections were attempted, but no successful connections could be established with the specified computer.");
         }
 
         /// <summary>
@@ -801,7 +801,7 @@ namespace Sqlcollaborative.Dbatools.Connection
 
                     if (testBadCredential)
                     {
-                        throw new UnauthorizedAccessException("Invalid credentials!", e);
+                        throw new UnauthorizedAccessException("Invalid credentials", e);
                     }
                     throw;
                 }
@@ -902,7 +902,7 @@ namespace Sqlcollaborative.Dbatools.Connection
 
                 if (testBadCredential)
                 {
-                    throw new UnauthorizedAccessException("Invalid credentials!", e);
+                    throw new UnauthorizedAccessException("Invalid credentials", e);
                 }
                 throw;
             }
@@ -1015,7 +1015,7 @@ namespace Sqlcollaborative.Dbatools.Connection
 
                     if (testBadCredential)
                     {
-                        throw new UnauthorizedAccessException("Invalid credentials!", e);
+                        throw new UnauthorizedAccessException("Invalid credentials", e);
                     }
                     throw;
                 }

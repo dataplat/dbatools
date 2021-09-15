@@ -1,156 +1,131 @@
 function Test-DbaPowerPlan {
     <#
-        .SYNOPSIS
-            Checks the Power Plan settings for compliance with best practices, which recommend High Performance for SQL Server.
+    .SYNOPSIS
+        Checks the Power Plan settings for compliance with best practices, which recommend High Performance for SQL Server.
 
-        .DESCRIPTION
-            Checks the Power Plan settings on a computer against best practices recommendations. If one server is checked, only $true or $false is returned. If multiple servers are checked, each server's name and an isBestPractice field are returned.
+    .DESCRIPTION
+        Checks the Power Plan settings on a computer against best practices recommendations.
+        Each server's name, the active and the recommended Power Plan and an IsBestPractice field are returned.
 
-            References:
-            https://support.microsoft.com/en-us/kb/2207548
-            http://www.sqlskills.com/blogs/glenn/windows-power-plan-effects-on-newer-intel-processors/
+        If your organization uses a different Power Plan that is considered best practice, specify -PowerPlan.
 
-        .PARAMETER ComputerName
-            The server(s) to check Power Plan settings on.
+        References:
+        https://support.microsoft.com/en-us/kb/2207548
+        http://www.sqlskills.com/blogs/glenn/windows-power-plan-effects-on-newer-intel-processors/
 
-        .PARAMETER Credential
-            Specifies a PSCredential object to use in authenticating to the server(s), instead of the current user account.
+    .PARAMETER ComputerName
+        The server(s) to check Power Plan settings on.
 
-        .PARAMETER CustomPowerPlan
-            If your organization uses a custom power plan that's considered best practice, specify it here.
+    .PARAMETER Credential
+        Specifies a PSCredential object to use in authenticating to the server(s), instead of the current user account.
 
-        .PARAMETER Detailed
-             Output all properties, will be deprecated in 1.0.0 release.
+    .PARAMETER PowerPlan
+        If your organization uses a different power plan that's considered best practice, specify it here.
 
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-        .NOTES
-            Tags: PowerPlan
-            Requires: WMI access to servers
+    .NOTES
+        Tags: PowerPlan
+        Author: Chrissy LeMaire (@cl), netnerds.net
 
-            dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
-            Copyright (C) 2016 Chrissy LeMaire
-            License: MIT https://opensource.org/licenses/MIT
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-        .LINK
-            https://dbatools.io/Test-DbaPowerPlan
+    .LINK
+        https://dbatools.io/Test-DbaPowerPlan
 
-        .EXAMPLE
-            Test-DbaPowerPlan -ComputerName sqlserver2014a
+    .EXAMPLE
+        PS C:\> Test-DbaPowerPlan -ComputerName sqlserver2014a
 
-            Checks the Power Plan settings for sqlserver2014a and indicates whether or not it complies with best practices.
+        Checks the Power Plan settings for sqlserver2014a and indicates whether or not it complies with best practices.
 
-        .EXAMPLE
-            Test-DbaPowerPlan -ComputerName sqlserver2014a -CustomPowerPlan 'Maximum Performance'
+    .EXAMPLE
+        PS C:\> Test-DbaPowerPlan -ComputerName sqlserver2014a -PowerPlan 'Maximum Performance'
 
-            Checks the Power Plan settings for sqlserver2014a and indicates whether or not it is set to the custom plan "Maximum Performance".
+        Checks the Power Plan settings for sqlserver2014a and indicates whether or not it is set to the Power Plan "Maximum Performance".
+
+    .EXAMPLE
+        PS C:\> 'newserver1', 'newserver2' | Test-DbaPowerPlan
+
+        Checks the Power Plan settings for newserver1 and newserver2 and indicates whether or not they comply with best practices.
+
+    .EXAMPLE
+        PS C:\> Get-DbaPowerPlan -ComputerName oldserver | Test-DbaPowerPlan -ComputerName newserver1, newserver2
+
+        Uses the Power Plan of oldserver as best practice and tests the Power Plan of newserver1 and newserver2 against that.
+
     #>
     param (
-        [parameter(ValueFromPipeline = $true)]
-        [Alias("ServerInstance", "SqlServer", "SqlInstance")]
-        [DbaInstance[]]$ComputerName = $env:COMPUTERNAME,
+        [parameter(Mandatory, ValueFromPipelineByPropertyName, ValueFromPipeline)]
+        [DbaInstance[]]$ComputerName,
+        [parameter(ValueFromPipelineByPropertyName)]
         [PSCredential]$Credential,
-        [string]$CustomPowerPlan,
-        [switch]$Detailed,
-        [Alias('Silent')]
+        [parameter(ValueFromPipelineByPropertyName)]
+        [Alias("CustomPowerPlan")]
+        [string]$PowerPlan,
         [switch]$EnableException
     )
 
     begin {
-        Test-DbaDeprecation -DeprecatedOn 1.0.0 -Parameter Detailed
-
         $bpPowerPlan = [PSCustomObject]@{
-            InstanceID  = '8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c'
-            ElementName = $null
+            InstanceID = '8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c'
+            PowerPlan  = $null
         }
-
-        $sessionOption = New-CimSessionOption -Protocol DCom
     }
 
     process {
         foreach ($computer in $ComputerName) {
-            $server = Resolve-DbaNetworkName -ComputerName $computer -Credential $credential
-
-            $computerResolved = $server.FullComputerName
-
-            if (!$computerResolved) {
-                Stop-Function -Message "Couldn't resolve hostname. Skipping." -Continue
-            }
-
-            Write-Message -Level Verbose -Message "Creating CimSession on $computer over WSMan."
-
-            if (!$Credential) {
-                $cimSession = New-CimSession -ComputerName $computerResolved -ErrorAction SilentlyContinue
-            }
-            else {
-                $cimSession = New-CimSession -ComputerName $computerResolved -ErrorAction SilentlyContinue -Credential $Credential
-            }
-
-            if ($null -eq $cimSession.id) {
-                Write-Message -Level Verbose -Message "Creating CimSession on $computer over WSMan failed. Creating CimSession on $computer over DCOM."
-
-                if (!$Credential) {
-                    $cimSession = New-CimSession -ComputerName $computerResolved -SessionOption $sessionOption -ErrorAction SilentlyContinue -Credential $Credential
-                }
-                else {
-                    $cimSession = New-CimSession -ComputerName $computerResolved -SessionOption $sessionOption -ErrorAction SilentlyContinue
-                }
-            }
-
-            if ($null -eq $cimSession.id) {
-                Stop-Function -Message "Can't create CimSession on $computer." -Target $computer
-            }
-
-            Write-Message -Level Verbose -Message "Getting Power Plan information from $computer."
-
             try {
-                $powerPlans = Get-CimInstance -CimSession $cimSession -ClassName Win32_PowerPlan -Namespace "root\cimv2\power" -ErrorAction Stop | Select-Object ElementName, InstanceID, IsActive
-            }
-            catch {
+                Write-Message -Level Verbose -Message "Getting Power Plans for $computer."
+                $powerPlans = Get-DbaPowerPlan -ComputerName $computer -Credential $Credential -List -EnableException
+            } catch {
                 if ($_.Exception -match "namespace") {
                     Stop-Function -Message "Can't get Power Plan Info for $computer. Unsupported operating system." -Continue -ErrorRecord $_ -Target $computer
-                }
-                else {
+                } elseif ($_.Exception -match "credentials are known to not work") {
+                    Stop-Function -Message "Can't get Power Plan Info for $computer. Login failure for $($Credential.UserName)." -Continue -ErrorRecord $_ -Target $computer
+                } else {
                     Stop-Function -Message "Can't get Power Plan Info for $computer. Check logs for more details." -Continue -ErrorRecord $_ -Target $computer
                 }
             }
 
-            $powerPlan = $powerPlans | Where-Object IsActive -eq 'True' | Select-Object ElementName, InstanceID
-            $powerPlan.InstanceID = $powerPlan.InstanceID.Split('{')[1].Split('}')[0]
-
-            if ($CustomPowerPlan.Length -gt 0) {
-                $bpPowerPlan.ElementName = $CustomPowerPlan
-                $bpPowerPlan.InstanceID = $($powerPlans | Where-Object { $_.ElementName -eq $CustomPowerPlan }).InstanceID
-            }
-            else {
-                $bpPowerPlan.ElementName = $($powerPlans | Where-Object { $_.InstanceID.Split('{')[1].Split('}')[0] -eq $bpPowerPlan.InstanceID }).ElementName
-                if ($null -eq $bpPowerplan.ElementName) {
-                    $bpPowerPlan.ElementName = "You do not have the high performance plan installed on this machine."
+            if ($PowerPlan) {
+                Write-Message -Level Verbose -Message "Using Power Plan '$PowerPlan' as best practice."
+                $bpPowerPlan.PowerPlan = $PowerPlan
+                $bpPowerPlan.InstanceID = ($powerPlans | Where-Object { $_.PowerPlan -eq $PowerPlan }).InstanceID
+                if ($null -eq $bpPowerplan.InstanceID) {
+                    Write-Message -Level Verbose -Message "Unable to find Power Plan '$PowerPlan' on $computer."
+                    $bpPowerPlan.PowerPlan = "You do not have the Power Plan '$PowerPlan' installed on this machine."
+                }
+            } else {
+                $bpPowerPlan.PowerPlan = ($powerPlans | Where-Object { $_.InstanceID -eq $bpPowerPlan.InstanceID }).PowerPlan
+                if ($null -eq $bpPowerplan.PowerPlan) {
+                    Write-Message -Level Verbose -Message "Unable to find Power Plan 'High performance' on $computer."
+                    $bpPowerPlan.PowerPlan = "You do not have the high performance plan installed on this machine."
                 }
             }
 
-            Write-Message -Level Verbose -Message "Recommended GUID is $($bpPowerPlan.InstanceID) and you have $($powerPlan.InstanceID)."
+            $activePowerPlan = $powerPlans | Where-Object IsActive -eq 'True'
+            Write-Message -Level Verbose -Message "Recommended GUID is $($bpPowerPlan.InstanceID) and you have $($activePowerPlan.InstanceID)."
 
-            if ($null -eq $powerPlan.InstanceID) {
-                $powerPlan.ElementName = "Unknown"
-            }
-
-            if ($powerPlan.InstanceID -eq $bpPowerPlan.InstanceID) {
+            if ($activePowerPlan.InstanceID -eq $bpPowerPlan.InstanceID) {
                 $isBestPractice = $true
-            }
-            else {
+            } else {
                 $isBestPractice = $false
             }
 
             [PSCustomObject]@{
-                ComputerName         = $computer
-                ActivePowerPlan      = $powerPlan.ElementName
-                RecommendedPowerPlan = $bpPowerPlan.ElementName
-                isBestPractice       = $isBestPractice
-            }
+                ComputerName          = $computer
+                ActiveInstanceId      = $activePowerPlan.InstanceID
+                ActivePowerPlan       = $activePowerPlan.PowerPlan
+                RecommendedInstanceId = $bpPowerPlan.InstanceID
+                RecommendedPowerPlan  = $bpPowerPlan.PowerPlan
+                IsBestPractice        = $isBestPractice
+                Credential            = $Credential
+            } | Select-DefaultView -Property ComputerName, ActivePowerPlan, RecommendedPowerPlan, IsBestPractice
         }
     }
 }

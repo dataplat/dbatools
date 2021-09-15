@@ -1,101 +1,103 @@
 function Stop-DbaAgentJob {
     <#
-        .SYNOPSIS
-            Stops a running SQL Server Agent Job.
+    .SYNOPSIS
+        Stops a running SQL Server Agent Job.
 
-        .DESCRIPTION
-            This command stops a job then returns connected SMO object for SQL Agent Job information for each instance(s) of SQL Server.
+    .DESCRIPTION
+        This command stops a job then returns connected SMO object for SQL Agent Job information for each instance(s) of SQL Server.
 
-        .PARAMETER SqlInstance
-            SQL Server name or SMO object representing the SQL Server to connect to.
+    .PARAMETER SqlInstance
+        The target SQL Server instance or instances.
 
-        .PARAMETER SqlCredential
-            SqlCredential object to connect as. If not specified, current Windows login will be used.
+    .PARAMETER SqlCredential
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
 
-        .PARAMETER Job
-            The job(s) to process - this list is auto-populated from the server. If unspecified, all jobs will be processed.
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
 
-        .PARAMETER ExcludeJob
-            The job(s) to exclude - this list is auto-populated from the server.
+        For MFA support, please use Connect-DbaInstance.
 
-        .PARAMETER Wait
-            Wait for output until the job has completely stopped
+    .PARAMETER Job
+        The job(s) to process - this list is auto-populated from the server. If unspecified, all jobs will be processed.
 
-        .PARAMETER JobCollection
-            Internal parameter that enables piping
+    .PARAMETER ExcludeJob
+        The job(s) to exclude - this list is auto-populated from the server.
 
-        .PARAMETER WhatIf
-            If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
+    .PARAMETER Wait
+        Wait for output until the job has completely stopped
 
-        .PARAMETER Confirm
-            If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
+    .PARAMETER InputObject
+        Internal parameter that enables piping
 
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+    .PARAMETER WhatIf
+        If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
 
-        .NOTES
-            Tags: Job, Agent
-            Website: https://dbatools.io
-            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: MIT https://opensource.org/licenses/MIT
+    .PARAMETER Confirm
+        If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
-        .LINK
-            https://dbatools.io/Stop-DbaAgentJob
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-        .EXAMPLE
-            Stop-DbaAgentJob -SqlInstance localhost
+    .NOTES
+        Tags: Job, Agent
+        Author: Chrissy LeMaire (@cl), netnerds.net
 
-            Stops all running SQL Agent Jobs on the local SQL Server instance
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-        .EXAMPLE
-            Get-DbaAgentJob -SqlInstance sql2016 -Job cdc.DBWithCDC_capture | Stop-DbaAgentJob
+    .LINK
+        https://dbatools.io/Stop-DbaAgentJob
 
-            Stops the cdc.DBWithCDC_capture SQL Agent Job on sql2016
+    .EXAMPLE
+        PS C:\> Stop-DbaAgentJob -SqlInstance localhost
 
-        .EXAMPLE
-            Stop-DbaAgentJob -SqlInstance sql2016 -Job cdc.DBWithCDC_capture
+        Stops all running SQL Agent Jobs on the local SQL Server instance
 
-            Stops the cdc.DBWithCDC_capture SQL Agent Job on sql2016
+    .EXAMPLE
+        PS C:\> Get-DbaAgentJob -SqlInstance sql2016 -Job cdc.DBWithCDC_capture | Stop-DbaAgentJob
+
+        Stops the cdc.DBWithCDC_capture SQL Agent Job on sql2016
+
+    .EXAMPLE
+        PS C:\> Stop-DbaAgentJob -SqlInstance sql2016 -Job cdc.DBWithCDC_capture
+
+        Stops the cdc.DBWithCDC_capture SQL Agent Job on sql2016
 
     #>
     [CmdletBinding(SupportsShouldProcess, DefaultParameterSetName = "Default")]
     param (
         [parameter(Mandatory, ParameterSetName = "Instance")]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [string[]]$Job,
         [string[]]$ExcludeJob,
         [parameter(Mandatory, ValueFromPipeline, ParameterSetName = "Object")]
-        [Microsoft.SqlServer.Management.Smo.Agent.Job[]]$JobCollection,
+        [Microsoft.SqlServer.Management.Smo.Agent.Job[]]$InputObject,
         [switch]$Wait,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 
     process {
         foreach ($instance in $SqlInstance) {
-            Write-Verbose "Attempting to connect to $instance"
             try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
-            }
-            catch {
+                $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
-            $jobcollection += $server.JobServer.Jobs
+            $InputObject += $server.JobServer.Jobs
 
             if ($Job) {
-                $jobcollection = $jobcollection | Where-Object Name -In $Job
+                $InputObject = $InputObject | Where-Object Name -In $Job
             }
             if ($ExcludeJob) {
-                $jobcollection = $jobcollection | Where-Object Name -NotIn $ExcludeJob
+                $InputObject = $InputObject | Where-Object Name -NotIn $ExcludeJob
             }
         }
 
-        foreach ($currentjob in $JobCollection) {
+        foreach ($currentjob in $InputObject) {
 
             $server = $currentjob.Parent.Parent
             $status = $currentjob.CurrentRunStatus
@@ -117,13 +119,12 @@ function Stop-DbaAgentJob {
 
                 if ($wait) {
                     while ($currentjob.CurrentRunStatus -ne 'Idle') {
-                        Write-Message -Level Output -Message "$currentjob is $($currentjob.CurrentRunStatus)"
+                        Write-Message -Level Verbose -Message "$currentjob is $($currentjob.CurrentRunStatus)"
                         Start-Sleep -Seconds 3
                         $currentjob.Refresh()
                     }
                     $currentjob
-                }
-                else {
+                } else {
                     $currentjob
                 }
             }

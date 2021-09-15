@@ -1,81 +1,81 @@
 function Get-DbaFile {
     <#
-.SYNOPSIS
-Get-DbaFile finds files in any directory specified on a remote SQL Server
+    .SYNOPSIS
+        Get-DbaFile finds files in any directory specified on a remote SQL Server
 
-.DESCRIPTION
-This command searches all specified directories, allowing a DBA to see file information on a server without direct access
+    .DESCRIPTION
+        This command searches all specified directories, allowing a DBA to see file information on a server without direct access
 
-You can filter by extension using the -FileType parameter. By default, the default data directory will be returned. You can provide and additional paths to search using the -Path parameter.
+        You can filter by extension using the -FileType parameter. By default, the default data directory will be returned. You can provide and additional paths to search using the -Path parameter.
 
-Thanks to serg-52 for the query:  https://www.sqlservercentral.com/Forums/Topic1642213-391-1.aspx
+        Thanks to serg-52 for the query:  https://www.sqlservercentral.com/Forums/Topic1642213-391-1.aspx
 
-.PARAMETER SqlInstance
-The SQL Server instance.
+    .PARAMETER SqlInstance
+        The target SQL Server instance or instances.
 
-.PARAMETER SqlCredential
-Allows you to login to servers using alternative credentials
+    .PARAMETER SqlCredential
+        Allows you to login to servers using alternative credentials
 
-.PARAMETER Path
-Used to specify extra directories to search in addition to the default data directory.
+    .PARAMETER Path
+        Used to specify extra directories to search in addition to the default data directory.
 
-.PARAMETER FileType
-Used to specify filter by filetype. No dot required, just pass the extension.
+    .PARAMETER FileType
+        Used to specify filter by filetype. No dot required, just pass the extension.
 
-.PARAMETER Depth
-Used to specify recursive folder depth.  Default is 1, non-recursive.
+    .PARAMETER Depth
+        Used to specify recursive folder depth.  Default is 1, non-recursive.
 
-.PARAMETER EnableException
+    .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-.NOTES
-Tags: Discovery
-Author: Brandon Abshire, netnerds.net
+    .NOTES
+        Tags: Discovery
+        Author: Brandon Abshire, netnerds.net
 
-Website: https://dbatools.io
-Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-License: MIT https://opensource.org/licenses/MIT
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-.LINK
-https://dbatools.io/Get-DbaFile
+    .LINK
+        https://dbatools.io/Get-DbaFile
 
-.EXAMPLE
-Get-DbaFile -SqlInstance sqlserver2014a -Path E:\Dir1
-Logs into the SQL Server "sqlserver2014a" using Windows credentials and searches E:\Dir for all files
+    .EXAMPLE
+        PS C:\> Get-DbaFile -SqlInstance sqlserver2014a -Path E:\Dir1
 
-.EXAMPLE
-Get-DbaFile -SqlInstance sqlserver2014a -SqlCredential $cred -Path 'E:\sql files'
-Logs into the SQL Server "sqlserver2014a" using alternative credentials and returns all files in 'E:\sql files'
+        Logs into the SQL Server "sqlserver2014a" using Windows credentials and searches E:\Dir for all files
 
-.EXAMPLE
-$all = Get-DbaDefaultPath -SqlInstance sql2014
-Get-DbaFile -SqlInstance sql2014 -Path $all.Data, $all.Log, $all.Backup -Depth 3
-Returns the files in the default data, log and backup directories on sql2014, 3 directories deep (recursively).
+    .EXAMPLE
+        PS C:\> Get-DbaFile -SqlInstance sqlserver2014a -SqlCredential $cred -Path 'E:\sql files'
 
-.EXAMPLE
-Get-DbaFile -SqlInstance sql2014 -Path 'E:\Dir1', 'E:\Dir2'
-Returns the files in "E:\Dir1" and "E:Dir2" on sql2014
+        Logs into the SQL Server "sqlserver2014a" using alternative credentials and returns all files in 'E:\sql files'
 
-.EXAMPLE
-Get-DbaFile -SqlInstance -Path 'E:\Dir1' sql2014, sql2016 -FileType fsf, mld
-Finds files in E:\Dir1 ending with ".fsf" and ".mld" for both the servers sql2014 and sql2016.
+    .EXAMPLE
+        PS C:\> $all = Get-DbaDefaultPath -SqlInstance sql2014
+        PS C:\> Get-DbaFile -SqlInstance sql2014 -Path $all.Data, $all.Log, $all.Backup -Depth 3
 
-.EXAMPLE
-Get-DbaFile -SqlInstance -Path 'E:\Dir1' sql2014, sql2016 -FileType fsf, mld
-Finds files in E:\Dir1 ending with ".fsf" and ".mld" for both the servers sql2014 and sql2016.
-#>
+        Returns the files in the default data, log and backup directories on sql2014, 3 directories deep (recursively).
+
+    .EXAMPLE
+        PS C:\> Get-DbaFile -SqlInstance sql2014 -Path 'E:\Dir1', 'E:\Dir2'
+
+        Returns the files in "E:\Dir1" and "E:Dir2" on sql2014
+
+    .EXAMPLE
+        PS C:\> Get-DbaFile -SqlInstance sql2014, sql2016 -Path 'E:\Dir1' -FileType fsf, mld
+
+        Finds files in E:\Dir1 ending with ".fsf" and ".mld" for both the servers sql2014 and sql2016.
+
+    #>
     [CmdletBinding()]
-    Param (
-        [parameter(Mandatory = $true, ValueFromPipeline = $true)]
-        [Alias("ServerInstance", "SqlServer")]
+    param (
+        [parameter(Mandatory, ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [string[]]$Path,
         [string[]]$FileType,
         [int]$Depth = 1,
-        [Alias('Silent')]
         [switch]$EnableException
     )
     begin {
@@ -156,19 +156,15 @@ Finds files in E:\Dir1 ending with ".fsf" and ".mld" for both the servers sql201
         }
 
         if ($FileType) {
-            $FileTypeComparison = $FileType | ForEach-Object { $_.ToLower() } | Where-Object { $_ } | Sort-Object | Get-Unique
+            $FileTypeComparison = $FileType | ForEach-Object { $_.ToLowerInvariant() } | Where-Object { $_ } | Sort-Object | Get-Unique
         }
     }
 
     process {
         foreach ($instance in $SqlInstance) {
-
-            $paths = @()
             try {
-                Write-Message -Level Verbose -Message "Connecting to $instance"
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
-            }
-            catch {
+                $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -186,26 +182,25 @@ Finds files in E:\Dir1 ending with ".fsf" and ".mld" for both the servers sql201
             if ($FileTypeComparison) {
                 foreach ($row in $datatable) {
                     foreach ($type in $FileTypeComparison) {
-                        if ($row.filename.ToLower().EndsWith(".$type")) {
+                        if ($row.filename.ToLowerInvariant().EndsWith(".$type")) {
                             [pscustomobject]@{
-                                ComputerName   = $server.NetName
+                                ComputerName   = $server.ComputerName
                                 InstanceName   = $server.ServiceName
                                 SqlInstance    = $server.DomainInstanceName
                                 Filename       = $row.fullpath
-                                RemoteFilename = Join-AdminUnc -Servername $server.netname -Filepath $row.fullpath
+                                RemoteFilename = Join-AdminUnc -Servername $server.ComputerName -Filepath $row.fullpath
                             } | Select-DefaultView -ExcludeProperty ComputerName, InstanceName, RemoteFilename
                         }
                     }
                 }
-            }
-            else {
+            } else {
                 foreach ($row in $datatable) {
                     [pscustomobject]@{
-                        ComputerName   = $server.NetName
+                        ComputerName   = $server.ComputerName
                         InstanceName   = $server.ServiceName
                         SqlInstance    = $server.DomainInstanceName
                         Filename       = $row.fullpath
-                        RemoteFilename = Join-AdminUnc -Servername $server.netname -Filepath $row.fullpath
+                        RemoteFilename = Join-AdminUnc -Servername $server.ComputerName -Filepath $row.fullpath
                     } | Select-DefaultView -ExcludeProperty ComputerName, InstanceName, RemoteFilename
                 }
             }

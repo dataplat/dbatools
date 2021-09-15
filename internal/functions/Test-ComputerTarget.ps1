@@ -1,7 +1,7 @@
-﻿function Test-ComputerTarget {
+function Test-ComputerTarget {
     <#
     .SYNOPSIS
-        Validates wheher the input string can be legally used to target a computer.
+        Validates whether the input string can be legally used to target a computer.
 
     .DESCRIPTION
         Validates whether the input string can be legally used to target a computer.
@@ -25,10 +25,10 @@
         Will test, whether the names passed to it are legal targets.
         - The first two will pass, the last one will fail
         - Note that it will only return boolean values, so the order needs to be remembered (due to this, using it by pipeline on more than one object is not really recommended).
-#>
+    #>
     [CmdletBinding()]
     param (
-        [Parameter(ValueFromPipeline = $true, Mandatory = $true)]
+        [Parameter(ValueFromPipeline, Mandatory)]
         [string[]]
         $ComputerName
     )

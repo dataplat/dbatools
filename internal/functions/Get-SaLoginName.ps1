@@ -17,18 +17,17 @@ function Get-SaLoginName {
 
     .NOTES
         Website: https://dbatools.io
-        Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+        Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
     #>
     [CmdletBinding()]
     param (
-        [Parameter(Mandatory = $true)]
-        [Alias("ServerInstance", "SqlServer")]
+        [Parameter(Mandatory)]
         [object]$SqlInstance,
         [PSCredential]$SqlCredential
     )
 
-    $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
+    $server = Connect-DbaInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
     $saname = ($server.logins | Where-Object { $_.id -eq 1 }).Name
 
     return $saname

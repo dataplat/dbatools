@@ -1,103 +1,110 @@
-#ValidationTags#Messaging#
 function Export-DbaExecutionPlan {
     <#
-        .SYNOPSIS
-            Exports execution plans to disk.
+    .SYNOPSIS
+        Exports execution plans to disk.
 
-        .DESCRIPTION
-            Exports execution plans to disk. Can pipe from Export-DbaExecutionPlan
+    .DESCRIPTION
+        Exports execution plans to disk. Can pipe from Get-DbaExecutionPlan
 
-            Thanks to
-                https://www.simple-talk.com/sql/t-sql-programming/dmvs-for-query-plan-metadata/
-                and
-                http://www.scarydba.com/2017/02/13/export-plans-cache-sqlplan-file/
-            for the idea and query.
+        Thanks to
+        https://www.simple-talk.com/sql/t-sql-programming/dmvs-for-query-plan-metadata/
+        and
+        http://www.scarydba.com/2017/02/13/export-plans-cache-sqlplan-file/
+        for the idea and query.
 
-        .PARAMETER SqlInstance
-            The SQL Server that you're connecting to.
+    .PARAMETER SqlInstance
+        The target SQL Server instance or instances.
 
-        .PARAMETER SqlCredential
-            Credential object used to connect to the SQL Server as a different user
+    .PARAMETER SqlCredential
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
 
-        .PARAMETER Database
-            The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
 
-        .PARAMETER ExcludeDatabase
-            The database(s) to exclude - this list is auto-populated from the server
+        For MFA support, please use Connect-DbaInstance.
 
-        .PARAMETER SinceCreation
-            Datetime object used to narrow the results to a date
+    .PARAMETER Database
+        The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
 
-        .PARAMETER SinceLastExecution
-            Datetime object used to narrow the results to a date
+    .PARAMETER ExcludeDatabase
+        The database(s) to exclude - this list is auto-populated from the server
 
-        .PARAMETER Path
-            The directory where all of the sqlxml files will be exported
+    .PARAMETER SinceCreation
+        Datetime object used to narrow the results to a date
 
-        .PARAMETER WhatIf
-            Shows what would happen if the command were to run. No actions are actually performed.
+    .PARAMETER SinceLastExecution
+        Datetime object used to narrow the results to a date
 
-        .PARAMETER Confirm
-            Prompts you for confirmation before executing any changing operations within the command.
+    .PARAMETER Path
+        The directory where all of the sqlxml files will be exported
 
-        .PARAMETER PipedObject
-            Internal parameter
+    .PARAMETER WhatIf
+        Shows what would happen if the command were to run. No actions are actually performed.
 
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+    .PARAMETER Confirm
+        Prompts you for confirmation before executing any changing operations within the command.
 
-        .NOTES
-            Tags: Performance, ExecutionPlan
-            dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
-            Copyright (C) 2016 Chrissy LeMaire
-            License: MIT https://opensource.org/licenses/MIT
+    .PARAMETER InputObject
+        Internal parameter
 
-        .LINK
-            https://dbatools.io/Export-DbaExecutionPlan
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-        .EXAMPLE
-            Export-DbaExecutionPlan -SqlInstance sqlserver2014a
+    .NOTES
+        Tags: Performance, ExecutionPlan
+        Author: Chrissy LeMaire (@cl), netnerds.net
 
-            Exports all execution plans for sqlserver2014a.
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-        .EXAMPLE
-            Export-DbaExecutionPlan -SqlInstance sqlserver2014a -Database db1, db2 -SinceLastExecution '7/1/2016 10:47:00'
+    .LINK
+        https://dbatools.io/Export-DbaExecutionPlan
 
-            Exports all execution plans for databases db1 and db2 on sqlserver2014a since July 1, 2016 at 10:47 AM.
+    .EXAMPLE
+        PS C:\> Export-DbaExecutionPlan -SqlInstance sqlserver2014a -Path C:\Temp
+
+        Exports all execution plans for sqlserver2014a. Files saved in to C:\Temp
+
+    .EXAMPLE
+        PS C:\> Export-DbaExecutionPlan -SqlInstance sqlserver2014a -Database db1, db2 -SinceLastExecution '2016-07-01 10:47:00' -Path C:\Temp
+
+        Exports all execution plans for databases db1 and db2 on sqlserver2014a since July 1, 2016 at 10:47 AM. Files saved in to C:\Temp
+
+    .EXAMPLE
+        PS C:\> Get-DbaExecutionPlan -SqlInstance sqlserver2014a | Export-DbaExecutionPlan -Path C:\Temp
+
+        Gets all execution plans for sqlserver2014a. Using Pipeline exports them all to C:\Temp
+
+    .EXAMPLE
+        PS C:\> Get-DbaExecutionPlan -SqlInstance sqlserver2014a | Export-DbaExecutionPlan -Path C:\Temp -WhatIf
+
+        Gets all execution plans for sqlserver2014a. Then shows what would happen if the results where piped to Export-DbaExecutionPlan
+
     #>
-    [cmdletbinding(SupportsShouldProcess = $true, DefaultParameterSetName = "Default")]
+    [cmdletbinding(SupportsShouldProcess, DefaultParameterSetName = "Default")]
     param (
         [parameter(ParameterSetName = 'NotPiped', Mandatory)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [parameter(ParameterSetName = 'NotPiped')]
         [PSCredential]$SqlCredential,
-        [Alias("Databases")]
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
-        [parameter(ParameterSetName = 'Piped', Mandatory)]
-        [parameter(ParameterSetName = 'NotPiped', Mandatory)]
-        [string]$Path,
+        [parameter(ParameterSetName = 'Piped')]
+        [parameter(ParameterSetName = 'NotPiped')]
+        # No file path because this needs a directory
+        [string]$Path = (Get-DbatoolsConfigValue -FullName 'Path.DbatoolsExport'),
         [parameter(ParameterSetName = 'NotPiped')]
         [datetime]$SinceCreation,
         [parameter(ParameterSetName = 'NotPiped')]
         [datetime]$SinceLastExecution,
         [Parameter(ParameterSetName = 'Piped', Mandatory, ValueFromPipeline)]
-        [object[]]$PipedObject,
-        [Alias('Silent')]
+        [object[]]$InputObject,
         [switch]$EnableException
     )
 
     begin {
-        if ($SinceCreation -ne $null) {
-            $SinceCreation = $SinceCreation.ToString("yyyy-MM-dd HH:mm:ss")
-        }
-
-        if ($SinceLastExecution -ne $null) {
-            $SinceLastExecution = $SinceLastExecution.ToString("yyyy-MM-dd HH:mm:ss")
-        }
 
         function Export-Plan {
             param(
@@ -117,8 +124,7 @@ function Export-DbaExecutionPlan {
                     if ($Pscmdlet.ShouldProcess("localhost", "Writing XML file to $fileName")) {
                         $queryPlan.Save($fileName)
                     }
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "Skipped query plan for $fileName because it is null." -Target $fileName -ErrorRecord $_ -Continue
                 }
             }
@@ -130,8 +136,7 @@ function Export-DbaExecutionPlan {
                     if ($Pscmdlet.ShouldProcess("localhost", "Writing XML file to $fileName")) {
                         $statementPlan.Save($fileName)
                     }
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "Skipped statement plan for $fileName because it is null." -Target $fileName -ErrorRecord $_ -Continue
                 }
             }
@@ -144,23 +149,27 @@ function Export-DbaExecutionPlan {
     }
 
     process {
-        if (!(Test-Path $Path)) {
-            $null = New-Item -ItemType Directory -Path $Path
+
+        if ((Test-Bound -ParamterName Path) -and ((Get-Item $Path -ErrorAction Ignore) -isnot [System.IO.DirectoryInfo])) {
+            if ($Path -eq (Get-DbatoolsConfigValue -FullName 'Path.DbatoolsExport')) {
+                $null = New-Item -ItemType Directory -Path $Path
+            } else {
+                Stop-Function -Message "Path ($Path) must be a directory"
+                return
+            }
         }
 
-        if ($PipedObject) {
-            foreach ($object in $pipedobject) {
+        if ($InputObject) {
+            foreach ($object in $InputObject) {
                 Export-Plan $object
                 return
             }
         }
 
         foreach ($instance in $SqlInstance) {
-            Write-Message -Level Verbose -Message "Attempting to connect to $instance"
             try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
-            }
-            catch {
+                $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -180,7 +189,7 @@ function Export-DbaExecutionPlan {
                         CROSS APPLY sys.dm_exec_query_plan(deqs.plan_handle) AS deqp
                         CROSS APPLY sys.dm_exec_sql_text(deqs.plan_handle) AS execText"
 
-            if ($ExcludeDatabase -or $Database -or $SinceCreation.Length -gt 0 -or $SinceLastExecution.length -gt 0 -or $ExcludeEmptyQueryPlan -eq $true) {
+            if ($ExcludeDatabase -or $Database -or $SinceCreation -or $SinceLastExecution -or $ExcludeEmptyQueryPlan -eq $true) {
                 $where = " WHERE "
             }
 
@@ -193,12 +202,12 @@ function Export-DbaExecutionPlan {
 
             if (Test-Bound 'SinceCreation') {
                 Write-Message -Level Verbose -Message "Adding creation time"
-                $whereArray += " creation_time >= '$SinceCreation' "
+                $whereArray += " creation_time >= CONVERT(datetime,'$($SinceCreation.ToString("yyyy-MM-ddTHH:mm:ss", [System.Globalization.CultureInfo]::InvariantCulture))',126) "
             }
 
             if (Test-Bound 'SinceLastExecution') {
                 Write-Message -Level Verbose -Message "Adding last execution time"
-                $whereArray += " last_execution_time >= '$SinceLastExecution' "
+                $whereArray += " last_execution_time >= CONVERT(datetime,'$($SinceLastExecution.ToString("yyyy-MM-ddTHH:mm:ss", [System.Globalization.CultureInfo]::InvariantCulture))',126) "
             }
 
             if (Test-Bound 'ExcludeDatabase') {
@@ -219,8 +228,7 @@ function Export-DbaExecutionPlan {
             Write-Message -Level Debug -Message "SQL Statement: $sql"
             try {
                 $dataTable = $server.ConnectionContext.ExecuteWithResults($sql).Tables
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Issue collecting execution plans" -Target $instance -ErroRecord $_ -Continue
             }
 
@@ -229,7 +237,7 @@ function Export-DbaExecutionPlan {
                 $planhandle = "0x"; $row.planhandle | ForEach-Object { $planhandle += ("{0:X}" -f $_).PadLeft(2, "0") }
 
                 $object = [pscustomobject]@{
-                    ComputerName           = $server.NetName
+                    ComputerName           = $server.ComputerName
                     InstanceName           = $server.ServiceName
                     SqlInstance            = $server.DomainInstanceName
                     DatabaseName           = $row.DatabaseName

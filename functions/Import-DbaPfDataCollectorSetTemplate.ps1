@@ -1,124 +1,128 @@
-﻿function Import-DbaPfDataCollectorSetTemplate {
+function Import-DbaPfDataCollectorSetTemplate {
     <#
-        .SYNOPSIS
-            Imports a new Performance Monitor Data Collector Set Template either from the dbatools repository or a file you specify.
+    .SYNOPSIS
+        Imports a new Performance Monitor Data Collector Set Template either from the dbatools repository or a file you specify.
 
-        .DESCRIPTION
-            Imports a new Performance Monitor Data Collector Set Template either from the dbatools repository or a file you specify.
-            When importing data collector sets from the local instance, Run As Admin is required.
+    .DESCRIPTION
+        Imports a new Performance Monitor Data Collector Set Template either from the dbatools repository or a file you specify.
+        When importing data collector sets from the local instance, Run As Admin is required.
 
-            Note: The included counters will be added for all SQL instances on the machine by default.
-            For specific instances in addition to the default, use -Instance.
+        Note: The included counters will be added for all SQL instances on the machine by default.
+        For specific instances in addition to the default, use -Instance.
 
-            See https://msdn.microsoft.com/en-us/library/windows/desktop/aa371952 for more information
+        See https://msdn.microsoft.com/en-us/library/windows/desktop/aa371952 for more information
 
-        .PARAMETER ComputerName
-            The target computer. Defaults to localhost.
+    .PARAMETER ComputerName
+        The target computer. Defaults to localhost.
 
-        .PARAMETER Credential
-            Allows you to login to servers using alternative credentials. To use:
+    .PARAMETER Credential
+        Allows you to login to servers using alternative credentials. To use:
 
-            $scred = Get-Credential, then pass $scred object to the -Credential parameter.
+        $scred = Get-Credential, then pass $scred object to the -Credential parameter.
 
-        .PARAMETER Path
-            The path to the xml file or files.
+    .PARAMETER Path
+        The path to the xml file or files.
 
-        .PARAMETER Template
-            From one or more of the templates from the dbatools repository. Press Tab to cycle through the available options.
+    .PARAMETER Template
+        From one or more of the templates from the dbatools repository. Press Tab to cycle through the available options.
 
-        .PARAMETER RootPath
-            Sets the base path where the subdirectories are created.
+    .PARAMETER RootPath
+        Sets the base path where the subdirectories are created.
 
-        .PARAMETER DisplayName
-            Sets the display name of the data collector set.
+    .PARAMETER DisplayName
+        Sets the display name of the data collector set.
 
-        .PARAMETER SchedulesEnabled
-            If this switch is enabled, sets a value that indicates whether the schedules are enabled.
+    .PARAMETER SchedulesEnabled
+        If this switch is enabled, sets a value that indicates whether the schedules are enabled.
 
-        .PARAMETER Segment
-            Sets a value that indicates whether PLA creates new logs if the maximum size or segment duration is reached before the data collector set is stopped.
+    .PARAMETER Segment
+        Sets a value that indicates whether PLA creates new logs if the maximum size or segment duration is reached before the data collector set is stopped.
 
-        .PARAMETER SegmentMaxDuration
-            Sets the duration that the data collector set can run before it begins writing to new log files.
+    .PARAMETER SegmentMaxDuration
+        Sets the duration that the data collector set can run before it begins writing to new log files.
 
-        .PARAMETER SegmentMaxSize
-            Sets the maximum size of any log file in the data collector set.
+    .PARAMETER SegmentMaxSize
+        Sets the maximum size of any log file in the data collector set.
 
-        .PARAMETER Subdirectory
-            Sets a base subdirectory of the root path where the next instance of the data collector set will write its logs.
+    .PARAMETER Subdirectory
+        Sets a base subdirectory of the root path where the next instance of the data collector set will write its logs.
 
-        .PARAMETER SubdirectoryFormat
-            Sets flags that describe how to decorate the subdirectory name. PLA appends the decoration to the folder name. For example, if you specify plaMonthDayHour, PLA appends the current month, day, and hour values to the folder name. If the folder name is MyFile, the result could be MyFile110816.
+    .PARAMETER SubdirectoryFormat
+        Sets flags that describe how to decorate the subdirectory name. PLA appends the decoration to the folder name. For example, if you specify plaMonthDayHour, PLA appends the current month, day, and hour values to the folder name. If the folder name is MyFile, the result could be MyFile110816.
 
-        .PARAMETER SubdirectoryFormatPattern
-            Sets a format pattern to use when decorating the folder name. Default is 'yyyyMMdd\-NNNNNN'.
+    .PARAMETER SubdirectoryFormatPattern
+        Sets a format pattern to use when decorating the folder name. Default is 'yyyyMMdd\-NNNNNN'.
 
-        .PARAMETER Task
-            Sets the name of a Task Scheduler job to start each time the data collector set stops, including between segments.
+    .PARAMETER Task
+        Sets the name of a Task Scheduler job to start each time the data collector set stops, including between segments.
 
-        .PARAMETER TaskRunAsSelf
-            If this switch is enabled, sets a value that determines whether the task runs as the data collector set user or as the user specified in the task.
+    .PARAMETER TaskRunAsSelf
+        If this switch is enabled, sets a value that determines whether the task runs as the data collector set user or as the user specified in the task.
 
-        .PARAMETER TaskArguments
-            Sets the command-line arguments to pass to the Task Scheduler job specified in the IDataCollectorSet::Task property.
-            See https://msdn.microsoft.com/en-us/library/windows/desktop/aa371992 for more information.
+    .PARAMETER TaskArguments
+        Sets the command-line arguments to pass to the Task Scheduler job specified in the IDataCollectorSet::Task property.
+        See https://msdn.microsoft.com/en-us/library/windows/desktop/aa371992 for more information.
 
-        .PARAMETER TaskUserTextArguments
-            Sets the command-line arguments that are substituted for the {usertext} substitution variable in the IDataCollectorSet::TaskArguments property.
-            See https://msdn.microsoft.com/en-us/library/windows/desktop/aa371993 for more information.
+    .PARAMETER TaskUserTextArguments
+        Sets the command-line arguments that are substituted for the {usertext} substitution variable in the IDataCollectorSet::TaskArguments property.
+        See https://msdn.microsoft.com/en-us/library/windows/desktop/aa371993 for more information.
 
-        .PARAMETER StopOnCompletion
-            If this switch is enabled, sets a value that determines whether the data collector set stops when all the data collectors in the set are in a completed state.
+    .PARAMETER StopOnCompletion
+        If this switch is enabled, sets a value that determines whether the data collector set stops when all the data collectors in the set are in a completed state.
 
-        .PARAMETER Instance
-            By default, the template will be applied to all instances. If you want to set specific ones in addition to the default, supply just the instance name.
+    .PARAMETER Instance
+        By default, the template will be applied to all instances. If you want to set specific ones in addition to the default, supply just the instance name.
 
-        .PARAMETER WhatIf
-            If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
+    .PARAMETER WhatIf
+        If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
 
-        .PARAMETER Confirm
-            If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
+    .PARAMETER Confirm
+        If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-        .NOTES
-            Website: https://dbatools.io
-            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: MIT https://opensource.org/licenses/MIT
+    .NOTES
+        Tags: Performance, DataCollector, PerfCounter
+        Author: Chrissy LeMaire (@cl), netnerds.net
 
-        .LINK
-            https://dbatools.io/Import-DbaPfDataCollectorSetTemplate
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-        .EXAMPLE
-            Import-DbaPfDataCollectorSetTemplate -SqlInstance sql2017 -Template 'Long Running Query'
+    .LINK
+        https://dbatools.io/Import-DbaPfDataCollectorSetTemplate
 
-            Creates a new data collector set named 'Long Running Query' from the dbatools repository on the SQL Server sql2017
+    .EXAMPLE
+        PS C:\> Import-DbaPfDataCollectorSetTemplate -ComputerName sql2017 -Template 'Long Running Query'
 
-        .EXAMPLE
-            Import-DbaPfDataCollectorSetTemplate -SqlInstance sql2017 -Template 'Long Running Query' -DisplayName 'New Long running query' -Confirm
+        Creates a new data collector set named 'Long Running Query' from the dbatools repository on the SQL Server sql2017.
 
-            Creates a new data collector set named "New Long Running Query" using the 'Long Running Query' template. Forces a confirmation if the template exists.
+    .EXAMPLE
+        PS C:\> Import-DbaPfDataCollectorSetTemplate -ComputerName sql2017 -Template 'Long Running Query' -DisplayName 'New Long running query' -Confirm
 
-        .EXAMPLE
-            Get-DbaPfDataCollectorSet -SqlInstance sql2017 -Session db_ola_health | Remove-Dbadata collector set
-            Import-DbaPfDataCollectorSetTemplate -SqlInstance sql2017 -Template db_ola_health | Start-Dbadata collector set
+        Creates a new data collector set named "New Long Running Query" using the 'Long Running Query' template. Forces a confirmation if the template exists.
 
-            Imports a session if it exists, then recreates it using a template.
+    .EXAMPLE
+        PS C:\> Get-DbaPfDataCollectorSet -ComputerName sql2017 -Session db_ola_health | Remove-DbaPfDataCollectorSet
+        Import-DbaPfDataCollectorSetTemplate -ComputerName sql2017 -Template db_ola_health | Start-DbaPfDataCollectorSet
 
-        .EXAMPLE
-            Get-DbaPfDataCollectorSetTemplate | Out-GridView -PassThru | Import-DbaPfDataCollectorSetTemplate -SqlInstance sql2017
+        Imports a session if it exists, then recreates it using a template.
 
-            Allows you to select a Session template then import to an instance named sql2017.
+    .EXAMPLE
+        PS C:\> Get-DbaPfDataCollectorSetTemplate | Out-GridView -PassThru | Import-DbaPfDataCollectorSetTemplate -ComputerName sql2017
 
-        .EXAMPLE
-            Import-DbaPfDataCollectorSetTemplate -SqlInstance sql2017 -Template 'Long Running Query' -Instance SHAREPOINT
+        Allows you to select a Session template then import to an instance named sql2017.
 
-            Creates a new data collector set named 'Long Running Query' from the dbatools repository on the SQL Server sql2017 for both the default and the SHAREPOINT instance.
+    .EXAMPLE
+        PS C:\> Import-DbaPfDataCollectorSetTemplate -ComputerName sql2017 -Template 'Long Running Query' -Instance SHAREPOINT
 
-            If you'd like to remove counters for the default instance, use Remove-DbaPfDataCollectorCounter.
+        Creates a new data collector set named 'Long Running Query' from the dbatools repository on the SQL Server sql2017 for both the default and the SHAREPOINT instance.
+
+        If you'd like to remove counters for the default instance, use Remove-DbaPfDataCollectorCounter.
+
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low")]
     param (
@@ -147,7 +151,8 @@
         [switch]$EnableException
     )
     begin {
-        $metadata = Import-Clixml "$script:PSModuleRoot\bin\perfmontemplates\collectorsets.xml"
+        #Variable marked as unused by PSScriptAnalyzer
+        #$metadata = Import-Clixml "$script:PSModuleRoot\bin\perfmontemplates\collectorsets.xml"
 
         $setscript = {
             $setname = $args[0]; $templatexml = $args[1]
@@ -163,6 +168,8 @@
         }
     }
     process {
+
+
         if ((Test-Bound -ParameterName Path -Not) -and (Test-Bound -ParameterName Template -Not)) {
             Stop-Function -Message "You must specify Path or Template"
         }
@@ -178,8 +185,7 @@
                 $templatepath = "$script:PSModuleRoot\bin\perfmontemplates\collectorsets\$file.xml"
                 if ((Test-Path $templatepath)) {
                     $Path += $templatepath
-                }
-                else {
+                } else {
                     Stop-Function -Message "Invalid template ($templatepath does not exist)" -Continue
                 }
             }
@@ -190,7 +196,7 @@
                     Set-Variable -Name DisplayName -Value (Get-ChildItem -Path $file).BaseName
                 }
 
-                $Name = $DisplayNameUnresolved = $DisplayName
+                $Name = $DisplayName
 
                 Write-Message -Level Verbose -Message "Processing $file for $computer"
 
@@ -211,7 +217,7 @@
 
                     foreach ($replacement in $replacements) {
                         $phrase = "<$replacement></$replacement>"
-                        $value = (Get-Variable -Name $replacement).Value
+                        $value = (Get-Variable -Name $replacement -ErrorAction SilentlyContinue).Value
                         if ($value -eq $false) {
                             $value = "0"
                         }
@@ -227,8 +233,7 @@
                     $xml = [xml](Get-Content $tempfile -ErrorAction Stop)
                     $plainxml = Get-Content $tempfile -ErrorAction Stop -Raw
                     $file = $tempfile
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "Failure" -ErrorRecord $_ -Target $file -Continue
                 }
                 if (-not $xml.DataCollectorSet) {
@@ -237,34 +242,30 @@
 
                 try {
                     Write-Message -Level Verbose -Message "Importing $file as $name "
-                    Write-Message -Level Verbose -Message "Connecting to $computer using Invoke-Command"
 
                     if ($instance) {
                         $instances = $instance
-                    }
-                    else {
+                    } else {
                         $instances = Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock $instancescript -ErrorAction Stop -Raw
                     }
 
-                    $scriptblock = {
+                    $scriptBlock = {
                         try {
                             $results = Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock $setscript -ArgumentList $Name, $plainxml -ErrorAction Stop
                             Write-Message -Level Verbose -Message " $results"
-                        }
-                        catch {
+                        } catch {
                             Stop-Function -Message "Failure starting $setname on $computer" -ErrorRecord $_ -Target $computer -Continue
                         }
                     }
 
                     if ((Get-DbaPfDataCollectorSet -ComputerName $computer -CollectorSet $Name)) {
                         if ($Pscmdlet.ShouldProcess($computer, "CollectorSet $Name already exists. Modify?")) {
-                            Invoke-Command -Scriptblock $scriptblock
+                            Invoke-Command -Scriptblock $scriptBlock
                             $output = Get-DbaPfDataCollectorSet -ComputerName $computer -CollectorSet $Name
                         }
-                    }
-                    else {
+                    } else {
                         if ($Pscmdlet.ShouldProcess($computer, "Importing collector set $Name")) {
-                            Invoke-Command -Scriptblock $scriptblock
+                            Invoke-Command -Scriptblock $scriptBlock
                             $output = Get-DbaPfDataCollectorSet -ComputerName $computer -CollectorSet $Name
                         }
                     }
@@ -295,8 +296,7 @@
 
                     Remove-Item $tempfile -ErrorAction SilentlyContinue
                     $output
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "Failure" -ErrorRecord $_ -Target $store -Continue
                 }
             }

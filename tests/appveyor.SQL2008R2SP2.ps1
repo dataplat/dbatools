@@ -1,8 +1,52 @@
+
+
+
+Function Install-ADAuthenticationLibraryforSQLServer {
+    # from https://bzzzt.io/post/2018-05-25-horrible-adalsql-issue/
+    $workingFolder = Join-Path $env:temp ([System.IO.Path]::GetRandomFileName())
+    New-Item -ItemType Directory -Force -Path $workingFolder
+
+    $Installer = 'C:\github\appveyor-lab\azure\adalsql.msi'
+
+    If (!(Test-Path $Installer)) {
+        Throw "$Installer does not exist"
+    }
+    try {
+        #Write-Host "attempting to uninstall..."
+        #Write-Host "Running MsiExec.exe /uninstall {4EE99065-01C6-49DD-9EC6-E08AA5B13491} /quiet"
+        Start-Process -FilePath "MsiExec.exe" -ArgumentList  "/uninstall {4EE99065-01C6-49DD-9EC6-E08AA5B13491} /quiet" -Wait -NoNewWindow
+    } catch {
+        #Write-Host "oh dear install did not work"
+        $fail = $_.Exception
+        Write-Error $fail
+        Throw
+    }
+    try {
+        $DataStamp = get-date -Format yyyyMMddTHHmmss
+        $logFile = '{0}-{1}.log' -f $Installer, $DataStamp
+        $MSIArguments = @(
+            "/i"
+            ('"{0}"' -f $Installer)
+            "/qn"
+            "/norestart"
+            "/L*v"
+            $logFile
+        )
+        #Write-Host "Attempting to install.."
+        #Write-Host " Running msiexec.exe $($MSIArguments)"
+        Start-Process "msiexec.exe" -ArgumentList $MSIArguments -Wait -NoNewWindow
+    } catch {
+        $fail = $_.Exception
+        Write-Error $fail
+        Throw
+    }
+}
+
+$null = Install-ADAuthenticationLibraryforSQLServer
+
 $indent = '...'
 Write-Host -Object "$indent Running $PSCommandpath" -ForegroundColor DarkGreen
-$dbatools_serialimport = $true
-Import-Module C:\github\dbatools\dbatools.psd1
-Start-Sleep 5
+Import-Module C:\github\dbatools\dbatools.psm1 -Force
 
 # This script spins up the 2008R2SP2 instance and the relative setup
 
@@ -25,12 +69,12 @@ foreach ($ipAddress in $Tcp.IPAddresses) {
 }
 $Tcp.Alter()
 Write-Host -Object "$indent Starting $instance" -ForegroundColor DarkGreen
-Restart-Service "MSSQL`$$instance" -WarningAction SilentlyContinue
+Restart-Service "MSSQL`$$instance" -WarningAction SilentlyContinue -Force
 $server = Connect-DbaInstance -SqlInstance $sqlinstance
 $server.Configuration.RemoteDacConnectionsEnabled.ConfigValue = $true
 $server.Configuration.Alter()
-$null = Set-DbaStartupParameter -SqlInstance $sqlinstance -TraceFlagsOverride -TraceFlags 7806 -Confirm:$false -ErrorAction SilentlyContinue -EnableException
-Restart-Service "MSSQL`$SQL2008R2SP2" -WarningAction SilentlyContinue
+$null = Set-DbaStartupParameter -SqlInstance $sqlinstance -TraceFlagOverride -TraceFlag 7806 -Confirm:$false -ErrorAction SilentlyContinue -EnableException
+Restart-Service "MSSQL`$SQL2008R2SP2" -WarningAction SilentlyContinue -Force
 $server = Connect-DbaInstance -SqlInstance $sqlinstance
 $server.Configuration.RemoteDacConnectionsEnabled.ConfigValue = $true
 $server.Configuration.Alter()
@@ -44,5 +88,7 @@ while ($lastexitcode -ne 0 -and $t++ -lt 10)
 Write-Host -Object "$indent Executing startup scripts for SQL Server 2008" -ForegroundColor DarkGreen
 # Add some jobs to the sql2008r2sp2 instance (1433 = default)
 foreach ($file in (Get-ChildItem C:\github\appveyor-lab\sql2008-startup\*.sql -Recurse -ErrorAction SilentlyContinue)) {
-    Invoke-Sqlcmd2 -ServerInstance $sqlinstance -InputFile $file
+    Invoke-DbaQuery -SqlInstance $sqlinstance -InputFile $file
 }
+
+Import-Module C:\github\dbatools\dbatools.psm1 -Force

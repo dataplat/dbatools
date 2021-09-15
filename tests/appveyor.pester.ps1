@@ -35,7 +35,7 @@ param (
     [switch]$Finalize,
     $PSVersion = $PSVersionTable.PSVersion.Major,
     $TestFile = "TestResultsPS$PSVersion.xml",
-    $ProjectRoot = $ENV:APPVEYOR_BUILD_FOLDER,
+    $ProjectRoot = $env:APPVEYOR_BUILD_FOLDER,
     $ModuleBase = $ProjectRoot,
     [switch]$IncludeCoverage
 )
@@ -45,15 +45,25 @@ Set-Location $ModuleBase
 # required to calculate coverage
 $global:dbatools_dotsourcemodule = $true
 $dbatools_serialimport = $true
-#removes previously imported dbatools, if any
-Remove-Module dbatools -ErrorAction Ignore
 #imports the psm1 to be able to use internal functions in tests
-Import-Module "$ModuleBase\dbatools.psm1"
+Import-Module "$ModuleBase\dbatools.psm1" -Force
 #imports the module making sure DLL is loaded ok
 Import-Module "$ModuleBase\dbatools.psd1"
 
-Update-TypeData -AppendPath "$ModuleBase\xml\dbatools.types.ps1xml"
+Update-TypeData -AppendPath "$ModuleBase\xml\dbatools.types.ps1xml" -ErrorAction SilentlyContinue # ( this should already be loaded by dbatools.psd1 )
 Start-Sleep 5
+
+function Split-ArrayInParts($array, [int]$parts) {
+    #splits an array in "equal" parts
+    $size = $array.Length / $parts
+    $counter = [pscustomobject] @{ Value = 0 }
+    $groups = $array | Group-Object -Property { [math]::Floor($counter.Value++ / $size) }
+    $rtn = @()
+    foreach ($g in $groups) {
+        $rtn += , @($g.Group)
+    }
+    $rtn
+}
 
 function Get-CoverageIndications($Path, $ModuleBase) {
     # takes a test file path and figures out what to analyze for coverage (i.e. dependencies)
@@ -70,12 +80,15 @@ function Get-CoverageIndications($Path, $ModuleBase) {
         $f = $everything | Where-Object Name -eq $func_name
         $source = $f.Definition
         $CBH = $CBHRex.match($source).Value
-        $cmdonly = $source.Replace($CBH, '')
-        foreach ($e in $everyfunction) {
-            # hacky, I know, but every occurrence of any function plus a space kinda denotes usage !?
-            $searchme = "$e "
-            if ($cmdonly.contains($searchme)) {
-                $funcs += $e
+        # This fails very hard sometimes
+        if ($source -and $CBH) {
+            $cmdonly = $source.Replace($CBH, '')
+            foreach ($e in $everyfunction) {
+                # hacky, I know, but every occurrence of any function plus a space kinda denotes usage !?
+                $searchme = "$e "
+                if ($cmdonly.contains($searchme)) {
+                    $funcs += $e
+                }
             }
         }
     }
@@ -83,7 +96,7 @@ function Get-CoverageIndications($Path, $ModuleBase) {
     $allfiles = Get-ChildItem -File -Path "$ModuleBase\internal\functions", "$ModuleBase\functions" -Filter '*.ps1'
     foreach ($f in $funcs) {
         # exclude always used functions ?!
-        if ($f -in ('Connect-SqlInstance', 'Select-DefaultView', 'Stop-Function', 'Write-Message')) { continue }
+        if ($f -in ('Connect-DbaInstance', 'Select-DefaultView', 'Stop-Function', 'Write-Message')) { continue }
         # can I find a correspondence to a physical file (again, on the convenience of having Get-DbaFoo.ps1 actually defining Get-DbaFoo)?
         $res = $allfiles | Where-Object { $_.Name.Replace('.ps1', '') -eq $f }
         if ($res.count -gt 0) {
@@ -95,7 +108,7 @@ function Get-CoverageIndications($Path, $ModuleBase) {
 
 function Get-CodecovReport($Results, $ModuleBase) {
     #handle coverage https://docs.codecov.io/reference#upload
-    $report = @{'coverage' = @{}}
+    $report = @{'coverage' = @{ } }
     #needs correct casing to do the replace
     $ModuleBase = (Resolve-Path $ModuleBase).Path
     # things we wanna a report for (and later backfill if not tested)
@@ -103,11 +116,11 @@ function Get-CodecovReport($Results, $ModuleBase) {
 
     $missed = $results.CodeCoverage | Select-Object -ExpandProperty MissedCommands | Sort-Object -Property File, Line -Unique
     $hits = $results.CodeCoverage | Select-Object -ExpandProperty HitCommands | Sort-Object -Property File, Line -Unique
-    $LineCount = @{}
+    $LineCount = @{ }
     $hits | ForEach-Object {
         $filename = $_.File.Replace("$ModuleBase\", '').Replace('\', '/')
         if ($filename -notin $report['coverage'].Keys) {
-            $report['coverage'][$filename] = @{}
+            $report['coverage'][$filename] = @{ }
             $LineCount[$filename] = (Get-Content $_.File -Raw | Measure-Object -Line).Lines
         }
         $report['coverage'][$filename][$_.Line] = 1
@@ -116,7 +129,7 @@ function Get-CodecovReport($Results, $ModuleBase) {
     $missed | ForEach-Object {
         $filename = $_.File.Replace("$ModuleBase\", '').Replace('\', '/')
         if ($filename -notin $report['coverage'].Keys) {
-            $report['coverage'][$filename] = @{}
+            $report['coverage'][$filename] = @{ }
             $LineCount[$filename] = (Get-Content $_.File | Measure-Object -Line).Lines
         }
         if ($_.Line -notin $report['coverage'][$filename].Keys) {
@@ -125,9 +138,9 @@ function Get-CodecovReport($Results, $ModuleBase) {
         }
     }
 
-    $newreport = @{'coverage' = [ordered]@{}}
+    $newreport = @{'coverage' = [ordered]@{ } }
     foreach ($fname in $report['coverage'].Keys) {
-        $Linecoverage = [ordered]@{}
+        $Linecoverage = [ordered]@{ }
         for ($i = 1; $i -le $LineCount[$fname]; $i++) {
             if ($i -in $report['coverage'][$fname].Keys) {
                 $Linecoverage["$i"] = $report['coverage'][$fname][$i]
@@ -140,14 +153,14 @@ function Get-CodecovReport($Results, $ModuleBase) {
     foreach ($target in $allfiles) {
         $target_relative = $target.FullName.Replace("$ModuleBase\", '').Replace('\', '/')
         if ($target_relative -notin $newreport['coverage'].Keys) {
-            $newreport['coverage'][$target_relative] = @{"1" = $null}
+            $newreport['coverage'][$target_relative] = @{"1" = $null }
         }
     }
     $newreport
 }
 
 function Send-CodecovReport($CodecovReport) {
-    $params = @{}
+    $params = @{ }
     $params['branch'] = $env:APPVEYOR_REPO_BRANCH
     $params['service'] = "appveyor"
     $params['job'] = $env:APPVEYOR_ACCOUNT_NAME
@@ -165,119 +178,11 @@ function Send-CodecovReport($CodecovReport) {
     Invoke-RestMethod -Uri $Request.Uri -Method Post -InFile $CodecovReport -ContentType 'multipart/form-data'
 }
 
-function Get-TestsForScenario {
-    param($Scenario, $AllTest)
-
-    # does this scenario run an 'autodetect' ?
-    if ($TestsRunGroups[$Scenario].StartsWith('autodetect_')[0]) {
-        # exclude any test specifically tied to a non-autodetect scenario
-        $TiedFunctions = ($TestsRunGroups.GetEnumerator() | Where-Object { $_.Value -notlike 'autodetect_*' }).Value
-        $RemainingTests = $AllTests | Where-Object { ($_.Name -replace '^([^.]+)(.+)?.Tests.ps1', '$1') -notin $TiedFunctions }
-        # and now scan for the instance string
-        $ScanFor = $TestsRunGroups[$Scenario].Replace('autodetect_', '')
-        #if ScanFor holds an array, search it in *and*
-        $ScanForAll = $ScanFor.Split(',')
-        # and exclude other instances in autodetect
-        $ExcludeScanForRaw = @() + ($TestsRunGroups.GetEnumerator() | Where-Object { ($_.Name -ne $Scenario) -and ($_.Value -like 'autodetect_*') }).Value.Replace('autodetect_', '')
-        $ScanTests = @()
-        foreach ($test in $RemainingTests) {
-            $testcontent = Get-Content $test -Raw
-            $IncludeFlag = 0
-            foreach ($piece in $ScanForAll) {
-                if ($testcontent -like "*$piece*") {
-                    $IncludeFlag += 1
-                }
-            }
-            if ($IncludeFlag -eq $ScanForAll.Length) {
-                #matched all pieces
-                $ExcludeAll = 0
-                foreach ($otherenv in $ExcludeScanForRaw) {
-                    $ExcludeFlag = 0
-                    $ExcludeScanForAll_ = $otherenv.split(',')
-                    #honor includes before excludes
-                    $ExcludeScanForAll = @()
-                    foreach ($piece in $ExcludeScanForAll_) {
-                        if ($piece -notin $ScanForAll) {
-                            $ExcludeScanForAll += $piece
-                        }
-                    }
-                    if ($ExcludeScanForAll.Length -eq 0) {
-                        $ExcludeAll = 0
-                        continue
-                    }
-                    foreach ($piece in $ExcludeScanForAll) {
-                        if ($testContent -like "*$piece*") {
-                            $ExcludeFlag += 1
-                        }
-                    }
-                    if ($ExcludeFlag -eq $ExcludeScanForAll.Length) {
-                        $ExcludeAll += 1
-                    }
-                }
-                if ($ExcludeAll -eq 0) {
-                    $ScanTests += $test
-                }
-            }
-        }
-        $AllScenarioTests = $ScanTests
-    }
-    else {
-        $AllScenarioTests = $AllTests | Where-Object { ($_.Name -replace '\.Tests\.ps1$', '') -in $TestsRunGroups[$Scenario] }
-    }
-    return $AllScenarioTests
-}
-
 
 if (-not $Finalize) {
-    # Invoke pester.groups.ps1 to know which tests to run
-    . "$ModuleBase\tests\pester.groups.ps1"
-    # retrieve all .Tests.
-    $AllDbatoolsTests = Get-ChildItem -File -Path "$ModuleBase\tests\*.Tests.ps1"
-    # exclude "disabled"
-    $AllTests = $AllDbatoolsTests | Where-Object { ($_.Name -replace '^([^.]+)(.+)?.Tests.ps1', '$1') -notin $TestsRunGroups['disabled'] }
-    # only in appveyor, disable uncooperative tests
-    $AllTests = $AllTests | Where-Object { ($_.Name -replace '^([^.]+)(.+)?.Tests.ps1', '$1') -notin $TestsRunGroups['appveyor_disabled'] }
-
-    # Inspect special words
-    $TestsToRunMessage = "$($env:APPVEYOR_REPO_COMMIT_MESSAGE) $($env:APPVEYOR_REPO_COMMIT_MESSAGE_EXTENDED)"
-    $TestsToRunRegex = [regex] '(?smi)\(do (?<do>[^)]+)\)'
-    $TestsToRunMatch = $TestsToRunRegex.Match($TestsToRunMessage).Groups['do'].Value
-    if ($TestsToRunMatch.Length -gt 0) {
-        $TestsToRun = "*$TestsToRunMatch*"
-        $AllTests = $AllTests | Where-Object { ($_.Name -replace '\.Tests\.ps1$', '') -like $TestsToRun }
-        Write-Host -ForegroundColor DarkGreen "Commit message: Reduced to $($AllTests.Count) out of $($AllDbatoolsTests.Count) tests"
-        if ($AllTests.Count -eq 0) {
-            throw "something went wrong, nothing to test"
-        }
-    }
-    else {
-        $TestsToRun = "*.Tests.*"
-    }
-
-    # do we have a scenario ?
-    if ($env:SCENARIO) {
-        # if so, do we have a group with tests to run ?
-        if ($env:SCENARIO -in $TestsRunGroups.Keys) {
-            $AllScenarioTests = Get-TestsForScenario -scenario $env:SCENARIO -AllTest $AllTests
-        }
-        else {
-            $AllTestsToExclude = @()
-            $validScenarios = $TestsRunGroups.Keys | Where-Object { $_ -notin @('disabled', 'appveyor_disabled') }
-            foreach ($k in $validScenarios) {
-                $AllTestsToExclude += Get-TestsForScenario -scenario $k -AllTest $AllTests
-            }
-            $AllTests = $AllTests | Where-Object { $_ -notin $AllTestsToExclude }
-            $AllScenarioTests = $AllTests
-        }
-    }
-    else {
-        $AllScenarioTests = $AllTests
-    }
-
-    Write-Host -ForegroundColor DarkGreen "Test Groups   : Reduced to $($AllScenarioTests.Count) out of $($AllDbatoolsTests.Count) tests"
-    if ($AllTests.Count -eq 0 -and $AllScenarioTests.Count -eq 0) {
-        throw "something went wrong, nothing to test"
-    }
+    # Invoke appveyor.common.ps1 to know which tests to run
+    . "$ModuleBase\tests\appveyor.common.ps1"
+    $AllScenarioTests = Get-TestsForBuildScenario -ModuleBase $ModuleBase
 }
 
 #Run a test with the current version of PowerShell
@@ -307,10 +212,38 @@ if (-not $Finalize) {
         }
         # Pester 4.0 outputs already what file is being ran. If we remove write-host from every test, we can time
         # executions for each test script (i.e. Executing Get-DbaFoo .... Done (40 seconds))
-        Invoke-Pester @PesterSplat | Export-Clixml -Path "$ModuleBase\PesterResults$PSVersion$Counter.xml"
+        $trialNo = 1
+        while ($trialNo -le 3) {
+            if ($trialNo -eq 1) {
+                $appvTestName = $f.Name
+            } else {
+                $appvTestName = "$f.Name, attempt #$trialNo"
+            }
+            Add-AppveyorTest -Name $appvTestName -Framework NUnit -FileName $f.FullName -Outcome Running
+            $PesterRun = Invoke-Pester @PesterSplat
+            $PesterRun | Export-Clixml -Path "$ModuleBase\PesterResults$PSVersion$Counter.xml"
+            $outcome = "Passed"
+            if ($PesterRun.FailedCount -gt 0) {
+                $trialno += 1
+                Update-AppveyorTest -Name $appvTestName -Framework NUnit -FileName $f.FullName -Outcome "Failed" -Duration $PesterRun.Time.TotalMilliseconds
+            } else {
+                Update-AppveyorTest -Name $appvTestName -Framework NUnit -FileName $f.FullName -Outcome "Passed" -Duration $PesterRun.Time.TotalMilliseconds
+                break
+            }
+        }
     }
-}
-else {
+    # Gather support package as an artifact
+    # New-DbatoolsSupportPackage -Path $ModuleBase - turns out to be too heavy
+    try {
+        $msgFile = "$ModuleBase\dbatools_messages.xml"
+        Write-Host -ForegroundColor DarkGreen "Dumping message log into $msgFile"
+        Get-DbatoolsLog | Select-Object FunctionName, Level, TimeStamp, Message | Export-Clixml -Path $msgFile -ErrorAction Stop
+        Compress-Archive -Path $msgFile -DestinationPath "$msgFile.zip" -ErrorAction Stop
+        Remove-Item $msgFile
+    } catch {
+        Write-Host -ForegroundColor Red "Message collection failed: $($_.Exception.Message)"
+    }
+} else {
     # Unsure why we're uploading so I removed it for now
     <#
     #If finalize is specified, check for failures and  show status
@@ -328,6 +261,10 @@ else {
     #>
     #What failed? How many tests did we run ?
     $results = @(Get-ChildItem -Path "$ModuleBase\PesterResults*.xml" | Import-Clixml)
+    #Publish the support package regardless of the outcome
+    if (Test-Path $ModuleBase\dbatools_messages.xml.zip) {
+        Get-ChildItem $ModuleBase\dbatools_messages.xml.zip | ForEach-Object { Push-AppveyorArtifact $_.FullName -FileName $_.Name }
+    }
     #$totalcount = $results | Select-Object -ExpandProperty TotalCount | Measure-Object -Sum | Select-Object -ExpandProperty Sum
     $failedcount = $results | Select-Object -ExpandProperty FailedCount | Measure-Object -Sum | Select-Object -ExpandProperty Sum
     if ($failedcount -gt 0) {

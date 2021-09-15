@@ -1,101 +1,129 @@
 function Export-DbaSpConfigure {
     <#
-        .SYNOPSIS
-            Exports advanced sp_configure global configuration options to sql file.
+    .SYNOPSIS
+        Exports advanced sp_configure global configuration options to sql file.
 
-        .DESCRIPTION
-            Exports advanced sp_configure global configuration options to sql file.
+    .DESCRIPTION
+        Exports advanced sp_configure global configuration options to sql file.
 
-        .PARAMETER SqlInstance
-            Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2005 or higher.
+    .PARAMETER SqlInstance
+        The target SQL Server instance or instances. This can be a collection and receive pipeline input.
+        You must have sysadmin access if needs to set 'show advanced options' to 1 and server version must be SQL Server version 2005 or higher.
 
-        .PARAMETER SqlCredential
-            Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
+    .PARAMETER SqlCredential
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
 
-            $scred = Get-Credential, then pass $scred object to the -SourceSqlCredential parameter.
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
 
-            Windows Authentication will be used if SourceSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
+        For MFA support, please use Connect-DbaInstance.
 
-            To connect as a different Windows user, run PowerShell as that user.
+    .PARAMETER Path
+        Specifies the directory where the file or files will be exported.
 
-        .PARAMETER Path
-            Specifies the path to a file which will contain the sp_configure queries necessary to replicate the configuration settings on another instance. This file is suitable for input into Import-DbaSPConfigure.
+    .PARAMETER FilePath
+        Specifies the full file path of the output file.
 
-        .PARAMETER Whatif
-            If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-        .PARAMETER Confirm
-            If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
+    .NOTES
+        Tags: SpConfig, Configure, Configuration
+        Author: Chrissy LeMaire (@cl), netnerds.net
 
-        .NOTES
-            dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
-            Website: https://dbatools.io
-            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: MIT https://opensource.org/licenses/MIT
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-        .EXAMPLE
-            Export-DbaSpConfigure -SqlInstance sourceserver -Path C:\temp\sp_configure.sql
+    .LINK
+        https://dbatools.io/Export-DbaSpConfigure
 
-            Exports the SPConfigure settings on sourceserver to the file C:\temp\sp_configure.sql
+    .INPUTS
+        A DbaInstanceParameter representing an array of SQL Server instances.
 
-        .OUTPUTS
-            File to disk, and string path.
+    .OUTPUTS
+        Creates a new file for each SQL Server Instance
+
+    .EXAMPLE
+        PS C:\> Export-DbaSpConfigure -SqlInstance sourceserver
+
+        Exports the SPConfigure settings on sourceserver. As no Path was defined outputs to My Documents folder with default name format of Servername-MMDDYYYYhhmmss-sp_configure.sql
+
+    .EXAMPLE
+        PS C:\> Export-DbaSpConfigure -SqlInstance sourceserver -Path C:\temp
+
+        Exports the SPConfigure settings on sourceserver to the directory C:\temp using the default name format
+
+    .EXAMPLE
+        PS C:\> $cred = Get-Credential sqladmin
+        PS C:\> Export-DbaSpConfigure -SqlInstance sourceserver -SqlCredential $cred -Path C:\temp\sp_configure.sql
+
+        Exports the SPConfigure settings on sourceserver to the file C:\temp\sp_configure.sql. Uses SQL Authentication to connect. Will require SysAdmin rights if needs to set 'show advanced options'
+
+    .EXAMPLE
+        PS C:\> 'Server1', 'Server2' | Export-DbaSpConfigure -Path C:\temp\configure.sql
+
+        Exports the SPConfigure settings for Server1 and Server2 using pipeline. As more than 1 Server adds prefix of Servername and date to the file name and saves to file like  C:\temp\Servername-MMDDYYYYhhmmss-configure.sql
 
     #>
-    [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
+    [CmdletBinding()]
     param (
-        [Parameter(Mandatory = $true)]
-        [ValidateNotNullOrEmpty()]
-        [Alias("ServerInstance", "SqlServer")]
-        [DbaInstanceParameter]$SqlInstance,
-        [string]$Path,
-        [PSCredential]$SqlCredential
+        [Parameter(Mandatory, ValueFromPipeline)]
+        [DbaInstanceParameter[]]$SqlInstance,
+        [PSCredential]$SqlCredential,
+        [string]$Path = (Get-DbatoolsConfigValue -FullName 'Path.DbatoolsExport'),
+        [Alias("OutFile", "FileName")]
+        [string]$FilePath,
+        [switch]$EnableException
     )
-
     begin {
-        $server = Connect-SqlInstance $sqlinstance $SqlCredential
-
-        if ($server.versionMajor -lt 9) {
-            Write-Error "Windows 2000 is not supported for sp_configure export."
-            break
-        }
-
-        if ($path.length -eq 0) {
-            $timenow = (Get-Date -uformat "%m%d%Y%H%M%S")
-            $mydocs = [Environment]::GetFolderPath('MyDocuments')
-            $path = "$mydocs\$($server.name.replace('\', '$'))-$timenow-sp_configure.sql"
-        }
-
+        $null = Test-ExportDirectory -Path $Path
     }
-
     process {
-        try {
-            Set-Content -Path $path "EXEC sp_configure 'show advanced options' , 1;  RECONFIGURE WITH OVERRIDE"
-        }
-        catch {
-            throw "Can't write to $path"
-        }
+        if (Test-FunctionInterrupt) { return }
+        foreach ($instance in $SqlInstance) {
+            try {
+                $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
+            } catch {
+                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+            }
 
-        $server.Configuration.ShowAdvancedOptions.ConfigValue = $true
-        $server.Configuration.Alter($true)
-        foreach ($sourceprop in $server.Configuration.Properties) {
-            $displayname = $sourceprop.DisplayName
-            $configvalue = $sourceprop.ConfigValue
-            Add-Content -Path $path "EXEC sp_configure '$displayname' , $configvalue;"
+            $FilePath = Get-ExportFilePath -Path $PSBoundParameters.Path -FilePath $PSBoundParameters.FilePath -Type sql -ServerName $instance
+            $ShowAdvancedOptions = $server.Configuration.ShowAdvancedOptions.ConfigValue
+
+            if ($ShowAdvancedOptions -eq 0) {
+                try {
+                    $server.Configuration.ShowAdvancedOptions.ConfigValue = $true
+                    $server.Configuration.Alter($true)
+                } catch {
+                    Stop-Function -Message "Can't set 'show advanced options' to 1 on instance $instance" -ErrorRecord $_ -Continue
+                }
+            }
+
+            try {
+                Set-Content -Path $FilePath "EXEC sp_configure 'show advanced options' , 1;  RECONFIGURE WITH OVERRIDE"
+            } catch {
+                Stop-Function -Message "Can't write to $FilePath" -ErrorRecord $_ -Continue
+            }
+
+            foreach ($sourceprop in $server.Configuration.Properties) {
+                $displayname = $sourceprop.DisplayName
+                $configvalue = $sourceprop.ConfigValue
+                Add-Content -Path $FilePath "EXEC sp_configure '$displayname' , $configvalue;"
+            }
+
+            if ($ShowAdvancedOptions -eq 0) {
+                Add-Content -Path $FilePath "EXEC sp_configure 'show advanced options' , 0;"
+                Add-Content -Path $FilePath "RECONFIGURE WITH OVERRIDE"
+
+                $server.Configuration.ShowAdvancedOptions.ConfigValue = $false
+                $server.Configuration.Alter($true)
+            }
+            Get-ChildItem -Path $FilePath
         }
-        Add-Content -Path $path "EXEC sp_configure 'show advanced options' , 0;"
-        Add-Content -Path $Path "RECONFIGURE WITH OVERRIDE"
-        $server.Configuration.ShowAdvancedOptions.ConfigValue = $false
-        $server.Configuration.Alter($true)
-        return $path
     }
-
     end {
-        $server.ConnectionContext.Disconnect()
-
-        If ($Pscmdlet.ShouldProcess("console", "Showing finished message")) {
-            Write-Output "Server configuration export finished"
-        }
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Export-SqlSpConfigure
+        Write-Message -Level Verbose -Message "Server configuration export finished"
     }
 }

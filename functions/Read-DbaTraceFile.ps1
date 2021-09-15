@@ -1,53 +1,57 @@
 function Read-DbaTraceFile {
     <#
-        .SYNOPSIS
-        Reads a trace file from specified SQL Server Database
+    .SYNOPSIS
+        Reads SQL Server trace files
 
-        .DESCRIPTION
+    .DESCRIPTION
         Using the fn_trace_gettable function, a trace file is read and returned as a PowerShell object
 
         This function returns the whole of the trace file. The information is presented in the format that the trace subsystem uses.
 
-        .PARAMETER SqlInstance
-        A SQL Server instance to connect to
+    .PARAMETER SqlInstance
+        The target SQL Server instance or instances.
 
-        .PARAMETER SqlCredential
-        A credential to use to connect to the SQL instance rather than using Windows Authentication
+    .PARAMETER SqlCredential
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
 
-        .PARAMETER Path
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
+
+    .PARAMETER Path
         Path to the trace file. This path is relative to the SQL Server instance.
 
-        .PARAMETER Database
+    .PARAMETER Database
         Search for results only with specific DatabaseName. Uses IN for comparisons.
 
-        .PARAMETER Login
+    .PARAMETER Login
         Search for results only with specific Logins. Uses IN for comparisons.
 
-        .PARAMETER Spid
+    .PARAMETER Spid
         Search for results only with specific Spids. Uses IN for comparisons.
 
-        .PARAMETER EventClass
+    .PARAMETER EventClass
         Search for results only with specific EventClasses. Uses IN for comparisons.
 
-        .PARAMETER ObjectType
+    .PARAMETER ObjectType
         Search for results only with specific ObjectTypes. Uses IN for comparisons.
 
-        .PARAMETER Error
-        Search for results only with specific Errors. Uses IN for comparisons.
+    .PARAMETER ErrorId
+        Search for results only with specific Errors. Filters 'Error in ($ErrorId)'  Uses IN for comparisons.
 
-        .PARAMETER EventSequence
+    .PARAMETER EventSequence
         Search for results only with specific EventSequences. Uses IN for comparisons.
 
-        .PARAMETER TextData
+    .PARAMETER TextData
         Search for results only with specific TextData. Uses LIKE for comparisons.
 
-        .PARAMETER ApplicationName
+    .PARAMETER ApplicationName
         Search for results only with specific ApplicationNames. Uses LIKE for comparisons.
 
-        .PARAMETER ObjectName
+    .PARAMETER ObjectName
         Search for results only with specific ObjectNames. Uses LIKE for comparisons.
 
-        .PARAMETER Where
+    .PARAMETER Where
         Custom where clause - use without the word "WHERE". Here are the available columns:
 
         TextData
@@ -117,44 +121,48 @@ function Read-DbaTraceFile {
         PlanHandle
         GroupID
 
-        .PARAMETER EnableException
+    .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-        .NOTES
+    .NOTES
         Tags: Security, Trace
+        Author: Chrissy LeMaire (@cl), netnerds.net
+
         Website: https://dbatools.io
-        Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+        Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
-        .EXAMPLE
-        Read-DbaTraceFile -SqlInstance sql2016 -Database master, tempdb -Path C:\traces\big.trc
+    .LINK
+        https://dbatools.io/Read-DbaTraceFile
+
+    .EXAMPLE
+        PS C:\> Read-DbaTraceFile -SqlInstance sql2016 -Database master, tempdb -Path C:\traces\big.trc
 
         Reads the tracefile C:\traces\big.trc, stored on the sql2016 sql server. Filters only results that have master or tempdb as the DatabaseName.
 
-        .EXAMPLE
-        Read-DbaTraceFile -SqlInstance sql2016 -Database master, tempdb -Path C:\traces\big.trc -TextData 'EXEC SP_PROCOPTION'
+    .EXAMPLE
+        PS C:\> Read-DbaTraceFile -SqlInstance sql2016 -Database master, tempdb -Path C:\traces\big.trc -TextData 'EXEC SP_PROCOPTION'
 
         Reads the tracefile C:\traces\big.trc, stored on the sql2016 sql server.
         Filters only results that have master or tempdb as the DatabaseName and that have 'EXEC SP_PROCOPTION' somewhere in the text.
 
-        .EXAMPLE
-        Read-DbaTraceFile -SqlInstance sql2016 -Path C:\traces\big.trc -Where "LinkedServerName = 'myls' and StartTime > '5/30/2017 4:27:52 PM'"
+    .EXAMPLE
+        PS C:\> Read-DbaTraceFile -SqlInstance sql2016 -Path C:\traces\big.trc -Where "LinkedServerName = 'myls' and StartTime > '5/30/2017 4:27:52 PM'"
 
         Reads the tracefile C:\traces\big.trc, stored on the sql2016 sql server.
         Filters only results where LinkServerName = myls and StartTime is greater than '5/30/2017 4:27:52 PM'.
 
-        .EXAMPLE
-        Get-DbaTrace -SqlInstance sql2014 | Read-DbaTraceFile
+    .EXAMPLE
+        PS C:\> Get-DbaTrace -SqlInstance sql2014 | Read-DbaTraceFile
 
         Reads every trace file on sql2014
 
-#>
+    #>
     [CmdletBinding()]
-    Param (
-        [parameter(Position = 0, Mandatory, ValueFromPipelineByPropertyName)]
-        [Alias("ServerInstance", "SqlServer")]
+    param (
+        [parameter(Mandatory, ValueFromPipelineByPropertyName)]
         [DbaInstanceParameter[]]$SqlInstance,
         [parameter(ValueFromPipelineByPropertyName)]
         [PSCredential]$SqlCredential,
@@ -165,22 +173,19 @@ function Read-DbaTraceFile {
         [int[]]$Spid,
         [string[]]$EventClass,
         [string[]]$ObjectType,
-        [int[]]$Error,
+        [int[]]$ErrorId,
         [int[]]$EventSequence,
         [string[]]$TextData,
         [string[]]$ApplicationName,
         [string[]]$ObjectName,
         [string]$Where,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 
-    process {
-
+    begin {
         if ($where) {
             $Where = "where $where"
-        }
-        elseif ($Database -or $Login -or $Spid) {
+        } elseif ($Database -or $Login -or $Spid -or $ApplicationName -or $EventClass -or $ObjectName -or $ObjectType -or $EventSequence -or $ErrorId) {
 
             $tempwhere = @()
 
@@ -209,8 +214,8 @@ function Read-DbaTraceFile {
                 $tempwhere += "ObjectType in ($where)"
             }
 
-            if ($Error) {
-                $where = $Error -join ","
+            if ($ErrorId) {
+                $where = $ErrorId -join ","
                 $tempwhere += "Error in ($where)"
             }
 
@@ -237,42 +242,40 @@ function Read-DbaTraceFile {
             $tempwhere = $tempwhere -join " and "
             $Where = "where $tempwhere"
         }
-
-        foreach ($instance in $sqlInstance) {
+    }
+    process {
+        foreach ($instance in $SqlInstance) {
             try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
-            }
-            catch {
+                $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
-                return
             }
 
             if (Test-Bound -Parameter Path) {
-                $currentpath = $path
-            }
-            else {
-                $currentpath = $server.ConnectionContext.ExecuteScalar("Select path from sys.traces where is_default = 1")
+                $currentPath = $path
+            } else {
+                $currentPath = $server.ConnectionContext.ExecuteScalar("SELECT path FROM sys.traces WHERE is_default = 1")
             }
 
-            foreach ($file in $currentpath) {
+            foreach ($file in $currentPath) {
                 Write-Message -Level Verbose -Message "Parsing $file"
 
-                $exists = Test-DbaSqlPath -SqlInstance $server -Path $file
+                $exists = Test-DbaPath -SqlInstance $server -Path $file
 
                 if (!$exists) {
                     Write-Message -Level Warning -Message "Path does not exist" -Target $file
                     Continue
                 }
 
-                $sql = "select SERVERPROPERTY('MachineName') AS ComputerName,
-                ISNULL(SERVERPROPERTY('InstanceName'), 'MSSQLSERVER') AS InstanceName,
-                SERVERPROPERTY('ServerName') AS SqlInstance,
-                 * FROM [fn_trace_gettable]('$file', DEFAULT) $Where"
+                $sql = "SELECT SERVERPROPERTY('MachineName') AS ComputerName, ISNULL(SERVERPROPERTY('InstanceName'), 'MSSQLSERVER') AS InstanceName, SERVERPROPERTY('ServerName') AS SqlInstance, *
+                FROM [fn_trace_gettable]('$file', DEFAULT)
+                $Where"
+
+                Write-Message -Message "SQL: $sql" -Level Debug
                 try {
                     $server.Query($sql)
-                }
-                catch {
-                    Stop-Function -Message "Error returned from SQL Server: $_" -Target $server -InnerErrorRecord $_
+                } catch {
+                    Stop-Function -Message "Error returned from SQL Server: $instance" -Target $server -InnerErrorRecord $_
                 }
             }
         }

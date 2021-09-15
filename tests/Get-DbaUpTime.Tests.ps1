@@ -4,15 +4,11 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
-        $paramCount = 4
-        $defaultParamCount = 11
-        [object[]]$params = (Get-ChildItem function:\Get-DbaUptime).Parameters.Keys
-        $knownParameters = 'Computer', 'SqlInstance', 'SqlCredential', 'Credential', 'EnableException'
-        It "Should contain our specific parameters" {
-            ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
-        }
-        It "Should only contain $paramCount parameters" {
-            $params.Count - $defaultParamCount | Should Be $paramCount
+        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
+        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Credential', 'EnableException'
+        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
+        It "Should only contain our specific parameters" {
+            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
         }
     }
 }
@@ -26,10 +22,10 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         }
     }
     Context "Command can handle multiple SqlInstances" {
-        $results = Get-DbaUptime -SqlInstance $script:instance1,$script:instance2
-            It "Command resultset could contain 2 results" {
-                $results.count | Should Be 2
-            }
+        $results = Get-DbaUptime -SqlInstance $script:instance1, $script:instance2
+        It "Command resultset could contain 2 results" {
+            $results.count | Should Be 2
+        }
         foreach ($result in $results) {
             It "Windows up time should be more than SQL Uptime" {
                 $result.SqlUptime | Should BeLessThan $result.WindowsUpTime

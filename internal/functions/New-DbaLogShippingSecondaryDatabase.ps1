@@ -1,171 +1,157 @@
 function New-DbaLogShippingSecondaryDatabase {
     <#
-.SYNOPSIS
-New-DbaLogShippingSecondaryDatabase sets up a secondary databases for log shipping.
+        .SYNOPSIS
+            New-DbaLogShippingSecondaryDatabase sets up a secondary databases for log shipping.
 
-.DESCRIPTION
-New-DbaLogShippingSecondaryDatabase sets up a secondary databases for log shipping.
-This is executed on the secondary server.
+        .DESCRIPTION
+            New-DbaLogShippingSecondaryDatabase sets up a secondary databases for log shipping.
+            This is executed on the secondary server.
 
-.PARAMETER SqlInstance
-SQL Server instance. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
+        .PARAMETER SqlInstance
+            SQL Server instance. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
 
-.PARAMETER SqlCredential
-Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
-$scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
-To connect as a different Windows user, run PowerShell as that user.
+        .PARAMETER SqlCredential
+            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
-.PARAMETER BufferCount
-The total number of buffers used by the backup or restore operation.
-The default is -1.
+        .PARAMETER BufferCount
+            The total number of buffers used by the backup or restore operation.
+            The default is -1.
 
-.PARAMETER BlockSize
-The size, in bytes, that is used as the block size for the backup device.
-The default is -1.
+        .PARAMETER BlockSize
+            The size, in bytes, that is used as the block size for the backup device.
+            The default is -1.
 
-.PARAMETER DisconnectUsers
-If set to 1, users are disconnected from the secondary database when a restore operation is performed.
-Te default is 0.
+        .PARAMETER DisconnectUsers
+            If set to 1, users are disconnected from the secondary database when a restore operation is performed.
+            Te default is 0.
 
-.PARAMETER HistoryRetention
-Is the length of time in minutes in which the history is retained.
-The default is 14420.
+        .PARAMETER HistoryRetention
+            Is the length of time in minutes in which the history is retained.
+            The default is 14420.
 
-.PARAMETER MaxTransferSize
-The size, in bytes, of the maximum input or output request which is issued by SQL Server to the backup device.
+        .PARAMETER MaxTransferSize
+            The size, in bytes, of the maximum input or output request which is issued by SQL Server to the backup device.
 
-.PARAMETER PrimaryServer
-The name of the primary instance of the Microsoft SQL Server Database Engine in the log shipping configuration.
+        .PARAMETER PrimaryServer
+            The name of the primary instance of the Microsoft SQL Server Database Engine in the log shipping configuration.
 
-.PARAMETER PrimaryDatabase
-Is the name of the database on the primary server.
+        .PARAMETER PrimaryDatabase
+            Is the name of the database on the primary server.
 
-.PARAMETER RestoreAll
-If set to 1, the secondary server restores all available transaction log backups when the restore job runs.
-The default is 1.
+        .PARAMETER RestoreAll
+            If set to 1, the secondary server restores all available transaction log backups when the restore job runs.
+            The default is 1.
 
-.PARAMETER RestoreDelay
-The amount of time, in minutes, that the secondary server waits before restoring a given backup file.
-The default is 0.
+        .PARAMETER RestoreDelay
+            The amount of time, in minutes, that the secondary server waits before restoring a given backup file.
+            The default is 0.
 
-.PARAMETER RestoreMode
-The restore mode for the secondary database. The default is 0.
-0 = Restore log with NORECOVERY.
-1 = Restore log with STANDBY.
+        .PARAMETER RestoreMode
+            The restore mode for the secondary database. The default is 0.
+            0 = Restore log with NORECOVERY.
+            1 = Restore log with STANDBY.
 
-.PARAMETER RestoreThreshold
-The number of minutes allowed to elapse between restore operations before an alert is generated.
+        .PARAMETER RestoreThreshold
+            The number of minutes allowed to elapse between restore operations before an alert is generated.
 
-.PARAMETER SecondaryDatabase
-Is the name of the secondary database.
+        .PARAMETER SecondaryDatabase
+            Is the name of the secondary database.
 
-.PARAMETER ThresholdAlert
-Is the alert to be raised when the backup threshold is exceeded.
-The default is 14420.
+        .PARAMETER ThresholdAlert
+            Is the alert to be raised when the backup threshold is exceeded.
+            The default is 14420.
 
-.PARAMETER ThresholdAlertEnabled
-Specifies whether an alert is raised when backup_threshold is exceeded.
+        .PARAMETER ThresholdAlertEnabled
+            Specifies whether an alert is raised when backup_threshold is exceeded.
 
-.PARAMETER WhatIf
-Shows what would happen if the command were to run. No actions are actually performed.
+        .PARAMETER MonitorServer
+            Is the name of the monitor server.
+            The default is the name of the primary server.
 
-.PARAMETER Confirm
-Prompts you for confirmation before executing any changing operations within the command.
+        .PARAMETER MonitorCredential
+            Allows you to login to enter a secure credential.
+            This is only needed in combination with MonitorServerSecurityMode having either a 0 or 'sqlserver' value.
+            To use: $scred = Get-Credential, then pass $scred object to the -MonitorCredential parameter.
 
-.PARAMETER EnableException
-        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+        .PARAMETER MonitorServerSecurityMode
+            The security mode used to connect to the monitor server. Allowed values are 0, "sqlserver", 1, "windows"
+            The default is 1 or Windows.
 
-.PARAMETER Force
-The force parameter will ignore some errors in the parameters and assume defaults.
-It will also remove the any present schedules with the same name for the specific job.
+        .PARAMETER WhatIf
+            Shows what would happen if the command were to run. No actions are actually performed.
 
-.NOTES
-Author: Sander Stad (@sqlstad, sqlstad.nl)
-Tags: Log shippin, secondary database
+        .PARAMETER Confirm
+            Prompts you for confirmation before executing any changing operations within the command.
 
-Website: https://dbatools.io
-Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-License: MIT https://opensource.org/licenses/MIT
+        .PARAMETER EnableException
+            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-.EXAMPLE
-New-DbaLogShippingSecondaryDatabase -SqlInstance sql2 -SecondaryDatabase DB1_DR -PrimaryServer sql1 -PrimaryDatabase DB1 -RestoreDelay 0 -RestoreMode standby -DisconnectUsers -RestoreThreshold 45 -ThresholdAlertEnabled -HistoryRetention 14420
+        .PARAMETER Force
+            The force parameter will ignore some errors in the parameters and assume defaults.
+            It will also remove the any present schedules with the same name for the specific job.
 
-#>
+        .NOTES
+            Author: Sander Stad (@sqlstad, sqlstad.nl)
+            Website: https://dbatools.io
+            Copyright: (c) 2018 by dbatools, licensed under MIT
+            License: MIT https://opensource.org/licenses/MIT
 
-    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "Low")]
+        .EXAMPLE
+            New-DbaLogShippingSecondaryDatabase -SqlInstance sql2 -SecondaryDatabase DB1_DR -PrimaryServer sql1 -PrimaryDatabase DB1 -RestoreDelay 0 -RestoreMode standby -DisconnectUsers -RestoreThreshold 45 -ThresholdAlertEnabled -HistoryRetention 14420
+    #>
+
+    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low")]
 
     param (
-        [parameter(Mandatory = $true)]
-        [Alias("ServerInstance", "SqlServer")]
-        [object]$SqlInstance,
-
-        [System.Management.Automation.PSCredential]
-        $SqlCredential,
-
+        [parameter(Mandatory)]
+        [DbaInstanceParameter]$SqlInstance,
+        [PSCredential]$SqlCredential,
         [int]$BufferCount = -1,
-
         [int]$BlockSize = -1,
-
         [switch]$DisconnectUsers,
-
         [int]$HistoryRetention = 14420,
-
         [int]$MaxTransferSize,
-
-        [Parameter(Mandatory = $true)]
+        [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
-        [object]$PrimaryServer,
-
-        [System.Management.Automation.PSCredential]
-        $PrimarySqlCredential,
-
-        [Parameter(Mandatory = $true)]
+        [DbaInstanceParameter]$PrimaryServer,
+        [PSCredential]$PrimarySqlCredential,
+        [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [object]$PrimaryDatabase,
-
         [int]$RestoreAll = 1,
-
         [int]$RestoreDelay = 0,
-
         [ValidateSet(0, 'NoRecovery', 1, 'Standby')]
         [object]$RestoreMode = 0,
-
-        [Parameter(Mandatory = $true)]
+        [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [int]$RestoreThreshold,
-
-        [Parameter(Mandatory = $true)]
+        [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [object]$SecondaryDatabase,
-
         [int]$ThresholdAlert = 14420,
-
         [switch]$ThresholdAlertEnabled,
-
-        [Alias('Silent')]
+        [string]$MonitorServer,
+        [ValidateSet(0, "sqlserver", 1, "windows")]
+        [object]$MonitorServerSecurityMode = 1,
+        [System.Management.Automation.PSCredential]$MonitorCredential,
         [switch]$EnableException,
-
         [switch]$Force
     )
 
     # Try connecting to the instance
-    Write-Message -Message "Attempting to connect to $SqlInstance" -Level Verbose
     try {
-        $ServerSecondary = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
-    }
-    catch {
-        Stop-Function -Message "Could not connect to Sql Server instance $SqlInstance.`n$_" -Target $SqlInstance -Continue
+        $ServerSecondary = Connect-DbaInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
+    } catch {
+        Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $SqlInstance
     }
 
     # Try connecting to the instance
-    Write-Message -Message "Attempting to connect to $PrimaryServer" -Level Verbose
     try {
-        $ServerPrimary = Connect-SqlInstance -SqlInstance $PrimaryServer -SqlCredential $PrimarySqlCredential
-    }
-    catch {
-        Stop-Function -Message "Could not connect to Sql Server instance $PrimaryServer.`n$_" -Target $PrimaryServer -Continue
+        $ServerPrimary = Connect-DbaInstance -SqlInstance $PrimaryServer -SqlCredential $PrimarySqlCredential
+    } catch {
+        Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $PrimaryServer
     }
 
     # Check if the database is present on the primary sql server
@@ -180,7 +166,7 @@ New-DbaLogShippingSecondaryDatabase -SqlInstance sql2 -SecondaryDatabase DB1_DR 
 
     # Check the restore mode
     if ($RestoreMode -notin 0, 1) {
-        $RestoreMode = switch ($RestoreMode) { "NoRecovery" { 0}  "Standby" { 1 } }
+        $RestoreMode = switch ($RestoreMode) { "NoRecovery" { 0 }  "Standby" { 1 } }
         Write-Message -Message "Setting restore mode to $RestoreMode." -Level Verbose
     }
 
@@ -188,8 +174,7 @@ New-DbaLogShippingSecondaryDatabase -SqlInstance sql2 -SecondaryDatabase DB1_DR 
     if ($ThresholdAlertEnabled) {
         [int]$ThresholdAlertEnabled = 1
         Write-Message -Message "Setting Threshold alert to $ThresholdAlertEnabled." -Level Verbose
-    }
-    else {
+    } else {
         [int]$ThresholdAlertEnabled = 0
         Write-Message -Message "Setting Threshold alert to $ThresholdAlertEnabled." -Level Verbose
     }
@@ -198,8 +183,7 @@ New-DbaLogShippingSecondaryDatabase -SqlInstance sql2 -SecondaryDatabase DB1_DR 
     if ($DisconnectUsers) {
         [int]$DisconnectUsers = 1
         Write-Message -Message "Setting disconnect users to $DisconnectUsers." -Level Verbose
-    }
-    else {
+    } else {
         [int]$DisconnectUsers = 0
         Write-Message -Message "Setting disconnect users to $DisconnectUsers." -Level Verbose
     }
@@ -209,8 +193,7 @@ New-DbaLogShippingSecondaryDatabase -SqlInstance sql2 -SecondaryDatabase DB1_DR 
         if ($Force) {
             [int]$DisconnectUsers = 0
             Write-Message -Message "Illegal combination of database restore mode $RestoreMode and disconnect users $DisconnectUsers. Setting it to $DisconnectUsers." -Level Warning
-        }
-        else {
+        } else {
             Stop-Function -Message "Illegal combination of database restore mode $RestoreMode and disconnect users $DisconnectUsers." -Target $SqlInstance -Continue
         }
     }
@@ -229,7 +212,13 @@ New-DbaLogShippingSecondaryDatabase -SqlInstance sql2 -SecondaryDatabase DB1_DR 
         ,@threshold_alert_enabled = $ThresholdAlertEnabled
         ,@history_retention_period = $HistoryRetention "
 
-    # Addinf extra options to the query when needed
+
+    if ($ServerSecondary.Version.Major -le 12) {
+        $Query += "
+        ,@ignoreremotemonitor = 1"
+    }
+
+    # Add inf extra options to the query when needed
     if ($BlockSize -ne -1) {
         $Query += ",@block_size = $BlockSize"
     }
@@ -242,26 +231,67 @@ New-DbaLogShippingSecondaryDatabase -SqlInstance sql2 -SecondaryDatabase DB1_DR 
         $Query += ",@max_transfer_size = $MaxTransferSize"
     }
 
-    if ($ServerSecondary.Version.Major -gt 9) {
+    if ($Force -and ($ServerSecondary.Version.Major -gt 9)) {
         $Query += ",@overwrite = 1;"
-    }
-    else {
+    } else {
         $Query += ";"
     }
 
     # Execute the query to add the log shipping primary
     if ($PSCmdlet.ShouldProcess($SqlServer, ("Configuring logshipping for secondary database $SecondaryDatabase on $SqlInstance"))) {
         try {
-            Write-Message -Message "Configuring logshipping for secondary database $SecondaryDatabase on $SqlInstance." -Level Output
+            Write-Message -Message "Configuring logshipping for secondary database $SecondaryDatabase on $SqlInstance." -Level Verbose
             Write-Message -Message "Executing query:`n$Query" -Level Verbose
             $ServerSecondary.Query($Query)
-        }
-        catch {
+
+            # For versions prior to SQL Server 2014, adding a monitor works in a different way.
+            # The next section makes sure the settings are being synchronized with earlier versions
+            if ($MonitorServer -and ($ServerSecondary.Version.Major -lt 12)) {
+                # Get the details of the primary database
+                $query = "SELECT * FROM msdb.dbo.log_shipping_monitor_secondary WHERE primary_database = '$PrimaryDatabase' AND primary_server = '$PrimaryServer'"
+                $lsDetails = $ServerSecondary.Query($query)
+
+                # Setup the procedure script for adding the monitor for the primary
+                $query = "EXEC msdb.dbo.sp_processlogshippingmonitorsecondary @mode = $MonitorServerSecurityMode
+                    ,@secondary_server = '$SqlInstance'
+                    ,@secondary_database = '$SecondaryDatabase'
+                    ,@secondary_id = '$($lsDetails.secondary_id)'
+                    ,@primary_server = '$($lsDetails.primary_server)'
+                    ,@primary_database = '$($lsDetails.primary_database)'
+                    ,@restore_threshold = $RestoreThreshold
+                    ,@threshold_alert = $([int]$lsDetails.threshold_alert)
+                    ,@threshold_alert_enabled = $([int]$lsDetails.threshold_alert_enabled)
+                    ,@history_retention_period = $([int]$lsDetails.history_retention_period)
+                    ,@monitor_server = '$MonitorServer'
+                    ,@monitor_server_security_mode = $MonitorServerSecurityMode "
+
+                # Check the MonitorServerSecurityMode if it's SQL Server authentication
+                if ($MonitorServer -and $MonitorServerSecurityMode -eq 0 ) {
+                    $query += ",@monitor_server_login = N'$MonitorLogin'
+                        ,@monitor_server_password = N'$MonitorPassword' "
+                }
+
+                Write-Message -Message "Configuring monitor server for secondary database $SecondaryDatabase." -Level Verbose
+                Write-Message -Message "Executing query:`n$query" -Level Verbose
+                Invoke-DbaQuery -SqlInstance $MonitorServer -SqlCredential $MonitorCredential -Database msdb -Query $query
+
+                $query = "
+                UPDATE msdb.dbo.log_shipping_secondary
+                SET monitor_server = '$MonitorServer', user_specified_monitor = 1
+                WHERE secondary_id = '$($lsDetails.secondary_id)'
+                "
+
+                Write-Message -Message "Updating monitor information for the secondary database $Database." -Level Verbose
+                Write-Message -Message "Executing query:`n$query" -Level Verbose
+                $ServerSecondary.Query($query)
+
+            }
+        } catch {
             Write-Message -Message "$($_.Exception.InnerException.InnerException.InnerException.InnerException.Message)" -Level Warning
             Stop-Function -Message "Error executing the query.`n$($_.Exception.Message)`n$Query"  -ErrorRecord $_ -Target $SqlInstance -Continue
         }
     }
 
-    Write-Message -Message "Finished adding the secondary database $SecondaryDatabase to log shipping." -Level Output
+    Write-Message -Message "Finished adding the secondary database $SecondaryDatabase to log shipping." -Level Verbose
 
 }

@@ -2,15 +2,14 @@ function Get-SqlDefaultPaths {
     <#
     .SYNOPSIS
         Internal function. Returns the default data and log paths for SQL Server. Needed because SMO's server.defaultpath is sometimes null.
-#>
+    #>
     [CmdletBinding()]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseSingularNouns", "")]
     param (
-        [Parameter(Mandatory = $true)]
+        [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
-        [Alias("ServerInstance", "SqlServer")]
         [object]$SqlInstance,
-        [Parameter(Mandatory = $true)]
+        [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [string]$filetype,
         [PSCredential]$SqlCredential
@@ -18,15 +17,13 @@ function Get-SqlDefaultPaths {
 
     try {
         if ($SqlInstance -isnot [Microsoft.SqlServer.Management.Smo.SqlSmoObject]) {
-            $Server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
-        }
-        else {
+            $Server = Connect-DbaInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
+        } else {
             $server = $SqlInstance
         }
-    }
-    catch {
-        Write-Message -Lvel Warning -Message "Cannot connect to $SqlInstance"
-        break
+    } catch {
+        Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $SqlInstance
+        return
     }
     switch ($filetype) { "mdf" { $filetype = "data" } "ldf" { $filetype = "log" } }
 
@@ -40,8 +37,7 @@ function Get-SqlDefaultPaths {
             $sql = "select SERVERPROPERTY('InstanceDefaultLogPath') as physical_name"
             $filepath = $server.ConnectionContext.ExecuteScalar($sql)
         }
-    }
-    else {
+    } else {
         # First attempt
         $filepath = $server.DefaultFile
         # Second attempt

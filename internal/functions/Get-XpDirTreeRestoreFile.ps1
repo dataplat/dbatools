@@ -24,52 +24,56 @@ function Get-XpDirTreeRestoreFile {
         PS C:\> Get-XpDirTreeRestoreFile -Path '\\foo\bar\' -SqlInstance $SqlInstance
 
         Tests whether the instance $SqlInstance has access to the path \\foo\bar\
-#>
+    #>
     [CmdletBinding()]
     param (
-        [parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [parameter(Mandatory, ValueFromPipeline)]
         [string]$Path,
-        [parameter(Mandatory = $true)]
-        [Alias("ServerInstance", "SqlServer")]
+        [parameter(Mandatory)]
         [DbaInstanceParameter]$SqlInstance,
         [System.Management.Automation.PSCredential]$SqlCredential,
-        [bool][Alias('Silent')]$EnableException = $false,
+        [switch]$EnableException,
         [switch]$NoRecurse
     )
 
     Write-Message -Level InternalComment -Message "Starting"
 
-    Write-Message -Level Verbose -Message "Connecting to $SqlInstance"
-    $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
-
-    if (($path -like '*.bak') -or ($path -like '*trn')) {
-
-    }
-    elseif ($Path[-1] -ne "\") {
-        $Path = $Path + "\"
+    $server = Connect-DbaInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
+    $pathSep = Get-DbaPathSep -Server $server
+    if (($path -like '*.bak') -or ($path -like '*.trn')) {
+        # For a future person who knows what's up, please replace this comment with the reason this is empty
+    } elseif ($Path[-1] -ne $pathSep) {
+        $Path = $Path + $pathSep
     }
 
-    if (!(Test-DbaSqlPath -SqlInstance $server -path $path)) {
-        Stop-Function -Message "SqlInstance $SqlInstance cannot access $path" -EnableException $true
+    if (!(Test-DbaPath -SqlInstance $server -path $path)) {
+        Stop-Function -Message "SqlInstance $SqlInstance cannot access $path"
     }
-    if ($server.VersionMajor -lt 9) {
+    if (!(Test-DbaPath -SqlInstance $server -path $Path)) {
+        Stop-Function -Message "SqlInstance $SqlInstance cannot access $Path"
+    }
+    if ($server.VersionMajor -ge 14) {
+        # this is all kinds of cool, api could be expanded sooo much here
+        $sql = "SELECT file_or_directory_name AS subdirectory, ~CONVERT(BIT, is_directory) as [file], 1 as depth
+        FROM sys.dm_os_enumerate_filesystem('$Path', '*')
+        WHERE  [level] = 0"
+    } elseif ($server.VersionMajor -lt 9) {
         $sql = "EXEC master..xp_dirtree '$Path',1,1;"
-    }
-    else {
+    } else {
         $sql = "EXEC master.sys.xp_dirtree '$Path',1,1;"
     }
-    #$queryResult = Invoke-Sqlcmd2 -ServerInstance $SqlInstance -Credential $SqlCredential -Database tempdb -Query $query
+    #$queryResult = Invoke-DbaQuery -SqlInstance $SqlInstance -Credential $SqlCredential -Database tempdb -Query $query
     $queryResult = $server.Query($sql)
     Write-Message -Level Debug -Message $sql
-    $dirs = $queryResult | where-object file -eq 0
+    $dirs = $queryResult | Where-Object file -eq 0
     $Results = @()
-    $Results += $queryResult | where-object file -eq 1 | Select-Object @{ Name = "FullName"; Expression = { $path + $_."Subdirectory" } }
+    $Results += $queryResult | Where-Object file -eq 1 | Select-Object @{ Name = "FullName"; Expression = { $path + $_.subdirectory } }
 
     if ($True -ne $NoRecurse) {
         foreach ($d in $dirs) {
-            $fullpath = "$path$($d.Subdirectory)"
+            $fullpath = $path + $d.subdirectory
             Write-Message -Level Verbose -Message "Enumerating subdirectory '$fullpath'"
-            $Results += Get-XpDirTreeRestoreFile -path $fullpath -SqlInstance $server
+            $Results += Get-XpDirTreeRestoreFile -Path $fullpath -SqlInstance $server
         }
     }
     return $Results

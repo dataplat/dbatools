@@ -1,107 +1,103 @@
 function Measure-DbaBackupThroughput {
     <#
-        .SYNOPSIS
-            Determines how quickly SQL Server is backing up databases to media.
+    .SYNOPSIS
+        Determines how quickly SQL Server is backing up databases to media.
 
-        .DESCRIPTION
-            Returns backup history details for one or more databases on a SQL Server.
+    .DESCRIPTION
+        Returns backup history details for one or more databases on a SQL Server.
 
-            Output looks like this:
-            SqlInstance     : sql2016
-            Database        : SharePoint_Config
-            AvgThroughputMB : 1.07
-            AvgSizeMB       : 24.17
-            AvgDuration     : 00:00:01.1000000
-            MinThroughputMB : 0.02
-            MaxThroughputMB : 2.26
-            MinBackupDate   : 8/6/2015 10:22:01 PM
-            MaxBackupDate   : 6/19/2016 12:57:45 PM
-            BackupCount     : 10
+        Output looks like this:
+        SqlInstance     : sql2016
+        Database        : SharePoint_Config
+        AvgThroughput   : 1.07 MB
+        AvgSize         : 24.17
+        AvgDuration     : 00:00:01.1000000
+        MinThroughput   : 0.02 MB
+        MaxThroughput   : 2.26 MB
+        MinBackupDate   : 8/6/2015 10:22:01 PM
+        MaxBackupDate   : 6/19/2016 12:57:45 PM
+        BackupCount     : 10
 
-        .PARAMETER SqlInstance
-            The SQL Server instance.
+    .PARAMETER SqlInstance
+        The target SQL Server instance or instances.
 
-        .PARAMETER SqlCredential
-            Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
+    .PARAMETER SqlCredential
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
 
-            $scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
 
-            Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
+        For MFA support, please use Connect-DbaInstance.
 
-            To connect as a different Windows user, run PowerShell as that user.
+    .PARAMETER Database
+        The database(s) to process. Options for this list are auto-populated from the server. If unspecified, all databases will be processed.
 
-        .PARAMETER Database
-            The database(s) to process. Options for this list are auto-populated from the server. If unspecified, all databases will be processed.
+    .PARAMETER ExcludeDatabase
+        The database(s) to exclude. Options for this list are auto-populated from the server.
 
-        .PARAMETER ExcludeDatabase
-            The database(s) to exclude. Options for this list are auto-populated from the server.
+    .PARAMETER Type
+        By default, this command measures the speed of Full backups. Valid options are "Full", "Log" and "Differential".
 
-        .PARAMETER Type
-            By default, this command measures the speed of Full backups. Valid options are "Full", "Log" and "Differential".
+    .PARAMETER Since
+        All backups taken on or after the point in time represented by this datetime object will be processed.
 
-        .PARAMETER Since
-             All backups taken on or after the point in time represented by this datetime object will be processed.
+    .PARAMETER Last
+        If this switch is enabled, only the last backup will be measured.
 
-        .PARAMETER Last
-            If this switch is enabled, only the last backup will be measured.
+    .PARAMETER DeviceType
+        Specifies one or more DeviceTypes to use in filtering backup sets. Valid values are "Disk", "Permanent Disk Device", "Tape", "Permanent Tape Device", "Pipe", "Permanent Pipe Device" and "Virtual Device", as well as custom integers for your own DeviceTypes.
 
-        .PARAMETER DeviceType
-            Specifies one or more DeviceTypes to use in filtering backup sets. Valid values are "Disk", "Permanent Disk Device", "Tape", "Permanent Tape Device", "Pipe", "Permanent Pipe Device" and "Virtual Device", as well as custom integers for your own DeviceTypes.
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+    .NOTES
+        Tags: Backup, Database
+        Author: Chrissy LeMaire (@cl), netnerds.net
 
-        .NOTES
-            Tags: DisasterRecovery, Backup, Databases
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-            Website: https://dbatools.io
-            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: MIT https://opensource.org/licenses/MIT
+    .LINK
+        https://dbatools.io/Measure-DbaBackupThroughput
 
-        .LINK
-            https://dbatools.io/Measure-DbaBackupThroughput
+    .EXAMPLE
+        PS C:\> Measure-DbaBackupThroughput -SqlInstance sql2016
 
-        .EXAMPLE
-            Measure-DbaBackupThroughput -SqlInstance sql2016
+        Parses every backup in msdb's backuphistory for stats on all databases.
 
-            Parses every backup in msdb's backuphistory for stats on all databases.
+    .EXAMPLE
+        PS C:\> Measure-DbaBackupThroughput -SqlInstance sql2016 -Database AdventureWorks2014
 
-        .EXAMPLE
-            Measure-DbaBackupThroughput -SqlInstance sql2016 -Database AdventureWorks2014
+        Parses every backup in msdb's backuphistory for stats on AdventureWorks2014.
 
-            Parses every backup in msdb's backuphistory for stats on AdventureWorks2014.
+    .EXAMPLE
+        PS C:\> Measure-DbaBackupThroughput -SqlInstance sql2005 -Last
 
-        .EXAMPLE
-            Measure-DbaBackupThroughput -SqlInstance sql2005 -Last
+        Processes the last full, diff and log backups every backup for all databases on sql2005.
 
-            Processes the last full, diff and log backups every backup for all databases on sql2005.
+    .EXAMPLE
+        PS C:\> Measure-DbaBackupThroughput -SqlInstance sql2005 -Last -Type Log
 
-        .EXAMPLE
-            Measure-DbaBackupThroughput -SqlInstance sql2005 -Last -Type Log
+        Processes the last log backups every backup for all databases on sql2005.
 
-            Processes the last log backups every backup for all databases on sql2005.
+    .EXAMPLE
+        PS C:\> Measure-DbaBackupThroughput -SqlInstance sql2016 -Since (Get-Date).AddDays(-7) | Where-Object { $_.MinThroughput.Gigabyte -gt 1 }
 
-        .EXAMPLE
-            Measure-DbaBackupThroughput -SqlInstance sql2016 -Since (Get-Date).AddDays(-7)
+        Gets backup calculations for the last week and filters results that have a minimum of 1GB throughput
 
-            Gets backup calculations for the last week.
+    .EXAMPLE
+        PS C:\> Measure-DbaBackupThroughput -SqlInstance sql2016 -Since (Get-Date).AddDays(-365) -Database bigoldb
 
-        .EXAMPLE
-            Measure-DbaBackupThroughput -SqlInstance sql2016 -Since (Get-Date).AddDays(-365) -Database bigoldb
-
-            Gets backup calculations, limited to the last year and only the bigoldb database
+        Gets backup calculations, limited to the last year and only the bigoldb database
 
     #>
     [CmdletBinding()]
     param (
-        [parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
-        [Alias("ServerInstance", "Instance", "SqlServer")]
+        [parameter(Mandatory, ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
-        [Alias("Credential")]
         [PSCredential]$SqlCredential,
-        [Alias("Databases")]
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
         [datetime]$Since,
@@ -109,24 +105,20 @@ function Measure-DbaBackupThroughput {
         [ValidateSet("Full", "Log", "Differential", "File", "Differential File", "Partial Full", "Partial Differential")]
         [string]$Type = "Full",
         [string[]]$DeviceType,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 
     process {
         foreach ($instance in $SqlInstance) {
             try {
-                Write-Message -Level Verbose -Message "Connecting to $instance."
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
-            }
-            catch {
+                $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
             if ($Database) {
                 $DatabaseCollection = $server.Databases | Where-Object Name -in $Database
-            }
-            else {
+            } else {
                 $DatabaseCollection = $server.Databases
             }
 
@@ -136,54 +128,52 @@ function Measure-DbaBackupThroughput {
 
             foreach ($db in $DatabaseCollection) {
                 Write-Message -Level VeryVerbose -Message "Retrieving history for $db."
-                $allhistory = @()
+                $allHistory = @()
 
                 # Splatting didn't work
-                if ($since) {
-                    $histories = Get-DbaBackupHistory -SqlInstance $server -Database $db.name -Since $since -DeviceType $DeviceType -Type $Type
-                }
-                else {
-                    $histories = Get-DbaBackupHistory -SqlInstance $server -Database $db.name -Last:$last -DeviceType $DeviceType -Type $Type
+                if ($Since) {
+                    $histories = Get-DbaDbBackupHistory -SqlInstance $server -Database $db.name -Since $Since -DeviceType $DeviceType -Type $Type
+                } else {
+                    $histories = Get-DbaDbBackupHistory -SqlInstance $server -Database $db.name -Last:$Last -DeviceType $DeviceType -Type $Type
                 }
 
                 foreach ($history in $histories) {
-                    $timetaken = New-TimeSpan -Start $history.Start -End $history.End
+                    $timeTaken = New-TimeSpan -Start $history.Start -End $history.End
 
-                    if ($timetaken.TotalMilliseconds -eq 0) {
+                    if ($timeTaken.TotalMilliseconds -eq 0) {
                         $throughput = $history.TotalSize.Megabyte
-                    }
-                    else {
-                        $throughput = $history.TotalSize.Megabyte / $timetaken.TotalSeconds
+                    } else {
+                        $throughput = $history.TotalSize.Megabyte / $timeTaken.TotalSeconds
                     }
 
-                    Add-Member -Force -InputObject $history -MemberType Noteproperty -Name MBps -value $throughput
+                    Add-Member -Force -InputObject $history -MemberType NoteProperty -Name MBps -value $throughput
 
-                    $allhistory += $history | Select-Object ComputerName, InstanceName, SqlInstance, Database, MBps, TotalSize, Start, End
+                    $allHistory += $history | Select-Object ComputerName, InstanceName, SqlInstance, Database, MBps, TotalSize, Start, End
                 }
 
                 Write-Message -Level VeryVerbose -Message "Calculating averages for $db."
-                foreach ($db in ($allhistory | Sort-Object Database | Group-Object Database)) {
+                foreach ($db in ($allHistory | Sort-Object Database | Group-Object Database)) {
 
-                    $measuremb = $db.Group.MBps | Measure-Object -Average -Minimum -Maximum
-                    $measurestart = $db.Group.Start | Measure-Object -Minimum
-                    $measureend = $db.Group.End | Measure-Object -Maximum
-                    $measuresize = $db.Group.TotalSize.Megabyte | Measure-Object -Average
-                    $avgduration = $db.Group | ForEach-Object { New-TimeSpan -Start $_.Start -End $_.End } | Measure-Object -Average TotalSeconds
+                    $measureMb = $db.Group.MBps | Measure-Object -Average -Minimum -Maximum
+                    $measureStart = $db.Group.Start | Measure-Object -Minimum
+                    $measureEnd = $db.Group.End | Measure-Object -Maximum
+                    $measureSize = $db.Group.TotalSize.Megabyte | Measure-Object -Average
+                    $avgDuration = $db.Group | ForEach-Object { New-TimeSpan -Start $_.Start -End $_.End } | Measure-Object -Average TotalSeconds
 
-                    [pscustomobject]@{
-                        ComputerName    = $db.Group.ComputerName | Select-Object -First 1
-                        InstanceName    = $db.Group.InstanceName | Select-Object -First 1
-                        SqlInstance     = $db.Group.SqlInstance | Select-Object -First 1
-                        Database        = $db.Name
-                        AvgThroughputMB = [System.Math]::Round($measuremb.Average, 2)
-                        AvgSizeMB       = [System.Math]::Round($measuresize.Average, 2)
-                        AvgDuration     = [dbatimespan](New-TimeSpan -Seconds $avgduration.Average)
-                        MinThroughputMB = [System.Math]::Round($measuremb.Minimum, 2)
-                        MaxThroughputMB = [System.Math]::Round($measuremb.Maximum, 2)
-                        MinBackupDate   = [dbadatetime]$measurestart.Minimum
-                        MaxBackupDate   = [dbadatetime]$measureend.Maximum
-                        BackupCount     = $db.Count
-                    } | Select-DefaultView -ExcludeProperty ComputerName, InstanceName
+                    [PSCustomObject]@{
+                        ComputerName  = $db.Group.ComputerName | Select-Object -First 1
+                        InstanceName  = $db.Group.InstanceName | Select-Object -First 1
+                        SqlInstance   = $db.Group.SqlInstance | Select-Object -First 1
+                        Database      = $db.Name
+                        AvgThroughput = [DbaSize]([System.Math]::Round($measureMb.Average, 2) * 1024 * 1024)
+                        AvgSize       = [DbaSize]([System.Math]::Round($measureSize.Average, 2) * 1024 * 1024)
+                        AvgDuration   = [DbaTimeSpan](New-TimeSpan -Seconds $avgDuration.Average)
+                        MinThroughput = [DbaSize]([System.Math]::Round($measureMb.Minimum, 2) * 1024 * 1024)
+                        MaxThroughput = [DbaSize]([System.Math]::Round($measureMb.Maximum, 2) * 1024 * 1024)
+                        MinBackupDate = [DbaDateTime]$measureStart.Minimum
+                        MaxBackupDate = [DbaDateTime]$measureEnd.Maximum
+                        BackupCount   = $db.Count
+                    }
                 }
             }
         }

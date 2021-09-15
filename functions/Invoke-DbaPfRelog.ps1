@@ -1,142 +1,146 @@
-﻿function Invoke-DbaPfRelog {
+function Invoke-DbaPfRelog {
     <#
-        .SYNOPSIS
-            Pipeline-compatible wrapper for the relog command which is available on modern Windows platforms.
+    .SYNOPSIS
+        Pipeline-compatible wrapper for the relog command which is available on modern Windows platforms.
 
-        .DESCRIPTION
-            Pipeline-compatible wrapper for the relog command. Relog is useful for converting Windows Perfmon.
+    .DESCRIPTION
+        Pipeline-compatible wrapper for the relog command. Relog is useful for converting Windows Perfmon.
 
-            Extracts performance counters from performance counter logs into other formats,
-            such as text-TSV (for tab-delimited text), text-CSV (for comma-delimited text), binary-BIN, or SQL.
+        Extracts performance counters from performance counter logs into other formats,
+        such as text-TSV (for tab-delimited text), text-CSV (for comma-delimited text), binary-BIN, or SQL.
 
-            relog "C:\PerfLogs\Admin\System Correlation\WORKSTATIONX_20180112-000001\DataCollector01.blg" -o C:\temp\foo.csv -f tsv
+        `relog "C:\PerfLogs\Admin\System Correlation\WORKSTATIONX_20180112-000001\DataCollector01.blg" -o C:\temp\foo.csv -f tsv`
 
-            If you find any input hangs, please send us the output so we can accommodate for it then use -Raw for an immediate solution.
+        If you find any input hangs, please send us the output so we can accommodate for it then use -Raw for an immediate solution.
 
-        .PARAMETER Path
-            Specifies the pathname of an existing performance counter log or performance counter path. You can specify multiple input files.
+    .PARAMETER Path
+        Specifies the pathname of an existing performance counter log or performance counter path. You can specify multiple input files.
 
-        .PARAMETER Destination
-            Specifies the pathname of the output file or SQL database where the counters will be written. Defaults to the same directory as the source.
+    .PARAMETER Destination
+        Specifies the pathname of the output file or SQL database where the counters will be written. Defaults to the same directory as the source.
 
-        .PARAMETER Type
-            The output format. Defaults to tsv. Options include tsv, csv, bin, and sql.
+    .PARAMETER Type
+        The output format. Defaults to tsv. Options include tsv, csv, bin, and sql.
 
-            For a SQL database, the output file specifies the DSN!counter_log. You can specify the database location by using the ODBC manager to configure the DSN (Database System Name).
+        For a SQL database, the output file specifies the DSN!counter_log. You can specify the database location by using the ODBC manager to configure the DSN (Database System Name).
 
-            For more information, read here: https://technet.microsoft.com/en-us/library/bb490958.aspx
+        For more information, read here: https://technet.microsoft.com/en-us/library/bb490958.aspx
 
-        .PARAMETER Append
-            If this switch is enabled, output will be appended to the specified file instead of overwriting. This option does not apply to SQL format where the default is always to append.
+    .PARAMETER Append
+        If this switch is enabled, output will be appended to the specified file instead of overwriting. This option does not apply to SQL format where the default is always to append.
 
-        .PARAMETER AllowClobber
-            If this switch is enabled, the destination file will be overwritten if it exists.
+    .PARAMETER AllowClobber
+        If this switch is enabled, the destination file will be overwritten if it exists.
 
-        .PARAMETER PerformanceCounter
-            Specifies the performance counter path to log.
+    .PARAMETER PerformanceCounter
+        Specifies the performance counter path to log.
 
-        .PARAMETER PerformanceCounterPath
-            Specifies the pathname of the text file that lists the performance counters to be included in a relog file. Use this option to list counter paths in an input file, one per line. Default setting is all counters in the original log file are relogged.
+    .PARAMETER PerformanceCounterPath
+        Specifies the pathname of the text file that lists the performance counters to be included in a relog file. Use this option to list counter paths in an input file, one per line. Default setting is all counters in the original log file are relogged.
 
-        .PARAMETER Interval
-            Specifies sample intervals in "n" records. Includes every nth data point in the relog file. Default is every data point.
+    .PARAMETER Interval
+        Specifies sample intervals in "n" records. Includes every nth data point in the relog file. Default is every data point.
 
-        .PARAMETER BeginTime
-            This is is Get-Date object and we format it for you.
+    .PARAMETER BeginTime
+        This is is Get-Date object and we format it for you.
 
-        .PARAMETER EndTime
-            Specifies end time for copying last record from the input file. This is is Get-Date object and we format it for you.
+    .PARAMETER EndTime
+        Specifies end time for copying last record from the input file. This is is Get-Date object and we format it for you.
 
-        .PARAMETER ConfigPath
-            Specifies the pathname of the settings file that contains command-line parameters.
+    .PARAMETER ConfigPath
+        Specifies the pathname of the settings file that contains command-line parameters.
 
-        .PARAMETER Summary
-            If this switch is enabled, the performance counters and time ranges of log files specified in the input file will be displayed.
+    .PARAMETER Summary
+        If this switch is enabled, the performance counters and time ranges of log files specified in the input file will be displayed.
 
-        .PARAMETER Multithread
-            If this switch is enabled, processing will be done in parallel. This may speed up large batches or large files.
+    .PARAMETER Multithread
+        If this switch is enabled, processing will be done in parallel. This may speed up large batches or large files.
 
-        .PARAMETER AllTime
-            If this switch is enabled and a datacollector or datacollectorset is passed in via the pipeline, collects all logs, not just the latest.
+    .PARAMETER AllTime
+        If this switch is enabled and a datacollector or datacollectorset is passed in via the pipeline, collects all logs, not just the latest.
 
-        .PARAMETER Raw
-            If this switch is enabled, the results of the DOS command instead of Get-ChildItem will be displayed. This does not run in parallel.
+    .PARAMETER Raw
+        If this switch is enabled, the results of the DOS command instead of Get-ChildItem will be displayed. This does not run in parallel.
 
-        .PARAMETER InputObject
-            Accepts the output of Get-DbaPfDataCollector and Get-DbaPfDataCollectorSet as input via the pipeline.
+    .PARAMETER InputObject
+        Accepts the output of Get-DbaPfDataCollector and Get-DbaPfDataCollectorSet as input via the pipeline.
 
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-        .NOTES
-            Website: https://dbatools.io
-            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: MIT https://opensource.org/licenses/MIT
+    .NOTES
+        Tags: Performance, DataCollector, PerfCounter, Relog
+        Author: Chrissy LeMaire (@cl), netnerds.net
 
-        .LINK
-            https://dbatools.io/Invoke-DbaPfRelog
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-        .EXAMPLE
-            Invoke-DbaPfRelog -Path C:\temp\perfmon.blg
+    .LINK
+        https://dbatools.io/Invoke-DbaPfRelog
 
-            Creates C:\temp\perfmon.tsv from C:\temp\perfmon.blg.
+    .EXAMPLE
+        PS C:\> Invoke-DbaPfRelog -Path C:\temp\perfmon.blg
 
-        .EXAMPLE
-            Invoke-DbaPfRelog -Path C:\temp\perfmon.blg -Destination C:\temp\a\b\c
+        Creates C:\temp\perfmon.tsv from C:\temp\perfmon.blg.
 
-            Creates the temp, a, and b directories if needed, then generates c.tsv (tab separated) from C:\temp\perfmon.blg.
+    .EXAMPLE
+        PS C:\> Invoke-DbaPfRelog -Path C:\temp\perfmon.blg -Destination C:\temp\a\b\c
 
-            Returns the newly created file as a file object.
+        Creates the temp, a, and b directories if needed, then generates c.tsv (tab separated) from C:\temp\perfmon.blg.
 
-        .EXAMPLE
-            Get-DbaPfDataCollectorSet -ComputerName sql2016 | Get-DbaPfDataCollector | Invoke-DbaPfRelog -Destination C:\temp\perf
+        Returns the newly created file as a file object.
 
-            Creates C:\temp\perf if needed, then generates computername-datacollectorname.tsv (tab separated) from the latest logs of all data collector sets on sql2016. This destination format was chosen to avoid naming conflicts with piped input.
+    .EXAMPLE
+        PS C:\> Get-DbaPfDataCollectorSet -ComputerName sql2016 | Get-DbaPfDataCollector | Invoke-DbaPfRelog -Destination C:\temp\perf
 
-        .EXAMPLE
-            Invoke-DbaPfRelog -Path C:\temp\perfmon.blg -Destination C:\temp\a\b\c -Raw
+        Creates C:\temp\perf if needed, then generates computername-datacollectorname.tsv (tab separated) from the latest logs of all data collector sets on sql2016. This destination format was chosen to avoid naming conflicts with piped input.
 
-            Creates the temp, a, and b directories if needed, then generates c.tsv (tab separated) from C:\temp\perfmon.blg then outputs the raw results of the relog command.
+    .EXAMPLE
+        PS C:\> Invoke-DbaPfRelog -Path C:\temp\perfmon.blg -Destination C:\temp\a\b\c -Raw
+        ```
+        [Invoke-DbaPfRelog][21:21:35] relog "C:\temp\perfmon.blg" -f csv -o C:\temp\a\b\c
 
-            [Invoke-DbaPfRelog][21:21:35] relog "C:\temp\perfmon.blg" -f csv -o C:\temp\a\b\c
+        Input
+        ----------------
+        File(s):
+        C:\temp\perfmon.blg (Binary)
 
-            Input
-            ----------------
-            File(s):
-                C:\temp\perfmon.blg (Binary)
+        Begin:    1/13/2018 5:13:23
+        End:      1/13/2018 14:29:55
+        Samples:  2227
 
-            Begin:    1/13/2018 5:13:23
-            End:      1/13/2018 14:29:55
-            Samples:  2227
+        100.00%
 
-            100.00%
+        Output
+        ----------------
+        File:     C:\temp\a\b\c.csv
 
-            Output
-            ----------------
-            File:     C:\temp\a\b\c.csv
+        Begin:    1/13/2018 5:13:23
+        End:      1/13/2018 14:29:55
+        Samples:  2227
 
-            Begin:    1/13/2018 5:13:23
-            End:      1/13/2018 14:29:55
-            Samples:  2227
+        The command completed successfully.
+        ```
 
-            The command completed successfully.
+        Creates the temp, a, and b directories if needed, then generates c.tsv (tab separated) from C:\temp\perfmon.blg then outputs the raw results of the relog command.
 
-        .EXAMPLE
-            Invoke-DbaPfRelog -Path 'C:\temp\perflog with spaces.blg' -Destination C:\temp\a\b\c -Type csv -BeginTime ((Get-Date).AddDays(-30)) -EndTime ((Get-Date).AddDays(-1))
+    .EXAMPLE
+        PS C:\> Invoke-DbaPfRelog -Path 'C:\temp\perflog with spaces.blg' -Destination C:\temp\a\b\c -Type csv -BeginTime ((Get-Date).AddDays(-30)) -EndTime ((Get-Date).AddDays(-1))
 
-            Creates the temp, a, and b directories if needed, then generates c.csv (comma separated) from C:\temp\perflog with spaces.blg', starts 30 days ago and ends one day ago.
+        Creates the temp, a, and b directories if needed, then generates c.csv (comma separated) from C:\temp\perflog with spaces.blg', starts 30 days ago and ends one day ago.
 
-        .EXAMPLE
-            $servers | Get-DbaPfDataCollectorSet | Get-DbaPfDataCollector | Invoke-DbaPfRelog -Multithread -AllowClobber
+    .EXAMPLE
+        PS C:\> $servers | Get-DbaPfDataCollectorSet | Get-DbaPfDataCollector | Invoke-DbaPfRelog -Multithread -AllowClobber
 
-            Relogs latest data files from all collectors within the servers listed in $servers.
+        Relogs latest data files from all collectors within the servers listed in $servers.
 
-        .EXAMPLE
-            Get-DbaPfDataCollector -Collector DataCollector01 | Invoke-DbaPfRelog -AllowClobber -AllTime
+    .EXAMPLE
+        PS C:\> Get-DbaPfDataCollector -Collector DataCollector01 | Invoke-DbaPfRelog -AllowClobber -AllTime
 
-            Relogs all the log files from the DataCollector01 on the local computer and allows overwrite.
+        Relogs all the log files from the DataCollector01 on the local computer and allows overwrite.
 
     #>
     [CmdletBinding()]
@@ -164,6 +168,8 @@
         [switch]$EnableException
     )
     begin {
+
+
         if (Test-Bound -ParameterName BeginTime) {
             $script:beginstring = ($BeginTime -f 'M/d/yyyy hh:mm:ss' | Out-String).Trim()
         }
@@ -178,8 +184,7 @@
         if (Test-Bound -ParameterName Destination) {
             $script:destinationset = $true
             $originaldestination = $Destination
-        }
-        else {
+        } else {
             $script:destinationset = $false
         }
     }
@@ -198,16 +203,13 @@
                     if (-not $AllTime) {
                         if ($instance.IsLocalHost) {
                             $allpaths += (Get-ChildItem -Recurse -Path $object.LatestOutputLocation -Include *.blg -ErrorAction SilentlyContinue).FullName
-                        }
-                        else {
+                        } else {
                             $allpaths += (Get-ChildItem -Recurse -Path $object.RemoteLatestOutputLocation -Include *.blg -ErrorAction SilentlyContinue).FullName
                         }
-                    }
-                    else {
+                    } else {
                         if ($instance.IsLocalHost) {
                             $allpaths += (Get-ChildItem -Recurse -Path $object.OutputLocation -Include *.blg -ErrorAction SilentlyContinue).FullName
-                        }
-                        else {
+                        } else {
                             $allpaths += (Get-ChildItem -Recurse -Path $object.RemoteOutputLocation -Include *.blg -ErrorAction SilentlyContinue).FullName
                         }
                     }
@@ -222,16 +224,13 @@
                     if (-not $AllTime) {
                         if ($instance.IsLocalHost) {
                             $allpaths += (Get-ChildItem -Recurse -Path $object.LatestOutputLocation -Include *.blg -ErrorAction SilentlyContinue).FullName
-                        }
-                        else {
+                        } else {
                             $allpaths += (Get-ChildItem -Recurse -Path $object.RemoteLatestOutputLocation -Include *.blg -ErrorAction SilentlyContinue).FullName
                         }
-                    }
-                    else {
+                    } else {
                         if ($instance.IsLocalHost) {
                             $allpaths += (Get-ChildItem -Recurse -Path (Split-Path $object.LatestOutputLocation) -Include *.blg -ErrorAction SilentlyContinue).FullName
-                        }
-                        else {
+                        } else {
                             $allpaths += (Get-ChildItem -Recurse -Path (Split-Path $object.RemoteLatestOutputLocation) -Include *.blg -ErrorAction SilentlyContinue).FullName
                         }
                     }
@@ -244,17 +243,16 @@
     # Gotta collect all the paths first then process them otherwise there may be duplicates
     end {
         $allpaths = $allpaths | Where-Object { $_ -match '.blg' } | Select-Object -Unique
-        
+
         if (-not $allpaths) {
             Stop-Function -Message "Could not find matching .blg files" -Target $file -Continue
             return
         }
-        
-        $scriptblock = {
+
+        $scriptBlock = {
             if ($args) {
                 $file = $args
-            }
-            else {
+            } else {
                 $file = $psitem
             }
             $item = Get-ChildItem -Path $file -ErrorAction SilentlyContinue
@@ -277,8 +275,7 @@
                 if ($script:destinationset -eq $true) {
                     if ($file -match "\:") {
                         $computer = $env:COMPUTERNAME
-                    }
-                    else {
+                    } else {
                         $computer = $file.Split("\")[2]
                     }
                     # Avoid naming conflicts
@@ -331,8 +328,7 @@
 
             if (-not ($Destination.StartsWith("DSN"))) {
                 $outputisfile = $true
-            }
-            else {
+            } else {
                 $outputisfile = $false
             }
 
@@ -342,8 +338,7 @@
                     if (-not (Test-Path -Path $dir)) {
                         try {
                             $null = New-Item -ItemType Directory -Path $dir -ErrorAction Stop
-                        }
-                        catch {
+                        } catch {
                             Stop-Function -Message "Failure" -ErrorRecord $_ -Target $Destination -Continue
                         }
                     }
@@ -352,16 +347,13 @@
                         if ($AllowClobber) {
                             try {
                                 Remove-Item -Path "$Destination" -ErrorAction Stop
-                            }
-                            catch {
+                            } catch {
                                 Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
                             }
-                        }
-                        else {
+                        } else {
                             if ($Type -eq "bin") {
                                 Stop-Function -Message "$Destination exists. Use -AllowClobber to overwrite or -Append to append." -Continue
-                            }
-                            else {
+                            } else {
                                 Stop-Function -Message "$Destination exists. Use -AllowClobber to overwrite." -Continue
                             }
                         }
@@ -371,16 +363,13 @@
                         if ($AllowClobber) {
                             try {
                                 Remove-Item -Path "$Destination.$type" -ErrorAction Stop
-                            }
-                            catch {
+                            } catch {
                                 Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
                             }
-                        }
-                        else {
+                        } else {
                             if ($Type -eq "bin") {
                                 Stop-Function -Message "$("$Destination.$type") exists. Use -AllowClobber to overwrite or -Append to append." -Continue
-                            }
-                            else {
+                            } else {
                                 Stop-Function -Message "$("$Destination.$type") exists. Use -AllowClobber to overwrite." -Continue
                             }
                         }
@@ -394,16 +383,14 @@
                 if ($Raw) {
                     Write-Message -Level Output -Message "relog $arguments"
                     cmd /c "relog $arguments"
-                }
-                else {
+                } else {
                     Write-Message -Level Verbose -Message "relog $arguments"
-                    $scriptblock = {
+                    $scriptBlock = {
                         $output = (cmd /c "relog $arguments" | Out-String).Trim()
 
                         if ($output -notmatch "Success") {
                             Stop-Function -Continue -Message $output.Trim("Input")
-                        }
-                        else {
+                        } else {
                             Write-Message -Level Verbose -Message "$output"
                             $array = $output -Split [environment]::NewLine
                             $files = $array | Select-String "File:"
@@ -418,22 +405,20 @@
                             }
                         }
                     }
-                    Invoke-Command -ScriptBlock $scriptblock
+                    Invoke-Command -ScriptBlock $scriptBlock
                 }
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -ErrorRecord $_ -Target $path
             }
         }
 
         if ($Multithread) {
-            $allpaths | Invoke-Parallel -ImportVariables -ImportModules -ScriptBlock $scriptblock -ErrorAction SilentlyContinue -ErrorVariable parallelerror
+            $allpaths | Invoke-Parallel -ImportVariables -ImportModules -ScriptBlock $scriptBlock -ErrorAction SilentlyContinue -ErrorVariable parallelerror
             if ($parallelerror) {
                 Write-Message -Level Verbose -Message "$parallelerror"
             }
-        }
-        else {
-            foreach ($file in $allpaths) { Invoke-Command -ScriptBlock $scriptblock -ArgumentList $file }
+        } else {
+            foreach ($file in $allpaths) { Invoke-Command -ScriptBlock $scriptBlock -ArgumentList $file }
         }
     }
 }

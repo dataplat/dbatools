@@ -1,46 +1,49 @@
 function Get-DbaAvailableCollation {
     <#
-        .SYNOPSIS
-            Function to get available collations for a given SQL Server
+    .SYNOPSIS
+        Function to get available collations for a given SQL Server
 
-        .DESCRIPTION
-            The Get-DbaAvailableCollation function returns the list of collations available on each SQL Server.
-            Only the connect permission is required to get this information.
+    .DESCRIPTION
+        The Get-DbaAvailableCollation function returns the list of collations available on each SQL Server.
+        Only the connect permission is required to get this information.
 
-        .PARAMETER SqlInstance
-            The SQL Server instance, or instances. Only connect permission is required.
+    .PARAMETER SqlInstance
+        TThe target SQL Server instance or instances. Only connect permission is required.
 
-        .PARAMETER SqlCredential
-            SqlCredential object to connect as. If not specified, current Windows login will be used.
+    .PARAMETER SqlCredential
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
 
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
 
-        .NOTES
-            Author: Bryan Hamby (@galador)
+        For MFA support, please use Connect-DbaInstance.
 
-            Website: https://dbatools.io
-            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: MIT https://opensource.org/licenses/MIT
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-        .LINK
-            https://dbatools.io/Get-DbaAvailableCollation
+    .NOTES
+        Tags: Collation, Configuration
+        Author: Bryan Hamby (@galador)
 
-        .EXAMPLE
-            Get-DbaAvailableCollation -SqlInstance sql2016
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-            Gets all the collations from server sql2016 using NT authentication
+    .LINK
+        https://dbatools.io/Get-DbaAvailableCollation
+
+    .EXAMPLE
+        PS C:\> Get-DbaAvailableCollation -SqlInstance sql2016
+
+        Gets all the collations from server sql2016 using NT authentication
 
     #>
     [CmdletBinding()]
-    Param (
-        [parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $true)]
-        [Alias("ServerInstance", "SqlServer")]
+    param (
+        [parameter(Mandatory, ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 
@@ -51,18 +54,16 @@ function Get-DbaAvailableCollation {
 
         #No longer supported by Windows, but still shows up in SQL Server
         #http://www.databaseteam.org/1-ms-sql-server/982faddda7a789a1.htm
-        $locales = @{66577 = "Japanese_Unicode"}
-        $codePages = @{}
+        $locales = @{66577 = "Japanese_Unicode" }
+        $codePages = @{ }
 
         function Get-LocaleDescription ($LocaleId) {
             if ($locales.ContainsKey($LocaleId)) {
                 $localeName = $locales.Get_Item($LocaleId)
-            }
-            else {
+            } else {
                 try {
                     $localeName = (Get-Language $LocaleId).DisplayName
-                }
-                catch {
+                } catch {
                     $localeName = $null
                 }
                 $locales.Set_Item($LocaleId, $localeName)
@@ -73,12 +74,10 @@ function Get-DbaAvailableCollation {
         function Get-CodePageDescription ($codePageId) {
             if ($codePages.ContainsKey($codePageId)) {
                 $codePageName = $codePages.Get_Item($codePageId)
-            }
-            else {
+            } else {
                 try {
                     $codePageName = (Get-CodePage $codePageId).EncodingName
-                }
-                catch {
+                } catch {
                     $codePageName = $null
                 }
                 $codePages.Set_Item($codePageId, $codePageName)
@@ -88,18 +87,16 @@ function Get-DbaAvailableCollation {
     }
 
     process {
-        foreach ($Instance in $sqlInstance) {
+        foreach ($Instance in $SqlInstance) {
             try {
-                Write-Message -Level Verbose -Message "Connecting to $instance"
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
-            }
-            catch {
+                $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
             $availableCollations = $server.EnumCollations()
             foreach ($collation in $availableCollations) {
-                Add-Member -Force -InputObject $collation -MemberType NoteProperty -Name ComputerName -value $server.NetName
+                Add-Member -Force -InputObject $collation -MemberType NoteProperty -Name ComputerName -value $server.ComputerName
                 Add-Member -Force -InputObject $collation -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
                 Add-Member -Force -InputObject $collation -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
                 Add-Member -Force -InputObject $collation -MemberType NoteProperty -Name CodePageName -Value (Get-CodePageDescription $collation.CodePage)

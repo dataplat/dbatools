@@ -39,7 +39,7 @@ namespace Sqlcollaborative.Dbatools.TypeConversion
         public override object ConvertTo(object sourceValue, Type destinationType, IFormatProvider formatProvider, bool ignoreCase)
         {
             if (!CanConvertTo(sourceValue, destinationType))
-                throw new ArgumentException("Conversion not supported!");
+                throw new ArgumentException("Conversion not supported");
 
             switch (destinationType.FullName)
             {
@@ -48,7 +48,7 @@ namespace Sqlcollaborative.Dbatools.TypeConversion
                 case "System.Management.Automation.PSCredential":
                     return (PSCredential)sourceValue;
                 default:
-                    throw new InvalidCastException(String.Format("Cannot convert from {0} to {1}!", sourceValue.GetType().FullName, destinationType.FullName));
+                    throw new InvalidCastException(String.Format("Cannot convert from {0} to {1}", sourceValue.GetType().FullName, destinationType.FullName));
             }
         }
 
@@ -79,7 +79,7 @@ namespace Sqlcollaborative.Dbatools.TypeConversion
         public override object ConvertFrom(object sourceValue, Type destinationType, IFormatProvider formatProvider, bool ignoreCase)
         {
             if (!CanConvertFrom(sourceValue, destinationType))
-                throw new ArgumentException("Conversion not supported!");
+                throw new ArgumentException("Conversion not supported");
 
             return new DbaCredentialParameter(sourceValue);
         }

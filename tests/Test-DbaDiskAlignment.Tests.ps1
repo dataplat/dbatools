@@ -4,22 +4,24 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
-        <#
-            The $paramCount is adjusted based on the parameters your command will have.
-
-            The $defaultParamCount is adjusted based on what type of command you are writing the test for:
-                - Commands that *do not* include SupportShouldProcess, set defaultParamCount    = 11
-                - Commands that *do* include SupportShouldProcess, set defaultParamCount        = 13
-        #>
-        $paramCount = 6
-        $defaultParamCount = 11
-        [object[]]$params = (Get-ChildItem function:\Test-DbaDiskAlignment).Parameters.Keys
-        $knownParameters = 'ComputerName', 'SqlCredential', 'Credential', 'NoSqlCheck', 'EnableException', 'Detailed'
-        It "Should contain our specific parameters" {
-            ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
+        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
+        [object[]]$knownParameters = 'ComputerName', 'Credential', 'SqlCredential', 'NoSqlCheck', 'EnableException'
+        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
+        It "Should only contain our specific parameters" {
+            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
         }
-        It "Should only contain $paramCount parameters" {
-            $params.Count - $defaultParamCount | Should Be $paramCount
+    }
+}
+Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
+    Context "Command actually works" {
+        It "Should return a result" {
+            $results = Test-DbaDiskAlignment -ComputerName $script:dbatoolsci_computer
+            $results | Should -Not -Be $null
+        }
+
+        It "Should return a result not using sql" {
+            $results = Test-DbaDiskAlignment -NoSqlCheck -ComputerName $script:dbatoolsci_computer
+            $results | Should -Not -Be $null
         }
     }
 }

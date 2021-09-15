@@ -1,11 +1,10 @@
-﻿if (Get-Command TabExpansionPlusPlus\Register-ArgumentCompleter -ErrorAction Ignore) {
+if ($ExecutionContext.SessionState.InvokeCommand.GetCommand('TabExpansionPlusPlus\Register-ArgumentCompleter','Function,Cmdlet')) {
     $script:TEPP = $true
-}
-else {
+} else {
     $script:TEPP = $false
 }
 
-$functions = Get-ChildItem function:\*-Dba*
+$functions = $executionContext.SessionState.InvokeCommand.GetCommands('*-Dba*', 'Function', $true) -as [Management.Automation.FunctionInfo[]]
 [Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::DbatoolsCommands = $functions
 $names = $functions.Name
 
@@ -65,17 +64,26 @@ Register-DbaTeppArgumentCompleter -Command $names -Parameter ServerTrigger -Name
 Register-DbaTeppArgumentCompleter -Command $names -Parameter Session -Name Session -All
 Register-DbaTeppArgumentCompleter -Command $names -Parameter Snapshot -Name Snapshot -All
 Register-DbaTeppArgumentCompleter -Command $names -Parameter SqlInstance -Name SqlInstance -All
+Register-DbaTeppArgumentCompleter -Command $names -Parameter InstanceProperty -Name InstanceProperty -All
+Register-DbaTeppArgumentCompleter -Command $names -Parameter PowerPlan -Name PowerPlan -All
 #endregion Automatic TEPP by parameter name
 
 #region Explicit TEPP
+Register-DbaTeppArgumentCompleter -Command "Import-DbaCsv" -Parameter Delimiter -Name delimiter
 Register-DbaTeppArgumentCompleter -Command "Find-DbaCommand" -Parameter Tag -Name tag
-Register-DbaTeppArgumentCompleter -Command "Get-DbaConfig", "Get-DbaConfigValue", "Register-DbaConfig", "Set-DbaConfig" -Parameter FullName -Name config
-Register-DbaTeppArgumentCompleter -Command "Get-DbaConfig", "Register-DbaConfig", "Set-DbaConfig" -Parameter Module -Name configmodule
-Register-DbaTeppArgumentCompleter -Command "Get-DbaConfig", "Register-DbaConfig", "Set-DbaConfig" -Parameter Name -Name config_name
+Register-DbaTeppArgumentCompleter -Command "Get-DbatoolsConfig", "Get-DbatoolsConfigValue", "Register-DbatoolsConfig", "Set-DbatoolsConfig" -Parameter FullName -Name config
+Register-DbaTeppArgumentCompleter -Command "Get-DbatoolsConfig", "Register-DbatoolsConfig", "Set-DbatoolsConfig" -Parameter Module -Name configmodule
+Register-DbaTeppArgumentCompleter -Command "Get-DbatoolsConfig", "Register-DbatoolsConfig", "Set-DbatoolsConfig" -Parameter Name -Name config_name
+Register-DbaTeppArgumentCompleter -Command "Get-DbatoolsPath", "Set-DbatoolsPath" -Parameter Name -Name path
 Register-DbaTeppArgumentCompleter -Command "Get-DbaProcess", "Stop-DbaProcess" -Parameter ExcludeSpid -Name processSpid
 Register-DbaTeppArgumentCompleter -Command "Get-DbaProcess", "Stop-DbaProcess" -Parameter Hostname -Name processHostname
 Register-DbaTeppArgumentCompleter -Command "Get-DbaProcess", "Stop-DbaProcess" -Parameter Program -Name processProgram
 Register-DbaTeppArgumentCompleter -Command "Get-DbaProcess", "Stop-DbaProcess" -Parameter Spid -Name processSpid
 Register-DbaTeppArgumentCompleter -Command "Import-DbaXESessionTemplate", "Get-DbaXESessionTemplate", "Export-DbaXESessionTemplate" -Parameter Template -Name xesessiontemplate
 Register-DbaTeppArgumentCompleter -Command "Import-DbaPfDataCollectorSetTemplate", "Get-DbaPfDataCollectorSetTemplate", "Export-DbaPfDataCollectorSetTemplate"  -Parameter Template -Name perfmontemplate
+Register-DbaTeppArgumentCompleter -Command "New-DbaAgentSchedule" -Parameter FrequencyInterval -Name newagentschedule
+Register-DbaTeppArgumentCompleter -Command "Set-DbaAgentSchedule" -Parameter FrequencyInterval -Name setagentschedule
+Register-DbaTeppArgumentCompleter -Command "Get-DbaSpConfigure", "Set-DbaSpConfigure" -Parameter Name -Name ConfigName
+Register-DbaTeppArgumentCompleter -Command "Copy-DbaSpConfigure" -Parameter ConfigName -Name ConfigName
+Register-DbaTeppArgumentCompleter -Command "Copy-DbaSpConfigure" -Parameter ExcludeConfigName -Name ConfigName
 #endregion Explicit TEPP

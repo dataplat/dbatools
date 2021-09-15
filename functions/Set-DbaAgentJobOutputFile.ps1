@@ -1,92 +1,95 @@
 function Set-DbaAgentJobOutputFile {
     <#
-        .Synopsis
-            Set the output file for a step within an Agent job.
+    .Synopsis
+        Set the output file for a step within an Agent job.
 
-        .DESCRIPTION
-            Sets the Output File for a step of an agent job with the Job Names and steps provided dynamically if required
+    .DESCRIPTION
+        Sets the Output File for a step of an agent job with the Job Names and steps provided dynamically if required
 
-        .PARAMETER SqlInstance
-            The SQL Server that you're connecting to.
+    .PARAMETER SqlInstance
+        The target SQL Server instance or instances.
 
-        .PARAMETER SQLCredential
-            Credential object used to connect to the SQL Server as a different user be it Windows or SQL Server. Windows users are determiend by the existence of a backslash, so if you are intending to use an alternative Windows connection instead of a SQL login, ensure it contains a backslash.
+    .PARAMETER SQLCredential
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
 
-        .PARAMETER Job
-            The job to process - this list is auto-populated from the server.
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
 
-        .PARAMETER Step
-            The Agent Job Step to provide Output File Path for. Also available dynamically
+        For MFA support, please use Connect-DbaInstance. be it Windows or SQL Server. Windows users are determined by the existence of a backslash, so if you are intending to use an alternative Windows connection instead of a SQL login, ensure it contains a backslash.
 
-        .PARAMETER OutputFile
-            The Full Path to the New Output file
+    .PARAMETER Job
+        The job to process - this list is auto-populated from the server.
 
-        .PARAMETER WhatIf
-            Shows what would happen if the command were to run. No actions are actually performed.
+    .PARAMETER Step
+        The Agent Job Step to provide Output File Path for. Also available dynamically
 
-        .PARAMETER Confirm
-            Prompts you for confirmation before executing any changing operations within the command.
+    .PARAMETER OutputFile
+        The Full Path to the New Output file
 
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+    .PARAMETER WhatIf
+        Shows what would happen if the command were to run. No actions are actually performed.
 
-        .NOTES
-            Original Author - Rob Sewell (https://sqldbawithabeard.com)
+    .PARAMETER Confirm
+        Prompts you for confirmation before executing any changing operations within the command.
 
-            Website: https://dbatools.io
-            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: MIT https://opensource.org/licenses/MIT
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-            # todo - allow piping and add -All
+    .NOTES
+        Tags: Agent, Job, SqlAgent
+        Author: Rob Sewell, https://sqldbawithabeard.com
 
-        .EXAMPLE
-            Set-DbaAgentJobOutputFile -SqlInstance SERVERNAME -JobName 'The Agent Job' -OutPutFile E:\Logs\AgentJobStepOutput.txt
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-            Sets the Job step for The Agent job on SERVERNAME to E:\Logs\AgentJobStepOutput.txt
+        .LINK
+        https://dbatools.io/Set-DbaAgentJobOutputFile
+
+    .EXAMPLE
+        PS C:\> Set-DbaAgentJobOutputFile -SqlInstance SERVERNAME -Job 'The Agent Job' -OutPutFile E:\Logs\AgentJobStepOutput.txt
+
+        Sets the Job step for The Agent job on SERVERNAME to E:\Logs\AgentJobStepOutput.txt
+
     #>
-    [CmdletBinding(SupportsShouldProcess = $true)]
+    [CmdletBinding(SupportsShouldProcess)]
     param (
-        [Parameter(Mandatory = $true, HelpMessage = 'The SQL Server Instance',
-            ValueFromPipeline = $true,
-            ValueFromPipelineByPropertyName = $true,
+        [Parameter(Mandatory, HelpMessage = 'The SQL Server Instance',
+            ValueFromPipeline,
+            ValueFromPipelineByPropertyName,
             ValueFromRemainingArguments = $false,
             Position = 0)]
         [ValidateNotNull()]
         [ValidateNotNullOrEmpty()]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
-        [Parameter(Mandatory = $false, HelpMessage = 'SQL Credential',
-            ValueFromPipeline = $true,
-            ValueFromPipelineByPropertyName = $true,
+        [Parameter(HelpMessage = 'SQL Credential',
+            ValueFromPipeline,
+            ValueFromPipelineByPropertyName,
             ValueFromRemainingArguments = $false)]
         [PSCredential]$SqlCredential,
         [object[]]$Job,
-        [Parameter(Mandatory = $false, HelpMessage = 'The Job Step name',
-            ValueFromPipeline = $true,
-            ValueFromPipelineByPropertyName = $true)]
+        [Parameter(HelpMessage = 'The Job Step name',
+            ValueFromPipeline,
+            ValueFromPipelineByPropertyName)]
         [ValidateNotNull()]
         [ValidateNotNullOrEmpty()]
         [object[]]$Step,
-        [Parameter(Mandatory = $true, HelpMessage = 'The Full Output File Path',
-            ValueFromPipeline = $true,
-            ValueFromPipelineByPropertyName = $true,
+        [Parameter(Mandatory, HelpMessage = 'The Full Output File Path',
+            ValueFromPipeline,
+            ValueFromPipelineByPropertyName,
             ValueFromRemainingArguments = $false)]
         [ValidateNotNull()]
         [ValidateNotNullOrEmpty()]
         [string]$OutputFile,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 
-    foreach ($instance in $sqlinstance) {
+    foreach ($instance in $SqlInstance) {
         try {
-            $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
-        }
-        catch {
-            Write-Message -Level Warning -Message "Failed to connect to: $instance"
-            continue
+            $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential
+        } catch {
+            Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
         }
 
         if (!$Job) {
@@ -105,13 +108,11 @@ function Set-DbaAgentJobOutputFile {
                     Write-Message -Level Warning -Message "$Step didn't return any steps"
                     return
                 }
-            }
-            else {
+            } else {
                 if (($currentJob.JobSteps).Count -gt 1) {
                     Write-Message -Level Output -Message "Which Job Step do you wish to add output file to?"
                     $steps = $currentJob.JobSteps | Out-GridView -Title "Choose the Job Steps to add an output file to" -PassThru -Verbose
-                }
-                else {
+                } else {
                     $steps = $currentJob.JobSteps
                 }
             }
@@ -120,30 +121,29 @@ function Set-DbaAgentJobOutputFile {
                 $steps = $currentJob.JobSteps
             }
 
-            foreach ($jobstep in $steps) {
-                $currentoutputfile = $jobstep.OutputFileName
+            foreach ($jobStep in $steps) {
+                $currentOutputFile = $jobStep.OutputFileName
 
-                Write-Message -Level Verbose -Message "Current Output File for $currentJob is $currentoutputfile"
-                Write-Message -Level Verbose -Message "Adding $OutputFile to $jobstep for $currentJob"
+                Write-Message -Level Verbose -Message "Current Output File for $currentJob is $currentOutputFile"
+                Write-Message -Level Verbose -Message "Adding $OutputFile to $jobStep for $currentJob"
 
                 try {
-                    if ($Pscmdlet.ShouldProcess($jobstep, "Changing Output File from $currentoutputfile to $OutputFile")) {
-                        $jobstep.OutputFileName = $OutputFile
-                        $jobstep.Alter()
-                        $jobstep.Refresh()
+                    if ($Pscmdlet.ShouldProcess($jobStep, "Changing Output File from $currentOutputFile to $OutputFile")) {
+                        $jobStep.OutputFileName = $OutputFile
+                        $jobStep.Alter()
+                        $jobStep.Refresh()
 
                         [pscustomobject]@{
-                            ComputerName   = $server.NetName
+                            ComputerName   = $server.ComputerName
                             InstanceName   = $server.ServiceName
                             SqlInstance    = $server.DomainInstanceName
                             Job            = $currentJob.Name
-                            JobStep        = $jobstep.Name
-                            OutputFileName = $currentoutputfile
+                            JobStep        = $jobStep.Name
+                            OutputFileName = $currentOutputFile
                         }
                     }
-                }
-                catch {
-                    Stop-Function -Message "Failed to add $OutputFile to $jobstep for $currentJob" -InnerErrorRecord $_ -Target $currentJob
+                } catch {
+                    Stop-Function -Message "Failed to add $OutputFile to $jobStep for $currentJob" -InnerErrorRecord $_ -Target $currentJob
                 }
             }
         }

@@ -1,10 +1,10 @@
-﻿$scriptBlock = {
+$scriptBlock = {
     $ModuleRoot = [Sqlcollaborative.Dbatools.dbaSystem.SystemHost]::ModuleBase
 
-    $ExecutionContext.InvokeCommand.InvokeScript($false, ([scriptblock]::Create([io.file]::ReadAllText("$ModuleRoot\internal\functions\Register-DbaTeppScriptblock.ps1"))), $null, $null)
-    $ExecutionContext.InvokeCommand.InvokeScript($false, ([scriptblock]::Create([io.file]::ReadAllText("$ModuleRoot\internal\functions\Register-DbaTeppInstanceCacheBuilder.ps1"))), $null, $null)
+    $ExecutionContext.InvokeCommand.InvokeScript($false, ([scriptblock]::Create([io.file]::ReadAllText((Resolve-Path "$ModuleRoot\internal\functions\tabcompletion\Register-DbaTeppScriptblock.ps1").ProviderPath))), $null, $null)
+    $ExecutionContext.InvokeCommand.InvokeScript($false, ([scriptblock]::Create([io.file]::ReadAllText((Resolve-Path "$ModuleRoot\internal\functions\tabcompletion\Register-DbaTeppInstanceCacheBuilder.ps1").ProviderPath))), $null, $null)
 
-    foreach ($file in (Get-ChildItem "$ModuleRoot\internal\dynamicparams\*.ps1")) {
+    foreach ($file in (Get-ChildItem (Resolve-Path "$ModuleRoot\internal\dynamicparams\*.ps1").ProviderPath)) {
         $ExecutionContext.InvokeCommand.InvokeScript($false, ([scriptblock]::Create([io.file]::ReadAllText($file.FullName))), $null, $null)
     }
 

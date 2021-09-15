@@ -1,96 +1,152 @@
-﻿$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
+$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
 
-$outputFile = "dbatoolsci_exportdbalogin.sql"
-
-Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
-    BeforeAll {
-        try {
-            $random = Get-Random
-            $dbname1 = "dbatoolsci_exportdbalogin1$random"
-            $login1 = "dbatoolsci_exportdbalogin_login1$random"
-            $user1 = "dbatoolsci_exportdbalogin_user1$random"
-            $server = Connect-DbaInstance -SqlInstance $script:instance1
-            $null = $server.Query("CREATE DATABASE [$dbname1]")
-            $null = $server.Query("CREATE LOGIN [$login1] WITH PASSWORD = 'GoodPass1234!'")
-            $server.Databases[$dbname1].ExecuteNonQuery("CREATE USER [$user1] FOR LOGIN [$login1]")
-
-            $dbname2 = "dbatoolsci_exportdbalogin2$random"
-            $login2 = "dbatoolsci_exportdbalogin_login2$random"
-            $user2 = "dbatoolsci_exportdbalogin_user2$random"
-            $server = Connect-DbaInstance -SqlInstance $script:instance1
-            $null = $server.Query("CREATE DATABASE [$dbname2]")
-            $null = $server.Query("CREATE LOGIN [$login2] WITH PASSWORD = 'GoodPass1234!'")
-            $null = $server.Query("ALTER LOGIN [$login2] DISABLE")
-            $null = $server.Query("DENY CONNECT SQL TO [$login2]")
-
-            if ($server.VersionMajor -lt 11) {
-                $null = $server.Query("EXEC sys.sp_addsrvrolemember @rolename=N'dbcreator', @loginame=N'$login2'")
-            } else {
-                $null = $server.Query("ALTER SERVER ROLE [dbcreator] ADD MEMBER [$login2]")
-            }
-            $null = $server.Query("GRANT SELECT ON sys.databases TO [$login2] WITH GRANT OPTION")
-            $server.Databases[$dbname2].ExecuteNonQuery("CREATE USER [$user2] FOR LOGIN [$login2]")
+Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+    Context "Validate parameters" {
+        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
+        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'InputObject', 'Login', 'ExcludeLogin', 'Database', 'ExcludeJobs', 'ExcludeDatabase', 'ExcludePassword', 'DefaultDatabase', 'Path', 'FilePath', 'Encoding', 'NoClobber', 'Append', 'BatchSeparator', 'DestinationVersion', 'NoPrefix', 'Passthru', 'ObjectLevel', 'EnableException'
+        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
+        It "Should only contain our specific parameters" {
+            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
         }
-        catch { } # No idea why appveyor can't handle this
+    }
+}
+
+Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
+    BeforeAll {
+        $DefaultExportPath = Get-DbatoolsConfigValue -FullName path.dbatoolsexport
+        $AltExportPath = "$env:USERPROFILE\Documents"
+        $random = Get-Random
+        $dbname1 = "dbatoolsci_exportdbalogin1$random"
+        $login1 = "dbatoolsci_exportdbalogin_login1$random"
+        $user1 = "dbatoolsci_exportdbalogin_user1$random"
+
+        $dbname2 = "dbatoolsci_exportdbalogin2$random"
+        $login2 = "dbatoolsci_exportdbalogin_login2$random"
+        $user2 = "dbatoolsci_exportdbalogin_user2$random"
+
+        $server = Connect-DbaInstance -SqlInstance $script:instance2
+        $null = $server.Query("CREATE DATABASE [$dbname1]")
+        $null = $server.Query("CREATE LOGIN [$login1] WITH PASSWORD = 'GoodPass1234!'")
+        $server.Databases[$dbname1].ExecuteNonQuery("CREATE USER [$user1] FOR LOGIN [$login1]")
+
+        $null = $server.Query("CREATE DATABASE [$dbname2]")
+        $null = $server.Query("CREATE LOGIN [$login2] WITH PASSWORD = 'GoodPass1234!'")
+        $null = $server.Query("ALTER LOGIN [$login2] DISABLE")
+        $null = $server.Query("DENY CONNECT SQL TO [$login2]")
+
+        if ($server.VersionMajor -lt 11) {
+            $null = $server.Query("EXEC sys.sp_addsrvrolemember @rolename=N'dbcreator', @loginame=N'$login2'")
+        } else {
+            $null = $server.Query("ALTER SERVER ROLE [dbcreator] ADD MEMBER [$login2]")
+        }
+        $server.Databases[$dbname2].ExecuteNonQuery("CREATE USER [$user2] FOR LOGIN [$login2]")
+        $server.Databases[$dbname2].ExecuteNonQuery("GRANT SELECT ON sys.tables TO [$user2] WITH GRANT OPTION")
+
     }
     AfterAll {
-        Remove-DbaDatabase -SqlInstance $script:instance1 -Database $dbname1 -Confirm:$false
-        Remove-DbaLogin -SqlInstance $script:instance1 -Login $login1 -Confirm:$false
+        Remove-DbaDatabase -SqlInstance $script:instance2 -Database $dbname1 -Confirm:$false
+        Remove-DbaLogin -SqlInstance $script:instance2 -Login $login1 -Confirm:$false
 
-        Remove-DbaDatabase -SqlInstance $script:instance1 -Database $dbname2 -Confirm:$false
-        Remove-DbaLogin -SqlInstance $script:instance1 -Login $login2 -Confirm:$false
-
-        Remove-Item -Path $outputFile
-    }
-
-    It "Should throw exception when trying to connect to an invalid server" {
-        Mock -ModuleName 'dbatools' Connect-SqlInstance -ParameterFilter { [string]$SqlInstance -eq 'MadeUpServer' } -Verifiable {
-            throw 'Forced failure when connecting'
-        }
-
-        { Get-DbaSqlModule -SqlInstance 'MadeUpServer' -EnableException } | Should Throw 'Forced failure when connecting'
-
-        Assert-VerifiableMock
-    }
-
-    It "Filters to specific databases" {
-        $output = Export-DbaLogin -SqlInstance $script:instance1 -Database $dbname1 -EnableException
-
-        ([regex]::matches($output, 'USE \[.*?\]').Value | Select-Object -Unique).Count | Should Be 1
-    }
-
-    It "Doesn't include database details when using NoDatabase" {
-        $output = Export-DbaLogin -SqlInstance $script:instance1 -NoDatabase -EnableException
-
-        ([regex]::matches($output, 'USE \[.*?\]')).Count | Should Be 0
-    }
-
-    $output = Export-DbaLogin -SqlInstance $script:instance1 -EnableException
-    It "Doesn't filter specific databases" {
-        ([regex]::matches($output, 'USE \[.*?\]').Value | Select-Object -Unique).Count | Should BeGreaterThan 1
-    }
-
-    It "Exports disabled logins" {
-        [regex]::matches($output, "ALTER LOGIN \[.*?\] DISABLE").Count | Should BeGreaterThan 0
-    }
-
-    It "Exports deny connects" {
-        [regex]::matches($output, "DENY CONNECT SQL TO \[.*?\]").Count | Should BeGreaterThan 0
-    }
-
-    It "Exports system role memberships" {
-        if ($server.VersionMajor -lt 11) {
-            [regex]::matches($output, "EXEC sys.sp_addsrvrolemember @rolename=N'dbcreator', @loginame=N'$login2'").Count | Should BeGreaterThan 0
-        } else {
-            [regex]::matches($output, "ALTER SERVER ROLE \[.*?\] ADD MEMBER \[.*?\]").Count | Should BeGreaterThan 0
+        Remove-DbaDatabase -SqlInstance $script:instance2 -Database $dbname2 -Confirm:$false
+        Remove-DbaLogin -SqlInstance $script:instance2 -Login $login2 -Confirm:$false
+        $timenow = (Get-Date -uformat "%m%d%Y%H")
+        $ExportedCredential = Get-ChildItem $DefaultExportPath, $AltExportPath | Where-Object { $_.Name -match "$timenow\d{4}-login.sql|Dbatoolsci_login_CustomFile.sql" }
+        if ($ExportedCredential) {
+            $null = Remove-Item -Path $($ExportedCredential.FullName) -ErrorAction SilentlyContinue
         }
     }
 
-    It "Exports to the specified file" {
-        Export-DbaLogin -SqlInstance $script:instance1 -FilePath $outputFile -EnableException
-
-        Test-Path -Path $outputFile | Should Be $true
+    Context "Executes with Exclude Parameters" {
+        It "Should exclude databases when exporting" {
+            $file = Export-DbaLogin -SqlInstance $script:instance2 -ExcludeDatabase -WarningAction SilentlyContinue
+            $results = Get-Content -Path $file -Raw
+            $allfiles += $file.FullName
+            $results | Should Match '\nGo\r'
+        }
+        It "Should exclude Jobs when exporting" {
+            $file = Export-DbaLogin -SqlInstance $script:instance2 -ExcludeJobs -WarningAction SilentlyContinue
+            $results = Get-Content -Path $file -Raw
+            $allfiles += $file.FullName
+            $results | Should Not Match 'Job'
+        }
+        It "Should exclude Go when exporting" {
+            $file = Export-DbaLogin -SqlInstance $script:instance2 -BatchSeparator '' -ObjectLevel -WarningAction SilentlyContinue
+            $results = Get-Content -Path $file -Raw
+            $allfiles += $file.FullName
+            $results | Should Not Match 'GO'
+            $results | Should Match "GRANT SELECT ON OBJECT::\[sys\]\.\[tables\] TO \[$user2\] WITH GRANT OPTION"
+            $results | Should Match "CREATE USER \[$user2\] FOR LOGIN \[$login2\]"
+            $results | Should Match "IF NOT EXISTS"
+            $results | Should Match "USE \[$dbname2\]"
+        }
+        It "Should exclude a specific login" {
+            $file = Export-DbaLogin -SqlInstance $script:instance2 -ExcludeLogin $login1 -WarningAction SilentlyContinue
+            $results = Get-Content -Path $file -Raw
+            $allfiles += $file.FullName
+            $results | Should Not Match "$login1"
+        }
+        It "Should exclude passwords" {
+            $file = Export-DbaLogin -SqlInstance $script:instance2 -ExcludeLogin $login1 -WarningAction SilentlyContinue -ExcludePassword
+            $results = Get-Content -Path $file -Raw
+            $allfiles += $file.FullName
+            $results | Should Not Match '(?<=PASSWORD =\s0x)(\w+)'
+        }
+    }
+    Context "Executes for various users, databases, and environments" {
+        It "Should Export a specific user" {
+            $file = Export-DbaLogin -SqlInstance $script:instance2 -Login $login1 -Database $dbname1 -DefaultDatabase master -WarningAction SilentlyContinue
+            $results = Get-Content -Path $file -Raw
+            $allfiles += $file.FullName
+            $results | Should Not Match "$login2|$dbname2"
+            $results | Should Match "$login1|$dbname1"
+            $results | Should -Match ([regex]::Escape("IF NOT EXISTS (SELECT * FROM sys.database_principals WHERE name = N'$user1')"))
+        }
+        It "Should Export with object level permissions" {
+            $results = Export-DbaLogin -SqlInstance $script:instance2 -Login $login2 -ObjectLevel -PassThru -WarningAction SilentlyContinue
+            $results | Should Not Match "$login1|$dbname1"
+            $results | Should Match "GRANT SELECT ON OBJECT::\[sys\]\.\[tables\] TO \[$user2\] WITH GRANT OPTION"
+            $results | Should Match "CREATE USER \[$user2\] FOR LOGIN \[$login2\]"
+            $results | Should Match "IF NOT EXISTS"
+            $results | Should Match "USE \[$dbname2\]"
+        }
+        foreach ($version in $((Get-Command $CommandName).Parameters.DestinationVersion.attributes.validvalues)) {
+            It "Should Export for the SQLVersion $version" {
+                $file = Export-DbaLogin -SqlInstance $script:instance2 -Login $login2 -Database $dbname2 -DestinationVersion $version -WarningAction SilentlyContinue
+                $results = Get-Content -Path $file -Raw
+                $allfiles += $file.FullName
+                $results | Should Match "$login2|$dbname2"
+                $results | Should Not Match "$login1|$dbname1"
+            }
+        }
+    }
+    Context "Exports file to random and specified paths" {
+        It "Should export file to the configured path" {
+            $file = Export-DbaLogin -SqlInstance $script:instance2 -ExcludeDatabase -WarningAction SilentlyContinue
+            $results = $file.DirectoryName
+            $allfiles += $file.FullName
+            $results | Should Be $DefaultExportPath
+        }
+        It "Should export file to custom folder path" {
+            $file = Export-DbaLogin -SqlInstance $script:instance2 -Path $AltExportPath -ExcludeDatabase -WarningAction SilentlyContinue
+            $results = $file.DirectoryName
+            $allfiles += $file.FullName
+            $results | Should Be $AltExportPath
+        }
+        It "Should export file to custom file path" {
+            $file = Export-DbaLogin -SqlInstance $script:instance2 -FilePath "$AltExportPath\Dbatoolsci_login_CustomFile.sql" -ExcludeDatabase -WarningAction SilentlyContinue
+            $results = $file.Name
+            $allfiles += $file.FullName
+            $results | Should Be "Dbatoolsci_login_CustomFile.sql"
+        }
+        It "Should export file to custom file path and Append" {
+            $file = Export-DbaLogin -SqlInstance $script:instance2 -FilePath "$AltExportPath\Dbatoolsci_login_CustomFile.sql" -Append -ExcludeDatabase -WarningAction SilentlyContinue
+            $allfiles += $file.FullName
+            $file.CreationTimeUtc.Ticks | Should BeLessThan $file.LastWriteTimeUtc.Ticks
+        }
+        It "Should not export file to custom file path with NoClobber" {
+            { Export-DbaLogin -SqlInstance $script:instance2 -FilePath "$AltExportPath\Dbatoolsci_login_CustomFile.sql" -NoClobber -WarningAction SilentlyContinue } | Should Throw
+        }
     }
 }

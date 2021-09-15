@@ -1,12 +1,12 @@
 function New-DbatoolsSupportPackage {
     <#
     .SYNOPSIS
-    Creates a package of troubleshooting information that can be used by dbatools to help debug issues.
+        Creates a package of troubleshooting information that can be used by dbatools to help debug issues.
 
     .DESCRIPTION
-    This function creates an extensive debugging package that can help with reproducing and fixing issues.
+        This function creates an extensive debugging package that can help with reproducing and fixing issues.
 
-    The file will be created on the desktop by default and will contain quite a bit of information:
+        The file will be created on the desktop (or in the home directory if $home/Desktop does not exist) by default and will contain quite a bit of information:
         - OS Information
         - Hardware Information (CPU, Ram, things like that)
         - .NET Information
@@ -17,53 +17,60 @@ function New-DbatoolsSupportPackage {
         - Screenshot of the console buffer (Basically, everything written in your current console, even if you have to scroll upwards to see it.
 
     .PARAMETER Path
-    The folder where to place the output xml in.
+        The folder where to place the output xml in.
 
     .PARAMETER Variables
-    Name of additional variables to attach.
-    This allows you to add the content of variables to the support package, if you believe them to be relevant to the case.
+        Name of additional variables to attach.
+        This allows you to add the content of variables to the support package, if you believe them to be relevant to the case.
+
+    .PARAMETER PassThru
+        Returns file object that was created during execution.
+
+    .PARAMETER WhatIf
+        If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
+
+    .PARAMETER Confirm
+        If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
     .PARAMETER EnableException
-    By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-    This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-    Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-    Author: Fred Weinmann (@FredWeinmann)
-    Tags: Debug
+        Tags: Module, Support
+        Author: Friedrich Weinmann (@FredWeinmann)
 
-    Website: https://dbatools.io
-    Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-    License: MIT https://opensource.org/licenses/MIT
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-    https://dbatools.io/New-DbatoolsSupportPackage
+        https://dbatools.io/New-DbatoolsSupportPackage
 
     .EXAMPLE
-    New-DbatoolsSupportPackage
+        PS C:\> New-DbatoolsSupportPackage
 
-    Creates a large support pack in order to help us troubleshoot stuff.
+        Creates a large support pack in order to help us troubleshoot stuff.
     #>
-    [CmdletBinding()]
+    [CmdletBinding(SupportsShouldProcess)]
     param (
-        [string]
-        $Path = "$($env:USERPROFILE)\Desktop",
-
-        [string[]]
-        $Variables,
-
-        [switch]
-        [Alias('Silent')]$EnableException
+        [string]$Path = "$($env:USERPROFILE)\Desktop",
+        [string[]]$Variables,
+        [switch]$PassThru,
+        [switch]$EnableException
     )
-
-    BEGIN {
+    begin {
+        if (-not (Test-Path $Path)) {
+            $Path = $home
+        }
         Write-Message -Level InternalComment -Message "Starting"
         Write-Message -Level Verbose -Message "Bound parameters: $($PSBoundParameters.Keys -join ", ")"
 
         #region Helper functions
         function Get-ShellBuffer {
             [CmdletBinding()]
-            Param ()
+            param ()
 
             try {
                 # Define limits
@@ -110,73 +117,78 @@ function New-DbatoolsSupportPackage {
 
                 # Cut results to the limit and return them
                 return $lines[$int .. $z]
+            } catch {
+                # here to avoid an empty catch
+                $null = 1
             }
-            catch { }
         }
         #endregion Helper functions
     }
-    PROCESS {
-        $filePathXml = "$($Path.Trim('\'))\dbatools_support_pack_$(Get-Date -Format "yyyy_MM_dd-HH_mm_ss").xml"
-        $filePathZip = $filePathXml -replace "\.xml$", ".zip"
+    process {
+        $stepCounter = 0
+        if ($Pscmdlet.ShouldProcess("Creating a Support Package for diagnosing Dbatools")) {
 
-        Write-Message -Level Critical -Message @"
-Gathering information...
+            $filePathXml = [IO.Path]::Combine($Path, "dbatools_support_pack_$(Get-Date -Format "yyyy_MM_dd-HH_mm_ss").xml")
+            $filePathZip = $filePathXml -replace "\.xml$", ".zip"
+
+            Write-Message -Level Critical -Message @"
 Will write the final output to: $filePathZip
-
-Please submit this file to the team, to help with troubleshooting whatever issue you encountered.
-Be aware that this package contains a lot of information including your input history in the console.
-Please make sure no sensitive data (such as passwords) can be caught this way.
-
-Ideally start a new console, perform the minimal steps required to reproduce the issue, then run this command.
-This will make it easier for us to troubleshoot and you won't be sending us the keys to your castle.
+Please submit this file to the team, to help with troubleshooting whatever issue you encountered. Be aware that this package contains a lot of information including your input history in the console. Please make sure no sensitive data (such as passwords) can be caught this way.
+Ideally start a new console, perform the minimal steps required to reproduce the issue, then run this command. This will make it easier for us to troubleshoot and you won't be sending us the keys to your castle.
 "@
 
-        $hash = @{ }
-        Write-Message -Level Output -Message "Collecting dbatools logged messages (Get-DbatoolsLog)"
-        $hash["Messages"] = Get-DbatoolsLog
-        Write-Message -Level Output -Message "Collecting dbatools logged errors (Get-DbatoolsLog -Errors)"
-        $hash["Errors"] = Get-DbatoolsLog -Errors
-        Write-Message -Level Output -Message "Collecting copy of console buffer (what you can see on your console)"
-        $hash["ConsoleBuffer"] = Get-ShellBuffer
-        Write-Message -Level Output -Message "Collecting Operating System information (Win32_OperatingSystem)"
-        $hash["OperatingSystem"] = Get-DbaCmObject -ClassName Win32_OperatingSystem
-        Write-Message -Level Output -Message "Collecting CPU information (Win32_Processor)"
-        $hash["CPU"] = Get-DbaCmObject -ClassName Win32_Processor
-        Write-Message -Level Output -Message "Collecting Ram information (Win32_PhysicalMemory)"
-        $hash["Ram"] = Get-DbaCmObject -ClassName Win32_PhysicalMemory
-        Write-Message -Level Output -Message "Collecting PowerShell & .NET Version (`$PSVersionTable)"
-        $hash["PSVersion"] = $PSVersionTable
-        Write-Message -Level Output -Message "Collecting Input history (Get-History)"
-        $hash["History"] = Get-History
-        Write-Message -Level Output -Message "Collecting list of loaded modules (Get-Module)"
-        $hash["Modules"] = Get-Module
-        Write-Message -Level Output -Message "Collecting list of loaded snapins (Get-PSSnapin)"
-        $hash["SnapIns"] = Get-PSSnapin
-        Write-Message -Level Output -Message "Collecting list of loaded assemblies (Name, Version, and Location)"
-        $hash["Assemblies"] = [appdomain]::CurrentDomain.GetAssemblies() | Select-Object CodeBase, FullName, Location, ImageRuntimeVersion, GlobalAssemblyCache, IsDynamic
+            $hash = @{ }
+            Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Collecting dbatools logged messages (Get-DbatoolsLog)"
+            $hash["Messages"] = Get-DbatoolsLog
+            Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Collecting dbatools logged errors (Get-DbatoolsLog -Errors)"
+            $hash["Errors"] = Get-DbatoolsLog -Errors
+            Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Collecting copy of console buffer (what you can see on your console)"
+            $hash["ConsoleBuffer"] = Get-ShellBuffer
+            Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Collecting Operating System information (Win32_OperatingSystem)"
+            $hash["OperatingSystem"] = Get-DbaCmObject -ClassName Win32_OperatingSystem
+            Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Collecting CPU information (Win32_Processor)"
+            $hash["CPU"] = Get-DbaCmObject -ClassName Win32_Processor
+            Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Collecting Ram information (Win32_PhysicalMemory)"
+            $hash["Ram"] = Get-DbaCmObject -ClassName Win32_PhysicalMemory
+            Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Collecting PowerShell & .NET Version (`$PSVersionTable)"
+            $hash["PSVersion"] = $PSVersionTable
+            Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Collecting Input history (Get-History)"
+            $hash["History"] = Get-History
+            Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Collecting list of loaded modules (Get-Module)"
+            $hash["Modules"] = Get-Module
+            # Snapins not supported in Core: https://github.com/PowerShell/PowerShell/issues/6135
+            if ($PSVersionTable.PSEdition -ne 'Core') {
+                Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Collecting list of loaded snapins (Get-PSSnapin)"
+                $hash["SnapIns"] = Get-PSSnapin
+            }
+            Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Collecting list of loaded assemblies (Name, Version, and Location)"
+            $hash["Assemblies"] = [appdomain]::CurrentDomain.GetAssemblies() | Select-Object CodeBase, FullName, Location, ImageRuntimeVersion, GlobalAssemblyCache, IsDynamic
 
-        if (Test-Bound "Variables") {
-            Write-Message -Level Output -Message "Adding variables specified for export: $($Variables -join ", ")"
-            $hash["Variables"] = $Variables | Get-Variable -ErrorAction Ignore
+            if (Test-Bound "Variables") {
+                Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Adding variables specified for export: $($Variables -join ", ")"
+                $hash["Variables"] = $Variables | Get-Variable -ErrorAction Ignore
+            }
+
+            $data = [pscustomobject]$hash
+
+            try {
+                $data | Export-Clixml -Path $filePathXml -ErrorAction Stop
+            } catch {
+                Stop-Function -Message "Failed to export dump to file." -ErrorRecord $_ -Target $filePathXml
+                return
+            }
+
+            try {
+                Compress-Archive -Path $filePathXml -DestinationPath $filePathZip -ErrorAction Stop
+                Get-ChildItem -Path $filePathZip
+            } catch {
+                Stop-Function -Message "Failed to pack dump-file into a zip archive. Please do so manually before submitting the results as the unpacked xml file will be rather large." -ErrorRecord $_ -Target $filePathZip
+                return
+            }
+            Remove-Item -Path $filePathXml -ErrorAction Ignore
         }
-
-        $data = [pscustomobject]$hash
-
-        try { $data | Export-Clixml -Path $filePathXml -ErrorAction Stop }
-        catch {
-            Stop-Function -Message "Failed to export dump to file!" -ErrorRecord $_ -Target $filePathXml
-            return
-        }
-
-        try { Compress-Archive -Path $filePathXml -DestinationPath $filePathZip -ErrorAction Stop }
-        catch {
-            Stop-Function -Message "Failed to pack dump-file into a zip archive. Please do so manually before submitting the results as the unpacked xml file will be rather large." -ErrorRecord $_ -Target $filePathZip
-            return
-        }
-
-        Remove-Item -Path $filePathXml -ErrorAction Ignore
     }
-    END {
+    end {
         Write-Message -Level InternalComment -Message "Ending"
     }
 }

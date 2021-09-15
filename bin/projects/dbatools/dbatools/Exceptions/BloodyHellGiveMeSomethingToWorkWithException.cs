@@ -17,29 +17,11 @@ namespace Sqlcollaborative.Dbatools.Exceptions
         public string ParameterClass;
 
         /// <summary>
-        /// Creates an empty exception
-        /// </summary>
-        public BloodyHellGiveMeSomethingToWorkWithException()
-        {
-
-        }
-
-        /// <summary>
-        /// Creates an exception with a simple message
-        /// </summary>
-        /// <param name="Message">The message to tell</param>
-        public BloodyHellGiveMeSomethingToWorkWithException(string Message)
-            : base(Message)
-        {
-
-        }
-
-        /// <summary>
         /// Creates an exception with a message and a nested exception
         /// </summary>
         /// <param name="Message">The message to tell</param>
         /// <param name="Inner">The inner exception to nest</param>
-        public BloodyHellGiveMeSomethingToWorkWithException(string Message, Exception Inner)
+        internal BloodyHellGiveMeSomethingToWorkWithException(string Message, Exception Inner)
             : base(Message, Inner)
         {
 
@@ -50,7 +32,7 @@ namespace Sqlcollaborative.Dbatools.Exceptions
         /// </summary>
         /// <param name="Message">The message to tell</param>
         /// <param name="ParameterClass">The Parameter Class that threw the exception</param>
-        public BloodyHellGiveMeSomethingToWorkWithException(string Message, string ParameterClass)
+        internal BloodyHellGiveMeSomethingToWorkWithException(string Message, string ParameterClass)
             : base(Message)
         {
             this.ParameterClass = ParameterClass;
@@ -62,7 +44,7 @@ namespace Sqlcollaborative.Dbatools.Exceptions
         /// <param name="Message">The message to tell</param>
         /// <param name="Inner">The inner exception to nest</param>
         /// <param name="ParameterClass">The Parameter Class that threw the exception</param>
-        public BloodyHellGiveMeSomethingToWorkWithException(string Message, Exception Inner, string ParameterClass)
+        internal BloodyHellGiveMeSomethingToWorkWithException(string Message, Exception Inner, string ParameterClass)
             : base(Message, Inner)
         {
             this.ParameterClass = ParameterClass;

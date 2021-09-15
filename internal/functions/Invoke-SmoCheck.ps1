@@ -3,10 +3,10 @@ function Invoke-SmoCheck {
     .SYNOPSIS
     Checks for PowerShell SMO version vs SQL Server's SMO version.
 
-#>
+    #>
     [CmdletBinding()]
     param (
-        [Parameter(Mandatory = $true)]
+        [Parameter(Mandatory)]
         [object]$SqlInstance
     )
 

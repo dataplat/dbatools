@@ -1,4 +1,4 @@
-﻿$scriptBlock = {
+$scriptBlock = {
     param (
         $commandName,
 
@@ -19,17 +19,15 @@
     $sqlCredential = $fakeBoundParameter['SqlCredential']
 
     try {
-        if ($sqlCredential) { $instance = Connect-SqlInstance -SqlInstance $server -ErrorAction Stop  }
-        else { $instance = Connect-SqlInstance -SqlInstance $server -ErrorAction Stop }
+        if ($sqlCredential) { $instance = Connect-DbaInstance -SqlInstance $server -SqlCredential $sqlCredential -ErrorAction Stop  }
+        else { $instance = Connect-DbaInstance -SqlInstance $server -ErrorAction Stop }
 
         $instance.EnumProcesses().Program | Select-Object -Unique | Where-DbaObject -Like "$wordToComplete*" | ForEach-Object {
             if (-not ([string]::IsNullOrWhiteSpace($_))) { New-DbaTeppCompletionResult -CompletionText $_ -ToolTip $_ }
         }
-    }
-    catch {
+    } catch {
         return
-    }
-    finally {
+    } finally {
     }
 }
 

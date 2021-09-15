@@ -1,5 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
+using System.IO.Compression;
+using System.Management.Automation;
+using System.Reflection;
+using System.Text;
 
 namespace Sqlcollaborative.Dbatools.Utility
 {
@@ -36,7 +41,7 @@ namespace Sqlcollaborative.Dbatools.Utility
         /// <summary>
         /// The number of digits a size object shows by default
         /// </summary>
-        public static int SizeDigits;
+        public static int SizeDigits = 2;
 
         /// <summary>
         /// The way size objects are usually displayed
@@ -127,6 +132,40 @@ namespace Sqlcollaborative.Dbatools.Utility
         }
 
         /// <summary>
+        /// Compress string using default zip algorithms
+        /// </summary>
+        /// <param name="String">The string to compress</param>
+        /// <returns>Returns a compressed string.</returns>
+        public static string CompressString(string String)
+        {
+            byte[] bytes = Encoding.UTF8.GetBytes(String);
+            MemoryStream outputStream = new MemoryStream();
+            GZipStream gZipStream = new GZipStream(outputStream, CompressionMode.Compress);
+            gZipStream.Write(bytes, 0, bytes.Length);
+            gZipStream.Close();
+            outputStream.Close();
+            return Convert.ToBase64String(outputStream.ToArray());
+        }
+
+        /// <summary>
+        /// Expand a string using default zig algorithms
+        /// </summary>
+        /// <param name="CompressedString">The compressed string to expand</param>
+        /// <returns>Returns an expanded string.</returns>
+        public static string ExpandString(string CompressedString)
+        {
+            MemoryStream inputStream = new MemoryStream(Convert.FromBase64String(CompressedString));
+            MemoryStream outputStream = new MemoryStream();
+            GZipStream converter = new GZipStream(inputStream, CompressionMode.Decompress);
+            converter.CopyTo(outputStream);
+            converter.Close();
+            inputStream.Close();
+            string result = Encoding.UTF8.GetString(outputStream.ToArray());
+            outputStream.Close();
+            return result;
+        }
+
+        /// <summary>
         /// Converts a string of characters to a HashSet of characters. If the string
         /// contains character ranges, such as A-Z, all characters in the range are
         /// also added to the returned set of characters.
@@ -152,6 +191,44 @@ namespace Sqlcollaborative.Dbatools.Utility
                 else set.Add(charList[i]);
             }
             return set;
+        }
+
+        /// <summary>
+        /// Returns the current callstack
+        /// </summary>
+        public static IEnumerable<CallStackFrame> Callstack
+        {
+            get
+            {
+                // Works on PS4+
+                try { return _CallstackNew; }
+
+                // Needed for PS3
+                catch { return _CallstackOld; }
+            }
+        }
+
+        /// <summary>
+        /// Returns the current callstack on PS4+
+        /// </summary>
+        private static IEnumerable<CallStackFrame> _CallstackNew
+        {
+            get
+            {
+                return System.Management.Automation.Runspaces.Runspace.DefaultRunspace.Debugger.GetCallStack();
+            }
+        }
+
+        /// <summary>
+        /// Returns the current callstack on PS3
+        /// </summary>
+        private static IEnumerable<CallStackFrame> _CallstackOld
+        {
+            get
+            {
+                MethodInfo method = System.Management.Automation.Runspaces.Runspace.DefaultRunspace.Debugger.GetType().GetMethod("GetCallStack", BindingFlags.NonPublic | BindingFlags.Instance);
+                return (IEnumerable<CallStackFrame>)method.Invoke(System.Management.Automation.Runspaces.Runspace.DefaultRunspace.Debugger, null);
+            }
         }
     }
 }

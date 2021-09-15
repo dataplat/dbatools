@@ -1,0 +1,582 @@
+[
+    {
+        "Name": "Address",
+        "Category": "Location",
+        "Country": "All",
+        "CountryCode": "All",
+        "Pattern": "(.*[\\s]*ap(ar)?t(ment)?[\\s]+.*)|(.*[\\s]*s(ui)?te[\\s]+.*)\\|(c(are)?[\\s]*[\\\\]?[/]?o(f)?[\\s]+.*)",
+        "Description": "",
+        "MaskingType": "Address",
+        "MaskingSubType": "StreetAddress"
+    },
+    {
+        "Name": "Bitcoin Address",
+        "Category": "Financial",
+        "Country": "All",
+        "CountryCode": "All",
+        "Pattern": "(?<![a-km-zA-HJ-NP-Z0-9])[13][a-km-zA-HJ-NP-Z0-9]{26,33}(?![a-km-zA-HJ-NP-Z0-9])",
+        "Description": "",
+        "MaskingType": "Finance",
+        "MaskingSubType": "BitcoinAddress"
+    },
+    {
+        "Name": "Creditcard",
+        "Category": "Financial",
+        "Country": "All",
+        "CountryCode": "All",
+        "Pattern": "(\\d{4}([\\D]?\\d{4}){3}([\\D]?\\d{3})?|\\d{4}[\\D]?\\d{6}[\\D]?\\d{5}([\\D]?\\d{4})?)[^A-Za-z0-9]",
+        "Description": "",
+        "MaskingType": "Finance",
+        "MaskingSubType": "CreditCardNumber"
+    },
+    {
+        "Name": "Creditcard",
+        "Category": "Financial",
+        "Country": "All",
+        "CountryCode": "All",
+        "Pattern": "^(?:3[47][0-9]{13}|4[0-9]{12}(?:[0-9]{3})?(?:[0-9]{3})?\\|(?:5[1-5][0-9]{2}\\|222[1-9]\\|22[3-9][0-9]\\|2[3-6][0-9]{2}\\|27[01][0-9]\\|2720)[0-9]{12}\\|6(?:(011\\|5[0-9][0-9])[0-9]{2}\\|4[4-9][0-9]{3}\\|2212[6-9]\\|221[3-9][0-9]\\|22[2-8][0-9]{2}\\|229[0-1][0-9]|2292[0-5])[0-9]{10}?(?:[0-9]{3})?\\|3(?:0[0-5,9]\\|6[0-9])[0-9]{11}\\|3[89][0-9]{14}?(?:[0-9]{1,3})?)$",
+        "Description": "",
+        "MaskingType": "Finance",
+        "MaskingSubType": "CreditCardNumber"
+    },
+    {
+        "Name": "Creditcard AMEX",
+        "Category": "Financial",
+        "Country": "All",
+        "CountryCode": "All",
+        "Pattern": "(3[47]\\d{13})|(3[47]\\d{2}[-| ]\\d{6}[-| ]\\d{5})",
+        "Description": "",
+        "MaskingType": "Finance",
+        "MaskingSubType": "CreditCardNumber"
+    },
+    {
+        "Name": "Creditcard Mastercard",
+        "Category": "Financial",
+        "Country": "All",
+        "CountryCode": "All",
+        "Pattern": "(5[1-5]\\d{14})|(5[1-5]\\d{2}[-| ]\\d{4}[-| ]\\d{4}[-| ]\\d{4})",
+        "Description": "",
+        "MaskingType": "Finance",
+        "MaskingSubType": "CreditCardNumber"
+    },
+    {
+        "Name": "Creditcard Mastercard",
+        "Category": "Financial",
+        "Country": "All",
+        "CountryCode": "All",
+        "Pattern": "^(?:5[1-5][0-9]{2}|222[1-9]|22[3-9][0-9]|2[3-6][0-9]{2}|27[01][0-9]|2720)[0-9]{12}$",
+        "Description": "MasterCard credit card with new range",
+        "MaskingType": "Finance",
+        "MaskingSubType": "CreditCardNumber"
+    },
+    {
+        "Name": "Creditcard VISA",
+        "Category": "Financial",
+        "Country": "All",
+        "CountryCode": "All",
+        "Pattern": "(4\\d{3}[-| ]\\d{4}[-| ]\\d{4}[-| ]\\d{4})|(4\\d{15})",
+        "Description": "",
+        "MaskingType": "Finance",
+        "MaskingSubType": "CreditCardNumber"
+    },
+    {
+        "Name": "Creditcard VISA",
+        "Category": "Financial",
+        "Country": "All",
+        "CountryCode": "All",
+        "Pattern": "(4\\d{3}[-| ]\\d{4}[-| ]\\d{4}[-| ]\\d{7})|(4\\d{19})",
+        "Description": "VISA credit card with 19 digits",
+        "MaskingType": "Finance",
+        "MaskingSubType": "CreditCardNumber"
+    },
+    {
+        "Name": "Creditcard Diners Club",
+        "Category": "Financial",
+        "Country": "All",
+        "CountryCode": "All",
+        "Pattern": "(3(?:0[0-5]|[68]\\d)\\d{11})|(3(?:0[0-5]|[68]\\d)\\d[-| ]\\d{6}[-| ]\\d{4})",
+        "Description": "",
+        "MaskingType": "Finance",
+        "MaskingSubType": "CreditCardNumber"
+    },
+    {
+        "Name": "Creditcard Discover",
+        "Category": "Financial",
+        "Country": "All",
+        "CountryCode": "All",
+        "Pattern": "(6(?:011|5\\d{2})\\d{12})|(6(?:011|5\\d{2})[-| ]\\d{4}[-| ]\\d{4}[-| ]\\d{4})",
+        "Description": "",
+        "MaskingType": "Finance",
+        "MaskingSubType": "CreditCardNumber"
+    },
+    {
+        "Name": "Creditcard JCB",
+        "Category": "Financial",
+        "Country": "All",
+        "CountryCode": "All",
+        "Pattern": "((?:2131|1800|35\\d{3})\\d{11})|((?:2131|1800|35\\d{2})[-| ]\\d{4}[-| ]\\d{4}[-| ]\\d{3}[\\d| ])",
+        "Description": "",
+        "MaskingType": "Finance",
+        "MaskingSubType": "CreditCardNumber"
+    },
+    {
+        "Name": "E-mail",
+        "Category": "Communication",
+        "Country": "All",
+        "CountryCode": "All",
+        "Pattern": "\\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,6}\\b",
+        "Description": "",
+        "MaskingType": "Internet",
+        "MaskingSubType": "Email"
+    },
+    {
+        "Name": "IBAN Number",
+        "Category": "Financial",
+        "Country": "All",
+        "CountryCode": "All",
+        "Pattern": "[a-zA-Z]{2}[0-9]{2}[a-zA-Z0-9]{4}[0-9]{7}([a-zA-Z0-9]?){0,16}",
+        "Description": "IBAN number without spaces",
+        "MaskingType": "Finance",
+        "MaskingSubType": "Iban"
+    },
+    {
+        "Name": "IBAN Number",
+        "Category": "Financial",
+        "Country": "All",
+        "CountryCode": "All",
+        "Pattern": "[a-zA-Z]{2}[0-9]{2}[a-zA-Z0-9]{4}[0-9]{7}([a-zA-Z0-9]?){0,16}",
+        "Description": "IBAN number with spaces",
+        "MaskingType": "Finance",
+        "MaskingSubType": "Iban"
+    },
+    {
+        "Name": "IPv4 Address",
+        "Category": "System",
+        "Country": "All",
+        "CountryCode": "All",
+        "Pattern": "((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])",
+        "Description": "",
+        "MaskingType": "Internet",
+        "MaskingSubType": "Ip"
+    },
+    {
+        "Name": "IPv6 Address",
+        "Category": "System",
+        "Country": "All",
+        "CountryCode": "All",
+        "Pattern": "(([0-9a-fA-F]{1,4}:){7,7}[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,7}:|([0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,5}(:[0-9a-fA-F]{1,4}){1,2}|([0-9a-fA-F]{1,4}:){1,4}(:[0-9a-fA-F]{1,4}){1,3}|([0-9a-fA-F]{1,4}:){1,3}(:[0-9a-fA-F]{1,4}){1,4}|([0-9a-fA-F]{1,4}:){1,2}(:[0-9a-fA-F]{1,4}){1,5}|[0-9a-fA-F]{1,4}:((:[0-9a-fA-F]{1,4}){1,6})|:((:[0-9a-fA-F]{1,4}){1,7}|:)|fe80:(:[0-9a-fA-F]{0,4}){0,4}%[0-9a-zA-Z]{1,}|::(ffff(:0{1,4}){0,1}:){0,1}((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])|([0-9a-fA-F]{1,4}:){1,4}:((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9]))",
+        "Description": "",
+        "MaskingType": "Internet",
+        "MaskingSubType": "Ipv6"
+    },
+    {
+        "Name": "National ID",
+        "Category": "Personal",
+        "Country": "Austria",
+        "CountryCode": "AT",
+        "Pattern": "[0-9]{12}",
+        "Description": "",
+        "MaskingType": "Random",
+        "MaskingSubType": "Int"
+    },
+    {
+        "Name": "National ID",
+        "Category": "Personal",
+        "Country": "Austria",
+        "CountryCode": "AT",
+        "Pattern": "^[0-9]{10}$",
+        "Description": "",
+        "MaskingType": "Random",
+        "MaskingSubType": "Int"
+    },
+    {
+        "Name": "National ID",
+        "Category": "Personal",
+        "Country": "Belgium",
+        "CountryCode": "BE",
+        "Pattern": "[0-9]{2}\\.?(0[1-9]|1[0-2])\\.?(0[1-9]|1[0-9]|2[0-9]|3[0-1])-[0-9]{3}\\.?[0-9]{2}",
+        "Description": "",
+        "MaskingType": "Random",
+        "MaskingSubType": "Int"
+    },
+    {
+        "Name": "National ID",
+        "Category": "Personal",
+        "Country": "Bulgaria",
+        "CountryCode": "Bg",
+        "Pattern": "[0-9]{2}\\.?[0-9]{2}\\.?[0-9]{2}-[0-9]{3}\\.?[0-9]{2}",
+        "Description": "",
+        "MaskingType": "Random",
+        "MaskingSubType": "Int"
+    },
+    {
+        "Name": "National ID",
+        "Category": "Personal",
+        "Country": "Netherlands",
+        "CountryCode": "NL",
+        "Pattern": "^[0-9]{9}$",
+        "Description": "National ID (Burgerservicenummer) Netherlands",
+        "MaskingType": "Random",
+        "MaskingSubType": "Int"
+    },
+    {
+        "Name": "National ID",
+        "Category": "Personal",
+        "Country": "United States of America",
+        "CountryCode": "US",
+        "Pattern": "\\b(?!000|666|9\\d{2})([0-8]\\d{2}|7([0-6]\\d))([-]?|\\s{1})(?!00)\\d\\d\\2(?!0000)\\d{4}\b",
+        "Description": "",
+        "MaskingType": "Random",
+        "MaskingSubType": "Int"
+    },
+    {
+        "Name": "National ID",
+        "Category": "Personal",
+        "Country": "Slovakia",
+        "CountryCode": "SK",
+        "Pattern": "[0-9]{2}[0,1,5][0-9][0-9]{2}/?[0-9]{4}",
+        "Description": "",
+        "MaskingType": "Random",
+        "MaskingSubType": "Int"
+    },
+    {
+        "Name": "National ID",
+        "Category": "Personal",
+        "Country": "Slovakia",
+        "CountryCode": "SK",
+        "Pattern": "[A-Z]{2}[0-9]{6}",
+        "Description": "",
+        "MaskingType": "Random",
+        "MaskingSubType": "Int"
+    },
+    {
+        "Name": "National ID",
+        "Category": "Personal",
+        "Country": "Denmark",
+        "CountryCode": "DK",
+        "Pattern": "[0-9]{2}[0,1][0-9][0-9]{2}-[0-9]{4}",
+        "Description": "",
+        "MaskingType": "Random",
+        "MaskingSubType": "Int"
+    },
+    {
+        "Name": "National ID",
+        "Category": "Personal",
+        "Country": "Estonia",
+        "CountryCode": "EE",
+        "Pattern": "[1-6][0-9]{2}[1,2][0-9][0-9]{2}[0-9]{4}",
+        "Description": "",
+        "MaskingType": "Random",
+        "MaskingSubType": "Int"
+    },
+    {
+        "Name": "National ID",
+        "Category": "Personal",
+        "Country": "Finland",
+        "CountryCode": "FI",
+        "Pattern": "[0-9]{2}\\.?[0,1][0-9]\\.?[0-9]{2}[-+A][0-9]{3}[A-Z]",
+        "Description": "",
+        "MaskingType": "Random",
+        "MaskingSubType": "Int"
+    },
+    {
+        "Name": "National ID",
+        "Category": "Personal",
+        "Country": "France",
+        "CountryCode": "FR",
+        "Pattern": "1,2][ ]?[0-9]{2}[]?[0,1,2,3,5][0-9][ ]?[0-9A-Z]{5}[ ]?[0-9]{3}[ ]?[0-9]{2}",
+        "Description": "",
+        "MaskingType": "Random",
+        "MaskingSubType": "Int"
+    },
+    {
+        "Name": "National ID",
+        "Category": "Personal",
+        "Country": "Germany",
+        "CountryCode": "DE",
+        "Pattern": "[0-9]{2}[0,1][0-9][0-9]{2}-[A-Z]-[0-9]{5}",
+        "Description": "National ID (Personenkennziffer)",
+        "MaskingType": "Random",
+        "MaskingSubType": "Int"
+    },
+    {
+        "Name": "National ID",
+        "Category": "Personal",
+        "Country": "Germany",
+        "CountryCode": "DE",
+        "Pattern": "[0-9]{3}/?[0-9]{4}/?[0-9]{4}",
+        "Description": "National ID (Steuer-Identifikationsnummer)",
+        "MaskingType": "Random",
+        "MaskingSubType": "Int"
+    },
+    {
+        "Name": "National ID",
+        "Category": "Personal",
+        "Country": "Germany",
+        "CountryCode": "DE",
+        "Pattern": "[0-9]{2}[0-9]{2}[0,1][0-9][0-9]{2}[A-Z][0-9]{2}[0-9]",
+        "Description": "National ID (Versicherungsnummer,Rentenversicherungsnummer)",
+        "MaskingType": "Random",
+        "MaskingSubType": "Int"
+    },
+    {
+        "Name": "National ID",
+        "Category": "Personal",
+        "Country": "Greece",
+        "CountryCode": "GR",
+        "Pattern": "[A-Z][ -]?[0-9]{6}",
+        "Description": "National ID (Tautotita)",
+        "MaskingType": "Random",
+        "MaskingSubType": "Int"
+    },
+    {
+        "Name": "National ID",
+        "Category": "Personal",
+        "Country": "Hungary",
+        "CountryCode": "HU",
+        "Pattern": "[0-9]{3}[ ]?[0-9]{3}[ ][0-9]{3}",
+        "Description": "",
+        "MaskingType": "Random",
+        "MaskingSubType": "Int"
+    },
+    {
+        "Name": "National ID",
+        "Category": "Personal",
+        "Country": "Hungary",
+        "CountryCode": "HU",
+        "Pattern": "[1-8][ ]?[0-9]{2}[0,1][0-9][0-9]{2}[ ]?[0-9]{4}",
+        "Description": "Personal identification number",
+        "MaskingType": "Random",
+        "MaskingSubType": "Int"
+    },
+    {
+        "Name": "National ID",
+        "Category": "Personal",
+        "Country": "Ireland",
+        "CountryCode": "IE",
+        "Pattern": "[0-9]{7}[A-Z]W?",
+        "Description": "Personal Public Service (PPS) Number",
+        "MaskingType": "Random",
+        "MaskingSubType": "Int"
+    },
+    {
+        "Name": "National ID",
+        "Category": "Personal",
+        "Country": "Italy",
+        "CountryCode": "IT",
+        "Pattern": "[A-Z]{6}[0-9]{2}[A-E,H,L,M,P,R-T][0-9]{2}[A-Z0-9]{5}",
+        "Description": "National ID (NumberCodice fiscale)",
+        "MaskingType": "Random",
+        "MaskingSubType": "Int"
+    },
+    {
+        "Name": "National ID",
+        "Category": "Personal",
+        "Country": "Latvia",
+        "CountryCode": "LV",
+        "Pattern": "[0-9]{2}[0,1][0-9][0-9]-[0-9]{5}",
+        "Description": "Social Security (Personas kodas)",
+        "MaskingType": "Random",
+        "MaskingSubType": "Int"
+    },
+    {
+        "Name": "National ID",
+        "Category": "Personal",
+        "Country": "Lithuania",
+        "CountryCode": "LT",
+        "Pattern": "[3-6][0-9]{2}[0,1][0-9][0-9]{2}[0-9]{4}",
+        "Description": "National ID (Asmens kodas)",
+        "MaskingType": "Random",
+        "MaskingSubType": "Int"
+    },
+    {
+        "Name": "National ID",
+        "Category": "Personal",
+        "Country": "Norway",
+        "CountryCode": "NO",
+        "Pattern": "[0-9]{2}[0,1][0-9][0-9]{2}[ ]?[0-9]{5}",
+        "Description": "National ID (Fødselsnummer)",
+        "MaskingType": "Random",
+        "MaskingSubType": "Int"
+    },
+    {
+        "Name": "National ID",
+        "Category": "Personal",
+        "Country": "Poland",
+        "CountryCode": "PL",
+        "Pattern": "[0-9]{4}[0-3]{1}[0-9}{1}[0-9]{5}",
+        "Description": "",
+        "MaskingType": "Random",
+        "MaskingSubType": "Int"
+    },
+    {
+        "Name": "National ID",
+        "Category": "Personal",
+        "Country": "Romania",
+        "CountryCode": "RO",
+        "Pattern": "[1-8][0-9]{2}[0,1][0-9][0-9]{2}[0-9]{6}",
+        "Description": "",
+        "MaskingType": "Random",
+        "MaskingSubType": "Int"
+    },
+    {
+        "Name": "National ID",
+        "Category": "Personal",
+        "Country": "Spain",
+        "CountryCode": "ES",
+        "Pattern": "[0-9,X,M,L,K,Y][0-9]{7}[A-Z]",
+        "Description": "National ID (Documento Nacional de Identidad)",
+        "MaskingType": "Random",
+        "MaskingSubType": "Int"
+    },
+    {
+        "Name": "National ID",
+        "Category": "Personal",
+        "Country": "Sweden",
+        "CountryCode": "SE",
+        "Pattern": "[0-9]{2}[0-1][0-9][0-9]{2}[-+][0-9]{4}",
+        "Description": "",
+        "MaskingType": "Random",
+        "MaskingSubType": "Int"
+    },
+    {
+        "Name": "National ID",
+        "Category": "Personal",
+        "Country": "Switzerland",
+        "CountryCode": "CH",
+        "Pattern": "[0-9]{3}\\.?[0-9]{2}\\.?[0-9]{3}\\.?[0-9]{3}",
+        "Description": "National ID (Old AVS format with personal data encoded)",
+        "MaskingType": "Random",
+        "MaskingSubType": "Int"
+    },
+    {
+        "Name": "National ID",
+        "Category": "Personal",
+        "Country": "Switzerland",
+        "CountryCode": "CH",
+        "Pattern": "756\\.?[0-9]{4}\\.?[0-9]{4}\\.?[0-9]{2}",
+        "Description": "National ID (New AVS format)",
+        "MaskingType": "Random",
+        "MaskingSubType": "Int"
+    },
+    {
+        "Name": "National ID",
+        "Category": "Personal",
+        "Country": "United Kingdom",
+        "CountryCode": "UK",
+        "Pattern": "[A-CEGHJ-PR-TW-Z][A-CEGHJ-NPR-TW-Z]{1}[0-9]{6}[A-DFM]?",
+        "Description": "",
+        "MaskingType": "Random",
+        "MaskingSubType": "Int"
+    },
+    {
+        "Name": "National ID",
+        "Category": "Personal",
+        "Country": "United Kingdom",
+        "CountryCode": "UK",
+        "Pattern": "^([ACEHJLMOPRSW-Yacehjlmoprsw-y][A-CEGHJ-NPRSTW-Za-ceghj-nprstw-z]|[Bb][A-CEHJ-NPRSTW-Za-cehj-nprstw-z]|[Gg][ACEGHJ-NPRSTW-Zaceghj-nprstw-z]|[Kk][A-CEGHJ-MPRSTW-Za-ceghj-mprstw-z]|[Nn][A-CEGHJLMNPRSW-Za-ceghjlmnprsw-z]|[Tt][A-CEGHJ-MPRSTW-Za-ceghj-mprstw-z]|[Zz][A-CEGHJ-NPRSTW-Ya-ceghj-nprstw-y])[0-9]{6}[A-Da-d ]?$",
+        "Description": "",
+        "MaskingType": "Random",
+        "MaskingSubType": "Int"
+    },
+    {
+        "Name": "Phone Number (Mobile)",
+        "Category": "Communication",
+        "Country": "Netherlands",
+        "CountryCode": "NL",
+        "Pattern": "^0[6]{1}(\\-)?[^0\\D]{1}\\d{7}$",
+        "Description": "",
+        "MaskingType": "Person",
+        "MaskingSubType": "Phone"
+    },
+    {
+        "Name": "Phone Number",
+        "Category": "Communication",
+        "Country": "United Kingdom",
+        "CountryCode": "UK",
+        "Pattern": "^(((\\+44\\s?\\d{4}|\\(?0\\d{4}\\)?)\\s?\\d{3}\\s?\\d{3})|((\\+44\\s?\\d{3}|\\(?0\\d{3}\\)?)\\s?\\d{3}\\s?\\d{4})|((\\+44\\s?\\d{2}|\\(?0\\d{2}\\)?)\\s?\\d{4}\\s?\\d{4}))(\\s?\\#(\\d{4}|\\d{3}))?$",
+        "Description": "",
+        "MaskingType": "Person",
+        "MaskingSubType": "Phone"
+    },
+    {
+        "Name": "Street Address",
+        "Category": "Location",
+        "Country": "United States of America",
+        "CountryCode": "US",
+        "Pattern": "\\d{1,4} [\\w\\s]{1,20}(?:street|st|avenue|ave|road|rd|highway|hwy|square|sq|trail|trl|drive|dr|court|ct|parkway|pkwy|circle|cir|boulevard|blvd)\\W?(?=\\s|$)",
+        "Description": "",
+        "MaskingType": "Address",
+        "MaskingSubType": "StreetAddress"
+    },
+    {
+        "Name": "UK NHS Number",
+        "Category": "Personal",
+        "Country": "United Kingdom",
+        "CountryCode": "UK",
+        "Pattern": "[0-9]{3}[ -]?[0-9]{3}[-]?[0-9]{4}",
+        "Description": "",
+        "MaskingType": "Random",
+        "MaskingSubType": "Int"
+    },
+    {
+        "Name": "Website",
+        "Category": "Communication",
+        "Country": "All",
+        "CountryCode": "All",
+        "Pattern": "\\b(?:(?:https?\\|ftp\\|file)://\\|www\\.\\|ftp\\.)[-A-Z0-9+&-@#/%=~_\\|$?!:,.]*[A-Z0-9+&-@#/%=~_\\|$]",
+        "Description": "",
+        "MaskingType": "Internet",
+        "MaskingSubType": "Url"
+    },
+    {
+        "Name": "Zipcode",
+        "Category": "Location",
+        "Country": "Netherlands",
+        "CountryCode": "NL",
+        "Pattern": "^[1-9][0-9]{3} ?(?!sa|sd|ss|SA|SD|SS)[A-Za-z]{2}$",
+        "Description": "",
+        "MaskingType": "Address",
+        "MaskingSubType": "Zipcode"
+    },
+    {
+        "Name": "Zipcode",
+        "Category": "Location",
+        "Country": "Canada",
+        "CountryCode": "CA",
+        "Pattern": "^((\\d{5}-\\d{4})|(\\d{5})|([AaBbCcEeGgHhJjKkLlMmNnPpRrSsTtVvXxYy]\\d[A-Za-z]\\s?\\d[A-Za-z]\\d))$",
+        "Description": "",
+        "MaskingType": "Address",
+        "MaskingSubType": "Zipcode"
+    },
+    {
+        "Name": "Zipcode",
+        "Category": "Location",
+        "Country": "Germany",
+        "CountryCode": "DE",
+        "Pattern": "\\b((?:0[1-46-9]\\d{3})|(?:[1-357-9]\\d{4})|(?:[4][0-24-9]\\d{3})|(?:[6][013-9]\\d{3}))\b",
+        "Description": "",
+        "MaskingType": "Address",
+        "MaskingSubType": "Zipcode"
+    },
+    {
+        "Name": "Zipcode",
+        "Category": "Location",
+        "Country": "United Kingdom",
+        "CountryCode": "UK",
+        "Pattern": "([Gg][Ii][Rr] 0[Aa]{2})|((([A-Za-z][0-9]{1,2})|(([A-Za-z][A-Ha-hJ-Yj-y][0-9]{1,2})|(([A-Za-z][0-9][A-Za-z])|([A-Za-z][A-Ha-hJ-Yj-y][0-9][A-Za-z]?))))\\s?[0-9][A-Za-z]{2})",
+        "Description": "",
+        "MaskingType": "Address",
+        "MaskingSubType": "Zipcode"
+    },
+    {
+        "Name": "Zipcode",
+        "Category": "Location",
+        "Country": "United States of America",
+        "CountryCode": "US",
+        "Pattern": "^((\\d{5}-\\d{4})|(\\d{5})|([A-Z]\\d[A-Z]\\s\\d[A-Z]\\d))$",
+        "Description": "",
+        "MaskingType": "Address",
+        "MaskingSubType": "Zipcode"
+    }
+]

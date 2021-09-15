@@ -1,103 +1,100 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Find-DbaDbGrowthEvent {
     <#
-        .SYNOPSIS
-            Finds any database AutoGrow events in the Default Trace.
+    .SYNOPSIS
+        Finds any database AutoGrow events in the Default Trace.
 
-        .DESCRIPTION
-            Finds any database AutoGrow events in the Default Trace.
+    .DESCRIPTION
+        Finds any database AutoGrow events in the Default Trace.
 
-            The following events are included:
-                92 - Data File Auto Grow
-                93 - Log File Auto Grow
-                94 - Data File Auto Shrink
-                95 - Log File Auto Shrink
+        The following events are included:
+        92 - Data File Auto Grow
+        93 - Log File Auto Grow
+        94 - Data File Auto Shrink
+        95 - Log File Auto Shrink
 
-        .PARAMETER SqlInstance
-            SQL Server name or SMO object representing the SQL Server to connect to. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.
+    .PARAMETER SqlInstance
+        The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.
 
-        .PARAMETER SqlCredential
-            Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
+    .PARAMETER SqlCredential
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
 
-            $scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
 
-            Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
+        For MFA support, please use Connect-DbaInstance.
 
-            To connect as a different Windows user, run PowerShell as that user.
+    .PARAMETER Database
+        The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
 
-        .PARAMETER Database
-            The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
+    .PARAMETER ExcludeDatabase
+        The database(s) to exclude - this list is auto-populated from the server
 
-        .PARAMETER ExcludeDatabase
-            The database(s) to exclude - this list is auto-populated from the server
+    .PARAMETER EventType
+        Provide a filter on growth event type to filter the results.
 
-        .PARAMETER EventType
-            Provide a filter on growth event type to filter the results.
+        Allowed values: Growth, Shrink
 
-            Allowed values: Growth, Shrink
+    .PARAMETER FileType
+        Provide a filter on file type to filter the results.
 
-        .PARAMETER FileType
-            Provide a filter on file type to filter the results.
+        Allowed values: Data, Log
 
-            Allowed vaules: Data, Log
+    .PARAMETER UseLocalTime
+        Return the local time of the instance instead of converting to UTC.
 
-        .PARAMETER UseLocalTime
-            Return the local time of the instance instead of converting to UTC.
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+    .NOTES
+        Tags: AutoGrow,Growth,Database
+        Author: Aaron Nelson
 
-        .NOTES
-            Tags: AutoGrow,Growth,Database
-            Author: Aaron Nelson
-            Query Extracted from SQL Server Management Studio (SSMS) 2016.
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-            Website: https://dbatools.io
-            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: MIT https://opensource.org/licenses/MIT
+        Query Extracted from SQL Server Management Studio (SSMS) 2016.
 
-        .LINK
-            https://dbatools.io/Find-DbaDatabaseGrowthEvent
+    .LINK
+        https://dbatools.io/Find-DbaDbGrowthEvent
 
-        .EXAMPLE
-            Find-DbaDatabaseGrowthEvent -SqlInstance localhost
+    .EXAMPLE
+        PS C:\> Find-DbaDbGrowthEvent -SqlInstance localhost
 
-            Returns any database AutoGrow events in the Default Trace with UTC time for the instance for every database on the localhost instance.
+        Returns any database AutoGrow events in the Default Trace with UTC time for the instance for every database on the localhost instance.
 
-        .EXAMPLE
-            Find-DbaDatabaseGrowthEvent -SqlInstance localhost -UseLocalTime
+    .EXAMPLE
+        PS C:\> Find-DbaDbGrowthEvent -SqlInstance localhost -UseLocalTime
 
-            Returns any database AutoGrow events in the Default Trace with the local time of the instance for every database on the localhost instance.
+        Returns any database AutoGrow events in the Default Trace with the local time of the instance for every database on the localhost instance.
 
-        .EXAMPLE
-            Find-DbaDatabaseGrowthEvent -SqlInstance ServerA\SQL2016, ServerA\SQL2014
+    .EXAMPLE
+        PS C:\> Find-DbaDbGrowthEvent -SqlInstance ServerA\SQL2016, ServerA\SQL2014
 
-            Returns any database AutoGrow events in the Default Traces for every database on ServerA\sql2016 & ServerA\SQL2014.
+        Returns any database AutoGrow events in the Default Traces for every database on ServerA\sql2016 & ServerA\SQL2014.
 
-        .EXAMPLE
-            Find-DbaDatabaseGrowthEvent -SqlInstance ServerA\SQL2016 | Format-Table -AutoSize -Wrap
+    .EXAMPLE
+        PS C:\> Find-DbaDbGrowthEvent -SqlInstance ServerA\SQL2016 | Format-Table -AutoSize -Wrap
 
-            Returns any database AutoGrow events in the Default Trace for every database on the ServerA\SQL2016 instance in a table format.
+        Returns any database AutoGrow events in the Default Trace for every database on the ServerA\SQL2016 instance in a table format.
 
-        .EXAMPLE
-            Find-DbaDatabaseGrowthEvent -SqlInstance ServerA\SQL2016 -EventType Shrink
+    .EXAMPLE
+        PS C:\> Find-DbaDbGrowthEvent -SqlInstance ServerA\SQL2016 -EventType Shrink
 
-            Returns any database Auto Shrink events in the Default Trace for every database on the ServerA\SQL2016 instance.
+        Returns any database Auto Shrink events in the Default Trace for every database on the ServerA\SQL2016 instance.
 
-        .EXAMPLE
-            Find-DbaDatabaseGrowthEvent -SqlInstance ServerA\SQL2016 -EventType Growth -FileType Data
+    .EXAMPLE
+        PS C:\> Find-DbaDbGrowthEvent -SqlInstance ServerA\SQL2016 -EventType Growth -FileType Data
 
-            Returns any database Auto Growth events on data files in the Default Trace for every database on the ServerA\SQL2016 instance.
+        Returns any database Auto Growth events on data files in the Default Trace for every database on the ServerA\SQL2016 instance.
+
     #>
     [CmdletBinding()]
     param (
-        [parameter(Mandatory = $true, ValueFromPipeline = $true)]
-        [Alias("ServerInstance", "SqlServer")]
+        [parameter(Mandatory, ValueFromPipeline)]
         [DbaInstance[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [Alias("Databases")]
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
         [ValidateSet('Growth', 'Shrink')]
@@ -105,7 +102,6 @@ function Find-DbaDbGrowthEvent {
         [ValidateSet('Data', 'Log')]
         [string]$FileType,
         [switch]$UseLocalTime,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 
@@ -142,7 +138,7 @@ function Find-DbaDbGrowthEvent {
 
         $eventClassFilter = $eventClass -join ","
 
-        $sql = "
+        $sqlTemplate = "
             BEGIN TRY
                 IF (SELECT CONVERT(INT,[value_in_use]) FROM sys.configurations WHERE [name] = 'default trace enabled' ) = 1
                     BEGIN
@@ -226,16 +222,12 @@ function Find-DbaDbGrowthEvent {
                     1 AS [SessionLoginName],
                     1 AS [SPID]
             END CATCH"
-
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Find-DbaDatabaseGrowthEvent
     }
     process {
         foreach ($instance in $SqlInstance) {
-            Write-Message -Level Verbose -Message "Attempting to connect to $instance"
             try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
-            }
-            catch {
+                $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -249,19 +241,18 @@ function Find-DbaDbGrowthEvent {
                 $dbs = $dbs | Where-Object Name -NotIn $ExcludeDatabase
             }
 
-            #Create dblist name in 'bd1', 'db2' format
+            #Create dblist name in 'db1', 'db2' format
             $dbsList = "'$($($dbs | ForEach-Object {$_.Name}) -join "','")'"
             Write-Message -Level Verbose -Message "Executing query against $dbsList on $instance"
 
-            $sql = $sql -replace '_DatabaseList_', $dbsList
+            $sql = $sqlTemplate -replace '_DatabaseList_', $dbsList
             Write-Message -Level Debug -Message "Executing SQL Statement:`n $sql"
 
             $defaults = 'ComputerName', 'InstanceName', 'SqlInstance', 'EventClass', 'DatabaseName', 'Filename', 'Duration', 'StartTime', 'EndTime', 'ChangeInSize', 'ApplicationName', 'HostName'
 
             try {
                 Select-DefaultView -InputObject $server.Query($sql) -Property $defaults
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Issue collecting data on $server" -Target $server -ErrorRecord $_ -Exception $_.Exception.InnerException.InnerException.InnerException -Continue
             }
         }

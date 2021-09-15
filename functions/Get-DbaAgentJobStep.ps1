@@ -1,94 +1,94 @@
-﻿function Get-DbaAgentJobStep {
+function Get-DbaAgentJobStep {
     <#
-        .SYNOPSIS
-            Gets SQL Agent Job Step information for each instance(s) of SQL Server.
+    .SYNOPSIS
+        Gets SQL Agent Job Step information for each instance(s) of SQL Server.
 
-        .DESCRIPTION
-            The Get-DbaAgentJobStep returns connected SMO object for SQL Agent Job Step for each instance(s) of SQL Server.
+    .DESCRIPTION
+        The Get-DbaAgentJobStep returns connected SMO object for SQL Agent Job Step for each instance(s) of SQL Server.
 
-        .PARAMETER SqlInstance
-            SQL Server name or SMO object representing the SQL Server to connect to. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.
+    .PARAMETER SqlInstance
+        The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.
 
-        .PARAMETER SqlCredential
-            SqlCredential object to connect as. If not specified, current Windows login will be used.
+    .PARAMETER SqlCredential
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
 
-        .PARAMETER Job
-            The job(s) to process - this list is auto-populated from the server. If unspecified, all jobs will be processed.
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
 
-        .PARAMETER ExcludeJob
-            The job(s) to exclude - this list is auto-populated from the server.
+        For MFA support, please use Connect-DbaInstance.
 
-        .PARAMETER NoDisabledJobs
-            Switch will exclude disabled jobs from the output.
+    .PARAMETER Job
+        The job(s) to process - this list is auto-populated from the server. If unspecified, all jobs will be processed.
 
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+    .PARAMETER ExcludeJob
+        The job(s) to exclude - this list is auto-populated from the server.
 
-        .NOTES
-            Tags: Job, Agent
-            Author: Klaas Vandenberghe (@PowerDbaKlaas), http://powerdba.eu
+    .PARAMETER ExcludeDisabledJobs
+        Switch will exclude disabled jobs from the output.
 
-            Website: https://dbatools.io
-            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: MIT https://opensource.org/licenses/MIT
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-        .LINK
-            https://dbatools.io/Get-DbaAgentJobStep
+    .NOTES
+        Tags: Job, Agent
+        Author: Klaas Vandenberghe (@PowerDbaKlaas), http://powerdba.eu
 
-        .EXAMPLE
-            Get-DbaAgentJobStep -SqlInstance localhost
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-            Returns all SQL Agent Job Steps on the local default SQL Server instance
+    .LINK
+        https://dbatools.io/Get-DbaAgentJobStep
 
-        .EXAMPLE
-            Get-DbaAgentJobStep -SqlInstance localhost, sql2016
+    .EXAMPLE
+        PS C:\> Get-DbaAgentJobStep -SqlInstance localhost
 
-            Returns all SQl Agent Job Steps for the local and sql2016 SQL Server instances
+        Returns all SQL Agent Job Steps on the local default SQL Server instance
 
-        .EXAMPLE
-            Get-DbaAgentJobStep -SqlInstance localhost -Job BackupData, BackupDiff
+    .EXAMPLE
+        PS C:\> Get-DbaAgentJobStep -SqlInstance localhost, sql2016
 
-            Returns all SQL Agent Job Steps for the jobs named BackupData and BackupDiff from the local SQL Server instance.
+        Returns all SQL Agent Job Steps for the local and sql2016 SQL Server instances
 
-        .EXAMPLE
-            Get-DbaAgentJobStep -SqlInstance localhost -ExcludeJob BackupDiff
+    .EXAMPLE
+        PS C:\> Get-DbaAgentJobStep -SqlInstance localhost -Job BackupData, BackupDiff
 
-            Returns all SQl Agent Job Steps for the local SQL Server instances, except for the BackupDiff Job.
+        Returns all SQL Agent Job Steps for the jobs named BackupData and BackupDiff from the local SQL Server instance.
 
-        .EXAMPLE
-            Get-DbaAgentJobStep -SqlInstance localhost -NoDisabledJobs
+    .EXAMPLE
+        PS C:\> Get-DbaAgentJobStep -SqlInstance localhost -ExcludeJob BackupDiff
 
-            Returns all SQl Agent Job Steps for the local SQL Server instances, excluding the disabled jobs.
+        Returns all SQL Agent Job Steps for the local SQL Server instances, except for the BackupDiff Job.
 
-        .EXAMPLE
-            $servers | Get-DbaAgentJobStep
+    .EXAMPLE
+        PS C:\> Get-DbaAgentJobStep -SqlInstance localhost -ExcludeDisabledJobs
 
-            Find all of your Job Steps from servers in the $server collection
+        Returns all SQL Agent Job Steps for the local SQL Server instances, excluding the disabled jobs.
+
+    .EXAMPLE
+        PS C:\> $servers | Get-DbaAgentJobStep
+
+        Find all of your Job Steps from SQL Server instances in the $servers collection
+
     #>
     [CmdletBinding()]
     param (
-        [parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
-        [Alias("ServerInstance", "SqlServer")]
+        [parameter(Mandatory, ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]
         $SqlCredential,
         [object[]]$Job,
         [object[]]$ExcludeJob,
-        [switch]$NoDisabledJobs,
-        [Alias('Silent')]
+        [switch]$ExcludeDisabledJobs,
         [switch]$EnableException
     )
 
     process {
         foreach ($instance in $SqlInstance) {
-            Write-Message -Level Verbose -Message "Attempting to connect to $instance"
-
             try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
-            }
-            catch {
+                $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
             Write-Message -Level Verbose -Message "Collecting jobs on $instance"
@@ -100,12 +100,12 @@
             if ($ExcludeJob) {
                 $jobs = $jobs | Where-Object Name -NotIn $ExcludeJob
             }
-            if ($NoDisabledJobs) {
+            if ($ExcludeDisabledJobs) {
                 $jobs = $Jobs | Where-Object IsEnabled -eq $true
             }
             Write-Message -Level Verbose -Message "Collecting job steps on $instance"
             foreach ($agentJobStep in $jobs.jobsteps) {
-                Add-Member -Force -InputObject $agentJobStep -MemberType NoteProperty -Name ComputerName -value $agentJobStep.Parent.Parent.Parent.NetName
+                Add-Member -Force -InputObject $agentJobStep -MemberType NoteProperty -Name ComputerName -value $agentJobStep.Parent.Parent.Parent.ComputerName
                 Add-Member -Force -InputObject $agentJobStep -MemberType NoteProperty -Name InstanceName -value $agentJobStep.Parent.Parent.Parent.ServiceName
                 Add-Member -Force -InputObject $agentJobStep -MemberType NoteProperty -Name SqlInstance -value $agentJobStep.Parent.Parent.Parent.DomainInstanceName
                 Add-Member -Force -InputObject $agentJobStep -MemberType NoteProperty -Name AgentJob -value $agentJobStep.Parent.Name

@@ -1,17 +1,28 @@
-﻿$commandname = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
+$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
 
-Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
+Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+    Context "Validate parameters" {
+        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
+        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'ExcludeUser', 'ExcludeSystem', 'Owner', 'Encrypted', 'Status', 'Access', 'RecoveryModel', 'NoFullBackup', 'NoFullBackupSince', 'NoLogBackup', 'NoLogBackupSince', 'EnableException', 'IncludeLastUsed', 'OnlyAccessible'
+        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
+        It "Should only contain our specific parameters" {
+            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        }
+    }
+}
+
+Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 
     Context "Count system databases on localhost" {
-        $results = Get-DbaDatabase -SqlInstance $script:instance1 -ExcludeAllUserDb
+        $results = Get-DbaDatabase -SqlInstance $script:instance1 -ExcludeUser
         It "reports the right number of databases" {
             $results.Count | Should Be 4
         }
     }
 
-    Context "Check that temppb database is in Simple recovery mode" {
+    Context "Check that tempdb database is in Simple recovery mode" {
         $results = Get-DbaDatabase -SqlInstance $script:instance1 -Database tempdb
         It "tempdb's recovery mode is Simple" {
             $results.RecoveryModel | Should Be "Simple"
@@ -38,10 +49,10 @@ Describe "$commandname Unit Tests" -Tags "UnitTests", Get-DBADatabase {
             Mock Stop-Function { } -ModuleName dbatools
             Mock Test-FunctionInterrupt { } -ModuleName dbatools
         }
-        Mock Connect-SQLInstance -MockWith {
+        Mock Connect-DbaInstance -MockWith {
             [object]@{
-                Name      = 'SQLServerName';
-                Databases = [object]@(
+                Name      = 'SQLServerName'
+                Databases = @(
                     @{
                         Name           = 'db1'
                         Status         = 'Normal'
@@ -50,21 +61,21 @@ Describe "$commandname Unit Tests" -Tags "UnitTests", Get-DBADatabase {
                         RecoveryModel  = 'Full'
                         Owner          = 'sa'
                     }
-                ); #databases
+                ) #databases
             } #object
-        } -ModuleName dbatools #mock connect-sqlserver
+        } -ModuleName dbatools #mock connect-SqlInstance
         function Invoke-QueryRawDatabases { }
         Mock Invoke-QueryRawDatabases -MockWith {
             [object]@(
                 @{
-                    name     = 'db1'
+                    name  = 'db1'
                     state = 0
                     Owner = 'sa'
                 }
             )
         } -ModuleName dbatools
         It "Should Call Stop-Function if NoUserDbs and NoSystemDbs are specified" {
-            Get-DbaDatabase -SqlInstance Dummy -ExcludeAllSystemDb -ExcludeAllUserDb -ErrorAction SilentlyContinue | Should Be
+            Get-DbaDatabase -SqlInstance Dummy -ExcludeSystem -ExcludeUser -ErrorAction SilentlyContinue | Should Be
         }
         It "Validates that Stop Function Mock has been called" {
             $assertMockParams = @{
@@ -87,22 +98,22 @@ Describe "$commandname Unit Tests" -Tags "UnitTests", Get-DBADatabase {
     }
     Context "Output" {
         It "Should have Last Read and Last Write Property when IncludeLastUsed switch is added" {
-            Mock Connect-SQLInstance -MockWith {
+            Mock Connect-DbaInstance -MockWith {
                 [object]@{
                     Name      = 'SQLServerName'
-                    Databases = [object]@{
-                            'db1' = @{
-                                Name           = 'db1'
-                                Status         = 'Normal'
-                                ReadOnly       = 'false'
-                                IsSystemObject = 'false'
-                                RecoveryModel  = 'Full'
-                                Owner          = 'sa'
-                                IsAccessible   = $true
-                            }
-                    }
+                    Databases = @(
+                        @{
+                            Name           = 'db1'
+                            Status         = 'Normal'
+                            ReadOnly       = 'false'
+                            IsSystemObject = 'false'
+                            RecoveryModel  = 'Full'
+                            Owner          = 'sa'
+                            IsAccessible   = $true
+                        }
+                    )
                 } #object
-            } -ModuleName dbatools #mock connect-sqlserver
+            } -ModuleName dbatools #mock connect-SqlInstance
             function Invoke-QueryDBlastUsed { }
             Mock Invoke-QueryDBlastUsed -MockWith {
                 [object]
@@ -125,9 +136,9 @@ Describe "$commandname Unit Tests" -Tags "UnitTests", Get-DBADatabase {
             (Get-DbaDatabase -SqlInstance SQLServerName -IncludeLastUsed).LastRead -ne $null | Should Be $true
             (Get-DbaDatabase -SqlInstance SQLServerName -IncludeLastUsed).LastWrite -ne $null | Should Be $true
         }
-        It "Validates that Connect-SqlInstance Mock has been called" {
+        It "Validates that Connect-DbaInstance Mock has been called" {
             $assertMockParams = @{
-                'CommandName' = 'Connect-SqlInstance'
+                'CommandName' = 'Connect-DbaInstance'
                 'Times'       = 2
                 'Exactly'     = $true
                 'Module'      = 'dbatools'

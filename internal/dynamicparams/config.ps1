@@ -1,4 +1,4 @@
-﻿#region Tepp Data return: FullName
+#region Tepp Data return: FullName
 $ScriptBlock = {
     param (
         $commandName,

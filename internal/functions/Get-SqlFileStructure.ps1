@@ -3,28 +3,28 @@ function Get-SqlFileStructure {
     .SYNOPSIS
     Internal function. Returns custom object that contains file structures on destination paths (\\SqlInstance\m$\mssql\etc\etc\file.mdf) for
     source and destination servers.
-#>
+    #>
     [CmdletBinding()]
     param (
-        [Parameter(Mandatory = $true, Position = 0)]
+        [Parameter(Mandatory, Position = 0)]
         [ValidateNotNullOrEmpty()]
         [object]$source,
-        [Parameter(Mandatory = $true, Position = 1)]
+        [Parameter(Mandatory, Position = 1)]
         [ValidateNotNullOrEmpty()]
         [object]$destination,
-        [Parameter(Mandatory = $false, Position = 2)]
         [bool]$ReuseSourceFolderStructure,
         [PSCredential]$SourceSqlCredential,
         [PSCredential]$DestinationSqlCredential
     )
 
-    $sourceserver = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
+    $sourceserver = Connect-DbaInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
     $source = $sourceserver.DomainInstanceName
-    $destserver = Connect-SqlInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
+    $destserver = Connect-DbaInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
     $destination = $destserver.DomainInstanceName
 
-    $sourcenetbios = Resolve-NetBiosName $sourceserver
-    $destnetbios = Resolve-NetBiosName $destserver
+    # Here we need it for Join-AdminUnc, so FullComputerName would be best with fallback to ComputerName
+    $sourceFullComputerName = Resolve-DbaComputerName -ComputerName $sourceserver
+    $destFullComputerName = Resolve-DbaComputerName -ComputerName $destserver
 
     $dbcollection = @{ };
 
@@ -40,21 +40,20 @@ function Get-SqlFileStructure {
                 $d = @{ }
                 if ($ReuseSourceFolderStructure) {
                     $d.physical = $file.filename
-                }
-                else {
+                } else {
                     $directory = Get-SqlDefaultPaths $destserver data
                     $filename = Split-Path $($file.filename) -leaf
                     $d.physical = "$directory\$filename"
                 }
                 $d.logical = $file.name
-                $d.remotefilename = Join-AdminUnc $destnetbios $d.physical
+                $d.remotefilename = Join-AdminUnc $destFullComputerName $d.physical
                 $destinationfiles.add($file.name, $d)
 
                 # Source File Structure
                 $s = @{ }
                 $s.logical = $file.name
                 $s.physical = $file.filename
-                $s.remotefilename = Join-AdminUnc $sourcenetbios $s.physical
+                $s.remotefilename = Join-AdminUnc $sourceFullComputerName $s.physical
                 $sourcefiles.add($file.name, $s)
             }
         }
@@ -70,15 +69,14 @@ function Get-SqlFileStructure {
                 $logical = "$pre$name"
                 if ($ReuseSourceFolderStructure) {
                     $d.physical = $physical
-                }
-                else {
+                } else {
                     $directory = Get-SqlDefaultPaths $destserver data
                     if ($destserver.VersionMajor -lt 10) { $directory = "$directory\FTDATA" }
                     $filename = Split-Path($physical) -leaf
                     $d.physical = "$directory\$filename"
                 }
                 $d.logical = $logical
-                $d.remotefilename = Join-AdminUnc $destnetbios $d.physical
+                $d.remotefilename = Join-AdminUnc $destFullComputerName $d.physical
                 $destinationfiles.add($logical, $d)
 
                 # Source File Structure
@@ -90,7 +88,7 @@ function Get-SqlFileStructure {
 
                 $s.logical = $logical
                 $s.physical = $physical
-                $s.remotefilename = Join-AdminUnc $sourcenetbios $s.physical
+                $s.remotefilename = Join-AdminUnc $sourceFullComputerName $s.physical
                 $sourcefiles.add($logical, $s)
             }
         }
@@ -100,20 +98,19 @@ function Get-SqlFileStructure {
             $d = @{ }
             if ($ReuseSourceFolderStructure) {
                 $d.physical = $file.filename
-            }
-            else {
+            } else {
                 $directory = Get-SqlDefaultPaths $destserver log
                 $filename = Split-Path $($file.filename) -leaf
                 $d.physical = "$directory\$filename"
             }
             $d.logical = $file.name
-            $d.remotefilename = Join-AdminUnc $destnetbios $d.physical
+            $d.remotefilename = Join-AdminUnc $destFullComputerName $d.physical
             $destinationfiles.add($file.name, $d)
 
             $s = @{ }
             $s.logical = $file.name
             $s.physical = $file.filename
-            $s.remotefilename = Join-AdminUnc $sourcenetbios $s.physical
+            $s.remotefilename = Join-AdminUnc $sourceFullComputerName $s.physical
             $sourcefiles.add($file.name, $s)
         }
 

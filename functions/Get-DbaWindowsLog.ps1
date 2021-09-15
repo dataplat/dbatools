@@ -38,26 +38,27 @@ function Get-DbaWindowsLog {
 
     .NOTES
         Tags: Logging
-        Author: Drew Furgiuele
-        Editor: Friedrich "Fred" Weinmann
+        Author: Drew Furgiuele | Friedrich Weinmann (@FredWeinmann)
+
         Website: https://dbatools.io
-        Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+        Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
         https://dbatools.io/Get-DbaWindowsLog
 
     .EXAMPLE
-        $ErrorLogs = Get-DbaWindowsLog -SqlInstance sql01\sharepoint
-        $ErrorLogs | Where-Object ErrorNumber -eq 18456
+        PS C:\> $ErrorLogs = Get-DbaWindowsLog -SqlInstance sql01\sharepoint
+        PS C:\> $ErrorLogs | Where-Object ErrorNumber -eq 18456
 
         Returns all lines in the errorlogs that have event number 18456 in them
 
-#>
+    #>
+    #This exists to ignore the Script Analyzer rule for Start-Runspace
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseShouldProcessForStateChangingFunctions", "")]
     [CmdletBinding()]
     param (
-        [Parameter(ValueFromPipeline = $true)]
-        [Alias("ServerInstance", "SqlServer")]
+        [Parameter(ValueFromPipeline)]
         [DbaInstanceParameter[]]
         $SqlInstance = $env:COMPUTERNAME,
 
@@ -77,8 +78,7 @@ function Get-DbaWindowsLog {
         [int]
         $MaxRemoteThreads = 2,
 
-        [switch]
-        [Alias('Silent')]$EnableException
+        [switch]$EnableException
     )
 
     begin {
@@ -94,7 +94,7 @@ function Get-DbaWindowsLog {
 
         function Receive-Runspace {
             [Parameter()]
-            Param (
+            param (
                 [switch]
                 $Wait
             )
@@ -117,7 +117,7 @@ function Get-DbaWindowsLog {
 
         #region Scriptblocks
         $scriptBlock_RemoteExecution = {
-            Param (
+            param (
                 [System.DateTime]
                 $Start,
 
@@ -133,7 +133,7 @@ function Get-DbaWindowsLog {
 
             #region Helper function
             function Convert-ErrorRecord {
-                Param (
+                param (
                     $Line
                 )
 
@@ -162,7 +162,7 @@ function Get-DbaWindowsLog {
 
             #region Script that processes an individual file
             $scriptBlock = {
-                Param (
+                param (
                     [System.IO.FileInfo]
                     $File
                 )
@@ -174,8 +174,10 @@ function Get-DbaWindowsLog {
                     while (-not $reader.EndOfStream) {
                         Convert-ErrorRecord -Line $reader.ReadLine()
                     }
+                } catch {
+                    # here to avoid an empty catch
+                    $null = 1
                 }
-                catch { }
             }
             #endregion Script that processes an individual file
 
@@ -242,7 +244,7 @@ function Get-DbaWindowsLog {
         }
 
         $scriptBlock_ParallelRemoting = {
-            Param (
+            param (
                 [DbaInstanceParameter]
                 $SqlInstance,
 
@@ -252,7 +254,7 @@ function Get-DbaWindowsLog {
                 [DateTime]
                 $End,
 
-                [object]
+                [PSCredential]
                 $Credential,
 
                 [int]
@@ -276,13 +278,15 @@ function Get-DbaWindowsLog {
         #region Setup Runspace
         [Collections.Arraylist]$RunspaceCollection = @()
         $InitialSessionState = [System.Management.Automation.Runspaces.InitialSessionState]::CreateDefault()
+        $defaultrunspace = [System.Management.Automation.Runspaces.Runspace]::DefaultRunspace
         $RunspacePool = [RunspaceFactory]::CreateRunspacePool($InitialSessionState)
         $RunspacePool.SetMinRunspaces(1) | Out-Null
         if ($MaxThreads -gt 0) { $null = $RunspacePool.SetMaxRunspaces($MaxThreads) }
         $RunspacePool.Open()
 
         $countStarted = 0
-        $countReceived = 0
+        #Variable marked as unused by PSScriptAnalyzer
+        #$countReceived = 0
         #endregion Setup Runspace
     }
 
@@ -298,5 +302,6 @@ function Get-DbaWindowsLog {
         Receive-Runspace -Wait
         $RunspacePool.Close()
         $RunspacePool.Dispose()
+        [System.Management.Automation.Runspaces.Runspace]::DefaultRunspace = $defaultrunspace
     }
 }

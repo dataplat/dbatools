@@ -11,13 +11,14 @@ function Get-DbaTopResourceUsage {
         Per Michael: "I've posted queries like this before, and others have written many other versions of this query. All these queries are based on sys.dm_exec_query_stats."
 
     .PARAMETER SqlInstance
-        Allows you to specify a comma separated list of servers to query.
+        The target SQL Server instance or instances.
 
     .PARAMETER SqlCredential
-        Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
-        $cred = Get-Credential, this pass this $cred to the param.
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
 
-        Windows Authentication will be used if DestinationSqlCredential is not specified. To connect as a different Windows user, run PowerShell as that user.
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
         The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
@@ -32,7 +33,7 @@ function Get-DbaTopResourceUsage {
         By default, all Types run but you can specify one or more of the following: Duration, Frequency, IO, or CPU
 
     .PARAMETER Limit
-        By default, these query the Top 20 worst offenders (though more than 20 results can be returend if each of the top 20 have more than 1 subsequent result)
+        By default, these query the Top 20 worst offenders (though more than 20 results can be returned if each of the top 20 have more than 1 subsequent result)
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -41,47 +42,51 @@ function Get-DbaTopResourceUsage {
 
     .NOTES
         Tags: Query, Performance
+        Author: Chrissy LeMaire (@cl), netnerds.net
+
         Website: https://dbatools.io
-        Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+        Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
         https://dbatools.io/Get-DbaTopResourceUsage
 
     .EXAMPLE
-        Get-DbaTopResourceUsage -SqlInstance sql2008, sql2012
+        PS C:\> Get-DbaTopResourceUsage -SqlInstance sql2008, sql2012
+
         Return the 80 (20 x 4 types) top usage results by duration, frequency, IO, and CPU servers for servers sql2008 and sql2012
 
     .EXAMPLE
-        Get-DbaTopResourceUsage -SqlInstance sql2008 -Type Duration, Frequency -Database TestDB
+        PS C:\> Get-DbaTopResourceUsage -SqlInstance sql2008 -Type Duration, Frequency -Database TestDB
+
         Return the highest usage by duration (top 20) and frequency (top 20) for the TestDB on sql2008
 
     .EXAMPLE
-        Get-DbaTopResourceUsage -SqlInstance sql2016 -Limit 30
+        PS C:\> Get-DbaTopResourceUsage -SqlInstance sql2016 -Limit 30
+
         Return the highest usage by duration (top 30) and frequency (top 30) for the TestDB on sql2016
 
     .EXAMPLE
-    Get-DbaTopResourceUsage -SqlInstance sql2008, sql2012 -ExcludeSystem
+        PS C:\> Get-DbaTopResourceUsage -SqlInstance sql2008, sql2012 -ExcludeSystem
+
         Return the 80 (20 x 4 types) top usage results by duration, frequency, IO, and CPU servers for servers sql2008 and sql2012 without any System Objects
 
-
     .EXAMPLE
-        Get-DbaTopResourceUsage -SqlInstance sql2016| Select *
+        PS C:\> Get-DbaTopResourceUsage -SqlInstance sql2016| Select-Object *
+
         Return all the columns plus the QueryPlan column
+
     #>
     [CmdletBinding()]
     param (
-        [parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
-        [Alias("ServerInstance", "SqlServer", "SqlServers")]
+        [parameter(Mandatory, ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [Alias("Databases")]
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
         [ValidateSet("All", "Duration", "Frequency", "IO", "CPU")]
         [string[]]$Type = "All",
         [int]$Limit = 20,
-        [Alias('Silent')]
         [switch]$EnableException,
         [switch]$ExcludeSystem
     )
@@ -97,7 +102,7 @@ function Get-DbaTopResourceUsage {
         }
 
         if ($ExcludeDatabase) {
-            $wherenotdb = " and coalesce(db_name(st.dbid), db_name(cast(pa.value AS INT)), 'Resource') notin '$($excludedatabase -join '', '')'"
+            $wherenotdb = " and coalesce(db_name(st.dbid), db_name(cast(pa.value AS INT)), 'Resource') not in ('$($excludedatabase -join '', '')')"
         }
 
         if ($ExcludeSystem) {
@@ -248,24 +253,17 @@ function Get-DbaTopResourceUsage {
 
     process {
         foreach ($instance in $SqlInstance) {
-            Write-Message -Level Verbose -Message "Attempting to connect to $instance"
-
             try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 10
-            }
-            catch {
+                $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 10 -StatementTimeout 0
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
-            }
-            if ($server.ConnectionContext.StatementTimeout -ne 0) {
-                $server.ConnectionContext.StatementTimeout = 0
             }
 
             if ($Type -in "All", "Duration") {
                 try {
                     Write-Message -Level Debug -Message "Executing SQL: $duration"
                     $server.Query($duration) | Select-DefaultView -ExcludeProperty QueryPlan
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "Failure executing query for duration." -ErrorRecord $_ -Target $server -Continue
                 }
             }
@@ -274,8 +272,7 @@ function Get-DbaTopResourceUsage {
                 try {
                     Write-Message -Level Debug -Message "Executing SQL: $frequency"
                     $server.Query($frequency) | Select-DefaultView -ExcludeProperty QueryPlan
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "Failure executing query for frequency." -ErrorRecord $_ -Target $server -Continue
                 }
             }
@@ -284,8 +281,7 @@ function Get-DbaTopResourceUsage {
                 try {
                     Write-Message -Level Debug -Message "Executing SQL: $io"
                     $server.Query($io) | Select-DefaultView -ExcludeProperty QueryPlan
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "Failure executing query for IO." -ErrorRecord $_ -Target $server -Continue
                 }
             }
@@ -294,8 +290,7 @@ function Get-DbaTopResourceUsage {
                 try {
                     Write-Message -Level Debug -Message "Executing SQL: $cpu"
                     $server.Query($cpu) | Select-DefaultView -ExcludeProperty QueryPlan
-                }
-                catch {
+                } catch {
                     Stop-Function -Message "Failure executing query for CPU." -ErrorRecord $_ -Target $server -Continue
                 }
             }

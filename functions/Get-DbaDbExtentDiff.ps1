@@ -1,59 +1,64 @@
 function Get-DbaDbExtentDiff {
     <#
-        .SYNOPSIS
-            What percentage of a database has changed since the last full backup
+    .SYNOPSIS
+        What percentage of a database has changed since the last full backup
 
-        .DESCRIPTION
-            This is only an implementation of the script created by Paul S. Randal to find what percentage of a database has changed since the last full backup
-            https://www.sqlskills.com/blogs/paul/new-script-how-much-of-the-database-has-changed-since-the-last-full-backup/
+    .DESCRIPTION
+        This is only an implementation of the script created by Paul S. Randal to find what percentage of a database has changed since the last full backup.
+        https://www.sqlskills.com/blogs/paul/new-script-how-much-of-the-database-has-changed-since-the-last-full-backup/
 
-        .PARAMETER SqlInstance
-            The target SQL Server instance
+    .PARAMETER SqlInstance
+        The target SQL Server instance
 
-        .PARAMETER SqlCredential
-            Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
-            $scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
-            To connect as a different Windows user, run PowerShell as that user.
+    .PARAMETER SqlCredential
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
 
-        .PARAMETER Database
-            The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
 
-        .PARAMETER ExcludeDatabase
-            The database(s) to exclude - this list is auto-populated from the server
+        For MFA support, please use Connect-DbaInstance.
 
-        .PARAMETER WhatIf
-            Shows what would happen if the command were to run. No actions are actually performed.
+    .PARAMETER Database
+        The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
 
-        .PARAMETER Confirm
-            Prompts you for confirmation before executing any changing operations within the command.
+    .PARAMETER ExcludeDatabase
+        The database(s) to exclude - this list is auto-populated from the server
 
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+    .PARAMETER WhatIf
+        Shows what would happen if the command were to run. No actions are actually performed.
 
-        .NOTES
-            Author: Viorel Ciucu, viorel.ciucu@gmail.com, cviorel.com
+    .PARAMETER Confirm
+        Prompts you for confirmation before executing any changing operations within the command.
 
-            Website: https://dbatools.io
-            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-        .LINK
-            http://dbatools.io/Get-DbaDbExtentDiff
+    .NOTES
+        Tags: Backup, Database
+        Author: Viorel Ciucu, cviorel.com
 
-        .EXAMPLE
-            Get the changes for the DBA database
-            Get-DbaDbExtentDiff -SqlInstance SQL2016 -Database DBA
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
 
-        .EXAMPLE
-            Get the changes for the DB01 database on multiple servers
-            Get-DbaDbExtentDiff -SqlInstance $SQL2017N1, $SQL2017N2, $SQL2016 -Database DB01 -SqlCredential $Cred
+    .LINK
+        https://dbatools.io/Get-DbaDbExtentDiff
+
+    .EXAMPLE
+        PS C:\> Get-DbaDbExtentDiff -SqlInstance SQL2016 -Database DBA
+
+        Get the changes for the DBA database.
+
+    .EXAMPLE
+        PS C:\> $Cred = Get-Credential sqladmin
+        PS C:\> Get-DbaDbExtentDiff -SqlInstance SQL2017N1, SQL2017N2, SQL2016 -Database DB01 -SqlCredential $Cred
+
+        Get the changes for the DB01 database on multiple servers.
+
     #>
-    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "High")]
+    [CmdletBinding()]
     param (
-        [parameter(Mandatory = $true, ValueFromPipeline = $true)]
-        [Alias('ServerInstance', 'SqlServer')]
+        [parameter(Mandatory, ValueFromPipeline)]
         [DbaInstance[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [object[]]$Database,
@@ -69,8 +74,7 @@ function Get-DbaDbExtentDiff {
                 $extents = $rex.Matches($f)
                 if ($extents.Count -eq 1) {
                     $res += 1
-                }
-                else {
+                } else {
                     $pages = [int]$extents[1].Groups['extent'].Value - [int]$extents[0].Groups['extent'].Value
                     $res += $pages / 8 + 1
                 }
@@ -83,11 +87,9 @@ function Get-DbaDbExtentDiff {
 
         foreach ($instance in $SqlInstance) {
             try {
-                Write-Message -Level Verbose -Message "Connecting to $instance"
-                $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential -NonPooled
-            }
-            catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+                $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential -NonPooledConnection
+            } catch {
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
             $dbs = $server.Databases
@@ -104,13 +106,13 @@ function Get-DbaDbExtentDiff {
             foreach ($db in $dbs) {
                 if ($db.IsAccessible -ne $true) {
                     Write-Message -Level Verbose -Message "$db is not accessible on $instance, skipping"
-                }
-                else {
+                } else {
                     $sourcedbs += $db
                 }
             }
 
-            if ($server.VersionMajor -ge 14 ) {
+            #Available from 2016 SP2
+            if ($server.Version -ge [version]'13.0.5026') {
                 foreach ($db in $sourcedbs) {
                     $DBCCPageQueryDMV = "
                         SELECT
@@ -121,7 +123,7 @@ function Get-DbaDbExtentDiff {
                     "
                     $DBCCPageResults = $server.Query($DBCCPageQueryDMV, $db.Name)
                     [pscustomobject]@{
-                        ComputerName   = $server.NetName
+                        ComputerName   = $server.ComputerName
                         InstanceName   = $server.ServiceName
                         SqlInstance    = $server.DomainInstanceName
                         DatabaseName   = $db.Name
@@ -130,8 +132,7 @@ function Get-DbaDbExtentDiff {
                         ChangedPerc    = [math]::Round($DBCCPageResults.ChangedPerc, 2)
                     }
                 }
-            }
-            else {
+            } else {
                 $MasterFilesQuery = "
                         SELECT [file_id], [size], database_id, db_name(database_id) as dbname FROM master.sys.master_files
                         WHERE [type_desc] = N'ROWS'
@@ -150,13 +151,13 @@ function Get-DbaDbExtentDiff {
                             $pageID = $extentID + 6
                             $DBCCPageQuery = "DBCC PAGE ('$($results.dbname)', $($results.file_id), $pageID, 3)  WITH TABLERESULTS, NO_INFOMSGS"
                             $DBCCPageResults = $server.Query($DBCCPageQuery)
-                            $dbExtents += $DBCCPageResults | Where-Object { $_.VALUE -eq '    CHANGED' -And $_.ParentObject -like 'DIFF_MAP*'}
+                            $dbExtents += $DBCCPageResults | Where-Object { $_.VALUE -eq '    CHANGED' -And $_.ParentObject -like 'DIFF_MAP*' }
                             $extentID = $extentID + 511232
                         }
                     }
                     $extents = Get-DbaExtent $dbExtents.Field
                     [pscustomobject]@{
-                        ComputerName   = $server.NetName
+                        ComputerName   = $server.ComputerName
                         InstanceName   = $server.ServiceName
                         SqlInstance    = $server.DomainInstanceName
                         DatabaseName   = $db.Name
@@ -166,6 +167,9 @@ function Get-DbaDbExtentDiff {
                     }
                 }
             }
+
+            # Close non-pooled connection as this is not done automatically. If it is a reused Server SMO, connection will be opened again automatically on next request.
+            $null = $server | Disconnect-DbaInstance
         }
     }
 }

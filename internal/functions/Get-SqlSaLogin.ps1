@@ -9,12 +9,11 @@ function Get-SqlSaLogin {
     #>
     [CmdletBinding()]
     param (
-        [Parameter(Mandatory = $true)]
-        [Alias("ServerInstance", "SqlServer")]
+        [Parameter(Mandatory)]
         [object]$SqlInstance,
         [PSCredential]$SqlCredential
     )
-    $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
+    $server = Connect-DbaInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
     $sa = $server.Logins | Where-Object Id -eq 1
     return $sa.Name
 }

@@ -1,39 +1,38 @@
 function Show-Notification {
     param(
+        $GalleryVersion,
         $Title = "dbatools update",
-        $Text = "Version $galleryVersion is now available"
+        $Text = "Version $GalleryVersion is now available"
     )
     # ensure the dbatools 'app' exists in registry so that it doesn't immediately disappear from Action Center
-    $regpath = 'HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Notifications\Settings'
-    $appid = "dbatools"
+    $regPath = 'HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Notifications\Settings'
+    $appId = "{1AC14E77-02E7-4E5D-B744-2EB1AE5198B7}\WindowsPowerShell\v1.0\powershell.exe"
 
-    if (!(Test-Path -Path "$regpath\$appid")) {
-        Write-Verbose "Adding required registry entry at $("$regpath\$appid")"
-        $null = New-Item -Path $regpath -Name $appid
-        $null = New-ItemProperty -Path "$regpath\$appid" -Name 'ShowInActionCenter' -Value 1 -PropertyType 'DWORD'
+    if (!(Test-Path -Path "$regPath\$appId")) {
+        Write-Verbose "Adding required registry entry at $("$regPath\$appId")"
+        $null = New-Item -Path "$regPath\$appId" -Force
+        $null = New-ItemProperty -Path "$regPath\$appId" -Name 'ShowInActionCenter' -Value 1 -PropertyType 'DWORD' -Force
     }
-
     $null = [Windows.UI.Notifications.ToastNotificationManager, Windows.UI.Notifications, ContentType = WindowsRuntime]
-    $templateType = [Windows.UI.Notifications.ToastTemplateType]::ToastImageAndText02
-    $template = [Windows.UI.Notifications.ToastNotificationManager]::GetTemplateContent($templateType)
+    $template = [Windows.UI.Notifications.ToastTemplateType]::ToastImageAndText02
+    [xml]$toastTemplate = ([Windows.UI.Notifications.ToastNotificationManager]::GetTemplateContent($template).GetXml())
 
-    $toastXml = [xml]$template.GetXml()
-    $toastTextElements = $toastXml.GetElementsByTagName("text")
+    [xml]$toastTemplate = "
+    <toast launch=`"app-defined-string`">
+        <visual>
+            <binding template=`"ToastGeneric`">
+                <text>`"$Title`"</text>
+                <text>`"$Text`"</text>
+            </binding>
+        </visual>
+        <actions>
+            <action activationType=`"background`" content=`"OK`" arguments=`"later`"/>
+        </actions>
+    </toast>"
 
-    $null = $toastTextElements[0].AppendChild($toastXml.CreateTextNode($Title))
-    $null = $toastTextElements[1].AppendChild($toastXml.CreateTextNode($Text))
+    $toastXml = New-Object -TypeName Windows.Data.Xml.Dom.XmlDocument
+    $toastXml.LoadXml($toastTemplate.OuterXml)
 
-    $image = $toastXml.GetElementsByTagName("image")
-    $base = $module.ModuleBase
-
-    $image.setAttribute("src", "$base\bin\thor.png")
-    $image.setAttribute("alt", "thor")
-
-    $xml = New-Object Windows.Data.Xml.Dom.XmlDocument
-    $xml.LoadXml($toastXml.OuterXml)
-
-    $toast = [Windows.UI.Notifications.ToastNotification]::new($xml)
-    $toast.Tag = "PowerShell"
-    $toast.Group = "dbatools"
-    $null = [Windows.UI.Notifications.ToastNotificationManager]::CreateToastNotifier("dbatools").Show($toast)
+    $notify = [Windows.UI.Notifications.ToastNotificationManager]::CreateToastNotifier($appId)
+    $notify.Show($toastXml)
 }

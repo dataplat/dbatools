@@ -11,7 +11,7 @@ function Get-DbaStartupParameter {
         See https://msdn.microsoft.com/en-us/library/ms190737.aspx for more information.
 
     .PARAMETER SqlInstance
-        The SQL Server instance to connect to.
+        The target SQL Server instance or instances.
 
     .PARAMETER Credential
         Allows you to login to servers using alternate Windows credentials.
@@ -24,35 +24,37 @@ function Get-DbaStartupParameter {
     .PARAMETER EnableException
         If this switch is enabled, exceptions will be thrown to the caller, which will need to perform its own exception processing. Otherwise, the function will try to catch the exception, interpret it and provide a friendly error message.
 
-    .EXAMPLE
-        Get-DbaStartupParameter -SqlInstance sql2014
-
-        Logs into SQL WMI as the current user then displays the values for numerous startup parameters.
-
-    .EXAMPLE
-        $wincred = Get-Credential ad\sqladmin
-        Get-DbaStartupParameter -SqlInstance sql2014 -Credential $wincred -Simple
-
-        Logs in to WMI using the ad\sqladmin credential and gathers simplified information about the SQL Server Startup Parameters.
-
     .NOTES
         Tags: WSMan, SQLWMI, Memory
-        dbatools PowerShell module (https://dbatools.io)
-        Copyright (C) 2016 Chrissy LeMaire
+        Author: Chrissy LeMaire (@cl), netnerds.net
+
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
         https://dbatools.io/Get-DbaStartupParameter
-#>
+
+    .EXAMPLE
+        PS C:\> Get-DbaStartupParameter -SqlInstance sql2014
+
+        Logs into SQL WMI as the current user then displays the values for numerous startup parameters.
+
+    .EXAMPLE
+        PS C:\> $wincred = Get-Credential ad\sqladmin
+        PS C:\> Get-DbaStartupParameter -SqlInstance sql2014 -Credential $wincred -Simple
+
+        Logs in to WMI using the ad\sqladmin credential and gathers simplified information about the SQL Server Startup Parameters.
+
+    #>
     [CmdletBinding()]
-    param ([parameter(ValueFromPipeline, Mandatory = $true)]
-        [Alias("ServerInstance", "SqlServer")]
+    param (
+        [parameter(ValueFromPipeline, Mandatory)]
         [DbaInstanceParameter[]]$SqlInstance,
         [Alias("SqlCredential")]
         [PSCredential]$Credential,
         [switch]$Simple,
-        [switch]
-        [Alias('Silent')]$EnableException
+        [switch]$EnableException
     )
 
     process {
@@ -64,7 +66,6 @@ function Get-DbaStartupParameter {
 
                 $computerName = (Resolve-DbaNetworkName -ComputerName $computerName).FullComputerName
 
-                Write-Message -Level Verbose -message "Attempting to connect to $computerName"
 
                 if ($instanceName.Length -eq 0) { $instanceName = "MSSQLSERVER" }
 
@@ -92,9 +93,8 @@ function Get-DbaStartupParameter {
 
                     if ($traceflags.length -eq 0) {
                         $traceflags = "None"
-                    }
-                    else {
-                        $traceflags = $traceflags.substring(2)
+                    } else {
+                        [int[]]$traceflags = $traceflags.substring(2)
                     }
 
                     if ($Simple -eq $true) {
@@ -105,11 +105,10 @@ function Get-DbaStartupParameter {
                             MasterData      = $masterdata.TrimStart('-d')
                             MasterLog       = $masterlog.TrimStart('-l')
                             ErrorLog        = $errorlog.TrimStart('-e')
-                            TraceFlags      = $traceflags -join ','
+                            TraceFlags      = $traceflags
                             ParameterString = $wmisvc.StartupParameters
                         }
-                    }
-                    else {
+                    } else {
                         # From https://msdn.microsoft.com/en-us/library/ms190737.aspx
 
                         $commandpromptparm = $params | Where-Object { $_ -eq '-c' }
@@ -157,9 +156,9 @@ function Get-DbaStartupParameter {
                             InstanceName         = $instanceName
                             SqlInstance          = $ogInstance
                             MasterData           = $masterdata -replace '^-[dD]', ''
-                            MasterLog            = $masterlog  -replace '^-[lL]', ''
-                            ErrorLog             = $errorlog   -replace '^-[eE]', ''
-                            TraceFlags           = $traceflags -join ','
+                            MasterLog            = $masterlog -replace '^-[lL]', ''
+                            ErrorLog             = $errorlog -replace '^-[eE]', ''
+                            TraceFlags           = $traceflags
                             CommandPromptStart   = $commandprompt
                             MinimalStart         = $minimalstart
                             MemoryToReserve      = $memorytoreserve
@@ -178,12 +177,10 @@ function Get-DbaStartupParameter {
                 # It's sorta like Invoke-Command.
                 if ($credential) {
                     Invoke-ManagedComputerCommand -Server $computerName -Credential $credential -ScriptBlock $Scriptblock -ArgumentList $computerName, $displayname
-                }
-                else {
+                } else {
                     Invoke-ManagedComputerCommand -Server $computerName -ScriptBlock $Scriptblock -ArgumentList $computerName, $displayname
                 }
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "$instance failed." -ErrorRecord $_ -Continue -Target $instance
             }
         }

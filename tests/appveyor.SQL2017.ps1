@@ -14,7 +14,6 @@ Set-Service -Name SQLBrowser -StartupType Automatic -WarningAction SilentlyConti
 Set-Service -Name "SQLAgent`$$instance" -StartupType Automatic -WarningAction SilentlyContinue
 Start-Service SQLBrowser -ErrorAction SilentlyContinue -WarningAction SilentlyContinue
 
-
 Write-Host -Object "$indent Changing the port on $instance to $port" -ForegroundColor DarkGreen
 $wmi = New-Object Microsoft.SqlServer.Management.Smo.Wmi.ManagedComputer
 $uri = "ManagedComputer[@Name='$env:COMPUTERNAME']/ ServerInstance[@Name='$instance']/ServerProtocol[@Name='Tcp']"
@@ -25,8 +24,10 @@ foreach ($ipAddress in $Tcp.IPAddresses) {
 }
 $Tcp.Alter()
 Write-Host -Object "$indent Starting $instance" -ForegroundColor DarkGreen
-Restart-Service "MSSQL`$$instance" -WarningAction SilentlyContinue
-Restart-Service "SQLAgent`$$instance" -WarningAction SilentlyContinue
+#Restart-Service "MSSQL`$$instance" -WarningAction SilentlyContinue -Force
+#Restart-Service "SQLAgent`$$instance" -WarningAction SilentlyContinue -Force
+
+$null = Enable-DbaAgHadr -SqlInstance $sqlinstance -Confirm:$false -Force
 
 do {
     Start-Sleep 1
@@ -40,3 +41,18 @@ do {
     Start-Sleep 1
 }
 while ((Get-Service "SQLAgent`$$instance").Status -ne 'Running' -and $z++ -lt 10)
+
+
+$server = Connect-DbaInstance -SqlInstance $sqlinstance
+$computername = $server.NetName
+$servicename = $server.ServiceName
+if ($servicename -eq 'MSSQLSERVER') {
+    $instancename = "$computername"
+} else {
+    $instancename = "$computername\$servicename"
+}
+
+$server = Connect-DbaInstance -SqlInstance $sqlinstance
+$server.Query("IF NOT EXISTS (select * from sys.symmetric_keys where name like '%DatabaseMasterKey%') CREATE MASTER KEY ENCRYPTION BY PASSWORD = '<StrongPassword>'")
+$server.Query("IF EXISTS ( SELECT * FROM sys.tcp_endpoints WHERE name = 'End_Mirroring') DROP ENDPOINT endpoint_mirroring")
+$server.Query("CREATE CERTIFICATE dbatoolsci_AGCert WITH SUBJECT = 'AG Certificate'")

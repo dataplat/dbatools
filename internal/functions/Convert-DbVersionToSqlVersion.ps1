@@ -14,12 +14,13 @@ Convert-DbVersionToSqlVersion -dbversion 856
 
 Returns "SQL Server vNext CTP1"
 
-#>
+    #>
     param (
         [string]$dbversion
     )
 
     $dbversion = switch ($dbversion) {
+        869 { "SQL Server 2017" }
         856 { "SQL Server vNext CTP1" }
         852 { "SQL Server 2016" }
         829 { "SQL Server 2016 Prerelease" }

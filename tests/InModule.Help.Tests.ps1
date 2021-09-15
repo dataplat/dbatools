@@ -12,6 +12,23 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
     To test help for the commands in a module, place this file in the module folder.
     To test any module from any path, use https://github.com/juneb/PesterTDD/Module.Help.Tests.ps1
 #>
+# quit failing appveyor
+if ($env:appveyor) {
+    $names = @(
+        'Microsoft.SqlServer.XEvent.Linq',
+        'Microsoft.SqlServer.Management.XEvent',
+        'Microsoft.SqlServer.Management.XEventDbScoped',
+        'Microsoft.SqlServer.Management.XEventDbScopedEnum',
+        'Microsoft.SqlServer.Management.XEventEnum',
+        'Microsoft.SqlServer.Replication',
+        'Microsoft.SqlServer.Rmo'
+    )
+
+    foreach ($name in $names) {
+        Add-Type -Path "C:\github\dbatools\bin\smo\$name.dll" -ErrorAction SilentlyContinue
+    }
+}
+
 if ($SkipHelpTest) { return }
 . "$PSScriptRoot\InModule.Help.Exceptions.ps1"
 
@@ -66,6 +83,24 @@ foreach ($command in $commands) {
             # Should be at least one example description
             It "gets example help from $commandName" {
                 ($Help.Examples.Example.Remarks | Select-Object -First 1).Text | Should Not BeNullOrEmpty
+            }
+            $testhelperrors += 1
+        }
+        # :-(
+        $testhelpall += 1
+        if ([string]::IsNullOrEmpty($help.relatedLinks.NavigationLink)) {
+            # Should have a navigation link
+            It "There should be a navigation link for $commandName" {
+                $help.relatedLinks.NavigationLink | Should -Not -BeNullOrEmpty -Because "We need a .LINK for Get-Help -Online to work"
+            }
+            $testhelperrors += 1
+        }
+        # :-(
+        $testhelpall += 1
+        if (-not ([string]::Equals($help.relatedLinks.NavigationLink.uri, "https://dbatools.io/$commandName"))) {
+            # the link should point to the correct page
+            It "The link for $commandName should be https://dbatools.io/$commandName" {
+                $help.relatedLinks[0].NavigationLink.uri | Should -MatchExactly "https://dbatools.io/$commandName"  -Because "The web-page should be the one for the command!"
             }
             $testhelperrors += 1
         }
@@ -124,8 +159,7 @@ foreach ($command in $commands) {
                         }
                         $testparamserrors += 1
                     }
-                }
-                elseif ($parameter.ParameterType.FullName -in $HelpTestEnumeratedArrays) {
+                } elseif ($parameter.ParameterType.FullName -in $HelpTestEnumeratedArrays) {
                     # Enumerations often have issues with the typename not being reliably available
                     $names = [Enum]::GetNames($parameter.ParameterType.DeclaredMembers[0].ReturnType)
                     if ($parameterHelp.parameterValueGroup.parameterValue -ne $names) {
@@ -135,8 +169,7 @@ foreach ($command in $commands) {
                         }
                         $testparamserrors += 1
                     }
-                }
-                else {
+                } else {
                     # To avoid calling Trim method on a null object.
                     $helpType = if ($parameterHelp.parameterValue) { $parameterHelp.parameterValue.Trim() }
                     if ($helpType -ne $codeType ) {

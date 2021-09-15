@@ -4,35 +4,31 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
-        $paramCount = 5
-        $defaultParamCount = 11
-        [object[]]$params = (Get-ChildItem function:\Test-DbaPowerPlan).Parameters.Keys
-        $knownParameters = 'ComputerName', 'Credential', 'CustomPowerPlan', 'Detailed', 'EnableException'
-        It "Should contain our specific parameters" {
-            ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
-        }
-        It "Should only contain $paramCount parameters" {
-            $params.Count - $defaultParamCount | Should Be $paramCount
+        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
+        [object[]]$knownParameters = 'ComputerName', 'Credential', 'PowerPlan', 'EnableException'
+        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
+        It "Should only contain our specific parameters" {
+            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
         }
     }
 }
 
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
+    BeforeAll {
+        $null = Set-DbaPowerPlan -ComputerName $script:instance2 -PowerPlan 'Balanced'
+    }
     Context "Command actually works" {
         It "Should return result for the server" {
             $results = Test-DbaPowerPlan -ComputerName $script:instance2
             $results | Should Not Be Null
+            $results.ActivePowerPlan | Should Be 'Balanced'
+            $results.RecommendedPowerPlan | Should Be 'High performance'
+            $results.RecommendedInstanceId | Should Be '8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c'
+            $results.IsBestPractice | Should Be $false
         }
-        It "Should state 'Balanced' plan does not meet best practice" {
-            $results = Test-DbaPowerPlan -ComputerName $script:instance2 -CustomPowerPlan 'Balanced'
-            $results.isBestPractice | Should Be $false
-        }
-    }
-
-    Context "Fails gracefully" {
-        It "Should throw on an invalid Connection" {
-            Mock -ModuleName 'dbatools' Connect-SqlInstance { throw }
-            { Test-DbaPowerPlan -ComputerName 'MadeUpServer' -EnableException 3>$null } | Should Throw
+        It "Use 'Balanced' plan as best practice" {
+            $results = Test-DbaPowerPlan -ComputerName $script:instance2 -PowerPlan 'Balanced'
+            $results.IsBestPractice | Should Be $true
         }
     }
 }

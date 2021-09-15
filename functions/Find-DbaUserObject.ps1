@@ -1,65 +1,68 @@
-#ValidationTags#Messaging#
 function Find-DbaUserObject {
     <#
-        .SYNOPSIS
-            Searches SQL Server to find user-owned objects (ie. not dbo or sa) or for any object owned by a specific user specified by the Pattern parameter.
+    .SYNOPSIS
+        Searches SQL Server to find user-owned objects (i.e. not dbo or sa) or for any object owned by a specific user specified by the Pattern parameter.
 
-        .DESCRIPTION
-            Looks at the below list of objects to see if they are either owned by a user or a specific user (using the parameter -Pattern)
-                Database Owner
-                Agent Job Owner
-                Used in Credential
-                USed in Proxy
-                SQL Agent Steps using a Proxy
-                Endpoints
-                Server Roles
-                Database Schemas
-                Database Roles
-                Database Assembles
-                Database Synonyms
+    .DESCRIPTION
+        Looks at the below list of objects to see if they are either owned by a user or a specific user (using the parameter -Pattern)
+        Database Owner
+        Agent Job Owner
+        Used in Credential
+        USed in Proxy
+        SQL Agent Steps using a Proxy
+        Endpoints
+        Server Roles
+        Database Schemas
+        Database Roles
+        Database Assembles
+        Database Synonyms
 
-        .PARAMETER SqlInstance
-            SqlInstance name or SMO object representing the SQL Server to connect to. This can be a collection and receive pipeline input
+    .PARAMETER SqlInstance
+        The target SQL Server instance or instances. This can be a collection and receive pipeline input
 
-        .PARAMETER SqlCredential
-            PSCredential object to connect as. If not specified, current Windows login will be used.
+    .PARAMETER SqlCredential
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
 
-        .PARAMETER Pattern
-            The regex pattern that the command will search for
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
 
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+        For MFA support, please use Connect-DbaInstance.
 
-        .NOTES
-            Tags: Object
-            Author: Stephen Bennett, https://sqlnotesfromtheunderground.wordpress.com/
-            dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
-            Copyright (C) 2016 Chrissy LeMaire
-            License: MIT https://opensource.org/licenses/MIT
+    .PARAMETER Pattern
+        The regex pattern that the command will search for
 
-        .LINK
-            https://dbatools.io/Find-DbaUserObject
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-        .EXAMPLE
-            Find-DbaUserObject -SqlInstance DEV01 -Pattern ad\stephen
+    .NOTES
+        Tags: Object
+        Author: Stephen Bennett, https://sqlnotesfromtheunderground.wordpress.com/
 
-            Searches user objects for owner ad\stephen
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-        .EXAMPLE
-            Find-DbaUserObject -SqlInstance DEV01 -Verbose
+    .LINK
+        https://dbatools.io/Find-DbaUserObject
 
-            Shows all user owned (non-sa, non-dbo) objects and verbose output
+    .EXAMPLE
+        PS C:\> Find-DbaUserObject -SqlInstance DEV01 -Pattern ad\stephen
+
+        Searches user objects for owner ad\stephen
+
+    .EXAMPLE
+        PS C:\> Find-DbaUserObject -SqlInstance DEV01 -Verbose
+
+        Shows all user owned (non-sa, non-dbo) objects and verbose output
+
     #>
     [CmdletBinding()]
-    Param (
-        [parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
-        [Alias("ServerInstance", "SqlServer", "SqlInstances")]
+    param (
+        [parameter(Mandatory, ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [string]$Pattern,
-        [Alias('Silent')]
         [switch]$EnableException
     )
     begin {
@@ -70,12 +73,9 @@ function Find-DbaUserObject {
     }
     process {
         foreach ($instance in $SqlInstance) {
-            Write-Message -Level Verbose -Message "Attempting to connect to $instance"
-
             try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
-            }
-            catch {
+                $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -89,16 +89,17 @@ function Find-DbaUserObject {
                 $endPoints = $server.Endpoints | Where-Object { $_.Owner -ne $saname }
 
                 Write-Message -Level Verbose -Message "Gather data on Agent Jobs ownership"
-                $jobs = $server.JobServer.Jobs | Where-Object { $_.OwnerLoginName -ne $saname }
-            }
-            else {
+                #Variable marked as unused by PSScriptAnalyzer
+                #$jobs = $server.JobServer.Jobs | Where-Object { $_.OwnerLoginName -ne $saname }
+            } else {
                 Write-Message -Level Verbose -Message "Gathering data on instance objects"
                 $creds = $server.Credentials | Where-Object { $_.Identity -match $pattern }
                 $proxies = $server.JobServer.ProxyAccounts | Where-Object { $_.CredentialIdentity -match $pattern }
                 $endPoints = $server.Endpoints | Where-Object { $_.Owner -match $pattern }
 
                 Write-Message -Level Verbose -Message "Gather data on Agent Jobs ownership"
-                $jobs = $server.JobServer.Jobs | Where-Object { $_.OwnerLoginName -match $pattern }
+                #Variable marked as unused by PSScriptAnalyzer
+                #$jobs = $server.JobServer.Jobs | Where-Object { $_.OwnerLoginName -match $pattern }
             }
 
             ## dbs
@@ -107,7 +108,7 @@ function Find-DbaUserObject {
                     Write-Message -Level Verbose -Message "checking if $db is owned "
 
                     [PSCustomObject]@{
-                        ComputerName = $server.NetName
+                        ComputerName = $server.ComputerName
                         InstanceName = $server.ServiceName
                         SqlInstance  = $server.DomainInstanceName
                         Type         = "Database"
@@ -116,11 +117,10 @@ function Find-DbaUserObject {
                         Parent       = $db.Parent.Name
                     }
                 }
-            }
-            else {
+            } else {
                 foreach ($db in $server.Databases | Where-Object { $_.Owner -match $pattern }) {
                     [PSCustomObject]@{
-                        ComputerName = $server.NetName
+                        ComputerName = $server.ComputerName
                         InstanceName = $server.ServiceName
                         SqlInstance  = $server.DomainInstanceName
                         Type         = "Database"
@@ -135,7 +135,7 @@ function Find-DbaUserObject {
             if (-not $pattern) {
                 foreach ($job in $server.JobServer.Jobs | Where-Object { $_.OwnerLoginName -ne $saname }) {
                     [PSCustomObject]@{
-                        ComputerName = $server.NetName
+                        ComputerName = $server.ComputerName
                         InstanceName = $server.ServiceName
                         SqlInstance  = $server.DomainInstanceName
                         Type         = "Agent Job"
@@ -144,11 +144,10 @@ function Find-DbaUserObject {
                         Parent       = $job.Parent.Name
                     }
                 }
-            }
-            else {
+            } else {
                 foreach ($job in $server.JobServer.Jobs | Where-Object { $_.OwnerLoginName -match $pattern }) {
                     [PSCustomObject]@{
-                        ComputerName = $server.NetName
+                        ComputerName = $server.ComputerName
                         InstanceName = $server.ServiceName
                         SqlInstance  = $server.DomainInstanceName
                         Type         = "Agent Job"
@@ -164,7 +163,7 @@ function Find-DbaUserObject {
                 ## list credentials using the account
 
                 [PSCustomObject]@{
-                    ComputerName = $server.NetName
+                    ComputerName = $server.ComputerName
                     InstanceName = $server.ServiceName
                     SqlInstance  = $server.DomainInstanceName
                     Type         = "Credential"
@@ -177,7 +176,7 @@ function Find-DbaUserObject {
             ## proxies
             foreach ($proxy in $proxies) {
                 [PSCustomObject]@{
-                    ComputerName = $server.NetName
+                    ComputerName = $server.ComputerName
                     InstanceName = $server.ServiceName
                     SqlInstance  = $server.DomainInstanceName
                     Type         = "Proxy"
@@ -190,7 +189,7 @@ function Find-DbaUserObject {
                 foreach ($job in $server.JobServer.Jobs) {
                     foreach ($step in $job.JobSteps | Where-Object { $_.ProxyName -eq $proxy.Name }) {
                         [PSCustomObject]@{
-                            ComputerName = $server.NetName
+                            ComputerName = $server.ComputerName
                             InstanceName = $server.ServiceName
                             SqlInstance  = $server.DomainInstanceName
                             Type         = "Agent Step"
@@ -206,7 +205,7 @@ function Find-DbaUserObject {
             ## endpoints
             foreach ($endPoint in $endPoints) {
                 [PSCustomObject]@{
-                    ComputerName = $server.NetName
+                    ComputerName = $server.ComputerName
                     InstanceName = $server.ServiceName
                     SqlInstance  = $server.DomainInstanceName
                     Type         = "Endpoint"
@@ -221,7 +220,7 @@ function Find-DbaUserObject {
                 foreach ($role in $server.Roles | Where-Object { $_.Owner -ne $saname }) {
                     Write-Message -Level Verbose -Message "checking if $db is owned "
                     [PSCustomObject]@{
-                        ComputerName = $server.NetName
+                        ComputerName = $server.ComputerName
                         InstanceName = $server.ServiceName
                         SqlInstance  = $server.DomainInstanceName
                         Type         = "Server Role"
@@ -230,11 +229,10 @@ function Find-DbaUserObject {
                         Parent       = $role.Parent.Name
                     }
                 }
-            }
-            else {
+            } else {
                 foreach ($role in $server.Roles | Where-Object { $_.Owner -match $pattern }) {
                     [PSCustomObject]@{
-                        ComputerName = $server.NetName
+                        ComputerName = $server.ComputerName
                         InstanceName = $server.ServiceName
                         SqlInstance  = $server.DomainInstanceName
                         Type         = "Server Role"
@@ -253,13 +251,12 @@ function Find-DbaUserObject {
 
                 if (-not $pattern) {
                     $schemas = $db.Schemas | Where-Object { $_.IsSystemObject -eq 0 -and $_.Owner -ne "dbo" -and $sysSchemas -notcontains $_.Owner }
-                }
-                else {
+                } else {
                     $schemas = $db.Schemas | Where-Object { $_.IsSystemObject -eq 0 -and $_.Owner -match $pattern -and $sysSchemas -notcontains $_.Owner }
                 }
                 foreach ($schema in $schemas) {
                     [PSCustomObject]@{
-                        ComputerName = $server.NetName
+                        ComputerName = $server.ComputerName
                         InstanceName = $server.ServiceName
                         SqlInstance  = $server.DomainInstanceName
                         Type         = "Schema"
@@ -272,13 +269,12 @@ function Find-DbaUserObject {
                 ## database roles
                 if (-not $pattern) {
                     $roles = $db.Roles | Where-Object { $_.IsSystemObject -eq 0 -and $_.Owner -ne "dbo" }
-                }
-                else {
+                } else {
                     $roles = $db.Roles | Where-Object { $_.IsSystemObject -eq 0 -and $_.Owner -match $pattern }
                 }
                 foreach ($role in $roles) {
                     [PSCustomObject]@{
-                        ComputerName = $server.NetName
+                        ComputerName = $server.ComputerName
                         InstanceName = $server.ServiceName
                         SqlInstance  = $server.DomainInstanceName
                         Type         = "Database Role"
@@ -291,14 +287,13 @@ function Find-DbaUserObject {
                 ## assembly
                 if (-not $pattern) {
                     $assemblies = $db.Assemblies | Where-Object { $_.IsSystemObject -eq 0 -and $_.Owner -ne "dbo" }
-                }
-                else {
+                } else {
                     $assemblies = $db.Assemblies | Where-Object { $_.IsSystemObject -eq 0 -and $_.Owner -match $pattern }
                 }
 
                 foreach ($assembly in $assemblies) {
                     [PSCustomObject]@{
-                        ComputerName = $server.NetName
+                        ComputerName = $server.ComputerName
                         InstanceName = $server.ServiceName
                         SqlInstance  = $server.DomainInstanceName
                         Type         = "Database Assembly"
@@ -311,14 +306,13 @@ function Find-DbaUserObject {
                 ## synonyms
                 if (-not $pattern) {
                     $synonyms = $db.Synonyms | Where-Object { $_.IsSystemObject -eq 0 -and $_.Owner -ne "dbo" }
-                }
-                else {
+                } else {
                     $synonyms = $db.Synonyms | Where-Object { $_.IsSystemObject -eq 0 -and $_.Owner -match $pattern }
                 }
 
                 foreach ($synonym in $synonyms) {
                     [PSCustomObject]@{
-                        ComputerName = $server.NetName
+                        ComputerName = $server.ComputerName
                         InstanceName = $server.ServiceName
                         SqlInstance  = $server.DomainInstanceName
                         Type         = "Database Synonyms"

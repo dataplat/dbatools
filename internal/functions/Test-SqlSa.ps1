@@ -2,12 +2,11 @@ function Test-SqlSa {
     <#
     .SYNOPSIS
         Internal function. Ensures sysadmin account access on SQL Server.
-#>
+    #>
     [CmdletBinding()]
     param (
-        [Parameter(Mandatory = $true)]
+        [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
-        [Alias("ServerInstance", "SqlServer")]
         [object]$SqlInstance,
         [PSCredential]$SqlCredential
     )
@@ -18,8 +17,7 @@ function Test-SqlSa {
             return ($SqlInstance.ConnectionContext.FixedServerRoles -match "SysAdmin")
         }
 
-        $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
+        $server = Connect-DbaInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
         return ($server.ConnectionContext.FixedServerRoles -match "SysAdmin")
-    }
-    catch { return $false }
+    } catch { return $false }
 }

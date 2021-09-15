@@ -1,78 +1,81 @@
-﻿function New-DbaXESmartReplay {
+function New-DbaXESmartReplay {
     <#
-        .SYNOPSIS
-            This Response type can be used to replay execution related events to a target SQL Server instance.
+    .SYNOPSIS
+        This response type can be used to replay execution related events to a target SQL Server instance.
 
-        .DESCRIPTION
-            This Response type can be used to replay execution related events to a target SQL Server instance. The events that you can replay are of the type sql_batch_completed and rpc_completed: all other events are ignored.
+    .DESCRIPTION
+        This response type can be used to replay execution related events to a target SQL Server instance. The events that you can replay are of the type sql_batch_completed and rpc_completed: all other events are ignored.
 
-        .PARAMETER SqlInstance
-            Target SQL Server. You must have sysadmin access and server version must be SQL Server version 2008 or higher.
+    .PARAMETER SqlInstance
+        The target SQL Server instance or instances. You must have sysadmin access and server version must be SQL Server version 2008 or higher.
 
-        .PARAMETER SqlCredential
-            Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
+    .PARAMETER SqlCredential
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
 
-            $scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
 
-            Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
+        For MFA support, please use Connect-DbaInstance.
 
-            To connect as a different Windows user, run PowerShell as that user.
+    .PARAMETER Database
+        Name of the initial catalog to connect to. Statements will be replayed by changing database to the same database where the event was originally captured, so this property only controls the initial database to connect to.
 
-        .PARAMETER Database
-            Name of the initial catalog to connect to. Statements will be replayed by changing database to the same database where the event was originally captured, so this property only controls the initial database to connect to.
+    .PARAMETER Event
+        Each Response can be limited to processing specific events, while ignoring all the other ones. When this attribute is omitted, all events are processed.
 
-        .PARAMETER Event
-            Each Response can be limited to processing specific events, while ignoring all the other ones. When this attribute is omitted, all events are processed.
+    .PARAMETER Filter
+        Specifies a filter expression in the same form as you would use in the WHERE clause of a SQL query.
 
-        .PARAMETER Filter
-            Specifies a filter expression in the same form as you would use in the WHERE clause of a SQL query.
+        Example: duration > 10000 AND cpu_time > 10000
 
-            Example: duration > 10000 AND cpu_time > 10000
+    .PARAMETER DelaySeconds
+        Specifies the duration of the delay in seconds.
 
-        .PARAMETER DelaySeconds
-            Specifies the duration of the delay in seconds.
+    .PARAMETER ReplayIntervalSeconds
+        Specifies the duration of the replay interval in seconds.
 
-        .PARAMETER ReplayIntervalSeconds
-            Specifies the duration of the replay interval in seconds.
+    .PARAMETER StopOnError
+        If this switch is enabled, the replay will be stopped when the first error is encountered. By default, error messages are piped to the log and console output, and replay proceeds.
 
-        .PARAMETER StopOnError
-            If this switch is enabled, the replay will be stopped when the first error is encountered. By default, error messages are piped to the log and console output, and replay proceeds.
+    .PARAMETER WhatIf
+        If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
 
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+    .PARAMETER Confirm
+        If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
-        .NOTES
-            Tags: ExtendedEvent, XE, Xevent
-            Website: https://dbatools.io
-            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: MIT https://opensource.org/licenses/MIT
-            SmartTarget: by Gianluca Sartori (@spaghettidba)
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-        .LINK
-            https://dbatools.io/New-DbaXESmartReplay
-            https://github.com/spaghettidba/XESmartTarget/wiki
+    .NOTES
+        Tags: ExtendedEvent, XE, XEvent, SmartTarget
+        Author: Chrissy LeMaire (@cl) | SmartTarget by Gianluca Sartori (@spaghettidba)
 
-        .EXAMPLE
-            $response = New-DbaXESmartReplay -SqlInstance sql2017 -Database planning
-            Start-DbaXESmartTarget -SqlInstance sql2016 -Session loadrelay -Responder $response
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-            Replays events from sql2016 on sql2017 in the planning database. Returns a PowerShell job object.
+    .LINK
+        https://dbatools.io/New-DbaXESmartReplay
 
-            To see a list of all SmartTarget job objects, use Get-DbaXESmartTarget.
+    .EXAMPLE
+        PS C:\> $response = New-DbaXESmartReplay -SqlInstance sql2017 -Database planning
+        PS C:\> Start-DbaXESmartTarget -SqlInstance sql2016 -Session loadrelay -Responder $response
 
-        .EXAMPLE
-            $response = New-DbaXESmartReplay -SqlInstance sql2017 -Database planning
-            Start-DbaXESmartTarget -SqlInstance sql2017 -Session 'Profiler Standard' -Responder $response -NotAsJob
+        Replays events from sql2016 on sql2017 in the planning database. Returns a PowerShell job object.
 
-            Replays events from the 'Profiler Standard' session on sql2016 to sql2017's planning database. Does not run as a job so you can see the raw output.
+        To see a list of all SmartTarget job objects, use Get-DbaXESmartTarget.
+
+    .EXAMPLE
+        PS C:\> $response = New-DbaXESmartReplay -SqlInstance sql2017 -Database planning
+        PS C:\> Start-DbaXESmartTarget -SqlInstance sql2017 -Session 'Profiler Standard' -Responder $response -NotAsJob
+
+        Replays events from the 'Profiler Standard' session on sql2016 to sql2017's planning database. Does not run as a job so you can see the raw output.
 
     #>
-    [CmdletBinding()]
+    [CmdletBinding(SupportsShouldProcess)]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [string]$Database,
@@ -85,9 +88,8 @@
     )
     begin {
         try {
-            Add-Type -Path "$script:PSModuleRoot\bin\XESmartTarget\XESmartTarget.Core.dll" -ErrorAction Stop
-        }
-        catch {
+            Add-Type -Path "$script:PSModuleRoot\bin\libraries\third-party\XESmartTarget\XESmartTarget.Core.dll" -ErrorAction Stop
+        } catch {
             Stop-Function -Message "Could not load XESmartTarget.Core.dll" -ErrorRecord $_ -Target "XESmartTarget"
             return
         }
@@ -97,33 +99,32 @@
 
         foreach ($instance in $SqlInstance) {
             try {
-                Write-Message -Level Verbose -Message "Connecting to $instance."
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 11
-            }
-            catch {
+                $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 11
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
+            if ($Pscmdlet.ShouldProcess($instance, "Creating new XESmartReply")) {
+                Write-Message -Message "Making a New XE SmartReplay for $Event against $instance running on $($server.name)" -Level Verbose
+                try {
+                    $replay = New-Object -TypeName XESmartTarget.Core.Responses.ReplayResponse
+                    $replay.ServerName = $instance
+                    $replay.DatabaseName = $Database
+                    $replay.Events = $Event
+                    $replay.StopOnError = $StopOnError
+                    $replay.Filter = $Filter
+                    $replay.DelaySeconds = $DelaySeconds
+                    $replay.ReplayIntervalSeconds = $ReplayIntervalSeconds
 
-            try {
-                $replay = New-Object -TypeName XESmartTarget.Core.Responses.ReplayResponse
-                $replay.ServerName = $instance
-                $replay.DatabaseName = $Database
-                $replay.Events = $Event
-                $replay.StopOnError = $StopOnError
-                $replay.Filter = $Filter
-                $replay.DelaySeconds = $DelaySeconds
-                $replay.ReplayIntervalSeconds = $ReplayIntervalSeconds
+                    if ($SqlCredential) {
+                        $replay.UserName = $SqlCredential.UserName
+                        $replay.Password = $SqlCredential.GetNetworkCredential().Password
+                    }
 
-                if ($SqlCredential) {
-                    $replay.UserName = $SqlCredential.UserName
-                    $replay.Password = $SqlCredential.GetNetworkCredential().Password
+                    $replay
+                } catch {
+                    $message = $_.Exception.InnerException.InnerException | Out-String
+                    Stop-Function -Message $message -Target "XESmartTarget" -Continue
                 }
-
-                $replay
-            }
-            catch {
-                $message = $_.Exception.InnerException.InnerException | Out-String
-                Stop-Function -Message $message -Target "XESmartTarget" -Continue
             }
         }
     }

@@ -1,108 +1,124 @@
 function Backup-DbaDbCertificate {
     <#
-        .SYNOPSIS
-            Exports database certificates from SQL Server using SMO.
+    .SYNOPSIS
+        Exports database certificates from SQL Server using SMO.
 
-        .DESCRIPTION
-            Exports database certificates from SQL Server using SMO and outputs the .cer and .pvk files.
+    .DESCRIPTION
+        Exports database certificates from SQL Server using SMO and outputs the .cer and .pvk files.
 
-        .PARAMETER SqlInstance
-            SQL Server name or SMO object representing the SQL Server to connect to. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.
+    .PARAMETER SqlInstance
+        The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.
 
-        .PARAMETER SqlCredential
-            SqlCredential object to connect as. If not specified, current Windows login will be used.
+    .PARAMETER SqlCredential
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
 
-        .PARAMETER Certificate
-            Exports certificate that matches the name(s).
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
 
-        .PARAMETER Database
-            Exports the encryptor for specific database(s).
+        For MFA support, please use Connect-DbaInstance.
 
-        .PARAMETER ExcludeDatabase
-            Database(s) to skip when exporting encryptors.
+    .PARAMETER Certificate
+        Exports certificate that matches the name(s).
 
-        .PARAMETER EncryptionPassword
-            A string value that specifies the system path to encrypt the private key.
+    .PARAMETER Database
+        Exports the encryptor for specific database(s).
 
-        .PARAMETER DecryptionPassword
-            A string value that specifies the system path to decrypt the private key.
+    .PARAMETER ExcludeDatabase
+        Database(s) to skip when exporting encryptors.
 
-        .PARAMETER Path
-            The path to output the files to. The path is relative to the SQL Server itself. If no path is specified, the default data directory will be used.
+    .PARAMETER EncryptionPassword
+        A string value that specifies the system path to encrypt the private key.
 
-        .PARAMETER Suffix
-            The suffix of the filename of the exported certificate.
+    .PARAMETER DecryptionPassword
+        Secure string used to decrypt the private key.
 
-        .PARAMETER CertificateCollection
-            Internal parameter to support pipeline input.
+    .PARAMETER Path
+        The path to output the files to. The path is relative to the SQL Server itself. If no path is specified, the default data directory will be used.
 
-        .PARAMETER Confirm
-            If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
+    .PARAMETER Suffix
+        The suffix of the filename of the exported certificate.
 
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+    .PARAMETER InputObject
+        Enables piping from Get-DbaDbCertificate
 
-        .PARAMETER WhatIf
-            If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
+    .PARAMETER Confirm
+        If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
-        .NOTES
-            Author: Jess Pomfret (@jpomfret)
-            Tags: Migration, Certificate
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-            Website: https://dbatools.io
-            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: MIT https://opensource.org/licenses/MIT
+    .PARAMETER WhatIf
+        If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
 
-        .EXAMPLE
-            Backup-DbaDbCertificate -SqlInstance Server1
-            Exports all the certificates on the specified SQL Server to the default data path for the instance.
+    .NOTES
+        Tags: Migration, Certificate
+        Author: Jess Pomfret (@jpomfret)
 
-        .EXAMPLE
-            $cred = Get-Credential sqladmin
-            Backup-DbaDbCertificate -SqlInstance Server1 -SqlCredential $cred
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-            Connects using sqladmin credential and exports all the certificates on the specified SQL Server to the default data path for the instance.
+    .LINK
+        https://dbatools.io/Backup-DbaDbCertificate
 
-        .EXAMPLE
-            Backup-DbaDbCertificate -SqlInstance Server1 -Certificate Certificate1
-            Exports only the certificate named Certificate1 on the specified SQL Server to the default data path for the instance.
+    .EXAMPLE
+        PS C:\> Backup-DbaDbCertificate -SqlInstance Server1
 
-        .EXAMPLE
-            Backup-DbaDbCertificate -SqlInstance Server1 -Database AdventureWorks
-            Exports only the certificates for AdventureWorks on the specified SQL Server to the default data path for the instance.
+        Exports all the certificates on the specified SQL Server to the default data path for the instance.
 
-        .EXAMPLE
-            Backup-DbaDbCertificate -SqlInstance Server1 -ExcludeDatabase AdventureWorks
-            Exports all certificates except those for AdventureWorks on the specified SQL Server to the default data path for the instance.
+    .EXAMPLE
+        PS C:\> $cred = Get-Credential sqladmin
+        PS C:\> Backup-DbaDbCertificate -SqlInstance Server1 -SqlCredential $cred
 
-        .EXAMPLE
-            Backup-DbaDbCertificate -SqlInstance Server1 -Path \\Server1\Certificates -EncryptionPassword (ConvertTo-SecureString -force -AsPlainText GoodPass1234!!)
-            Exports all the certificates and private keys on the specified SQL Server.
+        Connects using sqladmin credential and exports all the certificates on the specified SQL Server to the default data path for the instance.
 
-        .EXAMPLE
-            $EncryptionPassword = ConvertTo-SecureString -AsPlainText "GoodPass1234!!" -force
-            $DecryptionPassword = ConvertTo-SecureString -AsPlainText "Password4567!!" -force
-            Backup-DbaDbCertificate -SqlInstance Server1 -EncryptionPassword $EncryptionPassword -DecryptionPassword $DecryptionPassword
-            Exports all the certificates on the specified SQL Server using the supplied DecryptionPassword, since an EncryptionPassword is specified private keys are also exported.
+    .EXAMPLE
+        PS C:\> Backup-DbaDbCertificate -SqlInstance Server1 -Certificate Certificate1
 
-        .EXAMPLE
-            Backup-DbaDbCertificate -SqlInstance Server1 -Path \\Server1\Certificates
-            Exports all certificates on the specified SQL Server to the specified path.
+        Exports only the certificate named Certificate1 on the specified SQL Server to the default data path for the instance.
 
-        .EXAMPLE
-            Backup-DbaDbCertificate -SqlInstance Server1 -Suffix DbaTools
-            Exports all certificates on the specified SQL Server to the specified path, appends DbaTools to the end of the filenames.
+    .EXAMPLE
+        PS C:\> Backup-DbaDbCertificate -SqlInstance Server1 -Database AdventureWorks
 
-        .EXAMPLE
-            Get-DbaDbCertificate -SqlInstance sql2016 | Backup-DbaDbCertificate
-            Exports all certificates found on sql2016 to the default data directory.
+        Exports only the certificates for AdventureWorks on the specified SQL Server to the default data path for the instance.
+
+    .EXAMPLE
+        PS C:\> Backup-DbaDbCertificate -SqlInstance Server1 -ExcludeDatabase AdventureWorks
+
+        Exports all certificates except those for AdventureWorks on the specified SQL Server to the default data path for the instance.
+
+    .EXAMPLE
+        PS C:\> Backup-DbaDbCertificate -SqlInstance Server1 -Path \\Server1\Certificates -EncryptionPassword (ConvertTo-SecureString -force -AsPlainText GoodPass1234!!)
+
+        Exports all the certificates and private keys on the specified SQL Server.
+
+    .EXAMPLE
+        PS C:\> $EncryptionPassword = ConvertTo-SecureString -AsPlainText "GoodPass1234!!" -force
+        PS C:\> $DecryptionPassword = ConvertTo-SecureString -AsPlainText "Password4567!!" -force
+        PS C:\> Backup-DbaDbCertificate -SqlInstance Server1 -EncryptionPassword $EncryptionPassword -DecryptionPassword $DecryptionPassword
+
+        Exports all the certificates on the specified SQL Server using the supplied DecryptionPassword, since an EncryptionPassword is specified private keys are also exported.
+
+    .EXAMPLE
+        PS C:\> Backup-DbaDbCertificate -SqlInstance Server1 -Path \\Server1\Certificates
+
+        Exports all certificates on the specified SQL Server to the specified path.
+
+    .EXAMPLE
+        PS C:\> Backup-DbaDbCertificate -SqlInstance Server1 -Suffix DbaTools
+
+        Exports all certificates on the specified SQL Server to the specified path, appends DbaTools to the end of the filenames.
+
+    .EXAMPLE
+        PS C:\> Get-DbaDbCertificate -SqlInstance sql2016 | Backup-DbaDbCertificate
+
+        Exports all certificates found on sql2016 to the default data directory.
+
     #>
-    [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
+    [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess, ConfirmImpact = 'Low')]
     param (
         [parameter(Mandatory, ParameterSetName = "instance")]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [parameter(ParameterSetName = "instance")]
@@ -111,25 +127,19 @@ function Backup-DbaDbCertificate {
         [object[]]$Database,
         [parameter(ParameterSetName = "instance")]
         [object[]]$ExcludeDatabase,
-        [parameter(Mandatory = $false)]
         [Security.SecureString]$EncryptionPassword,
-        [parameter(Mandatory = $false)]
         [Security.SecureString]$DecryptionPassword,
         [System.IO.FileInfo]$Path,
         [string]$Suffix = "$(Get-Date -format 'yyyyMMddHHmmssms')",
         [parameter(ValueFromPipeline, ParameterSetName = "collection")]
-        [Microsoft.SqlServer.Management.Smo.Certificate[]]$CertificateCollection,
-        [Alias('Silent')]
+        [Microsoft.SqlServer.Management.Smo.Certificate[]]$InputObject,
         [switch]$EnableException
     )
 
     begin {
-
-        if ($EncryptionPassword.Length -eq 0 -and $DecryptionPassword.Length -gt 0) {
-            Stop-Function -Message "If you specify an decryption password, you must also specify an encryption password" -Target $DecryptionPassword
+        if (-not $EncryptionPassword -and $DecryptionPassword) {
+            Stop-Function -Message "If you specify a decryption password, you must also specify an encryption password" -Target $DecryptionPassword
         }
-
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Backup-DbaDatabaseCertificate
 
         function export-cert ($cert) {
             $certName = $cert.Name
@@ -142,10 +152,11 @@ function Backup-DbaDbCertificate {
                 $actualPath = Get-SqlDefaultPaths -SqlInstance $server -filetype Data
             }
 
-            $fullCertName = "$actualPath\$certName$Suffix"
+            $actualPath = "$actualPath".TrimEnd('\').TrimEnd('/')
+            $fullCertName = (Join-DbaPath -SqlInstance $server $actualPath "$certName$Suffix")
             $exportPathKey = "$fullCertName.pvk"
 
-            if (!(Test-DbaSqlPath -SqlInstance $server -Path $actualPath)) {
+            if (!(Test-DbaPath -SqlInstance $server -Path $actualPath)) {
                 Stop-Function -Message "$SqlInstance cannot access $actualPath" -Target $actualPath
             }
 
@@ -163,27 +174,25 @@ function Backup-DbaDbCertificate {
                         $cert.export(
                             $exportPathCert,
                             $exportPathKey,
-                            [System.Runtime.InteropServices.marshal]::PtrToStringAuto([System.Runtime.InteropServices.marshal]::SecureStringToBSTR($EncryptionPassword)),
-                            [System.Runtime.InteropServices.marshal]::PtrToStringAuto([System.Runtime.InteropServices.marshal]::SecureStringToBSTR($DecryptionPassword))
+                            ($EncryptionPassword | ConvertFrom-SecurePass),
+                            ($DecryptionPassword | ConvertFrom-SecurePass)
                         )
-                    }
-                    elseif ($EncryptionPassword.Length -gt 0 -and $DecryptionPassword.Length -eq 0) {
+                    } elseif ($EncryptionPassword.Length -gt 0 -and $DecryptionPassword.Length -eq 0) {
                         Write-Message -Level Verbose -Message "Only encryption password passed in. Will export both cer and pvk."
 
                         $cert.export(
                             $exportPathCert,
                             $exportPathKey,
-                            [System.Runtime.InteropServices.marshal]::PtrToStringAuto([System.Runtime.InteropServices.marshal]::SecureStringToBSTR($EncryptionPassword))
+                            ($EncryptionPassword | ConvertFrom-SecurePass)
                         )
-                    }
-                    else {
+                    } else {
                         Write-Message -Level Verbose -Message "No passwords passed in. Will export just cer."
                         $exportPathKey = "Password required to export key"
                         $cert.export($exportPathCert)
                     }
 
                     [pscustomobject]@{
-                        ComputerName   = $server.NetName
+                        ComputerName   = $server.ComputerName
                         InstanceName   = $server.ServiceName
                         SqlInstance    = $server.DomainInstanceName
                         Database       = $db.Name
@@ -196,18 +205,16 @@ function Backup-DbaDbCertificate {
                         exportPathKey  = $exportPathKey
                         Status         = "Success"
                     } | Select-DefaultView -ExcludeProperty exportPathCert, exportPathKey, ExportPath, ExportKey
-                }
-                catch {
+                } catch {
 
                     if ($_.Exception.InnerException) {
-                        $exception = $_.Exception.InnerException.ToString() -Split "System.Data.SqlClient.SqlException: "
+                        $exception = $_.Exception.InnerException.ToString() -Split "Microsoft.Data.SqlClient.SqlException: "
                         $exception = ($exception[1] -Split "at Microsoft.SqlServer.Management.Common.ConnectionManager")[0]
-                    }
-                    else {
+                    } else {
                         $exception = $_.Exception
                     }
                     [pscustomobject]@{
-                        ComputerName   = $server.NetName
+                        ComputerName   = $server.ComputerName
                         InstanceName   = $server.ServiceName
                         SqlInstance    = $server.DomainInstanceName
                         Database       = $db.Name
@@ -228,44 +235,15 @@ function Backup-DbaDbCertificate {
 
     process {
         if (Test-FunctionInterrupt) { return }
-        foreach ($instance in $SqlInstance) {
-            try {
-                Write-Message -Level Verbose -Message "Connecting to $instance"
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
-            }
-            catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
-                return
-            }
-            $databases = Get-DbaDatabase -SqlInstance $server | Where-Object IsAccessible
 
-            if ($Database) {
-                $databases = $databases | Where-Object Name -in $Database
-            }
-            if ($ExcludeDatabase) {
-                $databases = $databases | Where-Object Name -NotIn $ExcludeDatabase
-            }
-            foreach ($db in $databases.Name) {
-                $DBCertificateCollection = Get-DbaDbCertificate -SqlInstance $server -Database $db
-                if ($Certificate) {
-                    $CertificateCollection += $DBCertificateCollection | Where-Object Name -In $Certificate
-                }
-                else {
-                    $CertificateCollection += $DBCertificateCollection | Where-Object Name -NotLike "##*"
-                }
-                if (!$CertificateCollection) {
-                    Write-Message -Level Output -Message "No certificates found to export in $db."
-                    continue
-                }
-            }
-
+        if ($SqlInstance) {
+            $InputObject += Get-DbaDbCertificate -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $Database -ExcludeDatabase $ExcludeDatabase -Certificate $Certificate
         }
 
-        foreach ($cert in $CertificateCollection) {
+        foreach ($cert in $InputObject) {
             if ($cert.Name.StartsWith("##")) {
-                Write-Message -Level Output -Message "Skipping system cert $cert"
-            }
-            else {
+                Write-Message -Level Verbose -Message "Skipping system cert $cert"
+            } else {
                 export-cert $cert
             }
         }

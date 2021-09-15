@@ -4,16 +4,18 @@ function Disable-DbaTraceFlag {
         Disable a Global Trace Flag that is currently running
 
     .DESCRIPTION
-        The function will disable a Trace Flag that is currently running globally on the SQL Server instance(s) listed
+        The function will disable a Trace Flag that is currently running globally on the SQL Server instance(s) listed.
+        These are not persisted after a restart, use Set-DbaStartupParameter to set them to persist after restarts.
 
     .PARAMETER SqlInstance
-        Allows you to specify a comma separated list of servers to query.
+        The target SQL Server instance or instances.
 
     .PARAMETER SqlCredential
-        Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
-        $cred = Get-Credential, this pass this $cred to the param.
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
 
-        Windows Authentication will be used if DestinationSqlCredential is not specified. To connect as a different Windows user, run PowerShell as that user.
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER TraceFlag
         Trace flag number to enable globally
@@ -24,40 +26,38 @@ function Disable-DbaTraceFlag {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: TraceFlag
+        Tags: TraceFlag, DBCC
         Author: Garry Bargsley (@gbargsley), http://blog.garrybargsley.com
 
         Website: https://dbatools.io
-        Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+        Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
         https://dbatools.io/Disable-DbaTraceFlag
 
     .EXAMPLE
-        Disable-DbaTraceFlag -SqlInstance sql2016 -TraceFlag 3226
+        PS C:\> Disable-DbaTraceFlag -SqlInstance sql2016 -TraceFlag 3226
+
         Disable the globally running trace flag 3226 on SQL Server instance sql2016
-#>
+
+    #>
     [CmdletBinding()]
     param (
-        [parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
-        [Alias("ServerInstance", "SqlServer", "SqlServers")]
+        [parameter(Mandatory, ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [parameter(Mandatory)]
         [int[]]$TraceFlag,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 
     process {
         foreach ($instance in $SqlInstance) {
-            Write-Message -Level Verbose -Message "Attempting to connect to $instance"
 
             try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
-            }
-            catch {
+                $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -65,7 +65,7 @@ function Disable-DbaTraceFlag {
 
             foreach ($tf in $TraceFlag) {
                 $TraceFlagInfo = [pscustomobject]@{
-                    SourceServer = $server.NetName
+                    SourceServer = $server.ComputerName
                     InstanceName = $server.ServiceName
                     SqlInstance  = $server.DomainInstanceName
                     TraceFlag    = $tf
@@ -84,8 +84,7 @@ function Disable-DbaTraceFlag {
                 try {
                     $query = "DBCC TRACEOFF ($tf, -1)"
                     $server.Query($query)
-                }
-                catch {
+                } catch {
                     $TraceFlagInfo.Status = "Failed"
                     $TraceFlagInfo.Notes = $_.Exception.Message
                     $TraceFlagInfo

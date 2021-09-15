@@ -1,15 +1,25 @@
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
+Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
 
-Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
+Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+    Context "Validate parameters" {
+        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
+        [object[]]$knownParameters = 'Path', 'SqlInstance', 'SqlCredential', 'DatabaseName', 'SourceInstance', 'NoXpDirTree', 'DirectoryRecurse', 'EnableException', 'MaintenanceSolution', 'IgnoreLogBackup', 'IgnoreDiffBackup', 'ExportPath', 'AzureCredential', 'Import', 'Anonymise', 'NoClobber', 'PassThru', 'NoXpDirRecurse'
+        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
+        It "Should only contain our specific parameters" {
+            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        }
+    }
+}
+
+Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 
     BeforeAll {
         $DestBackupDir = 'C:\Temp\GetBackups'
         if (-Not(Test-Path $DestBackupDir)) {
             New-Item -Type Container -Path $DestBackupDir
-        }
-        else {
+        } else {
             Remove-Item $DestBackupDir\*
         }
         $random = Get-Random
@@ -35,8 +45,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             New-Item -Type Container -Path $DestBackupDirOla\FULL
             New-Item -Type Container -Path $DestBackupDirOla\DIFF
             New-Item -Type Container -Path $DestBackupDirOla\LOG
-        }
-        else {
+        } else {
             Remove-Item $DestBackupDirOla\FULL\*
             Remove-Item $DestBackupDirOla\DIFF\*
             Remove-Item $DestBackupDirOla\LOG\*
@@ -122,13 +131,11 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             ($resultsSanLog | Where-Object {$_.Type -eq 'Transaction Log'}).count | Should be 0
         }
         $ResultsSanLog = Get-DbaBackupInformation -SqlInstance $script:instance1 -Path $DestBackupDirOla -IgnoreLogBackup -WarningVariable warnvar -WarningAction SilentlyContinue
-        It "Should Warn if IgnoreLogBackup without Maintenance Solution" {
-            ($WarnVar -match "IgnoreLogBackup can only by used with Maintenance Soultion. Will not be used") | Should Be $True
+        It "Should Warn if IgnoreLogBackup without MaintenanceSolution" {
+            ($WarnVar -match "IgnoreLogBackup can only by used with MaintenanceSolution. Will not be used") | Should Be $True
         }
         It "Should ignore IgnoreLogBackup and return 3 backups" {
             $resultsSanLog.count | Should Be 3
         }
-
     }
-
 }

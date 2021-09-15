@@ -60,40 +60,34 @@ namespace Sqlcollaborative.Dbatools.Utility
         /// <summary>
         /// Number if digits behind the dot.
         /// </summary>
-        public Nullable<int> Digits
+        public int? Digits
         {
             get
             {
-                if (_digits == null)
-                    return UtilityHost.SizeDigits;
-                return (int)_digits;
+                return _digits ?? UtilityHost.SizeDigits;
             }
-            set {
-                if (value == null)
-                    _digits = value;
-                else
-                    _digits = value < 0 ? 0 : value;
+            set
+            {
+                _digits = value == null ? null : (value.Value <= 0 ? 0 : value);
             }
         }
-        private Nullable<int> _digits = 2;
+        private int? _digits;
 
         /// <summary>
         /// How the size object should be displayed.
         /// </summary>
-        public Nullable<SizeStyle> Style
+        public SizeStyle? Style
         {
             get
             {
-                if (_Style != null)
-                    return _Style;
-                return UtilityHost.SizeStyle;
+                return _style ?? UtilityHost.SizeStyle;
             }
             set
             {
-                _Style = value;
+                _style = value;
             }
         }
-        private Nullable<SizeStyle> _Style;
+        private SizeStyle? _style;
 
         /// <summary>
         /// Shows the default string representation of size
@@ -150,15 +144,15 @@ namespace Sqlcollaborative.Dbatools.Utility
         /// <returns>True if equal, false elsewise</returns>
         public override bool Equals(object obj)
         {
-            return (obj is Size && (Byte == ((Size)obj).Byte));
+            var size = obj as Size;
+            return (size != null  && (Byte == size.Byte));
         }
 
-        /// <summary>
-        /// Meaningless, but required
-        /// </summary>
-        /// <returns>Some meaningless output</returns>
+        /// <inheritdoc cref="Int64.GetHashCode"/>
+        /// <remarks>The hashcode of the underlying size</remarks>
         public override int GetHashCode()
         {
+            // ReSharper disable once NonReadonlyMemberInGetHashCode
             return Byte.GetHashCode();
         }
 
@@ -179,37 +173,27 @@ namespace Sqlcollaborative.Dbatools.Utility
             this.Byte = Byte;
         }
 
-        /// <summary>
-        /// Some more interface implementation. Used to sort the object
-        /// </summary>
-        /// <param name="obj">The object to compare to</param>
-        /// <returns>Something</returns>
+        /// <inheritdoc cref="IComparable{Size}.CompareTo"/>
+        /// <remarks>For sorting</remarks>
         public int CompareTo(Size obj)
         {
-            if (Byte == obj.Byte) { return 0; }
-            if (Byte < obj.Byte) { return -1; }
-
-            return 1;
+            return Byte.CompareTo(obj.Byte);
         }
 
-        /// <summary>
-        /// Some more interface implementation. Used to sort the object
-        /// </summary>
-        /// <param name="obj">The object to compare to</param>
-        /// <returns>Something</returns>
-        public int CompareTo(Object obj)
+        /// <inheritdoc cref="IComparable.CompareTo"/>
+        /// <remarks>For sorting</remarks>
+        /// <exception cref="ArgumentException">If you compare with something invalid.</exception>
+        public int CompareTo(object obj)
         {
-            try
+            var size = obj as Size;
+            if (size != null)
             {
-                if (Byte == ((Size)obj).Byte) { return 0; }
-                if (Byte < ((Size)obj).Byte) { return -1; }
-
-                return 1;
+                return CompareTo(size);
             }
-            catch { return 0; }
+            throw new ArgumentException(String.Format("Cannot compare a {0} to a {1}", typeof(Size).FullName, obj.GetType().FullName));
         }
 
-        #region Operators
+        #region MathOperators
         /// <summary>
         /// Adds two sizes
         /// </summary>
@@ -244,7 +228,7 @@ namespace Sqlcollaborative.Dbatools.Utility
         }
 
         /// <summary>
-        /// Divides one size by another.
+        /// Divides one size by another. 
         /// </summary>
         /// <param name="a">The size to divide</param>
         /// <param name="b">The size to divide with</param>
@@ -276,6 +260,9 @@ namespace Sqlcollaborative.Dbatools.Utility
             return new Size((long)((double)a.Byte / (double)b.Byte));
         }
 
+        #endregion
+        #region ImplicitCasts
+
         /// <summary>
         /// Implicitly converts int to size
         /// </summary>
@@ -283,6 +270,15 @@ namespace Sqlcollaborative.Dbatools.Utility
         public static implicit operator Size(int a)
         {
             return new Size(a);
+        }
+
+        /// <summary>
+        /// Implicitly converts int to size
+        /// </summary>
+        /// <param name="a">The number to convert</param>
+        public static implicit operator Size(decimal a)
+        {
+            return new Size((long)a);
         }
 
         /// <summary>

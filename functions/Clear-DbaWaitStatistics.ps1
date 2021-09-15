@@ -7,13 +7,14 @@ function Clear-DbaWaitStatistics {
         Reset the aggregated statistics - basically just executes DBCC SQLPERF (N'sys.dm_os_wait_stats', CLEAR)
 
     .PARAMETER SqlInstance
-        Allows you to specify a comma separated list of servers to query.
+        The target SQL Server instance or instances.
 
     .PARAMETER SqlCredential
-        Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
-        $cred = Get-Credential, this pass this $cred to the param.
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
 
-        Windows Authentication will be used if DestinationSqlCredential is not specified. To connect as a different Windows user, run PowerShell as that user.
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
@@ -27,39 +28,41 @@ function Clear-DbaWaitStatistics {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: WaitStatistic
+        Tags: WaitStatistic, Waits
+        Author: Chrissy LeMaire (@cl)
+
         Website: https://dbatools.io
-        Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+        Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
         https://dbatools.io/Clear-DbaWaitStatistics
 
     .EXAMPLE
-        Clear-DbaWaitStatistics -SqlInstance sql2008, sqlserver2012
+        PS C:\> Clear-DbaWaitStatistics -SqlInstance sql2008, sqlserver2012
+
         After confirmation, clears wait stats on servers sql2008 and sqlserver2012
 
     .EXAMPLE
-        Clear-DbaWaitStatistics -SqlInstance sql2008, sqlserver2012 -Confirm:$false
+        PS C:\> Clear-DbaWaitStatistics -SqlInstance sql2008, sqlserver2012 -Confirm:$false
+
         Clears wait stats on servers sql2008 and sqlserver2012, without prompting
+
     #>
     [CmdletBinding(ConfirmImpact = 'High', SupportsShouldProcess)]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseSingularNouns", "", Justification = "Singular Noun doesn't make sense")]
     param (
-        [parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
-        [Alias("ServerInstance", "SqlServer", "SqlServers")]
+        [parameter(Mandatory, ValueFromPipeline)]
         [DbaInstance[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [Alias('Silent')]
         [switch]$EnableException
     )
     process {
         foreach ($instance in $SqlInstance) {
-            Write-Message -Level Verbose -Message "Attempting to connect to $instance"
 
             try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
-            }
-            catch {
+                $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -67,13 +70,12 @@ function Clear-DbaWaitStatistics {
                 try {
                     $server.Query("DBCC SQLPERF (N'sys.dm_os_wait_stats', CLEAR);")
                     $status = "Success"
-                }
-                catch {
+                } catch {
                     $status = $_.Exception
                 }
 
                 [PSCustomObject]@{
-                    ComputerName = $server.NetName
+                    ComputerName = $server.ComputerName
                     InstanceName = $server.ServiceName
                     SqlInstance  = $server.DomainInstanceName
                     Status       = $status

@@ -7,16 +7,20 @@ function Get-DbaDbMailHistory {
         Gets the history of mail sent from a SQL instance
 
     .PARAMETER SqlInstance
-        The SQL Server instance, or instances.
+        TThe target SQL Server instance or instances.
 
     .PARAMETER SqlCredential
-        Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted.
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Since
-    Datetime object used to narrow the results to the send request date
+        Datetime object used to narrow the results to the send request date
 
     .PARAMETER Status
-    Narrow the results by status. Valid values include Unsent, Sent, Failed and Retrying
+        Narrow the results by status. Valid values include Unsent, Sent, Failed and Retrying
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -24,54 +28,51 @@ function Get-DbaDbMailHistory {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: Logging
+        Tags: DatabaseMail, DBMail, Mail
+        Author: Chrissy LeMaire (@cl), netnerds.net
+
         Website: https://dbatools.io
-        Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+        Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
         https://dbatools.io/Get-DbaDbMailHistory
 
     .EXAMPLE
-        Get-DbaDbMailHistory -SqlInstance sql01\sharepoint
+        PS C:\> Get-DbaDbMailHistory -SqlInstance sql01\sharepoint
 
-        Returns the entire dbmail history on sql01\sharepoint
-
-    .EXAMPLE
-        Get-DbaDbMailHistory -SqlInstance sql01\sharepoint | Select *
-
-        Returns the entire dbmail history on sql01\sharepoint then return a bunch more columns
+        Returns the entire DBMail history on sql01\sharepoint
 
     .EXAMPLE
-        $servers = "sql2014","sql2016", "sqlcluster\sharepoint"
-        $servers | Get-DbaDbMailHistory
+        PS C:\> Get-DbaDbMailHistory -SqlInstance sql01\sharepoint | Select-Object *
 
-        Returns the all dbmail history for "sql2014","sql2016" and "sqlcluster\sharepoint"
+        Returns the entire DBMail history on sql01\sharepoint then return a bunch more columns
 
-#>
+    .EXAMPLE
+        PS C:\> $servers = "sql2014","sql2016", "sqlcluster\sharepoint"
+        PS C:\> $servers | Get-DbaDbMailHistory
+
+        Returns the all DBMail history for "sql2014","sql2016" and "sqlcluster\sharepoint"
+
+    #>
     [CmdletBinding()]
     param (
-        [Parameter(ValueFromPipeline = $true)]
-        [Alias("ServerInstance", "SqlServer")]
+        [Parameter(ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
-        [Alias("Credential")]
         [PSCredential]
         $SqlCredential,
         [DateTime]$Since,
         [ValidateSet('Unsent', 'Sent', 'Failed', 'Retrying')]
         [string]$Status,
-        [Alias('Silent')]
         [switch]$EnableException
     )
     process {
         foreach ($instance in $SqlInstance) {
-            Write-Message -Level Verbose -Message "Attempting to connect to $instance"
 
             try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
-            }
-            catch {
-                Stop-Function -Message "Failure" -Category Connectiondbmail -dbmailRecord $_ -Target $instance -Continue
+                $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential
+            } catch {
+                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
             $sql = "SELECT SERVERPROPERTY('MachineName') AS ComputerName,
@@ -118,7 +119,7 @@ function Get-DbaDbMailHistory {
                 $wherearray = @()
 
                 if ($Since) {
-                    $wherearray += "send_request_date >= '$($Since.ToString("yyyy-MM-ddTHH:mm:ss"))'"
+                    $wherearray += "send_request_date >= CONVERT(datetime,'$($Since.ToString("yyyy-MM-ddTHH:mm:ss", [System.Globalization.CultureInfo]::InvariantCulture))',126)"
                 }
 
                 if ($Status) {
@@ -135,8 +136,7 @@ function Get-DbaDbMailHistory {
 
             try {
                 $server.Query($sql) | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, Profile, Recipients, CopyRecipients, BlindCopyRecipients, Subject, Importance, Sensitivity, FileAttachments, AttachmentEncoding, SendRequestDate, SendRequestUser, SentStatus, SentDate
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Query failure" -ErrorRecord $_ -Continue
             }
         }

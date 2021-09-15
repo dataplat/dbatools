@@ -25,8 +25,8 @@ foreach ($ipAddress in $Tcp.IPAddresses) {
 }
 $Tcp.Alter()
 Write-Host -Object "$indent Starting $instance" -ForegroundColor DarkGreen
-Restart-Service "MSSQL`$$instance" -WarningAction SilentlyContinue
-Restart-Service "SQLAgent`$$instance" -WarningAction SilentlyContinue
+Restart-Service "MSSQL`$$instance" -WarningAction SilentlyContinue -Force
+Restart-Service "SQLAgent`$$instance" -WarningAction SilentlyContinue -Force
 
 do {
     Start-Sleep 1
@@ -51,7 +51,7 @@ Write-Host -Object "$indent Executing startup scripts for SQL Server 2016" -Fore
 $sql2016Startup = 0
 foreach ($file in (Get-ChildItem C:\github\appveyor-lab\sql2016-startup\*.sql -Recurse -ErrorAction SilentlyContinue)) {
     try {
-        Invoke-Sqlcmd2 -ServerInstance $sqlinstance -InputFile $file -ErrorAction Stop
+        Invoke-DbaQuery -SqlInstance $sqlinstance -InputFile $file -ErrorAction Stop
     } catch {
         $sql2016Startup = 1
     }

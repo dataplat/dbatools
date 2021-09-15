@@ -1,14 +1,13 @@
 function Resolve-SqlIpAddress {
     [CmdletBinding()]
     param (
-        [Parameter(Mandatory = $true)]
-        [Alias("ServerInstance", "SqlServer")]
+        [Parameter(Mandatory)]
         [object]$SqlInstance,
         [PSCredential]$SqlCredential
     )
 
-    $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
+    $server = Connect-DbaInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
     $servernetbios = $server.ComputerNamePhysicalNetBIOS
-    $ipaddr = (Test-Connection $servernetbios -count 1).Ipv4Address
+    $ipaddr = (Resolve-DbaNetworkName -ComputerName $servernetbios -Turbo).IPAddress
     return $ipaddr
 }

@@ -1,95 +1,92 @@
 function Get-DbaPermission {
     <#
-        .SYNOPSIS
-            Get a list of Server and Database level permissions
+    .SYNOPSIS
+        Get a list of Server and Database level permissions
 
-        .DESCRIPTION
-            Retrieves a list of permissions
+    .DESCRIPTION
+        Retrieves a list of permissions
 
-            Permissions link principals to securables.
-            Principals exist on Windows, Instance and Database level.
-            Securables exist on Instance and Database level.
-            A permission state can be GRANT, DENY or REVOKE.
-            The permission type can be SELECT, CONNECT, EXECUTE and more.
+        Permissions link principals to securables.
+        Principals exist on Windows, Instance and Database level.
+        Securables exist on Instance and Database level.
+        A permission state can be GRANT, DENY or REVOKE.
+        The permission type can be SELECT, CONNECT, EXECUTE and more.
+        The CONTROL permission is also returned for dbo users, db_owners, and schema owners.
+        To see server-level implicit permissions via fixed roles run the following command: Get-DbaServerRole -SqlInstance serverName | Select-Object *
 
-            See https://msdn.microsoft.com/en-us/library/ms191291.aspx for more information
+        See https://msdn.microsoft.com/en-us/library/ms191291.aspx for more information
 
-        .PARAMETER SqlInstance
-            The SQL Server instance to connect to.
+    .PARAMETER SqlInstance
+        The target SQL Server instance or instances. Defaults to localhost.
 
-        .PARAMETER SqlCredential
-            Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
+    .PARAMETER SqlCredential
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
 
-            $scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
 
-            Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
+        For MFA support, please use Connect-DbaInstance.
 
-            To connect as a different Windows user, run PowerShell as that user.
+    .PARAMETER Database
+        Specifies one or more database(s) to process. If unspecified, all databases will be processed.
 
-        .PARAMETER Database
-            Specifies one or more database(s) to process. If unspecified, all databases will be processed.
+    .PARAMETER ExcludeDatabase
+        Specifies one or more database(s) to exclude from processing.
 
-        .PARAMETER ExcludeDatabase
-            Specifies one or more database(s) to exclude from processing.
+    .PARAMETER IncludeServerLevel
+        If this switch is enabled, information about Server Level Permissions will be output.
 
-        .PARAMETER IncludeServerLevel
-            If this switch is enabled, information about Server Level Permissions will be output.
+    .PARAMETER ExcludeSystemObjects
+        If this switch is enabled, permissions on system securables will be excluded.
 
-        .PARAMETER NoSystemObjects
-            If this switch is enabled, permissions on system securables will be excluded.
+    .PARAMETER EnableException
+        If this switch is enabled exceptions will be thrown to the caller, which will need to perform its own exception processing. Otherwise, the function will try to catch the exception, interpret it and provide a friendly error message.
 
-        .PARAMETER EnableException
-            If this switch is enabled exceptions will be thrown to the caller, which will need to perform its own exception processing. Otherwise, the function will try to catch the exception, interpret it and provide a friendly error message.
+    .NOTES
+        Tags: Permissions, Databases
+        Author: Klaas Vandenberghe (@PowerDBAKlaas)
 
-        .NOTES
-            Tags: Permissions, Databases
-            Author: Klaas Vandenberghe ( @PowerDBAKlaas )
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-            Website: https://dbatools.io
-            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: MIT https://opensource.org/licenses/MIT
+    .LINK
+        https://dbatools.io/Get-DbaPermission
 
-        .LINK
-            https://dbatools.io/Get-DbaPermission
+    .EXAMPLE
+        PS C:\> Get-DbaPermission -SqlInstance ServerA\sql987
 
-        .EXAMPLE
-            Get-DbaPermission -SqlInstance ServerA\sql987
+        Returns a custom object with Server name, Database name, permission state, permission type, grantee and securable.
 
-            Returns a custom object with Server name, Database name, permission state, permission type, grantee and securable.
+    .EXAMPLE
+        PS C:\> Get-DbaPermission -SqlInstance ServerA\sql987 | Format-Table -AutoSize
 
-        .EXAMPLE
-            Get-DbaPermission -SqlInstance ServerA\sql987 | Format-Table -AutoSize
+        Returns a formatted table displaying Server, Database, permission state, permission type, grantee, granteetype, securable and securabletype.
 
-            Returns a formatted table displaying Server, Database, permission state, permission type, grantee, granteetype, securable and securabletype.
+    .EXAMPLE
+        PS C:\> Get-DbaPermission -SqlInstance ServerA\sql987 -ExcludeSystemObjects -IncludeServerLevel
 
-        .EXAMPLE
-            Get-DbaPermission -SqlInstance ServerA\sql987 -NoSystemObjects -IncludeServerLevel
+        Returns a custom object with Server name, Database name, permission state, permission type, grantee and securable
+        in all databases and on the server level, but not on system securables.
 
-            Returns a custom object with Server name, Database name, permission state, permission type, grantee and securable
-            in all databases and on the server level, but not on system securables.
+    .EXAMPLE
+        PS C:\> Get-DbaPermission -SqlInstance sql2016 -Database master
 
-        .EXAMPLE
-            Get-DbaPermission -SqlInstance sql2016 -Database master
+        Returns a custom object with permissions for the master database.
 
-            Returns a custom object with permissions for the master database.
     #>
     [CmdletBinding()]
     param (
-        [parameter(Mandatory = $true, ValueFromPipeline = $true)]
-        [Alias("ServerInstance", "SqlServer")]
+        [parameter(Mandatory, ValueFromPipeline)]
         [DbaInstance[]]$SqlInstance,
-        [Alias("Credential")]
         [PSCredential]$SqlCredential,
-        [Alias("Databases")]
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
         [switch]$IncludeServerLevel,
-        [switch]$NoSystemObjects,
-        [Alias('Silent')]
+        [switch]$ExcludeSystemObjects,
         [switch]$EnableException
     )
     begin {
-        if ($NoSystemObjects) {
+        if ($ExcludeSystemObjects) {
             $ExcludeSystemObjectssql = "WHERE major_id > 0 "
         }
 
@@ -100,7 +97,7 @@ function Get-DbaPermission {
                         , [PermState] = state_desc
                         , [PermissionName] = permission_name
                         , [SecurableType] = COALESCE(o.type_desc,sp.class_desc)
-                        , [Securable] = CASE	WHEN class = 100 THEN @@SERVERNAME
+                        , [Securable] = CASE    WHEN class = 100 THEN @@SERVERNAME
                                                 WHEN class = 105 THEN OBJECT_NAME(major_id)
                                                 ELSE OBJECT_NAME(major_id)
                                                 END
@@ -108,6 +105,7 @@ function Get-DbaPermission {
                         , [GranteeType] = pr.type_desc
                         , [revokeStatement] = 'REVOKE ' + permission_name + ' ' + COALESCE(OBJECT_NAME(major_id),'') + ' FROM [' + SUSER_NAME(grantee_principal_id) + ']'
                         , [grantStatement] = 'GRANT ' + permission_name + ' ' + COALESCE(OBJECT_NAME(major_id),'') + ' TO [' + SUSER_NAME(grantee_principal_id) + ']'
+                            + CASE WHEN sp.state_desc = 'GRANT_WITH_GRANT_OPTION' THEN ' WITH GRANT OPTION' ELSE '' END
                     FROM sys.server_permissions sp
                         JOIN sys.server_principals pr ON pr.principal_id = sp.grantee_principal_id
                         LEFT OUTER JOIN sys.all_objects o ON o.object_id = sp.major_id
@@ -115,7 +113,7 @@ function Get-DbaPermission {
                     $ExcludeSystemObjectssql
 
                     UNION ALL
-                    SELECT	  SERVERPROPERTY('MachineName') AS ComputerName
+                    SELECT    SERVERPROPERTY('MachineName') AS ComputerName
                             , ISNULL(SERVERPROPERTY('InstanceName'), 'MSSQLSERVER') AS InstanceName
                             , SERVERPROPERTY('ServerName') AS SqlInstance
                             , [database] = ''
@@ -154,25 +152,30 @@ function Get-DbaPermission {
                     , [PermState] = state_desc
                     , [PermissionName] = permission_name
                     , [SecurableType] = COALESCE(o.type_desc,dp.class_desc)
-                    , [Securable] = CASE	WHEN class = 0 THEN DB_NAME()
+                    , [Securable] = CASE    WHEN class = 0 THEN DB_NAME()
                                             WHEN class = 1 THEN ISNULL(s.name + '.','')+OBJECT_NAME(major_id)
                                             WHEN class = 3 THEN SCHEMA_NAME(major_id)
                                             WHEN class = 6 THEN SCHEMA_NAME(t.schema_id)+'.' + t.name
                                             END
                     , [Grantee] = USER_NAME(grantee_principal_id)
                     , [GranteeType] = pr.type_desc
-                    , [revokeStatement] = 'REVOKE ' + permission_name + ' ON ' + isnull(schema_name(o.object_id)+'.','')+OBJECT_NAME(major_id)+ ' FROM [' + USER_NAME(grantee_principal_id) + ']'
-                    , [grantStatement] = 'GRANT ' + permission_name + ' ON ' + isnull(schema_name(o.object_id)+'.','')+OBJECT_NAME(major_id)+ ' TO [' + USER_NAME(grantee_principal_id) + ']'
-                FROM sys.database_permissions dp
+                    , [RevokeStatement] = CASE WHEN class = 3 THEN 'REVOKE ' + permission_name + ' ON Schema::[' + isnull(SCHEMA_NAME(dp.major_id) COLLATE DATABASE_DEFAULT,'') + '] FROM [' + USER_NAME(grantee_principal_id) +']'
+                                            ELSE 'REVOKE ' + permission_name + ' ON [' + isnull(schema_name(o.schema_id) COLLATE DATABASE_DEFAULT+'].[','')+OBJECT_NAME(major_id)+ '] FROM [' + USER_NAME(grantee_principal_id) +']'
+                                            END
+                    , [GrantStatement] = CASE WHEN class = 3 THEN 'GRANT ' + permission_name + ' ON Schema::' + isnull(SCHEMA_NAME(dp.major_id) COLLATE DATABASE_DEFAULT,'') + '] TO [' + USER_NAME(grantee_principal_id) + ']'
+                                            ELSE 'GRANT ' + permission_name + ' ON [' + isnull(schema_name(o.schema_id) COLLATE DATABASE_DEFAULT+'].[','')+OBJECT_NAME(major_id)+ '] TO [' + USER_NAME(grantee_principal_id) + ']'
+                                            END
+                        + CASE WHEN dp.state_desc = 'GRANT_WITH_GRANT_OPTION' THEN ' WITH GRANT OPTION' ELSE '' END
+                    FROM sys.database_permissions dp
                     JOIN sys.database_principals pr ON pr.principal_id = dp.grantee_principal_id
-                    LEFT OUTER JOIN sys.all_objects o ON o.object_id = dp.major_id
+                    LEFT OUTER JOIN sys.all_objects o ON (o.object_id = dp.major_id AND dp.class NOT IN (0, 3))
                     LEFT OUTER JOIN sys.schemas s ON s.schema_id = o.schema_id
                     LEFT OUTER JOIN sys.types t on t.user_type_id = dp.major_id
 
                 $ExcludeSystemObjectssql
 
                 UNION ALL
-                SELECT	  SERVERPROPERTY('MachineName') AS ComputerName
+                SELECT    SERVERPROPERTY('MachineName') AS ComputerName
                         , ISNULL(SERVERPROPERTY('InstanceName'), 'MSSQLSERVER') AS InstanceName
                         , SERVERPROPERTY('ServerName') AS SqlInstance
                         , [database] = DB_NAME()
@@ -213,17 +216,81 @@ function Get-DbaPermission {
 
                 WHERE dp.[type]='R'
                     AND dp.is_fixed_role=1
+                UNION ALL -- include the dbo user
+                SELECT
+                    [ComputerName]		= SERVERPROPERTY('MachineName')
+                ,	[InstanceName]		= ISNULL(SERVERPROPERTY('InstanceName'), 'MSSQLSERVER')
+                ,	[SqlInstance]		= SERVERPROPERTY('ServerName')
+                ,	[database]			= DB_NAME()
+                ,	[PermState]			= ''
+                ,	[PermissionName]	= 'CONTROL'
+                ,	[SecurableType]		= 'DATABASE'
+                ,	[Securable]			= DB_NAME()
+                ,	[Grantee]			= SUSER_SNAME(owner_sid)
+                ,	[GranteeType]		= 'DATABASE OWNER (dbo user)'
+                ,	[revokestatement]	= ''
+                ,	[grantstatement]	= ''
+                FROM
+                    sys.databases
+                WHERE
+                    name = DB_NAME()
+                UNION ALL -- include the users with the db_owner role
+                SELECT
+                    [ComputerName]		= SERVERPROPERTY('MachineName')
+                ,	[InstanceName]		= ISNULL(SERVERPROPERTY('InstanceName'), 'MSSQLSERVER')
+                ,	[SqlInstance]		= SERVERPROPERTY('ServerName')
+                ,	[database]			= DB_NAME()
+                ,	[PermState]			= ''
+                ,	[PermissionName]	= 'CONTROL'
+                ,	[SecurableType]		= 'DATABASE'
+                ,	[Securable]			= DB_NAME()
+                ,	[Grantee]			= databaseUser.name
+                ,	[GranteeType]		= 'DATABASE OWNER (db_owner role)'
+                ,	[revokestatement]	= ''
+                ,	[grantstatement]	= ''
+                FROM
+                (
+                    SELECT
+                        member_principal_id
+                    FROM
+                        sys.database_role_members AS roleMembers
+                    INNER JOIN
+                        sys.database_principals AS roleFilter
+                            ON roleMembers.role_principal_id = roleFilter.principal_id
+                            AND roleFilter.name = 'db_owner'
+                ) dbOwner
+                INNER JOIN
+                    sys.database_principals AS databaseUser
+                        ON dbOwner.member_principal_id = databaseUser.principal_id
+                WHERE
+                    databaseUser.name <> 'dbo'
+                UNION ALL -- include the schema owners
+                SELECT
+                    [ComputerName]		= SERVERPROPERTY('MachineName')
+                ,	[InstanceName]		= ISNULL(SERVERPROPERTY('InstanceName'), 'MSSQLSERVER')
+                ,	[SqlInstance]		= SERVERPROPERTY('ServerName')
+                ,	[database]			= DB_NAME()
+                ,	[PermState]			= ''
+                ,	[PermissionName]	= 'CONTROL'
+                ,	[SecurableType]		= 'SCHEMA'
+                ,	[Securable]			= name
+                ,	[Grantee]			= USER_NAME(principal_id)
+                ,	[GranteeType]		= 'SCHEMA OWNER'
+                ,	[revokestatement]	= ''
+                ,	[grantstatement]	= ''
+                FROM
+                    sys.schemas
+                WHERE
+                    name NOT IN (SELECT name FROM sys.database_principals WHERE type = 'R')
+                AND name NOT IN ('dbo', 'guest', 'INFORMATION_SCHEMA', 'sys')
                 ;"
     }
 
     process {
         foreach ($instance in $SqlInstance) {
-            Write-Message -Level Verbose -Message "Connecting to $instance."
-
             try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential -MinimumVersion 9
-            }
-            catch {
+                $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -246,12 +313,16 @@ function Get-DbaPermission {
                 Write-Message -Level Verbose -Message "Processing $db on $instance."
 
                 if ($db.IsAccessible -eq $false) {
-                    Write-Warning "The database $db is not accessible. Skipping database."
+                    Write-Message -Level Warning -Message "The database $db is not accessible. Skipping database."
                     Continue
                 }
 
                 Write-Message -Level Debug -Message "T-SQL: $DBPermsql"
-                $db.ExecuteWithResults($DBPermsql).Tables.Rows
+                try {
+                    $db.ExecuteWithResults($DBPermsql).Tables.Rows
+                } catch {
+                    Stop-Function -Message "Failure executing against $($db.Name) on $instance" -ErrorRecord $_ -Continue
+                }
             }
         }
     }

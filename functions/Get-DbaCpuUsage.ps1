@@ -1,5 +1,5 @@
-﻿function Get-DbaCpuUsage {
-<#
+function Get-DbaCpuUsage {
+    <#
     .SYNOPSIS
         Provides detailed CPU usage information about a SQL Server's process
 
@@ -13,14 +13,18 @@
 
         References: https://www.mssqltips.com/sqlservertip/2454/how-to-find-out-how-much-cpu-a-sql-server-process-is-really-using/
 
-        Note: This command returns results from all SQL instances on the destionation server but the process
+        Note: This command returns results from all SQL instances on the destination server but the process
         column is specific to -SqlInstance passed.
 
     .PARAMETER SqlInstance
-        Allows you to specify a comma separated list of servers to query.
+        The target SQL Server instance or instances.
 
     .PARAMETER SqlCredential
-        Allows you to login to the SQL instance using alternative credentials.
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Credential
         Allows you to login to the Windows Server using alternative credentials.
@@ -35,33 +39,35 @@
 
     .NOTES
         Tags: CPU
-        dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
-        Copyright (C) 2016 Chrissy LeMaire
+        Author: Chrissy LeMaire (@cl), netnerds.net
+
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
         https://dbatools.io/Get-DbaCpuUsage
 
     .EXAMPLE
-        Get-DbaCpuUsage -SqlInstance sql2017
+        PS C:\> Get-DbaCpuUsage -SqlInstance sql2017
 
         Logs into the SQL Server instance "sql2017" and also the Computer itself (via WMI) to gather information
 
     .EXAMPLE
-        $usage = Get-DbaCpuUsage -SqlInstance sql2017
-        $usage.Process
+        PS C:\> $usage = Get-DbaCpuUsage -SqlInstance sql2017
+        PS C:\> $usage.Process
 
         Explores the processes (from Get-DbaProcess) associated with the usage results
 
     .EXAMPLE
-        Get-DbaCpuUsage -SqlInstance sql2017 -SqlCredential (Get-Credential sqladmin) -Credential (Get-Credential ad\sqldba)
+        PS C:\> Get-DbaCpuUsage -SqlInstance sql2017 -SqlCredential sqladmin -Credential ad\sqldba
 
         Logs into the SQL instance using the SQL Login 'sqladmin' and then Windows instance as 'ad\sqldba'
-#>
+
+    #>
     [CmdletBinding()]
-    Param (
+    param (
         [parameter(Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer", "SqlServers")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [PSCredential]$Credential,
@@ -82,16 +88,16 @@
         }
 
         $threadwaitreasons = [pscustomobject]@{
-            0 = 'Executive'
-            1 = 'FreePage'
-            2 = 'PageIn'
-            3 = 'PoolAllocation'
-            4 = 'ExecutionDelay'
-            5 = 'FreePage'
-            6 = 'PageIn'
-            7 = 'Executive'
-            8 = 'FreePage'
-            9 = 'PageIn'
+            0  = 'Executive'
+            1  = 'FreePage'
+            2  = 'PageIn'
+            3  = 'PoolAllocation'
+            4  = 'ExecutionDelay'
+            5  = 'FreePage'
+            6  = 'PageIn'
+            7  = 'Executive'
+            8  = 'FreePage'
+            9  = 'PageIn'
             10 = 'PoolAllocation'
             11 = 'ExecutionDelay'
             12 = 'FreePage'
@@ -108,10 +114,8 @@
     process {
         foreach ($instance in $SqlInstance) {
             try {
-                Write-Message -Level Verbose -Message "Connecting to $instance"
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
-            }
-            catch {
+                $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -120,8 +124,7 @@
 
             if ($server.VersionMajor -eq 8) {
                 $spidcollection = $server.Query("select spid, kpid from sysprocesses")
-            }
-            else {
+            } else {
                 $spidcollection = $server.Query("select t.os_thread_id as kpid, s.session_id as spid
             from sys.dm_exec_sessions s
             join sys.dm_exec_requests er on s.session_id = er.session_id
@@ -137,7 +140,7 @@
                 $ThreadStateValue = $threadstates.$threadstate
                 $ThreadWaitReasonValue = $threadwaitreasons.$threadwaitreason
 
-                Add-Member -Force -InputObject $thread -MemberType NoteProperty -Name ComputerName -value $server.NetName
+                Add-Member -Force -InputObject $thread -MemberType NoteProperty -Name ComputerName -value $server.ComputerName
                 Add-Member -Force -InputObject $thread -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
                 Add-Member -Force -InputObject $thread -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
                 Add-Member -Force -InputObject $thread -MemberType NoteProperty -Name Processes -Value ($processes | Where-Object HostProcessID -eq $thread.IDProcess)

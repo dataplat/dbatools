@@ -7,10 +7,10 @@ function Test-DbaCmConnection {
         Tests over which paths a computer can be managed.
 
         This function tries out the connectivity for:
-            - Cim over WinRM
-            - Cim over DCOM
-            - Wmi
-            - PowerShellRemoting
+        - Cim over WinRM
+        - Cim over DCOM
+        - Wmi
+        - PowerShellRemoting
         Results will be written to the connectivity cache and will cause Get-DbaCmObject and Invoke-DbaCmMethod to connect using the way most likely to succeed. This way, it is likely the other commands will take less time to execute. These others too cache their results, in order to dynamically update connection statistics.
 
         This function ignores global configuration settings limiting which protocols may be used.
@@ -38,11 +38,11 @@ function Test-DbaCmConnection {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Author: Fred Winmann (@FredWeinmann)
-        Tags: ComputerManagement
+        Tags: ComputerManagement, CIM
+        Author: Friedrich Weinmann (@FredWeinmann)
 
         Website: https://dbatools.io
-        Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+        Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
         **This function should not be called from within dbatools. It is meant as a tool for users only.**
@@ -51,46 +51,38 @@ function Test-DbaCmConnection {
         https://dbatools.io/Test-DbaCmConnection
 
     .EXAMPLE
-        Test-DbaCmConnection -ComputerName sql2014
+        PS C:\> Test-DbaCmConnection -ComputerName sql2014
 
         Performs a full-spectrum connection test against the computer sql2014. The results will be reported and registered. Future calls from Get-DbaCmObject will recognize the results and optimize the query.
 
     .EXAMPLE
-        Test-DbaCmConnection -ComputerName sql2014 -Credential $null -Type CimDCOM, CimRM
+        PS C:\> Test-DbaCmConnection -ComputerName sql2014 -Credential $null -Type CimDCOM, CimRM
 
         This test will run a connectivity test of CIM over DCOM and CIM over WinRM against the computer sql2014 using Windows Authentication.
 
         The results will be reported and registered. Future calls from Get-DbaCmObject will recognize the results and optimize the query.
     #>
     [CmdletBinding()]
-    Param (
-        [Parameter(ValueFromPipeline = $true)]
-        [Sqlcollaborative.Dbatools.Parameter.DbaCmConnectionParameter[]]
-        $ComputerName = $env:COMPUTERNAME,
-
-        [System.Management.Automation.PSCredential]
-        $Credential,
-
-        [Sqlcollaborative.Dbatools.Connection.ManagementConnectionType[]]
-        $Type = @("CimRM", "CimDCOM", "Wmi", "PowerShellRemoting"),
-
-        [switch]
-        $Force,
-
-        [switch]
-        [Alias('Silent')]$EnableException
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingWMICmdlet", "", Justification = "Using Get-WmiObject is used as a fallback for testing connections")]
+    param (
+        [Parameter(ValueFromPipeline)]
+        [Sqlcollaborative.Dbatools.Parameter.DbaCmConnectionParameter[]]$ComputerName = $env:COMPUTERNAME,
+        [PSCredential]$Credential,
+        [Sqlcollaborative.Dbatools.Connection.ManagementConnectionType[]]$Type = @("CimRM", "CimDCOM", "Wmi", "PowerShellRemoting"),
+        [switch]$Force,
+        [switch]$EnableException
     )
-
-    Begin {
+    begin {
         #region Configuration Values
-        $disable_cache = Get-DbaConfigValue -Name "ComputerManagement.Cache.Disable.All" -Fallback $false
-        $disable_badcredentialcache = Get-DbaConfigValue -Name "ComputerManagement.Cache.Disable.BadCredentialList" -Fallback $false
+        $disable_cache = Get-DbatoolsConfigValue -Name "ComputerManagement.Cache.Disable.All" -Fallback $false
+        #Variable marked as unused by PSScriptAnalyzer
+        #$disable_badcredentialcache = Get-DbatoolsConfigValue -Name "ComputerManagement.Cache.Disable.BadCredentialList" -Fallback $false
         #endregion Configuration Values
 
         #region Helper Functions
         function Test-ConnectionCimRM {
             [CmdletBinding()]
-            Param (
+            param (
                 [Sqlcollaborative.Dbatools.Parameter.DbaCmConnectionParameter]
                 $ComputerName,
 
@@ -99,23 +91,22 @@ function Test-DbaCmConnection {
             )
 
             try {
-                $os = $ComputerName.Connection.GetCimRMInstance($Credential, "Win32_OperatingSystem", "root\cimv2")
+                #Variable $os marked as unused by PSScriptAnalyzer replace with $null to catch output
+                $null = $ComputerName.Connection.GetCimRMInstance($Credential, "Win32_OperatingSystem", "root\cimv2")
 
                 New-Object PSObject -Property @{
                     Success       = "Success"
                     Timestamp     = Get-Date
                     Authenticated = $true
                 }
-            }
-            catch {
+            } catch {
                 if (($_.Exception.InnerException -eq 0x8007052e) -or ($_.Exception.InnerException -eq 0x80070005)) {
                     New-Object PSObject -Property @{
                         Success       = "Error"
                         Timestamp     = Get-Date
                         Authenticated = $false
                     }
-                }
-                else {
+                } else {
                     New-Object PSObject -Property @{
                         Success       = "Error"
                         Timestamp     = Get-Date
@@ -127,7 +118,7 @@ function Test-DbaCmConnection {
 
         function Test-ConnectionCimDCOM {
             [CmdletBinding()]
-            Param (
+            param (
                 [Sqlcollaborative.Dbatools.Parameter.DbaCmConnectionParameter]
                 $ComputerName,
 
@@ -136,23 +127,22 @@ function Test-DbaCmConnection {
             )
 
             try {
-                $os = $ComputerName.Connection.GetCimDComInstance($Credential, "Win32_OperatingSystem", "root\cimv2")
+                #Variable $os marked as unused by PSScriptAnalyzer replace with $null to catch output
+                $null = $ComputerName.Connection.GetCimDComInstance($Credential, "Win32_OperatingSystem", "root\cimv2")
 
                 New-Object PSObject -Property @{
                     Success       = "Success"
                     Timestamp     = Get-Date
                     Authenticated = $true
                 }
-            }
-            catch {
+            } catch {
                 if (($_.Exception.InnerException -eq 0x8007052e) -or ($_.Exception.InnerException -eq 0x80070005)) {
                     New-Object PSObject -Property @{
                         Success       = "Error"
                         Timestamp     = Get-Date
                         Authenticated = $false
                     }
-                }
-                else {
+                } else {
                     New-Object PSObject -Property @{
                         Success       = "Error"
                         Timestamp     = Get-Date
@@ -164,7 +154,7 @@ function Test-DbaCmConnection {
 
         function Test-ConnectionWmi {
             [CmdletBinding()]
-            Param (
+            param (
                 [string]
                 $ComputerName,
 
@@ -173,21 +163,20 @@ function Test-DbaCmConnection {
             )
 
             try {
-                $os = Get-WmiObject -ComputerName $ComputerName -Credential $Credential -Class Win32_OperatingSystem -ErrorAction Stop
+                #Variable $os marked as unused by PSScriptAnalyzer replace with $null to catch output
+                $null = Get-WmiObject -ComputerName $ComputerName -Credential $Credential -Class Win32_OperatingSystem -ErrorAction Stop
                 New-Object PSObject -Property @{
                     Success       = "Success"
                     Timestamp     = Get-Date
                     Authenticated = $true
                 }
-            }
-            catch [System.UnauthorizedAccessException] {
+            } catch [System.UnauthorizedAccessException] {
                 New-Object PSObject -Property @{
                     Success       = "Error"
                     Timestamp     = Get-Date
                     Authenticated = $false
                 }
-            }
-            catch {
+            } catch {
                 New-Object PSObject -Property @{
                     Success       = "Error"
                     Timestamp     = Get-Date
@@ -198,7 +187,7 @@ function Test-DbaCmConnection {
 
         function Test-ConnectionPowerShellRemoting {
             [CmdletBinding()]
-            Param (
+            param (
                 [string]
                 $ComputerName,
 
@@ -213,15 +202,15 @@ function Test-DbaCmConnection {
                     ErrorAction  = 'Stop'
                 }
                 if ($Credential) { $parameters["Credential"] = $Credential }
-                $os = Invoke-Command @parameters
+                #Variable $os marked as unused by PSScriptAnalyzer replace with $null to catch output
+                $null = Invoke-Command @parameters
 
                 New-Object PSObject -Property @{
                     Success       = "Success"
                     Timestamp     = Get-Date
                     Authenticated = $true
                 }
-            }
-            catch {
+            } catch {
                 # Will always consider authenticated, since any call with credentials to a server that doesn't exist will also carry invalid credentials error.
                 # There simply is no way to differentiate between actual authentication errors and server not reached
                 New-Object PSObject -Property @{
@@ -233,11 +222,11 @@ function Test-DbaCmConnection {
         }
         #endregion Helper Functions
     }
-    Process {
+    process {
         foreach ($ConnectionObject in $ComputerName) {
-            if (-not $ConnectionObject.Success) { Stop-Function -Message "Failed to interpret input: $($ConnectionObject.Input)" -Category InvalidArgument -Target $ConnectionObject.Input -Continue}
+            if (-not $ConnectionObject.Success) { Stop-Function -Message "Failed to interpret input: $($ConnectionObject.Input)" -Category InvalidArgument -Target $ConnectionObject.Input -Continue }
 
-            $Computer = $ConnectionObject.Connection.ComputerName.ToLower()
+            $Computer = $ConnectionObject.Connection.ComputerName.ToLowerInvariant()
             Write-Message -Level VeryVerbose -Message "[$Computer] Testing management connection"
 
             #region Setup connection object
@@ -245,12 +234,12 @@ function Test-DbaCmConnection {
             #endregion Setup connection object
 
             #region Handle credentials
-            $BadCredentialsFound = $false
+            #Variable marked as unused by PSScriptAnalyzer
+            #$BadCredentialsFound = $false
             if ($con.DisableBadCredentialCache) { $con.KnownBadCredentials.Clear() }
             elseif ($con.IsBadCredential($Credential) -and (-not $Force)) {
                 Stop-Function -Message "[$Computer] The credentials supplied are on the list of known bad credentials, skipping. Use -Force to override this." -Continue -Category InvalidArgument -Target $Computer
-            }
-            elseif ($con.IsBadCredential($Credential) -and $Force) {
+            } elseif ($con.IsBadCredential($Credential) -and $Force) {
                 $con.RemoveBadCredential($Credential)
             }
             #endregion Handle credentials
@@ -323,8 +312,7 @@ function Test-DbaCmConnection {
             $con
         }
     }
-    End {
+    end {
 
     }
 }
-

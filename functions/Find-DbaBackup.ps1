@@ -1,79 +1,80 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Find-DbaBackup {
     <#
-        .SYNOPSIS
-            Finds SQL Server backups on disk.
+    .SYNOPSIS
+        Finds SQL Server backups on disk.
 
-        .DESCRIPTION
-            Provides all of the same functionality for finding SQL backups to remove from disk as a standard maintenance plan would.
+    .DESCRIPTION
+        Provides all of the same functionality for finding SQL backups to remove from disk as a standard maintenance plan would.
 
-            As an addition you have the ability to check the Archive bit on files before deletion. This will allow you to ensure backups have been archived to your archive location before removal.
+        As an addition you have the ability to check the Archive bit on files before deletion. This will allow you to ensure backups have been archived to your archive location before removal.
 
-        .PARAMETER Path
-            Specifies the name of the base level folder to search for backup files.
+    .PARAMETER Path
+        Specifies the name of the base level folder to search for backup files.
 
-        .PARAMETER BackupFileExtension
-            Specifies the filename extension of the backup files you wish to find (typically 'bak', 'trn' or 'log'). Do not include the period.
+    .PARAMETER BackupFileExtension
+        Specifies the filename extension of the backup files you wish to find (typically 'bak', 'trn' or 'log'). Do not include the period.
 
-        .PARAMETER RetentionPeriod
-            Specifies the retention period for backup files. Correct format is ##U.
+    .PARAMETER RetentionPeriod
+        Specifies the retention period for backup files. Correct format is ##U.
 
-            ## is the retention value and must be an integer value
-            U signifies the units where the valid units are:
-            h = hours
-            d = days
-            w = weeks
-            m = months
+        ## is the retention value and must be an integer value
+        U signifies the units where the valid units are:
+        h = hours
+        d = days
+        w = weeks
+        m = months
 
-            Formatting Examples:
-            '48h' = 48 hours
-            '7d' = 7 days
-            '4w' = 4 weeks
-            '1m' = 1 month
+        Formatting Examples:
+        '48h' = 48 hours
+        '7d' = 7 days
+        '4w' = 4 weeks
+        '1m' = 1 month
 
-        .PARAMETER CheckArchiveBit
-            If this switch is enabled, the filesystem Archive bit is checked.
-            If this bit is set (which translates to "it has not been backed up to another location yet"), the file won't be included.
+    .PARAMETER CheckArchiveBit
+        If this switch is enabled, the filesystem Archive bit is checked.
+        If this bit is set (which translates to "it has not been backed up to another location yet"), the file won't be included.
 
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-        .NOTES
-            Tags: Storage, DisasterRecovery, Backup
-            Author: Chris Sommer, @cjsommer, www.cjsommer.com
+    .NOTES
+        Tags: Backup
+        Author: Chris Sommer (@cjsommer), www.cjsommer.com
 
-            dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
-            Copyright (C) 2016 Chrissy LeMaire
-            License: MIT https://opensource.org/licenses/MIT
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-        .LINK
-            https://dbatools.io/Find-DbaBackup
+    .LINK
+        https://dbatools.io/Find-DbaBackup
 
-        .EXAMPLE
-            Find-DbaBackup -Path 'C:\MSSQL\SQL Backup\' -BackupFileExtension trn -RetentionPeriod 48h
+    .EXAMPLE
+        PS C:\> Find-DbaBackup -Path 'C:\MSSQL\SQL Backup\' -BackupFileExtension trn -RetentionPeriod 48h
 
-            '*.trn' files in 'C:\MSSQL\SQL Backup\' and all subdirectories that are more than 48 hours old will be included.
+        Searches for all trn files in C:\MSSQL\SQL Backup\ and all subdirectories that are more than 48 hours old will be included.
 
-        .EXAMPLE
-            Find-DbaBackup -Path 'C:\MSSQL\Backup\' -BackupFileExtension bak -RetentionPeriod 7d -CheckArchiveBit
+    .EXAMPLE
+        PS C:\> Find-DbaBackup -Path 'C:\MSSQL\Backup\' -BackupFileExtension bak -RetentionPeriod 7d -CheckArchiveBit
 
-            '*.bak' files in 'C:\MSSQL\Backup\' and all subdirectories that are more than 7 days old will be included, but only if the files have been backed up to another location as verified by checking the Archive bit.
+        Searches for all bak files in C:\MSSQL\Backup\ and all subdirectories that are more than 7 days old will be included, but only if the files have been backed up to another location as verified by checking the Archive bit.
 
-    #>
+    .EXAMPLE
+         PS C:\> Find-DbaBackup -Path '\\SQL2014\Backup\' -BackupFileExtension bak -RetentionPeriod 24h | Remove-Item -Verbose
+
+         Searches for all bak files in \\SQL2014\Backup\ and all subdirectories that are more than 24 hours old and deletes only those files with verbose message.
+#>
     [CmdletBinding()]
     param (
-        [parameter(Mandatory = $true, HelpMessage = "Full path to the root level backup folder (ex. 'C:\SQL\Backups'")]
+        [parameter(Mandatory, HelpMessage = "Full path to the root level backup folder (ex. 'C:\SQL\Backups'")]
         [Alias("BackupFolder")]
         [string]$Path,
-        [parameter(Mandatory = $true, HelpMessage = "Backup File extension to remove (ex. bak, trn, dif)")]
+        [parameter(Mandatory, HelpMessage = "Backup File extension to remove (ex. bak, trn, dif)")]
         [string]$BackupFileExtension ,
-        [parameter(Mandatory = $true, HelpMessage = "Backup retention period. (ex. 24h, 7d, 4w, 6m)")]
+        [parameter(Mandatory, HelpMessage = "Backup retention period. (ex. 24h, 7d, 4w, 6m)")]
         [string]$RetentionPeriod ,
-        [parameter(Mandatory = $false)]
         [switch]$CheckArchiveBit = $false ,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 
@@ -114,10 +115,11 @@ function Find-DbaBackup {
             }
 
             switch ($Units) {
-                'h' { $UnitString = 'Hours'; [datetime]$ReturnDatetime = (Get-Date).AddHours( - $Value)  }
-                'd' { $UnitString = 'Days'; [datetime]$ReturnDatetime = (Get-Date).AddDays( - $Value)   }
-                'w' { $UnitString = 'Weeks'; [datetime]$ReturnDatetime = (Get-Date).AddDays( - $Value * 7) }
-                'm' { $UnitString = 'Months'; [datetime]$ReturnDatetime = (Get-Date).AddMonths( - $Value) }
+                #Variable marked as unused by PSScriptAnalyzer
+                'h' { <# $UnitString = 'Hours';#> [datetime]$ReturnDatetime = (Get-Date).AddHours( - $Value) }
+                'd' { <# $UnitString = 'Days';#> [datetime]$ReturnDatetime = (Get-Date).AddDays( - $Value) }
+                'w' { <# $UnitString = 'Weeks';#> [datetime]$ReturnDatetime = (Get-Date).AddDays( - $Value * 7) }
+                'm' { <# $UnitString = 'Months';#> [datetime]$ReturnDatetime = (Get-Date).AddMonths( - $Value) }
             }
             $ReturnDatetime
         }
@@ -141,9 +143,8 @@ function Find-DbaBackup {
         try {
             $RetentionDate = Convert-UserFriendlyRetentionToDatetime -UserFriendlyRetention $RetentionPeriod
             Write-Message -Message "Backup Retention Date set to $RetentionDate" -Level Verbose
-        }
-        catch {
-            Stop-Function -Message "Failed to interpret retention time!" -ErrorRecord $_
+        } catch {
+            Stop-Function -Message "Failed to interpret retention time." -ErrorRecord $_
         }
 
         # Filter out unarchived files if -CheckArchiveBit parameter is used
@@ -154,8 +155,7 @@ function Find-DbaBackup {
                     $_
                 }
             }
-        }
-        else {
+        } else {
             filter DbaArchiveBitFilter {
                 $_
             }

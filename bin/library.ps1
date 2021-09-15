@@ -1,5 +1,5 @@
-﻿# Current library Version the module expects
-$currentLibraryVersion = New-Object System.Version(0, 9, 2, 46)
+# Current library Version the module expects
+$currentLibraryVersion = New-Object System.Version(0, 10, 0, 72)
 
 <#
 Library Versioning 101:
@@ -13,7 +13,7 @@ Revision: Tracks all changes. Every single update to the library - bugfix, featu
 Updating the library version number:
 When changing the library version number, it is necessary to do so in TWO places:
 - At the top of this very library.ps1
-- Within AssemblyInfo.cs
+- Within dbatools.csproj
 These two locations MUST have matching version numbers, otherwise it will keep building the library and complaining about version mismatch!
 #>
 
@@ -34,101 +34,69 @@ Mostly for developers working on the library.
 
 #>
 
-#region Test whether the module had already been imported
-if (([System.Management.Automation.PSTypeName]'Sqlcollaborative.Dbatools.Configuration.Config').Type) {
-    # No need to load the library again, if the module was once already imported.
-    Write-Verbose -Message "Library already loaded, will not load again"
-    $ImportLibrary = $false
+$dll =
+if ($PSVersionTable.PSVersion.Major -ge 6) {
+    Join-Path $psModuleRoot "bin\netcoreapp3.1\dbatools.dll"
+} else {
+    Join-Path $psModuleRoot "bin\net462\dbatools.dll"
 }
-else {
-    Write-Verbose -Message "Library not present already, will import"
-    $ImportLibrary = $true
-}
-#endregion Test whether the module had already been imported
+
+$ImportLibrary = $true # Always import the library, because it contains some internal cmdlets.
 
 if ($ImportLibrary) {
     #region Add Code
     try {
-        $libraryBase = $ExecutionContext.SessionState.Module.ModuleBase + "\bin"
         # In strict security mode, only load from the already pre-compiled binary within the module
         if ($script:strictSecurityMode) {
-            if (Test-Path -Path "$libraryBase\dbatools.dll") {
-                Add-Type -Path "$libraryBase\dbatools.dll" -ErrorAction Stop
-            }
-            else {
-                throw "Library not found, terminating!"
+            if (Test-Path -Path $dll) {
+                $dbaToolsAssembly = Import-Module "$dll"
+            } else {
+                throw "Library not found, terminating"
             }
         }
         # Else we prioritize user convenience
         else {
-            $hasProject = Test-Path -Path "$libraryBase\projects\dbatools\dbatools.sln"
-            $hasCompiledDll = Test-Path -Path "$libraryBase\dbatools.dll"
-
-            if ((-not $script:alwaysBuildLibrary) -and $hasCompiledDll -and ([System.Diagnostics.FileVersionInfo]::GetVersionInfo("$libraryBase\dbatools.dll").FileVersion -eq $currentLibraryVersion)) {
-                $start = Get-Date
-                try {
-                    Write-Verbose -Message "Found library, trying to copy & import"
-                    if ($libraryBase -ne $script:DllRoot) { Copy-Item -Path "$libraryBase\dbatools.dll" -Destination $script:DllRoot -Force -ErrorAction Stop }
-                    Add-Type -Path "$script:DllRoot\dbatools.dll" -ErrorAction Stop
+            try {
+                if ((Test-Path -Path "$libraryBase/projects/dbatools/dbatools.sln")) {
+                    $sln = (Resolve-Path -Path "$libraryBase\projects\dbatools\dbatools.sln" -ErrorAction Stop)
+                    $hasProject = Test-Path -Path $sln -ErrorAction Stop
                 }
-                catch {
-                    Write-Verbose -Message "Failed to copy&import, attempting to import straight from the module directory"
-                    Add-Type -Path "$libraryBase\dbatools.dll" -ErrorAction Stop
-                }
-                Write-Verbose -Message "Total duration: $((Get-Date) - $start)"
+            } catch {
+                $null = 1
             }
-            elseif ($hasProject) {
+
+            if (-not $dll) {
+                $hasCompiledDll = $false
+            } else {
+                $hasCompiledDll = Test-Path -Path $dll -ErrorAction Stop
+            }
+
+            if ((-not $script:alwaysBuildLibrary) -and $hasCompiledDll -and ([System.Diagnostics.FileVersionInfo]::GetVersionInfo($dll).FileVersion -eq $currentLibraryVersion)) {
                 $start = Get-Date
-                $system = [Appdomain]::CurrentDomain.GetAssemblies() | Where-Object FullName -like "System, *"
-                $msbuild = (Resolve-Path "$(Split-Path $system.Location)\..\..\..\..\Framework$(if ([intptr]::Size -eq 8) { "64" })\$($system.ImageRuntimeVersion)\msbuild.exe").Path
-                switch ($PSVersionTable.PSVersion.Major) {
-                    3 { $msbuildConfiguration = "/p:Configuration=ps3" }
-                    4 { $msbuildConfiguration = "/p:Configuration=ps4" }
-                    default { $msbuildConfiguration = "/p:Configuration=Release" }
-                }
-                $msbuildOptions = ""
-                if ($env:APPVEYOR -eq 'True') {
-                    # This doesn't seem to work. Keep it here for now
-                    $msbuildOptions = '/logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"'
-                    $msbuildConfiguration = '/p:Configuration=Debug'
-
-                    if (-not (Test-Path "C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll")) {
-                        throw "msbuild logger not found, cannot compile library! Check your .NET installation health, then try again. Path checked: $msbuild"
-                    }
-                }
-
-                if (-not (Test-Path $msbuild)) {
-                    throw "msbuild not found, cannot compile library! Check your .NET installation health, then try again. Path checked: $msbuild"
-                }
-
-                Write-Verbose -Message "Building the library"
-                & $msbuild "$libraryBase\projects\dbatools\dbatools.sln" $msbuildConfiguration $msbuildOptions
 
                 try {
-                    Write-Verbose -Message "Found library, trying to copy & import"
-                    if ($script:alwaysBuildLibrary) { Move-Item -Path "$libraryBase\dbatools.dll" -Destination $script:DllRoot -Force -ErrorAction Stop }
-                    else { Copy-Item -Path "$libraryBase\dbatools.dll" -Destination $script:DllRoot -Force -ErrorAction Stop }
-                    Add-Type -Path "$script:DllRoot\dbatools.dll" -ErrorAction Stop
-                }
-                catch {
-                    Write-Verbose -Message "Failed to copy&import, attempting to import straight from the module directory"
-                    Add-Type -Path "$libraryBase\dbatools.dll" -ErrorAction Stop
+                    Write-Verbose -Message "Found library at $dll, import"
+                    $dbaToolsAssembly = Import-Module -Name "$dll"
+                } catch {
+                    Write-Verbose -Message "Failed to copy and import, attempting to import straight from the module directory"
+                    $script:DllRoot = Resolve-Path -Path "$($script:PSModuleRoot)\bin\"
+                    Import-Module -Name "$(Join-Path -Path $script:DllRoot -ChildPath dbatools.dll)" -ErrorAction Stop
                 }
                 Write-Verbose -Message "Total duration: $((Get-Date) - $start)"
-            }
-            else {
+            } elseif ($hasProject) {
+                . Import-ModuleFile (Resolve-Path -Path "$($script:PSModuleRoot)\bin\build-project.ps1")
+            } else {
                 throw "No valid dbatools library found! Check your module integrity"
             }
         }
 
         #region PowerShell TypeData
-        Update-TypeData -TypeName "Sqlcollaborative.Dbatools.dbaSystem.DbatoolsException" -SerializationDepth 2 -ErrorAction Ignore
-        Update-TypeData -TypeName "Sqlcollaborative.Dbatools.dbaSystem.DbatoolsExceptionRecord" -SerializationDepth 2 -ErrorAction Ignore
+        #Update-TypeData -TypeName "Sqlcollaborative.Dbatools.dbaSystem.DbatoolsException" -SerializationDepth 2 -ErrorAction Ignore
+        #Update-TypeData -TypeName "Sqlcollaborative.Dbatools.dbaSystem.DbatoolsExceptionRecord" -SerializationDepth 2 -ErrorAction Ignore
         #endregion PowerShell TypeData
-    }
-    catch {
+    } catch {
         #region Warning
-        Write-Warning @'
+        Write-Verbose @'
 Dear User,
 
 in the name of the dbatools team I apologize for the inconvenience.
@@ -160,18 +128,3 @@ aka "The guy who made most of The Library that Failed to import"
     }
     #endregion Add Code
 }
-
-#region Version Warning
-if ($currentLibraryVersion -ne ([version](([AppDomain]::CurrentDomain.GetAssemblies() | Where-Object ManifestModule -like "dbatools.dll").CustomAttributes | Where-Object AttributeType -like "System.Reflection.AssemblyFileVersionAttribute").ConstructorArguments.Value)) {
-    Write-Warning @"
-A version missmatch between the dbatools library loaded and the one expected by
-this module. This usually happens when you update the dbatools module and use
-Remove-Module / Import-Module in order to load the latest version without
-starting a new PowerShell instance.
-
-Please restart the console to apply the library update, or unexpected behavior will likely occur.
-
-If the issues continue to persist, please Remove-Item '$script:PSModuleRoot\bin\dbatools.dll'
-"@
-}
-#endregion Version Warning

@@ -1,71 +1,73 @@
 function Get-DbaTraceFlag {
     <#
-        .SYNOPSIS
-            Get global Trace Flag(s) information for each instance(s) of SQL Server.
+    .SYNOPSIS
+        Get global Trace Flag(s) information for each instance(s) of SQL Server.
 
-        .DESCRIPTION
-            Returns Trace Flags that are enabled globally on each instance(s) of SQL Server as an object.
+    .DESCRIPTION
+        Returns Trace Flags that are enabled globally on each instance(s) of SQL Server as an object.
 
-        .PARAMETER SqlInstance
-            SQL Server name or SMO object representing the SQL Server to connect to. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.
+    .PARAMETER SqlInstance
+        The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.
 
-        .PARAMETER SqlCredential
-            SqlCredential object to connect as. If not specified, current Windows login will be used.
+    .PARAMETER SqlCredential
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
 
-        .PARAMETER TraceFlag
-            Use this switch to filter to a specific Trace Flag.
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
 
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+        For MFA support, please use Connect-DbaInstance.
 
-        .NOTES
-            Tags: TraceFlag
-            Author: Kevin Bullen (@sqlpadawan)
+    .PARAMETER TraceFlag
+        Use this switch to filter to a specific Trace Flag.
 
-            References:  https://docs.microsoft.com/en-us/sql/t-sql/database-console-commands/dbcc-traceon-trace-flags-transact-sql
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-            Website: https://dbatools.io
-            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: MIT https://opensource.org/licenses/MIT
+    .NOTES
+        Tags: TraceFlag, DBCC
+        Author: Kevin Bullen (@sqlpadawan)
 
-        .LINK
-            https://dbatools.io/Get-DbaTraceFlag
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-        .EXAMPLE
-            Get-DbaTraceFlag -SqlInstance localhost
+        References:  https://docs.microsoft.com/en-us/sql/t-sql/database-console-commands/dbcc-traceon-trace-flags-transact-sql
 
-            Returns all Trace Flag information on the local default SQL Server instance
+    .LINK
+        https://dbatools.io/Get-DbaTraceFlag
 
-        .EXAMPLE
-            Get-DbaTraceFlag -SqlInstance localhost, sql2016
+    .EXAMPLE
+        PS C:\> Get-DbaTraceFlag -SqlInstance localhost
 
-            Returns all Trace Flag(s) for the local and sql2016 SQL Server instances
+        Returns all Trace Flag information on the local default SQL Server instance
 
-        .EXAMPLE
-            Get-DbaTraceFlag -SqlInstance localhost -TraceFlag 4199,3205
+    .EXAMPLE
+        PS C:\> Get-DbaTraceFlag -SqlInstance localhost, sql2016
 
-            Returns Trace Flag status for TF 4199 and 3205 for the local SQL Server instance if they are enabled.
+        Returns all Trace Flag(s) for the local and sql2016 SQL Server instances
+
+    .EXAMPLE
+        PS C:\> Get-DbaTraceFlag -SqlInstance localhost -TraceFlag 4199,3205
+
+        Returns Trace Flag status for TF 4199 and 3205 for the local SQL Server instance if they are enabled.
+
     #>
     [CmdletBinding()]
     param (
-        [parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
-        [Alias("ServerInstance", "SqlServer")]
+        [parameter(Mandatory, ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]
         $SqlCredential,
         [int[]]$TraceFlag,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 
     process {
         foreach ($instance in $SqlInstance) {
             try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
-            }
-            catch {
+                $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -82,7 +84,7 @@ function Get-DbaTraceFlag {
 
             foreach ($tflag in $tflags) {
                 [pscustomobject]@{
-                    ComputerName = $server.NetName
+                    ComputerName = $server.ComputerName
                     InstanceName = $server.ServiceName
                     SqlInstance  = $server.DomainInstanceName
                     TraceFlag    = $tflag.TraceFlag

@@ -25,8 +25,8 @@ function Test-DbaRestoreVersion {
     .NOTES
         Author: Stuart Moore (@napalmgram), stuart-moore.com
         Tags:
-        dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
-        Copyright (C) 2016 Chrissy LeMaire
+        dbatools PowerShell module (https://dbatools.io)
+       Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
     .EXAMPLE
@@ -34,13 +34,12 @@ function Test-DbaRestoreVersion {
 
         Checks that the Restore chain in $FilteredFiles is compatible with the SQL Server version of server1\instance1
 
-#>
+    #>
     [CmdletBinding()]
     param (
-        [parameter(Mandatory = $true)]
-        [Alias("ServerInstance", "SqlServer")]
+        [parameter(Mandatory)]
         [object]$SqlInstance,
-        [parameter(Mandatory = $true)]
+        [parameter(Mandatory)]
         [object[]]$FilteredRestoreFiles,
         [PSCredential]$SqlCredential,
         [switch]$SystemDatabaseRestore
@@ -57,15 +56,13 @@ function Test-DbaRestoreVersion {
     try {
         if ($SqlInstance -isnot [Microsoft.SqlServer.Management.Smo.SqlSmoObject]) {
             $Newconnection = $true
-            $Server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
-        }
-        else {
+            $Server = Connect-DbaInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
+        } else {
             $server = $SqlInstance
         }
-    }
-    catch {
-        Write-Message -Level Warning -Message "Cannot connect to $SqlInstance"
-        break
+    } catch {
+        Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $SqlInstance
+        return
     }
 
     if ($SystemDatabaseRestore) {
@@ -74,8 +71,7 @@ function Test-DbaRestoreVersion {
             return $false
             break
         }
-    }
-    else {
+    } else {
         if ($RestoreVersion -gt $Server.VersionMajor) {
             Write-Message -Level Warning -Message "Backups are from a newer version of SQL Server than $($Server.Name)"
             return $false
@@ -93,4 +89,3 @@ function Test-DbaRestoreVersion {
     }
     return $True
 }
-

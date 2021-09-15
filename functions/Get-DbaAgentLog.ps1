@@ -7,10 +7,14 @@ function Get-DbaAgentLog {
         Gets the "SQL Agent Error Log" of an instance. Returns all 10 error logs by default.
 
     .PARAMETER SqlInstance
-        SQL Server name or SMO object representing the SQL Server to connect to. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.
+        The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.
 
     .PARAMETER SqlCredential
-        Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted.
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER LogNumber
         An Int32 value that specifies the index number of the error log required. Error logs are listed 0 through 9 where 0 is the current error log and 9 is the oldest.
@@ -22,50 +26,47 @@ function Get-DbaAgentLog {
 
     .NOTES
         Tags: Logging
+        Author: Chrissy LeMaire (@cl), netnerds.net
+
         Website: https://dbatools.io
-        Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+        Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
         https://dbatools.io/Get-DbaAgentLog
 
     .EXAMPLE
-        Get-DbaAgentLog -SqlInstance sql01\sharepoint
+        PS C:\> Get-DbaAgentLog -SqlInstance sql01\sharepoint
 
         Returns the entire error log for the SQL Agent on sql01\sharepoint
 
     .EXAMPLE
-        Get-DbaAgentLog -SqlInstance sql01\sharepoint -LogNumber 3, 6
+        PS C:\> Get-DbaAgentLog -SqlInstance sql01\sharepoint -LogNumber 3, 6
 
         Returns log numbers 3 and 6 for the SQL Agent on sql01\sharepoint
 
     .EXAMPLE
-        $servers = "sql2014","sql2016", "sqlcluster\sharepoint"
-        $servers | Get-DbaAgentLog -LogNumber 0
+        PS C:\> $servers = "sql2014","sql2016", "sqlcluster\sharepoint"
+        PS C:\> $servers | Get-DbaAgentLog -LogNumber 0
 
         Returns the most recent SQL Agent error logs for "sql2014","sql2016" and "sqlcluster\sharepoint"
-#>
+
+    #>
     [CmdletBinding()]
     param (
-        [Parameter(ValueFromPipeline = $true)]
-        [Alias("ServerInstance", "SqlServer")]
+        [Parameter(ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
-        [Alias("Credential")]
         [PSCredential]
         $SqlCredential,
         [ValidateRange(0, 9)]
         [int[]]$LogNumber,
-        [Alias('Silent')]
         [switch]$EnableException
     )
     process {
         foreach ($instance in $SqlInstance) {
-            Write-Message -Level Verbose -Message "Attempting to connect to $instance"
-
             try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
-            }
-            catch {
+                $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -74,32 +75,29 @@ function Get-DbaAgentLog {
                     try {
                         foreach ($object in $server.JobServer.ReadErrorLog($number)) {
                             Write-Message -Level Verbose -Message "Processing $object"
-                            Add-Member -Force -InputObject $object -MemberType NoteProperty ComputerName -value $server.NetName
+                            Add-Member -Force -InputObject $object -MemberType NoteProperty ComputerName -value $server.ComputerName
                             Add-Member -Force -InputObject $object -MemberType NoteProperty InstanceName -value $server.ServiceName
                             Add-Member -Force -InputObject $object -MemberType NoteProperty SqlInstance -value $server.DomainInstanceName
 
                             # Select all of the columns you'd like to show
                             Select-DefaultView -InputObject $object -Property ComputerName, InstanceName, SqlInstance, LogDate, ProcessInfo, Text
                         }
-                    }
-                    catch {
+                    } catch {
                         Stop-Function -Continue -Target $server -Message "Could not read from SQL Server Agent"
                     }
                 }
-            }
-            else {
+            } else {
                 try {
                     foreach ($object in $server.JobServer.ReadErrorLog()) {
                         Write-Message -Level Verbose -Message "Processing $object"
-                        Add-Member -Force -InputObject $object -MemberType NoteProperty ComputerName -value $server.NetName
+                        Add-Member -Force -InputObject $object -MemberType NoteProperty ComputerName -value $server.ComputerName
                         Add-Member -Force -InputObject $object -MemberType NoteProperty InstanceName -value $server.ServiceName
                         Add-Member -Force -InputObject $object -MemberType NoteProperty SqlInstance -value $server.DomainInstanceName
 
                         # Select all of the columns you'd like to show
                         Select-DefaultView -InputObject $object -Property ComputerName, InstanceName, SqlInstance, LogDate, ProcessInfo, Text
                     }
-                }
-                catch {
+                } catch {
                     Stop-Function -Continue -Target $server -Message "Could not read from SQL Server Agent"
                 }
             }

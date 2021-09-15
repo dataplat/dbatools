@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Ask a question about dbatools or get support
+    url: https://github.com/sqlcollaborative/dbatools/discussions/new
+    about: Get support via forums
+  - name: Get an invite to our Slack channel
+    url: https://dbatools.io/slack/
+    about: Get support via chat
+  - name: Say thank you
+    url: https://github.com/sqlcollaborative/dbatools/discussions/new
+    about: Show and Tell us how you use dbatools & support our efforts in maintaining dbatools

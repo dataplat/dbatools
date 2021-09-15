@@ -1,72 +1,70 @@
 function Invoke-DbaCycleErrorLog {
     <#
-        .SYNOPSIS
-            Cycles the current instance or agent log.
+    .SYNOPSIS
+        Cycles the current instance or agent log.
 
-        .DESCRIPTION
-            Cycles the current error log for the instance (SQL Server) and/or SQL Server Agent.
+    .DESCRIPTION
+        Cycles the current error log for the instance (SQL Server) and/or SQL Server Agent.
 
-        .PARAMETER SqlInstance
-            The SQL Server instance holding the databases to be removed.You must have sysadmin access and server version must be SQL Server version 2000 or higher.
+    .PARAMETER SqlInstance
+        The target SQL Server instance or instances.You must have sysadmin access and server version must be SQL Server version 2000 or higher.
 
-        .PARAMETER SqlCredential
-            Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
+    .PARAMETER SqlCredential
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
 
-            $cred = Get-Credential, this pass this $cred to the param.
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
 
-            Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials. To connect as a different Windows user, run PowerShell as that user.
+        For MFA support, please use Connect-DbaInstance.
 
-        .PARAMETER Type
-            The log to cycle.
-            Accepts: instance or agent.
+    .PARAMETER Type
+        The log to cycle.
+        Accepts: instance or agent.
 
-        .PARAMETER WhatIf
-            If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
+    .PARAMETER WhatIf
+        If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
 
-        .PARAMETER Confirm
-            If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
+    .PARAMETER Confirm
+        If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-        .NOTES
-            Tags: Log, Cycle
-            Author: Shawn Melton (@wsmelton | http://blog.wsmelton.info)
+    .NOTES
+        Tags: Log, Cycle
+        Author: Shawn Melton (@wsmelton), https://wsmelton.github.io
 
-            Website: https://dbatools.io
-            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: MIT https://opensource.org/licenses/MIT
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-        .LINK
-            https://dbatools.io/Invoke-DbaCycleLog
+    .LINK
+        https://dbatools.io/Invoke-DbaCycleErrorLog
 
-        .EXAMPLE
-            Invoke-DbaCycleLog -SqlInstance sql2016 -Type agent
+    .EXAMPLE
+        PS C:\> Invoke-DbaCycleLog -SqlInstance sql2016 -Type agent
 
-            Cycles the current error log for the SQL Server Agent on SQL Server instance sql2016
+        Cycles the current error log for the SQL Server Agent on SQL Server instance sql2016
 
-        .EXAMPLE
-            Invoke-DbaCycleLog -SqlInstance sql2016 -Type instance
+    .EXAMPLE
+        PS C:\> Invoke-DbaCycleLog -SqlInstance sql2016 -Type instance
 
-            Cycles the current error log for the SQL Server instance on SQL Server instance sql2016
+        Cycles the current error log for the SQL Server instance on SQL Server instance sql2016
 
-        .EXAMPLE
-            Invoke-DbaCycleLog -SqlInstance sql2016
+    .EXAMPLE
+        PS C:\> Invoke-DbaCycleLog -SqlInstance sql2016
 
-            Cycles the current error log for both SQL Server instance and SQL Server Agent on SQL Server instance sql2016
+        Cycles the current error log for both SQL Server instance and SQL Server Agent on SQL Server instance sql2016
+
     #>
-    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'Low')]
+    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'Low')]
     param (
-        [parameter(Mandatory = $true, ValueFromPipeline = $true)]
-        [Alias("ServerInstance", "SqlServer")]
+        [parameter(Mandatory, ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
-        [Alias("Credential")]
         [PSCredential]$SqlCredential,
         [ValidateSet('instance', 'agent')]
         [string]$Type,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 
@@ -101,10 +99,8 @@ function Invoke-DbaCycleErrorLog {
 
         foreach ($instance in $SqlInstance) {
             try {
-                Write-Message -Level Verbose -Message "Connecting to $instance"
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
-            }
-            catch {
+                $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -113,7 +109,7 @@ function Invoke-DbaCycleErrorLog {
                 if ($Pscmdlet.ShouldProcess($server, "Cycle the log(s): $logs")) {
                     $null = $server.Query($sql)
                     [pscustomobject]@{
-                        ComputerName = $server.NetName
+                        ComputerName = $server.ComputerName
                         InstanceName = $server.ServiceName
                         SqlInstance  = $server.DomainInstanceName
                         LogType      = $logToCycle
@@ -121,10 +117,9 @@ function Invoke-DbaCycleErrorLog {
                         Notes        = $null
                     }
                 }
-            }
-            catch {
+            } catch {
                 [pscustomobject]@{
-                    ComputerName = $server.NetName
+                    ComputerName = $server.ComputerName
                     InstanceName = $server.ServiceName
                     SqlInstance  = $server.DomainInstanceName
                     LogType      = $logToCycle

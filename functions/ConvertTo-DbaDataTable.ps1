@@ -1,78 +1,79 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function ConvertTo-DbaDataTable {
     <#
-        .SYNOPSIS
-            Creates a DataTable for an object.
+    .SYNOPSIS
+        Creates a DataTable for an object.
 
-        .DESCRIPTION
-            Creates a DataTable based on an object's properties. This allows you to easily write to SQL Server tables.
+    .DESCRIPTION
+        Creates a DataTable based on an object's properties. This allows you to easily write to SQL Server tables.
 
-            Thanks to Chad Miller, this is based on his script. https://gallery.technet.microsoft.com/scriptcenter/4208a159-a52e-4b99-83d4-8048468d29dd
+        Thanks to Chad Miller, this is based on his script. https://gallery.technet.microsoft.com/scriptcenter/4208a159-a52e-4b99-83d4-8048468d29dd
 
-            If the attempt to convert to datatable fails, try the -Raw parameter for less accurate datatype detection.
+        If the attempt to convert to data table fails, try the -Raw parameter for less accurate datatype detection.
 
-        .PARAMETER InputObject
-            The object to transform into a DataTable.
+    .PARAMETER InputObject
+        The object to transform into a DataTable.
 
-        .PARAMETER TimeSpanType
-            Specifies the type to convert TimeSpan objects into. Default is 'TotalMilliseconds'. Valid options are: 'Ticks', 'TotalDays', 'TotalHours', 'TotalMinutes', 'TotalSeconds', 'TotalMilliseconds', and 'String'.
+    .PARAMETER TimeSpanType
+        Specifies the type to convert TimeSpan objects into. Default is 'TotalMilliseconds'. Valid options are: 'Ticks', 'TotalDays', 'TotalHours', 'TotalMinutes', 'TotalSeconds', 'TotalMilliseconds', and 'String'.
 
-        .PARAMETER SizeType
-            Specifies the type to convert DbaSize objects to. Default is 'Int64'. Valid options are 'Int32', 'Int64', and 'String'.
+    .PARAMETER SizeType
+        Specifies the type to convert DbaSize objects to. Default is 'Int64'. Valid options are 'Int32', 'Int64', and 'String'.
 
-        .PARAMETER IgnoreNull
-            If this switch is enabled, objects with null values will be ignored (empty rows will be added by default).
+    .PARAMETER IgnoreNull
+        If this switch is enabled, objects with null values will be ignored (empty rows will be added by default).
 
-        .PARAMETER Raw
-            If this switch is enabled, the DataTable will be created with strings. No attempt will be made to parse/determine data types.
+    .PARAMETER Raw
+        If this switch is enabled, the DataTable will be created with strings. No attempt will be made to parse/determine data types.
 
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-        .EXAMPLE
-            Get-Service | ConvertTo-DbaDataTable
+    .NOTES
+        Tags: DataTable, Table, Data
+        Author: Chrissy LeMaire (@cl), netnerds.net
 
-            Creates a DataTable from the output of Get-Service.
+        Website: https://dbatools.io/
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-        .EXAMPLE
-            ConvertTo-DbaDataTable -InputObject $csv.cheesetypes
+    .LINK
+        https://dbatools.io/ConvertTo-DbaDataTable
 
-            Creates a DataTable from the CSV object $csv.cheesetypes.
+    .OUTPUTS
+        System.Object[]
 
-        .EXAMPLE
-            $dblist | ConvertTo-DbaDataTable
+    .EXAMPLE
+        PS C:\> Get-Service | ConvertTo-DbaDataTable
 
-            Creates a DataTable from the $dblist object passed in via pipeline.
+        Creates a DataTable from the output of Get-Service.
 
-        .EXAMPLE
-            Get-Process | ConvertTo-DbaDataTable -TimeSpanType TotalSeconds
+    .EXAMPLE
+        PS C:\> ConvertTo-DbaDataTable -InputObject $csv.cheesetypes
 
-            Creates a DataTable with the running processes and converts any TimeSpan property to TotalSeconds.
+        Creates a DataTable from the CSV object $csv.cheesetypes.
 
-        .OUTPUTS
-            System.Object[]
+    .EXAMPLE
+        PS C:\> $dblist | ConvertTo-DbaDataTable
 
-        .NOTES
-            Tags:
-            Website: https://dbatools.io/
-            dbatools PowerShell module (https://dbatools.io)
-            Copyright: (C) 2016 Chrissy LeMaire
-            License: MIT https://opensource.org/licenses/MIT
+        Creates a DataTable from the $dblist object passed in via pipeline.
 
-        .LINK
-            https://dbatools.io/ConvertTo-DbaDataTable
+    .EXAMPLE
+        PS C:\> Get-Process | ConvertTo-DbaDataTable -TimeSpanType TotalSeconds
+
+        Creates a DataTable with the running processes and converts any TimeSpan property to TotalSeconds.
+
     #>
     [CmdletBinding()]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseOutputTypeCorrectly", "", Justification = "PSSA Rule Ignored by BOH")]
     [OutputType([System.Object[]])]
     param (
         [Parameter(Position = 0,
-            Mandatory = $true,
-            ValueFromPipeline = $true)]
+            Mandatory,
+            ValueFromPipeline)]
         [AllowNull()]
         [PSObject[]]$InputObject,
-        [Parameter(Position = 1)]
         [ValidateSet("Ticks",
             "TotalDays",
             "TotalHours",
@@ -86,14 +87,12 @@ function ConvertTo-DbaDataTable {
         [string]$SizeType = "Int64",
         [switch]$IgnoreNull,
         [switch]$Raw,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 
     begin {
         Write-Message -Level Debug -Message "Bound parameters: $($PSBoundParameters.Keys -join ", ")"
         Write-Message -Level Debug -Message "TimeSpanType = $TimeSpanType | SizeType = $SizeType"
-        Test-DbaDeprecation -DeprecatedOn 1.0.0 -Alias Out-DbaDataTable
 
         function Convert-Type {
             # This function will check so that the type is an accepted type which could be used when inserting into a table.
@@ -103,11 +102,8 @@ function ConvertTo-DbaDataTable {
             [CmdletBinding()]
             param (
                 $type,
-
                 $value,
-
                 $timespantype = 'TotalMilliseconds',
-
                 $sizetype = 'Int64'
             )
 
@@ -122,6 +118,7 @@ function ConvertTo-DbaDataTable {
                 'System.Single',
                 'System.Double',
                 'System.Byte',
+                'System.Byte[]',
                 'System.SByte',
                 'System.Boolean',
                 'System.DateTime',
@@ -145,16 +142,14 @@ function ConvertTo-DbaDataTable {
                 if ($timespantype -eq 'String') {
                     $value = $value.ToString()
                     $type = 'System.String'
-                }
-                else {
+                } else {
                     # Let's use Int64 for all other types than string.
                     # We could match the type more closely with the timespantype but that can be added in the future if needed.
                     $value = $value.$timespantype
                     $type = 'System.Int64'
                 }
                 $specialType = 'Timespan'
-            }
-            elseif ($type -eq 'Sqlcollaborative.Dbatools.Utility.Size') {
+            } elseif ($type -eq 'Sqlcollaborative.Dbatools.Utility.Size') {
                 $special = $true
                 switch ($sizetype) {
                     'Int64' {
@@ -171,45 +166,45 @@ function ConvertTo-DbaDataTable {
                     }
                 }
                 $specialType = 'Size'
-            }
-            elseif (-not ($type -in $types)) {
+            } elseif (-not ($type -in $types)) {
                 # All types which are not found in the array will be converted into strings.
-                # In this way we dont ignore it completely and it will be clear in the end why it looks as it does.
+                # In this way we don't ignore it completely and it will be clear in the end why it looks as it does.
                 $type = 'System.String'
             }
-            
+
             # return a hashtable instead of an object. I like hashtables :)
             return @{ type = $type; Value = $value; Special = $special; SpecialType = $specialType }
         }
-        
+
         function Convert-SpecialType {
-        <#
+            <#
             .SYNOPSIS
                 Converts a value for a known column.
-            
+
             .DESCRIPTION
                 Converts a value for a known column.
-            
+
             .PARAMETER Value
                 The value to convert
-            
+
             .PARAMETER Type
                 The special type for which to convert
-            
+
             .PARAMETER SizeType
                 The size type defined by the user
-            
+
             .PARAMETER TimeSpanType
                 The timespan type defined by the user
         #>
             [CmdletBinding()]
-            Param (
+            param (
                 $Value,
-                [ValidateSet('Timespan','Size')] [string]$Type,
+                [ValidateSet('Timespan', 'Size')]
+                [string]$Type,
                 [string]$SizeType,
                 [string]$TimeSpanType
             )
-            
+
             switch ($Type) {
                 'Size' {
                     if ($SizeType -eq 'String') { return $Value.ToString() }
@@ -218,56 +213,54 @@ function ConvertTo-DbaDataTable {
                 'Timespan' {
                     if ($TimeSpanType -eq 'String') {
                         $Value.ToString()
-                    }
-                    else {
+                    } else {
                         $Value.$TimeSpanType
                     }
                 }
             }
         }
-        
+
         function Add-Column {
-        <#
+            <#
             .SYNOPSIS
                 Adds a column to the datatable in progress.
-            
+
             .DESCRIPTION
                 Adds a column to the datatable in progress.
-            
+
             .PARAMETER Property
                 The property for which to add a column.
-            
+
             .PARAMETER DataTable
                 Autofilled. The table for which to add a column.
-            
+
             .PARAMETER TimeSpanType
                 Autofilled. How should timespans be handled?
-            
+
             .PARAMETER SizeType
                 Autofilled. How should sizes be handled?
-            
+
             .PARAMETER Raw
                 Autofilled. Whether the column should be string, no matter the input.
         #>
             [CmdletBinding()]
-            Param (
+            param (
                 [System.Management.Automation.PSPropertyInfo]$Property,
                 [System.Data.DataTable]$DataTable = $datatable,
                 [string]$TimeSpanType = $TimeSpanType,
                 [string]$SizeType = $SizeType,
                 [bool]$Raw = $Raw
             )
-            
+
             $type = $property.TypeNameOfValue
             try {
                 if ($Property.MemberType -like 'ScriptProperty') {
                     $type = $Property.GetType().FullName
                 }
-            }
-            catch { $type = 'System.String' }
-            
+            } catch { $type = 'System.String' }
+
             $converted = Convert-Type -type $type -value $property.Value -timespantype $TimeSpanType -sizetype $SizeType
-            
+
             $column = New-Object System.Data.DataColumn
             $column.ColumnName = $property.Name.ToString()
             if (-not $Raw) {
@@ -276,17 +269,17 @@ function ConvertTo-DbaDataTable {
             $null = $DataTable.Columns.Add($column)
             $converted
         }
-        
+
         $datatable = New-Object System.Data.DataTable
-        
+
         # Accelerate subsequent lookups of columns and special type columns
         $columns = @()
         $specialColumns = @()
         $specialColumnsType = @{ }
-        
+
         $ShouldCreateColumns = $true
     }
-    
+
     process {
         #region Handle null objects
         if ($null -eq $InputObject) {
@@ -294,12 +287,13 @@ function ConvertTo-DbaDataTable {
                 $datarow = $datatable.NewRow()
                 $datatable.Rows.Add($datarow)
             }
-            
+
             # Only ends the current process block
             return
         }
         #endregion Handle null objects
-        
+
+
         foreach ($object in $InputObject) {
             #region Handle null objects
             if ($null -eq $object) {
@@ -310,10 +304,17 @@ function ConvertTo-DbaDataTable {
                 continue
             }
             #endregion Handle null objects
-            
+
+            #Handle rows already being System.Data.DataRow
+            if ($object.GetType().FullName -eq 'System.Data.DataRow') {
+                $datatable.Merge($object.Table)
+                $datatable = $datatable.DefaultView.ToTable($true)
+                continue
+            }
+
             # The new row to insert
             $datarow = $datatable.NewRow()
-            
+
             #region Process Properties
             $objectProperties = $object.PSObject.Properties
             foreach ($property in $objectProperties) {
@@ -327,40 +328,36 @@ function ConvertTo-DbaDataTable {
                     }
                 }
                 #endregion Create Columns as needed
-                
+
                 # Handle null properties, as well as properties with access errors
                 try {
                     $propValueLength = $property.value.length
-                }
-                catch {
+                } catch {
                     $propValueLength = 0
                 }
-                
+
                 #region Insert value into column of row
                 if ($propValueLength -gt 0) {
                     # If the typename was a special typename we want to use the value returned from Convert-Type instead.
                     # We might get error if we try to change the value for $property.value if it is read-only. That's why we use $converted.value instead.
                     if ($property.Name -in $specialColumns) {
                         $datarow.Item($property.Name) = Convert-SpecialType -Value $property.value -Type $specialColumnsType[$property.Name] -SizeType $SizeType -TimeSpanType $TimeSpanType
-                    }
-                    else {
+                    } else {
                         if ($property.value.ToString().length -eq 15) {
                             if ($property.value.ToString() -eq 'System.Object[]') {
                                 $value = $property.value -join ", "
-                            }
-                            elseif ($property.value.ToString() -eq 'System.String[]') {
+                            } elseif ($property.value.ToString() -eq 'System.String[]') {
                                 $value = $property.value -join ", "
-                            }
-                            else {
+                            } else {
                                 $value = $property.value
                             }
-                        }
-                        else {
+                        } else {
                             $value = $property.value
                         }
-                        
-                        try { $datarow.Item($property.Name) = $value }
-                        catch {
+
+                        try {
+                            $datarow.Item($property.Name) = $value
+                        } catch {
                             if ($property.Name -notin $columns) {
                                 try {
                                     $newColumn = Add-Column -Property $property
@@ -369,22 +366,20 @@ function ConvertTo-DbaDataTable {
                                         $specialColumns += $property.Name
                                         $specialColumnsType[$property.Name] = $newColumn.SpecialType
                                     }
-                                    
+
                                     $datarow.Item($property.Name) = $newColumn.Value
+                                } catch {
+                                    Stop-Function -Message "Failed to add property $($property.Name) from $object" -ErrorRecord $_ -Target $object
                                 }
-                                catch {
-                                    Write-Message -Level Warning -Message "Failed to add property $($property.Name) from $object" -ErrorRecord $_ -Target $object
-                                }
-                            }
-                            else {
-                                Write-Message -Level Warning -Message "Failed to add property $($property.Name) from $object" -ErrorRecord $_ -Target $object
+                            } else {
+                                Stop-Function -Message "Failed to add property $($property.Name) from $object" -ErrorRecord $_ -Target $object
                             }
                         }
                     }
                 }
                 #endregion Insert value into column of row
             }
-            
+
             $datatable.Rows.Add($datarow)
             # If this is the first non-null object then the columns has just been created.
             # Set variable to false to skip creating columns from now on.
@@ -394,9 +389,8 @@ function ConvertTo-DbaDataTable {
             #endregion Process Properties
         }
     }
-    
     end {
         Write-Message -Level InternalComment -Message "Finished."
-        ,$datatable
+        , $datatable
     }
 }

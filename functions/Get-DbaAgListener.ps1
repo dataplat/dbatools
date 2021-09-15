@@ -1,101 +1,94 @@
 function Get-DbaAgListener {
     <#
-        .SYNOPSIS
-            Outputs the name of the Listener for the Availability Group(s) found on the server.
+    .SYNOPSIS
+        Returns availability group listeners.
 
-        .DESCRIPTION
-            Default view provides most common set of properties for information on the database in an Availability Group(s).
+    .DESCRIPTION
+        Returns availability group listeners.
 
-            Information returned on the database will be specific to that replica, whether it is primary or a secondary.
+    .PARAMETER SqlInstance
+        The target SQL Server instance or instances. Server version must be SQL Server version 2012 or higher.
 
-            This command will return an SMO object, but it is the AvailabilityDatabases object  and not the Server.Databases object.
+    .PARAMETER SqlCredential
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
 
-        .PARAMETER SqlInstance
-            The SQL Server instance. Server version must be SQL Server version 2012 or higher.
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
 
-        .PARAMETER SqlCredential
-            Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted).
+        For MFA support, please use Connect-DbaInstance.
 
-        .PARAMETER AvailabilityGroup
-            Specify the Availability Group name that you want to get information on.
+    .PARAMETER AvailabilityGroup
+        Specify the availability groups to query.
 
-        .PARAMETER Listener
-            Specify the Listener name that you want to get information on.
+    .PARAMETER Listener
+        Return only specific listeners.
 
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+    .PARAMETER InputObject
+        Enables piped input from Get-DbaAvailabilityGroup.
 
-        .NOTES
-            Tags: DisasterRecovery, AG, AvailabilityGroup, Replica
-            Author: Viorel Ciucu (@viorelciucu)
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-            Website: https://dbatools.io
-            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: MIT https://opensource.org/licenses/MIT
+    .NOTES
+        Tags: AvailabilityGroup, HA, AG
+        Author: Viorel Ciucu (@viorelciucu)
 
-        .LINK
-            https://dbatools.io/Get-DbaAgListener
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-        .EXAMPLE
-            Get-DbaAgListener -SqlInstance sqlserver2014a
+    .LINK
+        https://dbatools.io/Get-DbaAgListener
 
-            Returns basic information on the listener found on sqlserver2014a
+    .EXAMPLE
+        PS C:\> Get-DbaAgListener -SqlInstance sql2017a
 
-        .EXAMPLE
-            Get-DbaAgListener -SqlInstance sqlserver2014a -AvailabilityGroup AG-a
+        Returns all listeners found on sql2017a
 
-            Returns basic information on the listener found on sqlserver2014a in the Availability Group AG-a
+    .EXAMPLE
+        PS C:\> Get-DbaAgListener -SqlInstance sql2017a -AvailabilityGroup AG-a
 
+        Returns all listeners found on sql2017a on sql2017a for the availability group AG-a
+
+    .EXAMPLE
+        PS C:\> Get-DbaAvailabilityGroup -SqlInstance sql2017a -AvailabilityGroup OPP | Get-DbaAgListener
+
+        Returns all listeners found on sql2017a on sql2017a for the availability group OPP
     #>
     [CmdletBinding()]
     param (
-        [parameter(Mandatory = $true, ValueFromPipeline = $true)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
-        [PSCredential][System.Management.Automation.CredentialAttribute()]
-        $SqlCredential,
-        [parameter(ValueFromPipeline = $true)]
-        [object[]]$AvailabilityGroup,
-        [object[]]$Listener,
-        [Alias('Silent')]
+        [PSCredential]$SqlCredential,
+        [string[]]$AvailabilityGroup,
+        [string[]]$Listener,
+        [parameter(ValueFromPipeline)]
+        [Microsoft.SqlServer.Management.Smo.AvailabilityGroup[]]$InputObject,
         [switch]$EnableException
     )
-
     process {
-        foreach ($serverName in $SqlInstance) {
-            try {
-                $server = Connect-SqlInstance -SqlInstance $serverName -SqlCredential $SqlCredential -MinimumVersion 11
-            }
-            catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
-            }
+        if (Test-Bound -Not SqlInstance, InputObject) {
+            Stop-Function -Message "You must supply either -SqlInstance or an Input Object"
+            return
+        }
 
-            if ($server.IsHadrEnabled -eq $false) {
-                Stop-Function -Message "Availability Group (HADR) is not configured for the instance: $serverName." -Target $serverName -Continue
-            }
+        if ($SqlInstance) {
+            $InputObject += Get-DbaAvailabilityGroup -SqlInstance $SqlInstance -SqlCredential $SqlCredential -AvailabilityGroup $AvailabilityGroup
+        }
 
-            $ags = $server.AvailabilityGroups
-            if ($AvailabilityGroup) {
-                $ags = $ags | Where-Object Name -in $AvailabilityGroup
-            }
+        if (Test-Bound -ParameterName Listener) {
+            $InputObject = $InputObject | Where-Object { $_.AvailabilityGroupListeners.Name -contains $Listener }
+        }
 
-            if ($Listener) {
-                $ags = $ags | Where-Object AvailabilityGroupListeners -match $Listener
-                if ($ags.Length -eq 0) {
-                    Stop-Function -Message "We could not find the listener $Listener on $serverName" -Target $serverName -Continue
-                }
-            }
+        $defaults = 'ComputerName', 'InstanceName', 'SqlInstance', 'AvailabilityGroup', 'Name', 'PortNumber', 'ClusterIPConfiguration'
 
-            foreach ($ag in $ags) {
-
-                $Listener = $ag.AvailabilityGroupListeners
-                $defaults = 'Parent as AvailabilityGroupName', 'Name as ListenerName', 'PortNumber', 'ClusterIPConfiguration'
-
-                Select-DefaultView -InputObject $Listener -Property $defaults
-            }
-
+        foreach ($aglistener in $InputObject.AvailabilityGroupListeners) {
+            $server = $aglistener.Parent.Parent
+            Add-Member -Force -InputObject $aglistener -MemberType NoteProperty -Name ComputerName -value $server.ComputerName
+            Add-Member -Force -InputObject $aglistener -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
+            Add-Member -Force -InputObject $aglistener -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
+            Add-Member -Force -InputObject $aglistener -MemberType NoteProperty -Name AvailabilityGroup -value $aglistener.Parent.Name
+            Select-DefaultView -InputObject $aglistener -Property $defaults
         }
     }
 }

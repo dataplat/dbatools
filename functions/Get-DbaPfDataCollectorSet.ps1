@@ -1,56 +1,58 @@
-﻿function Get-DbaPfDataCollectorSet {
+function Get-DbaPfDataCollectorSet {
     <#
-        .SYNOPSIS
-            Gets Performance Monitor Data Collector Set.
+    .SYNOPSIS
+        Gets Performance Monitor Data Collector Set.
 
-        .DESCRIPTION
-            Gets Performance Monitor Data Collector Set.
+    .DESCRIPTION
+        Gets Performance Monitor Data Collector Set.
 
-        .PARAMETER ComputerName
-            The target computer. Defaults to localhost.
+    .PARAMETER ComputerName
+        The target computer. Defaults to localhost.
 
-        .PARAMETER Credential
-            Allows you to login to servers using alternative credentials. To use:
+    .PARAMETER Credential
+        Allows you to login to servers using alternative credentials. To use:
 
-            $scred = Get-Credential, then pass $scred object to the -Credential parameter.
+        $scred = Get-Credential, then pass $scred object to the -Credential parameter.
 
-        .PARAMETER CollectorSet
-            The Collector set name.
+    .PARAMETER CollectorSet
+        The Collector set name.
 
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-        .NOTES
-            Tags: PerfMon
+    .NOTES
+        Tags: Performance, DataCollector, PerfCounter
+        Author: Chrissy LeMaire (@cl), netnerds.net
 
-            Website: https://dbatools.io
-            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: MIT https://opensource.org/licenses/MIT
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-        .LINK
-            https://dbatools.io/Get-DbaPfDataCollectorSet
+    .LINK
+        https://dbatools.io/Get-DbaPfDataCollectorSet
 
-        .EXAMPLE
-            Get-DbaPfDataCollectorSet
+    .EXAMPLE
+        PS C:\> Get-DbaPfDataCollectorSet
 
-            Gets all Collector Sets on localhost.
+        Gets all Collector Sets on localhost.
 
-        .EXAMPLE
-            Get-DbaPfDataCollectorSet -ComputerName sql2017
+    .EXAMPLE
+        PS C:\> Get-DbaPfDataCollectorSet -ComputerName sql2017
 
-            Gets all Collector Sets on sql2017.
+        Gets all Collector Sets on sql2017.
 
-        .EXAMPLE
-            Get-DbaPfDataCollectorSet -ComputerName sql2017 -Credential (Get-Credential) -CollectorSet 'System Correlation'
+    .EXAMPLE
+        PS C:\> Get-DbaPfDataCollectorSet -ComputerName sql2017 -Credential ad\sqldba -CollectorSet 'System Correlation'
 
-            Gets the 'System Correlation' CollectorSet on sql2017 using alternative credentials.
+        Gets the 'System Correlation' CollectorSet on sql2017 using alternative credentials.
 
-        .EXAMPLE
-            Get-DbaPfDataCollectorSet | Select *
+    .EXAMPLE
+        PS C:\> Get-DbaPfDataCollectorSet | Select-Object *
 
-            Displays extra columns and also exposes the original COM object in DataCollectorSetObject.
+        Displays extra columns and also exposes the original COM object in DataCollectorSetObject.
+
     #>
     [CmdletBinding()]
     param (
@@ -78,8 +80,7 @@
                     if ($task) {
                         $tasks += $task
                     }
-                }
-                catch {
+                } catch {
                     $done = $true
                 }
             }
@@ -112,16 +113,14 @@
                     if ($outputlocation) {
                         $dir = (Split-Path $outputlocation).Replace(':', '$')
                         $remote = "\\$env:COMPUTERNAME\$dir"
-                    }
-                    else {
+                    } else {
                         $remote = $null
                     }
 
                     if ($latestoutputlocation) {
                         $dir = ($latestoutputlocation).Replace(':', '$')
                         $remotelatest = "\\$env:COMPUTERNAME\$dir"
-                    }
-                    else {
+                    } else {
                         $remote = $null
                     }
 
@@ -163,8 +162,8 @@
                         TaskObject                 = $task
                         Credential                 = $args[1]
                     }
-                }
-                catch {
+                } catch {
+                    <# DO NOT use Write-Message as this is inside of a script block #>
                     Write-Warning -Message "Issue with getting Collector Set $setname on $env:Computername : $_."
                     continue
                 }
@@ -177,12 +176,12 @@
         'SubdirectoryFormatPattern', 'Task', 'TaskArguments', 'TaskRunAsSelf', 'TaskUserTextArguments', 'UserAccount'
     }
     process {
+
+
         foreach ($computer in $ComputerName.ComputerName) {
-            Write-Message -Level Verbose -Message "Connecting to $computer using Invoke-Command."
             try {
                 Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock $setscript -ArgumentList $CollectorSet, $Credential -ErrorAction Stop | Select-DefaultView -Property $columns
-            }
-            catch {
+            } catch {
                 Stop-Function -Message "Failure" -ErrorRecord $_ -Target $computer -Continue
             }
         }

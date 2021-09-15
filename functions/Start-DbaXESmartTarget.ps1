@@ -1,94 +1,98 @@
-﻿function Start-DbaXESmartTarget {
+function Start-DbaXESmartTarget {
     <#
-        .SYNOPSIS
-            XESmartTarget runs as a client application for an Extended Events session running on a SQL Server instance.
+    .SYNOPSIS
+        XESmartTarget runs as a client application for an Extended Events session running on a SQL Server instance.
 
-        .DESCRIPTION
-            XESmartTarget offers the ability to set up complex actions in response to Extended Events captured in sessions, without writing a single line of code.
+    .DESCRIPTION
+        XESmartTarget offers the ability to set up complex actions in response to Extended Events captured in sessions, without writing a single line of code.
 
-            See more at https://github.com/spaghettidba/XESmartTarget/wiki
+        See more at https://github.com/spaghettidba/XESmartTarget/wiki
 
-        .PARAMETER SqlInstance
-            Target SQL Server. You must have sysadmin access and server version must be SQL Server version 2008 or higher.
+    .PARAMETER SqlInstance
+        The target SQL Server instance or instances. You must have sysadmin access and server version must be SQL Server version 2008 or higher.
 
-        .PARAMETER SqlCredential
-            Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
+    .PARAMETER SqlCredential
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
 
-            $scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
 
-            Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
+        For MFA support, please use Connect-DbaInstance.
 
-            To connect as a different Windows user, run PowerShell as that user.
+    .PARAMETER Session
+        Name of the Extended Events session to attach to.
 
-        .PARAMETER Session
-            Name of the Extended Events session to attach to.
+        You can monitor a single session with an instance of XESmartTarget. In case you need to perform action on multiple sessions, run an additional instance of XESmartTarget, with its own configuration file.
 
-            You can monitor a single session with an instance of XESmartTarget. In case you need to perform action on multiple sessions, run an additional instance of XESmartTarget, with its own configuration file.
+    .PARAMETER Database
+        Specifies the name of the database that contains the target table.
 
-        .PARAMETER Database
-            Specifies the name of the database that contains the target table.
+    .PARAMETER FailOnProcessingError
+        If this switch is enabled, the a processing error will trigger a failure.
 
-        .PARAMETER FailOnProcessingError
-            If this switch is enabled, the a processing error will trigger a failure.
+    .PARAMETER Responder
+        The list of responses can include zero or more Response objects, each to be configured by specifying values for their public members.
 
-        .PARAMETER Responder
-            The list of responses can include zero or more Response objects, each to be configured by specifying values for their public members.
+    .PARAMETER Template
+        Path to the dbatools built-in templates
 
-        .PARAMETER Template
-            Path to the dbatools built-in templates
+    .PARAMETER NotAsJob
+        If this switch is enabled, output will be sent to screen indefinitely. BY default, a job will be run in the background.
 
-        .PARAMETER NotAsJob
-            If this switch is enabled, output will be sent to screen indefinitely. BY default, a job will be run in the background.
+    .PARAMETER WhatIf
+        If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
 
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+    .PARAMETER Confirm
+        If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
-        .NOTES
-            Tags: ExtendedEvent, XE, Xevent
-            Website: https://dbatools.io
-            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: MIT https://opensource.org/licenses/MIT
-            SmartTarget: by Gianluca Sartori (@spaghettidba)
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-        .LINK
-            https://dbatools.io/Start-DbaXESmartTarget
-            https://github.com/spaghettidba/XESmartTarget/wiki
+    .NOTES
+        Tags: ExtendedEvent, XE, XEvent, SmartTarget
+        Author: Chrissy LeMaire (@cl) | SmartTarget by Gianluca Sartori (@spaghettidba)
 
-        .EXAMPLE
-            $response = New-DbaXESmartQueryExec -SqlInstance sql2017 -Database dbadb -Query "update table set whatever = 1"
-            Start-DbaXESmartTarget -SqlInstance sql2017 -Session deadlock_tracker -Responder $response
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-            Executes a T-SQL command against dbadb on sql2017 whenever a deadlock event is recorded.
+    .LINK
+        https://dbatools.io/Start-DbaXESmartTarget
 
-        .EXAMPLE
-            $response = New-DbaXESmartQueryExec -SqlInstance sql2017 -Database dbadb -Query "update table set whatever = 1"
-            $params = @{
-                SmtpServer = "smtp.ad.local"
-                To = "admin@ad.local"
-                Sender = "reports@ad.local"
-                Subject = "Query executed"
-                Body = "Query executed at {collection_time}"
-                Attachment = "batch_text"
-                AttachmentFileName = "query.sql"
-            }
-            $emailresponse = New-DbaXESmartEmail @params
-            Start-DbaXESmartTarget -SqlInstance sql2017 -Session querytracker -Responder $response, $emailresponse
+    .EXAMPLE
+        PS C:\>$response = New-DbaXESmartQueryExec -SqlInstance sql2017 -Database dbadb -Query "update table set whatever = 1"
+        PS C:\>Start-DbaXESmartTarget -SqlInstance sql2017 -Session deadlock_tracker -Responder $response
 
-            Executes a T-SQL command against dbadb on sql2017 and sends an email whenever a querytracker event is recorded.
+        Executes a T-SQL command against dbadb on sql2017 whenever a deadlock event is recorded.
 
-        .EXAMPLE
-            $columns = "cpu_time", "duration", "physical_reads", "logical_reads", "writes", "row_count", "batch_text"
-            $response = New-DbaXESmartTableWriter -SqlInstance sql2017 -Database dbadb -Table deadlocktracker -OutputColumns $columns -Filter "duration > 10000"
-            Start-DbaXESmartTarget -SqlInstance sql2017 -Session deadlock_tracker -Responder $response
+    .EXAMPLE
+        PS C:\>$response = New-DbaXESmartQueryExec -SqlInstance sql2017 -Database dbadb -Query "update table set whatever = 1"
+        PS C:\>$params = @{
+        >> SmtpServer = "smtp.ad.local"
+        >> To = "admin@ad.local"
+        >> Sender = "reports@ad.local"
+        >> Subject = "Query executed"
+        >> Body = "Query executed at {collection_time}"
+        >> Attachment = "batch_text"
+        >> AttachmentFileName = "query.sql"
+        >> }
+        PS C:\> $emailresponse = New-DbaXESmartEmail @params
+        PS C:\> Start-DbaXESmartTarget -SqlInstance sql2017 -Session querytracker -Responder $response, $emailresponse
 
-            Writes Extended Events to the deadlocktracker table in dbadb on sql2017.
+        Executes a T-SQL command against dbadb on sql2017 and sends an email whenever a querytracker event is recorded.
+
+    .EXAMPLE
+        PS C:\> $columns = "cpu_time", "duration", "physical_reads", "logical_reads", "writes", "row_count", "batch_text"
+        PS C:\> $response = New-DbaXESmartTableWriter -SqlInstance sql2017 -Database dbadb -Table deadlocktracker -OutputColumns $columns -Filter "duration > 10000"
+        PS C:\> Start-DbaXESmartTarget -SqlInstance sql2017 -Session deadlock_tracker -Responder $response
+
+        Writes Extended Events to the deadlocktracker table in dbadb on sql2017.
+
     #>
-    [CmdletBinding()]
+    [CmdletBinding(SupportsShouldProcess)]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [string]$Database,
@@ -102,7 +106,7 @@
     )
     begin {
         function Start-SmartFunction {
-            [CmdletBinding()]
+            [CmdletBinding(SupportsShouldProcess)]
             param (
                 [parameter(Mandatory, ValueFromPipeline)]
                 [Alias("ServerInstance", "SqlServer")]
@@ -119,9 +123,8 @@
             )
             begin {
                 try {
-                    Add-Type -Path "$script:PSModuleRoot\bin\XESmartTarget\XESmartTarget.Core.dll" -ErrorAction Stop
-                }
-                catch {
+                    Add-Type -Path "$script:PSModuleRoot\bin\libraries\third-party\XESmartTarget\XESmartTarget.Core.dll" -ErrorAction Stop
+                } catch {
                     Stop-Function -Message "Could not load XESmartTarget.Core.dll" -ErrorRecord $_ -Target "XESmartTarget"
                     return
                 }
@@ -131,10 +134,8 @@
 
                 foreach ($instance in $SqlInstance) {
                     try {
-                        Write-Message -Level Verbose -Message "Connecting to $instance."
-                        $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 11
-                    }
-                    catch {
+                        $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 11
+                    } catch {
                         Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
                     }
 
@@ -152,17 +153,17 @@
                         $target.Responses.Add($response)
                     }
 
-                    try {
-                        $target.Start()
-                    }
-                    catch {
-                        $message = $_.Exception.InnerException.InnerException | Out-String
-                        
-                        if ($message) {
-                            Stop-Function -Message $message -Target "XESmartTarget" -Continue
-                        }
-                        else {
-                            Stop-Function -Message "Failure" -Target "XESmartTarget" -ErrorRecord $_ -Continue
+                    if ($Pscmdlet.ShouldProcess("$instance", "Starting SmartTarget on $($server.name)")) {
+                        try {
+                            $target.Start()
+                        } catch {
+                            $message = $_.Exception.InnerException.InnerException | Out-String
+
+                            if ($message) {
+                                Stop-Function -Message $message -Target "XESmartTarget" -Continue
+                            } else {
+                                Stop-Function -Message "Failure" -Target "XESmartTarget" -ErrorRecord $_ -Continue
+                            }
                         }
                     }
                 }
@@ -180,42 +181,48 @@
                 return
             }
         }
-
-        if ($NotAsJob) {
-            Start-SmartFunction @PSBoundParameters
-        }
-        else {
-            $date = (Get-Date -UFormat "%H%M%S") #"%m%d%Y%H%M%S"
-            Start-Job -Name "XESmartTarget-$session-$date" -ArgumentList $PSBoundParameters, $script:PSModuleRoot -ScriptBlock {
-                param (
-                    $Parameters,
-                    $ModulePath
-                )
-                Import-Module "$ModulePath\dbatools.psd1"
-                Add-Type -Path "$ModulePath\bin\XESmartTarget\XESmartTarget.Core.dll" -ErrorAction Stop
-                $params = @{
-                    SqlInstance    = $Parameters.SqlInstance.InputObject
-                    Database       = $Parameters.Database
-                    Session        = $Parameters.Session
-                    Responder      = @()
-                }
-                if ($Parameters.SqlCredential) {
-                    $params["SqlCredential"] = $Parameters.SqlCredential
-                }
-                foreach ($responder in $Parameters.Responder) {
-                    $typename = $responder.PSObject.TypeNames[0] -replace "^Deserialized\.", ""
-                    $newResponder = New-Object -TypeName $typename
-                    foreach ($property in $responder.PSObject.Properties) {
-                        if ($property.Value) {
-                            $name = $property.Name
-                            $newResponder.$name = $property.Value
-                        }
+        if ($Pscmdlet.ShouldProcess("$instance", "Configuring SmartTarget to start")) {
+            if ($NotAsJob) {
+                Start-SmartFunction @PSBoundParameters
+            } else {
+                $date = (Get-Date -UFormat "%H%M%S") #"%m%d%Y%H%M%S"
+                Start-Job -Name "XESmartTarget-$session-$date" -ArgumentList $PSBoundParameters, $script:PSModuleRoot -ScriptBlock {
+                    param (
+                        $Parameters,
+                        $ModulePath
+                    )
+                    Import-Module "$ModulePath\dbatools.psd1"
+                    Add-Type -Path "$ModulePath\bin\libraries\third-party\XESmartTarget\XESmartTarget.Core.dll" -ErrorAction Stop
+                    $params = @{
+                        SqlInstance = $Parameters.SqlInstance.InputObject
+                        Database    = $Parameters.Database
+                        Session     = $Parameters.Session
+                        Responder   = @()
                     }
-                    $params["Responder"] += $newResponder
-                }
-                
-                Start-DbaXESmartTarget @params -NotAsJob -FailOnProcessingError
-            } | Select-Object -Property ID, Name, State
+                    if ($Parameters.SqlCredential) {
+                        $params["SqlCredential"] = $Parameters.SqlCredential
+                    }
+                    foreach ($responder in $Parameters.Responder) {
+                        $typename = $responder.PSObject.TypeNames[0] -replace "^Deserialized\.", ""
+                        $newResponder = New-Object -TypeName $typename
+                        foreach ($property in $responder.PSObject.Properties) {
+                            if ($property.Value) {
+                                if ($property.Value -is [Array]) {
+                                    $name = $property.Name
+                                    $newResponder.$name = [object[]]$property.Value
+                                } else {
+                                    $name = $property.Name
+                                    $newResponder.$name = $property.Value
+                                }
+                            }
+
+                        }
+                        $params["Responder"] += $newResponder
+                    }
+
+                    Start-DbaXESmartTarget @params -NotAsJob -FailOnProcessingError
+                } | Select-Object -Property ID, Name, State
+            }
         }
     }
 }

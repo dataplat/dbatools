@@ -1,8 +1,19 @@
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
+Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
 
-Describe "$commandname Integration Tests" -Tags "UnitTests" {
+Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+    Context "Validate parameters" {
+        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
+        [object[]]$knownParameters = 'BackupHistory', 'ReplaceDatabaseName', 'ReplaceDbNameInFile', 'DataFileDirectory', 'LogFileDirectory', 'DestinationFileStreamDirectory', 'DatabaseNamePrefix', 'DatabaseFilePrefix', 'DatabaseFileSuffix', 'RebaseBackupFolder', 'Continue', 'FileMapping', 'PathSep', 'EnableException'
+        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
+        It "Should only contain our specific parameters" {
+            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+        }
+    }
+}
+
+Describe "$CommandName Integration Tests" -Tags 'IntegrationTests' {
 
     Context "Rename a Database" {
         $History = Get-DbaBackupInformation -Import -Path $PSScriptRoot\..\tests\ObjectDefinitions\BackupRestore\RawInput\ContinuePointTest.xml
@@ -122,9 +133,27 @@ Describe "$commandname Integration Tests" -Tags "UnitTests" {
         $Output = Format-DbaBackupInformation -BackupHistory $History -RebaseBackupFolder c:\backups\
 
         It "Should not have moved all backup files to c:\backups" {
-            ($Output | Select-Object -ExpandProperty FullName | split-path | Where-Object {$_ -eq 'c:\backups'}).count | Should Be 0
+            ($Output | Select-Object -ExpandProperty FullName | split-path | Where-Object {$_ -eq 'c:\backups'}).count | Should Be $History.count
         }
 
+    }
+
+    Context "Test PathSep" {
+        $History = Get-DbaBackupInformation -Import -Path $PSScriptRoot\..\tests\ObjectDefinitions\BackupRestore\RawInput\ContinuePointTest.xml
+        $History += Get-DbaBackupInformation -Import -Path $PSScriptRoot\..\tests\ObjectDefinitions\BackupRestore\RawInput\RestoreTimeClean.xml
+        $Output = Format-DbaBackupInformation -BackupHistory $History -RebaseBackupFolder 'c:\backups'
+        It "Should not have changed the default path separator" {
+            ($Output | Select-Object -ExpandProperty FullName | split-path | Where-Object {$_ -eq 'c:\backups'}).count | Should Be $History.count
+        }
+        $Output = Format-DbaBackupInformation -BackupHistory $History -RebaseBackupFolder 'c:\backups' -PathSep '\'
+        It "Should not have changed the default path separator even when passed explicitely" {
+            ($Output | Select-Object -ExpandProperty FullName | split-path | Where-Object {$_ -eq 'c:\backups'}).count | Should Be $History.count
+        }
+        $Output = Format-DbaBackupInformation -BackupHistory $History -RebaseBackupFolder '/opt/mssql/backups' -PathSep '/'
+        It "Should have changed the path separator as instructed" {
+            $result = $Output | Select-Object -ExpandProperty FullName | ForEach-Object { $all = $_.Split('/'); $all[0..($all.Length - 2)] -Join '/'}
+            ($result | Where-Object {$_ -eq '/opt/mssql/backups'}).count | Should Be $History.count
+        }
     }
 
     Context "Test everything all at once" {
@@ -136,14 +165,14 @@ Describe "$commandname Integration Tests" -Tags "UnitTests" {
         It "Should have renamed datafiles as well" {
             ($output | Select-Object -ExpandProperty filelist | Where-Object {$_.PhysicalName -like '*ContinuePointTest*'}).count
         }
-        It "Should  have moved all data files to c:\restores\" {
+        It "Should have moved all data files to c:\restores\" {
             (($Output | Select-Object -ExpandProperty Filelist | Where-Object {$_.Type -eq 'D'}).PhysicalName | split-path | Where-Object {$_ -ne 'c:\restores'}).count | Should Be 0
         }
         It "Should have moved all log files to c:\logs\" {
             (($Output | Select-Object -ExpandProperty Filelist | Where-Object {$_.Type -eq 'L'}).PhysicalName | split-path | Where-Object {$_ -ne 'c:\logs'}).count | Should Be 0
         }
         It "Should not have moved all backup files to c:\backups" {
-            ($Output | Select-Object -ExpandProperty FullName | split-path | Where-Object {$_ -eq 'c:\backups'}).count | Should Be 0
+            ($Output | Select-Object -ExpandProperty FullName | Split-Path | Where-Object {$_ -eq 'c:\backups'}).count | Should Be $History.count
         }
 
     }

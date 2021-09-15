@@ -1,45 +1,52 @@
-﻿function Get-DbaOpenTransaction {
+function Get-DbaOpenTransaction {
     <#
-        .SYNOPSIS
-            Displays all open transactions.
+    .SYNOPSIS
+        Displays all open transactions.
 
-        .DESCRIPTION
-            This command is based on open transaction script published by Paul Randal.
-            Reference: https://www.sqlskills.com/blogs/paul/script-open-transactions-with-text-and-plans/
+    .DESCRIPTION
+        This command is based on open transaction script published by Paul Randal.
+        Reference: https://www.sqlskills.com/blogs/paul/script-open-transactions-with-text-and-plans/
 
-        .PARAMETER SqlInstance
-            The SQL Server instance
+    .PARAMETER SqlInstance
+        The SQL Server instance
 
-        .PARAMETER SqlCredential
-            Connect using alternative credentials
+    .PARAMETER SqlCredential
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
 
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
 
-        .NOTES
-            Website: https://dbatools.io
-            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: MIT https://opensource.org/licenses/MIT
+        For MFA support, please use Connect-DbaInstance.
 
-        .LINK
-            https://dbatools.io/Get-DbaOpenTransaction
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-        .EXAMPLE
-            Get-DbaOpenTransaction -SqlInstance sqlserver2014a
+    .NOTES
+        Tags: Database, Process, Session, ActivityMonitor
+        Author: Chrissy LeMaire (@cl), netnerds.net
 
-            Returns open transactions for sqlserver2014a
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-        .EXAMPLE
-            Get-DbaOpenTransaction -SqlInstance sqlserver2014a -SqlCredential (Get-Credential sqladmin)
+    .LINK
+        https://dbatools.io/Get-DbaOpenTransaction
 
-            Logs into sqlserver2014a using the login "sqladmin"
+    .EXAMPLE
+        PS C:\> Get-DbaOpenTransaction -SqlInstance sqlserver2014a
+
+        Returns open transactions for sqlserver2014a
+
+    .EXAMPLE
+        PS C:\> Get-DbaOpenTransaction -SqlInstance sqlserver2014a -SqlCredential sqladmin
+
+        Logs into sqlserver2014a using the login "sqladmin"
+
     #>
     [CmdletBinding()]
     param (
-        [parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
-        [Alias("ServerInstance", "SqlServer", "SqlServers")]
+        [parameter(Mandatory, ValueFromPipeline)]
         [DbaInstance[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [switch]$EnableException
@@ -85,11 +92,9 @@
     }
     process {
         foreach ($instance in $SqlInstance) {
-            Write-Message -Level Verbose -Message "Attempting to connect to $instance"
             try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
-            }
-            catch {
+                $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 

@@ -13,8 +13,8 @@ function Convert-ByteToHexString {
     .NOTES
     Tags: Login, Internal
     Author: Kirill Kravtsov (@nvarscar)
-    dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
-    Copyright (C) 2016 Chrissy LeMaire
+    dbatools PowerShell module (https://dbatools.io)
+   Copyright: (c) 2018 by dbatools, licensed under MIT
     License: MIT https://opensource.org/licenses/MIT
 
     .EXAMPLE
@@ -26,7 +26,7 @@ function Convert-ByteToHexString {
     Convert-ByteToHexString 18,52
 
     Returns hex string '0x1234'
-#>
+    #>
     param ([byte[]]$InputObject)
     $outString = "0x"
     $InputObject | ForEach-Object { $outString += ("{0:X}" -f $_).PadLeft(2, "0") }

@@ -57,7 +57,7 @@ namespace Sqlcollaborative.Dbatools.TabExpansion
 
         #region Utility methods
         /// <summary>
-        /// Registers a new instance or updates an already existing one. Should only be called from Connect-SqlInstance and Connect-DbaSqlServer
+        /// Registers a new instance or updates an already existing one. Should only be called from Connect-DbaInstance and Connect-DbaSqlServer
         /// </summary>
         /// <param name="InstanceName">Name of the instance connected to</param>
         /// <param name="Connection">To connection object containing the relevant information for accessing the instance</param>
@@ -136,10 +136,16 @@ namespace Sqlcollaborative.Dbatools.TabExpansion
         public static void CalculateTabExpansion()
         {
             foreach (FunctionInfo info in DbatoolsCommands)
-                foreach (ParameterMetadata paramInfo in info.Parameters.Values)
-                    foreach (TabCompletionSet set in TabCompletionSets)
-                        if (set.Applies(info.Name, paramInfo.Name))
-                            SetTeppScript(info.Name, paramInfo.Name, set.Script);
+            {
+                try
+                {
+                    foreach (ParameterMetadata paramInfo in info.Parameters.Values)
+                        foreach (TabCompletionSet set in TabCompletionSets)
+                            if (set.Applies(info.Name, paramInfo.Name))
+                                SetTeppScript(info.Name, paramInfo.Name, set.Script);
+                }
+                catch { }
+            }
         }
         #endregion Utility methods
 

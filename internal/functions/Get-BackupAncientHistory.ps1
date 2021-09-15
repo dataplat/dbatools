@@ -4,7 +4,7 @@ function Get-BackupAncientHistory {
             Returns details of the last full backup of a SQL Server 2000 database
 
         .DESCRIPTION
-            Backup History command to pull limited history from a SQL 2000 instance. If not using SQL 2000, please use Get-DbaBackupHistory which pulls more infomation, and has more options. This is just here to cope with 2k and copy-DbaDatabase issues
+            Backup History command to pull limited history from a SQL 2000 instance. If not using SQL 2000, please use Get-DbaDbBackupHistory which pulls more infomation, and has more options. This is just here to cope with 2k and copy-DbaDatabase issues
 
         .PARAMETER SqlInstance
             SQL Server name or SMO object representing the SQL Server to connect to. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.
@@ -18,48 +18,42 @@ function Get-BackupAncientHistory {
         .NOTES
         Author: Stuart Moore (@napalmgram), stuart-moore.com
 
-        dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
-        Copyright (C) 2016 Chrissy LeMaire
+        dbatools PowerShell module (https://dbatools.io)
+       Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
     #>
     [CmdletBinding(DefaultParameterSetName = "Default")]
-    Param (
-        [parameter(Mandatory = $true)]
-        [Alias("ServerInstance", "SqlServer")]
+    param (
+        [parameter(Mandatory)]
         [DbaInstanceParameter]$SqlInstance,
-        [Alias("Credential")]
         [PsCredential]$SqlCredential,
-        [Alias("Databases")]
         [object[]]$Database,
         [string]$FileNameStub,
-        [Alias('Silent')]
         [switch]$EnableException
     )
-    BEGIN {
+    begin {
         try {
-            Write-Message -Level VeryVerbose -Message "Connecting to $SqlInstance." -Target $SqlInstance
-            $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
-        }
-        catch {
-            Stop-Function -Message "Failed to process Instance $SqlInstance." -InnerErrorRecord $_ -Target $SqlInstance -Continue
+            $server = Connect-DbaInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
+        } catch {
+            Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $SqlInstance
+            return
         }
         if ($server.SoftwareVersionMajor -gt 8) {
-            Write-Message -Level Warning -Message "This is not the function you're looking for. This is for SQL 2000 only, please use Get-DbaBackupHistory instead. It's much nicer"
+            Write-Message -Level Warning -Message "This is not the function you're looking for. This is for SQL 2000 only, please use Get-DbaDbBackupHistory instead. It's much nicer"
         }
 
         $databases = @()
         if ($null -ne $Database) {
             ForEach ($db in $Database) {
-                $databases += [PScustomObject]@{name = $db}
+                $databases += [PScustomObject]@{name = $db }
             }
-        }
-        else {
+        } else {
             $databases = $server.Databases
         }
     }
 
-    PROCESS {
+    process {
         foreach ($db in $Database) {
             Write-Message -Level Verbose -Message "Processing database $db"
             $sql = "
@@ -150,7 +144,7 @@ function Get-BackupAncientHistory {
                 Write-Message -Level Debug -Message "FileSQL: $fileSql"
 
                 $historyObject = New-Object Sqlcollaborative.Dbatools.Database.BackupHistory
-                $historyObject.ComputerName = $server.NetName
+                $historyObject.ComputerName = $server.ComputerName
                 $historyObject.InstanceName = $server.ServiceName
                 $historyObject.SqlInstance = $server.DomainInstanceName
                 $historyObject.Database = $group.Group[0].Database
@@ -174,8 +168,7 @@ function Get-BackupAncientHistory {
                 $historyObject.SoftwareVersionMajor = $group.Group[0].Software_Major_Version
                 $historyObject.IsCopyOnly = if ($group.Group[0].is_copy_only -eq 1) {
                     $true
-                }
-                else {
+                } else {
                     $false
                 }
                 $groupResults += $historyObject
@@ -185,5 +178,5 @@ function Get-BackupAncientHistory {
 
     }
 
-    END {}
+    END { }
 }

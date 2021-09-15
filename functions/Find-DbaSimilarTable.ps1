@@ -1,96 +1,98 @@
 function Find-DbaSimilarTable {
     <#
-.SYNOPSIS
-Returns all tables/views that are similar in structure by comparing the column names of matching and matched tables/views
+    .SYNOPSIS
+        Returns all tables/views that are similar in structure by comparing the column names of matching and matched tables/views
 
-.DESCRIPTION
-This function can either run against specific databases or all databases searching all/specific tables and views including in system databases.
-    Typically one would use this to find for example archive version(s) of a table whose structures are similar.
-    This can also be used to find tables/views that are very similar to a given table/view structure to see where a table/view might be used.
+    .DESCRIPTION
+        This function can either run against specific databases or all databases searching all/specific tables and views including in system databases.
+        Typically one would use this to find for example archive version(s) of a table whose structures are similar.
+        This can also be used to find tables/views that are very similar to a given table/view structure to see where a table/view might be used.
 
-    More information can be found here: https://sqljana.wordpress.com/2017/03/31/sql-server-find-tables-with-similar-table-structure/
+        More information can be found here: https://sqljana.wordpress.com/2017/03/31/sql-server-find-tables-with-similar-table-structure/
 
-.PARAMETER SqlInstance
-SQL Server name or SMO object representing the SQL Server to connect to. This can be a collection and receive pipeline input
+    .PARAMETER SqlInstance
+        The target SQL Server instance or instances. This can be a collection and receive pipeline input
 
-.PARAMETER SqlCredential
-PSCredential object to connect as. If not specified, current Windows login will be used.
+    .PARAMETER SqlCredential
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
 
-.PARAMETER Database
-The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
 
-.PARAMETER ExcludeDatabase
-The database(s) to exclude - this list is auto-populated from the server
+        For MFA support, please use Connect-DbaInstance.
 
-.PARAMETER SchemaName
-If you are looking in a specific schema whose table structures is to be used as reference structure, provide the name of the schema.
-    If no schema is provided, looks at all schemas
+    .PARAMETER Database
+        The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
 
-.PARAMETER TableName
-If you are looking in a specific table whose structure is to be used as reference structure, provide the name of the table.
-    If no table is provided, looks at all tables
-    If the table name exists in multiple schemas, all of them would qualify
+    .PARAMETER ExcludeDatabase
+        The database(s) to exclude - this list is auto-populated from the server
 
-.PARAMETER ExcludeViews
-By default, views are included. You can exclude them by setting this switch to $false
-    This excludes views in both matching and matched list
+    .PARAMETER SchemaName
+        If you are looking in a specific schema whose table structures is to be used as reference structure, provide the name of the schema.
+        If no schema is provided, looks at all schemas
 
-.PARAMETER IncludeSystemDatabases
-By default system databases are ignored but you can include them within the search using this parameter
+    .PARAMETER TableName
+        If you are looking in a specific table whose structure is to be used as reference structure, provide the name of the table.
+        If no table is provided, looks at all tables
+        If the table name exists in multiple schemas, all of them would qualify
 
-.PARAMETER MatchPercentThreshold
-The minimum percentage of column names that should match between the matching and matched objects.
-    Entries with no matches are eliminated
+    .PARAMETER ExcludeViews
+        By default, views are included. You can exclude them by setting this switch to $false
+        This excludes views in both matching and matched list
 
-.PARAMETER EnableException
+    .PARAMETER IncludeSystemDatabases
+        By default system databases are ignored but you can include them within the search using this parameter
+
+    .PARAMETER MatchPercentThreshold
+        The minimum percentage of column names that should match between the matching and matched objects.
+        Entries with no matches are eliminated
+
+    .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-.NOTES
-Author: Jana Sattainathan (@SQLJana - http://sqljana.wordpress.com)
+    .NOTES
+        Tags: Table
+        Author: Jana Sattainathan (@SQLJana), http://sqljana.wordpress.com
 
-Website: https://dbatools.io
-Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-License: MIT https://opensource.org/licenses/MIT
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-.LINK
-https://dbatools.io/Find-DbaSimilarTable
+    .LINK
+        https://dbatools.io/Find-DbaSimilarTable
 
-.EXAMPLE
-Find-DbaSimilarTable -SqlInstance DEV01
+    .EXAMPLE
+        PS C:\> Find-DbaSimilarTable -SqlInstance DEV01
 
-Searches all user database tables and views for each, returns all tables or views with their matching tables/views and match percent
+        Searches all user database tables and views for each, returns all tables or views with their matching tables/views and match percent
 
-.EXAMPLE
-Find-DbaSimilarTable -SqlInstance DEV01 -Database AdventureWorks
+    .EXAMPLE
+        PS C:\> Find-DbaSimilarTable -SqlInstance DEV01 -Database AdventureWorks
 
-Searches AdventureWorks database and lists tables/views and their corresponding matching tables/views with match percent
+        Searches AdventureWorks database and lists tables/views and their corresponding matching tables/views with match percent
 
-.EXAMPLE
-Find-DbaSimilarTable -SqlInstance DEV01 -Database AdventureWorks -SchemaName HumanResource
+    .EXAMPLE
+        PS C:\> Find-DbaSimilarTable -SqlInstance DEV01 -Database AdventureWorks -SchemaName HumanResource
 
-Searches AdventureWorks database and lists tables/views in the HumanResource schema with their corresponding matching tables/views with match percent
+        Searches AdventureWorks database and lists tables/views in the HumanResource schema with their corresponding matching tables/views with match percent
 
-.EXAMPLE
-Find-DbaSimilarTable -SqlInstance DEV01 -Database AdventureWorks -SchemaName HumanResource -Table Employee
+    .EXAMPLE
+        PS C:\> Find-DbaSimilarTable -SqlInstance DEV01 -Database AdventureWorks -SchemaName HumanResource -Table Employee
 
-Searches AdventureWorks database and lists tables/views in the HumanResource schema and table Employee with its corresponding matching tables/views with match percent
+        Searches AdventureWorks database and lists tables/views in the HumanResource schema and table Employee with its corresponding matching tables/views with match percent
 
-.EXAMPLE
-Find-DbaSimilarTable -SqlInstance DEV01 -Database AdventureWorks -MatchPercentThreshold 60
+    .EXAMPLE
+        PS C:\> Find-DbaSimilarTable -SqlInstance DEV01 -Database AdventureWorks -MatchPercentThreshold 60
 
-Searches AdventureWorks database and lists all tables/views with its corresponding matching tables/views with match percent greater than or equal to 60
+        Searches AdventureWorks database and lists all tables/views with its corresponding matching tables/views with match percent greater than or equal to 60
 
-
-#>
+    #>
     [CmdletBinding()]
-    Param (
-        [parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
-        [Alias("ServerInstance", "SqlServer", "SqlServers")]
+    param (
+        [parameter(Mandatory, ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [Alias("Databases")]
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
         [string]$SchemaName,
@@ -98,7 +100,6 @@ Searches AdventureWorks database and lists all tables/views with its correspondi
         [switch]$ExcludeViews,
         [switch]$IncludeSystemDatabases,
         [int]$MatchPercentThreshold,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 
@@ -189,8 +190,7 @@ Searches AdventureWorks database and lists all tables/views with its correspondi
 
         if ($wherearray.length -gt 0) {
             $sqlWhere = "$sqlWhere " + ($wherearray -join " AND ")
-        }
-        else {
+        } else {
             $sqlWhere = ""
         }
 
@@ -198,8 +198,7 @@ Searches AdventureWorks database and lists all tables/views with its correspondi
         $matchThreshold = 0
         if ($MatchPercentThreshold) {
             $matchThreshold = $MatchPercentThreshold
-        }
-        else {
+        } else {
             $matchThreshold = 0
         }
 
@@ -217,9 +216,8 @@ Searches AdventureWorks database and lists all tables/views with its correspondi
         foreach ($Instance in $SqlInstance) {
 
             try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
-            }
-            catch {
+                $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
+            } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -227,8 +225,7 @@ Searches AdventureWorks database and lists all tables/views with its correspondi
             #Use IsAccessible instead of Status -eq 'normal' because databases that are on readable secondaries for AG or mirroring replicas will cause errors to be thrown
             if ($IncludeSystemDatabases) {
                 $dbs = $server.Databases | Where-Object { $_.IsAccessible -eq $true }
-            }
-            else {
+            } else {
                 $dbs = $server.Databases | Where-Object { $_.IsAccessible -eq $true -and $_.IsSystemObject -eq $false }
             }
 
@@ -250,7 +247,7 @@ Searches AdventureWorks database and lists all tables/views with its correspondi
 
                 foreach ($row in $rows) {
                     [PSCustomObject]@{
-                        ComputerName              = $server.NetName
+                        ComputerName              = $server.ComputerName
                         InstanceName              = $server.ServiceName
                         SqlInstance               = $server.DomainInstanceName
                         Table                     = "$($row.DatabaseName).$($row.SchemaName).$($row.TableName)"

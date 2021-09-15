@@ -1,75 +1,84 @@
-﻿function Export-DbaXESessionTemplate {
+function Export-DbaXESessionTemplate {
     <#
-        .SYNOPSIS
-            Exports an XESession XML Template.
+    .SYNOPSIS
+        Exports an XESession XML Template using XE Session(s) output by Get-DbaXESession
 
-        .DESCRIPTION
-            Exports an XESession XML Template either from the dbatools repository or a file you specify. Exports to "$home\Documents\SQL Server Management Studio\Templates\XEventTemplates" by default
+    .DESCRIPTION
+        Exports an XESession XML Template either from the Target SQL Server or XE Session(s) output by Get-DbaXESession. Exports to "$home\Documents\SQL Server Management Studio\Templates\XEventTemplates" by default
 
-        .PARAMETER SqlInstance
-            Target SQL Server. You must have sysadmin access and server version must be SQL Server version 2008 or higher.
+    .PARAMETER SqlInstance
+        The target SQL Server instance or instances. You must have sysadmin access and server version must be SQL Server version 2008 or higher.
 
-        .PARAMETER SqlCredential
-            Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
+    .PARAMETER SqlCredential
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
 
-            $scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
 
-            Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
+        For MFA support, please use Connect-DbaInstance.
 
-            To connect as a different Windows user, run PowerShell as that user.
+    .PARAMETER Session
+        The Name of the session(s) to export.
 
-        .PARAMETER Session
-            The Name of the session(s) to export.
+    .PARAMETER Path
+        Specifies the directory where the file or files will be exported.
 
-        .PARAMETER Path
-            The path to export the file into. Can be .xml or directory.
+    .PARAMETER FilePath
+        Specifies the full file path of the output file.
 
-        .PARAMETER InputObject
-            Specifies an XE Session output by Get-DbaXESession.
+    .PARAMETER InputObject
+        Specifies an XE Session output by Get-DbaXESession.
 
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-        .NOTES
-            Website: https://dbatools.io
-            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: MIT https://opensource.org/licenses/MIT
+    .NOTES
+        Tags: ExtendedEvent, XE, XEvent
+        Author: Chrissy LeMaire (@cl), netnerds.net
 
-        .LINK
-            https://dbatools.io/Export-DbaXESessionTemplate
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-        .EXAMPLE
-            Export-DbaXESessionTemplate -SqlInstance sql2017 -Path C:\temp\xe
+    .LINK
+        https://dbatools.io/Export-DbaXESessionTemplate
 
-            Exports XE Session Template to the C:\temp\xe folder.
+    .EXAMPLE
+        PS C:\> Export-DbaXESessionTemplate -SqlInstance sql2017 -Path C:\temp\xe
 
-        .EXAMPLE
-            Get-DbaXESession -SqlInstance sql2017 -Session session_health | Export-DbaXESessionTemplate -Path C:\temp
+        Exports an XESession XML Template for all Extended Event Sessions on sql2017 to the C:\temp\xe folder.
 
-            Returns a new XE Session object from sql2017 then adds an event, an action then creates it.
+    .EXAMPLE
+        PS C:\> Get-DbaXESession -SqlInstance sql2017 -Session system_health | Export-DbaXESessionTemplate -Path C:\temp\xe
+
+        Gets the system_health Extended Events Session from sql2017 and then exports as an XESession XML Template to C:\temp\xe
 
     #>
     [CmdletBinding()]
     param (
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [object[]]$Session,
+        # intentionally left because this is where SSMS defaults
         [string]$Path = "$home\Documents\SQL Server Management Studio\Templates\XEventTemplates",
+        [Alias("OutFile", "FileName")]
+        [string]$FilePath,
         [Parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.XEvent.Session[]]$InputObject,
         [switch]$EnableException
     )
+    begin {
+        $null = Test-ExportDirectory -Path $Path
+    }
     process {
+        if (Test-FunctionInterrupt) { return }
+
         foreach ($instance in $SqlInstance) {
             try {
-                Write-Message -Level Verbose -Message "Connecting to $instance."
                 $InputObject += Get-DbaXESession -SqlInstance $instance -SqlCredential $SqlCredential -Session $Session -EnableException
-            }
-            catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+            } catch {
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
         }
 
@@ -80,15 +89,12 @@
                 Stop-Function -Message "$Path does not exist." -Target $Path
             }
 
-            if ($path.EndsWith(".xml")) {
-                $filename = $path
+            if (-not $PSBoundParameters.FilePath) {
+                $FilePath = Join-DbaPath $Path "$xesname.xml"
             }
-            else {
-                $filename = "$path\$xesname.xml"
-            }
-            Write-Message -Level Verbose -Message "Wrote $xesname to $filename"
-            [Microsoft.SqlServer.Management.XEvent.XEStore]::SaveSessionToTemplate($xes, $filename, $true)
-            Get-ChildItem -Path $filename
+            Write-Message -Level Verbose -Message "Wrote $xesname to $FilePath"
+            [Microsoft.SqlServer.Management.XEvent.XEStore]::SaveSessionToTemplate($xes, $FilePath, $true)
+            Get-ChildItem -Path $FilePath
         }
     }
 }

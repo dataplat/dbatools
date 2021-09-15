@@ -1,126 +1,140 @@
 function Get-DbaHelpIndex {
     <#
-        .SYNOPSIS
-            Returns size, row and configuration information for indexes in databases.
+    .SYNOPSIS
+        Returns size, row and configuration information for indexes in databases.
 
-        .DESCRIPTION
-            This function will return detailed information on indexes (and optionally statistics) for all indexes in a database, or a given index should one be passed along.
-            As this uses SQL Server DMVs to access the data it will only work in 2005 and up (sorry folks still running SQL Server 2000).
-            For performance reasons certain statistics information will not be returned from SQL Server 2005 if an ObjectName is not provided.
+    .DESCRIPTION
+        This function will return detailed information on indexes (and optionally statistics) for all indexes in a database, or a given index should one be passed along.
+        As this uses SQL Server DMVs to access the data it will only work in 2005 and up (sorry folks still running SQL Server 2000).
+        For performance reasons certain statistics information will not be returned from SQL Server 2005 if an ObjectName is not provided.
 
-            The data includes:
-                - ObjectName: the table containing the index
-                - IndexType: clustered/non-clustered/columnstore and whether the index is unique/primary key
-                - KeyColumns: the key columns of the index
-                - IncludeColumns: any include columns in the index
-                - FilterDefinition: any filter that may have been used in the index
-                - DataCompression: row/page/none depending upon whether or not compression has been used
-                - IndexReads: the number of reads of the index since last restart or index rebuild
-                - IndexUpdates: the number of writes to the index since last restart or index rebuild
-                - SizeKB: the size the index in KB
-                - IndexRows: the number of the rows in the index (note filtered indexes will have fewer rows than exist in the table)
-                - IndexLookups: the number of lookups that have been performed (only applicable for the heap or clustered index)
-                - MostRecentlyUsed: when the index was most recently queried (default to 1900 for when never read)
-                - StatsSampleRows: the number of rows queried when the statistics were built/rebuilt (not included in SQL Server 2005 unless ObjectName is specified)
-                - StatsRowMods: the number of changes to the statistics since the last rebuild
-                - HistogramSteps: the number of steps in the statistics histogram (not included in SQL Server 2005 unless ObjectName is specified)
-                - StatsLastUpdated: when the statistics were last rebuilt (not included in SQL Server 2005 unless ObjectName is specified)
+        The data includes:
+        - ObjectName: the table containing the index
+        - IndexType: clustered/non-clustered/columnstore and whether the index is unique/primary key
+        - KeyColumns: the key columns of the index
+        - IncludeColumns: any include columns in the index
+        - FilterDefinition: any filter that may have been used in the index
+        - DataCompression: row/page/none depending upon whether or not compression has been used
+        - IndexReads: the number of reads of the index since last restart or index rebuild
+        - IndexUpdates: the number of writes to the index since last restart or index rebuild
+        - SizeKB: the size the index in KB
+        - IndexRows: the number of the rows in the index (note filtered indexes will have fewer rows than exist in the table)
+        - IndexLookups: the number of lookups that have been performed (only applicable for the heap or clustered index)
+        - MostRecentlyUsed: when the index was most recently queried (default to 1900 for when never read)
+        - StatsSampleRows: the number of rows queried when the statistics were built/rebuilt (not included in SQL Server 2005 unless ObjectName is specified)
+        - StatsRowMods: the number of changes to the statistics since the last rebuild
+        - HistogramSteps: the number of steps in the statistics histogram (not included in SQL Server 2005 unless ObjectName is specified)
+        - StatsLastUpdated: when the statistics were last rebuilt (not included in SQL Server 2005 unless ObjectName is specified)
 
-        .PARAMETER SqlInstance
-            SQL Server name or SMO object representing the SQL Server to connect to.
+    .PARAMETER SqlInstance
+        The target SQL Server instance or instances.
 
-        .PARAMETER SqlCredential
-            Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
+    .PARAMETER SqlCredential
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
 
-            $cred = Get-Credential, then pass $cred variable to this parameter.
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
 
-            Windows Authentication will be used when SqlCredential is not specified. To connect as a different Windows use
+        For MFA support, please use Connect-DbaInstance.
 
-        .PARAMETER Database
-            The database(s) to process. This list is auto-populated from the server. If unspecified, all databases will be processed.
+    .PARAMETER Database
+        The database(s) to process. This list is auto-populated from the server. If unspecified, all databases will be processed.
 
-        .PARAMETER ExcludeDatabase
-            The database(s) to exclude. This list is auto-populated from the server.
+    .PARAMETER ExcludeDatabase
+        The database(s) to exclude. This list is auto-populated from the server.
 
-        .PARAMETER ObjectName
-            The name of a table for which you want to obtain the index information. If the two part naming convention for an object is not used it will use the default schema for the executing user. If not passed it will return data on all indexes in a given database.
+    .PARAMETER ObjectName
+        The name of a table for which you want to obtain the index information. If the two part naming convention for an object is not used it will use the default schema for the executing user. If not passed it will return data on all indexes in a given database.
 
-        .PARAMETER IncludeStats
-            If this switch is enabled, statistics as well as indexes will be returned in the output (statistics information such as the StatsRowMods will always be returned for indexes).
+    .PARAMETER IncludeStats
+        If this switch is enabled, statistics as well as indexes will be returned in the output (statistics information such as the StatsRowMods will always be returned for indexes).
 
-        .PARAMETER IncludeDataTypes
-            If this switch is enabled, the output will include the data type of each column that makes up a part of the index definition (key and include columns).
+    .PARAMETER IncludeDataTypes
+        If this switch is enabled, the output will include the data type of each column that makes up a part of the index definition (key and include columns).
 
-        .PARAMETER Raw
-            If this switch is enabled, results may be less user-readable but more suitable for processing by other code.
+    .PARAMETER IncludeFragmentation
+        If this switch is enabled, the output will include fragmentation information.
 
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+    .PARAMETER InputObject
+        Allows piping from Get-DbaDatabase
 
-        .NOTES
-            Tags: Indexes
-            Author: Nic Cain, https://sirsql.net/
+    .PARAMETER Raw
+        If this switch is enabled, results may be less user-readable but more suitable for processing by other code.
 
-            Website: https://dbatools.io
-            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: MIT https://opensource.org/licenses/MIT
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-        .LINK
-            https://dbatools.io/Get-DbaHelpIndex
+    .NOTES
+        Tags: Index
+        Author: Nic Cain, https://sirsql.net/
 
-        .EXAMPLE
-            Get-DbaHelpIndex -SqlInstance localhost -Database MyDB
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-            Returns information on all indexes on the MyDB database on the localhost.
+    .LINK
+        https://dbatools.io/Get-DbaHelpIndex
 
-        .EXAMPLE
-            Get-DbaHelpIndex -SqlInstance localhost -Database MyDB,MyDB2
+    .EXAMPLE
+        PS C:\> Get-DbaHelpIndex -SqlInstance localhost -Database MyDB
 
-            Returns information on all indexes on the MyDB & MyDB2 databases.
+        Returns information on all indexes on the MyDB database on the localhost.
 
-        .EXAMPLE
-            Get-DbaHelpIndex -SqlInstance localhost -Database MyDB -ObjectName dbo.Table1
+    .EXAMPLE
+        PS C:\> Get-DbaHelpIndex -SqlInstance localhost -Database MyDB,MyDB2
 
-            Returns index information on the object dbo.Table1 in the database MyDB.
+        Returns information on all indexes on the MyDB & MyDB2 databases.
 
-        .EXAMPLE
-            Get-DbaHelpIndex -SqlInstance localhost -Database MyDB -ObjectName dbo.Table1 -IncludeStats
+    .EXAMPLE
+        PS C:\> Get-DbaHelpIndex -SqlInstance localhost -Database MyDB -ObjectName dbo.Table1
 
-            Returns information on the indexes and statistics for the table dbo.Table1 in the MyDB database.
+        Returns index information on the object dbo.Table1 in the database MyDB.
 
-        .EXAMPLE
-            Get-DbaHelpIndex -SqlInstance localhost -Database MyDB -ObjectName dbo.Table1 -IncludeDataTypes
+    .EXAMPLE
+        PS C:\> Get-DbaHelpIndex -SqlInstance localhost -Database MyDB -ObjectName dbo.Table1 -IncludeStats
 
-            Returns the index information for the table dbo.Table1 in the MyDB database, and includes the data types for the key and include columns.
+        Returns information on the indexes and statistics for the table dbo.Table1 in the MyDB database.
 
-        .EXAMPLE
-            Get-DbaHelpIndex -SqlInstance localhost -Database MyDB -ObjectName dbo.Table1 -Raw
+    .EXAMPLE
+        PS C:\> Get-DbaHelpIndex -SqlInstance localhost -Database MyDB -ObjectName dbo.Table1 -IncludeDataTypes
 
-            Returns the index information for the table dbo.Table1 in the MyDB database, and returns the numerical data without localized separators.
+        Returns the index information for the table dbo.Table1 in the MyDB database, and includes the data types for the key and include columns.
 
-        .EXAMPLE
-            Get-DbaHelpIndex -SqlInstance localhost -Database MyDB -IncludeStats -Raw
+    .EXAMPLE
+        PS C:\> Get-DbaHelpIndex -SqlInstance localhost -Database MyDB -ObjectName dbo.Table1 -Raw
 
-            Returns the index information for all indexes in the MyDB database as well as their statistics, and formats the numerical data without localized separators.
+        Returns the index information for the table dbo.Table1 in the MyDB database, and returns the numerical data without localized separators.
+
+    .EXAMPLE
+        PS C:\> Get-DbaHelpIndex -SqlInstance localhost -Database MyDB -IncludeStats -Raw
+
+        Returns the index information for all indexes in the MyDB database as well as their statistics, and formats the numerical data without localized separators.
+
+    .EXAMPLE
+        PS C:\> Get-DbaHelpIndex -SqlInstance localhost -Database MyDB -IncludeFragmentation
+
+        Returns the index information for all indexes in the MyDB database as well as their fragmentation
+
+    .EXAMPLE
+        PS C:\> Get-DbaDatabase -SqlInstance sql2017 -Database MyDB | Get-DbaHelpIndex
+
+        Returns the index information for all indexes in the MyDB database
+
     #>
-    [CmdletBinding(SupportsShouldProcess = $false)]
+    [CmdletBinding()]
     param (
-        [parameter(Mandatory = $true, ValueFromPipeline = $true)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
-        [Alias("Credential")]
-        [PSCredential]
-        $SqlCredential,
-        [Alias("Databases")]
+        [PSCredential]$SqlCredential,
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
+        [Parameter(ValueFromPipeline)]
+        [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
         [string]$ObjectName,
         [switch]$IncludeStats,
         [switch]$IncludeDataTypes,
         [switch]$Raw,
-        [Alias('Silent')]
+        [switch]$IncludeFragmentation,
         [switch]$EnableException
     )
 
@@ -129,25 +143,34 @@ function Get-DbaHelpIndex {
         #Add the table predicate to the query
         if (!$ObjectName) {
             $TablePredicate = "DECLARE @TableName NVARCHAR(256);";
-        }
-        else {
+        } else {
             $TablePredicate = "DECLARE @TableName NVARCHAR(256); SET @TableName = '$ObjectName';";
         }
 
-
+        #Add Fragmentation info if requested
+        $FragSelectColumn = ", NULL as avg_fragmentation_in_percent"
+        $FragJoin = ''
+        $OutputProperties = 'Database,Object,Index,IndexType,KeyColumns,IncludeColumns,FilterDefinition,DataCompression,IndexReads,IndexUpdates,SizeKB,IndexRows,IndexLookups,MostRecentlyUsed,StatsSampleRows,StatsRowMods,HistogramSteps,StatsLastUpdated'
+        if ($IncludeFragmentation) {
+            $FragSelectColumn = ', pstat.avg_fragmentation_in_percent'
+            $FragJoin = "LEFT JOIN sys.dm_db_index_physical_stats(DB_ID(), NULL, NULL, NULL , 'DETAILED') pstat
+             ON pstat.database_id = ustat.database_id
+             AND pstat.object_id = ustat.object_id
+             AND pstat.index_id = ustat.index_id"
+            $OutputProperties = 'Database,Object,Index,IndexType,KeyColumns,IncludeColumns,FilterDefinition,DataCompression,IndexReads,IndexUpdates,SizeKB,IndexRows,IndexLookups,MostRecentlyUsed,StatsSampleRows,StatsRowMods,HistogramSteps,StatsLastUpdated,IndexFragInPercent'
+        }
+        $OutputProperties = $OutputProperties.Split(',')
         #Figure out if we are including stats in the results
         if ($IncludeStats) {
             $IncludeStatsPredicate = "";
-        }
-        else {
-            $IncludeStatsPredicate = "WHERE IndexType != 'STATISTICS'";
+        } else {
+            $IncludeStatsPredicate = "WHERE StatisticsName IS NULL";
         }
 
         #Data types being returns with the results?
         if ($IncludeDataTypes) {
             $IncludeDataTypesPredicate = 'DECLARE @IncludeDataTypes BIT; SET @IncludeDataTypes = 1';
-        }
-        else {
+        } else {
             $IncludeDataTypesPredicate = 'DECLARE @IncludeDataTypes BIT; SET @IncludeDataTypes = 0';
         }
 
@@ -170,7 +193,8 @@ function Get-DbaHelpIndex {
             user_lookups BIGINT ,
             last_user_lookup DATETIME2(0) ,
             last_user_scan DATETIME2(0) ,
-            last_user_seek DATETIME2(0)
+            last_user_seek DATETIME2(0) ,
+            avg_fragmentation_in_percent FLOAT
             );
 
         DECLARE @StatsInfo TABLE
@@ -197,19 +221,22 @@ function Get-DbaHelpIndex {
                 user_lookups ,
                 last_user_lookup ,
                 last_user_scan ,
-                last_user_seek
+                last_user_seek ,
+                avg_fragmentation_in_percent
                 )
-                SELECT  object_id ,
-                        index_id ,
-                        user_scans ,
-                        user_seeks ,
-                        user_updates ,
-                        user_lookups ,
-                        last_user_lookup ,
-                        last_user_scan ,
-                        last_user_seek
-                FROM    sys.dm_db_index_usage_stats
-                WHERE   database_id = DB_ID();
+                SELECT  ustat.object_id ,
+                        ustat.index_id ,
+                        ustat.user_scans ,
+                        ustat.user_seeks ,
+                        ustat.user_updates ,
+                        ustat.user_lookups ,
+                        ustat.last_user_lookup ,
+                        ustat.last_user_scan ,
+                        ustat.last_user_seek
+                        $FragSelectColumn
+                FROM    sys.dm_db_index_usage_stats ustat
+                $FragJoin
+                WHERE   ustat.database_id = DB_ID();
 
         INSERT  INTO @StatsInfo
                 ( object_id ,
@@ -339,7 +366,8 @@ function Get-DbaHelpIndex {
                                 i.is_primary_key ,
                                 ci.SizeKB ,
                                 cr.IndexRows ,
-                                QUOTENAME(sch.name) + '.' + QUOTENAME(tbl.name) AS FullObjectName
+                                QUOTENAME(sch.name) + '.' + QUOTENAME(tbl.name) AS FullObjectName ,
+                                ISNULL(dd.avg_fragmentation_in_percent, 0) as avg_fragmentation_in_percent
                     FROM     sys.indexes i
                                 JOIN sys.index_columns c ON i.object_id = c.object_id
                                                             AND i.index_id = c.index_id
@@ -413,7 +441,8 @@ function Get-DbaHelpIndex {
                                     WHEN LastLookup > LastScan
                                         AND LastLookup > LastSeek THEN LastLookup
                                     else ''
-                                END AS MostRecentlyUsed
+                                END AS MostRecentlyUsed ,
+                                AVG(ci.avg_fragmentation_in_percent) as avg_fragmentation_in_percent
                     FROM     cteIndex ci
                     GROUP BY ci.ObjectName ,
                                 ci.name ,
@@ -435,8 +464,9 @@ function Get-DbaHelpIndex {
                     ),
                 AllResults
                 AS ( SELECT   c.FullObjectName ,
-                                ISNULL(IndexType, 'STATISTICS') AS IndexType ,
+                                IndexType ,
                                 ISNULL(IndexName, si.stats_name) AS IndexName ,
+                                NULL as StatisticsName ,
                                 ISNULL(KeyColumns, si.StatsColumns) AS KeyColumns ,
                                 ISNULL(IncludeColumns, '') AS IncludeColumns ,
                                 FilterDefinition ,
@@ -452,13 +482,15 @@ function Get-DbaHelpIndex {
                                 RowMods AS StatsRowMods ,
                                 si.HistogramSteps ,
                                 si.StatsLastUpdated ,
+                                avg_fragmentation_in_percent AS IndexFragInPercent,
                                 1 AS Ordering
                     FROM     cteResults c
                                 INNER JOIN cteStatsInfo si ON si.object_id = c.object_id
                                                             AND si.stats_id = c.Index_Id
                     UNION
                     SELECT   QUOTENAME(sch.name) + '.' + QUOTENAME(tbl.name) AS FullObjectName ,
-                                'STATISTICS' ,
+                                '' ,
+                                '' ,
                                 stats_name ,
                                 StatsColumns ,
                                 '' ,
@@ -475,6 +507,7 @@ function Get-DbaHelpIndex {
                                 RowMods AS StatsRowMods ,
                                 csi.HistogramSteps ,
                                 csi.StatsLastUpdated ,
+                                '' AS IndexFragInPercent ,
                                 2
                     FROM     cteStatsInfo csi
                     INNER JOIN sys.tables tbl ON csi.object_id = tbl.object_id
@@ -486,8 +519,9 @@ function Get-DbaHelpIndex {
                                                                     AND si.stats_id = c.Index_Id )
                     )
             SELECT  FullObjectName ,
-                    ISNULL(IndexType, 'STATISTICS') AS IndexType ,
+                    IndexType ,
                     IndexName ,
+                    StatisticsName ,
                     KeyColumns ,
                     ISNULL(IncludeColumns, '') AS IncludeColumns ,
                     FilterDefinition ,
@@ -502,7 +536,8 @@ function Get-DbaHelpIndex {
                     StatsSampleRows ,
                     StatsRowMods ,
                     HistogramSteps ,
-                    StatsLastUpdated
+                    StatsLastUpdated ,
+                    IndexFragInPercent
             FROM    AllResults
                     $IncludeStatsPredicate
         OPTION  ( RECOMPILE );
@@ -554,7 +589,8 @@ function Get-DbaHelpIndex {
             user_lookups BIGINT ,
             last_user_lookup DATETIME ,
             last_user_scan DATETIME ,
-            last_user_seek DATETIME
+            last_user_seek DATETIME ,
+            avg_fragmentation_in_percent FLOAT
             );
 
         DECLARE @StatsInfo TABLE
@@ -581,18 +617,21 @@ function Get-DbaHelpIndex {
                 user_lookups ,
                 last_user_lookup ,
                 last_user_scan ,
-                last_user_seek
+                last_user_seek ,
+                avg_fragmentation_in_percent
                 )
-                SELECT  object_id ,
-                        index_id ,
-                        user_scans ,
-                        user_seeks ,
-                        user_updates ,
-                        user_lookups ,
-                        last_user_lookup ,
-                        last_user_scan ,
-                        last_user_seek
-                FROM    sys.dm_db_index_usage_stats
+                SELECT  ustat.object_id ,
+                        ustat.index_id ,
+                        ustat.user_scans ,
+                        ustat.user_seeks ,
+                        ustat.user_updates ,
+                        ustat.user_lookups ,
+                        ustat.last_user_lookup ,
+                        ustat.last_user_scan ,
+                        ustat.last_user_seek
+                        $FragSelectColumn
+                FROM    sys.dm_db_index_usage_stats ustat
+                $FragJoin
                 WHERE   database_id = DB_ID();
 
 
@@ -724,7 +763,8 @@ function Get-DbaHelpIndex {
                                 i.is_primary_key ,
                                 ci.SizeKB ,
                                 cr.IndexRows ,
-                                QUOTENAME(sch.name) + '.' + QUOTENAME(tbl.name) AS FullObjectName
+                                QUOTENAME(sch.name) + '.' + QUOTENAME(tbl.name) AS FullObjectName ,
+                                ISNULL(dd.avg_fragmentation_in_percent, 0) as avg_fragmentation_in_percent
                     FROM     sys.indexes i
                                 JOIN sys.index_columns c ON i.object_id = c.object_id
                                                             AND i.index_id = c.index_id
@@ -798,7 +838,8 @@ function Get-DbaHelpIndex {
                                     WHEN LastLookup > LastScan
                                         AND LastLookup > LastSeek THEN LastLookup
                                     else ''
-                                END AS MostRecentlyUsed
+                                END AS MostRecentlyUsed ,
+                                AVG(ci.avg_fragmentation_in_percent) as avg_fragmentation_in_percent
                     FROM     cteIndex ci
                     GROUP BY ci.ObjectName ,
                                 ci.name ,
@@ -836,6 +877,7 @@ function Get-DbaHelpIndex {
                                 NULL AS StatsRowMods ,
                                 NULL AS HistogramSteps ,
                                 NULL AS StatsLastUpdated ,
+                                avg_fragmentation_in_percent as IndexFragInPercent,
                                 1 AS Ordering ,
                                 c.object_id ,
                                 c.Index_Id
@@ -861,6 +903,7 @@ function Get-DbaHelpIndex {
                                 RowMods AS StatsRowMods ,
                                 csi.HistogramSteps ,
                                 csi.StatsLastUpdated ,
+                                '' as IndexFragInPercent,
                                 2 ,
                                 csi.object_id ,
                                 csi.stats_id
@@ -893,6 +936,7 @@ function Get-DbaHelpIndex {
                     StatsRowMods ,
                     HistogramSteps ,
                     StatsLastUpdated ,
+                    IndexFragInPercent ,
                     object_id ,
                     index_id
             FROM    AllResults
@@ -944,51 +988,44 @@ function Get-DbaHelpIndex {
                 MostRecentlyUsed ,
                 StatsSampleRows ,
                 StatsRowMods ,
-                HistogramSteps	,
-                StatsLastUpdated
+                HistogramSteps ,
+                StatsLastUpdated ,
+                IndexFragInPercent
         FROM @AllResults;"
 
         #endregion sizesQuery2005
-        $server = Connect-SqlInstance -SqlInstance $sqlinstance -SqlCredential $SqlCredential
     }
     process {
         Write-Message -Level Debug -Message $SizesQuery
         Write-Message -Level Debug -Message $SizesQuery2005
-        #Need to check the version of SQL
-        if ($server.versionMajor -ge 10) {
-            $indexesQuery = $SizesQuery
-        }
 
-        elseif ($server.Information.Version.Major -eq 9) {
-            $indexesQuery = $SizesQuery2005
-        }
-
-        else {
-            Write-Warning "This function does not support versions lower than SQL Server 2005 (v9)."
-            continue
-        }
-
-        if ($pipedatabase.Length -gt 0) {
-            $databases = $pipedatabase.name
-        }
-
-        $databases = $server.Databases
-
-        if ($Database) {
-            $databases = $databases | Where-Object Name -In $Database
-        }
-
-        if ($ExcludeDatabase) {
-            $databases = $databases | Where-Object Name -NotIn $ExcludeDatabase
-        }
-
-        foreach ($db in $databases) {
-            if (!$db.IsAccessible) {
-                Write-Message -Level Warning -Message "$db is not accessible. Skipping."
-                continue
-            }
+        foreach ($instance in $SqlInstance) {
             try {
-                $IndexDetails = ($server.Databases[$db.Name].ExecuteWithResults($indexesQuery)).Tables[0];
+                $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 10
+            } catch {
+                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+            }
+
+            $InputObject += Get-DbaDatabase -SqlInstance $server -Database $Database -ExcludeDatabase $ExcludeDatabase
+        }
+
+        foreach ($db in $InputObject) {
+            $server = $db.Parent
+
+            #Need to check the version of SQL
+            if ($server.versionMajor -ge 10) {
+                $indexesQuery = $SizesQuery
+            } else {
+                $indexesQuery = $SizesQuery2005
+            }
+
+            if (!$db.IsAccessible) {
+                Stop-Function -Message "$db is not accessible. Skipping." -Continue
+            }
+
+            Write-Message -Level Debug -Message "$indexesQuery"
+            try {
+                $IndexDetails = $db.Query($indexesQuery)
 
                 if (!$Raw) {
                     foreach ($detail in $IndexDetails) {
@@ -999,24 +1036,29 @@ function Get-DbaHelpIndex {
                         }
 
                         [pscustomobject]@{
-                            DatabaseName     = $db.Name
-                            ObjectName       = $detail.FullObjectName
-                            IndexName        = $detail.IndexName
-                            IndexType        = $detail.IndexType
-                            KeyColumns       = $detail.KeyColumns
-                            IncludeColumns   = $detail.IncludeColumns
-                            FilterDefinition = $detail.FilterDefinition
-                            DataCompression  = $detail.DataCompression
-                            IndexReads       = "{0:N0}" -f $detail.IndexReads
-                            IndexUpdates     = "{0:N0}" -f $detail.IndexUpdates
-                            SizeKB           = "{0:N0}" -f $detail.SizeKB
-                            IndexRows        = "{0:N0}" -f $detail.IndexRows
-                            IndexLookups     = "{0:N0}" -f $detail.IndexLookups
-                            MostRecentlyUsed = $recentlyused
-                            StatsSampleRows  = "{0:N0}" -f $detail.StatsSampleRows
-                            StatsRowMods     = "{0:N0}" -f $detail.StatsRowMods
-                            HistogramSteps   = $detail.HistogramSteps
-                            StatsLastUpdated = $detail.StatsLastUpdated
+                            ComputerName       = $server.ComputerName
+                            InstanceName       = $server.ServiceName
+                            SqlInstance        = $server.DomainInstanceName
+                            Database           = $db.Name
+                            Object             = $detail.FullObjectName
+                            Index              = $detail.IndexName
+                            IndexType          = $detail.IndexType
+                            Statistics         = $detail.StatisticsName
+                            KeyColumns         = $detail.KeyColumns
+                            IncludeColumns     = $detail.IncludeColumns
+                            FilterDefinition   = $detail.FilterDefinition
+                            DataCompression    = $detail.DataCompression
+                            IndexReads         = "{0:N0}" -f $detail.IndexReads
+                            IndexUpdates       = "{0:N0}" -f $detail.IndexUpdates
+                            Size               = "{0:N0}" -f $detail.SizeKB
+                            IndexRows          = "{0:N0}" -f $detail.IndexRows
+                            IndexLookups       = "{0:N0}" -f $detail.IndexLookups
+                            MostRecentlyUsed   = $recentlyused
+                            StatsSampleRows    = "{0:N0}" -f $detail.StatsSampleRows
+                            StatsRowMods       = "{0:N0}" -f $detail.StatsRowMods
+                            HistogramSteps     = $detail.HistogramSteps
+                            StatsLastUpdated   = $detail.StatsLastUpdated
+                            IndexFragInPercent = "{0:F2}" -f $detail.IndexFragInPercent
                         }
                     }
                 }
@@ -1030,32 +1072,35 @@ function Get-DbaHelpIndex {
                         }
 
                         [pscustomobject]@{
-                            DatabaseName     = $db.Name
-                            ObjectName       = $detail.FullObjectName
-                            IndexName        = $detail.IndexName
-                            IndexType        = $detail.IndexType
-                            KeyColumns       = $detail.KeyColumns
-                            IncludeColumns   = $detail.IncludeColumns
-                            FilterDefinition = $detail.FilterDefinition
-                            DataCompression  = $detail.DataCompression
-                            IndexReads       = $detail.IndexReads
-                            IndexUpdates     = $detail.IndexUpdates
-                            SizeKB           = $detail.SizeKB
-                            IndexRows        = $detail.IndexRows
-                            IndexLookups     = $detail.IndexLookups
-                            MostRecentlyUsed = $recentlyused
-                            StatsSampleRows  = $detail.StatsSampleRows
-                            StatsRowMods     = $detail.StatsRowMods
-                            HistogramSteps   = $detail.HistogramSteps
-                            StatsLastUpdated = $detail.StatsLastUpdated
+                            ComputerName       = $server.ComputerName
+                            InstanceName       = $server.ServiceName
+                            SqlInstance        = $server.DomainInstanceName
+                            Database           = $db.Name
+                            Object             = $detail.FullObjectName
+                            Index              = $detail.IndexName
+                            IndexType          = $detail.IndexType
+                            Statistics         = $detail.StatisticsName
+                            KeyColumns         = $detail.KeyColumns
+                            IncludeColumns     = $detail.IncludeColumns
+                            FilterDefinition   = $detail.FilterDefinition
+                            DataCompression    = $detail.DataCompression
+                            IndexReads         = $detail.IndexReads
+                            IndexUpdates       = $detail.IndexUpdates
+                            Size               = [dbasize]($detail.SizeKB * 1024)
+                            IndexRows          = $detail.IndexRows
+                            IndexLookups       = $detail.IndexLookups
+                            MostRecentlyUsed   = $recentlyused
+                            StatsSampleRows    = $detail.StatsSampleRows
+                            StatsRowMods       = $detail.StatsRowMods
+                            HistogramSteps     = $detail.HistogramSteps
+                            StatsLastUpdated   = $detail.StatsLastUpdated
+                            IndexFragInPercent = $detail.IndexFragInPercent
                         }
                     }
                 }
-            }
-            catch {
-                Write-Warning "Cannot process $db on $server."
+            } catch {
+                Stop-Function -Continue -ErrorRecord $_ -Message "Cannot process $db on $server"
             }
         }
     }
 }
-
