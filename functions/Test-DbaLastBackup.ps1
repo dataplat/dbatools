@@ -336,11 +336,7 @@ function Test-DbaLastBackup {
 
             if (-not $lastbackup) {
                 Write-Message -Level Verbose -Message "No backups exist for this database."
-                $lastbackup = @{
-                    Path = "No backups exist for this database"
-                }
-                $fileexists = $false
-                $success = $restoreresult = $dbccresult = "Skipped"
+                # This code should never be executed as there is already a test for databases without backup in line 241.
                 continue
             }
 
