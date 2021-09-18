@@ -149,7 +149,7 @@ function Get-DbaService {
         foreach ($computer in $ComputerName.ComputerName) {
             try {
                 $resolvedComputerName = (Resolve-DbaNetworkName -ComputerName $computer -Credential $Credential -EnableException).FullComputerName
-                $null = Get-DbaCmObject -ComputerName $resolvedComputerName -Namespace root\Microsoft -ClassName __NAMESPACE -EnableException
+                $null = Get-DbaCmObject -ComputerName $resolvedComputerName -Credential $Credential -Namespace root\Microsoft -ClassName __NAMESPACE -EnableException
             } catch {
                 Stop-Function -Message "Failed to resolve or to connect to $computer." -Target $computer -Category ConnectionError -ErrorRecord $_ -Continue
             }
