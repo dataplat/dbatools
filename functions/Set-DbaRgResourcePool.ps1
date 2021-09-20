@@ -41,6 +41,10 @@ function Set-DbaRgResourcePool {
     .PARAMETER MaximumIOPSPerVolume
         Specifies the maximum I/O operations per second (IOPS) per disk volume to allow for the resource pool.
 
+    .PARAMETER MaximumProcesses
+        Specifies the maximum number of processes allowed for the external resource pool.
+        Specify 0 to set an unlimited threshold for the pool, which is thereafter bound only by computer resources.
+
     .PARAMETER SkipReconfigure
         Resource Governor requires a reconfiguriation for resource pool changes to take effect.
         Use this switch to skip issuing a reconfigure for the Resource Governor.
