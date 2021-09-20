@@ -10,7 +10,7 @@ function Set-DbaRgResourcePool {
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.
 
-    .PARAMETER Credential
+    .PARAMETER SqlCredential
         Credential object used to connect to the Windows server as a different user
 
     .PARAMETER ResourcePool
@@ -19,7 +19,7 @@ function Set-DbaRgResourcePool {
     .PARAMETER Type
         Internal or External.
 
-    .PARAMETER MinCpuPercentage
+    .PARAMETER MinimumCpuPercentage
         Specifies the guaranteed average CPU bandwidth for all requests in the resource pool when there is CPU contention.
 
     .PARAMETER MaximumCpuPercentage
@@ -29,13 +29,13 @@ function Set-DbaRgResourcePool {
         Specifies a hard cap on the CPU bandwidth that all requests in the resource pool will receive.
         Limits the maximum CPU bandwidth level to be the same as the specified value. Only for SQL Server 2012+
 
-    .PARAMETER MinMemoryPercentage
+    .PARAMETER MinimumMemoryPercentage
         Specifies the minimum amount of memory reserved for this resource pool that can not be shared with other resource pools.
 
-    .PARAMETER MaxMemoryPercentage
+    .PARAMETER MaximumMemoryPercentage
         Specifies the total server memory that can be used by requests in this resource pool. value is an integer with a default setting of 100.
 
-    .PARAMETER MinIOPSPerVolume
+    .PARAMETER MinimumIOPSPerVolume
         Specifies the minimum I/O operations per second (IOPS) per disk volume to reserve for the resource pool.
 
     .PARAMETER MaximumIOPSPerVolume

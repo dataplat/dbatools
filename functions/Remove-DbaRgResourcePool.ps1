@@ -10,7 +10,7 @@ function Remove-DbaRgResourcePool {
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.
 
-    .PARAMETER Credential
+    .PARAMETER SqlCredential
         Credential object used to connect to the Windows server as a different user
 
     .PARAMETER ResourcePool
@@ -112,8 +112,7 @@ function Remove-DbaRgResourcePool {
                             Stop-Function -Message "Could not remove existing resource pool '$resPool' on $instance." -Target $existingResourcePool -Continue
                         }
                     }
-                }
-                else {
+                } else {
                     Stop-Function -Message "Resource pool '$resPool' does not exist on $instance." -Target $existingResourcePool -Continue
                 }
             }
