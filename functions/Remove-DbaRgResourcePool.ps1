@@ -84,7 +84,7 @@ function Remove-DbaRgResourcePool {
         }
 
         if ($ResourcePool) {
-            $InputObject += Get-DbaRgResourcePool -SqlInstance $SqlInstance -Type $Type | Where-Object { $_.Name -in $ResourcePool }
+            $InputObject += Get-DbaRgResourcePool -SqlInstance $SqlInstance -Type $Type | Where-Object Name -in $ResourcePool
         }
 
         if (($InputObject) -and ($PSBoundParameters.Keys -notcontains 'Type')) {
@@ -103,7 +103,7 @@ function Remove-DbaRgResourcePool {
             }
 
             foreach ($resPool in $InputObject) {
-                $existingResourcePool = Get-DbaRgResourcePool -SqlInstance $instance -Type $Type | Where-Object { $_.Name -eq $resPool.Name }
+                $existingResourcePool = Get-DbaRgResourcePool -SqlInstance $server -Type $Type | Where-Object Name -eq $resPool.Name
                 if ($null -ne $existingResourcePool) {
                     if ($Pscmdlet.ShouldProcess($existingResourcePool, "Dropping existing resource pool")) {
                         try {

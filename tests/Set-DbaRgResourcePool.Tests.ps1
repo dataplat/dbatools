@@ -33,7 +33,6 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 
             $result2.MaximumCpuPercentage | Should -Be 99
         }
-        #TODO
         It "Works using -Type Internal" {
             $resourcePoolName = "dbatoolssci_poolTest"
             $splatNewResourcePool = @{
@@ -95,6 +94,27 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $result.MaximumMemoryPercentage | Should -Be $splatSetResourcePool.MaximumMemoryPercentage
             $result.MaximumProcesses | Should -Be $splatSetResourcePool.MaximumProcesses
         }
+        It "Accepts resource pools from pipe" {
+            $resourcePoolName = "dbatoolssci_poolTest"
+            $resourcePoolName2 = "dbatoolssci_poolTest2"
+            $splatNewResourcePool = @{
+                SqlInstance             = $script:instance2
+                MaximumCpuPercentage    = 100
+                MaximumMemoryPercentage = 100
+                MaximumIOPSPerVolume    = 100
+                CapCpuPercent           = 100
+                Force                   = $true
+            }
+            $null = New-DbaRgResourcePool @splatNewResourcePool -ResourcePool $resourcePoolName
+            $null = New-DbaRgResourcePool @splatNewResourcePool -ResourcePool $resourcePoolName2
+            $result = Get-DbaRgResourcePool -SqlInstance $script:instance2 | Where-Object Name -in ($resourcePoolName, $resourcePoolName2)
+            ($result | Where-Object Name -eq $resourcePoolName).MaximumCpuPercentage = 99
+            ($result | Where-Object Name -eq $resourcePoolName2).MaximumCpuPercentage = 98
+            $result2 = $result | Set-DbaRgResourcePool
+
+            ($result2 | Where-Object Name -eq $resourcePoolName).MaximumCpuPercentage | Should -Be 99
+            ($result2 | Where-Object Name -eq $resourcePoolName2).MaximumCpuPercentage | Should -Be 98
+        }
         It "Skips Resource Governor reconfiguration" {
             $resourcePoolName = "dbatoolssci_poolTest"
             $splatNewResourcePool = @{
@@ -114,8 +134,9 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         }
         AfterEach {
             $resourcePoolName = "dbatoolssci_poolTest"
-            $null = Remove-DbaRgResourcePool -SqlInstance $script:instance2 -ResourcePool $resourcePoolName -Type Internal
-            $null = Remove-DbaRgResourcePool -SqlInstance $script:instance2 -ResourcePool $resourcePoolName -Type External
+            $resourcePoolName2 = "dbatoolssci_poolTest2"
+            $null = Remove-DbaRgResourcePool -SqlInstance $script:instance2 -ResourcePool $resourcePoolName, $resourcePoolName2 -Type Internal
+            $null = Remove-DbaRgResourcePool -SqlInstance $script:instance2 -ResourcePool $resourcePoolName, $resourcePoolName2 -Type External
         }
     }
 }

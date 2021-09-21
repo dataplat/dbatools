@@ -131,7 +131,7 @@ function New-DbaRgResourcePool {
             }
 
             foreach ($resPool in $ResourcePool) {
-                $existingResourcePool = Get-DbaRgResourcePool -SqlInstance $instance -Type $Type | Where-Object { $_.Name -eq $resPool }
+                $existingResourcePool = Get-DbaRgResourcePool -SqlInstance $server -Type $Type | Where-Object Name -eq $resPool
                 if ($null -ne $existingResourcePool) {
                     if ($Force) {
                         if ($Pscmdlet.ShouldProcess($existingResourcePool, "Dropping existing resource pool '$resPool' because -Force was used")) {
@@ -147,11 +147,12 @@ function New-DbaRgResourcePool {
                     }
                 }
 
+                #Create resource pool
                 if ($PSCmdlet.ShouldProcess($instance, "Creating resource pool '$resPool'")) {
                     try {
                         if ($Type -eq "External") {
                             $splatSetDbaRgResourcePool = @{
-                                SqlInstance             = $instance
+                                SqlInstance             = $server
                                 ResourcePool            = $resPool
                                 Type                    = $Type
                                 MaximumCpuPercentage    = $MaximumCpuPercentage
@@ -163,7 +164,7 @@ function New-DbaRgResourcePool {
                             $newResourcePool.Create()
                         } elseif ($Type -eq "Internal") {
                             $splatSetDbaRgResourcePool = @{
-                                SqlInstance             = $instance
+                                SqlInstance             = $server
                                 ResourcePool            = $resPool
                                 Type                    = $Type
                                 MinimumCpuPercentage    = $MinimumCpuPercentage
@@ -179,6 +180,7 @@ function New-DbaRgResourcePool {
                             $newResourcePool.Create()
                         }
 
+                        #Reconfigure Resource Governor
                         if ($SkipReconfigure) {
                             Write-Message -Level Warning -Message "Not reconfiguring the Resource Governor after creating a new pool may create problems."
                         } elseif ($PSCmdlet.ShouldProcess($instance, "Reconfiguring the Resource Governor")) {
@@ -190,7 +192,7 @@ function New-DbaRgResourcePool {
                         Stop-Function -Message "Failure" -ErrorRecord $_ -Target $newResourcePool -Continue
                     }
                 }
-                Get-DbaRgResourcePool -SqlInstance $instance -Type $Type | Where-Object { $_.Name -eq $resPool }
+                Get-DbaRgResourcePool -SqlInstance $server -Type $Type | Where-Object Name -eq $resPool
             }
         }
     }

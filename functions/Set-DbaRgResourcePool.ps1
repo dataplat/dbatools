@@ -145,7 +145,7 @@ function Set-DbaRgResourcePool {
         }
 
         if ($ResourcePool) {
-            $InputObject += Get-DbaRgResourcePool -SqlInstance $SqlInstance -Type $Type | Where-Object { $_.Name -in $ResourcePool }
+            $InputObject += Get-DbaRgResourcePool -SqlInstance $SqlInstance -Type $Type | Where-Object Name -in $ResourcePool
             if ($null -eq $InputObject) {
                 Stop-Function -Message "No resources pools matching '$ResourcePool' found." -Category ObjectNotFound -Target $existingResourcePool -Continue
                 return
@@ -167,7 +167,7 @@ function Set-DbaRgResourcePool {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
             foreach ($resPool in $InputObject) {
-                $existingResourcePool = Get-DbaRgResourcePool -SqlInstance $instance -Type $Type | Where-Object { $_.Name -eq $resPool.Name }
+                $existingResourcePool = Get-DbaRgResourcePool -SqlInstance $server -Type $Type | Where-Object Name -eq $resPool.Name
                 if ($Type -eq "External") {
                     if ($PSBoundParameters.Keys -contains 'MaximumCpuPercentage') {
                         $existingResourcePool.MaximumCpuPercentage = $MaximumCpuPercentage
@@ -205,7 +205,8 @@ function Set-DbaRgResourcePool {
                         }
                     }
                 }
-                # Execute
+
+                #Execute
                 try {
                     if ($PSCmdlet.ShouldProcess($instance, "Altering resource pool $($resPool.Name)")) {
                         $existingResourcePool.Alter()
@@ -213,17 +214,19 @@ function Set-DbaRgResourcePool {
                 } catch {
                     Stop-Function -Message "Failure" -ErrorRecord $_ -Target $existingResourcePool -Continue
                 }
-            }
-            try {
-                if ($SkipReconfigure) {
-                    Write-Message -Level Warning -Message "Resource pool changes will not take effect in Resource Governor until it is reconfigured."
-                } elseif ($PSCmdlet.ShouldProcess($instance, "Reconfiguring the Resource Governor")) {
-                    $server.ResourceGovernor.Alter()
+
+                #Reconfigure Resource Governor
+                try {
+                    if ($SkipReconfigure) {
+                        Write-Message -Level Warning -Message "Resource pool changes will not take effect in Resource Governor until it is reconfigured."
+                    } elseif ($PSCmdlet.ShouldProcess($instance, "Reconfiguring the Resource Governor")) {
+                        $server.ResourceGovernor.Alter()
+                    }
+                } catch {
+                    Stop-Function -Message "Failure" -ErrorRecord $_ -Target $server.ResourceGovernor -Continue
                 }
-            } catch {
-                Stop-Function -Message "Failure" -ErrorRecord $_ -Target $server.ResourceGovernor -Continue
             }
-            Get-DbaRgResourcePool -SqlInstance $instance -Type $Type | Where-Object { $_.Name -in $resPool.Name }
+            Get-DbaRgResourcePool -SqlInstance $server -Type $Type | Where-Object Name -in $resPool.Name
         }
     }
 }
