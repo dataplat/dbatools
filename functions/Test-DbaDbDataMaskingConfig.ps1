@@ -83,7 +83,7 @@ function Test-DbaDbDataMaskingConfig {
         $allowedActionTypes = @('Add', 'Divide', 'Multiply', 'Nullify', 'Set', 'Subtract')
 
         $allowedDateTimeTypes = @('date', 'datetime', 'datetime2', 'smalldatetime', 'time')
-        $allowedNumberTypes = @('bigint', 'bit', 'int', 'money', 'smallint')
+        $allowedNumberTypes = @('bigint', 'bit', 'decimal', 'float', 'int', 'money', 'numeric', 'smallint')
 
         $requiredDateTimeActionProperties = @('Category', 'Subcategory', 'Type', 'Value')
         $requiredNumberActionProperties = @('Category', 'Type', 'Value')
