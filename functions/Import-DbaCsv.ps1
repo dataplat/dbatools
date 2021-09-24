@@ -554,7 +554,7 @@ function Import-DbaCsv {
                                 try {
                                     $ColumnMap = @{ }
                                     $firstline = Get-Content -Path $file -TotalCount 1 -ErrorAction Stop
-                                    $firstline -split $Delimiter | ForEach-Object {
+                                    $firstline -split "$Delimiter", 0, "SimpleMatch" | ForEach-Object {
                                         $trimmed = $PSItem.Trim('"')
                                         Write-Message -Level Verbose -Message "Adding $trimmed to ColumnMap"
                                         $ColumnMap.Add($trimmed, $trimmed)
