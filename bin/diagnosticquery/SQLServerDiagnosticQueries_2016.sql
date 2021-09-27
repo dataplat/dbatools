@@ -1,7 +1,7 @@
 
 -- SQL Server 2016 Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: September 2, 2021
+-- Last Modified: September 22, 2021
 -- https://glennsqlperformance.com/
 -- https://sqlserverperformance.wordpress.com/
 -- YouTube: https://bit.ly/2PkoAM1 
@@ -286,8 +286,7 @@ FROM sys.dm_os_process_memory WITH (NOLOCK) OPTION (RECOMPILE);
 
 -- SQL Server Services information (Query 7) (SQL Server Services Info)
 SELECT servicename, process_id, startup_type_desc, status_desc, 
-last_startup_time, service_account, is_clustered, cluster_nodename, [filename], 
-instant_file_initialization_enabled 
+last_startup_time, service_account, is_clustered, cluster_nodename, [filename] 
 FROM sys.dm_server_services WITH (NOLOCK) OPTION (RECOMPILE);
 ------
 
@@ -522,8 +521,7 @@ SELECT cpu_count AS [Logical CPU Count], scheduler_count,
        sqlserver_start_time AS [SQL Server Start Time],
 	   DATEDIFF(hour, sqlserver_start_time, GETDATE()) AS [SQL Server Up Time (hrs)],
 	   virtual_machine_type_desc AS [Virtual Machine Type],
-	   softnuma_configuration_desc AS [Soft NUMA Configuration], 
-	   sql_memory_model_desc -- New in SQL Server 2016
+	   softnuma_configuration_desc AS [Soft NUMA Configuration]
 FROM sys.dm_os_sys_info WITH (NOLOCK) OPTION (RECOMPILE);
 ------
 
