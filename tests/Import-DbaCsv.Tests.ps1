@@ -22,6 +22,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     $CommaSeparatedWithHeader = "$script:appveyorlabrepo\csv\CommaSeparatedWithHeader.csv"
     $col1 = "$script:appveyorlabrepo\csv\cols.csv"
     $col2 = "$script:appveyorlabrepo\csv\col2.csv"
+    $pipe3 = "$script:appveyorlabrepo\csv\pipe3.psv"
 
 
     Context "Works as expected" {
@@ -30,10 +31,14 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             $results | Should -Be $null
         }
 
-        It "creates the right columnmap (#7630)" {
+        It "creates the right columnmap (#7630), handles pipe delimiters (#7806)" {
             $null = Import-DbaCsv -SqlInstance $script:instance1 -Path $col1 -Database tempdb -AutoCreateTable -Table cols
             $null = Import-DbaCsv -SqlInstance $script:instance1 -Path $col2 -Database tempdb -Table cols
+            $null = Import-DbaCsv -SqlInstance $script:instance1 -Path $pipe3 -Database tempdb -Table cols2 -Delimiter "|" -AutoCreateTable
             $results = Invoke-DbaQuery -SqlInstance $script:instance1 -Database tempdb -Query "select * from cols"
+            $results | Where-Object third -notmatch "three" | Should -BeNullOrEmpty
+            $results | Where-Object firstcol -notmatch "one" | Should -BeNullOrEmpty
+            $results = Invoke-DbaQuery -SqlInstance $script:instance1 -Database tempdb -Query "select * from cols2"
             $results | Where-Object third -notmatch "three" | Should -BeNullOrEmpty
             $results | Where-Object firstcol -notmatch "one" | Should -BeNullOrEmpty
         }
