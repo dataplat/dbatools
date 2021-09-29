@@ -68,7 +68,7 @@ function Remove-DbaDbMailProfile {
         [Parameter(ParameterSetName = 'NonPipeline')]
         [PSCredential]$SqlCredential,
         [Parameter(ParameterSetName = 'NonPipeline')]
-        [string[]]$Profile,
+        [string[]]$Name,
         [Parameter(ParameterSetName = 'NonPipeline')]
         [string[]]$ExcludeProfile,
         [parameter(ValueFromPipeline, ParameterSetName = 'Pipeline', Mandatory = $true)]
