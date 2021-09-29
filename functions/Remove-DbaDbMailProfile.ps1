@@ -19,8 +19,8 @@ function Remove-DbaDbMailProfile {
 
         For MFA support, please use Connect-DbaInstance.
 
-    .PARAMETER Profile
-        Specifies one or more database mail profile(s) to get. If unspecified, all profiles will be returned.
+    .PARAMETER Name
+        Specifies one or more database mail profile(s) to get. If unspecified, all profiles will be removed.
 
     .PARAMETER ExcludeProfile
         Specifies one or more database mail profile(s) to exclude.
@@ -55,6 +55,11 @@ function Remove-DbaDbMailProfile {
         PS C:\> Remove-DbaDbMailProfile -SqlInstance localhost, localhost\namedinstance
 
         Removes all database mail profiles on the localhost, localhost\namedinstance instances.
+
+    .EXAMPLE
+        PS C:\> Remove-DbaDbMailProfile -SqlInstance localhost -Name MyDatabaseMailProfile
+
+        Removes MyDatabaseMailProfile database mail profile on the localhost.
 
     .EXAMPLE
         PS C:\> Get-DbaDbMailProfile -SqlInstance SRV1 | Out-GridView -Title 'Select database mail profile(s) to drop' -OutputMode Multiple | Remove-DbaDbMailProfile
