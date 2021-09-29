@@ -1,13 +1,13 @@
 function Get-DbaDbMailProfile {
     <#
     .SYNOPSIS
-        Gets database mail profiles from SQL Server
+        Gets database mail profile(s) from SQL Server
 
     .DESCRIPTION
-        Gets database mail profiles from SQL Server
+        Gets database mail profile(s) from SQL Server
 
     .PARAMETER SqlInstance
-        TThe target SQL Server instance or instances.
+        The target SQL Server instance or instances.
 
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
@@ -62,6 +62,12 @@ function Get-DbaDbMailProfile {
 
         Returns the DBMail profiles for "sql2014","sql2016" and "sqlcluster\sharepoint"
 
+    .EXAMPLE
+        PS C:\> $servers = "sql2014","sql2016", "sqlcluster\sharepoint"
+        PS C:\> Get-DbaDbMailProfile -SqlInstance $servers
+
+        Returns the DBMail profiles for "sql2014","sql2016" and "sqlcluster\sharepoint"
+
     #>
     [CmdletBinding()]
     param (
@@ -75,7 +81,7 @@ function Get-DbaDbMailProfile {
     )
     process {
         foreach ($instance in $SqlInstance) {
-            $InputObject += Get-DbaDbMail -SqlInstance $SqlInstance -SqlCredential $SqlCredential
+            $InputObject += Get-DbaDbMail -SqlInstance $instance -SqlCredential $SqlCredential
         }
 
         if (-not $InputObject) {
@@ -88,17 +94,17 @@ function Get-DbaDbMailProfile {
                 $profiles = $mailserver.Profiles
 
                 if ($Profile) {
-                    $profiles = $profiles | Where-Object Name -in $Profile
+                    $profiles = $profiles | Where-Object Name -In $Profile
                 }
 
                 If ($ExcludeProfile) {
-                    $profiles = $profiles | Where-Object Name -notin $ExcludeProfile
+                    $profiles = $profiles | Where-Object Name -NotIn $ExcludeProfile
 
                 }
 
-                $profiles | Add-Member -Force -MemberType NoteProperty -Name ComputerName -value $mailserver.ComputerName
-                $profiles | Add-Member -Force -MemberType NoteProperty -Name InstanceName -value $mailserver.InstanceName
-                $profiles | Add-Member -Force -MemberType NoteProperty -Name SqlInstance -value $mailserver.SqlInstance
+                $profiles | Add-Member -Force -MemberType NoteProperty -Name ComputerName -Value $mailserver.ComputerName
+                $profiles | Add-Member -Force -MemberType NoteProperty -Name InstanceName -Value $mailserver.InstanceName
+                $profiles | Add-Member -Force -MemberType NoteProperty -Name SqlInstance -Value $mailserver.SqlInstance
 
                 $profiles | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, ID, Name, Description, ForceDeleteForActiveProfiles, IsBusyProfile
             } catch {
