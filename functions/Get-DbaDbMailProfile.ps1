@@ -73,6 +73,7 @@ function Get-DbaDbMailProfile {
     param (
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
+        [Alias("Name")]
         [string[]]$Profile,
         [string[]]$ExcludeProfile,
         [Parameter(ValueFromPipeline)]
