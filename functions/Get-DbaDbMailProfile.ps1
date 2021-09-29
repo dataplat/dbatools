@@ -57,16 +57,16 @@ function Get-DbaDbMailProfile {
         Returns the DBMail profiles on sql01\sharepoint then return a bunch more columns
 
     .EXAMPLE
-        PS C:\> $servers = "sql2014","sql2016", "sqlcluster\sharepoint"
+        PS C:\> $servers = "sql2014", "sql2016", "sqlcluster\sharepoint"
         PS C:\> $servers | Get-DbaDbMail | Get-DbaDbMailProfile
 
-        Returns the DBMail profiles for "sql2014","sql2016" and "sqlcluster\sharepoint"
+        Returns the DBMail profiles for "sql2014", "sql2016" and "sqlcluster\sharepoint"
 
     .EXAMPLE
-        PS C:\> $servers = "sql2014","sql2016", "sqlcluster\sharepoint"
+        PS C:\> $servers = "sql2014", "sql2016", "sqlcluster\sharepoint"
         PS C:\> Get-DbaDbMailProfile -SqlInstance $servers
 
-        Returns the DBMail profiles for "sql2014","sql2016" and "sqlcluster\sharepoint"
+        Returns the DBMail profiles for "sql2014", "sql2016" and "sqlcluster\sharepoint"
 
     #>
     [CmdletBinding()]
