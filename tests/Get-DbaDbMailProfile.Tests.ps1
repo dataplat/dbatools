@@ -16,14 +16,14 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     BeforeAll {
         $profilename = "dbatoolsci_test_$(get-random)"
-        $server = Connect-DbaInstance -SqlInstance $script:instance2
+        $server = Connect-DbaInstance -SqlInstance $script:instance2, $script:instance3
         $mailProfile = "EXEC msdb.dbo.sysmail_add_profile_sp
             @profile_name='$profilename',
             @description='Profile for system email';"
         $server.query($mailProfile)
     }
     AfterAll {
-        $server = Connect-DbaInstance -SqlInstance $script:instance2
+        $server = Connect-DbaInstance -SqlInstance $script:instance2, $script:instance3
         $mailProfile = "EXEC msdb.dbo.sysmail_delete_profile_sp
             @profile_name='$profilename';"
         $server.query($mailProfile)
@@ -39,6 +39,11 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
         It "Should have Desctiption of 'Profile for system email' " {
             $results.description | Should Be 'Profile for system email'
+        }
+        $results2 = Get-DbaDbMailProfile -SqlInstance $server | Where-Object {$_.name -eq "$profilename"}
+        It "Gets results from multiple instances" {
+            $results2 | Should Not Be $null
+            ($results2 | Select-Object SqlInstance -Unique).count | Should -Be 2
         }
     }
     Context "Gets DbMailProfile when using -Profile" {
@@ -56,7 +61,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     Context "Gets no DbMailProfile when using -ExcludeProfile" {
         $results = Get-DbaDbMailProfile -SqlInstance $script:instance2 -ExcludeProfile $profilename
         It "Gets no results" {
-            $results | Should Be $null
+            $results | Should -Not -Contain $profilename
         }
     }
 }
