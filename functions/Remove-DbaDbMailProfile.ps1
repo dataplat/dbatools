@@ -105,7 +105,7 @@ function Remove-DbaDbMailProfile {
                     ComputerName  = $dbMailProfile.Parent.Parent.ComputerName
                     InstanceName  = $dbMailProfile.Parent.Parent.ServiceName
                     SqlInstance   = $dbMailProfile.Parent.Parent.DomainInstanceName
-                    DbMailProfile = $dbMailProfile.Name
+                    Name          = $dbMailProfile.Name
                     Status        = $null
                     IsRemoved     = $false
                 }
