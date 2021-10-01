@@ -95,6 +95,7 @@ function Get-DbaDbMailAccount {
                 If ($ExcludeAccount) {
                     $accounts = $accounts | Where-Object Name -notin $ExcludeAccount
                 }
+
                 $accounts | Add-Member -Force -MemberType NoteProperty -Name ComputerName -value $mailserver.ComputerName
                 $accounts | Add-Member -Force -MemberType NoteProperty -Name InstanceName -value $mailserver.InstanceName
                 $accounts | Add-Member -Force -MemberType NoteProperty -Name SqlInstance -value $mailserver.SqlInstance
