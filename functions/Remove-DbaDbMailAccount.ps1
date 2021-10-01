@@ -102,7 +102,7 @@ function Remove-DbaDbMailAccount {
                     ComputerName  = $dbMailAccount.Parent.Parent.ComputerName
                     InstanceName  = $dbMailAccount.Parent.Parent.ServiceName
                     SqlInstance   = $dbMailAccount.Parent.Parent.DomainInstanceName
-                    DbMailAccount = $dbMailAccount.Name
+                    Name          = $dbMailAccount.Name
                     Status        = $null
                     IsRemoved     = $false
                 }
