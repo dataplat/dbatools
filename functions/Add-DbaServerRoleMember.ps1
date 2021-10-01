@@ -63,7 +63,7 @@ function Add-DbaServerRoleMember {
     .EXAMPLE
         PS C:\> Add-DbaServerRoleMember -SqlInstance server1 -ServerRole customrole -Role dbcreator
 
-        Adds customrole custom server-level role to dbcreator server-level fixed role.
+        Adds customrole custom server-level role to dbcreator fixed server-level role.
 
     .EXAMPLE
         PS C:\> $servers = Get-Content C:\servers.txt
