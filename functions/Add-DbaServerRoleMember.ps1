@@ -16,9 +16,6 @@ function Add-DbaServerRoleMember {
 
         For MFA support, please use Connect-DbaInstance.
 
-    .PARAMETER Database
-        The database(s) to process. This list is auto-populated from the server. If unspecified, all databases will be processed.
-
     .PARAMETER ServerRole
         The server-level role(s) to process.
 
