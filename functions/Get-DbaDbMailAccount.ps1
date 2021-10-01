@@ -95,13 +95,10 @@ function Get-DbaDbMailAccount {
                 If ($ExcludeAccount) {
                     $accounts = $accounts | Where-Object Name -notin $ExcludeAccount
                 }
-                foreach ($acct in $accounts) {
-                    $acct | Add-Member -Force -MemberType NoteProperty -Name ComputerName -value $mailserver.ComputerName
-                    $acct | Add-Member -Force -MemberType NoteProperty -Name InstanceName -value $mailserver.InstanceName
-                    $acct | Add-Member -Force -MemberType NoteProperty -Name SqlInstance -value $mailserver.SqlInstance
-                    $acct | Add-Member -Force -MemberType NoteProperty -Name MailProfile -value $acct.GetAccountProfileNames()
-                }
-                $accounts | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, ID, Name, DisplayName, Description, EmailAddress, ReplyToAddress, IsBusyAccount, MailServers, MailProfile
+                $accounts | Add-Member -Force -MemberType NoteProperty -Name ComputerName -value $mailserver.ComputerName
+                $accounts | Add-Member -Force -MemberType NoteProperty -Name InstanceName -value $mailserver.InstanceName
+                $accounts | Add-Member -Force -MemberType NoteProperty -Name SqlInstance -value $mailserver.SqlInstance
+                $accounts | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, ID, Name, DisplayName, Description, EmailAddress, ReplyToAddress, IsBusyAccount, MailServers
             } catch {
                 Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
             }
