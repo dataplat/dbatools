@@ -53,34 +53,34 @@ function Add-DbaServerRoleMember {
     .EXAMPLE
         PS C:\> Add-DbaServerRoleMember -SqlInstance server1 -ServerRole dbcreator -Login login1
 
-        Adds login1 to the server-level role dbcreator on the instance server1
+        Adds login1 to the dbcreator fixed server-level role on the instance server1.
 
     .EXAMPLE
         PS C:\> Add-DbaServerRoleMember -SqlInstance server1, sql2016 -ServerRole customrole -Login login1
 
-        Adds login1 in custom, server-level role customrole on the instance server1 and sql2016
+        Adds login1 in customrole custom server-level role on the instance server1 and sql2016.
 
     .EXAMPLE
         PS C:\> Add-DbaServerRoleMember -SqlInstance server1 -ServerRole customrole -Role dbcreator
 
-        Adds custom, server-level role customrole to dbcreator server-level fixed role.
+        Adds customrole custom server-level role to dbcreator server-level fixed role.
 
     .EXAMPLE
         PS C:\> $servers = Get-Content C:\servers.txt
         PS C:\> $servers | Add-DbaServerRoleMember -ServerRole sysadmin -Login login1
 
-        Adds login1 to the sysadmin server-level role in every server in C:\servers.txt
+        Adds login1 to the sysadmin fixed server-level role in every server in C:\servers.txt.
 
     .EXAMPLE
-        PS C:\> Add-DbaServerRoleMember -SqlInstance localhost -ServerRole "bulkadmin","dbcreator" -Login login1
+        PS C:\> Add-DbaServerRoleMember -SqlInstance localhost -ServerRole bulkadmin, dbcreator -Login login1
 
-        Adds login1 on the server localhost to the server-level roles bulkadmin and dbcreator
+        Adds login1 on the server localhost to the bulkadmin and dbcreator fixed server-level roles.
 
     .EXAMPLE
-        PS C:\> $roles = Get-DbaServerRole -SqlInstance localhost -ServerRole "bulkadmin","dbcreator"
+        PS C:\> $roles = Get-DbaServerRole -SqlInstance localhost -ServerRole bulkadmin, dbcreator
         PS C:\> $roles | Add-DbaServerRoleMember -Login login1
 
-        Adds login1 on the server localhost to the server-level roles bulkadmin and dbcreator
+        Adds login1 on the server localhost to the bulkadmin and dbcreator fixed server-level roles.
 
     .EXAMPLE
         PS C:\ $logins = Get-Content C:\logins.txt
