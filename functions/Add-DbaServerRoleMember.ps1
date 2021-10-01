@@ -51,7 +51,7 @@ function Add-DbaServerRoleMember {
         https://dbatools.io/Add-DbaServerRoleMember
 
     .EXAMPLE
-        PS C:\> Add-DbaServerRoleMember -SqlInstance server1 -Role dbcreator -Login login1
+        PS C:\> Add-DbaServerRoleMember -SqlInstance server1 -ServerRole dbcreator -Login login1
 
         Adds login1 to the server-level role dbcreator on the instance server1
 
