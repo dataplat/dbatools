@@ -19,7 +19,7 @@ function Remove-DbaDbMailProfile {
 
         For MFA support, please use Connect-DbaInstance.
 
-    .PARAMETER Name
+    .PARAMETER Profile
         Specifies one or more database mail profile(s) to get. If unspecified, all profiles will be removed.
 
     .PARAMETER ExcludeProfile
@@ -73,7 +73,7 @@ function Remove-DbaDbMailProfile {
         [Parameter(ParameterSetName = 'NonPipeline')]
         [PSCredential]$SqlCredential,
         [Parameter(ParameterSetName = 'NonPipeline')]
-        [string[]]$Name,
+        [string[]]$Profile,
         [Parameter(ParameterSetName = 'NonPipeline')]
         [string[]]$ExcludeProfile,
         [parameter(ValueFromPipeline, ParameterSetName = 'Pipeline', Mandatory = $true)]
