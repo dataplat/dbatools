@@ -191,4 +191,4 @@ function Remove-DbaServerRoleMember {
             }
         }
     }
-
+}
