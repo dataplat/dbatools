@@ -16,7 +16,7 @@ function Remove-DbaDbMailAccount {
         Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
         For MFA support, please use Connect-DbaInstance.
 
-    .PARAMETER Name
+    .PARAMETER Account
         Specifies one or more database mail account(s) to delete. If unspecified, all accounts will be removed.
 
     .PARAMETER ExcludeAccount
@@ -70,7 +70,7 @@ function Remove-DbaDbMailAccount {
         [Parameter(ParameterSetName = 'NonPipeline')]
         [PSCredential]$SqlCredential,
         [Parameter(ParameterSetName = 'NonPipeline')]
-        [string[]]$Name,
+        [string[]]$Account,
         [Parameter(ParameterSetName = 'NonPipeline')]
         [string[]]$ExcludeAccount,
         [parameter(ValueFromPipeline, ParameterSetName = 'Pipeline', Mandatory = $true)]

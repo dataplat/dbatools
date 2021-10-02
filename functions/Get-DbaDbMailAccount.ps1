@@ -67,7 +67,6 @@ function Get-DbaDbMailAccount {
     param (
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [Alias("Name")]
         [string[]]$Account,
         [string[]]$ExcludeAccount,
         [Parameter(ValueFromPipeline)]
