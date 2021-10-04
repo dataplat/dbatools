@@ -710,7 +710,10 @@
         'Set-DbaDefaultPath',
         'Remove-DbaDbUdf',
         'Save-DbaCommunitySoftware',
-        'Update-DbaMaintenanceSolution'
+        'Update-DbaMaintenanceSolution',
+        'Remove-DbaServerRoleMember',
+        'Remove-DbaDbMailProfile',
+        'Remove-DbaDbMailAccount'
     )
 
     # Cmdlets to export from this module
