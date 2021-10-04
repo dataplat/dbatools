@@ -1,10 +1,10 @@
 function Get-DbaDbMailAccount {
     <#
     .SYNOPSIS
-        Gets database mail accounts from SQL Server
+        Gets database mail account(s) from SQL Server.
 
     .DESCRIPTION
-        Gets database mail accounts from SQL Server
+        Gets database mail account(s) from SQL Server.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.
@@ -23,7 +23,7 @@ function Get-DbaDbMailAccount {
         Specifies one or more account(s) to exclude.
 
     .PARAMETER InputObject
-        Accepts pipeline input from Get-DbaDbMail
+        Accepts pipeline input from Get-DbaDbMail.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -36,7 +36,7 @@ function Get-DbaDbMailAccount {
 
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
-        License: MIT https://opensource.org/licenses/MITIT
+        License: MIT https://opensource.org/licenses/MIT
 
     .LINK
         https://dbatools.io/Get-DbaDbMailAccount
@@ -44,23 +44,23 @@ function Get-DbaDbMailAccount {
     .EXAMPLE
         PS C:\> Get-DbaDbMailAccount -SqlInstance sql01\sharepoint
 
-        Returns Database Mail accounts on sql01\sharepoint
+        Returns Database Mail accounts on sql01\sharepoint.
 
     .EXAMPLE
         PS C:\> Get-DbaDbMailAccount -SqlInstance sql01\sharepoint -Account 'The DBA Team'
 
-        Returns The DBA Team Database Mail account from sql01\sharepoint
+        Returns 'The DBA Team' Database Mail account from sql01\sharepoint.
 
     .EXAMPLE
         PS C:\> Get-DbaDbMailAccount -SqlInstance sql01\sharepoint | Select-Object *
 
-        Returns the Database Mail accounts on sql01\sharepoint then return a bunch more columns
+        Returns the Database Mail accounts on sql01\sharepoint then return a bunch more columns.
 
     .EXAMPLE
-        PS C:\> $servers = "sql2014","sql2016", "sqlcluster\sharepoint"
+        PS C:\> $servers = sql2014, sql2016, sqlcluster\sharepoint
         PS C:\> $servers | Get-DbaDbMail | Get-DbaDbMailAccount
 
-        Returns the Database Mail accounts for "sql2014","sql2016" and "sqlcluster\sharepoint"
+        Returns the Database Mail accounts for sql2014, sql2016 and sqlcluster\sharepoint.
 
     #>
     [CmdletBinding()]
