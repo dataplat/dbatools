@@ -1,10 +1,10 @@
 function Remove-DbaServerRoleMember {
     <#
     .SYNOPSIS
-        Removes a login to a server-level role(s) for each instance(s) of SQL Server.
+        Removes login(s) from a server-level role(s) for each instance(s) of SQL Server.
 
     .DESCRIPTION
-        Removes a login to a server-level role(s) for each instance(s) of SQL Server.
+        Removes login(s) from a server-level role(s) for each instance(s) of SQL Server.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.
@@ -53,41 +53,41 @@ function Remove-DbaServerRoleMember {
     .EXAMPLE
         PS C:\> Remove-DbaServerRoleMember -SqlInstance server1 -ServerRole dbcreator -Login login1
 
-        Removes login1 from the server-level role dbcreator on the instance server1
+        Removes login1 from the dbcreator fixed server-level role on the instance server1.
 
     .EXAMPLE
         PS C:\> Remove-DbaServerRoleMember -SqlInstance server1, sql2016 -ServerRole customrole -Login login1
 
-        Removes login1 from custom, server-level role customrole on the instance server1 and sql2016
+        Removes login1 from customrole custom server-level role on the instance server1 and sql2016.
 
     .EXAMPLE
         PS C:\> Remove-DbaServerRoleMember -SqlInstance server1 -ServerRole customrole -Role dbcreator
 
-        Removes custom, server-level role customrole from dbcreator server-level fixed role.
+        Removes customrole custom server-level role from the dbcreator fixed server-level role.
 
     .EXAMPLE
         PS C:\> $servers = Get-Content C:\servers.txt
         PS C:\> $servers | Remove-DbaServerRoleMember -ServerRole sysadmin -Login login1
 
-        Removes login1 from the sysadmin server-level role in every server in C:\servers.txt
+        Removes login1 from the sysadmin fixed server-level role in every server in C:\servers.txt.
 
     .EXAMPLE
-        PS C:\> Remove-DbaServerRoleMember -SqlInstance localhost -ServerRole "bulkadmin","dbcreator" -Login login1
+        PS C:\> Remove-DbaServerRoleMember -SqlInstance localhost -ServerRole bulkadmin, dbcreator -Login login1
 
-        Removes login1 from the server localhost to the server-level roles bulkadmin and dbcreator
+        Removes login1 from the bulkadmin and dbcreator fixed server-level roles on the server localhost.
 
     .EXAMPLE
-        PS C:\> $roles = Get-DbaServerRole -SqlInstance localhost -ServerRole "bulkadmin","dbcreator"
+        PS C:\> $roles = Get-DbaServerRole -SqlInstance localhost -ServerRole bulkadmin, dbcreator
         PS C:\> $roles | Remove-DbaServerRoleMember -Login login1
 
-        Removes login1 from the server localhost to the server-level roles bulkadmin and dbcreator
+        Removes login1 from the bulkadmin and dbcreator fixed server-level roles on the server localhost.
 
     .EXAMPLE
         PS C:\ $logins = Get-Content C:\logins.txt
         PS C:\ $srvLogins = Get-DbaLogin -SqlInstance server1 -Login $logins
         PS C:\ Remove-DbaServerRoleMember -Login $logins
 
-        Removes all the logins found in C:\logins.txt from server-level role mycustomrole on server1.
+        Removes all the logins found in C:\logins.txt from mycustomrole custom server-level role on server1.
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High')]
     param (
