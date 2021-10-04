@@ -84,10 +84,10 @@ body:
       description: "You can provide the output from: SELECT @@VERSION"
     validations:
       required: true
-   - type: text area
-     id: net-version
-     attributes:
-       label: ".NET Framework Version"
-       description: "Note as of 1.1.0 release our model requires .NET Framework 4.6.2 to be present on Windows devices"
-     validations:
-       required: true
+  - type: text area
+    id: net-version
+    attributes:
+      label: ".NET Framework Version"
+      description: "Note as of 1.1.0 release our model requires .NET Framework 4.6.2 to be present on Windows devices"
+    validations:
+      required: true
