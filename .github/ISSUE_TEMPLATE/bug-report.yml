@@ -89,9 +89,5 @@ body:
     attributes:
       label: ".NET Framework Version"
       description: "Note as of 1.1.0 release our model requires .NET Framework 4.6.2 to be present on Windows devices"
-      value: |
-        ```powershell
-        [System.Runtime.InteropServices.RuntimeInformation]::get_FrameworkDescription()
-        ```
     validations:
       required: true
