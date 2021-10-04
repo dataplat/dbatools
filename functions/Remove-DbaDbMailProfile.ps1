@@ -102,12 +102,12 @@ function Remove-DbaDbMailProfile {
         foreach ($dbMailProfile in $dbMailProfiles) {
             if ($PSCmdlet.ShouldProcess($dbMailProfile.Parent.Parent.Name, "Removing the database mail profile $($dbMailProfile.Name) in the database $($dbMailProfile.Parent.Name) on $($dbMailProfile.Parent.Parent.Name)")) {
                 $output = [pscustomobject]@{
-                    ComputerName  = $dbMailProfile.Parent.Parent.ComputerName
-                    InstanceName  = $dbMailProfile.Parent.Parent.ServiceName
-                    SqlInstance   = $dbMailProfile.Parent.Parent.DomainInstanceName
-                    Name          = $dbMailProfile.Name
-                    Status        = $null
-                    IsRemoved     = $false
+                    ComputerName = $dbMailProfile.Parent.Parent.ComputerName
+                    InstanceName = $dbMailProfile.Parent.Parent.ServiceName
+                    SqlInstance  = $dbMailProfile.Parent.Parent.DomainInstanceName
+                    Name         = $dbMailProfile.Name
+                    Status       = $null
+                    IsRemoved    = $false
                 }
                 try {
                     $dbMailProfile.Drop()
