@@ -158,8 +158,8 @@ function Remove-DbaServerRoleMember {
             foreach ($sr in $serverRoles) {
                 $instance = $sr.Parent
                 foreach ($l in $Login) {
-                    if ($PSCmdlet.ShouldProcess($instance, "Removing login $l to server-level role: $sr")) {
-                        Write-Message -Level Verbose -Message "Removing login $l to server-level role: $sr on $instance"
+                    if ($PSCmdlet.ShouldProcess($instance, "Removing login $l from server-level role: $sr")) {
+                        Write-Message -Level Verbose -Message "Removing login $l from server-level role: $sr on $instance"
                         try {
                             $sr.DropMember($l)
                         } catch {
