@@ -99,12 +99,12 @@ function Remove-DbaDbMailAccount {
         foreach ($dbMailAccount in $dbMailAccounts) {
             if ($PSCmdlet.ShouldProcess($dbMailAccount.Parent.Parent.Name, "Removing the database mail account $($dbMailAccount.Name) in the database $($dbMailAccount.Parent.Name) on $($dbMailAccount.Parent.Parent.Name)")) {
                 $output = [pscustomobject]@{
-                    ComputerName  = $dbMailAccount.Parent.Parent.ComputerName
-                    InstanceName  = $dbMailAccount.Parent.Parent.ServiceName
-                    SqlInstance   = $dbMailAccount.Parent.Parent.DomainInstanceName
-                    Name          = $dbMailAccount.Name
-                    Status        = $null
-                    IsRemoved     = $false
+                    ComputerName = $dbMailAccount.Parent.Parent.ComputerName
+                    InstanceName = $dbMailAccount.Parent.Parent.ServiceName
+                    SqlInstance  = $dbMailAccount.Parent.Parent.DomainInstanceName
+                    Name         = $dbMailAccount.Name
+                    Status       = $null
+                    IsRemoved    = $false
                 }
                 try {
                     $dbMailAccount.Drop()
