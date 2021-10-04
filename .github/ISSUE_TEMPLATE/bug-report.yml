@@ -84,7 +84,7 @@ body:
       description: "You can provide the output from: SELECT @@VERSION"
     validations:
       required: true
-  - type: text area
+  - type: textarea
     id: net-version
     attributes:
       label: ".NET Framework Version"
