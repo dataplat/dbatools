@@ -179,6 +179,8 @@
         'Get-DbaAgDatabase',
         'Get-DbaAgentAlert',
         'Get-DbaAgentAlertCategory',
+        'Remove-DbaDbMailAccount',
+        'Remove-DbaServerRoleMember',
         'Get-DbaAgentJob',
         'Get-DbaAgentJobCategory',
         'Get-DbaAgentJobHistory',
