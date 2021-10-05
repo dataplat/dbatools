@@ -5,7 +5,7 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
         [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Name', 'Description', 'MailAccountName', 'MailAccountPriority', 'EnableException'
+        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Profile', 'Description', 'MailAccountName', 'MailAccountPriority', 'EnableException'
         $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
         It "Should only contain our specific parameters" {
             (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
@@ -18,7 +18,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         $profilename = "dbatoolsci_test_$(get-random)"
         $server = Connect-DbaInstance -SqlInstance $script:instance2
         $description = 'Mail account for email alerts'
-        $mailaccountname = 'dbatoolssci@dbatools.io'
+        $mailaccountname = "dbatoolsci_testacct_$(get-random)"
         $mailaccountpriority = 1
 
         $sql = "EXECUTE msdb.dbo.sysmail_add_account_sp
@@ -35,13 +35,15 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         $server.query($mailAccountSettings)
         $regularaccountsettings = "EXEC msdb.dbo.sysmail_delete_account_sp @account_name = '$mailaccountname';"
         $server.query($regularaccountsettings)
+        Remove-DbaDbMailAccount -SqlInstance $script:instance2 -Confirm:$false
+        Remove-DbaDbMailProfile -SqlInstance $script:instance2 -Confirm:$false
     }
 
     Context "Sets DbMail Profile" {
 
         $splat = @{
             SqlInstance         = $script:instance2
-            Name                = $profilename
+            Profile             = $profilename
             Description         = $description
             MailAccountName     = $mailaccountname
             MailAccountPriority = $mailaccountpriority

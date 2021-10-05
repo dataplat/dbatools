@@ -77,9 +77,9 @@ function New-DbaDbMailProfile {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
-            if ($Pscmdlet.ShouldProcess($instance, "Creating new db mail profile called $Name")) {
+            if ($Pscmdlet.ShouldProcess($instance, "Creating new db mail profile called $Profile")) {
                 try {
-                    $profileObj = New-Object Microsoft.SqlServer.Management.SMO.Mail.MailProfile $server.Mail, $Name
+                    $profileObj = New-Object Microsoft.SqlServer.Management.SMO.Mail.MailProfile $server.Mail, $Profile
                     if (Test-Bound -ParameterName 'Description') {
                         $profileObj.Description = $Description
                     }
