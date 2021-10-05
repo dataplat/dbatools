@@ -31,7 +31,6 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         $server = Connect-DbaInstance -SqlInstance $script:instance2
         $mailAccountSettings = "EXEC msdb.dbo.sysmail_delete_account_sp @account_name = '$accountName';"
         $server.query($mailAccountSettings)
-        Remove-DbaDbMailAccount -SqlInstance $script:instance2 -Confirm:$false
     }
 
     Context "Gets DbMail Account" {

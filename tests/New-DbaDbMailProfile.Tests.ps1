@@ -18,7 +18,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         $profilename = "dbatoolsci_test_$(get-random)"
         $server = Connect-DbaInstance -SqlInstance $script:instance2
         $description = 'Mail account for email alerts'
-        $mailaccountname = "dbatoolsci_testacct_$(get-random)"
+        $mailaccountname = 'dbatoolssci@dbatools.io'
         $mailaccountpriority = 1
 
         $sql = "EXECUTE msdb.dbo.sysmail_add_account_sp
@@ -35,8 +35,6 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         $server.query($mailAccountSettings)
         $regularaccountsettings = "EXEC msdb.dbo.sysmail_delete_account_sp @account_name = '$mailaccountname';"
         $server.query($regularaccountsettings)
-        Remove-DbaDbMailAccount -SqlInstance $script:instance2 -Confirm:$false
-        Remove-DbaDbMailProfile -SqlInstance $script:instance2 -Confirm:$false
     }
 
     Context "Sets DbMail Profile" {
