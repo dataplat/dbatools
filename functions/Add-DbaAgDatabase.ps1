@@ -457,7 +457,7 @@ function Add-DbaAgDatabase {
                             $syncProgress['Status'] = "IsJoined is $($replicaAgDbSMO[$replicaName].IsJoined), SynchronizationState is $($replicaAgDbSMO[$replicaName].SynchronizationState), replica is in desired state."
                         }
                         if ($ag.AvailabilityReplicas[$replicaName].SeedingMode -eq 'Automatic' -and $reportSeeding) {
-                            $seedingStats = $server.Query("SELECT * FROM sys.dm_hadr_physical_seeding_stats WHERE local_database_name = '$($db.Name)' AND remote_machine_name = '$($ag.AvailabilityReplicas[$replicaName].EndpointUrl)'")
+                            $seedingStats = $server.Query("SELECT TOP 1 * FROM sys.dm_hadr_physical_seeding_stats WHERE local_database_name = '$($db.Name)' AND remote_machine_name = '$($ag.AvailabilityReplicas[$replicaName].EndpointUrl)' ORDER BY start_time_utc DESC")
                             if ($seedingStats) {
                                 if ($seedingStats.failure_message -ne [DBNull]::Value) {
                                     $failure = $true
