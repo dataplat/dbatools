@@ -20,7 +20,7 @@ function New-DbaDbSequence {
     .PARAMETER Database
         The target database(s).
 
-    .PARAMETER Name
+    .PARAMETER Sequence
         The name of the new sequence
 
     .PARAMETER Schema
@@ -73,17 +73,17 @@ function New-DbaDbSequence {
         https://dbatools.io/New-DbaDbSequence
 
     .EXAMPLE
-        PS C:\> New-DbaDbSequence -SqlInstance sqldev01 -Database TestDB -Name TestSequence -StartWith 10000 -IncrementBy 10
+        PS C:\> New-DbaDbSequence -SqlInstance sqldev01 -Database TestDB -Sequence TestSequence -StartWith 10000 -IncrementBy 10
 
         Creates a new sequence TestSequence in the TestDB database on the sqldev01 instance. The sequence will start with 10000 and increment by 10.
 
     .EXAMPLE
-        PS C:\> New-DbaDbSequence -SqlInstance sqldev01 -Database TestDB -Name TestSequence -Cycle
+        PS C:\> New-DbaDbSequence -SqlInstance sqldev01 -Database TestDB -Sequence TestSequence -Cycle
 
         Creates a new sequence TestSequence in the TestDB database on the sqldev01 instance. The sequence will cycle the numbers.
 
     .EXAMPLE
-        PS C:\> Get-DbaDatabase -SqlInstance sqldev01 -Database TestDB | New-DbaDbSequence -Name TestSequence -Schema TestSchema -IntegerType bigint
+        PS C:\> Get-DbaDatabase -SqlInstance sqldev01 -Database TestDB | New-DbaDbSequence -Sequence TestSequence -Schema TestSchema -IntegerType bigint
 
         Using a pipeline this command creates a new bigint sequence named TestSchema.TestSequence in the TestDB database on the sqldev01 instance.
     #>
@@ -93,7 +93,8 @@ function New-DbaDbSequence {
         [PSCredential]$SqlCredential,
         [string[]]$Database,
         [Parameter(Mandatory)]
-        [string]$Name,
+        [Alias("Name")]
+        [string[]]$Sequence,
         [string]$Schema = 'dbo',
         [string]$IntegerType = 'bigint',
         [long]$StartWith = 1,
@@ -123,11 +124,11 @@ function New-DbaDbSequence {
                 Stop-Function -Message "This command only supports SQL Server 2012 and higher." -Continue
             }
 
-            if (($db.Sequences | Where-Object { $_.Schema -eq $Schema -and $_.Name -eq $Name })) {
-                Stop-Function -Message "Sequence $Name already exists in the $Schema schema in the database $($db.Name) on $($db.Parent.Name)" -Continue
+            if (($db.Sequences | Where-Object { $_.Schema -eq $Schema -and $_.Name -eq $Sequence })) {
+                Stop-Function -Message "Sequence $Sequence already exists in the $Schema schema in the database $($db.Name) on $($db.Parent.Name)" -Continue
             }
 
-            if ($Pscmdlet.ShouldProcess($db.Parent.Name, "Creating the sequence $Name in the $Schema schema in the database $($db.Name) on $($db.Parent.Name)")) {
+            if ($Pscmdlet.ShouldProcess($db.Parent.Name, "Creating the sequence $Sequence in the $Schema schema in the database $($db.Name) on $($db.Parent.Name)")) {
                 try {
                     if (Test-Bound Schema) {
                         $schemaObject = $db | Get-DbaDbSchema -Schema $Schema -IncludeSystemSchemas
@@ -138,7 +139,7 @@ function New-DbaDbSequence {
                         }
                     }
 
-                    $newSequence = New-Object Microsoft.SqlServer.Management.Smo.Sequence -ArgumentList $db, $Name, $Schema
+                    $newSequence = New-Object Microsoft.SqlServer.Management.Smo.Sequence -ArgumentList $db, $Sequence, $Schema
                     $newSequence.StartValue = $StartWith
                     $newSequence.IncrementValue = $IncrementBy
                     $newSequence.IsCycleEnabled = $Cycle.IsPresent
@@ -177,9 +178,9 @@ function New-DbaDbSequence {
                     }
 
                     $newSequence.Create()
-                    $db | Get-DbaDbSequence -Name $newSequence.Name -Schema $newSequence.Schema
+                    $db | Get-DbaDbSequence -Sequence $newSequence.Name -Schema $newSequence.Schema
                 } catch {
-                    Stop-Function -Message "Failure on $($db.Parent.Name) to create the sequence $Name in the $Schema schema in the database $($db.Name)" -ErrorRecord $_ -Continue
+                    Stop-Function -Message "Failure on $($db.Parent.Name) to create the sequence $Sequence in the $Schema schema in the database $($db.Name)" -ErrorRecord $_ -Continue
                 }
             }
         }
