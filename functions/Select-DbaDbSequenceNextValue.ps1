@@ -67,7 +67,8 @@ function Select-DbaDbSequenceNextValue {
         [PSCredential]$SqlCredential,
         [string]$Database,
         [Parameter(Mandatory)]
-        [string]$Sequence,
+        [Alias("Name")]
+        [string[]]$Sequence,
         [string]$Schema = 'dbo',
         [parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.Database]$InputObject,
