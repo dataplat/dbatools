@@ -22,7 +22,7 @@ function Remove-DbaDbSequence {
     .PARAMETER Database
         The target database(s).
 
-    .PARAMETER Name
+    .PARAMETER Sequence
         The name(s) of the sequence(s).
 
     .PARAMETER Schema
@@ -55,7 +55,7 @@ function Remove-DbaDbSequence {
         https://dbatools.io/Remove-DbaDbSequence
 
     .EXAMPLE
-        PS C:\> Remove-DbaDbSequence -SqlInstance sqldev01 -Database TestDB -Name TestSequence
+        PS C:\> Remove-DbaDbSequence -SqlInstance sqldev01 -Database TestDB -Sequence TestSequence
 
         Removes the sequence TestSequence in the TestDB database on the sqldev01 instance.
 
@@ -68,12 +68,13 @@ function Remove-DbaDbSequence {
     param (
         [Parameter(ParameterSetName = 'NonPipeline', Mandatory = $true, Position = 0)]
         [DbaInstanceParameter[]]$SqlInstance,
-        [Parameter(ParameterSetName = 'NonPipeline')]
+        #[Parameter(ParameterSetName = 'NonPipeline')]
         [PSCredential]$SqlCredential,
         [Parameter(ParameterSetName = 'NonPipeline')]
         [string[]]$Database,
         [Parameter(ParameterSetName = 'NonPipeline')]
-        [string[]]$Name,
+        [Alias("Name")]
+        [string[]]$Sequence,
         [Parameter(ParameterSetName = 'NonPipeline')]
         [string[]]$Schema,
         [parameter(ValueFromPipeline, ParameterSetName = 'Pipeline', Mandatory = $true)]
@@ -99,25 +100,25 @@ function Remove-DbaDbSequence {
 
     end {
         # We have to delete in the end block to prevent "Collection was modified; enumeration operation may not execute." if directly piped from Get-DbaDbSequence.
-        foreach ($sequence in $sequences) {
-            if ($PSCmdlet.ShouldProcess($sequence.Parent.Parent.Name, "Removing the sequence $($sequence.Schema).$($sequence.Name) in the database $($sequence.Parent.Name) on $($sequence.Parent.Parent.Name)")) {
+        foreach ($sequenceItem in $sequences) {
+            if ($PSCmdlet.ShouldProcess($sequenceItem.Parent.Parent.Name, "Removing the sequence $($sequenceItem.Schema).$($sequenceItem.Name) in the database $($sequenceItem.Parent.Name) on $($sequenceItem.Parent.Parent.Name)")) {
                 $output = [pscustomobject]@{
-                    ComputerName   = $sequence.Parent.Parent.ComputerName
-                    InstanceName   = $sequence.Parent.Parent.ServiceName
-                    SqlInstance    = $sequence.Parent.Parent.DomainInstanceName
-                    Database       = $sequence.Parent.Name
-                    Sequence       = "$($sequence.Schema).$($sequence.Name)"
-                    SequenceName   = $sequence.Name
-                    SequenceSchema = $sequence.Schema
+                    ComputerName   = $sequenceItem.Parent.Parent.ComputerName
+                    InstanceName   = $sequenceItem.Parent.Parent.ServiceName
+                    SqlInstance    = $sequenceItem.Parent.Parent.DomainInstanceName
+                    Database       = $sequenceItem.Parent.Name
+                    Sequence       = "$($sequenceItem.Schema).$($sequenceItem.Name)"
+                    SequenceName   = $sequenceItem.Name
+                    SequenceSchema = $sequenceItem.Schema
                     Status         = $null
                     IsRemoved      = $false
                 }
                 try {
-                    $sequence.Drop()
+                    $sequenceItem.Drop()
                     $output.Status = "Dropped"
                     $output.IsRemoved = $true
                 } catch {
-                    Stop-Function -Message "Failed removing the sequence $($sequence.Schema).$($sequence.Name) in the database $($sequence.Parent.Name) on $($sequence.Parent.Parent.Name)" -ErrorRecord $_
+                    Stop-Function -Message "Failed removing the sequence $($sequenceItem.Schema).$($sequenceItem.Name) in the database $($sequenceItem.Parent.Name) on $($sequenceItem.Parent.Parent.Name)" -ErrorRecord $_
                     $output.Status = (Get-ErrorMessage -Record $_)
                     $output.IsRemoved = $false
                 }
