@@ -57,7 +57,7 @@ function Remove-DbaDbMailProfile {
         Removes all database mail profiles on the localhost, localhost\namedinstance instances.
 
     .EXAMPLE
-        PS C:\> Remove-DbaDbMailProfile -SqlInstance localhost -Name MyDatabaseMailProfile
+        PS C:\> Remove-DbaDbMailProfile -SqlInstance localhost -Profile MyDatabaseMailProfile
 
         Removes MyDatabaseMailProfile database mail profile on the localhost.
 
@@ -100,7 +100,7 @@ function Remove-DbaDbMailProfile {
     end {
         # We have to delete in the end block to prevent "Collection was modified; enumeration operation may not execute." if directly piped from Get-DbaDbMailProfile.
         foreach ($dbMailProfile in $dbMailProfiles) {
-            if ($PSCmdlet.ShouldProcess($dbMailProfile.Parent.Parent.Name, "Removing the database mail profile $($dbMailProfile.Name) in the database $($dbMailProfile.Parent.Name) on $($dbMailProfile.Parent.Parent.Name)")) {
+            if ($PSCmdlet.ShouldProcess($dbMailProfile.Parent.Parent.Name, "Removing the database mail profile $($dbMailProfile.Name) on $($dbMailProfile.Parent.Parent.Name)")) {
                 $output = [pscustomobject]@{
                     ComputerName = $dbMailProfile.Parent.Parent.ComputerName
                     InstanceName = $dbMailProfile.Parent.Parent.ServiceName
@@ -114,7 +114,7 @@ function Remove-DbaDbMailProfile {
                     $output.Status = "Dropped"
                     $output.IsRemoved = $true
                 } catch {
-                    Stop-Function -Message "Failed removing the database mail profile $($dbMailProfile.Name) in the database $($dbMailProfile.Parent.Name) on $($dbMailProfile.Parent.Parent.Name)" -ErrorRecord $_
+                    Stop-Function -Message "Failed removing the database mail profile $($dbMailProfile.Name) on $($dbMailProfile.Parent.Parent.Name)" -ErrorRecord $_
                     $output.Status = (Get-ErrorMessage -Record $_)
                     $output.IsRemoved = $false
                 }
