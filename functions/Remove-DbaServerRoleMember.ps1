@@ -26,7 +26,7 @@ function Remove-DbaServerRoleMember {
         The role(s) to remove from server-level role(s) specified.
 
     .PARAMETER InputObject
-        Enables piped input from Get-DbaServerRole or New-DbaServerRole
+        Enables piped input from Get-DbaServerRole.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
