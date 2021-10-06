@@ -140,7 +140,7 @@ function New-DbaRgResourcePool {
                             }
                         }
                     } else {
-                        Stop-Function -Message "Resource Pool '$resPool' already exists." -Category ResourceExists -ErrorRecord $_ -Target $existingResourcePool
+                        Stop-Function -Message "Resource Pool '$resPool' already exists." -Category ResourceExists -ErrorRecord $_ -Target $existingResourcePool -Continue
                         return
                     }
                 }
