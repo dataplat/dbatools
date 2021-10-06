@@ -85,7 +85,7 @@ function Remove-DbaServerRoleMember {
     .EXAMPLE
         PS C:\ $logins = Get-Content C:\logins.txt
         PS C:\ $srvLogins = Get-DbaLogin -SqlInstance server1 -Login $logins
-        PS C:\ Remove-DbaServerRoleMember -Login $logins
+        PS C:\ Remove-DbaServerRoleMember -Login $logins -ServerRole mycustomrole
 
         Removes all the logins found in C:\logins.txt from mycustomrole custom server-level role on server1.
     #>
