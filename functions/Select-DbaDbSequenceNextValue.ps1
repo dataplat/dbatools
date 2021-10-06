@@ -20,7 +20,7 @@ function Select-DbaDbSequenceNextValue {
     .PARAMETER Database
         The target database.
 
-    .PARAMETER Name
+    .PARAMETER Sequence
         The name of the sequence.
 
     .PARAMETER Schema
@@ -52,12 +52,12 @@ function Select-DbaDbSequenceNextValue {
         https://dbatools.io/Select-DbaDbSequenceNextValue
 
     .EXAMPLE
-        PS C:\> Select-DbaDbSequenceNextValue -SqlInstance sqldev01 -Database TestDB -Name TestSequence
+        PS C:\> Select-DbaDbSequenceNextValue -SqlInstance sqldev01 -Database TestDB -Sequence TestSequence
 
         Selects the next value from the sequence TestSequence in the TestDB database on the sqldev01 instance.
 
     .EXAMPLE
-        PS C:\> Get-DbaDatabase -SqlInstance sqldev01 -Database TestDB | Select-DbaDbSequenceNextValue -Name TestSequence -Schema TestSchema
+        PS C:\> Get-DbaDatabase -SqlInstance sqldev01 -Database TestDB | Select-DbaDbSequenceNextValue -Sequence TestSequence -Schema TestSchema
 
         Using a pipeline this command selects the next value from the sequence TestSchema.TestSequence in the TestDB database on the sqldev01 instance.
     #>
@@ -67,7 +67,7 @@ function Select-DbaDbSequenceNextValue {
         [PSCredential]$SqlCredential,
         [string]$Database,
         [Parameter(Mandatory)]
-        [string]$Name,
+        [string]$Sequence,
         [string]$Schema = 'dbo',
         [parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.Database]$InputObject,
@@ -84,6 +84,6 @@ function Select-DbaDbSequenceNextValue {
             $InputObject = Get-DbaDatabase -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $Database
         }
 
-        $InputObject.Query("SELECT NEXT VALUE FOR [$($Schema)].[$($Name)] AS NextValue").NextValue
+        $InputObject.Query("SELECT NEXT VALUE FOR [$($Schema)].[$($Sequence)] AS NextValue").NextValue
     }
 }
