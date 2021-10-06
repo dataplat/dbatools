@@ -97,25 +97,23 @@ function New-DbaRgResourcePool {
         [string]$Type = "Internal",
         [Parameter(ParameterSetName = "Internal")]
         [ValidateRange(0, 100)]
-        [int]$MinimumCpuPercentage,
-        [Parameter(Mandatory)]
+        [int]$MinimumCpuPercentage = 0,
         [ValidateRange(1, 100)]
-        [int]$MaximumCpuPercentage,
-        [Parameter(Mandatory, ParameterSetName = "Internal")]
+        [int]$MaximumCpuPercentage = 100,
+        [Parameter(ParameterSetName = "Internal")]
         [ValidateRange(1, 100)]
-        [int]$CapCpuPercentage,
+        [int]$CapCpuPercentage = 100,
         [Parameter(ParameterSetName = "Internal")]
         [ValidateRange(0, 100)]
-        [int]$MinimumMemoryPercentage,
-        [Parameter(Mandatory)]
+        [int]$MinimumMemoryPercentage = 0,
         [ValidateRange(1, 100)]
-        [int]$MaximumMemoryPercentage,
+        [int]$MaximumMemoryPercentage = 100,
         [Parameter(ParameterSetName = "Internal")]
         [ValidateRange(0, 2147483647)]
-        [int]$MinimumIOPSPerVolume,
+        [int]$MinimumIOPSPerVolume = 0,
         [Parameter(ParameterSetName = "Internal")]
-        [ValidateRange(1, 2147483647)]
-        [int]$MaximumIOPSPerVolume,
+        [ValidateRange(0, 2147483647)]
+        [int]$MaximumIOPSPerVolume = 0,
         [Parameter(ParameterSetName = "External")]
         [int]$MaximumProcesses,
         [switch]$SkipReconfigure,
