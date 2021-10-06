@@ -1,7 +1,7 @@
 
 -- SQL Server 2017 Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: October 1, 2021
+-- Last Modified: October 5, 2021
 -- https://glennsqlperformance.com/
 -- https://sqlserverperformance.wordpress.com/
 -- YouTube: https://bit.ly/2PkoAM1 
@@ -299,7 +299,8 @@ SELECT ISNULL(d.[name], bs.[database_name]) AS [Database], d.recovery_model_desc
        d.log_reuse_wait_desc AS [Log Reuse Wait Desc],
     MAX(CASE WHEN [type] = 'D' THEN bs.backup_finish_date ELSE NULL END) AS [Last Full Backup],
     MAX(CASE WHEN [type] = 'I' THEN bs.backup_finish_date ELSE NULL END) AS [Last Differential Backup],
-    MAX(CASE WHEN [type] = 'L' THEN bs.backup_finish_date ELSE NULL END) AS [Last Log Backup]
+    MAX(CASE WHEN [type] = 'L' THEN bs.backup_finish_date ELSE NULL END) AS [Last Log Backup],
+	DATABASEPROPERTYEX ((d.[name]), 'LastGoodCheckDbTime') AS [Last Good CheckDB]
 FROM sys.databases AS d WITH (NOLOCK)
 LEFT OUTER JOIN msdb.dbo.backupset AS bs WITH (NOLOCK)
 ON bs.[database_name] = d.[name]
@@ -1755,7 +1756,8 @@ ORDER BY [BufferCount] DESC OPTION (RECOMPILE);
 
 
 -- Get Schema names, Table names, object size, row counts, and compression status for clustered index or heap  (Query 69) (Table Sizes)
-SELECT SCHEMA_NAME(o.Schema_ID) AS [Schema Name], OBJECT_NAME(p.object_id) AS [Object Name],
+SELECT DB_NAME(DB_ID()) AS [Database Name], SCHEMA_NAME(o.Schema_ID) AS [Schema Name], 
+OBJECT_NAME(p.object_id) AS [Object Name],
 CAST(SUM(ps.reserved_page_count) * 8.0 / 1024 AS DECIMAL(19,2)) AS [Object Size (MB)],
 SUM(p.Rows) AS [Row Count], 
 p.data_compression_desc AS [Compression Type]
@@ -2048,6 +2050,18 @@ ORDER BY bs.backup_finish_date DESC OPTION (RECOMPILE);
 -- In SQL Server 2016, native SQL Server backup compression actually works 
 -- much better with databases that are using TDE than in previous versions
 -- https://bit.ly/28Rpb2x
+
+
+-- Get Last Good CheckDB date and time for the current database (Query 83) (Last Good CheckDB)
+SELECT DATABASEPROPERTYEX (DB_NAME(DB_ID()), 'LastGoodCheckDbTime') AS [Last Good CheckDB];
+------
+
+-- The date and time of the last successful DBCC CHECKDB that ran on the current database
+-- If DBCC CHECKDB has not been run on a database, 1900-01-01 00:00:00.000 is returned
+
+-- DATABASEPROPERTYEX (Transact-SQL)
+-- https://bit.ly/3FhvQ41
+
 
 
 -- Microsoft Visual Studio Dev Essentials

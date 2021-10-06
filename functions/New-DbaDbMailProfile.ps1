@@ -16,8 +16,8 @@ function New-DbaDbMailProfile {
 
         For MFA support, please use Connect-DbaInstance.
 
-    .PARAMETER Name
-        The Name of the profile to be created.
+    .PARAMETER Profile
+        The name of the profile to be created.
 
     .PARAMETER Description
         Sets the description of the purpose of the mail profile.
@@ -40,7 +40,7 @@ function New-DbaDbMailProfile {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: DbMail
+        Tags: DatabaseMail, DbMail, Mail
         Author: Ian Lanham (@ilanham)
 
         Website: https://dbatools.io
@@ -51,9 +51,9 @@ function New-DbaDbMailProfile {
         https://dbatools.io/New-DbaDbMailProfile
 
     .EXAMPLE
-        PS C:\> $profile = New-DbaDbMailProfile -SqlInstance sql2017 -Name 'The DBA Team'
+        PS C:\> $profile = New-DbaDbMailProfile -SqlInstance sql2017 -Profile 'The DBA Team'
 
-        Creates a new db mail profile
+        Creates a new database mail profile.
 
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low")]
@@ -62,7 +62,8 @@ function New-DbaDbMailProfile {
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [parameter(Mandatory)]
-        [string]$Name,
+        [Alias("Name")]
+        [string]$Profile,
         [string]$Description,
         [string]$MailAccountName,
         [int]$MailAccountPriority,
@@ -76,24 +77,24 @@ function New-DbaDbMailProfile {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
-            if ($Pscmdlet.ShouldProcess($instance, "Creating new db mail profile called $Name")) {
+            if ($Pscmdlet.ShouldProcess($instance, "Creating new db mail profile called $Profile")) {
                 try {
-                    $profile = New-Object Microsoft.SqlServer.Management.SMO.Mail.MailProfile $server.Mail, $Name
+                    $profileObj = New-Object Microsoft.SqlServer.Management.SMO.Mail.MailProfile $server.Mail, $Profile
                     if (Test-Bound -ParameterName 'Description') {
-                        $profile.Description = $Description
+                        $profileObj.Description = $Description
                     }
-                    $profile.Create()
+                    $profileObj.Create()
                     if (Test-Bound -ParameterName 'MailAccountName') {
                         if (!$MailAccountPriority) {
                             $MailAccountPriority = 1
                         }
-                        $profile.AddAccount($MailAccountName, $MailAccountPriority) # sequenceNumber correlates to "Priority" when associating a db mail Account to a db mail Profile
+                        $profileObj.AddAccount($MailAccountName, $MailAccountPriority) # sequenceNumber correlates to "Priority" when associating a db mail Account to a db mail Profile
                     }
-                    Add-Member -Force -InputObject $profile -MemberType NoteProperty -Name ComputerName -value $server.ComputerName
-                    Add-Member -Force -InputObject $profile -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
-                    Add-Member -Force -InputObject $profile -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
+                    Add-Member -Force -InputObject $profileObj -MemberType NoteProperty -Name ComputerName -value $server.ComputerName
+                    Add-Member -Force -InputObject $profileObj -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
+                    Add-Member -Force -InputObject $profileObj -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
 
-                    $profile | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, Id, Name, Description, IsBusyProfile
+                    $profileObj | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, Id, Name, Description, IsBusyProfile
                 } catch {
                     Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
                 }

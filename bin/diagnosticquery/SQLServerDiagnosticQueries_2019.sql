@@ -1,7 +1,7 @@
 
 -- SQL Server 2019 Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: October 3, 2021
+-- Last Modified: October 5, 2021
 -- https://glennsqlperformance.com/ 
 -- https://sqlserverperformance.wordpress.com/
 -- YouTube: https://bit.ly/2PkoAM1 
@@ -82,7 +82,8 @@ SELECT @@SERVERNAME AS [Server Name], @@VERSION AS [SQL Server and OS Version In
 -- 15.0.4102.2		CU9									2/11/2021		https://support.microsoft.com/en-in/help/5000642/cumulative-update-9-for-sql-server-2019
 -- 15.0.4123.1		CU10								 4/6/2021       https://support.microsoft.com/en-us/topic/kb5001090-cumulative-update-10-for-sql-server-2019-b6b696ec-6598-48d9-80ee-f1b85d7a508b
 -- 15.0.4138.2		CU11								6/10/2021		https://support.microsoft.com/en-us/topic/kb5003249-cumulative-update-11-for-sql-server-2019-657b2977-a0f1-4e1f-8b93-8c2ca8b6bef5
--- 15.0.4153.1		CU12								 8/4/2021		https://support.microsoft.com/en-us/topic/kb5004524-cumulative-update-12-for-sql-server-2019-45b2d82a-c7d0-4eb8-aa17-d4bad4059987	
+-- 15.0.4153.1		CU12								 8/4/2021		https://support.microsoft.com/en-us/topic/kb5004524-cumulative-update-12-for-sql-server-2019-45b2d82a-c7d0-4eb8-aa17-d4bad4059987
+-- 15.0.4178.1		CU13								10/5/2021		https://support.microsoft.com/en-us/topic/kb5005679-cumulative-update-13-for-sql-server-2019-5c1be850-460a-4be4-a569-fe11f0adc535							
 
 -- Performance and Stability Fixes in SQL Server 2019 CU Builds
 -- https://bit.ly/3712NQQ
@@ -261,7 +262,8 @@ SELECT ISNULL(d.[name], bs.[database_name]) AS [Database], d.recovery_model_desc
        d.log_reuse_wait_desc AS [Log Reuse Wait Desc],
     MAX(CASE WHEN [type] = 'D' THEN bs.backup_finish_date ELSE NULL END) AS [Last Full Backup],
     MAX(CASE WHEN [type] = 'I' THEN bs.backup_finish_date ELSE NULL END) AS [Last Differential Backup],
-    MAX(CASE WHEN [type] = 'L' THEN bs.backup_finish_date ELSE NULL END) AS [Last Log Backup]
+    MAX(CASE WHEN [type] = 'L' THEN bs.backup_finish_date ELSE NULL END) AS [Last Log Backup],
+	DATABASEPROPERTYEX ((d.[name]), 'LastGoodCheckDbTime') AS [Last Good CheckDB]
 FROM sys.databases AS d WITH (NOLOCK)
 LEFT OUTER JOIN msdb.dbo.backupset AS bs WITH (NOLOCK)
 ON bs.[database_name] = d.[name]
@@ -1796,7 +1798,8 @@ ORDER BY [BufferCount] DESC OPTION (RECOMPILE);
 
 
 -- Get Schema names, Table names, object size, row counts, and compression status for clustered index or heap  (Query 70) (Table Sizes)
-SELECT SCHEMA_NAME(o.Schema_ID) AS [Schema Name], OBJECT_NAME(p.object_id) AS [Object Name],
+SELECT DB_NAME(DB_ID()) AS [Database Name], SCHEMA_NAME(o.Schema_ID) AS [Schema Name], 
+OBJECT_NAME(p.object_id) AS [Object Name],
 CAST(SUM(ps.reserved_page_count) * 8.0 / 1024 AS DECIMAL(19,2)) AS [Object Size (MB)],
 SUM(p.Rows) AS [Row Count], 
 p.data_compression_desc AS [Compression Type]
@@ -2097,6 +2100,7 @@ AND bs.[type] = 'D' -- Change to L if you want Log backups
 ORDER BY bs.backup_finish_date DESC OPTION (RECOMPILE);
 ------
 
+
 -- Things to look at:
 -- Are your backup sizes and times changing over time?
 -- Are you using backup compression?
@@ -2109,6 +2113,17 @@ ORDER BY bs.backup_finish_date DESC OPTION (RECOMPILE);
 -- In SQL Server 2016 and newer, native SQL Server backup compression actually works 
 -- much better with databases that are using TDE than in previous versions
 -- https://bit.ly/28Rpb2x
+
+
+-- Get Last Good CheckDB date and time for the current database (Query 85) (Last Good CheckDB)
+SELECT DATABASEPROPERTYEX (DB_NAME(DB_ID()), 'LastGoodCheckDbTime') AS [Last Good CheckDB];
+------
+
+-- The date and time of the last successful DBCC CHECKDB that ran on the current database
+-- If DBCC CHECKDB has not been run on a database, 1900-01-01 00:00:00.000 is returned
+
+-- DATABASEPROPERTYEX (Transact-SQL)
+-- https://bit.ly/3FhvQ41
 
 
 -- Microsoft Visual Studio Dev Essentials

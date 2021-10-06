@@ -38175,14 +38175,18 @@
     {
         "Name":  "New-DbaDbMailAccount",
         "Description":  "Creates a new database mail account",
-        "Tags":  "DbMail",
+        "Tags":  [
+                     "DatabaseMail",
+                     "DbMail",
+                     "Mail"
+                 ],
         "Synopsis":  "Creates a new database mail account",
         "Alias":  "",
         "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "CommandName":  "New-DbaDbMailAccount",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/New-DbaDbMailAccount",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003e$account = New-DbaDbMailAccount -SqlInstance sql2017 -Name \u0027The DBA Team\u0027 -EmailAddress admin@ad.local -MailServer smtp.ad.local\nCreates a new db mail account with the email address admin@ad.local on sql2017 named \"The DBA Team\" using the smtp.ad.local mail server",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003e$account = New-DbaDbMailAccount -SqlInstance sql2017 -Account \u0027The DBA Team\u0027 -EmailAddress admin@ad.local -MailServer smtp.ad.local\nCreates a new database mail account with the email address admin@ad.local on sql2017 named \"The DBA Team\" using the smtp.ad.local mail server.",
         "Params":  [
                        [
                            "SqlInstance",
@@ -38203,9 +38207,9 @@
                            ""
                        ],
                        [
+                           "Account",
+                           "The name of the account to be created.",
                            "Name",
-                           "The Name of the account to be created.",
-                           "",
                            true,
                            "false",
                            "",
@@ -38217,7 +38221,7 @@
                            "",
                            false,
                            "false",
-                           "$Name",
+                           "$Account",
                            ""
                        ],
                        [
@@ -38293,19 +38297,23 @@
                            ""
                        ]
                    ],
-        "Syntax":  "New-DbaDbMailAccount [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [-Name] \u003cString\u003e [[-DisplayName] \u003cString\u003e] [[-Description] \u003cString\u003e] [-EmailAddress] \u003cString\u003e [[-ReplyToAddress] \u003cString\u003e] [[-MailServer] \u003cString\u003e] [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Syntax":  "New-DbaDbMailAccount [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [-Account] \u003cString\u003e [[-DisplayName] \u003cString\u003e] [[-Description] \u003cString\u003e] [-EmailAddress] \u003cString\u003e [[-ReplyToAddress] \u003cString\u003e] [[-MailServer] \u003cString\u003e] [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "New-DbaDbMailProfile",
         "Description":  "Creates a new database mail profile, and optionally associates it to a database mail account",
-        "Tags":  "DbMail",
+        "Tags":  [
+                     "DatabaseMail",
+                     "DbMail",
+                     "Mail"
+                 ],
         "Synopsis":  "Creates a new database mail profile",
         "Alias":  "",
         "Author":  "Ian Lanham (@ilanham)",
         "CommandName":  "New-DbaDbMailProfile",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/New-DbaDbMailProfile",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003e$profile = New-DbaDbMailProfile -SqlInstance sql2017 -Name \u0027The DBA Team\u0027\nCreates a new db mail profile",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003e$profile = New-DbaDbMailProfile -SqlInstance sql2017 -Profile \u0027The DBA Team\u0027\nCreates a new database mail profile.",
         "Params":  [
                        [
                            "SqlInstance",
@@ -38326,9 +38334,9 @@
                            ""
                        ],
                        [
+                           "Profile",
+                           "The name of the profile to be created.",
                            "Name",
-                           "The Name of the profile to be created.",
-                           "",
                            true,
                            "false",
                            "",
@@ -38389,7 +38397,7 @@
                            ""
                        ]
                    ],
-        "Syntax":  "New-DbaDbMailProfile [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [-Name] \u003cString\u003e [[-Description] \u003cString\u003e] [[-MailAccountName] \u003cString\u003e] [[-MailAccountPriority] \u003cInt32\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Syntax":  "New-DbaDbMailProfile [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [-Profile] \u003cString\u003e [[-Description] \u003cString\u003e] [[-MailAccountName] \u003cString\u003e] [[-MailAccountPriority] \u003cInt32\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "New-DbaDbMaskingConfig",
@@ -42726,7 +42734,7 @@
         "CommandName":  "Remove-DbaAgDatabase",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Remove-DbaAgDatabase",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eRemove-DbaAgDatabase -SqlInstance sqlserver2012 -AvailabilityGroup ag1, ag2 -Confirm:$false\nRemoves all databases from the ag1 and ag2 availability groups on sqlserver2012.  Does not prompt for confirmation.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eRemove-DbaAgDatabase -SqlInstance sqlserver2012 -AvailabilityGroup ag1 -Databsase pubs  -Confirm:$false\nRemoves the pubs database from the ag1 availability group on sqlserver2012.  Does not prompt for confirmation.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaAvailabilityGroup -SqlInstance sqlserver2012 -AvailabilityGroup availabilitygroup1 | Remove-DbaAgDatabase\nRemoves the availability groups returned from the Get-DbaAvailabilityGroup function. Prompts for confirmation.",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eRemove-DbaAgDatabase -SqlInstance sqlserver2012 -AvailabilityGroup ag1, ag2 -Confirm:$false\nRemoves all databases from the ag1 and ag2 availability groups on sqlserver2012.  Does not prompt for confirmation.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eRemove-DbaAgDatabase -SqlInstance sqlserver2012 -AvailabilityGroup ag1 -Database pubs -Confirm:$false\nRemoves the pubs database from the ag1 availability group on sqlserver2012.  Does not prompt for confirmation.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaAvailabilityGroup -SqlInstance sqlserver2012 -AvailabilityGroup availabilitygroup1 | Remove-DbaAgDatabase\nRemoves the availability groups returned from the Get-DbaAvailabilityGroup function. Prompts for confirmation.",
         "Params":  [
                        [
                            "SqlInstance",
@@ -44819,7 +44827,7 @@
         "CommandName":  "Remove-DbaDbMailAccount",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Remove-DbaDbMailAccount",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eRemove-DbaDbMailAccount -SqlInstance localhost, localhost\\namedinstance\nRemoves all database mail accounts on the localhost, localhost\\namedinstance instances.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eRemove-DbaDbMailAccount -SqlInstance localhost -Name MyDatabaseMailAccount\nRemoves MyDatabaseMailAccount database mail account on the localhost.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaDbMailAccount -SqlInstance SRV1 | Out-GridView -Title \u0027Select database mail account(s) to drop\u0027 -OutputMode Multiple | Remove-DbaDbMailAccount\nUsing a pipeline this command gets all database mail accounts on SRV1, lets the user select those to remove and then removes the selected database mail accounts.",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eRemove-DbaDbMailAccount -SqlInstance localhost, localhost\\namedinstance\nRemoves all database mail accounts on the localhost, localhost\\namedinstance instances.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eRemove-DbaDbMailAccount -SqlInstance localhost -Account MyDatabaseMailAccount\nRemoves MyDatabaseMailAccount database mail account on the localhost.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaDbMailAccount -SqlInstance SRV1 | Out-GridView -Title \u0027Select database mail account(s) to drop\u0027 -OutputMode Multiple | Remove-DbaDbMailAccount\nUsing a pipeline this command gets all database mail accounts on SRV1, lets the user select those to remove and then removes the selected database mail accounts.",
         "Params":  [
                        [
                            "SqlInstance",
@@ -44910,7 +44918,7 @@
         "CommandName":  "Remove-DbaDbMailProfile",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Remove-DbaDbMailProfile",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eRemove-DbaDbMailProfile -SqlInstance localhost, localhost\\namedinstance\nRemoves all database mail profiles on the localhost, localhost\\namedinstance instances.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eRemove-DbaDbMailProfile -SqlInstance localhost -Name MyDatabaseMailProfile\nRemoves MyDatabaseMailProfile database mail profile on the localhost.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaDbMailProfile -SqlInstance SRV1 | Out-GridView -Title \u0027Select database mail profile(s) to drop\u0027 -OutputMode Multiple | Remove-DbaDbMailProfile\nUsing a pipeline this command gets all database mail profiles on SRV1, lets the user select those to remove and then removes the selected database mail profiles.",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eRemove-DbaDbMailProfile -SqlInstance localhost, localhost\\namedinstance\nRemoves all database mail profiles on the localhost, localhost\\namedinstance instances.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eRemove-DbaDbMailProfile -SqlInstance localhost -Profile MyDatabaseMailProfile\nRemoves MyDatabaseMailProfile database mail profile on the localhost.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaDbMailProfile -SqlInstance SRV1 | Out-GridView -Title \u0027Select database mail profile(s) to drop\u0027 -OutputMode Multiple | Remove-DbaDbMailProfile\nUsing a pipeline this command gets all database mail profiles on SRV1, lets the user select those to remove and then removes the selected database mail profiles.",
         "Params":  [
                        [
                            "SqlInstance",

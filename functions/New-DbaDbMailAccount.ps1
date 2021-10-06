@@ -16,8 +16,8 @@ function New-DbaDbMailAccount {
 
         For MFA support, please use Connect-DbaInstance.
 
-    .PARAMETER Name
-        The Name of the account to be created.
+    .PARAMETER Account
+        The name of the account to be created.
 
     .PARAMETER DisplayName
         Sets the name of the mail account that is displayed in messages.
@@ -49,7 +49,7 @@ function New-DbaDbMailAccount {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: DbMail
+        Tags: DatabaseMail, DbMail, Mail
         Author: Chrissy LeMaire (@cl), netnerds.net
 
         Website: https://dbatools.io
@@ -60,9 +60,9 @@ function New-DbaDbMailAccount {
         https://dbatools.io/New-DbaDbMailAccount
 
     .EXAMPLE
-        PS C:\> $account = New-DbaDbMailAccount -SqlInstance sql2017 -Name 'The DBA Team' -EmailAddress admin@ad.local -MailServer smtp.ad.local
+        PS C:\> $account = New-DbaDbMailAccount -SqlInstance sql2017 -Account 'The DBA Team' -EmailAddress admin@ad.local -MailServer smtp.ad.local
 
-        Creates a new db mail account with the email address admin@ad.local on sql2017 named "The DBA Team" using the smtp.ad.local mail server
+        Creates a new database mail account with the email address admin@ad.local on sql2017 named "The DBA Team" using the smtp.ad.local mail server.
 
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low")]
@@ -71,8 +71,9 @@ function New-DbaDbMailAccount {
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [parameter(Mandatory)]
-        [string]$Name,
-        [string]$DisplayName = $Name,
+        [Alias("Name")]
+        [string]$Account,
+        [string]$DisplayName = $Account,
         [string]$Description,
         [parameter(Mandatory)]
         [string]$EmailAddress,
@@ -95,26 +96,26 @@ function New-DbaDbMailAccount {
                 }
             }
 
-            if ($Pscmdlet.ShouldProcess($instance, "Creating new db mail account called $Name")) {
+            if ($Pscmdlet.ShouldProcess($instance, "Creating new db mail account called $Account")) {
                 try {
-                    $account = New-Object Microsoft.SqlServer.Management.SMO.Mail.MailAccount $server.Mail, $Name
-                    $account.DisplayName = $DisplayName
-                    $account.Description = $Description
-                    $account.EmailAddress = $EmailAddress
-                    $account.ReplyToAddress = $ReplyToAddress
-                    $account.Create()
+                    $accountObj = New-Object Microsoft.SqlServer.Management.SMO.Mail.MailAccount $server.Mail, $Account
+                    $accountObj.DisplayName = $DisplayName
+                    $accountObj.Description = $Description
+                    $accountObj.EmailAddress = $EmailAddress
+                    $accountObj.ReplyToAddress = $ReplyToAddress
+                    $accountObj.Create()
                 } catch {
-                    Stop-Function -Message "Failure creating db mail account" -Target $Name -ErrorRecord $_ -Continue
+                    Stop-Function -Message "Failure creating db mail account" -Target $Account -ErrorRecord $_ -Continue
                 }
 
                 try {
-                    $account.MailServers.Item($($server.DomainInstanceName)).Rename($MailServer)
-                    $account.Alter()
-                    $account.Refresh()
-                    Add-Member -Force -InputObject $account -MemberType NoteProperty -Name ComputerName -value $server.ComputerName
-                    Add-Member -Force -InputObject $account -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
-                    Add-Member -Force -InputObject $account -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
-                    $account | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, Id, Name, DisplayName, Description, EmailAddress, ReplyToAddress, IsBusyAccount, MailServers
+                    $accountObj.MailServers.Item($($server.DomainInstanceName)).Rename($MailServer)
+                    $accountObj.Alter()
+                    $accountObj.Refresh()
+                    Add-Member -Force -InputObject $accountObj -MemberType NoteProperty -Name ComputerName -value $server.ComputerName
+                    Add-Member -Force -InputObject $accountObj -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
+                    Add-Member -Force -InputObject $accountObj -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
+                    $accountObj | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, Id, Name, DisplayName, Description, EmailAddress, ReplyToAddress, IsBusyAccount, MailServers
                 } catch {
                     Stop-Function -Message "Failure returning output" -ErrorRecord $_ -Continue
                 }
