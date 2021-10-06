@@ -115,7 +115,7 @@ function Remove-DbaNetworkCertificate {
                 $vsname = $args[3]
 
                 $regPath = "Registry::HKEY_LOCAL_MACHINE\$($regRoot)\MSSQLServer\SuperSocketNetLib"
-                $cert = (Get-ItemProperty -Path $regPath -Name Certificate).Certificate
+                $thumbprint = (Get-ItemProperty -Path $regPath -Name Certificate).Certificate
                 Set-ItemProperty -Path $regPath -Name Certificate -Value $null
 
                 [pscustomobject]@{
@@ -123,7 +123,7 @@ function Remove-DbaNetworkCertificate {
                     InstanceName      = $instanceName
                     SqlInstance       = $vsname
                     ServiceAccount    = $serviceAccount
-                    RemovedThumbprint = $cert.Thumbprint
+                    RemovedThumbprint = $thumbprint
                 }
             }
 
