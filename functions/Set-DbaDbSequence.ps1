@@ -20,7 +20,7 @@ function Set-DbaDbSequence {
     .PARAMETER Database
         The target database(s).
 
-    .PARAMETER Name
+    .PARAMETER Sequence
         The name of the new sequence
 
     .PARAMETER Schema
@@ -70,12 +70,12 @@ function Set-DbaDbSequence {
         https://dbatools.io/Set-DbaDbSequence
 
     .EXAMPLE
-        PS C:\> Set-DbaDbSequence -SqlInstance sqldev01 -Database TestDB -Name TestSequence -RestartWith 10000 -IncrementBy 10
+        PS C:\> Set-DbaDbSequence -SqlInstance sqldev01 -Database TestDB -Sequence TestSequence -RestartWith 10000 -IncrementBy 10
 
         Modifies the sequence TestSequence in the TestDB database on the sqldev01 instance. The sequence will restart with 10000 and increment by 10.
 
     .EXAMPLE
-        PS C:\> Get-DbaDatabase -SqlInstance sqldev01 -Database TestDB | Set-DbaDbSequence -Name TestSequence -Schema TestSchema -Cycle
+        PS C:\> Get-DbaDatabase -SqlInstance sqldev01 -Database TestDB | Set-DbaDbSequence -Sequence TestSequence -Schema TestSchema -Cycle
 
         Using a pipeline this command modifies the sequence named TestSchema.TestSequence in the TestDB database on the sqldev01 instance. The sequence will now cycle the sequence values.
     #>
@@ -85,7 +85,8 @@ function Set-DbaDbSequence {
         [PSCredential]$SqlCredential,
         [string[]]$Database,
         [Parameter(Mandatory)]
-        [string]$Name,
+        [Alias("Name")]
+        [string[]]$Sequence,
         [string]$Schema = 'dbo',
         [long]$RestartWith,
         [long]$IncrementBy,
@@ -110,48 +111,48 @@ function Set-DbaDbSequence {
 
         foreach ($db in $InputObject) {
 
-            if ($Pscmdlet.ShouldProcess($db.Parent.Name, "Modifying the sequence $Name in the $Schema schema in the database $($db.Name) on $($db.Parent.Name)")) {
+            if ($Pscmdlet.ShouldProcess($db.Parent.Name, "Modifying the sequence $Sequence in the $Schema schema in the database $($db.Name) on $($db.Parent.Name)")) {
                 try {
-                    $sequence = $db | Get-DbaDbSequence -Schema $Schema -Name $Name
+                    $sequenceObj = $db | Get-DbaDbSequence -Schema $Schema -Sequence $Sequence
 
-                    if ($null -eq $sequence) {
-                        Stop-Function -Message "Unable to find sequence $Name in the $Schema schema in the database $($db.Name) on $($db.Parent.Name)" -Continue
+                    if ($null -eq $sequenceObj) {
+                        Stop-Function -Message "Unable to find sequence $Sequence in the $Schema schema in the database $($db.Name) on $($db.Parent.Name)" -Continue
                     }
 
                     if (Test-Bound IncrementBy) {
-                        $sequence.IncrementValue = $IncrementBy
+                        $sequenceObj.IncrementValue = $IncrementBy
                     }
 
-                    $sequence.IsCycleEnabled = $Cycle.IsPresent
+                    $sequenceObj.IsCycleEnabled = $Cycle.IsPresent
 
                     if (Test-Bound RestartWith) {
-                        $sequence.StartValue = $RestartWith # SMO does the restart logic when this value is changed and then Alter() is called (i.e. CurrentValue is also updated)
+                        $sequenceObj.StartValue = $RestartWith # SMO does the restart logic when this value is changed and then Alter() is called (i.e. CurrentValue is also updated)
                     }
 
                     if (Test-Bound MinValue) {
-                        $sequence.MinValue = $MinValue
+                        $sequenceObj.MinValue = $MinValue
                     }
 
                     if (Test-Bound MaxValue) {
-                        $sequence.MaxValue = $MaxValue
+                        $sequenceObj.MaxValue = $MaxValue
                     }
 
                     if (Test-Bound CacheSize) {
                         if ($CacheSize -eq 0) {
-                            $sequence.SequenceCacheType = [Microsoft.SqlServer.Management.Smo.SequenceCacheType]::NoCache
+                            $sequenceObj.SequenceCacheType = [Microsoft.SqlServer.Management.Smo.SequenceCacheType]::NoCache
                         } else {
-                            $sequence.SequenceCacheType = [Microsoft.SqlServer.Management.Smo.SequenceCacheType]::CacheWithSize
-                            $sequence.CacheSize = $CacheSize
+                            $sequenceObj.SequenceCacheType = [Microsoft.SqlServer.Management.Smo.SequenceCacheType]::CacheWithSize
+                            $sequenceObj.CacheSize = $CacheSize
                         }
                     } else {
-                        $sequence.SequenceCacheType = [Microsoft.SqlServer.Management.Smo.SequenceCacheType]::DefaultCache
+                        $sequenceObj.SequenceCacheType = [Microsoft.SqlServer.Management.Smo.SequenceCacheType]::DefaultCache
                     }
 
-                    $sequence.Alter()
+                    $sequenceObj.Alter()
                     $db.Refresh()
-                    $db.Sequences | Where-Object { $_.Schema -eq $Schema -and $_.Name -eq $Name }
+                    $db.Sequences | Where-Object { $_.Schema -eq $Schema -and $_.Name -eq $Sequence }
                 } catch {
-                    Stop-Function -Message "Failure on $($db.Parent.Name) to modify the sequence $Name in the $Schema schema in the database $($db.Name)" -ErrorRecord $_ -Continue
+                    Stop-Function -Message "Failure on $($db.Parent.Name) to modify the sequence $Sequence in the $Schema schema in the database $($db.Name)" -ErrorRecord $_ -Continue
                 }
             }
         }
