@@ -53,7 +53,7 @@ function Remove-DbaDbMailAccount {
         Removes all database mail accounts on the localhost, localhost\namedinstance instances.
 
     .EXAMPLE
-        PS C:\> Remove-DbaDbMailAccount -SqlInstance localhost -Name MyDatabaseMailAccount
+        PS C:\> Remove-DbaDbMailAccount -SqlInstance localhost -Account MyDatabaseMailAccount
 
         Removes MyDatabaseMailAccount database mail account on the localhost.
 
@@ -97,7 +97,7 @@ function Remove-DbaDbMailAccount {
     end {
         # We have to delete in the end block to prevent "Collection was modified; enumeration operation may not execute." if directly piped from Get-DbaDbMailAccount.
         foreach ($dbMailAccount in $dbMailAccounts) {
-            if ($PSCmdlet.ShouldProcess($dbMailAccount.Parent.Parent.Name, "Removing the database mail account $($dbMailAccount.Name) in the database $($dbMailAccount.Parent.Name) on $($dbMailAccount.Parent.Parent.Name)")) {
+            if ($PSCmdlet.ShouldProcess($dbMailAccount.Parent.Parent.Name, "Removing the database mail account $($dbMailAccount.Name) on $($dbMailAccount.Parent.Parent.Name)")) {
                 $output = [pscustomobject]@{
                     ComputerName = $dbMailAccount.Parent.Parent.ComputerName
                     InstanceName = $dbMailAccount.Parent.Parent.ServiceName
@@ -111,7 +111,7 @@ function Remove-DbaDbMailAccount {
                     $output.Status = "Dropped"
                     $output.IsRemoved = $true
                 } catch {
-                    Stop-Function -Message "Failed removing the database mail account $($dbMailAccount.Name) in the database $($dbMailAccount.Parent.Name) on $($dbMailAccount.Parent.Parent.Name)" -ErrorRecord $_
+                    Stop-Function -Message "Failed removing the database mail account $($dbMailAccount.Name) on $($dbMailAccount.Parent.Parent.Name)" -ErrorRecord $_
                     $output.Status = (Get-ErrorMessage -Record $_)
                     $output.IsRemoved = $false
                 }
