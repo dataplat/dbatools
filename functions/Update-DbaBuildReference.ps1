@@ -77,6 +77,7 @@ function Update-DbaBuildReference {
         # If no writable copy exists, create one and return the module original
         if (-not (Test-Path $writable_idxfile)) {
             Copy-Item -Path $orig_idxfile -Destination $writable_idxfile -Force -ErrorAction Stop
+            $offline_time = Get-Date (Get-Content $orig_idxfile -Raw | ConvertFrom-Json).LastUpdated
         }
 
         # Else, if both exist, update the writeable if necessary and return the current version
