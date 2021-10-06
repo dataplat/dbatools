@@ -132,7 +132,8 @@ function Find-DbaLoginInGroup {
             }
 
             $AdGroups = $server.Logins | Where-Object { $_.LoginType -eq "WindowsGroup" -and $_.Name -ne "BUILTIN\Administrators" -and $_.Name -notlike "*NT SERVICE*" }
-
+            # remove local groups, see #7820
+            $AdGroups = $AdGroups | Where-Object Name -notlike "$($server.ComputerName)\*"
             $ADGroupOut = @()
             foreach ($AdGroup in $AdGroups) {
                 Write-Message -Level Verbose -Message "Looking at Group: $AdGroup"

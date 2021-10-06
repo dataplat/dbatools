@@ -1207,7 +1207,7 @@
         "CommandName":  "Add-DbaServerRoleMember",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Add-DbaServerRoleMember",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eAdd-DbaServerRoleMember -SqlInstance server1 -Role dbcreator -Login login1\nAdds login1 to the server-level role dbcreator on the instance server1\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eAdd-DbaServerRoleMember -SqlInstance server1, sql2016 -ServerRole customrole -Login login1\nAdds login1 in custom, server-level role customrole on the instance server1 and sql2016\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eAdd-DbaServerRoleMember -SqlInstance server1 -ServerRole customrole -Role dbcreator\nAdds custom, server-level role customrole to dbcreator server-level fixed role.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003e$servers = Get-Content C:\\servers.txt\nPS C:\\\u003e $servers | Add-DbaServerRoleMember -ServerRole sysadmin -Login login1\nAdds login1 to the sysadmin server-level role in every server in C:\\servers.txt\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eAdd-DbaServerRoleMember -SqlInstance localhost -ServerRole \"bulkadmin\",\"dbcreator\" -Login login1\nAdds login1 on the server localhost to the server-level roles bulkadmin and dbcreator\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003e$roles = Get-DbaServerRole -SqlInstance localhost -ServerRole \"bulkadmin\",\"dbcreator\"\nPS C:\\\u003e $roles | Add-DbaServerRoleMember -Login login1\nAdds login1 on the server localhost to the server-level roles bulkadmin and dbcreator\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003ePS C:\\ $logins = Get-Content C:\\logins.txt\nPS C:\\ $srvLogins = Get-DbaLogin -SqlInstance server1 -Login $logins\r\nPS C:\\ New-DbaServerRole -SqlInstance server1 -ServerRole mycustomrole -Owner sa | Add-DbaServerRoleMember -Login $logins\nAdds all the logins found in C:\\logins.txt to the newly created server-level role mycustomrole on server1.",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eAdd-DbaServerRoleMember -SqlInstance server1 -ServerRole dbcreator -Login login1\nAdds login1 to the dbcreator fixed server-level role on the instance server1.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eAdd-DbaServerRoleMember -SqlInstance server1, sql2016 -ServerRole customrole -Login login1\nAdds login1 in customrole custom server-level role on the instance server1 and sql2016.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eAdd-DbaServerRoleMember -SqlInstance server1 -ServerRole customrole -Role dbcreator\nAdds customrole custom server-level role to dbcreator fixed server-level role.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003e$servers = Get-Content C:\\servers.txt\nPS C:\\\u003e $servers | Add-DbaServerRoleMember -ServerRole sysadmin -Login login1\nAdds login1 to the sysadmin fixed server-level role in every server in C:\\servers.txt.\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eAdd-DbaServerRoleMember -SqlInstance localhost -ServerRole bulkadmin, dbcreator -Login login1\nAdds login1 on the server localhost to the bulkadmin and dbcreator fixed server-level roles.\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003e$roles = Get-DbaServerRole -SqlInstance localhost -ServerRole bulkadmin, dbcreator\nPS C:\\\u003e $roles | Add-DbaServerRoleMember -Login login1\nAdds login1 on the server localhost to the bulkadmin and dbcreator fixed server-level roles.\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003ePS C:\\ $logins = Get-Content C:\\logins.txt\nPS C:\\ $srvLogins = Get-DbaLogin -SqlInstance server1 -Login $logins\r\nPS C:\\ New-DbaServerRole -SqlInstance server1 -ServerRole mycustomrole -Owner sa | Add-DbaServerRoleMember -Login $logins\nAdds all the logins found in C:\\logins.txt to the newly created server-level role mycustomrole on server1.",
         "Params":  [
                        [
                            "SqlInstance",
@@ -16458,19 +16458,19 @@
     },
     {
         "Name":  "Get-DbaDbMailAccount",
-        "Description":  "Gets database mail accounts from SQL Server",
+        "Description":  "Gets database mail account(s) from SQL Server.",
         "Tags":  [
                      "DatabaseMail",
                      "DbMail",
                      "Mail"
                  ],
-        "Synopsis":  "Gets database mail accounts from SQL Server",
+        "Synopsis":  "Gets database mail account(s) from SQL Server.",
         "Alias":  "",
         "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "CommandName":  "Get-DbaDbMailAccount",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Get-DbaDbMailAccount",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaDbMailAccount -SqlInstance sql01\\sharepoint\nReturns Database Mail accounts on sql01\\sharepoint\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaDbMailAccount -SqlInstance sql01\\sharepoint -Account \u0027The DBA Team\u0027\nReturns The DBA Team Database Mail account from sql01\\sharepoint\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaDbMailAccount -SqlInstance sql01\\sharepoint | Select-Object *\nReturns the Database Mail accounts on sql01\\sharepoint then return a bunch more columns\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003e$servers = \"sql2014\",\"sql2016\", \"sqlcluster\\sharepoint\"\nPS C:\\\u003e $servers | Get-DbaDbMail | Get-DbaDbMailAccount\nReturns the Database Mail accounts for \"sql2014\",\"sql2016\" and \"sqlcluster\\sharepoint\"",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaDbMailAccount -SqlInstance sql01\\sharepoint\nReturns Database Mail accounts on sql01\\sharepoint.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaDbMailAccount -SqlInstance sql01\\sharepoint -Account \u0027The DBA Team\u0027\nReturns \u0027The DBA Team\u0027 Database Mail account from sql01\\sharepoint.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaDbMailAccount -SqlInstance sql01\\sharepoint | Select-Object *\nReturns the Database Mail accounts on sql01\\sharepoint then return a bunch more columns.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003e$servers = sql2014, sql2016, sqlcluster\\sharepoint\nPS C:\\\u003e $servers | Get-DbaDbMail | Get-DbaDbMailAccount\nReturns the Database Mail accounts for sql2014, sql2016 and sqlcluster\\sharepoint.",
         "Params":  [
                        [
                            "SqlInstance",
@@ -16510,7 +16510,7 @@
                        ],
                        [
                            "InputObject",
-                           "Accepts pipeline input from Get-DbaDbMail",
+                           "Accepts pipeline input from Get-DbaDbMail.",
                            "",
                            false,
                            "true (ByValue)",
@@ -16723,23 +16723,23 @@
     },
     {
         "Name":  "Get-DbaDbMailProfile",
-        "Description":  "Gets database mail profiles from SQL Server",
+        "Description":  "Gets database mail profile(s) from SQL Server",
         "Tags":  [
                      "DatabaseMail",
                      "DBMail",
                      "Mail"
                  ],
-        "Synopsis":  "Gets database mail profiles from SQL Server",
+        "Synopsis":  "Gets database mail profile(s) from SQL Server",
         "Alias":  "",
         "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "CommandName":  "Get-DbaDbMailProfile",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Get-DbaDbMailProfile",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaDbMailProfile -SqlInstance sql01\\sharepoint\nReturns DBMail profiles on sql01\\sharepoint\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaDbMailProfile -SqlInstance sql01\\sharepoint -Profile \u0027The DBA Team\u0027\nReturns The DBA Team DBMail profile from sql01\\sharepoint\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaDbMailProfile -SqlInstance sql01\\sharepoint | Select-Object *\nReturns the DBMail profiles on sql01\\sharepoint then return a bunch more columns\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003e$servers = \"sql2014\",\"sql2016\", \"sqlcluster\\sharepoint\"\nPS C:\\\u003e $servers | Get-DbaDbMail | Get-DbaDbMailProfile\nReturns the DBMail profiles for \"sql2014\",\"sql2016\" and \"sqlcluster\\sharepoint\"",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaDbMailProfile -SqlInstance sql01\\sharepoint\nReturns DBMail profiles on sql01\\sharepoint\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaDbMailProfile -SqlInstance sql01\\sharepoint -Profile \u0027The DBA Team\u0027\nReturns The DBA Team DBMail profile from sql01\\sharepoint\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaDbMailProfile -SqlInstance sql01\\sharepoint | Select-Object *\nReturns the DBMail profiles on sql01\\sharepoint then return a bunch more columns\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003e$servers = \"sql2014\", \"sql2016\", \"sqlcluster\\sharepoint\"\nPS C:\\\u003e $servers | Get-DbaDbMail | Get-DbaDbMailProfile\nReturns the DBMail profiles for \"sql2014\", \"sql2016\" and \"sqlcluster\\sharepoint\"\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003e$servers = \"sql2014\", \"sql2016\", \"sqlcluster\\sharepoint\"\nPS C:\\\u003e Get-DbaDbMailProfile -SqlInstance $servers\nReturns the DBMail profiles for \"sql2014\", \"sql2016\" and \"sqlcluster\\sharepoint\"",
         "Params":  [
                        [
                            "SqlInstance",
-                           "TThe target SQL Server instance or instances.",
+                           "The target SQL Server instance or instances.",
                            "",
                            false,
                            "false",
@@ -44804,6 +44804,188 @@
                        ]
                    ],
         "Syntax":  "Remove-DbaDbLogShipping [-PrimarySqlInstance] \u003cDbaInstanceParameter\u003e [[-SecondarySqlInstance] \u003cDbaInstanceParameter\u003e] [[-PrimarySqlCredential] \u003cPSCredential\u003e] [[-SecondarySqlCredential] \u003cPSCredential\u003e] [-Database] \u003cObject[]\u003e [-RemoveSecondaryDatabase] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+    },
+    {
+        "Name":  "Remove-DbaDbMailAccount",
+        "Description":  "Removes the database mail account(s) that have passed through the pipeline.\nIf not used with a pipeline, Get-DbaDbMailAccount will be executed with the parameters provided\nand the returned database mail account(s) will be removed.",
+        "Tags":  [
+                     "DatabaseMail",
+                     "DbMail",
+                     "Mail"
+                 ],
+        "Synopsis":  "Removes database mail account(s).",
+        "Alias":  "",
+        "Author":  "Mikey Bronowski (@MikeyBronowski), https://bronowski.it",
+        "CommandName":  "Remove-DbaDbMailAccount",
+        "Availability":  "Windows, Linux, macOS",
+        "Links":  "https://dbatools.io/Remove-DbaDbMailAccount",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eRemove-DbaDbMailAccount -SqlInstance localhost, localhost\\namedinstance\nRemoves all database mail accounts on the localhost, localhost\\namedinstance instances.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eRemove-DbaDbMailAccount -SqlInstance localhost -Name MyDatabaseMailAccount\nRemoves MyDatabaseMailAccount database mail account on the localhost.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaDbMailAccount -SqlInstance SRV1 | Out-GridView -Title \u0027Select database mail account(s) to drop\u0027 -OutputMode Multiple | Remove-DbaDbMailAccount\nUsing a pipeline this command gets all database mail accounts on SRV1, lets the user select those to remove and then removes the selected database mail accounts.",
+        "Params":  [
+                       [
+                           "SqlInstance",
+                           "The target SQL Server instance or instances.",
+                           "",
+                           true,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "SqlCredential",
+                           "Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).\r\nWindows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.\r\nFor MFA support, please use Connect-DbaInstance.",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "Account",
+                           "Specifies one or more database mail account(s) to delete. If unspecified, all accounts will be removed.",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "ExcludeAccount",
+                           "Specifies one or more database mail account(s) to exclude.",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "InputObject",
+                           "Allows piping from Get-DbaDbMailAccount.",
+                           "",
+                           true,
+                           "true (ByValue)",
+                           "",
+                           ""
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "",
+                           false,
+                           "false",
+                           "False",
+                           ""
+                       ],
+                       [
+                           "WhatIf",
+                           "Shows what would happen if the command were to run. No actions are actually performed.",
+                           "wi",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "Confirm",
+                           "Prompts you for confirmation before executing any changing operations within the command.\r\nThis is the default. Use -Confirm:$false to suppress these prompts.",
+                           "cf",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ]
+                   ],
+        "Syntax":  "Remove-DbaDbMailAccount [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-Account \u003cString[]\u003e] [-ExcludeAccount \u003cString[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\nRemove-DbaDbMailAccount -InputObject \u003cMailAccount[]\u003e [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+    },
+    {
+        "Name":  "Remove-DbaDbMailProfile",
+        "Description":  "Removes the database mail profile(s) that have passed through the pipeline.\n\nIf not used with a pipeline, Get-DbaDbMailProfile will be executed with the parameters provided\nand the returned database mail profile(s) will be removed.",
+        "Tags":  [
+                     "DatabaseMail",
+                     "DBMail",
+                     "Mail"
+                 ],
+        "Synopsis":  "Removes database mail profile(s).",
+        "Alias":  "",
+        "Author":  "Mikey Bronowski (@MikeyBronowski), https://bronowski.it",
+        "CommandName":  "Remove-DbaDbMailProfile",
+        "Availability":  "Windows, Linux, macOS",
+        "Links":  "https://dbatools.io/Remove-DbaDbMailProfile",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eRemove-DbaDbMailProfile -SqlInstance localhost, localhost\\namedinstance\nRemoves all database mail profiles on the localhost, localhost\\namedinstance instances.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eRemove-DbaDbMailProfile -SqlInstance localhost -Name MyDatabaseMailProfile\nRemoves MyDatabaseMailProfile database mail profile on the localhost.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaDbMailProfile -SqlInstance SRV1 | Out-GridView -Title \u0027Select database mail profile(s) to drop\u0027 -OutputMode Multiple | Remove-DbaDbMailProfile\nUsing a pipeline this command gets all database mail profiles on SRV1, lets the user select those to remove and then removes the selected database mail profiles.",
+        "Params":  [
+                       [
+                           "SqlInstance",
+                           "The target SQL Server instance or instances.",
+                           "",
+                           true,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "SqlCredential",
+                           "Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).\nWindows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.\nFor MFA support, please use Connect-DbaInstance.",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "Profile",
+                           "Specifies one or more database mail profile(s) to get. If unspecified, all profiles will be removed.",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "ExcludeProfile",
+                           "Specifies one or more database mail profile(s) to exclude.",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "InputObject",
+                           "Allows piping from Get-DbaDbMailProfile.",
+                           "",
+                           true,
+                           "true (ByValue)",
+                           "",
+                           ""
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "",
+                           false,
+                           "false",
+                           "False",
+                           ""
+                       ],
+                       [
+                           "WhatIf",
+                           "Shows what would happen if the command were to run. No actions are actually performed.",
+                           "wi",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "Confirm",
+                           "Prompts you for confirmation before executing any changing operations within the command.\r\nThis is the default. Use -Confirm:$false to suppress these prompts.",
+                           "cf",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ]
+                   ],
+        "Syntax":  "Remove-DbaDbMailProfile [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-Profile \u003cString[]\u003e] [-ExcludeProfile \u003cString[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\nRemove-DbaDbMailProfile -InputObject \u003cMailProfile[]\u003e [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Remove-DbaDbMasterKey",
