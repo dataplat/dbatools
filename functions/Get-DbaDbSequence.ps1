@@ -20,7 +20,7 @@ function Get-DbaDbSequence {
     .PARAMETER Database
         The target database(s).
 
-    .PARAMETER Name
+    .PARAMETER Sequence
         The name of the sequence.
 
     .PARAMETER Schema
@@ -52,12 +52,12 @@ function Get-DbaDbSequence {
         https://dbatools.io/Get-DbaDbSequence
 
     .EXAMPLE
-        PS C:\> Get-DbaDbSequence -SqlInstance sqldev01 -Database TestDB -Name TestSequence
+        PS C:\> Get-DbaDbSequence -SqlInstance sqldev01 -Database TestDB -Sequence TestSequence
 
         Finds the sequence TestSequence in the TestDB database on the sqldev01 instance.
 
     .EXAMPLE
-        PS C:\> Get-DbaDatabase -SqlInstance sqldev01 -Database TestDB | Get-DbaDbSequence -Name TestSequence -Schema TestSchema
+        PS C:\> Get-DbaDatabase -SqlInstance sqldev01 -Database TestDB | Get-DbaDbSequence -Sequence TestSequence -Schema TestSchema
 
         Using a pipeline this command finds the sequence named TestSchema.TestSequence in the TestDB database on the sqldev01 instance.
 
@@ -72,7 +72,7 @@ function Get-DbaDbSequence {
         Finds all the sequences in the db database on the localhost instance.
 
     .EXAMPLE
-        PS C:\> Get-DbaDbSequence -SqlInstance localhost -Name seq
+        PS C:\> Get-DbaDbSequence -SqlInstance localhost -Sequence seq
 
         Finds all the sequences named seq on the localhost instance.
 
@@ -88,7 +88,8 @@ function Get-DbaDbSequence {
         [DbaInstance[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [string[]]$Database,
-        [string[]]$Name,
+        [Alias("Name")]
+        [string[]]$Sequence,
         [string[]]$Schema,
         [parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
@@ -113,8 +114,8 @@ function Get-DbaDbSequence {
 
             $dbSequences = $db.Sequences
 
-            if ($Name) {
-                $dbSequences = $dbSequences | Where-Object { $_.Name -in $Name }
+            if ($Sequence) {
+                $dbSequences = $dbSequences | Where-Object { $_.Name -in $Sequence }
             }
 
             if ($Schema) {
