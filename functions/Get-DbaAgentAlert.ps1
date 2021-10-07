@@ -28,7 +28,7 @@ function Get-DbaAgentAlert {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: Agent, SMO
+        Tags: Agent, Alert, SMO
         Author: Klaas Vandenberghe (@PowerDBAKlaas)
 
         Website: https://dbatools.io
