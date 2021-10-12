@@ -69,12 +69,12 @@ function Invoke-DbaDbLogShipRecovery {
         https://dbatools.io/Invoke-DbaDbLogShipRecovery
 
     .EXAMPLE
-        PS C:\> Invoke-DbaDbLogShipRecovery -SqlInstance server1
+        PS C:\> Invoke-DbaDbLogShipRecovery -SqlInstance server1 -Force
 
         Recovers all the databases on the instance that are enabled for log shipping
 
     .EXAMPLE
-        PS C:\> Invoke-DbaDbLogShipRecovery -SqlInstance server1 -SqlCredential $cred -Verbose
+        PS C:\> Invoke-DbaDbLogShipRecovery -SqlInstance server1 -SqlCredential $cred -Verbose -Force
 
         Recovers all the databases on the instance that are enabled for log shipping using a credential
 
@@ -89,7 +89,7 @@ function Invoke-DbaDbLogShipRecovery {
         Recovers the database db1, db2, db3, db4 to a normal status
 
     .EXAMPLE
-        PS C:\> Invoke-DbaDbLogShipRecovery -SqlInstance server1 -WhatIf
+        PS C:\> Invoke-DbaDbLogShipRecovery -SqlInstance server1 -Force -WhatIf
 
         Shows what would happen if the command were executed.
 
