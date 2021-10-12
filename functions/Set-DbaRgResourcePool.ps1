@@ -124,7 +124,7 @@ function Set-DbaRgResourcePool {
         [int]$MinimumIOPSPerVolume,
         [Parameter(ValueFromPipelineByPropertyName)]
         [Parameter(ParameterSetName = "Internal")]
-        [ValidateRange(1, 2147483647)]
+        [ValidateRange(0, 2147483647)]
         [int]$MaximumIOPSPerVolume,
         [Parameter(ParameterSetName = "External")]
         [int]$MaximumProcesses,
