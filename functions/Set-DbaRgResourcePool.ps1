@@ -144,14 +144,6 @@ function Set-DbaRgResourcePool {
             return
         }
 
-        if ($ResourcePool) {
-            $InputObject += Get-DbaRgResourcePool -SqlInstance $SqlInstance -Type $Type | Where-Object Name -in $ResourcePool
-            if ($null -eq $InputObject) {
-                Stop-Function -Message "No resources pools matching '$ResourcePool' found." -Category ObjectNotFound -Target $existingResourcePool -Continue
-                return
-            }
-        }
-
         if (($InputObject) -and ($PSBoundParameters.Keys -notcontains 'Type')) {
             if ($InputObject -is [Microsoft.SqlServer.Management.Smo.ResourcePool]) {
                 $Type = "Internal"
@@ -166,67 +158,74 @@ function Set-DbaRgResourcePool {
             } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
-            foreach ($resPool in $InputObject) {
-                $existingResourcePool = Get-DbaRgResourcePool -SqlInstance $server -Type $Type | Where-Object Name -eq $resPool.Name
-                if ($Type -eq "External") {
-                    if ($PSBoundParameters.Keys -contains 'MaximumCpuPercentage') {
-                        $existingResourcePool.MaximumCpuPercentage = $MaximumCpuPercentage
-                    }
-                    if ($PSBoundParameters.Keys -contains 'MaximumMemoryPercentage') {
-                        $existingResourcePool.MaximumMemoryPercentage = $MaximumMemoryPercentage
-                    }
-                    if ($PSBoundParameters.Keys -contains 'MaximumProcesses') {
-                        $existingResourcePool.MaximumProcesses = $MaximumProcesses
-                    }
-                } elseif ($Type -eq "Internal") {
-                    if ($PSBoundParameters.Keys -contains 'MinimumCpuPercentage') {
-                        $existingResourcePool.MinimumCpuPercentage = $MinimumCpuPercentage
-                    }
-                    if ($PSBoundParameters.Keys -contains 'MaximumCpuPercentage') {
-                        $existingResourcePool.MaximumCpuPercentage = $MaximumCpuPercentage
-                    }
-                    if ($PSBoundParameters.Keys -contains 'MinimumMemoryPercentage') {
-                        $existingResourcePool.MinimumMemoryPercentage = $MinimumMemoryPercentage
-                    }
-                    if ($PSBoundParameters.Keys -contains 'MaximumMemoryPercentage') {
-                        $existingResourcePool.MaximumMemoryPercentage = $MaximumMemoryPercentage
-                    }
-                    if ($PSBoundParameters.Keys -contains 'MinimumIOPSPerVolume') {
-                        $existingResourcePool.MinimumIopsPerVolume = $MinimumIOPSPerVolume
-                    }
-                    if ($PSBoundParameters.Keys -contains 'MaximumIOPSPerVolume') {
-                        $existingResourcePool.MaximumIopsPerVolume = $MaximumIOPSPerVolume
-                    }
-                    if ($PSBoundParameters.Keys -contains 'CapCpuPercentage') {
-                        if ($server.ResourceGovernor.ServerVersion.Major -ge 11) {
-                            $existingResourcePool.CapCpuPercentage = $CapCpuPercentage
-                        } elseif ($server.ResourceGovernor.ServerVersion.Major -lt 11) {
-                            Write-Message -Level Warning -Message "SQL Server version 2012+ required to specify a CPU percentage cap."
-                        }
-                    }
-                }
+            if ($Type -eq "Internal") {
+                $InputObject += $server.ResourceGovernor.ResourcePools | Where-Object Name -in $ResourcePool
+            }
+            elseif ($Type -eq "External") {
+                $InputObject += $server.ResourceGovernor.ExternalResourcePools | Where-Object Name -in $ResourcePool
+            }
+        }
 
-                #Execute
-                try {
-                    if ($PSCmdlet.ShouldProcess($instance, "Altering resource pool $($resPool.Name)")) {
-                        $existingResourcePool.Alter()
-                    }
-                } catch {
-                    Stop-Function -Message "Failure" -ErrorRecord $_ -Target $existingResourcePool -Continue
+        foreach ($resPool in $InputObject) {
+            $server = $resPool.Parent.Parent
+            if ($Type -eq "External") {
+                if ($PSBoundParameters.Keys -contains 'MaximumCpuPercentage') {
+                    $resPool.MaximumCpuPercentage = $MaximumCpuPercentage
                 }
-
-                #Reconfigure Resource Governor
-                try {
-                    if ($SkipReconfigure) {
-                        Write-Message -Level Warning -Message "Resource pool changes will not take effect in Resource Governor until it is reconfigured."
-                    } elseif ($PSCmdlet.ShouldProcess($instance, "Reconfiguring the Resource Governor")) {
-                        $server.ResourceGovernor.Alter()
+                if ($PSBoundParameters.Keys -contains 'MaximumMemoryPercentage') {
+                    $resPool.MaximumMemoryPercentage = $MaximumMemoryPercentage
+                }
+                if ($PSBoundParameters.Keys -contains 'MaximumProcesses') {
+                    $resPool.MaximumProcesses = $MaximumProcesses
+                }
+            } elseif ($Type -eq "Internal") {
+                if ($PSBoundParameters.Keys -contains 'MinimumCpuPercentage') {
+                    $resPool.MinimumCpuPercentage = $MinimumCpuPercentage
+                }
+                if ($PSBoundParameters.Keys -contains 'MaximumCpuPercentage') {
+                    $resPool.MaximumCpuPercentage = $MaximumCpuPercentage
+                }
+                if ($PSBoundParameters.Keys -contains 'MinimumMemoryPercentage') {
+                    $resPool.MinimumMemoryPercentage = $MinimumMemoryPercentage
+                }
+                if ($PSBoundParameters.Keys -contains 'MaximumMemoryPercentage') {
+                    $resPool.MaximumMemoryPercentage = $MaximumMemoryPercentage
+                }
+                if ($PSBoundParameters.Keys -contains 'MinimumIOPSPerVolume') {
+                    $resPool.MinimumIopsPerVolume = $MinimumIOPSPerVolume
+                }
+                if ($PSBoundParameters.Keys -contains 'MaximumIOPSPerVolume') {
+                    $resPool.MaximumIopsPerVolume = $MaximumIOPSPerVolume
+                }
+                if ($PSBoundParameters.Keys -contains 'CapCpuPercentage') {
+                    if ($server.ResourceGovernor.ServerVersion.Major -ge 11) {
+                        $resPool.CapCpuPercentage = $CapCpuPercentage
+                    } elseif ($server.ResourceGovernor.ServerVersion.Major -lt 11) {
+                        Write-Message -Level Warning -Message "SQL Server version 2012+ required to specify a CPU percentage cap."
                     }
-                } catch {
-                    Stop-Function -Message "Failure" -ErrorRecord $_ -Target $server.ResourceGovernor -Continue
                 }
             }
-            Get-DbaRgResourcePool -SqlInstance $server -Type $Type | Where-Object Name -in $resPool.Name
+
+            #Execute
+            try {
+                if ($PSCmdlet.ShouldProcess($server, "Altering resource pool $resPool")) {
+                    $resPool.Alter()
+                }
+            } catch {
+                Stop-Function -Message "Failure" -ErrorRecord $_ -Target $resPool -Continue
+            }
+
+            #Reconfigure Resource Governor
+            try {
+                if ($SkipReconfigure) {
+                    Write-Message -Level Warning -Message "Resource pool changes will not take effect in Resource Governor until it is reconfigured."
+                } elseif ($PSCmdlet.ShouldProcess($server, "Reconfiguring the Resource Governor")) {
+                    $server.ResourceGovernor.Alter()
+                }
+            } catch {
+                Stop-Function -Message "Failure" -ErrorRecord $_ -Target $server.ResourceGovernor -Continue
+            }
         }
+        Get-DbaRgResourcePool -SqlInstance $server -Type $Type | Where-Object Name -in $resPool.Name
     }
 }

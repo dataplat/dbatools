@@ -83,10 +83,6 @@ function Remove-DbaRgResourcePool {
             return
         }
 
-        if ($ResourcePool) {
-            $InputObject += Get-DbaRgResourcePool -SqlInstance $SqlInstance -Type $Type | Where-Object Name -in $ResourcePool
-        }
-
         if (($InputObject) -and ($PSBoundParameters.Keys -notcontains 'Type')) {
             if ($InputObject -is [Microsoft.SqlServer.Management.Smo.ResourcePool]) {
                 $Type = "Internal"
@@ -101,31 +97,33 @@ function Remove-DbaRgResourcePool {
             } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
-
-            foreach ($resPool in $InputObject) {
-                $existingResourcePool = Get-DbaRgResourcePool -SqlInstance $server -Type $Type | Where-Object Name -eq $resPool.Name
-                if ($null -ne $existingResourcePool) {
-                    if ($Pscmdlet.ShouldProcess($existingResourcePool, "Dropping existing resource pool")) {
-                        try {
-                            $existingResourcePool.Drop()
-                        } catch {
-                            Stop-Function -Message "Could not remove existing resource pool '$resPool' on $instance." -Target $existingResourcePool -Continue
-                        }
-                    }
-                } else {
-                    Stop-Function -Message "Resource pool '$resPool' does not exist on $instance." -Target $existingResourcePool -Continue
-                }
+            if ($Type -eq "Internal") {
+                $InputObject += $server.ResourceGovernor.ResourcePools | Where-Object Name -in $ResourcePool
             }
+            elseif ($Type -eq "External") {
+                $InputObject += $server.ResourceGovernor.ExternalResourcePools | Where-Object Name -in $ResourcePool
+            }
+        }
 
-            # Reconfigure Resource Governor
+        foreach ($resPool in $InputObject) {
             try {
+                $server = $resPool.Parent.Parent
+                if ($Pscmdlet.ShouldProcess($resPool, "Dropping existing resource pool")) {
+                    try {
+                        $resPool.Drop()
+                    } catch {
+                        Stop-Function -Message "Could not remove existing resource pool $resPool on $server." -Target $resPool -Continue
+                    }
+                }
+
+                # Reconfigure Resource Governor
                 if ($SkipReconfigure) {
                     Write-Message -Level Warning -Message "Resource pool changes will not take effect in Resource Governor until it is reconfigured."
-                } elseif ($PSCmdlet.ShouldProcess($instance, "Reconfiguring the Resource Governor")) {
+                } elseif ($PSCmdlet.ShouldProcess($server, "Reconfiguring the Resource Governor")) {
                     $server.ResourceGovernor.Alter()
                 }
             } catch {
-                Stop-Function -Message "Failure" -ErrorRecord $_ -Target $existingResourcePool -Continue
+                Stop-Function -Message "Failure" -ErrorRecord $_ -Target $resPool -Continue
             }
         }
     }
