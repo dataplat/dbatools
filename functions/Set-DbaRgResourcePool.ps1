@@ -160,8 +160,7 @@ function Set-DbaRgResourcePool {
             }
             if ($Type -eq "Internal") {
                 $InputObject += $server.ResourceGovernor.ResourcePools | Where-Object Name -in $ResourcePool
-            }
-            elseif ($Type -eq "External") {
+            } elseif ($Type -eq "External") {
                 $InputObject += $server.ResourceGovernor.ExternalResourcePools | Where-Object Name -in $ResourcePool
             }
         }
