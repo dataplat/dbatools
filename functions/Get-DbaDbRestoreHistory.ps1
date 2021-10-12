@@ -89,14 +89,16 @@ function Get-DbaDbRestoreHistory {
         [switch]$EnableException
     )
 
+    begin {
+        if ($Since -ne $null) {
+            $Since = $Since.ToString("yyyy-MM-ddTHH:mm:ss")
+        }
+    }
+
     process {
         foreach ($instance in $SqlInstance) {
             try {
-                try {
-                    $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
-                } catch {
-                    Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
-                }
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
                 $computername = $server.ComputerName
                 $instanceName = $server.ServiceName
                 $servername = $server.DomainInstanceName
@@ -136,8 +138,15 @@ function Get-DbaDbRestoreHistory {
                     bs.last_lsn,
                     bs.checkpoint_lsn,
                     bs.database_backup_lsn,
+                    bs.backup_start_date,
+                    bs.backup_start_date AS BackupStartDate,
                     bs.backup_finish_date,
-                    bs.backup_finish_date AS BackupFinishDate
+                    bs.backup_finish_date AS BackupFinishDate,
+					rsh.stop_at AS StopAt,
+                    CASE 
+		                WHEN coalesce(rsh.stop_at, '9999-12-31') < bs.backup_start_date THEN stop_at
+		                ELSE bs.backup_start_date
+	                END AS LastRestorePoint
                     "
                 }
 
@@ -161,7 +170,7 @@ function Get-DbaDbRestoreHistory {
                 }
 
                 if ($null -ne $Since) {
-                    $wherearray += "rsh.restore_date >= CONVERT(datetime,'$($Since.ToString("yyyy-MM-ddTHH:mm:ss", [System.Globalization.CultureInfo]::InvariantCulture))',126)"
+                    $wherearray += "rsh.restore_date >= '$since'"
                 }
 
 
@@ -190,7 +199,7 @@ function Get-DbaDbRestoreHistory {
                     }
                     $results = $tmpres
                 }
-                $results | Select-DefaultView -ExcludeProperty first_lsn, last_lsn, checkpoint_lsn, database_backup_lsn, backup_finish_date
+                $results | Select-DefaultView -ExcludeProperty first_lsn, last_lsn, checkpoint_lsn, database_backup_lsn, backup_start_date, backup_finish_date
             } catch {
                 Stop-Function -Message "Failure" -Target $SqlInstance -Error $_ -Exception $_.Exception.InnerException -Continue
             }
