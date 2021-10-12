@@ -319,9 +319,10 @@ go
     }
 
     Context "Test Backup templating" {
-        $results = Backup-DbaDatabase -SqlInstance $script:instance1 -Database master -BackupDirectory $DestBackupDir\dbname\instancename\backuptype\  -BackupFileName dbname-backuptype.bak -ReplaceInName -BuildPath
+        $results = Backup-DbaDatabase -SqlInstance $script:instance1 -Database master,msdb -BackupDirectory $DestBackupDir\dbname\instancename\backuptype\  -BackupFileName dbname-backuptype.bak -ReplaceInName -BuildPath
         It "Should have replaced the markers" {
-            $results.BackupPath | Should -BeLike "$DestBackupDir\master\$(($script:instance1).split('\')[1])\Full\master-Full.bak"
+            $results[0].BackupPath | Should -BeLike "$DestBackupDir\master\$(($script:instance1).split('\')[1])\Full\master-Full.bak"
+            $results[1].BackupPath | Should -BeLike "$DestBackupDir\msdb\$(($script:instance1).split('\')[1])\Full\msdb-Full.bak"
         }
     }
 
