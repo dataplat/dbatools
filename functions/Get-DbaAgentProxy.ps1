@@ -79,18 +79,18 @@ function Get-DbaAgentProxy {
             $proxies = $server.Jobserver.ProxyAccounts
 
             if (Test-Bound 'Proxy') {
-                $tempProxies = @();
+                $tempProxies = @()
 
                 foreach ($a in $Proxy) {
-                    $tempProxies += $proxies | where Name -like $a;
+                    $tempProxies += $proxies | Where-Object Name -like $a
                 }
 
-                $proxies = $tempProxies;
+                $proxies = $tempProxies
             }
 
             if (Test-Bound 'ExcludeProxy') {
                 foreach ($e in $ExcludeProxy) {
-                    $proxies = $proxies | where Name -notlike $e;
+                    $proxies = $proxies | Where-Object Name -notlike $e
                 }
             }
 
