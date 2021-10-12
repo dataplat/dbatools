@@ -224,7 +224,7 @@ function Set-DbaRgResourcePool {
             } catch {
                 Stop-Function -Message "Failure" -ErrorRecord $_ -Target $server.ResourceGovernor -Continue
             }
+            Get-DbaRgResourcePool -SqlInstance $server -SqlCredential $SqlCredential -Type $Type | Where-Object Name -in $resPool.Name
         }
-        Get-DbaRgResourcePool -SqlInstance $server -Type $Type | Where-Object Name -in $resPool.Name
     }
 }
