@@ -142,11 +142,11 @@ function Get-DbaDbRestoreHistory {
                     bs.backup_start_date AS BackupStartDate,
                     bs.backup_finish_date,
                     bs.backup_finish_date AS BackupFinishDate,
-					rsh.stop_at AS StopAt,
+                    rsh.stop_at AS StopAt,
                     CASE 
-		                WHEN coalesce(rsh.stop_at, '9999-12-31') < bs.backup_start_date THEN stop_at
-		                ELSE bs.backup_start_date
-	                END AS LastRestorePoint
+                        WHEN coalesce(rsh.stop_at, '9999-12-31') < bs.backup_start_date THEN stop_at
+                        ELSE bs.backup_start_date
+                    END AS LastRestorePoint
                     "
                 }
 
