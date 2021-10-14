@@ -12906,7 +12906,16 @@
                        ],
                        [
                            "Proxy",
-                           "The proxy to process - this list is auto-populated from the server. If unspecified, all proxies will be processed.",
+                           "The name of the proxies to return. If null, will get all proxies from the server. Note - this parameter accepts wildcards.",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "ExcludeProxy",
+                           "The name of the proxies to exclude. If not provided, no proxies will be excluded. Note - this parameter accepts wildcards.",
                            "",
                            false,
                            "false",
@@ -12923,7 +12932,7 @@
                            ""
                        ]
                    ],
-        "Syntax":  "Get-DbaAgentProxy [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Proxy] \u003cString[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Get-DbaAgentProxy [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Proxy] \u003cString[]\u003e] [[-ExcludeProxy] \u003cString[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Get-DbaAgentSchedule",
@@ -18071,7 +18080,7 @@
         "CommandName":  "Get-DbaDbSequence",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Get-DbaDbSequence",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaDbSequence -SqlInstance sqldev01 -Database TestDB -Name TestSequence\nFinds the sequence TestSequence in the TestDB database on the sqldev01 instance.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaDatabase -SqlInstance sqldev01 -Database TestDB | Get-DbaDbSequence -Name TestSequence -Schema TestSchema\nUsing a pipeline this command finds the sequence named TestSchema.TestSequence in the TestDB database on the sqldev01 instance.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaDbSequence -SqlInstance localhost\nFinds all the sequences on the localhost instance.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaDbSequence -SqlInstance localhost -Database db\nFinds all the sequences in the db database on the localhost instance.\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eGet-DbaDbSequence -SqlInstance localhost -Name seq\nFinds all the sequences named seq on the localhost instance.\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eGet-DbaDbSequence -SqlInstance localhost -Schema sch\nFinds all the sequences in the sch schema on the localhost instance.",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaDbSequence -SqlInstance sqldev01 -Database TestDB -Sequence TestSequence\nFinds the sequence TestSequence in the TestDB database on the sqldev01 instance.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaDatabase -SqlInstance sqldev01 -Database TestDB | Get-DbaDbSequence -Sequence TestSequence -Schema TestSchema\nUsing a pipeline this command finds the sequence named TestSchema.TestSequence in the TestDB database on the sqldev01 instance.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaDbSequence -SqlInstance localhost\nFinds all the sequences on the localhost instance.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaDbSequence -SqlInstance localhost -Database db\nFinds all the sequences in the db database on the localhost instance.\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eGet-DbaDbSequence -SqlInstance localhost -Sequence seq\nFinds all the sequences named seq on the localhost instance.\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eGet-DbaDbSequence -SqlInstance localhost -Schema sch\nFinds all the sequences in the sch schema on the localhost instance.",
         "Params":  [
                        [
                            "SqlInstance",
@@ -18101,9 +18110,9 @@
                            ""
                        ],
                        [
-                           "Name",
+                           "Sequence",
                            "The name of the sequence.",
-                           "",
+                           "Name",
                            false,
                            "false",
                            "",
@@ -18137,7 +18146,7 @@
                            ""
                        ]
                    ],
-        "Syntax":  "Get-DbaDbSequence [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cString[]\u003e] [[-Name] \u003cString[]\u003e] [[-Schema] \u003cString[]\u003e] [[-InputObject] \u003cDatabase[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Get-DbaDbSequence [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cString[]\u003e] [[-Sequence] \u003cString[]\u003e] [[-Schema] \u003cString[]\u003e] [[-InputObject] \u003cDatabase[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Get-DbaDbServiceBrokerService",
@@ -31812,7 +31821,7 @@
         "CommandName":  "Invoke-DbaDbLogShipRecovery",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Invoke-DbaDbLogShipRecovery",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eInvoke-DbaDbLogShipRecovery -SqlInstance server1\nRecovers all the databases on the instance that are enabled for log shipping\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eInvoke-DbaDbLogShipRecovery -SqlInstance server1 -SqlCredential $cred -Verbose\nRecovers all the databases on the instance that are enabled for log shipping using a credential\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eInvoke-DbaDbLogShipRecovery -SqlInstance server1 -database db_logship -Verbose\nRecovers the database \"db_logship\" to a normal status\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003edb1, db2, db3, db4 | Invoke-DbaDbLogShipRecovery -SqlInstance server1 -Verbose\nRecovers the database db1, db2, db3, db4 to a normal status\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eInvoke-DbaDbLogShipRecovery -SqlInstance server1 -WhatIf\nShows what would happen if the command were executed.",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eInvoke-DbaDbLogShipRecovery -SqlInstance server1 -Force\nRecovers all the databases on the instance that are enabled for log shipping\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eInvoke-DbaDbLogShipRecovery -SqlInstance server1 -SqlCredential $cred -Verbose -Force\nRecovers all the databases on the instance that are enabled for log shipping using a credential\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eInvoke-DbaDbLogShipRecovery -SqlInstance server1 -database db_logship -Verbose\nRecovers the database \"db_logship\" to a normal status\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003edb1, db2, db3, db4 | Invoke-DbaDbLogShipRecovery -SqlInstance server1 -Verbose\nRecovers the database db1, db2, db3, db4 to a normal status\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eInvoke-DbaDbLogShipRecovery -SqlInstance server1 -Force -WhatIf\nShows what would happen if the command were executed.",
         "Params":  [
                        [
                            "SqlInstance",
@@ -38903,7 +38912,7 @@
         "CommandName":  "New-DbaDbSequence",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/New-DbaDbSequence",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eNew-DbaDbSequence -SqlInstance sqldev01 -Database TestDB -Name TestSequence -StartWith 10000 -IncrementBy 10\nCreates a new sequence TestSequence in the TestDB database on the sqldev01 instance. The sequence will start with 10000 and increment by 10.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eNew-DbaDbSequence -SqlInstance sqldev01 -Database TestDB -Name TestSequence -Cycle\nCreates a new sequence TestSequence in the TestDB database on the sqldev01 instance. The sequence will cycle the numbers.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaDatabase -SqlInstance sqldev01 -Database TestDB | New-DbaDbSequence -Name TestSequence -Schema TestSchema -IntegerType bigint\nUsing a pipeline this command creates a new bigint sequence named TestSchema.TestSequence in the TestDB database on the sqldev01 instance.",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eNew-DbaDbSequence -SqlInstance sqldev01 -Database TestDB -Sequence TestSequence -StartWith 10000 -IncrementBy 10\nCreates a new sequence TestSequence in the TestDB database on the sqldev01 instance. The sequence will start with 10000 and increment by 10.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eNew-DbaDbSequence -SqlInstance sqldev01 -Database TestDB -Sequence TestSequence -Cycle\nCreates a new sequence TestSequence in the TestDB database on the sqldev01 instance. The sequence will cycle the numbers.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaDatabase -SqlInstance sqldev01 -Database TestDB | New-DbaDbSequence -Sequence TestSequence -Schema TestSchema -IntegerType bigint\nUsing a pipeline this command creates a new bigint sequence named TestSchema.TestSequence in the TestDB database on the sqldev01 instance.",
         "Params":  [
                        [
                            "SqlInstance",
@@ -38933,9 +38942,9 @@
                            ""
                        ],
                        [
-                           "Name",
+                           "Sequence",
                            "The name of the new sequence",
-                           "",
+                           "Name",
                            true,
                            "false",
                            "",
@@ -39050,7 +39059,7 @@
                            ""
                        ]
                    ],
-        "Syntax":  "New-DbaDbSequence [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cString[]\u003e] [-Name] \u003cString\u003e [[-Schema] \u003cString\u003e] [[-IntegerType] \u003cString\u003e] [[-StartWith] \u003cInt64\u003e] [[-IncrementBy] \u003cInt64\u003e] [[-MinValue] \u003cInt64\u003e] [[-MaxValue] \u003cInt64\u003e] [-Cycle] [[-CacheSize] \u003cInt32\u003e] [[-InputObject] \u003cDatabase[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Syntax":  "New-DbaDbSequence [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cString[]\u003e] [-Sequence] \u003cString[]\u003e [[-Schema] \u003cString\u003e] [[-IntegerType] \u003cString\u003e] [[-StartWith] \u003cInt64\u003e] [[-IncrementBy] \u003cInt64\u003e] [[-MinValue] \u003cInt64\u003e] [[-MaxValue] \u003cInt64\u003e] [-Cycle] [[-CacheSize] \u003cInt32\u003e] [[-InputObject] \u003cDatabase[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "New-DbaDbSnapshot",
@@ -40857,18 +40866,18 @@
                            "MaximumCpuPercentage",
                            "Specifies the maximum average CPU bandwidth that all requests in resource pool will receive when there is CPU contention.",
                            "",
-                           true,
+                           false,
                            "false",
-                           "0",
+                           "100",
                            ""
                        ],
                        [
                            "CapCpuPercentage",
                            "Specifies a hard cap on the CPU bandwidth that all requests in the resource pool will receive.\r\nLimits the maximum CPU bandwidth level to be the same as the specified value. Only for SQL Server 2012+",
                            "",
-                           true,
+                           false,
                            "false",
-                           "0",
+                           "100",
                            ""
                        ],
                        [
@@ -40884,9 +40893,9 @@
                            "MaximumMemoryPercentage",
                            "Specifies the total server memory that can be used by requests in this resource pool. value is an integer with a default setting of 100.",
                            "",
-                           true,
+                           false,
                            "false",
-                           "0",
+                           "100",
                            ""
                        ],
                        [
@@ -40962,7 +40971,7 @@
                            ""
                        ]
                    ],
-        "Syntax":  "New-DbaRgResourcePool -SqlInstance \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-ResourcePool \u003cString[]\u003e] [-Type \u003cString\u003e] -MaximumCpuPercentage \u003cInt32\u003e -MaximumMemoryPercentage \u003cInt32\u003e [-SkipReconfigure] [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\nNew-DbaRgResourcePool -SqlInstance \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-ResourcePool \u003cString[]\u003e] [-Type \u003cString\u003e] [-MinimumCpuPercentage \u003cInt32\u003e] -MaximumCpuPercentage \u003cInt32\u003e -CapCpuPercentage \u003cInt32\u003e [-MinimumMemoryPercentage \u003cInt32\u003e] -MaximumMemoryPercentage \u003cInt32\u003e [-MinimumIOPSPerVolume \u003cInt32\u003e] [-MaximumIOPSPerVolume \u003cInt32\u003e] [-SkipReconfigure] [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\nNew-DbaRgResourcePool -SqlInstance \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-ResourcePool \u003cString[]\u003e] [-Type \u003cString\u003e] -MaximumCpuPercentage \u003cInt32\u003e -MaximumMemoryPercentage \u003cInt32\u003e [-MaximumProcesses \u003cInt32\u003e] [-SkipReconfigure] [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Syntax":  "New-DbaRgResourcePool -SqlInstance \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-ResourcePool \u003cString[]\u003e] [-Type \u003cString\u003e] [-MaximumCpuPercentage \u003cInt32\u003e] [-MaximumMemoryPercentage \u003cInt32\u003e] [-SkipReconfigure] [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\nNew-DbaRgResourcePool -SqlInstance \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-ResourcePool \u003cString[]\u003e] [-Type \u003cString\u003e] [-MinimumCpuPercentage \u003cInt32\u003e] [-MaximumCpuPercentage \u003cInt32\u003e] [-CapCpuPercentage \u003cInt32\u003e] [-MinimumMemoryPercentage \u003cInt32\u003e] [-MaximumMemoryPercentage \u003cInt32\u003e] [-MinimumIOPSPerVolume \u003cInt32\u003e] [-MaximumIOPSPerVolume \u003cInt32\u003e] [-SkipReconfigure] [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\nNew-DbaRgResourcePool -SqlInstance \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-ResourcePool \u003cString[]\u003e] [-Type \u003cString\u003e] [-MaximumCpuPercentage \u003cInt32\u003e] [-MaximumMemoryPercentage \u003cInt32\u003e] [-MaximumProcesses \u003cInt32\u003e] [-SkipReconfigure] [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "New-DbaScriptingOption",
@@ -45671,7 +45680,7 @@
         "CommandName":  "Remove-DbaDbSequence",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Remove-DbaDbSequence",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eRemove-DbaDbSequence -SqlInstance sqldev01 -Database TestDB -Name TestSequence\nRemoves the sequence TestSequence in the TestDB database on the sqldev01 instance.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaDbSequence -SqlInstance SRV1 | Out-GridView -Title \u0027Select sequence(s) to drop\u0027 -OutputMode Multiple | Remove-DbaDbSequence\nUsing a pipeline this command gets all sequences on SRV1, lets the user select those to remove and then removes the selected sequences.",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eRemove-DbaDbSequence -SqlInstance sqldev01 -Database TestDB -Sequence TestSequence\nRemoves the sequence TestSequence in the TestDB database on the sqldev01 instance.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaDbSequence -SqlInstance SRV1 | Out-GridView -Title \u0027Select sequence(s) to drop\u0027 -OutputMode Multiple | Remove-DbaDbSequence\nUsing a pipeline this command gets all sequences on SRV1, lets the user select those to remove and then removes the selected sequences.",
         "Params":  [
                        [
                            "SqlInstance",
@@ -45701,9 +45710,9 @@
                            ""
                        ],
                        [
-                           "Name",
+                           "Sequence",
                            "The name(s) of the sequence(s).",
-                           "",
+                           "Name",
                            false,
                            "false",
                            "",
@@ -45755,7 +45764,7 @@
                            ""
                        ]
                    ],
-        "Syntax":  "Remove-DbaDbSequence [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-Database \u003cString[]\u003e] [-Name \u003cString[]\u003e] [-Schema \u003cString[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\nRemove-DbaDbSequence -InputObject \u003cSequence[]\u003e [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Remove-DbaDbSequence [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-Database \u003cString[]\u003e] [-Sequence \u003cString[]\u003e] [-Schema \u003cString[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\nRemove-DbaDbSequence [-SqlCredential \u003cPSCredential\u003e] -InputObject \u003cSequence[]\u003e [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Remove-DbaDbSnapshot",
@@ -49889,7 +49898,7 @@
         "CommandName":  "Select-DbaDbSequenceNextValue",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Select-DbaDbSequenceNextValue",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eSelect-DbaDbSequenceNextValue -SqlInstance sqldev01 -Database TestDB -Name TestSequence\nSelects the next value from the sequence TestSequence in the TestDB database on the sqldev01 instance.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaDatabase -SqlInstance sqldev01 -Database TestDB | Select-DbaDbSequenceNextValue -Name TestSequence -Schema TestSchema\nUsing a pipeline this command selects the next value from the sequence TestSchema.TestSequence in the TestDB database on the sqldev01 instance.",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eSelect-DbaDbSequenceNextValue -SqlInstance sqldev01 -Database TestDB -Sequence TestSequence\nSelects the next value from the sequence TestSequence in the TestDB database on the sqldev01 instance.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaDatabase -SqlInstance sqldev01 -Database TestDB | Select-DbaDbSequenceNextValue -Sequence TestSequence -Schema TestSchema\nUsing a pipeline this command selects the next value from the sequence TestSchema.TestSequence in the TestDB database on the sqldev01 instance.",
         "Params":  [
                        [
                            "SqlInstance",
@@ -49919,9 +49928,9 @@
                            ""
                        ],
                        [
-                           "Name",
+                           "Sequence",
                            "The name of the sequence.",
-                           "",
+                           "Name",
                            true,
                            "false",
                            "",
@@ -49973,7 +49982,7 @@
                            ""
                        ]
                    ],
-        "Syntax":  "Select-DbaDbSequenceNextValue [[-SqlInstance] \u003cDbaInstanceParameter\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cString\u003e] [-Name] \u003cString\u003e [[-Schema] \u003cString\u003e] [[-InputObject] \u003cDatabase\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Select-DbaDbSequenceNextValue [[-SqlInstance] \u003cDbaInstanceParameter\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cString\u003e] [-Sequence] \u003cString[]\u003e [[-Schema] \u003cString\u003e] [[-InputObject] \u003cDatabase\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Select-DbaObject",
@@ -53542,7 +53551,7 @@
         "CommandName":  "Set-DbaDbSequence",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Set-DbaDbSequence",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eSet-DbaDbSequence -SqlInstance sqldev01 -Database TestDB -Name TestSequence -RestartWith 10000 -IncrementBy 10\nModifies the sequence TestSequence in the TestDB database on the sqldev01 instance. The sequence will restart with 10000 and increment by 10.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaDatabase -SqlInstance sqldev01 -Database TestDB | Set-DbaDbSequence -Name TestSequence -Schema TestSchema -Cycle\nUsing a pipeline this command modifies the sequence named TestSchema.TestSequence in the TestDB database on the sqldev01 instance. The sequence will now cycle the sequence values.",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eSet-DbaDbSequence -SqlInstance sqldev01 -Database TestDB -Sequence TestSequence -RestartWith 10000 -IncrementBy 10\nModifies the sequence TestSequence in the TestDB database on the sqldev01 instance. The sequence will restart with 10000 and increment by 10.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaDatabase -SqlInstance sqldev01 -Database TestDB | Set-DbaDbSequence -Sequence TestSequence -Schema TestSchema -Cycle\nUsing a pipeline this command modifies the sequence named TestSchema.TestSequence in the TestDB database on the sqldev01 instance. The sequence will now cycle the sequence values.",
         "Params":  [
                        [
                            "SqlInstance",
@@ -53572,9 +53581,9 @@
                            ""
                        ],
                        [
-                           "Name",
+                           "Sequence",
                            "The name of the new sequence",
-                           "",
+                           "Name",
                            true,
                            "false",
                            "",
@@ -53680,7 +53689,7 @@
                            ""
                        ]
                    ],
-        "Syntax":  "Set-DbaDbSequence [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cString[]\u003e] [-Name] \u003cString\u003e [[-Schema] \u003cString\u003e] [[-RestartWith] \u003cInt64\u003e] [[-IncrementBy] \u003cInt64\u003e] [[-MinValue] \u003cInt64\u003e] [[-MaxValue] \u003cInt64\u003e] [-Cycle] [[-CacheSize] \u003cInt32\u003e] [[-InputObject] \u003cDatabase[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Set-DbaDbSequence [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cString[]\u003e] [-Sequence] \u003cString[]\u003e [[-Schema] \u003cString\u003e] [[-RestartWith] \u003cInt64\u003e] [[-IncrementBy] \u003cInt64\u003e] [[-MinValue] \u003cInt64\u003e] [[-MaxValue] \u003cInt64\u003e] [-Cycle] [[-CacheSize] \u003cInt32\u003e] [[-InputObject] \u003cDatabase[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Set-DbaDbState",

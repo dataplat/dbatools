@@ -17,7 +17,11 @@ function Get-DbaAgentProxy {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Proxy
-        The proxy to process - this list is auto-populated from the server. If unspecified, all proxies will be processed.
+        The name of the proxies to return. If null, will get all proxies from the server. Note - this parameter accepts wildcards.
+
+    .PARAMETER ExcludeProxy
+        The name of the proxies to exclude. If not provided, no proxies will be excluded. Note - this parameter accepts wildcards.
+
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -52,6 +56,7 @@ function Get-DbaAgentProxy {
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [string[]]$Proxy,
+        [string[]]$ExcludeProxy,
         [switch]$EnableException
     )
     process {
@@ -73,8 +78,20 @@ function Get-DbaAgentProxy {
 
             $proxies = $server.Jobserver.ProxyAccounts
 
-            if ($proxy) {
-                $proxies = $proxies | Where-Object Name -In $proxy
+            if (Test-Bound 'Proxy') {
+                $tempProxies = @()
+
+                foreach ($a in $Proxy) {
+                    $tempProxies += $proxies | Where-Object Name -like $a
+                }
+
+                $proxies = $tempProxies
+            }
+
+            if (Test-Bound 'ExcludeProxy') {
+                foreach ($e in $ExcludeProxy) {
+                    $proxies = $proxies | Where-Object Name -notlike $e
+                }
             }
 
             foreach ($px in $proxies) {

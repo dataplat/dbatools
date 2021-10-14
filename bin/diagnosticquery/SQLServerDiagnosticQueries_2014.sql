@@ -1,7 +1,7 @@
 
 -- SQL Server 2014 Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: October 5, 2021
+-- Last Modified: October 11, 2021
 -- https://glennsqlperformance.com/
 -- https://sqlserverperformance.wordpress.com/
 -- YouTube: https://bit.ly/2PkoAM1 
@@ -327,17 +327,12 @@ ORDER BY d.recovery_model_desc, d.[name] OPTION (RECOMPILE);
 
 
 -- Get SQL Server Agent jobs and Category information (Query 10) (SQL Server Agent Jobs)
-SELECT sj.name AS [Job Name], 
-sj.[description] AS [Job Description], 
+SELECT sj.name AS [Job Name], sj.[description] AS [Job Description], 
 sc.name AS [CategoryName], SUSER_SNAME(sj.owner_sid) AS [Job Owner],
 sj.date_created AS [Date Created], sj.[enabled] AS [Job Enabled], 
-sj.notify_email_operator_id, sj.notify_level_email,
-h.run_status,
-    STUFF(STUFF(REPLACE(STR(h.run_duration,7,0),
-        ' ','0'),4,0,':'),7,0,':') AS  [Last Duration - HHMMSS],
-     CONVERT(DATETIME, RTRIM(run_date) + ' '
-        + STUFF(STUFF(REPLACE(STR(RTRIM(h.run_time),6,0),
-        ' ','0'),3,0,':'),6,0,':')) AS [Last Start Date]
+sj.notify_email_operator_id, sj.notify_level_email, h.run_status,
+RIGHT(STUFF(STUFF(REPLACE(STR(h.run_duration, 7, 0), ' ', '0'), 4, 0, ':'), 7, 0, ':'),8) AS [Last Duration - HHMMSS],
+CONVERT(DATETIME, RTRIM(h.run_date) + ' ' + STUFF(STUFF(REPLACE(STR(RTRIM(h.run_time),6,0),' ','0'),3,0,':'),6,0,':')) AS [Last Start Date]
 FROM msdb.dbo.sysjobs AS sj WITH (NOLOCK)
 INNER JOIN
     (SELECT job_id, instance_id = MAX(instance_id)
