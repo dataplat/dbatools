@@ -1,10 +1,10 @@
 function Get-DbaRgWorkloadGroup {
     <#
     .SYNOPSIS
-        Gets all Resource Governor Pool objects, including both internal and external
+        Gets all Resource Governor workload group objects
 
     .DESCRIPTION
-        Gets all Resource Governor Pool objects, including both internal and external
+        Gets all Resource Governor workload group objects
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances
