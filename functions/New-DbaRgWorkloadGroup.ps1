@@ -94,13 +94,13 @@ function New-DbaRgWorkloadGroup {
         [string]$Importance = "MEDIUM",
         [ValidateRange(1, 100)]
         [int]$RequestMaximumMemoryGrantPercentage = 25,
-        [ValidateRange("NonNegative")]
+        [ValidateRange(0, [int]::MaxValue)]
         [int]$RequestMaximumCpuTimeInSeconds = 0,
-        [ValidateRange("NonNegative")]
+        [ValidateRange(0, [int]::MaxValue)]
         [int]$RequestMemoryGrantTimeoutInSeconds = 0,
         [ValidateRange(0, 64)]
         [int]$MaximumDegreeOfParallelism = 0,
-        [ValidateRange("NonNegative")]
+        [ValidateRange(0, [int]::MaxValue)]
         [int]$GroupMaximumRequests = 0,
         [switch]$SkipReconfigure,
         [switch]$Force,
