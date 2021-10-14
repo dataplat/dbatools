@@ -85,19 +85,18 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         }
         It "Creates multiple workload groups" {
             $wklGroupName = "dbatoolssci_wklgroupTest"
-            $wklGroupName2 = "dbatoolssci_wklgroupTest"
+            $wklGroupName2 = "dbatoolssci_wklgroupTest2"
             $splatNewWorkloadGroup = @{
                 SqlInstance   = $script:instance2
-                WorkloadGroup = @($wklGroupName, $wklGroupName2)
                 Force         = $true
             }
             $result = Get-DbaRgWorkloadGroup -SqlInstance $script:instance2 | Where-Object Name -in $wklGroupName, $wklGroupName2
-            $newWorkloadGroups = New-DbaRgWorkloadGroup @splatNewWorkloadGroup
-            $result2 = Get-DbaRgWorkloadGroup -SqlInstance $script:instance2 | Where-Object Name -eq $wklGroupName, $wklGroupName2
+            $newWorkloadGroups = New-DbaRgWorkloadGroup @splatNewWorkloadGroup -WorkloadGroup $wklGroupName, $wklGroupName2
+            $result2 = Get-DbaRgWorkloadGroup -SqlInstance $script:instance2 | Where-Object Name -in $wklGroupName, $wklGroupName2
 
             $newWorkloadGroups | Should -Not -Be $null
-            $result.Count | Should -BeLessThan $result2.Count
-            $result2.Name | Should -Contain $wklGroupName, $wklGroupName2
+            $result2.Count | Should -Be 2
+            $result.Count | Should -Be ($result2.Count - 2)
         }
         It "Skips Resource Governor reconfiguration" {
             $wklGroupName = "dbatoolssci_wklgroupTest"
