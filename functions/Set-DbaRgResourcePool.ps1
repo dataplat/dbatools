@@ -225,9 +225,9 @@ function Set-DbaRgResourcePool {
                 Stop-Function -Message "Failure" -ErrorRecord $_ -Target $server.ResourceGovernor -Continue
             }
 
-            $respool | Add-Member -Force -MemberType NoteProperty -Name ComputerName -value $resourcegov.ComputerName
-            $respool | Add-Member -Force -MemberType NoteProperty -Name InstanceName -value $resourcegov.InstanceName
-            $respool | Add-Member -Force -MemberType NoteProperty -Name SqlInstance -value $resourcegov.SqlInstance
+            $respool | Add-Member -Force -MemberType NoteProperty -Name ComputerName -value $server.ComputerName
+            $respool | Add-Member -Force -MemberType NoteProperty -Name InstanceName -value $server.InstanceName
+            $respool | Add-Member -Force -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
             $respool | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, Id, Name, CapCpuPercentage, IsSystemObject, MaximumCpuPercentage, MaximumIopsPerVolume, MaximumMemoryPercentage, MinimumCpuPercentage, MinimumIopsPerVolume, MinimumMemoryPercentage, WorkloadGroups
         }
     }
