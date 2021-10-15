@@ -76,22 +76,22 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
                 INSERT INTO dbo.TestTable2 VALUES (2, 'Firstname2')
                 "
 
-        New-DbaDatabase -SqlInstance $script:instance2 -Name $db
-        Invoke-DbaQuery -SqlInstance $script:instance2 -Database $db -Query $sql
+        New-DbaDatabase -SqlInstance $script:instance2 -SqlCredential $script:SqlCredential -Name $db
+        Invoke-DbaQuery -SqlInstance $script:instance2 -SqlCredential $script:SqlCredential -Database $db -Query $sql
     }
 
     AfterAll {
-        Remove-DbaDatabase -SqlInstance $script:instance2 -Database $db -Confirm:$false
+        Remove-DbaDatabase -SqlInstance $script:instance2 -SqlCredential $script:SqlCredential -Database $db -Confirm:$false
     }
 
     Context "Command works" {
         It "starts with the right data" {
-            Invoke-DbaQuery -SqlInstance $script:instance2 -Database $db -Query "SELECT * FROM Customer WHERE FirstName = 'Delores'" | Should -Not -Be $null
-            Invoke-DbaQuery -SqlInstance $script:instance2 -Database $db -Query "SELECT * FROM Customer WHERE RandomText = '6011295760226704'" | Should -Not -Be $null
+            Invoke-DbaQuery -SqlInstance $script:instance2 -SqlCredential $script:SqlCredential -Database $db -Query "SELECT * FROM Customer WHERE FirstName = 'Delores'" | Should -Not -Be $null
+            Invoke-DbaQuery -SqlInstance $script:instance2 -SqlCredential $script:SqlCredential -Database $db -Query "SELECT * FROM Customer WHERE RandomText = '6011295760226704'" | Should -Not -Be $null
         }
 
         It "returns the proper output" {
-            $results = Invoke-DbaDbPiiScan -SqlInstance $script:instance2 -Database $db -SampleCount 500
+            $results = Invoke-DbaDbPiiScan -SqlInstance $script:instance2 -SqlCredential $script:SqlCredential -Database $db -SampleCount 500
             $results.Count | Should -Be 29
             $results."PII-Name" | Should -Contain "Creditcard Discover"
             $results."PII-Name" | Should -Contain "First name"
@@ -99,36 +99,36 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         }
 
         It "ExcludeColumn param" {
-            $results = Invoke-DbaDbPiiScan -SqlInstance $script:instance2 -Database $db -ExcludeColumn @('CustomerID', 'Firstname', 'Lastname', 'FullName', 'Address', 'Zip', 'City', 'Randomtext')
+            $results = Invoke-DbaDbPiiScan -SqlInstance $script:instance2 -SqlCredential $script:SqlCredential -Database $db -ExcludeColumn @('CustomerID', 'Firstname', 'Lastname', 'FullName', 'Address', 'Zip', 'City', 'Randomtext')
             $results.Count | Should -Be 2
             $results."PII-Name" | Should -Contain 'IPv4 Address'
             $results."PII-Name" | Should -Contain 'IPv6 Address'
         }
 
         It "Table param" {
-            $results = Invoke-DbaDbPiiScan -SqlInstance $script:instance2 -Database $db -Table Customer
+            $results = Invoke-DbaDbPiiScan -SqlInstance $script:instance2 -SqlCredential $script:SqlCredential -Database $db -Table Customer
             $results.Count | Should -Be 27
             $results.Table | Should -Not -Contain TestTable
             $results.Table | Should -Not -Contain TestTable2
 
-            $results = Invoke-DbaDbPiiScan -SqlInstance $script:instance2 -Database $db -Table Customer, TestTable
+            $results = Invoke-DbaDbPiiScan -SqlInstance $script:instance2 -SqlCredential $script:SqlCredential -Database $db -Table Customer, TestTable
             $results.Count | Should -Be 28
             $results.Table | Should -Not -Contain TestTable2
         }
 
         It "Column param" {
-            $results = Invoke-DbaDbPiiScan -SqlInstance $script:instance2 -Database $db -Table Customer -Column UnknownColumn
+            $results = Invoke-DbaDbPiiScan -SqlInstance $script:instance2 -SqlCredential $script:SqlCredential -Database $db -Table Customer -Column UnknownColumn
             $results.Count | Should -Be 2
             $results."PII-Name" | Should -Contain 'IPv4 Address'
             $results."PII-Name" | Should -Contain 'IPv6 Address'
 
-            $results = Invoke-DbaDbPiiScan -SqlInstance $script:instance2 -Database $db -Table Customer -Column UnknownColumn, Firstname
+            $results = Invoke-DbaDbPiiScan -SqlInstance $script:instance2 -SqlCredential $script:SqlCredential -Database $db -Table Customer -Column UnknownColumn, Firstname
             $results.Count | Should -Be 3
             $results."PII-Name" | Should -Contain 'IPv4 Address'
             $results."PII-Name" | Should -Contain 'IPv6 Address'
             $results."PII-Name" | Should -Contain 'First name'
 
-            $results = Invoke-DbaDbPiiScan -SqlInstance $script:instance2 -Database $db -Table Customer, TestTable -Column UnknownColumn, Firstname
+            $results = Invoke-DbaDbPiiScan -SqlInstance $script:instance2 -SqlCredential $script:SqlCredential -Database $db -Table Customer, TestTable -Column UnknownColumn, Firstname
             $results.Count | Should -Be 4
             $results."PII-Name" | Should -Contain 'IPv4 Address'
             $results."PII-Name" | Should -Contain 'IPv6 Address'
@@ -136,29 +136,29 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         }
 
         It "Country param" {
-            $results = Invoke-DbaDbPiiScan -SqlInstance $script:instance2 -Database $db -Table Customer -Country Austria
+            $results = Invoke-DbaDbPiiScan -SqlInstance $script:instance2 -SqlCredential $script:SqlCredential -Database $db -Table Customer -Country Austria
             $results.Count | Should -Be 9
             (($results | Where-Object Country -eq "Austria")."PII-Name" -eq "National ID") | Should -Be $true
 
-            $results = Invoke-DbaDbPiiScan -SqlInstance $script:instance2 -Database $db -Table Customer -Country Austria, Slovakia
+            $results = Invoke-DbaDbPiiScan -SqlInstance $script:instance2 -SqlCredential $script:SqlCredential -Database $db -Table Customer -Country Austria, Slovakia
             $results.Count | Should -Be 10
             (($results | Where-Object Country -eq "Austria")."PII-Name" -eq "National ID") | Should -Be $true
             (($results | Where-Object Country -eq "Slovakia")."PII-Name" -eq "National ID") | Should -Be $true
         }
 
         It "CountryCode param" {
-            $results = Invoke-DbaDbPiiScan -SqlInstance $script:instance2 -Database $db -Table Customer -CountryCode SK
+            $results = Invoke-DbaDbPiiScan -SqlInstance $script:instance2 -SqlCredential $script:SqlCredential -Database $db -Table Customer -CountryCode SK
             $results.Count | Should -Be 9
             (($results | Where-Object CountryCode -eq "SK")."PII-Name" -eq "National ID") | Should -Be $true
 
-            $results = Invoke-DbaDbPiiScan -SqlInstance $script:instance2 -Database $db -Table Customer -CountryCode AT, SK
+            $results = Invoke-DbaDbPiiScan -SqlInstance $script:instance2 -SqlCredential $script:SqlCredential -Database $db -Table Customer -CountryCode AT, SK
             $results.Count | Should -Be 10
             (($results | Where-Object CountryCode -eq "SK")."PII-Name" -eq "National ID") | Should -Be $true
             (($results | Where-Object CountryCode -eq "AT")."PII-Name" -eq "National ID") | Should -Be $true
         }
 
         It "Custom scan definitions" {
-            $results = Invoke-DbaDbPiiScan -SqlInstance $script:instance2 -Database $db -KnownNameFilePath "$PSScriptRoot\ObjectDefinitions\Invoke-DbaDbPiiScan\custom-pii-knownnames.json" -PatternFilePath "$PSScriptRoot\ObjectDefinitions\Invoke-DbaDbPiiScan\custom-pii-patterns.json" -ExcludeDefaultKnownName -ExcludeDefaultPattern
+            $results = Invoke-DbaDbPiiScan -SqlInstance $script:instance2 -SqlCredential $script:SqlCredential -Database $db -KnownNameFilePath "$PSScriptRoot\ObjectDefinitions\Invoke-DbaDbPiiScan\custom-pii-knownnames.json" -PatternFilePath "$PSScriptRoot\ObjectDefinitions\Invoke-DbaDbPiiScan\custom-pii-patterns.json" -ExcludeDefaultKnownName -ExcludeDefaultPattern
             $results.Count | Should -Be 6
             ($results | Where-Object "PII-Name" -eq "First name").Count | Should -Be 3
             ($results | Where-Object "PII-Name" -eq "IPv4 Address").Count | Should -Be 2
@@ -166,18 +166,18 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         }
 
         It "ExcludeColumn and ExcludeTable params" {
-            $results = Invoke-DbaDbPiiScan -SqlInstance $script:instance2 -Database $db -ExcludeTable Customer
+            $results = Invoke-DbaDbPiiScan -SqlInstance $script:instance2 -SqlCredential $script:SqlCredential -Database $db -ExcludeTable Customer
             $results.Count | Should -Be 2
             ($results | Where-Object "PII-Name" -eq "First name").Count | Should -Be 2
 
-            $results = Invoke-DbaDbPiiScan -SqlInstance $script:instance2 -Database $db -ExcludeTable Customer, TestTable
+            $results = Invoke-DbaDbPiiScan -SqlInstance $script:instance2 -SqlCredential $script:SqlCredential -Database $db -ExcludeTable Customer, TestTable
             $results.Table | Should -Be TestTable2
 
-            $results = Invoke-DbaDbPiiScan -SqlInstance $script:instance2 -Database $db -ExcludeColumn UnknownColumn
+            $results = Invoke-DbaDbPiiScan -SqlInstance $script:instance2 -SqlCredential $script:SqlCredential -Database $db -ExcludeColumn UnknownColumn
             $results.Count | Should -Be 27
             $results.Column | Should -Not -Contain UnknownColumn
 
-            $results = Invoke-DbaDbPiiScan -SqlInstance $script:instance2 -Database $db -ExcludeColumn UnknownColumn, FirstName
+            $results = Invoke-DbaDbPiiScan -SqlInstance $script:instance2 -SqlCredential $script:SqlCredential -Database $db -ExcludeColumn UnknownColumn, FirstName
             $results.Count | Should -Be 24
             $results.Column | Should -Not -Contain UnknownColumn
             $results.Column | Should -Not -Contain FirstName
