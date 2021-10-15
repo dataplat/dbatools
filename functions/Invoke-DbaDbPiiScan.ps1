@@ -337,7 +337,7 @@ function Invoke-DbaDbPiiScan {
                                 Write-Message -Level Verbose -Message "Scanning the top $SampleCount values for [$($columnobject.Name)] from [$($tableobject.Schema)].[$($tableobject.Name)]"
 
                                 # Setup the query
-                                $query = "SELECT TOP($SampleCount) [$($columnobject.Name)] FROM [$($tableobject.Schema)].[$($tableobject.Name)]"
+                                $query = "SELECT TOP($SampleCount) TRIM([$($columnobject.Name)]) AS [$($columnobject.Name)] FROM [$($tableobject.Schema)].[$($tableobject.Name)]"
 
                                 # Get the data
                                 try {
