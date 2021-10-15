@@ -336,8 +336,16 @@ function Invoke-DbaDbPiiScan {
 
                                 Write-Message -Level Verbose -Message "Scanning the top $SampleCount values for [$($columnobject.Name)] from [$($tableobject.Schema)].[$($tableobject.Name)]"
 
+                                # Set the text data types
+                                $textDataTypes = 'char', 'varchar', 'text', 'nchar', 'nvarchar', 'ntext', 'xml'
+
                                 # Setup the query
-                                $query = "SELECT TOP($SampleCount) TRIM([$($columnobject.Name)]) AS [$($columnobject.Name)] FROM [$($tableobject.Schema)].[$($tableobject.Name)]"
+                                if($columnobject.DataType.Name -in $textDataTypes) {
+                                    $query = "SELECT TOP($SampleCount) TRIM([$($columnobject.Name)]) AS [$($columnobject.Name)] FROM [$($tableobject.Schema)].[$($tableobject.Name)]"
+                                }
+                                else{
+                                    $query = "SELECT TOP($SampleCount) [$($columnobject.Name)] AS [$($columnobject.Name)] FROM [$($tableobject.Schema)].[$($tableobject.Name)]"
+                                }
 
                                 # Get the data
                                 try {
