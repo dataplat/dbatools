@@ -4,9 +4,9 @@ configuration: "Debug"
 
 build_script:
   - ps: Set-Service wuauserv -StartupType Manual #otherwise, choco command exits with code 1058
-  - ps: choco install dotnet-5.0-sdk | Out-String | Out-Null
+  - ps: choco install windows-sdk-10 | Out-String | Out-Null
   - ps: choco install dotnetcore-sdk | Out-String | Out-Null
-  - ps: Push-Location bin\projects\dbatools; dotnet build ;Pop-Location
+  - ps: .\build-library.ps1
 
 version: 0.9.{build}
 
@@ -17,7 +17,7 @@ cache:
   - C:\Program Files\WindowsPowerShell\Modules\Pester -> appveyor.yml
 
 #shallow_clone: true
-clone_depth: 100
+clone_depth: 1
 
 # Set build info
 environment:

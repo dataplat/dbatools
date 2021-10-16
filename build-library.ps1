@@ -1,12 +1,12 @@
 [CmdletBinding()]
 param (
-    [string]$ProjectPath = (Resolve-Path -Path (Join-Path -Path $PSModuleRoot -ChildPath 'bin\projects\dbatools\dbatools.sln')),
+    [string]$ProjectPath = (Resolve-Path -Path (Join-Path -Path $PSScriptRoot -ChildPath 'src\dbatools\dbatools.csproj')),
     [ValidateSet('ps3', 'ps4', 'Release', 'Debug')]
     [string]$MsbuildConfiguration = "Release",
     [Parameter(HelpMessage = 'Target to run instead of build')]
     [string]$MsbuildTarget = 'Build',
-    [string]$DllRoot = $script:DllRoot,
-    [string]$LibraryBase = (Join-Path $PSModuleRoot "bin")
+    [string]$DllRoot = (Resolve-Path -Path (Join-Path -Path $PSScriptRoot -ChildPath 'src\bin')),
+    [string]$LibraryBase = (Join-Path -Path $PSScriptRoot -ChildPath 'src\bin')
 )
 
 if (-not $PSBoundParameters.ContainsKey('MsbuildConfiguration')) {
