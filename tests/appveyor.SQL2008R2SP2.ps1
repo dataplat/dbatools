@@ -46,7 +46,7 @@ $null = Install-ADAuthenticationLibraryforSQLServer
 
 $indent = '...'
 Write-Host -Object "$indent Running $PSCommandpath" -ForegroundColor DarkGreen
-Import-Module C:\github\dbatools\dbatools.psm1 -Force
+Import-Module C:\github\dbatools\src\dbatools.psm1 -Force
 
 # This script spins up the 2008R2SP2 instance and the relative setup
 
@@ -91,4 +91,4 @@ foreach ($file in (Get-ChildItem C:\github\appveyor-lab\sql2008-startup\*.sql -R
     Invoke-DbaQuery -SqlInstance $sqlinstance -InputFile $file
 }
 
-Import-Module C:\github\dbatools\dbatools.psm1 -Force
+Import-Module C:\github\dbatools\src\dbatools.psm1 -Force

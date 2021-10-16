@@ -1,15 +1,14 @@
-cd C:\github\dbatools\bin\smo
+cd C:\github\dbatools\src\bin\smo
 $phase1 = @()
 $leftover = @()
 dir *.dll | %{
 
- $file = $_
- try
- {
- Add-Type -Path $_.FullName -ErrorAction Stop
- $phase1 += $_.FullName
- }
- catch { $leftover += $file.FullName }
+$file = $_
+try {
+Add-Type -Path $_.FullName -ErrorAction Stop
+$phase1 += $_.FullName
+}
+catch { $leftover += $file.FullName }
 }
 
 $dep = @()
@@ -21,7 +20,7 @@ $dep | Select-Object -unique
 
 
 
-cd C:\github\dbatools\bin\smo
+cd C:\github\dbatools\src\bin\smo
 $dir = "C:\Program Files (x86)\Microsoft SQL Server Management Studio 18\Common7\IDE"
 dir *.dll | %{
  cp "$dir\$($_.Name)" . -EA ignore
@@ -29,7 +28,7 @@ dir *.dll | %{
 
 $names
 
-cd C:\github\dbatools\bin\smo
+cd C:\github\dbatools\src\bin\smo
 $newnames = @()
 foreach ($name in $names) {
     if ((Get-ChildItem "$($name).dll" -EA Ignore)) {
@@ -80,7 +79,7 @@ $names = @(
 
 foreach ($name in $names) {
     try {
-        $null = Add-Type -Path (Resolve-Path -Path "C:\github\dbatools\bin\smo\$name.dll") -ErrorAction Stop
+        $null = Add-Type -Path (Resolve-Path -Path "C:\github\dbatools\src\bin\smo\$name.dll") -ErrorAction Stop
     } catch {
         write-warning $name
     }

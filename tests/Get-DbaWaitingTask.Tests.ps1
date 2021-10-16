@@ -34,7 +34,8 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     $sql = "SELECT '$flag'; WAITFOR DELAY '$time'"
     $instance = $script:instance2
 
-    $modulePath = 'C:\Github\dbatools\dbatools.psm1'
+    $moduleRoot = [IO.Path]::Combine((Split-Path $PSScriptRoot -Parent),'src')
+    $modulePath = [IO.Path]::Combine($moduleRoot,'dbatools.psm1')
     $job = 'YouHaveBeenFoundWaiting'
 
     Start-Job -Name $job -ScriptBlock {
