@@ -1,5 +1,9 @@
 Describe "Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
+        $moduleRoot = [IO.Path]::Combine((Split-Path $PSScriptRoot -Parent), 'src')
+        $psd1Path = [IO.Path]::Combine($moduleRoot,'dbatools.psd1')
+        Import-Module $psd1Path -Force
+
         $password = ConvertTo-SecureString "dbatools.IO" -AsPlainText -Force
         $cred = New-Object -TypeName System.Management.Automation.PSCredential -ArgumentList "sqladmin", $password
 
@@ -19,8 +23,8 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
         $PSDefaultParameterValues["*:WarningAction"] = "SilentlyContinue"
         $global:ProgressPreference = "SilentlyContinue"
 
-        $psm1Path = [IO.Path]::Combine((Split-Path $PSScriptRoot -Parent),'src','dbatools.psm1')
-        Import-Module $psm1Path -Force
+        $getXPlatVar = [IO.Path]::Combine($moduleRoot,'private','functions','Get-XPlatVariable.ps1')
+        . $getXPlatVar
         $null = Get-XPlatVariable | Where-Object { $PSItem -notmatch "Copy-", "Migration" } | Sort-Object
     }
 
