@@ -19,7 +19,8 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
         $PSDefaultParameterValues["*:WarningAction"] = "SilentlyContinue"
         $global:ProgressPreference = "SilentlyContinue"
 
-        Import-Module ./dbatools.psm1 -Force
+        $psm1Path = [IO.Path]::Combine('..','src','dbatools.psm1')
+        Import-Module $psm1Path -Force
         $null = Get-XPlatVariable | Where-Object { $PSItem -notmatch "Copy-", "Migration" } | Sort-Object
     }
 

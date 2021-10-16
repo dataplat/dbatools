@@ -4,11 +4,11 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
+        [array]$params = ([Management.Automation.CommandMetaData]$ExecutionContext.SessionState.InvokeCommand.GetCommand($CommandName, 'Function')).Parameters.Keys
         [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'IncludeDependencies', 'BatchSeparator', 'Path', 'FilePath', 'NoPrefix', 'ScriptingOptionsObject', 'NoClobber', 'PassThru', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
+
         It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
+            Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params | Should -BeNullOrEmpty
         }
     }
 }
@@ -69,7 +69,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 
     Context "works as expected with filename" {
         $null = Export-DbaSysDbUserObject -SqlInstance $script:instance2 -FilePath "C:\Temp\objects_$random.sql"
-        $file = get-content "C:\Temp\objects_$random.sql" | Out-String
+        $file = Get-Content "C:\Temp\objects_$random.sql" | Out-String
         It "should export text matching table name '$tableName'" {
             $file -match $tableName | Should be $true
         }

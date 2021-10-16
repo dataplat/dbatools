@@ -4,11 +4,11 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 
 Describe "$CommandName Unit Tests" -Tags "UnitTests" {
     Context "Validate parameters" {
+        [array]$params = ([Management.Automation.CommandMetaData]$ExecutionContext.SessionState.InvokeCommand.GetCommand($CommandName, 'Function')).Parameters.Keys
+        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'InputObject', 'Path', 'FilePath', 'CredentialPersistenceType', 'EnableException', 'Group', 'ExcludeGroup', 'Overwrite'
+
         It "Should only contain our specific parameters" {
-            [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-            [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'InputObject', 'Path', 'FilePath', 'CredentialPersistenceType', 'EnableException', 'Group', 'ExcludeGroup', 'Overwrite'
-            $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should -Be 0
+            Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params | Should -BeNullOrEmpty
         }
     }
 }
@@ -57,7 +57,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     It "should create a specific xml file when using Path" {
         $results2 = $newGroup2 | Export-DbaRegServer -Path C:\temp
         $results2 -is [System.IO.FileInfo] | Should -Be $true
-        $results2.FullName | Should -match 'C\:\\temp'
+        $results2.FullName | Should -Match 'C\:\\temp'
         Get-Content -Path $results2 -Raw | Should -Match $group2
     }
 

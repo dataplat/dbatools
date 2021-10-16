@@ -4,12 +4,11 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
-        It "Should only contain our specific parameters" {
-            [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm') }
-            [object[]]$knownParameters = 'AutoCreateTable', 'BatchSize', 'bulkCopyTimeOut', 'CheckConstraints', 'Database', 'Destination', 'DestinationDatabase', 'DestinationSqlCredential', 'DestinationTable', 'EnableException', 'FireTriggers', 'InputObject', 'KeepIdentity', 'KeepNulls', 'NoTableLock', 'NotifyAfter', 'Query', 'SqlCredential', 'SqlInstance', 'Truncate', 'View'
-            $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
+        [array]$params = ([Management.Automation.CommandMetaData]$ExecutionContext.SessionState.InvokeCommand.GetCommand($CommandName, 'Function')).Parameters.Keys
+        [object[]]$knownParameters = 'AutoCreateTable', 'BatchSize', 'bulkCopyTimeOut', 'CheckConstraints', 'Database', 'Destination', 'DestinationDatabase', 'DestinationSqlCredential', 'DestinationTable', 'EnableException', 'FireTriggers', 'InputObject', 'KeepIdentity', 'KeepNulls', 'NoTableLock', 'NotifyAfter', 'Query', 'SqlCredential', 'SqlInstance', 'Truncate', 'View'
 
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should -Be 0
+        It "Should only contain our specific parameters" {
+            Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params | Should -BeNullOrEmpty
         }
     }
 }
@@ -94,7 +93,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     It "supports piping more than one view" {
         $results = Get-DbaDbView -SqlInstance $script:instance1 -Database tempdb -View dbatoolsci_view_example2, dbatoolsci_view_example | Copy-DbaDbViewData -DestinationTable dbatoolsci_example3
         $results.Count | Should -Be 2
-        $results.RowsCopied | Measure-Object -Sum | Select -Expand Sum | Should -Be 20
+        $results.RowsCopied | Measure-Object -Sum | select -Expand Sum | Should -Be 20
     }
 
     It "opens and closes connections properly" {
@@ -116,13 +115,13 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     It "Should warn and return nothing if Source and Destination are same" {
         $result = Copy-DbaDbViewData -SqlInstance $script:instance1 -Database tempdb -View dbatoolsci_view_example -Truncate -WarningVariable tablewarning
         $result | Should -Be $null
-        $tablewarning | Should -match "Cannot copy dbatoolsci_view_example into itself"
+        $tablewarning | Should -Match "Cannot copy dbatoolsci_view_example into itself"
     }
 
     It "Should warn if the destination table doesn't exist" {
         $result = Copy-DbaDbViewData -SqlInstance $script:instance1 -Database tempdb -View tempdb.dbo.dbatoolsci_view_example -DestinationTable dbatoolsci_view_does_not_exist -WarningVariable tablewarning
         $result | Should -Be $null
-        $tablewarning | Should -match Auto
+        $tablewarning | Should -Match Auto
     }
 
     It "automatically creates the table" {
@@ -133,7 +132,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     It "Should warn if the source database doesn't exist" {
         $result = Copy-DbaDbViewData -SqlInstance $script:instance2 -Database tempdb_invalid -View dbatoolsci_view_example -DestinationTable dbatoolsci_doesntexist -WarningVariable tablewarning
         $result | Should -Be $null
-        $tablewarning | Should -match "Failure"
+        $tablewarning | Should -Match "Failure"
     }
 
     It "Copy data using a query that relies on the default source database" {

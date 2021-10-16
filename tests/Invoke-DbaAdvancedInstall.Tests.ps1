@@ -26,7 +26,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
         $null = New-Item -ItemType File -Path TestDrive:\dummy.exe -Force
     }
     Context "Validate parameters" {
-        [object[]]$params = (Get-ChildItem function:\$CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
+        [array]$params = ([Management.Automation.CommandMetaData]$ExecutionContext.SessionState.InvokeCommand.GetCommand($CommandName, 'Function')).Parameters.Keys
         [object[]]$knownParameters = @(
             'ComputerName',
             'Version',
@@ -44,9 +44,9 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
             'EnableException',
             'ArgumentList'
         )
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
+
         It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params).Count ) | Should Be 0
+            Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params | Should -BeNullOrEmpty
         }
     }
     Context "Validate installs of each version" {

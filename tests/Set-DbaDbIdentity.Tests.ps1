@@ -5,7 +5,7 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
         Context "Validate parameters" {
-            [object[]]$params = (Get-Command -Name $CommandName).Parameters.Keys
+            [array]$params = ([Management.Automation.CommandMetaData]$ExecutionContext.SessionState.InvokeCommand.GetCommand($CommandName, 'Function')).Parameters.Keys
             $knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'Table', 'ReSeedValue', 'EnableException'
 
             It "Should contain our specific parameters" {

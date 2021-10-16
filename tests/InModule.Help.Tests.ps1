@@ -13,6 +13,7 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
     To test any module from any path, use https://github.com/juneb/PesterTDD/Module.Help.Tests.ps1
 #>
 # quit failing appveyor
+$ModuleRoot = [IO.Path]::Combine('..','src')
 if ($env:appveyor) {
     $names = @(
         'Microsoft.SqlServer.XEvent.Linq',
@@ -25,15 +26,15 @@ if ($env:appveyor) {
     )
 
     foreach ($name in $names) {
-        Add-Type -Path "C:\github\dbatools\bin\smo\$name.dll" -ErrorAction SilentlyContinue
+        Add-Type -Path "$ModuleRoot\bin\smo\$name.dll" -ErrorAction SilentlyContinue
     }
 }
 
 if ($SkipHelpTest) { return }
 . "$PSScriptRoot\InModule.Help.Exceptions.ps1"
 
-$includedNames = (Get-ChildItem "$PSScriptRoot\..\functions" | Where-Object Name -like "*.ps1" ).BaseName
-$commands = Get-Command -Module (Get-Module dbatools) -CommandType Cmdlet, Function, Workflow | Where-Object Name -in $includedNames
+$includedNames = (Get-ChildItem "$ModuleRoot\public" | Where-Object Name -like "*.ps1" ).BaseName
+$commands = Get-Command -Module (Get-Module dbatools) -CommandType Cmdlet, Function | Where-Object Name -in $includedNames
 
 ## When testing help, remember that help is cached at the beginning of each session.
 ## To test, restart session.

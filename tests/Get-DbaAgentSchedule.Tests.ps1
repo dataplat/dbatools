@@ -4,11 +4,11 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
+        [array]$params = ([Management.Automation.CommandMetaData]$ExecutionContext.SessionState.InvokeCommand.GetCommand($CommandName, 'Function')).Parameters.Keys
+        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Schedule', 'ScheduleUid', 'Id', 'EnableException'
+
         It "Should only contain our specific parameters" {
-            [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-            [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Schedule', 'ScheduleUid', 'Id', 'EnableException'
-            $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should -Be 0
+            Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params | Should -BeNullOrEmpty
         }
     }
 }
@@ -147,16 +147,16 @@ Describe "$commandname Integration Tests" -Tags "UnitTests" {
         It "verify schedule components" {
             $results = Get-DbaAgentSchedule -SqlInstance $script:instance2 -Schedule dbatoolsci_MonthlyTest
 
-            $results.count                  | Should -Be 1
-            $results                        | Should -Not -BeNullOrEmpty
-            $results.ScheduleName           | Should -Be "dbatoolsci_MonthlyTest"
-            $results.FrequencyInterval      | Should -Be 10
-            $results.IsEnabled              | Should -Be $true
-            $results.SqlInstance            | Should -Not -BeNullOrEmpty
+            $results.count | Should -Be 1
+            $results | Should -Not -BeNullOrEmpty
+            $results.ScheduleName | Should -Be "dbatoolsci_MonthlyTest"
+            $results.FrequencyInterval | Should -Be 10
+            $results.IsEnabled | Should -Be $true
+            $results.SqlInstance | Should -Not -BeNullOrEmpty
             $datetimeFormat = (Get-Culture).DateTimeFormat
             $startDate = Get-Date $results.ActiveStartDate -Format $datetimeFormat.ShortDatePattern
             $startTime = Get-Date '00:00:00' -Format $datetimeFormat.LongTimePattern
-            $results.Description            | Should -Be "Occurs every month on day 10 of that month at $startTime. Schedule will be used starting on $startDate."
+            $results.Description | Should -Be "Occurs every month on day 10 of that month at $startTime. Schedule will be used starting on $startDate."
         }
     }
 
@@ -179,8 +179,8 @@ Describe "$commandname Integration Tests" -Tags "UnitTests" {
 
             $result = Get-DbaAgentSchedule -SqlInstance $script:instance2 -Schedule Issue_6636_Once_Copy
 
-            $result.ScheduleName            | Should -Be "Issue_6636_Once_Copy"
-            $result.FrequencySubdayTypes    | Should -Be "Once"
+            $result.ScheduleName | Should -Be "Issue_6636_Once_Copy"
+            $result.FrequencySubdayTypes | Should -Be "Once"
         }
 
         It "Ensure frequency subday type of 'Hour' is usable" {
@@ -201,8 +201,8 @@ Describe "$commandname Integration Tests" -Tags "UnitTests" {
 
             $result = Get-DbaAgentSchedule -SqlInstance $script:instance2 -Schedule Issue_6636_Hour_Copy
 
-            $result.ScheduleName            | Should -Be "Issue_6636_Hour_Copy"
-            $result.FrequencySubdayTypes    | Should -Be "Hour"
+            $result.ScheduleName | Should -Be "Issue_6636_Hour_Copy"
+            $result.FrequencySubdayTypes | Should -Be "Hour"
         }
 
         It "Ensure frequency subday type of 'Minute' is usable" {
@@ -223,8 +223,8 @@ Describe "$commandname Integration Tests" -Tags "UnitTests" {
 
             $result = Get-DbaAgentSchedule -SqlInstance $script:instance2 -Schedule Issue_6636_Minute_Copy
 
-            $result.ScheduleName            | Should -Be "Issue_6636_Minute_Copy"
-            $result.FrequencySubdayTypes    | Should -Be "Minute"
+            $result.ScheduleName | Should -Be "Issue_6636_Minute_Copy"
+            $result.FrequencySubdayTypes | Should -Be "Minute"
         }
 
         It "Ensure frequency subday type of 'Second' is usable" {
@@ -245,8 +245,8 @@ Describe "$commandname Integration Tests" -Tags "UnitTests" {
 
             $result = Get-DbaAgentSchedule -SqlInstance $script:instance2 -Schedule Issue_6636_Second_Copy
 
-            $result.ScheduleName            | Should -Be "Issue_6636_Second_Copy"
-            $result.FrequencySubdayTypes    | Should -Be "Second"
+            $result.ScheduleName | Should -Be "Issue_6636_Second_Copy"
+            $result.FrequencySubdayTypes | Should -Be "Second"
         }
 
         It "Ensure frequency type of 'OneTime' is usable" {
@@ -263,8 +263,8 @@ Describe "$commandname Integration Tests" -Tags "UnitTests" {
 
             $result = Get-DbaAgentSchedule -SqlInstance $script:instance2 -Schedule Issue_6636_OneTime_Copy
 
-            $result.ScheduleName    | Should -Be "Issue_6636_OneTime_Copy"
-            $result.FrequencyTypes  | Should -Be "OneTime"
+            $result.ScheduleName | Should -Be "Issue_6636_OneTime_Copy"
+            $result.FrequencyTypes | Should -Be "OneTime"
         }
 
         It "Ensure frequency type of 'AutoStart' is usable" {
@@ -281,8 +281,8 @@ Describe "$commandname Integration Tests" -Tags "UnitTests" {
 
             $result = Get-DbaAgentSchedule -SqlInstance $script:instance2 -Schedule Issue_6636_AutoStart_Copy
 
-            $result.ScheduleName    | Should -Be "Issue_6636_AutoStart_Copy"
-            $result.FrequencyTypes  | Should -Be "AutoStart"
+            $result.ScheduleName | Should -Be "Issue_6636_AutoStart_Copy"
+            $result.FrequencyTypes | Should -Be "AutoStart"
         }
 
         It "Ensure frequency type of 'OnIdle' is usable" {
@@ -298,8 +298,8 @@ Describe "$commandname Integration Tests" -Tags "UnitTests" {
 
             $result = Get-DbaAgentSchedule -SqlInstance $script:instance2 -Schedule Issue_6636_OnIdle_Copy
 
-            $result.ScheduleName    | Should -Be "Issue_6636_OnIdle_Copy"
-            $result.FrequencyTypes  | Should -Be "OnIdle"
+            $result.ScheduleName | Should -Be "Issue_6636_OnIdle_Copy"
+            $result.FrequencyTypes | Should -Be "OnIdle"
         }
     }
 }

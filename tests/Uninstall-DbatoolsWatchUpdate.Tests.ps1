@@ -4,7 +4,7 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
+        [array]$params = ([Management.Automation.CommandMetaData]$ExecutionContext.SessionState.InvokeCommand.GetCommand($CommandName, 'Function')).Parameters.Keys
         [object[]]$knownParameters = $null
         $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
         It -Skip "Should only contain our specific parameters" {
@@ -12,8 +12,3 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
         }
     }
 }
-<#
-    Integration test should appear below and are custom to the command you are writing.
-    Read https://github.com/sqlcollaborative/dbatools/blob/development/contributing.md#tests
-    for more guidence.
-#>

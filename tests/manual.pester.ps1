@@ -32,9 +32,9 @@
         .\manual.pester.ps1 -Path Find-DbaOrphanedFile.Tests.ps1 -TestIntegration -Coverage -DependencyCoverage -ScriptAnalyzer
 
         The most complete number of checks:
-          - Runs both unittests and integrationtests
-          - Gathers and shows code coverage measurement for Find-DbaOrphanedFile and all its dependencies
-          - Checks Find-DbaOrphanedFile with Invoke-ScriptAnalyzer
+        - Runs both unittests and integrationtests
+        - Gathers and shows code coverage measurement for Find-DbaOrphanedFile and all its dependencies
+        - Checks Find-DbaOrphanedFile with Invoke-ScriptAnalyzer
 
     .EXAMPLE
         .\manual.pester.ps1 -Path Find-DbaOrphanedFile.Tests.ps1
@@ -100,7 +100,7 @@ param (
 
 $invokeFormatterVersion = (Get-Command Invoke-Formatter -ErrorAction SilentlyContinue).Version
 $HasScriptAnalyzer = $null -ne $invokeFormatterVersion
-$MinimumPesterVersion = [Version] '3.4.5.0' # Because this is when -Show was introduced
+$MinimumPesterVersion = [Version] '4.4.2' # Because this is when -Show was introduced
 $PesterVersion = (Get-Command Invoke-Pester -ErrorAction SilentlyContinue).Version
 $HasPester = $null -ne $PesterVersion
 $ScriptAnalyzerCorrectVersion = '1.18.2'
@@ -126,7 +126,7 @@ if (!($HasPester)) {
     Write-Warning "     or go to https://github.com/pester/Pester"
 }
 if ($PesterVersion -lt $MinimumPesterVersion) {
-    Write-Warning "Please update Pester to at least 3.4.5"
+    Write-Warning "Please update Pester to at least 4.4.2"
     Write-Warning "     Install-Module -Name Pester -Force -SkipPublisherCheck"
     Write-Warning "     or go to https://github.com/pester/Pester"
 }
@@ -143,11 +143,11 @@ if (-not(Test-Path "$ModuleBase\.git" -Type Container)) {
 }
 
 #removes previously imported dbatools, if any
-Remove-Module dbatools -ErrorAction Ignore
+Remove-Module dbatools -ErrorAction Ignore -Force
 #imports the module making sure DLL is loaded ok
-Import-Module "$ModuleBase\dbatools.psd1" -DisableNameChecking
+Import-Module "$ModuleBase\src\dbatools.psd1" -DisableNameChecking
 #imports the psm1 to be able to use internal functions in tests
-Import-Module "$ModuleBase\dbatools.psm1" -DisableNameChecking
+Import-Module "$ModuleBase\src\dbatools.psm1" -DisableNameChecking
 
 $ScriptAnalyzerRulesExclude = @('PSUseOutputTypeCorrectly', 'PSAvoidUsingPlainTextForPassword', 'PSUseBOMForUnicodeEncodedFile')
 

@@ -8,8 +8,8 @@ Describe "$ModuleName Aliases" -Tag Aliases, Build {
     ## Get the Aliases that should -Be set from the psm1 file
 
     $psm1 = Get-Content $ModulePath\$ModuleName.psm1 -Verbose
-    $Matches = [regex]::Matches($psm1, "AliasName`"\s=\s`"(\w*-\w*)`"")
-    $Aliases = $Matches.ForEach{$_.Groups[1].Value}
+    $regMatches = [regex]::Matches($psm1, "AliasName`"\s=\s`"(\w*-\w*)`"")
+    $Aliases = $regMatches.ForEach{$_.Groups[1].Value}
 
     foreach ($Alias in $Aliases) {
         Context "Testing $Alias Alias" {

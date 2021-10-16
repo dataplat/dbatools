@@ -4,11 +4,11 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
+        [array]$params = ([Management.Automation.CommandMetaData]$ExecutionContext.SessionState.InvokeCommand.GetCommand($CommandName, 'Function')).Parameters.Keys
         [object[]]$knownParameters = 'Source', 'SourceSqlCredential', 'Destination', 'DestinationSqlCredential', 'ResourcePool', 'ExcludeResourcePool', 'Force', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
+
         It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+            Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params | Should -BeNullOrEmpty
         }
     }
 }
@@ -16,30 +16,16 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
         $sql = "CREATE RESOURCE POOL dbatoolsci_prod
-                WITH
-                (
-                     MAX_CPU_PERCENT = 100,
-                     MIN_CPU_PERCENT = 50
-                )"
+                WITH ( MAX_CPU_PERCENT = 100, MIN_CPU_PERCENT = 50 )"
         Invoke-DbaQuery -WarningAction SilentlyContinue -SqlInstance $script:instance2 -Query $sql
         $sql = "CREATE WORKLOAD GROUP dbatoolsci_prodprocessing
-                WITH
-                (
-                     IMPORTANCE = MEDIUM
-                ) USING dbatoolsci_prod"
+                WITH ( IMPORTANCE = MEDIUM ) USING dbatoolsci_prod"
         Invoke-DbaQuery -WarningAction SilentlyContinue -SqlInstance $script:instance2 -Query $sql
         $sql = "CREATE RESOURCE POOL dbatoolsci_offhoursprocessing
-                WITH
-                (
-                     MAX_CPU_PERCENT = 50,
-                     MIN_CPU_PERCENT = 0
-                )"
+                WITH ( MAX_CPU_PERCENT = 50, MIN_CPU_PERCENT = 0 )"
         Invoke-DbaQuery -WarningAction SilentlyContinue -SqlInstance $script:instance2 -Query $sql
         $sql = "CREATE WORKLOAD GROUP dbatoolsci_goffhoursprocessing
-                WITH
-                (
-                     IMPORTANCE = LOW
-                )
+                WITH ( IMPORTANCE = LOW )
                 USING dbatoolsci_offhoursprocessing"
         Invoke-DbaQuery -WarningAction SilentlyContinue -SqlInstance $script:instance2 -Query $sql
         $sql = "ALTER RESOURCE GOVERNOR RECONFIGURE"
@@ -49,14 +35,14 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
                 WITH SCHEMABINDING
                 AS
                 BEGIN
-                     RETURN N'dbatoolsci_goffhoursprocessing'
+                    RETURN N'dbatoolsci_goffhoursprocessing'
                 END"
         Invoke-DbaQuery -WarningAction SilentlyContinue -SqlInstance $script:instance2 -Query $sql
         $sql = "ALTER RESOURCE GOVERNOR with (CLASSIFIER_FUNCTION = dbo.dbatoolsci_fnRG); ALTER RESOURCE GOVERNOR RECONFIGURE;"
         Invoke-DbaQuery -WarningAction SilentlyContinue -SqlInstance $script:instance2 -Query $sql
     }
     AfterAll {
-        Get-DbaProcess -SqlInstance $script:instance2, $script:instance3 |  Stop-DbaProcess -WarningAction SilentlyContinue
+        Get-DbaProcess -SqlInstance $script:instance2, $script:instance3 | Stop-DbaProcess -WarningAction SilentlyContinue
         Invoke-DbaQuery -WarningAction SilentlyContinue -SqlInstance $script:instance2, $script:instance3 -Query "ALTER RESOURCE GOVERNOR WITH (CLASSIFIER_FUNCTION = NULL); ALTER RESOURCE GOVERNOR RECONFIGURE"
         Invoke-DbaQuery -WarningAction SilentlyContinue -SqlInstance $script:instance2, $script:instance3 -Query "DROP FUNCTION [dbo].[dbatoolsci_fnRG];ALTER RESOURCE GOVERNOR RECONFIGURE"
         Invoke-DbaQuery -WarningAction SilentlyContinue -SqlInstance $script:instance2, $script:instance3 -Query "DROP WORKLOAD GROUP [dbatoolsci_prodprocessing];ALTER RESOURCE GOVERNOR RECONFIGURE"
