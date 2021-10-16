@@ -107,7 +107,7 @@ $scriptBlock = {
     $assemblies = [System.AppDomain]::CurrentDomain.GetAssemblies()
 
     foreach ($name in $shared) {
-        $assemblyPath = "$script:PSModuleRoot" + $separator + "bin\libraries" + $separator + "$name.dll"
+        $assemblyPath = [IO.Path]::Combine($PSModuleRoot,'bin',"$name.dll")
 
         $null = try {
             Import-Module $assemblyPath
