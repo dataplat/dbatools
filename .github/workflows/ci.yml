@@ -14,4 +14,4 @@ jobs:
     - uses: actions/checkout@v1
     - name: Perform the import
       shell: pwsh
-      run: Import-Module ./dbatools.psd1 -ErrorAction Stop; (Get-DbaManagementObject).LoadTemplate -ne $null
+      run: Import-Module ./src/dbatools.psd1 -ErrorAction Stop; (Get-DbaManagementObject).LoadTemplate -ne $null
