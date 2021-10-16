@@ -36,7 +36,7 @@ param (
     $PSVersion = $PSVersionTable.PSVersion.Major,
     $TestFile = "TestResultsPS$PSVersion.xml",
     $ProjectRoot = $env:APPVEYOR_BUILD_FOLDER,
-    $ModuleBase = $ProjectRoot,
+    $ModuleBase = [IO.Path]::Combine($ProjectRoot, 'src'),
     [switch]$IncludeCoverage
 )
 
@@ -50,7 +50,7 @@ Import-Module "$ModuleBase\dbatools.psm1" -Force
 #imports the module making sure DLL is loaded ok
 Import-Module "$ModuleBase\dbatools.psd1"
 
-Update-TypeData -AppendPath "$ModuleBase\xml\dbatools.types.ps1xml" -ErrorAction SilentlyContinue # ( this should already be loaded by dbatools.psd1 )
+Update-TypeData -AppendPath "$ModuleBase\dbatools.types.ps1xml" -ErrorAction SilentlyContinue # ( this should already be loaded by dbatools.psd1 )
 Start-Sleep 5
 
 function Split-ArrayInParts($array, [int]$parts) {
@@ -93,7 +93,7 @@ function Get-CoverageIndications($Path, $ModuleBase) {
         }
     }
     $testpaths = @()
-    $allfiles = Get-ChildItem -File -Path "$ModuleBase\internal\functions", "$ModuleBase\functions" -Filter '*.ps1'
+    $allfiles = Get-ChildItem -File -Path "$ModuleBase\private\functions", "$ModuleBase\public" -Filter '*.ps1'
     foreach ($f in $funcs) {
         # exclude always used functions ?!
         if ($f -in ('Connect-DbaInstance', 'Select-DefaultView', 'Stop-Function', 'Write-Message')) { continue }
@@ -112,7 +112,7 @@ function Get-CodecovReport($Results, $ModuleBase) {
     #needs correct casing to do the replace
     $ModuleBase = (Resolve-Path $ModuleBase).Path
     # things we wanna a report for (and later backfill if not tested)
-    $allfiles = Get-ChildItem -File -Path "$ModuleBase\internal\functions", "$ModuleBase\functions" -Filter '*.ps1'
+    $allfiles = Get-ChildItem -File -Path "$ModuleBase\private\functions", "$ModuleBase\public" -Filter '*.ps1'
 
     $missed = $results.CodeCoverage | Select-Object -ExpandProperty MissedCommands | Sort-Object -Property File, Line -Unique
     $hits = $results.CodeCoverage | Select-Object -ExpandProperty HitCommands | Sort-Object -Property File, Line -Unique

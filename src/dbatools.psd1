@@ -56,11 +56,11 @@
     ScriptsToProcess       = @()
 
     # Type files (xml) to be loaded when importing this module
-    TypesToProcess         = @("xml\dbatools.Types.ps1xml")
+    TypesToProcess         = @("dbatools.Types.ps1xml")
 
     # Format files (xml) to be loaded when importing this module
     # "xml\dbatools.Format.ps1xml"
-    FormatsToProcess       = @("xml\dbatools.Format.ps1xml")
+    FormatsToProcess       = @("dbatools.Format.ps1xml")
 
     # Modules to import as nested modules of the module specified in ModuleToProcess
     NestedModules          = @()
@@ -753,7 +753,7 @@
             # The primary categorization of this module (from the TechNet Gallery tech tree).
             Category     = "Databases"
 
-            # Keyword tags to help users find this module via navigations and search.
+            # Tags applied to this module. These help with module discovery in online galleries.
             Tags         = @('sqlserver', 'migrations', 'sql', 'dba', 'databases', 'mac', 'linux', 'core')
 
             # The web address of an icon which can be used in galleries to represent this module
@@ -762,7 +762,7 @@
             # The web address of this module's project or support homepage.
             ProjectUri   = "https://dbatools.io"
 
-            # The web address of this module's license. Points to a page that's embeddable and linkable.
+            # A URL to the license for this module.
             LicenseUri   = "https://opensource.org/licenses/MIT"
 
             # Release notes for this particular version of the module

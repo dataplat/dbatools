@@ -211,14 +211,12 @@ Theoretically, there's a minor cuncurrency collision risk with that, but since t
 a little import time loss if that happens ...
 #>
 if ((-not ('Sqlcollaborative.Dbatools.dbaSystem.DebugHost' -as [type])) -or (-not [Sqlcollaborative.Dbatools.dbaSystem.SystemHost]::ModuleBase)) {
-    . $script:psScriptRoot\internal\scripts\libraryimport.ps1
+    . $script:PSScriptRoot\private\scripts\libraryimport.ps1
     Write-ImportTime -Text "Starting import SMO libraries"
 }
 
 <#
-
     Do the rest of the loading
-
 #>
 
 # This technique helps a little bit
@@ -226,43 +224,48 @@ if ((-not ('Sqlcollaborative.Dbatools.dbaSystem.DebugHost' -as [type])) -or (-no
 
 # Load our own custom library
 # Should always come before function imports
-. $psScriptRoot\bin\library.ps1
-. $psScriptRoot\bin\typealiases.ps1
+<# loading dbatools library - priority 1 #>
+$dll =
+if ($PSVersionTable.PSVersion.Major -ge 6) {
+    Join-Path $PSModuleRoot "bin\netcoreapp3.1\dbatools.dll"
+} else {
+    Join-Path $PSModuleRoot "bin\net462\dbatools.dll"
+}
+if (Test-Path -Path $dll) {
+    $null = Import-Module "$dll"
+} else {
+    throw "Library not found, terminating"
+}
+. $PSScriptRoot\bin\typealiases.ps1
+
 Write-ImportTime -Text "Loading dbatools library"
 
 # Tell the library where the module is based, just in case
 [Sqlcollaborative.Dbatools.dbaSystem.SystemHost]::ModuleBase = $script:PSModuleRoot
 
-if ($script:multiFileImport -or -not (Test-Path -Path "$psScriptRoot\allcommands.ps1")) {
+if ($script:multiFileImport -or -not (Test-Path -Path "$PSScriptRoot\allcommands.ps1")) {
     # All internal functions privately available within the toolset
-    foreach ($file in (Get-ChildItem -Path "$psScriptRoot\internal\functions\" -Recurse -Filter *.ps1)) {
+    foreach ($file in (Get-ChildItem -Path "$PSScriptRoot\private\functions\" -Recurse -Filter *.ps1)) {
         . $file.FullName
     }
     Write-ImportTime -Text "Loading Internal Commands"
 
-    #    . $psScriptRoot\internal\scripts\cmdlets.ps1
-
-    Write-ImportTime -Text "Registering cmdlets"
-
     # All exported functions
-    foreach ($file in (Get-ChildItem -Path "$script:PSModuleRoot\functions\" -Recurse -Filter *.ps1)) {
+    foreach ($file in (Get-ChildItem -Path "$script:PSModuleRoot\public\" -Recurse -Filter *.ps1)) {
         . $file.FullName
     }
     Write-ImportTime -Text "Loading Public Commands"
 
 } else {
-    #    . $psScriptRoot\internal\scripts\cmdlets.ps1
     Write-Verbose -Message "Loading allcommands.ps1 to speed up import times"
-    . $psScriptRoot\allcommands.ps1
+    . $PSScriptRoot\allcommands.ps1
     #. (Resolve-Path -Path "$script:PSModuleRoot\allcommands.ps1")
     Write-ImportTime -Text "Loading Public and Private Commands"
-
-    Write-ImportTime -Text "Registering cmdlets"
 }
 
 # Load configuration system
 # Should always go after library and path setting
-. $psScriptRoot\internal\configurations\configuration.ps1
+. $PSScriptRoot\private\configurations\configuration.ps1
 Write-ImportTime -Text "Configuration System"
 
 # Resolving the path was causing trouble when it didn't exist yet
@@ -275,33 +278,33 @@ if (-not ([Sqlcollaborative.Dbatools.Message.LogHost]::LoggingPath)) {
 # Note: Each optional file must include a conditional governing whether it's run at all.
 # Validations were moved into the other files, in order to prevent having to update dbatools.psm1 every time
 # 96ms
-foreach ($file in (Get-ChildItem -Path "$script:PSScriptRoot\optional" -Filter *.ps1)) {
+foreach ($file in (Get-ChildItem -Path "$script:PSScriptRoot\private\optional" -Filter *.ps1)) {
     . $file.FullName
 }
 Write-ImportTime -Text "Loading Optional Commands"
 
 # Process TEPP parameters
-. $psScriptRoot\internal\scripts\insertTepp.ps1
+. $PSScriptRoot\private\scripts\insertTepp.ps1
 Write-ImportTime -Text "Loading TEPP"
 
 
 # Process transforms
-. $psScriptRoot\internal\scripts\message-transforms.ps1
+. $PSScriptRoot\private\scripts\message-transforms.ps1
 Write-ImportTime -Text "Loading Message Transforms"
 
 # Load scripts that must be individually run at the end #
 #-------------------------------------------------------#
 
 # Start the logging system (requires the configuration system up and running)
-. $psScriptRoot\internal\scripts\logfilescript.ps1
+. $PSScriptRoot\private\scripts\logfilescript.ps1
 Write-ImportTime -Text "Script: Logging"
 
 # Start the tepp asynchronous update system (requires the configuration system up and running)
-. $psScriptRoot\internal\scripts\updateTeppAsync.ps1
+. $PSScriptRoot\private\scripts\updateTeppAsync.ps1
 Write-ImportTime -Text "Script: Asynchronous TEPP Cache"
 
 # Start the maintenance system (requires pretty much everything else already up and running)
-. $psScriptRoot\internal\scripts\dbatools-maintenance.ps1
+. $PSScriptRoot\private\scripts\dbatools-maintenance.ps1
 Write-ImportTime -Text "Script: Maintenance"
 
 #region Aliases
@@ -1074,11 +1077,9 @@ if ($option.LoadTypes -or
     ($myInv.Line -like '*.psm1*' -and
         (-not (Get-TypeData -TypeName Microsoft.SqlServer.Management.Smo.Server)
         ))) {
-    Update-TypeData -AppendPath (Resolve-Path -Path "$script:PSModuleRoot\xml\dbatools.Types.ps1xml")
+    Update-TypeData -AppendPath (Resolve-Path -Path "$script:PSModuleRoot\dbatools.Types.ps1xml")
     Write-ImportTime -Text "Loaded type extensions"
 }
-#. Import-ModuleFile "$script:PSModuleRoot\bin\type-extensions.ps1"
-#Write-ImportTime -Text "Loaded type extensions"
 
 $td = (Get-TypeData -TypeName Microsoft.SqlServer.Management.Smo.Server)
 [Sqlcollaborative.Dbatools.dbaSystem.SystemHost]::ModuleImported = $true;
@@ -1091,9 +1092,12 @@ if ($loadedModuleNames -contains 'sqlserver' -or $loadedModuleNames -contains 's
 }
 #endregion Post-Import Cleanup
 
-# Removal of runspaces is needed to successfully close PowerShell ISE
+<#
+    Removal of runspaces is needed to successfully close PowerShell ISE
+    https://github.com/sqlcollaborative/dbatools/issues/7617
+#>
 $onRemoveScript = {
-    Get-Runspace | Where-Object Name -like dbatools* | ForEach-Object -Process { $_.Dispose() }
+    Get-Runspace | Where-Object Name -Like dbatools* | ForEach-Object -Process { $_.Dispose() }
 }
 $ExecutionContext.SessionState.Module.OnRemove += $onRemoveScript
 Register-EngineEvent -SourceIdentifier ([System.Management.Automation.PsEngineEvent]::Exiting) -Action $onRemoveScript

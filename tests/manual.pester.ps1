@@ -184,7 +184,7 @@ function Get-CoverageIndications($Path, $ModuleBase) {
         }
     }
     $testpaths = @()
-    $allfiles = Get-ChildItem -File -Path "$ModuleBase\internal\functions", "$ModuleBase\functions" -Filter '*.ps1'
+    $allfiles = Get-ChildItem -File -Path "$ModuleBase\private\functions", "$ModuleBase\functions" -Filter '*.ps1'
     foreach ($f in $funcs) {
         # exclude always used functions ?!
         if ($f -in ('Connect-DbaInstance', 'Select-DefaultView', 'Stop-Function', 'Write-Message')) { continue }

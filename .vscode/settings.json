@@ -19,5 +19,9 @@
         "editor.wordSeparators": "`~!@#%^&*()-=+[{]}\\|;:'\",.<>/?"
     },
     "powershell.scriptAnalysis.settingsPath": "bin\\PSScriptAnalyzerRules.psd1",
-    "powershell.codeFormatting.addWhitespaceAroundPipe": true
+    "powershell.codeFormatting.addWhitespaceAroundPipe": true,
+    "cSpell.words": [
+        "cuncurrency",
+        "TEPP"
+    ]
 }

@@ -1,4 +1,4 @@
-foreach ($item in (Get-ChildItem "$script:PSModuleRoot\internal\maintenance" -Filter *.ps1)) {
+foreach ($item in (Get-ChildItem "$script:PSModuleRoot\private\maintenance" -Filter *.ps1)) {
     if ($script:doDotSource) { . $item.FullName }
     else { $ExecutionContext.InvokeCommand.InvokeScript($false, ([scriptblock]::Create([io.file]::ReadAllText($item.FullName))), $null, $null) }
 }

@@ -123,7 +123,7 @@ if (($PSVersionTable.PSVersion.Major -ge 6) -and ($PSVersionTable.OS -notlike "*
     $script:NoRegistry = $true
 }
 
-$configpath = Resolve-Path "$script:PSModuleRoot\internal\configurations"
+$configpath = Resolve-Path "$script:PSModuleRoot\private\configurations"
 
 # Import configuration validation
 foreach ($file in (Get-ChildItem -Path (Resolve-Path "$configpath\validation"))) {

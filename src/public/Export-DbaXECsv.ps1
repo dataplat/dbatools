@@ -55,7 +55,7 @@ function Export-DbaXECsv {
     begin {
         $null = Test-ExportDirectory -Path $Path
         try {
-            Add-Type -Path "$script:PSModuleRoot\bin\libraries\third-party\XESmartTarget\XESmartTarget.Core.dll" -ErrorAction Stop
+            Add-Type -Path "$script:PSModuleRoot\bin\third-party\XESmartTarget\XESmartTarget.Core.dll" -ErrorAction Stop
         } catch {
             Stop-Function -Message "Could not load XESmartTarget.Core.dll" -ErrorRecord $_ -Target "XESmartTarget"
             return
@@ -75,7 +75,7 @@ function Export-DbaXECsv {
                 } else {
                     $xelpath = $InputObject.RemoteTargetFile
                 }
-                
+
                 #this is funny, TargetFile usually is more a path than a real file
                 #Even if the filename property is set to a fixed filepath with a xel
                 #extension, the produced files have something appended to it to make

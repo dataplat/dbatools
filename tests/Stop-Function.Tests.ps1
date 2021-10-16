@@ -1,7 +1,7 @@
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
-. "$PSScriptRoot\..\internal\functions\flowcontrol\Stop-Function.ps1"
+. "$PSScriptRoot\..\private\functions\flowcontrol\Stop-Function.ps1"
 $PSDefaultParameterValues.Remove('*:WarningAction')
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {

@@ -1,19 +1,19 @@
 # Obtain a reference to the TypeAccelerators type
-$TAType = [psobject].Assembly.GetType("System.Management.Automation.TypeAccelerators")
+$TAType = [PSObject].Assembly.GetType("System.Management.Automation.TypeAccelerators")
 
 # Define our type aliases
 $TypeAliasTable = @{
     DbaInstance              = "Sqlcollaborative.Dbatools.Parameter.DbaInstanceParameter"
     DbaCmConnectionParameter = "Sqlcollaborative.Dbatools.Parameter.DbaCmConnectionParameter"
     DbaInstanceParameter     = "Sqlcollaborative.Dbatools.Parameter.DbaInstanceParameter"
-    dbargx                   = "Sqlcollaborative.Dbatools.Utility.RegexHelper"
-    dbatime                  = "Sqlcollaborative.Dbatools.Utility.DbaTime"
-    dbadatetime              = "Sqlcollaborative.Dbatools.Utility.DbaDateTime"
-    dbadate                  = "Sqlcollaborative.Dbatools.Utility.DbaDate"
-    dbatimespan              = "Sqlcollaborative.Dbatools.Utility.DbaTimeSpan"
-    prettytimespan           = "Sqlcollaborative.Dbatools.Utility.DbaTimeSpanPretty"
-    dbasize                  = "Sqlcollaborative.Dbatools.Utility.Size"
-    dbavalidate              = "Sqlcollaborative.Dbatools.Utility.Validation"
+    DbaRgx                   = "Sqlcollaborative.Dbatools.Utility.RegexHelper"
+    DbaTime                  = "Sqlcollaborative.Dbatools.Utility.DbaTime"
+    DbaDatetime              = "Sqlcollaborative.Dbatools.Utility.DbaDateTime"
+    DbaDate                  = "Sqlcollaborative.Dbatools.Utility.DbaDate"
+    DbaTimespan              = "Sqlcollaborative.Dbatools.Utility.DbaTimeSpan"
+    PrettyTimespan           = "Sqlcollaborative.Dbatools.Utility.DbaTimeSpanPretty"
+    DbaSize                  = "Sqlcollaborative.Dbatools.Utility.Size"
+    DbaValidate              = "Sqlcollaborative.Dbatools.Utility.Validation"
     DbaMode                  = "Sqlcollaborative.Dbatools.General.ExecutionMode"
     DbaCredential            = "Sqlcollaborative.Dbatools.Parameter.DbaCredentialparameter"
     DbaCredentialParameter   = "Sqlcollaborative.Dbatools.Parameter.DbaCredentialparameter"
