@@ -74,7 +74,7 @@ body:
     id: ps-version
     attributes:
       label: "PowerShell Host Version"
-      description: "You can provide the output from: $PSVersionTable | clip"
+      description: "You can provide the output from: $PSVersionTable | Set-Clipboard"
     validations:
       required: true
   - type: textarea
@@ -88,6 +88,6 @@ body:
     id: net-version
     attributes:
       label: ".NET Framework Version"
-      description: "Note as of 1.1.0 release our model requires .NET Framework 4.6.2 to be present on Windows devices. You can copy/paste the output from: [System.Runtime.InteropServices.RuntimeInformation]::get_FrameworkDescription()"
+      description: "Note as of 1.1.0 release our model requires .NET Framework 4.6.2 to be present on Windows devices. You can paste the output from: [System.Runtime.InteropServices.RuntimeInformation]::get_FrameworkDescription() | Set-Clipboard"
     validations:
       required: true
