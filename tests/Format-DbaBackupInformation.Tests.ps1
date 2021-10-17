@@ -16,7 +16,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 Describe "$CommandName Integration Tests" -Tags 'IntegrationTests' {
 
     Context "Rename a Database" {
-        $History = Get-DbaBackupInformation -Import -Path $PSScriptRoot\..\tests\ObjectDefinitions\BackupRestore\RawInput\ContinuePointTest.xml
+        $History = Get-DbaBackupInformation -Import -Path $PSScriptRoot\ObjectDefinitions\BackupRestore\RawInput\ContinuePointTest.xml
         $output = $history | Format-DbaBackupInformation -ReplaceDatabaseName 'Pester'
         It "Should have a database name of Pester" {
             ($output | Where-Object {$_.Database -ne 'Pester'}).count | Should be 0
@@ -28,7 +28,7 @@ Describe "$CommandName Integration Tests" -Tags 'IntegrationTests' {
     }
 
     Context "Test it works as a parameter as well" {
-        $History = Get-DbaBackupInformation -Import -Path $PSScriptRoot\..\tests\ObjectDefinitions\BackupRestore\RawInput\ContinuePointTest.xml
+        $History = Get-DbaBackupInformation -Import -Path $PSScriptRoot\ObjectDefinitions\BackupRestore\RawInput\ContinuePointTest.xml
         $output = Format-DbaBackupInformation -BackupHistory $History -ReplaceDatabaseName 'Pester'
         It "Should have a database name of Pester" {
             ($output | Where-Object {$_.Database -ne 'Pester'}).count | Should be 0
@@ -39,8 +39,8 @@ Describe "$CommandName Integration Tests" -Tags 'IntegrationTests' {
     }
 
     Context "Rename 2 dbs using a hash" {
-        $History = Get-DbaBackupInformation -Import -Path $PSScriptRoot\..\tests\ObjectDefinitions\BackupRestore\RawInput\ContinuePointTest.xml
-        $History += Get-DbaBackupInformation -Import -Path $PSScriptRoot\..\tests\ObjectDefinitions\BackupRestore\RawInput\RestoreTimeClean.xml
+        $History = Get-DbaBackupInformation -Import -Path $PSScriptRoot\ObjectDefinitions\BackupRestore\RawInput\ContinuePointTest.xml
+        $History += Get-DbaBackupInformation -Import -Path $PSScriptRoot\ObjectDefinitions\BackupRestore\RawInput\RestoreTimeClean.xml
         $output = Format-DbaBackupInformation -BackupHistory $History -ReplaceDatabaseName @{'ContinuePointTest' = 'Spiggy'; 'RestoreTimeClean' = 'Eldritch'}
         It "Should have no databases other than spiggy and eldritch" {
             ($output | Where-Object {$_.Database -notin ('Spiggy', 'Eldritch')}).count | Should be 0
@@ -64,8 +64,8 @@ Describe "$CommandName Integration Tests" -Tags 'IntegrationTests' {
     }
 
     Context "Rename 1 dbs using a hash" {
-        $History = Get-DbaBackupInformation -Import -Path $PSScriptRoot\..\tests\ObjectDefinitions\BackupRestore\RawInput\ContinuePointTest.xml
-        $History += Get-DbaBackupInformation -Import -Path $PSScriptRoot\..\tests\ObjectDefinitions\BackupRestore\RawInput\RestoreTimeClean.xml
+        $History = Get-DbaBackupInformation -Import -Path $PSScriptRoot\ObjectDefinitions\BackupRestore\RawInput\ContinuePointTest.xml
+        $History += Get-DbaBackupInformation -Import -Path $PSScriptRoot\ObjectDefinitions\BackupRestore\RawInput\RestoreTimeClean.xml
         $output = Format-DbaBackupInformation -BackupHistory $History -ReplaceDatabaseName @{'ContinuePointTest' = 'Alice'}
         It "Should have no databases other than spiggy and eldritch" {
             ($output | Where-Object {$_.Database -notin ('RestoreTimeClean', 'Alice')}).count | Should be 0
@@ -83,7 +83,7 @@ Describe "$CommandName Integration Tests" -Tags 'IntegrationTests' {
     }
 
     Context "Check DB Name prefix and suffix" {
-        $History = Get-DbaBackupInformation -Import -Path $PSScriptRoot\..\tests\ObjectDefinitions\BackupRestore\RawInput\ContinuePointTest.xml
+        $History = Get-DbaBackupInformation -Import -Path $PSScriptRoot\ObjectDefinitions\BackupRestore\RawInput\ContinuePointTest.xml
         $output = $history | Format-DbaBackupInformation -DatabaseNamePrefix PREFIX
         It "Should have prefixed all db names" {
             ($Output | Where-Object {$_.Database -like 'PREFIX*'}).count | Should be $output.count
@@ -92,8 +92,8 @@ Describe "$CommandName Integration Tests" -Tags 'IntegrationTests' {
     }
 
     Context "Check DataFileDirectory moves all files" {
-        $History = Get-DbaBackupInformation -Import -Path $PSScriptRoot\..\tests\ObjectDefinitions\BackupRestore\RawInput\ContinuePointTest.xml
-        $History += Get-DbaBackupInformation -Import -Path $PSScriptRoot\..\tests\ObjectDefinitions\BackupRestore\RawInput\RestoreTimeClean.xml
+        $History = Get-DbaBackupInformation -Import -Path $PSScriptRoot\ObjectDefinitions\BackupRestore\RawInput\ContinuePointTest.xml
+        $History += Get-DbaBackupInformation -Import -Path $PSScriptRoot\ObjectDefinitions\BackupRestore\RawInput\RestoreTimeClean.xml
         $output = Format-DbaBackupInformation -BackupHistory $History -DataFileDirectory c:\restores
 
         It "Should have move ALL files to c:\restores\" {
@@ -102,8 +102,8 @@ Describe "$CommandName Integration Tests" -Tags 'IntegrationTests' {
     }
 
     Context "Check DataFileDirectory and LogFileDirectory work independently" {
-        $History = Get-DbaBackupInformation -Import -Path $PSScriptRoot\..\tests\ObjectDefinitions\BackupRestore\RawInput\ContinuePointTest.xml
-        $History += Get-DbaBackupInformation -Import -Path $PSScriptRoot\..\tests\ObjectDefinitions\BackupRestore\RawInput\RestoreTimeClean.xml
+        $History = Get-DbaBackupInformation -Import -Path $PSScriptRoot\ObjectDefinitions\BackupRestore\RawInput\ContinuePointTest.xml
+        $History += Get-DbaBackupInformation -Import -Path $PSScriptRoot\ObjectDefinitions\BackupRestore\RawInput\RestoreTimeClean.xml
         $output = Format-DbaBackupInformation -BackupHistory $History -DataFileDirectory c:\restores\ -LogFileDirectory c:\logs
 
         It "Should  have moved all data files to c:\restores\" {
@@ -115,8 +115,8 @@ Describe "$CommandName Integration Tests" -Tags 'IntegrationTests' {
     }
 
     Context "Check LogFileDirectory works for just logfiles" {
-        $History = Get-DbaBackupInformation -Import -Path $PSScriptRoot\..\tests\ObjectDefinitions\BackupRestore\RawInput\ContinuePointTest.xml
-        $History += Get-DbaBackupInformation -Import -Path $PSScriptRoot\..\tests\ObjectDefinitions\BackupRestore\RawInput\RestoreTimeClean.xml
+        $History = Get-DbaBackupInformation -Import -Path $PSScriptRoot\ObjectDefinitions\BackupRestore\RawInput\ContinuePointTest.xml
+        $History += Get-DbaBackupInformation -Import -Path $PSScriptRoot\ObjectDefinitions\BackupRestore\RawInput\RestoreTimeClean.xml
         $Output = Format-DbaBackupInformation -BackupHistory $History -DataFileDirectory c:\restores\ -LogFileDirectory c:\logs
 
         It "Should not have moved all data files to c:\restores\" {
@@ -128,8 +128,8 @@ Describe "$CommandName Integration Tests" -Tags 'IntegrationTests' {
     }
 
     Context "Test RebaseBackupFolder" {
-        $History = Get-DbaBackupInformation -Import -Path $PSScriptRoot\..\tests\ObjectDefinitions\BackupRestore\RawInput\ContinuePointTest.xml
-        $History += Get-DbaBackupInformation -Import -Path $PSScriptRoot\..\tests\ObjectDefinitions\BackupRestore\RawInput\RestoreTimeClean.xml
+        $History = Get-DbaBackupInformation -Import -Path $PSScriptRoot\ObjectDefinitions\BackupRestore\RawInput\ContinuePointTest.xml
+        $History += Get-DbaBackupInformation -Import -Path $PSScriptRoot\ObjectDefinitions\BackupRestore\RawInput\RestoreTimeClean.xml
         $Output = Format-DbaBackupInformation -BackupHistory $History -RebaseBackupFolder c:\backups\
 
         It "Should not have moved all backup files to c:\backups" {
@@ -139,8 +139,8 @@ Describe "$CommandName Integration Tests" -Tags 'IntegrationTests' {
     }
 
     Context "Test PathSep" {
-        $History = Get-DbaBackupInformation -Import -Path $PSScriptRoot\..\tests\ObjectDefinitions\BackupRestore\RawInput\ContinuePointTest.xml
-        $History += Get-DbaBackupInformation -Import -Path $PSScriptRoot\..\tests\ObjectDefinitions\BackupRestore\RawInput\RestoreTimeClean.xml
+        $History = Get-DbaBackupInformation -Import -Path $PSScriptRoot\ObjectDefinitions\BackupRestore\RawInput\ContinuePointTest.xml
+        $History += Get-DbaBackupInformation -Import -Path $PSScriptRoot\ObjectDefinitions\BackupRestore\RawInput\RestoreTimeClean.xml
         $Output = Format-DbaBackupInformation -BackupHistory $History -RebaseBackupFolder 'c:\backups'
         It "Should not have changed the default path separator" {
             ($Output | Select-Object -ExpandProperty FullName | split-path | Where-Object {$_ -eq 'c:\backups'}).count | Should Be $History.count
@@ -157,7 +157,7 @@ Describe "$CommandName Integration Tests" -Tags 'IntegrationTests' {
     }
 
     Context "Test everything all at once" {
-        $History = Get-DbaBackupInformation -Import -Path $PSScriptRoot\..\tests\ObjectDefinitions\BackupRestore\RawInput\ContinuePointTest.xml
+        $History = Get-DbaBackupInformation -Import -Path $PSScriptRoot\ObjectDefinitions\BackupRestore\RawInput\ContinuePointTest.xml
         $output = $history | Format-DbaBackupInformation -ReplaceDatabaseName 'Pester' -DataFileDirectory c:\restores -LogFileDirectory c:\logs\ -RebaseBackupFolder c:\backups\
         It "Should have a database name of Pester" {
             ($output | Where-Object {$_.Database -ne 'Pester'}).count | Should be 0

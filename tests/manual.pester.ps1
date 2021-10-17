@@ -137,6 +137,7 @@ if (($HasPester -and $HasScriptAnalyzer -and ($PesterVersion -ge $MinimumPesterV
 }
 
 $ModuleBase = Split-Path -Path $PSScriptRoot -Parent
+$TestBase = $PSScriptRoot
 
 if (-not(Test-Path "$ModuleBase\.git" -Type Container)) {
     New-Item -Type Container -Path "$ModuleBase\.git" -Force
@@ -204,7 +205,7 @@ if ($Path) {
         if (Test-Path $item) {
             $files += Get-ChildItem -Path $item
         } else {
-            $files += Get-ChildItem -Path "$ModuleBase\tests\*$item*.Tests.ps1"
+            $files += Get-ChildItem -Path "$TestBase\tests\*$item*.Tests.ps1"
         }
     }
 }

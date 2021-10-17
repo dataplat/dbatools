@@ -17,7 +17,7 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
 Describe "$commandname Integration Tests" -Tag 'IntegrationTests' {
     InModuleScope dbatools {
         Context "General Diff restore" {
-            $Header = ConvertFrom-Json -InputObject (Get-Content $PSScriptRoot\..\tests\ObjectDefinitions\BackupRestore\RawInput\DiffRestore.json -raw)
+            $Header = ConvertFrom-Json -InputObject (Get-Content $PSScriptRoot\ObjectDefinitions\BackupRestore\RawInput\DiffRestore.json -raw)
             $header | Add-Member -Type NoteProperty -Name FullName -Value 1
 
             $filteredFiles = $header | Select-DbaBackupInformation
@@ -28,7 +28,7 @@ Describe "$commandname Integration Tests" -Tag 'IntegrationTests' {
                 $Output = Test-DbaLsnChain -FilteredRestoreFiles $FilteredFiles -WarningAction SilentlyContinue
                 $Output | Should be True
             }
-            $Header = ConvertFrom-Json -InputObject (Get-Content $PSScriptRoot\..\tests\ObjectDefinitions\BackupRestore\RawInput\DiffRestore.json -raw)
+            $Header = ConvertFrom-Json -InputObject (Get-Content $PSScriptRoot\ObjectDefinitions\BackupRestore\RawInput\DiffRestore.json -raw)
             $header = $Header | Where-Object { $_.BackupTypeDescription -ne 'Database Differential' }
             $header | Add-Member -Type NoteProperty -Name FullName -Value 1
 

@@ -15,7 +15,7 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
 Describe "$commandname Integration Tests" -Tag 'IntegrationTests' {
     InModuleScope dbatools {
         Context "General Diff Restore" {
-            $Header = ConvertFrom-Json -InputObject (Get-Content $PSScriptRoot\..\tests\ObjectDefinitions\BackupRestore\RawInput\DiffRestore.json -raw)
+            $Header = ConvertFrom-Json -InputObject (Get-Content $PSScriptRoot\ObjectDefinitions\BackupRestore\RawInput\DiffRestore.json -raw)
             $header | Add-Member -Type NoteProperty -Name FullName -Value 1
             $Output = Select-DbaBackupInformation -BackupHistory $header -EnableException:$true
 
@@ -34,7 +34,7 @@ Describe "$commandname Integration Tests" -Tag 'IntegrationTests' {
         }
 
         Context "AG  Diff Restore" {
-            $Header = ConvertFrom-Json -InputObject (Get-Content $PSScriptRoot\..\tests\ObjectDefinitions\BackupRestore\RawInput\AGDiffRestore.json -raw)
+            $Header = ConvertFrom-Json -InputObject (Get-Content $PSScriptRoot\ObjectDefinitions\BackupRestore\RawInput\AGDiffRestore.json -raw)
             $header | Add-Member -Type NoteProperty -Name FullName -Value 1
             $Output = Select-DbaBackupInformation -BackupHistory $header -EnableException:$true
 
@@ -62,7 +62,7 @@ Describe "$commandname Integration Tests" -Tag 'IntegrationTests' {
         }
 
         Context "General Diff Restore from Pipeline" {
-            $Header = ConvertFrom-Json -InputObject (Get-Content $PSScriptRoot\..\tests\ObjectDefinitions\BackupRestore\RawInput\DiffRestore.json -raw)
+            $Header = ConvertFrom-Json -InputObject (Get-Content $PSScriptRoot\ObjectDefinitions\BackupRestore\RawInput\DiffRestore.json -raw)
             $header | Add-Member -Type NoteProperty -Name FullName -Value 1
             $Output = $Header | Select-DbaBackupInformation -EnableException:$true
 
@@ -80,7 +80,7 @@ Describe "$commandname Integration Tests" -Tag 'IntegrationTests' {
             }
         }
         Context "General Diff Restore from Pipeline with IgnoreDiff" {
-            $Header = ConvertFrom-Json -InputObject (Get-Content $PSScriptRoot\..\tests\ObjectDefinitions\BackupRestore\RawInput\DiffRestore.json -raw)
+            $Header = ConvertFrom-Json -InputObject (Get-Content $PSScriptRoot\ObjectDefinitions\BackupRestore\RawInput\DiffRestore.json -raw)
             $header | Add-Member -Type NoteProperty -Name FullName -Value 1
             $Output = $Header | Select-DbaBackupInformation -EnableException:$true -IgnoreDiff
 
@@ -98,7 +98,7 @@ Describe "$commandname Integration Tests" -Tag 'IntegrationTests' {
             }
         }
         Context "General Diff Restore from Pipeline with IgnoreLog" {
-            $Header = ConvertFrom-Json -InputObject (Get-Content $PSScriptRoot\..\tests\ObjectDefinitions\BackupRestore\RawInput\DiffRestore.json -raw)
+            $Header = ConvertFrom-Json -InputObject (Get-Content $PSScriptRoot\ObjectDefinitions\BackupRestore\RawInput\DiffRestore.json -raw)
             $header | Add-Member -Type NoteProperty -Name FullName -Value 1
             $Output = $Header | Select-DbaBackupInformation -EnableException:$true -IgnoreLogs
 
@@ -116,7 +116,7 @@ Describe "$commandname Integration Tests" -Tag 'IntegrationTests' {
             }
         }
         Context "Server/database names and file paths have commas and spaces" {
-            $Header = ConvertFrom-Json -InputObject (Get-Content $PSScriptRoot\..\tests\ObjectDefinitions\BackupRestore\RawInput\RestoreCommaIssues.json -raw)
+            $Header = ConvertFrom-Json -InputObject (Get-Content $PSScriptRoot\ObjectDefinitions\BackupRestore\RawInput\RestoreCommaIssues.json -raw)
             $header | Add-Member -Type NoteProperty -Name FullName -Value 'test'
 
             $Output = Select-DbaBackupInformation -BackupHistory $header
@@ -135,7 +135,7 @@ Describe "$commandname Integration Tests" -Tag 'IntegrationTests' {
             }
         }
         Context "Missing Diff Restore" {
-            $Header = ConvertFrom-Json -InputObject (Get-Content $PSScriptRoot\..\tests\ObjectDefinitions\BackupRestore\RawInput\DiffRestore.json -raw)
+            $Header = ConvertFrom-Json -InputObject (Get-Content $PSScriptRoot\ObjectDefinitions\BackupRestore\RawInput\DiffRestore.json -raw)
             $header = $header | Where-Object { $_.BackupTypeDescription -ne 'Database Differential' }
             $header | Add-Member -Type NoteProperty -Name FullName -Value 1
 
@@ -155,7 +155,7 @@ Describe "$commandname Integration Tests" -Tag 'IntegrationTests' {
             }
         }
         Context "Overlapping Diff and log Restore" {
-            $Header = ConvertFrom-Json -InputObject (Get-Content $PSScriptRoot\..\tests\ObjectDefinitions\BackupRestore\RawInput\DiffIssues.json -raw)
+            $Header = ConvertFrom-Json -InputObject (Get-Content $PSScriptRoot\ObjectDefinitions\BackupRestore\RawInput\DiffIssues.json -raw)
             $header | Add-Member -Type NoteProperty -Name FullName -Value 1
 
             $RestoreDate = Get-date "2017-07-18 09:00:00"
@@ -178,7 +178,7 @@ Describe "$commandname Integration Tests" -Tag 'IntegrationTests' {
             }
         }
         Context "When FirstLSN ne CheckPointLsn" {
-            $Header = ConvertFrom-Json -InputObject (Get-Content $PSScriptRoot\..\tests\ObjectDefinitions\BackupRestore\RawInput\chkptLSN-ne-firstLSN.json -raw)
+            $Header = ConvertFrom-Json -InputObject (Get-Content $PSScriptRoot\ObjectDefinitions\BackupRestore\RawInput\chkptLSN-ne-firstLSN.json -raw)
             $header | Add-Member -Type NoteProperty -Name FullName -Value 1
 
             $RestoreDate = Get-date "2017-07-18 09:00:00"
@@ -201,7 +201,7 @@ Describe "$commandname Integration Tests" -Tag 'IntegrationTests' {
             }
         }
         Context "When TLogs between full's FirstLsn and LastLsn" {
-            $Header = ConvertFrom-Json -InputObject (Get-Content $PSScriptRoot\..\tests\ObjectDefinitions\BackupRestore\RawInput\TLogBWFirstLastLsn.json -raw)
+            $Header = ConvertFrom-Json -InputObject (Get-Content $PSScriptRoot\ObjectDefinitions\BackupRestore\RawInput\TLogBWFirstLastLsn.json -raw)
             $header | Add-Member -Type NoteProperty -Name FullName -Value 1
 
             $RestoreDate = Get-date "2017-07-18 09:00:00"
@@ -224,7 +224,7 @@ Describe "$commandname Integration Tests" -Tag 'IntegrationTests' {
             }
         }
         Context "Last log backup has same lastlsn as consequent backups" {
-            $Header = ConvertFrom-Json -InputObject (Get-Content $PSScriptRoot\..\tests\ObjectDefinitions\BackupRestore\RawInput\broken_chain.json -raw)
+            $Header = ConvertFrom-Json -InputObject (Get-Content $PSScriptRoot\ObjectDefinitions\BackupRestore\RawInput\broken_chain.json -raw)
             $header | Add-Member -Type NoteProperty -Name FullName -Value 1
 
             $RestoreDate = Get-date "2017-07-16 17:51:30"
@@ -250,7 +250,7 @@ Describe "$commandname Integration Tests" -Tag 'IntegrationTests' {
             }
         }
         Context "Continue Points" {
-            $BackupInfo = Get-DbaBackupInformation -Import -Path $PSScriptRoot\..\tests\ObjectDefinitions\BackupRestore\RawInput\ContinuePointTest.xml
+            $BackupInfo = Get-DbaBackupInformation -Import -Path $PSScriptRoot\ObjectDefinitions\BackupRestore\RawInput\ContinuePointTest.xml
             [bigint]$redo_start_lsn = '34000000016700004'
             $ContinuePoints = [PsCustomObject]@{
                 redo_start_lsn      = $redo_start_lsn
