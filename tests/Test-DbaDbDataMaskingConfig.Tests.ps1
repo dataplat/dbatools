@@ -14,8 +14,9 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 
     Context "PII Known Names" {
 
-        $piiKnownNames = Get-Content "$PSScriptRoot\..\bin\datamasking\pii-knownnames.json" -Raw | ConvertFrom-Json
-        $randomizerTypes = Get-Content "$PSScriptRoot\..\bin\randomizer\en.randomizertypes.csv" | ConvertFrom-Csv -Delimiter ','
+        $modulePath = [IO.Path]::Combine((Split-Path $PSScriptRoot -Parent),'src')
+        $piiKnownNames = Get-Content "$modulePath\bin\datamasking\pii-knownnames.json" -Raw | ConvertFrom-Json
+        $randomizerTypes = Get-Content "$modulePath\bin\randomizer\en.randomizertypes.csv" | ConvertFrom-Csv -Delimiter ','
 
         It "All masking types match randomizer types" {
             # Arrange
@@ -47,8 +48,9 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 
     Context "PII patterns" {
 
-        $piiPatterns = Get-Content "$PSScriptRoot\..\bin\datamasking\pii-patterns.json" -Raw | ConvertFrom-Json
-        $randomizerTypes = Get-Content "$PSScriptRoot\..\bin\randomizer\en.randomizertypes.csv" | ConvertFrom-Csv -Delimiter ','
+        $modulePath = [IO.Path]::Combine((Split-Path $PSScriptRoot -Parent),'src')
+        $piiPatterns = Get-Content "$modulePath\bin\datamasking\pii-patterns.json" -Raw | ConvertFrom-Json
+        $randomizerTypes = Get-Content "$modulePath\bin\randomizer\en.randomizertypes.csv" | ConvertFrom-Csv -Delimiter ','
 
         It "All masking types match randomizer types" {
             # Arrange
