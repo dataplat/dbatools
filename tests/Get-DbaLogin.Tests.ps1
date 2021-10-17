@@ -130,7 +130,6 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
                 try {
                     Connect-DbaInstance -SqlInstance $script:instance1 -SqlCredential $invalidSqlCredential
                 } catch {
-                    Write-Message -Level Warning -Message "invalid login credentials used on purpose to lock out account"
                     Start-Sleep -s 5
                 }
             }

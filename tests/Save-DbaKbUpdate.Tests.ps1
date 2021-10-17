@@ -29,7 +29,6 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
 
         # basic retry logic in case the first download didn't get all of the files
         if ($null -eq $results -or $results.Count -ne 2) {
-            Write-Message -Level Warning -Message "Retrying..."
             if ($results.Count -gt 0) {
                 $results | Remove-Item -Confirm:$false
             }
@@ -45,7 +44,6 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
 
         # basic retry logic in case the first download didn't get all of the files
         if ($null -eq $results -or $results.Count -ne 2) {
-            Write-Message -Level Warning -Message "Retrying..."
             if ($results.Count -gt 0) {
                 $results | Remove-Item -Confirm:$false
             }

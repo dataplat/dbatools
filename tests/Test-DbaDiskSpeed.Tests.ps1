@@ -91,7 +91,6 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
                 } elseif ($results -is [Object[]] -and $results.Count -gt 0) {
                     $row = $results[0]
                 } else {
-                    Write-Message -Level Warning -Message "Unexpected results returned from $($script:instance1): $($results)"
                     $validColumns = $false
                 }
 
@@ -99,10 +98,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
                     [object[]]$columnNamesReturned = @($row | Get-Member -MemberType Property | Select-Object -Property Name | ForEach-Object { $_.Name })
 
                     if ( @(Compare-Object -ReferenceObject $expectedColumnArray -DifferenceObject $columnNamesReturned).Count -eq 0 ) {
-                        Write-Message -Level Debug -Message "Columns matched on $($script:instance1)"
                         $validColumns = $true
-                    } else {
-                        Write-Message -Level Warning -Message "The columns specified in the expectedColumnArray variable do not match these returned columns from $($script:instance1): $($columnNamesReturned)"
                     }
                 }
             }
@@ -126,7 +122,6 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
                 } elseif ($results -is [Object[]] -and $results.Count -gt 0) {
                     $row = $results[0]
                 } else {
-                    Write-Message -Level Warning -Message "Unexpected results returned from $($script:instance1): $($results)"
                     $validColumns = $false
                 }
 
@@ -134,10 +129,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
                     [object[]]$columnNamesReturned = @($row | Get-Member -MemberType Property | Select-Object -Property Name | ForEach-Object { $_.Name })
 
                     if ( @(Compare-Object -ReferenceObject $expectedColumnArray -DifferenceObject $columnNamesReturned).Count -eq 0 ) {
-                        Write-Message -Level Debug -Message "Columns matched on $($script:instance1)"
                         $validColumns = $true
-                    } else {
-                        Write-Message -Level Warning -Message "The columns specified in the expectedColumnArray variable do not match these returned columns from $($script:instance1): $($columnNamesReturned)"
                     }
                 }
             }
@@ -161,7 +153,6 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
                 } elseif ($results -is [Object[]] -and $results.Count -gt 0) {
                     $row = $results[0]
                 } else {
-                    Write-Message -Level Warning -Message "Unexpected results returned from $($script:instance1): $($results)"
                     $validColumns = $false
                 }
 
@@ -169,10 +160,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
                     [object[]]$columnNamesReturned = @($row | Get-Member -MemberType Property | Select-Object -Property Name | ForEach-Object { $_.Name })
 
                     if ( @(Compare-Object -ReferenceObject $expectedColumnArray -DifferenceObject $columnNamesReturned).Count -eq 0 ) {
-                        Write-Message -Level Debug -Message "Columns matched on $($script:instance1)"
                         $validColumns = $true
-                    } else {
-                        Write-Message -Level Warning -Message "The columns specified in the expectedColumnArray variable do not match these returned columns from $($script:instance1): $($columnNamesReturned)"
                     }
                 }
             }
@@ -227,7 +215,6 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
                 } elseif ($results -is [Object[]] -and $results.Count -gt 0) {
                     $row = $results[0]
                 } else {
-                    Write-Message -Level Warning -Message "Unexpected results returned from $($script:instance1): $($results)"
                     $validColumns = $false
                 }
 
@@ -235,10 +222,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
                     [object[]]$columnNamesReturned = @($row | Get-Member -MemberType Property | Select-Object -Property Name | ForEach-Object { $_.Name })
 
                     if ( @(Compare-Object -ReferenceObject $expectedColumnArray -DifferenceObject $columnNamesReturned).Count -eq 0 ) {
-                        Write-Message -Level Debug -Message "Columns matched on $($script:instance1)"
                         $validColumns = $true
-                    } else {
-                        Write-Message -Level Warning -Message "The columns specified in the expectedColumnArray variable do not match these returned columns from $($script:instance1): $($columnNamesReturned)"
                     }
                 }
             }
@@ -267,7 +251,6 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
                 } elseif ($results -is [Object[]] -and $results.Count -gt 0) {
                     $row = $results[0]
                 } else {
-                    Write-Message -Level Warning -Message "Unexpected results returned from $($script:instance1): $($results)"
                     $validColumns = $false
                 }
 
@@ -275,10 +258,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
                     [object[]]$columnNamesReturned = @($row | Get-Member -MemberType Property | Select-Object -Property Name | ForEach-Object { $_.Name })
 
                     if ( @(Compare-Object -ReferenceObject $expectedColumnArray -DifferenceObject $columnNamesReturned).Count -eq 0 ) {
-                        Write-Message -Level Debug -Message "Columns matched on $($script:instance1)"
                         $validColumns = $true
-                    } else {
-                        Write-Message -Level Warning -Message "The columns specified in the expectedColumnArray variable do not match these returned columns from $($script:instance1): $($columnNamesReturned)"
                     }
                 }
             }
@@ -307,7 +287,6 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
                 } elseif ($results -is [Object[]] -and $results.Count -gt 0) {
                     $row = $results[0]
                 } else {
-                    Write-Message -Level Warning -Message "Unexpected results returned from $($script:instance1): $($results)"
                     $validColumns = $false
                 }
 
@@ -315,10 +294,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
                     [object[]]$columnNamesReturned = @($row | Get-Member -MemberType Property | Select-Object -Property Name | ForEach-Object { $_.Name })
 
                     if ( @(Compare-Object -ReferenceObject $expectedColumnArray -DifferenceObject $columnNamesReturned).Count -eq 0 ) {
-                        Write-Message -Level Debug -Message "Columns matched on $($script:instance1)"
                         $validColumns = $true
-                    } else {
-                        Write-Message -Level Warning -Message "The columns specified in the expectedColumnArray variable do not match these returned columns from $($script:instance1): $($columnNamesReturned)"
                     }
                 }
             }

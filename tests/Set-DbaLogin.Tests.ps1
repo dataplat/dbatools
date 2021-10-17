@@ -235,7 +235,6 @@ Describe "$CommandName Integration Tests" -Tag 'IntegrationTests' {
                 try {
                     Connect-DbaInstance -SqlInstance $script:instance2 -SqlCredential $invalidSqlCredential
                 } catch {
-                    Write-Message -Level Warning -Message "invalid login credentials used on purpose to lock out account"
                     Start-Sleep -s 5
                 }
             }
@@ -256,7 +255,6 @@ Describe "$CommandName Integration Tests" -Tag 'IntegrationTests' {
                 try {
                     Connect-DbaInstance -SqlInstance $script:instance2 -SqlCredential $invalidSqlCredential
                 } catch {
-                    Write-Message -Level Warning -Message "invalid login credentials used on purpose to lock out account"
                     Start-Sleep -s 5
                 }
             }
