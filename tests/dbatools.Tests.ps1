@@ -1,6 +1,6 @@
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 $Path = Split-Path -Parent $MyInvocation.MyCommand.Path
-$ModulePath = (Get-Item $Path).Parent.FullName
+$ModulePath = [IO.Path]::Combine((Split-Path $PSScriptRoot -Parent),'src')
 $ModuleName = (Split-Path -Leaf $MyInvocation.MyCommand.Path) -Replace ".Tests.ps1"
 #$ManifestPath = "$ModulePath\$ModuleName.psd1"
 
@@ -44,7 +44,7 @@ Describe "$ModuleName style" -Tag 'Compliance' {
     - UTF8 without BOM is what is going to be used in PS Core, so we adopt this standard for dbatools
     #>
     $AllFiles = Get-ChildItem -Path $ModulePath -File -Recurse -Filter '*.ps*1' | Where-Object Name -ne 'allcommands.ps1'
-    $AllFunctionFiles = Get-ChildItem -Path "$ModulePath\functions", "$ModulePath\private\functions"-Filter '*.ps*1'
+    $AllFunctionFiles = Get-ChildItem -Path "$ModulePath\public", "$ModulePath\private\functions"-Filter '*.ps*1'
     Context "formatting" {
         $maxConcurrentJobs = $env:NUMBER_OF_PROCESSORS
         $whatever = Split-ArrayInParts -array $AllFunctionFiles -parts $maxConcurrentJobs
@@ -105,7 +105,7 @@ Describe "$ModuleName style" -Tag 'Compliance' {
     <#
     Ensures avoiding already discovered pitfalls
     #>
-    $AllPublicFunctions = Get-ChildItem -Path "$ModulePath\functions" -Filter '*.ps*1'
+    $AllPublicFunctions = Get-ChildItem -Path "$ModulePath\public" -Filter '*.ps*1'
 
     Context "NoCompatibleTLS" {
         # .NET defaults clash with recent TLS hardening (e.g. no TLS 1.2 by default)
@@ -135,7 +135,7 @@ Describe "$ModuleName style" -Tag 'Compliance' {
 
 Describe "$ModuleName ScriptAnalyzerErrors" -Tag 'Compliance' {
     $ScriptAnalyzerErrors = @()
-    $ScriptAnalyzerErrors += Invoke-ScriptAnalyzer -Path "$ModulePath\functions" -Severity Error
+    $ScriptAnalyzerErrors += Invoke-ScriptAnalyzer -Path "$ModulePath\public" -Severity Error
     $ScriptAnalyzerErrors += Invoke-ScriptAnalyzer -Path "$ModulePath\private\functions" -Severity Error
     Context "Errors" {
         if ($ScriptAnalyzerErrors.Count -gt 0) {
@@ -149,7 +149,7 @@ Describe "$ModuleName ScriptAnalyzerErrors" -Tag 'Compliance' {
 }
 
 Describe "$ModuleName Tests missing" -Tag 'Tests' {
-    $functions = Get-ChildItem "$ModulePath\functions\" -Recurse -Include *.ps1
+    $functions = Get-ChildItem "$ModulePath\public\" -Recurse -Include *.ps1
     Context "Every function should have tests" {
         foreach ($f in $functions) {
             It "$($f.basename) has a tests.ps1 file" {
@@ -167,7 +167,7 @@ Describe "$ModuleName Tests missing" -Tag 'Tests' {
 Describe "$ModuleName Function Name" -Tag 'Compliance' {
     $FunctionNameMatchesErrors = @()
     $FunctionNameDbaErrors = @()
-    foreach ($item in (Get-ChildItem -Path "$ModulePath\functions" -Filter '*.ps*1')) {
+    foreach ($item in (Get-ChildItem -Path "$ModulePath\public" -Filter '*.ps*1')) {
         $Tokens = $null
         $Errors = $null
         $ast = [System.Management.Automation.Language.Parser]::ParseFile($item.FullName, [ref]$Tokens, [ref]$Errors)
@@ -295,7 +295,7 @@ $Script:Manifest = Test-ModuleManifest -Path $ManifestPath -ErrorAction Silently
 
     It 'exports all public functions' {
 
-        $FunctionFiles = Get-ChildItem "$ModulePath\functions" -Filter *.ps1 | Select-Object -ExpandProperty BaseName
+        $FunctionFiles = Get-ChildItem "$ModulePath\public" -Filter *.ps1 | Select-Object -ExpandProperty BaseName
 
         $FunctionNames = $FunctionFiles
 
