@@ -58,9 +58,9 @@ function Get-DbaPrivilege {
     begin {
         $ResolveSID = @"
     function Convert-SIDToUserName ([string] `$SID ) {
-      `$objSID = New-Object System.Security.Principal.SecurityIdentifier (`"`$SID`")
-      `$objUser = `$objSID.Translate( [System.Security.Principal.NTAccount])
-      `$objUser.Value
+        `$objSID = New-Object System.Security.Principal.SecurityIdentifier (`"`$SID`")
+        `$objUser = `$objSID.Translate( [System.Security.Principal.NTAccount])
+        `$objUser.Value
     }
 "@
         $ComputerName = $ComputerName.ComputerName | Select-Object -Unique

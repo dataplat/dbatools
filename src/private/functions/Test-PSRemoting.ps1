@@ -13,10 +13,8 @@ function Test-PSRemoting {
         $Credential = [System.Management.Automation.PSCredential]::Empty,
         [switch]$EnableException
     )
-
     process {
         $UseSSL = Get-DbatoolsConfigValue -FullName 'PSRemoting.PsSession.UseSSL' -Fallback $false
-
         Write-Message -Level VeryVerbose -Message "Testing $($ComputerName.Computername)"
 
         try {
@@ -26,7 +24,5 @@ function Test-PSRemoting {
             $false
             Stop-Function -Message "Testing $($ComputerName.Computername)" -Target $ComputerName -ErrorRecord $_ -EnableException:$EnableException
         }
-
-    } #process
-
-} #close function
+    }
+}
