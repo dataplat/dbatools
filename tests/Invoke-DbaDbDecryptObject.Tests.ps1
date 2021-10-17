@@ -4,11 +4,11 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
+        [array]$params = ([Management.Automation.CommandMetaData]$ExecutionContext.SessionState.InvokeCommand.GetCommand($CommandName, 'Function')).Parameters.Keys
+        [object[]]$knownParameters = 'Database', 'EnableException', 'EncodingType', 'ExportDestination', 'ObjectName', 'SqlCredential', 'SqlInstance'
+
         It "Should only contain our specific parameters" {
-            [array]$params = ([Management.Automation.CommandMetaData]$ExecutionContext.SessionState.InvokeCommand.GetCommand($CommandName, 'Function')).Parameters.Keys
-            [object[]]$knownParameters = 'Database', 'EnableException', 'EncodingType', 'ExportDestination', 'ObjectName', 'SqlCredential', 'SqlInstance'
-            $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should -Be 0
+            Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params | Should -BeNullOrEmpty
         }
     }
 }
@@ -282,10 +282,10 @@ SELECT 'áéíñóú¡¿' as SampleUTF8;"
     Context "Decrypt all encrypted objects and use a destination folder" {
         It -Skip "Should be successful" {
             $result = Invoke-DbaDbDecryptObject -SqlInstance $script:instance1 -Database $dbname -ExportDestination .
-            @($result | Where-Object { $_.Type -eq 'StoredProcedure' }).Count       | Should -Be 1
-            @($result | Where-Object { $_.Type -eq 'Trigger' }).Count               | Should -Be 1
-            @($result | Where-Object { $_.Type -eq 'UserDefinedFunction' }).Count   | Should -Be 3
-            @($result | Where-Object { $_.Type -eq 'View' }).Count                  | Should -Be 4
+            @($result | Where-Object { $_.Type -eq 'StoredProcedure' }).Count | Should -Be 1
+            @($result | Where-Object { $_.Type -eq 'Trigger' }).Count | Should -Be 1
+            @($result | Where-Object { $_.Type -eq 'UserDefinedFunction' }).Count | Should -Be 3
+            @($result | Where-Object { $_.Type -eq 'View' }).Count | Should -Be 4
         }
     }
 

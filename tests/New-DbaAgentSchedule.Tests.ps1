@@ -4,11 +4,11 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
+        [array]$params = ([Management.Automation.CommandMetaData]$ExecutionContext.SessionState.InvokeCommand.GetCommand($CommandName, 'Function')).Parameters.Keys
+        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Job', 'Schedule', 'Disabled', 'FrequencyType', 'FrequencyInterval', 'FrequencySubdayType', 'FrequencySubdayInterval', 'FrequencyRelativeInterval', 'FrequencyRecurrenceFactor', 'StartDate', 'EndDate', 'StartTime', 'EndTime', 'Force', 'EnableException'
+
         It "Should only contain our specific parameters" {
-            [array]$params = ([Management.Automation.CommandMetaData]$ExecutionContext.SessionState.InvokeCommand.GetCommand($CommandName, 'Function')).Parameters.Keys
-            [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Job', 'Schedule', 'Disabled', 'FrequencyType', 'FrequencyInterval', 'FrequencySubdayType', 'FrequencySubdayInterval', 'FrequencyRelativeInterval', 'FrequencyRecurrenceFactor', 'StartDate', 'EndDate', 'StartTime', 'EndTime', 'Force', 'EnableException'
-            $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should -Be 0
+            Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params | Should -BeNullOrEmpty
         }
     }
 }
@@ -27,7 +27,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 
     Context "Should create schedules based on frequency type" {
         BeforeAll {
-            $results = @{}
+            $results = @{ }
 
             $scheduleOptions = @('Once', 'OneTime', 'Daily', 'Weekly', 'Monthly', 'MonthlyRelative', 'AgentStart', 'AutoStart', 'IdleComputer', 'OnIdle')
 
@@ -61,17 +61,17 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 
         It "Should be a schedule on an existing job and have the correct frequency type" {
             foreach ($key in $results.keys) {
-                $($results[$key].parent)        | Should -Be 'dbatoolsci_newschedule'
-                $results[$key].FrequencyTypes   | Should -BeIn $scheduleOptions
+                $($results[$key].parent) | Should -Be 'dbatoolsci_newschedule'
+                $results[$key].FrequencyTypes | Should -BeIn $scheduleOptions
 
                 if ($key -in @('IdleComputer', 'OnIdle')) {
-                    $results[$key].FrequencyTypes   | Should -Be "OnIdle"
+                    $results[$key].FrequencyTypes | Should -Be "OnIdle"
                 } elseif ($key -in @('Once', 'OneTime')) {
-                    $results[$key].FrequencyTypes   | Should -Be "OneTime"
+                    $results[$key].FrequencyTypes | Should -Be "OneTime"
                 } elseif ($key -in @('AgentStart', 'AutoStart')) {
-                    $results[$key].FrequencyTypes   | Should -Be "AutoStart"
+                    $results[$key].FrequencyTypes | Should -Be "AutoStart"
                 } else {
-                    $results[$key].FrequencyTypes   | Should -Be $key
+                    $results[$key].FrequencyTypes | Should -Be $key
                 }
             }
         }
@@ -79,7 +79,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 
     Context "Should create schedules with various frequency interval" {
         BeforeAll {
-            $results = @{}
+            $results = @{ }
 
             foreach ($frequencyinterval in ('EveryDay', 'Weekdays', 'Weekend', 'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday',
                     1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31)) {
@@ -142,7 +142,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 
     Context "Should create schedules with various frequency subday type" {
         BeforeAll {
-            $results = @{}
+            $results = @{ }
 
             $scheduleOptions = @('Time', 'Once', 'Second', 'Seconds', 'Minute', 'Minutes', 'Hour', 'Hours')
 
@@ -177,19 +177,19 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 
         It "Should be a schedule on an existing job and have a valid frequency subday type" {
             foreach ($key in $results.keys) {
-                $($results[$key].parent)            | Should -Be 'dbatoolsci_newschedule'
+                $($results[$key].parent) | Should -Be 'dbatoolsci_newschedule'
                 $results[$key].FrequencySubdayTypes | Should -BeIn $scheduleOptions
 
                 if ($key -in @('Second', 'Seconds')) {
-                    $results[$key].FrequencySubdayTypes   | Should -Be "Second"
+                    $results[$key].FrequencySubdayTypes | Should -Be "Second"
                 } elseif ($key -in @('Minute', 'Minutes')) {
-                    $results[$key].FrequencySubdayTypes   | Should -Be "Minute"
+                    $results[$key].FrequencySubdayTypes | Should -Be "Minute"
                 } elseif ($key -in @('Hour', 'Hours')) {
-                    $results[$key].FrequencySubdayTypes   | Should -Be "Hour"
+                    $results[$key].FrequencySubdayTypes | Should -Be "Hour"
                 } elseif ($key -in @('Once', 'Time')) {
-                    $results[$key].FrequencySubdayTypes   | Should -Be "Once"
+                    $results[$key].FrequencySubdayTypes | Should -Be "Once"
                 } else {
-                    $results[$key].FrequencySubdayTypes   | Should -Be $key
+                    $results[$key].FrequencySubdayTypes | Should -Be $key
                 }
             }
         }
@@ -197,7 +197,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 
     Context "Should create schedules with various frequency relative interval" {
         BeforeAll {
-            $results = @{}
+            $results = @{ }
 
             # Unused (value of 0) is not valid for sp_add_jobschedule when using the MonthlyRelative frequency type, so 'Unused' has been removed from this test.
             $scheduleOptions = @('First', 'Second', 'Third', 'Fourth', 'Last')
@@ -234,9 +234,9 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 
         It "Should be a schedule on an existing job and have a valid frequency relative interval" {
             foreach ($key in $results.keys) {
-                $($results[$key].parent)                    | Should -Be 'dbatoolsci_newschedule'
-                $results[$key].FrequencyRelativeIntervals   | Should -BeIn $scheduleOptions
-                $results[$key].FrequencyRelativeIntervals   | Should -Be $key
+                $($results[$key].parent) | Should -Be 'dbatoolsci_newschedule'
+                $results[$key].FrequencyRelativeIntervals | Should -BeIn $scheduleOptions
+                $results[$key].FrequencyRelativeIntervals | Should -Be $key
             }
         }
     }

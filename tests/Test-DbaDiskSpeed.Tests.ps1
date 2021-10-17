@@ -4,11 +4,11 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
+        [array]$params = ([Management.Automation.CommandMetaData]$ExecutionContext.SessionState.InvokeCommand.GetCommand($CommandName, 'Function')).Parameters.Keys
+        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'EnableException', 'AggregateBy'
+
         It "Should only contain our specific parameters" {
-            [array]$params = ([Management.Automation.CommandMetaData]$ExecutionContext.SessionState.InvokeCommand.GetCommand($CommandName, 'Function')).Parameters.Keys
-            [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'EnableException', 'AggregateBy'
-            $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should -Be 0
+            Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params | Should -BeNullOrEmpty
         }
     }
 }
@@ -56,9 +56,9 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             $resultsWithParam = Test-DbaDiskSpeed -SqlInstance $script:instance1 -AggregateBy "File"
             $resultsWithoutParam = Test-DbaDiskSpeed -SqlInstance $script:instance1
 
-            $resultsWithParam.count                                 | Should -Be $resultsWithoutParam.count
-            $resultsWithParam.FileName -contains 'modellog.ldf'     | Should -Be $true
-            $resultsWithoutParam.FileName -contains 'modellog.ldf'  | Should -Be $true
+            $resultsWithParam.count | Should -Be $resultsWithoutParam.count
+            $resultsWithParam.FileName -contains 'modellog.ldf' | Should -Be $true
+            $resultsWithoutParam.FileName -contains 'modellog.ldf' | Should -Be $true
         }
 
         It "aggregate by database" {
@@ -71,7 +71,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
 
         It "aggregate by disk" {
             $results = Test-DbaDiskSpeed -SqlInstance $script:instance1 -AggregateBy "Disk"
-            (($results -is [System.Data.DataRow]) -or ($results.count -ge 1))   | Should -Be $true
+            (($results -is [System.Data.DataRow]) -or ($results.count -ge 1)) | Should -Be $true
             #($results.SqlInstance -contains $script:instance1)                  | Should -Be $true
         }
 
@@ -180,18 +180,18 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             $databases = Get-DbaDatabase -SqlInstance $script:instance2 -SqlCredential $linuxSqlCredential
 
             $results.Database -contains 'model' | Should -Be $true
-            $results.count                      | Should -Be $databases.count
+            $results.count | Should -Be $databases.count
 
             $results = Test-DbaDiskSpeed -SqlInstance $script:instance2 -SqlCredential $linuxSqlCredential -AggregateBy "Disk"
 
-            (($results -is [System.Data.DataRow]) -or ($results.count -ge 1))   | Should -Be $true
+            (($results -is [System.Data.DataRow]) -or ($results.count -ge 1)) | Should -Be $true
 
             $resultsWithParam = Test-DbaDiskSpeed -SqlInstance $script:instance2 -SqlCredential $linuxSqlCredential -AggregateBy "File"
             $resultsWithoutParam = Test-DbaDiskSpeed -SqlInstance $script:instance2 -SqlCredential $linuxSqlCredential
 
-            $resultsWithParam.count                                 | Should -Be $resultsWithoutParam.count
-            $resultsWithParam.FileName -contains 'modellog.ldf'     | Should -Be $true
-            $resultsWithoutParam.FileName -contains 'modellog.ldf'  | Should -Be $true
+            $resultsWithParam.count | Should -Be $resultsWithoutParam.count
+            $resultsWithParam.FileName -contains 'modellog.ldf' | Should -Be $true
+            $resultsWithoutParam.FileName -contains 'modellog.ldf' | Should -Be $true
         }
 
         # Separate test to run against a Linux-hosted SQL instance.

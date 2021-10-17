@@ -1,7 +1,9 @@
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
-
+$sourcePath = [IO.Path]::Combine((Split-Path $PSScriptRoot -Parent), 'src')
+$privFunction = [IO.Path]::Combine($sourcePath,'private','functions','Convert-DbaLsn.ps1')
+. $privFunction
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
         [array]$params = ([Management.Automation.CommandMetaData]$ExecutionContext.SessionState.InvokeCommand.GetCommand($CommandName, 'Function')).Parameters.Keys

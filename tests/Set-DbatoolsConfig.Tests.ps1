@@ -12,12 +12,6 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
         }
     }
 }
-<#
-    Integration test are custom to the command you are writing for.
-    Read https://github.com/sqlcollaborative/dbatools/blob/development/contributing.md#tests
-    for more guidence
-#>
-
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     It "impacts the connection timeout" {
         $null = Set-DbatoolsConfig -FullName sql.connection.timeout -Value 60
