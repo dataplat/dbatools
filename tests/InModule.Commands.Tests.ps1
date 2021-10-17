@@ -5,7 +5,8 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
     Context "duplicate commands are not added" {
         It "only indexes one instance per command" {
-            $commandlist = Import-PowerShellDataFile -Path '$PSScriptRoot\..\dbatools.psd1'
+            $sourcePath = [IO.Path]::Combine((Split-Path $PSScriptRoot -Parent), 'src')
+            $commandlist = Import-PowerShellDataFile -Path "$sourcePath\dbatools.psd1"
             $dupes = $commandlist.FunctionsToExport | Group-Object | Where-Object Count -gt 1
             $dupes.Name | Should -be $null
         }

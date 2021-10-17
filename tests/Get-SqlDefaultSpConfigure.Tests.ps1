@@ -1,7 +1,8 @@
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
-. "$PSScriptRoot\..\private\functions\Get-SqlDefaultSPConfigure.ps1"
+$sourcePath = [IO.Path]::Combine((Split-Path $PSScriptRoot -Parent), 'src')
+. "$sourcePath\private\functions\Get-SqlDefaultSPConfigure.ps1"
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
