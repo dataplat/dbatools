@@ -1,7 +1,14 @@
+$ModuleBase = Split-Path -Path $PSScriptRoot -Parent
+$TestBase = $PSScriptRoot
+
 $indent = '...'
 Write-Host -Object "Running $PSCommandpath" -ForegroundColor DarkGreen
+
 $dbatools_serialimport = $true
-Import-Module C:\github\dbatools\src\dbatools.psd1
+#imports the module making sure DLL is loaded ok
+Import-Module "$ModuleBase\src\dbatools.psd1" -DisableNameChecking
+#imports the psm1 to be able to use internal functions in tests
+Import-Module "$ModuleBase\src\dbatools.psm1" -DisableNameChecking
 Start-Sleep 5
 # This script spins up the 2016 instance and the relative setup
 

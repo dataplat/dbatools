@@ -1,4 +1,5 @@
-
+$ModuleBase = Split-Path -Path $PSScriptRoot -Parent
+$TestBase = $PSScriptRoot
 
 
 Function Install-ADAuthenticationLibraryforSQLServer {
@@ -46,7 +47,12 @@ $null = Install-ADAuthenticationLibraryforSQLServer
 
 $indent = '...'
 Write-Host -Object "$indent Running $PSCommandpath" -ForegroundColor DarkGreen
-Import-Module C:\github\dbatools\src\dbatools.psm1 -Force
+
+$dbatools_serialimport = $true
+#imports the module making sure DLL is loaded ok
+Import-Module "$ModuleBase\src\dbatools.psd1" -DisableNameChecking
+#imports the psm1 to be able to use internal functions in tests
+Import-Module "$ModuleBase\src\dbatools.psm1" -DisableNameChecking
 
 # This script spins up the 2008R2SP2 instance and the relative setup
 
