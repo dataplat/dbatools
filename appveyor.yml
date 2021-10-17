@@ -2,11 +2,11 @@
 image: Previous Visual Studio 2015
 configuration: "Debug"
 
-build_script:
-  - ps: Set-Service wuauserv -StartupType Manual #otherwise, choco command exits with code 1058
-  - ps: choco install windows-sdk-10 | Out-String | Out-Null
-  - ps: choco install dotnetcore-sdk | Out-String | Out-Null
-  - ps: .\build-library.ps1
+# build_script:
+  # - ps: Set-Service wuauserv -StartupType Manual #otherwise, choco command exits with code 1058
+  # - ps: choco install windows-sdk-10 | Out-String | Out-Null
+  # - ps: choco install dotnetcore-sdk | Out-String | Out-Null
+  # - ps: .\build-library.ps1
 
 version: 0.9.{build}
 
