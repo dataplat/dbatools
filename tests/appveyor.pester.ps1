@@ -37,6 +37,7 @@ param (
     $TestFile = "TestResultsPS$PSVersion.xml",
     $ProjectRoot = $env:APPVEYOR_BUILD_FOLDER,
     $ModuleBase = [IO.Path]::Combine($ProjectRoot, 'src'),
+    $TestBase = [IO.Path]::Combine($ProjectRoot,'tests'),
     [switch]$IncludeCoverage
 )
 
@@ -181,8 +182,8 @@ function Send-CodecovReport($CodecovReport) {
 
 if (-not $Finalize) {
     # Invoke appveyor.common.ps1 to know which tests to run
-    . "$ModuleBase\tests\appveyor.common.ps1"
-    $AllScenarioTests = Get-TestsForBuildScenario -ModuleBase $ModuleBase
+    . "$TestBase\tests\appveyor.common.ps1"
+    $AllScenarioTests = Get-TestsForBuildScenario -ModuleBase $ProjectRoot
 }
 
 #Run a test with the current version of PowerShell
@@ -235,7 +236,7 @@ if (-not $Finalize) {
     # Gather support package as an artifact
     # New-DbatoolsSupportPackage -Path $ModuleBase - turns out to be too heavy
     try {
-        $msgFile = "$ModuleBase\dbatools_messages.xml"
+        $msgFile = "$ProjectRoot\dbatools_messages.xml"
         Write-Host -ForegroundColor DarkGreen "Dumping message log into $msgFile"
         Get-DbatoolsLog | Select-Object FunctionName, Level, TimeStamp, Message | Export-Clixml -Path $msgFile -ErrorAction Stop
         Compress-Archive -Path $msgFile -DestinationPath "$msgFile.zip" -ErrorAction Stop
