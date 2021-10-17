@@ -46,11 +46,11 @@ Set-Location $ModuleBase
 # required to calculate coverage
 $global:dbatools_dotsourcemodule = $true
 $dbatools_serialimport = $true
-#imports the psm1 to be able to use internal functions in tests
-Import-Module "$ModuleBase\dbatools.psm1" -Force
+
 #imports the module making sure DLL is loaded ok
 Import-Module "$ModuleBase\dbatools.psd1"
-
+#imports the psm1 to be able to use internal functions in tests
+Import-Module "$ModuleBase\dbatools.psm1" -Force
 Update-TypeData -AppendPath "$ModuleBase\dbatools.types.ps1xml" -ErrorAction SilentlyContinue # ( this should already be loaded by dbatools.psd1 )
 Start-Sleep 5
 
@@ -178,7 +178,6 @@ function Send-CodecovReport($CodecovReport) {
     $Request.Query = $CodeCovParams.ToString()
     Invoke-RestMethod -Uri $Request.Uri -Method Post -InFile $CodecovReport -ContentType 'multipart/form-data'
 }
-
 
 if (-not $Finalize) {
     # Invoke appveyor.common.ps1 to know which tests to run
