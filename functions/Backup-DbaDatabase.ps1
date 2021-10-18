@@ -741,6 +741,10 @@ function Backup-DbaDatabase {
             }
 
             $headerinfo | Select-DefaultView -ExcludeProperty $OutputExclude
+
+            if (-not $ReplaceInName) {
+                $FilePath = $null
+            }
         }
     }
 }
