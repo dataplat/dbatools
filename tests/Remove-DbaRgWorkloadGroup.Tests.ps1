@@ -27,12 +27,14 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             }
             $newWorkloadGroup = New-DbaRgWorkloadGroup @splatNewWorkloadGroup
             $result = Get-DbaRgWorkloadGroup -SqlInstance $script:instance2 | Where-Object Name -eq $wklGroupName
-            $null = Remove-DbaRgWorkloadGroup -SqlInstance $script:instance2 -WorkloadGroup $wklGroupName
-            $result2 = Get-DbaRgWorkloadGroup -SqlInstance $script:instance2 | Where-Object Name -eq $wklGroupName
+            $result2 = Remove-DbaRgWorkloadGroup -SqlInstance $script:instance2 -WorkloadGroup $wklGroupName
+            $result3 = Get-DbaRgWorkloadGroup -SqlInstance $script:instance2 | Where-Object Name -eq $wklGroupName
 
             $newWorkloadGroup | Should -Not -Be $null
-            $result.Count | Should -BeGreaterThan $result2.Count
-            $result2 | Should -Be $null
+            $result.Count | Should -BeGreaterThan $result3.Count
+            $result2.Status | Should -Be "Dropped"
+            $result2.IsRemoved | Should -Be $true
+            $result3 | Should -Be $null
         }
         It "Removes a workload group in a user defined resource pool" {
             $wklGroupName = "dbatoolssci_wklgroupTest"
@@ -54,14 +56,16 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $null = New-DbaRgResourcePool @splatNewResourcePool
             $newWorkloadGroup = New-DbaRgWorkloadGroup @splatNewWorkloadGroup
             $result = Get-DbaRgWorkloadGroup -SqlInstance $script:instance2 | Where-Object Name -eq $wklGroupName
-            $null = Remove-DbaRgWorkloadGroup -SqlInstance $script:instance2 -WorkloadGroup $wklGroupName -ResourcePool $resourcePoolName -ResourcePoolType $resourcePoolType
-            $result2 = Get-DbaRgWorkloadGroup -SqlInstance $script:instance2 | Where-Object Name -eq $wklGroupName
+            $result2 = Remove-DbaRgWorkloadGroup -SqlInstance $script:instance2 -WorkloadGroup $wklGroupName -ResourcePool $resourcePoolName -ResourcePoolType $resourcePoolType
+            $result3 = Get-DbaRgWorkloadGroup -SqlInstance $script:instance2 | Where-Object Name -eq $wklGroupName
 
             $null = Remove-DbaRgResourcePool -SqlInstance $script:instance2 -ResourcePool $resourcePoolName -Type $resourcePoolType
 
             $newWorkloadGroup | Should -Not -Be $null
-            $result.Count | Should -BeGreaterThan $result2.Count
-            $result2 | Should -Be $null
+            $result.Count | Should -BeGreaterThan $result3.Count
+            $result2.Status | Should -Be "Dropped"
+            $result2.IsRemoved | Should -Be $true
+            $result3 | Should -Be $null
         }
         It "Removes multiple workload groups" {
             $wklGroupName = "dbatoolssci_wklgroupTest"
@@ -74,12 +78,14 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 
             $newWorkloadGroups = New-DbaRgWorkloadGroup @splatNewWorkloadGroup
             $result = Get-DbaRgWorkloadGroup -SqlInstance $script:instance2 | Where-Object Name -in $wklGroupName, $wklGroupName2
-            $null = Remove-DbaRgWorkloadGroup -SqlInstance $script:instance2 -WorkloadGroup $wklGroupName, $wklGroupName2
-            $result2 = Get-DbaRgWorkloadGroup -SqlInstance $script:instance2 | Where-Object Name -in $wklGroupName, $wklGroupName2
+            $result2 = Remove-DbaRgWorkloadGroup -SqlInstance $script:instance2 -WorkloadGroup $wklGroupName, $wklGroupName2
+            $result3 = Get-DbaRgWorkloadGroup -SqlInstance $script:instance2 | Where-Object Name -in $wklGroupName, $wklGroupName2
 
             $newWorkloadGroups | Should -Not -Be $null
-            $result.Count | Should -BeGreaterThan $result2.Count
-            $result2 | Should -Be $null
+            $result.Count | Should -BeGreaterThan $result3.Count
+            $result2.Status | Should -Be "Dropped"
+            $result2.IsRemoved | Should -Be $true
+            $result3 | Should -Be $null
         }
         It "Removes a piped workload group" {
             $wklGroupName = "dbatoolssci_wklgroupTest"
@@ -90,12 +96,14 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             }
             $newWorkloadGroup = New-DbaRgWorkloadGroup @splatNewWorkloadGroup
             $result = Get-DbaRgWorkloadGroup -SqlInstance $script:instance2 | Where-Object Name -eq $wklGroupName
-            $newWorkloadGroup | Remove-DbaRgWorkloadGroup
-            $result2 = Get-DbaRgWorkloadGroup -SqlInstance $script:instance2 | Where-Object Name -eq $wklGroupName
+            $result2 = $newWorkloadGroup | Remove-DbaRgWorkloadGroup
+            $result3 = Get-DbaRgWorkloadGroup -SqlInstance $script:instance2 | Where-Object Name -eq $wklGroupName
 
             $newWorkloadGroup | Should -Not -Be $null
-            $result.Count | Should -BeGreaterThan $result2.Count
-            $result2 | Should -Be $null
+            $result.Count | Should -BeGreaterThan $result3.Count
+            $result2.Status | Should -Be "Dropped"
+            $result2.IsRemoved | Should -Be $true
+            $result3 | Should -Be $null
         }
     }
 }

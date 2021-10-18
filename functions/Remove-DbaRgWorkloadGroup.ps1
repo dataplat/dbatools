@@ -102,28 +102,41 @@ function Remove-DbaRgWorkloadGroup {
             $resPool = $resPools | Where-Object Name -eq $ResourcePool
             $InputObject += $resPool.WorkloadGroups | Where-Object Name -in $WorkloadGroup
         }
-
+    }
+    end {
         foreach ($wklGroup in $InputObject) {
-            try {
-                $resPool = $wklGroup.Parent
-                $server = $resPool.Parent.Parent
-                if ($Pscmdlet.ShouldProcess($resPool, "Dropping existing workload group")) {
-                    try {
-                        $wklGroup.Drop()
-                    } catch {
-                        Stop-Function -Message "Could not remove existing workload group $wklGroup on $server." -Target $wklGroup -Continue
-                    }
+            $server = $wklGroup.Parent.Parent.Parent
+            if ($Pscmdlet.ShouldProcess($wklGroup, "Dropping workload group")) {
+                $output = [pscustomobject]@{
+                    ComputerName = $server.ComputerName
+                    InstanceName = $server.ServiceName
+                    SqlInstance  = $server.DomainInstanceName
+                    Name         = $wklGroup.Name
+                    Status       = $null
+                    IsRemoved    = $false
                 }
-
-                # Reconfigure Resource Governor
-                if ($SkipReconfigure) {
-                    Write-Message -Level Warning -Message "Workload group changes will not take effect in Resource Governor until it is reconfigured."
-                } elseif ($PSCmdlet.ShouldProcess($server, "Reconfiguring the Resource Governor")) {
-                    $server.ResourceGovernor.Alter()
+                try {
+                    $wklGroup.Drop()
+                    $output.Status = "Dropped"
+                    $output.IsRemoved = $true
+                } catch {
+                    Stop-Function -Message "Could not remove existing workload group $wklGroup on $server." -Target $wklGroup -Continue
+                    $output.Status = (Get-ErrorMessage -Record $_)
+                    $output.IsRemoved = $false
                 }
-            } catch {
-                Stop-Function -Message "Failure" -ErrorRecord $_ -Target $wklGroup -Continue
             }
+
+            # Reconfigure Resource Governor
+            if ($SkipReconfigure) {
+                Write-Message -Level Warning -Message "Workload group changes will not take effect in Resource Governor until it is reconfigured."
+            } elseif ($PSCmdlet.ShouldProcess($server, "Reconfiguring the Resource Governor")) {
+                try {
+                    $server.ResourceGovernor.Alter()
+                } catch {
+                    Stop-Function -Message "Could not reconfigure Resource Governor on $server." -Target $server.ResourceGovernor -Continue
+                }
+            }
+            $output
         }
     }
 }
