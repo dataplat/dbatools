@@ -132,43 +132,43 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             $results.Count | Should -Be 4
             $results."PII-Name" | Should -Contain 'IPv4 Address'
             $results."PII-Name" | Should -Contain 'IPv6 Address'
-            ($results | Where-Object "PII-Name" -eq "First name").Count | Should -Be 2
+            ($results | Where-Object { $_."PII-Name" -eq "First name" }).Count | Should -Be 2
         }
 
         It "Country param" {
             $results = Invoke-DbaDbPiiScan -SqlInstance $script:instance2 -Database $db -Table Customer -Country Austria
             $results.Count | Should -Be 9
-            (($results | Where-Object Country -eq "Austria")."PII-Name" -eq "National ID") | Should -Be $true
+            (($results | Where-Object { $_.Country -eq "Austria" })."PII-Name" -eq "National ID") | Should -Be $true
 
             $results = Invoke-DbaDbPiiScan -SqlInstance $script:instance2 -Database $db -Table Customer -Country Austria, Slovakia
             $results.Count | Should -Be 10
-            (($results | Where-Object Country -eq "Austria")."PII-Name" -eq "National ID") | Should -Be $true
-            (($results | Where-Object Country -eq "Slovakia")."PII-Name" -eq "National ID") | Should -Be $true
+            (($results | Where-Object { $_.Country -eq "Austria" })."PII-Name" -eq "National ID") | Should -Be $true
+            (($results | Where-Object { $_.Country -eq "Slovakia" })."PII-Name" -eq "National ID") | Should -Be $true
         }
 
         It "CountryCode param" {
             $results = Invoke-DbaDbPiiScan -SqlInstance $script:instance2 -Database $db -Table Customer -CountryCode SK
             $results.Count | Should -Be 9
-            (($results | Where-Object CountryCode -eq "SK")."PII-Name" -eq "National ID") | Should -Be $true
+            (($results | Where-Object { $_.CountryCode -eq "SK" })."PII-Name" -eq "National ID") | Should -Be $true
 
             $results = Invoke-DbaDbPiiScan -SqlInstance $script:instance2 -Database $db -Table Customer -CountryCode AT, SK
             $results.Count | Should -Be 10
-            (($results | Where-Object CountryCode -eq "SK")."PII-Name" -eq "National ID") | Should -Be $true
-            (($results | Where-Object CountryCode -eq "AT")."PII-Name" -eq "National ID") | Should -Be $true
+            (($results | Where-Object { $_.CountryCode -eq "SK" })."PII-Name" -eq "National ID") | Should -Be $true
+            (($results | Where-Object { $_.CountryCode -eq "AT" })."PII-Name" -eq "National ID") | Should -Be $true
         }
 
         It "Custom scan definitions" {
             $results = Invoke-DbaDbPiiScan -SqlInstance $script:instance2 -Database $db -KnownNameFilePath "$PSScriptRoot\ObjectDefinitions\Invoke-DbaDbPiiScan\custom-pii-knownnames.json" -PatternFilePath "$PSScriptRoot\ObjectDefinitions\Invoke-DbaDbPiiScan\custom-pii-patterns.json" -ExcludeDefaultKnownName -ExcludeDefaultPattern
             $results.Count | Should -Be 6
-            ($results | Where-Object "PII-Name" -eq "First name").Count | Should -Be 3
-            ($results | Where-Object "PII-Name" -eq "IPv4 Address").Count | Should -Be 2
-            ($results | Where-Object "PII-Name" -eq "IPv6 Address").Column | Should -Be UnknownColumn
+            ($results | Where-Object { $_."PII-Name" -eq "First name" }).Count | Should -Be 3
+            ($results | Where-Object { $_."PII-Name" -eq "IPv4 Address" }).Count | Should -Be 2
+            ($results | Where-Object { $_."PII-Name" -eq "IPv6 Address" }).Column | Should -Be UnknownColumn
         }
 
         It "ExcludeColumn and ExcludeTable params" {
             $results = Invoke-DbaDbPiiScan -SqlInstance $script:instance2 -Database $db -ExcludeTable Customer
             $results.Count | Should -Be 2
-            ($results | Where-Object "PII-Name" -eq "First name").Count | Should -Be 2
+            ($results | Where-Object { $_."PII-Name" -eq "First name" }).Count | Should -Be 2
 
             $results = Invoke-DbaDbPiiScan -SqlInstance $script:instance2 -Database $db -ExcludeTable Customer, TestTable
             $results.Table | Should -Be TestTable2
