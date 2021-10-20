@@ -338,23 +338,6 @@ function Connect-DbaInstance {
         [switch]$DisableException
     )
     begin {
-        $azurevm = Get-DbatoolsConfigValue -FullName azure.vm
-        #region Utility functions
-        if ($Tenant -or $AuthenticationType -in 'AD Universal with MFA Support', 'AD - Password', 'AD - Integrated' -and ($null -eq $azurevm)) {
-            Write-Message -Level Verbose -Message "Determining if current workstation is an Azure VM"
-            # Do an Azure check - this will occur just once
-            try {
-                $azurevmcheck = Invoke-RestMethod -Headers @{"Metadata" = "true" } -Uri http://169.254.169.254/metadata/instance?api-version=2018-10-01 -Method GET -TimeoutSec 2 -ErrorAction Stop
-                if ($azurevmcheck.compute.azEnvironment) {
-                    $azurevm = $true
-                    $null = Set-DbatoolsConfig -FullName azure.vm -Value $true -PassThru | Register-DbatoolsConfig
-                } else {
-                    $null = Set-DbatoolsConfig -FullName azure.vm -Value $false -PassThru | Register-DbatoolsConfig
-                }
-            } catch {
-                $null = Set-DbatoolsConfig -FullName azure.vm -Value $false -PassThru | Register-DbatoolsConfig
-            }
-        }
         function Test-Azure {
             Param (
                 [DbaInstanceParameter]$SqlInstance
@@ -1192,11 +1175,6 @@ function Connect-DbaInstance {
 
                     if (($appid -and $clientsecret) -and -not $SqlCredential) {
                         $SqlCredential = New-Object System.Management.Automation.PSCredential ($appid, $clientsecret)
-                    }
-
-                    if (-not $azurevm -and (-not $SqlCredential -and $Tenant)) {
-                        Stop-Function -Target $instance -Message "When using Tenant, SqlCredential must be specified."
-                        return
                     }
 
                     if (-not $Database) {
