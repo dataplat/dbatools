@@ -1,7 +1,7 @@
 
 -- SQL Server 2017 Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: October 11, 2021
+-- Last Modified: October 20, 2021
 -- https://glennsqlperformance.com/
 -- https://sqlserverperformance.wordpress.com/
 -- YouTube: https://bit.ly/2PkoAM1 
@@ -1257,11 +1257,15 @@ ORDER BY SUM(mc.pages_kb) DESC OPTION (RECOMPILE);
 
 
 -- Find single-use, ad-hoc and prepared queries that are bloating the plan cache  (Query 47) (Ad hoc Queries)
-SELECT TOP(50) DB_NAME(t.[dbid]) AS [Database Name], t.[text] AS [Query Text], 
+SELECT TOP(50) DB_NAME(t.[dbid]) AS [Database Name],
+REPLACE(REPLACE(LEFT(t.[text], 255), CHAR(10),''), CHAR(13),'') AS [Short Query Text], 
 cp.objtype AS [Object Type], cp.cacheobjtype AS [Cache Object Type],  
-cp.size_in_bytes/1024 AS [Plan Size in KB]
+cp.size_in_bytes/1024 AS [Plan Size in KB],
+CASE WHEN CONVERT(nvarchar(max), qp.query_plan) COLLATE Latin1_General_BIN2 LIKE N'%<MissingIndexes>%' THEN 1 ELSE 0 END AS [Has Missing Index]
+--,t.[text] AS [Query Text], qp.query_plan AS [Query Plan] -- uncomment out these columns if not copying results to Excel
 FROM sys.dm_exec_cached_plans AS cp WITH (NOLOCK)
 CROSS APPLY sys.dm_exec_sql_text(plan_handle) AS t
+CROSS APPLY sys.dm_exec_query_plan(plan_handle) AS qp
 WHERE cp.cacheobjtype = N'Compiled Plan' 
 AND cp.objtype IN (N'Adhoc', N'Prepared') 
 AND cp.usecounts = 1
@@ -1459,7 +1463,8 @@ qs.total_worker_time/qs.execution_count AS [Avg Worker Time],
 qs.total_elapsed_time AS [Total Elapsed Time],
 qs.total_elapsed_time/qs.execution_count AS [Avg Elapsed Time],
 CASE WHEN CONVERT(nvarchar(max), qp.query_plan) COLLATE Latin1_General_BIN2 LIKE N'%<MissingIndexes>%' THEN 1 ELSE 0 END AS [Has Missing Index],
-qs.creation_time AS [Creation Time]
+FORMAT(qs.last_execution_time, 'yyyy-MM-dd HH:mm:ss', 'en-US') AS [Last Execution Time], 
+FORMAT(qs.creation_time, 'yyyy-MM-dd HH:mm:ss', 'en-US') AS [Plan Cached Time]
 --,t.[text] AS [Complete Query Text], qp.query_plan AS [Query Plan] -- uncomment out these columns if not copying results to Excel
 FROM sys.dm_exec_query_stats AS qs WITH (NOLOCK)
 CROSS APPLY sys.dm_exec_sql_text(plan_handle) AS t 
@@ -1847,10 +1852,9 @@ ORDER BY sp.modification_counter DESC, o.name OPTION (RECOMPILE);
 -- Get fragmentation info for all indexes above a certain size in the current database  (Query 73) (Index Fragmentation)
 -- Note: This query could take some time on a very large database
 SELECT DB_NAME(ps.database_id) AS [Database Name], SCHEMA_NAME(o.[schema_id]) AS [Schema Name],
-OBJECT_NAME(ps.OBJECT_ID) AS [Object Name], i.[name] AS [Index Name], ps.index_id, 
-ps.index_type_desc, ps.avg_fragmentation_in_percent, 
-ps.fragment_count, ps.page_count, i.fill_factor, i.has_filter, 
-i.filter_definition, i.[allow_page_locks]
+OBJECT_NAME(ps.OBJECT_ID) AS [Object Name], i.[name] AS [Index Name], ps.index_id, ps.index_type_desc, 
+CAST(ps.avg_fragmentation_in_percent AS DECIMAL (15,3)) AS [Avg Fragmentation in Pct], 
+ps.fragment_count, ps.page_count, i.fill_factor, i.has_filter, i.filter_definition, i.[allow_page_locks]
 FROM sys.dm_db_index_physical_stats(DB_ID(),NULL, NULL, NULL , N'LIMITED') AS ps
 INNER JOIN sys.indexes AS i WITH (NOLOCK)
 ON ps.[object_id] = i.[object_id] 
@@ -1868,12 +1872,12 @@ ORDER BY ps.avg_fragmentation_in_percent DESC OPTION (RECOMPILE);
 
 --- Index Read/Write stats (all tables in current DB) ordered by Reads  (Query 74) (Overall Index Usage - Reads)
 SELECT SCHEMA_NAME(t.[schema_id]) AS [SchemaName], OBJECT_NAME(i.[object_id]) AS [ObjectName], 
-       i.[name] AS [IndexName], i.index_id, 
+       i.[name] AS [IndexName], i.index_id, i.[type_desc] AS [Index Type],
        s.user_seeks, s.user_scans, s.user_lookups,
 	   s.user_seeks + s.user_scans + s.user_lookups AS [Total Reads], 
 	   s.user_updates AS [Writes],  
-	   i.[type_desc] AS [Index Type], i.fill_factor AS [Fill Factor], i.has_filter, i.filter_definition, 
-	   s.last_user_scan, s.last_user_lookup, s.last_user_seek
+	   i.fill_factor AS [Fill Factor], i.has_filter, i.filter_definition, 
+	   s.last_user_scan, s.last_user_lookup, s.last_user_seek, i.[allow_page_locks]
 FROM sys.indexes AS i WITH (NOLOCK)
 LEFT OUTER JOIN sys.dm_db_index_usage_stats AS s WITH (NOLOCK)
 ON i.[object_id] = s.[object_id]
@@ -1890,10 +1894,10 @@ ORDER BY s.user_seeks + s.user_scans + s.user_lookups DESC OPTION (RECOMPILE); -
 
 --- Index Read/Write stats (all tables in current DB) ordered by Writes  (Query 75) (Overall Index Usage - Writes)
 SELECT SCHEMA_NAME(t.[schema_id]) AS [SchemaName],OBJECT_NAME(i.[object_id]) AS [ObjectName], 
-	   i.[name] AS [IndexName], i.index_id,
+	   i.[name] AS [IndexName], i.index_id, i.[type_desc] AS [Index Type],
 	   s.user_updates AS [Writes], s.user_seeks + s.user_scans + s.user_lookups AS [Total Reads], 
-	   i.[type_desc] AS [Index Type], i.fill_factor AS [Fill Factor], i.has_filter, i.filter_definition,
-	   s.last_system_update, s.last_user_update
+	   i.fill_factor AS [Fill Factor], i.has_filter, i.filter_definition,
+	   s.last_system_update, s.last_user_update, i.[allow_page_locks]
 FROM sys.indexes AS i WITH (NOLOCK)
 LEFT OUTER JOIN sys.dm_db_index_usage_stats AS s WITH (NOLOCK)
 ON i.[object_id] = s.[object_id]
