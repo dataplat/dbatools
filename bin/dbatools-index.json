@@ -47481,6 +47481,106 @@
         "Syntax":  "Remove-DbaServerRole [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-ServerRole] \u003cString[]\u003e] [[-InputObject] \u003cServerRole[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
+        "Name":  "Remove-DbaServerRoleMember",
+        "Description":  "Removes login(s) from a server-level role(s) for each instance(s) of SQL Server.",
+        "Tags":  [
+                     "Role",
+                     "Security",
+                     "Login"
+                 ],
+        "Synopsis":  "Removes login(s) from a server-level role(s) for each instance(s) of SQL Server.",
+        "Alias":  "",
+        "Author":  "Mikey Bronowski (@MikeyBronowski), https://bronowski.it",
+        "CommandName":  "Remove-DbaServerRoleMember",
+        "Availability":  "Windows, Linux, macOS",
+        "Links":  "https://dbatools.io/Remove-DbaServerRoleMember",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eRemove-DbaServerRoleMember -SqlInstance server1 -ServerRole dbcreator -Login login1\nRemoves login1 from the dbcreator fixed server-level role on the instance server1.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eRemove-DbaServerRoleMember -SqlInstance server1, sql2016 -ServerRole customrole -Login login1\nRemoves login1 from customrole custom server-level role on the instance server1 and sql2016.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eRemove-DbaServerRoleMember -SqlInstance server1 -ServerRole customrole -Role dbcreator\nRemoves customrole custom server-level role from the dbcreator fixed server-level role.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003e$servers = Get-Content C:\\servers.txt\nPS C:\\\u003e $servers | Remove-DbaServerRoleMember -ServerRole sysadmin -Login login1\nRemoves login1 from the sysadmin fixed server-level role in every server in C:\\servers.txt.\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eRemove-DbaServerRoleMember -SqlInstance localhost -ServerRole bulkadmin, dbcreator -Login login1\nRemoves login1 from the bulkadmin and dbcreator fixed server-level roles on the server localhost.\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003e$roles = Get-DbaServerRole -SqlInstance localhost -ServerRole bulkadmin, dbcreator\nPS C:\\\u003e $roles | Remove-DbaServerRoleMember -Login login1\nRemoves login1 from the bulkadmin and dbcreator fixed server-level roles on the server localhost.\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003ePS C:\\ $logins = Get-Content C:\\logins.txt\nPS C:\\ $srvLogins = Get-DbaLogin -SqlInstance server1 -Login $logins\r\nPS C:\\ Remove-DbaServerRoleMember -Login $logins -ServerRole mycustomrole\nRemoves all the logins found in C:\\logins.txt from mycustomrole custom server-level role on server1.",
+        "Params":  [
+                       [
+                           "SqlInstance",
+                           "The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.",
+                           "",
+                           false,
+                           "true (ByValue)",
+                           "",
+                           ""
+                       ],
+                       [
+                           "SqlCredential",
+                           "Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).\nWindows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.\nFor MFA support, please use Connect-DbaInstance.",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "ServerRole",
+                           "The server-level role(s) to process.",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "Login",
+                           "The login(s) to remove from server-level role(s) specified.",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "Role",
+                           "The role(s) to remove from server-level role(s) specified.",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "InputObject",
+                           "Enables piped input from Get-DbaServerRole.",
+                           "",
+                           false,
+                           "true (ByValue)",
+                           "",
+                           ""
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "",
+                           false,
+                           "false",
+                           "False",
+                           ""
+                       ],
+                       [
+                           "WhatIf",
+                           "Shows what would happen if the command were to run. No actions are actually performed.",
+                           "wi",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "Confirm",
+                           "Prompts you for confirmation before executing any changing operations within the command.",
+                           "cf",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ]
+                   ],
+        "Syntax":  "Remove-DbaServerRoleMember [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-ServerRole] \u003cString[]\u003e] [[-Login] \u003cString[]\u003e] [[-Role] \u003cString[]\u003e] [[-InputObject] \u003cObject[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+    },
+    {
         "Name":  "Remove-DbaSpn",
         "Description":  "This function will connect to Active Directory and search for an account. If the account is found, it will attempt to remove the specified SPN. Once the SPN is removed, the function will also remove delegation to that service.\n\nIn order to run this function, the credential you provide must have write access to Active Directory.",
         "Tags":  "SPN",
