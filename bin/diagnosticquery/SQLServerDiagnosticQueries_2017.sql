@@ -21,7 +21,7 @@
 -- https://dbatools.io/
 
 -- Invoke-DbaDiagnosticQuery
--- https://dbatools.io/functions/invoke-dbadiagnosticquery/
+-- https://docs.dbatools.io/Invoke-DbaDiagnosticQuery
 
 
 --******************************************************************************

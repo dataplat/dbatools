@@ -21,7 +21,7 @@
 -- https://dbatools.io/
 
 -- Invoke-DbaDiagnosticQuery
--- https://dbatools.io/functions/invoke-dbadiagnosticquery/
+-- https://docs.dbatools.io/Invoke-DbaDiagnosticQuery
 
 
 --******************************************************************************
@@ -203,7 +203,7 @@ DBCC TRACESTATUS (-1);
 -- TF 3226 - Supresses logging of successful database backup messages to the SQL Server Error Log
 --           https://bit.ly/38zDNAK   
 
--- TF 6534 - Enables use of native code to improve performance with spatial data
+-- TF 6534 - Enables use of native code to improve performance with spatial data. This is a startup trace flag only
 --           https://bit.ly/2HrQUpU         
 
 -- TF 7745 - Prevents Query Store data from being written to disk in case of a failover or shutdown command
@@ -615,6 +615,7 @@ ORDER BY LogDate DESC OPTION (RECOMPILE);
 DROP TABLE IF EXISTS #ErrorLogFiles;
 DROP TABLE IF EXISTS #SQLErrorLog_AllLogs;
 GO
+------
 
 
 -- Get number of data files in tempdb database (Query 24) (TempDB Data Files)
