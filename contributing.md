@@ -10,7 +10,7 @@ Let's sum this up saying that we'd love your help. There are several ways to con
 - Documentation: functions, website, this guide, everything can be improved (everyone can)
 - Code review (PowerShell/T-SQL knowledge required)
 
-Our [dbatools-dev](https://sqlcommunity.slack.com/messages/C3EJ852JD/) Slack channel is best avenue for asking for assistance or needing review of any work on the module. The main contributors stay active on this channel during the week for the most part.
+Our [dbatools-dev](https://aka.ms/sqlslack) Slack channel is best avenue for asking for assistance or needing review of any work on the module. The main contributors stay active on this channel during the week for the most part.
 
 ## Documentation
 
