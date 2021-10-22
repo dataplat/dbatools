@@ -74,7 +74,7 @@ body:
     id: ps-version
     attributes:
       label: "PowerShell Host Version"
-      description: "You can provide the output from: $PSVersionTable | Set-Clipboard"
+      description: "You can provide the output from: $PSVersionTable | Out-String | Set-Clipboard"
     validations:
       required: true
   - type: textarea
