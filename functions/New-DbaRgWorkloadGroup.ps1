@@ -17,7 +17,7 @@ function New-DbaRgWorkloadGroup {
         Name of the workload group to be created.
 
     .PARAMETER ResourcePool
-        Name of the resource pool to create the workload group in.
+        Name of the resource pool to create the workload group in. If not provided, set to the Default Resource Pool.
 
     .PARAMETER ResourcePoolType
         Internal (default) or External
