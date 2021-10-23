@@ -26,7 +26,7 @@ function New-DbaRgWorkloadGroup {
         Specifies the relative importance of a request in the workload group. Default is MEDIUM, allowed: LOW, MEDIUM, HIGH
 
     .PARAMETER RequestMaximumMemoryGrantPercentage
-        Specifies the maximum amount of memory that a single request can take from the pool.
+        Specifies the maximum amount of memory that a single request can take from the pool. Default is 25%.
 
     .PARAMETER RequestMaximumCpuTimeInSeconds
         Specifies the maximum amount of CPU time, in seconds, that a request can use.
