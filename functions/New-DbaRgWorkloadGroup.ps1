@@ -124,7 +124,7 @@ function New-DbaRgWorkloadGroup {
                 $existingWorkloadGroup = $resPool.WorkloadGroups | Where-Object Name -eq $wklGroup
                 if ($null -ne $existingWorkloadGroup) {
                     if ($Force) {
-                        if ($Pscmdlet.ShouldProcess($existingWorkloadGroup, "Dropping existing workload group $wklGroup because -Force was used")) {
+                        if ($PSCmdlet.ShouldProcess($existingWorkloadGroup, "Dropping existing workload group $wklGroup because -Force was used")) {
                             try {
                                 $existingWorkloadGroup.Drop()
                             } catch {
