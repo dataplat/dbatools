@@ -23,7 +23,7 @@ function New-DbaRgWorkloadGroup {
         Internal or External
 
     .PARAMETER Importance
-        Specifies the relative importance of a request in the workload group.
+        Specifies the relative importance of a request in the workload group. Default is MEDIUM, allowed: LOW, MEDIUM, HIGH
 
     .PARAMETER RequestMaximumMemoryGrantPercentage
         Specifies the maximum amount of memory that a single request can take from the pool.
