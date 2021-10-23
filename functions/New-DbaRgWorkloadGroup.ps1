@@ -20,7 +20,7 @@ function New-DbaRgWorkloadGroup {
         Name of the resource pool to create the workload group in.
 
     .PARAMETER ResourcePoolType
-        Internal or External
+        Internal (default) or External
 
     .PARAMETER Importance
         Specifies the relative importance of a request in the workload group. Default is MEDIUM, allowed: LOW, MEDIUM, HIGH
