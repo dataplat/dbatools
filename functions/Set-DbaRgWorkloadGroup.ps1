@@ -132,6 +132,10 @@ function Set-DbaRgWorkloadGroup {
 
         foreach ($wklGroup in $InputObject) {
             $resPool = $wklGroup.Parent
+            switch ($resPool.GetType().Name) {
+                'ResourcePool' { $resPoolType = "Internal" }
+                'ExternalResourcePool' { $resPoolType = "External" }
+            }
             $server = $resPool.Parent.Parent
             if ($PSBoundParameters.Keys -contains 'Importance') {
                 $wklGroup.Importance = $Importance
@@ -171,11 +175,7 @@ function Set-DbaRgWorkloadGroup {
             } catch {
                 Stop-Function -Message "Failure reconfiguring the Resource Governor." -ErrorRecord $_ -Target $server.ResourceGovernor -Continue
             }
-            $wklGroup | Add-Member -Force -MemberType NoteProperty -Name ComputerName -Value $server.ComputerName
-            $wklGroup | Add-Member -Force -MemberType NoteProperty -Name InstanceName -Value $server.ServiceName
-            $wklGroup | Add-Member -Force -MemberType NoteProperty -Name SqlInstance -Value $server.DomainInstanceName
-            $wklGroup | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, Id, Name, ExternalResourcePoolName, GroupMaximumRequests, Importance, IsSystemObject, MaximumDegreeOfParallelism, RequestMaximumCpuTimeInSeconds, RequestMaximumMemoryGrantPercentage, RequestMemoryGrantTimeoutInSeconds
+            Get-DbaRgResourcePool -SqlInstance $server -Type $resPoolType | Where-Object Name -eq $resPool.Name | Get-DbaRgWorkloadGroup | Where-Object Name -eq $wklGroup.Name
         }
-
     }
 }

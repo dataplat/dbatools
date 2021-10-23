@@ -159,10 +159,7 @@ function New-DbaRgWorkloadGroup {
                         Stop-Function -Message "Failure" -ErrorRecord $_ -Target $newWorkloadGroup -Continue
                     }
                 }
-                $newWorkloadGroup | Add-Member -Force -MemberType NoteProperty -Name ComputerName -Value $server.ComputerName
-                $newWorkloadGroup | Add-Member -Force -MemberType NoteProperty -Name InstanceName -Value $server.ServiceName
-                $newWorkloadGroup | Add-Member -Force -MemberType NoteProperty -Name SqlInstance -Value $server.DomainInstanceName
-                $newWorkloadGroup | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, Id, Name, ExternalResourcePoolName, GroupMaximumRequests, Importance, IsSystemObject, MaximumDegreeOfParallelism, RequestMaximumCpuTimeInSeconds, RequestMaximumMemoryGrantPercentage, RequestMemoryGrantTimeoutInSeconds
+                Get-DbaRgResourcePool -SqlInstance $server -Type $ResourcePoolType | Where-Object Name -eq $resPool.Name | Get-DbaRgWorkloadGroup | Where-Object Name -eq $wklGroup
             }
         }
     }
