@@ -20,10 +20,12 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         }
         It "Sets a workload group in default resource pool" {
             $wklGroupName = "dbatoolssci_wklgroupTest"
+            $resourcePoolType = "Internal"
             $splatNewWorkloadGroup = @{
                 SqlInstance                         = $script:instance2
                 WorkloadGroup                       = $wklGroupName
                 ResourcePool                        = "default"
+                ResourcePoolType                    = $resourcePoolType
                 Importance                          = "MEDIUM"
                 RequestMaximumMemoryGrantPercentage = 25
                 RequestMaximumCpuTimeInSeconds      = 0
@@ -36,6 +38,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
                 SqlInstance                         = $script:instance2
                 WorkloadGroup                       = $wklGroupName
                 ResourcePool                        = "default"
+                ResourcePoolType                    = $resourcePoolType
                 Importance                          = "HIGH"
                 RequestMaximumMemoryGrantPercentage = 26
                 RequestMaximumCpuTimeInSeconds      = 5
@@ -175,6 +178,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
                 SqlInstance     = $script:instance2
                 WorkloadGroup   = $wklGroupName
                 ResourcePool    = "default"
+                ResourcePoolType = "Internal"
                 Importance      = "HIGH"
                 SkipReconfigure = $true
             }

@@ -82,13 +82,12 @@ function Set-DbaRgWorkloadGroup {
     #>
     [CmdletBinding(SupportsShouldProcess, DefaultParameterSetName = "Default", ConfirmImpact = "Low")]
     param (
-        [parameter(ValueFromPipeline, ValueFromPipelineByPropertyName)]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [string[]]$WorkloadGroup,
         [string]$ResourcePool,
         [ValidateSet("Internal", "External")]
-        [string]$ResourcePoolType = "Internal",
+        [string]$ResourcePoolType,
         [ValidateSet("LOW", "MEDIUM", "HIGH")]
         [string]$Importance,
         [ValidateRange(1, 100)]
@@ -123,10 +122,9 @@ function Set-DbaRgWorkloadGroup {
             } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
-            if ($ResourcePoolType -eq "Internal") {
-                $resPools = $server.ResourceGovernor.ResourcePools
-            } elseif ($ResourcePoolType -eq "External") {
-                $resPools = $server.ResourceGovernor.ExternalResourcePools
+            switch ($ResourcePoolType) {
+                'Internal' { $resPools = $server.ResourceGovernor.ResourcePools }
+                'External' { $resPools = $server.ResourceGovernor.ExternalResourcePools }
             }
             $resPool = $resPools | Where-Object Name -eq $ResourcePool
             $InputObject += $resPool.WorkloadGroups | Where-Object Name -in $WorkloadGroup
