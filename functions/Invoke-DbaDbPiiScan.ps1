@@ -340,9 +340,9 @@ function Invoke-DbaDbPiiScan {
                                 $textDataTypes = 'char', 'varchar', 'text', 'nchar', 'nvarchar', 'ntext', 'xml'
 
                                 # Setup the query
-                                if($columnobject.DataType.Name -in $textDataTypes) {
+                                if ($columnobject.DataType.Name -in $textDataTypes) {
                                     $query = "SELECT TOP($SampleCount) TRIM([$($columnobject.Name)]) AS [$($columnobject.Name)] FROM [$($tableobject.Schema)].[$($tableobject.Name)]"
-                                } else{
+                                } else {
                                     $query = "SELECT TOP($SampleCount) [$($columnobject.Name)] AS [$($columnobject.Name)] FROM [$($tableobject.Schema)].[$($tableobject.Name)]"
                                 }
 
