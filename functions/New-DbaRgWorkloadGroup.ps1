@@ -115,10 +115,9 @@ function New-DbaRgWorkloadGroup {
             }
 
             foreach ($wklGroup in $WorkloadGroup) {
-                if ($ResourcePoolType -eq "Internal") {
-                    $resPools = $server.ResourceGovernor.ResourcePools
-                } elseif ($ResourcePoolType -eq "External") {
-                    $resPools = $server.ResourceGovernor.ExternalResourcePools
+                switch ($ResourcePoolType) {
+                    'Internal' { $resPools = $server.ResourceGovernor.ResourcePools }
+                    'External' { $resPools = $server.ResourceGovernor.ExternalResourcePools }
                 }
                 $resPool = $resPools | Where-Object Name -eq $ResourcePool
                 $existingWorkloadGroup = $resPool.WorkloadGroups | Where-Object Name -eq $wklGroup

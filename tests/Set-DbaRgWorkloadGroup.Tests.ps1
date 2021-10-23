@@ -23,6 +23,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $splatNewWorkloadGroup = @{
                 SqlInstance                         = $script:instance2
                 WorkloadGroup                       = $wklGroupName
+                ResourcePool                        = "default"
                 Importance                          = "MEDIUM"
                 RequestMaximumMemoryGrantPercentage = 25
                 RequestMaximumCpuTimeInSeconds      = 0
@@ -34,6 +35,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $splatSetWorkloadGroup = @{
                 SqlInstance                         = $script:instance2
                 WorkloadGroup                       = $wklGroupName
+                ResourcePool                        = "default"
                 Importance                          = "HIGH"
                 RequestMaximumMemoryGrantPercentage = 26
                 RequestMaximumCpuTimeInSeconds      = 5
@@ -123,6 +125,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $splatSetWorkloadGroup = @{
                 SqlInstance                         = $script:instance2
                 WorkloadGroup                       = @($wklGroupName, $wklGroupName2)
+                ResourcePool                        = "default"
                 Importance                          = "HIGH"
                 RequestMaximumMemoryGrantPercentage = 26
                 RequestMaximumCpuTimeInSeconds      = 5
@@ -150,6 +153,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $splatNewWorkloadGroup = @{
                 SqlInstance          = $script:instance2
                 WorkloadGroup        = $wklGroupName
+                ResourcePool         = "default"
                 GroupMaximumRequests = $oldGroupMaximumRequests
                 Force                = $true
             }
@@ -170,6 +174,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $splatSetWorkloadGroup = @{
                 SqlInstance     = $script:instance2
                 WorkloadGroup   = $wklGroupName
+                ResourcePool    = "default"
                 Importance      = "HIGH"
                 SkipReconfigure = $true
             }

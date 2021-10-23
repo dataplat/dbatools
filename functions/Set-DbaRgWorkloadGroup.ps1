@@ -6,6 +6,7 @@ function Set-DbaRgWorkloadGroup {
     .DESCRIPTION
         Sets a workload group for use by the Resource Governor on the specified SQL Server.
         A workload group represents a subset of resources of an instance of the Database Engine.
+        When changing a plan affecting setting, the new setting will only take effect in previously cached plans after executing 'DBCC FREEPROCCACHE (pool_name);'.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.
@@ -85,21 +86,21 @@ function Set-DbaRgWorkloadGroup {
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [string[]]$WorkloadGroup,
-        [string]$ResourcePool = "default",
+        [string]$ResourcePool,
         [ValidateSet("Internal", "External")]
         [string]$ResourcePoolType = "Internal",
         [ValidateSet("LOW", "MEDIUM", "HIGH")]
-        [string]$Importance = "MEDIUM",
+        [string]$Importance,
         [ValidateRange(1, 100)]
-        [int]$RequestMaximumMemoryGrantPercentage = 25,
+        [int]$RequestMaximumMemoryGrantPercentage,
         [ValidateRange(0, [int]::MaxValue)]
-        [int]$RequestMaximumCpuTimeInSeconds = 0,
+        [int]$RequestMaximumCpuTimeInSeconds,
         [ValidateRange(0, [int]::MaxValue)]
-        [int]$RequestMemoryGrantTimeoutInSeconds = 0,
+        [int]$RequestMemoryGrantTimeoutInSeconds,
         [ValidateRange(0, 64)]
-        [int]$MaximumDegreeOfParallelism = 0,
+        [int]$MaximumDegreeOfParallelism,
         [ValidateRange(0, [int]::MaxValue)]
-        [int]$GroupMaximumRequests = 0,
+        [int]$GroupMaximumRequests,
         [switch]$SkipReconfigure,
         [Parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.WorkloadGroup[]]$InputObject,
@@ -115,7 +116,6 @@ function Set-DbaRgWorkloadGroup {
             Stop-Function -Message "You must pipe in a workload group or specify a SqlInstance."
             return
         }
-        Write-Message -Level Warning -Message "When changing a plan affecting setting, the new setting will only take effect in previously cached plans after executing 'DBCC FREEPROCCACHE (pool_name);'"
 
         foreach ($instance in $SqlInstance) {
             try {
