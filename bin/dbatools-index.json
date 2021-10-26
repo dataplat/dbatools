@@ -24398,9 +24398,9 @@
     },
     {
         "Name":  "Get-DbaRgWorkloadGroup",
-        "Description":  "Gets all Resource Governor Pool objects, including both internal and external",
+        "Description":  "Gets all Resource Governor workload group objects",
         "Tags":  "ResourceGovernor",
-        "Synopsis":  "Gets all Resource Governor Pool objects, including both internal and external",
+        "Synopsis":  "Gets all Resource Governor workload group objects",
         "Alias":  "",
         "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "CommandName":  "Get-DbaRgWorkloadGroup",
@@ -40975,6 +40975,168 @@
         "Syntax":  "New-DbaRgResourcePool -SqlInstance \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-ResourcePool \u003cString[]\u003e] [-Type \u003cString\u003e] [-MaximumCpuPercentage \u003cInt32\u003e] [-MaximumMemoryPercentage \u003cInt32\u003e] [-SkipReconfigure] [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\nNew-DbaRgResourcePool -SqlInstance \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-ResourcePool \u003cString[]\u003e] [-Type \u003cString\u003e] [-MinimumCpuPercentage \u003cInt32\u003e] [-MaximumCpuPercentage \u003cInt32\u003e] [-CapCpuPercentage \u003cInt32\u003e] [-MinimumMemoryPercentage \u003cInt32\u003e] [-MaximumMemoryPercentage \u003cInt32\u003e] [-MinimumIOPSPerVolume \u003cInt32\u003e] [-MaximumIOPSPerVolume \u003cInt32\u003e] [-SkipReconfigure] [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\nNew-DbaRgResourcePool -SqlInstance \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-ResourcePool \u003cString[]\u003e] [-Type \u003cString\u003e] [-MaximumCpuPercentage \u003cInt32\u003e] [-MaximumMemoryPercentage \u003cInt32\u003e] [-MaximumProcesses \u003cInt32\u003e] [-SkipReconfigure] [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
+        "Name":  "New-DbaRgWorkloadGroup",
+        "Description":  "Creates a Resource Governor workload group and associates the workload group with a Resource Governor resource pool.\nA workload group represents a subset of the resources of a resource pool in instance of the Database Engine.",
+        "Tags":  [
+                     "WorkloadGroup",
+                     "ResourceGovernor"
+                 ],
+        "Synopsis":  "Creates a Resource Governor workload group and associates the workload group with a Resource Governor resource pool.",
+        "Alias":  "",
+        "Author":  "John McCall (@lowlydba), https://www.lowlydba.com/",
+        "CommandName":  "New-DbaRgWorkloadGroup",
+        "Availability":  "Windows, Linux, macOS",
+        "Links":  "https://dbatools.io/New-DbaRgWorkloadGroup",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eNew-DbaRgWorkloadGroup -SqlInstance sql2016 -WorkloadGroup \"groupAdmin\" -ResourcePool \"poolAdmin\"\nCreates a workload group \"groupAdmin\" in the resource pool named \"poolAdmin\" for the instance sql2016.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eNew-DbaRgWorkloadGroup -SqlInstance sql2016 -WorkloadGroup \"groupAdmin\" -Force\nIf \"groupAdmin\" exists, it is dropped and re-created in the default resource pool for the instance sql2016.",
+        "Params":  [
+                       [
+                           "SqlInstance",
+                           "The target SQL Server instance or instances.",
+                           "",
+                           false,
+                           "true (ByValue, ByPropertyName)",
+                           "",
+                           ""
+                       ],
+                       [
+                           "SqlCredential",
+                           "Credential object used to connect to the Windows server as a different user",
+                           "",
+                           false,
+                           "true (ByPropertyName)",
+                           "",
+                           ""
+                       ],
+                       [
+                           "WorkloadGroup",
+                           "Name of the workload group to be created.",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "ResourcePool",
+                           "Name of the resource pool to create the workload group in. If not provided, set to the Default Resource Pool.",
+                           "",
+                           false,
+                           "false",
+                           "default",
+                           ""
+                       ],
+                       [
+                           "ResourcePoolType",
+                           "Internal (default) or External",
+                           "",
+                           false,
+                           "false",
+                           "Internal",
+                           "Internal,External"
+                       ],
+                       [
+                           "Importance",
+                           "Specifies the relative importance of a request in the workload group. Default is MEDIUM, allowed: LOW, MEDIUM, HIGH",
+                           "",
+                           false,
+                           "false",
+                           "MEDIUM",
+                           "LOW,MEDIUM,HIGH"
+                       ],
+                       [
+                           "RequestMaximumMemoryGrantPercentage",
+                           "Specifies the maximum amount of memory that a single request can take from the pool. Default is 25%.",
+                           "",
+                           false,
+                           "false",
+                           "25",
+                           ""
+                       ],
+                       [
+                           "RequestMaximumCpuTimeInSeconds",
+                           "Specifies the maximum amount of CPU time, in seconds, that a request can use.",
+                           "",
+                           false,
+                           "false",
+                           "0",
+                           ""
+                       ],
+                       [
+                           "RequestMemoryGrantTimeoutInSeconds",
+                           "Specifies the maximum time, in seconds, that a query can wait for a memory grant (work buffer memory) to become available.",
+                           "",
+                           false,
+                           "false",
+                           "0",
+                           ""
+                       ],
+                       [
+                           "MaximumDegreeOfParallelism",
+                           "Specifies the maximum degree of parallelism (MAXDOP) for parallel query execution.",
+                           "",
+                           false,
+                           "false",
+                           "0",
+                           ""
+                       ],
+                       [
+                           "GroupMaximumRequests",
+                           "Specifies the maximum number of simultaneous requests that are allowed to execute in the workload group.",
+                           "",
+                           false,
+                           "false",
+                           "0",
+                           ""
+                       ],
+                       [
+                           "SkipReconfigure",
+                           "Resource Governor requires a reconfiguriation for workload group changes to take effect.\r\nUse this switch to skip issuing a reconfigure for the Resource Governor.",
+                           "",
+                           false,
+                           "false",
+                           "False",
+                           ""
+                       ],
+                       [
+                           "Force",
+                           "If the workload group already exists, drop and re-create it.",
+                           "",
+                           false,
+                           "false",
+                           "False",
+                           ""
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "",
+                           false,
+                           "false",
+                           "False",
+                           ""
+                       ],
+                       [
+                           "WhatIf",
+                           "Shows what would happen if the command were to run. No actions are actually performed.",
+                           "wi",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "Confirm",
+                           "Prompts you for confirmation before executing any changing operations within the command.",
+                           "cf",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ]
+                   ],
+        "Syntax":  "New-DbaRgWorkloadGroup [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-WorkloadGroup] \u003cString[]\u003e] [[-ResourcePool] \u003cString\u003e] [[-ResourcePoolType] \u003cString\u003e] [[-Importance] \u003cString\u003e] [[-RequestMaximumMemoryGrantPercentage] \u003cInt32\u003e] [[-RequestMaximumCpuTimeInSeconds] \u003cInt32\u003e] [[-RequestMemoryGrantTimeoutInSeconds] \u003cInt32\u003e] [[-MaximumDegreeOfParallelism] \u003cInt32\u003e] [[-GroupMaximumRequests] \u003cInt32\u003e] [-SkipReconfigure] [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+    },
+    {
         "Name":  "New-DbaScriptingOption",
         "Description":  "Creates a new Microsoft.SqlServer.Management.Smo.ScriptingOptions object. Basically saves you the time from remembering the SMO assembly name ;)\n\nSee https://msdn.microsoft.com/en-us/library/microsoft.sqlserver.management.smo.scriptingoptions.aspx for more information",
         "Tags":  [
@@ -47397,6 +47559,114 @@
                        ]
                    ],
         "Syntax":  "Remove-DbaRgResourcePool [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-ResourcePool] \u003cString[]\u003e] [[-Type] \u003cString\u003e] [-SkipReconfigure] [[-InputObject] \u003cObject[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+    },
+    {
+        "Name":  "Remove-DbaRgWorkloadGroup",
+        "Description":  "Removes a workload group from the Resource Governor on the specified SQL Server.\nA workload group represents a subset of the resources of an instance of the Database Engine.",
+        "Tags":  [
+                     "WorkloadGroup",
+                     "ResourceGovernor"
+                 ],
+        "Synopsis":  "Removes a workload group from the Resource Governor on the specified SQL Server.",
+        "Alias":  "",
+        "Author":  "John McCall (@lowlydba), https://www.lowlydba.com/",
+        "CommandName":  "Remove-DbaRgWorkloadGroup",
+        "Availability":  "Windows, Linux, macOS",
+        "Links":  "https://dbatools.io/Remove-DbaRgWorkloadGroup",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eRemove-DbaRgResourcePool -SqlInstance sql2016 -WorkloadGroup \"groupAdmin\" -ResourcePool \"poolAdmin\" -ResourcePoolType Internal\nRemoves a workload group named \"groupAdmin\" in the \"poolAdmin\" resource pool for the instance sql2016\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eRemove-DbaRgResourcePool -SqlInstance sql2016 -WorkloadGroup \"groupAdmin\"\nRemoves a workload group named \"groupAdmin\" in the default resource pool for the instance sql2016.",
+        "Params":  [
+                       [
+                           "SqlInstance",
+                           "The target SQL Server instance or instances.",
+                           "",
+                           false,
+                           "true (ByValue, ByPropertyName)",
+                           "",
+                           ""
+                       ],
+                       [
+                           "SqlCredential",
+                           "Credential object used to connect to the Windows server as a different user.",
+                           "",
+                           false,
+                           "true (ByPropertyName)",
+                           "",
+                           ""
+                       ],
+                       [
+                           "WorkloadGroup",
+                           "Name of the workload group to be removed.",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "ResourcePool",
+                           "Name of the resource pool the workload group is in.",
+                           "",
+                           false,
+                           "false",
+                           "default",
+                           ""
+                       ],
+                       [
+                           "ResourcePoolType",
+                           "Internal or External.",
+                           "",
+                           false,
+                           "false",
+                           "Internal",
+                           "Internal,External"
+                       ],
+                       [
+                           "SkipReconfigure",
+                           "Resource Governor requires a reconfiguriation for workload group changes to take effect.\r\nUse this switch to skip issuing a reconfigure for the Resource Governor.",
+                           "",
+                           false,
+                           "false",
+                           "False",
+                           ""
+                       ],
+                       [
+                           "InputObject",
+                           "Allows input to be piped from Get-DbaRgWorkloadGroup.",
+                           "",
+                           false,
+                           "true (ByValue)",
+                           "",
+                           ""
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "",
+                           false,
+                           "false",
+                           "False",
+                           ""
+                       ],
+                       [
+                           "WhatIf",
+                           "Shows what would happen if the command were to run. No actions are actually performed.",
+                           "wi",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "Confirm",
+                           "Prompts you for confirmation before executing any changing operations within the command.",
+                           "cf",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ]
+                   ],
+        "Syntax":  "Remove-DbaRgWorkloadGroup [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-WorkloadGroup] \u003cString[]\u003e] [[-ResourcePool] \u003cString\u003e] [[-ResourcePoolType] \u003cString\u003e] [-SkipReconfigure] [[-InputObject] \u003cWorkloadGroup[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Remove-DbaServerRole",
@@ -55374,6 +55644,168 @@
                        ]
                    ],
         "Syntax":  "Set-DbaRgResourcePool [-SqlInstance \u003cDbaInstanceParameter[]\u003e] [-SqlCredential \u003cPSCredential\u003e] [-ResourcePool \u003cString[]\u003e] [-Type \u003cString\u003e] [-MinimumCpuPercentage \u003cInt32\u003e] [-MaximumCpuPercentage \u003cInt32\u003e] [-CapCpuPercentage \u003cInt32\u003e] [-MinimumMemoryPercentage \u003cInt32\u003e] [-MaximumMemoryPercentage \u003cInt32\u003e] [-MinimumIOPSPerVolume \u003cInt32\u003e] [-MaximumIOPSPerVolume \u003cInt32\u003e] [-SkipReconfigure] [-InputObject \u003cObject[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\nSet-DbaRgResourcePool [-SqlInstance \u003cDbaInstanceParameter[]\u003e] [-SqlCredential \u003cPSCredential\u003e] [-ResourcePool \u003cString[]\u003e] [-Type \u003cString\u003e] [-MinimumCpuPercentage \u003cInt32\u003e] [-MaximumCpuPercentage \u003cInt32\u003e] [-CapCpuPercentage \u003cInt32\u003e] [-MinimumMemoryPercentage \u003cInt32\u003e] [-MaximumMemoryPercentage \u003cInt32\u003e] [-MinimumIOPSPerVolume \u003cInt32\u003e] [-MaximumIOPSPerVolume \u003cInt32\u003e] [-SkipReconfigure] [-InputObject \u003cObject[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\nSet-DbaRgResourcePool [-SqlInstance \u003cDbaInstanceParameter[]\u003e] [-SqlCredential \u003cPSCredential\u003e] [-ResourcePool \u003cString[]\u003e] [-Type \u003cString\u003e] [-MinimumCpuPercentage \u003cInt32\u003e] [-MaximumCpuPercentage \u003cInt32\u003e] [-CapCpuPercentage \u003cInt32\u003e] [-MinimumMemoryPercentage \u003cInt32\u003e] [-MaximumMemoryPercentage \u003cInt32\u003e] [-MinimumIOPSPerVolume \u003cInt32\u003e] [-MaximumIOPSPerVolume \u003cInt32\u003e] [-MaximumProcesses \u003cInt32\u003e] [-SkipReconfigure] [-InputObject \u003cObject[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+    },
+    {
+        "Name":  "Set-DbaRgWorkloadGroup",
+        "Description":  "Sets a workload group for use by the Resource Governor on the specified SQL Server.\nA workload group represents a subset of resources of an instance of the Database Engine.\nWhen changing a plan affecting setting, the new setting will only take effect in previously cached plans after executing \u0027DBCC FREEPROCCACHE (pool_name);\u0027.",
+        "Tags":  [
+                     "ResourcePool",
+                     "ResourceGovernor"
+                 ],
+        "Synopsis":  "Sets a workload group for use by the Resource Governor on the specified SQL Server.",
+        "Alias":  "",
+        "Author":  "John McCall (@lowlydba), https://www.lowlydba.com/",
+        "CommandName":  "Set-DbaRgWorkloadGroup",
+        "Availability":  "Windows, Linux, macOS",
+        "Links":  "https://dbatools.io/Set-DbaRgWorkloadGroup",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eSet-DbaRgWorkloadGroup -SqlInstance sql2016 -WorkloadGroup \"groupAdmin\" -ResourcePool \"poolAdmin\"\nConfigures a workload group named \"groupAdmin\" in the resource pool \"poolAdmin\" for the instance sql2016.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaRgWorkloadGroup | Where-Object Name -eq \"groupSuperUsers\" | Set-DbaRgWorkloadGroup -GroupMaximumRequests 2\nConfigures a workload group named \"groupSuperUsers\" by setting the maximum number of group requests to 2 for the instance sql2016.",
+        "Params":  [
+                       [
+                           "SqlInstance",
+                           "The target SQL Server instance or instances.",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "SqlCredential",
+                           "Credential object used to connect to the Windows server as a different user",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "WorkloadGroup",
+                           "Name of the workload group to be configured.",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "ResourcePool",
+                           "Name of the resource pool to create the workload group in.",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "ResourcePoolType",
+                           "Internal or External",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           "Internal,External"
+                       ],
+                       [
+                           "Importance",
+                           "Specifies the relative importance of a request in the workload group.",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           "LOW,MEDIUM,HIGH"
+                       ],
+                       [
+                           "RequestMaximumMemoryGrantPercentage",
+                           "Specifies the maximum amount of memory that a single request can take from the pool.",
+                           "",
+                           false,
+                           "false",
+                           "0",
+                           ""
+                       ],
+                       [
+                           "RequestMaximumCpuTimeInSeconds",
+                           "Specifies the maximum amount of CPU time, in seconds, that a request can use.",
+                           "",
+                           false,
+                           "false",
+                           "0",
+                           ""
+                       ],
+                       [
+                           "RequestMemoryGrantTimeoutInSeconds",
+                           "Specifies the maximum time, in seconds, that a query can wait for a memory grant (work buffer memory) to become available.",
+                           "",
+                           false,
+                           "false",
+                           "0",
+                           ""
+                       ],
+                       [
+                           "MaximumDegreeOfParallelism",
+                           "Specifies the maximum degree of parallelism (MAXDOP) for parallel query execution.",
+                           "",
+                           false,
+                           "false",
+                           "0",
+                           ""
+                       ],
+                       [
+                           "GroupMaximumRequests",
+                           "Specifies the maximum number of simultaneous requests that are allowed to execute in the workload group.",
+                           "",
+                           false,
+                           "false",
+                           "0",
+                           ""
+                       ],
+                       [
+                           "SkipReconfigure",
+                           "Resource Governor requires a reconfiguriation for workload group changes to take effect.\r\nUse this switch to skip issuing a reconfigure for the Resource Governor.",
+                           "",
+                           false,
+                           "false",
+                           "False",
+                           ""
+                       ],
+                       [
+                           "InputObject",
+                           "Allows input to be piped from Get-DbaRgWorkloadGroup.",
+                           "",
+                           false,
+                           "true (ByValue)",
+                           "",
+                           ""
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "",
+                           false,
+                           "false",
+                           "False",
+                           ""
+                       ],
+                       [
+                           "WhatIf",
+                           "Shows what would happen if the command were to run. No actions are actually performed.",
+                           "wi",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "Confirm",
+                           "Prompts you for confirmation before executing any changing operations within the command.",
+                           "cf",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ]
+                   ],
+        "Syntax":  "Set-DbaRgWorkloadGroup [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-WorkloadGroup] \u003cString[]\u003e] [[-ResourcePool] \u003cString\u003e] [[-ResourcePoolType] \u003cString\u003e] [[-Importance] \u003cString\u003e] [[-RequestMaximumMemoryGrantPercentage] \u003cInt32\u003e] [[-RequestMaximumCpuTimeInSeconds] \u003cInt32\u003e] [[-RequestMemoryGrantTimeoutInSeconds] \u003cInt32\u003e] [[-MaximumDegreeOfParallelism] \u003cInt32\u003e] [[-GroupMaximumRequests] \u003cInt32\u003e] [-SkipReconfigure] [[-InputObject] \u003cWorkloadGroup[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Set-DbaSpConfigure",
