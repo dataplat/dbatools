@@ -13,6 +13,7 @@ function Save-DbaCommunitySoftware {
         * MaintenanceSolution: SQL Server Maintenance Solution created by Ola Hallengren (https://ola.hallengren.com)
         * FirstResponderKit: First Responder Kit created by Brent Ozar (http://FirstResponderKit.org)
         * DarlingData: Erik Darling's stored procedures (https://www.erikdarlingdata.com)
+        * SQLWATCH: SQL Server Monitoring Solution created by Marcin Gminski (https://sqlwatch.io/)
 
     .PARAMETER Branch
         Specifies the branch. Defaults to master or main. Can only be used if Software is used.
@@ -56,7 +57,7 @@ function Save-DbaCommunitySoftware {
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Medium")]
     param (
-        [ValidateSet('MaintenanceSolution', 'FirstResponderKit', 'DarlingData')]
+        [ValidateSet('MaintenanceSolution', 'FirstResponderKit', 'DarlingData', 'SQLWATCH')]
         [string]$Software,
         [string]$Branch,
         [string]$LocalFile,
@@ -98,6 +99,36 @@ function Save-DbaCommunitySoftware {
             }
             if (-not $LocalDirectory) {
                 $LocalDirectory = Join-Path -Path $dbatoolsData -ChildPath "DarlingData-$Branch"
+            }
+        } elseif ($Software -eq 'SQLWATCH') {
+            if ($Branch -in 'prerelease', 'pre-release') {
+                $preRelease = $true
+            } else {
+                $preRelease = $false
+            }
+            if (-not $Url) {
+                $releasesUrl = "https://api.github.com/repos/marcingminski/sqlwatch/releases"
+                try {
+                    try {
+                        $releasesJson = Invoke-TlsWebRequest -Uri $releasesUrl -UseBasicParsing -ErrorAction Stop
+                    } catch {
+                        # Try with default proxy and usersettings
+                        (New-Object System.Net.WebClient).Proxy.Credentials = [System.Net.CredentialCache]::DefaultNetworkCredentials
+                        $releasesJson = Invoke-TlsWebRequest -Uri $releasesUrl -UseBasicParsing -ErrorAction Stop
+                    }
+                } catch {
+                    Stop-Function -Message "Unable to get release information from $releasesUrl." -ErrorRecord $_
+                    return
+                }
+                $latestRelease = ($releasesJson | ConvertFrom-Json) | Where-Object prerelease -eq $preRelease | Select-Object -First 1
+                if ($null -eq $latestRelease) {
+                    Stop-Function -Message "No release found." -ErrorRecord $_
+                    return
+                }
+                $Url = $latestRelease.assets[0].browser_download_url
+            }
+            if (-not $LocalDirectory) {
+                $LocalDirectory = Join-Path -Path $dbatoolsData -ChildPath "SQLWATCH"
             }
         }
 
@@ -172,6 +203,15 @@ function Save-DbaCommunitySoftware {
             $localDirectoryName = Split-Path -Path $LocalDirectory -Leaf
             $sourceDirectory = Get-ChildItem -Path $zipFolder -Directory
             $sourceDirectoryName = $sourceDirectory.Name
+            if ($Software -eq 'SQLWATCH') {
+                # As this software is downloaded as a release, the directory has a different name.
+                # Rename the directory from like 'SQLWATCH 4.3.0.23725 20210721131116' to 'SQLWATCH' to be able to handle this like the other software.
+                if ($sourceDirectoryName -like 'SQLWATCH*') {
+                    Rename-Item -Path $sourceDirectory.FullName -NewName 'SQLWATCH'
+                    $sourceDirectory = Get-ChildItem -Path $zipFolder -Directory
+                    $sourceDirectoryName = $sourceDirectory.Name
+                }
+            }
             if ((Get-ChildItem -Path $zipFolder).Count -gt 1 -or $sourceDirectoryName -ne $localDirectoryName) {
                 Stop-Function -Message "The archive does not contain the desired directory $localDirectoryName but $sourceDirectoryName."
                 Remove-Item -Path $zipFile -ErrorAction SilentlyContinue
