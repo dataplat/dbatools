@@ -847,7 +847,10 @@ $script:xplat = @(
     'Update-DbaMaintenanceSolution',
     'Remove-DbaServerRoleMember',
     'Remove-DbaDbMailProfile',
-    'Remove-DbaDbMailAccount'
+    'Remove-DbaDbMailAccount',
+    'Set-DbaRgWorkloadGroup',
+    'New-DbaRgWorkloadGroup',
+    'Remove-DbaRgWorkloadGroup'
 )
 
 $script:noncoresmo = @(
