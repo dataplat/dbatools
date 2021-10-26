@@ -713,7 +713,10 @@
         'Update-DbaMaintenanceSolution',
         'Remove-DbaServerRoleMember',
         'Remove-DbaDbMailProfile',
-        'Remove-DbaDbMailAccount'
+        'Remove-DbaDbMailAccount',
+        'Set-DbaRgWorkloadGroup',
+        'New-DbaRgWorkloadGroup',
+        'Remove-DbaRgWorkloadGroup'
     )
 
     # Cmdlets to export from this module
