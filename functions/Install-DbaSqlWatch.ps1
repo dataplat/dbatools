@@ -160,11 +160,12 @@ function Install-DbaSqlWatch {
                     }
 
                     [PSCustomObject]@{
-                        ComputerName = $PublishResults.ComputerName
-                        InstanceName = $PublishResults.InstanceName
-                        SqlInstance  = $PublishResults.SqlInstance
-                        Database     = $PublishResults.Database
-                        Status       = $ExtractedResult
+                        ComputerName  = $PublishResults.ComputerName
+                        InstanceName  = $PublishResults.InstanceName
+                        SqlInstance   = $PublishResults.SqlInstance
+                        Database      = $PublishResults.Database
+                        Status        = $ExtractedResult
+                        DashboardPath = $localCachedCopy + '\SqlWatch.Dashboard'
                     }
                 } catch {
                     Stop-Function -Message "DACPAC failed to publish to $database on $instance." -ErrorRecord $_ -Target $instance -Continue
