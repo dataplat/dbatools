@@ -1092,11 +1092,13 @@ if ($loadedModuleNames -contains 'sqlserver' -or $loadedModuleNames -contains 's
 #endregion Post-Import Cleanup
 
 # Removal of runspaces is needed to successfully close PowerShell ISE
-$onRemoveScript = {
-    Get-Runspace | Where-Object Name -like dbatools* | ForEach-Object -Process { $_.Dispose() }
+if (Test-Path -Path Variable:global:psISE) {
+    $onRemoveScript = {
+        Get-Runspace | Where-Object Name -like dbatools* | ForEach-Object -Process { $_.Dispose() }
+    }
+    $ExecutionContext.SessionState.Module.OnRemove += $onRemoveScript
+    Register-EngineEvent -SourceIdentifier ([System.Management.Automation.PsEngineEvent]::Exiting) -Action $onRemoveScript
 }
-$ExecutionContext.SessionState.Module.OnRemove += $onRemoveScript
-Register-EngineEvent -SourceIdentifier ([System.Management.Automation.PsEngineEvent]::Exiting) -Action $onRemoveScript
 
 # Create collection for servers
 $script:connectionhash = @{ }
