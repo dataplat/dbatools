@@ -128,7 +128,11 @@ function Save-DbaCommunitySoftware {
                 $Url = $latestRelease.assets[0].browser_download_url
             }
             if (-not $LocalDirectory) {
-                $LocalDirectory = Join-Path -Path $dbatoolsData -ChildPath "SQLWATCH"
+                if ($preRelease) {
+                    $LocalDirectory = Join-Path -Path $dbatoolsData -ChildPath "SQLWATCH-prerelease"
+                } else {
+                    $LocalDirectory = Join-Path -Path $dbatoolsData -ChildPath "SQLWATCH"
+                }
             }
         }
 
