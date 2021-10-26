@@ -17,7 +17,7 @@ function Get-DbaMaintenanceSolutionLog {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER LogType
-        Accepts 'IndexOptimize', 'DatabaseBackup', 'DatabaseIntegrityCheck'. ATM only IndexOptimize parsing is available
+        Accepts 'IndexOptimize', 'DatabaseBackup', 'DatabaseIntegrityCheck'. Only IndexOptimize parsing is available at the moment
 
     .PARAMETER Since
         Consider only files generated since this date
