@@ -94,84 +94,27 @@ function Install-DbaSqlWatch {
     begin {
         if ($Force) { $ConfirmPreference = 'none' }
 
+        # Do we need a new local cached version of the software?
+        $dbatoolsData = Get-DbatoolsConfigValue -FullName 'Path.DbatoolsData'
+        if ($PreRelease) {
+            $localCachedCopy = Join-DbaPath -Path $dbatoolsData -Child "SQLWATCH-prerelease"
+            $branch = 'prerelease'
+        } else {
+            $localCachedCopy = Join-DbaPath -Path $dbatoolsData -Child "SQLWATCH"
+            $branch = 'release'
+        }
+        if ($Force -or $LocalFile -or -not (Test-Path -Path $localCachedCopy)) {
+            if ($PSCmdlet.ShouldProcess('SQLWATCH', 'Update local cached copy of the software')) {
+                try {
+                    Save-DbaCommunitySoftware -Software SQLWATCH -Branch $branch -LocalFile $LocalFile -EnableException
+                } catch {
+                    Stop-Function -Message 'Failed to update local cached copy' -ErrorRecord $_
+                }
+            }
+        }
+
         $stepCounter = 0
 
-        $DbatoolsData = Get-DbatoolsConfigValue -FullName "Path.DbatoolsData"
-        $tempFolder = ([System.IO.Path]::GetTempPath()).TrimEnd("\")
-        $zipfile = "$tempFolder\SqlWatch.zip"
-
-        $releasetxt = $(if ($PreRelease) { "pre-release" } else { "release" })
-
-        if (-not $LocalFile) {
-            if ($PSCmdlet.ShouldProcess($env:computername, "Downloading latest $releasetxt from GitHub")) {
-                Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Downloading latest release from GitHub"
-                # query the releases to find the latest, check and see if its cached
-                $ReleasesUrl = "https://api.github.com/repos/marcingminski/sqlwatch/releases"
-                $DownloadBase = "https://github.com/marcingminski/sqlwatch/releases/download/"
-
-                Write-Message -Level Verbose -Message "Checking GitHub for the latest $releasetxt."
-                $LatestReleaseUrl = ((Invoke-TlsWebRequest -UseBasicParsing -Uri $ReleasesUrl | ConvertFrom-Json) | Where-Object { $_.prerelease -eq $PreRelease })[0].assets[0].browser_download_url
-
-                Write-Message -Level VeryVerbose -Message "Latest $releasetxt is available at $LatestReleaseUrl"
-                $LocallyCachedZip = Join-Path -Path $DbatoolsData -ChildPath $($LatestReleaseUrl -replace $DownloadBase, '');
-
-                # if local cached copy exists, use it, otherwise download a new one
-                if (-not $Force) {
-
-                    # download from github
-                    Write-Message -Level Verbose "Downloading $LatestReleaseUrl"
-                    try {
-                        Invoke-TlsWebRequest $LatestReleaseUrl -OutFile $zipfile -ErrorAction Stop -UseBasicParsing
-                    } catch {
-                        #try with default proxy and usersettings
-                        (New-Object System.Net.WebClient).Proxy.Credentials = [System.Net.CredentialCache]::DefaultNetworkCredentials
-                        Invoke-TlsWebRequest $LatestReleaseUrl -OutFile $zipfile -ErrorAction Stop -UseBasicParsing
-                    }
-
-                    # copy the file from temp to local cache
-                    Write-Message -Level Verbose "Copying $zipfile to $LocallyCachedZip"
-                    try {
-                        New-Item -Path $LocallyCachedZip -ItemType File -Force | Out-Null
-                        Copy-Item -Path $zipfile -Destination $LocallyCachedZip -Force
-                    } catch {
-                        # should we stop the function if the file copy fails?
-                        # here to avoid an empty catch
-                        $null = 1
-                    }
-                }
-            }
-        } else {
-
-            # $LocalFile was passed, so use it
-            if ($PSCmdlet.ShouldProcess($env:computername, "Copying local file to temp directory")) {
-
-                if ($LocalFile.EndsWith("zip")) {
-                    $LocallyCachedZip = $zipfile
-                    Copy-Item -Path $LocalFile -Destination $LocallyCachedZip -Force
-                } else {
-                    $LocallyCachedZip = (Join-Path -path $tempFolder -childpath "SqlWatch.zip")
-                    Copy-Item -Path $LocalFile -Destination $LocallyCachedZip -Force
-                }
-            }
-        }
-
-        # expand the zip file
-        if ($PSCmdlet.ShouldProcess($env:computername, "Unpacking zipfile")) {
-            Write-Message -Level VeryVerbose "Unblocking $LocallyCachedZip"
-            Unblock-File $LocallyCachedZip -ErrorAction SilentlyContinue
-            $LocalCacheFolder = Split-Path $LocallyCachedZip -Parent
-
-            Write-Message -Level Verbose "Extracting $LocallyCachedZip to $LocalCacheFolder"
-            try {
-                Expand-Archive -Path $LocallyCachedZip -DestinationPath $LocalCacheFolder -Force
-            } catch {
-                Stop-Function -Message "Unable to extract $LocallyCachedZip. Archive may not be valid." -ErrorRecord $_
-                return
-            }
-
-            Write-Message -Level VeryVerbose "Deleting $LocallyCachedZip"
-            Remove-Item -Path $LocallyCachedZip
-        }
         if ($Database -eq 'tempdb') {
             Stop-Function -Message "Installation to tempdb not supported"
             return
@@ -200,13 +143,13 @@ function Install-DbaSqlWatch {
 
                 try {
                     # create a publish profile and publish DACPAC
-                    $DacPacPath = Get-ChildItem -Filter "SqlWatch.dacpac" -Path $LocalCacheFolder -Recurse | Select-Object -ExpandProperty FullName
+                    $DacPacPath = Get-ChildItem -Filter "SqlWatch.dacpac" -Path $localCachedCopy -Recurse | Select-Object -ExpandProperty FullName
                     $PublishOptions = @{
                         RegisterDataTierApplication = $true
                     }
 
                     Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Publishing SqlWatch dacpac to $database on $instance" -TotalSteps $totalSteps
-                    $DacProfile = New-DbaDacProfile -SqlInstance $server -Database $Database -Path $LocalCacheFolder -PublishOptions $PublishOptions | Select-Object -ExpandProperty FileName
+                    $DacProfile = New-DbaDacProfile -SqlInstance $server -Database $Database -Path $localCachedCopy -PublishOptions $PublishOptions | Select-Object -ExpandProperty FileName
                     $PublishResults = Publish-DbaDacPackage -SqlInstance $server -Database $Database -Path $DacPacPath -PublishXml $DacProfile
 
                     # parse results
