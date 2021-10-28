@@ -100,10 +100,10 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         It "works with NoHeaderRow" {
             # See #7759
             $server = Connect-DbaInstance $script:instance1 -Database tempdb
-            Invoke-DbaQuery -SqlInstance $server -Query 'CREATE TABLE dbo.NoHeaderRow (c1 VARCHAR(50), c2 VARCHAR(50), c3 VARCHAR(50))'
-            $result = Import-DbaCsv -Path $col1 -NoHeaderRow -SqlInstance $server -Database tempdb -Table 'dbo.NoHeaderRow' -WarningVariable warnNoHeaderRow
-            $data = Invoke-DbaQuery -SqlInstance $server -Query 'SELECT * FROM dbo.NoHeaderRow' -As PSObject
-            Invoke-DbaQuery -SqlInstance $server -Query 'DROP TABLE dbo.NoHeaderRow'
+            Invoke-DbaQuery -SqlInstance $server -Query 'CREATE TABLE NoHeaderRow (c1 VARCHAR(50), c2 VARCHAR(50), c3 VARCHAR(50))'
+            $result = Import-DbaCsv -Path $col1 -NoHeaderRow -SqlInstance $server -Database tempdb -Table 'NoHeaderRow' -WarningVariable warnNoHeaderRow
+            $data = Invoke-DbaQuery -SqlInstance $server -Query 'SELECT * FROM NoHeaderRow' -As PSObject
+            Invoke-DbaQuery -SqlInstance $server -Query 'DROP TABLE NoHeaderRow'
 
             $warnNoHeaderRow | Should -BeNullOrEmpty
             $result | Should -Not -BeNullOrEmpty
