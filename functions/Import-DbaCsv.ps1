@@ -550,6 +550,8 @@ function Import-DbaCsv {
                         if ((-not $KeepOrdinalOrder -and -not $AutoCreateTable) -or ($quotematch -match "'" -or $quotematch -match '"')) {
                             if ($ColumnMap) {
                                 Write-Message -Level Verbose -Message "ColumnMap was supplied. Additional auto-mapping will not be attempted."
+                            } elseif ($NoHeaderRow) {
+                                Write-Message -Level Verbose -Message "NoHeaderRow was supplied. Additional auto-mapping will not be attempted."
                             } else {
                                 try {
                                     $ColumnMap = @{ }
