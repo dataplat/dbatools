@@ -15,8 +15,13 @@ function Save-DbaKbUpdate {
     .PARAMETER FilePath
         The exact file name to save to, otherwise, it uses the name given by the webserver
 
-     .PARAMETER Architecture
+    .PARAMETER Architecture
         Defaults to x64. Can be x64, x86, ia64 or "All"
+
+    .PARAMETER Language
+        Cumulative Updates come in one file for all languages, but Service Packs have a file for every language.
+        If you want to download only a specific language, use this parameter.
+        You have to use the three letter code that is part of the filename, e. g. "enu" for english or "deu" for german.
 
     .PARAMETER InputObject
         Enables piping from Get-DbaKbUpdate
@@ -58,6 +63,11 @@ function Save-DbaKbUpdate {
         PS C:\> Save-DbaKbUpdate -Name KB4057114 -Architecture All -Path C:\temp
 
         Downloads the x64 version of KB4057114 and the x86 version of KB4057114 to C:\temp. This works for SQL Server or any other KB.
+
+    .EXAMPLE
+        PS C:\> Save-DbaKbUpdate -Name KB5003279 -Language enu -Path C:\temp
+
+        Downloads only the english version of KB5003279, which is the Service Pack 3 for SQL Server 2016, to C:\temp.
     #>
     [CmdletBinding()]
     param(
@@ -66,6 +76,7 @@ function Save-DbaKbUpdate {
         [string]$FilePath,
         [ValidateSet("x64", "x86", "ia64", "All")]
         [string]$Architecture = "x64",
+        [string]$Language,
         [parameter(ValueFromPipeline)]
         [object[]]$InputObject,
         [switch]$EnableException
@@ -91,7 +102,10 @@ function Save-DbaKbUpdate {
         }
 
         foreach ($link in $InputObject.Link) {
-            if ($Architecture -ne "All" -and $link -notmatch "$($Architecture)_") {
+            if ($Architecture -ne "All" -and $link -notmatch "$($Architecture)[-_]") {
+                continue
+            }
+            if ($Language -and $link -notmatch "-$($Language)_") {
                 continue
             }
 
