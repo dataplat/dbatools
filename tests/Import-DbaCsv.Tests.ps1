@@ -96,5 +96,17 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             $result.Database | Should -Be tempdb
             $result.Table | Should -Be CommaSeparatedWithHeader
         }
+
+        It "works with NoHeaderRow" {
+            # See #7759
+            $server = Connect-DbaInstance $script:instance1 -Database tempdb
+            Invoke-DbaQuery -SqlInstance $server -Query 'CREATE TABLE dbo.NoHeaderRow (c1 VARCHAR(50), c2 VARCHAR(50), c3 VARCHAR(50))'
+            $result = Import-DbaCsv -Path $col1 -NoHeaderRow -SqlInstance $server -Database tempdb -Table 'dbo.NoHeaderRow'
+            $result.RowsCopied | Should -Be 3
+            $data = Invoke-DbaQuery -SqlInstance $server -Query 'SELECT * FROM dbo.NoHeaderRow' -As PSObject
+            $data.Count | Should -Be 3
+            $data[0].c1 | Should -Be 'firstcol'
+            Invoke-DbaQuery -SqlInstance $server -Query 'DROP TABLE dbo.NoHeaderRow'
+        }
     }
 }
