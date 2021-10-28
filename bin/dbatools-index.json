@@ -366,7 +366,7 @@
                            false,
                            "false",
                            "(Get-DbatoolsConfigValue -FullName \u0027AvailabilityGroups.Default.ConnectionModeInSecondaryRole\u0027 -Fallback \u0027AllowNoConnections\u0027)",
-                           "AllowNoConnections,AllowReadIntentConnectionsOnly,AllowAllConnections"
+                           "AllowNoConnections,AllowReadIntentConnectionsOnly,AllowAllConnections,No,Read-intent only,Yes"
                        ],
                        [
                            "SeedingMode",
@@ -14470,7 +14470,7 @@
                        ],
                        [
                            "NoLogBackup",
-                           "If this switch is enabled, only databases without a log backup recorded by SQL Server will be returned. This will also indicate which of these databases only have CopyOnly log backups.",
+                           "If this switch is enabled, only databases without a log backup recorded by SQL Server will be returned.",
                            "",
                            false,
                            "false",
@@ -21493,7 +21493,7 @@
                        ],
                        [
                            "LogType",
-                           "Accepts \u0027IndexOptimize\u0027, \u0027DatabaseBackup\u0027, \u0027DatabaseIntegrityCheck\u0027. ATM only IndexOptimize parsing is available",
+                           "Accepts \u0027IndexOptimize\u0027, \u0027DatabaseBackup\u0027, \u0027DatabaseIntegrityCheck\u0027. Only IndexOptimize parsing is available at the moment",
                            "",
                            false,
                            "false",
@@ -34248,7 +34248,7 @@
     },
     {
         "Name":  "Move-DbaDbFile",
-        "Description":  "Moves database files from one local drive or folder to another.\nIt will put database offline, update metadata and set it online again.\nIt can also be used to move database files on an AG secondary.",
+        "Description":  "Moves database files from one local drive or folder to another.\nIt will put database offline, update metadata and set it online again.",
         "Tags":  [
                      "Database",
                      "Move",
@@ -49974,12 +49974,12 @@
         "Params":  [
                        [
                            "Software",
-                           "Name of the software to download.\r\nOptions include:\r\n* MaintenanceSolution: SQL Server Maintenance Solution created by Ola Hallengren (https://ola.hallengren.com)\r\n* FirstResponderKit: First Responder Kit created by Brent Ozar (http://FirstResponderKit.org)\r\n* DarlingData: Erik Darling\u0027s stored procedures (https://www.erikdarlingdata.com)",
+                           "Name of the software to download.\r\nOptions include:\r\n* MaintenanceSolution: SQL Server Maintenance Solution created by Ola Hallengren (https://ola.hallengren.com)\r\n* FirstResponderKit: First Responder Kit created by Brent Ozar (http://FirstResponderKit.org)\r\n* DarlingData: Erik Darling\u0027s stored procedures (https://www.erikdarlingdata.com)\r\n* SQLWATCH: SQL Server Monitoring Solution created by Marcin Gminski (https://sqlwatch.io/)",
                            "",
                            false,
                            "false",
                            "",
-                           "MaintenanceSolution,FirstResponderKit,DarlingData"
+                           "MaintenanceSolution,FirstResponderKit,DarlingData,SQLWATCH"
                        ],
                        [
                            "Branch",
@@ -50097,7 +50097,7 @@
         "CommandName":  "Save-DbaKbUpdate",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Save-DbaKbUpdate",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eSave-DbaKbUpdate -Name KB4057119\nDownloads KB4057119 to the current directory. This works for SQL Server or any other KB.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaKbUpdate -Name KB4057119 -Simple | Out-GridView -Passthru | Save-DbaKbUpdate\nDownloads the selected files from KB4057119 to the current directory.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eSave-DbaKbUpdate -Name KB4057119, 4057114 -Path C:\\temp\nDownloads KB4057119 and the x64 version of KB4057114 to C:\\temp. This works for SQL Server or any other KB.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eSave-DbaKbUpdate -Name KB4057114 -Architecture All -Path C:\\temp\nDownloads the x64 version of KB4057114 and the x86 version of KB4057114 to C:\\temp. This works for SQL Server or any other KB.",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eSave-DbaKbUpdate -Name KB4057119\nDownloads KB4057119 to the current directory. This works for SQL Server or any other KB.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaKbUpdate -Name KB4057119 -Simple | Out-GridView -Passthru | Save-DbaKbUpdate\nDownloads the selected files from KB4057119 to the current directory.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eSave-DbaKbUpdate -Name KB4057119, 4057114 -Path C:\\temp\nDownloads KB4057119 and the x64 version of KB4057114 to C:\\temp. This works for SQL Server or any other KB.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eSave-DbaKbUpdate -Name KB4057114 -Architecture All -Path C:\\temp\nDownloads the x64 version of KB4057114 and the x86 version of KB4057114 to C:\\temp. This works for SQL Server or any other KB.\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eSave-DbaKbUpdate -Name KB5003279 -Language enu -Path C:\\temp\nDownloads only the english version of KB5003279, which is the Service Pack 3 for SQL Server 2016, to C:\\temp.",
         "Params":  [
                        [
                            "Name",
@@ -50136,6 +50136,15 @@
                            "x64,x86,ia64,All"
                        ],
                        [
+                           "Language",
+                           "Cumulative Updates come in one file for all languages, but Service Packs have a file for every language.\r\nIf you want to download only a specific language, use this parameter.\r\nYou have to use the three letter code that is part of the filename, e. g. \"enu\" for english or \"deu\" for german.",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
                            "InputObject",
                            "Enables piping from Get-DbaKbUpdate",
                            "",
@@ -50154,7 +50163,7 @@
                            ""
                        ]
                    ],
-        "Syntax":  "Save-DbaKbUpdate [[-Name] \u003cString[]\u003e] [[-Path] \u003cString\u003e] [[-FilePath] \u003cString\u003e] [[-Architecture] \u003cString\u003e] [[-InputObject] \u003cObject[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Save-DbaKbUpdate [[-Name] \u003cString[]\u003e] [[-Path] \u003cString\u003e] [[-FilePath] \u003cString\u003e] [[-Architecture] \u003cString\u003e] [[-Language] \u003cString\u003e] [[-InputObject] \u003cObject[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Select-DbaBackupInformation",
