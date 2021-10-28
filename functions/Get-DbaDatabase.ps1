@@ -55,7 +55,7 @@ function Get-DbaDatabase {
         Only databases which haven't had a full backup since the specified DateTime will be returned.
 
     .PARAMETER NoLogBackup
-        If this switch is enabled, only databases without a log backup recorded by SQL Server will be returned. This will also indicate which of these databases only have CopyOnly log backups.
+        If this switch is enabled, only databases without a log backup recorded by SQL Server will be returned.
 
     .PARAMETER NoLogBackupSince
         Only databases which haven't had a log backup since the specified DateTime will be returned.
@@ -296,7 +296,7 @@ function Get-DbaDatabase {
                     $inputObject += $server.Databases | Where-Object Name -ceq $dt.name
                 }
             }
-            $inputobject = $inputObject |
+            $inputObject = $inputObject |
                 Where-Object {
                     ($_.Name -in $Database -or !$Database) -and
                     ($_.Name -notin $ExcludeDatabase -or !$ExcludeDatabase) -and
@@ -309,26 +309,19 @@ function Get-DbaDatabase {
                     $_.EncryptionEnabled -in $Encrypt
                 }
             if ($NoFullBackup -or $NoFullBackupSince) {
-                $dabs = ( Get-DbaDbBackupHistory -SqlInstance $server -LastFull )
-                if ($null -ne $NoFullBackupSince) {
-                    $dabsWithinScope = ($dabs | Where-Object End -lt $NoFullBackupSince)
-
-                    $inputobject = $inputobject | Where-Object { $_.Name -in $dabsWithinScope.Database -and $_.Name -ne 'tempdb' }
-                } else {
-                    $inputObject = $inputObject | Where-Object { $_.Name -notin $dabs.Database -and $_.Name -ne 'tempdb' }
+                $lastFullBackups = Get-DbaDbBackupHistory -SqlInstance $server -LastFull
+                $lastCopyOnlyBackups = Get-DbaDbBackupHistory -SqlInstance $server -LastFull -IncludeCopyOnly | Where-Object IsCopyOnly
+                if ($NoFullBackupSince) {
+                    $lastFullBackups = $lastFullBackups | Where-Object End -gt $NoFullBackupSince
                 }
-
+                $inputObject = $inputObject | Where-Object { $_.Name -cnotin $lastFullBackups.Database -and $_.Name -ne 'tempdb' }
             }
             if ($NoLogBackup -or $NoLogBackupSince) {
-                $dabs = ( Get-DbaDbBackupHistory -SqlInstance $server -LastLog )
-                if ($null -ne $NoLogBackupSince) {
-                    $dabsWithinScope = ($dabs | Where-Object End -lt $NoLogBackupSince)
-                    $inputobject = $inputobject |
-                        Where-Object { $_.Name -in $dabsWithinScope.Database -and $_.Name -ne 'tempdb' -and $_.RecoveryModel -ne 'Simple' }
-                } else {
-                    $inputobject = $inputObject |
-                        Where-Object { $_.Name -notin $dabs.Database -and $_.Name -ne 'tempdb' -and $_.RecoveryModel -ne 'Simple' }
+                $lastLogBackups = Get-DbaDbBackupHistory -SqlInstance $server -LastLog
+                if ($NoLogBackupSince) {
+                    $lastLogBackups = $lastLogBackups | Where-Object End -gt $NoLogBackupSince
                 }
+                $inputObject = $inputObject | Where-Object { $_.Name -cnotin $lastLogBackups.Database -and $_.Name -ne 'tempdb' -and $_.RecoveryModel -ne 'Simple' }
             }
 
             $defaults = 'ComputerName', 'InstanceName', 'SqlInstance', 'Name', 'Status', 'IsAccessible', 'RecoveryModel',
@@ -336,8 +329,8 @@ function Get-DbaDatabase {
             'LastBackupDate as LastFullBackup', 'LastDifferentialBackupDate as LastDiffBackup',
             'LastLogBackupDate as LastLogBackup'
 
-            if ($NoFullBackup -or $NoFullBackupSince -or $NoLogBackup -or $NoLogBackupSince) {
-                $defaults += ('Notes')
+            if ($NoFullBackup -or $NoFullBackupSince) {
+                $defaults += ('BackupStatus')
             }
             if ($IncludeLastUsed) {
                 # Add Last Used to the default view
@@ -345,22 +338,22 @@ function Get-DbaDatabase {
             }
 
             try {
-                foreach ($db in $inputobject) {
+                foreach ($db in $inputObject) {
 
-                    $Notes = $null
+                    $backupStatus = $null
                     if ($NoFullBackup -or $NoFullBackupSince) {
-                        if (@($db.EnumBackupSets()).count -eq @($db.EnumBackupSets() | Where-Object { $_.IsCopyOnly }).count -and (@($db.EnumBackupSets()).count -gt 0)) {
-                            $Notes = "Only CopyOnly backups"
+                        if ($db.Name -cin $lastCopyOnlyBackups.Database) {
+                            $backupStatus = "Only CopyOnly backups"
                         }
                     }
 
                     $lastusedinfo = $dblastused | Where-Object { $_.dbname -eq $db.name }
-                    Add-Member -Force -InputObject $db -MemberType NoteProperty BackupStatus -value $Notes
-                    Add-Member -Force -InputObject $db -MemberType NoteProperty -Name ComputerName -value $server.ComputerName
-                    Add-Member -Force -InputObject $db -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
-                    Add-Member -Force -InputObject $db -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
-                    Add-Member -Force -InputObject $db -MemberType NoteProperty -Name LastRead -value $lastusedinfo.last_read
-                    Add-Member -Force -InputObject $db -MemberType NoteProperty -Name LastWrite -value $lastusedinfo.last_write
+                    Add-Member -Force -InputObject $db -MemberType NoteProperty -Name BackupStatus -Value $backupStatus
+                    Add-Member -Force -InputObject $db -MemberType NoteProperty -Name ComputerName -Value $server.ComputerName
+                    Add-Member -Force -InputObject $db -MemberType NoteProperty -Name InstanceName -Value $server.ServiceName
+                    Add-Member -Force -InputObject $db -MemberType NoteProperty -Name SqlInstance -Value $server.DomainInstanceName
+                    Add-Member -Force -InputObject $db -MemberType NoteProperty -Name LastRead -Value $lastusedinfo.last_read
+                    Add-Member -Force -InputObject $db -MemberType NoteProperty -Name LastWrite -Value $lastusedinfo.last_write
                     Select-DefaultView -InputObject $db -Property $defaults
                 }
             } catch {
