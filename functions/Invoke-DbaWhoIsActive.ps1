@@ -242,10 +242,6 @@ function Invoke-DbaWhoIsActive {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
-            if ($server.VersionMajor -lt 9) {
-                throw "sp_WhoIsActive is only supported in SQL Server 2005 and above"
-            }
-
             $paramDictionary = @{
                 Filter             = '@filter'
                 FilterType         = '@filter_type'
