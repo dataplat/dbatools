@@ -186,7 +186,7 @@ function Invoke-DbaWhoIsActive {
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]
         $SqlCredential,
-        [object]$Database,
+        [string]$Database,
         [ValidateLength(0, 128)]
         [string]$Filter,
         [ValidateSet('Session', 'Program', 'Database', 'Login', 'Host')]
