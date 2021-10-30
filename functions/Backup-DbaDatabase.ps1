@@ -533,7 +533,7 @@ function Backup-DbaDatabase {
                 $suffix = $file.extension -Replace '^\.', ''
                 if ( '' -ne (Split-Path $FilePath)) {
                     Write-Message -Level Verbose -Message "Fully qualified path passed in"
-                    $FinalBackupPath += [IO.Path]::GetFullPath($file.DirectoryName)
+                    $FinalBackupPath += $file.DirectoryName
                 }
             } else {
                 Write-Message -Level VeryVerbose -Message "Setting filename - $timestamp"
@@ -597,11 +597,6 @@ function Backup-DbaDatabase {
                         }
                     }
                 }
-            }
-
-
-            if ($null -eq $AzureBaseUrl -and $Path) {
-                $FinalBackupPath = $FinalBackupPath | ForEach-Object { [IO.Path]::GetFullPath($_) }
             }
 
 
