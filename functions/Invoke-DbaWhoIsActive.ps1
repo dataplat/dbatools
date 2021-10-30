@@ -229,6 +229,10 @@ function Invoke-DbaWhoIsActive {
     begin {
         $passedParams = $psboundparameters.Keys | Where-Object { 'Silent', 'SqlServer', 'SqlCredential', 'OutputAs', 'ServerInstance', 'SqlInstance', 'Database' -notcontains $_ }
         $localParams = $psboundparameters
+
+        # The procedure sp_WhoIsActive uses only lowercase values, so we convert the input in case we have a case sensitive database.
+        $FilterType = $FilterType.ToLower()
+        $NotFilterType = $NotFilterType.ToLower()
     }
     process {
 
