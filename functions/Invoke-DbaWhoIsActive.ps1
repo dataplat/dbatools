@@ -230,8 +230,8 @@ function Invoke-DbaWhoIsActive {
         $localParams = $psboundparameters
 
         # The procedure sp_WhoIsActive uses only lowercase values, so we convert the input in case we have a case sensitive database.
-        $FilterType = $FilterType.ToLower()
-        $NotFilterType = $NotFilterType.ToLower()
+        if ($localParams.FilterType) { $localParams.FilterType = $localParams.FilterType.ToLower() }
+        if ($localParams.NotFilterType) { $localParams.NotFilterType = $localParams.NotFilterType.ToLower() }
     }
     process {
 
@@ -305,6 +305,7 @@ function Invoke-DbaWhoIsActive {
                     }
                 }
 
+                #Invoke-DbaQuery -SqlInstance $server -Query "dbo.sp_WhoIsActive" -CommandType "StoredProcedure" -SqlParameter
                 $dataTable = New-Object System.Data.DataSet
                 $dataAdapter = New-Object Microsoft.Data.SqlClient.SqlDataAdapter($sqlCommand)
                 $dataAdapter.fill($dataTable) | Out-Null
