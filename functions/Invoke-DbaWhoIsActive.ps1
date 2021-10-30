@@ -136,6 +136,11 @@ function Invoke-DbaWhoIsActive {
 
         For MFA support, please use Connect-DbaInstance.
 
+    .PARAMETER As
+        Specifies output type. Valid options for this parameter are 'DataSet', 'DataTable', 'DataRow', 'PSObject'. Default is 'DataRow'.
+
+        PSObject output introduces overhead but adds flexibility for working with results: https://forums.powershell.org/t/dealing-with-dbnull/2328/2
+
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
 
@@ -223,6 +228,8 @@ function Invoke-DbaWhoIsActive {
         [switch]$ReturnSchema,
         [string]$Schema,
         [switch]$Help,
+        [ValidateSet("DataSet", "DataTable", "DataRow", "PSObject")]
+        [string]$As = "DataRow",
         [switch]$EnableException
     )
     begin {
@@ -245,7 +252,7 @@ function Invoke-DbaWhoIsActive {
             $paramDictionary = @{
                 Filter             = '@filter'
                 FilterType         = '@filter_type'
-                NotFilter          = 'not_filter'
+                NotFilter          = '@not_filter'
                 NotFilterType      = '@not_filter_type'
                 ShowOwnSpid        = '@show_own_spid'
                 ShowSystemSpids    = '@show_system_spids'
@@ -271,45 +278,21 @@ function Invoke-DbaWhoIsActive {
 
             Write-Message -Level Verbose -Message "Collecting sp_whoisactive data from server: $instance"
             try {
-                $sqlConnection = New-Object Microsoft.Data.SqlClient.SqlConnection
-                $sqlConnection.ConnectionString = $server.ConnectionContext.ConnectionString
-                $sqlConnection.Open()
-
-                if ($Database) {
-                    # database is being returned as something weird. change it to string without using a method then trim.
-                    $Database = "$Database"
-                    $Database = $Database.Trim()
-                    $sqlConnection.ChangeDatabase($Database)
-                }
-
-                $sqlCommand = New-Object Microsoft.Data.SqlClient.SqlCommand
-                $sqlCommand.CommandType = "StoredProcedure"
-                $sqlCommand.CommandText = "dbo.sp_WhoIsActive"
-                $sqlCommand.Connection = $sqlConnection
-
+                $sqlParameter = @{ }
                 foreach ($param in $passedParams) {
                     Write-Message -Level Verbose -Message "Check parameter '$param'"
-
                     $sqlParam = $paramDictionary[$param]
-
                     if ($sqlParam) {
-
                         $value = $localParams[$param]
-
                         switch ($value) {
                             $true { $value = 1 }
                             $false { $value = 0 }
                         }
                         Write-Message -Level Verbose -Message "Adding parameter '$sqlParam' with value '$value'"
-                        [Void]$sqlCommand.Parameters.AddWithValue($sqlParam, $value)
+                        $sqlParameter[$sqlParam] = $value
                     }
                 }
-
-                #Invoke-DbaQuery -SqlInstance $server -Query "dbo.sp_WhoIsActive" -CommandType "StoredProcedure" -SqlParameter
-                $dataTable = New-Object System.Data.DataSet
-                $dataAdapter = New-Object Microsoft.Data.SqlClient.SqlDataAdapter($sqlCommand)
-                $dataAdapter.fill($dataTable) | Out-Null
-                $dataTable.Tables.Rows
+                Invoke-DbaQuery -SqlInstance $server -Query "dbo.sp_WhoIsActive" -CommandType "StoredProcedure" -SqlParameter $sqlParameter -As $As -EnableException
             } catch {
                 if ($_.Exception.InnerException -Like "*Could not find*") {
                     Stop-Function -Message "sp_whoisactive not found, please install using Install-DbaWhoIsActive." -Continue
