@@ -609,6 +609,7 @@ function Backup-DbaDatabase {
                 $FinalBackupPath = $FinalBackupPath | ForEach-Object { [IO.Path]::GetFullPath($_) }
             }
 
+
             $script = $null
             $backupComplete = $false
 
