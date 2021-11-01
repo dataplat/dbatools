@@ -87,6 +87,15 @@ RW     = CASE WHEN is_read_only = 0 THEN 'READ_WRITE' ELSE 'READ_ONLY' END
 FROM sys.databases
 '@
 
+        $DbStatesQuery2000 = @'
+SELECT
+Name   = name,
+Access = DATABASEPROPERTYEX(name, 'UserAccess'),
+Status = DATABASEPROPERTYEX(name, 'Status'),
+RW     = DATABASEPROPERTYEX(name, 'Updateability')
+FROM sys.databases
+'@
+
     }
     process {
         foreach ($instance in $SqlInstance) {
@@ -95,7 +104,11 @@ FROM sys.databases
             } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
-            $dbStates = $server.Query($DbStatesQuery)
+            if ($server.VersionMajor -eq 8) {
+                $dbStates = $server.Query($DbStatesQuery2000)
+            } else {
+                $dbStates = $server.Query($DbStatesQuery)
+            }
             $dbs = $dbStates | Where-Object { @('master', 'model', 'msdb', 'tempdb', 'distribution') -notcontains $_.Name }
             if ($Database) {
                 $dbs = $dbs | Where-Object Name -In $Database
