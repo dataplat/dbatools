@@ -418,7 +418,7 @@ function Restore-DbaDatabase {
 
         #region Validation
         try {
-            $RestoreInstance = Connect-DbaInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
+            $RestoreInstance = Connect-DbaInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database master
         } catch {
             Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $SqlInstance
             return
