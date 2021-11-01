@@ -133,7 +133,7 @@ function Reset-DbaAdmin {
                 [switch]$EnableException
             )
             try {
-                $connstring = "Data Source=$instance;Integrated Security=True;Connect Timeout=20;Application Name=Reset-DbaAdmin"
+                $connstring = "Data Source=$instance;Integrated Security=True;TrustServerCertificate=true;Connect Timeout=20;Application Name=Reset-DbaAdmin"
                 $conn = New-Object Microsoft.Data.SqlClient.SqlConnection $connstring
                 $conn.Open()
                 $cmd = New-Object Microsoft.Data.sqlclient.sqlcommand($null, $conn)
