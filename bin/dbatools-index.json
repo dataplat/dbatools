@@ -33430,7 +33430,7 @@
                        [
                            "Filter",
                            "FiltersBoth inclusive and exclusive\r\nSet either filter to \u0027\u0027 to disable\r\nSession is a session ID, and either 0 or \u0027\u0027 can be used to indicate \"all\" sessions\r\nAll other filter types support % or _ as wildcards",
-                           "As",
+                           "",
                            false,
                            "false",
                            "",
@@ -33644,6 +33644,15 @@
                            ""
                        ],
                        [
+                           "As",
+                           "Specifies output type. Valid options for this parameter are \u0027DataSet\u0027, \u0027DataTable\u0027, \u0027DataRow\u0027, \u0027PSObject\u0027. Default is \u0027DataRow\u0027.\nPSObject output introduces overhead but adds flexibility for working with results: https://forums.powershell.org/t/dealing-with-dbnull/2328/2",
+                           "",
+                           false,
+                           "false",
+                           "DataRow",
+                           "DataSet,DataTable,DataRow,PSObject"
+                       ],
+                       [
                            "EnableException",
                            "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
                            "",
@@ -33653,7 +33662,7 @@
                            ""
                        ]
                    ],
-        "Syntax":  "Invoke-DbaWhoIsActive [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cObject\u003e] [[-Filter] \u003cString\u003e] [[-FilterType] \u003cString\u003e] [[-NotFilter] \u003cString\u003e] [[-NotFilterType] \u003cString\u003e] [-ShowOwnSpid] [-ShowSystemSpids] [[-ShowSleepingSpids] \u003cInt32\u003e] [-GetFullInnerText] [[-GetPlans] \u003cInt32\u003e] [-GetOuterCommand] [-GetTransactionInfo] [[-GetTaskInfo] \u003cInt32\u003e] [-GetLocks] [-GetAverageTime] [-GetAdditonalInfo] [-FindBlockLeaders] [[-DeltaInterval] \u003cInt32\u003e] [[-OutputColumnList] \u003cString\u003e] [[-SortOrder] \u003cString\u003e] [[-FormatOutput] \u003cInt32\u003e] [[-DestinationTable] \u003cString\u003e] \r\n[-ReturnSchema] [[-Schema] \u003cString\u003e] [-Help] [-EnableException] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Invoke-DbaWhoIsActive [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cString\u003e] [[-Filter] \u003cString\u003e] [[-FilterType] \u003cString\u003e] [[-NotFilter] \u003cString\u003e] [[-NotFilterType] \u003cString\u003e] [-ShowOwnSpid] [-ShowSystemSpids] [[-ShowSleepingSpids] \u003cInt32\u003e] [-GetFullInnerText] [[-GetPlans] \u003cInt32\u003e] [-GetOuterCommand] [-GetTransactionInfo] [[-GetTaskInfo] \u003cInt32\u003e] [-GetLocks] [-GetAverageTime] [-GetAdditonalInfo] [-FindBlockLeaders] [[-DeltaInterval] \u003cInt32\u003e] [[-OutputColumnList] \u003cString\u003e] [[-SortOrder] \u003cString\u003e] [[-FormatOutput] \u003cInt32\u003e] [[-DestinationTable] \u003cString\u003e] \r\n[-ReturnSchema] [[-Schema] \u003cString\u003e] [-Help] [[-As] \u003cString\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Invoke-DbaXEReplay",
