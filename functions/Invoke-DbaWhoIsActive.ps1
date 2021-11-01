@@ -136,6 +136,11 @@ function Invoke-DbaWhoIsActive {
 
         For MFA support, please use Connect-DbaInstance.
 
+    .PARAMETER As
+        Specifies output type. Valid options for this parameter are 'DataSet', 'DataTable', 'DataRow', 'PSObject'. Default is 'DataRow'.
+
+        PSObject output introduces overhead but adds flexibility for working with results: https://forums.powershell.org/t/dealing-with-dbnull/2328/2
+
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
 
@@ -186,8 +191,7 @@ function Invoke-DbaWhoIsActive {
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]
         $SqlCredential,
-        [object]$Database,
-        [Alias('As')]
+        [string]$Database,
         [ValidateLength(0, 128)]
         [string]$Filter,
         [ValidateSet('Session', 'Program', 'Database', 'Login', 'Host')]
@@ -224,29 +228,31 @@ function Invoke-DbaWhoIsActive {
         [switch]$ReturnSchema,
         [string]$Schema,
         [switch]$Help,
+        [ValidateSet("DataSet", "DataTable", "DataRow", "PSObject")]
+        [string]$As = "DataRow",
         [switch]$EnableException
     )
     begin {
         $passedParams = $psboundparameters.Keys | Where-Object { 'Silent', 'SqlServer', 'SqlCredential', 'OutputAs', 'ServerInstance', 'SqlInstance', 'Database' -notcontains $_ }
         $localParams = $psboundparameters
+
+        # The procedure sp_WhoIsActive uses only lowercase values, so we convert the input in case we have a case sensitive database.
+        if ($localParams.FilterType) { $localParams.FilterType = $localParams.FilterType.ToLower() }
+        if ($localParams.NotFilterType) { $localParams.NotFilterType = $localParams.NotFilterType.ToLower() }
     }
     process {
 
         foreach ($instance in $SqlInstance) {
             try {
-                $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
+                $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential -Database $Database -MinimumVersion 9
             } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
-            }
-
-            if ($server.VersionMajor -lt 9) {
-                throw "sp_WhoIsActive is only supported in SQL Server 2005 and above"
             }
 
             $paramDictionary = @{
                 Filter             = '@filter'
                 FilterType         = '@filter_type'
-                NotFilter          = 'not_filter'
+                NotFilter          = '@not_filter'
                 NotFilterType      = '@not_filter_type'
                 ShowOwnSpid        = '@show_own_spid'
                 ShowSystemSpids    = '@show_system_spids'
@@ -272,44 +278,21 @@ function Invoke-DbaWhoIsActive {
 
             Write-Message -Level Verbose -Message "Collecting sp_whoisactive data from server: $instance"
             try {
-                $sqlConnection = New-Object Microsoft.Data.SqlClient.SqlConnection
-                $sqlConnection.ConnectionString = $server.ConnectionContext.ConnectionString
-                $sqlConnection.Open()
-
-                if ($Database) {
-                    # database is being returned as something weird. change it to string without using a method then trim.
-                    $Database = "$Database"
-                    $Database = $Database.Trim()
-                    $sqlConnection.ChangeDatabase($Database)
-                }
-
-                $sqlCommand = New-Object Microsoft.Data.SqlClient.SqlCommand
-                $sqlCommand.CommandType = "StoredProcedure"
-                $sqlCommand.CommandText = "dbo.sp_WhoIsActive"
-                $sqlCommand.Connection = $sqlConnection
-
+                $sqlParameter = @{ }
                 foreach ($param in $passedParams) {
                     Write-Message -Level Verbose -Message "Check parameter '$param'"
-
                     $sqlParam = $paramDictionary[$param]
-
                     if ($sqlParam) {
-
                         $value = $localParams[$param]
-
                         switch ($value) {
                             $true { $value = 1 }
                             $false { $value = 0 }
                         }
                         Write-Message -Level Verbose -Message "Adding parameter '$sqlParam' with value '$value'"
-                        [Void]$sqlCommand.Parameters.AddWithValue($sqlParam, $value)
+                        $sqlParameter[$sqlParam] = $value
                     }
                 }
-
-                $dataTable = New-Object System.Data.DataSet
-                $dataAdapter = New-Object Microsoft.Data.SqlClient.SqlDataAdapter($sqlCommand)
-                $dataAdapter.fill($dataTable) | Out-Null
-                $dataTable.Tables.Rows
+                Invoke-DbaQuery -SqlInstance $server -Query "dbo.sp_WhoIsActive" -CommandType "StoredProcedure" -SqlParameter $sqlParameter -As $As -EnableException
             } catch {
                 if ($_.Exception.InnerException -Like "*Could not find*") {
                     Stop-Function -Message "sp_whoisactive not found, please install using Install-DbaWhoIsActive." -Continue
