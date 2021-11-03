@@ -638,12 +638,14 @@ function Get-DbaDbBackupHistory {
                 Write-Message -Level SomewhatVerbose -Message "$($groupedResults.Count) result-groups found."
                 $groupResults = @()
                 $backupSetIds = $groupedResults.Name
-                $backupSetIdsList = $backupSetIds -Join ","
+                $backupSetIdsList = '(' + ($backupSetIds -join '),(') + ')'
                 if ($groupedResults.Count -gt 0) {
-                    $backupSetIdsWhere = "backup_set_id IN ($backupSetIdsList)"
-                    $fileAllSql = "SELECT backup_set_id, file_type as FileType, logical_name as LogicalName, physical_name as PhysicalName
-                    FROM msdb..backupfile WHERE $backupSetIdsWhere
-                    AND [state] <> 8;" #Used to eliminate data files that no longer exist
+                    $BackupSetIdsTempTable = "Create table #BackupSetIds ( ID int ); Insert into #BackupSetIds( ID ) Values $BackupSetIdsList;" #Changed to temp table to avoid Error 8623 on large number of BackupsetIDs
+                    $fileAllSql = "$BackupSetIdsTempTable SELECT backup_set_id, file_type as FileType, logical_name as LogicalName, physical_name as PhysicalName
+                    FROM msdb..backupfile bf
+					join #BackupSetIds b
+						on b.ID = bf.backup_set_id
+					Where [state] <> 8;" #Used to eliminate data files that no longer exist
                     Write-Message -Level Debug -Message "FileSQL: $fileAllSql"
                     $fileListResults = $server.Query($fileAllSql)
                 } else {
