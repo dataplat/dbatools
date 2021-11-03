@@ -640,7 +640,7 @@ function Get-DbaDbBackupHistory {
                 $backupSetIds = $groupedResults.Name
                 $backupSetIdsList = '(' + ($backupSetIds -join '),(') + ')'
                 if ($groupedResults.Count -gt 0) {
-                    $BackupSetIdsTempTable = "Create table #BackupSetIds_Get_DbaBackup_History ( ID int ); Insert into #BackupSetIds( ID ) Values $BackupSetIdsList;" #Changed to temp table to avoid Error 8623 on large number of BackupsetIDs
+                    $BackupSetIdsTempTable = "Create table #BackupSetIds_Get_DbaBackup_History ( ID int ); Insert into #BackupSetIds_Get_DbaBackup_History( ID ) Values $BackupSetIdsList;" #Changed to temp table to avoid Error 8623 on large number of BackupsetIDs
                     $fileAllSql = "$BackupSetIdsTempTable SELECT backup_set_id, file_type as FileType, logical_name as LogicalName, physical_name as PhysicalName
                     FROM msdb..backupfile bf
 					join #BackupSetIds_Get_DbaBackup_History b
