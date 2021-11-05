@@ -645,8 +645,8 @@ function Get-DbaDbBackupHistory {
                     FROM msdb..backupfile bf
                     join #BackupSetIds bs
                         on bs.backup_set_id = bf.backup_set_id
-                    WHERE [state] <> 8; #Used to eliminate data files that no longer exist
-                    Drop Table #BackupSetIds"
+                    WHERE [state] <> 8; 
+                    Drop Table #BackupSetIds;" # <> 8 Used to eliminate data files that no longer exist
                     Write-Message -Level Debug -Message "FileSQL: $fileAllSql"
                     $fileListResults = $server.Query($fileAllSql)
                 } else {
