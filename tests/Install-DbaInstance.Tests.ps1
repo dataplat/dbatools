@@ -218,6 +218,31 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
                 # reverting the mock
                 Mock -CommandName Invoke-Program -MockWith { [pscustomobject]@{ Successful = $true; ExitCode = [uint32[]]0 } } -ModuleName dbatools
             }
+            It "Should install tools for SQL$version" {
+                Mock -CommandName Invoke-Program -MockWith { [pscustomobject]@{ Successful = $true; ExitCode = [uint32[]]0 } } -ModuleName dbatools
+                $splat = @{
+                    Version = $version
+                    Path    = 'TestDrive:'
+                    Feature = 'Tools'
+                }
+                $result = Install-DbaInstance @splat -EnableException -Confirm:$false
+                Assert-MockCalled -CommandName Invoke-Program -Exactly 1 -Scope It -ModuleName dbatools
+                Assert-MockCalled -CommandName Find-SqlInstanceSetup -Exactly 1 -Scope It -ModuleName dbatools
+                Assert-MockCalled -CommandName Test-PendingReboot -Exactly 3 -Scope It -ModuleName dbatools
+
+                $result | Should -Not -BeNullOrEmpty
+                $result.Version | Should -Be $canonicVersion
+                $result.Successful | Should -Be $true
+                'BC' | Should -BeIn $result.Configuration.$mainNode.FEATURES
+                'Conn' | Should -BeIn $result.Configuration.$mainNode.FEATURES
+                if ($version -in '2008', '2008R2', '2012', '2014') {
+                    'SSMS' | Should -BeIn $result.Configuration.$mainNode.FEATURES
+                    'ADV_SSMS' | Should -BeIn $result.Configuration.$mainNode.FEATURES
+                } else {
+                    'SSMS' | Should -Not -BeIn $result.Configuration.$mainNode.FEATURES
+                    'ADV_SSMS' | Should -Not -BeIn $result.Configuration.$mainNode.FEATURES
+                }
+            }
         }
     }
     Context "Negative tests" {
