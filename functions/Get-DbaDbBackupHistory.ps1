@@ -638,10 +638,10 @@ function Get-DbaDbBackupHistory {
                 Write-Message -Level SomewhatVerbose -Message "$($groupedResults.Count) result-groups found."
                 $groupResults = @()
                 $backupSetIds = $groupedResults.Name
-                $backupSetIdsList = '(' + ($backupSetIds -join '),(') + ')'
+                $backupSetIdsList = "Insert into #BackupSetIds( backup_set_id ) Values (" + ($backupSetIds -join ");Insert into #BackupSetIds( backup_set_id ) Values (") + ")"
                 if ($groupedResults.Count -gt 0) {
-                    $TempTable = "Create table #BackupSetIds ( backup_set_id int ); Insert into #BackupSetIds( backup_set_id ) Values $BackupSetIdsList;"
-                    $fileAllSql = "$TempTable SELECT backup_set_id, file_type as FileType, logical_name as LogicalName, physical_name as PhysicalName
+                    $TempTable = "Create table #BackupSetIds ( backup_set_id int ); $backupSetIdsList;"
+                    $fileAllSql = "$TempTable SELECT bf.backup_set_id, file_type as FileType, logical_name as LogicalName, physical_name as PhysicalName
                     FROM msdb..backupfile bf
                     join #BackupSetIds bs
                         on bs.backup_set_id = bf.backup_set_id
