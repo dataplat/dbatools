@@ -132,7 +132,7 @@ function Get-DbaComputerSystem {
                 $pendingReboot = $null
                 try {
                     Write-Message -Level Verbose -Message "Getting information about pending reboots."
-                    $pendingReboot = Test-PendingReboot -ComputerName $computerResolved -Credential $Credential -PendingRename
+                    $pendingReboot = Test-PendingReboot -ComputerName $computerResolved -Credential $Credential
                 } catch {
                     Write-Message -Level Verbose -Message "Not able to get information about pending reboots."
                 }

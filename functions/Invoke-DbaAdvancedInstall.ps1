@@ -61,6 +61,9 @@ function Invoke-DbaAdvancedInstall {
     .PARAMETER SaCredential
         Securely provide the password for the sa account when using mixed mode authentication.
 
+    .PARAMETER NoPendingRenameCheck
+        Disables pending rename validation when checking for a pending reboot.
+
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
 
@@ -103,6 +106,7 @@ function Invoke-DbaAdvancedInstall {
         [string]$Authentication = 'Credssp',
         [pscredential]$Credential,
         [pscredential]$SaCredential,
+        [switch]$NoPendingRenameCheck,
         [switch]$EnableException
     )
     Function Get-SqlInstallSummary {
@@ -180,7 +184,7 @@ function Invoke-DbaAdvancedInstall {
     }
     $activity = "Installing SQL Server ($Version) components on $ComputerName"
     try {
-        $restartNeeded = Test-PendingReboot -ComputerName $ComputerName -Credential $Credential
+        $restartNeeded = Test-PendingReboot -ComputerName $ComputerName -Credential $Credential -NoPendingRename:$NoPendingRenameCheck
     } catch {
         $restartNeeded = $false
         Stop-Function -Message "Failed to get reboot status from $computer" -ErrorRecord $_
@@ -305,7 +309,7 @@ function Invoke-DbaAdvancedInstall {
     }
     # restart if necessary
     try {
-        $restartNeeded = Test-PendingReboot -ComputerName $ComputerName -Credential $Credential
+        $restartNeeded = Test-PendingReboot -ComputerName $ComputerName -Credential $Credential -NoPendingRename:$NoPendingRenameCheck
     } catch {
         $restartNeeded = $false
         Stop-Function -Message "Failed to get reboot status from $($ComputerName)" -ErrorRecord $_
