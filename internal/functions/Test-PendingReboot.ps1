@@ -18,7 +18,7 @@ function Test-PendingReboot {
         [ValidateNotNullOrEmpty()]
         [DbaInstanceParameter]$ComputerName,
         [pscredential]$Credential,
-        [switch]$PendingRename
+        [switch]$NoPendingRename
     )
     process {
         $icmParams = @{
@@ -30,28 +30,28 @@ function Test-PendingReboot {
             $icmParams.Credential = $Credential
         }
 
-        $OperatingSystem = Get-DbaCmObject -ComputerName $ComputerName.ComputerName  -Credential $Credential -ClassName Win32_OperatingSystem -EnableException
+        $operatingSystem = Get-DbaCmObject -ComputerName $ComputerName.ComputerName  -Credential $Credential -ClassName Win32_OperatingSystem -EnableException
 
         # If Vista/2008 & Above query the CBS Reg Key
-        If ($OperatingSystem.BuildNumber -ge 6001) {
-            $PendingReboot = Invoke-Command2 @icmParams -ScriptBlock { Get-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Component Based Servicing' -Name 'RebootPending' -ErrorAction SilentlyContinue }
-            if ($PendingReboot) {
+        If ($operatingSystem.BuildNumber -ge 6001) {
+            $pendingReboot = Invoke-Command2 @icmParams -ScriptBlock { Get-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Component Based Servicing' -Name 'RebootPending' -ErrorAction SilentlyContinue }
+            if ($pendingReboot) {
                 Write-Message -Level Verbose -Message 'Reboot pending detected in the Component Based Servicing registry key'
                 return $true
             }
         }
 
         # Query WUAU from the registry
-        $PendingReboot = Invoke-Command2 @icmParams -ScriptBlock { Get-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\WindowsUpdate\Auto Update' -Name 'RebootRequired' -ErrorAction SilentlyContinue }
-        if ($PendingReboot) {
+        $pendingReboot = Invoke-Command2 @icmParams -ScriptBlock { Get-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\WindowsUpdate\Auto Update' -Name 'RebootRequired' -ErrorAction SilentlyContinue }
+        if ($pendingReboot) {
             Write-Message -Level Verbose -Message 'WUAU has a reboot pending'
             return $true
         }
 
         # Query PendingFileRenameOperations from the registry
-        if ($PendingRename) {
-            $PendingReboot = Invoke-Command2 @icmParams -ScriptBlock { Get-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager' -Name 'PendingFileRenameOperations' -ErrorAction SilentlyContinue }
-            if ($PendingReboot -and $PendingReboot.PendingFileRenameOperations) {
+        if (-not $NoPendingRename) {
+            $pendingReboot = Invoke-Command2 @icmParams -ScriptBlock { Get-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager' -Name 'PendingFileRenameOperations' -ErrorAction SilentlyContinue }
+            if ($pendingReboot -and $pendingReboot.PendingFileRenameOperations) {
                 Write-Message -Level Verbose -Message 'Reboot pending in the PendingFileRenameOperations registry value'
                 return $true
             }
