@@ -96,8 +96,8 @@ Function Uninstall-DbaSqlWatch {
             $tables = Get-DbaDbTable -SqlInstance $server -Database $Database | Where-Object { $PSItem.Name -like "sqlwatch_*" -or $PSItem.Name -like "dbachecks*" -or $PSItem.Name -eq "__RefactorLog" } | Sort-Object $PSItem.createdate -Descending
             $views = Get-DbaDbView -SqlInstance $server -Database $Database | Where-Object { $PSItem.Name -like "vw_sqlwatch_*" } | Sort-Object $PSItem.createdate -Descending
             $sprocs = Get-DbaDbStoredProcedure -SqlInstance $server -Database $Database | Where-Object { $PSItem.Name -like "usp_sqlwatch_*" -or $PSItem.Name -like "Stream*" } | Sort-Object $PSItem.createdate -Descending
-            $funcs = Get-DbaDbUdf -SqlInstance $server -Database $Database | Where-Object { $PSItem.Name -like "ufn_sqlwatch_*" -or $PSItem.Name -like "Get*" -or $PSItem.Name -like "Read*" -and $PSItem.Name -ne "ufn_sqlwatch_get_threshold_comparator" } | Sort-Object $PSItem.createdate
-            $funcs += Get-DbaDbUdf -SqlInstance $server -Database $Database | Where-Object { $PSItem.Name -eq "ufn_sqlwatch_get_threshold_comparator" }
+            $funcs = Get-DbaDbUdf -SqlInstance $server -Database $Database | Where-Object { $PSItem.Name -like "ufn_sqlwatch_*" -or $PSItem.Name -like "Get*" -or $PSItem.Name -like "Read*" -and $PSItem.Name -notin "ufn_sqlwatch_get_threshold_comparator", "ufn_sqlwatch_clean_sql_text" } | Sort-Object $PSItem.createdate
+            $funcs += Get-DbaDbUdf -SqlInstance $server -Database $Database | Where-Object { $PSItem.Name -in "ufn_sqlwatch_get_threshold_comparator", "ufn_sqlwatch_clean_sql_text" }
             $agentJobs = Get-DbaAgentJob -SqlInstance $server | Where-Object { $PSItem.Name -like "SqlWatch-*" }
             $XESessions = Get-DbaXESession -SqlInstance $server | Where-Object { $PSItem.Name -like "SQLWATCH_*" }
             $Assemblies = Get-DbaDbAssembly -SqlInstance $server -Database $Database | Where-Object { $PSItem.Name -like "SqlWatch*" }
@@ -224,7 +224,7 @@ Function Uninstall-DbaSqlWatch {
             if ($PSCmdlet.ShouldProcess($server, "Unpublishing DACPAC")) {
                 try {
                     Write-Message -Level Verbose -Message "Unpublishing SqlWatch DACPAC from $database on $server."
-                    $connectionString = $server | Select-Object -ExpandProperty ConnectionContext
+                    $connectionString = $server.ConnectionContext.ConnectionString | Convert-ConnectionString
                     $dacServices = New-Object Microsoft.SqlServer.Dac.DacServices $connectionString
                     $dacServices.Unregister($Database)
                 } catch {
