@@ -288,6 +288,9 @@ function Get-DbaBackupInformation {
                 $Files = $Files | Where-Object { $_.FullName -notlike '*\DIFF\*' }
             }
 
+            # Skipping partially uploaded files (see #7921)
+            $Files = $Files | Where-Object { $_.FullName -notlike '*.part' }
+
             if ($Files.Count -gt 0) {
                 Write-Message -Level Verbose -Message "Reading backup headers of $($Files.Count) files"
                 $FileDetails = Read-DbaBackupHeader -SqlInstance $server -Path $Files -AzureCredential $AzureCredential
