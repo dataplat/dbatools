@@ -42,6 +42,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
             'PerformVolumeMaintenanceTasks',
             'Restart',
             'EnableException',
+            'NoPendingRenameCheck',
             'ArgumentList'
         )
         $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
