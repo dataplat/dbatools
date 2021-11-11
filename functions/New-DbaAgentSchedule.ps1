@@ -124,6 +124,11 @@ function New-DbaAgentSchedule {
         https://dbatools.io/New-DbaAgentSchedule
 
     .EXAMPLE
+        PS C:\> New-DbaAgentSchedule -SqlInstance sql01 -Schedule DailyAt6 -FrequencyType Daily -StartTime "060000" -Force
+
+        Creates a schedule that runs jobs every day at 6 in the morning. It assumes default values for the start date, start time, end date and end time due to -Force.
+
+    .EXAMPLE
         PS C:\> New-DbaAgentSchedule -SqlInstance localhost\SQL2016 -Schedule daily -FrequencyType Daily -FrequencyInterval Everyday -Force
 
         Creates a schedule with a daily frequency every day. It assumes default values for the start date, start time, end date and end time due to -Force.
@@ -164,8 +169,12 @@ function New-DbaAgentSchedule {
     begin {
         if ($Force) { $ConfirmPreference = 'none' }
 
+        if ($FrequencyType -eq "Daily" -and -not $FrequencyInterval) {
+            $FrequencyInterval = 1
+        }
+
         # if a Schedule is not provided there is no much point
-        if (!$Schedule) {
+        if (-not $Schedule) {
             Stop-Function -Message "A schedule was not provided! Please provide a schedule name."
             return
         }
