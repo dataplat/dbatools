@@ -28523,12 +28523,12 @@
                        ],
                        [
                            "Feature",
-                           "Features to install. Templates like \"Default\" and \"All\" can be used to setup a predefined set of components. Full list of features:\nDefault\r\nAll\r\nEngine\r\nTools\r\nReplication\r\nFullText\r\nDataQuality\r\nPolyBase\r\nMachineLearning\r\nAnalysisServices\r\nReportingServices\r\nReportingForSharepoint\r\nSharepointAddin\r\nIntegrationServices\r\nMasterDataServices\r\nPythonPackages\r\nRPackages\r\nReplayController\r\nReplayClient\r\nSDK\r\nBIDS\r\nSSMS",
+                           "Features to install. Templates like \"Default\" and \"All\" can be used to setup a predefined set of components. Full list of features:\nDefault: Engine, Replication, FullText, Tools\r\nAll\r\nEngine\r\nTools: SSMS, BackwardsCompatibility, Connectivity\r\nReplication\r\nFullText\r\nDataQuality\r\nPolyBase\r\nMachineLearning\r\nAnalysisServices\r\nReportingServices\r\nReportingForSharepoint\r\nSharepointAddin\r\nIntegrationServices\r\nMasterDataServices\r\nPythonPackages\r\nRPackages\r\nBackwardsCompatibility\r\nConnectivity\r\nReplayController\r\nReplayClient\r\nSDK\r\nBIDS\r\nSSMS: SSMS, ADV_SSMS",
                            "",
                            false,
                            "false",
                            "Default",
-                           "Default,All,Engine,Tools,Replication,FullText,DataQuality,PolyBase,MachineLearning,AnalysisServices,ReportingServices,ReportingForSharepoint,SharepointAddin,IntegrationServices,MasterDataServices,PythonPackages,RPackages,ReplayController,ReplayClient,SDK,BIDS,SSMS"
+                           "Default,All,Engine,Tools,Replication,FullText,DataQuality,PolyBase,MachineLearning,AnalysisServices,ReportingServices,ReportingForSharepoint,SharepointAddin,IntegrationServices,MasterDataServices,PythonPackages,RPackages,BackwardsCompatibility,Connectivity,ReplayController,ReplayClient,SDK,BIDS,SSMS"
                        ],
                        [
                            "AuthenticationMode",
@@ -28720,6 +28720,15 @@
                            ""
                        ],
                        [
+                           "NoPendingRenameCheck",
+                           "Disables pending rename validation when checking for a pending reboot.",
+                           "",
+                           false,
+                           "false",
+                           "(Get-DbatoolsConfigValue -Name \u0027OS.PendingRename\u0027 -Fallback $false)",
+                           ""
+                       ],
+                       [
                            "EnableException",
                            "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
                            "",
@@ -28747,7 +28756,7 @@
                            ""
                        ]
                    ],
-        "Syntax":  "Install-DbaInstance [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [-Version] \u003cString\u003e [[-InstanceName] \u003cString\u003e] [[-SaCredential] \u003cPSCredential\u003e] [[-Credential] \u003cPSCredential\u003e] [[-Authentication] \u003cString\u003e] [[-ConfigurationFile] \u003cObject\u003e] [[-Configuration] \u003cHashtable\u003e] [[-Path] \u003cString[]\u003e] [[-Feature] \u003cString[]\u003e] [[-AuthenticationMode] \u003cString\u003e] [[-InstancePath] \u003cString\u003e] [[-DataPath] \u003cString\u003e] [[-LogPath] \u003cString\u003e] [[-TempPath] \u003cString\u003e] [[-BackupPath] \u003cString\u003e] [[-UpdateSourcePath] \u003cString\u003e] [[-AdminAccount] \u003cString[]\u003e] [[-Port] \u003cInt32\u003e] [[-Throttle] \u003cInt32\u003e] [[-ProductID] \u003cString\u003e] \r\n[[-EngineCredential] \u003cPSCredential\u003e] [[-AgentCredential] \u003cPSCredential\u003e] [[-ASCredential] \u003cPSCredential\u003e] [[-ISCredential] \u003cPSCredential\u003e] [[-RSCredential] \u003cPSCredential\u003e] [[-FTCredential] \u003cPSCredential\u003e] [[-PBEngineCredential] \u003cPSCredential\u003e] [[-SaveConfiguration] \u003cString\u003e] [-PerformVolumeMaintenanceTasks] [-Restart] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Install-DbaInstance [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [-Version] \u003cString\u003e [[-InstanceName] \u003cString\u003e] [[-SaCredential] \u003cPSCredential\u003e] [[-Credential] \u003cPSCredential\u003e] [[-Authentication] \u003cString\u003e] [[-ConfigurationFile] \u003cObject\u003e] [[-Configuration] \u003cHashtable\u003e] [[-Path] \u003cString[]\u003e] [[-Feature] \u003cString[]\u003e] [[-AuthenticationMode] \u003cString\u003e] [[-InstancePath] \u003cString\u003e] [[-DataPath] \u003cString\u003e] [[-LogPath] \u003cString\u003e] [[-TempPath] \u003cString\u003e] [[-BackupPath] \u003cString\u003e] [[-UpdateSourcePath] \u003cString\u003e] [[-AdminAccount] \u003cString[]\u003e] [[-Port] \u003cInt32\u003e] [[-Throttle] \u003cInt32\u003e] [[-ProductID] \u003cString\u003e] \r\n[[-EngineCredential] \u003cPSCredential\u003e] [[-AgentCredential] \u003cPSCredential\u003e] [[-ASCredential] \u003cPSCredential\u003e] [[-ISCredential] \u003cPSCredential\u003e] [[-RSCredential] \u003cPSCredential\u003e] [[-FTCredential] \u003cPSCredential\u003e] [[-PBEngineCredential] \u003cPSCredential\u003e] [[-SaveConfiguration] \u003cString\u003e] [-PerformVolumeMaintenanceTasks] [-Restart] [-NoPendingRenameCheck] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Install-DbaMaintenanceSolution",
@@ -29394,6 +29403,15 @@
                            ""
                        ],
                        [
+                           "NoPendingRenameCheck",
+                           "Disables pending rename validation when checking for a pending reboot.",
+                           "",
+                           false,
+                           "false",
+                           "False",
+                           ""
+                       ],
+                       [
                            "EnableException",
                            "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
                            "",
@@ -29403,7 +29421,7 @@
                            ""
                        ]
                    ],
-        "Syntax":  "Invoke-DbaAdvancedInstall [[-ComputerName] \u003cString\u003e] [[-InstanceName] \u003cString\u003e] [[-Port] \u003cNullable`1\u003e] [[-InstallationPath] \u003cString\u003e] [[-ConfigurationPath] \u003cString\u003e] [[-ArgumentList] \u003cString[]\u003e] [[-Version] \u003cVersion\u003e] [[-Configuration] \u003cHashtable\u003e] [[-Restart] \u003cBoolean\u003e] [[-PerformVolumeMaintenanceTasks] \u003cBoolean\u003e] [[-SaveConfiguration] \u003cString\u003e] [[-Authentication] \u003cString\u003e] [[-Credential] \u003cPSCredential\u003e] [[-SaCredential] \u003cPSCredential\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Invoke-DbaAdvancedInstall [[-ComputerName] \u003cString\u003e] [[-InstanceName] \u003cString\u003e] [[-Port] \u003cNullable`1\u003e] [[-InstallationPath] \u003cString\u003e] [[-ConfigurationPath] \u003cString\u003e] [[-ArgumentList] \u003cString[]\u003e] [[-Version] \u003cVersion\u003e] [[-Configuration] \u003cHashtable\u003e] [[-Restart] \u003cBoolean\u003e] [[-PerformVolumeMaintenanceTasks] \u003cBoolean\u003e] [[-SaveConfiguration] \u003cString\u003e] [[-Authentication] \u003cString\u003e] [[-Credential] \u003cPSCredential\u003e] [[-SaCredential] \u003cPSCredential\u003e] [-NoPendingRenameCheck] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Invoke-DbaAdvancedRestore",
@@ -29717,6 +29735,15 @@
                            ""
                        ],
                        [
+                           "NoPendingRenameCheck",
+                           "Disables pending rename validation when checking for a pending reboot.",
+                           "",
+                           false,
+                           "false",
+                           "False",
+                           ""
+                       ],
+                       [
                            "EnableException",
                            "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
                            "",
@@ -29744,7 +29771,7 @@
                            ""
                        ]
                    ],
-        "Syntax":  "Invoke-DbaAdvancedUpdate [[-ComputerName] \u003cString\u003e] [[-Action] \u003cObject[]\u003e] [[-Restart] \u003cBoolean\u003e] [[-Authentication] \u003cString\u003e] [[-Credential] \u003cPSCredential\u003e] [[-ExtractPath] \u003cString\u003e] [[-ArgumentList] \u003cString[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Invoke-DbaAdvancedUpdate [[-ComputerName] \u003cString\u003e] [[-Action] \u003cObject[]\u003e] [[-Restart] \u003cBoolean\u003e] [[-Authentication] \u003cString\u003e] [[-Credential] \u003cPSCredential\u003e] [[-ExtractPath] \u003cString\u003e] [[-ArgumentList] \u003cString[]\u003e] [-NoPendingRenameCheck] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Invoke-DbaAgFailover",
@@ -35552,7 +35579,7 @@
         "CommandName":  "New-DbaAgentSchedule",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/New-DbaAgentSchedule",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eNew-DbaAgentSchedule -SqlInstance localhost\\SQL2016 -Schedule daily -FrequencyType Daily -FrequencyInterval Everyday -Force\nCreates a schedule with a daily frequency every day. It assumes default values for the start date, start time, end date and end time due to -Force.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eNew-DbaAgentSchedule -SqlInstance sstad-pc -Schedule MonthlyTest -FrequencyType Monthly -FrequencyInterval 10 -FrequencyRecurrenceFactor 1 -Force\nCreate a schedule with a monhtly frequency occuring every 10th of the month. It assumes default values for the start date, start time, end date and end time due to -Force.",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eNew-DbaAgentSchedule -SqlInstance sql01 -Schedule DailyAt6 -FrequencyType Daily -StartTime \"060000\" -Force\nCreates a schedule that runs jobs every day at 6 in the morning. It assumes default values for the start date, start time, end date and end time due to -Force.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eNew-DbaAgentSchedule -SqlInstance localhost\\SQL2016 -Schedule daily -FrequencyType Daily -FrequencyInterval Everyday -Force\nCreates a schedule with a daily frequency every day. It assumes default values for the start date, start time, end date and end time due to -Force.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eNew-DbaAgentSchedule -SqlInstance sstad-pc -Schedule MonthlyTest -FrequencyType Monthly -FrequencyInterval 10 -FrequencyRecurrenceFactor 1 -Force\nCreate a schedule with a monhtly frequency occuring every 10th of the month. It assumes default values for the start date, start time, end date and end time due to -Force.",
         "Params":  [
                        [
                            "SqlInstance",
@@ -62102,6 +62129,15 @@
                            ""
                        ],
                        [
+                           "NoPendingRenameCheck",
+                           "Disables pending rename validation when checking for a pending reboot.",
+                           "",
+                           false,
+                           "false",
+                           "(Get-DbatoolsConfigValue -Name \u0027OS.PendingRename\u0027 -Fallback $false)",
+                           ""
+                       ],
+                       [
                            "EnableException",
                            "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
                            "",
@@ -62129,7 +62165,7 @@
                            ""
                        ]
                    ],
-        "Syntax":  "Update-DbaInstance [[-ComputerName] \u003cDbaInstanceParameter[]\u003e] [-Credential \u003cPSCredential\u003e] [-Version \u003cString[]\u003e] [-Type \u003cString[]\u003e] [-InstanceName \u003cString\u003e] [-Path \u003cString[]\u003e] [-Restart] [-Continue] [-Throttle \u003cInt32\u003e] [-Authentication \u003cString\u003e] [-ExtractPath \u003cString\u003e] [-ArgumentList \u003cString[]\u003e] [-Download] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\nUpdate-DbaInstance [[-ComputerName] \u003cDbaInstanceParameter[]\u003e] [-Credential \u003cPSCredential\u003e] -KB \u003cString[]\u003e [-InstanceName \u003cString\u003e] [-Path \u003cString[]\u003e] [-Restart] [-Continue] [-Throttle \u003cInt32\u003e] [-Authentication \u003cString\u003e] [-ExtractPath \u003cString\u003e] [-ArgumentList \u003cString[]\u003e] [-Download] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Update-DbaInstance [[-ComputerName] \u003cDbaInstanceParameter[]\u003e] [-Credential \u003cPSCredential\u003e] [-Version \u003cString[]\u003e] [-Type \u003cString[]\u003e] [-InstanceName \u003cString\u003e] [-Path \u003cString[]\u003e] [-Restart] [-Continue] [-Throttle \u003cInt32\u003e] [-Authentication \u003cString\u003e] [-ExtractPath \u003cString\u003e] [-ArgumentList \u003cString[]\u003e] [-Download] [-NoPendingRenameCheck] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\nUpdate-DbaInstance [[-ComputerName] \u003cDbaInstanceParameter[]\u003e] [-Credential \u003cPSCredential\u003e] -KB \u003cString[]\u003e [-InstanceName \u003cString\u003e] [-Path \u003cString[]\u003e] [-Restart] [-Continue] [-Throttle \u003cInt32\u003e] [-Authentication \u003cString\u003e] [-ExtractPath \u003cString\u003e] [-ArgumentList \u003cString[]\u003e] [-Download] [-NoPendingRenameCheck] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Update-DbaMaintenanceSolution",

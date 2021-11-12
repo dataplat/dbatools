@@ -36,6 +36,9 @@ Function Invoke-DbaAdvancedUpdate {
         A list of extra arguments to pass to the execution file. Accepts one or more strings containing command line parameters.
         Example: ... -ArgumentList "/SkipRules=RebootRequiredCheck", "/Q"
 
+    .PARAMETER NoPendingRenameCheck
+        Disables pending rename validation when checking for a pending reboot.
+
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
 
@@ -77,6 +80,7 @@ Function Invoke-DbaAdvancedUpdate {
         [pscredential]$Credential,
         [string]$ExtractPath,
         [string[]]$ArgumentList,
+        [switch]$NoPendingRenameCheck,
         [switch]$EnableException
 
     )
@@ -94,7 +98,7 @@ Function Invoke-DbaAdvancedUpdate {
         $restartParams.Credential = $Credential
     }
     try {
-        $restartNeeded = Test-PendingReboot -ComputerName $computer -Credential $Credential
+        $restartNeeded = Test-PendingReboot -ComputerName $computer -Credential $Credential -NoPendingRename:$NoPendingRenameCheck
     } catch {
         $restartNeeded = $false
         Stop-Function -Message "Failed to get reboot status from $computer" -ErrorRecord $_
@@ -203,7 +207,7 @@ Function Invoke-DbaAdvancedUpdate {
         }
         #double check if restart is needed
         try {
-            $restartNeeded = Test-PendingReboot -ComputerName $computer -Credential $Credential
+            $restartNeeded = Test-PendingReboot -ComputerName $computer -Credential $Credential -NoPendingRename:$NoPendingRenameCheck
         } catch {
             $restartNeeded = $false
             Stop-Function -Message "Failed to get reboot status from $computer" -ErrorRecord $_
