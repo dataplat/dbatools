@@ -314,14 +314,14 @@ function Get-DbaDatabase {
                 if ($NoFullBackupSince) {
                     $lastFullBackups = $lastFullBackups | Where-Object End -gt $NoFullBackupSince
                 }
-                $inputObject = $inputObject | Where-Object { $_.Name -cnotin $lastFullBackups.Database -and $_.Name -ne 'tempdb' }
+                $inputObject = $inputObject | Where-Object { $_.Name -notin $lastFullBackups.Database -and $_.Name -ne 'tempdb' }
             }
             if ($NoLogBackup -or $NoLogBackupSince) {
                 $lastLogBackups = Get-DbaDbBackupHistory -SqlInstance $server -LastLog
                 if ($NoLogBackupSince) {
                     $lastLogBackups = $lastLogBackups | Where-Object End -gt $NoLogBackupSince
                 }
-                $inputObject = $inputObject | Where-Object { $_.Name -cnotin $lastLogBackups.Database -and $_.Name -ne 'tempdb' -and $_.RecoveryModel -ne 'Simple' }
+                $inputObject = $inputObject | Where-Object { $_.Name -notin $lastLogBackups.Database -and $_.Name -ne 'tempdb' -and $_.RecoveryModel -ne 'Simple' }
             }
 
             $defaults = 'ComputerName', 'InstanceName', 'SqlInstance', 'Name', 'Status', 'IsAccessible', 'RecoveryModel',
