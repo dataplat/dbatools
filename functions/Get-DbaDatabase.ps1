@@ -314,7 +314,7 @@ function Get-DbaDatabase {
                 if ($NoFullBackupSince) {
                     $lastFullBackups = $lastFullBackups | Where-Object End -gt $NoFullBackupSince
                 }
-                if ( $server.Collation -like "*_CS*" -or $server.Collation -like "*_BIN_*"  ) {
+                if ( $server.Collation -like "*_CS*" -or $server.Collation -like "*_BIN*"  ) {
                     # Collation Check, when Case Sensitive collation use cnotin for database name comparision
                     $inputObject = $inputObject | Where-Object { $_.Name -cnotin $lastFullBackups.Database -and $_.Name -ne 'tempdb' }
                 } else {
