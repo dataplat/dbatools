@@ -316,7 +316,7 @@ function Get-DbaDatabase {
                 }
                 if ( $server.Collation -like "*_CS") {
                     $inputObject = $inputObject | Where-Object { $_.Name -cnotin $lastFullBackups.Database -and $_.Name -ne 'tempdb' }
-                } else{
+                } else {
                     $inputObject = $inputObject | Where-Object { $_.Name -notin $lastFullBackups.Database -and $_.Name -ne 'tempdb' }
                 }
             }
