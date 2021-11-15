@@ -47,6 +47,9 @@ function Test-DbaLastBackup {
     .PARAMETER LogDirectory
         Specifies an alternative directory for ldfs. The command uses the SQL Server's default log directory for all restores.
 
+    .PARAMETER FileStreamDirectory
+        Specifies a directory for filestream data.
+
     .PARAMETER VerifyOnly
         If this switch is enabled, VERIFYONLY will be performed. An actual restore will not be executed.
 
@@ -196,6 +199,7 @@ function Test-DbaLastBackup {
         [object]$DestinationCredential,
         [string]$DataDirectory,
         [string]$LogDirectory,
+        [string]$FileStreamDirectory,
         [string]$Prefix = "dbatools-testrestore-",
         [switch]$VerifyOnly,
         [switch]$NoCheck,
@@ -474,6 +478,9 @@ function Test-DbaLastBackup {
                         }
                         if (Test-Bound "BufferCount") {
                             $restoreSplat.Add('BufferCount', $BufferCount)
+                        }
+                        if (Test-Bound "FileStreamDirectory") {
+                            $restoreSplat.Add('DestinationFileStreamDirectory', $FileStreamDirectory)
                         }
 
                         if ($verifyonly) {
