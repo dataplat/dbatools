@@ -317,8 +317,7 @@ function Get-DbaDatabase {
                 # Collation Check for cnotin vs notin
                 if ( $server.Collation -like "*_CS") {
                     $inputObject = $inputObject | Where-Object { $_.Name -cnotin $lastFullBackups.Database -and $_.Name -ne 'tempdb' }
-                }
-                else{
+                } else{
                     $inputObject = $inputObject | Where-Object { $_.Name -notin $lastFullBackups.Database -and $_.Name -ne 'tempdb' }
                 }
             }
@@ -330,8 +329,7 @@ function Get-DbaDatabase {
                 # Collation Check for cnotin vs notin
                 if ( $server.Collation -like "*_CS") {
                     $inputObject = $inputObject | Where-Object { $_.Name -cnotin $lastLogBackups.Database -and $_.Name -ne 'tempdb' -and $_.RecoveryModel -ne 'Simple' }
-                }
-                else {
+                } else {
                     $inputObject = $inputObject | Where-Object { $_.Name -notin $lastLogBackups.Database -and $_.Name -ne 'tempdb' -and $_.RecoveryModel -ne 'Simple' }
                 }
             }
