@@ -315,6 +315,7 @@ function Get-DbaDatabase {
                     $lastFullBackups = $lastFullBackups | Where-Object End -gt $NoFullBackupSince
                 }
                 if ( $server.Collation -like "*_CS") {
+                    # Collation Check, when Case Sensitive collation use cnotin for database name comparision
                     $inputObject = $inputObject | Where-Object { $_.Name -cnotin $lastFullBackups.Database -and $_.Name -ne 'tempdb' }
                 } else {
                     $inputObject = $inputObject | Where-Object { $_.Name -notin $lastFullBackups.Database -and $_.Name -ne 'tempdb' }
@@ -326,6 +327,7 @@ function Get-DbaDatabase {
                     $lastLogBackups = $lastLogBackups | Where-Object End -gt $NoLogBackupSince
                 }
                 if ( $server.Collation -like "*_CS") {
+                    # Collation check, when Case Sensitive collation use cnotin for database name comparision
                     $inputObject = $inputObject | Where-Object { $_.Name -cnotin $lastLogBackups.Database -and $_.Name -ne 'tempdb' -and $_.RecoveryModel -ne 'Simple' }
                 } else {
                     $inputObject = $inputObject | Where-Object { $_.Name -notin $lastLogBackups.Database -and $_.Name -ne 'tempdb' -and $_.RecoveryModel -ne 'Simple' }
