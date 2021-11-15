@@ -13,6 +13,8 @@ function Save-DbaCommunitySoftware {
         * MaintenanceSolution: SQL Server Maintenance Solution created by Ola Hallengren (https://ola.hallengren.com)
         * FirstResponderKit: First Responder Kit created by Brent Ozar (http://FirstResponderKit.org)
         * DarlingData: Erik Darling's stored procedures (https://www.erikdarlingdata.com)
+        * SQLWATCH: SQL Server Monitoring Solution created by Marcin Gminski (https://sqlwatch.io/)
+        * WhoIsActive: Adam Machanic's comprehensive activity monitoring stored procedure sp_WhoIsActive (https://github.com/amachanic/sp_whoisactive)
 
     .PARAMETER Branch
         Specifies the branch. Defaults to master or main. Can only be used if Software is used.
@@ -56,7 +58,7 @@ function Save-DbaCommunitySoftware {
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Medium")]
     param (
-        [ValidateSet('MaintenanceSolution', 'FirstResponderKit', 'DarlingData')]
+        [ValidateSet('MaintenanceSolution', 'FirstResponderKit', 'DarlingData', 'SQLWATCH', 'WhoIsActive')]
         [string]$Software,
         [string]$Branch,
         [string]$LocalFile,
@@ -99,11 +101,71 @@ function Save-DbaCommunitySoftware {
             if (-not $LocalDirectory) {
                 $LocalDirectory = Join-Path -Path $dbatoolsData -ChildPath "DarlingData-$Branch"
             }
+        } elseif ($Software -eq 'SQLWATCH') {
+            if ($Branch -in 'prerelease', 'pre-release') {
+                $preRelease = $true
+            } else {
+                $preRelease = $false
+            }
+            if (-not $Url -and -not $LocalFile) {
+                $releasesUrl = "https://api.github.com/repos/marcingminski/sqlwatch/releases"
+                try {
+                    try {
+                        $releasesJson = Invoke-TlsWebRequest -Uri $releasesUrl -UseBasicParsing -ErrorAction Stop
+                    } catch {
+                        # Try with default proxy and usersettings
+                        (New-Object System.Net.WebClient).Proxy.Credentials = [System.Net.CredentialCache]::DefaultNetworkCredentials
+                        $releasesJson = Invoke-TlsWebRequest -Uri $releasesUrl -UseBasicParsing -ErrorAction Stop
+                    }
+                } catch {
+                    Stop-Function -Message "Unable to get release information from $releasesUrl." -ErrorRecord $_
+                    return
+                }
+                $latestRelease = ($releasesJson | ConvertFrom-Json) | Where-Object prerelease -eq $preRelease | Select-Object -First 1
+                if ($null -eq $latestRelease) {
+                    Stop-Function -Message "No release found." -ErrorRecord $_
+                    return
+                }
+                $Url = $latestRelease.assets[0].browser_download_url
+            }
+            if (-not $LocalDirectory) {
+                if ($preRelease) {
+                    $LocalDirectory = Join-Path -Path $dbatoolsData -ChildPath "SQLWATCH-prerelease"
+                } else {
+                    $LocalDirectory = Join-Path -Path $dbatoolsData -ChildPath "SQLWATCH"
+                }
+            }
+        } elseif ($Software -eq 'WhoIsActive') {
+            # We currently ignore -Branch as there is only one branch and there are no pre-releases.
+            if (-not $Url -and -not $LocalFile) {
+                $releasesUrl = "https://api.github.com/repos/amachanic/sp_whoisactive/releases"
+                try {
+                    try {
+                        $releasesJson = Invoke-TlsWebRequest -Uri $releasesUrl -UseBasicParsing -ErrorAction Stop
+                    } catch {
+                        # Try with default proxy and usersettings
+                        (New-Object System.Net.WebClient).Proxy.Credentials = [System.Net.CredentialCache]::DefaultNetworkCredentials
+                        $releasesJson = Invoke-TlsWebRequest -Uri $releasesUrl -UseBasicParsing -ErrorAction Stop
+                    }
+                } catch {
+                    Stop-Function -Message "Unable to get release information from $releasesUrl." -ErrorRecord $_
+                    return
+                }
+                $latestRelease = ($releasesJson | ConvertFrom-Json) | Select-Object -First 1
+                if ($null -eq $latestRelease) {
+                    Stop-Function -Message "No release found." -ErrorRecord $_
+                    return
+                }
+                $Url = $latestRelease.zipball_url
+            }
+            if (-not $LocalDirectory) {
+                $LocalDirectory = Join-Path -Path $dbatoolsData -ChildPath "WhoIsActive"
+            }
         }
 
-        # Test if we now have Url and LocalDirectory
-        if (-not $Url) {
-            Stop-Function -Message 'Url is missing.'
+        # Test if we now have source and destination for the following actions.
+        if (-not ($Url -or $LocalFile)) {
+            Stop-Function -Message 'Url or LocalFile is missing.'
             return
         }
         if (-not $LocalDirectory) {
@@ -119,7 +181,15 @@ function Save-DbaCommunitySoftware {
         $zipFile = Join-DbaPath -Path $temp -Child "dbatools_software_download_$random.zip"
         $zipFolder = Join-DbaPath -Path $temp -Child "dbatools_software_download_$random"
 
-        if ($LocalFile) {
+        if ($Software -eq 'WhoIsActive' -and $LocalFile.EndsWith('.sql')) {
+            # For WhoIsActive, we allow to pass in the sp_WhoIsActive.sql file or any other sql file with the source code.
+            # We create the zip folder with a subfolder named WhoIsActive and copy the LocalFile there as sp_WhoIsActive.sql.
+            $appFolder = Join-DbaPath -Path $zipFolder -Child 'WhoIsActive'
+            $appFile = Join-DbaPath -Path $appFolder -Child 'sp_WhoIsActive.sql'
+            $null = New-Item -Path $zipFolder -ItemType Directory
+            $null = New-Item -Path $appFolder -ItemType Directory
+            Copy-Item -Path $LocalFile -Destination $appFile
+        } elseif ($LocalFile) {
             # No download, so we just extract the given file if it exists and is a zip file.
             if (-not (Test-Path $LocalFile)) {
                 Stop-Function -Message "$LocalFile doesn't exist"
@@ -172,6 +242,23 @@ function Save-DbaCommunitySoftware {
             $localDirectoryName = Split-Path -Path $LocalDirectory -Leaf
             $sourceDirectory = Get-ChildItem -Path $zipFolder -Directory
             $sourceDirectoryName = $sourceDirectory.Name
+            if ($Software -eq 'SQLWATCH') {
+                # As this software is downloaded as a release, the directory has a different name.
+                # Rename the directory from like 'SQLWATCH 4.3.0.23725 20210721131116' to 'SQLWATCH' to be able to handle this like the other software.
+                if ($sourceDirectoryName -like 'SQLWATCH*') {
+                    Rename-Item -Path $sourceDirectory.FullName -NewName 'SQLWATCH'
+                    $sourceDirectory = Get-ChildItem -Path $zipFolder -Directory
+                    $sourceDirectoryName = $sourceDirectory.Name
+                }
+            } elseif ($Software -eq 'WhoIsActive') {
+                # As this software is downloaded as a release, the directory has a different name.
+                # Rename the directory from like 'amachanic-sp_whoisactive-459d2bc' to 'WhoIsActive' to be able to handle this like the other software.
+                if ($sourceDirectoryName -like 'amachanic-sp_whoisactive-*') {
+                    Rename-Item -Path $sourceDirectory.FullName -NewName 'WhoIsActive'
+                    $sourceDirectory = Get-ChildItem -Path $zipFolder -Directory
+                    $sourceDirectoryName = $sourceDirectory.Name
+                }
+            }
             if ((Get-ChildItem -Path $zipFolder).Count -gt 1 -or $sourceDirectoryName -ne $localDirectoryName) {
                 Stop-Function -Message "The archive does not contain the desired directory $localDirectoryName but $sourceDirectoryName."
                 Remove-Item -Path $zipFile -ErrorAction SilentlyContinue

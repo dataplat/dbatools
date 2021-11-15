@@ -24,7 +24,8 @@ function Install-DbaWhoIsActive {
         The database to install sp_WhoisActive into. This parameter is mandatory when executing this command unattended.
 
     .PARAMETER LocalFile
-        Specifies the path to a local file to install sp_WhoisActive from. This can be either the zip file as distributed by the website or the expanded SQL script. If this parameter is not specified, the latest version will be downloaded and installed from https://whoisactive.com/
+        Specifies the path to a local file to install sp_WhoisActive from. This can be either the zip file as distributed by the website or the expanded SQL script.
+        If this parameter is not specified, the latest version will be downloaded and installed from https://github.com/amachanic/sp_whoisactive/releases
 
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
@@ -33,7 +34,7 @@ function Install-DbaWhoIsActive {
         If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
     .PARAMETER Force
-        If this switch is enabled, the sp_WhoisActive will be downloaded from the internet even if previously cached.
+        If this switch is enabled, then sp_WhoisActive will be downloaded from the internet even if previously cached.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -64,9 +65,16 @@ function Install-DbaWhoIsActive {
         Pops up a dialog box asking which database on sqlserver2014a you want to install the procedure into. Connects to SQL Server using SQL Authentication.
 
     .EXAMPLE
-        PS C:\> Install-DbaWhoIsActive -SqlInstance sqlserver2014a -Database master -LocalFile c:\SQLAdmin\whoisactive_install.sql
+        PS C:\> Install-DbaWhoIsActive -SqlInstance sqlserver2014a -Database master -LocalFile c:\SQLAdmin\sp_WhoIsActive.sql
 
-        Installs sp_WhoisActive to sqlserver2014a's master database from the local file whoisactive_install.sql
+        Installs sp_WhoisActive to sqlserver2014a's master database from the local file sp_WhoIsActive.sql.
+        You can download this file from https://github.com/amachanic/sp_whoisactive/blob/master/sp_WhoIsActive.sql
+
+    .EXAMPLE
+        PS C:\> Install-DbaWhoIsActive -SqlInstance sqlserver2014a -Database master -LocalFile c:\SQLAdmin\sp_whoisactive-12.00.zip
+
+        Installs sp_WhoisActive to sqlserver2014a's master database from the local file sp_whoisactive-12.00.zip.
+        You can download this file from https://github.com/amachanic/sp_whoisactive/releases
 
     .EXAMPLE
         PS C:\> $instances = Get-DbaRegServer sqlserver
@@ -90,71 +98,25 @@ function Install-DbaWhoIsActive {
     begin {
         if ($Force) { $ConfirmPreference = 'none' }
 
-        $DbatoolsData = Get-DbatoolsConfigValue -FullName "Path.DbatoolsData"
-        $temp = ([System.IO.Path]::GetTempPath())
-        $zipfile = Join-Path -Path $temp -ChildPath "spwhoisactive.zip"
-
-        if ($LocalFile -eq $null -or $LocalFile.Length -eq 0) {
-            $baseUrl = "https://github.com/amachanic/sp_whoisactive/archive"
-            $latest = (((Invoke-TlsWebRequest -UseBasicParsing -uri https://github.com/amachanic/sp_whoisactive/releases/latest).Links | Where-Object { $PSItem.href -match "zip" } | Select-Object href -First 1).href -split '/')[-1]
-            $LocalCachedCopy = Join-Path -Path $DbatoolsData -ChildPath $latest;
-
-            if ((Test-Path -Path $LocalCachedCopy -PathType Leaf) -and (-not $Force)) {
-                Write-Message -Level Verbose -Message "Locally-cached copy exists, skipping download."
-                if ($PSCmdlet.ShouldProcess($env:computername, "Copying sp_WhoisActive from local cache for installation")) {
-                    Copy-Item -Path $LocalCachedCopy -Destination $zipfile;
-                }
-            } else {
-                if ($PSCmdlet.ShouldProcess($env:computername, "Downloading sp_WhoisActive")) {
-                    try {
-                        Write-Message -Level Verbose -Message "Downloading sp_WhoisActive zip file, unzipping and installing."
-                        $url = $baseUrl + "/" + $latest
-                        try {
-                            Invoke-TlsWebRequest $url -OutFile $zipfile -ErrorAction Stop -UseBasicParsing
-                            Copy-Item -Path $zipfile -Destination $LocalCachedCopy
-                        } catch {
-                            #try with default proxy and usersettings
-                            (New-Object System.Net.WebClient).Proxy.Credentials = [System.Net.CredentialCache]::DefaultNetworkCredentials
-                            Invoke-TlsWebRequest $url -OutFile $zipfile -ErrorAction Stop -UseBasicParsing
-                        }
-                    } catch {
-                        Stop-Function -Message "Couldn't download sp_WhoisActive. Please download and install manually from $url." -ErrorRecord $_
-                        return
-                    }
-                }
-            }
-        } else {
-            # Look local
-            if ($PSCmdlet.ShouldProcess($env:computername, "Copying local file to temp directory")) {
-
-                if ($LocalFile.EndsWith("zip")) {
-                    Copy-Item -Path $LocalFile -Destination $zipfile -Force
-                } else {
-                    Copy-Item -Path $LocalFile -Destination (Join-Path -path $temp -childpath "whoisactivelocal.sql")
-                }
-            }
-        }
-        if ($LocalFile -eq $null -or $LocalFile.Length -eq 0 -or $LocalFile.EndsWith("zip")) {
-            # Unpack
-            # Unblock if there's a block
-            if ($PSCmdlet.ShouldProcess($env:computername, "Unpacking zipfile")) {
-                if (Test-Windows -NoWarn) {
-                    Unblock-File $zipfile -ErrorAction SilentlyContinue
-                }
+        # Do we need a new local cached version of the software?
+        $dbatoolsData = Get-DbatoolsConfigValue -FullName 'Path.DbatoolsData'
+        $localCachedCopy = Join-DbaPath -Path $dbatoolsData -Child 'WhoIsActive'
+        if ($Force -or $LocalFile -or -not (Test-Path -Path $localCachedCopy)) {
+            if ($PSCmdlet.ShouldProcess('WhoIsActive', 'Update local cached copy of the software')) {
                 try {
-                    Expand-Archive -Path $zipfile -DestinationPath $temp -Force
+                    Save-DbaCommunitySoftware -Software WhoIsActive -LocalFile $LocalFile -EnableException
                 } catch {
-                    Stop-Function -Message "Unable to extract $zipfile. Archive may not be valid." -ErrorRecord $_
-                    return
+                    Stop-Function -Message 'Failed to update local cached copy' -ErrorRecord $_
                 }
-                Remove-Item -Path $zipfile
             }
-            $sqlfile = (Get-ChildItem "$($temp)who*active*.sql" -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1).FullName
-        } else {
-            $sqlfile = $LocalFile
         }
 
         if ($PSCmdlet.ShouldProcess($env:computername, "Reading SQL file into memory")) {
+            $sqlfile = (Get-ChildItem -Path $localCachedCopy -Filter 'sp_WhoIsActive.sql').FullName
+            if ($null -eq $sqlfile) {
+                Write-Message -Level Verbose -Message "New filename sp_WhoIsActive.sql not found, using old filename who_is_active.sql."
+                $sqlfile = (Get-ChildItem -Path $localCachedCopy -Filter 'who_is_active.sql').FullName
+            }
             Write-Message -Level Verbose -Message "Using $sqlfile."
 
             $sql = [IO.File]::ReadAllText($sqlfile)

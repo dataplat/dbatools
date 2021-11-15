@@ -504,11 +504,11 @@ function Get-DbaDbBackupHistory {
                         JOIN msdb..backupmediaset AS mediaset ON mediafamily.media_set_id = mediaset.media_set_id
                         JOIN msdb..backupset AS backupset ON backupset.media_set_id = mediaset.media_set_id
                         JOIN (
-                            SELECT TOP 1 database_guid, last_recovery_fork_guid
+                            SELECT TOP 1 database_name, database_guid, last_recovery_fork_guid
                             FROM msdb..backupset
                             WHERE database_name = '$($db.Name)'
                             ORDER BY backup_finish_date DESC
-                            ) AS last_guids ON last_guids.database_guid = backupset.database_guid AND last_guids.last_recovery_fork_guid = backupset.last_recovery_fork_guid
+                            ) AS last_guids ON last_guids.database_name = backupset.database_name AND last_guids.database_guid = backupset.database_guid AND last_guids.last_recovery_fork_guid = backupset.last_recovery_fork_guid
                     WHERE (type = '$first' OR type = '$second')
                     $whereCopyOnly
                     $devTypeFilterWhere
@@ -638,12 +638,15 @@ function Get-DbaDbBackupHistory {
                 Write-Message -Level SomewhatVerbose -Message "$($groupedResults.Count) result-groups found."
                 $groupResults = @()
                 $backupSetIds = $groupedResults.Name
-                $backupSetIdsList = $backupSetIds -Join ","
+                $backupSetIdsList = "Insert into #BackupSetIds( backup_set_id ) Values (" + ($backupSetIds -join ");Insert into #BackupSetIds( backup_set_id ) Values (") + ")"
                 if ($groupedResults.Count -gt 0) {
-                    $backupSetIdsWhere = "backup_set_id IN ($backupSetIdsList)"
-                    $fileAllSql = "SELECT backup_set_id, file_type as FileType, logical_name as LogicalName, physical_name as PhysicalName
-                    FROM msdb..backupfile WHERE $backupSetIdsWhere
-                    AND [state] <> 8;" #Used to eliminate data files that no longer exist
+                    $TempTable = "Create table #BackupSetIds ( backup_set_id int ); $backupSetIdsList;"
+                    $fileAllSql = "$TempTable SELECT bf.backup_set_id, file_type as FileType, logical_name as LogicalName, physical_name as PhysicalName
+                    FROM msdb..backupfile bf
+                    join #BackupSetIds bs
+                        on bs.backup_set_id = bf.backup_set_id
+                    WHERE [state] <> 8;
+                    Drop Table #BackupSetIds;" # <> 8 Used to eliminate data files that no longer exist
                     Write-Message -Level Debug -Message "FileSQL: $fileAllSql"
                     $fileListResults = $server.Query($fileAllSql)
                 } else {

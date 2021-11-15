@@ -1,7 +1,7 @@
 
 -- SQL Server 2012 Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: October 11, 2021
+-- Last Modified: November 2, 2021
 -- https://glennsqlperformance.com/
 -- https://sqlserverperformance.wordpress.com/
 -- YouTube: https://bit.ly/2PkoAM1 
@@ -21,7 +21,7 @@
 -- https://dbatools.io/
 
 -- Invoke-DbaDiagnosticQuery
--- https://dbatools.io/functions/invoke-dbadiagnosticquery/
+-- https://docs.dbatools.io/Invoke-DbaDiagnosticQuery
 
 
 --******************************************************************************
@@ -505,7 +505,7 @@ FROM sys.dm_hadr_cluster WITH (NOLOCK) OPTION (RECOMPILE);
 
 -- Good overview of AG health and status (Query 17) (AG Status)
 SELECT ag.name AS [AG Name], ar.replica_server_name, ar.availability_mode_desc, adc.[database_name], 
-       drs.is_local, drs.is_primary_replica, drs.synchronization_state_desc, drs.is_commit_participant, 
+       drs.is_local, drs.synchronization_state_desc, drs.is_commit_participant, 
 	   drs.synchronization_health_desc, drs.recovery_lsn, drs.truncation_lsn, drs.last_sent_lsn, 
 	   drs.last_sent_time, drs.last_received_lsn, drs.last_received_time, drs.last_hardened_lsn, 
 	   drs.last_hardened_time, drs.last_redone_lsn, drs.last_redone_time, drs.log_send_queue_size, 
@@ -1169,7 +1169,7 @@ ORDER BY qs.total_worker_time DESC OPTION (RECOMPILE);
 
 -- Page Life Expectancy (PLE) value for each NUMA node in current instance  (Query 43) (PLE by NUMA Node)
 SELECT @@SERVERNAME AS [Server Name], RTRIM([object_name]) AS [Object Name], 
-       instance_name, cntr_value AS [Page Life Expectancy]
+       instance_name, cntr_value AS [Page Life Expectancy], GETDATE() AS [System Time]
 FROM sys.dm_os_performance_counters WITH (NOLOCK)
 WHERE [object_name] LIKE N'%Buffer Node%' -- Handles named instances
 AND counter_name = N'Page life expectancy' OPTION (RECOMPILE);
@@ -1614,7 +1614,7 @@ ORDER BY [BufferCount] DESC OPTION (RECOMPILE);
 
 -- Get Schema names, Table names, object size, row counts, and compression status for clustered index or heap  (Query 63) (Table Sizes)
 SELECT DB_NAME(DB_ID()) AS [Database Name], SCHEMA_NAME(o.Schema_ID) AS [Schema Name], 
-OBJECT_NAME(p.object_id) AS [Object Name],
+OBJECT_NAME(p.object_id) AS [Table Name],
 CAST(SUM(ps.reserved_page_count) * 8.0 / 1024 AS DECIMAL(19,2)) AS [Object Size (MB)],
 SUM(p.Rows) AS [Row Count], 
 p.data_compression_desc AS [Compression Type]

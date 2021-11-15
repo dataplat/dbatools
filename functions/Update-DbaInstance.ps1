@@ -94,6 +94,9 @@ function Update-DbaInstance {
         Files would be first downloaded to the local machine (TEMP folder), and then distributed onto remote machines if needed.
         If the Path is a network Path, the files would be downloaded straight to the network folder and executed from there.
 
+    .PARAMETER NoPendingRenameCheck
+        Disables pending rename validation when checking for a pending reboot.
+
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
 
@@ -206,6 +209,7 @@ function Update-DbaInstance {
         [string]$ExtractPath,
         [string[]]$ArgumentList,
         [switch]$Download,
+        [switch]$NoPendingRenameCheck = (Get-DbatoolsConfigValue -Name 'OS.PendingRename' -Fallback $false),
         [switch]$EnableException
 
     )
@@ -578,14 +582,15 @@ function Update-DbaInstance {
         # Declare the installation script
         $installScript = {
             $updateSplat = @{
-                ComputerName    = $_.ComputerName
-                Action          = $_.Actions
-                Restart         = $Restart
-                Credential      = $Credential
-                EnableException = $EnableException
-                ExtractPath     = $ExtractPath
-                Authentication  = $Authentication
-                ArgumentList    = $ArgumentList
+                ComputerName         = $_.ComputerName
+                Action               = $_.Actions
+                Restart              = $Restart
+                Credential           = $Credential
+                EnableException      = $EnableException
+                ExtractPath          = $ExtractPath
+                Authentication       = $Authentication
+                ArgumentList         = $ArgumentList
+                NoPendingRenameCheck = $NoPendingRenameCheck
             }
             Invoke-DbaAdvancedUpdate @updateSplat
         }

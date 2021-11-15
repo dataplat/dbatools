@@ -144,7 +144,8 @@ function Connect-DbaInstance {
         Not used in the current version.
 
     .PARAMETER AccessToken
-        Connect to an Azure SQL Database or an Azure SQL Managed Instance with an AccessToken, that has to be generated with Get-AzAccessToken.
+        Connect to an Azure SQL Database or an Azure SQL Managed Instance with an AccessToken, that has to be generated with Get-AzAccessToken or New-DbaAzAccessToken.
+
         Note that the token is valid for only one hour and cannot be renewed automatically.
 
     .PARAMETER DedicatedAdminConnection
@@ -264,7 +265,7 @@ function Connect-DbaInstance {
     .EXAMPLE
         PS C:\> $azureCredential = Get-Credential -Message 'Azure Credential'
         PS C:\> $azureAccount = Connect-AzAccount -Credential $azureCredential
-        PS C:\> $azureToken = (Get-AzAccessToken -ResourceUrl https://database.windows.net).Token
+        PS C:\> $azureToken = Get-AzAccessToken -ResourceUrl https://database.windows.net
         PS C:\> $azureInstance = "YOURSERVER.database.windows.net"
         PS C:\> $azureDatabase = "MYDATABASE"
         PS C:\> $server = Connect-DbaInstance -SqlInstance $azureInstance -Database $azureDatabase -AccessToken $azureToken
@@ -274,7 +275,7 @@ function Connect-DbaInstance {
         Note that the token is valid for only one hour and cannot be renewed automatically.
 
     .EXAMPLE
-        PS C:\> $token = (New-DbaAzAccessToken -Type RenewableServicePrincipal -Subtype AzureSqlDb -Tenant $tenantid -Credential $cred).GetAccessToken()
+        PS C:\> $token = New-DbaAzAccessToken -Type RenewableServicePrincipal -Subtype AzureSqlDb -Tenant $tenantid -Credential $cred
         PS C:\> Connect-DbaInstance -SqlInstance sample.database.windows.net -Accesstoken $token
 
         Uses dbatools to generate the access token for an Azure SQL Database, then logs in using that AccessToken.
@@ -332,28 +333,11 @@ function Connect-DbaInstance {
         [string]$Thumbprint = (Get-DbatoolsConfigValue -FullName 'azure.certificate.thumbprint'),
         [ValidateSet('CurrentUser', 'LocalMachine')]
         [string]$Store = (Get-DbatoolsConfigValue -FullName 'azure.certificate.store'),
-        [string]$AccessToken,
+        [psobject]$AccessToken,
         [switch]$DedicatedAdminConnection,
         [switch]$DisableException
     )
     begin {
-        $azurevm = Get-DbatoolsConfigValue -FullName azure.vm
-        #region Utility functions
-        if ($Tenant -or $AuthenticationType -in 'AD Universal with MFA Support', 'AD - Password', 'AD - Integrated' -and ($null -eq $azurevm)) {
-            Write-Message -Level Verbose -Message "Determining if current workstation is an Azure VM"
-            # Do an Azure check - this will occur just once
-            try {
-                $azurevmcheck = Invoke-RestMethod -Headers @{"Metadata" = "true" } -Uri http://169.254.169.254/metadata/instance?api-version=2018-10-01 -Method GET -TimeoutSec 2 -ErrorAction Stop
-                if ($azurevmcheck.compute.azEnvironment) {
-                    $azurevm = $true
-                    $null = Set-DbatoolsConfig -FullName azure.vm -Value $true -PassThru | Register-DbatoolsConfig
-                } else {
-                    $null = Set-DbatoolsConfig -FullName azure.vm -Value $false -PassThru | Register-DbatoolsConfig
-                }
-            } catch {
-                $null = Set-DbatoolsConfig -FullName azure.vm -Value $false -PassThru | Register-DbatoolsConfig
-            }
-        }
         function Test-Azure {
             Param (
                 [DbaInstanceParameter]$SqlInstance
@@ -876,6 +860,16 @@ function Connect-DbaInstance {
 
                     # If we have an AccessToken, we will build a SqlConnection
                     if ($AccessToken) {
+                        # Check if token was created by New-DbaAzAccessToken or Get-AzAccessToken
+                        Write-Message -Level Debug -Message "AccessToken detected, checking for string or PsObjectIRenewableToken"
+                        if ($AccessToken | Get-Member | Where-Object Name -eq GetAccessToken) {
+                            Write-Message -Level Debug -Message "Token was generated using New-DbaAzAccessToken, executing GetAccessToken()"
+                            $AccessToken = $AccessToken.GetAccessToken()
+                        }
+                        if ($AccessToken | Get-Member | Where-Object Name -eq Token) {
+                            Write-Message -Level Debug -Message "Token was generated using Get-AzAccessToken, getting .Token"
+                            $AccessToken = $AccessToken.Token
+                        }
                         Write-Message -Level Debug -Message "We have an AccessToken and build a SqlConnection with that token"
                         Write-Message -Level Debug -Message "But we remove 'Integrated Security=True;'"
                         # TODO: How do we get a ConnectionString without this?
@@ -1181,11 +1175,6 @@ function Connect-DbaInstance {
 
                     if (($appid -and $clientsecret) -and -not $SqlCredential) {
                         $SqlCredential = New-Object System.Management.Automation.PSCredential ($appid, $clientsecret)
-                    }
-
-                    if (-not $azurevm -and (-not $SqlCredential -and $Tenant)) {
-                        Stop-Function -Target $instance -Message "When using Tenant, SqlCredential must be specified."
-                        return
                     }
 
                     if (-not $Database) {

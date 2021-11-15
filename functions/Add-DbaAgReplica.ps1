@@ -137,7 +137,7 @@ function Add-DbaAgReplica {
         [int]$BackupPriority = 50,
         [ValidateSet('AllowAllConnections', 'AllowReadWriteConnections')]
         [string]$ConnectionModeInPrimaryRole = 'AllowAllConnections',
-        [ValidateSet('AllowNoConnections', 'AllowReadIntentConnectionsOnly', 'AllowAllConnections')]
+        [ValidateSet('AllowNoConnections', 'AllowReadIntentConnectionsOnly', 'AllowAllConnections', 'No', 'Read-intent only', 'Yes')]
         [string]$ConnectionModeInSecondaryRole = (Get-DbatoolsConfigValue -FullName 'AvailabilityGroups.Default.ConnectionModeInSecondaryRole' -Fallback 'AllowNoConnections'),
         [ValidateSet('Automatic', 'Manual')]
         [string]$SeedingMode,
@@ -169,6 +169,16 @@ function Add-DbaAgReplica {
         if ($ReadonlyRoutingConnectionUrl -and ($ReadonlyRoutingConnectionUrl -notmatch 'TCP://.+:\d+')) {
             Stop-Function -Message "ReadonlyRoutingConnectionUrl not in correct format 'TCP://system-address:port'"
             return
+        }
+
+        if ($ConnectionModeInSecondaryRole) {
+            $ConnectionModeInSecondaryRole =
+            switch ($ConnectionModeInSecondaryRole) {
+                "No" { "AllowNoConnections" }
+                "Read-intent only" { "AllowReadIntentConnectionsOnly" }
+                "Yes" { "AllowAllConnections" }
+                default { $ConnectionModeInSecondaryRole }
+            }
         }
 
         foreach ($instance in $SqlInstance) {

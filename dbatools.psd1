@@ -11,7 +11,7 @@
     RootModule             = 'dbatools.psm1'
 
     # Version number of this module.
-    ModuleVersion          = '1.1.24'
+    ModuleVersion          = '1.1.35'
 
     # ID used to uniquely identify this module
     GUID                   = '9d139310-ce45-41ce-8e8b-d76335aa1789'
@@ -38,7 +38,7 @@
     PowerShellHostVersion  = ''
 
     # Minimum version of the .NET Framework required by this module
-    DotNetFrameworkVersion = ''
+    DotNetFrameworkVersion = '4.6.2'
 
     # Minimum version of the common language runtime (CLR) required by this module
     CLRVersion             = ''
@@ -713,7 +713,10 @@
         'Update-DbaMaintenanceSolution',
         'Remove-DbaServerRoleMember',
         'Remove-DbaDbMailProfile',
-        'Remove-DbaDbMailAccount'
+        'Remove-DbaDbMailAccount',
+        'Set-DbaRgWorkloadGroup',
+        'New-DbaRgWorkloadGroup',
+        'Remove-DbaRgWorkloadGroup'
     )
 
     # Cmdlets to export from this module

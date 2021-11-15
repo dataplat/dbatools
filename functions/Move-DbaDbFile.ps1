@@ -6,7 +6,6 @@ function Move-DbaDbFile {
     .DESCRIPTION
         Moves database files from one local drive or folder to another.
         It will put database offline, update metadata and set it online again.
-        It can also be used to move database files on an AG secondary.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.
@@ -148,7 +147,7 @@ function Move-DbaDbFile {
 
             $dbStatus = (Get-DbaDbState -SqlInstance $server -Database $Database).Status
             if ($dbStatus -ne 'ONLINE') {
-                Write-Message -Level Verbose -Message "Database $Database is already Offline. Getting file strucutre from sys.master_files."
+                Write-Message -Level Verbose -Message "Database $Database is not ONLINE. Getting file strucutre from sys.master_files."
                 if ($fileTypeFilter -eq -1) {
                     $DataFiles = Get-DbaDbPhysicalFile -SqlInstance $server | Where-Object Name -eq $Database | Select-Object LogicalName, PhysicalName
                 } else {
@@ -185,12 +184,14 @@ function Move-DbaDbFile {
                         try {
                             $SetState = Set-DbaDbState -SqlInstance $server -Database $Database -Offline -Force:$Force
                             if ($SetState.Status -ne 'Offline') {
-                                Write-Message -Level Warning -Message "Setting database Offline failed!"
+                                Stop-Function -Message "Setting database Offline failed!"
+                                return
                             } else {
                                 Write-Message -Level Verbose -Message "Database $Database was set to Offline status."
                             }
                         } catch {
-                            Stop-Function -Message "Setting database Offline failed! : $($_.Exception.InnerException.InnerException.InnerException)" -ErrorRecord $_ -Target $server.DomainInstanceName -OverrideExceptionMessage
+                            Stop-Function -Message "Setting database Offline failed!" -ErrorRecord $_ -Target $SqlInstance
+                            return
                         }
                     }
                 }
@@ -331,7 +332,7 @@ function Move-DbaDbFile {
                         }
 
                         if (-not $failed) {
-                            $query = "ALTER DATABASE [$Database] MODIFY FILE (name=$LogicalName, filename='$destination'); "
+                            $query = "ALTER DATABASE [$Database] MODIFY FILE (name=[$LogicalName], filename='$destination'); "
 
                             if ($PSCmdlet.ShouldProcess($Database, "Executing ALTER DATABASE query - $query")) {
                                 # Change database file path

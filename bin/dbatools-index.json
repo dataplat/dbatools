@@ -366,7 +366,7 @@
                            false,
                            "false",
                            "(Get-DbatoolsConfigValue -FullName \u0027AvailabilityGroups.Default.ConnectionModeInSecondaryRole\u0027 -Fallback \u0027AllowNoConnections\u0027)",
-                           "AllowNoConnections,AllowReadIntentConnectionsOnly,AllowAllConnections"
+                           "AllowNoConnections,AllowReadIntentConnectionsOnly,AllowAllConnections,No,Read-intent only,Yes"
                        ],
                        [
                            "SeedingMode",
@@ -2288,7 +2288,7 @@
         "CommandName":  "Connect-DbaInstance",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Connect-DbaInstance",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eConnect-DbaInstance -SqlInstance sql2014\nCreates an SMO Server object that connects using Windows Authentication\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003e$wincred = Get-Credential ad\\sqladmin\nPS C:\\\u003e Connect-DbaInstance -SqlInstance sql2014 -SqlCredential $wincred\nCreates an SMO Server object that connects using alternative Windows credentials\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003e$sqlcred = Get-Credential sqladmin\nPS C:\\\u003e $server = Connect-DbaInstance -SqlInstance sql2014 -SqlCredential $sqlcred\nLogin to sql2014 as SQL login sqladmin.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003e$server = Connect-DbaInstance -SqlInstance sql2014 -ClientName \"my connection\"\nCreates an SMO Server object that connects using Windows Authentication and uses the client name \"my connection\".\r\nSo when you open up profiler or use extended events, you can search for \"my connection\".\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003e$server = Connect-DbaInstance -SqlInstance sql2014 -AppendConnectionString \"Packet Size=4096;AttachDbFilename=C:\\MyFolder\\MyDataFile.mdf;User Instance=true;\"\nCreates an SMO Server object that connects to sql2014 using Windows Authentication, then it sets the packet size (this can also be done via -PacketSize) and other connection attributes.\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003e$server = Connect-DbaInstance -SqlInstance sql2014 -NetworkProtocol TcpIp -MultiSubnetFailover\nCreates an SMO Server object that connects using Windows Authentication that uses TCP/IP and has MultiSubnetFailover enabled.\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003e$server = Connect-DbaInstance sql2016 -ApplicationIntent ReadOnly\nConnects with ReadOnly ApplicationIntent.\n-------------------------- EXAMPLE 8 --------------------------\nPS C:\\\u003e$server = Connect-DbaInstance -SqlInstance myserver.database.windows.net -Database mydb -SqlCredential me@mydomain.onmicrosoft.com -DisableException\nPS C:\\\u003e Invoke-DbaQuery -SqlInstance $server -Query \"select 1 as test\"\nLogs into Azure SQL DB using AAD / Azure Active Directory, then performs a sample query.\n-------------------------- EXAMPLE 9 --------------------------\nPS C:\\\u003e$server = Connect-DbaInstance -SqlInstance psdbatools.database.windows.net -Database dbatools -DisableException\nPS C:\\\u003e Invoke-DbaQuery -SqlInstance $server -Query \"select 1 as test\"\nLogs into Azure SQL DB using AAD Integrated Auth, then performs a sample query.\n-------------------------- EXAMPLE 10 --------------------------\nPS C:\\\u003e$server = Connect-DbaInstance -SqlInstance \"myserver.public.cust123.database.windows.net,3342\" -Database mydb -SqlCredential me@mydomain.onmicrosoft.com -DisableException\nPS C:\\\u003e Invoke-DbaQuery -SqlInstance $server -Query \"select 1 as test\"\nLogs into Azure SQL Managed instance using AAD / Azure Active Directory, then performs a sample query.\n-------------------------- EXAMPLE 11 --------------------------\nPS C:\\\u003e$server = Connect-DbaInstance -SqlInstance db.mycustomazure.com -Database mydb -AzureDomain mycustomazure.com -DisableException\nPS C:\\\u003e Invoke-DbaQuery -SqlInstance $server -Query \"select 1 as test\"\nIn the event your AzureSqlDb is not on a database.windows.net domain, you can set a custom domain using the AzureDomain parameter.\r\nThis tells Connect-DbaInstance to login to the database using the method that works best with Azure.\n-------------------------- EXAMPLE 12 --------------------------\nPS C:\\\u003e$connstring = \"Data Source=TCP:mydb.database.windows.net,1433;User ID=sqladmin;Password=adfasdf;Connect Timeout=30;\"\nPS C:\\\u003e $server = Connect-DbaInstance -ConnectionString $connstring\r\nPS C:\\\u003e Invoke-DbaQuery -SqlInstance $server -Query \"select 1 as test\"\nLogs into Azure using a preconstructed connstring, then performs a sample query.\r\nConnectionString is an alias of SqlInstance, so you can use -SqlInstance $connstring as well.\n-------------------------- EXAMPLE 13 --------------------------\nPS C:\\\u003e$cred = Get-Credential guid-app-id-here # appid for username, clientsecret for password\nPS C:\\\u003e $server = Connect-DbaInstance -SqlInstance psdbatools.database.windows.net -Database abc -SqCredential $cred -Tenant guidheremaybename\r\nPS C:\\\u003e Invoke-DbaQuery -SqlInstance $server -Query \"select 1 as test\"\nWhen connecting from a non-Azure workstation, logs into Azure using Universal with MFA Support with a username and password, then performs a sample query.\nNote that generating access tokens is not supported on Core, so when using Tenant on Core, we rewrite the connection string with Active Directory Service Principal authentication instead.\n-------------------------- EXAMPLE 14 --------------------------\nPS C:\\\u003e$cred = Get-Credential guid-app-id-here # appid for username, clientsecret for password\nPS C:\\\u003e Set-DbatoolsConfig -FullName azure.tenantid -Value \u0027guidheremaybename\u0027 -Passthru | Register-DbatoolsConfig\r\nPS C:\\\u003e Set-DbatoolsConfig -FullName azure.appid -Value $cred.Username -Passthru | Register-DbatoolsConfig\r\nPS C:\\\u003e Set-DbatoolsConfig -FullName azure.clientsecret -Value $cred.Password -Passthru | Register-DbatoolsConfig # requires securestring\r\nPS C:\\\u003e Set-DbatoolsConfig -FullName sql.connection.database -Value abc -Passthru | Register-DbatoolsConfig\r\nPS C:\\\u003e Connect-DbaInstance -SqlInstance psdbatools.database.windows.net\nPermanently sets some app id config values. To set them temporarily (just for a session), remove -Passthru | Register-DbatoolsConfig\r\nWhen connecting from a non-Azure workstation or an Azure VM without .NET 4.7.2 and higher, logs into Azure using Universal with MFA Support, then performs a sample query.\n-------------------------- EXAMPLE 15 --------------------------\nPS C:\\\u003e$azureCredential = Get-Credential -Message \u0027Azure Credential\u0027\nPS C:\\\u003e $azureAccount = Connect-AzAccount -Credential $azureCredential\r\nPS C:\\\u003e $azureToken = (Get-AzAccessToken -ResourceUrl https://database.windows.net).Token\r\nPS C:\\\u003e $azureInstance = \"YOURSERVER.database.windows.net\"\r\nPS C:\\\u003e $azureDatabase = \"MYDATABASE\"\r\nPS C:\\\u003e $server = Connect-DbaInstance -SqlInstance $azureInstance -Database $azureDatabase -AccessToken $azureToken\r\nPS C:\\\u003e Invoke-DbaQuery -SqlInstance $server -Query \"select 1 as test\"\nConnect to an Azure SQL Database or an Azure SQL Managed Instance with an AccessToken.\r\nNote that the token is valid for only one hour and cannot be renewed automatically.\n-------------------------- EXAMPLE 16 --------------------------\nPS C:\\\u003e$token = (New-DbaAzAccessToken -Type RenewableServicePrincipal -Subtype AzureSqlDb -Tenant $tenantid -Credential $cred).GetAccessToken()\nPS C:\\\u003e Connect-DbaInstance -SqlInstance sample.database.windows.net -Accesstoken $token\nUses dbatools to generate the access token for an Azure SQL Database, then logs in using that AccessToken.\n-------------------------- EXAMPLE 17 --------------------------\nPS C:\\\u003e$server = Connect-DbaInstance -SqlInstance srv1 -DedicatedAdminConnection\nPS C:\\\u003e $dbaProcess = Get-DbaProcess -SqlInstance $server -ExcludeSystemSpids\r\nPS C:\\\u003e $killedProcess = $dbaProcess | Out-GridView -OutputMode Multiple | Stop-DbaProcess\r\nPS C:\\\u003e $server | Disconnect-DbaInstance\nCreates a dedicated admin connection (DAC) to the default instance on server srv1.\r\nReceives all non-system processes from the instance using the DAC.\r\nOpens a grid view to let the user select processes to be stopped.\r\nCloses the connection.",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eConnect-DbaInstance -SqlInstance sql2014\nCreates an SMO Server object that connects using Windows Authentication\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003e$wincred = Get-Credential ad\\sqladmin\nPS C:\\\u003e Connect-DbaInstance -SqlInstance sql2014 -SqlCredential $wincred\nCreates an SMO Server object that connects using alternative Windows credentials\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003e$sqlcred = Get-Credential sqladmin\nPS C:\\\u003e $server = Connect-DbaInstance -SqlInstance sql2014 -SqlCredential $sqlcred\nLogin to sql2014 as SQL login sqladmin.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003e$server = Connect-DbaInstance -SqlInstance sql2014 -ClientName \"my connection\"\nCreates an SMO Server object that connects using Windows Authentication and uses the client name \"my connection\".\r\nSo when you open up profiler or use extended events, you can search for \"my connection\".\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003e$server = Connect-DbaInstance -SqlInstance sql2014 -AppendConnectionString \"Packet Size=4096;AttachDbFilename=C:\\MyFolder\\MyDataFile.mdf;User Instance=true;\"\nCreates an SMO Server object that connects to sql2014 using Windows Authentication, then it sets the packet size (this can also be done via -PacketSize) and other connection attributes.\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003e$server = Connect-DbaInstance -SqlInstance sql2014 -NetworkProtocol TcpIp -MultiSubnetFailover\nCreates an SMO Server object that connects using Windows Authentication that uses TCP/IP and has MultiSubnetFailover enabled.\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003e$server = Connect-DbaInstance sql2016 -ApplicationIntent ReadOnly\nConnects with ReadOnly ApplicationIntent.\n-------------------------- EXAMPLE 8 --------------------------\nPS C:\\\u003e$server = Connect-DbaInstance -SqlInstance myserver.database.windows.net -Database mydb -SqlCredential me@mydomain.onmicrosoft.com -DisableException\nPS C:\\\u003e Invoke-DbaQuery -SqlInstance $server -Query \"select 1 as test\"\nLogs into Azure SQL DB using AAD / Azure Active Directory, then performs a sample query.\n-------------------------- EXAMPLE 9 --------------------------\nPS C:\\\u003e$server = Connect-DbaInstance -SqlInstance psdbatools.database.windows.net -Database dbatools -DisableException\nPS C:\\\u003e Invoke-DbaQuery -SqlInstance $server -Query \"select 1 as test\"\nLogs into Azure SQL DB using AAD Integrated Auth, then performs a sample query.\n-------------------------- EXAMPLE 10 --------------------------\nPS C:\\\u003e$server = Connect-DbaInstance -SqlInstance \"myserver.public.cust123.database.windows.net,3342\" -Database mydb -SqlCredential me@mydomain.onmicrosoft.com -DisableException\nPS C:\\\u003e Invoke-DbaQuery -SqlInstance $server -Query \"select 1 as test\"\nLogs into Azure SQL Managed instance using AAD / Azure Active Directory, then performs a sample query.\n-------------------------- EXAMPLE 11 --------------------------\nPS C:\\\u003e$server = Connect-DbaInstance -SqlInstance db.mycustomazure.com -Database mydb -AzureDomain mycustomazure.com -DisableException\nPS C:\\\u003e Invoke-DbaQuery -SqlInstance $server -Query \"select 1 as test\"\nIn the event your AzureSqlDb is not on a database.windows.net domain, you can set a custom domain using the AzureDomain parameter.\r\nThis tells Connect-DbaInstance to login to the database using the method that works best with Azure.\n-------------------------- EXAMPLE 12 --------------------------\nPS C:\\\u003e$connstring = \"Data Source=TCP:mydb.database.windows.net,1433;User ID=sqladmin;Password=adfasdf;Connect Timeout=30;\"\nPS C:\\\u003e $server = Connect-DbaInstance -ConnectionString $connstring\r\nPS C:\\\u003e Invoke-DbaQuery -SqlInstance $server -Query \"select 1 as test\"\nLogs into Azure using a preconstructed connstring, then performs a sample query.\r\nConnectionString is an alias of SqlInstance, so you can use -SqlInstance $connstring as well.\n-------------------------- EXAMPLE 13 --------------------------\nPS C:\\\u003e$cred = Get-Credential guid-app-id-here # appid for username, clientsecret for password\nPS C:\\\u003e $server = Connect-DbaInstance -SqlInstance psdbatools.database.windows.net -Database abc -SqCredential $cred -Tenant guidheremaybename\r\nPS C:\\\u003e Invoke-DbaQuery -SqlInstance $server -Query \"select 1 as test\"\nWhen connecting from a non-Azure workstation, logs into Azure using Universal with MFA Support with a username and password, then performs a sample query.\nNote that generating access tokens is not supported on Core, so when using Tenant on Core, we rewrite the connection string with Active Directory Service Principal authentication instead.\n-------------------------- EXAMPLE 14 --------------------------\nPS C:\\\u003e$cred = Get-Credential guid-app-id-here # appid for username, clientsecret for password\nPS C:\\\u003e Set-DbatoolsConfig -FullName azure.tenantid -Value \u0027guidheremaybename\u0027 -Passthru | Register-DbatoolsConfig\r\nPS C:\\\u003e Set-DbatoolsConfig -FullName azure.appid -Value $cred.Username -Passthru | Register-DbatoolsConfig\r\nPS C:\\\u003e Set-DbatoolsConfig -FullName azure.clientsecret -Value $cred.Password -Passthru | Register-DbatoolsConfig # requires securestring\r\nPS C:\\\u003e Set-DbatoolsConfig -FullName sql.connection.database -Value abc -Passthru | Register-DbatoolsConfig\r\nPS C:\\\u003e Connect-DbaInstance -SqlInstance psdbatools.database.windows.net\nPermanently sets some app id config values. To set them temporarily (just for a session), remove -Passthru | Register-DbatoolsConfig\r\nWhen connecting from a non-Azure workstation or an Azure VM without .NET 4.7.2 and higher, logs into Azure using Universal with MFA Support, then performs a sample query.\n-------------------------- EXAMPLE 15 --------------------------\nPS C:\\\u003e$azureCredential = Get-Credential -Message \u0027Azure Credential\u0027\nPS C:\\\u003e $azureAccount = Connect-AzAccount -Credential $azureCredential\r\nPS C:\\\u003e $azureToken = Get-AzAccessToken -ResourceUrl https://database.windows.net\r\nPS C:\\\u003e $azureInstance = \"YOURSERVER.database.windows.net\"\r\nPS C:\\\u003e $azureDatabase = \"MYDATABASE\"\r\nPS C:\\\u003e $server = Connect-DbaInstance -SqlInstance $azureInstance -Database $azureDatabase -AccessToken $azureToken\r\nPS C:\\\u003e Invoke-DbaQuery -SqlInstance $server -Query \"select 1 as test\"\nConnect to an Azure SQL Database or an Azure SQL Managed Instance with an AccessToken.\r\nNote that the token is valid for only one hour and cannot be renewed automatically.\n-------------------------- EXAMPLE 16 --------------------------\nPS C:\\\u003e$token = New-DbaAzAccessToken -Type RenewableServicePrincipal -Subtype AzureSqlDb -Tenant $tenantid -Credential $cred\nPS C:\\\u003e Connect-DbaInstance -SqlInstance sample.database.windows.net -Accesstoken $token\nUses dbatools to generate the access token for an Azure SQL Database, then logs in using that AccessToken.\n-------------------------- EXAMPLE 17 --------------------------\nPS C:\\\u003e$server = Connect-DbaInstance -SqlInstance srv1 -DedicatedAdminConnection\nPS C:\\\u003e $dbaProcess = Get-DbaProcess -SqlInstance $server -ExcludeSystemSpids\r\nPS C:\\\u003e $killedProcess = $dbaProcess | Out-GridView -OutputMode Multiple | Stop-DbaProcess\r\nPS C:\\\u003e $server | Disconnect-DbaInstance\nCreates a dedicated admin connection (DAC) to the default instance on server srv1.\r\nReceives all non-system processes from the instance using the DAC.\r\nOpens a grid view to let the user select processes to be stopped.\r\nCloses the connection.",
         "Params":  [
                        [
                            "SqlInstance",
@@ -2571,7 +2571,7 @@
                        ],
                        [
                            "AccessToken",
-                           "Connect to an Azure SQL Database or an Azure SQL Managed Instance with an AccessToken, that has to be generated with Get-AzAccessToken.\r\nNote that the token is valid for only one hour and cannot be renewed automatically.",
+                           "Connect to an Azure SQL Database or an Azure SQL Managed Instance with an AccessToken, that has to be generated with Get-AzAccessToken or New-DbaAzAccessToken.\nNote that the token is valid for only one hour and cannot be renewed automatically.",
                            "",
                            false,
                            "false",
@@ -2597,7 +2597,7 @@
                            ""
                        ]
                    ],
-        "Syntax":  "Connect-DbaInstance [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cString\u003e] [[-ApplicationIntent] \u003cString\u003e] [-AzureUnsupported] [[-BatchSeparator] \u003cString\u003e] [[-ClientName] \u003cString\u003e] [[-ConnectTimeout] \u003cInt32\u003e] [-EncryptConnection] [[-FailoverPartner] \u003cString\u003e] [[-LockTimeout] \u003cInt32\u003e] [[-MaxPoolSize] \u003cInt32\u003e] [[-MinPoolSize] \u003cInt32\u003e] [[-MinimumVersion] \u003cInt32\u003e] [-MultipleActiveResultSets] [-MultiSubnetFailover] [[-NetworkProtocol] \u003cString\u003e] [-NonPooledConnection] [[-PacketSize] \u003cInt32\u003e] [[-PooledConnectionLifetime] \u003cInt32\u003e] [[-SqlExecutionModes] \r\n\u003cString\u003e] [[-StatementTimeout] \u003cInt32\u003e] [-TrustServerCertificate] [[-WorkstationId] \u003cString\u003e] [[-AppendConnectionString] \u003cString\u003e] [-SqlConnectionOnly] [[-AzureDomain] \u003cString\u003e] [[-AuthenticationType] \u003cString\u003e] [[-Tenant] \u003cString\u003e] [[-Thumbprint] \u003cString\u003e] [[-Store] \u003cString\u003e] [[-AccessToken] \u003cString\u003e] [-DedicatedAdminConnection] [-DisableException] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Connect-DbaInstance [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cString\u003e] [[-ApplicationIntent] \u003cString\u003e] [-AzureUnsupported] [[-BatchSeparator] \u003cString\u003e] [[-ClientName] \u003cString\u003e] [[-ConnectTimeout] \u003cInt32\u003e] [-EncryptConnection] [[-FailoverPartner] \u003cString\u003e] [[-LockTimeout] \u003cInt32\u003e] [[-MaxPoolSize] \u003cInt32\u003e] [[-MinPoolSize] \u003cInt32\u003e] [[-MinimumVersion] \u003cInt32\u003e] [-MultipleActiveResultSets] [-MultiSubnetFailover] [[-NetworkProtocol] \u003cString\u003e] [-NonPooledConnection] [[-PacketSize] \u003cInt32\u003e] [[-PooledConnectionLifetime] \u003cInt32\u003e] [[-SqlExecutionModes] \r\n\u003cString\u003e] [[-StatementTimeout] \u003cInt32\u003e] [-TrustServerCertificate] [[-WorkstationId] \u003cString\u003e] [[-AppendConnectionString] \u003cString\u003e] [-SqlConnectionOnly] [[-AzureDomain] \u003cString\u003e] [[-AuthenticationType] \u003cString\u003e] [[-Tenant] \u003cString\u003e] [[-Thumbprint] \u003cString\u003e] [[-Store] \u003cString\u003e] [[-AccessToken] \u003cPSObject\u003e] [-DedicatedAdminConnection] [-DisableException] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "ConvertTo-DbaDataTable",
@@ -12202,6 +12202,7 @@
         "Description":  "This function returns SQL Agent alerts.",
         "Tags":  [
                      "Agent",
+                     "Alert",
                      "SMO"
                  ],
         "Synopsis":  "Returns SQL Agent alerts on a SQL Server Agent.",
@@ -14469,7 +14470,7 @@
                        ],
                        [
                            "NoLogBackup",
-                           "If this switch is enabled, only databases without a log backup recorded by SQL Server will be returned. This will also indicate which of these databases only have CopyOnly log backups.",
+                           "If this switch is enabled, only databases without a log backup recorded by SQL Server will be returned.",
                            "",
                            false,
                            "false",
@@ -21492,7 +21493,7 @@
                        ],
                        [
                            "LogType",
-                           "Accepts \u0027IndexOptimize\u0027, \u0027DatabaseBackup\u0027, \u0027DatabaseIntegrityCheck\u0027. ATM only IndexOptimize parsing is available",
+                           "Accepts \u0027IndexOptimize\u0027, \u0027DatabaseBackup\u0027, \u0027DatabaseIntegrityCheck\u0027. Only IndexOptimize parsing is available at the moment",
                            "",
                            false,
                            "false",
@@ -24397,9 +24398,9 @@
     },
     {
         "Name":  "Get-DbaRgWorkloadGroup",
-        "Description":  "Gets all Resource Governor Pool objects, including both internal and external",
+        "Description":  "Gets all Resource Governor workload group objects",
         "Tags":  "ResourceGovernor",
-        "Synopsis":  "Gets all Resource Governor Pool objects, including both internal and external",
+        "Synopsis":  "Gets all Resource Governor workload group objects",
         "Alias":  "",
         "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "CommandName":  "Get-DbaRgWorkloadGroup",
@@ -28522,12 +28523,12 @@
                        ],
                        [
                            "Feature",
-                           "Features to install. Templates like \"Default\" and \"All\" can be used to setup a predefined set of components. Full list of features:\nDefault\r\nAll\r\nEngine\r\nTools\r\nReplication\r\nFullText\r\nDataQuality\r\nPolyBase\r\nMachineLearning\r\nAnalysisServices\r\nReportingServices\r\nReportingForSharepoint\r\nSharepointAddin\r\nIntegrationServices\r\nMasterDataServices\r\nPythonPackages\r\nRPackages\r\nReplayController\r\nReplayClient\r\nSDK\r\nBIDS\r\nSSMS",
+                           "Features to install. Templates like \"Default\" and \"All\" can be used to setup a predefined set of components. Full list of features:\nDefault: Engine, Replication, FullText, Tools\r\nAll\r\nEngine\r\nTools: SSMS, BackwardsCompatibility, Connectivity\r\nReplication\r\nFullText\r\nDataQuality\r\nPolyBase\r\nMachineLearning\r\nAnalysisServices\r\nReportingServices\r\nReportingForSharepoint\r\nSharepointAddin\r\nIntegrationServices\r\nMasterDataServices\r\nPythonPackages\r\nRPackages\r\nBackwardsCompatibility\r\nConnectivity\r\nReplayController\r\nReplayClient\r\nSDK\r\nBIDS\r\nSSMS: SSMS, ADV_SSMS",
                            "",
                            false,
                            "false",
                            "Default",
-                           "Default,All,Engine,Tools,Replication,FullText,DataQuality,PolyBase,MachineLearning,AnalysisServices,ReportingServices,ReportingForSharepoint,SharepointAddin,IntegrationServices,MasterDataServices,PythonPackages,RPackages,ReplayController,ReplayClient,SDK,BIDS,SSMS"
+                           "Default,All,Engine,Tools,Replication,FullText,DataQuality,PolyBase,MachineLearning,AnalysisServices,ReportingServices,ReportingForSharepoint,SharepointAddin,IntegrationServices,MasterDataServices,PythonPackages,RPackages,BackwardsCompatibility,Connectivity,ReplayController,ReplayClient,SDK,BIDS,SSMS"
                        ],
                        [
                            "AuthenticationMode",
@@ -28719,6 +28720,15 @@
                            ""
                        ],
                        [
+                           "NoPendingRenameCheck",
+                           "Disables pending rename validation when checking for a pending reboot.",
+                           "",
+                           false,
+                           "false",
+                           "(Get-DbatoolsConfigValue -Name \u0027OS.PendingRename\u0027 -Fallback $false)",
+                           ""
+                       ],
+                       [
                            "EnableException",
                            "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
                            "",
@@ -28746,7 +28756,7 @@
                            ""
                        ]
                    ],
-        "Syntax":  "Install-DbaInstance [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [-Version] \u003cString\u003e [[-InstanceName] \u003cString\u003e] [[-SaCredential] \u003cPSCredential\u003e] [[-Credential] \u003cPSCredential\u003e] [[-Authentication] \u003cString\u003e] [[-ConfigurationFile] \u003cObject\u003e] [[-Configuration] \u003cHashtable\u003e] [[-Path] \u003cString[]\u003e] [[-Feature] \u003cString[]\u003e] [[-AuthenticationMode] \u003cString\u003e] [[-InstancePath] \u003cString\u003e] [[-DataPath] \u003cString\u003e] [[-LogPath] \u003cString\u003e] [[-TempPath] \u003cString\u003e] [[-BackupPath] \u003cString\u003e] [[-UpdateSourcePath] \u003cString\u003e] [[-AdminAccount] \u003cString[]\u003e] [[-Port] \u003cInt32\u003e] [[-Throttle] \u003cInt32\u003e] [[-ProductID] \u003cString\u003e] \r\n[[-EngineCredential] \u003cPSCredential\u003e] [[-AgentCredential] \u003cPSCredential\u003e] [[-ASCredential] \u003cPSCredential\u003e] [[-ISCredential] \u003cPSCredential\u003e] [[-RSCredential] \u003cPSCredential\u003e] [[-FTCredential] \u003cPSCredential\u003e] [[-PBEngineCredential] \u003cPSCredential\u003e] [[-SaveConfiguration] \u003cString\u003e] [-PerformVolumeMaintenanceTasks] [-Restart] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Install-DbaInstance [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [-Version] \u003cString\u003e [[-InstanceName] \u003cString\u003e] [[-SaCredential] \u003cPSCredential\u003e] [[-Credential] \u003cPSCredential\u003e] [[-Authentication] \u003cString\u003e] [[-ConfigurationFile] \u003cObject\u003e] [[-Configuration] \u003cHashtable\u003e] [[-Path] \u003cString[]\u003e] [[-Feature] \u003cString[]\u003e] [[-AuthenticationMode] \u003cString\u003e] [[-InstancePath] \u003cString\u003e] [[-DataPath] \u003cString\u003e] [[-LogPath] \u003cString\u003e] [[-TempPath] \u003cString\u003e] [[-BackupPath] \u003cString\u003e] [[-UpdateSourcePath] \u003cString\u003e] [[-AdminAccount] \u003cString[]\u003e] [[-Port] \u003cInt32\u003e] [[-Throttle] \u003cInt32\u003e] [[-ProductID] \u003cString\u003e] \r\n[[-EngineCredential] \u003cPSCredential\u003e] [[-AgentCredential] \u003cPSCredential\u003e] [[-ASCredential] \u003cPSCredential\u003e] [[-ISCredential] \u003cPSCredential\u003e] [[-RSCredential] \u003cPSCredential\u003e] [[-FTCredential] \u003cPSCredential\u003e] [[-PBEngineCredential] \u003cPSCredential\u003e] [[-SaveConfiguration] \u003cString\u003e] [-PerformVolumeMaintenanceTasks] [-Restart] [-NoPendingRenameCheck] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Install-DbaMaintenanceSolution",
@@ -29175,7 +29185,7 @@
         "CommandName":  "Install-DbaWhoIsActive",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Install-DbaWhoIsActive",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eInstall-DbaWhoIsActive -SqlInstance sqlserver2014a -Database master\nDownloads sp_WhoisActive from the internet and installs to sqlserver2014a\u0027s master database. Connects to SQL Server using Windows Authentication.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eInstall-DbaWhoIsActive -SqlInstance sqlserver2014a -SqlCredential $cred\nPops up a dialog box asking which database on sqlserver2014a you want to install the procedure into. Connects to SQL Server using SQL Authentication.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eInstall-DbaWhoIsActive -SqlInstance sqlserver2014a -Database master -LocalFile c:\\SQLAdmin\\whoisactive_install.sql\nInstalls sp_WhoisActive to sqlserver2014a\u0027s master database from the local file whoisactive_install.sql\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003e$instances = Get-DbaRegServer sqlserver\nPS C:\\\u003e Install-DbaWhoIsActive -SqlInstance $instances -Database master\nInstalls sp_WhoisActive to all servers within CMS",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eInstall-DbaWhoIsActive -SqlInstance sqlserver2014a -Database master\nDownloads sp_WhoisActive from the internet and installs to sqlserver2014a\u0027s master database. Connects to SQL Server using Windows Authentication.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eInstall-DbaWhoIsActive -SqlInstance sqlserver2014a -SqlCredential $cred\nPops up a dialog box asking which database on sqlserver2014a you want to install the procedure into. Connects to SQL Server using SQL Authentication.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eInstall-DbaWhoIsActive -SqlInstance sqlserver2014a -Database master -LocalFile c:\\SQLAdmin\\sp_WhoIsActive.sql\nInstalls sp_WhoisActive to sqlserver2014a\u0027s master database from the local file sp_WhoIsActive.sql.\r\nYou can download this file from https://github.com/amachanic/sp_whoisactive/blob/master/sp_WhoIsActive.sql\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eInstall-DbaWhoIsActive -SqlInstance sqlserver2014a -Database master -LocalFile c:\\SQLAdmin\\sp_whoisactive-12.00.zip\nInstalls sp_WhoisActive to sqlserver2014a\u0027s master database from the local file sp_whoisactive-12.00.zip.\r\nYou can download this file from https://github.com/amachanic/sp_whoisactive/releases\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003e$instances = Get-DbaRegServer sqlserver\nPS C:\\\u003e Install-DbaWhoIsActive -SqlInstance $instances -Database master\nInstalls sp_WhoisActive to all servers within CMS",
         "Params":  [
                        [
                            "SqlInstance",
@@ -29197,7 +29207,7 @@
                        ],
                        [
                            "LocalFile",
-                           "Specifies the path to a local file to install sp_WhoisActive from. This can be either the zip file as distributed by the website or the expanded SQL script. If this parameter is not specified, the \r\nlatest version will be downloaded and installed from https://whoisactive.com/",
+                           "Specifies the path to a local file to install sp_WhoisActive from. This can be either the zip file as distributed by the website or the expanded SQL script.\r\nIf this parameter is not specified, the latest version will be downloaded and installed from https://github.com/amachanic/sp_whoisactive/releases",
                            "",
                            false,
                            "false",
@@ -29224,7 +29234,7 @@
                        ],
                        [
                            "Force",
-                           "If this switch is enabled, the sp_WhoisActive will be downloaded from the internet even if previously cached.",
+                           "If this switch is enabled, then sp_WhoisActive will be downloaded from the internet even if previously cached.",
                            "",
                            false,
                            "false",
@@ -29393,6 +29403,15 @@
                            ""
                        ],
                        [
+                           "NoPendingRenameCheck",
+                           "Disables pending rename validation when checking for a pending reboot.",
+                           "",
+                           false,
+                           "false",
+                           "False",
+                           ""
+                       ],
+                       [
                            "EnableException",
                            "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
                            "",
@@ -29402,7 +29421,7 @@
                            ""
                        ]
                    ],
-        "Syntax":  "Invoke-DbaAdvancedInstall [[-ComputerName] \u003cString\u003e] [[-InstanceName] \u003cString\u003e] [[-Port] \u003cNullable`1\u003e] [[-InstallationPath] \u003cString\u003e] [[-ConfigurationPath] \u003cString\u003e] [[-ArgumentList] \u003cString[]\u003e] [[-Version] \u003cVersion\u003e] [[-Configuration] \u003cHashtable\u003e] [[-Restart] \u003cBoolean\u003e] [[-PerformVolumeMaintenanceTasks] \u003cBoolean\u003e] [[-SaveConfiguration] \u003cString\u003e] [[-Authentication] \u003cString\u003e] [[-Credential] \u003cPSCredential\u003e] [[-SaCredential] \u003cPSCredential\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Invoke-DbaAdvancedInstall [[-ComputerName] \u003cString\u003e] [[-InstanceName] \u003cString\u003e] [[-Port] \u003cNullable`1\u003e] [[-InstallationPath] \u003cString\u003e] [[-ConfigurationPath] \u003cString\u003e] [[-ArgumentList] \u003cString[]\u003e] [[-Version] \u003cVersion\u003e] [[-Configuration] \u003cHashtable\u003e] [[-Restart] \u003cBoolean\u003e] [[-PerformVolumeMaintenanceTasks] \u003cBoolean\u003e] [[-SaveConfiguration] \u003cString\u003e] [[-Authentication] \u003cString\u003e] [[-Credential] \u003cPSCredential\u003e] [[-SaCredential] \u003cPSCredential\u003e] [-NoPendingRenameCheck] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Invoke-DbaAdvancedRestore",
@@ -29716,6 +29735,15 @@
                            ""
                        ],
                        [
+                           "NoPendingRenameCheck",
+                           "Disables pending rename validation when checking for a pending reboot.",
+                           "",
+                           false,
+                           "false",
+                           "False",
+                           ""
+                       ],
+                       [
                            "EnableException",
                            "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
                            "",
@@ -29743,7 +29771,7 @@
                            ""
                        ]
                    ],
-        "Syntax":  "Invoke-DbaAdvancedUpdate [[-ComputerName] \u003cString\u003e] [[-Action] \u003cObject[]\u003e] [[-Restart] \u003cBoolean\u003e] [[-Authentication] \u003cString\u003e] [[-Credential] \u003cPSCredential\u003e] [[-ExtractPath] \u003cString\u003e] [[-ArgumentList] \u003cString[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Invoke-DbaAdvancedUpdate [[-ComputerName] \u003cString\u003e] [[-Action] \u003cObject[]\u003e] [[-Restart] \u003cBoolean\u003e] [[-Authentication] \u003cString\u003e] [[-Credential] \u003cPSCredential\u003e] [[-ExtractPath] \u003cString\u003e] [[-ArgumentList] \u003cString[]\u003e] [-NoPendingRenameCheck] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Invoke-DbaAgFailover",
@@ -33429,7 +33457,7 @@
                        [
                            "Filter",
                            "FiltersBoth inclusive and exclusive\r\nSet either filter to \u0027\u0027 to disable\r\nSession is a session ID, and either 0 or \u0027\u0027 can be used to indicate \"all\" sessions\r\nAll other filter types support % or _ as wildcards",
-                           "As",
+                           "",
                            false,
                            "false",
                            "",
@@ -33643,6 +33671,15 @@
                            ""
                        ],
                        [
+                           "As",
+                           "Specifies output type. Valid options for this parameter are \u0027DataSet\u0027, \u0027DataTable\u0027, \u0027DataRow\u0027, \u0027PSObject\u0027. Default is \u0027DataRow\u0027.\nPSObject output introduces overhead but adds flexibility for working with results: https://forums.powershell.org/t/dealing-with-dbnull/2328/2",
+                           "",
+                           false,
+                           "false",
+                           "DataRow",
+                           "DataSet,DataTable,DataRow,PSObject"
+                       ],
+                       [
                            "EnableException",
                            "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
                            "",
@@ -33652,7 +33689,7 @@
                            ""
                        ]
                    ],
-        "Syntax":  "Invoke-DbaWhoIsActive [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cObject\u003e] [[-Filter] \u003cString\u003e] [[-FilterType] \u003cString\u003e] [[-NotFilter] \u003cString\u003e] [[-NotFilterType] \u003cString\u003e] [-ShowOwnSpid] [-ShowSystemSpids] [[-ShowSleepingSpids] \u003cInt32\u003e] [-GetFullInnerText] [[-GetPlans] \u003cInt32\u003e] [-GetOuterCommand] [-GetTransactionInfo] [[-GetTaskInfo] \u003cInt32\u003e] [-GetLocks] [-GetAverageTime] [-GetAdditonalInfo] [-FindBlockLeaders] [[-DeltaInterval] \u003cInt32\u003e] [[-OutputColumnList] \u003cString\u003e] [[-SortOrder] \u003cString\u003e] [[-FormatOutput] \u003cInt32\u003e] [[-DestinationTable] \u003cString\u003e] \r\n[-ReturnSchema] [[-Schema] \u003cString\u003e] [-Help] [-EnableException] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Invoke-DbaWhoIsActive [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cString\u003e] [[-Filter] \u003cString\u003e] [[-FilterType] \u003cString\u003e] [[-NotFilter] \u003cString\u003e] [[-NotFilterType] \u003cString\u003e] [-ShowOwnSpid] [-ShowSystemSpids] [[-ShowSleepingSpids] \u003cInt32\u003e] [-GetFullInnerText] [[-GetPlans] \u003cInt32\u003e] [-GetOuterCommand] [-GetTransactionInfo] [[-GetTaskInfo] \u003cInt32\u003e] [-GetLocks] [-GetAverageTime] [-GetAdditonalInfo] [-FindBlockLeaders] [[-DeltaInterval] \u003cInt32\u003e] [[-OutputColumnList] \u003cString\u003e] [[-SortOrder] \u003cString\u003e] [[-FormatOutput] \u003cInt32\u003e] [[-DestinationTable] \u003cString\u003e] \r\n[-ReturnSchema] [[-Schema] \u003cString\u003e] [-Help] [[-As] \u003cString\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Invoke-DbaXEReplay",
@@ -34247,7 +34284,7 @@
     },
     {
         "Name":  "Move-DbaDbFile",
-        "Description":  "Moves database files from one local drive or folder to another.\nIt will put database offline, update metadata and set it online again.\nIt can also be used to move database files on an AG secondary.",
+        "Description":  "Moves database files from one local drive or folder to another.\nIt will put database offline, update metadata and set it online again.",
         "Tags":  [
                      "Database",
                      "Move",
@@ -35542,7 +35579,7 @@
         "CommandName":  "New-DbaAgentSchedule",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/New-DbaAgentSchedule",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eNew-DbaAgentSchedule -SqlInstance localhost\\SQL2016 -Schedule daily -FrequencyType Daily -FrequencyInterval Everyday -Force\nCreates a schedule with a daily frequency every day. It assumes default values for the start date, start time, end date and end time due to -Force.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eNew-DbaAgentSchedule -SqlInstance sstad-pc -Schedule MonthlyTest -FrequencyType Monthly -FrequencyInterval 10 -FrequencyRecurrenceFactor 1 -Force\nCreate a schedule with a monhtly frequency occuring every 10th of the month. It assumes default values for the start date, start time, end date and end time due to -Force.",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eNew-DbaAgentSchedule -SqlInstance sql01 -Schedule DailyAt6 -FrequencyType Daily -StartTime \"060000\" -Force\nCreates a schedule that runs jobs every day at 6 in the morning. It assumes default values for the start date, start time, end date and end time due to -Force.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eNew-DbaAgentSchedule -SqlInstance localhost\\SQL2016 -Schedule daily -FrequencyType Daily -FrequencyInterval Everyday -Force\nCreates a schedule with a daily frequency every day. It assumes default values for the start date, start time, end date and end time due to -Force.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eNew-DbaAgentSchedule -SqlInstance sstad-pc -Schedule MonthlyTest -FrequencyType Monthly -FrequencyInterval 10 -FrequencyRecurrenceFactor 1 -Force\nCreate a schedule with a monhtly frequency occuring every 10th of the month. It assumes default values for the start date, start time, end date and end time due to -Force.",
         "Params":  [
                        [
                            "SqlInstance",
@@ -40972,6 +41009,168 @@
                        ]
                    ],
         "Syntax":  "New-DbaRgResourcePool -SqlInstance \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-ResourcePool \u003cString[]\u003e] [-Type \u003cString\u003e] [-MaximumCpuPercentage \u003cInt32\u003e] [-MaximumMemoryPercentage \u003cInt32\u003e] [-SkipReconfigure] [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\nNew-DbaRgResourcePool -SqlInstance \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-ResourcePool \u003cString[]\u003e] [-Type \u003cString\u003e] [-MinimumCpuPercentage \u003cInt32\u003e] [-MaximumCpuPercentage \u003cInt32\u003e] [-CapCpuPercentage \u003cInt32\u003e] [-MinimumMemoryPercentage \u003cInt32\u003e] [-MaximumMemoryPercentage \u003cInt32\u003e] [-MinimumIOPSPerVolume \u003cInt32\u003e] [-MaximumIOPSPerVolume \u003cInt32\u003e] [-SkipReconfigure] [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\nNew-DbaRgResourcePool -SqlInstance \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-ResourcePool \u003cString[]\u003e] [-Type \u003cString\u003e] [-MaximumCpuPercentage \u003cInt32\u003e] [-MaximumMemoryPercentage \u003cInt32\u003e] [-MaximumProcesses \u003cInt32\u003e] [-SkipReconfigure] [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+    },
+    {
+        "Name":  "New-DbaRgWorkloadGroup",
+        "Description":  "Creates a Resource Governor workload group and associates the workload group with a Resource Governor resource pool.\nA workload group represents a subset of the resources of a resource pool in instance of the Database Engine.",
+        "Tags":  [
+                     "WorkloadGroup",
+                     "ResourceGovernor"
+                 ],
+        "Synopsis":  "Creates a Resource Governor workload group and associates the workload group with a Resource Governor resource pool.",
+        "Alias":  "",
+        "Author":  "John McCall (@lowlydba), https://www.lowlydba.com/",
+        "CommandName":  "New-DbaRgWorkloadGroup",
+        "Availability":  "Windows, Linux, macOS",
+        "Links":  "https://dbatools.io/New-DbaRgWorkloadGroup",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eNew-DbaRgWorkloadGroup -SqlInstance sql2016 -WorkloadGroup \"groupAdmin\" -ResourcePool \"poolAdmin\"\nCreates a workload group \"groupAdmin\" in the resource pool named \"poolAdmin\" for the instance sql2016.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eNew-DbaRgWorkloadGroup -SqlInstance sql2016 -WorkloadGroup \"groupAdmin\" -Force\nIf \"groupAdmin\" exists, it is dropped and re-created in the default resource pool for the instance sql2016.",
+        "Params":  [
+                       [
+                           "SqlInstance",
+                           "The target SQL Server instance or instances.",
+                           "",
+                           false,
+                           "true (ByValue, ByPropertyName)",
+                           "",
+                           ""
+                       ],
+                       [
+                           "SqlCredential",
+                           "Credential object used to connect to the Windows server as a different user",
+                           "",
+                           false,
+                           "true (ByPropertyName)",
+                           "",
+                           ""
+                       ],
+                       [
+                           "WorkloadGroup",
+                           "Name of the workload group to be created.",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "ResourcePool",
+                           "Name of the resource pool to create the workload group in. If not provided, set to the Default Resource Pool.",
+                           "",
+                           false,
+                           "false",
+                           "default",
+                           ""
+                       ],
+                       [
+                           "ResourcePoolType",
+                           "Internal (default) or External",
+                           "",
+                           false,
+                           "false",
+                           "Internal",
+                           "Internal,External"
+                       ],
+                       [
+                           "Importance",
+                           "Specifies the relative importance of a request in the workload group. Default is MEDIUM, allowed: LOW, MEDIUM, HIGH",
+                           "",
+                           false,
+                           "false",
+                           "MEDIUM",
+                           "LOW,MEDIUM,HIGH"
+                       ],
+                       [
+                           "RequestMaximumMemoryGrantPercentage",
+                           "Specifies the maximum amount of memory that a single request can take from the pool. Default is 25%.",
+                           "",
+                           false,
+                           "false",
+                           "25",
+                           ""
+                       ],
+                       [
+                           "RequestMaximumCpuTimeInSeconds",
+                           "Specifies the maximum amount of CPU time, in seconds, that a request can use.",
+                           "",
+                           false,
+                           "false",
+                           "0",
+                           ""
+                       ],
+                       [
+                           "RequestMemoryGrantTimeoutInSeconds",
+                           "Specifies the maximum time, in seconds, that a query can wait for a memory grant (work buffer memory) to become available.",
+                           "",
+                           false,
+                           "false",
+                           "0",
+                           ""
+                       ],
+                       [
+                           "MaximumDegreeOfParallelism",
+                           "Specifies the maximum degree of parallelism (MAXDOP) for parallel query execution.",
+                           "",
+                           false,
+                           "false",
+                           "0",
+                           ""
+                       ],
+                       [
+                           "GroupMaximumRequests",
+                           "Specifies the maximum number of simultaneous requests that are allowed to execute in the workload group.",
+                           "",
+                           false,
+                           "false",
+                           "0",
+                           ""
+                       ],
+                       [
+                           "SkipReconfigure",
+                           "Resource Governor requires a reconfiguriation for workload group changes to take effect.\r\nUse this switch to skip issuing a reconfigure for the Resource Governor.",
+                           "",
+                           false,
+                           "false",
+                           "False",
+                           ""
+                       ],
+                       [
+                           "Force",
+                           "If the workload group already exists, drop and re-create it.",
+                           "",
+                           false,
+                           "false",
+                           "False",
+                           ""
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "",
+                           false,
+                           "false",
+                           "False",
+                           ""
+                       ],
+                       [
+                           "WhatIf",
+                           "Shows what would happen if the command were to run. No actions are actually performed.",
+                           "wi",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "Confirm",
+                           "Prompts you for confirmation before executing any changing operations within the command.",
+                           "cf",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ]
+                   ],
+        "Syntax":  "New-DbaRgWorkloadGroup [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-WorkloadGroup] \u003cString[]\u003e] [[-ResourcePool] \u003cString\u003e] [[-ResourcePoolType] \u003cString\u003e] [[-Importance] \u003cString\u003e] [[-RequestMaximumMemoryGrantPercentage] \u003cInt32\u003e] [[-RequestMaximumCpuTimeInSeconds] \u003cInt32\u003e] [[-RequestMemoryGrantTimeoutInSeconds] \u003cInt32\u003e] [[-MaximumDegreeOfParallelism] \u003cInt32\u003e] [[-GroupMaximumRequests] \u003cInt32\u003e] [-SkipReconfigure] [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "New-DbaScriptingOption",
@@ -47398,6 +47597,114 @@
         "Syntax":  "Remove-DbaRgResourcePool [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-ResourcePool] \u003cString[]\u003e] [[-Type] \u003cString\u003e] [-SkipReconfigure] [[-InputObject] \u003cObject[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
+        "Name":  "Remove-DbaRgWorkloadGroup",
+        "Description":  "Removes a workload group from the Resource Governor on the specified SQL Server.\nA workload group represents a subset of the resources of an instance of the Database Engine.",
+        "Tags":  [
+                     "WorkloadGroup",
+                     "ResourceGovernor"
+                 ],
+        "Synopsis":  "Removes a workload group from the Resource Governor on the specified SQL Server.",
+        "Alias":  "",
+        "Author":  "John McCall (@lowlydba), https://www.lowlydba.com/",
+        "CommandName":  "Remove-DbaRgWorkloadGroup",
+        "Availability":  "Windows, Linux, macOS",
+        "Links":  "https://dbatools.io/Remove-DbaRgWorkloadGroup",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eRemove-DbaRgResourcePool -SqlInstance sql2016 -WorkloadGroup \"groupAdmin\" -ResourcePool \"poolAdmin\" -ResourcePoolType Internal\nRemoves a workload group named \"groupAdmin\" in the \"poolAdmin\" resource pool for the instance sql2016\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eRemove-DbaRgResourcePool -SqlInstance sql2016 -WorkloadGroup \"groupAdmin\"\nRemoves a workload group named \"groupAdmin\" in the default resource pool for the instance sql2016.",
+        "Params":  [
+                       [
+                           "SqlInstance",
+                           "The target SQL Server instance or instances.",
+                           "",
+                           false,
+                           "true (ByValue, ByPropertyName)",
+                           "",
+                           ""
+                       ],
+                       [
+                           "SqlCredential",
+                           "Credential object used to connect to the Windows server as a different user.",
+                           "",
+                           false,
+                           "true (ByPropertyName)",
+                           "",
+                           ""
+                       ],
+                       [
+                           "WorkloadGroup",
+                           "Name of the workload group to be removed.",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "ResourcePool",
+                           "Name of the resource pool the workload group is in.",
+                           "",
+                           false,
+                           "false",
+                           "default",
+                           ""
+                       ],
+                       [
+                           "ResourcePoolType",
+                           "Internal or External.",
+                           "",
+                           false,
+                           "false",
+                           "Internal",
+                           "Internal,External"
+                       ],
+                       [
+                           "SkipReconfigure",
+                           "Resource Governor requires a reconfiguriation for workload group changes to take effect.\r\nUse this switch to skip issuing a reconfigure for the Resource Governor.",
+                           "",
+                           false,
+                           "false",
+                           "False",
+                           ""
+                       ],
+                       [
+                           "InputObject",
+                           "Allows input to be piped from Get-DbaRgWorkloadGroup.",
+                           "",
+                           false,
+                           "true (ByValue)",
+                           "",
+                           ""
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "",
+                           false,
+                           "false",
+                           "False",
+                           ""
+                       ],
+                       [
+                           "WhatIf",
+                           "Shows what would happen if the command were to run. No actions are actually performed.",
+                           "wi",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "Confirm",
+                           "Prompts you for confirmation before executing any changing operations within the command.",
+                           "cf",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ]
+                   ],
+        "Syntax":  "Remove-DbaRgWorkloadGroup [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-WorkloadGroup] \u003cString[]\u003e] [[-ResourcePool] \u003cString\u003e] [[-ResourcePoolType] \u003cString\u003e] [-SkipReconfigure] [[-InputObject] \u003cWorkloadGroup[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+    },
+    {
         "Name":  "Remove-DbaServerRole",
         "Description":  "Deletes specified server-level role.",
         "Tags":  [
@@ -47478,6 +47785,106 @@
                        ]
                    ],
         "Syntax":  "Remove-DbaServerRole [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-ServerRole] \u003cString[]\u003e] [[-InputObject] \u003cServerRole[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+    },
+    {
+        "Name":  "Remove-DbaServerRoleMember",
+        "Description":  "Removes login(s) from a server-level role(s) for each instance(s) of SQL Server.",
+        "Tags":  [
+                     "Role",
+                     "Security",
+                     "Login"
+                 ],
+        "Synopsis":  "Removes login(s) from a server-level role(s) for each instance(s) of SQL Server.",
+        "Alias":  "",
+        "Author":  "Mikey Bronowski (@MikeyBronowski), https://bronowski.it",
+        "CommandName":  "Remove-DbaServerRoleMember",
+        "Availability":  "Windows, Linux, macOS",
+        "Links":  "https://dbatools.io/Remove-DbaServerRoleMember",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eRemove-DbaServerRoleMember -SqlInstance server1 -ServerRole dbcreator -Login login1\nRemoves login1 from the dbcreator fixed server-level role on the instance server1.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eRemove-DbaServerRoleMember -SqlInstance server1, sql2016 -ServerRole customrole -Login login1\nRemoves login1 from customrole custom server-level role on the instance server1 and sql2016.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eRemove-DbaServerRoleMember -SqlInstance server1 -ServerRole customrole -Role dbcreator\nRemoves customrole custom server-level role from the dbcreator fixed server-level role.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003e$servers = Get-Content C:\\servers.txt\nPS C:\\\u003e $servers | Remove-DbaServerRoleMember -ServerRole sysadmin -Login login1\nRemoves login1 from the sysadmin fixed server-level role in every server in C:\\servers.txt.\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eRemove-DbaServerRoleMember -SqlInstance localhost -ServerRole bulkadmin, dbcreator -Login login1\nRemoves login1 from the bulkadmin and dbcreator fixed server-level roles on the server localhost.\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003e$roles = Get-DbaServerRole -SqlInstance localhost -ServerRole bulkadmin, dbcreator\nPS C:\\\u003e $roles | Remove-DbaServerRoleMember -Login login1\nRemoves login1 from the bulkadmin and dbcreator fixed server-level roles on the server localhost.\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003ePS C:\\ $logins = Get-Content C:\\logins.txt\nPS C:\\ $srvLogins = Get-DbaLogin -SqlInstance server1 -Login $logins\r\nPS C:\\ Remove-DbaServerRoleMember -Login $logins -ServerRole mycustomrole\nRemoves all the logins found in C:\\logins.txt from mycustomrole custom server-level role on server1.",
+        "Params":  [
+                       [
+                           "SqlInstance",
+                           "The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.",
+                           "",
+                           false,
+                           "true (ByValue)",
+                           "",
+                           ""
+                       ],
+                       [
+                           "SqlCredential",
+                           "Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).\nWindows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.\nFor MFA support, please use Connect-DbaInstance.",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "ServerRole",
+                           "The server-level role(s) to process.",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "Login",
+                           "The login(s) to remove from server-level role(s) specified.",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "Role",
+                           "The role(s) to remove from server-level role(s) specified.",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "InputObject",
+                           "Enables piped input from Get-DbaServerRole.",
+                           "",
+                           false,
+                           "true (ByValue)",
+                           "",
+                           ""
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "",
+                           false,
+                           "false",
+                           "False",
+                           ""
+                       ],
+                       [
+                           "WhatIf",
+                           "Shows what would happen if the command were to run. No actions are actually performed.",
+                           "wi",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "Confirm",
+                           "Prompts you for confirmation before executing any changing operations within the command.",
+                           "cf",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ]
+                   ],
+        "Syntax":  "Remove-DbaServerRoleMember [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-ServerRole] \u003cString[]\u003e] [[-Login] \u003cString[]\u003e] [[-Role] \u003cString[]\u003e] [[-InputObject] \u003cObject[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Remove-DbaSpn",
@@ -49603,12 +50010,12 @@
         "Params":  [
                        [
                            "Software",
-                           "Name of the software to download.\r\nOptions include:\r\n* MaintenanceSolution: SQL Server Maintenance Solution created by Ola Hallengren (https://ola.hallengren.com)\r\n* FirstResponderKit: First Responder Kit created by Brent Ozar (http://FirstResponderKit.org)\r\n* DarlingData: Erik Darling\u0027s stored procedures (https://www.erikdarlingdata.com)",
+                           "Name of the software to download.\r\nOptions include:\r\n* MaintenanceSolution: SQL Server Maintenance Solution created by Ola Hallengren (https://ola.hallengren.com)\r\n* FirstResponderKit: First Responder Kit created by Brent Ozar (http://FirstResponderKit.org)\r\n* DarlingData: Erik Darling\u0027s stored procedures (https://www.erikdarlingdata.com)\r\n* SQLWATCH: SQL Server Monitoring Solution created by Marcin Gminski (https://sqlwatch.io/)\r\n* WhoIsActive: Adam Machanic\u0027s comprehensive activity monitoring stored procedure sp_WhoIsActive (https://github.com/amachanic/sp_whoisactive)",
                            "",
                            false,
                            "false",
                            "",
-                           "MaintenanceSolution,FirstResponderKit,DarlingData"
+                           "MaintenanceSolution,FirstResponderKit,DarlingData,SQLWATCH,WhoIsActive"
                        ],
                        [
                            "Branch",
@@ -49726,7 +50133,7 @@
         "CommandName":  "Save-DbaKbUpdate",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Save-DbaKbUpdate",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eSave-DbaKbUpdate -Name KB4057119\nDownloads KB4057119 to the current directory. This works for SQL Server or any other KB.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaKbUpdate -Name KB4057119 -Simple | Out-GridView -Passthru | Save-DbaKbUpdate\nDownloads the selected files from KB4057119 to the current directory.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eSave-DbaKbUpdate -Name KB4057119, 4057114 -Path C:\\temp\nDownloads KB4057119 and the x64 version of KB4057114 to C:\\temp. This works for SQL Server or any other KB.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eSave-DbaKbUpdate -Name KB4057114 -Architecture All -Path C:\\temp\nDownloads the x64 version of KB4057114 and the x86 version of KB4057114 to C:\\temp. This works for SQL Server or any other KB.",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eSave-DbaKbUpdate -Name KB4057119\nDownloads KB4057119 to the current directory. This works for SQL Server or any other KB.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaKbUpdate -Name KB4057119 -Simple | Out-GridView -Passthru | Save-DbaKbUpdate\nDownloads the selected files from KB4057119 to the current directory.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eSave-DbaKbUpdate -Name KB4057119, 4057114 -Path C:\\temp\nDownloads KB4057119 and the x64 version of KB4057114 to C:\\temp. This works for SQL Server or any other KB.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eSave-DbaKbUpdate -Name KB4057114 -Architecture All -Path C:\\temp\nDownloads the x64 version of KB4057114 and the x86 version of KB4057114 to C:\\temp. This works for SQL Server or any other KB.\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eSave-DbaKbUpdate -Name KB5003279 -Language enu -Path C:\\temp\nDownloads only the english version of KB5003279, which is the Service Pack 3 for SQL Server 2016, to C:\\temp.",
         "Params":  [
                        [
                            "Name",
@@ -49765,6 +50172,15 @@
                            "x64,x86,ia64,All"
                        ],
                        [
+                           "Language",
+                           "Cumulative Updates come in one file for all languages, but Service Packs have a file for every language.\r\nIf you want to download only a specific language, use this parameter.\r\nYou have to use the three letter code that is part of the filename, e. g. \"enu\" for english or \"deu\" for german.",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
                            "InputObject",
                            "Enables piping from Get-DbaKbUpdate",
                            "",
@@ -49783,7 +50199,7 @@
                            ""
                        ]
                    ],
-        "Syntax":  "Save-DbaKbUpdate [[-Name] \u003cString[]\u003e] [[-Path] \u003cString\u003e] [[-FilePath] \u003cString\u003e] [[-Architecture] \u003cString\u003e] [[-InputObject] \u003cObject[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Save-DbaKbUpdate [[-Name] \u003cString[]\u003e] [[-Path] \u003cString\u003e] [[-FilePath] \u003cString\u003e] [[-Architecture] \u003cString\u003e] [[-Language] \u003cString\u003e] [[-InputObject] \u003cObject[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Select-DbaBackupInformation",
@@ -55275,6 +55691,168 @@
         "Syntax":  "Set-DbaRgResourcePool [-SqlInstance \u003cDbaInstanceParameter[]\u003e] [-SqlCredential \u003cPSCredential\u003e] [-ResourcePool \u003cString[]\u003e] [-Type \u003cString\u003e] [-MinimumCpuPercentage \u003cInt32\u003e] [-MaximumCpuPercentage \u003cInt32\u003e] [-CapCpuPercentage \u003cInt32\u003e] [-MinimumMemoryPercentage \u003cInt32\u003e] [-MaximumMemoryPercentage \u003cInt32\u003e] [-MinimumIOPSPerVolume \u003cInt32\u003e] [-MaximumIOPSPerVolume \u003cInt32\u003e] [-SkipReconfigure] [-InputObject \u003cObject[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\nSet-DbaRgResourcePool [-SqlInstance \u003cDbaInstanceParameter[]\u003e] [-SqlCredential \u003cPSCredential\u003e] [-ResourcePool \u003cString[]\u003e] [-Type \u003cString\u003e] [-MinimumCpuPercentage \u003cInt32\u003e] [-MaximumCpuPercentage \u003cInt32\u003e] [-CapCpuPercentage \u003cInt32\u003e] [-MinimumMemoryPercentage \u003cInt32\u003e] [-MaximumMemoryPercentage \u003cInt32\u003e] [-MinimumIOPSPerVolume \u003cInt32\u003e] [-MaximumIOPSPerVolume \u003cInt32\u003e] [-SkipReconfigure] [-InputObject \u003cObject[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\nSet-DbaRgResourcePool [-SqlInstance \u003cDbaInstanceParameter[]\u003e] [-SqlCredential \u003cPSCredential\u003e] [-ResourcePool \u003cString[]\u003e] [-Type \u003cString\u003e] [-MinimumCpuPercentage \u003cInt32\u003e] [-MaximumCpuPercentage \u003cInt32\u003e] [-CapCpuPercentage \u003cInt32\u003e] [-MinimumMemoryPercentage \u003cInt32\u003e] [-MaximumMemoryPercentage \u003cInt32\u003e] [-MinimumIOPSPerVolume \u003cInt32\u003e] [-MaximumIOPSPerVolume \u003cInt32\u003e] [-MaximumProcesses \u003cInt32\u003e] [-SkipReconfigure] [-InputObject \u003cObject[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
+        "Name":  "Set-DbaRgWorkloadGroup",
+        "Description":  "Sets a workload group for use by the Resource Governor on the specified SQL Server.\nA workload group represents a subset of resources of an instance of the Database Engine.\nWhen changing a plan affecting setting, the new setting will only take effect in previously cached plans after executing \u0027DBCC FREEPROCCACHE (pool_name);\u0027.",
+        "Tags":  [
+                     "ResourcePool",
+                     "ResourceGovernor"
+                 ],
+        "Synopsis":  "Sets a workload group for use by the Resource Governor on the specified SQL Server.",
+        "Alias":  "",
+        "Author":  "John McCall (@lowlydba), https://www.lowlydba.com/",
+        "CommandName":  "Set-DbaRgWorkloadGroup",
+        "Availability":  "Windows, Linux, macOS",
+        "Links":  "https://dbatools.io/Set-DbaRgWorkloadGroup",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eSet-DbaRgWorkloadGroup -SqlInstance sql2016 -WorkloadGroup \"groupAdmin\" -ResourcePool \"poolAdmin\"\nConfigures a workload group named \"groupAdmin\" in the resource pool \"poolAdmin\" for the instance sql2016.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaRgWorkloadGroup | Where-Object Name -eq \"groupSuperUsers\" | Set-DbaRgWorkloadGroup -GroupMaximumRequests 2\nConfigures a workload group named \"groupSuperUsers\" by setting the maximum number of group requests to 2 for the instance sql2016.",
+        "Params":  [
+                       [
+                           "SqlInstance",
+                           "The target SQL Server instance or instances.",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "SqlCredential",
+                           "Credential object used to connect to the Windows server as a different user",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "WorkloadGroup",
+                           "Name of the workload group to be configured.",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "ResourcePool",
+                           "Name of the resource pool to create the workload group in.",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "ResourcePoolType",
+                           "Internal or External",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           "Internal,External"
+                       ],
+                       [
+                           "Importance",
+                           "Specifies the relative importance of a request in the workload group.",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           "LOW,MEDIUM,HIGH"
+                       ],
+                       [
+                           "RequestMaximumMemoryGrantPercentage",
+                           "Specifies the maximum amount of memory that a single request can take from the pool.",
+                           "",
+                           false,
+                           "false",
+                           "0",
+                           ""
+                       ],
+                       [
+                           "RequestMaximumCpuTimeInSeconds",
+                           "Specifies the maximum amount of CPU time, in seconds, that a request can use.",
+                           "",
+                           false,
+                           "false",
+                           "0",
+                           ""
+                       ],
+                       [
+                           "RequestMemoryGrantTimeoutInSeconds",
+                           "Specifies the maximum time, in seconds, that a query can wait for a memory grant (work buffer memory) to become available.",
+                           "",
+                           false,
+                           "false",
+                           "0",
+                           ""
+                       ],
+                       [
+                           "MaximumDegreeOfParallelism",
+                           "Specifies the maximum degree of parallelism (MAXDOP) for parallel query execution.",
+                           "",
+                           false,
+                           "false",
+                           "0",
+                           ""
+                       ],
+                       [
+                           "GroupMaximumRequests",
+                           "Specifies the maximum number of simultaneous requests that are allowed to execute in the workload group.",
+                           "",
+                           false,
+                           "false",
+                           "0",
+                           ""
+                       ],
+                       [
+                           "SkipReconfigure",
+                           "Resource Governor requires a reconfiguriation for workload group changes to take effect.\r\nUse this switch to skip issuing a reconfigure for the Resource Governor.",
+                           "",
+                           false,
+                           "false",
+                           "False",
+                           ""
+                       ],
+                       [
+                           "InputObject",
+                           "Allows input to be piped from Get-DbaRgWorkloadGroup.",
+                           "",
+                           false,
+                           "true (ByValue)",
+                           "",
+                           ""
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "",
+                           false,
+                           "false",
+                           "False",
+                           ""
+                       ],
+                       [
+                           "WhatIf",
+                           "Shows what would happen if the command were to run. No actions are actually performed.",
+                           "wi",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "Confirm",
+                           "Prompts you for confirmation before executing any changing operations within the command.",
+                           "cf",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ]
+                   ],
+        "Syntax":  "Set-DbaRgWorkloadGroup [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-WorkloadGroup] \u003cString[]\u003e] [[-ResourcePool] \u003cString\u003e] [[-ResourcePoolType] \u003cString\u003e] [[-Importance] \u003cString\u003e] [[-RequestMaximumMemoryGrantPercentage] \u003cInt32\u003e] [[-RequestMaximumCpuTimeInSeconds] \u003cInt32\u003e] [[-RequestMemoryGrantTimeoutInSeconds] \u003cInt32\u003e] [[-MaximumDegreeOfParallelism] \u003cInt32\u003e] [[-GroupMaximumRequests] \u003cInt32\u003e] [-SkipReconfigure] [[-InputObject] \u003cWorkloadGroup[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+    },
+    {
         "Name":  "Set-DbaSpConfigure",
         "Description":  "This function changes the configured value for sp_configure settings. If the setting is dynamic this setting will be used, otherwise the user will be warned that a restart of SQL is required.\nThis is designed to be safe and will not allow for configurations to be set outside of the defined configuration min and max values.\nWhile it is possible to set below the min, or above the max this can cause serious problems with SQL Server (including startup failures), and so is not permitted.",
         "Tags":  "SpConfigure",
@@ -60239,6 +60817,15 @@
                            ""
                        ],
                        [
+                           "FileStreamDirectory",
+                           "Specifies a directory for filestream data.",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
                            "Prefix",
                            "The database is restored as \"dbatools-testrestore-$databaseName\" by default. You can change dbatools-testrestore to whatever you would like using this parameter.",
                            "",
@@ -60419,7 +61006,7 @@
                            ""
                        ]
                    ],
-        "Syntax":  "Test-DbaLastBackup [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cObject[]\u003e] [[-ExcludeDatabase] \u003cObject[]\u003e] [[-Destination] \u003cDbaInstanceParameter\u003e] [[-DestinationCredential] \u003cObject\u003e] [[-DataDirectory] \u003cString\u003e] [[-LogDirectory] \u003cString\u003e] [[-Prefix] \u003cString\u003e] [-VerifyOnly] [-NoCheck] [-NoDrop] [-CopyFile] [[-CopyPath] \u003cString\u003e] [[-MaxSize] \u003cInt32\u003e] [[-DeviceType] \u003cString[]\u003e] [-IncludeCopyOnly] [-IgnoreLogBackup] [[-AzureCredential] \u003cString\u003e] [[-InputObject] \u003cDatabase[]\u003e] [[-MaxTransferSize] \u003cInt32\u003e] [[-BufferCount] \u003cInt32\u003e] [-IgnoreDiffBackup] \r\n[[-MaxDop] \u003cInt32\u003e] [-ReuseSourceFolderStructure] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Test-DbaLastBackup [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cObject[]\u003e] [[-ExcludeDatabase] \u003cObject[]\u003e] [[-Destination] \u003cDbaInstanceParameter\u003e] [[-DestinationCredential] \u003cObject\u003e] [[-DataDirectory] \u003cString\u003e] [[-LogDirectory] \u003cString\u003e] [[-FileStreamDirectory] \u003cString\u003e] [[-Prefix] \u003cString\u003e] [-VerifyOnly] [-NoCheck] [-NoDrop] [-CopyFile] [[-CopyPath] \u003cString\u003e] [[-MaxSize] \u003cInt32\u003e] [[-DeviceType] \u003cString[]\u003e] [-IncludeCopyOnly] [-IgnoreLogBackup] [[-AzureCredential] \u003cString\u003e] [[-InputObject] \u003cDatabase[]\u003e] [[-MaxTransferSize] \u003cInt32\u003e] [[-BufferCount] \r\n\u003cInt32\u003e] [-IgnoreDiffBackup] [[-MaxDop] \u003cInt32\u003e] [-ReuseSourceFolderStructure] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Test-DbaLinkedServerConnection",
@@ -61551,6 +62138,15 @@
                            ""
                        ],
                        [
+                           "NoPendingRenameCheck",
+                           "Disables pending rename validation when checking for a pending reboot.",
+                           "",
+                           false,
+                           "false",
+                           "(Get-DbatoolsConfigValue -Name \u0027OS.PendingRename\u0027 -Fallback $false)",
+                           ""
+                       ],
+                       [
                            "EnableException",
                            "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
                            "",
@@ -61578,7 +62174,7 @@
                            ""
                        ]
                    ],
-        "Syntax":  "Update-DbaInstance [[-ComputerName] \u003cDbaInstanceParameter[]\u003e] [-Credential \u003cPSCredential\u003e] [-Version \u003cString[]\u003e] [-Type \u003cString[]\u003e] [-InstanceName \u003cString\u003e] [-Path \u003cString[]\u003e] [-Restart] [-Continue] [-Throttle \u003cInt32\u003e] [-Authentication \u003cString\u003e] [-ExtractPath \u003cString\u003e] [-ArgumentList \u003cString[]\u003e] [-Download] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\nUpdate-DbaInstance [[-ComputerName] \u003cDbaInstanceParameter[]\u003e] [-Credential \u003cPSCredential\u003e] -KB \u003cString[]\u003e [-InstanceName \u003cString\u003e] [-Path \u003cString[]\u003e] [-Restart] [-Continue] [-Throttle \u003cInt32\u003e] [-Authentication \u003cString\u003e] [-ExtractPath \u003cString\u003e] [-ArgumentList \u003cString[]\u003e] [-Download] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Update-DbaInstance [[-ComputerName] \u003cDbaInstanceParameter[]\u003e] [-Credential \u003cPSCredential\u003e] [-Version \u003cString[]\u003e] [-Type \u003cString[]\u003e] [-InstanceName \u003cString\u003e] [-Path \u003cString[]\u003e] [-Restart] [-Continue] [-Throttle \u003cInt32\u003e] [-Authentication \u003cString\u003e] [-ExtractPath \u003cString\u003e] [-ArgumentList \u003cString[]\u003e] [-Download] [-NoPendingRenameCheck] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\nUpdate-DbaInstance [[-ComputerName] \u003cDbaInstanceParameter[]\u003e] [-Credential \u003cPSCredential\u003e] -KB \u003cString[]\u003e [-InstanceName \u003cString\u003e] [-Path \u003cString[]\u003e] [-Restart] [-Continue] [-Throttle \u003cInt32\u003e] [-Authentication \u003cString\u003e] [-ExtractPath \u003cString\u003e] [-ArgumentList \u003cString[]\u003e] [-Download] [-NoPendingRenameCheck] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Update-DbaMaintenanceSolution",

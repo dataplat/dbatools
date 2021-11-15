@@ -75,10 +75,10 @@ function Install-DbaInstance {
     .PARAMETER Feature
         Features to install. Templates like "Default" and "All" can be used to setup a predefined set of components. Full list of features:
 
-        Default
+        Default: Engine, Replication, FullText, Tools
         All
         Engine
-        Tools
+        Tools: SSMS, BackwardsCompatibility, Connectivity
         Replication
         FullText
         DataQuality
@@ -92,11 +92,13 @@ function Install-DbaInstance {
         MasterDataServices
         PythonPackages
         RPackages
+        BackwardsCompatibility
+        Connectivity
         ReplayController
         ReplayClient
         SDK
         BIDS
-        SSMS
+        SSMS: SSMS, ADV_SSMS
 
     .PARAMETER InstancePath
         Root folder for instance components. Includes SQL Server logs, system databases, etc.
@@ -168,6 +170,9 @@ function Install-DbaInstance {
 
     .PARAMETER AuthenticationMode
         Chooses authentication mode for SQL Server. Allowed values: Mixed, Windows.
+
+    .PARAMETER NoPendingRenameCheck
+        Disables pending rename validation when checking for a pending reboot.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -251,7 +256,7 @@ function Install-DbaInstance {
         [string[]]$Path = (Get-DbatoolsConfigValue -Name 'Path.SQLServerSetup'),
         [ValidateSet("Default", "All", "Engine", "Tools", "Replication", "FullText", "DataQuality", "PolyBase", "MachineLearning", "AnalysisServices",
             "ReportingServices", "ReportingForSharepoint", "SharepointAddin", "IntegrationServices", "MasterDataServices", "PythonPackages", "RPackages",
-            "ReplayController", "ReplayClient", "SDK", "BIDS", "SSMS")]
+            "BackwardsCompatibility", "Connectivity", "ReplayController", "ReplayClient", "SDK", "BIDS", "SSMS")]
         [string[]]$Feature = "Default",
         [ValidateSet("Windows", "Mixed")]
         [string]$AuthenticationMode = "Windows",
@@ -276,6 +281,7 @@ function Install-DbaInstance {
         [string]$SaveConfiguration,
         [switch]$PerformVolumeMaintenanceTasks,
         [switch]$Restart,
+        [switch]$NoPendingRenameCheck = (Get-DbatoolsConfigValue -Name 'OS.PendingRename' -Fallback $false),
         [switch]$EnableException
     )
     begin {
@@ -390,8 +396,8 @@ function Install-DbaInstance {
             $featureDef = $components | Where-Object Name -contains $f
             foreach ($fd in $featureDef) {
                 if (($fd.MinimumVersion -and $canonicVersion -lt [version]$fd.MinimumVersion) -or ($fd.MaximumVersion -and $canonicVersion -gt [version]$fd.MaximumVersion)) {
-                    # exclude Default and All
-                    if ($f -notin 'Default', 'All') {
+                    # exclude Default, All, and Tools, as they are expected to have SSMS components in some cases
+                    if ($f -notin 'Default', 'All', 'Tools') {
                         Stop-Function -Message "Feature $f($($fd.Feature)) is not supported on SQL$Version"
                         return
                     }
@@ -709,6 +715,7 @@ function Install-DbaInstance {
                     SaCredential                  = $SaCredential
                     PerformVolumeMaintenanceTasks = $PerformVolumeMaintenanceTasks
                     Credential                    = $Credential
+                    NoPendingRenameCheck          = $NoPendingRenameCheck
                     EnableException               = $EnableException
                 }
             }
