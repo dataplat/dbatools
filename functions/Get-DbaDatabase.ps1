@@ -314,7 +314,6 @@ function Get-DbaDatabase {
                 if ($NoFullBackupSince) {
                     $lastFullBackups = $lastFullBackups | Where-Object End -gt $NoFullBackupSince
                 }
-                # Collation Check for cnotin vs notin
                 if ( $server.Collation -like "*_CS") {
                     $inputObject = $inputObject | Where-Object { $_.Name -cnotin $lastFullBackups.Database -and $_.Name -ne 'tempdb' }
                 } else{
@@ -326,7 +325,6 @@ function Get-DbaDatabase {
                 if ($NoLogBackupSince) {
                     $lastLogBackups = $lastLogBackups | Where-Object End -gt $NoLogBackupSince
                 }
-                # Collation Check for cnotin vs notin
                 if ( $server.Collation -like "*_CS") {
                     $inputObject = $inputObject | Where-Object { $_.Name -cnotin $lastLogBackups.Database -and $_.Name -ne 'tempdb' -and $_.RecoveryModel -ne 'Simple' }
                 } else {
