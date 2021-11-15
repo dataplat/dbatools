@@ -65,15 +65,15 @@ function Install-DbaWhoIsActive {
         Pops up a dialog box asking which database on sqlserver2014a you want to install the procedure into. Connects to SQL Server using SQL Authentication.
 
     .EXAMPLE
-        PS C:\> Install-DbaWhoIsActive -SqlInstance sqlserver2014a -Database master -LocalFile c:\SQLAdmin\who_is_active.sql
+        PS C:\> Install-DbaWhoIsActive -SqlInstance sqlserver2014a -Database master -LocalFile c:\SQLAdmin\sp_WhoIsActive.sql
 
-        Installs sp_WhoisActive to sqlserver2014a's master database from the local file who_is_active.sql.
-        You can download this file from https://github.com/amachanic/sp_whoisactive/blob/master/who_is_active.sql
+        Installs sp_WhoisActive to sqlserver2014a's master database from the local file sp_WhoIsActive.sql.
+        You can download this file from https://github.com/amachanic/sp_whoisactive/blob/master/sp_WhoIsActive.sql
 
     .EXAMPLE
-        PS C:\> Install-DbaWhoIsActive -SqlInstance sqlserver2014a -Database master -LocalFile c:\SQLAdmin\sp_whoisactive-11.35.zip
+        PS C:\> Install-DbaWhoIsActive -SqlInstance sqlserver2014a -Database master -LocalFile c:\SQLAdmin\sp_whoisactive-12.00.zip
 
-        Installs sp_WhoisActive to sqlserver2014a's master database from the local file sp_whoisactive-11.35.zip.
+        Installs sp_WhoisActive to sqlserver2014a's master database from the local file sp_whoisactive-12.00.zip.
         You can download this file from https://github.com/amachanic/sp_whoisactive/releases
 
     .EXAMPLE
@@ -112,7 +112,11 @@ function Install-DbaWhoIsActive {
         }
 
         if ($PSCmdlet.ShouldProcess($env:computername, "Reading SQL file into memory")) {
-            $sqlfile = (Get-ChildItem -Path $localCachedCopy -Filter 'who_is_active.sql').FullName
+            $sqlfile = (Get-ChildItem -Path $localCachedCopy -Filter 'sp_WhoIsActive.sql').FullName
+            if ($null -eq $sqlfile) {
+                Write-Message -Level Verbose -Message "New filename sp_WhoIsActive.sql not found, using old filename who_is_active.sql."
+                $sqlfile = (Get-ChildItem -Path $localCachedCopy -Filter 'who_is_active.sql').FullName
+            }
             Write-Message -Level Verbose -Message "Using $sqlfile."
 
             $sql = [IO.File]::ReadAllText($sqlfile)
