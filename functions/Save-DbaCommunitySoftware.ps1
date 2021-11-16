@@ -246,6 +246,8 @@ function Save-DbaCommunitySoftware {
                 # As this software is downloaded as a release, the directory has a different name.
                 # Rename the directory from like 'SQLWATCH 4.3.0.23725 20210721131116' to 'SQLWATCH' to be able to handle this like the other software.
                 if ($sourceDirectoryName -like 'SQLWATCH*') {
+                    # Write a file with version info, to be able to check if version is outdated
+                    Set-Content -Path "$sourceDirectory\version.txt" -Value $sourceDirectoryName
                     Rename-Item -Path $sourceDirectory.FullName -NewName 'SQLWATCH'
                     $sourceDirectory = Get-ChildItem -Path $zipFolder -Directory
                     $sourceDirectoryName = $sourceDirectory.Name
