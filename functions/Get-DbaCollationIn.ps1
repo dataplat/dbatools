@@ -1,4 +1,4 @@
-Function Get-DbaCollationIN
+Function Get-DbaCollationIn
 {
 	param( [string]$Collation, [string]$String, [string]$array, [Microsoft.SqlServer.Management.Smo.Server]$SqlInstance )
 	if ( -not $SqlInstance ) {
