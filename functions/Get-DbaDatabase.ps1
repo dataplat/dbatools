@@ -319,7 +319,7 @@ function Get-DbaDatabase {
                     $inputObject = $inputObject | Where-Object { $_.Name -cnotin $lastFullBackups.Database -and $_.Name -ne 'tempdb' }
                 } else {
                     $inputObject = $inputObject | Where-Object { $_.Name -notin $lastFullBackups.Database -and $_.Name -ne 'tempdb' }
-                }
+$inputObject = $inputObject | Where-Object { $_.Name -notin $lastFullBackups.Database -and $_.Name -ne 'tempdb' }
             }
             if ($NoLogBackup -or $NoLogBackupSince) {
                 $lastLogBackups = Get-DbaDbBackupHistory -SqlInstance $server -LastLog
