@@ -182,10 +182,10 @@ function Save-DbaCommunitySoftware {
         $zipFolder = Join-DbaPath -Path $temp -Child "dbatools_software_download_$random"
 
         if ($Software -eq 'WhoIsActive' -and $LocalFile.EndsWith('.sql')) {
-            # For WhoIsActive, we allow to pass in the who_is_active.sql file or any other sql file with the source code.
-            # We create the zip folder with a subfolder named WhoIsActive and copy the LocalFile there as who_is_active.sql.
+            # For WhoIsActive, we allow to pass in the sp_WhoIsActive.sql file or any other sql file with the source code.
+            # We create the zip folder with a subfolder named WhoIsActive and copy the LocalFile there as sp_WhoIsActive.sql.
             $appFolder = Join-DbaPath -Path $zipFolder -Child 'WhoIsActive'
-            $appFile = Join-DbaPath -Path $appFolder -Child 'who_is_active.sql'
+            $appFile = Join-DbaPath -Path $appFolder -Child 'sp_WhoIsActive.sql'
             $null = New-Item -Path $zipFolder -ItemType Directory
             $null = New-Item -Path $appFolder -ItemType Directory
             Copy-Item -Path $LocalFile -Destination $appFile
