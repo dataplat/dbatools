@@ -314,15 +314,16 @@ function Get-DbaDatabase {
                 if ($NoFullBackupSince) {
                     $lastFullBackups = $lastFullBackups | Where-Object End -gt $NoFullBackupSince
                 }
-                $inputObject = $inputObject | Where-Object { (Get-DbaCollationIn -Collation $server.Collation  -String $_.Name  -array $lastFullBackups.Database -sqlinstance $server) -and $_.Name -ne 'tempdb' }
+                $fbdbs = $lastFullBackups.Database
+                $inputObject = $inputObject | Where-Object { (Get-DbaCollationIn -Collation $server.Collation  -String $_.Name  -array $fbdbs -sqlinstance $server) -and $_.Name -ne 'tempdb' }
             }
             if ($NoLogBackup -or $NoLogBackupSince) {
                 $lastLogBackups = Get-DbaDbBackupHistory -SqlInstance $server -LastLog
                 if ($NoLogBackupSince) {
                     $lastLogBackups = $lastLogBackups | Where-Object End -gt $NoLogBackupSince
                 }
-
-                $inputObject = $inputObject | Where-Object { (Get-DbaCollationIn -Collation $server.Collation  -String $_.Name  -array $lastLogackups.Database -SQLInstance $server) -and $_.Name -ne 'tempdb' }
+                $lbdbs = $lastLogackups.Database
+                $inputObject = $inputObject | Where-Object { (Get-DbaCollationIn -Collation $server.Collation  -String $_.Name  -array $lbdbs -SQLInstance $server) -and $_.Name -ne 'tempdb' }
             }
 
             $defaults = 'ComputerName', 'InstanceName', 'SqlInstance', 'Name', 'Status', 'IsAccessible', 'RecoveryModel',
