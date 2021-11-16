@@ -313,25 +313,16 @@ function Get-DbaDatabase {
                 $lastCopyOnlyBackups = Get-DbaDbBackupHistory -SqlInstance $server -LastFull -IncludeCopyOnly | Where-Object IsCopyOnly
                 if ($NoFullBackupSince) {
                     $lastFullBackups = $lastFullBackups | Where-Object End -gt $NoFullBackupSince
-                }
-                if ( $server.Collation -like "*_CS*" -or $server.Collation -like "*_BIN*"  ) {
-                    # Collation Check, when Case Sensitive collation use cnotin for database name comparision
-                    $inputObject = $inputObject | Where-Object { $_.Name -cnotin $lastFullBackups.Database -and $_.Name -ne 'tempdb' }
-                } else {
-                    $inputObject = $inputObject | Where-Object { $_.Name -notin $lastFullBackups.Database -and $_.Name -ne 'tempdb' }
-$inputObject = $inputObject | Where-Object { $_.Name -notin $lastFullBackups.Database -and $_.Name -ne 'tempdb' }
+                }                
+                $inputObject = $inputObject | Where-Object { (Get-DbaCollationIn -Collation $server.Collation  -String $_.Name  -array $lastFullBackups.Database) -and $_.Name -ne 'tempdb' }
             }
             if ($NoLogBackup -or $NoLogBackupSince) {
                 $lastLogBackups = Get-DbaDbBackupHistory -SqlInstance $server -LastLog
                 if ($NoLogBackupSince) {
                     $lastLogBackups = $lastLogBackups | Where-Object End -gt $NoLogBackupSince
                 }
-                if ( $server.Collation -like "*_CS*" -or $server.Collation -like "*_BIN*"  ) {
-                    # Collation check, when Case Sensitive collation use cnotin for database name comparision
-                    $inputObject = $inputObject | Where-Object { $_.Name -cnotin $lastLogBackups.Database -and $_.Name -ne 'tempdb' -and $_.RecoveryModel -ne 'Simple' }
-                } else {
-                    $inputObject = $inputObject | Where-Object { $_.Name -notin $lastLogBackups.Database -and $_.Name -ne 'tempdb' -and $_.RecoveryModel -ne 'Simple' }
-$inputObject = $inputObject | Where-Object { $_.Name -notin $lastLogBackups.Database -and $_.Name -ne 'tempdb' -and $_.RecoveryModel -ne 'Simple' }
+
+                $inputObject = $inputObject | Where-Object { (Get-DbaCollationIn -Collation $server.Collation  -String $_.Name  -array $lastLogackups.Database) -and $_.Name -ne 'tempdb' }
             }
 
             $defaults = 'ComputerName', 'InstanceName', 'SqlInstance', 'Name', 'Status', 'IsAccessible', 'RecoveryModel',
