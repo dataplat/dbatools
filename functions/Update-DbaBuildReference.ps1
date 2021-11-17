@@ -8,6 +8,9 @@ function Update-DbaBuildReference {
         It uses the setting 'assets.sqlbuildreference' to fetch it.
         To see your current setting, use Get-DbatoolsConfigValue -Name 'assets.sqlbuildreference'
 
+    .PARAMETER LocalFile
+        Specifies the path to a local file to install from instead of downloading from Github.
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -29,10 +32,16 @@ function Update-DbaBuildReference {
 
         Looks online if there is a newer version of the build reference
 
+    .EXAMPLE
+        PS C:\> Update-DbaBuildReference -LocalFile \\fileserver\Software\dbatools\dbatools-buildref-index.json
+
+        Uses the given file instead of downloading the file to update the build reference
+
     #>
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseShouldProcessForStateChangingFunctions", "")]
     [CmdletBinding(DefaultParameterSetName = 'Build')]
     param (
+        [string]$LocalFile,
         [switch]$EnableException
     )
 
@@ -45,18 +54,18 @@ function Update-DbaBuildReference {
             )
             $url = Get-DbatoolsConfigValue -Name 'assets.sqlbuildreference'
             try {
-                $WebContent = Invoke-TlsWebRequest $url -UseBasicParsing -ErrorAction Stop
+                $webContent = Invoke-TlsWebRequest $url -UseBasicParsing -ErrorAction Stop
             } catch {
                 try {
                     Write-Message -Level Verbose -Message "Probably using a proxy for internet access, trying default proxy settings"
                     (New-Object System.Net.WebClient).Proxy.Credentials = [System.Net.CredentialCache]::DefaultNetworkCredentials
-                    $WebContent = Invoke-TlsWebRequest $url -UseBasicParsing -ErrorAction Stop
+                    $webContent = Invoke-TlsWebRequest $url -UseBasicParsing -ErrorAction Stop
                 } catch {
                     Write-Message -Level Warning -Message "Couldn't download updated index from $url"
                     return
                 }
             }
-            return $WebContent
+            return $webContent.Content
         }
 
     }
@@ -95,13 +104,24 @@ function Update-DbaBuildReference {
                 $offline_time = $data_time
             }
         }
-        $WebContent = Get-DbaBuildReferenceIndexOnline -EnableException $EnableException
-        if ($null -ne $WebContent) {
-            $webdata_content = $WebContent.Content | ConvertFrom-Json
-            $webdata_time = Get-Date $webdata_content.LastUpdated
-            if ($webdata_time -gt $offline_time) {
-                Write-Message -Level Output -Message "Index updated correctly, last update on: $(Get-Date -Date $webdata_time -Format s), was $(Get-Date -Date $offline_time -Format s)"
-                $WebContent.Content | Out-File $writable_idxfile -Encoding utf8 -ErrorAction Stop
+
+        # Depending on LocalFile, use file or internet as source
+        if ($LocalFile) {
+            try {
+                $newContent = Get-Content -Path $LocalFile
+            } catch {
+                Stop-Function -Message "Unable to read content from $LocalFile"
+            }
+        } else {
+            $newContent = Get-DbaBuildReferenceIndexOnline -EnableException $EnableException
+        }
+
+        # If new data was sucessful read, compare LastUpdated and copy if newer
+        if ($null -ne $newContent) {
+            $new_time = Get-Date ($newContent | ConvertFrom-Json).LastUpdated
+            if ($new_time -gt $offline_time) {
+                Write-Message -Level Output -Message "Index updated correctly, last update on: $(Get-Date -Date $new_time -Format s), was $(Get-Date -Date $offline_time -Format s)"
+                $newContent | Out-File $writable_idxfile -Encoding utf8 -ErrorAction Stop
             }
         }
 
