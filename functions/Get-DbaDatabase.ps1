@@ -344,9 +344,9 @@ function Get-DbaDatabase {
 
                     $backupStatus = $null
                     if ($NoFullBackup -or $NoFullBackupSince) {
-                        
+
                         $DbisCopyOnly = Get-DbaCollationIn -Collation $server.Collation  -String $db.Name  -array $lastCopyOnlyBackups.Database -sqlinstance $server
-                        if( $DbisCopyOnly ) {
+                        if ($DbisCopyOnly) {
                             $backupStatus = "Only CopyOnly backups"
                         }
                     }
