@@ -7,6 +7,15 @@ function Save-DbaCommunitySoftware {
         Download and extract software from Github to update the local cached version of that software.
         This command is run from inside of Install-Dba* and Update-Dba* commands to update the local cache if needed.
 
+        In case you don't have internet access on the target computer, you can download the zip files from the following URLs
+        at another computer, transfer them to the target computer or place them on a network share and then use -LocalFile
+        to update the local cache:
+        * MaintenanceSolution: https://github.com/olahallengren/sql-server-maintenance-solution
+        * FirstResponderKit: https://github.com/BrentOzarULTD/SQL-Server-First-Responder-Kit/releases
+        * DarlingData: https://github.com/erikdarlingdata/DarlingData
+        * SQLWATCH: https://github.com/marcingminski/sqlwatch/releases
+        * WhoIsActive: https://github.com/amachanic/sp_whoisactive/releases
+
     .PARAMETER Software
         Name of the software to download.
         Options include:
@@ -55,6 +64,11 @@ function Save-DbaCommunitySoftware {
 
         Updates the local cache of Ola Hallengren's Solution objects.
 
+    .EXAMPLE
+        PS C:\> Save-DbaCommunitySoftware -Software FirstResponderKit -LocalFile \\fileserver\Software\SQL-Server-First-Responder-Kit-20211106.zip
+
+        Updates the local cache of the First Responder Kit based on the given file.
+
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Medium")]
     param (
@@ -93,7 +107,7 @@ function Save-DbaCommunitySoftware {
             }
         } elseif ($Software -eq 'DarlingData') {
             if (-not $Branch) {
-                $Branch = 'master'
+                $Branch = 'main'
             }
             if (-not $Url) {
                 $Url = "https://github.com/erikdarlingdata/DarlingData/archive/$Branch.zip"
@@ -237,6 +251,8 @@ function Save-DbaCommunitySoftware {
         }
 
         # As a safety net, we test whether the archive contained exactly the desired destination directory.
+        # But inside of zip files that are downloaded by the user via a webbrowser and not the api,
+        # the directory name is the name of the zip file. So we have to test for that as well.
         if ($PSCmdlet.ShouldProcess($zipFolder, "Testing for correct content")) {
             $localDirectoryBase = Split-Path -Path $LocalDirectory
             $localDirectoryName = Split-Path -Path $LocalDirectory -Leaf
@@ -255,8 +271,16 @@ function Save-DbaCommunitySoftware {
             } elseif ($Software -eq 'WhoIsActive') {
                 # As this software is downloaded as a release, the directory has a different name.
                 # Rename the directory from like 'amachanic-sp_whoisactive-459d2bc' to 'WhoIsActive' to be able to handle this like the other software.
-                if ($sourceDirectoryName -like 'amachanic-sp_whoisactive-*') {
+                if ($sourceDirectoryName -like '*sp_whoisactive-*') {
                     Rename-Item -Path $sourceDirectory.FullName -NewName 'WhoIsActive'
+                    $sourceDirectory = Get-ChildItem -Path $zipFolder -Directory
+                    $sourceDirectoryName = $sourceDirectory.Name
+                }
+            } elseif ($Software -eq 'FirstResponderKit') {
+                # As this software is downloadable as a release, the directory might have a different name.
+                # Rename the directory from like 'SQL-Server-First-Responder-Kit-20211106' to 'SQL-Server-First-Responder-Kit-main' to be able to handle this like the other software.
+                if ($sourceDirectoryName -like 'SQL-Server-First-Responder-Kit-20*') {
+                    Rename-Item -Path $sourceDirectory.FullName -NewName 'SQL-Server-First-Responder-Kit-main'
                     $sourceDirectory = Get-ChildItem -Path $zipFolder -Directory
                     $sourceDirectoryName = $sourceDirectory.Name
                 }
