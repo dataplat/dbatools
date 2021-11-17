@@ -322,7 +322,7 @@ function Get-DbaDatabase {
                 if ($NoLogBackupSince) {
                     $lastLogBackups = $lastLogBackups | Where-Object End -gt $NoLogBackupSince
                 }
-                $lbdbs = $lastLogackups.Database
+                $lbdbs = $lastLogBackups.Database
                 $inputObject = $inputObject | Where-Object { (Get-DbaCollationIn -Collation $server.Collation  -String $_.Name  -array $lbdbs -SQLInstance $server) -and $_.Name -ne 'tempdb' }
             }
 
