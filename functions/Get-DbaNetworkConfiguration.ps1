@@ -255,7 +255,7 @@ function Get-DbaNetworkConfiguration {
                         IssuedBy        = $netConf.Certificate.IssuedBy
                         Certificate     = $netConf.Certificate.Certificate
                     }
-                    $defaultView = 'ComputerName', 'InstanceName', 'SqlInstance', 'VSName', 'ServiceAccount', 'ForceEncryption', 'FriendlyName', 'DnsNameList', 'Thumbprint', 'Generated', 'Expires', 'IssuedTo', 'IssuedBy'
+                    $defaultView = 'ComputerName,InstanceName,SqlInstance,VSName,ServiceAccount,ForceEncryption,FriendlyName,DnsNameList,Thumbprint,Generated,Expires,IssuedTo,IssuedBy'.Split(',')
                     if (-not $netConf.Certificate.VSName) {
                         $defaultView = $defaultView | Where-Object { $_ -ne 'VSNAME' }
                     }
