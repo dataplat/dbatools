@@ -314,7 +314,14 @@ function Get-DbaDatabase {
                 if ($NoFullBackupSince) {
                     $lastFullBackups = $lastFullBackups | Where-Object End -gt $NoFullBackupSince
                 }
-                $dbComparedIn = Compare-DbaStringCollation -Collation $server.Collation -Reference $inputObject.Name -Difference $lastFullBackups.Database
+                $dbComparedIn = @()
+                foreach ($ref in $inputObject.Name) {
+                    foreach ($dif in $lastFullBackups.Database) {
+                        if ($server.getStringComparer($server.Collation).Compare($ref, $dif) -eq 0 ) {
+                            $dbComparedIn += $ref
+                        }
+                    }
+                }
                 $inputObject = $inputObject | Where-Object { $_.Name -in $dbComparedIn -and $_.Name -ne 'tempdb' }
             }
             if ($NoLogBackup -or $NoLogBackupSince) {
@@ -322,7 +329,14 @@ function Get-DbaDatabase {
                 if ($NoLogBackupSince) {
                     $lastLogBackups = $lastLogBackups | Where-Object End -gt $NoLogBackupSince
                 }
-                $dbComparedIn = Compare-DbaStringCollation -Collation $server.Collation -Reference $inputObject.Name -Difference $lastLogBackups.Database
+                $dbComparedIn = @()
+                foreach ($ref in $inputObject.Name) {
+                    foreach ($dif in $lastLogBackups.Database) {
+                        if ($server.getStringComparer($server.Collation).Compare($ref, $dif) -eq 0) {
+                            $dbComparedIn += $ref
+                        }
+                    }
+                }
                 $inputObject = $inputObject | Where-Object { $_.Name -in $dbComparedIn -and $_.Name -ne 'tempdb' }
             }
 
@@ -344,10 +358,10 @@ function Get-DbaDatabase {
 
                     $backupStatus = $null
                     if ($NoFullBackup -or $NoFullBackupSince) {
-
-                        $dbisCopyOnly = (Compare-DbaStringCollation -Collation $server.Collation -Reference $db.Name -Difference $lastCopyOnlyBackups.Database) -eq $db.Name
-                        if ($dbisCopyOnly) {
-                            $backupStatus = "Only CopyOnly backups"
+                        foreach ($dif in $lastCopyOnlyBackups.Database) {
+                            if ($server.getStringComparer($server.Collation).Compare($db.Name, $dif) -eq 0 ) {
+                                $backupStatus = "Only CopyOnly backups"
+                            }
                         }
                     }
 
