@@ -127,4 +127,3 @@ Function Compare-DbaStringCollation {
     }
     return $results
 }
-Compare-DbaStringCollation -Reference dbá, tools -Difference Dba, Tools -Comparison Notin -Collation SQL_Latin1_General_CP1_CI_AS
