@@ -26,7 +26,7 @@ function Install-DbaDarlingData {
     .PARAMETER Branch
         Specifies an alternate branch of Erik's to install.
         Allowed values:
-            master (default)
+            main (default)
             dev
 
     .PARAMETER Procedure
@@ -102,8 +102,8 @@ function Install-DbaDarlingData {
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [object]$Database = "master",
-        [ValidateSet('master', 'dev')]
-        [string]$Branch = "master",
+        [ValidateSet('main', 'dev')]
+        [string]$Branch = "main",
         [ValidateSet('All', 'Human', 'Pressure', 'Quickie')]
         [string[]]$Procedure = "All",
         [string]$LocalFile,
