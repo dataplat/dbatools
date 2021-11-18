@@ -314,7 +314,8 @@ function Get-DbaDatabase {
                 if ($NoFullBackupSince) {
                     $lastFullBackups = $lastFullBackups | Where-Object End -gt $NoFullBackupSince
                 }
-                $fbdbs = $lastFullBackups.Database
+                $dbComparedIn = Compare-DbaStringCollation -Collation $server.Collation -Reference $inputObject.Name -Difference $lastFullBackups.Database -Comparison In | Where-Object Result | Select-Object -expandProperty Reference
+                $inputObject = $inputObject | Where-Object { $_.Name -in $dbComparedIn -and $_.Name -ne 'tempdb' }
                 $inputObject = $inputObject | Where-Object { (Get-DbaCollationIn -Collation $server.Collation  -String $_.Name  -array $fbdbs -sqlinstance $server) -and $_.Name -ne 'tempdb' }
             }
             if ($NoLogBackup -or $NoLogBackupSince) {
@@ -322,7 +323,7 @@ function Get-DbaDatabase {
                 if ($NoLogBackupSince) {
                     $lastLogBackups = $lastLogBackups | Where-Object End -gt $NoLogBackupSince
                 }
-                $lbdbs = $lastLogBackups.Database
+                $dbComparedIn = Compare-DbaStringCollation -Collation $server.Collation -Reference $inputObject.Name -Difference $lastLogBackups.Database -Comparison In | Where-Object Result | Select-Object -expandProperty Reference
                 $inputObject = $inputObject | Where-Object { (Get-DbaCollationIn -Collation $server.Collation  -String $_.Name  -array $lbdbs -SQLInstance $server) -and $_.Name -ne 'tempdb' }
             }
 
@@ -345,7 +346,7 @@ function Get-DbaDatabase {
                     $backupStatus = $null
                     if ($NoFullBackup -or $NoFullBackupSince) {
 
-                        $dbisCopyOnly = Get-DbaCollationIn -Collation $server.Collation  -String $db.Name  -array $lastCopyOnlyBackups.Database -sqlinstance $server
+                        $dbisCopyOnly = Compare-DbaStringCollation -Collation $server.Collation -Reference $db.Name -Difference $lastCopyOnlyBackups.Database -Comparison In | Select-Object -expandProperty Result
                         if ($dbisCopyOnly) {
                             $backupStatus = "Only CopyOnly backups"
                         }

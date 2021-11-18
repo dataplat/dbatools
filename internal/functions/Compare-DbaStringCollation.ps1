@@ -127,3 +127,4 @@ Function Compare-DbaStringCollation {
     }
     return $results
 }
+
