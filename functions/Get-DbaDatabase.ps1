@@ -323,7 +323,7 @@ function Get-DbaDatabase {
                     $lastLogBackups = $lastLogBackups | Where-Object End -gt $NoLogBackupSince
                 }
                 $dbComparedIn = Compare-DbaStringCollation -Collation $server.Collation -Reference $inputObject.Name -Difference $lastLogBackups.Database
-                $inputObject = $inputObject | Where-Object {  $_.Name  -in $dbComparedIn  -and $_.Name -ne 'tempdb' }
+                $inputObject = $inputObject | Where-Object { $_.Name -in $dbComparedIn -and $_.Name -ne 'tempdb' }
             }
 
             $defaults = 'ComputerName', 'InstanceName', 'SqlInstance', 'Name', 'Status', 'IsAccessible', 'RecoveryModel',
