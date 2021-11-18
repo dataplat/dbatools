@@ -116,11 +116,7 @@ function Remove-DbaLinkedServer {
 
             if ($Pscmdlet.ShouldProcess($lsToDrop.Parent.Name, "Removing the linked server $($lsToDrop.Name) on $($lsToDrop.Parent.Name)")) {
                 try {
-                    if (Test-Bound Force) {
-                        $lsToDrop.Drop($true)
-                    } else {
-                        $lsToDrop.Drop()
-                    }
+                    $lsToDrop.Drop([boolean]$Force)
                 } catch {
                     Stop-Function -Message "Failure on $($lsToDrop.Parent.Name) to remove the linked server $($lsToDrop.Name)" -ErrorRecord $_ -Continue
                 }
