@@ -21,7 +21,7 @@ Function Compare-DbaStringCollation {
         https://docs.microsoft.com/en-us/dotnet/api/microsoft.sqlserver.management.smo.server.getstringcomparer?view=sql-smo-160
         https://docs.microsoft.com/en-us/dotnet/api/system.string.compare?view=net-5.0
     .EXAMPLE
-        PS C:\> Compare-DbaStringCollation -Reference dbá,Tools -Difference Dba,tools -Comparison In -Collation SQL_Latin1_General_CP1_CI_AI
+        PS C:\> Compare-DbaStringCollation -Reference dbá,Tools -Difference Dba,tools -Collation SQL_Latin1_General_CP1_CI_AI
         Returns  dbá,Tools
     #>
     param(
@@ -31,22 +31,16 @@ Function Compare-DbaStringCollation {
         [string[]]$Difference,
         [Parameter(Mandatory)]
         [string]$Collation)
+
     $smo = New-Object -TypeName Microsoft.SqlServer.Management.Smo.Server
 
     $results = @()
-        foreach ($ref in $Reference) {
-                    foreach ($dif in $Difference) {
-                        $res = $null
-                        if ($smo.getStringComparer($Collation).Compare($ref, $dif) -eq 0 ) {
-                            $res = $true
-                        }
-                    }
-                }
-            }
-            if( $res ){
-            $results += $ref
+    foreach ($ref in $Reference) {
+        foreach ($dif in $Difference) {
+            if ($smo.getStringComparer($Collation).Compare($ref, $dif) -eq 0 ) {
+                $results += $ref
             }
         }
+    }
     return $results
 }
-
