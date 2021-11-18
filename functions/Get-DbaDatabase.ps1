@@ -314,17 +314,16 @@ function Get-DbaDatabase {
                 if ($NoFullBackupSince) {
                     $lastFullBackups = $lastFullBackups | Where-Object End -gt $NoFullBackupSince
                 }
-                $dbComparedIn = Compare-DbaStringCollation -Collation $server.Collation -Reference $inputObject.Name -Difference $lastFullBackups.Database -Comparison In | Where-Object Result | Select-Object -expandProperty Reference
+                $dbComparedIn = Compare-DbaStringCollation -Collation $server.Collation -Reference $inputObject.Name -Difference $lastFullBackups.Database
                 $inputObject = $inputObject | Where-Object { $_.Name -in $dbComparedIn -and $_.Name -ne 'tempdb' }
-                $inputObject = $inputObject | Where-Object { (Get-DbaCollationIn -Collation $server.Collation  -String $_.Name  -array $fbdbs -sqlinstance $server) -and $_.Name -ne 'tempdb' }
             }
             if ($NoLogBackup -or $NoLogBackupSince) {
                 $lastLogBackups = Get-DbaDbBackupHistory -SqlInstance $server -LastLog
                 if ($NoLogBackupSince) {
                     $lastLogBackups = $lastLogBackups | Where-Object End -gt $NoLogBackupSince
                 }
-                $dbComparedIn = Compare-DbaStringCollation -Collation $server.Collation -Reference $inputObject.Name -Difference $lastLogBackups.Database -Comparison In | Where-Object Result | Select-Object -expandProperty Reference
-                $inputObject = $inputObject | Where-Object { (Get-DbaCollationIn -Collation $server.Collation  -String $_.Name  -array $lbdbs -SQLInstance $server) -and $_.Name -ne 'tempdb' }
+                $dbComparedIn = Compare-DbaStringCollation -Collation $server.Collation -Reference $inputObject.Name -Difference $lastLogBackups.Database
+                $inputObject = $inputObject | Where-Object {  $_.Name  -in $dbComparedIn  -and $_.Name -ne 'tempdb' }
             }
 
             $defaults = 'ComputerName', 'InstanceName', 'SqlInstance', 'Name', 'Status', 'IsAccessible', 'RecoveryModel',
@@ -346,7 +345,7 @@ function Get-DbaDatabase {
                     $backupStatus = $null
                     if ($NoFullBackup -or $NoFullBackupSince) {
 
-                        $dbisCopyOnly = Compare-DbaStringCollation -Collation $server.Collation -Reference $db.Name -Difference $lastCopyOnlyBackups.Database -Comparison In | Select-Object -expandProperty Result
+                        $dbisCopyOnly = (Compare-DbaStringCollation -Collation $server.Collation -Reference $db.Name -Difference $lastCopyOnlyBackups.Database) -eq $db.Name
                         if ($dbisCopyOnly) {
                             $backupStatus = "Only CopyOnly backups"
                         }
