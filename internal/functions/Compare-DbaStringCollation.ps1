@@ -1,15 +1,13 @@
 Function Compare-DbaStringCollation {
     <#
     .SYNOPSIS
-        Gets whether two strings are equivalent using any given collation.
+        Compares string  using a collation
     .DESCRIPTION
-        The Get-DbaCollationEquals command uses the server management object's getStringComparer() function to compare two strings for a given collation
-    .PARAMETER SqlInstance
-        The target SQL Server instance
-    .PARAMETER String1
-        Specifies first string to compare
-    .PARAMETER String2
-        Specifies second string to compare
+        The Compare-DbaStringCollation command uses the server management object's getStringComparer() function to compare strings for a given collation
+    .PARAMETER Reference
+        Reference String
+    .PARAMETER Difference
+        Specifies String or array of strings to compare
     .PARAMETER Collation
         Specifies Collation to use for string comparison
     .NOTES
@@ -46,7 +44,7 @@ Function Compare-DbaStringCollation {
     #>
     param(
         [Parameter(Mandatory)]
-        [string]$Reference,
+        [string[]]$Reference,
         [Parameter(Mandatory)]
         [string[]]$Difference,
         [Parameter(Mandatory)]
@@ -55,24 +53,35 @@ Function Compare-DbaStringCollation {
         [ValidateSet('In', 'Notin', 'Eq', 'Ne')]
         [string]$Comparison)
     $smo = New-Object -TypeName Microsoft.SqlServer.Management.Smo.Server
-    switch ($Comparison) {
-        'Eq' { return $smo.getStringComparer($Collation).Compare($Reference, $Difference) -eq 0 }
-        'Ne' { return $smo.getStringComparer($Collation).Compare($Reference, $Difference) -ne 0 }
-        'In' {
-            foreach ($dif in $Difference) {
-                if ($smo.getStringComparer($Collation).Compare($Reference, $dif) -eq 0 ) {
-                    return $true
+    $results = @()
+    foreach ($ref in $Reference) {
+        switch ($Comparison) {
+            'Eq' { $equalivent = $smo.getStringComparer($Collation).Compare($ref, $Difference) -eq 0 }
+            'Ne' { $equalivent = $smo.getStringComparer($Collation).Compare($ref, $Difference) -ne 0 }
+            'In' {
+                foreach ($dif in $Difference) {
+                    if ($smo.getStringComparer($Collation).Compare($ref, $dif) -eq 0 ) {
+                        $equalivent = $true
+                        break
+                    }
                 }
+                $equalivent = $false;
             }
-            return $false
+            'Notin' {
+                foreach ($dif in $Difference) {
+                    if ($smo.getStringComparer($Collation).Compare($ref, $dif) -eq 0 ) {
+                        $equalivent = $false
+                        break
+                    }
+                }
+                $equalivent = $true
+            }
         }
-        'Notin' {
-            foreach ($dif in $Difference) {
-                if ($smo.getStringComparer($Collation).Compare($Reference, $dif) -eq 0 ) {
-                    return $false
-                }
-            }
-            return $true
+        $results += [pscustomobject]@{Collation = $Collation
+            Reference                           = $ref
+            Difference                          = $Difference
+            Equivalent                          = $equalivent
         }
     }
+    return $results
 }
