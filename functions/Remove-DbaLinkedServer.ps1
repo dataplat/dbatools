@@ -29,6 +29,9 @@ function Remove-DbaLinkedServer {
     .PARAMETER Confirm
         Prompts you for confirmation before executing any changing operations within the command.
 
+    .PARAMETER Force
+        Drops the linked server login(s) associated with the linked server and then drops the linked server.
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -51,6 +54,11 @@ function Remove-DbaLinkedServer {
         Removes the linked server "linkedServer1" from the sql01 instance.
 
     .EXAMPLE
+        PS C:\>Remove-DbaLinkedServer -SqlInstance sql01 -LinkedServer linkedServer1 -Confirm:$false -Force
+
+        Removes the linked server "linkedServer1" and the associated linked server logins from the sql01 instance.
+
+    .EXAMPLE
         PS C:\>$linkedServer1 = Get-DbaLinkedServer -SqlInstance sql01 -LinkedServer linkedServer1
         PS C:\>$linkedServer1 | Remove-DbaLinkedServer -Confirm:$false
 
@@ -68,6 +76,7 @@ function Remove-DbaLinkedServer {
         [string[]]$LinkedServer,
         [parameter(ValueFromPipeline)]
         [object[]]$InputObject,
+        [switch]$Force,
         [switch]$EnableException
     )
     begin {
@@ -107,7 +116,7 @@ function Remove-DbaLinkedServer {
 
             if ($Pscmdlet.ShouldProcess($lsToDrop.Parent.Name, "Removing the linked server $($lsToDrop.Name) on $($lsToDrop.Parent.Name)")) {
                 try {
-                    $lsToDrop.Drop()
+                    $lsToDrop.Drop([boolean]$Force)
                 } catch {
                     Stop-Function -Message "Failure on $($lsToDrop.Parent.Name) to remove the linked server $($lsToDrop.Name)" -ErrorRecord $_ -Continue
                 }
