@@ -673,8 +673,7 @@ function New-DbaAvailabilityGroup {
                                 $ready = $false
                             }
                         }
-                    }
-                    until ($ready -or $wait -gt 10)
+                    } until ($ready -or $wait -gt 20) # wait up to 10 seconds (500ms * 20)
                     $wait = 0
                     $null = Add-DbaAgDatabase @addDatabaseParams
                 } catch {
