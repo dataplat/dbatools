@@ -21986,12 +21986,12 @@
                        ],
                        [
                            "OutputType",
-                           "Defines what information is returned from the command.\r\nOptions include: Full, ServerProtocols, TcpIpProperties or TcpIpAddresses. Full by default.\nFull returns one object per SqlInstance with information about the server protocols\r\nand nested objects with information about TCP/IP properties and TCP/IP addresses.\nServerProtocols returns one object per SqlInstance with information about the server protocols only.\nTcpIpProperties returns one object per SqlInstance with information about the TCP/IP protocol properties only.\nTcpIpAddresses returns one object per SqlInstance and IP address.\r\nIf the instance listens on all IP addresses (TcpIpProperties.ListenAll), only the information about the IPAll address is returned.\r\nOtherwise only information about the individual IP addresses is returned.\r\nFor more details see: https://docs.microsoft.com/en-us/sql/database-engine/configure-windows/configure-a-server-to-listen-on-a-specific-tcp-port",
+                           "Defines what information is returned from the command.\r\nOptions include: Full, ServerProtocols, TcpIpProperties, TcpIpAddresses or Certificate. Full by default.\nFull returns one object per SqlInstance with information about the server protocols\r\nand nested objects with information about TCP/IP properties and TCP/IP addresses.\nServerProtocols returns one object per SqlInstance with information about the server protocols only.\nTcpIpProperties returns one object per SqlInstance with information about the TCP/IP protocol properties only.\nTcpIpAddresses returns one object per SqlInstance and IP address.\r\nIf the instance listens on all IP addresses (TcpIpProperties.ListenAll), only the information about the IPAll address is returned.\r\nOtherwise only information about the individual IP addresses is returned.\r\nFor more details see: https://docs.microsoft.com/en-us/sql/database-engine/configure-windows/configure-a-server-to-listen-on-a-specific-tcp-port\nCertificate returns one object per SqlInstance with information about the configured network certificate and whether encryption is enforced.",
                            "",
                            false,
                            "false",
                            "Full",
-                           "Full,ServerProtocols,TcpIpProperties,TcpIpAddresses"
+                           "Full,ServerProtocols,TcpIpProperties,TcpIpAddresses,Certificate"
                        ],
                        [
                            "EnableException",
@@ -28256,12 +28256,12 @@
                        ],
                        [
                            "Branch",
-                           "Specifies an alternate branch of Erik\u0027s to install.\r\nAllowed values:\r\n    master (default)\r\n    dev",
+                           "Specifies an alternate branch of Erik\u0027s to install.\r\nAllowed values:\r\n    main (default)\r\n    dev",
                            "",
                            false,
                            "false",
-                           "master",
-                           "master,dev"
+                           "main",
+                           "main,dev"
                        ],
                        [
                            "Procedure",
@@ -46925,7 +46925,7 @@
         "CommandName":  "Remove-DbaLinkedServer",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Remove-DbaLinkedServer",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eRemove-DbaLinkedServer -SqlInstance sql01 -LinkedServer linkedServer1 -Confirm:$false\nRemoves the linked server \"linkedServer1\" from the sql01 instance.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003e$linkedServer1 = Get-DbaLinkedServer -SqlInstance sql01 -LinkedServer linkedServer1\nPS C:\\\u003e$linkedServer1 | Remove-DbaLinkedServer -Confirm:$false\nPasses in a linked server via pipeline and removes it from the sql01 instance.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eConnect-DbaInstance -SqlInstance sql01 | Remove-DbaLinkedServer -LinkedServer linkedServer1 -Confirm:$false\nRemoves the linked server \"linkedServer1\" from the sql01 instance, which is passed in via pipeline.",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eRemove-DbaLinkedServer -SqlInstance sql01 -LinkedServer linkedServer1 -Confirm:$false\nRemoves the linked server \"linkedServer1\" from the sql01 instance.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eRemove-DbaLinkedServer -SqlInstance sql01 -LinkedServer linkedServer1 -Confirm:$false -Force\nRemoves the linked server \"linkedServer1\" and the associated linked server logins from the sql01 instance.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003e$linkedServer1 = Get-DbaLinkedServer -SqlInstance sql01 -LinkedServer linkedServer1\nPS C:\\\u003e$linkedServer1 | Remove-DbaLinkedServer -Confirm:$false\nPasses in a linked server via pipeline and removes it from the sql01 instance.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eConnect-DbaInstance -SqlInstance sql01 | Remove-DbaLinkedServer -LinkedServer linkedServer1 -Confirm:$false\nRemoves the linked server \"linkedServer1\" from the sql01 instance, which is passed in via pipeline.",
         "Params":  [
                        [
                            "SqlInstance",
@@ -46964,6 +46964,15 @@
                            ""
                        ],
                        [
+                           "Force",
+                           "Drops the linked server login(s) associated with the linked server and then drops the linked server.",
+                           "",
+                           false,
+                           "false",
+                           "False",
+                           ""
+                       ],
+                       [
                            "EnableException",
                            "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
                            "",
@@ -46991,7 +47000,7 @@
                            ""
                        ]
                    ],
-        "Syntax":  "Remove-DbaLinkedServer [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-LinkedServer] \u003cString[]\u003e] [[-InputObject] \u003cObject[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Remove-DbaLinkedServer [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-LinkedServer] \u003cString[]\u003e] [[-InputObject] \u003cObject[]\u003e] [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Remove-DbaLogin",
@@ -49998,7 +50007,7 @@
     },
     {
         "Name":  "Save-DbaCommunitySoftware",
-        "Description":  "Download and extract software from Github to update the local cached version of that software.\nThis command is run from inside of Install-Dba* and Update-Dba* commands to update the local cache if needed.",
+        "Description":  "Download and extract software from Github to update the local cached version of that software.\nThis command is run from inside of Install-Dba* and Update-Dba* commands to update the local cache if needed.\n\nIn case you don\u0027t have internet access on the target computer, you can download the zip files from the following URLs\nat another computer, transfer them to the target computer or place them on a network share and then use -LocalFile\nto update the local cache:\n* MaintenanceSolution: https://github.com/olahallengren/sql-server-maintenance-solution\n* FirstResponderKit: https://github.com/BrentOzarULTD/SQL-Server-First-Responder-Kit/releases\n* DarlingData: https://github.com/erikdarlingdata/DarlingData\n* SQLWATCH: https://github.com/marcingminski/sqlwatch/releases\n* WhoIsActive: https://github.com/amachanic/sp_whoisactive/releases",
         "Tags":  "Community",
         "Synopsis":  "Download and extract software from Github to update the local cached version of that software.",
         "Alias":  "",
@@ -50006,7 +50015,7 @@
         "CommandName":  "Save-DbaCommunitySoftware",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Save-DbaCommunitySoftware",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eSave-DbaCommunitySoftware -Software MaintenanceSolution\nUpdates the local cache of Ola Hallengren\u0027s Solution objects.",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eSave-DbaCommunitySoftware -Software MaintenanceSolution\nUpdates the local cache of Ola Hallengren\u0027s Solution objects.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eSave-DbaCommunitySoftware -Software FirstResponderKit -LocalFile \\\\fileserver\\Software\\SQL-Server-First-Responder-Kit-20211106.zip\nUpdates the local cache of the First Responder Kit based on the given file.",
         "Params":  [
                        [
                            "Software",
@@ -61979,8 +61988,17 @@
         "CommandName":  "Update-DbaBuildReference",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Update-DbaBuildReference",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eUpdate-DbaBuildReference\nLooks online if there is a newer version of the build reference",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eUpdate-DbaBuildReference\nLooks online if there is a newer version of the build reference\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eUpdate-DbaBuildReference -LocalFile \\\\fileserver\\Software\\dbatools\\dbatools-buildref-index.json\nUses the given file instead of downloading the file to update the build reference",
         "Params":  [
+                       [
+                           "LocalFile",
+                           "Specifies the path to a local file to install from instead of downloading from Github.",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
                        [
                            "EnableException",
                            "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
@@ -61991,7 +62009,7 @@
                            ""
                        ]
                    ],
-        "Syntax":  "Update-DbaBuildReference [-EnableException] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Update-DbaBuildReference [[-LocalFile] \u003cString\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Update-DbaInstance",
