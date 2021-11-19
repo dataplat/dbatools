@@ -287,7 +287,6 @@ function Get-DbaDatabase {
                 ($_.Owner -in $Owner -or !$Owner) -and
                 ($_.state -ne 6 -or !$OnlyAccessible)
             }
-
             $inputObject = @()
             foreach ($dt in $backed_info) {
                 if ($server.DatabaseEngineType -eq "SqlAzureDatabase") {
@@ -322,7 +321,7 @@ function Get-DbaDatabase {
                         }
                     }
                 }
-                $inputObject = $inputObject | Where-Object { $_.Name -in $dbComparedIn -and $_.Name -ne 'tempdb' }
+                $inputObject = $inputObject | Where-Object { $_.Name -notin $dbComparedIn -and $_.Name -ne 'tempdb' }
             }
             if ($NoLogBackup -or $NoLogBackupSince) {
                 $lastLogBackups = Get-DbaDbBackupHistory -SqlInstance $server -LastLog
@@ -337,7 +336,7 @@ function Get-DbaDatabase {
                         }
                     }
                 }
-                $inputObject = $inputObject | Where-Object { $_.Name -in $dbComparedIn -and $_.Name -ne 'tempdb' }
+                $inputObject = $inputObject | Where-Object { $_.Name -notin $dbComparedIn -and $_.Name -ne 'tempdb' }
             }
 
             $defaults = 'ComputerName', 'InstanceName', 'SqlInstance', 'Name', 'Status', 'IsAccessible', 'RecoveryModel',
