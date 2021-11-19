@@ -652,7 +652,12 @@ function New-DbaAvailabilityGroup {
                     $ready = $false
                 }
             }
-        } until ($ready -or $wait -gt 20) # wait up to 10 seconds (500ms * 20)
+        } until ($ready -or $wait -gt 40) # wait up to 20 seconds (500ms * 40)
+
+        if (-not $ready -or $wait -gt 40) {
+            Write-Message -Level Warning -Message "One or more replicas are still not connected and ready. If you encounter this error often, please let us know and we'll increase the timeout. Moving on and trying the next step."
+        }
+
         $wait = 0
 
         # Add databases
