@@ -663,6 +663,19 @@ function New-DbaAvailabilityGroup {
                 if ($SeedingMode) { $addDatabaseParams['SeedingMode'] = $SeedingMode }
                 if ($SharedPath) { $addDatabaseParams['SharedPath'] = $SharedPath }
                 try {
+                    do {
+                        Start-Sleep -Milliseconds 500
+                        $states = Get-DbaAgReplica -SqlInstance $secondaries | Where-Object Role -notin "Primary", "Unknown"
+                        $wait++
+                        $ready = $true
+                        foreach ($state in $states) {
+                            if ($state.ConnectionState -ne "Connected") {
+                                $ready = $false
+                            }
+                        }
+                    }
+                    until ($ready -or $wait -gt 10)
+                    $wait = 0
                     $null = Add-DbaAgDatabase @addDatabaseParams
                 } catch {
                     Stop-Function -Message "Failed to add databases to Availability Group." -ErrorRecord $_
