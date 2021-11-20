@@ -312,7 +312,8 @@ function Get-DbaDatabase {
                 $lastFullBackups = Get-DbaDbBackupHistory -SqlInstance $server -LastFull
                 $lastCopyOnlyBackups = Get-DbaDbBackupHistory -SqlInstance $server -LastFull -IncludeCopyOnly | Where-Object IsCopyOnly
                 if ($NoFullBackupSince) {
-                    $lastFullBackups = $lastFullBackups | Where-Object End -lt $NoFullBackupSince
+                    $lastFullBackups = $lastFullBackups | Where-Object End -gt $NoFullBackupSince
+                    $lastCopyOnlyBackups = $lastCopyOnlyBackups | Where-Object End -gt $NoFullBackupSince
                 }
                 $dbComparedIn = @()
                 foreach ($ref in $inputObject.Name) {
