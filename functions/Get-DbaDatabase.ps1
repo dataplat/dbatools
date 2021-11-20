@@ -337,7 +337,7 @@ function Get-DbaDatabase {
                         }
                     }
                 }
-                $inputObject = $inputObject | Where-Object { $_.Name -cnotin $dbComparedIn -and $_.Name -ne 'tempdb' }
+                $inputObject = $inputObject | Where-Object { $_.Name -cnotin $dbComparedIn -and $_.Name -ne 'tempdb' -and $_.RecoveryModel -ne 'Simple'}
             }
 
             $defaults = 'ComputerName', 'InstanceName', 'SqlInstance', 'Name', 'Status', 'IsAccessible', 'RecoveryModel',
