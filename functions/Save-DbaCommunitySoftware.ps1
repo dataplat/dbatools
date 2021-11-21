@@ -72,7 +72,7 @@ function Save-DbaCommunitySoftware {
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Medium")]
     param (
-        [ValidateSet('MaintenanceSolution', 'FirstResponderKit', 'DarlingData', 'SQLWATCH', 'WhoIsActive')]
+        [ValidateSet('MaintenanceSolution', 'FirstResponderKit', 'DarlingData', 'SQLWATCH', 'WhoIsActive', 'DbaMultiTool')]
         [string]$Software,
         [string]$Branch,
         [string]$LocalFile,
@@ -174,6 +174,17 @@ function Save-DbaCommunitySoftware {
             }
             if (-not $LocalDirectory) {
                 $LocalDirectory = Join-Path -Path $dbatoolsData -ChildPath "WhoIsActive"
+            }
+        } elseif ($Software -eq 'DbaMultiTool') {
+            if (-not $Branch) {
+                $Branch = 'master'
+            }
+            if (-not $Url) {
+                $Url = "https://github.com/LowlyDBA/dba-multitool/archive/$Branch.zip"
+
+            }
+            if (-not $LocalDirectory) {
+                $LocalDirectory = Join-Path -Path $dbatoolsData -ChildPath "dba-multitool"
             }
         }
 
@@ -281,6 +292,14 @@ function Save-DbaCommunitySoftware {
                 # Rename the directory from like 'SQL-Server-First-Responder-Kit-20211106' to 'SQL-Server-First-Responder-Kit-main' to be able to handle this like the other software.
                 if ($sourceDirectoryName -like 'SQL-Server-First-Responder-Kit-20*') {
                     Rename-Item -Path $sourceDirectory.FullName -NewName 'SQL-Server-First-Responder-Kit-main'
+                    $sourceDirectory = Get-ChildItem -Path $zipFolder -Directory
+                    $sourceDirectoryName = $sourceDirectory.Name
+                }
+            } elseif ($Software -eq 'DbaMultiTool') {
+                # As this software is downloadable as a release, the directory might have a different name.
+                # Rename the directory from like 'dba-multitool-1.7.5' to 'dba-multitool' to be able to handle this like the other software.
+                if ($sourceDirectoryName -like 'dba-multitool-*') {
+                    Rename-Item -Path $sourceDirectory.FullName -NewName 'dba-multitool'
                     $sourceDirectory = Get-ChildItem -Path $zipFolder -Directory
                     $sourceDirectoryName = $sourceDirectory.Name
                 }

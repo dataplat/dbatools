@@ -106,82 +106,16 @@ function Install-DbaMultiTool {
     begin {
         if ($Force) { $ConfirmPreference = 'none' }
 
-        $DbatoolsData = Get-DbatoolsConfigValue -FullName "Path.DbatoolsData"
-
-        if (-not $DbatoolsData) {
-            $DbatoolsData = [System.IO.Path]::GetTempPath()
-        }
-
-        $url = "https://github.com/LowlyDBA/dba-multitool/archive/$Branch.zip"
-        $temp = [System.IO.Path]::GetTempPath()
-        $zipFile = Join-Path -Path $temp -ChildPath "DBA-MultiTool-$Branch.zip"
-        $zipFolder = Join-Path -Path $temp -ChildPath "DBA-MultiTool-$Branch"
-        $localCachedCopy = Join-Path -Path $DbatoolsData -ChildPath "DBA-MultiTool-$Branch"
-        $minimumVersion = 11
-
-        if ($Force -or -not(Test-Path -Path $localCachedCopy -PathType Container) -or $LocalFile) {
-            # Force was passed, or we don't have a local copy, or $LocalFile was passed
-            if (Test-Path $zipFile) {
-                if ($PSCmdlet.ShouldProcess($zipFile, "File found, dropping $zipFile")) {
-                    Remove-Item -Path $zipFile -ErrorAction SilentlyContinue
+        # Do we need a new local cached version of the software?
+        $dbatoolsData = Get-DbatoolsConfigValue -FullName 'Path.DbatoolsData'
+        $localCachedCopy = Join-DbaPath -Path $dbatoolsData -Child "dba-multitool-$Branch"
+        if ($Force -or $LocalFile -or -not (Test-Path -Path $localCachedCopy)) {
+            if ($PSCmdlet.ShouldProcess('DbaMultiTool', 'Update local cached copy of the software')) {
+                try {
+                    Save-DbaCommunitySoftware -Software DbaMultiTool -Branch $Branch -LocalFile $LocalFile -EnableException
+                } catch {
+                    Stop-Function -Message 'Failed to update local cached copy' -ErrorRecord $_
                 }
-            }
-
-            if ($LocalFile) {
-                if (-not (Test-Path $LocalFile)) {
-                    if ($PSCmdlet.ShouldProcess($LocalFile, "File does not exists, returning to prompt")) {
-                        Stop-Function -Message "$LocalFile doesn't exist."
-                        return
-                    }
-                }
-                if (Test-Path $LocalFile -PathType Container) {
-                    if ($PSCmdlet.ShouldProcess($LocalFile, "File is not a zip file, returning to prompt")) {
-                        Stop-Function -Message "$LocalFile should be a zip file."
-                        return
-                    }
-                }
-                if (Test-Windows -NoWarn) {
-                    if ($PSCmdlet.ShouldProcess($LocalFile, "Checking if Windows system, unblocking file")) {
-                        Unblock-File $LocalFile -ErrorAction SilentlyContinue
-                    }
-                }
-                if ($PSCmdlet.ShouldProcess($LocalFile, "Extracting archive to $temp path")) {
-                    Expand-Archive -Path $LocalFile -DestinationPath $temp -Force
-                }
-            } else {
-                Write-Message -Level Verbose -Message "Downloading and unzipping the DBA MultiTool zip file."
-                if ($PSCmdlet.ShouldProcess($url, "Downloading zip file")) {
-                    try {
-                        try {
-                            Invoke-TlsWebRequest $url -OutFile $zipFile -ErrorAction Stop -UseBasicParsing
-                        } catch {
-                            # Try with default proxy and usersettings
-                            (New-Object System.Net.WebClient).Proxy.Credentials = [System.Net.CredentialCache]::DefaultNetworkCredentials
-                            Invoke-TlsWebRequest $url -OutFile $zipFile -ErrorAction Stop -UseBasicParsing
-                        }
-
-                        # Unblock if there's a block
-                        if (Test-Windows -NoWarn) {
-                            Unblock-File $zipFile -ErrorAction SilentlyContinue
-                        }
-
-                        Expand-Archive -Path $zipFile -DestinationPath $temp -Force
-                        Remove-Item -Path $zipFile
-                    } catch {
-                        Stop-Function -Message "Couldn't download the DBA MultiTool. Download and install manually from $url." -ErrorRecord $_
-                        return
-                    }
-                }
-            }
-
-            ## Copy it into local area
-            if ($PSCmdlet.ShouldProcess("LocalCachedCopy", "Copying extracted files to the local module cache")) {
-                if (Test-Path -Path $localCachedCopy -PathType Container) {
-                    Remove-Item -Path (Join-Path $localCachedCopy '*') -Recurse -ErrorAction SilentlyContinue
-                } else {
-                    $null = New-Item -Path $localCachedCopy -ItemType Container
-                }
-                Copy-Item -Path "$zipFolder\sp_*.sql" -Destination $localCachedCopy
             }
         }
     }
@@ -189,6 +123,7 @@ function Install-DbaMultiTool {
     process {
         if (Test-FunctionInterrupt) { return }
 
+        $minimumVersion = 11
         foreach ($instance in $SqlInstance) {
             if ($PSCmdlet.ShouldProcess($instance, "Connecting to $instance")) {
                 try {
@@ -197,13 +132,18 @@ function Install-DbaMultiTool {
                     Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
                 }
             }
-            if ($PSCmdlet.ShouldProcess($Database, "Installing DBA MultiTool procedures in $Database on $instance")) {
-                Write-Message -Level Verbose -Message "Starting installing/updating the DBA MultiTool stored procedures in $Database on $instance."
+            if ($PSCmdlet.ShouldProcess($Database, "Installing DbaMultiTool procedures in $Database on $instance")) {
+                Write-Message -Level Verbose -Message "Starting installing/updating DbaMultiTool stored procedures in $Database on $instance."
                 $allProcedures_Query = "SELECT name FROM sys.procedures WHERE is_ms_shipped = 0;"
                 $allProcedures = ($server.Query($allProcedures_Query, $Database)).Name
 
-                # Install/Update each stored procedure
-                $sqlScripts = Get-ChildItem $localCachedCopy -Filter "sp_*.sql"
+                # We only install specific scripts
+                $sqlScripts = @( )
+                $sqlScripts += Get-ChildItem $localCachedCopy -Filter "sp_helpme.sql" -Recurse
+                $sqlScripts += Get-ChildItem $localCachedCopy -Filter "sp_doc.sql" -Recurse
+                $sqlScripts += Get-ChildItem $localCachedCopy -Filter "sp_sizeoptimiser.sql" -Recurse
+                $sqlScripts += Get-ChildItem $localCachedCopy -Filter "sp_estindex.sql" -Recurse
+
                 foreach ($script in $sqlScripts) {
                     $scriptName = $script.Name
                     $scriptError = $false
@@ -241,7 +181,7 @@ function Install-DbaMultiTool {
                     }
                 }
             }
-            Write-Message -Level Verbose -Message "Finished installing/updating DBA MultiTool stored procedures in $Database on $instance."
+            Write-Message -Level Verbose -Message "Finished installing/updating DbaMultiTool stored procedures in $Database on $instance."
         }
     }
 }
