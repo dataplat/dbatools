@@ -45,11 +45,12 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $resultsDownload[0].Status -eq 'Updated' | Should -Be $true
         }
         It "Shows status of Error" {
-            $folder = Join-Path (Get-DbatoolsConfigValue -FullName Path.DbatoolsData) -Child "DBA-MultiTool-$branch"
-            $sqlScript = (Get-ChildItem $folder | Select-Object -First 1).FullName
-            Add-Content $sqlScript (New-Guid).ToString()
+            $folder = Join-Path (Get-DbatoolsConfigValue -FullName Path.DbatoolsData) -Child "dba-multitool-$branch"
+            $sqlScript = Get-ChildItem $folder -Filter "sp_*.sql" | Select-Object -First 1
+            Add-Content $sqlScript.FullName (New-Guid).ToString()
             $result = Install-DbaMultiTool -SqlInstance $script:instance2 -Database $database -Verbose:$false
-            $result[0].Status -eq "Error" | Should -Be $true
+            $result = $result | Where-Object Name -eq $sqlScript.BaseName
+            $result.Status -eq "Error" | Should -Be $true
         }
     }
     Context "Testing DBA MultiTool installer with LocalFile" {
@@ -89,11 +90,12 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $resultsLocalFile[0].Status -eq 'Updated' | Should -Be $true
         }
         It "Shows status of Error" {
-            $folder = Join-Path (Get-DbatoolsConfigValue -FullName Path.DbatoolsData) -Child "DBA-MultiTool-$branch"
-            $sqlScript = (Get-ChildItem $folder | Select-Object -First 1).FullName
-            Add-Content $sqlScript (New-Guid).ToString()
-            $result = Install-DbaMultiTool -SqlInstance $script:instance3 -Database $database
-            $result[0].Status -eq "Error" | Should -Be $true
+            $folder = Join-Path (Get-DbatoolsConfigValue -FullName Path.DbatoolsData) -Child "dba-multitool-$Branch"
+            $sqlScript = Get-ChildItem $folder -Filter "sp_*.sql" | Select-Object -First 1
+            Add-Content $sqlScript.FullName (New-Guid).ToString()
+            $result = Install-DbaMultiTool -SqlInstance $script:instance2 -Database $database -Verbose:$false
+            $result = $result | Where-Object Name -eq $sqlScript.BaseName
+            $result.Status -eq "Error" | Should -Be $true
         }
     }
 }
