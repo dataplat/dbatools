@@ -315,29 +315,14 @@ function Get-DbaDatabase {
                     $lastFullBackups = $lastFullBackups | Where-Object End -gt $NoFullBackupSince
                     $lastCopyOnlyBackups = $lastCopyOnlyBackups | Where-Object End -gt $NoFullBackupSince
                 }
-                $dbComparedIn = @()
-                foreach ($ref in $inputObject.Name) {
-                    foreach ($dif in $lastFullBackups.Database) {
-                        if ($server.getStringComparer($server.Collation).Compare($ref, $dif) -eq 0 ) {
-                            $dbComparedIn += $ref
-                        }
-                    }
-                }
-                $copyOnlyComparedIn = @()
-                foreach ($ref in $inputObject.Name) {
-                    foreach ($dif in $lastCopyOnlyBackups.Database) {
-                        if ($server.getStringComparer($server.Collation).Compare($ref, $dif) -eq 0 ) {
-                            $copyOnlyComparedIn += $ref
-                        }
-                    }
-                }
-                $inputObject = $inputObject | Where-Object { ($_.Name -cnotin $dbComparedIn -or ($_.Name -cin $dbComparedIN -and $_.Name -cin $CopyOnlyComparedIn))  -and $_.Name -ne 'tempdb'}
+                $hasCopyOnly = $inputObject | Where-CollationSensitiveObject -Property Name -In -Value $lastCopyOnlyBackups.Database -Collation $server.Collation
+                $InputObject = $inputObject | Where-CollationSensitiveObject -Property Name -Notin -Value $lastFullBackups.Database -Collation $server.Collation
             }
             if ($NoLogBackup -or $NoLogBackupSince) {
                 if (!$NoLogBackupSince) {
                     $NoLogBackupSince = "1/1/0001 12:00:01 AM"
                 }
-                $inputObject = $inputObject | Where-Object { $_.LastLogBackupDate -lt $NoLogBackupSince -and $_.Name -ne 'tempdb' -and $_.RecoveryModel -ne 'Simple'}
+                $inputObject = $inputObject | Where-Object { $_.LastLogBackupDate -lt $NoLogBackupSince -and $_.Name -ne 'tempdb' -and $_.RecoveryModel -ne 'Simple' }
             }
 
             $defaults = 'ComputerName', 'InstanceName', 'SqlInstance', 'Name', 'Status', 'IsAccessible', 'RecoveryModel',
@@ -358,11 +343,10 @@ function Get-DbaDatabase {
 
                     $backupStatus = $null
                     if ($NoFullBackup -or $NoFullBackupSince) {
-                        if ($db.Name -cin $copyOnlyComparedIn) {
+                        if ($db -cin $hasCopyOnly) {
                             $backupStatus = "Only CopyOnly backups"
                         }
                     }
-
 
                     $lastusedinfo = $dblastused | Where-Object { $_.dbname -eq $db.name }
                     Add-Member -Force -InputObject $db -MemberType NoteProperty -Name BackupStatus -Value $backupStatus
