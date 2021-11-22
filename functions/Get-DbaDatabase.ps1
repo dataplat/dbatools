@@ -315,8 +315,10 @@ function Get-DbaDatabase {
                     $lastFullBackups = $lastFullBackups | Where-Object End -gt $NoFullBackupSince
                     $lastCopyOnlyBackups = $lastCopyOnlyBackups | Where-Object End -gt $NoFullBackupSince
                 }
+
                 $hasCopyOnly = $inputObject | Where-CollationSensitiveObject -Property Name -In -Value $lastCopyOnlyBackups.Database -Collation $server.Collation
-                $InputObject = $inputObject | Where-CollationSensitiveObject -Property Name -Notin -Value $lastFullBackups.Database -Collation $server.Collation
+                $inputObject = $inputObject | Where-CollationSensitiveObject -Property Name -Notin -Value $lastFullBackups.Database -Collation $server.Collation
+                $inputObject = $inputObject | Where-Object Name -ne 'tempdb'
             }
             if ($NoLogBackup -or $NoLogBackupSince) {
                 if (!$NoLogBackupSince) {
