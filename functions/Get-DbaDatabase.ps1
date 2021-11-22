@@ -320,7 +320,8 @@ function Get-DbaDatabase {
             }
             if ($NoLogBackup -or $NoLogBackupSince) {
                 if (!$NoLogBackupSince) {
-                    $NoLogBackupSince = "1/1/0001 12:00:01 AM"
+                    $NoLogBackupSince = New-Object -TypeName DateTime
+                    $NoLogBackupSince = $NoLogBackupSince.AddMilliSeconds(1)
                 }
                 $inputObject = $inputObject | Where-Object { $_.LastLogBackupDate -lt $NoLogBackupSince -and $_.Name -ne 'tempdb' -and $_.RecoveryModel -ne 'Simple' }
             }
