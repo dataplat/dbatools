@@ -13,7 +13,7 @@ filter Where-CollationSensitiveObject {
     if ($In) {
         foreach ($ref in $_."$Property") {
             foreach ($dif in $Value) {
-                if ($stringComparer.Compare($ref, $dif) -eq 0 ) {
+                if ($stringComparer.Compare($ref, $dif) -eq 0) {
                     return $_
                 }
             }
