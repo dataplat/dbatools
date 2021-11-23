@@ -18,8 +18,8 @@ jobs:
           docker network create localnet
           # create a shared volume
           $dir = New-Item -Type Directory /tmp/sqlshared -Force -ErrorAction SilentlyContinue
-          docker run -p 1433:1433 --network localnet  --volume "$($dir):/sharedpath" --name dockersql1 -d dbatools/sqlinstance
-          docker run -p 14333:1433 --network localnet --volume "$($dir):/sharedpath" --name dockersql2 -d dbatools/sqlinstance2
+          docker run -p 1433:1433 --network localnet  --volume "$($dir):/app/shared" --name dockersql1 -d dbatools/sqlinstance
+          docker run -p 14333:1433 --network localnet --volume "$($dir):/app/shared" --name dockersql2 -d dbatools/sqlinstance2
 
       - name: 👥 Clone appveyor repo
         working-directory: /tmp
@@ -34,7 +34,7 @@ jobs:
         run: |
           $results = Invoke-Pester ./tests/gh-actions.ps1 -Output Detailed -PassThru
           Get-DbatoolsError -All | Where-Object ScriptStackTrace -notmatch darling
-          Get-ChildItem /sharedpath
+          Get-ChildItem /app/shared
           if ($results.Result -ne "Passed") {
               throw "There were $($results.FailedCount) failed tests."
           }

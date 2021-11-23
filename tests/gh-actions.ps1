@@ -15,7 +15,7 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
         $PSDefaultParameterValues["*:MirrorSqlCredential"] = $cred
         $PSDefaultParameterValues["*:WitnessSqlCredential"] = $cred
         $PSDefaultParameterValues["*:Confirm"] = $false
-        $PSDefaultParameterValues["*:SharedPath"] = "/sharedpath"
+        $PSDefaultParameterValues["*:SharedPath"] = "/app/shared"
         $PSDefaultParameterValues["*:WarningAction"] = "SilentlyContinue"
         $global:ProgressPreference = "SilentlyContinue"
 
