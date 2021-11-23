@@ -17,7 +17,7 @@ jobs:
           # create a shared network
           docker network create localnet
           # create a shared volume
-          $dir = New-Item -Type Directory $home\Documents\sqlshared -Force -ErrorAction SilentlyContinue
+          $dir = New-Item -Type Directory /tmp/sqlshared -Force -ErrorAction SilentlyContinue
           docker run -p 1433:1433 --network localnet  --volume "$($dir):/sharedpath" --name dockersql1 -d dbatools/sqlinstance
           docker run -p 14333:1433 --network localnet --volume "$($dir):/sharedpath" --name dockersql2 -d dbatools/sqlinstance2
 
