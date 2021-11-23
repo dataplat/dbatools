@@ -325,6 +325,9 @@ function Invoke-DbaDbMirroring {
 
                 foreach ($account in $serviceAccounts) {
                     if ($account) {
+                        if ($account -eq "LocalSystem" -and $source.HostPlatform -eq "Linux") {
+                            $account = "NT AUTHORITY\SYSTEM"
+                        }
                         if ($Pscmdlet.ShouldProcess("primary, mirror and witness (if specified)", "Creating login $account and granting CONNECT ON ENDPOINT")) {
                             $null = New-DbaLogin -SqlInstance $source -Login $account -WarningAction SilentlyContinue
                             $null = New-DbaLogin -SqlInstance $dest -Login $account -WarningAction SilentlyContinue
