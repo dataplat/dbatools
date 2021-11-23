@@ -34,6 +34,7 @@ jobs:
           CLIENTSECRET: ${{secrets.CLIENTSECRET}}
         run: |
           $results = Invoke-Pester ./tests/gh-actions.ps1 -Output Detailed -PassThru
+          Get-DbatoolsError
           if ($results.Result -ne "Passed") {
               throw "There were $($results.FailedCount) failed tests."
           }

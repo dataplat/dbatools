@@ -188,8 +188,6 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
         Connect-DbaInstance -SqlInstance "Server=dbatoolstest.database.windows.net; Authentication=Active Directory Service Principal; Database=test; User Id=$env:CLIENTID; Password=$env:CLIENTSECRET;" | Select-Object -ExpandProperty ComputerName | Should -Be "dbatoolstest.database.windows.net"
     }
 }
-
-Get-DbatoolsError -All
 <#
 # fails on newer version of SMO
 'Invoke-DbaWhoisActive',
