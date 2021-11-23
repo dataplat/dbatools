@@ -329,8 +329,12 @@ function Invoke-DbaDbMirroring {
                             $account = "NT AUTHORITY\SYSTEM"
                         }
                         if ($Pscmdlet.ShouldProcess("primary, mirror and witness (if specified)", "Creating login $account and granting CONNECT ON ENDPOINT")) {
-                            $null = New-DbaLogin -SqlInstance $source -Login $account -WarningAction SilentlyContinue
-                            $null = New-DbaLogin -SqlInstance $dest -Login $account -WarningAction SilentlyContinue
+                            if (-not (Get-DbaLogin -SqlInstance $source -Login $account)) {
+                                $null = New-DbaLogin -SqlInstance $source -Login $account -WarningAction SilentlyContinue
+                            }
+                            if (-not (Get-DbaLogin -SqlInstance $dest -Login $account)) {
+                                $null = New-DbaLogin -SqlInstance $dest -Login $account -WarningAction SilentlyContinue
+                            }
                             try {
                                 $null = $source.Query("GRANT CONNECT ON ENDPOINT::$primaryendpoint TO [$account]")
                                 $null = $dest.Query("GRANT CONNECT ON ENDPOINT::$currentmirrorendpoint TO [$account]")
