@@ -37,8 +37,13 @@ DECLARE @TraceID INT = --TRACEID--
 DECLARE @SessionName NVARCHAR(128) = '--SESSIONNAME--'
 DECLARE @PrintOutput BIT = 1
 DECLARE @Execute BIT = 0
-
 SET NOCOUNT ON
+
+DECLARE @PATHSEP CHAR(1) = '\'
+
+IF @@VERSION LIKE '%Linux%'
+SET @PATHSEP = '/'
+
 
 CREATE TABLE [#SQLskills_Trace_XE_Column_Map](
        [trace_event_id] [int] NOT NULL,
@@ -673,7 +678,7 @@ CASE
        ELSE 
 'ADD TARGET package0.event_file' + CHAR(10) +
 '(' + CHAR(10) +
-'      SET filename = '''+ SUBSTRING(path, 0, LEN(path)-CHARINDEX('\', REVERSE(path))+1) + '\'+@SessionName+'.xel'',' + CHAR(10) +
+'      SET filename = '''+ SUBSTRING(path, 0, LEN(path)-CHARINDEX(@PATHSEP, REVERSE(path))+1) + @PATHSEP +@SessionName+'.xel'',' + CHAR(10) +
 '             max_file_size = ' + CAST(max_size AS NVARCHAR) + ',' + CHAR(10) +
 '             max_rollover_files = ' + CAST(max_files AS NVARCHAR) + CHAR(10) +
 ')' + CHAR(10) 
