@@ -17,9 +17,10 @@ jobs:
           # create a shared network
           docker network create localnet
           # create a shared volume
-          $dir = New-Item -Type Directory /tmp/sqlshared -Force -ErrorAction SilentlyContinue
-          docker run -p 1433:1433 --network localnet --volume "$($dir):/app/shared" --name dockersql1 -d dbatools/sqlinstance
-          docker run -p 14333:1433 --network localnet --volume "$($dir):/app/shared" --name dockersql2 -d dbatools/sqlinstance2
+          docker volume create shared
+          # setup two containers and expose ports
+          docker run -p 1433:1433 -p 5022:5022 --network localnet --hostname dockersql1 --name dockersql1 --mount 'source=shared,target=/shared' -d dbatools/sqlinstance
+          docker run -p 14333:1433 -p 5023:5023  --network localnet --hostname dockersql2 --name dockersql2 --mount 'source=shared,target=/shared' -d dbatools/sqlinstance2
 
       - name: 👥 Clone appveyor repo
         working-directory: /tmp
@@ -33,16 +34,6 @@ jobs:
           CLIENTSECRET: ${{secrets.CLIENTSECRET}}
         run: |
           $results = Invoke-Pester ./tests/gh-actions.ps1 -Output Detailed -PassThru
-          Get-DbatoolsError -All | Where-Object ScriptStackTrace -match mirror
-          Get-ChildItem /tmp/sqlshared
-          Write-Output "NEXT"
-          docker exec dockersql2 ls -l /app/shared
-          Write-Output "NEXT"
-          docker exec dockersql2 ls -l /app/shared
-
-          $password = ConvertTo-SecureString "dbatools.IO" -AsPlainText -Force
-          $cred = New-Object -TypeName System.Management.Automation.PSCredential -ArgumentList "sqladmin", $password
-          Get-DbaDatabase -SqlInstance localhost, localhost:14333 -SqlCredential $cred | Select SqlInstance, Name
           if ($results.Result -ne "Passed") {
               throw "There were $($results.FailedCount) failed tests."
           }

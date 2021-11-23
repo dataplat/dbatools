@@ -15,7 +15,7 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
         $PSDefaultParameterValues["*:MirrorSqlCredential"] = $cred
         $PSDefaultParameterValues["*:WitnessSqlCredential"] = $cred
         $PSDefaultParameterValues["*:Confirm"] = $false
-        $PSDefaultParameterValues["*:SharedPath"] = "/app/shared"
+        $PSDefaultParameterValues["*:SharedPath"] = "/shared"
         $PSDefaultParameterValues["*:WarningAction"] = "SilentlyContinue"
         $global:ProgressPreference = "SilentlyContinue"
 
@@ -26,14 +26,14 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
     It "migrates" {
         $params = @{
             BackupRestore = $true
-            Exclude       = "LinkedServers", "Credentials", "DataCollector", "EndPoints", "PolicyManagement", "ResourceGovernor", "BackupDevices", "Logins"
+            Exclude       = "LinkedServers", "Credentials", "DataCollector", "EndPoints", "PolicyManagement", "ResourceGovernor", "BackupDevices"
         }
 
         $results = Start-DbaMigration @params
         $results.Name | Should -Contain "Northwind"
     }
 
-    It "sets up a mirror" {
+    It -Skip "sets up a mirror" {
         $newdb = New-DbaDatabase
         $params = @{
             Database = $newdb.Name
@@ -188,6 +188,8 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
         Connect-DbaInstance -SqlInstance "Server=dbatoolstest.database.windows.net; Authentication=Active Directory Service Principal; Database=test; User Id=$env:CLIENTID; Password=$env:CLIENTSECRET;" | Select-Object -ExpandProperty ComputerName | Should -Be "dbatoolstest.database.windows.net"
     }
 }
+
+
 <#
 # fails on newer version of SMO
 'Invoke-DbaWhoisActive',
