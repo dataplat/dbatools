@@ -21,13 +21,12 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
 
         Import-Module ./dbatools.psm1 -Force
         $null = Get-XPlatVariable | Where-Object { $PSItem -notmatch "Copy-", "Migration" } | Sort-Object
-        Start-Sleep 10
     }
 
     It "migrates" {
         $params = @{
             BackupRestore = $true
-            Exclude       = "LinkedServers", "Credentials", "DataCollector", "EndPoints", "PolicyManagement", "ResourceGovernor", "BackupDevices"
+            Exclude       = "LinkedServers", "Credentials", "DataCollector", "EndPoints", "PolicyManagement", "ResourceGovernor", "BackupDevices", "Logins"
         }
 
         $results = Start-DbaMigration @params
