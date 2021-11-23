@@ -151,7 +151,7 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
 
     It "tests the instance name" {
         $results = Test-DbaInstanceName
-        $results.RenameRequired | Should -Be $true
+        $results.RenameRequired | Should -Be $false
     }
 
     It "creates a new database user" {
@@ -189,7 +189,7 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
     }
 }
 
-
+Get-DbatoolsError -All
 <#
 # fails on newer version of SMO
 'Invoke-DbaWhoisActive',
