@@ -183,7 +183,6 @@ function Save-DbaCommunitySoftware {
             }
             if (-not $Url) {
                 $Url = "https://github.com/LowlyDBA/dba-multitool/archive/$Branch.zip"
-
             }
             if (-not $LocalDirectory) {
                 $LocalDirectory = Join-Path -Path $dbatoolsData -ChildPath "dba-multitool-$Branch"
@@ -294,6 +293,14 @@ function Save-DbaCommunitySoftware {
                 # Rename the directory from like 'SQL-Server-First-Responder-Kit-20211106' to 'SQL-Server-First-Responder-Kit-main' to be able to handle this like the other software.
                 if ($sourceDirectoryName -like 'SQL-Server-First-Responder-Kit-20*') {
                     Rename-Item -Path $sourceDirectory.FullName -NewName 'SQL-Server-First-Responder-Kit-main'
+                    $sourceDirectory = Get-ChildItem -Path $zipFolder -Directory
+                    $sourceDirectoryName = $sourceDirectory.Name
+                }
+            } elseif ($Software -eq 'DbaMultiTool') {
+                # As this software is downloadable as a release, the directory might have a different name.
+                # Rename the directory from like 'dba-multitool-1.7.5' to 'dba-multitool-master' to be able to handle this like the other software.
+                if ($sourceDirectoryName -like 'dba-multitool-[0-9]*') {
+                    Rename-Item -Path $sourceDirectory.FullName -NewName 'dba-multitool-master'
                     $sourceDirectory = Get-ChildItem -Path $zipFolder -Directory
                     $sourceDirectoryName = $sourceDirectory.Name
                 }
