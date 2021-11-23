@@ -21,8 +21,8 @@ jobs:
           # setup two containers and expose ports
           docker run -p 1433:1433 -p 5022:5022 --network localnet --hostname dockersql1 --name dockersql1 --mount 'source=shared,target=/tmp/shared' -d dbatools/sqlinstance
           docker run -p 14333:1433 -p 5023:5023  --network localnet --hostname dockersql2 --name dockersql2 --mount 'source=shared,target=/tmp/shared' -d dbatools/sqlinstance2
-          docker exec -it dockersql1 mkdir /tmp/shared
-          docker exec -it dockersql2 mkdir /tmp/shared
+          docker exec dockersql1 mkdir /tmp/shared
+          docker exec dockersql2 mkdir /tmp/shared
 
       - name: 👥 Clone appveyor repo
         working-directory: /tmp
