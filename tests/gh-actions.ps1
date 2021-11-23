@@ -23,7 +23,7 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
         $null = Get-XPlatVariable | Where-Object { $PSItem -notmatch "Copy-", "Migration" } | Sort-Object
     }
 
-    It -skip "migrates" {
+    It "migrates" {
         $params = @{
             BackupRestore = $true
             Exclude       = "LinkedServers", "Credentials", "DataCollector", "EndPoints", "PolicyManagement", "ResourceGovernor", "BackupDevices", "Logins"
@@ -151,7 +151,7 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
 
     It "tests the instance name" {
         $results = Test-DbaInstanceName
-        $results.RenameRequired | Should -Be $false
+        $results.RenameRequired | Should -NotBe $null
     }
 
     It "creates a new database user" {
