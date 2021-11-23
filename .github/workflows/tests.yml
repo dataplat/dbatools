@@ -17,10 +17,9 @@ jobs:
           # create a shared network
           docker network create localnet
           # create a shared volume
-          docker volume create shared
-          # setup two containers and expose ports
-          docker run -p 1433:1433 -p 5022:5022 --network localnet --hostname dockersql1 --name dockersql1 --mount 'source=shared,target=/tmp/shared' -d dbatools/sqlinstance
-          docker run -p 14333:1433 -p 5023:5023  --network localnet --hostname dockersql2 --name dockersql2 --mount 'source=shared,target=/tmp/shared' -d dbatools/sqlinstance2
+          $dir = New-Item -Type Directory $home\Documents\sqlshared -Force -ErrorAction SilentlyContinue
+          docker run -p 1433:1433 --network localnet  --volume "$($dir):/sharedpath" --name dockersql1 -d dbatools/sqlinstance
+          docker run -p 14333:1433 --network localnet --volume "$($dir):/sharedpath" --name dockersql2 -d dbatools/sqlinstance2
 
       - name: 👥 Clone appveyor repo
         working-directory: /tmp
