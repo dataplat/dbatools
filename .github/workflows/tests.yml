@@ -39,6 +39,10 @@ jobs:
           docker exec dockersql2 ls -l /app/shared
           Write-Output "NEXT"
           docker exec dockersql2 ls -l /app/shared
+
+          $password = ConvertTo-SecureString "dbatools.IO" -AsPlainText -Force
+          $cred = New-Object -TypeName System.Management.Automation.PSCredential -ArgumentList "sqladmin", $password
+          Get-DbaDatabase -SqlInstance localhost, localhost:14333 -SqlCredential $cred | Select SqlInstance, Name
           if ($results.Result -ne "Passed") {
               throw "There were $($results.FailedCount) failed tests."
           }
