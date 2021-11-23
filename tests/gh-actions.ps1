@@ -21,6 +21,7 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
 
         Import-Module ./dbatools.psm1 -Force
         $null = Get-XPlatVariable | Where-Object { $PSItem -notmatch "Copy-", "Migration" } | Sort-Object
+        Start-Sleep 10
     }
 
     It "migrates" {
