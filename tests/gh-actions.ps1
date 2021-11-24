@@ -33,7 +33,7 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
         $results.Name | Should -Contain "Northwind"
     }
 
-    It -Skip "sets up a mirror" {
+    It "sets up a mirror" {
         $newdb = New-DbaDatabase
         $params = @{
             Database = $newdb.Name
