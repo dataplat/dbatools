@@ -360,6 +360,7 @@ $script:xplat = @(
     'Copy-DbaStartupProcedure',
     'Get-DbaDbDetachedFileInfo',
     'Copy-DbaAgentJobCategory',
+    'Get-DbaLinkedServerLogin',
     'Test-DbaPath',
     'Export-DbaLogin',
     'Watch-DbaDbLogin',
