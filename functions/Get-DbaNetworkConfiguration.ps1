@@ -164,10 +164,10 @@ function Get-DbaNetworkConfiguration {
                         ExtendedProtection = $extendedProtection
                     }
                 } catch {
-                    $outputCertificate = "Failed to get information from registry: $_"
+                    $outputCertificate = $outputAdvanced = "Failed to get information from registry: $_"
                 }
             } else {
-                $outputCertificate = "Failed to get information from registry: Path not found"
+                $outputCertificate = $outputAdvanced = "Failed to get information from registry: Path not found"
             }
 
             [PSCustomObject]@{
