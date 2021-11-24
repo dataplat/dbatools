@@ -123,14 +123,11 @@ function Install-DbaMultiTool {
     process {
         if (Test-FunctionInterrupt) { return }
 
-        $minimumVersion = 11
         foreach ($instance in $SqlInstance) {
-            if ($PSCmdlet.ShouldProcess($instance, "Connecting to $instance")) {
-                try {
-                    $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential
-                } catch {
-                    Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
-                }
+            try {
+                $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 11
+            } catch {
+                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
             if ($PSCmdlet.ShouldProcess($Database, "Installing DbaMultiTool procedures in $Database on $instance")) {
                 Write-Message -Level Verbose -Message "Starting installing/updating DbaMultiTool stored procedures in $Database on $instance."
@@ -155,12 +152,6 @@ function Install-DbaMultiTool {
                         Database     = $Database
                         Name         = $script.BaseName
                         Status       = $null
-                    }
-                    if ($server.VersionMajor -lt $minimumVersion) {
-                        Write-Message -Level Warning -Message "$instance found to be below SQL Server 2012, skipping $scriptName."
-                        $baseRes.Status = 'Skipped'
-                        $baseRes
-                        continue
                     }
                     if ($Pscmdlet.ShouldProcess($instance, "installing/updating $scriptName in $Database")) {
                         try {
