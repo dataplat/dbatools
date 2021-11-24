@@ -6,7 +6,7 @@ function Get-DbaNetworkConfiguration {
     .DESCRIPTION
         Returns a PowerShell object with the network configuration of a SQL Server instance as shown in SQL Server Configuration Manager.
 
-        Remote SQL WMI is used by default, with PS Remoting used as a fallback.
+        As we get information from SQL WMI and also from the registry, we use PS Remoting to run the core code on the target machine.
 
         For a detailed explenation of the different properties see the documentation at:
         https://docs.microsoft.com/en-us/sql/tools/configuration-manager/sql-server-network-configuration
@@ -73,20 +73,17 @@ function Get-DbaNetworkConfiguration {
     )
 
     begin {
-        $wmiScriptBlock = {
-            # This scriptblock will be processed by Invoke-ManagedComputerCommand.
-            # It is extended there above this line by the following lines:
-            #   $ipaddr = $args[$args.GetUpperBound(0)]
-            #   [void][System.Reflection.Assembly]::LoadWithPartialName('Microsoft.SqlServer.SqlWmiManagement')
-            #   $wmi = New-Object Microsoft.SqlServer.Management.Smo.Wmi.ManagedComputer $ipaddr
-            #   $null = $wmi.Initialize()
-            # So we can use $wmi here and assume that there is a successful connection.
-
-            # We take an object as the first parameter which has to include the properties ComputerName, InstanceName and SqlFullName, so normally a DbaInstanceParameter.
+        $scriptBlock = {
+            # This scriptblock will be processed by Invoke-Command2 on the target machine.
+            # We take an object as the first parameter which has to include the properties ComputerName, InstanceName and SqlFullName,
+            # so normally a DbaInstanceParameter.
             $instance = $args[0]
-
             $verbose = @( )
 
+            # As we go remote, ensure the assembly is loaded
+            [void][System.Reflection.Assembly]::LoadWithPartialName('Microsoft.SqlServer.SqlWmiManagement')
+            $wmi = New-Object Microsoft.SqlServer.Management.Smo.Wmi.ManagedComputer
+            $null = $wmi.Initialize()
             $wmiServerProtocols = ($wmi.ServerInstances | Where-Object { $_.Name -eq $instance.InstanceName } ).ServerProtocols
 
             $wmiSpSm = $wmiServerProtocols | Where-Object { $_.Name -eq 'Sm' }
@@ -135,22 +132,30 @@ function Get-DbaNetworkConfiguration {
                     $verbose += "Can't find regRoot"
                 }
             }
-            $regPath = "Registry::HKEY_LOCAL_MACHINE\$regRoot\MSSQLServer\SuperSocketNetLib"
-            $forceEncryption = switch ((Get-ItemProperty -Path $regPath -Name ForceEncryption -ErrorAction SilentlyContinue).ForceEncryption) { 0 { $false } 1 { $true } }
-            $thumbprint = (Get-ItemProperty -Path $regPath -Name Certificate -ErrorAction SilentlyContinue).Certificate
-            $cert = Get-ChildItem Cert:\LocalMachine -Recurse -ErrorAction SilentlyContinue | Where-Object Thumbprint -eq $thumbprint | Select-Object -First 1
-            $outputCertificate = [PSCustomObject]@{
-                VSName          = $vsname
-                ServiceAccount  = $serviceAccount
-                ForceEncryption = $forceEncryption
-                FriendlyName    = $cert.FriendlyName
-                DnsNameList     = $cert.DnsNameList
-                Thumbprint      = $cert.Thumbprint
-                Generated       = $cert.NotBefore
-                Expires         = $cert.NotAfter
-                IssuedTo        = $cert.Subject
-                IssuedBy        = $cert.Issuer
-                Certificate     = $cert
+            if ($regRoot) {
+                $regPath = "Registry::HKEY_LOCAL_MACHINE\$regRoot\MSSQLServer\SuperSocketNetLib"
+                try {
+                    $forceEncryption = switch ((Get-ItemProperty -Path $regPath -Name ForceEncryption).ForceEncryption) { 0 { $false } 1 { $true } }
+                    $thumbprint = (Get-ItemProperty -Path $regPath -Name Certificate).Certificate
+                    $cert = Get-ChildItem Cert:\LocalMachine -Recurse -ErrorAction SilentlyContinue | Where-Object Thumbprint -eq $thumbprint | Select-Object -First 1
+                    $outputCertificate = [PSCustomObject]@{
+                        VSName          = $vsname
+                        ServiceAccount  = $serviceAccount
+                        ForceEncryption = $forceEncryption
+                        FriendlyName    = $cert.FriendlyName
+                        DnsNameList     = $cert.DnsNameList
+                        Thumbprint      = $cert.Thumbprint
+                        Generated       = $cert.NotBefore
+                        Expires         = $cert.NotAfter
+                        IssuedTo        = $cert.Subject
+                        IssuedBy        = $cert.Issuer
+                        Certificate     = $cert
+                    }
+                } catch {
+                    $outputCertificate = "Failed to get information from registry: $_"
+                }
+            } else {
+                $outputCertificate = "Failed to get information from registry: Path not found"
             }
 
             [PSCustomObject]@{
@@ -171,7 +176,9 @@ function Get-DbaNetworkConfiguration {
     process {
         foreach ($instance in $SqlInstance) {
             try {
-                $netConf = Invoke-ManagedComputerCommand -ComputerName $instance.ComputerName -Credential $Credential -ScriptBlock $wmiScriptBlock -ArgumentList $instance
+                $computerName = Resolve-DbaComputerName -ComputerName $instance.ComputerName -Credential $Credential
+                $null = Test-ElevationRequirement -ComputerName $computerName -EnableException $true
+                $netConf = Invoke-Command2 -ScriptBlock $scriptBlock -ArgumentList $instance -ComputerName $computerName -Credential $Credential -ErrorAction Stop
                 foreach ($verbose in $netConf.Verbose) {
                     Write-Message -Level Verbose -Message $verbose
                 }
@@ -239,6 +246,9 @@ function Get-DbaNetworkConfiguration {
                         }
                     }
                 } elseif ($OutputType -eq 'Certificate') {
+                    if ($netConf.Certificate -like 'Failed*') {
+                        Stop-Function -Message "Failed to collect certificate information from $($instance.ComputerName) for instance $($instance.InstanceName): $($netConf.Certificate)" -Target $instance -Continue
+                    }
                     $output = [PSCustomObject]@{
                         ComputerName    = $netConf.ComputerName
                         InstanceName    = $netConf.InstanceName
