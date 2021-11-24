@@ -716,7 +716,8 @@
         'Remove-DbaDbMailAccount',
         'Set-DbaRgWorkloadGroup',
         'New-DbaRgWorkloadGroup',
-        'Remove-DbaRgWorkloadGroup'
+        'Remove-DbaRgWorkloadGroup',
+        'Get-DbaLinkedServerLogin'
     )
 
     # Cmdlets to export from this module
