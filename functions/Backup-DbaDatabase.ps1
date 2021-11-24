@@ -556,7 +556,7 @@ function Backup-DbaDatabase {
                 }
             }
 
-            if ($AzureBaseUrl -or $AzureCredential) {
+            if ($AzureBaseUrl -or $AzureCredential -or $server.HostPlatform -eq "Linux") {
                 $slash = "/"
             } else {
                 $slash = "\"
@@ -605,7 +605,7 @@ function Backup-DbaDatabase {
             }
 
             # Because of #7860, don't use [IO.Path]::GetFullPath on MacOS
-            if ($null -eq $AzureBaseUrl -and $Path -and -not $IsMacOS) {
+            if ($null -eq $AzureBaseUrl -and $Path -and -not $IsMacOS -and $server.HostPlatform -ne "Linux") {
                 $FinalBackupPath = $FinalBackupPath | ForEach-Object { [IO.Path]::GetFullPath($_) }
             }
 
