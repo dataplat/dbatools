@@ -23,6 +23,7 @@ function Get-DbaNetworkConfiguration {
 
         Full returns one object per SqlInstance with information about the server protocols
         and nested objects with information about TCP/IP properties and TCP/IP addresses.
+        It also outputs advanded properties including information about the used certificate.
 
         ServerProtocols returns one object per SqlInstance with information about the server protocols only.
 
@@ -135,9 +136,13 @@ function Get-DbaNetworkConfiguration {
             if ($regRoot) {
                 $regPath = "Registry::HKEY_LOCAL_MACHINE\$regRoot\MSSQLServer\SuperSocketNetLib"
                 try {
-                    $forceEncryption = switch ((Get-ItemProperty -Path $regPath -Name ForceEncryption).ForceEncryption) { 0 { $false } 1 { $true } }
+                    $acceptedNtlmSpns = (Get-ItemProperty -Path $regPath -Name AcceptedSPNs).AcceptedSPNs
                     $thumbprint = (Get-ItemProperty -Path $regPath -Name Certificate).Certificate
                     $cert = Get-ChildItem Cert:\LocalMachine -Recurse -ErrorAction SilentlyContinue | Where-Object Thumbprint -eq $thumbprint | Select-Object -First 1
+                    $extendedProtection = switch ((Get-ItemProperty -Path $regPath -Name ExtendedProtection).ExtendedProtection) { 0 { $false } 1 { $true } }
+                    $forceEncryption = switch ((Get-ItemProperty -Path $regPath -Name ForceEncryption).ForceEncryption) { 0 { $false } 1 { $true } }
+                    $hideInstance = switch ((Get-ItemProperty -Path $regPath -Name HideInstance).HideInstance) { 0 { $false } 1 { $true } }
+
                     $outputCertificate = [PSCustomObject]@{
                         VSName          = $vsname
                         ServiceAccount  = $serviceAccount
@@ -150,6 +155,13 @@ function Get-DbaNetworkConfiguration {
                         IssuedTo        = $cert.Subject
                         IssuedBy        = $cert.Issuer
                         Certificate     = $cert
+                    }
+
+                    $outputAdvanced = [PSCustomObject]@{
+                        ForceEncryption    = $forceEncryption
+                        HideInstance       = $hideInstance
+                        AcceptedNtlmSpns   = $acceptedNtlmSpns
+                        ExtendedProtection = $extendedProtection
                     }
                 } catch {
                     $outputCertificate = "Failed to get information from registry: $_"
@@ -168,6 +180,7 @@ function Get-DbaNetworkConfiguration {
                 TcpIpProperties     = $outputTcpIpProperties
                 TcpIpAddresses      = $outputTcpIpAddressesIPn + $outputTcpIpAddressesIPAll
                 Certificate         = $outputCertificate
+                Advanced            = $outputAdvanced
                 Verbose             = $verbose
             }
         }
@@ -199,6 +212,7 @@ function Get-DbaNetworkConfiguration {
                         TcpIpProperties     = $netConf.TcpIpProperties
                         TcpIpAddresses      = $netConf.TcpIpAddresses
                         Certificate         = $netConf.Certificate
+                        Advanced            = $netConf.Advanced
                     }
                 } elseif ($OutputType -eq 'ServerProtocols') {
                     [PSCustomObject]@{
