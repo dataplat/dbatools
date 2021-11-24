@@ -21270,6 +21270,105 @@
         "Syntax":  "Get-DbaLinkedServer [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-LinkedServer] \u003cObject[]\u003e] [[-ExcludeLinkedServer] \u003cObject[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
+        "Name":  "Get-DbaLinkedServerLogin",
+        "Description":  "Obtains linked server login(s).",
+        "Tags":  [
+                     "Security",
+                     "Server"
+                 ],
+        "Synopsis":  "Obtains linked server login(s).",
+        "Alias":  "",
+        "Author":  "Adam Lancaster https://github.com/lancasteradam",
+        "CommandName":  "Get-DbaLinkedServerLogin",
+        "Availability":  "Windows, Linux, macOS",
+        "Links":  "https://dbatools.io/Get-DbaLinkedServerLogin",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaLinkedServerLogin -SqlInstance sql01 -LinkedServer linkedServer1 -LocalLogin login1\nGets the linked server login \"login1\" from the linked server \"linkedServer1\" on sql01.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaLinkedServerLogin -SqlInstance sql01 -LinkedServer linkedServer1 -ExcludeLocalLogin login2\nGets the linked server login(s) from the linked server \"linkedServer1\" on sql01 and excludes the login2 linked server login.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003e(Get-DbaLinkedServer -SqlInstance sql01 -LinkedServer linkedServer1) | Get-DbaLinkedServerLogin -LocalLogin login1\nGets the linked server login \"login1\" from the linked server \"linkedServer1\" on sql01 using a pipeline with the linked server passed in.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003e(Connect-DbaInstance -SqlInstance sql01) | Get-DbaLinkedServerLogin -LinkedServer linkedServer1 -LocalLogin login1\nGets the linked server login \"login1\" from the linked server \"linkedServer1\" on sql01 using a pipeline with the instance passed in.",
+        "Params":  [
+                       [
+                           "SqlInstance",
+                           "The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function\r\nto be executed against multiple SQL Server instances.",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "SqlCredential",
+                           "Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).\nWindows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.\nFor MFA support, please use Connect-DbaInstance.",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "LinkedServer",
+                           "The name(s) of the linked server(s).",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "LocalLogin",
+                           "The name(s) of the linked server login(s) to include.",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "ExcludeLocalLogin",
+                           "The name(s) of the linked server login(s) to exclude",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "InputObject",
+                           "Allows piping from Connect-DbaInstance and Get-DbaLinkedServer",
+                           "",
+                           false,
+                           "true (ByValue)",
+                           "",
+                           ""
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "",
+                           false,
+                           "false",
+                           "False",
+                           ""
+                       ],
+                       [
+                           "WhatIf",
+                           "Shows what would happen if the command were to run. No actions are actually performed.",
+                           "wi",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "Confirm",
+                           "Prompts you for confirmation before executing any changing operations within the command.",
+                           "cf",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ]
+                   ],
+        "Syntax":  "Get-DbaLinkedServerLogin [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-LinkedServer] \u003cString[]\u003e] [[-LocalLogin] \u003cString[]\u003e] [[-ExcludeLocalLogin] \u003cString[]\u003e] [[-InputObject] \u003cObject[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+    },
+    {
         "Name":  "Get-DbaLocaleSetting",
         "Description":  "Gets the Locale settings on one or more computers.\n\nRequires Local Admin rights on destination computer(s).",
         "Tags":  [
@@ -21956,7 +22055,7 @@
     },
     {
         "Name":  "Get-DbaNetworkConfiguration",
-        "Description":  "Returns a PowerShell object with the network configuration of a SQL Server instance as shown in SQL Server Configuration Manager.\n\nRemote SQL WMI is used by default, with PS Remoting used as a fallback.\n\nFor a detailed explenation of the different properties see the documentation at:\nhttps://docs.microsoft.com/en-us/sql/tools/configuration-manager/sql-server-network-configuration",
+        "Description":  "Returns a PowerShell object with the network configuration of a SQL Server instance as shown in SQL Server Configuration Manager.\n\nAs we get information from SQL WMI and also from the registry, we use PS Remoting to run the core code on the target machine.\n\nFor a detailed explenation of the different properties see the documentation at:\nhttps://docs.microsoft.com/en-us/sql/tools/configuration-manager/sql-server-network-configuration",
         "Tags":  "SQLWMI",
         "Synopsis":  "Returns the network configuration of a SQL Server instance as shown in SQL Server Configuration Manager.",
         "Alias":  "",
