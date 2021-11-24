@@ -15,7 +15,7 @@ function Save-DbaCommunitySoftware {
         * DarlingData: https://github.com/erikdarlingdata/DarlingData
         * SQLWATCH: https://github.com/marcingminski/sqlwatch/releases
         * WhoIsActive: https://github.com/amachanic/sp_whoisactive/releases
-        * DbaMultitool: https://github.com/LowlyDBA/dba-multitool/releases
+        * DbaMultiTool: https://github.com/LowlyDBA/dba-multitool/releases
 
     .PARAMETER Software
         Name of the software to download.
@@ -25,7 +25,7 @@ function Save-DbaCommunitySoftware {
         * DarlingData: Erik Darling's stored procedures (https://www.erikdarlingdata.com)
         * SQLWATCH: SQL Server Monitoring Solution created by Marcin Gminski (https://sqlwatch.io/)
         * WhoIsActive: Adam Machanic's comprehensive activity monitoring stored procedure sp_WhoIsActive (https://github.com/amachanic/sp_whoisactive)
-        * DbaMultitool: John McCall's T-SQL scripts for the long haul: optimizing storage, on-the-fly documentation, and general administrative needs (https://dba-multitool.org)
+        * DbaMultiTool: John McCall's T-SQL scripts for the long haul: optimizing storage, on-the-fly documentation, and general administrative needs (https://dba-multitool.org)
 
     .PARAMETER Branch
         Specifies the branch. Defaults to master or main. Can only be used if Software is used.
