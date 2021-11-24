@@ -33,7 +33,7 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
         $results.Name | Should -Contain "Northwind"
     }
 
-    It "sets up a mirror" {
+    It -Skip "sets up a mirror" {
         $newdb = New-DbaDatabase
         $params = @{
             Database = $newdb.Name
@@ -151,7 +151,7 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
 
     It "tests the instance name" {
         $results = Test-DbaInstanceName
-        $results.RenameRequired | Should -Be $true
+        $results.ServerName | Should -Be "dockersql1"
     }
 
     It "creates a new database user" {
