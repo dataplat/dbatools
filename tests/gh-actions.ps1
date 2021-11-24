@@ -23,7 +23,7 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
         $null = Get-XPlatVariable | Where-Object { $PSItem -notmatch "Copy-", "Migration" } | Sort-Object
     }
 
-    It -Skip "migrates" {
+    It "migrates" {
         $params = @{
             BackupRestore = $true
             Exclude       = "LinkedServers", "Credentials", "DataCollector", "EndPoints", "PolicyManagement", "ResourceGovernor", "BackupDevices"
