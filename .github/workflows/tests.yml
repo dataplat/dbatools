@@ -16,13 +16,12 @@ jobs:
         run: |
           # create a shared network
           docker network create localnet
-
-          # create a shared directory for migrations
-          $dir = New-Item -Type Directory $home\Documents\sqlshared -Force -ErrorAction SilentlyContinue
-
-          # setup two containers and expose ports
-          docker run -p 1433:1433  --network localnet --volume "$($dir):/shared" --name dockersql1 -d dbatools/sqlinstance
-          docker run -p 14333:1433 --network localnet --volume "$($dir):/shared" --name dockersql2 -d dbatools/sqlinstance2
+          # created shared drive
+          docker volume create shared
+          # Expose engine and endpoint then setup a shared path for migrations
+          docker run -p 1433:1433  --volume shared:/shared:z --name mssql1 --hostname mssql1 --network localnet -d dbatools/sqlinstance
+          # Expose second engine and endpoint on different port
+          docker run -p 14333:1433 --volume shared:/shared:z --name mssql2 --hostname mssql2 --network localnet -d dbatools/sqlinstance2
 
       - name: 👥 Clone appveyor repo
         working-directory: /tmp
@@ -35,5 +34,5 @@ jobs:
           CLIENTID: ${{secrets.CLIENTID}}
           CLIENTSECRET: ${{secrets.CLIENTSECRET}}
         run: |
-          Invoke-Pester ./tests/gh-actions.ps1 -Output Detailed -PassThru
+          $null = Invoke-Pester ./tests/gh-actions.ps1 -Output Detailed -PassThru
           Get-DbatoolsError -All | Where ScriptStackTrace -notmatch darling

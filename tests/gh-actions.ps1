@@ -41,7 +41,7 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
         }
 
         Invoke-DbaDbMirroring @params | Select-Object -ExpandProperty Status | Should -Be "Success"
-        Get-DbaDbMirror | Select-Object -ExpandProperty MirroringPartner | Should -Be "TCP://dockersql2:5022"
+        Get-DbaDbMirror | Select-Object -ExpandProperty MirroringPartner | Should -Be "TCP://mssql2:5022"
     }
 
     It "gets some permissions" {
@@ -151,7 +151,7 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
 
     It "tests the instance name" {
         $results = Test-DbaInstanceName
-        $results.ServerName | Should -Be "dockersql1"
+        $results.ServerName | Should -Be "mssql1"
     }
 
     It "creates a new database user" {
