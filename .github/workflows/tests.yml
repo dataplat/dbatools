@@ -35,13 +35,5 @@ jobs:
           CLIENTID: ${{secrets.CLIENTID}}
           CLIENTSECRET: ${{secrets.CLIENTSECRET}}
         run: |
-          Invoke-Pester ./tests/gh-actions.ps1 -Output Detailed -PassThru |
-            Export-CliXml dbatools-results.xml
-          (Get-DbatoolsError -All | Where ScriptStackTrace -notmatch darling | Out-String) | Export-CliXml -Path dbatools-errors.xml
-      - name: Tests results and error messages
-        run: |
-          $results = Import-CliXml dbatools-results.xml
-          if ($results.Result -ne "Passed") {
-            Import-CliXml -Path dbatools-errors.xml
-            throw "There were $($results.FailedCount) failed tests."
-          }
+          Invoke-Pester ./tests/gh-actions.ps1 -Output Detailed -PassThru
+          Get-DbatoolsError -All | Where ScriptStackTrace -notmatch darling
