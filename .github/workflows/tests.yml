@@ -39,3 +39,6 @@ jobs:
           if ($results.Result -ne "Passed") {
               throw "There were $($results.FailedCount) failed tests."
           }
+          Get-DbatoolsError -All | Where ScriptStackTrace -notmatch darling | Export-CliXml -Path dbatools-errors.xml
+      - name: Show Detailed Errors
+        run: Import-CliXml -Path dbatools-errors.xml
