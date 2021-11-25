@@ -37,7 +37,7 @@ jobs:
         run: |
           Invoke-Pester ./tests/gh-actions.ps1 -Output Detailed -PassThru |
             Export-CliXml dbatools-results.xml
-          Get-DbatoolsError -All | Where ScriptStackTrace -notmatch darling | Export-CliXml -Path dbatools-errors.xml
+          (Get-DbatoolsError -All | Where ScriptStackTrace -notmatch darling | Out-String) | Export-CliXml -Path dbatools-errors.xml
       - name: Tests results and error messages
         run: |
           $results = Import-CliXml dbatools-results.xml
