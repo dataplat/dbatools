@@ -19,9 +19,9 @@ jobs:
           # created shared drive
           docker volume create shared
           # Expose engine and endpoint then setup a shared path for migrations
-          docker run -p 1433:1433  --volume shared:/shared:z --name mssql1 --hostname mssql1 --network localnet -d dbatools/sqlinstance
+          docker run -p 1433:1433  --volume shared:/shared:z --name mssql1 --hostname mssql1 --network localnet -d dbatools/sqlinstance:latest-amd64
           # Expose second engine and endpoint on different port
-          docker run -p 14333:1433 --volume shared:/shared:z --name mssql2 --hostname mssql2 --network localnet -d dbatools/sqlinstance2
+          docker run -p 14333:1433 --volume shared:/shared:z --name mssql2 --hostname mssql2 --network localnet -d dbatools/sqlinstance2:latest-amd64
 
       - name: 👥 Clone appveyor repo
         working-directory: /tmp
