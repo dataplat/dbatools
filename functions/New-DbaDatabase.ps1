@@ -173,7 +173,7 @@ function New-DbaDatabase {
 
     begin {
         # do some checks to see if the advanced config settings will be invoked
-        if (Test-Bound -ParameterName DataFilePath, DefaultFileGroup, LogFilePath, LogGrowth, LogMaxSize, LogSize, PrimaryFileGrowth, PrimaryFileMaxSize, PrimaryFilesize, SecondaryFileCount, SecondaryFileGrowth, SecondaryFileMaxSize, SecondaryFilesize) {
+        if (Test-Bound -ParameterName DataFilePath, DefaultFileGroup, LogFilePath, LogGrowth, LogMaxSize, LogSize, PrimaryFileGrowth, PrimaryFileMaxSize, PrimaryFilesize, SecondaryFileCount, SecondaryFileGrowth, SecondaryFileMaxSize, SecondaryFilesize, DataFileSuffix, LogFileSuffix, SecondaryDataFileSuffix) {
             $advancedconfig = $true
             Write-Message -Message "Advanced data file configuration will be invoked" -Level Verbose
         }
@@ -258,7 +258,7 @@ function New-DbaDatabase {
                     $newdb.RecoveryModel = $RecoveryModel
                 }
 
-                if ($advancedconfig) {
+                if ($server.VersionMajor -gt 8) {
                     try {
                         Write-Message -Message "Creating PRIMARY filegroup" -Level Verbose
                         $primaryfg = New-Object Microsoft.SqlServer.Management.Smo.Filegroup($newdb, "PRIMARY")
