@@ -31,6 +31,9 @@ function New-DbaDbUser {
     .PARAMETER Username
         When specified, the user will have this name.
 
+    .PARAMETER DefaultSchema
+        The default database schema for the user. If not specified this value will default to dbo.
+
     .PARAMETER Force
         If user exists, drop and recreate.
 
@@ -85,6 +88,7 @@ function New-DbaDbUser {
         [parameter(ParameterSetName = "NoLogin")]
         [parameter(ParameterSetName = "Login")]
         [string[]]$Username,
+        [string]$DefaultSchema = 'dbo',
         [switch]$Force,
         [switch]$EnableException
     )
@@ -207,6 +211,11 @@ function New-DbaDbUser {
                 # Does user exist with same name?
                 Test-SqlUserInDatabase -Database $db -Username $Name
 
+                # check if DefaultSchema exists
+                if ($DefaultSchema -notin $db.Schemas.Name) {
+                    Stop-Function -Message "DefaultSchema $DefaultSchema does not exist in the database $db on $instance" -Continue
+                }
+
                 if ($Pscmdlet.ShouldProcess($db, "Creating user $Name")) {
                     try {
                         $smoUser = New-Object Microsoft.SqlServer.Management.Smo.User
@@ -217,6 +226,7 @@ function New-DbaDbUser {
                             $smoUser.Login = $Login
                         }
                         $smoUser.UserType = $UserType
+                        $smoUser.DefaultSchema = $DefaultSchema
 
                         $smoUser.Create()
                     } catch {
