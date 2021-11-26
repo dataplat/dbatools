@@ -235,7 +235,7 @@ function Invoke-DbaDbMirroring {
                     if ((Test-Bound -ParameterName UseLastBackup)) {
                         Stop-Function -Message "$dbName not set to full recovery. UseLastBackup cannot be used."
                     } else {
-                        Set-DbaDbRecoveryModel -SqlInstance $source -Database $primarydb.Name -RecoveryModel Full
+                        $null = Set-DbaDbRecoveryModel -SqlInstance $source -Database $primarydb.Name -RecoveryModel Full
                     }
                 }
 
