@@ -236,10 +236,17 @@ if (-not $Finalize) {
     # New-DbatoolsSupportPackage -Path $ModuleBase - turns out to be too heavy
     try {
         $msgFile = "$ModuleBase\dbatools_messages.xml"
+        $errorFile = "$ModuleBase\dbatools_errors.xml"
         Write-Host -ForegroundColor DarkGreen "Dumping message log into $msgFile"
         Get-DbatoolsLog | Select-Object FunctionName, Level, TimeStamp, Message | Export-Clixml -Path $msgFile -ErrorAction Stop
-        Compress-Archive -Path $msgFile -DestinationPath "$msgFile.zip" -ErrorAction Stop
+        Write-Host -ForegroundColor DarkGreen "Dumping error log into $errorFile"
+        Get-DbatoolsError | Export-Clixml -Path $errorFile -ErrorAction Stop
+        if (-not (Test-Path $errorFile)) {
+            Set-Content -Path $errorFile -Value 'None'
+        }
+        Compress-Archive -Path $msgFile, $errorFile -DestinationPath "$msgFile.zip" -ErrorAction Stop
         Remove-Item $msgFile
+        Remove-Item $errorFile
     } catch {
         Write-Host -ForegroundColor Red "Message collection failed: $($_.Exception.Message)"
     }
