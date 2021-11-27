@@ -41,20 +41,20 @@ function Join-DbaPath {
 
     if (Test-HostOSLinux -SqlInstance $SqlInstance) {
         Write-Message -Level Verbose -Message "Linux detected on remote server"
-        $resultingPath = $resultingPath.Replace("\", "/")
+        $resultingPath = $resultingPath.Replace("\", "/").TrimEnd('\\').TrimEnd('/')
 
         foreach ($childItem in $Child) {
-            $resultingPath = ($resultingPath, $childItem) -join '/'
+            $resultingPath = (($resultingPath, $childItem) -join '/').TrimEnd('\\').TrimEnd('/')
         }
     } else {
         if (($PSVersionTable.PSVersion.Major -ge 6) -and (-not $script:isWindows)) {
-            $resultingPath = $resultingPath.Replace("\", "/")
+            $resultingPath = $resultingPath.Replace("\", "/").TrimEnd('\\').TrimEnd('/')
         } else {
-            $resultingPath = $resultingPath.Replace("/", "\")
+            $resultingPath = $resultingPath.Replace("/", "\").TrimEnd('\\').TrimEnd('/')
         }
 
         foreach ($childItem in $Child) {
-            $resultingPath = [IO.Path]::Combine($resultingPath, $childItem)
+            $resultingPath = [IO.Path]::Combine($resultingPath, $childItem).TrimEnd('\\').TrimEnd('/')
         }
     }
 
