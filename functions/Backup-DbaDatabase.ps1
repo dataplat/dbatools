@@ -569,7 +569,7 @@ function Backup-DbaDatabase {
                 for ($i = 0; $i -lt $FinalBackupPath.Count; $i++) {
                     $parent = [IO.Path]::GetDirectoryName($FinalBackupPath[$i])
                     $leaf = [IO.Path]::GetFileName($FinalBackupPath[$i])
-                    $FinalBackupPath[$i] = Join-DbaPath -SqlInstance $server -Path $parent -ChildPath $leaf
+                    $FinalBackupPath[$i] = Join-DbaPath -SqlInstance $server -Path $parent -ChildPath $dbName, $leaf
                 }
             }
 
@@ -601,10 +601,11 @@ function Backup-DbaDatabase {
             }
 
             # Because of #7860, don't use [IO.Path]::GetFullPath on MacOS
-            if ($null -eq $AzureBaseUrl -and $Path -and $server.HostPlatform -ne "Linux") {
-                $FinalBackupPath = $FinalBackupPath | ForEach-Object { [IO.Path]::GetFullPath($_) }
+            if ($null -eq $AzureBaseUrl -and $Path) {
+                $FinalBackupPath = $FinalBackupPath | ForEach-Object {
+                    Join-DbaPath -SqlInstance $server -Path $psitem
+                }
             }
-
 
             $script = $null
             $backupComplete = $false
