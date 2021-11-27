@@ -36,6 +36,7 @@ $TestsRunGroups = @{
         'Invoke-DbaBalanceDataFiles',
         'Invoke-DbaWhoisActive',
         'Install-DbaDarlingData',
+        'Invoke-DbaDbMirroring',
         # previous tests that were failing on older versions too
         'Remove-DbaAvailabilityGroup',
         'Set-DbaAgReplica',
