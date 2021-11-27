@@ -533,8 +533,7 @@ function Backup-DbaDatabase {
                 $suffix = $file.extension -Replace '^\.', ''
                 if ( '' -ne (Split-Path $FilePath)) {
                     Write-Message -Level Verbose -Message "Fully qualified path passed in"
-                    $temppath = Join-DbaPath -SqlInstance $server -Path $file.DirectoryName
-                    $FinalBackupPath += $temppath.TrimEnd('\\').TrimEnd('/')
+                    $FinalBackupPath += Join-DbaPath -SqlInstance $server -Path $file.DirectoryName
                 }
             } else {
                 Write-Message -Level VeryVerbose -Message "Setting filename - $timestamp"
@@ -570,8 +569,7 @@ function Backup-DbaDatabase {
                 for ($i = 0; $i -lt $FinalBackupPath.Count; $i++) {
                     $parent = [IO.Path]::GetDirectoryName($FinalBackupPath[$i])
                     $leaf = [IO.Path]::GetFileName($FinalBackupPath[$i])
-                    $temppath = Join-DbaPath -SqlInstance $server -Path $parent -ChildPath $dbName, $leaf
-                    $FinalBackupPath[$i] = $temppath.TrimEnd('\\').TrimEnd('/')
+                    $FinalBackupPath[$i] = Join-DbaPath -SqlInstance $server -Path $parent -ChildPath $dbName, $leaf
                 }
             }
 
@@ -605,8 +603,7 @@ function Backup-DbaDatabase {
             # Because of #7860, don't use [IO.Path]::GetFullPath on MacOS
             if ($null -eq $AzureBaseUrl -and $Path) {
                 $FinalBackupPath = $FinalBackupPath | ForEach-Object {
-                    $temppath = Join-DbaPath -SqlInstance $server -Path $psitem
-                    $temppath.TrimEnd('\\').TrimEnd('/')
+                    Join-DbaPath -SqlInstance $server -Path $psitem
                 }
             }
 
