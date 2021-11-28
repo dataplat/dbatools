@@ -4,7 +4,7 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
-        $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+        #$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
         [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
         [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'Table', 'Column', 'Country', 'CountryCode', 'ExcludeTable', 'ExcludeColumn', 'SampleCount', 'KnownNameFilePath', 'PatternFilePath', 'ExcludeDefaultKnownName', 'ExcludeDefaultPattern', 'EnableException'
         $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
