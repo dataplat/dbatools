@@ -96,7 +96,8 @@ function Test-DbaDiskAllocation {
 
             if ($NoSqlCheck -eq $false) {
                 Write-Message -Level Verbose -Message "Checking for SQL Services"
-                $sqlservices = Get-Service -ComputerName $ipaddr | Where-Object { $_.DisplayName -like 'SQL Server (*' }
+                $ClassFilter = "DisplayName like 'SQL Server (%'"
+                $sqlservices = Get-CimInstance -CimSession $CIMsession -ClassName win32_service -Filter $ClassFilter -ErrorAction Stop | Sort-Object -Property Name
                 foreach ($service in $sqlservices) {
                     $instance = $service.DisplayName.Replace('SQL Server (', '')
                     $instance = $instance.TrimEnd(')')

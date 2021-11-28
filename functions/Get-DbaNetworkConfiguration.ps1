@@ -6,7 +6,7 @@ function Get-DbaNetworkConfiguration {
     .DESCRIPTION
         Returns a PowerShell object with the network configuration of a SQL Server instance as shown in SQL Server Configuration Manager.
 
-        Remote SQL WMI is used by default, with PS Remoting used as a fallback.
+        As we get information from SQL WMI and also from the registry, we use PS Remoting to run the core code on the target machine.
 
         For a detailed explenation of the different properties see the documentation at:
         https://docs.microsoft.com/en-us/sql/tools/configuration-manager/sql-server-network-configuration
@@ -19,7 +19,7 @@ function Get-DbaNetworkConfiguration {
 
     .PARAMETER OutputType
         Defines what information is returned from the command.
-        Options include: Full, ServerProtocols, TcpIpProperties or TcpIpAddresses. Full by default.
+        Options include: Full, ServerProtocols, TcpIpProperties, TcpIpAddresses or Certificate. Full by default.
 
         Full returns one object per SqlInstance with information about the server protocols
         and nested objects with information about TCP/IP properties and TCP/IP addresses.
@@ -32,6 +32,8 @@ function Get-DbaNetworkConfiguration {
         If the instance listens on all IP addresses (TcpIpProperties.ListenAll), only the information about the IPAll address is returned.
         Otherwise only information about the individual IP addresses is returned.
         For more details see: https://docs.microsoft.com/en-us/sql/database-engine/configure-windows/configure-a-server-to-listen-on-a-specific-tcp-port
+
+        Certificate returns one object per SqlInstance with information about the configured network certificate and whether encryption is enforced.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -65,24 +67,23 @@ function Get-DbaNetworkConfiguration {
         [parameter(Mandatory, ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$Credential,
-        [ValidateSet('Full', 'ServerProtocols', 'TcpIpProperties', 'TcpIpAddresses')]
+        [ValidateSet('Full', 'ServerProtocols', 'TcpIpProperties', 'TcpIpAddresses', 'Certificate')]
         [string]$OutputType = 'Full',
         [switch]$EnableException
     )
 
     begin {
-        $wmiScriptBlock = {
-            # This scriptblock will be processed by Invoke-ManagedComputerCommand.
-            # It is extended there above this line by the following lines:
-            #   $ipaddr = $args[$args.GetUpperBound(0)]
-            #   [void][System.Reflection.Assembly]::LoadWithPartialName('Microsoft.SqlServer.SqlWmiManagement')
-            #   $wmi = New-Object Microsoft.SqlServer.Management.Smo.Wmi.ManagedComputer $ipaddr
-            #   $null = $wmi.Initialize()
-            # So we can use $wmi here and assume that there is a successful connection.
-
-            # We take on object as the first parameter which has to include the property InstanceName.
+        $scriptBlock = {
+            # This scriptblock will be processed by Invoke-Command2 on the target machine.
+            # We take an object as the first parameter which has to include the properties ComputerName, InstanceName and SqlFullName,
+            # so normally a DbaInstanceParameter.
             $instance = $args[0]
+            $verbose = @( )
 
+            # As we go remote, ensure the assembly is loaded
+            [void][System.Reflection.Assembly]::LoadWithPartialName('Microsoft.SqlServer.SqlWmiManagement')
+            $wmi = New-Object Microsoft.SqlServer.Management.Smo.Wmi.ManagedComputer
+            $null = $wmi.Initialize()
             $wmiServerProtocols = ($wmi.ServerInstances | Where-Object { $_.Name -eq $instance.InstanceName } ).ServerProtocols
 
             $wmiSpSm = $wmiServerProtocols | Where-Object { $_.Name -eq 'Sm' }
@@ -114,6 +115,49 @@ function Get-DbaNetworkConfiguration {
                 TcpPort         = ($wmiIPAll.IPAddressProperties | Where-Object { $_.Name -eq 'TcpPort' } ).Value
             }
 
+            $wmiService = $wmi.Services | Where-Object { $_.DisplayName -eq "SQL Server ($($instance.InstanceName))" }
+            $serviceAccount = $wmiService.ServiceAccount
+            $regRoot = ($wmiService.AdvancedProperties | Where-Object Name -eq REGROOT).Value
+            $vsname = ($wmiService.AdvancedProperties | Where-Object Name -eq VSNAME).Value
+            $verbose += "regRoot = '$regRoot' / vsname = '$vsname'"
+            if ([System.String]::IsNullOrEmpty($regRoot)) {
+                $regRoot = $wmiService.AdvancedProperties | Where-Object { $_ -match 'REGROOT' }
+                $vsname = $wmiService.AdvancedProperties | Where-Object { $_ -match 'VSNAME' }
+                $verbose += "regRoot = '$regRoot' / vsname = '$vsname'"
+                if (![System.String]::IsNullOrEmpty($regRoot)) {
+                    $regRoot = ($regRoot -Split 'Value\=')[1]
+                    $vsname = ($vsname -Split 'Value\=')[1]
+                    $verbose += "regRoot = '$regRoot' / vsname = '$vsname'"
+                } else {
+                    $verbose += "Can't find regRoot"
+                }
+            }
+            if ($regRoot) {
+                $regPath = "Registry::HKEY_LOCAL_MACHINE\$regRoot\MSSQLServer\SuperSocketNetLib"
+                try {
+                    $forceEncryption = switch ((Get-ItemProperty -Path $regPath -Name ForceEncryption).ForceEncryption) { 0 { $false } 1 { $true } }
+                    $thumbprint = (Get-ItemProperty -Path $regPath -Name Certificate).Certificate
+                    $cert = Get-ChildItem Cert:\LocalMachine -Recurse -ErrorAction SilentlyContinue | Where-Object Thumbprint -eq $thumbprint | Select-Object -First 1
+                    $outputCertificate = [PSCustomObject]@{
+                        VSName          = $vsname
+                        ServiceAccount  = $serviceAccount
+                        ForceEncryption = $forceEncryption
+                        FriendlyName    = $cert.FriendlyName
+                        DnsNameList     = $cert.DnsNameList
+                        Thumbprint      = $cert.Thumbprint
+                        Generated       = $cert.NotBefore
+                        Expires         = $cert.NotAfter
+                        IssuedTo        = $cert.Subject
+                        IssuedBy        = $cert.Issuer
+                        Certificate     = $cert
+                    }
+                } catch {
+                    $outputCertificate = "Failed to get information from registry: $_"
+                }
+            } else {
+                $outputCertificate = "Failed to get information from registry: Path not found"
+            }
+
             [PSCustomObject]@{
                 ComputerName        = $instance.ComputerName
                 InstanceName        = $instance.InstanceName
@@ -123,6 +167,8 @@ function Get-DbaNetworkConfiguration {
                 TcpIpEnabled        = $wmiSpTcp.IsEnabled
                 TcpIpProperties     = $outputTcpIpProperties
                 TcpIpAddresses      = $outputTcpIpAddressesIPn + $outputTcpIpAddressesIPAll
+                Certificate         = $outputCertificate
+                Verbose             = $verbose
             }
         }
     }
@@ -130,7 +176,12 @@ function Get-DbaNetworkConfiguration {
     process {
         foreach ($instance in $SqlInstance) {
             try {
-                $netConf = Invoke-ManagedComputerCommand -ComputerName $instance.ComputerName -Credential $Credential -ScriptBlock $wmiScriptBlock -ArgumentList $instance
+                $computerName = Resolve-DbaComputerName -ComputerName $instance.ComputerName -Credential $Credential
+                $null = Test-ElevationRequirement -ComputerName $computerName -EnableException $true
+                $netConf = Invoke-Command2 -ScriptBlock $scriptBlock -ArgumentList $instance -ComputerName $computerName -Credential $Credential -ErrorAction Stop
+                foreach ($verbose in $netConf.Verbose) {
+                    Write-Message -Level Verbose -Message $verbose
+                }
 
                 # Test if object is filled to test if instance was found on computer
                 if ($null -eq $netConf.SharedMemoryEnabled) {
@@ -138,7 +189,17 @@ function Get-DbaNetworkConfiguration {
                 }
 
                 if ($OutputType -eq 'Full') {
-                    $netConf
+                    [PSCustomObject]@{
+                        ComputerName        = $netConf.ComputerName
+                        InstanceName        = $netConf.InstanceName
+                        SqlInstance         = $netConf.SqlInstance
+                        SharedMemoryEnabled = $netConf.SharedMemoryEnabled
+                        NamedPipesEnabled   = $netConf.NamedPipesEnabled
+                        TcpIpEnabled        = $netConf.TcpIpEnabled
+                        TcpIpProperties     = $netConf.TcpIpProperties
+                        TcpIpAddresses      = $netConf.TcpIpAddresses
+                        Certificate         = $netConf.Certificate
+                    }
                 } elseif ($OutputType -eq 'ServerProtocols') {
                     [PSCustomObject]@{
                         ComputerName        = $netConf.ComputerName
@@ -184,6 +245,31 @@ function Get-DbaNetworkConfiguration {
                             }
                         }
                     }
+                } elseif ($OutputType -eq 'Certificate') {
+                    if ($netConf.Certificate -like 'Failed*') {
+                        Stop-Function -Message "Failed to collect certificate information from $($instance.ComputerName) for instance $($instance.InstanceName): $($netConf.Certificate)" -Target $instance -Continue
+                    }
+                    $output = [PSCustomObject]@{
+                        ComputerName    = $netConf.ComputerName
+                        InstanceName    = $netConf.InstanceName
+                        SqlInstance     = $netConf.SqlInstance
+                        VSName          = $netConf.Certificate.VSName
+                        ServiceAccount  = $netConf.Certificate.ServiceAccount
+                        ForceEncryption = $netConf.Certificate.ForceEncryption
+                        FriendlyName    = $netConf.Certificate.FriendlyName
+                        DnsNameList     = $netConf.Certificate.DnsNameList
+                        Thumbprint      = $netConf.Certificate.Thumbprint
+                        Generated       = $netConf.Certificate.Generated
+                        Expires         = $netConf.Certificate.Expires
+                        IssuedTo        = $netConf.Certificate.IssuedTo
+                        IssuedBy        = $netConf.Certificate.IssuedBy
+                        Certificate     = $netConf.Certificate.Certificate
+                    }
+                    $defaultView = 'ComputerName,InstanceName,SqlInstance,VSName,ServiceAccount,ForceEncryption,FriendlyName,DnsNameList,Thumbprint,Generated,Expires,IssuedTo,IssuedBy'.Split(',')
+                    if (-not $netConf.Certificate.VSName) {
+                        $defaultView = $defaultView | Where-Object { $_ -ne 'VSNAME' }
+                    }
+                    $output | Select-DefaultView -Property $defaultView
                 }
             } catch {
                 Stop-Function -Message "Failed to collect network configuration from $($instance.ComputerName) for instance $($instance.InstanceName)." -Target $instance -ErrorRecord $_ -Continue
