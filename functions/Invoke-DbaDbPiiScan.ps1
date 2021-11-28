@@ -341,7 +341,7 @@ function Invoke-DbaDbPiiScan {
 
                                 # Setup the query
                                 if ($columnobject.DataType.Name -in $textDataTypes) {
-                                    $query = "SELECT TOP($SampleCount) TRIM([$($columnobject.Name)]) AS [$($columnobject.Name)] FROM [$($tableobject.Schema)].[$($tableobject.Name)]"
+                                    $query = "SELECT TOP($SampleCount) LTRIM(RTRIM([$($columnobject.Name)])) AS [$($columnobject.Name)] FROM [$($tableobject.Schema)].[$($tableobject.Name)]"
                                 } else {
                                     $query = "SELECT TOP($SampleCount) [$($columnobject.Name)] AS [$($columnobject.Name)] FROM [$($tableobject.Schema)].[$($tableobject.Name)]"
                                 }
