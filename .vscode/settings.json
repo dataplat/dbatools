@@ -19,5 +19,14 @@
         "editor.wordSeparators": "`~!@#%^&*()-=+[{]}\\|;:'\",.<>/?"
     },
     "powershell.scriptAnalysis.settingsPath": "bin\\PSScriptAnalyzerRules.psd1",
-    "powershell.codeFormatting.addWhitespaceAroundPipe": true
+    "powershell.codeFormatting.addWhitespaceAroundPipe": true,
+    "cSpell.words": [
+        "ISNULL",
+        "nchar",
+        "ntext",
+        "randomizer",
+        "SQLDB",
+        "sqlstad",
+        "Stad"
+    ]
 }

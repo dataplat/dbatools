@@ -748,11 +748,11 @@ function Invoke-DbaDbDataMasking {
                     if ($Pscmdlet.ShouldProcess($instance, "Masking $($data.Count) row(s) for column [$($tablecolumns.Name -join ', ')] in $($dbName).$($tableobject.Schema).$($tableobject.Name)")) {
                         $totalBatches = [System.Math]::Ceiling($data.Count / $BatchSize)
 
-                        # Firgure out if the columns has actions
+                        # Figure out if the columns has actions
                         $columnsWithActions = @()
                         $columnsWithActions += $tableobject.Columns | Where-Object { $null -ne $_.Action }
 
-                        # Firgure out if the columns has composites
+                        # Figure out if the columns has composites
                         $columnsWithComposites = @()
                         $columnsWithComposites += $tableobject.Columns | Where-Object { $null -ne $_.Composite }
 
@@ -955,7 +955,7 @@ function Invoke-DbaDbDataMasking {
                                             }
                                         }
 
-                                        # Convert the values so they can used in TSQL
+                                        # Convert the values so they can used in T-SQL
                                         try {
                                             if ($row.($columnobject.Name) -eq '') {
                                                 $convertedValue = Convert-DbaMaskingValue -Value ' ' -DataType $columnobject.ColumnType -Nullable:$columnobject.Nullable -EnableException
@@ -1225,12 +1225,13 @@ function Invoke-DbaDbDataMasking {
                                     }
                                 }
 
-                                $compositeItems = $compositeItems | ForEach-Object { $_ = "ISNULL($($_), '')"; $_ }
+                                $compositeItemsUpdated = $compositeItems | ForEach-Object { $_ = "ISNULL($($_), '')"; $_ }
 
-                                $null = $stringBuilder.AppendLine("UPDATE [$($tableobject.Schema)].[$($tableobject.Name)] SET [$($columnObject.Name)] = $($compositeItems -join ' + ')")
+                                $null = $stringBuilder.AppendLine("UPDATE [$($tableobject.Schema)].[$($tableobject.Name)] SET [$($columnObject.Name)] = $($compositeItemsUpdated -join ' + ')")
                             }
 
                             try {
+                                $stringBuilder.ToString()
                                 Invoke-DbaQuery -SqlInstance $instance -SqlCredential $SqlCredential -Database $db.Name -Query $stringBuilder.ToString() -EnableException
                             } catch {
                                 Stop-Function -Message "Error updating $($tableobject.Schema).$($tableobject.Name): $_" -Target $stringBuilder -Continue -ErrorRecord $_
