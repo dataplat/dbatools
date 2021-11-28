@@ -533,7 +533,12 @@ function Backup-DbaDatabase {
                 $suffix = $file.extension -Replace '^\.', ''
                 if ( '' -ne (Split-Path $FilePath)) {
                     Write-Message -Level Verbose -Message "Fully qualified path passed in"
-                    $FinalBackupPath += Join-DbaPath -SqlInstance $server -Path $file.DirectoryName
+                    # Because of #7860, don't use [IO.Path]::GetFullPath on MacOS
+                    if ($IsMacOS) {
+                        $FinalBackupPath += $file.DirectoryName
+                    } else {
+                        $FinalBackupPath += [IO.Path]::GetFullPath($file.DirectoryName)
+                    }
                 }
             } else {
                 Write-Message -Level VeryVerbose -Message "Setting filename - $timestamp"
@@ -551,11 +556,12 @@ function Backup-DbaDatabase {
                 }
             }
 
-            if ($AzureBaseUrl -or $AzureCredential -or $server.HostPlatform -eq "Linux") {
+            if ($AzureBaseUrl -or $AzureCredential) {
                 $slash = "/"
             } else {
                 $slash = "\"
             }
+
             if ($FinalBackupPath.Count -gt 1) {
                 $File = New-Object System.IO.FileInfo($BackupFinalName)
                 for ($i = 0; $i -lt $FinalBackupPath.Count; $i++) {
@@ -569,7 +575,7 @@ function Backup-DbaDatabase {
                 for ($i = 0; $i -lt $FinalBackupPath.Count; $i++) {
                     $parent = [IO.Path]::GetDirectoryName($FinalBackupPath[$i])
                     $leaf = [IO.Path]::GetFileName($FinalBackupPath[$i])
-                    $FinalBackupPath[$i] = Join-DbaPath -SqlInstance $server -Path $parent -ChildPath $dbName, $leaf
+                    $FinalBackupPath[$i] = [IO.Path]::Combine($parent, $dbName, $leaf)
                 }
             }
 
@@ -586,8 +592,6 @@ function Backup-DbaDatabase {
             if (-not $IgnoreFileChecks -and -not $AzureBaseUrl) {
                 $parentPaths = ($FinalBackupPath | ForEach-Object { Split-Path $_ } | Select-Object -Unique)
                 foreach ($parentPath in $parentPaths) {
-                    $parentPath = $parentPath.Replace("/", $slash)
-                    $parentPath = $parentPath.Replace("\", $slash)
                     if (-not (Test-DbaPath -SqlInstance $server -Path $parentPath)) {
                         if (($BuildPath -eq $true) -or ($CreateFolder -eq $True)) {
                             $null = New-DbaDirectory -SqlInstance $server -Path $parentPath
@@ -601,11 +605,10 @@ function Backup-DbaDatabase {
             }
 
             # Because of #7860, don't use [IO.Path]::GetFullPath on MacOS
-            if ($null -eq $AzureBaseUrl -and $Path) {
-                $FinalBackupPath = $FinalBackupPath | ForEach-Object {
-                    Join-DbaPath -SqlInstance $server -Path $psitem
-                }
+            if ($null -eq $AzureBaseUrl -and $Path -and -not $IsMacOS) {
+                $FinalBackupPath = $FinalBackupPath | ForEach-Object { [IO.Path]::GetFullPath($_) }
             }
+
 
             $script = $null
             $backupComplete = $false
