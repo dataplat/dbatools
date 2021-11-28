@@ -542,7 +542,7 @@ function Backup-DbaDatabase {
 
             Write-Message -Level Verbose -Message "Building backup path"
             if ($FinalBackupPath.Count -eq 0) {
-                $FinalBackupPath += $Path.TrimEnd("\\").TrimEnd("/")
+                $FinalBackupPath += $Path
             }
 
             if ($Path.Count -eq 1 -and $FileCount -gt 1) {
