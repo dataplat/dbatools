@@ -640,6 +640,26 @@ function New-DbaAvailabilityGroup {
             }
         }
 
+        # Wait for the availability group to be ready
+        Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Waiting for replicas to be connected and ready"
+        do {
+            Start-Sleep -Milliseconds 500
+            $wait++
+            $ready = $true
+            $states = Get-DbaAgReplica -SqlInstance $secondaries | Where-Object Role -notin "Primary", "Unknown"
+            foreach ($state in $states) {
+                if ($state.ConnectionState -ne "Connected") {
+                    $ready = $false
+                }
+            }
+        } until ($ready -or $wait -gt 40) # wait up to 20 seconds (500ms * 40)
+
+        if (-not $ready -or $wait -gt 40) {
+            Write-Message -Level Warning -Message "One or more replicas are still not connected and ready. If you encounter this error often, please let us know and we'll increase the timeout. Moving on and trying the next step."
+        }
+
+        $wait = 0
+
         # Add databases
         Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Adding databases"
         if ($Database) {

@@ -151,7 +151,7 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
 
     It "tests the instance name" {
         $results = Test-DbaInstanceName
-        $results.RenameRequired | Should -Be $true
+        $results.ServerName | Should -Be "dockersql1"
     }
 
     It "creates a new database user" {
