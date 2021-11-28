@@ -31,6 +31,11 @@ function Join-DbaPath {
         [string[]]$Child
     )
 
+    # remove trailing path separator
+    if ($Path.EndsWith("\") -or $Path.EndsWith("/")) {
+        $Path = $Path.Substring(0, $Path.Length - 1)
+    }
+
     if (-not $SqlInstance) {
         return @($path) + $Child -join
         [IO.Path]::DirectorySeparatorChar -replace
