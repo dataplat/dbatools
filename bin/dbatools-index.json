@@ -50106,7 +50106,7 @@
     },
     {
         "Name":  "Save-DbaCommunitySoftware",
-        "Description":  "Download and extract software from Github to update the local cached version of that software.\nThis command is run from inside of Install-Dba* and Update-Dba* commands to update the local cache if needed.\n\nIn case you don\u0027t have internet access on the target computer, you can download the zip files from the following URLs\nat another computer, transfer them to the target computer or place them on a network share and then use -LocalFile\nto update the local cache:\n* MaintenanceSolution: https://github.com/olahallengren/sql-server-maintenance-solution\n* FirstResponderKit: https://github.com/BrentOzarULTD/SQL-Server-First-Responder-Kit/releases\n* DarlingData: https://github.com/erikdarlingdata/DarlingData\n* SQLWATCH: https://github.com/marcingminski/sqlwatch/releases\n* WhoIsActive: https://github.com/amachanic/sp_whoisactive/releases",
+        "Description":  "Download and extract software from Github to update the local cached version of that software.\nThis command is run from inside of Install-Dba* and Update-Dba* commands to update the local cache if needed.\n\nIn case you don\u0027t have internet access on the target computer, you can download the zip files from the following URLs\nat another computer, transfer them to the target computer or place them on a network share and then use -LocalFile\nto update the local cache:\n* MaintenanceSolution: https://github.com/olahallengren/sql-server-maintenance-solution\n* FirstResponderKit: https://github.com/BrentOzarULTD/SQL-Server-First-Responder-Kit/releases\n* DarlingData: https://github.com/erikdarlingdata/DarlingData\n* SQLWATCH: https://github.com/marcingminski/sqlwatch/releases\n* WhoIsActive: https://github.com/amachanic/sp_whoisactive/releases\n* DbaMultiTool: https://github.com/LowlyDBA/dba-multitool/releases",
         "Tags":  "Community",
         "Synopsis":  "Download and extract software from Github to update the local cached version of that software.",
         "Alias":  "",
@@ -50118,12 +50118,12 @@
         "Params":  [
                        [
                            "Software",
-                           "Name of the software to download.\r\nOptions include:\r\n* MaintenanceSolution: SQL Server Maintenance Solution created by Ola Hallengren (https://ola.hallengren.com)\r\n* FirstResponderKit: First Responder Kit created by Brent Ozar (http://FirstResponderKit.org)\r\n* DarlingData: Erik Darling\u0027s stored procedures (https://www.erikdarlingdata.com)\r\n* SQLWATCH: SQL Server Monitoring Solution created by Marcin Gminski (https://sqlwatch.io/)\r\n* WhoIsActive: Adam Machanic\u0027s comprehensive activity monitoring stored procedure sp_WhoIsActive (https://github.com/amachanic/sp_whoisactive)",
+                           "Name of the software to download.\r\nOptions include:\r\n* MaintenanceSolution: SQL Server Maintenance Solution created by Ola Hallengren (https://ola.hallengren.com)\r\n* FirstResponderKit: First Responder Kit created by Brent Ozar (http://FirstResponderKit.org)\r\n* DarlingData: Erik Darling\u0027s stored procedures (https://www.erikdarlingdata.com)\r\n* SQLWATCH: SQL Server Monitoring Solution created by Marcin Gminski (https://sqlwatch.io/)\r\n* WhoIsActive: Adam Machanic\u0027s comprehensive activity monitoring stored procedure sp_WhoIsActive (https://github.com/amachanic/sp_whoisactive)\r\n* DbaMultiTool: John McCall\u0027s T-SQL scripts for the long haul: optimizing storage, on-the-fly documentation, and general administrative needs (https://dba-multitool.org)",
                            "",
                            false,
                            "false",
                            "",
-                           "MaintenanceSolution,FirstResponderKit,DarlingData,SQLWATCH,WhoIsActive"
+                           "MaintenanceSolution,FirstResponderKit,DarlingData,SQLWATCH,WhoIsActive,DbaMultiTool"
                        ],
                        [
                            "Branch",
