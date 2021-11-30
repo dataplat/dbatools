@@ -165,9 +165,9 @@ function New-DbaDatabase {
         [int32]$SecondaryFileCount,
         [ValidateSet('Primary', 'Secondary')]
         [string]$DefaultFileGroup,
-        [string]$DataFileSuffix = "_PRIMARY",
-        [string]$LogFileSuffix = "_Log",
-        [string]$SecondaryDataFileSuffix = "_MainData",
+        [string]$DataFileSuffix,
+        [string]$LogFileSuffix,
+        [string]$SecondaryDataFileSuffix,
         [switch]$EnableException
     )
 
@@ -258,7 +258,7 @@ function New-DbaDatabase {
                     $newdb.RecoveryModel = $RecoveryModel
                 }
 
-                if ($server.VersionMajor -gt 8) {
+                if ($advancedconfig) {
                     try {
                         Write-Message -Message "Creating PRIMARY filegroup" -Level Verbose
                         $primaryfg = New-Object Microsoft.SqlServer.Management.Smo.Filegroup($newdb, "PRIMARY")
