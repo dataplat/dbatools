@@ -96,7 +96,7 @@ function Remove-DbaAgentAlertCategory {
     }
 
     end {
-        # We have to delete in the end block to prevent "Collection was modified; enumeration operation may not execute." if directly piped from Get-DbaAgentAlert.
+        # We have to delete in the end block to prevent "Collection was modified; enumeration operation may not execute." if directly piped from Get-DbaAgentAlertCategory.
         foreach ($agentCategory in $agentCategories) {
             if ($PSCmdlet.ShouldProcess($agentCategory.Parent.Parent.Name, "Removing the SQL Agent alert category $($agentCategory.Name) on $($agentCategory.Parent.Parent.Name)")) {
                 $output = [pscustomobject]@{
