@@ -61,44 +61,57 @@ function Remove-DbaAgentAlertCategory {
         Remove multiple alert categories from the multiple instances.
 
     #>
-    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low")]
+    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High')]
     param (
-        [parameter(Mandatory, ValueFromPipeline)]
+        [Parameter(ParameterSetName = 'NonPipeline', Mandatory = $true, Position = 0)]
         [DbaInstanceParameter[]]$SqlInstance,
+        #[Parameter(ParameterSetName = 'NonPipeline')]
         [PSCredential]$SqlCredential,
-        [ValidateNotNullOrEmpty()]
+        [Parameter(ParameterSetName = 'NonPipeline')]
         [string[]]$Category,
-        [switch]$Force,
+        [parameter(ValueFromPipeline, ParameterSetName = 'Pipeline', Mandatory = $true)]
+        [Microsoft.SqlServer.Management.Smo.Agent.AlertCategory[]]$InputObject,
+        [Parameter(ParameterSetName = 'NonPipeline')][Parameter(ParameterSetName = 'Pipeline')]
         [switch]$EnableException
     )
+
     begin {
-        if ($Force) { $ConfirmPreference = 'none' }
+        $agentCategories = @( )
     }
+
     process {
+        if ($SqlInstance) {
+            $params = $PSBoundParameters
+            $null = $params.Remove('WhatIf')
+            $null = $params.Remove('Confirm')
+            $agentCategories = Get-DbaAgentAlertCategory @params
+        } else {
+            $agentCategories += $InputObject
+        }
+    }
 
-        foreach ($instance in $SqlInstance) {
-            try {
-                $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential
-            } catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
-            }
-
-            foreach ($cat in $Category) {
-                if ($cat -notin $server.JobServer.AlertCategories.Name) {
-                    Stop-Function -Message "Alert category $cat doesn't exist on $instance" -Target $instance -Continue
+    end {
+        # We have to delete in the end block to prevent "Collection was modified; enumeration operation may not execute." if directly piped from Get-DbaAgentAlert.
+        foreach ($agentCategory in $agentCategories) {
+            if ($PSCmdlet.ShouldProcess($agentCategory.Parent.Parent.Name, "Removing the SQL Agent alert category $($agentCategory.Name) on $($agentCategory.Parent.Parent.Name)")) {
+                $output = [pscustomobject]@{
+                    ComputerName = $agentCategory.Parent.Parent.ComputerName
+                    InstanceName = $agentCategory.Parent.Parent.ServiceName
+                    SqlInstance  = $agentCategory.Parent.Parent.DomainInstanceName
+                    Name         = $agentCategory.Name
+                    Status       = $null
+                    IsRemoved    = $false
                 }
-
-                if ($PSCmdlet.ShouldProcess($instance, "Removing the alert category $Category")) {
-                    try {
-                        $currentCategory = $server.JobServer.AlertCategories[$cat]
-
-                        Write-Message -Message "Removing alert category $cat" -Level Verbose
-
-                        $currentCategory.Drop()
-                    } catch {
-                        Stop-Function -Message "Something went wrong removing the alert category $cat on $instance" -Target $cat -Continue -ErrorRecord $_
-                    }
+                try {
+                    $agentCategory.Drop()
+                    $output.Status = "Dropped"
+                    $output.IsRemoved = $true
+                } catch {
+                    Stop-Function -Message "Failed removing the SQL Agent alert category $($agentCategory.Name) on $($agentCategory.Parent.Parent.Name)" -ErrorRecord $_
+                    $output.Status = (Get-ErrorMessage -Record $_)
+                    $output.IsRemoved = $false
                 }
+                $output
             }
         }
     }
