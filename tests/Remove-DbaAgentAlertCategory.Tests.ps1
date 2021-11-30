@@ -36,7 +36,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $newresults.Count | Should Be 0
         }
 
-        It "supports piping SQL Agent alert" {
+        It "supports piping SQL Agent alert category" {
             $categoryName = "dbatoolsci_test_$(get-random)"
             $results2 = New-DbaAgentAlertCategory -SqlInstance $script:instance2 -Category $categoryName
             (Get-DbaAgentAlertCategory -SqlInstance $server -Category $categoryName ) | Should -Not -BeNullOrEmpty
