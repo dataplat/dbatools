@@ -517,6 +517,7 @@
         'Register-DbatoolsConfig',
         'Remove-DbaAgDatabase',
         'Remove-DbaAgentAlertCategory',
+        'Remove-DbaAgentAlert',
         'Remove-DbaAgentJob',
         'Remove-DbaAgentJobCategory',
         'Remove-DbaAgentJobStep',
