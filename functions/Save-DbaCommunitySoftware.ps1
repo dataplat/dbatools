@@ -15,6 +15,7 @@ function Save-DbaCommunitySoftware {
         * DarlingData: https://github.com/erikdarlingdata/DarlingData
         * SQLWATCH: https://github.com/marcingminski/sqlwatch/releases
         * WhoIsActive: https://github.com/amachanic/sp_whoisactive/releases
+        * DbaMultiTool: https://github.com/LowlyDBA/dba-multitool/releases
 
     .PARAMETER Software
         Name of the software to download.
@@ -24,6 +25,7 @@ function Save-DbaCommunitySoftware {
         * DarlingData: Erik Darling's stored procedures (https://www.erikdarlingdata.com)
         * SQLWATCH: SQL Server Monitoring Solution created by Marcin Gminski (https://sqlwatch.io/)
         * WhoIsActive: Adam Machanic's comprehensive activity monitoring stored procedure sp_WhoIsActive (https://github.com/amachanic/sp_whoisactive)
+        * DbaMultiTool: John McCall's T-SQL scripts for the long haul: optimizing storage, on-the-fly documentation, and general administrative needs (https://dba-multitool.org)
 
     .PARAMETER Branch
         Specifies the branch. Defaults to master or main. Can only be used if Software is used.
@@ -72,7 +74,7 @@ function Save-DbaCommunitySoftware {
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Medium")]
     param (
-        [ValidateSet('MaintenanceSolution', 'FirstResponderKit', 'DarlingData', 'SQLWATCH', 'WhoIsActive')]
+        [ValidateSet('MaintenanceSolution', 'FirstResponderKit', 'DarlingData', 'SQLWATCH', 'WhoIsActive', 'DbaMultiTool')]
         [string]$Software,
         [string]$Branch,
         [string]$LocalFile,
@@ -174,6 +176,16 @@ function Save-DbaCommunitySoftware {
             }
             if (-not $LocalDirectory) {
                 $LocalDirectory = Join-Path -Path $dbatoolsData -ChildPath "WhoIsActive"
+            }
+        } elseif ($Software -eq 'DbaMultiTool') {
+            if (-not $Branch) {
+                $Branch = 'master'
+            }
+            if (-not $Url) {
+                $Url = "https://github.com/LowlyDBA/dba-multitool/archive/$Branch.zip"
+            }
+            if (-not $LocalDirectory) {
+                $LocalDirectory = Join-Path -Path $dbatoolsData -ChildPath "dba-multitool-$Branch"
             }
         }
 
@@ -281,6 +293,14 @@ function Save-DbaCommunitySoftware {
                 # Rename the directory from like 'SQL-Server-First-Responder-Kit-20211106' to 'SQL-Server-First-Responder-Kit-main' to be able to handle this like the other software.
                 if ($sourceDirectoryName -like 'SQL-Server-First-Responder-Kit-20*') {
                     Rename-Item -Path $sourceDirectory.FullName -NewName 'SQL-Server-First-Responder-Kit-main'
+                    $sourceDirectory = Get-ChildItem -Path $zipFolder -Directory
+                    $sourceDirectoryName = $sourceDirectory.Name
+                }
+            } elseif ($Software -eq 'DbaMultiTool') {
+                # As this software is downloadable as a release, the directory might have a different name.
+                # Rename the directory from like 'dba-multitool-1.7.5' to 'dba-multitool-master' to be able to handle this like the other software.
+                if ($sourceDirectoryName -like 'dba-multitool-[0-9]*') {
+                    Rename-Item -Path $sourceDirectory.FullName -NewName 'dba-multitool-master'
                     $sourceDirectory = Get-ChildItem -Path $zipFolder -Directory
                     $sourceDirectoryName = $sourceDirectory.Name
                 }
