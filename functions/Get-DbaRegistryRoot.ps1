@@ -68,17 +68,18 @@ function Get-DbaRegistryRoot {
                         $regRoot = ($regRoot -Split 'Value\=')[1]
                         $vsname = ($vsname -Split 'Value\=')[1]
                     } else {
-                        Write-Message -Level Warning -Message "Can't find instance $vsname on $env:COMPUTERNAME"
-                        return
+                        Stop-Function -Message "Can't find instance $instanceName on $env:COMPUTERNAME" -Continue
                     }
                 }
 
-                # vsname takes care of clusters
+                # vsname is the virtual server name for a failover cluster instance
                 if ([System.String]::IsNullOrEmpty($vsname)) {
-                    $vsname = $computer
-                    if ($instanceName -ne "MSSQLSERVER") {
-                        $vsname = "$($computer.ComputerName)\$instanceName"
-                    }
+                    $sqlInstance = $computer.ComputerName
+                } else {
+                    $sqlInstance = $vsname
+                }
+                if ($instanceName -ne "MSSQLSERVER") {
+                    $sqlInstance = "$sqlInstance\$instanceName"
                 }
 
                 Write-Message -Level Verbose -Message "Regroot: $regRoot"
@@ -88,7 +89,7 @@ function Get-DbaRegistryRoot {
                 [PSCustomObject]@{
                     ComputerName = $computer.ComputerName
                     InstanceName = $instanceName
-                    SqlInstance  = $vsname
+                    SqlInstance  = $sqlInstance
                     Hive         = "HKLM"
                     Path         = $regRoot
                     RegistryRoot = "HKLM:\$regRoot"
