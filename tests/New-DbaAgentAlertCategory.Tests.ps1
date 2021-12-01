@@ -38,6 +38,6 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         }
 
         # Cleanup and ignore all output
-        $null = Remove-DbaAgentAlertCategory -SqlInstance $script:instance2 -Category CategoryTest1, CategoryTest2
+        $null = Remove-DbaAgentAlertCategory -SqlInstance $script:instance2 -Category CategoryTest1, CategoryTest2 -Confirm:$false
     }
 }
