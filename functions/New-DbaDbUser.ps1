@@ -31,6 +31,9 @@ function New-DbaDbUser {
     .PARAMETER Username
         When specified, the user will have this name.
 
+    .PARAMETER DefaultSchema
+        The default database schema for the user. If not specified this value will default to dbo.
+
     .PARAMETER Force
         If user exists, drop and recreate.
 
@@ -71,6 +74,11 @@ function New-DbaDbUser {
 
         Creates a new sql user named user1 mapped to Login1 in the specified database.
 
+    .EXAMPLE
+        PS C:\> New-DbaDbUser -SqlInstance sqlserver2014 -Database DB1 -Login Login1 -Username user1 -DefaultSchema schema1
+
+        Creates a new sql user named user1 mapped to Login1 in the specified database and specifies the default schema to be schema1.
+
     #>
     [CmdletBinding(SupportsShouldProcess, DefaultParameterSetName = "NoLogin", ConfirmImpact = "Medium")]
     param(
@@ -85,6 +93,7 @@ function New-DbaDbUser {
         [parameter(ParameterSetName = "NoLogin")]
         [parameter(ParameterSetName = "Login")]
         [string[]]$Username,
+        [string]$DefaultSchema = 'dbo',
         [switch]$Force,
         [switch]$EnableException
     )
@@ -207,6 +216,12 @@ function New-DbaDbUser {
                 # Does user exist with same name?
                 Test-SqlUserInDatabase -Database $db -Username $Name
 
+                # Check if DefaultSchema exists.
+                # Using a SQL query here because there is some unknown error occurring if the $db.Schemas.Name is accessed.
+                if (-not $db.Query("SELECT 1 FROM sys.schemas WHERE name = '$DefaultSchema'")) {
+                    Stop-Function -Message "DefaultSchema $DefaultSchema does not exist in the database $db on $instance" -Continue
+                }
+
                 if ($Pscmdlet.ShouldProcess($db, "Creating user $Name")) {
                     try {
                         $smoUser = New-Object Microsoft.SqlServer.Management.Smo.User
@@ -217,6 +232,7 @@ function New-DbaDbUser {
                             $smoUser.Login = $Login
                         }
                         $smoUser.UserType = $UserType
+                        $smoUser.DefaultSchema = $DefaultSchema
 
                         $smoUser.Create()
                     } catch {
