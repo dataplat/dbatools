@@ -25,6 +25,12 @@ function Get-DbaDbUser {
     .PARAMETER ExcludeSystemUser
         This switch removes all system objects from the user collection
 
+    .PARAMETER User
+        Specifies the name(s) of the user(s) to return.
+
+    .PARAMETER Login
+        Specifies the name(s) of the login(s) to filter the user(s) returned.
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -66,6 +72,16 @@ function Get-DbaDbUser {
 
         Gets the users for the databases on Sql1 and Sql2/sqlexpress
 
+    .EXAMPLE
+        PS C:\> Get-DbaDbUser -SqlInstance Server1 -Database db1 -User user1, user2
+
+        Gets the users 'user1' and 'user2' from the db1 database
+
+    .EXAMPLE
+        PS C:\> Get-DbaDbUser -SqlInstance Server1 -Login login1, login2
+
+        Gets the users associated with the logins 'login1' and 'login2'
+
     #>
     [CmdletBinding()]
     param (
@@ -75,6 +91,8 @@ function Get-DbaDbUser {
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
         [switch]$ExcludeSystemUser,
+        [string[]]$User,
+        [string[]]$Login,
         [switch]$EnableException
     )
 
@@ -105,6 +123,12 @@ function Get-DbaDbUser {
                 }
                 if (Test-Bound -ParameterName ExcludeSystemUser) {
                     $users = $users | Where-Object { $_.IsSystemObject -eq $false }
+                }
+                if (Test-Bound -ParameterName User) {
+                    $users = $users | Where-Object { $_.Name -in $User }
+                }
+                if (Test-Bound -ParameterName Login) {
+                    $users = $users | Where-Object { $_.Login -in $Login }
                 }
 
                 $users | ForEach-Object {
