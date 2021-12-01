@@ -18,7 +18,7 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
         $null = New-DbaAgentJobCategory -SqlInstance $script:instance2 -Category 'dbatoolsci test category'
     }
     AfterAll {
-        $null = Remove-DbaAgentJobCategory -SqlInstance $script:instance2 -Category 'dbatoolsci test category'
+        $null = Remove-DbaAgentJobCategory -SqlInstance $script:instance2 -Category 'dbatoolsci test category' -Confirm:$false
     }
 
     Context "Command copies jobs properly" {

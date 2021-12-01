@@ -25,7 +25,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
         AfterAll {
             $null = Remove-DbaAgentJob -SqlInstance $script:instance2 -Job dbatoolsci_testjob, dbatoolsci_testjob_disabled
-            $null = Remove-DbaAgentJobCategory -SqlInstance $script:instance2 -Category 'dbatoolsci_job_category'
+            $null = Remove-DbaAgentJobCategory -SqlInstance $script:instance2 -Category 'dbatoolsci_job_category' -Confirm:$false
         }
 
         $results = Find-DbaAgentJob -SqlInstance $script:instance2 -Job dbatoolsci_testjob
