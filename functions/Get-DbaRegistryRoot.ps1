@@ -72,9 +72,10 @@ function Get-DbaRegistryRoot {
                     }
                 }
 
-                $sqlInstance = $computer.ComputerName
                 # vsname is the virtual server name for a failover cluster instance
-                if ($vsname) {
+                if ([System.String]::IsNullOrEmpty($vsname)) {
+                    $sqlInstance = $computer.ComputerName
+                } else {
                     $sqlInstance = $vsname
                 }
                 if ($instanceName -ne "MSSQLSERVER") {
