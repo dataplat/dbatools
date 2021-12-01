@@ -194,11 +194,11 @@ function Invoke-DbaDbPiiScan {
 
         # Filter the patterns
         if ($Country.Count -ge 1) {
-            $patterns = $patterns | Where-Object Country -in $Country
+            $patterns = $patterns | Where-Object Country -In $Country
         }
 
         if ($CountryCode.Count -ge 1) {
-            $patterns = $patterns | Where-Object CountryCode -in $CountryCode
+            $patterns = $patterns | Where-Object CountryCode -In $CountryCode
         }
     }
 
@@ -231,13 +231,13 @@ function Invoke-DbaDbPiiScan {
 
                 # Filter the tables if needed
                 if ($Table) {
-                    $tables = $db.Tables | Where-Object Name -in $Table
+                    $tables = $db.Tables | Where-Object Name -In $Table
                 } else {
                     $tables = $db.Tables
                 }
 
                 if ($ExcludeTable) {
-                    $tables = $tables | Where-Object Name -notin $ExcludeTable
+                    $tables = $tables | Where-Object Name -NotIn $ExcludeTable
                 }
 
                 # Filter the tables based on the column
@@ -259,13 +259,13 @@ function Invoke-DbaDbPiiScan {
 
                     # Get the columns
                     if ($Column) {
-                        $columns = $tableobject.Columns | Where-Object Name -in $Column
+                        $columns = $tableobject.Columns | Where-Object Name -In $Column
                     } else {
                         $columns = $tableobject.Columns
                     }
 
                     if ($ExcludeColumn) {
-                        $columns = $columns | Where-Object Name -notin $ExcludeColumn
+                        $columns = $columns | Where-Object Name -NotIn $ExcludeColumn
                     }
 
                     # Loop through the columns
@@ -294,7 +294,7 @@ function Invoke-DbaDbPiiScan {
                                 foreach ($knownName in $knownNames) {
                                     foreach ($pattern in $knownName.Pattern) {
                                         if ($columnobject.Name -match $pattern) {
-                                            # Add the column name match if not aleady found
+                                            # Add the column name match if not already found
                                             if ($null -eq ($piiScanResults | Where-Object {
                                                         $_.ComputerName -eq $db.Parent.ComputerName -and
                                                         $_.InstanceName -eq $db.Parent.ServiceName -and
@@ -336,8 +336,15 @@ function Invoke-DbaDbPiiScan {
 
                                 Write-Message -Level Verbose -Message "Scanning the top $SampleCount values for [$($columnobject.Name)] from [$($tableobject.Schema)].[$($tableobject.Name)]"
 
+                                # Set the text data types
+                                $textDataTypes = 'char', 'varchar', 'text', 'nchar', 'nvarchar', 'ntext', 'xml'
+
                                 # Setup the query
-                                $query = "SELECT TOP($SampleCount) [$($columnobject.Name)] FROM [$($tableobject.Schema)].[$($tableobject.Name)]"
+                                if ($columnobject.DataType.Name -in $textDataTypes) {
+                                    $query = "SELECT TOP($SampleCount) LTRIM(RTRIM([$($columnobject.Name)])) AS [$($columnobject.Name)] FROM [$($tableobject.Schema)].[$($tableobject.Name)]"
+                                } else {
+                                    $query = "SELECT TOP($SampleCount) [$($columnobject.Name)] AS [$($columnobject.Name)] FROM [$($tableobject.Schema)].[$($tableobject.Name)]"
+                                }
 
                                 # Get the data
                                 try {
