@@ -24,6 +24,9 @@ function Remove-DbaAgentJobCategory {
         The type of category. This can be "LocalJob", "MultiServerJob" or "None".
         If no category is used all categories types will be removed.
 
+    .PARAMETER InputObject
+        Allows piping from Get-DbaAgentJobCategory.
+
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
 
