@@ -23,7 +23,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         }
 
         It "has the correct properties" {
-            $ExpectedPropsFull = 'ComputerName,InstanceName,SqlInstance,SharedMemoryEnabled,NamedPipesEnabled,TcpIpEnabled,TcpIpProperties,TcpIpAddresses,Certificate'.Split(',')
+            $ExpectedPropsFull = 'ComputerName,InstanceName,SqlInstance,SharedMemoryEnabled,NamedPipesEnabled,TcpIpEnabled,TcpIpProperties,TcpIpAddresses,Certificate,Advanced'.Split(',')
             ($resultsFull.PsObject.Properties.Name | Sort-Object) | Should Be ($ExpectedPropsFull | Sort-Object)
             $ExpectedPropsTcpIpProperties = 'ComputerName,InstanceName,SqlInstance,Enabled,KeepAlive,ListenAll'.Split(',')
             ($resultsTcpIpProperties.PsObject.Properties.Name | Sort-Object) | Should Be ($ExpectedPropsTcpIpProperties | Sort-Object)
