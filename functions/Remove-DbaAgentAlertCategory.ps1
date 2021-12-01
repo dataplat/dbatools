@@ -20,8 +20,8 @@ function Remove-DbaAgentAlertCategory {
     .PARAMETER Category
         The name of the category
 
-    .PARAMETER Force
-        The force parameter will ignore some errors in the parameters and assume defaults.
+    .PARAMETER InputObject
+        Allows piping from Get-DbaAgentAlertCategory.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
