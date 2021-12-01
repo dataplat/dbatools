@@ -316,16 +316,16 @@ function Get-DbaDatabase {
                     $lastCopyOnlyBackups = $lastCopyOnlyBackups | Where-Object End -gt $NoFullBackupSince
                 }
 
-                $hasCopyOnly = $inputObject | Where-CollationSensitiveObject -Property Name -In -Value $lastCopyOnlyBackups.Database -Collation $server.Collation
-                $inputObject = $inputObject | Where-CollationSensitiveObject -Property Name -Notin -Value $lastFullBackups.Database -Collation $server.Collation
+                $hasCopyOnly = $inputObject | Where-DbaCollationSensitiveObject -Property Name -In -Value $lastCopyOnlyBackups.Database -Collation $server.Collation
                 $inputObject = $inputObject | Where-Object Name -cne 'tempdb'
+                $inputObject = $inputObject | Where-DbaCollationSensitiveObject -Property Name -NotIn -Value $lastFullBackups.Database -Collation $server.Collation
             }
             if ($NoLogBackup -or $NoLogBackupSince) {
                 if (!$NoLogBackupSince) {
                     $NoLogBackupSince = New-Object -TypeName DateTime
                     $NoLogBackupSince = $NoLogBackupSince.AddMilliSeconds(1)
                 }
-                $inputObject = $inputObject | Where-Object { $_.LastLogBackupDate -lt $NoLogBackupSince -and $_.Name -ne 'tempdb' -and $_.RecoveryModel -ne 'Simple' }
+                $inputObject = $inputObject | Where-Object { $_.LastLogBackupDate -lt $NoLogBackupSince -and $_.RecoveryModel -ne 'Simple' }
             }
 
             $defaults = 'ComputerName', 'InstanceName', 'SqlInstance', 'Name', 'Status', 'IsAccessible', 'RecoveryModel',
