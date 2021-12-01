@@ -23,9 +23,6 @@ function Get-DbaAgentJobCategory {
         The type of category. This can be "LocalJob", "MultiServerJob" or "None".
         If no category is used all categories types will be returned.
 
-    .PARAMETER Force
-        The force parameter will ignore some errors in the parameters and assume defaults.
-
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -67,7 +64,6 @@ function Get-DbaAgentJobCategory {
         [string[]]$Category,
         [ValidateSet("LocalJob", "MultiServerJob", "None")]
         [string]$CategoryType,
-        [switch]$Force,
         [switch]$EnableException
     )
 

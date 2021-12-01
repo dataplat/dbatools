@@ -137,7 +137,7 @@ function Copy-DbaAgentAlert {
                     } catch {
                         $copyAgentAlertStatus.Status = "Failed"
                         $copyAgentAlertStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                        Stop-Function -Message "Issue creating alert defaults." -Category InvalidOperation -ErrorRecord $_ -Target $destServer -Continue
+                        Write-Message -Level Verbose -Message "Issue creating alert defaults | $PSitem"
                     }
                     $copyAgentAlertStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                 }
