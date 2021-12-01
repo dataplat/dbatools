@@ -19,7 +19,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $null = New-DbaAgentJobCategory -SqlInstance $script:instance2 -Category dbatoolsci_testcategory, dbatoolsci_testcategory2
         }
         AfterAll {
-            $null = Remove-DbaAgentJobCategory -SqlInstance $script:instance2 -Category dbatoolsci_testcategory, dbatoolsci_testcategory2 -Confirm:$false
+            $null = Remove-DbaAgentJobCategory -SqlInstance $script:instance2 -Category dbatoolsci_testcategory, dbatoolsci_testcategory2
         }
         $results = Get-DbaAgentJobCategory -SqlInstance $script:instance2 | Where-Object {$_.Name -match "dbatoolsci"}
         It "Should get at least 2 categories" {
