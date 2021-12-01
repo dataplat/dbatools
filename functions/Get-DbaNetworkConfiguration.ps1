@@ -136,7 +136,7 @@ function Get-DbaNetworkConfiguration {
             if ($regRoot) {
                 $regPath = "Registry::HKEY_LOCAL_MACHINE\$regRoot\MSSQLServer\SuperSocketNetLib"
                 try {
-                    $acceptedNtlmSpns = (Get-ItemProperty -Path $regPath -Name AcceptedSPNs).AcceptedSPNs
+                    $acceptedSPNs = (Get-ItemProperty -Path $regPath -Name AcceptedSPNs).AcceptedSPNs
                     $thumbprint = (Get-ItemProperty -Path $regPath -Name Certificate).Certificate
                     $cert = Get-ChildItem Cert:\LocalMachine -Recurse -ErrorAction SilentlyContinue | Where-Object Thumbprint -eq $thumbprint | Select-Object -First 1
                     $extendedProtection = switch ((Get-ItemProperty -Path $regPath -Name ExtendedProtection).ExtendedProtection) { 0 { $false } 1 { $true } }
@@ -160,7 +160,7 @@ function Get-DbaNetworkConfiguration {
                     $outputAdvanced = [PSCustomObject]@{
                         ForceEncryption    = $forceEncryption
                         HideInstance       = $hideInstance
-                        AcceptedNtlmSpns   = $acceptedNtlmSpns
+                        AcceptedSPNs       = $acceptedSPNs
                         ExtendedProtection = $extendedProtection
                     }
                 } catch {
