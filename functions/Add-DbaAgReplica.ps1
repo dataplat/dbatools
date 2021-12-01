@@ -44,6 +44,8 @@ function Add-DbaAgReplica {
         EndpointUrl has to be an array of strings in format 'TCP://system-address:port', one entry for every instance.
         See details at: https://docs.microsoft.com/en-us/sql/database-engine/availability-groups/windows/specify-endpoint-url-adding-or-modifying-availability-replica
 
+        If an endpoint must be created, EndpointUrl will be used for configuration, if system-address is an ipv4 address.
+
     .PARAMETER Passthru
         Don't create the replica, just pass thru an object that can be further customized before creation.
 
@@ -195,15 +197,35 @@ function Add-DbaAgReplica {
                 }
             }
 
+            # Split of endpoint URL here, as it will be used in two places.
+            if ($EndpointUrl) {
+                $epUrl, $EndpointUrl = $EndpointUrl
+            }
+
             $ep = Get-DbaEndpoint -SqlInstance $server -Type DatabaseMirroring
             if (-not $ep) {
                 if (-not $Endpoint) {
                     $Endpoint = "hadr_endpoint"
                 }
                 if ($Pscmdlet.ShouldProcess($server.Name, "Adding endpoint named $Endpoint to $instance")) {
-                    $ep = New-DbaEndpoint -SqlInstance $server -Name $Endpoint -Type DatabaseMirroring -EndpointEncryption Supported -EncryptionAlgorithm Aes -Certificate $Certificate
+                    $epParams = @{
+                        SqlInstance         = $server
+                        Name                = $Endpoint
+                        Type                = 'DatabaseMirroring'
+                        EndpointEncryption  = 'Supported'
+                        EncryptionAlgorithm = 'Aes'
+                        Certificate         = $Certificate
+                    }
+                    # If the endpoint URL is using an ipv4 address, we will use the URL to create a custom endpoint
+                    if ($epUrl -match 'TCP://\d+\.\d+.\d+\.\d+:\d+') {
+                        $epParams['IPAddress'] = $epUrl -replace 'TCP://(.+):\d+', '$1'
+                        $epParams['Port'] = $epUrl -replace 'TCP://.+:(\d+)', '$1'
+                    }
+                    $ep = New-DbaEndpoint @epParams
                     $null = $ep | Start-DbaEndpoint
                 }
+            } else {
+                $epUrl = $ep.Fqdn
             }
 
             if ((Test-Bound -Not -ParameterName Name)) {
@@ -213,12 +235,7 @@ function Add-DbaAgReplica {
             if ($Pscmdlet.ShouldProcess($server.Name, "Creating a replica for $($InputObject.Name) named $Name")) {
                 try {
                     $replica = New-Object Microsoft.SqlServer.Management.Smo.AvailabilityReplica -ArgumentList $InputObject, $Name
-                    if ($EndpointUrl) {
-                        $epUrl, $EndpointUrl = $EndpointUrl
-                        $replica.EndpointUrl = $epUrl
-                    } else {
-                        $replica.EndpointUrl = $ep.Fqdn
-                    }
+                    $replica.EndpointUrl = $epUrl
                     $replica.FailoverMode = [Microsoft.SqlServer.Management.Smo.AvailabilityReplicaFailoverMode]::$FailoverMode
                     $replica.AvailabilityMode = [Microsoft.SqlServer.Management.Smo.AvailabilityReplicaAvailabilityMode]::$AvailabilityMode
                     if ($server.EngineEdition -ne "Standard") {
