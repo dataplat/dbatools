@@ -388,7 +388,7 @@
                        ],
                        [
                            "EndpointUrl",
-                           "By default, the property Fqdn of Get-DbaEndpoint is used as EndpointUrl.\nUse EndpointUrl if a different URL is required due to special network configurations.\r\nEndpointUrl has to be an array of strings in format \u0027TCP://system-address:port\u0027, one entry for every instance.\r\nSee details at: https://docs.microsoft.com/en-us/sql/database-engine/availability-groups/windows/specify-endpoint-url-adding-or-modifying-availability-replica",
+                           "By default, the property Fqdn of Get-DbaEndpoint is used as EndpointUrl.\nUse EndpointUrl if a different URL is required due to special network configurations.\r\nEndpointUrl has to be an array of strings in format \u0027TCP://system-address:port\u0027, one entry for every instance.\r\nSee details at: https://docs.microsoft.com/en-us/sql/database-engine/availability-groups/windows/specify-endpoint-url-adding-or-modifying-availability-replica\nIf an endpoint must be created, EndpointUrl will be used for configuration, if system-address is an ipv4 address.",
                            "",
                            false,
                            "false",
@@ -12486,15 +12486,6 @@
                            "LocalJob,MultiServerJob,None"
                        ],
                        [
-                           "Force",
-                           "The force parameter will ignore some errors in the parameters and assume defaults.",
-                           "",
-                           false,
-                           "false",
-                           "False",
-                           ""
-                       ],
-                       [
                            "EnableException",
                            "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
                            "",
@@ -12504,7 +12495,7 @@
                            ""
                        ]
                    ],
-        "Syntax":  "Get-DbaAgentJobCategory [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Category] \u003cString[]\u003e] [[-CategoryType] \u003cString\u003e] [-Force] [-EnableException] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Get-DbaAgentJobCategory [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Category] \u003cString[]\u003e] [[-CategoryType] \u003cString\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Get-DbaAgentJobHistory",
@@ -19001,7 +18992,7 @@
         "CommandName":  "Get-DbaDbUser",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Get-DbaDbUser",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaDbUser -SqlInstance sql2016\nGets all database users\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaDbUser -SqlInstance Server1 -Database db1\nGets the users for the db1 database\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaDbUser -SqlInstance Server1 -ExcludeDatabase db1\nGets the users for all databases except db1\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaDbUser -SqlInstance Server1 -ExcludeSystemUser\nGets the users for all databases that are not system objects, like \u0027dbo\u0027, \u0027guest\u0027 or \u0027INFORMATION_SCHEMA\u0027\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003e\u0027Sql1\u0027,\u0027Sql2/sqlexpress\u0027 | Get-DbaDbUser\nGets the users for the databases on Sql1 and Sql2/sqlexpress",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaDbUser -SqlInstance sql2016\nGets all database users\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaDbUser -SqlInstance Server1 -Database db1\nGets the users for the db1 database\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaDbUser -SqlInstance Server1 -ExcludeDatabase db1\nGets the users for all databases except db1\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaDbUser -SqlInstance Server1 -ExcludeSystemUser\nGets the users for all databases that are not system objects, like \u0027dbo\u0027, \u0027guest\u0027 or \u0027INFORMATION_SCHEMA\u0027\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003e\u0027Sql1\u0027,\u0027Sql2/sqlexpress\u0027 | Get-DbaDbUser\nGets the users for the databases on Sql1 and Sql2/sqlexpress\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eGet-DbaDbUser -SqlInstance Server1 -Database db1 -User user1, user2\nGets the users \u0027user1\u0027 and \u0027user2\u0027 from the db1 database\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003eGet-DbaDbUser -SqlInstance Server1 -Login login1, login2\nGets the users associated with the logins \u0027login1\u0027 and \u0027login2\u0027",
         "Params":  [
                        [
                            "SqlInstance",
@@ -19049,6 +19040,24 @@
                            ""
                        ],
                        [
+                           "User",
+                           "Specifies the name(s) of the user(s) to return.",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "Login",
+                           "Specifies the name(s) of the login(s) to filter the user(s) returned.",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
                            "EnableException",
                            "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
                            "",
@@ -19058,7 +19067,7 @@
                            ""
                        ]
                    ],
-        "Syntax":  "Get-DbaDbUser [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cObject[]\u003e] [[-ExcludeDatabase] \u003cObject[]\u003e] [-ExcludeSystemUser] [-EnableException] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Get-DbaDbUser [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cObject[]\u003e] [[-ExcludeDatabase] \u003cObject[]\u003e] [-ExcludeSystemUser] [[-User] \u003cString[]\u003e] [[-Login] \u003cString[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Get-DbaDbUserDefinedTableType",
@@ -22085,7 +22094,7 @@
                        ],
                        [
                            "OutputType",
-                           "Defines what information is returned from the command.\r\nOptions include: Full, ServerProtocols, TcpIpProperties, TcpIpAddresses or Certificate. Full by default.\nFull returns one object per SqlInstance with information about the server protocols\r\nand nested objects with information about TCP/IP properties and TCP/IP addresses.\nServerProtocols returns one object per SqlInstance with information about the server protocols only.\nTcpIpProperties returns one object per SqlInstance with information about the TCP/IP protocol properties only.\nTcpIpAddresses returns one object per SqlInstance and IP address.\r\nIf the instance listens on all IP addresses (TcpIpProperties.ListenAll), only the information about the IPAll address is returned.\r\nOtherwise only information about the individual IP addresses is returned.\r\nFor more details see: https://docs.microsoft.com/en-us/sql/database-engine/configure-windows/configure-a-server-to-listen-on-a-specific-tcp-port\nCertificate returns one object per SqlInstance with information about the configured network certificate and whether encryption is enforced.",
+                           "Defines what information is returned from the command.\r\nOptions include: Full, ServerProtocols, TcpIpProperties, TcpIpAddresses or Certificate. Full by default.\nFull returns one object per SqlInstance with information about the server protocols\r\nand nested objects with information about TCP/IP properties and TCP/IP addresses.\r\nIt also outputs advanded properties including information about the used certificate.\nServerProtocols returns one object per SqlInstance with information about the server protocols only.\nTcpIpProperties returns one object per SqlInstance with information about the TCP/IP protocol properties only.\nTcpIpAddresses returns one object per SqlInstance and IP address.\r\nIf the instance listens on all IP addresses (TcpIpProperties.ListenAll), only the information about the IPAll address is returned.\r\nOtherwise only information about the individual IP addresses is returned.\r\nFor more details see: https://docs.microsoft.com/en-us/sql/database-engine/configure-windows/configure-a-server-to-listen-on-a-specific-tcp-port\nCertificate returns one object per SqlInstance with information about the configured network certificate and whether encryption is enforced.",
                            "",
                            false,
                            "false",
@@ -40195,7 +40204,7 @@
         "CommandName":  "New-DbaDbUser",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/New-DbaDbUser",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eNew-DbaDbUser -SqlInstance sqlserver2014 -Database DB1 -Login user1\nCreates a new sql user with login named user1 in the specified database.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eNew-DbaDbUser -SqlInstance sqlserver2014 -Database DB1 -Username user1\nCreates a new sql user without login named user1 in the specified database.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eNew-DbaDbUser -SqlInstance sqlserver2014 -Database DB1 -Login Login1 -Username user1\nCreates a new sql user named user1 mapped to Login1 in the specified database.",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eNew-DbaDbUser -SqlInstance sqlserver2014 -Database DB1 -Login user1\nCreates a new sql user with login named user1 in the specified database.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eNew-DbaDbUser -SqlInstance sqlserver2014 -Database DB1 -Username user1\nCreates a new sql user without login named user1 in the specified database.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eNew-DbaDbUser -SqlInstance sqlserver2014 -Database DB1 -Login Login1 -Username user1\nCreates a new sql user named user1 mapped to Login1 in the specified database.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eNew-DbaDbUser -SqlInstance sqlserver2014 -Database DB1 -Login Login1 -Username user1 -DefaultSchema schema1\nCreates a new sql user named user1 mapped to Login1 in the specified database and specifies the default schema to be schema1.",
         "Params":  [
                        [
                            "SqlInstance",
@@ -40261,6 +40270,15 @@
                            ""
                        ],
                        [
+                           "DefaultSchema",
+                           "The default database schema for the user. If not specified this value will default to dbo.",
+                           "",
+                           false,
+                           "false",
+                           "dbo",
+                           ""
+                       ],
+                       [
                            "Force",
                            "If user exists, drop and recreate.",
                            "",
@@ -40297,7 +40315,7 @@
                            ""
                        ]
                    ],
-        "Syntax":  "New-DbaDbUser [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-Database \u003cObject[]\u003e] [-ExcludeDatabase \u003cObject[]\u003e] [-IncludeSystem] [-Username \u003cString[]\u003e] [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\nNew-DbaDbUser [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-Database \u003cObject[]\u003e] [-ExcludeDatabase \u003cObject[]\u003e] [-IncludeSystem] [-Login \u003cString\u003e] [-Username \u003cString[]\u003e] [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Syntax":  "New-DbaDbUser [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-Database \u003cObject[]\u003e] [-ExcludeDatabase \u003cObject[]\u003e] [-IncludeSystem] [-Username \u003cString[]\u003e] [-DefaultSchema \u003cString\u003e] [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\nNew-DbaDbUser [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-Database \u003cObject[]\u003e] [-ExcludeDatabase \u003cObject[]\u003e] [-IncludeSystem] [-Login \u003cString\u003e] [-Username \u003cString[]\u003e] [-DefaultSchema \u003cString\u003e] [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "New-DbaDiagnosticAdsNotebook",
@@ -43117,6 +43135,97 @@
                        ]
                    ],
         "Syntax":  "Remove-DbaAgDatabase [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cString[]\u003e] [[-AvailabilityGroup] \u003cString[]\u003e] [[-InputObject] \u003cObject[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+    },
+    {
+        "Name":  "Remove-DbaAgentAlert",
+        "Description":  "Removes the SQL Agent alert(s) that have passed through the pipeline.\nIf not used with a pipeline, Get-DbaAgentAlert will be executed with the parameters provided\nand the returned SQL Agent alert(s) will be removed.",
+        "Tags":  [
+                     "Agent",
+                     "Alert",
+                     "SMO"
+                 ],
+        "Synopsis":  "Removes SQL Agent agent alert(s).",
+        "Alias":  "",
+        "Author":  "Mikey Bronowski (@MikeyBronowski), https://bronowski.it",
+        "CommandName":  "Remove-DbaAgentAlert",
+        "Availability":  "Windows, Linux, macOS",
+        "Links":  "https://dbatools.io/Remove-DbaAgentAlert",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eRemove-DbaAgentAlert -SqlInstance localhost, localhost\\namedinstance\nRemoves all SQL Agent alerts on the localhost, localhost\\namedinstance instances.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eRemove-DbaAgentAlert -SqlInstance localhost -Alert MyDatabaseAlert\nRemoves MyDatabaseAlert SQL Agent alert on the localhost.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaAgentAlert -SqlInstance SRV1 | Out-GridView -Title \u0027Select SQL Agent alert(s) to drop\u0027 -OutputMode Multiple | Remove-DbaAgentAlert\nUsing a pipeline this command gets all SQL Agent alerts on SRV1, lets the user select those to remove and then removes the selected SQL Agent alerts.",
+        "Params":  [
+                       [
+                           "SqlInstance",
+                           "The target SQL Server instance or instances.",
+                           "",
+                           true,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "SqlCredential",
+                           "Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).\r\nWindows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.\r\nFor MFA support, please use Connect-DbaInstance.",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "Alert",
+                           "Specifies one or more SQL Agent alert(s) to delete. If unspecified, all accounts will be removed.",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "ExcludeAlert",
+                           "Specifies one or more SQL Agent alert(s) to exclude.",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "InputObject",
+                           "Allows piping from Get-DbaAgentAlert.",
+                           "",
+                           true,
+                           "true (ByValue)",
+                           "",
+                           ""
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "",
+                           false,
+                           "false",
+                           "False",
+                           ""
+                       ],
+                       [
+                           "WhatIf",
+                           "Shows what would happen if the command were to run. No actions are actually performed.",
+                           "wi",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "Confirm",
+                           "Prompts you for confirmation before executing any changing operations within the command.\r\nThis is the default. Use -Confirm:$false to suppress these prompts.",
+                           "cf",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ]
+                   ],
+        "Syntax":  "Remove-DbaAgentAlert [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-Alert \u003cString[]\u003e] [-ExcludeAlert \u003cString[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\nRemove-DbaAgentAlert -InputObject \u003cAlert[]\u003e [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Remove-DbaAgentAlertCategory",
@@ -46062,7 +46171,7 @@
                            ""
                        ]
                    ],
-        "Syntax":  "Remove-DbaDbSequence [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-Database \u003cString[]\u003e] [-Sequence \u003cString[]\u003e] [-Schema \u003cString[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\nRemove-DbaDbSequence [-SqlCredential \u003cPSCredential\u003e] -InputObject \u003cSequence[]\u003e [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Remove-DbaDbSequence [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-Database \u003cString[]\u003e] [-Sequence \u003cString[]\u003e] [-Schema \u003cString[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\nRemove-DbaDbSequence -InputObject \u003cSequence[]\u003e [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Remove-DbaDbSnapshot",
