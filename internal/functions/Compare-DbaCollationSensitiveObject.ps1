@@ -76,16 +76,17 @@ Function Compare-DbaCollationSensitiveObject {
         #If InputObject is passed in by name, change it to a pipeline, so we can use the process block
         if ($PSBoundParameters['InputObject']) {
             $newParamaters = $PSBoundParameters
-            $newParamaters.Remove('InputObject')
+            $null = $newParamaters.Remove('InputObject')
             return $InputObject | Compare-DbaCollationSensitiveObject @newParamaters
         }
         $stringComparer = (New-Object -TypeName Microsoft.SqlServer.Management.Smo.Server).getStringComparer($Collation)
     }
     process {
         $obj = $_
+        if(-not $obj) {return}
         switch ($PsCmdlet.ParameterSetName) {
             "In" {
-                foreach ($ref in $obj."$Property") {
+                foreach ($ref in $obj.$Property) {
                     foreach ($dif in $Value) {
                         if ($stringComparer.Compare($ref, $dif) -eq 0) {
                             return $obj
@@ -95,33 +96,29 @@ Function Compare-DbaCollationSensitiveObject {
                 break
             }
             "NotIn" {
-                foreach ($ref in $obj."$Property") {
                     $matchFound = $false
                     foreach ($dif in $Value) {
-                        if ($stringComparer.Compare($ref, $dif) -eq 0) {
+                        if ($stringComparer.Compare($obj.$Property, $dif) -eq 0) {
                             $matchFound = $true
                         }
                     }
                     if (-not $matchFound) {
                         return $obj
                     }
-                }
+                
                 break
             }
             "Eq" {
-                foreach ($ref in $obj."$Property") {
-                    if ($stringComparer.Compare($ref, $Value) -eq 0) {
+                    if ($stringComparer.Compare($obj.Property, $Value) -eq 0) {
                         return $obj
                     }
-                }
+                
                 break
             }
             "Ne" {
-                foreach ($ref in $obj."$Property") {
-                    if ($stringComparer.Compare($ref, $Value) -ne 0) {
+                    if ($stringComparer.Compare($obj.$Property $Value) -ne 0) {
                         return $obj
                     }
-                }
                 break
             }
         }
