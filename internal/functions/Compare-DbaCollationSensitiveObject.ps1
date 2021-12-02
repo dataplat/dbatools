@@ -39,18 +39,18 @@
         Copyright: (c) 2021 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
     .EXAMPLE
-        PS C:\> $server = connect-dbaInstance -sqlInstance localhost
+        PS C:\> $server = Connect-DbaInstance -SqlInstance localhost
         PS C:\> $lastCopyOnlyBackups = Get-DbaDbBackupHistory -SqlInstance $server -LastFull -IncludeCopyOnly | Where-Object IsCopyOnly
         PS C:\> $server.Databases | Compare-DbaCollationSensitiveObject -Property Name -In -Value $lastCopyOnlyBackups.Database -Collation $server.Collation
 
-        Returns all databases on the local default SQL Server instance with copy only backups using the server's collation
+        Returns all databases on the local default SQL Server instance with copy only backups using the collation of the SqlInstance
 
     .EXAMPLE
-        PS C:\> $server = connect-dbaInstance -sqlInstance localhost
+        PS C:\> $server = Connect-DbaInstance -SqlInstance localhost
         PS C:\> $lastFullBackups = Get-DbaDbBackupHistory -SqlInstance $server -LastFull
         PS C:\> $server.Databases | Compare-DbaCollationSensitiveObject -Property Name -NotIn -Value $lastFullBackups.Database -Collation $server.Collation
 
-        Returns only the databases on the local default SQL Server instance without a Full Backup, uses server's collation
+        Returns only the databases on the local default SQL Server instance without a Full Backup, using the collation of the SqlInstance
 
 #>
 Function Compare-DbaCollationSensitiveObject {
@@ -73,54 +73,58 @@ Function Compare-DbaCollationSensitiveObject {
         [parameter(Mandatory)]
         [String]$Collation)
     begin {
-
-        #If inputObject is passed in by name, change it to a pipeline, so we can use the process block
+        #If InputObject is passed in by name, change it to a pipeline, so we can use the process block
         if ($PSBoundParameters['InputObject']) {
-            if ($In) {
-                return $InputObject | Compare-DbaCollationSensitiveObject -Property $Property -In -Value $Value -Collation $Collation
-            } elseif ($NotIn) {
-                return $InputObject | Compare-DbaCollationSensitiveObject -Property $Property -NotIn -Value $Value -Collation $Collation
-            } elseif ($Eq) {
-                return $InputObject | Compare-DbaCollationSensitiveObject -Property $Property -Eq -Value $Value -Collation $Collation
-            } elseif ($Ne) {
-                return $InputObject | Compare-DbaCollationSensitiveObject -Property $Property -Ne -Value $Value -Collation $Collation
-            }
+            $newParamaters = $PSBoundParameters
+            $newParamaters.Remove('InputObject')
+            return $InputObject | Compare-DbaCollationSensitiveObject @newParamaters
         }
         $stringComparer = (New-Object -TypeName Microsoft.SqlServer.Management.Smo.Server).getStringComparer($Collation)
     }
     process {
-        if ($In) {
-            foreach ($ref in $_."$Property") {
-                foreach ($dif in $Value) {
-                    if ($stringComparer.Compare($ref, $dif) -eq 0) {
-                        return $_
+        $obj = $_
+        switch ($PsCmdlet.ParameterSetName) {
+            "In" {
+                foreach ($ref in $obj."$Property") {
+                    foreach ($dif in $Value) {
+                        if ($stringComparer.Compare($ref, $dif) -eq 0) {
+                            return $obj
+                        }
                     }
                 }
+                break
             }
-        } elseif ($NotIn) {
-            foreach ($ref in $_."$Property") {
-                $matchFound = $false
-                foreach ($dif in $Value) {
-                    if ($stringComparer.Compare($ref, $dif) -eq 0) {
-                        $matchFound = $true
+            "NotIn" {
+                foreach ($ref in $obj."$Property") {
+                    $matchFound = $false
+                    foreach ($dif in $Value) {
+                        if ($stringComparer.Compare($ref, $dif) -eq 0) {
+                            $matchFound = $true
+                        }
+                    }
+                    if (-not $matchFound) {
+                        return $obj
                     }
                 }
-                if (-not $matchFound) {
-                    return $_
-                }
+                break
             }
-        } elseif ($Eq) {
-            foreach ($ref in $_."$Property") {
-                if ($stringComparer.Compare($ref, $Value) -eq 0) {
-                    return $_
+            "Eq" {
+                foreach ($ref in $obj."$Property") {
+                    if ($stringComparer.Compare($ref, $Value) -eq 0) {
+                        return $obj
+                    }
                 }
+                break
             }
-        } elseif ($Ne) {
-            foreach ($ref in $_."$Property") {
-                if ($stringComparer.Compare($ref, $Value) -ne 0) {
-                    return $_
+            "Ne" {
+                foreach ($ref in $obj."$Property") {
+                    if ($stringComparer.Compare($ref, $Value) -ne 0) {
+                        return $obj
+                    }
                 }
+                break
             }
         }
     }
+    end { }
 }
