@@ -34,10 +34,10 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 
         It "supports piping SQL Agent operator" {
             $operatorName = "dbatoolsci_test_$(get-random)"
-            $null = New-DbaAgentOperator -SqlInstance $script:instance2 -Operator $operatorName
-            (Get-DbaAgentOperator -SqlInstance $script:instance2 -Operator $operatorName ) | Should -Not -BeNullOrEmpty
-            Get-DbaAgentOperator -SqlInstance $script:instance2 -Operator $operatorName | Remove-DbaAgentOperator -Confirm:$false
-            (Get-DbaAgentOperator -SqlInstance $script:instance2 -Operator $operatorName ) | Should -BeNullOrEmpty
+            $null = New-DbaAgentOperator -SqlInstance $instance2 -Operator $operatorName
+            (Get-DbaAgentOperator -SqlInstance $instance2 -Operator $operatorName ) | Should -Not -BeNullOrEmpty
+            Get-DbaAgentOperator -SqlInstance $instance2 -Operator $operatorName | Remove-DbaAgentOperator -Confirm:$false
+            (Get-DbaAgentOperator -SqlInstance $instance2 -Operator $operatorName ) | Should -BeNullOrEmpty
         }
     }
 }
