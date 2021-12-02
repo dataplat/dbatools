@@ -1,10 +1,9 @@
 <#
     .SYNOPSIS
-        Gets SQL Database information for each database that is present on the target instance(s) of SQL Server.
+        Filters InputObject, Compares a property to value(s) using a given sql server collation
 
     .DESCRIPTION
-        The Get-DbaDatabase command gets SQL database information for each database that is present on the target instance(s) of
-        SQL Server. If the name of the database is provided, the command will return only the specific database information.
+        The Compare-DbaCollationSensitiveObject command filters an Inputobject using a string comparer builder provided by the SMO, for a given sql server collation.
 
     .PARAMETER InputObject
         The Object to Filter
