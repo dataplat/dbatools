@@ -41,25 +41,25 @@
     .EXAMPLE
         PS C:\> $server = connect-dbaInstance -sqlInstance localhost
         PS C:\> $lastCopyOnlyBackups = Get-DbaDbBackupHistory -SqlInstance $server -LastFull -IncludeCopyOnly | Where-Object IsCopyOnly
-        PS C:\> $server.Databases | Where-DbaCollationSensitiveObject -Property Name -In -Value $lastCopyOnlyBackups.Database -Collation $server.Collation
+        PS C:\> $server.Databases | Compare-DbaCollationSensitiveObject -Property Name -In -Value $lastCopyOnlyBackups.Database -Collation $server.Collation
 
         Returns all databases on the local default SQL Server instance with copy only backups using the server's collation
 
     .EXAMPLE
         PS C:\> $server = connect-dbaInstance -sqlInstance localhost
         PS C:\> $lastFullBackups = Get-DbaDbBackupHistory -SqlInstance $server -LastFull
-        PS C:\> $server.Databases | Where-DbaCollationSensitiveObject -Property Name -NotIn -Value $lastFullBackups.Database -Collation $server.Collation
+        PS C:\> $server.Databases | Compare-DbaCollationSensitiveObject -Property Name -NotIn -Value $lastFullBackups.Database -Collation $server.Collation
 
         Returns only the databases on the local default SQL Server instance without a Full Backup, uses server's collation
 
     .EXAMPLE
         PS C:\> $server = connect-dbaInstance -sqlInstance localhost
         PS C:\> $lastFullBackups = Get-DbaDbBackupHistory -SqlInstance $server -LastFull
-        PS C:\> $server.Databases | Where-DbaCollationSensitiveObject -Property Name -NotIn -Value $lastFullBackups.Database -Collation $server.Collation | select-Object -ExpandProperty Name
+        PS C:\> $server.Databases | Compare-DbaCollationSensitiveObject -Property Name -NotIn -Value $lastFullBackups.Database -Collation $server.Collation | select-Object -ExpandProperty Name
 
         Returns only the databases on the local default SQL Server instance without a Full Backup
 #>
-Function Where-DbaCollationSensitiveObject {
+Function Compare-DbaCollationSensitiveObject {
     [CmdletBinding()]
     param(
         [parameter(Mandatory, ValueFromPipeline = $true)]
@@ -83,13 +83,13 @@ Function Where-DbaCollationSensitiveObject {
         #If inputObject is passed in by name, change it to a pipeline, so we can use the process block
         if ($PSBoundParameters['InputObject']) {
             if ($In) {
-                return $InputObject | Where-DbaCollationSensitiveObject -Property $Property -In -Value $Value -Collation $Collation
+                return $InputObject | Compare-DbaCollationSensitiveObject -Property $Property -In -Value $Value -Collation $Collation
             } elseif ($NotIn) {
-                return $InputObject | Where-DbaCollationSensitiveObject -Property $Property -NotIn -Value $Value -Collation $Collation
+                return $InputObject | Compare-DbaCollationSensitiveObject -Property $Property -NotIn -Value $Value -Collation $Collation
             } elseif ($Eq) {
-                return $InputObject | Where-DbaCollationSensitiveObject -Property $Property -Eq -Value $Value -Collation $Collation
+                return $InputObject | Compare-DbaCollationSensitiveObject -Property $Property -Eq -Value $Value -Collation $Collation
             } elseif ($Ne) {
-                return $InputObject | Where-DbaCollationSensitiveObject -Property $Property -Ne -Value $Value -Collation $Collation
+                return $InputObject | Compare-DbaCollationSensitiveObject -Property $Property -Ne -Value $Value -Collation $Collation
             }
         }
         $stringComparer = (New-Object -TypeName Microsoft.SqlServer.Management.Smo.Server).getStringComparer($Collation)
