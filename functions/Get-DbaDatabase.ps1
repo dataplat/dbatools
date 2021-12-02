@@ -313,15 +313,19 @@ function Get-DbaDatabase {
                 $lastCopyOnlyBackups = Get-DbaDbBackupHistory -SqlInstance $server -LastFull -IncludeCopyOnly | Where-Object IsCopyOnly
                 if ($NoFullBackupSince) {
                     $lastFullBackups = $lastFullBackups | Where-Object End -gt $NoFullBackupSince
+                    $lastCopyOnlyBackups = $lastCopyOnlyBackups | Where-Object End -gt $NoFullBackupSince
                 }
-                $inputObject = $inputObject | Where-Object { $_.Name -cnotin $lastFullBackups.Database -and $_.Name -ne 'tempdb' }
+
+                $hasCopyOnly = $inputObject | Compare-DbaCollationSensitiveObject -Property Name -In -Value $lastCopyOnlyBackups.Database -Collation $server.Collation
+                $inputObject = $inputObject | Where-Object Name -cne 'tempdb'
+                $inputObject = $inputObject | Compare-DbaCollationSensitiveObject -Property Name -NotIn -Value $lastFullBackups.Database -Collation $server.Collation
             }
             if ($NoLogBackup -or $NoLogBackupSince) {
-                $lastLogBackups = Get-DbaDbBackupHistory -SqlInstance $server -LastLog
-                if ($NoLogBackupSince) {
-                    $lastLogBackups = $lastLogBackups | Where-Object End -gt $NoLogBackupSince
+                if (!$NoLogBackupSince) {
+                    $NoLogBackupSince = New-Object -TypeName DateTime
+                    $NoLogBackupSince = $NoLogBackupSince.AddMilliSeconds(1)
                 }
-                $inputObject = $inputObject | Where-Object { $_.Name -cnotin $lastLogBackups.Database -and $_.Name -ne 'tempdb' -and $_.RecoveryModel -ne 'Simple' }
+                $inputObject = $inputObject | Where-Object { $_.LastLogBackupDate -lt $NoLogBackupSince -and $_.RecoveryModel -ne 'Simple' }
             }
 
             $defaults = 'ComputerName', 'InstanceName', 'SqlInstance', 'Name', 'Status', 'IsAccessible', 'RecoveryModel',
@@ -342,7 +346,7 @@ function Get-DbaDatabase {
 
                     $backupStatus = $null
                     if ($NoFullBackup -or $NoFullBackupSince) {
-                        if ($db.Name -cin $lastCopyOnlyBackups.Database) {
+                        if ($db -cin $hasCopyOnly) {
                             $backupStatus = "Only CopyOnly backups"
                         }
                     }
