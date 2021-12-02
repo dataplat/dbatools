@@ -83,42 +83,38 @@ Function Compare-DbaCollationSensitiveObject {
     }
     process {
         $obj = $_
-        if(-not $obj) {return}
+        if (-not $obj) { return }
         switch ($PsCmdlet.ParameterSetName) {
             "In" {
-                foreach ($ref in $obj.$Property) {
-                    foreach ($dif in $Value) {
-                        if ($stringComparer.Compare($ref, $dif) -eq 0) {
-                            return $obj
-                        }
+                foreach ($dif in $Value) {
+                    if ($stringComparer.Compare($obj.$Property, $dif) -eq 0) {
+                        return $obj
                     }
                 }
                 break
             }
             "NotIn" {
-                    $matchFound = $false
-                    foreach ($dif in $Value) {
-                        if ($stringComparer.Compare($obj.$Property, $dif) -eq 0) {
-                            $matchFound = $true
-                        }
+                $matchFound = $false
+                foreach ($dif in $Value) {
+                    if ($stringComparer.Compare($obj.$Property, $dif) -eq 0) {
+                        $matchFound = $true
                     }
-                    if (-not $matchFound) {
-                        return $obj
-                    }
-                
+                }
+                if (-not $matchFound) {
+                    return $obj
+                }
                 break
             }
             "Eq" {
-                    if ($stringComparer.Compare($obj.Property, $Value) -eq 0) {
-                        return $obj
-                    }
-                
+                if ($stringComparer.Compare($obj.Property, $Value) -eq 0) {
+                    return $obj
+                }
                 break
             }
             "Ne" {
-                    if ($stringComparer.Compare($obj.$Property $Value) -ne 0) {
-                        return $obj
-                    }
+                if ($stringComparer.Compare($obj.$Property, $Value) -ne 0) {
+                    return $obj
+                }
                 break
             }
         }
