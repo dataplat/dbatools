@@ -52,12 +52,6 @@
 
         Returns only the databases on the local default SQL Server instance without a Full Backup, uses server's collation
 
-    .EXAMPLE
-        PS C:\> $server = connect-dbaInstance -sqlInstance localhost
-        PS C:\> $lastFullBackups = Get-DbaDbBackupHistory -SqlInstance $server -LastFull
-        PS C:\> $server.Databases | Compare-DbaCollationSensitiveObject -Property Name -NotIn -Value $lastFullBackups.Database -Collation $server.Collation | select-Object -ExpandProperty Name
-
-        Returns only the databases on the local default SQL Server instance without a Full Backup
 #>
 Function Compare-DbaCollationSensitiveObject {
     [CmdletBinding()]
