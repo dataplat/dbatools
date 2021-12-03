@@ -22,6 +22,13 @@ function Remove-DbaCredential {
     .PARAMETER ExcludeCredential
         Specifies one or more SQL credential(s) to exclude.
 
+    .PARAMETER Identity
+        Only include specific identities
+        Note: if spaces exist in the credential identity, you will have to type "" or '' around it.
+
+    .PARAMETER ExcludeIdentity
+        Excluded identities
+
     .PARAMETER InputObject
         Allows piping from Get-DbaCredential.
 

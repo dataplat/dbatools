@@ -17,11 +17,11 @@ function Get-DbaCredential {
 
         For MFA support, please use Connect-DbaInstance.
 
-    .PARAMETER Name
+    .PARAMETER Credential
         Only include specific names
         Note: if spaces exist in the credential name, you will have to type "" or '' around it.
 
-    .PARAMETER ExcludeName
+    .PARAMETER ExcludeCredential
         Excluded credential names
 
     .PARAMETER Identity
