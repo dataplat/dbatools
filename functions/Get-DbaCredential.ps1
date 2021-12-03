@@ -95,7 +95,7 @@ function Get-DbaCredential {
             }
 
             if ($ExcludeCredential) {
-                $creds = $creds | Where-Object { $ExcludeCredentials -notcontains $_.Name }
+                $creds = $creds | Where-Object { $ExcludeCredential -notcontains $_.Name }
             }
 
             if ($Identity) {
