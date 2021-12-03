@@ -67,7 +67,7 @@ function Remove-DbaCredential {
     param (
         [Parameter(ParameterSetName = 'NonPipeline', Mandatory = $true, Position = 0)]
         [DbaInstanceParameter[]]$SqlInstance,
-        #[Parameter(ParameterSetName = 'NonPipeline')]
+        [Parameter(ParameterSetName = 'NonPipeline')]
         [PSCredential]$SqlCredential,
         [Parameter(ParameterSetName = 'NonPipeline')]
         [string[]]$Credential,
