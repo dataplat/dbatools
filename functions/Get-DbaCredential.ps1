@@ -88,25 +88,25 @@ function Get-DbaCredential {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
-            $credential = $server.Credentials
+            $creds = $server.Credentials
 
             if ($Credential) {
-                $credential = $credential | Where-Object { $Credential -contains $_.Name }
+                $creds = $creds | Where-Object { $Credential -contains $_.Name }
             }
 
             if ($ExcludeCredential) {
-                $credential = $credential | Where-Object { $ExcludeCredentials -notcontains $_.Name }
+                $creds = $creds | Where-Object { $ExcludeCredentials -notcontains $_.Name }
             }
 
             if ($Identity) {
-                $credential = $credential | Where-Object { $Identity -contains $_.Identity }
+                $creds = $creds | Where-Object { $Identity -contains $_.Identity }
             }
 
             if ($ExcludeIdentity) {
-                $credential = $credential | Where-Object { $ExcludeIdentity -notcontains $_.Identity }
+                $creds = $creds | Where-Object { $ExcludeIdentity -notcontains $_.Identity }
             }
 
-            foreach ($currentcredential in $credential) {
+            foreach ($currentcredential in $creds) {
                 Add-Member -Force -InputObject $currentcredential -MemberType NoteProperty -Name ComputerName -value $currentcredential.Parent.ComputerName
                 Add-Member -Force -InputObject $currentcredential -MemberType NoteProperty -Name InstanceName -value $currentcredential.Parent.ServiceName
                 Add-Member -Force -InputObject $currentcredential -MemberType NoteProperty -Name SqlInstance -value $currentcredential.Parent.DomainInstanceName
