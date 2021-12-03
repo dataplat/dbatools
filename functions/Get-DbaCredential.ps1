@@ -69,8 +69,10 @@ function Get-DbaCredential {
         [parameter(Mandatory, ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [string[]]$Name,
-        [string[]]$ExcludeName,
+        [Alias('Name')]
+        [string[]]$Credential,
+        [Alias('ExcludeName')]
+        [string[]]$ExcludeCredential,
         [Alias('CredentialIdentity')]
         [string[]]$Identity,
         [Alias('ExcludeCredentialIdentity')]
@@ -88,12 +90,12 @@ function Get-DbaCredential {
 
             $credential = $server.Credentials
 
-            if ($Name) {
-                $credential = $credential | Where-Object { $Name -contains $_.Name }
+            if ($Credential) {
+                $credential = $credential | Where-Object { $Credential -contains $_.Name }
             }
 
-            if ($ExcludeName) {
-                $credential = $credential | Where-Object { $ExcludeName -notcontains $_.Name }
+            if ($ExcludeCredential) {
+                $credential = $credential | Where-Object { $ExcludeCredentials -notcontains $_.Name }
             }
 
             if ($Identity) {
