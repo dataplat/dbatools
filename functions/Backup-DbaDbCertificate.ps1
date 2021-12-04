@@ -237,7 +237,15 @@ function Backup-DbaDbCertificate {
         if (Test-FunctionInterrupt) { return }
 
         if ($SqlInstance) {
-            $InputObject += Get-DbaDbCertificate -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $Database -ExcludeDatabase $ExcludeDatabase -Certificate $Certificate
+            foreach ($dbCert in $Certificate) {
+                $databaseCertToBackup = Get-DbaDbCertificate -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $Database -ExcludeDatabase $ExcludeDatabase -Certificate $dbCert
+
+                if ($databaseCertToBackup) {
+                    $InputObject += $databaseCertToBackup
+                } else {
+                    Stop-Function -Message "Database certificate $dbCert was not found in $Database on $SqlInstance" -Continue
+                }
+            }
         }
 
         foreach ($cert in $InputObject) {
