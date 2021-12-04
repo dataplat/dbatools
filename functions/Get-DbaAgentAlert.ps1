@@ -58,8 +58,7 @@ function Get-DbaAgentAlert {
     param (
         [parameter(Mandatory, ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
-        [PSCredential]
-        $SqlCredential,
+        [PSCredential]$SqlCredential,
         [string[]]$Alert,
         [string[]]$ExcludeAlert,
         [switch]$EnableException

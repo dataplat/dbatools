@@ -20,8 +20,8 @@ function Remove-DbaAgentAlertCategory {
     .PARAMETER Category
         The name of the category
 
-    .PARAMETER Force
-        The force parameter will ignore some errors in the parameters and assume defaults.
+    .PARAMETER InputObject
+        Allows piping from Get-DbaAgentAlertCategory.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
@@ -60,45 +60,63 @@ function Remove-DbaAgentAlertCategory {
 
         Remove multiple alert categories from the multiple instances.
 
+    .EXAMPLE
+        PS C:\> Get-DbaAgentAlertCategory -SqlInstance SRV1 | Out-GridView -Title 'Select SQL Agent alert category(-ies) to drop' -OutputMode Multiple | Remove-DbaAgentAlertCategory
+
+        Using a pipeline this command gets all SQL Agent alert category(-ies) on SRV1, lets the user select those to remove and then removes the selected SQL Agent alert category(-ies).
+
     #>
-    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low")]
+    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High')]
     param (
-        [parameter(Mandatory, ValueFromPipeline)]
+        [Parameter(ParameterSetName = 'NonPipeline', Mandatory = $true, Position = 0)]
         [DbaInstanceParameter[]]$SqlInstance,
+        [Parameter(ParameterSetName = 'NonPipeline')]
         [PSCredential]$SqlCredential,
-        [ValidateNotNullOrEmpty()]
+        [Parameter(ParameterSetName = 'NonPipeline')]
         [string[]]$Category,
-        [switch]$Force,
+        [parameter(ValueFromPipeline, ParameterSetName = 'Pipeline', Mandatory = $true)]
+        [Microsoft.SqlServer.Management.Smo.Agent.AlertCategory[]]$InputObject,
+        [Parameter(ParameterSetName = 'NonPipeline')][Parameter(ParameterSetName = 'Pipeline')]
         [switch]$EnableException
     )
+
     begin {
-        if ($Force) { $ConfirmPreference = 'none' }
+        $agentCategories = @( )
     }
+
     process {
+        if ($SqlInstance) {
+            $params = $PSBoundParameters
+            $null = $params.Remove('WhatIf')
+            $null = $params.Remove('Confirm')
+            $agentCategories = Get-DbaAgentAlertCategory @params
+        } else {
+            $agentCategories += $InputObject
+        }
+    }
 
-        foreach ($instance in $SqlInstance) {
-            try {
-                $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential
-            } catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
-            }
-
-            foreach ($cat in $Category) {
-                if ($cat -notin $server.JobServer.AlertCategories.Name) {
-                    Stop-Function -Message "Alert category $cat doesn't exist on $instance" -Target $instance -Continue
+    end {
+        # We have to delete in the end block to prevent "Collection was modified; enumeration operation may not execute." if directly piped from Get-DbaAgentAlertCategory.
+        foreach ($agentCategory in $agentCategories) {
+            if ($PSCmdlet.ShouldProcess($agentCategory.Parent.Parent.Name, "Removing the SQL Agent alert category $($agentCategory.Name) on $($agentCategory.Parent.Parent.Name)")) {
+                $output = [pscustomobject]@{
+                    ComputerName = $agentCategory.Parent.Parent.ComputerName
+                    InstanceName = $agentCategory.Parent.Parent.ServiceName
+                    SqlInstance  = $agentCategory.Parent.Parent.DomainInstanceName
+                    Name         = $agentCategory.Name
+                    Status       = $null
+                    IsRemoved    = $false
                 }
-
-                if ($PSCmdlet.ShouldProcess($instance, "Removing the alert category $Category")) {
-                    try {
-                        $currentCategory = $server.JobServer.AlertCategories[$cat]
-
-                        Write-Message -Message "Removing alert category $cat" -Level Verbose
-
-                        $currentCategory.Drop()
-                    } catch {
-                        Stop-Function -Message "Something went wrong removing the alert category $cat on $instance" -Target $cat -Continue -ErrorRecord $_
-                    }
+                try {
+                    $agentCategory.Drop()
+                    $output.Status = "Dropped"
+                    $output.IsRemoved = $true
+                } catch {
+                    Stop-Function -Message "Failed removing the SQL Agent alert category $($agentCategory.Name) on $($agentCategory.Parent.Parent.Name)" -ErrorRecord $_
+                    $output.Status = (Get-ErrorMessage -Record $_)
+                    $output.IsRemoved = $false
                 }
+                $output
             }
         }
     }
