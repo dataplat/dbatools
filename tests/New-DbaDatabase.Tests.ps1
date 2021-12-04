@@ -90,7 +90,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         }
 
         It "bug 6780 autogrowth params" {
-            $db6780 = New-DbaDatabase -SqlInstance $instance2 -Name $bug6780DbName -Recoverymodel Simple -DataFilePath $randomDb.PrimaryFilePath -LogFilePath $randomDb.PrimaryFilePath -SecondaryFileCount 1 -DataFileSuffix = "_PRIMARY" -LogFileSuffix = "_Log" -SecondaryDataFileSuffix = "_MainData"
+            $db6780 = New-DbaDatabase -SqlInstance $instance2 -Name $bug6780DbName -Recoverymodel Simple -DataFilePath $randomDb.PrimaryFilePath -LogFilePath $randomDb.PrimaryFilePath -SecondaryFileCount 1 -DataFileSuffix "_PRIMARY" -LogFileSuffix "_Log" -SecondaryDataFileSuffix "_MainData"
             $db6780.Count | Should -Be 1
 
             $instance2.Databases[$bug6780DbName].FileGroups["PRIMARY"].Files["$($bug6780DbName)_PRIMARY"].Growth | Should -Be $instance2.Databases["model"].FileGroups["PRIMARY"].Files["modeldev"].Growth
@@ -116,13 +116,13 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         }
 
         It "SecondaryFilesize is specified but not the SecondaryFileCount" {
-            $secondaryFileTestDb = New-DbaDatabase -SqlInstance $instance3 -Name $secondaryFileTestDbName -SecondaryFilesize 10 -DataFileSuffix = "_PRIMARY" -LogFileSuffix = "_Log" -SecondaryDataFileSuffix = "_MainData"
+            $secondaryFileTestDb = New-DbaDatabase -SqlInstance $instance3 -Name $secondaryFileTestDbName -SecondaryFilesize 10 -DataFileSuffix "_PRIMARY" -LogFileSuffix "_Log" -SecondaryDataFileSuffix "_MainData"
             $instance3.Databases[$secondaryFileTestDbName].FileGroups["$($secondaryFileTestDbName)_MainData"].Files.Count | Should -Be 1
             $instance3.Databases[$secondaryFileTestDbName].FileGroups["$($secondaryFileTestDbName)_MainData"].Files[0].Size | Should -Be 10240
         }
 
         It "SecondaryFileCount is specified but not the other secondary file params" {
-            $secondaryFileCountTestDb = New-DbaDatabase -SqlInstance $instance3 -Name $secondaryFileCountTestDbName -SecondaryFileCount 2 -DataFileSuffix = "_PRIMARY" -LogFileSuffix = "_Log" -SecondaryDataFileSuffix = "_MainData"
+            $secondaryFileCountTestDb = New-DbaDatabase -SqlInstance $instance3 -Name $secondaryFileCountTestDbName -SecondaryFileCount 2 -DataFileSuffix "_PRIMARY" -LogFileSuffix "_Log" -SecondaryDataFileSuffix "_MainData"
             $instance3.Databases[$secondaryFileCountTestDbName].FileGroups["$($secondaryFileCountTestDbName)_MainData"].Files.Count | Should -Be 2
             $instance3.Databases[$secondaryFileCountTestDbName].FileGroups["$($secondaryFileCountTestDbName)_MainData"].Files[0].Size | Should -Be $instance3.Databases["model"].FileGroups["PRIMARY"].Files["modeldev"].Size
             $instance3.Databases[$secondaryFileCountTestDbName].FileGroups["$($secondaryFileCountTestDbName)_MainData"].Files[1].Size | Should -Be $instance3.Databases["model"].FileGroups["PRIMARY"].Files["modeldev"].Size
@@ -143,7 +143,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             $primaryFileGroupDb = New-DbaDatabase -SqlInstance $instance3 -Name $primaryFileGroupDbName -DefaultFileGroup "Primary"
             $primaryFileGroupDb.DefaultFileGroup | Should -Be "PRIMARY"
 
-            $secondaryFileGroupDb = New-DbaDatabase -SqlInstance $instance3 -Name $secondaryFileGroupDbName -DefaultFileGroup "Secondary" -DataFileSuffix = "_PRIMARY" -LogFileSuffix = "_Log" -SecondaryDataFileSuffix = "_MainData"
+            $secondaryFileGroupDb = New-DbaDatabase -SqlInstance $instance3 -Name $secondaryFileGroupDbName -DefaultFileGroup "Secondary" -DataFileSuffix "_PRIMARY" -LogFileSuffix "_Log" -SecondaryDataFileSuffix "_MainData"
             $secondaryFileGroupDb.DefaultFileGroup | Should -Be "$($secondaryFileGroupDbName)_MainData"
         }
     }
