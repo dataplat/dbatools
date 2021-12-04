@@ -8,12 +8,6 @@ function New-DbaDatabase {
 
         It allows creation with multiple files, and sets all growth settings to be fixed size rather than percentage growth. The autogrowth settings are obtained from the modeldev file in the model database when not supplied as command line arguments.
 
-        The generated database filenames take the form:
-
-        <db name>_PRIMARY
-        <db name>_Log
-        <db name>_MainData_1  (Secondary filegroup files)
-
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.
 
@@ -77,13 +71,13 @@ function New-DbaDatabase {
         Sets the default file group. Either primary or secondary.
 
     .PARAMETER DataFileSuffix
-        The data file suffix. Defaults to "_PRIMARY"
+        The data file suffix.
 
     .PARAMETER LogFileSuffix
-        The log file suffix. Defaults to "_Log"
+        The log file suffix.
 
     .PARAMETER SecondaryDataFileSuffix
-        The secondary data file suffix. Defaults to "_MainData"
+        The secondary data file suffix.
 
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
@@ -130,7 +124,23 @@ function New-DbaDatabase {
         Creates a secondary group with 2 files in the Secondary filegroup.
 
     .EXAMPLE
-        New-DbaDatabase -SqlInstance sql1 -Name newDb -LogSize 32 -LogMaxSize 512 -PrimaryFilesize 64 -PrimaryFileMaxSize 512 -SecondaryFilesize 64 -SecondaryFileMaxSize 512 -LogGrowth 32 -PrimaryFileGrowth 64 -SecondaryFileGrowth 64
+        $databaseParams = @{
+            SqlInstance             = "sql1"
+            Name                    = "newDb"
+            LogSize                 = 32
+            LogMaxSize              = 512
+            PrimaryFilesize         = 64
+            PrimaryFileMaxSize      = 512
+            SecondaryFilesize       = 64
+            SecondaryFileMaxSize    = 512
+            LogGrowth               = 32
+            PrimaryFileGrowth       = 64
+            SecondaryFileGrowth     = 64
+            DataFileSuffix          = "_PRIMARY"
+            LogFileSuffix           = "_Log"
+            SecondaryDataFileSuffix = "_MainData"
+        }
+        New-DbaDatabase @databaseParams
 
         Creates a new database named newDb on the sql1 instance and sets the file sizes, max sizes, and growth as specified. The resulting filenames will take the form:
 
