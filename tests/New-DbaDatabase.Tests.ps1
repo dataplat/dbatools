@@ -46,7 +46,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         }
 
         It "creates one new database on two servers" {
-            $newDbOnTwoServers = New-DbaDatabase -SqlInstance $instance2, $instance3 -Name $newDbName -LogSize 32 -LogMaxSize 512 -PrimaryFilesize 64 -PrimaryFileMaxSize 512 -SecondaryFilesize 64 -SecondaryFileMaxSize 512 -LogGrowth 32 -PrimaryFileGrowth 64 -SecondaryFileGrowth 64 -DataFileSuffix = "_PRIMARY" -LogFileSuffix = "_Log" -SecondaryDataFileSuffix = "_MainData"
+            $newDbOnTwoServers = New-DbaDatabase -SqlInstance $instance2, $instance3 -Name $newDbName -LogSize 32 -LogMaxSize 512 -PrimaryFilesize 64 -PrimaryFileMaxSize 512 -SecondaryFilesize 64 -SecondaryFileMaxSize 512 -LogGrowth 32 -PrimaryFileGrowth 64 -SecondaryFileGrowth 64 -DataFileSuffix "_PRIMARY" -LogFileSuffix "_Log" -SecondaryDataFileSuffix "_MainData"
             $newDbOnTwoServers.Count | Should -Be 2
             $newDbOnTwoServers[0].Name | Should -Be $newDbName
             $newDbOnTwoServers[1].Name | Should -Be $newDbName
