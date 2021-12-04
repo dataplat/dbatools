@@ -74,7 +74,7 @@ function New-DbaDatabase {
         The data file suffix.
 
     .PARAMETER LogFileSuffix
-        The log file suffix.
+        The log file suffix. Defaults to "_log"
 
     .PARAMETER SecondaryDataFileSuffix
         The secondary data file suffix.
@@ -176,7 +176,7 @@ function New-DbaDatabase {
         [ValidateSet('Primary', 'Secondary')]
         [string]$DefaultFileGroup,
         [string]$DataFileSuffix,
-        [string]$LogFileSuffix,
+        [string]$LogFileSuffix = '_log',
         [string]$SecondaryDataFileSuffix,
         [switch]$EnableException
     )
