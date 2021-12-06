@@ -1,7 +1,7 @@
 
 function Add-DbaAgListener {
     <#
-    .SYNOPSIS
+        .SYNOPSIS
         Adds a listener to an availability group on a SQL Server instance.
 
     .DESCRIPTION
