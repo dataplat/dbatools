@@ -65,17 +65,13 @@ function Remove-DbaAgentProxy {
     #>
     [CmdletBinding(SupportsShouldProcess, DefaultParameterSetName = 'Default', ConfirmImpact = 'High')]
     param (
-        [Parameter(ParameterSetName = 'NonPipeline', Mandatory = $true, Position = 0)]
         [DbaInstanceParameter[]]$SqlInstance,
-        [Parameter(ParameterSetName = 'NonPipeline')]
         [PSCredential]$SqlCredential,
-        [Parameter(ParameterSetName = 'NonPipeline')]
         [string[]]$Proxy,
-        [Parameter(ParameterSetName = 'NonPipeline')]
         [string[]]$ExcludeProxy,
         [parameter(ValueFromPipeline, ParameterSetName = 'Pipeline', Mandatory = $true)]
         [Microsoft.SqlServer.Management.Smo.Agent.ProxyAccount[]]$InputObject,
-        [Parameter(ParameterSetName = 'NonPipeline')][Parameter(ParameterSetName = 'Pipeline')]
+        [Parameter(ParameterSetName = 'Pipeline')]
         [switch]$EnableException
     )
 
