@@ -49,6 +49,11 @@ function Backup-DbaServiceMasterKey {
 
     .EXAMPLE
         PS C:\> Backup-DbaServiceMasterKey -SqlInstance server1\sql2016
+        >> ComputerName : SERVER1
+        >> InstanceName : SQL2016
+        >> SqlInstance  : SERVER1\SQL2016
+        >> Filename     : E:\MSSQL13.SQL2016\MSSQL\Backup\server1$sql2016-SMK-20170614162311.key
+        >> Status       : Success
 
         Prompts for export password, then logs into server1\sql2016 with Windows credentials then backs up the service master key to the default backup directory.
 
