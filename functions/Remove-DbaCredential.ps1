@@ -70,23 +70,17 @@ function Remove-DbaCredential {
         Using a pipeline this command gets all SQL credentials on SRV1, lets the user select those to remove and then removes the selected SQL credentials.
 
     #>
-    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High')]
+    [CmdletBinding(SupportsShouldProcess, DefaultParameterSetName = 'Default', ConfirmImpact = 'High')]
     param (
-        [Parameter(ParameterSetName = 'NonPipeline', Mandatory = $true, Position = 0)]
         [DbaInstanceParameter[]]$SqlInstance,
-        [Parameter(ParameterSetName = 'NonPipeline')]
         [PSCredential]$SqlCredential,
-        [Parameter(ParameterSetName = 'NonPipeline')]
         [string[]]$Credential,
-        [Parameter(ParameterSetName = 'NonPipeline')]
         [string[]]$ExcludeCredential,
-        [Parameter(ParameterSetName = 'NonPipeline')]
         [string[]]$Identity,
-        [Parameter(ParameterSetName = 'NonPipeline')]
         [string[]]$ExcludeIdentity,
         [parameter(ValueFromPipeline, ParameterSetName = 'Pipeline', Mandatory = $true)]
         [Microsoft.SqlServer.Management.Smo.Credential[]]$InputObject,
-        [Parameter(ParameterSetName = 'NonPipeline')][Parameter(ParameterSetName = 'Pipeline')]
+        [Parameter(ParameterSetName = 'Pipeline')]
         [switch]$EnableException
     )
 
