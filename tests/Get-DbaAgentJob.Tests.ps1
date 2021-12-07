@@ -67,7 +67,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $null = New-DbaAgentJob -SqlInstance $script:instance2 -Job dbatoolsci_testjob_cat2 -Category 'Cat2'
         }
         AfterAll {
-            $null = Remove-DbaAgentJobCategory -SqlInstance $script:instance2 -Category 'Cat1', 'Cat2'
+            $null = Remove-DbaAgentJobCategory -SqlInstance $script:instance2 -Category 'Cat1', 'Cat2' -Confirm:$false
 
             $null = Remove-DbaAgentJob -SqlInstance $script:instance2 -Job dbatoolsci_testjob_cat1, dbatoolsci_testjob_cat2
         }

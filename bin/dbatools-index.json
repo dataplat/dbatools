@@ -43241,14 +43241,14 @@
         "CommandName":  "Remove-DbaAgentAlertCategory",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Remove-DbaAgentAlertCategory",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eRemove-DbaAgentAlertCategory -SqlInstance sql1 -Category \u0027Category 1\u0027\nRemove the alert category Category 1 from the instance.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eRemove-DbaAgentAlertCategory -SqlInstance sql1 -Category Category1, Category2, Category3\nRemove multiple alert categories from the instance.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eRemove-DbaAgentAlertCategory -SqlInstance sql1, sql2, sql3 -Category Category1, Category2, Category3\nRemove multiple alert categories from the multiple instances.",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eRemove-DbaAgentAlertCategory -SqlInstance sql1 -Category \u0027Category 1\u0027\nRemove the alert category Category 1 from the instance.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eRemove-DbaAgentAlertCategory -SqlInstance sql1 -Category Category1, Category2, Category3\nRemove multiple alert categories from the instance.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eRemove-DbaAgentAlertCategory -SqlInstance sql1, sql2, sql3 -Category Category1, Category2, Category3\nRemove multiple alert categories from the multiple instances.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaAgentAlertCategory -SqlInstance SRV1 | Out-GridView -Title \u0027Select SQL Agent alert category(-ies) to drop\u0027 -OutputMode Multiple | Remove-DbaAgentAlertCategory\nUsing a pipeline this command gets all SQL Agent alert category(-ies) on SRV1, lets the user select those to remove and then removes the selected SQL Agent alert category(-ies).",
         "Params":  [
                        [
                            "SqlInstance",
                            "The target SQL Server instance or instances. You must have sysadmin access and server version must be SQL Server version 2000 or greater.",
                            "",
                            true,
-                           "true (ByValue)",
+                           "false",
                            "",
                            ""
                        ],
@@ -43271,12 +43271,12 @@
                            ""
                        ],
                        [
-                           "Force",
-                           "The force parameter will ignore some errors in the parameters and assume defaults.",
+                           "InputObject",
+                           "Allows piping from Get-DbaAgentAlertCategory.",
                            "",
-                           false,
-                           "false",
-                           "False",
+                           true,
+                           "true (ByValue)",
+                           "",
                            ""
                        ],
                        [
@@ -43307,7 +43307,7 @@
                            ""
                        ]
                    ],
-        "Syntax":  "Remove-DbaAgentAlertCategory [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Category] \u003cString[]\u003e] [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Remove-DbaAgentAlertCategory [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-Category \u003cString[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\nRemove-DbaAgentAlertCategory -InputObject \u003cAlertCategory[]\u003e [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Remove-DbaAgentJob",
@@ -43431,14 +43431,14 @@
         "CommandName":  "Remove-DbaAgentJobCategory",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Remove-DbaAgentJobCategory",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eRemove-DbaAgentJobCategory -SqlInstance sql1 -Category \u0027Category 1\u0027\nRemove the job category Category 1 from the instance.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eRemove-DbaAgentJobCategory -SqlInstance sql1 -Category Category1, Category2, Category3\nRemove multiple job categories from the instance.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eRemove-DbaAgentJobCategory -SqlInstance sql1, sql2, sql3 -Category Category1, Category2, Category3\nRemove multiple job categories from the multiple instances.",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eRemove-DbaAgentJobCategory -SqlInstance sql1 -Category \u0027Category 1\u0027\nRemove the job category Category 1 from the instance.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eRemove-DbaAgentJobCategory -SqlInstance sql1 -Category Category1, Category2, Category3\nRemove multiple job categories from the instance.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eRemove-DbaAgentJobCategory -SqlInstance sql1, sql2, sql3 -Category Category1, Category2, Category3\nRemove multiple job categories from the multiple instances.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaAgentJobCategory -SqlInstance SRV1 | Out-GridView -Title \u0027Select SQL Agent job category(-ies) to drop\u0027 -OutputMode Multiple | Remove-DbaAgentJobCategory\nUsing a pipeline this command gets all SQL Agent job category(-ies) on SRV1, lets the user select those to remove and then removes the selected SQL Agent job category(-ies).",
         "Params":  [
                        [
                            "SqlInstance",
                            "The target SQL Server instance or instances. You must have sysadmin access and server version must be SQL Server version 2000 or greater.",
                            "",
                            true,
-                           "true (ByValue)",
+                           "false",
                            "",
                            ""
                        ],
@@ -43453,7 +43453,7 @@
                        ],
                        [
                            "Category",
-                           "The name of the category",
+                           "The name of the category.",
                            "",
                            false,
                            "false",
@@ -43461,12 +43461,21 @@
                            ""
                        ],
                        [
-                           "Force",
-                           "The force parameter will ignore some errors in the parameters and assume defaults.",
+                           "CategoryType",
+                           "The type of category. This can be \"LocalJob\", \"MultiServerJob\" or \"None\".\r\nIf no category is used all categories types will be removed.",
                            "",
                            false,
                            "false",
-                           "False",
+                           "",
+                           "LocalJob,MultiServerJob,None"
+                       ],
+                       [
+                           "InputObject",
+                           "Allows piping from Get-DbaAgentJobCategory.",
+                           "",
+                           true,
+                           "true (ByValue)",
+                           "",
                            ""
                        ],
                        [
@@ -43497,7 +43506,7 @@
                            ""
                        ]
                    ],
-        "Syntax":  "Remove-DbaAgentJobCategory [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Category] \u003cString[]\u003e] [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Remove-DbaAgentJobCategory [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-Category \u003cString[]\u003e] [-CategoryType \u003cString[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\nRemove-DbaAgentJobCategory -InputObject \u003cJobCategory[]\u003e [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Remove-DbaAgentJobStep",
