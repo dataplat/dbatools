@@ -240,7 +240,11 @@ if (-not $Finalize) {
         Write-Host -ForegroundColor DarkGreen "Dumping message log into $msgFile"
         Get-DbatoolsLog | Select-Object FunctionName, Level, TimeStamp, Message | Export-Clixml -Path $msgFile -ErrorAction Stop
         Write-Host -ForegroundColor DarkGreen "Dumping error log into $errorFile"
-        Get-DbatoolsError -All -ErrorAction SilentlyContinue | Export-Clixml -Depth 1 -Path $errorFile -ErrorAction SilentlyContinue
+        try {
+            Get-DbatoolsError -All -ErrorAction Stop | Export-Clixml -Depth 1 -Path $errorFile -ErrorAction Stop
+        } catch {
+            Set-Content -Path $errorFile -Value 'None'
+        }
         if (-not (Test-Path $errorFile)) {
             Set-Content -Path $errorFile -Value 'None'
         }

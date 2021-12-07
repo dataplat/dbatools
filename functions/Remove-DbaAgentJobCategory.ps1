@@ -18,10 +18,14 @@ function Remove-DbaAgentJobCategory {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Category
-        The name of the category
+        The name of the category.
 
-    .PARAMETER Force
-        The force parameter will ignore some errors in the parameters and assume defaults.
+    .PARAMETER CategoryType
+        The type of category. This can be "LocalJob", "MultiServerJob" or "None".
+        If no category is used all categories types will be removed.
+
+    .PARAMETER InputObject
+        Allows piping from Get-DbaAgentJobCategory.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
@@ -60,45 +64,66 @@ function Remove-DbaAgentJobCategory {
 
         Remove multiple job categories from the multiple instances.
 
+    .EXAMPLE
+        PS C:\> Get-DbaAgentJobCategory -SqlInstance SRV1 | Out-GridView -Title 'Select SQL Agent job category(-ies) to drop' -OutputMode Multiple | Remove-DbaAgentJobCategory
+
+        Using a pipeline this command gets all SQL Agent job category(-ies) on SRV1, lets the user select those to remove and then removes the selected SQL Agent job category(-ies).
+
     #>
-    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low")]
+    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High')]
     param (
-        [parameter(Mandatory, ValueFromPipeline)]
+        [Parameter(ParameterSetName = 'NonPipeline', Mandatory = $true, Position = 0)]
         [DbaInstanceParameter[]]$SqlInstance,
+        [Parameter(ParameterSetName = 'NonPipeline')]
         [PSCredential]$SqlCredential,
-        [ValidateNotNullOrEmpty()]
+        [Parameter(ParameterSetName = 'NonPipeline')]
         [string[]]$Category,
-        [switch]$Force,
+        [Parameter(ParameterSetName = 'NonPipeline')]
+        [ValidateSet("LocalJob", "MultiServerJob", "None")]
+        [string[]]$CategoryType,
+        [parameter(ValueFromPipeline, ParameterSetName = 'Pipeline', Mandatory = $true)]
+        [Microsoft.SqlServer.Management.Smo.Agent.JobCategory[]]$InputObject,
+        [Parameter(ParameterSetName = 'NonPipeline')][Parameter(ParameterSetName = 'Pipeline')]
         [switch]$EnableException
     )
+
     begin {
-        if ($Force) { $ConfirmPreference = 'none' }
+        $jobCategories = @( )
     }
+
     process {
+        if ($SqlInstance) {
+            $params = $PSBoundParameters
+            $null = $params.Remove('WhatIf')
+            $null = $params.Remove('Confirm')
+            $jobCategories = Get-DbaAgentJobCategory @params
+        } else {
+            $jobCategories += $InputObject
+        }
+    }
 
-        foreach ($instance in $SqlInstance) {
-            try {
-                $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential
-            } catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
-            }
-
-            foreach ($cat in $Category) {
-                if ($cat -notin $server.JobServer.JobCategories.Name) {
-                    Stop-Function -Message "Job category $cat doesn't exist on $instance" -Target $instance -Continue
+    end {
+        # We have to delete in the end block to prevent "Collection was modified; enumeration operation may not execute." if directly piped from Get-DbaAgentJobCategory.
+        foreach ($jobCategory in $jobCategories) {
+            if ($PSCmdlet.ShouldProcess($jobCategory.Parent.Parent.Name, "Removing the SQL Agent category(-ies) $($jobCategory.Name) on $($jobCategory.Parent.Parent.Name)")) {
+                $output = [pscustomobject]@{
+                    ComputerName = $jobCategory.Parent.Parent.ComputerName
+                    InstanceName = $jobCategory.Parent.Parent.ServiceName
+                    SqlInstance  = $jobCategory.Parent.Parent.DomainInstanceName
+                    Name         = $jobCategory.Name
+                    Status       = $null
+                    IsRemoved    = $false
                 }
-
-                if ($PSCmdlet.ShouldProcess($instance, "Removing the job category $Category")) {
-                    try {
-                        $currentCategory = $server.JobServer.JobCategories[$cat]
-
-                        Write-Message -Message "Removing job category $cat" -Level Verbose
-
-                        $currentCategory.Drop()
-                    } catch {
-                        Stop-Function -Message "Something went wrong removing the job category $cat on $instance" -Target $cat -Continue -ErrorRecord $_
-                    }
+                try {
+                    $jobCategory.Drop()
+                    $output.Status = "Dropped"
+                    $output.IsRemoved = $true
+                } catch {
+                    Stop-Function -Message "Failed removing the SQL Agent job category(-ies) $($jobCategory.Name) on $($jobCategory.Parent.Parent.Name)" -ErrorRecord $_
+                    $output.Status = (Get-ErrorMessage -Record $_)
+                    $output.IsRemoved = $false
                 }
+                $output
             }
         }
     }

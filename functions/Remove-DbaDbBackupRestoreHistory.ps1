@@ -45,7 +45,7 @@ function Remove-DbaDbBackupRestoreHistory {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: Delete
+        Tags: Delete, Backup, Restore, Database
         Author: IJeb Reitsma
 
         Website: https://dbatools.io
@@ -60,14 +60,17 @@ function Remove-DbaDbBackupRestoreHistory {
 
         Prompts for confirmation then deletes backup and restore history on SQL Server sql2016 older than 30 days (default period)
 
+    .EXAMPLE
         PS C:\> Remove-DbaDbBackupRestoreHistory -SqlInstance sql2016 -KeepDays 100 -Confirm:$false
 
         Remove backup and restore history on SQL Server sql2016 older than 100 days. Does not prompt for confirmation.
 
+    .EXAMPLE
         PS C:\> Remove-DbaDbBackupRestoreHistory -SqlInstance sql2016 -Database db1
 
         Prompts for confirmation then deletes all backup and restore history for database db1 on SQL Server sql2016
 
+    .EXAMPLE
         PS C:\> Get-DbaDatabase -SqlInstance sql2016 | Remove-DbaDbBackupRestoreHistory -WhatIf
 
         Remove complete backup and restore history for all databases on SQL Server sql2016
@@ -120,7 +123,7 @@ function Remove-DbaDbBackupRestoreHistory {
             try {
                 $servername = $db.Parent.Name
                 if ($Pscmdlet.ShouldProcess("$db on $servername", "Remove complete backup/restore history")) {
-                    # While this method is named DeleteBackupHistory, it also removes restore history
+                    # While this method is named DropBackupHistory, it also removes restore history
                     $db.DropBackupHistory()
                     $db.Refresh()
                 }
