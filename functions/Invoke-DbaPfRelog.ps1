@@ -100,30 +100,22 @@ function Invoke-DbaPfRelog {
 
     .EXAMPLE
         PS C:\> Invoke-DbaPfRelog -Path C:\temp\perfmon.blg -Destination C:\temp\a\b\c -Raw
-        ```
-        [Invoke-DbaPfRelog][21:21:35] relog "C:\temp\perfmon.blg" -f csv -o C:\temp\a\b\c
-
-        Input
-        ----------------
-        File(s):
-        C:\temp\perfmon.blg (Binary)
-
-        Begin:    1/13/2018 5:13:23
-        End:      1/13/2018 14:29:55
-        Samples:  2227
-
-        100.00%
-
-        Output
-        ----------------
-        File:     C:\temp\a\b\c.csv
-
-        Begin:    1/13/2018 5:13:23
-        End:      1/13/2018 14:29:55
-        Samples:  2227
-
-        The command completed successfully.
-        ```
+        >> [Invoke-DbaPfRelog][21:21:35] relog "C:\temp\perfmon.blg" -f csv -o C:\temp\a\b\c
+        >> Input
+        >> ----------------
+        >> File(s):
+        >> C:\temp\perfmon.blg (Binary)
+        >> Begin:    1/13/2018 5:13:23
+        >> End:      1/13/2018 14:29:55
+        >> Samples:  2227
+        >> 100.00%
+        >> Output
+        >> ----------------
+        >> File:     C:\temp\a\b\c.csv
+        >> Begin:    1/13/2018 5:13:23
+        >> End:      1/13/2018 14:29:55
+        >> Samples:  2227
+        >> The command completed successfully.
 
         Creates the temp, a, and b directories if needed, then generates c.tsv (tab separated) from C:\temp\perfmon.blg then outputs the raw results of the relog command.
 
