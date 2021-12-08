@@ -40750,6 +40750,123 @@
         "Syntax":  "New-DbaFirewallRule [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-Credential] \u003cPSCredential\u003e] [[-Type] \u003cString[]\u003e] [[-Configuration] \u003cHashtable\u003e] [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
+        "Name":  "New-DbaLinkedServerLogin",
+        "Description":  "Creates a new linked server login. See the Microsoft documentation for sp_addlinkedsrvlogin for more details on the parameters.",
+        "Tags":  [
+                     "Security",
+                     "Server"
+                 ],
+        "Synopsis":  "Creates a new linked server login.",
+        "Alias":  "",
+        "Author":  "Adam Lancaster https://github.com/lancasteradam",
+        "CommandName":  "New-DbaLinkedServerLogin",
+        "Availability":  "Windows, Linux, macOS",
+        "Links":  "https://dbatools.io/New-DbaLinkedServerLogin",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eNew-DbaLinkedServerLogin -SqlInstance sql01 -LinkedServer linkedServer1 -LocalLogin localUser1 -RemoteUser remoteUser1 -RemoteUserPassword \u003cpassword\u003e\nCreates a new linked server login and maps the local login testuser1 to the remote login testuser2. This linked server login is created on the sql01 instance for the linkedServer1 linked server.\nNOTE: passwords are sent to the SQL Server instance in plain text. Check with your security administrator before using the command with the RemoteUserPassword parameter. View the documentation for \r\nsp_addlinkedsrvlogin for more details.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eNew-DbaLinkedServerLogin -SqlInstance sql01 -LinkedServer linkedServer1 -Impersonate\nCreates a mapping for all local logins on sql01 to connect using their own credentials to the linked server linkedServer1.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaLinkedServer -SqlInstance sql01 -LinkedServer linkedServer1 | New-DbaLinkedServerLogin -LinkedServer linkedServer1 -LocalLogin testuser1 -RemoteUser testuser2 -RemoteUserPassword \r\n\u003cpassword\u003e\nCreates a new linked server login and maps the local login testuser1 to the remote login testuser2. This linked server login is created on the sql01 instance for the linkedServer1 linked server. The \r\nlinkedServer1 instance is passed in via pipeline.\nNOTE: passwords are sent to the SQL Server instance in plain text. Check with your security administrator before using the command with the RemoteUserPassword parameter. View the documentation for \r\nsp_addlinkedsrvlogin for more details.",
+        "Params":  [
+                       [
+                           "SqlInstance",
+                           "The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function\r\nto be executed against multiple SQL Server instances.",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "SqlCredential",
+                           "Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).\nWindows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.\nFor MFA support, please use Connect-DbaInstance.",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "LinkedServer",
+                           "The name(s) of the linked server(s).",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "LocalLogin",
+                           "Specifies the local login name. This parameter is required in all scenarios.",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "RemoteUser",
+                           "Specifies the remote login name.",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "RemoteUserPassword",
+                           "Specifies the remote login password as a secure string. NOTE: passwords are sent to the SQL Server instance in plain text. Check with your security administrator before using this parameter. View the \r\ndocumentation for sp_addlinkedsrvlogin for more details.",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "Impersonate",
+                           "Specifies if the local login credentials should be used instead of the remote login credentials.",
+                           "",
+                           false,
+                           "false",
+                           "False",
+                           ""
+                       ],
+                       [
+                           "InputObject",
+                           "Allows piping from Get-DbaLinkedServer.",
+                           "",
+                           false,
+                           "true (ByValue)",
+                           "",
+                           ""
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "",
+                           false,
+                           "false",
+                           "False",
+                           ""
+                       ],
+                       [
+                           "WhatIf",
+                           "Shows what would happen if the command were to run. No actions are actually performed.",
+                           "wi",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "Confirm",
+                           "Prompts you for confirmation before executing any changing operations within the command.",
+                           "cf",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ]
+                   ],
+        "Syntax":  "New-DbaLinkedServerLogin [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-LinkedServer] \u003cString[]\u003e] [[-LocalLogin] \u003cString\u003e] [[-RemoteUser] \u003cString\u003e] [[-RemoteUserPassword] \u003cSecureString\u003e] [-Impersonate] [[-InputObject] \u003cLinkedServer[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+    },
+    {
         "Name":  "New-DbaLogin",
         "Description":  "Creates a new SQL Server login with provided specifications",
         "Tags":  [
@@ -43624,13 +43741,13 @@
                      "Agent",
                      "Operator"
                  ],
-        "Synopsis":  "Removes a new operator on an instance.",
+        "Synopsis":  "Removes an operator from an instance.",
         "Alias":  "",
         "Author":  "Tracy Boggiano (@TracyBoggiano), databasesuperhero.com",
         "CommandName":  "Remove-DbaAgentOperator",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Remove-DbaAgentOperator",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS:\\\u003eRemove-DbaAgentOperator -SqlInstance sql01 -Operator DBA\nThis removes an operator named DBA from the instance.",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS:\\\u003eRemove-DbaAgentOperator -SqlInstance sql01 -Operator DBA\nThis removes an operator named DBA from the instance.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaAgentOperator -SqlInstance SRV1 | Out-GridView -Title \u0027Select SQL Agent operator(s) to drop\u0027 -OutputMode Multiple | Remove-DbaAgentOperator\nUsing a pipeline this command gets all SQL Agent operator(s) on SRV1, lets the user select those to remove and then removes the selected SQL Agent alert category(-ies).",
         "Params":  [
                        [
                            "SqlInstance",
@@ -43654,16 +43771,25 @@
                            "Operator",
                            "Name of the operator in SQL Agent.",
                            "",
-                           true,
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "ExcludeOperator",
+                           "The operator(s) to exclude.",
+                           "",
+                           false,
                            "false",
                            "",
                            ""
                        ],
                        [
                            "InputObject",
-                           "SMO Server Objects (pipeline input from Connect-DbaInstance)",
+                           "Allows piping from Get-DbaAgentOperator.",
                            "",
-                           false,
+                           true,
                            "true (ByValue)",
                            "",
                            ""
@@ -43696,7 +43822,98 @@
                            ""
                        ]
                    ],
-        "Syntax":  "Remove-DbaAgentOperator [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [-Operator] \u003cString\u003e [[-InputObject] \u003cServer[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Remove-DbaAgentOperator [-SqlInstance \u003cDbaInstanceParameter[]\u003e] [-SqlCredential \u003cPSCredential\u003e] [-Operator \u003cString[]\u003e] [-ExcludeOperator \u003cString[]\u003e] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\nRemove-DbaAgentOperator [-SqlInstance \u003cDbaInstanceParameter[]\u003e] [-SqlCredential \u003cPSCredential\u003e] [-Operator \u003cString[]\u003e] [-ExcludeOperator \u003cString[]\u003e] -InputObject \u003cOperator[]\u003e [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+    },
+    {
+        "Name":  "Remove-DbaAgentProxy",
+        "Description":  "Removes the SQL Agent proxy(s) that have passed through the pipeline.\nIf not used with a pipeline, Get-DbaAgentProxy will be executed with the parameters provided\nand the returned SQL Agent proxy(s) will be removed.",
+        "Tags":  [
+                     "Agent",
+                     "Proxy",
+                     "SMO"
+                 ],
+        "Synopsis":  "Removes SQL Agent agent proxy(s).",
+        "Alias":  "",
+        "Author":  "Mikey Bronowski (@MikeyBronowski), https://bronowski.it",
+        "CommandName":  "Remove-DbaAgentProxy",
+        "Availability":  "Windows, Linux, macOS",
+        "Links":  "https://dbatools.io/Remove-DbaAgentProxy",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eRemove-DbaAgentProxy -SqlInstance localhost, localhost\\namedinstance\nRemoves all SQL Agent proxies on the localhost, localhost\\namedinstance instances.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eRemove-DbaAgentProxy -SqlInstance localhost -Proxy MyDatabaseProxy\nRemoves MyDatabaseProxy SQL Agent proxy on the localhost.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaAgentProxy -SqlInstance SRV1 | Out-GridView -Title \u0027Select SQL Agent proxy(s) to drop\u0027 -OutputMode Multiple | Remove-DbaAgentProxy\nUsing a pipeline this command gets all SQL Agent proxies on SRV1, lets the user select those to remove and then removes the selected SQL Agent proxies.",
+        "Params":  [
+                       [
+                           "SqlInstance",
+                           "The target SQL Server instance or instances.",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "SqlCredential",
+                           "Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).\r\nWindows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.\r\nFor MFA support, please use Connect-DbaInstance.",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "Proxy",
+                           "Specifies one or more SQL Agent proxy(s) to delete. If unspecified, all accounts will be removed.",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "ExcludeProxy",
+                           "Specifies one or more SQL Agent proxy(s) to exclude.",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "InputObject",
+                           "Allows piping from Get-DbaAgentProxy.",
+                           "",
+                           true,
+                           "true (ByValue)",
+                           "",
+                           ""
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "",
+                           false,
+                           "false",
+                           "False",
+                           ""
+                       ],
+                       [
+                           "WhatIf",
+                           "Shows what would happen if the command were to run. No actions are actually performed.",
+                           "wi",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "Confirm",
+                           "Prompts you for confirmation before executing any changing operations within the command.\r\nThis is the default. Use -Confirm:$false to suppress these prompts.",
+                           "cf",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ]
+                   ],
+        "Syntax":  "Remove-DbaAgentProxy [-SqlInstance \u003cDbaInstanceParameter[]\u003e] [-SqlCredential \u003cPSCredential\u003e] [-Proxy \u003cString[]\u003e] [-ExcludeProxy \u003cString[]\u003e] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\nRemove-DbaAgentProxy [-SqlInstance \u003cDbaInstanceParameter[]\u003e] [-SqlCredential \u003cPSCredential\u003e] [-Proxy \u003cString[]\u003e] [-ExcludeProxy \u003cString[]\u003e] -InputObject \u003cProxyAccount[]\u003e [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Remove-DbaAgentSchedule",
@@ -44380,6 +44597,111 @@
                        ]
                    ],
         "Syntax":  "Remove-DbaComputerCertificate [[-ComputerName] \u003cDbaInstanceParameter[]\u003e] [[-Credential] \u003cPSCredential\u003e] [-Thumbprint] \u003cString[]\u003e [[-Store] \u003cString\u003e] [[-Folder] \u003cString\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+    },
+    {
+        "Name":  "Remove-DbaCredential",
+        "Description":  "Removes the SQL credential(s) that have passed through the pipeline.\nIf not used with a pipeline, Get-DbaCredential will be executed with the parameters provided\nand the returned SQL credential(s) will be removed.",
+        "Tags":  "Credential",
+        "Synopsis":  "Removes SQL credential(s).",
+        "Alias":  "",
+        "Author":  "Mikey Bronowski (@MikeyBronowski), https://bronowski.it",
+        "CommandName":  "Remove-DbaCredential",
+        "Availability":  "Windows, Linux, macOS",
+        "Links":  "https://dbatools.io/Remove-DbaCredential",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eRemove-DbaCredential -SqlInstance localhost, localhost\\namedinstance\nRemoves all SQL credentials on the localhost, localhost\\namedinstance instances.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eRemove-DbaCredential -SqlInstance localhost -Credential MyDatabaseCredential\nRemoves MyDatabaseCredential SQL credential on the localhost.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaCredential -SqlInstance SRV1 | Out-GridView -Title \u0027Select SQL credential(s) to drop\u0027 -OutputMode Multiple | Remove-DbaCredential\nUsing a pipeline this command gets all SQL credentials on SRV1, lets the user select those to remove and then removes the selected SQL credentials.",
+        "Params":  [
+                       [
+                           "SqlInstance",
+                           "The target SQL Server instance or instances.",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "SqlCredential",
+                           "Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).\r\nWindows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.\r\nFor MFA support, please use Connect-DbaInstance.",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "Credential",
+                           "Specifies one or more SQL credential(s) to delete. If unspecified, all accounts will be removed.",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "ExcludeCredential",
+                           "Specifies one or more SQL credential(s) to exclude.",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "Identity",
+                           "Only include specific identities\r\nNote: if spaces exist in the credential identity, you will have to type \"\" or \u0027\u0027 around it.",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "ExcludeIdentity",
+                           "Excluded identities",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "InputObject",
+                           "Allows piping from Get-DbaCredential.",
+                           "",
+                           true,
+                           "true (ByValue)",
+                           "",
+                           ""
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "",
+                           false,
+                           "false",
+                           "False",
+                           ""
+                       ],
+                       [
+                           "WhatIf",
+                           "Shows what would happen if the command were to run. No actions are actually performed.",
+                           "wi",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "Confirm",
+                           "Prompts you for confirmation before executing any changing operations within the command.\r\nThis is the default. Use -Confirm:$false to suppress these prompts.",
+                           "cf",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ]
+                   ],
+        "Syntax":  "Remove-DbaCredential [-SqlInstance \u003cDbaInstanceParameter[]\u003e] [-SqlCredential \u003cPSCredential\u003e] [-Credential \u003cString[]\u003e] [-ExcludeCredential \u003cString[]\u003e] [-Identity \u003cString[]\u003e] [-ExcludeIdentity \u003cString[]\u003e] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\nRemove-DbaCredential [-SqlInstance \u003cDbaInstanceParameter[]\u003e] [-SqlCredential \u003cPSCredential\u003e] [-Credential \u003cString[]\u003e] [-ExcludeCredential \u003cString[]\u003e] [-Identity \u003cString[]\u003e] [-ExcludeIdentity \u003cString[]\u003e] -InputObject \u003cCredential[]\u003e [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Remove-DbaCustomError",
