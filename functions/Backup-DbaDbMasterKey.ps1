@@ -58,14 +58,11 @@ function Backup-DbaDbMasterKey {
 
     .EXAMPLE
         PS C:\> Backup-DbaDbMasterKey -SqlInstance server1\sql2016
-        ```
-        ComputerName : SERVER1
-        InstanceName : SQL2016
-        SqlInstance  : SERVER1\SQL2016
-        Database     : master
-        Filename     : E:\MSSQL13.SQL2016\MSSQL\Backup\server1$sql2016-master-20170614162311.key
-        Status       : Success
-        ```
+        >> ComputerName : SERVER1
+        >> InstanceName : SQL2016
+        >> SqlInstance  : SERVER1\SQL2016
+        >> Filename     : E:\MSSQL13.SQL2016\MSSQL\Backup\server1$sql2016-SMK-20170614162311.key
+        >> Status       : Success
 
         Prompts for export password, then logs into server1\sql2016 with Windows credentials then backs up all database keys to the default backup directory.
 

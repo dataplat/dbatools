@@ -194,7 +194,7 @@ function Test-DbaConnection {
                 }
             } catch {
                 $connectSuccess = $false
-                $instanceName = $instance.InputObject
+                $instanceName = $instance.InstanceName
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance
             }
 
