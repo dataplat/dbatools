@@ -19,6 +19,10 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
         if (-not (Get-DbaDbMasterKey -SqlInstance $script:instance1 -Database tempdb)) {
             $masterkey = New-DbaDbMasterKey -SqlInstance $script:instance1 -Database tempdb -Password $pw -Confirm:$false
         }
+
+        $random = Get-Random
+        $cert = New-DbaDbCertificate -SqlInstance $script:instance1 -Database tempdb -Confirm:$false -Password $pw -Name dbatoolscli_cert1_$random
+        $cert2 = New-DbaDbCertificate -SqlInstance $script:instance1 -Database tempdb -Confirm:$false -Password $pw -Name dbatoolscli_cert2_$random
     }
     AfterAll {
         Get-DbaDbCertificate -SqlInstance $script:instance1 -Database tempdb | Remove-DbaDbCertificate -Confirm:$false
@@ -26,8 +30,6 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
     }
 
     Context "Can create and backup a database certificate" {
-        $cert = New-DbaDbCertificate -SqlInstance $script:instance1 -Database tempdb -Confirm:$false -Password $pw -Name cert1
-        $cert2 = New-DbaDbCertificate -SqlInstance $script:instance1 -Database tempdb -Confirm:$false -Password $pw -Name cert2
         $results = Backup-DbaDbCertificate -SqlInstance $script:instance1 -Certificate $cert.Name -Database tempdb -EncryptionPassword $pw -DecryptionPassword $pw
         $null = Remove-Item -Path $results.Path -ErrorAction SilentlyContinue -Confirm:$false
 
