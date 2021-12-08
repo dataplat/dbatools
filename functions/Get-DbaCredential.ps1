@@ -17,11 +17,11 @@ function Get-DbaCredential {
 
         For MFA support, please use Connect-DbaInstance.
 
-    .PARAMETER Name
+    .PARAMETER Credential
         Only include specific names
         Note: if spaces exist in the credential name, you will have to type "" or '' around it.
 
-    .PARAMETER ExcludeName
+    .PARAMETER ExcludeCredential
         Excluded credential names
 
     .PARAMETER Identity
@@ -69,8 +69,10 @@ function Get-DbaCredential {
         [parameter(Mandatory, ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [string[]]$Name,
-        [string[]]$ExcludeName,
+        [Alias('Name')]
+        [string[]]$Credential,
+        [Alias('ExcludeName')]
+        [string[]]$ExcludeCredential,
         [Alias('CredentialIdentity')]
         [string[]]$Identity,
         [Alias('ExcludeCredentialIdentity')]
@@ -86,25 +88,25 @@ function Get-DbaCredential {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
-            $credential = $server.Credentials
+            $creds = $server.Credentials
 
-            if ($Name) {
-                $credential = $credential | Where-Object { $Name -contains $_.Name }
+            if ($Credential) {
+                $creds = $creds | Where-Object { $Credential -contains $_.Name }
             }
 
-            if ($ExcludeName) {
-                $credential = $credential | Where-Object { $ExcludeName -notcontains $_.Name }
+            if ($ExcludeCredential) {
+                $creds = $creds | Where-Object { $ExcludeCredential -notcontains $_.Name }
             }
 
             if ($Identity) {
-                $credential = $credential | Where-Object { $Identity -contains $_.Identity }
+                $creds = $creds | Where-Object { $Identity -contains $_.Identity }
             }
 
             if ($ExcludeIdentity) {
-                $credential = $credential | Where-Object { $ExcludeIdentity -notcontains $_.Identity }
+                $creds = $creds | Where-Object { $ExcludeIdentity -notcontains $_.Identity }
             }
 
-            foreach ($currentcredential in $credential) {
+            foreach ($currentcredential in $creds) {
                 Add-Member -Force -InputObject $currentcredential -MemberType NoteProperty -Name ComputerName -value $currentcredential.Parent.ComputerName
                 Add-Member -Force -InputObject $currentcredential -MemberType NoteProperty -Name InstanceName -value $currentcredential.Parent.ServiceName
                 Add-Member -Force -InputObject $currentcredential -MemberType NoteProperty -Name SqlInstance -value $currentcredential.Parent.DomainInstanceName
