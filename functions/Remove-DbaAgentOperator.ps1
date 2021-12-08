@@ -1,7 +1,7 @@
 function Remove-DbaAgentOperator {
     <#
     .SYNOPSIS
-        Removes a new operator on an instance.
+        Removes an operator from an instance.
 
     .DESCRIPTION
         Drop an operator from SQL Agent.
@@ -18,6 +18,12 @@ function Remove-DbaAgentOperator {
 
     .PARAMETER Operator
         Name of the operator in SQL Agent.
+
+    .PARAMETER ExcludeOperator
+        The operator(s) to exclude.
+
+    .PARAMETER InputObject
+        Allows piping from Get-DbaAgentOperator.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
@@ -49,42 +55,61 @@ function Remove-DbaAgentOperator {
 
         This removes an operator named DBA from the instance.
 
+    .EXAMPLE
+        PS C:\>  Get-DbaAgentOperator -SqlInstance SRV1 | Out-GridView -Title 'Select SQL Agent operator(s) to drop' -OutputMode Multiple | Remove-DbaAgentOperator
+
+        Using a pipeline this command gets all SQL Agent operator(s) on SRV1, lets the user select those to remove and then removes the selected SQL Agent alert category(-ies).
+
     #>
-    [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess, ConfirmImpact = "High")]
+    [CmdletBinding(SupportsShouldProcess, DefaultParameterSetName = 'Default', ConfirmImpact = 'High')]
     param (
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [parameter(Mandatory)]
-        [string]$Operator,
-        [parameter(ValueFromPipeline)]
-        [Microsoft.SqlServer.Management.Smo.Server[]]$InputObject,
+        [string[]]$Operator,
+        [string[]]$ExcludeOperator,
+        [parameter(ValueFromPipeline, ParameterSetName = 'Pipeline', Mandatory = $true)]
+        [Microsoft.SqlServer.Management.Smo.Agent.Operator[]]$InputObject,
+        [Parameter(ParameterSetName = 'Pipeline')]
         [switch]$EnableException
     )
 
     begin {
+        $dbOperators = @( )
     }
 
     process {
-        foreach ($instance in $SqlInstance) {
-            try {
-                $InputObject += Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential
-            } catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
-            }
+        if ($SqlInstance) {
+            $params = $PSBoundParameters
+            $null = $params.Remove('WhatIf')
+            $null = $params.Remove('Confirm')
+            $dbOperators = Get-DbaAgentOperator @params
+        } else {
+            $dbOperators += $InputObject
         }
+    }
 
-        foreach ($server in $InputObject) {
-            if ((Get-DbaAgentOperator -SqlInstance $server -Operator $Operator).Count -ne 0) {
-                if ($Pscmdlet.ShouldProcess($server, "Dropping operator $operator")) {
-                    try {
-                        Write-Message -Level Verbose -Message "Dropping Operator $operator"
-                        $server.JobServer.Operators[$operator].Drop()
-
-                        Get-DbaAgentOperator -SqlInstance $server -Operator $Operator
-                    } catch {
-                        Stop-Function -Message "Issue dropping operator" -Category InvalidOperation -ErrorRecord $_ -Target $server
-                    }
+    end {
+        # We have to delete in the end block to prevent "Collection was modified; enumeration operation may not execute." if directly piped from Get-DbaAgentOperator.
+        foreach ($dbOperator in $dbOperators) {
+            if ($PSCmdlet.ShouldProcess($dbOperator.Parent.Parent.Name, "Removing the SQL Agent operator $($dbOperator.Name) on $($dbOperator.Parent.Parent.Name)")) {
+                $output = [pscustomobject]@{
+                    ComputerName = $dbOperator.Parent.Parent.ComputerName
+                    InstanceName = $dbOperator.Parent.Parent.ServiceName
+                    SqlInstance  = $dbOperator.Parent.Parent.DomainInstanceName
+                    Name         = $dbOperator.Name
+                    Status       = $null
+                    IsRemoved    = $false
                 }
+                try {
+                    $dbOperator.Drop()
+                    $output.Status = "Dropped"
+                    $output.IsRemoved = $true
+                } catch {
+                    Stop-Function -Message "Failed removing the SQL Agent operator $($dbOperator.Name) on $($dbOperator.Parent.Parent.Name)" -ErrorRecord $_
+                    $output.Status = (Get-ErrorMessage -Record $_)
+                    $output.IsRemoved = $false
+                }
+                $output
             }
         }
     }

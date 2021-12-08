@@ -5,7 +5,7 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
         [array]$params = ([Management.Automation.CommandMetaData]$ExecutionContext.SessionState.InvokeCommand.GetCommand($CommandName, 'Function')).Parameters.Keys
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Operator', 'InputObject', 'EnableException'
+        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Operator', 'ExcludeOperator', 'InputObject', 'EnableException'
         It "Should only contain our specific parameters" {
             Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params | Should -BeNullOrEmpty
         }
@@ -32,9 +32,12 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $results | Should Be 0
         }
 
-        It "Pipeline command" {
-            $results = $instance2 | Remove-DbaAgentOperator -Operator $email2 -Confirm:$false
-            $results | Should -BeNullOrEmpty
+        It "supports piping SQL Agent operator" {
+            $operatorName = "dbatoolsci_test_$(get-random)"
+            $null = New-DbaAgentOperator -SqlInstance $instance2 -Operator $operatorName
+            (Get-DbaAgentOperator -SqlInstance $instance2 -Operator $operatorName ) | Should -Not -BeNullOrEmpty
+            Get-DbaAgentOperator -SqlInstance $instance2 -Operator $operatorName | Remove-DbaAgentOperator -Confirm:$false
+            (Get-DbaAgentOperator -SqlInstance $instance2 -Operator $operatorName ) | Should -BeNullOrEmpty
         }
     }
 }
