@@ -128,6 +128,15 @@ function Install-DbaInstance {
         Product ID, or simply, serial number of your SQL Server installation, which will determine which version to install.
         If the PID is already built into the installation media, can be ignored.
 
+    .PARAMETER AsCollation
+        Collation for the Analysis Service.
+        Default value: Latin1_General_CI_AS
+
+    .PARAMETER SqlCollation
+        Collation for the Database Engine.
+        The default depends on the Windows locale:
+        https://docs.microsoft.com/en-us/sql/relational-databases/collations/collation-and-unicode-support#Server-level-collations
+
     .PARAMETER EngineCredential
         Service account of the SQL Server Database Engine
 
@@ -227,11 +236,10 @@ function Install-DbaInstance {
     .Example
         PS C:\> $config = @{
         >> AGTSVCSTARTUPTYPE = "Manual"
-        >> SQLCOLLATION = "Latin1_General_CI_AS"
         >> BROWSERSVCSTARTUPTYPE = "Manual"
         >> FILESTREAMLEVEL = 1
         >> }
-        PS C:\> Install-DbaInstance -SqlInstance localhost\v2017:1337 -Version 2017 -Configuration $config
+        PS C:\> Install-DbaInstance -SqlInstance localhost\v2017:1337 -Version 2017 -SqlCollation Latin1_General_CI_AS -Configuration $config
 
         Run the installation locally with default settings overriding the value of specific configuration items.
         Instance name will be defined as 'v2017'; TCP port will be changed to 1337 after installation.
@@ -271,6 +279,8 @@ function Install-DbaInstance {
         [int]$Throttle = 50,
         [Alias('PID')]
         [string]$ProductID,
+        [string]$AsCollation,
+        [string]$SqlCollation,
         [pscredential]$EngineCredential,
         [pscredential]$AgentCredential,
         [pscredential]$ASCredential,
@@ -571,7 +581,6 @@ function Install-DbaInstance {
                     $mainKey = @{
                         ACTION                = "Install"
                         AGTSVCSTARTUPTYPE     = "Automatic"
-                        ASCOLLATION           = "Latin1_General_CI_AS"
                         BROWSERSVCSTARTUPTYPE = $browserStartup
                         ENABLERANU            = "False"
                         ERRORREPORTING        = "False"
@@ -584,7 +593,6 @@ function Install-DbaInstance {
                         ISSVCSTARTUPTYPE      = "Automatic"
                         QUIET                 = "True"
                         QUIETSIMPLE           = "False"
-                        SQLCOLLATION          = "SQL_Latin1_General_CP1_CI_AS"
                         SQLSVCSTARTUPTYPE     = "Automatic"
                         SQLSYSADMINACCOUNTS   = $defaultAdminAccount
                         SQMREPORTING          = "False"
@@ -600,6 +608,13 @@ function Install-DbaInstance {
                 return
             }
             $execParams = @()
+            # collation-specific parameters
+            if ($AsCollation) {
+                $configNode.ASCOLLATION = $AsCollation
+            }
+            if ($SqlCollation) {
+                $configNode.SQLCOLLATION = $SqlCollation
+            }
             # feature-specific parameters
             # Python
             foreach ($pythonFeature in 'SQL_INST_MPY', 'SQL_SHARED_MPY', 'AdvancedAnalytics') {
