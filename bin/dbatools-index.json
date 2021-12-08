@@ -1835,7 +1835,7 @@
         "CommandName":  "Backup-DbaDbMasterKey",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Backup-DbaDbMasterKey",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eBackup-DbaDbMasterKey -SqlInstance server1\\sql2016\n```\r\nComputerName : SERVER1\r\nInstanceName : SQL2016\r\nSqlInstance  : SERVER1\\SQL2016\r\nDatabase     : master\r\nFilename     : E:\\MSSQL13.SQL2016\\MSSQL\\Backup\\server1$sql2016-master-20170614162311.key\r\nStatus       : Success\r\n```\nPrompts for export password, then logs into server1\\sql2016 with Windows credentials then backs up all database keys to the default backup directory.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eBackup-DbaDbMasterKey -SqlInstance Server1 -Database db1 -Path \\\\nas\\sqlbackups\\keys\nLogs into sql2016 with Windows credentials then backs up db1\u0027s keys to the \\\\nas\\sqlbackups\\keys directory.",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eBackup-DbaDbMasterKey -SqlInstance server1\\sql2016\n\u003e\u003e ComputerName : SERVER1\r\n\u003e\u003e InstanceName : SQL2016\r\n\u003e\u003e SqlInstance  : SERVER1\\SQL2016\r\n\u003e\u003e Filename     : E:\\MSSQL13.SQL2016\\MSSQL\\Backup\\server1$sql2016-SMK-20170614162311.key\r\n\u003e\u003e Status       : Success\nPrompts for export password, then logs into server1\\sql2016 with Windows credentials then backs up all database keys to the default backup directory.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eBackup-DbaDbMasterKey -SqlInstance Server1 -Database db1 -Path \\\\nas\\sqlbackups\\keys\nLogs into sql2016 with Windows credentials then backs up db1\u0027s keys to the \\\\nas\\sqlbackups\\keys directory.",
         "Params":  [
                        [
                            "SqlInstance",
@@ -1952,7 +1952,7 @@
         "CommandName":  "Backup-DbaServiceMasterKey",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Backup-DbaServiceMasterKey",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eBackup-DbaServiceMasterKey -SqlInstance server1\\sql2016\n```\r\nComputerName : SERVER1\r\nInstanceName : SQL2016\r\nSqlInstance  : SERVER1\\SQL2016\r\nFilename     : E:\\MSSQL13.SQL2016\\MSSQL\\Backup\\server1$sql2016-SMK-20170614162311.key\r\nStatus       : Success\r\n```\nPrompts for export password, then logs into server1\\sql2016 with Windows credentials then backs up the service master key to the default backup directory.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eBackup-DbaServiceMasterKey -SqlInstance Server1 -Path \\\\nas\\sqlbackups\\keys\nLogs into sql2016 with Windows credentials then backs up the service master key to the \\\\nas\\sqlbackups\\keys directory.",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eBackup-DbaServiceMasterKey -SqlInstance server1\\sql2016\n\u003e\u003e ComputerName : SERVER1\r\n\u003e\u003e InstanceName : SQL2016\r\n\u003e\u003e SqlInstance  : SERVER1\\SQL2016\r\n\u003e\u003e Filename     : E:\\MSSQL13.SQL2016\\MSSQL\\Backup\\server1$sql2016-SMK-20170614162311.key\r\n\u003e\u003e Status       : Success\nPrompts for export password, then logs into server1\\sql2016 with Windows credentials then backs up the service master key to the default backup directory.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eBackup-DbaServiceMasterKey -SqlInstance Server1 -Path \\\\nas\\sqlbackups\\keys\nLogs into sql2016 with Windows credentials then backs up the service master key to the \\\\nas\\sqlbackups\\keys directory.",
         "Params":  [
                        [
                            "SqlInstance",
@@ -14238,18 +14238,18 @@
                            ""
                        ],
                        [
-                           "Name",
+                           "Credential",
                            "Only include specific names\r\nNote: if spaces exist in the credential name, you will have to type \"\" or \u0027\u0027 around it.",
-                           "",
+                           "Name",
                            false,
                            "false",
                            "",
                            ""
                        ],
                        [
-                           "ExcludeName",
+                           "ExcludeCredential",
                            "Excluded credential names",
-                           "",
+                           "ExcludeName",
                            false,
                            "false",
                            "",
@@ -14283,7 +14283,7 @@
                            ""
                        ]
                    ],
-        "Syntax":  "Get-DbaCredential [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Name] \u003cString[]\u003e] [[-ExcludeName] \u003cString[]\u003e] [[-Identity] \u003cString[]\u003e] [[-ExcludeIdentity] \u003cString[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Get-DbaCredential [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Credential] \u003cString[]\u003e] [[-ExcludeCredential] \u003cString[]\u003e] [[-Identity] \u003cString[]\u003e] [[-ExcludeIdentity] \u003cString[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Get-DbaCustomError",
@@ -28546,7 +28546,7 @@
         "CommandName":  "Install-DbaInstance",
         "Availability":  "Windows only",
         "Links":  "https://dbatools.io/Install-DbaInstance",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eInstall-DbaInstance -Version 2017 -Feature All\nInstall a default SQL Server instance and run the installation enabling all features with default settings. Automatically generates configuration.ini\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eInstall-DbaInstance -SqlInstance sql2017\\sqlexpress, server01 -Version 2017 -Feature Default\nInstall a named SQL Server instance named sqlexpress on sql2017, and a default instance on server01. Automatically generates configuration.ini.\r\nDefault features will be installed.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eInstall-DbaInstance -Version 2008R2 -SqlInstance sql2017 -ConfigurationFile C:\\temp\\configuration.ini\nInstall a default named SQL Server instance on the remote machine, sql2017 and use the local configuration.ini\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eInstall-DbaInstance -Version 2017 -InstancePath G:\\SQLServer -UpdateSourcePath \u0027\\\\my\\updates\u0027\nRun the installation locally with default settings apart from the application volume, this will be redirected to G:\\SQLServer.\r\nThe installation procedure would search for SQL Server updates in \\\\my\\updates and slipstream them into the installation.\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003e$svcAcc = Get-Credential MyDomain\\SvcSqlServer\nPS C:\\\u003e Install-DbaInstance -Version 2016 -InstancePath D:\\Root -DataPath E: -LogPath L: -PerformVolumeMaintenanceTasks -EngineCredential $svcAcc\nInstall SQL Server 2016 instance into D:\\Root drive, set default data folder as E: and default logs folder as L:.\r\nPerform volume maintenance tasks permission is granted. MyDomain\\SvcSqlServer is used as a service account for SqlServer.\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003e$config = @{\n\u003e\u003e AGTSVCSTARTUPTYPE = \"Manual\"\r\n\u003e\u003e SQLCOLLATION = \"Latin1_General_CI_AS\"\r\n\u003e\u003e BROWSERSVCSTARTUPTYPE = \"Manual\"\r\n\u003e\u003e FILESTREAMLEVEL = 1\r\n\u003e\u003e }\r\nPS C:\\\u003e Install-DbaInstance -SqlInstance localhost\\v2017:1337 -Version 2017 -Configuration $config\nRun the installation locally with default settings overriding the value of specific configuration items.\r\nInstance name will be defined as \u0027v2017\u0027; TCP port will be changed to 1337 after installation.",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eInstall-DbaInstance -Version 2017 -Feature All\nInstall a default SQL Server instance and run the installation enabling all features with default settings. Automatically generates configuration.ini\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eInstall-DbaInstance -SqlInstance sql2017\\sqlexpress, server01 -Version 2017 -Feature Default\nInstall a named SQL Server instance named sqlexpress on sql2017, and a default instance on server01. Automatically generates configuration.ini.\r\nDefault features will be installed.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eInstall-DbaInstance -Version 2008R2 -SqlInstance sql2017 -ConfigurationFile C:\\temp\\configuration.ini\nInstall a default named SQL Server instance on the remote machine, sql2017 and use the local configuration.ini\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eInstall-DbaInstance -Version 2017 -InstancePath G:\\SQLServer -UpdateSourcePath \u0027\\\\my\\updates\u0027\nRun the installation locally with default settings apart from the application volume, this will be redirected to G:\\SQLServer.\r\nThe installation procedure would search for SQL Server updates in \\\\my\\updates and slipstream them into the installation.\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003e$svcAcc = Get-Credential MyDomain\\SvcSqlServer\nPS C:\\\u003e Install-DbaInstance -Version 2016 -InstancePath D:\\Root -DataPath E: -LogPath L: -PerformVolumeMaintenanceTasks -EngineCredential $svcAcc\nInstall SQL Server 2016 instance into D:\\Root drive, set default data folder as E: and default logs folder as L:.\r\nPerform volume maintenance tasks permission is granted. MyDomain\\SvcSqlServer is used as a service account for SqlServer.\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003e$config = @{\n\u003e\u003e AGTSVCSTARTUPTYPE = \"Manual\"\r\n\u003e\u003e BROWSERSVCSTARTUPTYPE = \"Manual\"\r\n\u003e\u003e FILESTREAMLEVEL = 1\r\n\u003e\u003e }\r\nPS C:\\\u003e Install-DbaInstance -SqlInstance localhost\\v2017:1337 -Version 2017 -SqlCollation Latin1_General_CI_AS -Configuration $config\nRun the installation locally with default settings overriding the value of specific configuration items.\r\nInstance name will be defined as \u0027v2017\u0027; TCP port will be changed to 1337 after installation.",
         "Params":  [
                        [
                            "SqlInstance",
@@ -28738,6 +28738,24 @@
                            ""
                        ],
                        [
+                           "AsCollation",
+                           "Collation for the Analysis Service.\r\nDefault value: Latin1_General_CI_AS",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "SqlCollation",
+                           "Collation for the Database Engine.\r\nThe default depends on the Windows locale:\r\nhttps://docs.microsoft.com/en-us/sql/relational-databases/collations/collation-and-unicode-support#Server-level-collations",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
                            "EngineCredential",
                            "Service account of the SQL Server Database Engine",
                            "",
@@ -28864,7 +28882,7 @@
                            ""
                        ]
                    ],
-        "Syntax":  "Install-DbaInstance [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [-Version] \u003cString\u003e [[-InstanceName] \u003cString\u003e] [[-SaCredential] \u003cPSCredential\u003e] [[-Credential] \u003cPSCredential\u003e] [[-Authentication] \u003cString\u003e] [[-ConfigurationFile] \u003cObject\u003e] [[-Configuration] \u003cHashtable\u003e] [[-Path] \u003cString[]\u003e] [[-Feature] \u003cString[]\u003e] [[-AuthenticationMode] \u003cString\u003e] [[-InstancePath] \u003cString\u003e] [[-DataPath] \u003cString\u003e] [[-LogPath] \u003cString\u003e] [[-TempPath] \u003cString\u003e] [[-BackupPath] \u003cString\u003e] [[-UpdateSourcePath] \u003cString\u003e] [[-AdminAccount] \u003cString[]\u003e] [[-Port] \u003cInt32\u003e] [[-Throttle] \u003cInt32\u003e] [[-ProductID] \u003cString\u003e] \r\n[[-EngineCredential] \u003cPSCredential\u003e] [[-AgentCredential] \u003cPSCredential\u003e] [[-ASCredential] \u003cPSCredential\u003e] [[-ISCredential] \u003cPSCredential\u003e] [[-RSCredential] \u003cPSCredential\u003e] [[-FTCredential] \u003cPSCredential\u003e] [[-PBEngineCredential] \u003cPSCredential\u003e] [[-SaveConfiguration] \u003cString\u003e] [-PerformVolumeMaintenanceTasks] [-Restart] [-NoPendingRenameCheck] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Install-DbaInstance [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [-Version] \u003cString\u003e [[-InstanceName] \u003cString\u003e] [[-SaCredential] \u003cPSCredential\u003e] [[-Credential] \u003cPSCredential\u003e] [[-Authentication] \u003cString\u003e] [[-ConfigurationFile] \u003cObject\u003e] [[-Configuration] \u003cHashtable\u003e] [[-Path] \u003cString[]\u003e] [[-Feature] \u003cString[]\u003e] [[-AuthenticationMode] \u003cString\u003e] [[-InstancePath] \u003cString\u003e] [[-DataPath] \u003cString\u003e] [[-LogPath] \u003cString\u003e] [[-TempPath] \u003cString\u003e] [[-BackupPath] \u003cString\u003e] [[-UpdateSourcePath] \u003cString\u003e] [[-AdminAccount] \u003cString[]\u003e] [[-Port] \u003cInt32\u003e] [[-Throttle] \u003cInt32\u003e] [[-ProductID] \u003cString\u003e] \r\n[[-AsCollation] \u003cString\u003e] [[-SqlCollation] \u003cString\u003e] [[-EngineCredential] \u003cPSCredential\u003e] [[-AgentCredential] \u003cPSCredential\u003e] [[-ASCredential] \u003cPSCredential\u003e] [[-ISCredential] \u003cPSCredential\u003e] [[-RSCredential] \u003cPSCredential\u003e] [[-FTCredential] \u003cPSCredential\u003e] [[-PBEngineCredential] \u003cPSCredential\u003e] [[-SaveConfiguration] \u003cString\u003e] [-PerformVolumeMaintenanceTasks] [-Restart] [-NoPendingRenameCheck] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Install-DbaMaintenanceSolution",
@@ -33113,7 +33131,7 @@
         "CommandName":  "Invoke-DbaPfRelog",
         "Availability":  "Windows only",
         "Links":  "https://dbatools.io/Invoke-DbaPfRelog",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eInvoke-DbaPfRelog -Path C:\\temp\\perfmon.blg\nCreates C:\\temp\\perfmon.tsv from C:\\temp\\perfmon.blg.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eInvoke-DbaPfRelog -Path C:\\temp\\perfmon.blg -Destination C:\\temp\\a\\b\\c\nCreates the temp, a, and b directories if needed, then generates c.tsv (tab separated) from C:\\temp\\perfmon.blg.\nReturns the newly created file as a file object.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaPfDataCollectorSet -ComputerName sql2016 | Get-DbaPfDataCollector | Invoke-DbaPfRelog -Destination C:\\temp\\perf\nCreates C:\\temp\\perf if needed, then generates computername-datacollectorname.tsv (tab separated) from the latest logs of all data collector sets on sql2016. This destination format was chosen to \r\navoid naming conflicts with piped input.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eInvoke-DbaPfRelog -Path C:\\temp\\perfmon.blg -Destination C:\\temp\\a\\b\\c -Raw\n```\r\n[Invoke-DbaPfRelog][21:21:35] relog \"C:\\temp\\perfmon.blg\" -f csv -o C:\\temp\\a\\b\\c\nInput\r\n----------------\r\nFile(s):\r\nC:\\temp\\perfmon.blg (Binary)\nBegin:    1/13/2018 5:13:23\r\nEnd:      1/13/2018 14:29:55\r\nSamples:  2227\n100.00%\nOutput\r\n----------------\r\nFile:     C:\\temp\\a\\b\\c.csv\nBegin:    1/13/2018 5:13:23\r\nEnd:      1/13/2018 14:29:55\r\nSamples:  2227\nThe command completed successfully.\r\n```\nCreates the temp, a, and b directories if needed, then generates c.tsv (tab separated) from C:\\temp\\perfmon.blg then outputs the raw results of the relog command.\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eInvoke-DbaPfRelog -Path \u0027C:\\temp\\perflog with spaces.blg\u0027 -Destination C:\\temp\\a\\b\\c -Type csv -BeginTime ((Get-Date).AddDays(-30)) -EndTime ((Get-Date).AddDays(-1))\nCreates the temp, a, and b directories if needed, then generates c.csv (comma separated) from C:\\temp\\perflog with spaces.blg\u0027, starts 30 days ago and ends one day ago.\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003e$servers | Get-DbaPfDataCollectorSet | Get-DbaPfDataCollector | Invoke-DbaPfRelog -Multithread -AllowClobber\nRelogs latest data files from all collectors within the servers listed in $servers.\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003eGet-DbaPfDataCollector -Collector DataCollector01 | Invoke-DbaPfRelog -AllowClobber -AllTime\nRelogs all the log files from the DataCollector01 on the local computer and allows overwrite.",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eInvoke-DbaPfRelog -Path C:\\temp\\perfmon.blg\nCreates C:\\temp\\perfmon.tsv from C:\\temp\\perfmon.blg.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eInvoke-DbaPfRelog -Path C:\\temp\\perfmon.blg -Destination C:\\temp\\a\\b\\c\nCreates the temp, a, and b directories if needed, then generates c.tsv (tab separated) from C:\\temp\\perfmon.blg.\nReturns the newly created file as a file object.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaPfDataCollectorSet -ComputerName sql2016 | Get-DbaPfDataCollector | Invoke-DbaPfRelog -Destination C:\\temp\\perf\nCreates C:\\temp\\perf if needed, then generates computername-datacollectorname.tsv (tab separated) from the latest logs of all data collector sets on sql2016. This destination format was chosen to \r\navoid naming conflicts with piped input.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eInvoke-DbaPfRelog -Path C:\\temp\\perfmon.blg -Destination C:\\temp\\a\\b\\c -Raw\n\u003e\u003e [Invoke-DbaPfRelog][21:21:35] relog \"C:\\temp\\perfmon.blg\" -f csv -o C:\\temp\\a\\b\\c\r\n\u003e\u003e Input\r\n\u003e\u003e ----------------\r\n\u003e\u003e File(s):\r\n\u003e\u003e C:\\temp\\perfmon.blg (Binary)\r\n\u003e\u003e Begin:    1/13/2018 5:13:23\r\n\u003e\u003e End:      1/13/2018 14:29:55\r\n\u003e\u003e Samples:  2227\r\n\u003e\u003e 100.00%\r\n\u003e\u003e Output\r\n\u003e\u003e ----------------\r\n\u003e\u003e File:     C:\\temp\\a\\b\\c.csv\r\n\u003e\u003e Begin:    1/13/2018 5:13:23\r\n\u003e\u003e End:      1/13/2018 14:29:55\r\n\u003e\u003e Samples:  2227\r\n\u003e\u003e The command completed successfully.\nCreates the temp, a, and b directories if needed, then generates c.tsv (tab separated) from C:\\temp\\perfmon.blg then outputs the raw results of the relog command.\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eInvoke-DbaPfRelog -Path \u0027C:\\temp\\perflog with spaces.blg\u0027 -Destination C:\\temp\\a\\b\\c -Type csv -BeginTime ((Get-Date).AddDays(-30)) -EndTime ((Get-Date).AddDays(-1))\nCreates the temp, a, and b directories if needed, then generates c.csv (comma separated) from C:\\temp\\perflog with spaces.blg\u0027, starts 30 days ago and ends one day ago.\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003e$servers | Get-DbaPfDataCollectorSet | Get-DbaPfDataCollector | Invoke-DbaPfRelog -Multithread -AllowClobber\nRelogs latest data files from all collectors within the servers listed in $servers.\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003eGet-DbaPfDataCollector -Collector DataCollector01 | Invoke-DbaPfRelog -AllowClobber -AllTime\nRelogs all the log files from the DataCollector01 on the local computer and allows overwrite.",
         "Params":  [
                        [
                            "Path",
@@ -37594,7 +37612,7 @@
     },
     {
         "Name":  "New-DbaDatabase",
-        "Description":  "This command creates a new database.\n\nIt allows creation with multiple files, and sets all growth settings to be fixed size rather than percentage growth. The autogrowth settings are obtained from the modeldev file in the model database when not supplied as command line arguments.\n\nThe generated database filenames take the form:\n\n\u003cdb name\u003e_PRIMARY\n\u003cdb name\u003e_Log\n\u003cdb name\u003e_MainData_1  (Secondary filegroup files)",
+        "Description":  "This command creates a new database.\n\nIt allows creation with multiple files, and sets all growth settings to be fixed size rather than percentage growth. The autogrowth settings are obtained from the modeldev file in the model database when not supplied as command line arguments.",
         "Tags":  "Database",
         "Synopsis":  "Creates a new database",
         "Alias":  "",
@@ -37602,7 +37620,7 @@
         "CommandName":  "New-DbaDatabase",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/New-DbaDatabase",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eNew-DbaDatabase -SqlInstance sql1\nCreates a randomly named database (random-N) on instance sql1\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eNew-DbaDatabase -SqlInstance sql1 -Name dbatools, dbachecks\nCreates a database named dbatools and a database named dbachecks on sql1\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eNew-DbaDatabase -SqlInstance sql1, sql2, sql3 -Name multidb, multidb2 -SecondaryFilesize 20 -SecondaryFileGrowth 20 -LogSize 20 -LogGrowth 20\nCreates two databases, multidb and multidb2, on 3 instances (sql1, sql2 and sql3) and sets the secondary data file size to 20MB, the file growth to 20MB and the log growth to 20MB for each\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eNew-DbaDatabase -SqlInstance sql1 -Name nondefault -DataFilePath M:\\Data -LogFilePath \u0027L:\\Logs with spaces\u0027 -SecondaryFileCount 2\nCreates a database named nondefault and places data files in in the M:\\data directory and log files in \"L:\\Logs with spaces\".\nCreates a secondary group with 2 files in the Secondary filegroup.\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eNew-DbaDatabase -SqlInstance sql1 -Name newDb -LogSize 32 -LogMaxSize 512 -PrimaryFilesize 64 -PrimaryFileMaxSize 512 -SecondaryFilesize 64 -SecondaryFileMaxSize 512 -LogGrowth 32 \r\n-PrimaryFileGrowth 64 -SecondaryFileGrowth 64\nCreates a new database named newDb on the sql1 instance and sets the file sizes, max sizes, and growth as specified. The resulting filenames will take the form:\nnewDb_PRIMARY\r\nnewDb_Log\r\nnewDb_MainData_1  (Secondary filegroup files)",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eNew-DbaDatabase -SqlInstance sql1\nCreates a randomly named database (random-N) on instance sql1\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eNew-DbaDatabase -SqlInstance sql1 -Name dbatools, dbachecks\nCreates a database named dbatools and a database named dbachecks on sql1\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eNew-DbaDatabase -SqlInstance sql1, sql2, sql3 -Name multidb, multidb2 -SecondaryFilesize 20 -SecondaryFileGrowth 20 -LogSize 20 -LogGrowth 20\nCreates two databases, multidb and multidb2, on 3 instances (sql1, sql2 and sql3) and sets the secondary data file size to 20MB, the file growth to 20MB and the log growth to 20MB for each\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eNew-DbaDatabase -SqlInstance sql1 -Name nondefault -DataFilePath M:\\Data -LogFilePath \u0027L:\\Logs with spaces\u0027 -SecondaryFileCount 2\nCreates a database named nondefault and places data files in in the M:\\data directory and log files in \"L:\\Logs with spaces\".\nCreates a secondary group with 2 files in the Secondary filegroup.\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003e$databaseParams = @{\nSqlInstance             = \"sql1\"\r\n    Name                    = \"newDb\"\r\n    LogSize                 = 32\r\n    LogMaxSize              = 512\r\n    PrimaryFilesize         = 64\r\n    PrimaryFileMaxSize      = 512\r\n    SecondaryFilesize       = 64\r\n    SecondaryFileMaxSize    = 512\r\n    LogGrowth               = 32\r\n    PrimaryFileGrowth       = 64\r\n    SecondaryFileGrowth     = 64\r\n    DataFileSuffix          = \"_PRIMARY\"\r\n    LogFileSuffix           = \"_Log\"\r\n    SecondaryDataFileSuffix = \"_MainData\"\r\n}\r\nNew-DbaDatabase @databaseParams\nCreates a new database named newDb on the sql1 instance and sets the file sizes, max sizes, and growth as specified. The resulting filenames will take the form:\nnewDb_PRIMARY\r\nnewDb_Log\r\nnewDb_MainData_1  (Secondary filegroup files)",
         "Params":  [
                        [
                            "SqlInstance",
@@ -37777,29 +37795,29 @@
                        ],
                        [
                            "DataFileSuffix",
-                           "The data file suffix. Defaults to \"_PRIMARY\"",
+                           "The data file suffix.",
                            "",
                            false,
                            "false",
-                           "_PRIMARY",
+                           "",
                            ""
                        ],
                        [
                            "LogFileSuffix",
-                           "The log file suffix. Defaults to \"_Log\"",
+                           "The log file suffix. Defaults to \"_log\"",
                            "",
                            false,
                            "false",
-                           "_Log",
+                           "_log",
                            ""
                        ],
                        [
                            "SecondaryDataFileSuffix",
-                           "The secondary data file suffix. Defaults to \"_MainData\"",
+                           "The secondary data file suffix.",
                            "",
                            false,
                            "false",
-                           "_MainData",
+                           "",
                            ""
                        ],
                        [
@@ -40732,6 +40750,123 @@
         "Syntax":  "New-DbaFirewallRule [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-Credential] \u003cPSCredential\u003e] [[-Type] \u003cString[]\u003e] [[-Configuration] \u003cHashtable\u003e] [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
+        "Name":  "New-DbaLinkedServerLogin",
+        "Description":  "Creates a new linked server login. See the Microsoft documentation for sp_addlinkedsrvlogin for more details on the parameters.",
+        "Tags":  [
+                     "Security",
+                     "Server"
+                 ],
+        "Synopsis":  "Creates a new linked server login.",
+        "Alias":  "",
+        "Author":  "Adam Lancaster https://github.com/lancasteradam",
+        "CommandName":  "New-DbaLinkedServerLogin",
+        "Availability":  "Windows, Linux, macOS",
+        "Links":  "https://dbatools.io/New-DbaLinkedServerLogin",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eNew-DbaLinkedServerLogin -SqlInstance sql01 -LinkedServer linkedServer1 -LocalLogin localUser1 -RemoteUser remoteUser1 -RemoteUserPassword \u003cpassword\u003e\nCreates a new linked server login and maps the local login testuser1 to the remote login testuser2. This linked server login is created on the sql01 instance for the linkedServer1 linked server.\nNOTE: passwords are sent to the SQL Server instance in plain text. Check with your security administrator before using the command with the RemoteUserPassword parameter. View the documentation for \r\nsp_addlinkedsrvlogin for more details.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eNew-DbaLinkedServerLogin -SqlInstance sql01 -LinkedServer linkedServer1 -Impersonate\nCreates a mapping for all local logins on sql01 to connect using their own credentials to the linked server linkedServer1.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaLinkedServer -SqlInstance sql01 -LinkedServer linkedServer1 | New-DbaLinkedServerLogin -LinkedServer linkedServer1 -LocalLogin testuser1 -RemoteUser testuser2 -RemoteUserPassword \r\n\u003cpassword\u003e\nCreates a new linked server login and maps the local login testuser1 to the remote login testuser2. This linked server login is created on the sql01 instance for the linkedServer1 linked server. The \r\nlinkedServer1 instance is passed in via pipeline.\nNOTE: passwords are sent to the SQL Server instance in plain text. Check with your security administrator before using the command with the RemoteUserPassword parameter. View the documentation for \r\nsp_addlinkedsrvlogin for more details.",
+        "Params":  [
+                       [
+                           "SqlInstance",
+                           "The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function\r\nto be executed against multiple SQL Server instances.",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "SqlCredential",
+                           "Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).\nWindows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.\nFor MFA support, please use Connect-DbaInstance.",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "LinkedServer",
+                           "The name(s) of the linked server(s).",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "LocalLogin",
+                           "Specifies the local login name. This parameter is required in all scenarios.",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "RemoteUser",
+                           "Specifies the remote login name.",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "RemoteUserPassword",
+                           "Specifies the remote login password as a secure string. NOTE: passwords are sent to the SQL Server instance in plain text. Check with your security administrator before using this parameter. View the \r\ndocumentation for sp_addlinkedsrvlogin for more details.",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "Impersonate",
+                           "Specifies if the local login credentials should be used instead of the remote login credentials.",
+                           "",
+                           false,
+                           "false",
+                           "False",
+                           ""
+                       ],
+                       [
+                           "InputObject",
+                           "Allows piping from Get-DbaLinkedServer.",
+                           "",
+                           false,
+                           "true (ByValue)",
+                           "",
+                           ""
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "",
+                           false,
+                           "false",
+                           "False",
+                           ""
+                       ],
+                       [
+                           "WhatIf",
+                           "Shows what would happen if the command were to run. No actions are actually performed.",
+                           "wi",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "Confirm",
+                           "Prompts you for confirmation before executing any changing operations within the command.",
+                           "cf",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ]
+                   ],
+        "Syntax":  "New-DbaLinkedServerLogin [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-LinkedServer] \u003cString[]\u003e] [[-LocalLogin] \u003cString\u003e] [[-RemoteUser] \u003cString\u003e] [[-RemoteUserPassword] \u003cSecureString\u003e] [-Impersonate] [[-InputObject] \u003cLinkedServer[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+    },
+    {
         "Name":  "New-DbaLogin",
         "Description":  "Creates a new SQL Server login with provided specifications",
         "Tags":  [
@@ -43606,13 +43741,13 @@
                      "Agent",
                      "Operator"
                  ],
-        "Synopsis":  "Removes a new operator on an instance.",
+        "Synopsis":  "Removes an operator from an instance.",
         "Alias":  "",
         "Author":  "Tracy Boggiano (@TracyBoggiano), databasesuperhero.com",
         "CommandName":  "Remove-DbaAgentOperator",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Remove-DbaAgentOperator",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS:\\\u003eRemove-DbaAgentOperator -SqlInstance sql01 -Operator DBA\nThis removes an operator named DBA from the instance.",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS:\\\u003eRemove-DbaAgentOperator -SqlInstance sql01 -Operator DBA\nThis removes an operator named DBA from the instance.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaAgentOperator -SqlInstance SRV1 | Out-GridView -Title \u0027Select SQL Agent operator(s) to drop\u0027 -OutputMode Multiple | Remove-DbaAgentOperator\nUsing a pipeline this command gets all SQL Agent operator(s) on SRV1, lets the user select those to remove and then removes the selected SQL Agent alert category(-ies).",
         "Params":  [
                        [
                            "SqlInstance",
@@ -43636,16 +43771,25 @@
                            "Operator",
                            "Name of the operator in SQL Agent.",
                            "",
-                           true,
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "ExcludeOperator",
+                           "The operator(s) to exclude.",
+                           "",
+                           false,
                            "false",
                            "",
                            ""
                        ],
                        [
                            "InputObject",
-                           "SMO Server Objects (pipeline input from Connect-DbaInstance)",
+                           "Allows piping from Get-DbaAgentOperator.",
                            "",
-                           false,
+                           true,
                            "true (ByValue)",
                            "",
                            ""
@@ -43678,7 +43822,98 @@
                            ""
                        ]
                    ],
-        "Syntax":  "Remove-DbaAgentOperator [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [-Operator] \u003cString\u003e [[-InputObject] \u003cServer[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Remove-DbaAgentOperator [-SqlInstance \u003cDbaInstanceParameter[]\u003e] [-SqlCredential \u003cPSCredential\u003e] [-Operator \u003cString[]\u003e] [-ExcludeOperator \u003cString[]\u003e] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\nRemove-DbaAgentOperator [-SqlInstance \u003cDbaInstanceParameter[]\u003e] [-SqlCredential \u003cPSCredential\u003e] [-Operator \u003cString[]\u003e] [-ExcludeOperator \u003cString[]\u003e] -InputObject \u003cOperator[]\u003e [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+    },
+    {
+        "Name":  "Remove-DbaAgentProxy",
+        "Description":  "Removes the SQL Agent proxy(s) that have passed through the pipeline.\nIf not used with a pipeline, Get-DbaAgentProxy will be executed with the parameters provided\nand the returned SQL Agent proxy(s) will be removed.",
+        "Tags":  [
+                     "Agent",
+                     "Proxy",
+                     "SMO"
+                 ],
+        "Synopsis":  "Removes SQL Agent agent proxy(s).",
+        "Alias":  "",
+        "Author":  "Mikey Bronowski (@MikeyBronowski), https://bronowski.it",
+        "CommandName":  "Remove-DbaAgentProxy",
+        "Availability":  "Windows, Linux, macOS",
+        "Links":  "https://dbatools.io/Remove-DbaAgentProxy",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eRemove-DbaAgentProxy -SqlInstance localhost, localhost\\namedinstance\nRemoves all SQL Agent proxies on the localhost, localhost\\namedinstance instances.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eRemove-DbaAgentProxy -SqlInstance localhost -Proxy MyDatabaseProxy\nRemoves MyDatabaseProxy SQL Agent proxy on the localhost.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaAgentProxy -SqlInstance SRV1 | Out-GridView -Title \u0027Select SQL Agent proxy(s) to drop\u0027 -OutputMode Multiple | Remove-DbaAgentProxy\nUsing a pipeline this command gets all SQL Agent proxies on SRV1, lets the user select those to remove and then removes the selected SQL Agent proxies.",
+        "Params":  [
+                       [
+                           "SqlInstance",
+                           "The target SQL Server instance or instances.",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "SqlCredential",
+                           "Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).\r\nWindows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.\r\nFor MFA support, please use Connect-DbaInstance.",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "Proxy",
+                           "Specifies one or more SQL Agent proxy(s) to delete. If unspecified, all accounts will be removed.",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "ExcludeProxy",
+                           "Specifies one or more SQL Agent proxy(s) to exclude.",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "InputObject",
+                           "Allows piping from Get-DbaAgentProxy.",
+                           "",
+                           true,
+                           "true (ByValue)",
+                           "",
+                           ""
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "",
+                           false,
+                           "false",
+                           "False",
+                           ""
+                       ],
+                       [
+                           "WhatIf",
+                           "Shows what would happen if the command were to run. No actions are actually performed.",
+                           "wi",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "Confirm",
+                           "Prompts you for confirmation before executing any changing operations within the command.\r\nThis is the default. Use -Confirm:$false to suppress these prompts.",
+                           "cf",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ]
+                   ],
+        "Syntax":  "Remove-DbaAgentProxy [-SqlInstance \u003cDbaInstanceParameter[]\u003e] [-SqlCredential \u003cPSCredential\u003e] [-Proxy \u003cString[]\u003e] [-ExcludeProxy \u003cString[]\u003e] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\nRemove-DbaAgentProxy [-SqlInstance \u003cDbaInstanceParameter[]\u003e] [-SqlCredential \u003cPSCredential\u003e] [-Proxy \u003cString[]\u003e] [-ExcludeProxy \u003cString[]\u003e] -InputObject \u003cProxyAccount[]\u003e [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Remove-DbaAgentSchedule",
@@ -44364,6 +44599,111 @@
         "Syntax":  "Remove-DbaComputerCertificate [[-ComputerName] \u003cDbaInstanceParameter[]\u003e] [[-Credential] \u003cPSCredential\u003e] [-Thumbprint] \u003cString[]\u003e [[-Store] \u003cString\u003e] [[-Folder] \u003cString\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
+        "Name":  "Remove-DbaCredential",
+        "Description":  "Removes the SQL credential(s) that have passed through the pipeline.\nIf not used with a pipeline, Get-DbaCredential will be executed with the parameters provided\nand the returned SQL credential(s) will be removed.",
+        "Tags":  "Credential",
+        "Synopsis":  "Removes SQL credential(s).",
+        "Alias":  "",
+        "Author":  "Mikey Bronowski (@MikeyBronowski), https://bronowski.it",
+        "CommandName":  "Remove-DbaCredential",
+        "Availability":  "Windows, Linux, macOS",
+        "Links":  "https://dbatools.io/Remove-DbaCredential",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eRemove-DbaCredential -SqlInstance localhost, localhost\\namedinstance\nRemoves all SQL credentials on the localhost, localhost\\namedinstance instances.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eRemove-DbaCredential -SqlInstance localhost -Credential MyDatabaseCredential\nRemoves MyDatabaseCredential SQL credential on the localhost.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaCredential -SqlInstance SRV1 | Out-GridView -Title \u0027Select SQL credential(s) to drop\u0027 -OutputMode Multiple | Remove-DbaCredential\nUsing a pipeline this command gets all SQL credentials on SRV1, lets the user select those to remove and then removes the selected SQL credentials.",
+        "Params":  [
+                       [
+                           "SqlInstance",
+                           "The target SQL Server instance or instances.",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "SqlCredential",
+                           "Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).\r\nWindows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.\r\nFor MFA support, please use Connect-DbaInstance.",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "Credential",
+                           "Specifies one or more SQL credential(s) to delete. If unspecified, all accounts will be removed.",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "ExcludeCredential",
+                           "Specifies one or more SQL credential(s) to exclude.",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "Identity",
+                           "Only include specific identities\r\nNote: if spaces exist in the credential identity, you will have to type \"\" or \u0027\u0027 around it.",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "ExcludeIdentity",
+                           "Excluded identities",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "InputObject",
+                           "Allows piping from Get-DbaCredential.",
+                           "",
+                           true,
+                           "true (ByValue)",
+                           "",
+                           ""
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "",
+                           false,
+                           "false",
+                           "False",
+                           ""
+                       ],
+                       [
+                           "WhatIf",
+                           "Shows what would happen if the command were to run. No actions are actually performed.",
+                           "wi",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "Confirm",
+                           "Prompts you for confirmation before executing any changing operations within the command.\r\nThis is the default. Use -Confirm:$false to suppress these prompts.",
+                           "cf",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ]
+                   ],
+        "Syntax":  "Remove-DbaCredential [-SqlInstance \u003cDbaInstanceParameter[]\u003e] [-SqlCredential \u003cPSCredential\u003e] [-Credential \u003cString[]\u003e] [-ExcludeCredential \u003cString[]\u003e] [-Identity \u003cString[]\u003e] [-ExcludeIdentity \u003cString[]\u003e] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\nRemove-DbaCredential [-SqlInstance \u003cDbaInstanceParameter[]\u003e] [-SqlCredential \u003cPSCredential\u003e] [-Credential \u003cString[]\u003e] [-ExcludeCredential \u003cString[]\u003e] [-Identity \u003cString[]\u003e] [-ExcludeIdentity \u003cString[]\u003e] -InputObject \u003cCredential[]\u003e [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+    },
+    {
         "Name":  "Remove-DbaCustomError",
         "Description":  "This command provides a wrapper for the sp_dropmessage system procedure that allows for user defined messages to be removed from sys.messages.",
         "Tags":  [
@@ -44777,14 +45117,19 @@
     {
         "Name":  "Remove-DbaDbBackupRestoreHistory",
         "Description":  "Reduces the size of the backup and restore history tables by deleting the entries for backup sets.\n\nCan be used at server level, in this case a retention period -KeepDays can be set (default is 30 days).\nCan also be used at database level, in this case the complete history for the database(s) is deleted.\n\nThe backup and restore history tables reside in the msdb database.\n\nTo periodically remove old data from backup and restore history tables it is recommended to schedule the agent job sp_delete_backuphistory from the\nSQL Server Maintenance Solution created by Ola Hallengren (https://ola.hallengren.com).",
-        "Tags":  "Delete",
+        "Tags":  [
+                     "Delete",
+                     "Backup",
+                     "Restore",
+                     "Database"
+                 ],
         "Synopsis":  "Reduces the size of the backup and restore history tables by deleting old entries for backup sets.",
         "Alias":  "",
         "Author":  "IJeb Reitsma",
         "CommandName":  "Remove-DbaDbBackupRestoreHistory",
         "Availability":  "Windows, Linux, macOS",
         "Links":  "https://dbatools.io/Remove-DbaDbBackupRestoreHistory",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eRemove-DbaDbBackupRestoreHistory -SqlInstance sql2016\nPrompts for confirmation then deletes backup and restore history on SQL Server sql2016 older than 30 days (default period)\nPS C:\\\u003e Remove-DbaDbBackupRestoreHistory -SqlInstance sql2016 -KeepDays 100 -Confirm:$false\nRemove backup and restore history on SQL Server sql2016 older than 100 days. Does not prompt for confirmation.\nPS C:\\\u003e Remove-DbaDbBackupRestoreHistory -SqlInstance sql2016 -Database db1\nPrompts for confirmation then deletes all backup and restore history for database db1 on SQL Server sql2016\nPS C:\\\u003e Get-DbaDatabase -SqlInstance sql2016 | Remove-DbaDbBackupRestoreHistory -WhatIf\nRemove complete backup and restore history for all databases on SQL Server sql2016",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eRemove-DbaDbBackupRestoreHistory -SqlInstance sql2016\nPrompts for confirmation then deletes backup and restore history on SQL Server sql2016 older than 30 days (default period)\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eRemove-DbaDbBackupRestoreHistory -SqlInstance sql2016 -KeepDays 100 -Confirm:$false\nRemove backup and restore history on SQL Server sql2016 older than 100 days. Does not prompt for confirmation.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eRemove-DbaDbBackupRestoreHistory -SqlInstance sql2016 -Database db1\nPrompts for confirmation then deletes all backup and restore history for database db1 on SQL Server sql2016\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaDatabase -SqlInstance sql2016 | Remove-DbaDbBackupRestoreHistory -WhatIf\nRemove complete backup and restore history for all databases on SQL Server sql2016",
         "Params":  [
                        [
                            "SqlInstance",
