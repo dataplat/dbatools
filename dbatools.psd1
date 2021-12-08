@@ -718,7 +718,10 @@
         'Set-DbaRgWorkloadGroup',
         'New-DbaRgWorkloadGroup',
         'Remove-DbaRgWorkloadGroup',
-        'Get-DbaLinkedServerLogin'
+        'Get-DbaLinkedServerLogin',
+        'New-DbaLinkedServerLogin',
+        'Remove-DbaCredential',
+        'Remove-DbaAgentProxy'
     )
 
     # Cmdlets to export from this module
