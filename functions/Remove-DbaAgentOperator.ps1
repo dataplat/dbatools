@@ -61,19 +61,15 @@ function Remove-DbaAgentOperator {
         Using a pipeline this command gets all SQL Agent operator(s) on SRV1, lets the user select those to remove and then removes the selected SQL Agent alert category(-ies).
 
     #>
-    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High')]
+    [CmdletBinding(SupportsShouldProcess, DefaultParameterSetName = 'Default', ConfirmImpact = 'High')]
     param (
-        [Parameter(ParameterSetName = 'NonPipeline', Mandatory = $true, Position = 0)]
         [DbaInstanceParameter[]]$SqlInstance,
-        [Parameter(ParameterSetName = 'NonPipeline')]
         [PSCredential]$SqlCredential,
-        [Parameter(ParameterSetName = 'NonPipeline')]
         [string[]]$Operator,
-        [Parameter(ParameterSetName = 'NonPipeline')]
         [string[]]$ExcludeOperator,
         [parameter(ValueFromPipeline, ParameterSetName = 'Pipeline', Mandatory = $true)]
         [Microsoft.SqlServer.Management.Smo.Agent.Operator[]]$InputObject,
-        [Parameter(ParameterSetName = 'NonPipeline')][Parameter(ParameterSetName = 'Pipeline')]
+        [Parameter(ParameterSetName = 'Pipeline')]
         [switch]$EnableException
     )
 
