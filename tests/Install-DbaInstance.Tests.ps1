@@ -50,6 +50,8 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
             'Port',
             'Throttle',
             'ProductID',
+            'AsCollation',
+            'SqlCollation',
             'EngineCredential',
             'AgentCredential',
             'ASCredential',
