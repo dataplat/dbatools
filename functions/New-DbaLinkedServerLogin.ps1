@@ -21,7 +21,7 @@ function New-DbaLinkedServerLogin {
         The name(s) of the linked server(s).
 
     .PARAMETER LocalLogin
-        Specifies the local login name.
+        Specifies the local login name. This parameter is required in all scenarios.
 
     .PARAMETER RemoteUser
         Specifies the remote login name.
@@ -90,15 +90,18 @@ function New-DbaLinkedServerLogin {
         [switch]$EnableException
     )
     process {
+        if ($SqlInstance -and (-not $LinkedServer)) {
+            Stop-Function -Message "LinkedServer is required when SqlInstance is specified"
+            return
+        }
+
+        if (-not $LocalLogin) {
+            Stop-Function -Message "LocalLogin is required in all scenarios"
+            return
+        }
 
         foreach ($instance in $SqlInstance) {
-
-            if (Test-Bound -Not -ParameterName LinkedServer) {
-                Stop-Function -Message "LinkedServer is required"
-                return
-            }
-
-            $InputObject += Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential | Get-DbaLinkedServer -LinkedServer $LinkedServer
+            $InputObject += Get-DbaLinkedServer -SqlInstance $instance -SqlCredential $SqlCredential -LinkedServer $LinkedServer
         }
 
         foreach ($lnkSrv in $InputObject) {

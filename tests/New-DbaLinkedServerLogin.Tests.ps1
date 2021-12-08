@@ -48,24 +48,32 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 
         It "Check the validation for a linked server" {
             $results = New-DbaLinkedServerLogin -SqlInstance $instance2 -LocalLogin $localLogin1Name -WarningVariable warnings
-            $warnings | Should -BeLike "*LinkedServer is required*"
+            $warnings | Should -BeLike "*LinkedServer is required when SqlInstance is specified*"
             $results | Should -BeNullOrEmpty
         }
 
         It "Creates a linked server login with the local login to remote user mapping on two different linked servers" {
             $results = New-DbaLinkedServerLogin -SqlInstance $instance2 -LinkedServer $linkedServer1Name, $linkedServer2Name -LocalLogin $localLogin1Name -RemoteUser $remoteLoginName -RemoteUserPassword $securePassword
             $results.length | Should -Be 2
+            $results.Parent.Name | Should -Be $linkedServer1Name, $linkedServer2Name
             $results.Name | Should -Be $localLogin1Name, $localLogin1Name
             $results.RemoteUser | Should -Be $remoteLoginName, $remoteLoginName
             $results.Impersonate | Should -Be $false, $false
         }
 
         It "Creates a linked server login with impersonation using a linked server from a pipeline" {
-            $results = New-DbaLinkedServerLogin -SqlInstance $instance2 -LinkedServer $linkedServer1Name -LocalLogin $localLogin2Name -Impersonate
+            $results = $linkedServer1 | New-DbaLinkedServerLogin -LocalLogin $localLogin2Name -Impersonate
             $results | Should -Not -BeNullOrEmpty
+            $results.Parent.Name | Should -Be $linkedServer1Name
             $results.Name | Should -Be $localLogin2Name
             $results.RemoteUser | Should -BeNullOrEmpty
             $results.Impersonate | Should -Be $true
+        }
+
+        It "Ensure that LocalLogin is passed in" {
+            $results = $linkedServer1 | New-DbaLinkedServerLogin -Impersonate -WarningVariable warnings
+            $results | Should -BeNullOrEmpty
+            $warnings | Should -BeLike "*LocalLogin is required in all scenarios*"
         }
     }
 }
