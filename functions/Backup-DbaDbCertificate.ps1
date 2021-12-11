@@ -241,7 +241,7 @@ function Backup-DbaDbCertificate {
         }
 
         if ($Certificate) {
-            $missingCerts = $Certificate | ? { $InputObject.Name -notcontains $_ }
+            $missingCerts = $Certificate | Where-Object { $InputObject.Name -notcontains $_ }
 
             if ($missingCerts) {
                 Write-Message -Level Warning -Message "Database certificate(s) $missingCerts not found in Database(s)=$Database on Instance(s)=$SqlInstance"
