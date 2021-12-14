@@ -166,8 +166,8 @@ function Get-DbaDbRestoreHistory {
 
 
                 if ($last) {
-                    $wherearray += "rsh.backup_set_id in
-                        (select max(backup_set_id) from msdb.dbo.restorehistory
+                    $wherearray += "rsh.restore_history_id in
+                        (select max(restore_history_id) from msdb.dbo.restorehistory
                         group by destination_database_name
                         )"
                 }
