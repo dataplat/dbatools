@@ -153,7 +153,7 @@ function Invoke-DbaQuery {
         [string]$Database,
         [Parameter(Mandatory, ParameterSetName = "Query")]
         [string]$Query,
-        [Int32]$QueryTimeout = 600,
+        [Int32]$QueryTimeout,
         [Parameter(Mandatory, ParameterSetName = "File")]
         [Alias("InputFile")]
         [object[]]$File,
