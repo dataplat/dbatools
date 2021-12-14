@@ -240,6 +240,14 @@ function Backup-DbaDbCertificate {
             $InputObject += Get-DbaDbCertificate -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $Database -ExcludeDatabase $ExcludeDatabase -Certificate $Certificate
         }
 
+        if ($Certificate) {
+            $missingCerts = $Certificate | Where-Object { $InputObject.Name -notcontains $_ }
+
+            if ($missingCerts) {
+                Write-Message -Level Warning -Message "Database certificate(s) $missingCerts not found in Database(s)=$Database on Instance(s)=$SqlInstance"
+            }
+        }
+
         foreach ($cert in $InputObject) {
             if ($cert.Name.StartsWith("##")) {
                 Write-Message -Level Verbose -Message "Skipping system cert $cert"
