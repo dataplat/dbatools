@@ -22,7 +22,6 @@ else { ($this.ExecuteWithResults($Query)).Tables[0] }
 param (
     $Command
 )
-$Command = $Command.Replace("	", " ")
 $this.ExecuteNonQuery($Command)
 </Script>
 </ScriptMethod>
