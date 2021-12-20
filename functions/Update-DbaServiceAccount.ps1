@@ -224,6 +224,22 @@ function Update-DbaServiceAccount {
                             Write-Message -Level Verbose -Message "Attempting an account change for service $($svc.ServiceName) on $($svc.ComputerName)"
                             $null = Invoke-ManagedComputerCommand -ComputerName $svc.ComputerName -Credential $Credential -ScriptBlock $scriptAccountChange -ArgumentList @($svc.ServiceName, $currentCredential.UserName, $currentCredential.GetNetworkCredential().Password) -EnableException:$EnableException
                             $outMessage = "The login account for the service has been successfully set."
+                            if ($serviceObject.ServiceType -eq 'Engine') {
+                                # Test if a certificate is used. If so, update permissions on the certificate for the new service account.
+                                $sqlInstance = $svc.ComputerName
+                                if ($svc.ServiceName -ne 'MSSQLSERVER') {
+                                    $sqlInstance += '\' + $svc.ServiceName
+                                }
+                                try {
+                                    $certificate = Get-DbaNetworkConfiguration -SqlInstance $sqlInstance -Credential $Credential -OutputType Certificate -EnableException
+                                    if ($certificate.Thumbprint) {
+                                        $setCertOutput = Set-DbaNetworkCertificate -SqlInstance $sqlInstance -Credential $Credential -Thumbprint $certificate.Thumbprint -EnableException
+                                        $outMessage += ' ' + $setCertOutput.Notes
+                                    }
+                                } catch {
+                                    $outMessage += " Failed to update permissions on the certificate."
+                                }
+                            }
                         } elseif ($actionType -eq 'Password') {
                             Write-Message -Level Verbose -Message "Attempting a password change for service $($svc.ServiceName) on $($svc.ComputerName)"
                             $null = Invoke-ManagedComputerCommand -ComputerName $svc.ComputerName -Credential $Credential -ScriptBlock $scriptPasswordChange -ArgumentList @($svc.ServiceName, (New-Object System.Management.Automation.PSCredential ("user", $PreviousPassword)).GetNetworkCredential().Password, (New-Object System.Management.Automation.PSCredential ("user", $currentPassword)).GetNetworkCredential().Password) -EnableException:$EnableException
