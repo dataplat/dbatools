@@ -47,6 +47,6 @@ function Get-DbaNetworkCertificate {
         [switch]$EnableException
     )
     process {
-        Get-DbaNetworkConfiguration -SqlInstance $SqlInstance -OutputType Certificate | Where-Object FriendlyName
+        Get-DbaNetworkConfiguration -SqlInstance $SqlInstance -OutputType Certificate | Where-Object Thumbprint
     }
 }
