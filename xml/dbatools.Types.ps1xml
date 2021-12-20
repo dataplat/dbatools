@@ -40,7 +40,7 @@ param (
     $Database,
     $AllTables = $false
 )
-$Query = $Query.Replace("	", " ")
+
 if (-not $Database) {
     if ($this.ConnectionContext.DatabaseEngineType -eq "SqlAzureDatabase") {
         $Database = $this.ConnectionContext.ExecuteScalar("select db_name()")
