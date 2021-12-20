@@ -153,7 +153,7 @@ function Invoke-DbaQuery {
         [string]$Database,
         [Parameter(Mandatory, ParameterSetName = "Query")]
         [string]$Query,
-        [Int32]$QueryTimeout = 600,
+        [Int32]$QueryTimeout,
         [Parameter(Mandatory, ParameterSetName = "File")]
         [Alias("InputFile")]
         [object[]]$File,
@@ -351,9 +351,10 @@ function Invoke-DbaQuery {
             $server = $db.Parent
             $conncontext = $server.ConnectionContext
             if ($conncontext.DatabaseName -ne $db.Name) {
-                #$conncontext = $server.ConnectionContext.Copy()
-                #$conncontext.DatabaseName = $db.Name
-                $conncontext = $server.ConnectionContext.Copy().GetDatabaseConnection($db.Name)
+                # Save StatementTimeout because it might be reset on GetDatabaseConnection
+                $savedStatementTimeout = $conncontext.StatementTimeout
+                $conncontext = $conncontext.Copy().GetDatabaseConnection($db.Name)
+                $conncontext.StatementTimeout = $savedStatementTimeout
             }
             try {
                 if ($File -or $SqlObject) {
