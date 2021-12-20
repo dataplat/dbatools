@@ -64,7 +64,7 @@ function Invoke-DbaAsync {
         [switch]
         $AppendServerInstance,
 
-        [Int32]$QueryTimeout = 600,
+        [Int32]$QueryTimeout,
 
         [switch]
         $MessagesToOutput,
@@ -79,6 +79,9 @@ function Invoke-DbaAsync {
                 Stop-Function -Message "SqlParameter only accepts a single hashtable or Microsoft.Data.SqlClient.SqlParameter"
                 return
             }
+        }
+        if (-not $PSBoundParameters.QueryTimeout) {
+            $QueryTimeout = $SQLConnection.StatementTimeout
         }
         function Resolve-SqlError {
             param($Err)
