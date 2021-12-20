@@ -193,7 +193,8 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
         $securestring = ConvertTo-SecureString $env:CLIENTSECRET -AsPlainText -Force
         $azurecred = New-Object PSCredential -ArgumentList $env:CLIENTID, $securestring
         $server = Connect-DbaInstance -SqlInstance dbatoolstest.database.windows.net -SqlCredential $azurecred -Tenant $env:TENANTID
-        (Get-DbaDatabase -SqlInstance $server).Name | Should -BeGreaterThan 0
+        (Get-DbaDatabase -SqlInstance $server).Name.Count | Should -BeGreaterThan 0
+        Get-DbaDatabase -SqlInstance $server | Should -Not throw
     }
 }
 
