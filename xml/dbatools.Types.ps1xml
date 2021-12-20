@@ -11,7 +11,7 @@ param (
     $Query,
     $AllTables = $false
 )
-$Query = $Query.Replace("	", " ")
+
 if ($AllTables) { ($this.ExecuteWithResults($Query)).Tables }
 else { ($this.ExecuteWithResults($Query)).Tables[0] }
 </Script>
