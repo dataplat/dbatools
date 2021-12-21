@@ -1,7 +1,7 @@
 
 -- SQL Server 2014 Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: December 1, 2021
+-- Last Modified: December 21, 2021
 -- https://glennsqlperformance.com/
 -- https://sqlserverperformance.wordpress.com/
 -- YouTube: https://bit.ly/2PkoAM1 
@@ -234,7 +234,7 @@ DBCC TRACESTATUS (-1);
 -- TF 2371 - Lowers auto update statistics threshold for large tables (on tables with more than 25,000 rows)
 --           https://bit.ly/30KO4Hh
 
--- TF 3226 - Supresses logging of successful database backup messages to the SQL Server Error Log
+-- TF 3226 - Suppresses logging of successful database backup messages to the SQL Server Error Log
 --           https://bit.ly/38zDNAK 
 
 -- TF 3449 - Enables use of dirty page manager (SQL Server 2014 SP1 CU7 and later)
