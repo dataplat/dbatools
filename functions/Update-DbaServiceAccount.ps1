@@ -228,7 +228,8 @@ function Update-DbaServiceAccount {
                                 if ($svc.ServiceName -ne 'MSSQLSERVER') {
                                     $sqlInstance += '\' + $svc.ServiceName
                                 }
-                                $certificate = Get-DbaNetworkConfiguration -SqlInstance $sqlInstance -Credential $Credential -OutputType Certificate -EnableException
+                                # We try to get the certificate, but don't fail in case we are not able to.
+                                $certificate = Get-DbaNetworkConfiguration -SqlInstance $sqlInstance -Credential $Credential -OutputType Certificate
                                 if ($certificate.Thumbprint) {
                                     Write-Message -Level Verbose -Message "Removing certificate from service $($svc.ServiceName) on $($svc.ComputerName)"
                                     $null = Remove-DbaNetworkCertificate -SqlInstance $sqlInstance -Credential $Credential -EnableException
