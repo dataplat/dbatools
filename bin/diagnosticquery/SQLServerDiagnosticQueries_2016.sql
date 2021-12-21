@@ -1,7 +1,7 @@
 
 -- SQL Server 2016 Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: December 12, 2021
+-- Last Modified: December 21, 2021
 -- https://glennsqlperformance.com/
 -- https://sqlserverperformance.wordpress.com/
 -- YouTube: https://bit.ly/2PkoAM1 
@@ -231,7 +231,7 @@ DBCC TRACESTATUS (-1);
 -- TF 460  - Improvement: Optional replacement for "String or binary data would be truncated" message with extended information in SQL Server 2017
 --           https://bit.ly/2sboMli  (added in SP2 CU6)
 
--- TF 3226 - Supresses logging of successful database backup messages to the SQL Server Error Log
+-- TF 3226 - Suppresses logging of successful database backup messages to the SQL Server Error Log
 --           https://bit.ly/38zDNAK 
 
 -- TF 6534 - Enables use of native code to improve performance with spatial data

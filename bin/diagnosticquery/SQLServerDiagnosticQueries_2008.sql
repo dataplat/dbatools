@@ -1,7 +1,7 @@
 
 -- SQL Server 2008 Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: May 21, 2021
+-- Last Modified: December 21, 2021
 -- https://glennsqlperformance.com/
 -- https://sqlserverperformance.wordpress.com/
 -- YouTube: https://bit.ly/2PkoAM1 
@@ -192,7 +192,7 @@ DBCC TRACESTATUS (-1);
 -- TF 2371 - Lowers auto update statistics threshold for large tables
 --           https://bit.ly/30KO4Hh
 
--- TF 3226 - Supresses logging of successful database backup messages to the SQL Server Error Log
+-- TF 3226 - Suppresses logging of successful database backup messages to the SQL Server Error Log
 --           https://bit.ly/38zDNAK 
 
 

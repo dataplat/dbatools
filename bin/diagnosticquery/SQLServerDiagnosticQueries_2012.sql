@@ -1,7 +1,7 @@
 
 -- SQL Server 2012 Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: December 1, 2021
+-- Last Modified: December 21, 2021
 -- https://glennsqlperformance.com/
 -- https://sqlserverperformance.wordpress.com/
 -- YouTube: https://bit.ly/2PkoAM1 
@@ -251,7 +251,7 @@ DBCC TRACESTATUS (-1);
 -- TF 3023 - Enables backup checksum default
 --           https://bit.ly/2vtjqqc
 
--- TF 3226 - Supresses logging of successful database backup messages to the SQL Server Error Log
+-- TF 3226 - Suppresses logging of successful database backup messages to the SQL Server Error Log
 --           https://bit.ly/38zDNAK 
 
 -- TF 3449 - Enables use of dirty page manager (SQL Server 2012 SP3 CU3 and later)

@@ -1,7 +1,7 @@
 
 -- SQL Server 2005 Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: May 21, 2021
+-- Last Modified: December 21, 2021
 -- https://glennsqlperformance.com/
 -- https://sqlserverperformance.wordpress.com/
 -- YouTube: https://bit.ly/2PkoAM1 
@@ -166,7 +166,7 @@ DBCC TRACESTATUS (-1);
 --           Recommendations to reduce allocation contention in SQL Server tempdb database
 --           https://bit.ly/2GY1kOl
 
--- TF 3226 - Supresses logging of successful database backup messages to the SQL Server Error Log
+-- TF 3226 - Suppresses logging of successful database backup messages to the SQL Server Error Log
 --           https://bit.ly/38zDNAK 
 
 
