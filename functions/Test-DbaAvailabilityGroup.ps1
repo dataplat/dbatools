@@ -182,13 +182,6 @@ function Test-DbaAvailabilityGroup {
                 }
             }
 
-            if ($ag.AvailabilityDatabases.Name -contains $db.Name) {
-                Stop-Function -Message "Database $db is already joined to Availability Group $AvailabilityGroup." -Continue
-                # Note on further development: It should be possible to add a database to a replica where the database is currently not synchronized to.
-                # Use case: Have a three node AG and in the first step only add the database to primary and one of the secondaries. Then add the database to the third replica later.
-                # Use case: Have a two node AG and later add a new replica. Add-DbaAgReplica only adds the replica itself, not the databases.
-            }
-
             if ($SeedingMode -eq 'Automatic' -and $server.VersionMajor -lt 13) {
                 Stop-Function -Message "Automatic seeding mode only supported in SQL Server 2016 and above." -Continue
             }
@@ -236,16 +229,20 @@ function Test-DbaAvailabilityGroup {
                 $replicaDb = $replicaAg.Parent.Databases[$db.Name]
 
                 if ($replicaDb) {
-                    # Database already present on replica, so test if we can use it.
-                    if ($replicaDb.Status -ne 'Restoring') {
-                        $failure = $true
-                        Stop-Function -Message "Status of database $db on replica $replicaName is not Restoring, but $($replicaDb.Status)" -Continue
+                    # Database already present on replica, so test if already joined or if we can use it.
+                    if ($replicaDb.AvailabilityGroupName -eq $AvailabilityGroup) {
+                        Write-Message -Level Verbose -Message "Database $db is already part of the Availability Group on replica $replicaName."
+                    } else {
+                        if ($replicaDb.Status -ne 'Restoring') {
+                            $failure = $true
+                            Stop-Function -Message "Status of database $db on replica $replicaName is not Restoring, but $($replicaDb.Status)" -Continue
+                        }
+                        if ($UseLastBackup) {
+                            $failure = $true
+                            Stop-Function -Message "Database $db is already present on $replicaName, so -UseLastBackup must not be used. Please remove database from replica to use -UseLastBackup." -Continue
+                        }
+                        Write-Message -Level Verbose -Message "Database $db is already present in restoring status on replica $replicaName."
                     }
-                    if ($UseLastBackup) {
-                        $failure = $true
-                        Stop-Function -Message "Database $db is already present on $replicaName, so -UseLastBackup must not be used. Please remove database from replica to use -UseLastBackup." -Continue
-                    }
-                    Write-Message -Level Verbose -Message "Database $db is already present in restoring status on replica $replicaName."
                 } else {
                     # No database on replica, so test if we need a backup.
                     # We need to restore a backup if the desired or the current seeding mode is manual.
