@@ -223,6 +223,7 @@ function Add-DbaAgReplica {
                     }
                     $ep = New-DbaEndpoint @epParams
                     $null = $ep | Start-DbaEndpoint
+                    $epUrl = $ep.Fqdn
                 }
             } else {
                 $epUrl = $ep.Fqdn
