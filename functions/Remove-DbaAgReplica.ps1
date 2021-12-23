@@ -90,7 +90,7 @@ function Remove-DbaAgReplica {
                         ComputerName      = $agreplica.ComputerName
                         InstanceName      = $agreplica.InstanceName
                         SqlInstance       = $agreplica.SqlInstance
-                        AvailabilityGroup = $agreplica.Parent.Name
+                        AvailabilityGroup = $agreplica.Parent.AvailabilityGroup
                         Replica           = $agreplica.Name
                         Status            = "Removed"
                     }
