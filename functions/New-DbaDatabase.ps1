@@ -124,23 +124,23 @@ function New-DbaDatabase {
         Creates a secondary group with 2 files in the Secondary filegroup.
 
     .EXAMPLE
-        $databaseParams = @{
-            SqlInstance             = "sql1"
-            Name                    = "newDb"
-            LogSize                 = 32
-            LogMaxSize              = 512
-            PrimaryFilesize         = 64
-            PrimaryFileMaxSize      = 512
-            SecondaryFilesize       = 64
-            SecondaryFileMaxSize    = 512
-            LogGrowth               = 32
-            PrimaryFileGrowth       = 64
-            SecondaryFileGrowth     = 64
-            DataFileSuffix          = "_PRIMARY"
-            LogFileSuffix           = "_Log"
-            SecondaryDataFileSuffix = "_MainData"
-        }
-        New-DbaDatabase @databaseParams
+        PS C:\> $databaseParams = @{
+        >> SqlInstance             = "sql1"
+        >> Name                    = "newDb"
+        >> LogSize                 = 32
+        >> LogMaxSize              = 512
+        >> PrimaryFilesize         = 64
+        >> PrimaryFileMaxSize      = 512
+        >> SecondaryFilesize       = 64
+        >> SecondaryFileMaxSize    = 512
+        >> LogGrowth               = 32
+        >> PrimaryFileGrowth       = 64
+        >> SecondaryFileGrowth     = 64
+        >> DataFileSuffix          = "_PRIMARY"
+        >> LogFileSuffix           = "_Log"
+        >> SecondaryDataFileSuffix = "_MainData"
+        >> }
+        >> New-DbaDatabase @databaseParams
 
         Creates a new database named newDb on the sql1 instance and sets the file sizes, max sizes, and growth as specified. The resulting filenames will take the form:
 
