@@ -22,7 +22,7 @@ function Get-DbaDbMail {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: DatabaseMail, DBMail, Mail
+        Tags: Mail, DbMail, Email
         Author: Chrissy LeMaire (@cl), netnerds.net
 
         Website: https://dbatools.io
