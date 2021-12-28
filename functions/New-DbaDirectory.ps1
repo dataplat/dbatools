@@ -32,7 +32,7 @@ function New-DbaDirectory {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: Path, Directory, Folder
+        Tags: Path, Directory, Folder, Storage
         Author: Stuart Moore
 
         Website: https://dbatools.io

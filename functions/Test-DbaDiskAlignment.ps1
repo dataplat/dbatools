@@ -42,7 +42,7 @@ function Test-DbaDiskAlignment {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: Storage
+        Tags: Storage, Disk
         Author: Constantine Kokkinos (@mobileck), https://constantinekokkinos.com
 
         Website: https://dbatools.io
