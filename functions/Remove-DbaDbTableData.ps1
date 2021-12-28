@@ -59,7 +59,7 @@ function Remove-DbaDbTableData {
         Prompts for confirmation before executing any data modification operations.
 
     .NOTES
-        Tags: Data, Database, Delete, LogFile, Performance, Remove, Space, Table
+        Tags: Table, Data
         Author: Adam Lancaster https://github.com/lancasteradam
 
         Website: https://dbatools.io
@@ -74,7 +74,7 @@ function Remove-DbaDbTableData {
     .EXAMPLE
         PS C:\> Remove-DbaDbTableData -SqlInstance localhost -Database TestDb -Table dbo.Test -BatchSize 1000000 -LogBackupPath E:\LogBackups -Confirm:$false
 
-        Removes all data from the dbo.Test table in the TestDb database on the local SQL instance. The deletes are dones in batches of 1000000 rows each and the log backups are written to E:\LogBackups.
+        Removes all data from the dbo.Test table in the TestDb database on the local SQL instance. The deletes are done in batches of 1000000 rows each and the log backups are written to E:\LogBackups.
 
     .EXAMPLE
         PS C:\> Remove-DbaDbTableData -SqlInstance localhost -Database TestDb -DeleteSql "DELETE TOP (1000000) deleteFromTable FROM dbo.Test deleteFromTable LEFT JOIN dbo.Test2 b ON deleteFromTable.Id = b.Id" -LogBackupPath E:\LogBackups -Confirm:$false
@@ -84,24 +84,24 @@ function Remove-DbaDbTableData {
     .EXAMPLE
         PS C:\> Remove-DbaDbTableData -SqlInstance localhost -Database TestDb -Table dbo.Test -DeleteSql "WITH ToDelete AS (SELECT TOP (1000000) Id FROM dbo.Test ORDER BY Id DESC;) DELETE FROM ToDelete;" -LogBackupPath E:\LogBackups -Confirm:$false
 
-        Removes data from the dbo.Test table based on the DELETE statement specified in the -DeleteSql. The deletes occur in the TestDb database on the local SQL instance. The deletes are dones in batches of 1000000 rows each and the log backups are written to E:\LogBackups.
+        Removes data from the dbo.Test table based on the DELETE statement specified in the -DeleteSql. The deletes occur in the TestDb database on the local SQL instance. The deletes are done in batches of 1000000 rows each and the log backups are written to E:\LogBackups.
 
     .EXAMPLE
         PS C:\> Get-DbaDatabase -SqlInstance localhost -Database TestDb1, TestDb2  | Remove-DbaDbTableData -Table dbo.Test -BatchSize 1000000 -LogBackupPath E:\LogBackups -Confirm:$false
 
-        Removes data from the dbo.Test table in the TestDb1 and TestDb2 databases on the local SQL instance. The deletes are dones in batches of 1000000 rows each and the log backups are written to E:\LogBackups.
+        Removes data from the dbo.Test table in the TestDb1 and TestDb2 databases on the local SQL instance. The deletes are done in batches of 1000000 rows each and the log backups are written to E:\LogBackups.
 
     .EXAMPLE
         PS C:\> $server, $server2 | Remove-DbaDbTableData -Database TestDb -Table dbo.Test -BatchSize 1000000 -LogBackupPath E:\LogBackups -Confirm:$false
 
-        Removes data from the dbo.Test table in the TestDb database on the SQL instances represented by $server and $server2. The deletes are dones in batches of 1000000 rows each and the log backups are written to E:\LogBackups.
+        Removes data from the dbo.Test table in the TestDb database on the SQL instances represented by $server and $server2. The deletes are done in batches of 1000000 rows each and the log backups are written to E:\LogBackups.
 
     .EXAMPLE
         PS C:\> $server = Connect-DbaInstance -ConnectionString "Data Source=TCP:yourserver.database.windows.net,1433;MultipleActiveResultSets=False;Connect Timeout=30;Encrypt=True;TrustServerCertificate=False;User Id=dbuser;Password=strongpassword;Database=TestDb"
 
         Remove-DbaDbTableData -SqlInstance $server -Database TestDb -Table dbo.Test -BatchSize 1000000 -Confirm:$false
 
-        Removes data from the dbo.Test table in the TestDb database on the Azure SQL server yourserver.database.windows.net. The deletes are dones in batches of 1000000 rows. Log backups are managed by Azure SQL. Note: for Azure SQL databases error 40552 could occur for large batch deletions: https://docs.microsoft.com/en-us/azure/azure-sql/database/troubleshoot-common-errors-issues#error-40552-the-session-has-been-terminated-because-of-excessive-transaction-log-space-usage
+        Removes data from the dbo.Test table in the TestDb database on the Azure SQL server yourserver.database.windows.net. The deletes are done in batches of 1000000 rows. Log backups are managed by Azure SQL. Note: for Azure SQL databases error 40552 could occur for large batch deletions: https://docs.microsoft.com/en-us/azure/azure-sql/database/troubleshoot-common-errors-issues#error-40552-the-session-has-been-terminated-because-of-excessive-transaction-log-space-usage
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High')]
     param (
