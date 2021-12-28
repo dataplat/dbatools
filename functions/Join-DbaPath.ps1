@@ -25,7 +25,7 @@ function Join-DbaPath {
     param (
         [Parameter(Mandatory, Position = 0)]
         [string]$Path,
-        [dbainstanceparameter]$SqlInstance,
+        [DbaInstanceParameter]$SqlInstance,
         [Parameter(ValueFromRemainingArguments)]
         [Alias("ChildPath")]
         [string[]]$Child
