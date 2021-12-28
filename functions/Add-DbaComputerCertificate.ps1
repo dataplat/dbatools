@@ -39,7 +39,7 @@ function Add-DbaComputerCertificate {
         If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
     .NOTES
-        Tags: Certificate
+        Tags: Certificate, Security
         Author: Chrissy LeMaire (@cl), netnerds.net
 
         Website: https://dbatools.io
