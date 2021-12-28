@@ -8,7 +8,7 @@ function Get-DbaNetworkConfiguration {
 
         As we get information from SQL WMI and also from the registry, we use PS Remoting to run the core code on the target machine.
 
-        For a detailed explenation of the different properties see the documentation at:
+        For a detailed explanation of the different properties see the documentation at:
         https://docs.microsoft.com/en-us/sql/tools/configuration-manager/sql-server-network-configuration
 
     .PARAMETER SqlInstance
@@ -23,7 +23,7 @@ function Get-DbaNetworkConfiguration {
 
         Full returns one object per SqlInstance with information about the server protocols
         and nested objects with information about TCP/IP properties and TCP/IP addresses.
-        It also outputs advanded properties including information about the used certificate.
+        It also outputs advanced properties including information about the used certificate.
 
         ServerProtocols returns one object per SqlInstance with information about the server protocols only.
 
@@ -42,7 +42,7 @@ function Get-DbaNetworkConfiguration {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: SQLWMI
+        Tags: Connection, SQLWMI
         Author: Andreas Jordan (@JordanOrdix), ordix.de
 
         Website: https://dbatools.io

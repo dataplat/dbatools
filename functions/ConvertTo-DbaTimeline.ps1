@@ -16,7 +16,7 @@ function ConvertTo-DbaTimeline {
 
     .PARAMETER ExcludeRowLabel
         By default, the Timeline shows SqlInstance and item name (agent job or database) in row labels section of the chart.
-        When this parameter (ExcludeRowLabel) is set to true the row labels will not be shown which will maximise the chart area for better visualisation.
+        When this parameter (ExcludeRowLabel) is set to true the row labels will not be shown which will maximise the chart area for better visualization.
         All relevant details are still available in the tooltip.
 
     .PARAMETER EnableException
@@ -25,7 +25,7 @@ function ConvertTo-DbaTimeline {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: Chart
+        Tags: Utility, Chart
         Author: Marcin Gminski (@marcingminski)
 
         Website: https://dbatools.io

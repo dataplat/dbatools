@@ -21,9 +21,11 @@
     "powershell.scriptAnalysis.settingsPath": "bin\\PSScriptAnalyzerRules.psd1",
     "powershell.codeFormatting.addWhitespaceAroundPipe": true,
     "cSpell.words": [
+        "Andreas",
         "ISNULL",
         "nchar",
         "ntext",
+        "Ordix",
         "randomizer",
         "SQLDB",
         "sqlstad",

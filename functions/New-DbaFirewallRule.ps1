@@ -75,7 +75,7 @@ function New-DbaFirewallRule {
         If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
     .NOTES
-        Tags: Firewall, Network
+        Tags: Firewall, Network, Connection
         Author: Andreas Jordan (@JordanOrdix), ordix.de
 
         Website: https://dbatools.io
