@@ -34,7 +34,7 @@ function Get-DbaServerRoleMember {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: ServerRole, Security, Login
+        Tags: Role, Login
         Author: Klaas Vandenberghe (@PowerDBAKlaas)
 
         Website: https://dbatools.io
