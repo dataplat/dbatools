@@ -1,5 +1,5 @@
 function Resolve-DbaPath {
-<#
+    <#
     .SYNOPSIS
         Resolves a path.
 
@@ -24,6 +24,17 @@ function Resolve-DbaPath {
         Assumes one wishes to create a new child item.
         The parent path will be resolved and must validate true.
         The final leaf will be treated as a leaf item that does not exist yet.
+
+    .NOTES
+        Tags: Path, Resolve, Utility
+        Author: Friedrich Weinmann (@FredWeinmann)
+
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
+
+    .LINK
+        https://dbatools.io/Resolve-DbaPath
 
     .EXAMPLE
         PS C:\> Resolve-DbaPath -Path report.log -Provider FileSystem -NewChild -SingleItem
@@ -54,53 +65,40 @@ function Resolve-DbaPath {
         $NewChild
     )
 
-    process
-    {
-        foreach ($inputPath in $Path)
-        {
-            if ($inputPath -eq ".")
-            {
+    process {
+        foreach ($inputPath in $Path) {
+            if ($inputPath -eq ".") {
                 $inputPath = (Get-Location).Path
             }
-            if ($NewChild)
-            {
+            if ($NewChild) {
                 $parent = Split-Path -Path $inputPath
                 $child = Split-Path -Path $inputPath -Leaf
 
-                try
-                {
+                try {
                     if (-not $parent) { $parentPath = Get-Location -ErrorAction Stop }
                     else { $parentPath = Resolve-Path $parent -ErrorAction Stop }
-                }
-                catch { Stop-Function -Message "Failed to resolve path" -ErrorRecord $_ -EnableException $true }
+                } catch { Stop-Function -Message "Failed to resolve path" -ErrorRecord $_ -EnableException $true }
 
-                if ($SingleItem -and (($parentPath | Measure-Object).Count -gt 1))
-                {
+                if ($SingleItem -and (($parentPath | Measure-Object).Count -gt 1)) {
                     Stop-Function -Message "Could not resolve to a single parent path." -EnableException $true
                 }
 
-                if ($Provider -and ($parentPath.Provider.Name -ne $Provider))
-                {
+                if ($Provider -and ($parentPath.Provider.Name -ne $Provider)) {
                     Stop-Function -Message "Resolved provider is $($parentPath.Provider.Name) when it should be $($Provider)" -EnableException $true
                 }
 
-                foreach ($parentItem in $parentPath)
-                {
+                foreach ($parentItem in $parentPath) {
                     Join-Path $parentItem.ProviderPath $child
                 }
-            }
-            else
-            {
+            } else {
                 try { $resolvedPaths = Resolve-Path $inputPath -ErrorAction Stop }
                 catch { Stop-Function -Message "Failed to resolve path" -ErrorRecord $_ -EnableException $true }
 
-                if ($SingleItem -and (($resolvedPaths | Measure-Object).Count -gt 1))
-                {
+                if ($SingleItem -and (($resolvedPaths | Measure-Object).Count -gt 1)) {
                     Stop-Function -Message "Could not resolve to a single parent path." -EnableException $true
                 }
 
-                if ($Provider -and ($resolvedPaths.Provider.Name -ne $Provider))
-                {
+                if ($Provider -and ($resolvedPaths.Provider.Name -ne $Provider)) {
                     Stop-Function -Message "Resolved provider is $($resolvedPaths.Provider.Name) when it should be $($Provider)" -EnableException $true
                 }
 
