@@ -15,6 +15,17 @@ function Join-DbaPath {
     .PARAMETER Child
         Any number of child paths to add.
 
+    .NOTES
+        Tags: Path, Utility
+        Author: Friedrich Weinmann (@FredWeinmann)
+
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
+
+    .LINK
+        https://dbatools.io/Join-DbaPath
+
     .EXAMPLE
         PS C:\> Join-DbaPath -Path 'C:\temp' 'Foo' 'Bar'
 
