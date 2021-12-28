@@ -47,7 +47,7 @@ function New-DbaDacProfile {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: Dacpac
+        Tags: Dacpac, Deployment
         Author: Richie lee (@richiebzzzt)
 
         Website: https://dbatools.io

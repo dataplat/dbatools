@@ -48,8 +48,7 @@ function Invoke-DbaAdvancedInstall {
         If the protocol fails to establish a connection
 
         Defaults:
-        * CredSSP when -Credential is specified - due to the fact that repository Path is usually a network share and credentials need to be passed to the remote host
-          to avoid the double-hop issue.
+        * CredSSP when -Credential is specified - due to the fact that repository Path is usually a network share and credentials need to be passed to the remote host to avoid the double-hop issue.
         * Default when -Credential is not specified. Will likely fail if a network path is specified.
 
     .PARAMETER PerformVolumeMaintenanceTasks
@@ -76,7 +75,9 @@ function Invoke-DbaAdvancedInstall {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: Instance, Update
+        Tags: Install, Patching, Deployment
+        Author: Chrissy LeMaire (@cl), netnerds.net
+
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT

@@ -115,7 +115,7 @@ function Update-DbaInstance {
         https://dbatools.io/Update-DbaInstance
 
     .NOTES
-        Tags: Install, Patching, SP, CU, Instance
+        Tags: Install, Patching, Update, Deployment
         Author: Kirill Kravtsov (@nvarscar) https://nvarscar.wordpress.com/
 
         Website: https://dbatools.io
