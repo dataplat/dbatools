@@ -51,7 +51,7 @@ function Get-DbaDiskSpace {
         If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
     .NOTES
-        Tags: Server, Management, Space
+        Tags: Storage, OS
         Author: Chrissy LeMaire (@cl), netnerds.net | Jakob Bindslet
 
         Website: https://dbatools.io

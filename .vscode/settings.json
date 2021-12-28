@@ -22,9 +22,13 @@
     "powershell.codeFormatting.addWhitespaceAroundPipe": true,
     "cSpell.words": [
         "Andreas",
+        "Bargsley",
         "cjsommer",
+        "gbargsley",
         "ISNULL",
+        "Jakob",
         "Kirill",
+        "Klaas",
         "Kokkinos",
         "Kravtsov",
         "nchar",
@@ -36,6 +40,8 @@
         "SQLDB",
         "sqlstad",
         "SSDT",
-        "Stad"
+        "Stad",
+        "Vandenberghe",
+        "wsmelton"
     ]
 }
