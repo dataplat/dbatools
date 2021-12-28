@@ -41,7 +41,7 @@ function Get-DbaUserPermission {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: Discovery, Permissions, Security
+        Tags: Security, User
         Author: Brandon Abshire, netnerds.net
 
         Website: https://dbatools.io
