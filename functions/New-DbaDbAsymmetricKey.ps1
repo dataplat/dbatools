@@ -29,12 +29,12 @@ function New-DbaDbAsymmetricKey {
         Enables piping from Get-DbaDatabase
 
     .PARAMETER KeySourceType
-        The source of external keys loaded in, can be one of Executable, File or Assemnly
+        The source of external keys loaded in, can be one of Executable, File or Assembly
         We do not currently support Provider
 
     .PARAMETER KeySource
         The path to the Executable, File or Assembly to be passed in.
-        The path is parsed by the SQL Server instance, so needs to visiable to the instance
+        The path is parsed by the SQL Server instance, so needs to be visible to the instance
 
     .PARAMETER Algorithm
         The algorithm used to generate the key. Can be one of RSA512, RSA1024, RSA1024, RSA2048, RSA3072 or RSA4096. If not specified RSA2048 is the default
@@ -55,7 +55,7 @@ function New-DbaDbAsymmetricKey {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: asymmetrickey
+        Tags: Certificate, Security
         Author: Stuart Moore (@napalmgram), stuart-moore.com
 
         Website: https://dbatools.io
