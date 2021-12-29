@@ -6,7 +6,7 @@ function Get-DbaAgReplica {
     .DESCRIPTION
         Returns the availability group replica object found on the server.
 
-   .PARAMETER SqlInstance
+    .PARAMETER SqlInstance
         The target SQL Server instance or instances. Server version must be SQL Server version 2012 or higher.
 
     .PARAMETER SqlCredential
@@ -31,7 +31,7 @@ function Get-DbaAgReplica {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: AvailabilityGroup, HA, AG
+        Tags: AG, HA
         Author: Shawn Melton (@wsmelton) | Chrissy LeMaire (@cl)
 
         Website: https://dbatools.io
