@@ -19,7 +19,7 @@ function Get-DbaDbFileMapping {
     .PARAMETER Database
         The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
 
-   .PARAMETER InputObject
+    .PARAMETER InputObject
         Database object piped in from Get-DbaDatabase
 
     .PARAMETER EnableException

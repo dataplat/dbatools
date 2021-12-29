@@ -4,7 +4,7 @@ function Get-DbaDbServiceBrokerService {
         Gets database service broker services
 
     .DESCRIPTION
-        Gets database Sservice broker services
+        Gets database Service broker services
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances

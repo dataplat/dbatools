@@ -47,7 +47,7 @@ function Get-DbaDbSchema {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: Schema, Database
+        Tags: Database, Schema
         Author: Adam Lancaster https://github.com/lancasteradam
 
         dbatools PowerShell module (https://dbatools.io)
