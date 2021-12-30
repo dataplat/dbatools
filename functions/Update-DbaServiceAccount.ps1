@@ -221,9 +221,27 @@ function Update-DbaServiceAccount {
                 if ($PsCmdlet.ShouldProcess($serviceObject, "Changing account information for service $($svc.ServiceName) on $($svc.ComputerName)")) {
                     try {
                         if ($actionType -eq 'Account') {
+                            # Test if a certificate is used. If so, remove it and set it again later.
+                            $certificate = $null
+                            if ($serviceObject.ServiceType -eq 'Engine') {
+                                $sqlInstance = $svc.ComputerName
+                                if ($svc.ServiceName -ne 'MSSQLSERVER') {
+                                    $sqlInstance += '\' + $svc.ServiceName
+                                }
+                                # We try to get the certificate, but don't fail in case we are not able to.
+                                $certificate = Get-DbaNetworkConfiguration -SqlInstance $sqlInstance -Credential $Credential -OutputType Certificate
+                                if ($certificate.Thumbprint) {
+                                    Write-Message -Level Verbose -Message "Removing certificate from service $($svc.ServiceName) on $($svc.ComputerName)"
+                                    $null = Remove-DbaNetworkCertificate -SqlInstance $sqlInstance -Credential $Credential -EnableException
+                                }
+                            }
                             Write-Message -Level Verbose -Message "Attempting an account change for service $($svc.ServiceName) on $($svc.ComputerName)"
                             $null = Invoke-ManagedComputerCommand -ComputerName $svc.ComputerName -Credential $Credential -ScriptBlock $scriptAccountChange -ArgumentList @($svc.ServiceName, $currentCredential.UserName, $currentCredential.GetNetworkCredential().Password) -EnableException:$EnableException
                             $outMessage = "The login account for the service has been successfully set."
+                            if ($certificate.Thumbprint) {
+                                Write-Message -Level Verbose -Message "Setting certificate for service $($svc.ServiceName) on $($svc.ComputerName)"
+                                $null = Set-DbaNetworkCertificate -SqlInstance $sqlInstance -Credential $Credential -Thumbprint $certificate.Thumbprint -EnableException
+                            }
                         } elseif ($actionType -eq 'Password') {
                             Write-Message -Level Verbose -Message "Attempting a password change for service $($svc.ServiceName) on $($svc.ComputerName)"
                             $null = Invoke-ManagedComputerCommand -ComputerName $svc.ComputerName -Credential $Credential -ScriptBlock $scriptPasswordChange -ArgumentList @($svc.ServiceName, (New-Object System.Management.Automation.PSCredential ("user", $PreviousPassword)).GetNetworkCredential().Password, (New-Object System.Management.Automation.PSCredential ("user", $currentPassword)).GetNetworkCredential().Password) -EnableException:$EnableException
@@ -233,6 +251,10 @@ function Update-DbaServiceAccount {
                     } catch {
                         $outStatus = 'Failed'
                         $outMessage = $_.Exception.Message
+                        if ($certificate.Thumbprint) {
+                            # Depending on where the process failed, the certificate might be already removed but not yet set again.
+                            $outMessage += " Please check if certificate with thumbprint $($certificate.Thumbprint) is still in place."
+                        }
                         Stop-Function -Message $outMessage -Continue
                     }
                 } else {
