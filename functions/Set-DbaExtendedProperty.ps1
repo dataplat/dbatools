@@ -41,7 +41,7 @@ function Set-DbaExtendedProperty {
         Enables piping from Get-DbaExtendedProperty
 
     .PARAMETER Value
-       The new value for the extended property
+        The new value for the extended property
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
@@ -55,7 +55,7 @@ function Set-DbaExtendedProperty {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: extendedproperties
+        Tags: General, ExtendedProperties
         Author: Chrissy LeMaire (@cl), netnerds.net
 
         Website: https://dbatools.io

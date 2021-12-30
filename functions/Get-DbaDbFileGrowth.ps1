@@ -28,8 +28,9 @@ function Get-DbaDbFileGrowth {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: Database, File, Growth
+        Tags: Storage, Data, File, Log
         Author: Chrissy LeMaire (@cl), netnerds.net
+
         Website: https://dbatools.io
         Copyright: (c) 2021 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT

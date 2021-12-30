@@ -36,7 +36,7 @@ function Set-DbaDefaultPath {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: Data, Logs, Backups
+        Tags: Storage, Data, Logs, Backup
         Author: Chrissy LeMaire (@cl), netnerds.net
 
         Website: https://dbatools.io

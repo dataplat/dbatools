@@ -50,7 +50,7 @@ Function Invoke-DbaAdvancedUpdate {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: Install, Patching, Update, Deployment
+        Tags: Deployment, Install, Patching, Update
         Author: Kirill Kravtsov (@nvarscar)
 
         Website: https://dbatools.io

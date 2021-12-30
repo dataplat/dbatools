@@ -194,7 +194,7 @@ function Install-DbaInstance {
         Prompts you for confirmation before executing any changing operations within the command.
 
     .NOTES
-        Tags: Install, Deployment
+        Tags: Deployment, Install
         Author: Reitse Eskens (@2meterDBA), Kirill Kravtsov (@nvarscar)
 
         Website: https://dbatools.io
