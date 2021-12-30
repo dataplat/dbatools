@@ -102,7 +102,7 @@ function Invoke-DbaDbTransfer {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: Migration
+        Tags: General, Object
         Author: Kirill Kravtsov (@nvarscar)
 
         Website: https://dbatools.io
@@ -142,67 +142,27 @@ function Invoke-DbaDbTransfer {
     [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess)]
     Param (
         [DbaInstanceParameter]$SqlInstance,
-
         [PSCredential]$SqlCredential,
-
         [DbaInstanceParameter]$DestinationSqlInstance,
-
         [PSCredential]$DestinationSqlCredential,
-
         [string]$Database,
-
         [string]$DestinationDatabase = $Database,
-
         [int]$BatchSize = 50000,
-
         [int]$BulkCopyTimeOut = 5000,
-
         [Microsoft.SqlServer.Management.Smo.ScriptingOptions]$ScriptingOption,
-
         [Parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.Transfer]$InputObject,
-
         [switch]$CopyAllObjects,
-
-        [ValidateSet(
-            'FullTextCatalogs',
-            'FullTextStopLists',
-            'SearchPropertyLists',
-            'Tables',
-            'Views',
-            'StoredProcedures',
-            'UserDefinedFunctions',
-            'UserDefinedDataTypes',
-            'UserDefinedTableTypes',
-            'PlanGuides',
-            'Rules',
-            'Defaults',
-            'Users',
-            'Roles',
-            'PartitionSchemes',
-            'PartitionFunctions',
-            'XmlSchemaCollections',
-            'SqlAssemblies',
-            'UserDefinedAggregates',
-            'UserDefinedTypes',
-            'Schemas',
-            'Synonyms',
-            'Sequences',
-            'DatabaseTriggers',
-            'DatabaseScopedCredentials',
-            'ExternalFileFormats',
-            'ExternalDataSources',
-            'Logins',
-            'ExternalLibraries'
-        )]
+        [ValidateSet('FullTextCatalogs', 'FullTextStopLists', 'SearchPropertyLists',
+            'Tables', 'Views', 'StoredProcedures', 'UserDefinedFunctions', 'UserDefinedDataTypes',
+            'UserDefinedTableTypes', 'PlanGuides', 'Rules', 'Defaults', 'Users', 'Roles', 'PartitionSchemes',
+            'PartitionFunctions', 'XmlSchemaCollections', 'SqlAssemblies', 'UserDefinedAggregates',
+            'UserDefinedTypes', 'Schemas', 'Synonyms', 'Sequences', 'DatabaseTriggers', 'DatabaseScopedCredentials',
+            'ExternalFileFormats', 'ExternalDataSources', 'Logins', 'ExternalLibraries')]
         [string[]]$CopyAll,
-
         [switch]$SchemaOnly,
-
         [switch]$DataOnly,
-
         [switch]$ScriptOnly,
-
         [switch]$EnableException
     )
     begin {

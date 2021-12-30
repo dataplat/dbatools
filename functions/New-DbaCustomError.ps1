@@ -44,7 +44,7 @@ function New-DbaCustomError {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: Error, CustomError
+        Tags: General, Error
         Author: Adam Lancaster https://github.com/lancasteradam
 
         Website: https://dbatools.io
