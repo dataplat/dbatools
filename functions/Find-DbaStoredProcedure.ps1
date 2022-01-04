@@ -141,8 +141,10 @@ function Find-DbaStoredProcedure {
                     if ($row.TextBody -match $Pattern) {
                         $sp = $db.StoredProcedures | Where-Object { $_.Schema -eq $procSchema -and $_.Name -eq $proc }
 
-                        $StoredProcedureText = $row.TextBody.split("`n")
-                        $spTextFound = $StoredProcedureText | Select-String -Pattern $Pattern | ForEach-Object { "(LineNumber: $($_.LineNumber)) $($_.ToString().Trim())" }
+                        $StoredProcedureText = $row.TextBody
+                        $splitOn = [string[]]@("`r`n", "`r", "`n" )
+                        $spTextFound = $StoredProcedureText.Split( $splitOn , [System.StringSplitOptions]::RemoveEmptyEntries ) | 
+                            Select-String -Pattern $Pattern | ForEach-Object { "(LineNumber: $($_.LineNumber)) $($_.ToString().Trim())" }
 
                         [PSCustomObject]@{
                             ComputerName             = $server.ComputerName
@@ -154,7 +156,7 @@ function Find-DbaStoredProcedure {
                             IsSystemObject           = $sp.IsSystemObject
                             CreateDate               = $sp.CreateDate
                             LastModified             = $sp.DateLastModified
-                            StoredProcedureTextFound = $spTextFound -join "`n"
+                            StoredProcedureTextFound = $spTextFound -join [System.Environment]::NewLine
                             StoredProcedure          = $sp
                             StoredProcedureFullText  = $StoredProcedureText
                         } | Select-DefaultView -ExcludeProperty StoredProcedure, StoredProcedureFullText
