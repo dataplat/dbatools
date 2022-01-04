@@ -143,7 +143,7 @@ function Find-DbaStoredProcedure {
 
                         $StoredProcedureText = $row.TextBody
                         $splitOn = [string[]]@("`r`n", "`r", "`n" )
-                        $spTextFound = $StoredProcedureText.Split( $splitOn , [System.StringSplitOptions]::RemoveEmptyEntries ) | 
+                        $spTextFound = $StoredProcedureText.Split( $splitOn , [System.StringSplitOptions]::RemoveEmptyEntries ) |
                             Select-String -Pattern $Pattern | ForEach-Object { "(LineNumber: $($_.LineNumber)) $($_.ToString().Trim())" }
 
                         [PSCustomObject]@{
