@@ -29,7 +29,7 @@ AS
             $DropProcedure = "DROP PROCEDURE dbo.cp_dbatoolsci_sysadmin;"
             $null = Invoke-DbaQuery -SqlInstance $script:instance2 -Database 'Master' -Query $DropProcedure
         }
-        $results = Find-DbaStoredProcedure -SqlInstance $script:instance2 -Pattern dbatools* -IncludeSystemDatabases
+        $results = Find-DbaStoredProcedure -SqlInstance $script:instance2 -Pattern 'cp_dbatoolsci_sysadmin' -IncludeSystemDatabases
         It "Should find a specific StoredProcedure named cp_dbatoolsci_sysadmin" {
             $results.Name | Should Be "cp_dbatoolsci_sysadmin"
         }
