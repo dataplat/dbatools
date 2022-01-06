@@ -298,7 +298,7 @@ function Invoke-DbaDbLogShipping {
 
     .PARAMETER RestoreThreshold
         The number of minutes allowed to elapse between restore operations before an alert is generated.
-        The default value = 0
+        The default value = 45
 
     .PARAMETER SecondaryDatabasePrefix
         The secondary database can be renamed to include a prefix.
@@ -623,7 +623,7 @@ function Invoke-DbaDbLogShipping {
             Write-Message -Message "Restore retention set to $RestoreRetention" -Level Verbose
         }
         if (-not $RestoreThreshold) {
-            $RestoreThreshold = 0
+            $RestoreThreshold = 45
             Write-Message -Message "Restore Threshold set to $RestoreThreshold" -Level Verbose
         }
         if (-not $PrimaryMonitorServerSecurityMode) {
