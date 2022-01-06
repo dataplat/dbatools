@@ -33,7 +33,7 @@ function Set-DbaPrivilege {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: Privilege
+        Tags: Privilege, Security
         Author: Klaas Vandenberghe ( @PowerDBAKlaas )
 
         Website: https://dbatools.io

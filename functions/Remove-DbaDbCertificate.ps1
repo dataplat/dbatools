@@ -37,7 +37,7 @@ function Remove-DbaDbCertificate {
         Piped certificate objects
 
     .NOTES
-        Tags: Certificate
+        Tags: Certificate, Security
         Author: Chrissy LeMaire (@cl), netnerds.net
 
         Website: https://dbatools.io

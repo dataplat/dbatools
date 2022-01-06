@@ -38,7 +38,7 @@ function Get-DbaFirewallRule {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: Firewall, Network
+        Tags: Network, Connection, Firewall
         Author: Andreas Jordan (@JordanOrdix), ordix.de
 
         Website: https://dbatools.io
@@ -52,7 +52,7 @@ function Get-DbaFirewallRule {
         PS C:\> Get-DbaFirewallRule -SqlInstance SRV1
 
         Returns the firewall rule for the default instance on SRV1.
-        In case the instance is not listening on port 1433, it also returnes the firewall rule for the SQL Server Browser.
+        In case the instance is not listening on port 1433, it also returns the firewall rule for the SQL Server Browser.
 
     .EXAMPLE
         PS C:\> Get-DbaFirewallRule -SqlInstance SRV1\SQL2016 -Type Engine

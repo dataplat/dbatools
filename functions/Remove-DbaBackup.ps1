@@ -52,7 +52,7 @@ function Remove-DbaBackup {
         If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.i
 
     .NOTES
-        Tags: Storage, DisasterRecovery, Backup
+        Tags: Backup, DisasterRecovery
         Author: Chris Sommer (@cjsommer), www.cjsommer.com
 
         Website: https://dbatools.io

@@ -64,7 +64,7 @@ function Test-DbaDbCompression {
         Returns a PsCustomObject with following fields: ComputerName, InstanceName, SqlInstance, Database, IndexName, Partition, IndexID, PercentScan, PercentUpdate, RowEstimatePercentOriginal, PageEstimatePercentOriginal, CompressionTypeRecommendation, SizeCurrent, SizeRequested, PercentCompression
 
     .NOTES
-        Tags: Compression, Table, Database
+        Tags: Compression, Table
         Author: Jason Squires (@js_0505), jstexasdba@gmail.com
 
         Website: https://dbatools.io

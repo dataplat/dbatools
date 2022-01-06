@@ -10,7 +10,7 @@ function Add-DbaAgDatabase {
         Step 1: Setting seeding mode if needed.
             If -SeedingMode is used and the current seeding mode of the replica is not in the desired mode, the seeding mode of the replica is changed.
             The seeding mode will not be changed back but stay in this mode.
-            If the seeding mode is changed to Automatic, the necessary rigths to create databases will be granted.
+            If the seeding mode is changed to Automatic, the necessary rights to create databases will be granted.
         Step 2: Running backup and restore if needed.
             Action is only taken for replicas with a desired seeding mode of Manual and where the database does not yet exist.
             If -UseLastBackup is used, the restore will be performed based on the backup history of the database.
@@ -33,7 +33,7 @@ function Add-DbaAgDatabase {
         because the command fails if the database is already part of the Availability Group.
         This limitation will be removed in a later version.
 
-   .PARAMETER SqlInstance
+    .PARAMETER SqlInstance
         The primary replica of the Availability Group. Server version must be SQL Server version 2012 or higher.
 
     .PARAMETER SqlCredential
@@ -93,8 +93,9 @@ function Add-DbaAgDatabase {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: AvailabilityGroup, HA, AG
+        Tags: AG, HA
         Author: Chrissy LeMaire (@cl), netnerds.net | Andreas Jordan (@JordanOrdix), ordix.de
+
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT

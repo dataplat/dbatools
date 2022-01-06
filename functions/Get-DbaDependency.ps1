@@ -32,7 +32,7 @@ function Get-DbaDependency {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: Database, Dependent, Dependency, Object
+        Tags: Dependency, Utility
         Author: Chrissy LeMaire (@cl), netnerds.net
 
         Website: https://dbatools.io

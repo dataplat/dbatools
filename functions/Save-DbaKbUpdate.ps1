@@ -4,7 +4,7 @@ function Save-DbaKbUpdate {
         Downloads patches from Microsoft
 
     .DESCRIPTION
-         Downloads patches from Microsoft
+        Downloads patches from Microsoft
 
     .PARAMETER Name
         The KB name or number. For example, KB4057119 or 4057119.
@@ -34,7 +34,7 @@ function Save-DbaKbUpdate {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: Update, Patching, Install
+        Tags: Deployment, Install, Patching
         Author: Chrissy LeMaire (@cl), netnerds.net
 
         Website: https://dbatools.io

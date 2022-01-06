@@ -1,10 +1,10 @@
 function Get-DbaAvailableCollation {
     <#
     .SYNOPSIS
-        Function to get available collations for a given SQL Server
+        Return available collations for a given SQL Server
 
     .DESCRIPTION
-        The Get-DbaAvailableCollation function returns the list of collations available on each SQL Server.
+        Returns the list of collations available on each SQL Server.
         Only the connect permission is required to get this information.
 
     .PARAMETER SqlInstance
@@ -23,7 +23,7 @@ function Get-DbaAvailableCollation {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: Collation, Configuration
+        Tags: Collation, Configuration, Management
         Author: Bryan Hamby (@galador)
 
         Website: https://dbatools.io

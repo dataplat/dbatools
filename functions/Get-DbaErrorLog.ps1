@@ -40,7 +40,7 @@ function Get-DbaErrorLog {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: Instance, ErrorLog
+        Tags: Logging, Instance, ErrorLog
         Author: Chrissy LeMaire (@cl), netnerds.net
 
         Website: https://dbatools.io

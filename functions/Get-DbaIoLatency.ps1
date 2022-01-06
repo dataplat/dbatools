@@ -27,7 +27,7 @@ function Get-DbaIoLatency {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: IOLatency
+        Tags: Diagnostic, IOLatency
         Author: Patrick Flynn (@sqllensman)
 
         Website: https://dbatools.io

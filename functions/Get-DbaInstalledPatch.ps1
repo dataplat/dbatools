@@ -20,7 +20,7 @@ function Get-DbaInstalledPatch {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: Updates, Patches
+        Tags: Deployment, Updates, Patches
         Author: Hiram Fleitas, @hiramfleitas, fleitasarts.com
         Website: https://dbatools.io
         Copyright: (c) 2021 by dbatools, licensed under MIT
@@ -68,7 +68,7 @@ function Get-DbaInstalledPatch {
                     ComputerName = $computer
                     Name         = $patch.DisplayName
                     Version      = $patch.DisplayVersion
-                    InstallDate  = [dbadate][datetime]::ParseExact($patch.InstallDate, 'yyyyMMdd', $null)
+                    InstallDate  = [DbaDate][datetime]::ParseExact($patch.InstallDate, 'yyyyMMdd', $null)
                 }
             }
         }

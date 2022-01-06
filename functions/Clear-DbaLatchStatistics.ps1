@@ -28,7 +28,7 @@ function Clear-DbaLatchStatistics {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: LatchStatistic, Waits
+        Tags: Diagnostic, LatchStatistic, Waits
         Author: Patrick Flynn (@sqllensman)
 
         Website: https://dbatools.io

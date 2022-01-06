@@ -37,7 +37,7 @@ function Remove-DbaDbAsymmetricKey {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: asymmetrickey
+        Tags: Security, Key
         Author: Stuart Moore (@napalmgram), stuart-moore.com
 
         Website: https://dbatools.io

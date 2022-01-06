@@ -34,7 +34,7 @@ function Disable-DbaHideInstance {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-         https://dbatools.io/Disable-DbaHideInstance
+        https://dbatools.io/Disable-DbaHideInstance
 
     .EXAMPLE
         PS C:\> Disable-DbaHideInstance

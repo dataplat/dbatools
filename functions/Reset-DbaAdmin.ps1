@@ -55,7 +55,7 @@ function Reset-DbaAdmin {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: WSMan
+        Tags: WSMan, Instance, Utility
         Author: Chrissy LeMaire (@cl), netnerds.net
 
         Website: https://dbatools.io

@@ -52,7 +52,7 @@ function Backup-DbaDbCertificate {
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
 
     .NOTES
-        Tags: Migration, Certificate
+        Tags: CertBackup, Certificate, Backup
         Author: Jess Pomfret (@jpomfret)
 
         Website: https://dbatools.io

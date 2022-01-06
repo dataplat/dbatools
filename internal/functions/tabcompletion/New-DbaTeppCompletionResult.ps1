@@ -17,7 +17,7 @@ function global:New-DbaTeppCompletionResult {
 
         .PARAMETER CompletionResultType
             The type of object that is being completed.
-            By default it generates one of type paramter value.
+            By default it generates one of type parameter value.
 
         .PARAMETER NoQuotes
             Whether to put the result in quotes or not.
