@@ -41,7 +41,7 @@ function Find-DbaOrphanedFile {
         If this switch is enabled, the command will search subdirectories of the Path parameter.
 
     .NOTES
-        Tags: Orphan, Database, DatabaseFile
+        Tags: Orphan, Database, DatabaseFile, Lookup
         Author: Sander Stad (@sqlstad), sqlstad.nl
 
         Website: https://dbatools.io

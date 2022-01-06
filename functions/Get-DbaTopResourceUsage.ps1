@@ -41,7 +41,7 @@ function Get-DbaTopResourceUsage {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: Query, Performance
+        Tags: Diagnostic, Performance, Query
         Author: Chrissy LeMaire (@cl), netnerds.net
 
         Website: https://dbatools.io

@@ -62,7 +62,7 @@ function Invoke-DbaQuery {
         Default is 'Text'. Further information: https://docs.microsoft.com/en-us/dotnet/api/system.data.sqlclient.sqlcommand.commandtype
 
     .NOTES
-        Tags: Database, Query
+        Tags: Database, Query, Utility
         Author: Friedrich Weinmann (@FredWeinmann)
 
         Website: https://dbatools.io

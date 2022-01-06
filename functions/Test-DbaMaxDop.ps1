@@ -33,7 +33,7 @@ function Test-DbaMaxDop {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: MaxDop, SpConfigure
+        Tags: MaxDop, Utility
         Author: Claudio Silva (@claudioessilva)
 
         Website: https://dbatools.io

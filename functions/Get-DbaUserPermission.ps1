@@ -6,7 +6,7 @@ function Get-DbaUserPermission {
     .DESCRIPTION
         This command will display all server logins, server level securables, database logins and database securables.
 
-        DISA STIG implementators will find this command useful as it uses Permissions.sql provided by DISA.
+        DISA STIG implementors will find this command useful as it uses Permissions.sql provided by DISA.
 
         Note that if you Ctrl-C out of this command and end it prematurely, it will leave behind a STIG schema in tempdb.
 
@@ -41,7 +41,7 @@ function Get-DbaUserPermission {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: Discovery, Permissions, Security
+        Tags: Security, User
         Author: Brandon Abshire, netnerds.net
 
         Website: https://dbatools.io

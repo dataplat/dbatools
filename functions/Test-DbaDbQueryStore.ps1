@@ -43,7 +43,7 @@ function Test-DbaDbQueryStore {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: QueryStore
+        Tags: Database, QueryStore
         Author: Jess Pomfret (@jpomfret), jesspomfret.com
 
         Website: https://dbatools.io

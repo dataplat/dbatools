@@ -25,7 +25,7 @@ function Get-DbaTraceFlag {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: TraceFlag, DBCC
+        Tags: Diagnostic, TraceFlag, DBCC
         Author: Kevin Bullen (@sqlpadawan)
 
         Website: https://dbatools.io

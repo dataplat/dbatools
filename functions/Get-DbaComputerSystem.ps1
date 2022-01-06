@@ -21,7 +21,7 @@ function Get-DbaComputerSystem {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: Server, Management
+        Tags: Management, Computer, OS
         Author: Shawn Melton (@wsmelton), https://wsmelton.github.io
 
         Website: https://dbatools.io

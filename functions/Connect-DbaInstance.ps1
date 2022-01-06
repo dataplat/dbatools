@@ -161,7 +161,7 @@ function Connect-DbaInstance {
         Using this switch turns our "nice by default" feature on which makes errors into pretty warnings.
 
     .NOTES
-        Tags: Connect, Connection
+        Tags: Connection
         Author: Chrissy LeMaire (@cl), netnerds.net
 
         Website: https://dbatools.io

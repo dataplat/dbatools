@@ -47,7 +47,7 @@ function Get-DbaProcess {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: Process, Session, ActivityMonitor
+        Tags: Diagnostic, Process, Session, ActivityMonitor
         Author: Chrissy LeMaire (@cl), netnerds.net
 
         Website: https://dbatools.io

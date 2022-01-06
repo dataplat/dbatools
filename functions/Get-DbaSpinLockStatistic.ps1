@@ -32,7 +32,7 @@ function Get-DbaSpinLockStatistic {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: SpinLockStatistics, Waits
+        Tags: Diagnostic, SpinLockStatistics, Waits
         Author: Patrick Flynn (@sqllensman)
 
         Website: https://dbatools.io

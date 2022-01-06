@@ -98,7 +98,7 @@ function Write-DbaDbTableData {
         If this switch is enabled, all columns will get the length specified by the column's MaxLength property (if specified).
 
     .NOTES
-        Tags: DataTable, Insert
+        Tags: Table, Data, Insert
         Author: Chrissy LeMaire (@cl), netnerds.net
 
         Website: https://dbatools.io

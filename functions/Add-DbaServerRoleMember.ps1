@@ -40,7 +40,7 @@ function Add-DbaServerRoleMember {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: Role, Security, Login
+        Tags: Role, Login
         Author: Shawn Melton (@wsmelton)
 
         Website: https://dbatools.io
