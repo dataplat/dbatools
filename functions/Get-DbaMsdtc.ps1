@@ -21,7 +21,7 @@ function Get-DbaMsdtc {
 
         Using this switch turns our "nice by default" feature on which makes errors into pretty warnings.
     .NOTES
-        Tags: Msdtc, dtc
+        Tags: Msdtc, dtc, General
         Author: Klaas Vandenberghe (@powerdbaklaas)
 
         Website: https://dbatools.io

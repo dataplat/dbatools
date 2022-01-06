@@ -74,7 +74,7 @@ function Get-DbaAgBackupHistory {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: DisasterRecovery, Backup
+        Tags: AG, HA
         Author: Chrissy LeMaire (@cl) | Stuart Moore (@napalmgram), Andreas Jordan
 
         Website: https://dbatools.io

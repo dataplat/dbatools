@@ -23,7 +23,7 @@ function Get-DbaBuild {
 
     .PARAMETER CumulativeUpdate
         Get a KB information based on SQL Server Cumulative Update version.
-         Examples: CU0 | CU13 | CU0
+        Examples: CU0 | CU13 | CU0
 
     .PARAMETER SqlInstance
         Target any number of instances, in order to return their build state.
@@ -44,7 +44,7 @@ function Get-DbaBuild {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: SqlBuild
+        Tags: SqlBuild, Utility
         Author: Simone Bizzotto (@niphold) | Friedrich Weinmann (@FredWeinmann)
 
         Website: https://dbatools.io

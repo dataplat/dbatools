@@ -23,7 +23,7 @@ function Get-DbaInstanceUserOption {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: Instance, Configure, UserOption
+        Tags: Instance, Configure, UserOption, General
         Author: Klaas Vandenberghe (@powerdbaklaas)
 
         Website: https://dbatools.io

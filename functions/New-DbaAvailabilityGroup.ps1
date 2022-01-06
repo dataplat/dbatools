@@ -94,7 +94,7 @@ function New-DbaAvailabilityGroup {
         Defaults to 30000 (30 seconds).
 
     .PARAMETER Basic
-        Indicates whether the availability group is basic. Basic availability groups like pumpkin spice and uggs.
+        Indicates whether the availability group is Basic Availability Group.
 
         https://docs.microsoft.com/en-us/sql/database-engine/availability-groups/windows/basic-availability-groups-always-on-availability-groups
 
@@ -197,7 +197,7 @@ function New-DbaAvailabilityGroup {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: AvailabilityGroup, HA, AG
+        Tags: AG, HA
         Author: Chrissy LeMaire (@cl), netnerds.net
 
         Website: https://dbatools.io

@@ -42,7 +42,7 @@ function Test-DbaDiskAlignment {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: Storage
+        Tags: Storage, Disk, OS
         Author: Constantine Kokkinos (@mobileck), https://constantinekokkinos.com
 
         Website: https://dbatools.io
@@ -92,7 +92,7 @@ function Test-DbaDiskAlignment {
         function Get-DiskAlignment {
             [CmdletBinding()]
             param (
-                $CimSession,
+                $cimSession,
                 [string]$FunctionName = (Get-PSCallStack)[0].Command,
                 [bool]$NoSqlCheck,
                 [string]$ComputerName,
@@ -108,7 +108,7 @@ function Test-DbaDiskAlignment {
                 Write-Message -Level Verbose -Message "Gathering information about first partition on each disk for $ComputerName." -FunctionName $FunctionName
 
                 try {
-                    $partitions = Get-CimInstance -CimSession $CimSession -ClassName Win32_DiskPartition -Namespace "root\cimv2" -ErrorAction Stop
+                    $partitions = Get-CimInstance -CimSession $cimSession -ClassName Win32_DiskPartition -Namespace "root\cimv2" -ErrorAction Stop
                 } catch {
                     if ($_.Exception -match "namespace") {
                         Stop-Function -Message "Can't get disk alignment info for $ComputerName. Unsupported operating system." -InnerErrorRecord $_ -Target $ComputerName -FunctionName $FunctionName
@@ -122,7 +122,7 @@ function Test-DbaDiskAlignment {
 
                 $disks = @()
                 foreach ($partition in $partitions) {
-                    $associators = Get-CimInstance -CimSession $CimSession -Query "ASSOCIATORS OF {Win32_DiskPartition.DeviceID=""$($partition.DeviceID.Replace("\", "\\"))""} WHERE AssocClass = Win32_LogicalDiskToPartition"
+                    $associators = Get-CimInstance -CimSession $cimSession -Query "ASSOCIATORS OF {Win32_DiskPartition.DeviceID=""$($partition.DeviceID.Replace("\", "\\"))""} WHERE AssocClass = Win32_LogicalDiskToPartition"
                     foreach ($assoc in $associators) {
                         $disks += [PSCustomObject]@{
                             BlockSize      = $partition.BlockSize
@@ -149,7 +149,7 @@ function Test-DbaDiskAlignment {
             #region Retrieving Instances
             if (-not $NoSqlCheck) {
                 Write-Message -Level Verbose -Message "Checking for SQL Services." -FunctionName $FunctionName
-                $sqlservices = Get-CimInstance -ClassName Win32_Service -CimSession $CimSession | Where-Object DisplayName -like 'SQL Server (*'
+                $sqlservices = Get-CimInstance -ClassName Win32_Service -CimSession $cimSession | Where-Object DisplayName -like 'SQL Server (*'
                 foreach ($service in $sqlservices) {
                     $instance = $service.DisplayName.Replace('SQL Server (', '')
                     $instance = $instance.TrimEnd(')')
@@ -242,13 +242,13 @@ function Test-DbaDiskAlignment {
                     }
 
                     [PSCustomObject]@{
-                        ComputerName            = $ogcomputer
+                        ComputerName            = $ogComputer
                         Name                    = "$($partition.Name)"
-                        PartitionSize           = [dbasize]($($partition.Size / 1MB) * 1024 * 1024)
+                        PartitionSize           = [DbaSize]($($partition.Size / 1MB) * 1024 * 1024)
                         PartitionType           = $partition.Type
-                        TestingStripeSize       = [dbasize]($size * 1024)
-                        OffsetModuluCalculation = [dbasize]($OffsetModuloKB * 1024)
-                        StartingOffset          = [dbasize]($offset * 1024)
+                        TestingStripeSize       = [DbaSize]($size * 1024)
+                        OffsetModuluCalculation = [DbaSize]($OffsetModuloKB * 1024)
+                        StartingOffset          = [DbaSize]($offset * 1024)
                         IsOffsetBestPractice    = $IsOffsetBestPractice
                         IsBestPractice          = $isBestPractice
                         NumberOfBlocks          = $partition.NumberOfBlocks
@@ -266,7 +266,7 @@ function Test-DbaDiskAlignment {
 
 
         foreach ($computer in $ComputerName) {
-            $computer = $ogcomputer = $computer.ComputerName
+            $computer = $ogComputer = $computer.ComputerName
             Write-Message -Level VeryVerbose -Message "Processing: $computer."
 
             $computer = Resolve-DbaNetworkName -ComputerName $computer -Credential $Credential
@@ -280,22 +280,22 @@ function Test-DbaDiskAlignment {
             Write-Message -Level Verbose -Message "Creating CimSession on $computer over WSMan"
 
             if (-not $Credential) {
-                $cimsession = New-CimSession -ComputerName $Computer -ErrorAction Ignore
+                $cimSession = New-CimSession -ComputerName $Computer -ErrorAction Ignore
             } else {
-                $cimsession = New-CimSession -ComputerName $Computer -ErrorAction Ignore -Credential $Credential
+                $cimSession = New-CimSession -ComputerName $Computer -ErrorAction Ignore -Credential $Credential
             }
 
-            if ($null -eq $cimsession.id) {
+            if ($null -eq $cimSession.id) {
                 Write-Message -Level Verbose -Message "Creating CimSession on $computer over WSMan failed. Creating CimSession on $computer over DCOM."
 
                 if (!$Credential) {
-                    $cimsession = New-CimSession -ComputerName $Computer -SessionOption $sessionoption -ErrorAction Ignore
+                    $cimSession = New-CimSession -ComputerName $Computer -SessionOption $sessionoption -ErrorAction Ignore
                 } else {
-                    $cimsession = New-CimSession -ComputerName $Computer -SessionOption $sessionoption -ErrorAction Ignore -Credential $Credential
+                    $cimSession = New-CimSession -ComputerName $Computer -SessionOption $sessionoption -ErrorAction Ignore -Credential $Credential
                 }
             }
 
-            if ($null -eq $cimsession.id) {
+            if ($null -eq $cimSession.id) {
                 Stop-Function -Message "Can't create CimSession on $computer." -Target $Computer -Continue
             }
             #endregion Connecting to server via Cim
@@ -304,7 +304,7 @@ function Test-DbaDiskAlignment {
 
 
             try {
-                Get-DiskAlignment -CimSession $cimsession -NoSqlCheck $NoSqlCheck -ComputerName $Computer -ErrorAction Stop
+                Get-DiskAlignment -CimSession $cimSession -NoSqlCheck $NoSqlCheck -ComputerName $Computer -ErrorAction Stop
             } catch {
                 Stop-Function -Message "Failed to process $($Computer): $($_.Exception.Message)" -Continue -InnerErrorRecord $_ -Target $Computer
             }

@@ -42,7 +42,7 @@ function Get-DbaPermission {
         If this switch is enabled exceptions will be thrown to the caller, which will need to perform its own exception processing. Otherwise, the function will try to catch the exception, interpret it and provide a friendly error message.
 
     .NOTES
-        Tags: Permissions, Databases
+        Tags: Permissions, Instance, Database, Security
         Author: Klaas Vandenberghe (@PowerDBAKlaas)
 
         Website: https://dbatools.io

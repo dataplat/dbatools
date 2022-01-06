@@ -30,7 +30,7 @@ function Get-DbaInstanceInstallDate {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: Install
+        Tags: Install, Instance, Utility
         Author: Mitchell Hamann (@SirCaptainMitch), mitchellhamann.com
 
         Website: https://dbatools.io

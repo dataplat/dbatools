@@ -25,7 +25,7 @@ function Test-DbaDbDataGeneratorConfig {
         If this switch is enabled, existing objects on Destination with matching names from Source will be dropped.
 
     .NOTES
-        Tags: Data generation, testing
+        Tags: DataGeneration
         Author: Sander Stad (@sqlstad), sqlstad.nl
 
         Website: https://dbatools.io

@@ -4,7 +4,7 @@ function Get-DbaDbServiceBrokerService {
         Gets database service broker services
 
     .DESCRIPTION
-        Gets database Sservice broker services
+        Gets database Service broker services
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances
@@ -31,7 +31,7 @@ function Get-DbaDbServiceBrokerService {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: Database, ServiceBroker, Service
+        Tags: Service, ServiceBroker
         Author: Ant Green (@ant_green)
 
         Website: https://dbatools.io

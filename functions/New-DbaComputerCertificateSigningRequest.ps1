@@ -9,7 +9,7 @@ function New-DbaComputerCertificateSigningRequest {
         By default, a key with a length of 1024 and a friendly name of the machines FQDN is generated.
 
     .PARAMETER ComputerName
-       The target SQL Server instance or instances. Defaults to localhost. If target is a cluster, you must also specify ClusterInstanceName (see below)
+        The target SQL Server instance or instances. Defaults to localhost. If target is a cluster, you must also specify ClusterInstanceName (see below)
 
     .PARAMETER Credential
         Allows you to login to $ComputerName using alternative credentials.
@@ -41,7 +41,7 @@ function New-DbaComputerCertificateSigningRequest {
         Prompts you for confirmation before executing any changing operations within the command.
 
     .NOTES
-        Tags: Certificate
+        Tags: Certificate, Security
         Author: Chrissy LeMaire (@cl), netnerds.net
 
         Website: https://dbatools.io
@@ -52,25 +52,24 @@ function New-DbaComputerCertificateSigningRequest {
         https://dbatools.io/New-DbaComputerCertificateSigningRequest
 
     .EXAMPLE
-        PS C:\> New-DbaComputerCertificate
+        PS C:\> New-DbaComputerCertificateSigningRequest
 
         Creates a computer certificate signing request for the local machine with the keylength of 1024.
 
     .EXAMPLE
-        PS C:\> New-DbaComputerCertificate -ComputerName Server1
+        PS C:\> New-DbaComputerCertificateSigningRequest -ComputerName Server1
 
         Creates a computer certificate signing request for server1 with the keylength of 1024.
 
     .EXAMPLE
-        PS C:\> New-DbaComputerCertificate -ComputerName sqla, sqlb -ClusterInstanceName sqlcluster -KeyLength 4096
+        PS C:\> New-DbaComputerCertificateSigningRequest -ComputerName sqla, sqlb -ClusterInstanceName sqlcluster -KeyLength 4096
 
         Creates a computer certificate signing request for sqlcluster with the keylength of 4096.
 
     .EXAMPLE
-        PS C:\> New-DbaComputerCertificate -ComputerName Server1 -WhatIf
+        PS C:\> New-DbaComputerCertificateSigningRequest -ComputerName Server1 -WhatIf
 
         Shows what would happen if the command were run
-
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low")]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseOutputTypeCorrectly", "", Justification = "PSSA Rule Ignored by BOH")]

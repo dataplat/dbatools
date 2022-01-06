@@ -1,7 +1,7 @@
 function Get-DbaManagementObject {
     <#
     .SYNOPSIS
-        Gets SQL Mangaement Object versions installed on the machine.
+        Gets SQL Management Object versions installed on the machine.
 
     .DESCRIPTION
         The Get-DbaManagementObject returns an object with the Version and the

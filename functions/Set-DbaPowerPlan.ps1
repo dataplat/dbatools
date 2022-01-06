@@ -34,7 +34,7 @@ function Set-DbaPowerPlan {
         If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
     .NOTES
-        Tags: PowerPlan, OS, Configure
+        Tags: PowerPlan, OS, Configure, Utility
         Author: Chrissy LeMaire (@cl), netnerds.net
 
         Website: https://dbatools.io
