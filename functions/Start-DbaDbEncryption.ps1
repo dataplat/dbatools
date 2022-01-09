@@ -22,7 +22,25 @@ function Start-DbaDbEncryption {
         The database that will be encrypted.
 
     .PARAMETER EncryptorName
-        Optional name to create the certificate. Defaults to database name.
+        XYZ
+
+    .PARAMETER EncryptorType
+        Type of Encryptor - either Asymmetric or Certificate
+
+    .PARAMETER MasterKeySecurePassword
+        XYZ
+
+    .PARAMETER CertificateSecurePassword
+        XYZ
+
+    .PARAMETER Force
+        XYZ
+
+    .PARAMETER All
+        XYZ
+
+    .PARAMETER BackupPath
+        The path where its all backed up
 
     .PARAMETER CertificateSubject
         Optional subject to create the certificate.
@@ -77,7 +95,8 @@ function Start-DbaDbEncryption {
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [string]$EncryptorName,
-        [string]$EncryptorType,
+        [ValidateSet("AsymmetricKey", "Certificate")]
+        [string]$EncryptorType = "Certificate",
         [string[]]$Database,
         [Parameter(Mandatory)]
         [string]$BackupPath,
@@ -153,10 +172,14 @@ function Start-DbaDbEncryption {
 
                 Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Processing EncryptorType for $($db.Name) on $($server.Name)"
                 if ($EncryptorType -eq "Certificate") {
-                    $mastercert = Get-DbaDbCertificate -SqlInstance $server -Database master | Where-Object Name -notmatch "##"
+                    if ($EncryptorName) {
+                        $mastercert = Get-DbaDbCertificate -SqlInstance $server -Database master | Where-Object Name -eq $EncryptorName
+                    } else {
+                        $mastercert = Get-DbaDbCertificate -SqlInstance $server -Database master | Where-Object Name -notmatch "##"
+                    }
 
                     if ($mastercert.Count -gt 1) {
-                        # Stop-Function
+                        Stop-Function -Message "More than one certificate found on $($server.Name), please specify an EncryptorName" -Continue
                     }
 
                     if (-not $mastercert) {
@@ -171,6 +194,10 @@ function Start-DbaDbEncryption {
                             EnableException              = $true
                         }
                         $mastercert = New-DbaDbCertificate @params
+
+                        if (-not $EncryptorName) {
+                            $EncryptorName = $mastercert.Name
+                        }
                     }
                 } else {
                     $masterasym = Get-DbaDbAsymmetricKey -SqlInstance $server -Database master
@@ -182,6 +209,10 @@ function Start-DbaDbEncryption {
                             EnableException = $true
                         }
                         $masterasym = New-DbaDbAsymmetricKey @params
+                    }
+
+                    if (-not $EncryptorName) {
+                        $EncryptorName = $masterasym.Name
                     }
                 }
 
@@ -261,7 +292,7 @@ function Start-DbaDbEncryption {
                 }
 
                 Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Enabling database encryption in $($db.Name) on $($server.Name)"
-                $db | Enable-DbaDbEncryption -EncryptorName $mastercert.Name -Force
+                $db | Enable-DbaDbEncryption -EncryptorName $EncryptorName -Force
             } catch {
                 Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
             }
