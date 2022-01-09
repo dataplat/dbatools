@@ -36,14 +36,14 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     }
 
     AfterAll {
+        if ($db) {
+            $db | Remove-DbaDatabase
+        }
         if ($delmastercert) {
             $mastercert | Remove-DbaDbCertificate
         }
         if ($delmasterkey) {
             $masterkey | Remove-DbaDbMasterKey
-        }
-        if ($db) {
-            $db | Remove-DbaDatabase
         }
     }
 

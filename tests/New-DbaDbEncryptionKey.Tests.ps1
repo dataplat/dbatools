@@ -35,14 +35,14 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     }
 
     AfterAll {
+        if ($db) {
+            $db | Remove-DbaDatabase
+        }
         if ($delmastercert) {
             $mastercert | Remove-DbaDbCertificate
         }
         if ($delmasterkey) {
             $masterkey | Remove-DbaDbMasterKey
-        }
-        if ($db) {
-            $db | Remove-DbaDatabase
         }
     }
 
@@ -84,14 +84,14 @@ Describe "$CommandName Integration Tests for Async" -Tags "IntegrationTests" {
     }
 
     AfterAll {
+        if ($db) {
+            $db | Remove-DbaDatabase
+        }
         if ($delmasterasym) {
             $masterasym | Remove-DbaDbAsymmetricKey
         }
         if ($delmasterkey) {
             $masterkey | Remove-DbaDbMasterKey
-        }
-        if ($db) {
-            $db | Remove-DbaDatabase
         }
     }
 
