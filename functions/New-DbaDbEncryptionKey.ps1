@@ -19,7 +19,7 @@ function New-DbaDbEncryptionKey {
     .PARAMETER Database
         The database where the encryption key will be created. Defaults to master.
 
-    .PARAMETER Certificate
+    .PARAMETER EncryptorName
         The name of the certificate in master that will be used. Tries to find one if one is not specified.
 
     .PARAMETER EncryptionAlgorithm
@@ -71,7 +71,9 @@ function New-DbaDbEncryptionKey {
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [string[]]$Database = "master",
-        [string]$Certificate,
+        [string]$EncryptorName,
+        [ValidateSet("Certificate", "AsymmetricKey")]
+        [string]$Type = "Certificate",
         [ValidateSet("Aes128", "Aes192", "Aes256", "TripleDes")]
         [string]$EncryptionAlgorithm = 'Aes256',
         [Parameter(ValueFromPipeline)]
@@ -85,24 +87,39 @@ function New-DbaDbEncryptionKey {
         }
 
         foreach ($db in $InputObject) {
-            if ((Test-Bound -Not -ParameterName Certificate)) {
-                Write-Message -Level Verbose -Message "Name of certificate not specified, getting cert from '$db'"
-                $null = $db.Parent.Databases["master"].Certificates.Refresh()
-                $dbcert = Get-DbaDbCertificate -SqlInstance $db.Parent -Database master | Where-Object Name -notmatch "##"
-                if ($dbcert.Name.Count -ne 1) {
-                    if ($dbcert.Name.Count -lt 1) {
-                        Stop-Function -Message "No usable certificates found in master" -Continue
+            if ($db.HasDatabaseEncryptionKey) {
+                Stop-Function -Message "$($db.Name) on $($db.Parent.Name) already has a database encryption key" -Continue
+            }
+
+            if ((Test-Bound -Not -ParameterName EncryptorName)) {
+                Write-Message -Level Verbose -Message "Name of encryptor not specified, looking for candidates on master"
+
+                if ($Type -eq "Certificate") {
+                    $null = $db.Parent.Databases["master"].Certificates.Refresh()
+                    $dbcert = Get-DbaDbCertificate -SqlInstance $db.Parent -Database master | Where-Object Name -notmatch "##"
+                    if ($dbcert.Name.Count -ne 1) {
+                        if ($dbcert.Name.Count -lt 1) {
+                            Stop-Function -Message "No usable certificates found in master on $($db.Parent.Name)" -Continue
+                        } else {
+                            Stop-Function -Message "More than one certificate found in master, please specify a name" -Continue
+                        }
                     } else {
-                        Stop-Function -Message "More than one certificate found in master, please specify a name" -Continue
+                        $EncryptorName = $dbcert.Name
                     }
                 } else {
-                    $Certificate = $dbcert.Name
+                    $EncryptorName = (Get-DbaDbAsymmetricKey -SqlInstance $db.Parent -Database master).Name
+                    if (-not $EncryptorName) {
+                        Stop-Function -Message "No usable Asymmetric Keys found in master on $($db.Parent.Name)" -Continue
+                    }
                 }
             }
 
-            $dbcert = Get-DbaDbCertificate -SqlInstance $db.Parent -Database master -Certificate $Certificate
-            if ($dbcert.LastBackupDate.Year -eq 1 -and -not $Force) {
-                Stop-Function -Message "Certificate ($Certificate) has not been backed up. Please backup your certificate or use -Force to continue" -Continue
+            # asym is backed up with db, so only check certs for backups
+            if ($Type -eq "Certificate") {
+                $dbcert = Get-DbaDbCertificate -SqlInstance $db.Parent -Database master -Certificate $EncryptorName
+                if ($dbcert.LastBackupDate.Year -eq 1 -and -not $Force) {
+                    Stop-Function -Message "Certificate ($EncryptorName) has not been backed up. Please backup your certificate or use -Force to continue" -Continue
+                }
             }
 
             if ($Pscmdlet.ShouldProcess($db.Parent.Name, "Creating encryption key for database '$($db.Name)'")) {
@@ -115,12 +132,15 @@ function New-DbaDbEncryptionKey {
                     $smoencryptionkey = New-Object -TypeName Microsoft.SqlServer.Management.Smo.DatabaseEncryptionKey
                     $smoencryptionkey.Parent = $db
                     $smoencryptionkey.EncryptionAlgorithm = $EncryptionAlgorithm
-                    $smoencryptionkey.EncryptionType = [Microsoft.SqlServer.Management.Smo.DatabaseEncryptionType]::ServerCertificate
-                    $smoencryptionkey.EncryptorName = $Certificate
+                    $smoencryptionkey.EncryptionType = "Server$Type"
+                    $smoencryptionkey.EncryptorName = $EncryptorName
                     $null = $smoencryptionkey.Create()
                     $null = $db.Refresh()
                     if ($db.Certficates) {
                         $null = $db.Certficates.Refresh()
+                    }
+                    if ($db.AsymmetricKeys) {
+                        $null = $db.AsymmetricKeys.Refresh()
                     }
                     $db | Get-DbaDbEncryptionKey
                 } catch {
