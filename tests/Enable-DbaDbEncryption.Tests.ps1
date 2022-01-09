@@ -46,7 +46,8 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 
     Context "Command actually works" {
         It "should enable encryption on a database" {
-            $db | Enable-DbaDbEncryption
+            $results = $db |  Enable-DbaDbEncryption -Certificate $mastercert.Name -Force
+            $results.EncryptionEnabled | Should -Be $true
         }
     }
 }
