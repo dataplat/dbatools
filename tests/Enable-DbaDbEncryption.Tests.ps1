@@ -45,8 +45,13 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     }
 
     Context "Command actually works" {
-        It "should enable encryption on a database" {
+        It "should enable encryption on a database with piping" {
             $results = $db |  Enable-DbaDbEncryption -Certificate $mastercert.Name -Force
+            $results.EncryptionEnabled | Should -Be $true
+        }
+        It "should enable encryption on a database" {
+            $null = Disable-DbaDbEncryption -SqlInstance $script:instance2 -Database $db.Name
+            $results = Enable-DbaDbEncryption -SqlInstance $script:instance2 -Certificate $mastercert.Name -Database $db.Name -Force
             $results.EncryptionEnabled | Should -Be $true
         }
     }
