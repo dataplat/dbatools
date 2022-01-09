@@ -79,6 +79,7 @@ function Enable-DbaDbEncryption {
             $InputObject = Get-DbaDatabase -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $Database
         }
 
+        # todo: refuse to encrypt w/o master cert backup
         foreach ($db in $InputObject) {
             $server = $db.Parent
             if ($Pscmdlet.ShouldProcess($server.Name, "Enabling encryption on $($db.Name)")) {
@@ -86,7 +87,7 @@ function Enable-DbaDbEncryption {
                 try {
                     $db.EncryptionEnabled = $true
                     $db.Alter()
-                    $db
+                    $db | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, 'Name as DatabaseName', EncryptionEnabled
                 } catch {
                     Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
                 }

@@ -86,7 +86,7 @@ function Disable-DbaDbEncryption {
                 try {
                     $db.EncryptionEnabled = $false
                     $db.Alter()
-                    $db
+                    $db | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, 'Name as DatabaseName', EncryptionEnabled
                 } catch {
                     Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
                 }
