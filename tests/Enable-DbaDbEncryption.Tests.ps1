@@ -29,9 +29,9 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         }
 
         $db = New-DbaDatabase -SqlInstance $script:instance2
-        $db | New-DbaDbMasterKey -SqlInstance $null -SecurePassword $passwd
-        $db | New-DbaDbCertificate -SqlInstance $null
-        $db | New-DbaDbEncryptionKey -SqlInstance $null -Force
+        $db | New-DbaDbMasterKey -SecurePassword $passwd
+        $db | New-DbaDbCertificate
+        $db | New-DbaDbEncryptionKey -Force
     }
 
     AfterAll {
