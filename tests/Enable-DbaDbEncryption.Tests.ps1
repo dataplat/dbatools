@@ -41,7 +41,9 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         if ($delmastercert) {
             $mastercert | Remove-DbaDbCertificate
         }
-        $db | Remove-DbaDatabase
+        if ($db) {
+            $db | Remove-DbaDatabase
+        }
     }
 
     Context "Command actually works" {
