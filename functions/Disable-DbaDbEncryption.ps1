@@ -100,7 +100,7 @@ function Disable-DbaDbEncryption {
                     $db.Alter()
                     if (-not $NoEncryptionKeyDrop) {
                         # https://www.sqlservercentral.com/steps/stairway-to-tde-removing-tde-from-a-database
-                        $db.Invoke("DROP DATABASE ENCRYPTION KEY")
+                        $db | Remove-DbaDbEncryptionKey
                     }
                     $db | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, 'Name as DatabaseName', EncryptionEnabled
                 } catch {
