@@ -16,6 +16,7 @@ Describe "$CommandName Unit Tests" -Tags "UnitTests" {
 
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     BeforeAll {
+        $PSDefaultParameterValues["*:Confirm"] = $false
         $passwd = ConvertTo-SecureString "dbatools.IO" -AsPlainText -Force
         $masterkey = Get-DbaDbMasterKey -SqlInstance $script:instance2 -Database master
         if (-not $masterkey) {
