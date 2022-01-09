@@ -47,9 +47,15 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     }
 
     Context "Command actually works" {
-        It "should create master key on a database" {
+        It "should create master key on a database using piping" {
             $db.Refresh()
             $results = $db | New-DbaDbMasterKey -SecurePassword $passwd
+            $results.IsEncryptedByServer | Should -Be $true
+        }
+        It "should create master key on a database" {
+            $db.Refresh()
+            $null = $results | Remove-DbaDbMasterKey
+            $results = New-DbaDbMasterKey -SqlInstance $script:instance2 -Database $db.Name -SecurePassword $passwd
             $results.IsEncryptedByServer | Should -Be $true
         }
     }
