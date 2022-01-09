@@ -32,7 +32,6 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 
         $db = New-DbaDatabase -SqlInstance $script:instance2
         $db | New-DbaDbCertificate
-        $db | New-DbaDbEncryptionKey -Force
     }
 
     AfterAll {
