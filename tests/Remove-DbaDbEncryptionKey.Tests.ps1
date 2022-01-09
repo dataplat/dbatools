@@ -45,8 +45,15 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     }
 
     Context "Command actually works" {
-        It "should remove encryption key on a database" {
+        It "should remove encryption key on a database using piping" {
             $results = $dbkey | Remove-DbaDbEncryptionKey
+            $results.Status | Should -Be "Success"
+            $db.Refresh()
+            $db | Get-DbaDbEncryptionKey | Should -Be $null
+        }
+        It "should remove encryption key on a database" {
+            $null = $db | New-DbaDbEncryptionKey -Force
+            $results = Remove-DbaDbEncryptionKey -SqlInstance $script:instance2 -Database $db.Name
             $results.Status | Should -Be "Success"
             $db.Refresh()
             $db | Get-DbaDbEncryptionKey | Should -Be $null
