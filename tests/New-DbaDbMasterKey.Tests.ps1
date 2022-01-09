@@ -22,17 +22,17 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     BeforeAll {
         $PSDefaultParameterValues["*:Confirm"] = $false
         $passwd = ConvertTo-SecureString "dbatools.IO" -AsPlainText -Force
-        $masterkey = Get-DbaDbMasterKey -SqlInstance $script:instance2 -Database master
+        $masterkey = Get-DbaDbMasterKey -SqlInstance $script:instance1 -Database master
         if (-not $masterkey) {
             $delmasterkey = $true
-            $masterkey = New-DbaServiceMasterKey -SqlInstance $script:instance2 -SecurePassword $passwd
+            $masterkey = New-DbaServiceMasterKey -SqlInstance $script:instance1 -SecurePassword $passwd
         }
-        $mastercert = Get-DbaDbCertificate -SqlInstance $script:instance2 -Database master | Where-Object Name -notmatch "##" | Select-Object -First 1
+        $mastercert = Get-DbaDbCertificate -SqlInstance $script:instance1 -Database master | Where-Object Name -notmatch "##" | Select-Object -First 1
         if (-not $mastercert) {
             $delmastercert = $true
-            $mastercert = New-DbaDbCertificate -SqlInstance $script:instance2
+            $mastercert = New-DbaDbCertificate -SqlInstance $script:instance1
         }
-        $db = New-DbaDatabase -SqlInstance $script:instance2
+        $db = New-DbaDatabase -SqlInstance $script:instance1
     }
 
     AfterAll {
@@ -56,7 +56,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         It "should create master key on a database" {
             $db.Refresh()
             $null = $results | Remove-DbaDbMasterKey
-            $results = New-DbaDbMasterKey -SqlInstance $script:instance2 -Database $db.Name -SecurePassword $passwd
+            $results = New-DbaDbMasterKey -SqlInstance $script:instance1 -Database $db.Name -SecurePassword $passwd
             $results.IsEncryptedByServer | Should -Be $true
         }
     }
