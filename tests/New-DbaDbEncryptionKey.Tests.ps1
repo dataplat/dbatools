@@ -32,6 +32,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 
         $db = New-DbaDatabase -SqlInstance $script:instance2
         $db | New-DbaDbCertificate
+        $db | New-DbaDbEncryptionKey -Force
     }
 
     AfterAll {
@@ -46,7 +47,8 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 
     Context "Command actually works" {
         It "should create a new encryption key" {
-            $db | New-DbaDbEncryptionKey -Force
+            $results = $db | New-DbaDbEncryptionKey -Force -Certificate $mastercert.Name
+            $results.EncryptionAlgorithm | Should -Be "Aes256"
         }
     }
 }

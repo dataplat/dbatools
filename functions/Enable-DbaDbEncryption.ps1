@@ -19,6 +19,9 @@ function Enable-DbaDbEncryption {
     .PARAMETER Database
         The database that where encryption will be enabled
 
+    .PARAMETER Certificate
+        If an Encryption Key does not exist in the database, this command will attempt to create one. This parameter specifies the name of the certificate in master that should be used and tries to find one if one is not specified.
+
     .PARAMETER InputObject
         Enables pipeline input from Get-DbaDatabase
 
@@ -68,6 +71,7 @@ function Enable-DbaDbEncryption {
         [DbaInstanceParameter[]]$SqlInstance,
         [System.Management.Automation.PSCredential]$SqlCredential,
         [string[]]$Database,
+        [string]$Certificate,
         [parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
         [switch]$Force,
@@ -84,15 +88,17 @@ function Enable-DbaDbEncryption {
         }
 
         foreach ($db in $InputObject) {
+            $null = $db.DatabaseEncryptionKey.Refresh()
             $server = $db.Parent
             if ($Pscmdlet.ShouldProcess($server.Name, "Enabling encryption on $($db.Name)")) {
-                # avoid enumeration issues
                 try {
-                    if (-not $db.DatabaseEncryptionKey.Name) {
-                        $db | New-DbaDbEncryptionKey -Force:$Force -EnableException
+                    if (-not $db.DatabaseEncryptionKey.EncryptionAlgorithm) {
+                        Write-Message -Level Verbose -Message "No Encryption Key found, creating one"
+                        $null = $db | New-DbaDbEncryptionKey -Force:$Force -Certificate $Certificate -EnableException
                     }
                     $db.EncryptionEnabled = $true
                     $db.Alter()
+                    $null = $db.DatabaseEncryptionKey.Refresh()
                     $db | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, 'Name as DatabaseName', EncryptionEnabled
                 } catch {
                     Stop-Function -Message "Failure" -ErrorRecord $_ -Continue

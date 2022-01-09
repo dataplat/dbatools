@@ -106,6 +106,7 @@ function New-DbaDbCertificate {
             }
 
             foreach ($cert in $Name) {
+                $null = $db.Certificates.Refresh()
                 if ($null -ne $db.Certificates[$cert]) {
                     Stop-Function -Message "Certificate '$cert' already exists in $($db.Name) on $($db.Parent.Name)" -Target $db -Continue
                 }

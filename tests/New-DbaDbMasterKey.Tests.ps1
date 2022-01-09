@@ -17,3 +17,13 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Read https://github.com/sqlcollaborative/dbatools/blob/development/contributing.md#tests
     for more guidence.
 #>
+
+<#
+        ComputerName        : macmini
+        InstanceName        : MSSQLSERVER
+        SqlInstance         : ea2b68b126c0
+        Database            : master
+        CreateDate          : 1/9/2022 1:33:08 PM
+        DateLastModified    : 1/9/2022 1:33:08 PM
+        IsEncryptedByServer : True
+        #>
