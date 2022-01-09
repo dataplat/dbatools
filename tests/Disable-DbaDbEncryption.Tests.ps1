@@ -45,8 +45,14 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     }
 
     Context "Command actually works" {
+        It "should disable encryption on a database with piping" {
+            $results = $db | Disable-DbaDbEncryption -NoEncryptionKeyDrop -WarningVariable warn
+            $warn | Should -Be $null
+            $results.EncryptionEnabled | Should -Be $false
+        }
         It "should disable encryption on a database" {
-            $results = $db | Disable-DbaDbEncryption -WarningVariable warn
+            $null = $db | Enable-DbaDbEncryption -Certificate $mastercert.Name -Force
+            $results = Disable-DbaDbEncryption -SqlInstance $script:instance2 -Database $db.Name -WarningVariable warn
             $warn | Should -Be $null
             $results.EncryptionEnabled | Should -Be $false
         }

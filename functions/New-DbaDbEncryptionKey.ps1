@@ -118,8 +118,10 @@ function New-DbaDbEncryptionKey {
                     $smoencryptionkey.EncryptionType = [Microsoft.SqlServer.Management.Smo.DatabaseEncryptionType]::ServerCertificate
                     $smoencryptionkey.EncryptorName = $Certificate
                     $null = $smoencryptionkey.Create()
-                    $null = $smoencryptionkey.Parent.Refresh()
-                    $null = $smoencryptionkey.Parent.Certficates.Refresh()
+                    $null = $db.Refresh()
+                    if ($db.Certficates) {
+                        $null = $db.Certficates.Refresh()
+                    }
                     $db | Get-DbaDbEncryptionKey
                 } catch {
                     $ErrorActionPreference = $eap
