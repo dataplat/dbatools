@@ -58,3 +58,50 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         }
     }
 }
+
+
+
+Describe "$CommandName Integration Tests for Async" -Tags "IntegrationTests" {
+    BeforeAll {
+        $PSDefaultParameterValues["*:Confirm"] = $false
+        $passwd = ConvertTo-SecureString "dbatools.IO" -AsPlainText -Force
+        $masterkey = Get-DbaDbMasterKey -SqlInstance $script:instance2 -Database master
+        if (-not $masterkey) {
+            $delmasterkey = $true
+            $masterkey = New-DbaServiceMasterKey -SqlInstance $script:instance2 -SecurePassword $passwd
+        }
+
+        $masterasym = Get-DbaDbAsymmetricKey -SqlInstance $script:instance2 -Database master
+
+        if (-not $masterasym) {
+            $delmasterasym = $true
+            $masterasym = New-DbaDbAsymmetricKey -SqlInstance $script:instance2 -Database master
+        }
+
+        $db = New-DbaDatabase -SqlInstance $script:instance2
+        $db | New-DbaDbMasterKey -SecurePassword $passwd
+        $db | New-DbaDbAsymmetricKey
+    }
+
+    AfterAll {
+        if ($delmasterasym) {
+            $masterasym | Remove-DbaDbAsymmetricKey
+        }
+        if ($delmasterkey) {
+            $masterkey | Remove-DbaDbMasterKey
+        }
+        if ($db) {
+            $db | Remove-DbaDatabase
+        }
+    }
+
+    # In order to encrypt the database encryption key with an asymmetric
+#key, please use an asymmetric key that resides on an extensible key management provider
+
+    Context "Command does not work but warns" {
+        It "should warn that it cant create an encryption key" {
+            $null = $db | New-DbaDbEncryptionKey -Force -Type AsymmetricKey -EncryptorName $masterasym.Name -WarningVariable warn
+            $warn | Should -Match "n order to encrypt the database encryption key with an as"
+        }
+    }
+}
