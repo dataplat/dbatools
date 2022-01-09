@@ -90,7 +90,7 @@ function New-DbaDbEncryptionKey {
                 $dbcert = Get-DbaDbCertificate -SqlInstance $db.Parent -Database master | Where-Object Name -notmatch "##"
                 if ($dbcert.Name.Count -ne 1) {
                     if ($dbcert.Name.Count -lt 1) {
-                        Stop-Function -Message "No certificates found in master" -Continue
+                        Stop-Function -Message "No usable certificates found in master" -Continue
                     } else {
                         Stop-Function -Message "More than one certificate found in master, please specify a name" -Continue
                     }

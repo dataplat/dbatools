@@ -22,6 +22,13 @@ function Disable-DbaDbEncryption {
     .PARAMETER InputObject
         Disables pipeline input from Get-DbaDatabase
 
+    .PARAMETER NoEncryptionKeyDrop
+        Encryption is not fully disabled until the Encryption Key is dropped
+
+        Consequently, this command will drop the key by default
+
+        Use this to do whatever
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -67,6 +74,7 @@ function Disable-DbaDbEncryption {
         [string[]]$Database,
         [parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
+        [switch]$NoEncryptionKeyDrop,
         [switch]$EnableException
     )
     process {
@@ -81,13 +89,19 @@ function Disable-DbaDbEncryption {
 
         foreach ($db in $InputObject) {
             $server = $db.Parent
-            if ($Pscmdlet.ShouldProcess($server.Name, "Disabling encryption on $($db.Name) will also drop the database encryption key. Continue?")) {
-                # avoid enumeration issues
+            if ($NoEncryptionKeyDrop) {
+                $msg = "Disabling encryption on $($db.Name)"
+            } else {
+                $msg = "Disabling encryption on $($db.Name) will also drop the database encryption key. Continue?"
+            }
+            if ($Pscmdlet.ShouldProcess($server.Name, $msg)) {
                 try {
                     $db.EncryptionEnabled = $false
                     $db.Alter()
-                    # https://www.sqlservercentral.com/steps/stairway-to-tde-removing-tde-from-a-database
-                    $db.Invoke("DROP DATABASE ENCRYPTION KEY")
+                    if (-not $NoEncryptionKeyDrop) {
+                        # https://www.sqlservercentral.com/steps/stairway-to-tde-removing-tde-from-a-database
+                        $db.Invoke("DROP DATABASE ENCRYPTION KEY")
+                    }
                     $db | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, 'Name as DatabaseName', EncryptionEnabled
                 } catch {
                     Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
