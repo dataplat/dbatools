@@ -45,18 +45,21 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         if ($db) {
             $db | Remove-DbaDatabase
         }
+        if ($db1) {
+            $db1 | Remove-DbaDatabase
+        }
     }
 
     Context "Command actually works" {
         It "should create master key on a database using piping" {
-            $db.Refresh()
+            $PSDefaultParameterValues["*:Confirm"] = $false
+            $passwd = ConvertTo-SecureString "dbatools.IO" -AsPlainText -Force
             $results = $db | New-DbaDbMasterKey -SecurePassword $passwd
             $results.IsEncryptedByServer | Should -Be $true
         }
         It "should create master key on a database" {
-            $db.Refresh()
-            $null = $results | Remove-DbaDbMasterKey
-            $results = New-DbaDbMasterKey -SqlInstance $script:instance1 -Database $db.Name -SecurePassword $passwd
+            $db1 = New-DbaDatabase -SqlInstance $script:instance1
+            $results = New-DbaDbMasterKey -SqlInstance $script:instance1 -Database $db1.Name -SecurePassword $passwd
             $results.IsEncryptedByServer | Should -Be $true
         }
     }
