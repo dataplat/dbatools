@@ -31,7 +31,6 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         $db | New-DbaDbMasterKey -SecurePassword $passwd
         $db | New-DbaDbCertificate
         $db | New-DbaDbEncryptionKey -Force
-        $db | Enable-DbaDbEncryption -Certificate $mastercert.Name -Force
     }
 
     AfterAll {
@@ -45,10 +44,13 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     }
 
     Context "Command actually works" {
-        It "should disable encryption on a database" {
-            $results = $db | Disable-DbaDbEncryption -WarningVariable warn
-            $warn | Should -Be $null
-            $results.EncryptionEnabled | Should -Be $false
+        It "should get an encryption key on a database using piping" {
+            $results = $db | Get-DbaDbEncryptionKey
+            $results.EncryptionType | Should -Be "ServerCertificate"
+        }
+        It "should get an encryption key on a database" {
+            $results = Get-DbaDbEncryptionKey -SqlInstance $script:instance2 -Database $db.Name
+            $results.EncryptionType | Should -Be "ServerCertificate"
         }
     }
 }
