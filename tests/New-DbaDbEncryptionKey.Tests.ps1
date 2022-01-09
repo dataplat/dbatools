@@ -31,7 +31,6 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         }
 
         $db = New-DbaDatabase -SqlInstance $script:instance2
-        $db | New-DbaDbCertificate
     }
 
     AfterAll {
@@ -45,8 +44,13 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     }
 
     Context "Command actually works" {
-        It "should create a new encryption key" {
+        It "should create a new encryption key using piping" {
             $results = $db | New-DbaDbEncryptionKey -Force -Certificate $mastercert.Name
+            $results.EncryptionAlgorithm | Should -Be "Aes256"
+        }
+        It "should create a new encryption key" {
+            $null = Get-DbaDbEncryptionKey -SqlInstance $script:instance2 -Database $db.Name | Remove-DbaDbEncryptionKey
+            $results = New-DbaDbEncryptionKey -SqlInstance $script:instance2 -Database $db.Name -Force -Certificate $mastercert.Name
             $results.EncryptionAlgorithm | Should -Be "Aes256"
         }
     }

@@ -31,9 +31,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $delmastercert = $true
             $mastercert = New-DbaDbCertificate -SqlInstance $script:instance2
         }
-
         $db = New-DbaDatabase -SqlInstance $script:instance2
-
     }
 
     AfterAll {
