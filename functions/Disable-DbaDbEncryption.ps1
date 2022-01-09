@@ -81,11 +81,13 @@ function Disable-DbaDbEncryption {
 
         foreach ($db in $InputObject) {
             $server = $db.Parent
-            if ($Pscmdlet.ShouldProcess($server.Name, "Disabling encryption on $($db.Name)")) {
+            if ($Pscmdlet.ShouldProcess($server.Name, "Disabling encryption on $($db.Name) will also drop the database encryption key. Continue?")) {
                 # avoid enumeration issues
                 try {
                     $db.EncryptionEnabled = $false
                     $db.Alter()
+                    # https://www.sqlservercentral.com/steps/stairway-to-tde-removing-tde-from-a-database
+                    $db.Invoke("DROP DATABASE ENCRYPTION KEY")
                     $db | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, 'Name as DatabaseName', EncryptionEnabled
                 } catch {
                     Stop-Function -Message "Failure" -ErrorRecord $_ -Continue

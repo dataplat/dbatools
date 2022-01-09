@@ -22,6 +22,9 @@ function Enable-DbaDbEncryption {
     .PARAMETER InputObject
         Enables pipeline input from Get-DbaDatabase
 
+    .PARAMETER Force
+        Enable encryption even though the specified cert has not been backed up
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -67,6 +70,7 @@ function Enable-DbaDbEncryption {
         [string[]]$Database,
         [parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
+        [switch]$Force,
         [switch]$EnableException
     )
     process {
@@ -79,12 +83,14 @@ function Enable-DbaDbEncryption {
             $InputObject = Get-DbaDatabase -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $Database
         }
 
-        # todo: refuse to encrypt w/o master cert backup
         foreach ($db in $InputObject) {
             $server = $db.Parent
             if ($Pscmdlet.ShouldProcess($server.Name, "Enabling encryption on $($db.Name)")) {
                 # avoid enumeration issues
                 try {
+                    if (-not $db.DatabaseEncryptionKey.Name) {
+                        $db | New-DbaDbEncryptionKey -Force:$Force -EnableException
+                    }
                     $db.EncryptionEnabled = $true
                     $db.Alter()
                     $db | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, 'Name as DatabaseName', EncryptionEnabled

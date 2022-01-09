@@ -30,6 +30,9 @@ function New-DbaDbEncryptionKey {
     .PARAMETER InputObject
         Enables piping from Get-DbaDatabase
 
+    .PARAMETER Force
+        Create an encryption key even though the specified cert has not been backed up
+
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
 
@@ -73,6 +76,7 @@ function New-DbaDbEncryptionKey {
         [string]$EncryptionAlgorithm = 'Aes256',
         [Parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
+        [switch]$Force,
         [switch]$EnableException
     )
     process {
@@ -83,14 +87,21 @@ function New-DbaDbEncryptionKey {
         foreach ($db in $InputObject) {
             if ((Test-Bound -Not -ParameterName Certificate)) {
                 Write-Message -Level Verbose -Message "Name of certificate not specified, getting cert from '$db'"
-                $Certificate = (Get-DbaDbCertificate -SqlInstance $db.Parent -Database master).Name
-                if ($Certificate.Count -ne 1) {
-                    if ($Certificate.Count -lt 1) {
+                $dbcert = Get-DbaDbCertificate -SqlInstance $db.Parent -Database master | Where-Object Name -notmatch "##"
+                if ($dbcert.Name.Count -ne 1) {
+                    if ($dbcert.Name.Count -lt 1) {
                         Stop-Function -Message "No certificates found in master" -Continue
                     } else {
                         Stop-Function -Message "More than one certificate found in master, please specify a name" -Continue
                     }
+                } else {
+                    $Certificate = $dbcert.Name
                 }
+            }
+
+            $dbcert = Get-DbaDbCertificate -SqlInstance $db.Parent -Database master -Certificate $Certificate
+            if ($dbcert.LastBackupDate.Year -eq 1 -and -not $Force) {
+                Stop-Function -Message "Certificate ($Certificate) has not been backed up. Please backup your certificate or use -Force to continue" -Continue
             }
 
             if ($Pscmdlet.ShouldProcess($db.Parent.Name, "Creating encryption key for database '$($db.Name)'")) {
