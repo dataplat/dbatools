@@ -32,15 +32,15 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         $db | New-DbaDbMasterKey -SecurePassword $passwd
         $db | New-DbaDbCertificate
         $db | New-DbaDbEncryptionKey -Force
-        $db | Enable-DbaDbEncryption -Certificate $mastercert.Name -Force
+        $db | Enable-DbaDbEncryption -EncryptorName $mastercert.Name -Force
     }
 
     AfterAll {
-        if ($delmasterkey) {
-            $masterkey | Remove-DbaDbMasterKey
-        }
         if ($delmastercert) {
             $mastercert | Remove-DbaDbCertificate
+        }
+        if ($delmasterkey) {
+            $masterkey | Remove-DbaDbMasterKey
         }
         if ($db) {
             $db | Remove-DbaDatabase
@@ -56,7 +56,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $results.EncryptionEnabled | Should -Be $false
         }
         It "should disable encryption on a database" {
-            $null = $db | Enable-DbaDbEncryption -Certificate $mastercert.Name -Force
+            $null = $db | Enable-DbaDbEncryption -EncryptorName $mastercert.Name -Force
             # Give it time to finish encrypting or it'll error
             Start-Sleep 10
             $results = Disable-DbaDbEncryption -SqlInstance $script:instance2 -Database $db.Name -WarningVariable warn

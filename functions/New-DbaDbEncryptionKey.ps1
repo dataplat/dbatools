@@ -20,7 +20,12 @@ function New-DbaDbEncryptionKey {
         The database where the encryption key will be created. Defaults to master.
 
     .PARAMETER EncryptorName
-        The name of the certificate in master that will be used. Tries to find one if one is not specified.
+        The name of the encryptor (Certificate or Asymmetric Key) in master that will be used. Tries to find one if one is not specified.
+
+        In order to encrypt the database encryption key with an asymmetric key, you must use an asymmetric key that resides on an extensible key management provider.
+
+    .PARAMETER Type
+        Specifies an encryption type of Certificate or Asymmetric Key. Defaults to Certificate.
 
     .PARAMETER EncryptionAlgorithm
         Specifies an encryption algorithm. Defaults to Aes256.

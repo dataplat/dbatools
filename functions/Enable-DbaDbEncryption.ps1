@@ -22,6 +22,8 @@ function Enable-DbaDbEncryption {
     .PARAMETER EncryptorName
         If an Encryption Key does not exist in the database, this command will attempt to create one. This parameter specifies the name of the certificate in master that should be used and tries to find one if one is not specified.
 
+        In order to encrypt the database encryption key with an asymmetric key, you must use an asymmetric key that resides on an extensible key management provider.
+
     .PARAMETER InputObject
         Enables pipeline input from Get-DbaDatabase
 
