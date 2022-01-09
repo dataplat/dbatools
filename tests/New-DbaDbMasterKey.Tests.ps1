@@ -18,12 +18,39 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     for more guidence.
 #>
 
-<#
-        ComputerName        : macmini
-        InstanceName        : MSSQLSERVER
-        SqlInstance         : ea2b68b126c0
-        Database            : master
-        CreateDate          : 1/9/2022 1:33:08 PM
-        DateLastModified    : 1/9/2022 1:33:08 PM
-        IsEncryptedByServer : True
-        #>
+Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
+    BeforeAll {
+        $passwd = ConvertTo-SecureString "dbatools.IO" -AsPlainText -Force
+        $masterkey = Get-DbaDbMasterKey -SqlInstance $script:instance2 -Database master
+        if (-not $masterkey) {
+            $delmasterkey = $true
+            $masterkey = New-DbaServiceMasterKey -SqlInstance $script:instance2 -SecurePassword $passwd
+        }
+        $mastercert = Get-DbaDbCertificate -SqlInstance $script:instance2 -Database master | Where-Object Name -notmatch "##" | Select-Object -First 1
+        if (-not $mastercert) {
+            $delmastercert = $true
+            $mastercert = New-DbaDbCertificate -SqlInstance $script:instance2
+        }
+
+        $db = New-DbaDatabase -SqlInstance $script:instance2
+
+    }
+
+    AfterAll {
+        if ($delmasterkey) {
+            $masterkey | Remove-DbaDbMasterKey
+        }
+        if ($delmastercert) {
+            $mastercert | Remove-DbaDbCertificate
+        }
+        $db | Remove-DbaDatabase
+    }
+
+    Context "Command actually works" {
+        It "should create master key on a database" {
+            $db.Refresh()
+            $results = $db | New-DbaDbMasterKey -SecurePassword $passwd
+            $results.IsEncryptedByServer | Should -Be $true
+        }
+    }
+}
