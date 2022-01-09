@@ -61,7 +61,7 @@ function Remove-DbaDbEncryptionKey {
         [PSCredential]$SqlCredential,
         [string[]]$Database,
         [parameter(ValueFromPipeline)]
-        [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
+        [Microsoft.SqlServer.Management.Smo.DatabaseEncryptionKey[]]$InputObject,
         [switch]$EnableException
     )
     process {
@@ -71,9 +71,10 @@ function Remove-DbaDbEncryptionKey {
                 return
             }
 
-            $InputObject += Get-DbaDatabase -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $Database
+            $InputObject += Get-DbaDbEncryptionKey -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $Database
         }
-        foreach ($db in $InputObject) {
+        foreach ($key in $InputObject) {
+            $db = $key.Parent
             $server = $db.Parent
             if ($Pscmdlet.ShouldProcess($server.Name, "Dropping the encryption key for database $db")) {
                 try {

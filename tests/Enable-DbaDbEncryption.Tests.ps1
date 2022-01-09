@@ -12,3 +12,20 @@ Describe "$CommandName Unit Tests" -Tags "UnitTests" {
         }
     }
 }
+
+
+Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
+    BeforeAll {
+        $db = New-DbaDatabase -SqlInstance $script:instance2
+    }
+
+    AfterAll {
+        $db | Remove-DbaDatabase
+    }
+
+    Context "Command actually works" {
+        It "Should be true" {
+            $true | Should -Be $true
+        }
+    }
+}

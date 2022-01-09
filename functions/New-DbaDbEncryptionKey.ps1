@@ -87,6 +87,7 @@ function New-DbaDbEncryptionKey {
         foreach ($db in $InputObject) {
             if ((Test-Bound -Not -ParameterName Certificate)) {
                 Write-Message -Level Verbose -Message "Name of certificate not specified, getting cert from '$db'"
+                $null = $db.Parent.Databases["master"].Certificates.Refresh()
                 $dbcert = Get-DbaDbCertificate -SqlInstance $db.Parent -Database master | Where-Object Name -notmatch "##"
                 if ($dbcert.Name.Count -ne 1) {
                     if ($dbcert.Name.Count -lt 1) {
@@ -117,9 +118,8 @@ function New-DbaDbEncryptionKey {
                     $smoencryptionkey.EncryptionType = [Microsoft.SqlServer.Management.Smo.DatabaseEncryptionType]::ServerCertificate
                     $smoencryptionkey.EncryptorName = $Certificate
                     $smoencryptionkey.Create()
-                    $db.Refresh()
-                    $db.Parent.Refresh()
-                    $smoencryptionkey
+                    $smoencryptionkey.Parent.Certficates.Refresh()
+                    $db | Get-DbaDbEncryptionKey
                 } catch {
                     $ErrorActionPreference = $eap
                     Stop-Function -Message "Failed to create encryption key in $($db.Name) on $($db.Parent.Name)" -Target $smoencryptionkey -ErrorRecord $_ -Continue

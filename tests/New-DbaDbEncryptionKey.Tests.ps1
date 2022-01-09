@@ -16,16 +16,37 @@ Describe "$CommandName Unit Tests" -Tags "UnitTests" {
 
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     BeforeAll {
+        $passwd = ConvertTo-SecureString "dbatools.IO" -AsPlainText -Force
+        $cred = New-Object System.Management.Automation.PSCredential "sqladmin", $passwd
+
+        $masterkey = Get-DbaDbMasterKey -SqlInstance $script:instance2 -Database master
+        if (-not $masterkey) {
+            $delmasterkey = $true
+            $masterkey = New-DbaServiceMasterKey -SqlInstance $script:instance2 -SecurePassword $passwd
+        }
+        $mastercert = Get-DbaDbCertificate -SqlInstance $script:instance2 -Database master | Where-Object Name -notmatch "##" | Select-Object -First 1
+        if (-not $mastercert) {
+            $delmastercert = $true
+            $mastercert = New-DbaDbCertificate -SqlInstance $script:instance2
+        }
+
         $db = New-DbaDatabase -SqlInstance $script:instance2
+        $db | New-DbaDbCertificate
     }
 
     AfterAll {
+        if ($delmasterkey) {
+            $masterkey | Remove-DbaDbMasterKey
+        }
+        if ($delmastercert) {
+            $mastercert | Remove-DbaDbCertificate
+        }
         $db | Remove-DbaDatabase
     }
 
     Context "Command actually works" {
-        It "Should be true" {
-            $true | Should -Be $true
+        It "should create a new encryption key" {
+            $db | New-DbaDbEncryptionKey -Force
         }
     }
 }
