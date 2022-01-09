@@ -88,7 +88,9 @@ function Enable-DbaDbEncryption {
         }
 
         foreach ($db in $InputObject) {
-            $null = $db.DatabaseEncryptionKey.Refresh()
+            if ($db.DatabaseEncryptionKey) {
+                $null = $db.DatabaseEncryptionKey.Refresh()
+            }
             $server = $db.Parent
             if ($Pscmdlet.ShouldProcess($server.Name, "Enabling encryption on $($db.Name)")) {
                 try {
@@ -98,7 +100,9 @@ function Enable-DbaDbEncryption {
                     }
                     $db.EncryptionEnabled = $true
                     $db.Alter()
-                    $null = $db.DatabaseEncryptionKey.Refresh()
+                    if ($db.DatabaseEncryptionKey) {
+                        $null = $db.DatabaseEncryptionKey.Refresh()
+                    }
                     $db | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, 'Name as DatabaseName', EncryptionEnabled
                 } catch {
                     Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
