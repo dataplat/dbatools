@@ -79,7 +79,7 @@ function Get-DbaDbMasterKey {
                 Write-Message -Level Warning -Message "Database $db on $($db.Parent) is not accessible. Skipping."
                 continue
             }
-
+            $instance = $db.Parent.Name
             $masterkey = $db.MasterKey
 
             if (!$masterkey) {
