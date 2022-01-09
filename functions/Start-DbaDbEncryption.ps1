@@ -187,11 +187,13 @@ function Start-DbaDbEncryption {
                             SqlInstance                  = $server
                             Database                     = "master"
                             StartDate                    = $CertificateStartDate
-                            Subject                      = $CertificateSubject
                             ExpirationDate               = $CertificateExpirationDate
                             ActiveForServiceBrokerDialog = $CertificateActiveForServiceBrokerDialog
                             SecurePassword               = $CertificateSecurePassword
                             EnableException              = $true
+                        }
+                        if ($CertificateSubject) {
+                            $params.Subject = $CertificateSubject
                         }
                         $mastercert = New-DbaDbCertificate @params
 
@@ -250,7 +252,7 @@ function Start-DbaDbEncryption {
                     $dbmastercert = Get-DbaDbCertificate -SqlInstance $server -Database $db.Name | Where-Object Name -notmatch "##"
 
                     if ($dbmastercert.Count -gt 1) {
-                        # Stop-Function
+                        Stop-Function -Message "More than one certificate found on $($server.Name), please specify an EncryptorName" -Continue
                     }
 
                     if (-not $dbmastercert) {
@@ -258,11 +260,14 @@ function Start-DbaDbEncryption {
                             SqlInstance                  = $server
                             Database                     = $db.Name
                             StartDate                    = $CertificateStartDate
-                            Subject                      = $CertificateSubject
                             ExpirationDate               = $CertificateExpirationDate
                             ActiveForServiceBrokerDialog = $CertificateActiveForServiceBrokerDialog
                             SecurePassword               = $CertificateSecurePassword
                             EnableException              = $true
+                        }
+
+                        if ($CertificateSubject) {
+                            $params.Subject = $CertificateSubject
                         }
                         $mastercert = New-DbaDbCertificate @params
                     }

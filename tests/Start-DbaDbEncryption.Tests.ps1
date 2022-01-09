@@ -18,7 +18,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     BeforeAll {
         $PSDefaultParameterValues["*:Confirm"] = $false
         $alldbs = @()
-        1..10 | ForEach-Object { $alldbs += New-DbaDatabase -SqlInstance $script:instance2 }
+        1..5 | ForEach-Object { $alldbs += New-DbaDatabase -SqlInstance $script:instance2 }
     }
 
     AfterAll {
