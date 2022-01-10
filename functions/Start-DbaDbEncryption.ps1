@@ -90,7 +90,7 @@ function Start-DbaDbEncryption {
         xyz
 
     #>
-    [CmdletBinding(SupportsShouldProcess, ConfirmImpact="High")]
+    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "High")]
     param (
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
@@ -132,7 +132,7 @@ function Start-DbaDbEncryption {
                 Database        = $Database
                 ExcludeDatabase = $ExcludeDatabase
             }
-            $InputObject += Get-DbaDatabase @param | Where-Object Name -notin 'master', 'model', 'tempdb', 'msdb','resource'
+            $InputObject += Get-DbaDatabase @param | Where-Object Name -NotIn 'master', 'model', 'tempdb', 'msdb', 'resource'
         }
 
         foreach ($db in $InputObject) {
@@ -173,9 +173,9 @@ function Start-DbaDbEncryption {
                 Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Processing EncryptorType for $($db.Name) on $($server.Name)"
                 if ($EncryptorType -eq "Certificate") {
                     if ($EncryptorName) {
-                        $mastercert = Get-DbaDbCertificate -SqlInstance $server -Database master | Where-Object Name -eq $EncryptorName
+                        $mastercert = Get-DbaDbCertificate -SqlInstance $server -Database master | Where-Object Name -EQ $EncryptorName
                     } else {
-                        $mastercert = Get-DbaDbCertificate -SqlInstance $server -Database master | Where-Object Name -notmatch "##"
+                        $mastercert = Get-DbaDbCertificate -SqlInstance $server -Database master | Where-Object Name -NotMatch "##"
                     }
 
                     if ($mastercert.Count -gt 1) {
@@ -249,7 +249,7 @@ function Start-DbaDbEncryption {
                 # Create a database certificate or asymmetric key in the target database
                 Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Creating a database certificate or asymmetric key in $($db.Name) on $($server.Name)"
                 if ($EncryptorType -eq "Certificate") {
-                    $dbmastercert = Get-DbaDbCertificate -SqlInstance $server -Database $db.Name | Where-Object Name -notmatch "##"
+                    $dbmastercert = Get-DbaDbCertificate -SqlInstance $server -Database $db.Name | Where-Object Name -NotMatch "##"
 
                     if ($dbmastercert.Count -gt 1) {
                         Stop-Function -Message "More than one certificate found on $($server.Name), please specify an EncryptorName" -Continue
