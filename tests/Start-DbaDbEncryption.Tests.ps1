@@ -31,14 +31,16 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         It "should mass enable encryption" {
             $passwd = ConvertTo-SecureString "dbatools.IO" -AsPlainText -Force
             $params = @{
-                All                       = $true
-                Force                     = $true
-                MasterKeySecurePassword   = $passwd
-                CertificateSecurePassword = $passwd
-                BackupPath                = "C:\temp"
-                EnableException           = $true
+                All                     = $true
+                Force                   = $true
+                MasterKeySecurePassword = $passwd
+                BackupPath              = "C:\temp"
+                EnableException         = $true
             }
-            $results = Start-DbaDbEncryption -SqlInstance $script:instance2 -All -Force -MasterKeySecurePassword $passwd -CertificateSecurePassword $passwd -BackupPath "/tmp"
+            $results = Start-DbaDbEncryption -SqlInstance $script:instance2 -All -Force -MasterKeySecurePassword $passwd -BackupPath C:\temp
+            $results.Count | Should -Be 5
+            $results | Select-Object -First 1 -ExpandProperty EncryptionEnabled | Should -Be $true
+            $results | Select-Object -First 1 -ExpandProperty DatabaseName | Should -Match "random"
         }
     }
 }

@@ -134,14 +134,13 @@ function Start-DbaDbEncryption {
         foreach ($db in $InputObject) {
             try {
                 $server = $db.Parent
+                $null = $db.Refresh()
+                $null = $server.Refresh()
                 if ($db.EncryptionEnabled) {
                     Stop-Function -Message "Database $($db.Name) on $($server.Name) is already encrypted" -Continue
                 }
                 $stepCounter = 0
                 Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Processing $($db.Name)"
-
-                $null = $db.Refresh()
-                $null = $server.Refresh()
 
                 # Ensure a database master key exists in the master database
                 Write-Message -Level Verbose -Message "Ensure a database master key exists in the master database for $($server.Name)"
@@ -289,8 +288,6 @@ function Start-DbaDbEncryption {
                             $params.Subject = $CertificateSubject
                         }
                         $dbmastercert = New-DbaDbCertificate @params
-
-                        $null = $server.Refresh()
                         $null = $db.Refresh()
                     } else {
                         Write-Message -Level Verbose -Message "master cert '$($mastercert.Name)' found in $($db.Name) on $($server.Name)"
@@ -306,7 +303,6 @@ function Start-DbaDbEncryption {
                             EnableException = $true
                         }
                         $dbasymkey = New-DbaDbAsymmetricKey @params
-                        $null = $server.Refresh()
                         $null = $db.Refresh()
                     }
                 }
