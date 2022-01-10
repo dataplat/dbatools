@@ -30,9 +30,6 @@ function Start-DbaDbEncryption {
     .PARAMETER MasterKeySecurePassword
         XYZ
 
-    .PARAMETER CertificateSecurePassword
-        XYZ
-
     .PARAMETER Force
         XYZ
 
@@ -106,8 +103,6 @@ function Start-DbaDbEncryption {
         [datetime]$CertificateStartDate = (Get-Date),
         [datetime]$CertificateExpirationDate = (Get-Date).AddYears(5),
         [switch]$CertificateActiveForServiceBrokerDialog,
-        [Parameter(Mandatory)]
-        [Security.SecureString]$CertificateSecurePassword,
         [parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
         [switch]$Force,
@@ -135,6 +130,7 @@ function Start-DbaDbEncryption {
             $InputObject += Get-DbaDatabase @param | Where-Object Name -NotIn 'master', 'model', 'tempdb', 'msdb', 'resource'
         }
 
+        $PSDefaultParameterValues["Connect-DbaInstance:Verbose"] = $false
         foreach ($db in $InputObject) {
             try {
                 $server = $db.Parent
@@ -148,10 +144,12 @@ function Start-DbaDbEncryption {
                 $null = $server.Refresh()
 
                 # Ensure a database master key exists in the master database
+                Write-Message -Level Verbose -Message "Ensure a database master key exists in the master database for $($server.Name)"
                 Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Ensure a database master key exists in the master database for $($server.Name)"
                 $masterkey = Get-DbaDbMasterKey -SqlInstance $server -Database master
 
                 if (-not $masterkey) {
+                    Write-Message -Level Verbose -Message "master key not found, creating one"
                     $params = @{
                         SqlInstance     = $server
                         SecurePassword  = $MasterKeySecurePassword
@@ -167,13 +165,16 @@ function Start-DbaDbEncryption {
                         EnableException = $true
                         SecurePassword  = $MasterKeySecurePassword
                     }
+                    $null = $server.Refresh()
+                    $null = $server.Databases["master"].Refresh()
+                    Write-Message -Level Verbose -Message "Backing up master key"
                     $null = Backup-DbaDbMasterKey @params
                 }
 
                 Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Processing EncryptorType for $($db.Name) on $($server.Name)"
                 if ($EncryptorType -eq "Certificate") {
                     if ($EncryptorName) {
-                        $mastercert = Get-DbaDbCertificate -SqlInstance $server -Database master | Where-Object Name -EQ $EncryptorName
+                        $mastercert = Get-DbaDbCertificate -SqlInstance $server -Database master | Where-Object Name -eq $EncryptorName
                     } else {
                         $mastercert = Get-DbaDbCertificate -SqlInstance $server -Database master | Where-Object Name -NotMatch "##"
                     }
@@ -183,41 +184,53 @@ function Start-DbaDbEncryption {
                     }
 
                     if (-not $mastercert) {
+                        Write-Message -Level Verbose -Message "master cert not found, creating one"
                         $params = @{
                             SqlInstance                  = $server
                             Database                     = "master"
                             StartDate                    = $CertificateStartDate
                             ExpirationDate               = $CertificateExpirationDate
                             ActiveForServiceBrokerDialog = $CertificateActiveForServiceBrokerDialog
-                            SecurePassword               = $CertificateSecurePassword
                             EnableException              = $true
                         }
                         if ($CertificateSubject) {
                             $params.Subject = $CertificateSubject
                         }
                         $mastercert = New-DbaDbCertificate @params
+                        $null = $server.Refresh()
+                        $null = $server.Databases["master"].Refresh()
+                    } else {
+                        Write-Message -Level Verbose -Message "master cert found on $($server.Name)"
+                    }
 
-                        if (-not $EncryptorName) {
-                            $EncryptorName = $mastercert.Name
-                        }
+                    if (-not $EncryptorName) {
+                        Write-Message -Level Verbose -Message "Getting EncryptorName from master cert"
+                        $EncryptorName = $mastercert.Name
                     }
                 } else {
                     $masterasym = Get-DbaDbAsymmetricKey -SqlInstance $server -Database master
 
                     if (-not $masterasym) {
+                        Write-Message -Level Verbose -Message "Asymmetric key not found, creating one"
                         $params = @{
                             SqlInstance     = $server
                             Database        = "master"
                             EnableException = $true
                         }
                         $masterasym = New-DbaDbAsymmetricKey @params
+                        $null = $server.Refresh()
+                        $null = $server.Databases["master"].Refresh()
+                    } else {
+                        Write-Message -Level Verbose -Message "master asymmetric key found on $($server.Name)"
                     }
 
                     if (-not $EncryptorName) {
+                        Write-Message -Level Verbose -Message "Getting EncryptorName from master asymmetric key"
                         $EncryptorName = $masterasym.Name
                     }
                 }
 
+                Write-Message -Level Verbose -Message "Using EncryptorName '$EncryptorName'"
                 # Create a database master key in the target database
                 Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Creating database master key for $($db.Name) on $($server.Name)"
 
@@ -235,6 +248,9 @@ function Start-DbaDbEncryption {
                     Write-Message -Level Verbose -Message "Creating master key in $($db.Name) on $($server.Name)"
                     $dbmasterkey = New-DbaDbMasterKey @params
 
+                    $null = $server.Refresh()
+                    $null = $db.Refresh()
+
                     # Back up master key
                     $params = @{
                         SqlInstance     = $server
@@ -243,7 +259,10 @@ function Start-DbaDbEncryption {
                         EnableException = $true
                         SecurePassword  = $MasterKeySecurePassword
                     }
+                    Write-Message -Level Verbose -Message "Backing up master key for $($db.Name) on $($server.Name)"
                     $null = Backup-DbaDbMasterKey @params
+                } else {
+                    Write-Message -Level Verbose -Message "master key found in $($db.Name) on $($server.Name)"
                 }
 
                 # Create a database certificate or asymmetric key in the target database
@@ -256,47 +275,56 @@ function Start-DbaDbEncryption {
                     }
 
                     if (-not $dbmastercert) {
+                        Write-Message -Level Verbose -Message "Master cert not found for $($db.Name) on $($server.Name), creating one"
                         $params = @{
                             SqlInstance                  = $server
                             Database                     = $db.Name
                             StartDate                    = $CertificateStartDate
                             ExpirationDate               = $CertificateExpirationDate
                             ActiveForServiceBrokerDialog = $CertificateActiveForServiceBrokerDialog
-                            SecurePassword               = $CertificateSecurePassword
                             EnableException              = $true
                         }
 
                         if ($CertificateSubject) {
                             $params.Subject = $CertificateSubject
                         }
-                        $mastercert = New-DbaDbCertificate @params
+                        $dbmastercert = New-DbaDbCertificate @params
+
+                        $null = $server.Refresh()
+                        $null = $db.Refresh()
+                    } else {
+                        Write-Message -Level Verbose -Message "master cert '$($mastercert.Name)' found in $($db.Name) on $($server.Name)"
                     }
                 } else {
-                    $masterasym = Get-DbaDbAsymmetricKey -SqlInstance $server -Database $db.Name
+                    $dbasymkey = Get-DbaDbAsymmetricKey -SqlInstance $server -Database $db.Name
 
-                    if (-not $masterasym) {
+                    if (-not $dbasymkey) {
+                        Write-Message -Level Verbose -Message "Asymmetric key not found for $($db.Name) on $($server.Name),creating one"
                         $params = @{
                             SqlInstance     = $server
                             Database        = $db.Name
                             EnableException = $true
                         }
-                        $masterasym = New-DbaDbAsymmetricKey @params
+                        $dbasymkey = New-DbaDbAsymmetricKey @params
+                        $null = $server.Refresh()
+                        $null = $db.Refresh()
                     }
                 }
-
-                $null = $server.Databases[$db.Name].Refresh()
+                #$EncryptorName = $dbmastercert.Name
+                $null = $db.Refresh()
                 # Create a database encryption key in the target database
                 # Enable database encryption on the target database
-
 
                 Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Creating database encryption key in $($db.Name) on $($server.Name)"
                 if ($db.HasDatabaseEncryptionKey) {
                     Write-Message -Level Verbose -Message "$($db.Name) on $($db.Parent.Name) already has a database encryption key"
                 } else {
-                    $null = $db | New-DbaDbEncryptionKey -Force:$force -EnableException
+                    Write-Message -Level Verbose -Message "Creating new encryption key for $($db.Name) on $($server.Name) with EncryptorName $EncryptorName"
+                    $null = $db | New-DbaDbEncryptionKey -EncryptorName $EncryptorName -Force:$force -EnableException
                 }
 
                 Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Enabling database encryption in $($db.Name) on $($server.Name)"
+                Write-Message -Level Verbose -Message "Enabling encryption for $($db.Name) on $($server.Name)"
                 $db | Enable-DbaDbEncryption -EncryptorName $EncryptorName -Force
             } catch {
                 Stop-Function -Message "Failure" -ErrorRecord $_ -Continue

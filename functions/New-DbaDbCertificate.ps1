@@ -96,8 +96,8 @@ function New-DbaDbCertificate {
 
         foreach ($db in $InputObject) {
             if ((Test-Bound -Not -ParameterName Name)) {
-                Write-Message -Level Verbose -Message "Name of certificate not specified, setting it to '$db'"
                 $Name = $db.Name
+                Write-Message -Level Verbose -Message "Name of certificate not specified, setting it to '$name'"
             }
 
             if ((Test-Bound -Not -ParameterName Subject)) {
@@ -124,8 +124,10 @@ function New-DbaDbCertificate {
                         $smocert.ActiveForServiceBrokerDialog = $ActiveForServiceBrokerDialog
 
                         if ($SecurePassword) {
+                            Write-Message -Level Verbose -Message "Creating certificate with password"
                             $smocert.Create(($SecurePassword | ConvertFrom-SecurePass))
                         } else {
+                            Write-Message -Level Verbose -Message "Creating certificate without password"
                             $smocert.Create()
                         }
 
