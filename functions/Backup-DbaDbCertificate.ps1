@@ -26,7 +26,7 @@ function Backup-DbaDbCertificate {
         Database(s) to skip when exporting encryptors.
 
     .PARAMETER EncryptionPassword
-        A string value that specifies the system path to encrypt the private key.
+        A string value that specifies the secure password to encrypt the private key.
 
     .PARAMETER DecryptionPassword
         Secure string used to decrypt the private key.
