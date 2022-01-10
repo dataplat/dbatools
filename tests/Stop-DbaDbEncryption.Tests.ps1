@@ -53,7 +53,9 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             Start-Sleep 10
             $results = Stop-DbaDbEncryption -SqlInstance $script:instance2
             $warn | Should -Be $null
-            $results.EncryptionEnabled | Should -Be $false
+            foreach ($result in $results) {
+                $result.EncryptionEnabled | Should -Be $false
+            }
         }
     }
 }
