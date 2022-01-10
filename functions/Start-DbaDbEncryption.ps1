@@ -1,12 +1,12 @@
 function Start-DbaDbEncryption {
     <#
     .SYNOPSIS
-        Combokill
+        Z
 
     .DESCRIPTION
-        Combokill
+        Disables encryption for all databases on SQL Server instance
 
-        protected by the master key
+        Removes the encryption key but does not remove certificates or master keys
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.
@@ -73,7 +73,7 @@ function Start-DbaDbEncryption {
         Author: Chrissy LeMaire (@cl), netnerds.net
 
         Website: https://dbatools.io
-        Copyright: (c) 2018 by dbatools, licensed under MIT
+        Copyright: (c) 2022 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK

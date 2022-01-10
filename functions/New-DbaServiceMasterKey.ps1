@@ -63,7 +63,7 @@ function New-DbaServiceMasterKey {
 
     process {
         foreach ($instance in $SqlInstance) {
-            if ($PSCmdlet.ShouldProcess("$instance", "Creating New MasterKey")) {
+            if ($PSCmdlet.ShouldProcess("$instance", "Creating new master key")) {
                 New-DbaDbMasterKey -SqlInstance $instance -SqlCredential $SqlCredential -Database master -SecurePassword $SecurePassword -Credential $Credential
             }
         }
