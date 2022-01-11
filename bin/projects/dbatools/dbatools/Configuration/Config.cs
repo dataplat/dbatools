@@ -99,7 +99,7 @@ namespace Sqlcollaborative.Dbatools.Configuration
         /// <summary>
         /// Validates the user input
         /// </summary>
-        public ScriptBlock Validation;
+        public string Validation;
 
         /// <summary>
         /// Setting this to true will cause the element to not be discovered unless using the '-Force' parameter on "Get-DbaConfig"

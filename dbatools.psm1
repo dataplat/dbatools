@@ -469,6 +469,7 @@ $script:xplat = @(
     'Set-DbaDbFileGrowth',
     'Read-DbaTransactionLog',
     'Get-DbaDbTable',
+    'Remove-DbaDbTable',
     'Invoke-DbaDbShrink',
     'Get-DbaEstimatedCompletionTime',
     'Get-DbaLinkedServer',
@@ -854,6 +855,7 @@ $script:xplat = @(
     'New-DbaRgWorkloadGroup',
     'Remove-DbaRgWorkloadGroup',
     'New-DbaLinkedServerLogin',
+    'Remove-DbaLinkedServerLogin',
     'Remove-DbaCredential',
     'Remove-DbaAgentProxy'
 )

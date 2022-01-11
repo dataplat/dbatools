@@ -266,6 +266,7 @@
         'Get-DbaDbStoredProcedure',
         'Get-DbaDbSynonym',
         'Get-DbaDbTable',
+        'Remove-DbaDbTable',
         'Get-DbaDbTrigger',
         'Get-DbaDbUdf',
         'Get-DbaDbUser',
@@ -720,6 +721,7 @@
         'Remove-DbaRgWorkloadGroup',
         'Get-DbaLinkedServerLogin',
         'New-DbaLinkedServerLogin',
+        'Remove-DbaLinkedServerLogin',
         'Remove-DbaCredential',
         'Remove-DbaAgentProxy'
     )
