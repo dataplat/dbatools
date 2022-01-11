@@ -266,6 +266,7 @@
         'Get-DbaDbStoredProcedure',
         'Get-DbaDbSynonym',
         'Get-DbaDbTable',
+        'Remove-DbaDbTable',
         'Get-DbaDbTrigger',
         'Get-DbaDbUdf',
         'Get-DbaDbUser',

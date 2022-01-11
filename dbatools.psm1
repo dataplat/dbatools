@@ -469,6 +469,7 @@ $script:xplat = @(
     'Set-DbaDbFileGrowth',
     'Read-DbaTransactionLog',
     'Get-DbaDbTable',
+    'Remove-DbaDbTable',
     'Invoke-DbaDbShrink',
     'Get-DbaEstimatedCompletionTime',
     'Get-DbaLinkedServer',
