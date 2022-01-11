@@ -2514,6 +2514,78 @@
             Whether the task is due and should be executed
             </summary>
         </member>
+        <member name="T:Sqlcollaborative.Dbatools.Message.CallStack">
+            <summary>
+            Container for a callstack, to create a non-volatile copy of the relevant information
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Message.CallStack.Entries">
+            <summary>
+            The entries that make up the callstack
+            </summary>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Message.CallStack.ToString">
+            <summary>
+            String representation of the callstack copy
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Message.CallStack.#ctor">
+            <summary>
+            Create an empty callstack
+            </summary>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Message.CallStack.#ctor(System.Collections.Generic.IEnumerable{System.Management.Automation.CallStackFrame})">
+            <summary>
+            Initialize a callstack from a live callstack frame
+            </summary>
+            <param name="CallStack">The live powershell callstack</param>
+        </member>
+        <member name="T:Sqlcollaborative.Dbatools.Message.CallStackEntry">
+            <summary>
+            A single entry within the callstack
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Message.CallStackEntry.FunctionName">
+            <summary>
+            The name of the command that executed
+            </summary>
+        </member>
+        <member name="P:Sqlcollaborative.Dbatools.Message.CallStackEntry.File">
+            <summary>
+            The file the command was defined in
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Message.CallStackEntry.Line">
+            <summary>
+            THe line in the scriptblock that has been executed
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Message.CallStackEntry.InvocationInfo">
+            <summary>
+            The full invocation info object
+            </summary>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Message.CallStackEntry.#ctor">
+            <summary>
+            Create an empty callstack entry.
+            </summary>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Message.CallStackEntry.#ctor(System.String,System.String,System.Int32,System.Management.Automation.InvocationInfo)">
+            <summary>
+            Creates a prefilled callstack entry.
+            </summary>
+            <param name="FunctionName"></param>
+            <param name="File"></param>
+            <param name="Line"></param>
+            <param name="InvocationInfo"></param>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Message.CallStackEntry.ToString">
+            <summary>
+            The string notation of the callstack entry
+            </summary>
+            <returns></returns>
+        </member>
         <member name="T:Sqlcollaborative.Dbatools.Message.DbatoolsException">
             <summary>
             Wrapper class that can emulate any exception for purpose of serialization without blowing up the storage space consumed
@@ -4511,7 +4583,7 @@
         </member>
         <member name="M:Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost.SetInstance(System.String,System.Object,System.Boolean)">
             <summary>
-            Registers a new instance or updates an already existing one. Should only be called from Connect-SqlInstance and Connect-DbaSqlServer
+            Registers a new instance or updates an already existing one. Should only be called from Connect-DbaInstance and Connect-DbaSqlServer
             </summary>
             <param name="InstanceName">Name of the instance connected to</param>
             <param name="Connection">To connection object containing the relevant information for accessing the instance</param>
