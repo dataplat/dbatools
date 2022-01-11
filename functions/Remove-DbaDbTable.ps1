@@ -65,6 +65,7 @@ function Remove-DbaDbTable {
         [PSCredential]$SqlCredential,
         [string[]]$Database,
         [string[]]$Table,
+        [Parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.Table[]]$InputObject,
         [switch]$EnableException
     )
