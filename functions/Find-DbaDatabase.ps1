@@ -33,7 +33,7 @@ function Find-DbaDatabase {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: Database
+        Tags: Database, Lookup
         Author: Stephen Bennett, https://sqlnotesfromtheunderground.wordpress.com/
 
         Website: https://dbatools.io

@@ -36,7 +36,7 @@ function Find-DbaUserObject {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: Object
+        Tags: Object, Lookup
         Author: Stephen Bennett, https://sqlnotesfromtheunderground.wordpress.com/
 
         Website: https://dbatools.io

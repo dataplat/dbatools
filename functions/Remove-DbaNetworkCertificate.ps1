@@ -8,7 +8,7 @@ function Remove-DbaNetworkCertificate {
         Removes the network certificate for SQL Server instance. This setting is found in Configuration Manager.
 
     .PARAMETER SqlInstance
-       The target SQL Server instance or instances. Defaults to localhost. If target is a cluster, you must also specify InstanceClusterName (see below)
+        The target SQL Server instance or instances. Defaults to localhost. If target is a cluster, you must also specify InstanceClusterName (see below)
 
     .PARAMETER Credential
         Allows you to login to the computer (not sql instance) using alternative credentials.
@@ -25,7 +25,7 @@ function Remove-DbaNetworkCertificate {
         Prompts you for confirmation before executing any changing operations within the command.
 
     .NOTES
-        Tags: Certificate
+        Tags: Certificate, Security
         Author: Chrissy LeMaire (@cl), netnerds.net
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT

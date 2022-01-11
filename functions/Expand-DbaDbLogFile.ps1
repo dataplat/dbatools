@@ -1,7 +1,7 @@
 function Expand-DbaDbLogFile {
     <#
     .SYNOPSIS
-        This command will help you to automatically grow your transaction log  file in a responsible way (preventing the generation of too many VLFs).
+        This command will help you to automatically grow your transaction log file in a responsible way (preventing the generation of too many VLFs).
 
     .DESCRIPTION
         As you may already know, having a transaction log file with too many Virtual Log Files (VLFs) can hurt your database performance in many ways.
@@ -98,7 +98,7 @@ function Expand-DbaDbLogFile {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: Storage, Backup
+        Tags: Storage, LogFile
         Author: Claudio Silva (@ClaudioESSilva)
 
         Website: https://dbatools.io

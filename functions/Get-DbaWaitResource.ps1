@@ -29,7 +29,7 @@ function Get-DbaWaitResource {
         Use this if you want the function to throw terminating errors you want to catch.
 
     .NOTES
-        Tags: Pages, DBCC
+        Tags: Diagnostic, Pages, DBCC
         Author: Stuart Moore (@napalmgram), stuart-moore.com
 
         Website: https://dbatools.io

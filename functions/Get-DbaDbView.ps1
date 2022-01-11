@@ -37,7 +37,7 @@ function Get-DbaDbView {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: Security, Database
+        Tags: View, Database
         Author: Klaas Vandenberghe (@PowerDbaKlaas)
 
         Website: https://dbatools.io
@@ -131,6 +131,11 @@ function Get-DbaDbView {
 
         foreach ($db in $InputObject) {
             Write-Message -Level Verbose -Message "processing $db"
+
+            # Let the SMO read all properties referenced in this command for all views in the database in one query.
+            # Downside: If some other properties were already read outside of this command in the used SMO, they are cleared.
+            $db.Views.ClearAndInitialize('', [string[]]('Name', 'Schema', 'IsSystemObject', 'CreateDate', 'DateLastModified'))
+
             if ($fqtns) {
                 $views = @()
                 foreach ($fqtn in $fqtns) {

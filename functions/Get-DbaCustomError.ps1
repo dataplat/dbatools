@@ -23,7 +23,7 @@ function Get-DbaCustomError {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: Error, CustomError
+        Tags: General, Error
         Author: Garry Bargsley (@gbargsley), http://blog.garrybargsley.com
 
         Website: https://dbatools.io

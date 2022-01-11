@@ -41,7 +41,7 @@ function Test-DbaBuild {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: SqlBuild, Version
+        Tags: SqlBuild, Version, Utility
         Author: Simone Bizzotto (@niphold) | Friedrich Weinmann (@FredWeinmann)
 
         dbatools PowerShell module (https://dbatools.io)

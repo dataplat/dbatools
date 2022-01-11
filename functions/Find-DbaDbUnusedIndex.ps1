@@ -60,7 +60,7 @@ function Find-DbaDbUnusedIndex {
         AND user_lookups < $Lookups
 
     .NOTES
-        Tags: Index
+        Tags: Index, Lookup
         Author: Aaron Nelson (@SQLvariant), SQLvariant.com
 
         Website: https://dbatools.io

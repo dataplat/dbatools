@@ -1,10 +1,10 @@
 function Get-DbaDbRecoveryModel {
     <#
     .SYNOPSIS
-        Get-DbaDbRecoveryModel displays the Recovery Model.
+        Displays the Recovery Model.
 
     .DESCRIPTION
-        Get-DbaDbRecoveryModel displays the Recovery Model for all databases. This is the default, you can filter using -Database, -ExcludeDatabase, -RecoveryModel
+        Displays the Recovery Model for all databases. This is the default, you can filter using -Database, -ExcludeDatabase, -RecoveryModel
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.
@@ -34,7 +34,7 @@ function Get-DbaDbRecoveryModel {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: Recovery, RecoveryModel, Simple, Full, Bulk, BulkLogged
+        Tags: Recovery, RecoveryModel, Backup
         Author: Viorel Ciucu (@viorelciucu), https://www.cviorel.com
 
         Website: https://dbatools.io

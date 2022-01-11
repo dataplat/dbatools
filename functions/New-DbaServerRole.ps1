@@ -6,7 +6,7 @@ function New-DbaServerRole {
     .DESCRIPTION
         The New-DbaServerRole create new roles on instance(s) of SQL Server.
 
-   .PARAMETER SqlInstance
+    .PARAMETER SqlInstance
         The target SQL Server instance or instances.
 
     .PARAMETER SqlCredential
@@ -37,8 +37,8 @@ function New-DbaServerRole {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: Role, Database, Security
-        Author: Cláudio Silva (@ClaudioESSilva), https://claudioessilva.eu
+        Tags: Role
+        Author: Claudio Silva (@ClaudioESSilva), https://claudioessilva.eu
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT

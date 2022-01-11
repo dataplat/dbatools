@@ -40,8 +40,9 @@ function Remove-DbaDbMasterKey {
         Prompts you for confirmation before executing any changing operations within the command.
 
     .NOTES
-        Tags: Certificate, Masterkey
+        Tags: Certificate, Security
         Author: Chrissy LeMaire (@cl), netnerds.net
+
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT

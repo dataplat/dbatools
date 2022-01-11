@@ -39,7 +39,7 @@ function Find-DbaView {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: View
+        Tags: View, Lookup
         Author: Claudio Silva  (@ClaudioESSilva)
 
         Website: https://dbatools.io

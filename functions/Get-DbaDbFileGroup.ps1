@@ -19,7 +19,7 @@ function Get-DbaDbFileGroup {
     .PARAMETER Database
         The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
 
-   .PARAMETER InputObject
+    .PARAMETER InputObject
         Database object piped in from Get-DbaDatabase
 
     .PARAMETER FileGroup
@@ -31,7 +31,7 @@ function Get-DbaDbFileGroup {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: Database, FileGroup
+        Tags: Storage, File, Data
         Author: Patrick Flynn (@sqllensman)
 
         Website: https://dbatools.io

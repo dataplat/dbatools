@@ -73,7 +73,7 @@ namespace Sqlcollaborative.Dbatools.Message
         /// <summary>
         /// The callstack when the message was written.
         /// </summary>
-        public IEnumerable<CallStackFrame> CallStack;
+        public CallStack CallStack;
 
         /// <summary>
         /// The user that did the writing.
@@ -119,7 +119,7 @@ namespace Sqlcollaborative.Dbatools.Message
             this.TargetObject = TargetObject;
             this.File = File;
             this.Line = Line;
-            this.CallStack = CallStack;
+            this.CallStack = new CallStack(CallStack);
             this.Username = Username;
         }
     }

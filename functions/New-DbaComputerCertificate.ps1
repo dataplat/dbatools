@@ -20,7 +20,7 @@ function New-DbaComputerCertificate {
         The certificate is generated using AD's webserver SSL template on the client machine and pushed to the remote machine.
 
     .PARAMETER ComputerName
-       The target SQL Server instance or instances. Defaults to localhost. If target is a cluster, you must also specify ClusterInstanceName (see below)
+        The target SQL Server instance or instances. Defaults to localhost. If target is a cluster, you must also specify ClusterInstanceName (see below)
 
     .PARAMETER Credential
         Allows you to login to $ComputerName using alternative credentials.
@@ -70,7 +70,7 @@ function New-DbaComputerCertificate {
         Prompts you for confirmation before executing any changing operations within the command.
 
     .NOTES
-        Tags: Certificate
+        Tags: Certificate, Security
         Author: Chrissy LeMaire (@cl), netnerds.net
 
         Website: https://dbatools.io

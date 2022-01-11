@@ -80,7 +80,7 @@ function Find-DbaInstance {
         Scans can be specified in any arbitrary combination, however at least one instance detecting scan needs to be specified in order for data to be returned.
 
         Scans:
-         Browser
+        Browser
         - Tries discovering all instances via the browser service
         - This scan detects instances.
 
@@ -152,7 +152,7 @@ function Find-DbaInstance {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: Instance, Connect, SqlServer
+        Tags: Instance, Connect, SqlServer, Lookup
         Author: Scott Sutherland, 2018 NetSPI | Friedrich Weinmann (@FredWeinmann)
 
         Website: https://dbatools.io

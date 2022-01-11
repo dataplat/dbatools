@@ -14,7 +14,7 @@ function Set-DbaNetworkCertificate {
         https://blogs.msdn.microsoft.com/sqlserverfaq/2016/09/26/creating-and-registering-ssl-certificates/
 
     .PARAMETER SqlInstance
-       The target SQL Server instance or instances. Defaults to localhost.
+        The target SQL Server instance or instances. Defaults to localhost.
 
     .PARAMETER Credential
         Allows you to login to the computer (not sql instance) using alternative credentials.
@@ -37,7 +37,7 @@ function Set-DbaNetworkCertificate {
         Prompts you for confirmation before executing any changing operations within the command.
 
     .NOTES
-        Tags: Certificate
+        Tags: Certificate, Security
         Author: Chrissy LeMaire (@cl), netnerds.net
 
         Website: https://dbatools.io

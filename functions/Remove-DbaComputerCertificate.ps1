@@ -4,7 +4,7 @@ function Remove-DbaComputerCertificate {
         Removes a computer certificate - useful for removing easily certs from remote computers
 
     .DESCRIPTION
-        Removes a computer certificate from a local or remote compuer
+        Removes a computer certificate from a local or remote computer
 
     .PARAMETER ComputerName
         The target computer. Defaults to localhost.
@@ -33,7 +33,7 @@ function Remove-DbaComputerCertificate {
         Prompts you for confirmation before executing any changing operations within the command.
 
     .NOTES
-        Tags: Certificate
+        Tags: Certificate, Security
         Author: Chrissy LeMaire (@cl), netnerds.net
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
