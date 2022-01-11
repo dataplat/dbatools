@@ -28,7 +28,9 @@ function Enable-DbaDbEncryption {
         Enables pipeline input from Get-DbaDatabase
 
     .PARAMETER Force
-        Enable encryption even though the specified cert has not been backed up
+        By default, this command will not encrypt a database unless the cert has been backed up
+
+        Use Force to enable encryption even though the specified cert has not been backed up
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

@@ -5,7 +5,7 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 Describe "$CommandName Unit Tests" -Tags "UnitTests" {
     Context "Validate parameters" {
         [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'EncryptorName', 'EncryptorType', 'Database', 'BackupPath', 'MasterKeySecurePassword', 'CertificateSubject', 'CertificateStartDate', 'CertificateExpirationDate', 'CertificateActiveForServiceBrokerDialog', 'InputObject', 'Force', 'All', 'EnableException', 'BackupSecurePassword'
+        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'EncryptorName', 'EncryptorType', 'Database', 'BackupPath', 'MasterKeySecurePassword', 'CertificateSubject', 'CertificateStartDate', 'CertificateExpirationDate', 'CertificateActiveForServiceBrokerDialog', 'InputObject',  'AllUserDatabases', 'EnableException', 'BackupSecurePassword', 'ExcludeDatabase'
         $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
         It "Should only contain our specific parameters" {
             (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
@@ -32,12 +32,11 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $passwd = ConvertTo-SecureString "dbatools.IO" -AsPlainText -Force
             $params = @{
                 All                     = $true
-                Force                   = $true
                 MasterKeySecurePassword = $passwd
                 BackupPath              = "C:\temp"
                 EnableException         = $true
             }
-            $results = Start-DbaDbEncryption -SqlInstance $script:instance2 -All -Force -MasterKeySecurePassword $passwd -BackupPath C:\temp -BackupSecurePassword $passwd
+            $results = Start-DbaDbEncryption -SqlInstance $script:instance2 -AllUserDatabases  -MasterKeySecurePassword $passwd -BackupPath C:\temp -BackupSecurePassword $passwd
             $results.Count | Should -Be 5
             $results | Select-Object -First 1 -ExpandProperty EncryptionEnabled | Should -Be $true
             $results | Select-Object -First 1 -ExpandProperty DatabaseName | Should -Match "random"

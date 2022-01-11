@@ -123,7 +123,7 @@ function New-DbaDbEncryptionKey {
             if ($Type -eq "Certificate") {
                 $dbcert = Get-DbaDbCertificate -SqlInstance $db.Parent -Database master -Certificate $EncryptorName
                 if ($dbcert.LastBackupDate.Year -eq 1 -and -not $Force) {
-                    Stop-Function -Message "Certificate ($EncryptorName) has not been backed up. Please backup your certificate or use -Force to continue" -Continue
+                    Stop-Function -Message "Certificate ($EncryptorName) in master on $($db.Parent) has not been backed up. Please backup your certificate or use -Force to continue" -Continue
                 }
             }
 
@@ -132,8 +132,8 @@ function New-DbaDbEncryptionKey {
                 # something is up with .net, force a stop
                 $eap = $ErrorActionPreference
                 $ErrorActionPreference = 'Stop'
-                # Shoutout to https://www.mssqltips.com/sqlservertip/6316/configure-sql-server-transparent-data-encryption-with-powershell/
                 try {
+                    # Shoutout to https://www.mssqltips.com/sqlservertip/6316/configure-sql-server-transparent-data-encryption-with-powershell/
                     $smoencryptionkey = New-Object -TypeName Microsoft.SqlServer.Management.Smo.DatabaseEncryptionKey
                     $smoencryptionkey.Parent = $db
                     $smoencryptionkey.EncryptionAlgorithm = $EncryptionAlgorithm

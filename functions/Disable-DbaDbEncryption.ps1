@@ -6,6 +6,10 @@ function Disable-DbaDbEncryption {
     .DESCRIPTION
         Disables encryption on a database
 
+        Encryption is not fully disabled until the Encryption Key is dropped
+
+        Consequently, this command will drop the key by default
+
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.
 
@@ -19,15 +23,15 @@ function Disable-DbaDbEncryption {
     .PARAMETER Database
         The database that where encryption will be disabled
 
-    .PARAMETER InputObject
-        Disables pipeline input from Get-DbaDatabase
-
     .PARAMETER NoEncryptionKeyDrop
         Encryption is not fully disabled until the Encryption Key is dropped
 
         Consequently, this command will drop the key by default
 
-        Use this to do whatever
+        Use this to keep the encryption key. Note that if you keep your key, your database will not be fully decrypted.
+
+    .PARAMETER InputObject
+        Disables pipeline input from Get-DbaDatabase
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -89,7 +93,7 @@ function Disable-DbaDbEncryption {
 
         foreach ($db in $InputObject) {
             $server = $db.Parent
-            if ($NoEncryptionKeyDrop) {
+            if (-not $NoEncryptionKeyDrop) {
                 $msg = "Disabling encryption on $($db.Name)"
             } else {
                 $msg = "Disabling encryption on $($db.Name) will also drop the database encryption key. Continue?"

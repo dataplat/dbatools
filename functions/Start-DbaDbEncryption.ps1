@@ -1,12 +1,17 @@
 function Start-DbaDbEncryption {
     <#
     .SYNOPSIS
-        Z
+        Combo command that encrypts all instances on a database, backing up certs along the way if needed
 
     .DESCRIPTION
-        Disables encryption for all databases on SQL Server instance
+        Combo command that encrypts all instances on a database, backing up certs along the way if needed
 
-        Removes the encryption key but does not remove certificates or master keys
+        * Ensures a database master key exists in the master database
+        * Ensures a database certificate or asymmetric key exists in the master database
+        * Creates a database master key in the target database
+        * Creates a database certificate or asymmetric key in the target database
+        * Creates a database encryption key in the target database
+        * Enables database encryption on the target database
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.
@@ -19,40 +24,56 @@ function Start-DbaDbEncryption {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        The database that will be encrypted.
+        The database or databases that will be encrypted
+
+    .PARAMETER ExcludeDatabase
+        The database or databases that will not be encrypted
 
     .PARAMETER EncryptorName
-        XYZ
+        The name of the encryptor (Certificate or Asymmetric Key) in master that will be used. Tries to find one if one is not specified.
+
+        In order to encrypt the database encryption key with an asymmetric key, you must use an asymmetric key that resides on an extensible key management provider.
 
     .PARAMETER EncryptorType
         Type of Encryptor - either Asymmetric or Certificate
 
     .PARAMETER MasterKeySecurePassword
-        XYZ
+        A master service key will be created and backed up if one does not exist
+
+        MasterKeySecurePassword is the secure string (password) used to create the key
+
+        This parameter is required even if no master keys are made, as we won't know if master key creation will be required until each server is processed
 
     .PARAMETER BackupSecurePassword
-        XYZ
+        If any backups are required, this password will be used to protect the backup
 
-    .PARAMETER Force
-        XYZ
-
-    .PARAMETER All
-        XYZ
+        This parameter is required even if no backups are made, as we won't know if backups are required until each server is processed
 
     .PARAMETER BackupPath
-        The path where its all backed up
+        The path (accessible by and relative to the SQL Server) where master keys and certificates are backed up, if required
+
+        This parameter is required even if no backups are made, as we won't know if backups are required until each server is processed
+
+    .PARAMETER AllUserDatabases
+        Run command against all user databases
+
+        This was added to emphasize that all user databases will be encrypted
 
     .PARAMETER CertificateSubject
-        Optional subject to create the certificate.
+        Optional subject that will be used when creating all certificates
 
     .PARAMETER CertificateStartDate
-        Optional secure string used to create the certificate.
+        Optional start date that will be used when creating all certificates
+
+        By default, certs will start immediately
 
     .PARAMETER CertificateExpirationDate
-        Optional secure string used to create the certificate.
+        Optional expiration that will be used when creating all certificates
+
+        By default, certs will last 5 years
 
     .PARAMETER CertificateActiveForServiceBrokerDialog
-        Optional secure string used to create the certificate.
+        Microsoft has not provided a description so we can only assume the cert is active for service broker dialog
 
     .PARAMETER InputObject
         Enables piping from Get-DbaDatabase
@@ -80,7 +101,17 @@ function Start-DbaDbEncryption {
         https://dbatools.io/Start-DbaDbEncryption
 
     .EXAMPLE
-        PS C:\> Start-DbaDbEncryption -SqlInstance Server1
+        PS C:\> $masterkeypass = (Get-Credential justneedpassword).Password
+        PS C:\> $certbackuppass = (Get-Credential justneedpassword).Password
+        PS C:\> Start-DbaDbEncryption -SqlInstance sql01
+
+        PS C:\> $params = @{
+        >>SqlInstance = "sql01"
+        >>Name = "AzureBackupBlobStore"
+        >>Identity = "https://<Azure Storage Account Name>.blob.core.windows.net/<Blob Container Name>"
+        >>SecurePassword = (ConvertTo-SecureString '<Azure Storage Account Access Key>' -AsPlainText -Force)
+        >>}
+        PS C:\> New-DbaCredential @params
 
         xyz
 
@@ -110,8 +141,7 @@ function Start-DbaDbEncryption {
         [Security.SecureString]$BackupSecurePassword,
         [parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
-        [switch]$Force,
-        [switch]$All,
+        [switch]$AllUserDatabases,
         [switch]$EnableException
     )
     process {
@@ -121,8 +151,8 @@ function Start-DbaDbEncryption {
         }
 
         if ($SqlInstance) {
-            if (-not $Database -and -not $ExcludeDatabase -and -not $All) {
-                Stop-Function -Message "You must specify Database, ExcludeDatabase or All when using SqlInstance"
+            if (-not $Database -and -not $ExcludeDatabase -and -not $AllUserDatabases) {
+                Stop-Function -Message "You must specify Database, ExcludeDatabase or AllUserDatabases when using SqlInstance"
                 return
             }
             # all does not need to be addressed in the code because it gets all the dbs if $databases is empty
@@ -138,6 +168,8 @@ function Start-DbaDbEncryption {
         $PSDefaultParameterValues["Connect-DbaInstance:Verbose"] = $false
         foreach ($db in $InputObject) {
             try {
+                # Just in case they use inputobject + exclude
+                if ($db.Name -in $ExcludeDatabase) { continue }
                 $server = $db.Parent
                 # refresh in case we have a stale database
                 $null = $db.Refresh()
@@ -338,12 +370,12 @@ function Start-DbaDbEncryption {
                     Write-Message -Level Verbose -Message "$($db.Name) on $($db.Parent.Name) already has a database encryption key"
                 } else {
                     Write-Message -Level Verbose -Message "Creating new encryption key for $($db.Name) on $($server.Name) with EncryptorName $EncryptorName"
-                    $null = $db | New-DbaDbEncryptionKey -EncryptorName $EncryptorName -Force:$force -EnableException
+                    $null = $db | New-DbaDbEncryptionKey -EncryptorName $EncryptorName -EnableException
                 }
 
                 Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Enabling database encryption in $($db.Name) on $($server.Name)"
                 Write-Message -Level Verbose -Message "Enabling encryption for $($db.Name) on $($server.Name)"
-                $db | Enable-DbaDbEncryption -EncryptorName $EncryptorName -Force
+                $db | Enable-DbaDbEncryption -EncryptorName $EncryptorName
             } catch {
                 Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
             }
