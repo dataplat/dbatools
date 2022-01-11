@@ -127,7 +127,6 @@ function Copy-DbaCredential {
             #>
             [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingPlainTextForPassword", "", Justification = "For Credentials")]
             param (
-                [string[]]$Credentials,
                 [bool]$Force
             )
 
@@ -174,8 +173,19 @@ function Copy-DbaCredential {
                     $sqlcredentialName = $credentialName.Replace("'", "''")
                     $identity = $currentCred.Identity.Replace("'", "''")
                     $password = $currentCred.Password.Replace("'", "''")
+
+                    if ($credential.MappedClassType -eq "CryptographicProvider") {
+                        $cryptoConfiguredOnDestination = $destServer.Query("SELECT is_enabled FROM sys.cryptographic_providers WHERE name = '$($credential.ProviderName)'")
+
+                        if (-not $cryptoConfiguredOnDestination.is_enabled) {
+                            throw "The cryptographic provider $($credential.ProviderName) needs to be configured and enabled on $destServer"
+                        } else {
+                            $cryptoSQL = " FOR CRYPTOGRAPHIC PROVIDER $($credential.ProviderName) "
+                        }
+                    }
+
                     if ($Pscmdlet.ShouldProcess($destinstance.Name, "Copying $identity ($credentialName)")) {
-                        $destServer.Query("CREATE CREDENTIAL [$sqlcredentialName] WITH IDENTITY = N'$identity', SECRET = N'$password'")
+                        $destServer.Query("CREATE CREDENTIAL [$sqlcredentialName] WITH IDENTITY = N'$identity', SECRET = N'$password' $cryptoSQL")
                         $destServer.Credentials.Refresh()
                         Write-Message -Level Verbose -Message "$credentialName successfully copied"
                         $copyCredentialStatus.Status = "Successful"
@@ -202,15 +212,6 @@ function Copy-DbaCredential {
         }
 
         Invoke-SmoCheck -SqlInstance $sourceServer
-
-        Write-Message -Level Verbose -Message "Checking if Remote Registry is enabled on $Source"
-        $resolvedComputerName = Resolve-DbaComputerName -ComputerName $Source -Credential $Credential
-        try {
-            $null = Invoke-Command2 -ComputerName $resolvedComputerName -Credential $Credential -ScriptBlock { Get-ItemProperty -Path "HKLM:\SOFTWARE\" }
-        } catch {
-            Stop-Function -Message "Can't connect to registry on $Source" -Target $resolvedComputerName -ErrorRecord $_
-            return
-        }
     }
     process {
         if (Test-FunctionInterrupt) { return }
@@ -223,7 +224,7 @@ function Copy-DbaCredential {
             }
             Invoke-SmoCheck -SqlInstance $destServer
 
-            Copy-Credential $credentials -force:$force
+            Copy-Credential -force:$force
         }
     }
 }
