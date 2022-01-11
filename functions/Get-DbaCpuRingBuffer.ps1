@@ -35,7 +35,7 @@ function Get-DbaCpuRingBuffer {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: CPU
+        Tags: Diagnostic, Buffer, CPU
         Author: Patrick Flynn (@sqllensman)
 
         Website: https://dbatools.io

@@ -15,7 +15,7 @@ function Invoke-DbaBalanceDataFiles {
         The function does NOT yet support heaps.
 
         The function will also check if the file groups are subject to balance out.
-        A file group whould have at least have 2 data files and should be writable.
+        A file group would have at least have 2 data files and should be writable.
         If a table is within such a file group it will be subject for processing. If not the table will be skipped.
 
     .PARAMETER SqlInstance
@@ -39,14 +39,10 @@ function Invoke-DbaBalanceDataFiles {
         This option is also needed when the server version is below 2005.
 
     .PARAMETER WhatIf
-        Shows what would happen if the command were to run
+        Shows what would happen if the command were to run. No actions are actually performed.
 
     .PARAMETER Confirm
-        Prompts for confirmation of every step. For example:
-
-        The server does not support online rebuilds of indexes.
-        Do you want to rebuild the indexes offline?
-        [Y] Yes  [N] No   [?] Help (default is "Y"):
+        Prompts you for confirmation before executing any changing operations within the command.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -58,7 +54,7 @@ function Invoke-DbaBalanceDataFiles {
         Use this with caution!!
 
     .NOTES
-        Tags: Database, FileManagement, File, Space
+        Tags: Database, FileManagement, File, Utility
         Author: Sander Stad (@sqlstad), sqlstad.nl
 
         Website: https://dbatools.io

@@ -47,7 +47,7 @@ function Set-DbaMaxDop {
         Prompts you for confirmation before running the cmdlet.
 
     .NOTES
-        Tags: MaxDop, SpConfigure
+        Tags: MaxDop, Utility
         Author: Claudio Silva (@claudioessilva)
 
         Website: https://dbatools.io

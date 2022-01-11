@@ -27,7 +27,7 @@ function Get-DbaUptime {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: CIM
+        Tags: CIM, Instance, Utility
         Author: Stuart Moore (@napalmgram), stuart-moore.com
 
         Website: https://dbatools.io

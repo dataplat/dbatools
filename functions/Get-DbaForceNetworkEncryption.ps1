@@ -9,7 +9,7 @@ function Get-DbaForceNetworkEncryption {
         This setting is found in Configuration Manager.
 
     .PARAMETER SqlInstance
-       The target SQL Server instance or instances. Defaults to localhost.
+        The target SQL Server instance or instances. Defaults to localhost.
 
     .PARAMETER Credential
         Allows you to login to the computer (not sql instance) using alternative Windows credentials
@@ -20,7 +20,7 @@ function Get-DbaForceNetworkEncryption {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: Certificate
+        Tags: Certificate, Security
         Author: Chrissy LeMaire (@cl), netnerds.net
 
         Website: https://dbatools.io

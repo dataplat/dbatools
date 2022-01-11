@@ -34,7 +34,7 @@ function Remove-DbaServerRole {
         Piped server-role objects.
 
     .NOTES
-        Tags: ServerRole, Instance, Security
+        Tags: Role, Login
         Author: Claudio Silva (@ClaudioESSilva), https://claudioessilva.com
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT

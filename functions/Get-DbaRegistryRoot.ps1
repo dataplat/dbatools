@@ -18,7 +18,7 @@ function Get-DbaRegistryRoot {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: Server, Management, Registry
+        Tags: Management, OS, Registry
         Author: Chrissy LeMaire (@cl), netnerds.net
 
         Website: https://dbatools.io
@@ -26,7 +26,7 @@ function Get-DbaRegistryRoot {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-         https://dbatools.io/Get-DbaRegistryRoot
+        https://dbatools.io/Get-DbaRegistryRoot
 
     .EXAMPLE
         PS C:\> Get-DbaRegistryRoot
@@ -49,15 +49,15 @@ function Get-DbaRegistryRoot {
     process {
         foreach ($computer in $computername) {
             try {
-                $sqlwmis = Invoke-ManagedComputerCommand -ComputerName $computer.ComputerName -ScriptBlock { $wmi.Services } -Credential $Credential -ErrorAction Stop | Where-Object DisplayName -match "SQL Server \("
+                $sqlwmis = Invoke-ManagedComputerCommand -ComputerName $computer.ComputerName -ScriptBlock { $wmi.Services } -Credential $Credential -ErrorAction Stop | Where-Object DisplayName -Match "SQL Server \("
             } catch {
                 Stop-Function -Message $_ -Target $sqlwmi -Continue
             }
 
             foreach ($sqlwmi in $sqlwmis) {
 
-                $regRoot = ($sqlwmi.AdvancedProperties | Where-Object Name -eq REGROOT).Value
-                $vsname = ($sqlwmi.AdvancedProperties | Where-Object Name -eq VSNAME).Value
+                $regRoot = ($sqlwmi.AdvancedProperties | Where-Object Name -EQ REGROOT).Value
+                $vsname = ($sqlwmi.AdvancedProperties | Where-Object Name -EQ VSNAME).Value
                 $instanceName = $sqlwmi.DisplayName.Replace('SQL Server (', '').Replace(')', '') # Don't clown, I don't know regex :(
 
                 if ([System.String]::IsNullOrEmpty($regRoot)) {

@@ -157,7 +157,7 @@ function Import-DbaCsv {
         The value which denotes a DbNull-value.
 
     .PARAMETER MaxQuotedFieldLength
-        The maxmimum length (in bytes) for any quoted field.
+        The maximum length (in bytes) for any quoted field.
 
     .PARAMETER SkipEmptyLine
         Skip empty lines.
@@ -183,7 +183,7 @@ function Import-DbaCsv {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: Migration, Import
+        Tags: Import, Data, Utility
         Author: Chrissy LeMaire (@cl), netnerds.net
 
         Website: https://dbatools.io

@@ -101,7 +101,7 @@ function Copy-DbaDbViewData {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: Migration
+        Tags: Table, Data
         Author: Stephen Swan (@jaxnoth)
 
         Website: https://dbatools.io

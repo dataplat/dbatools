@@ -41,7 +41,7 @@ function Remove-DbaDbData {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: Role, Database
+        Tags: Table, Data
         Author: Jess Pomfret (@jpomfret), jesspomfret.com
 
         Website: https://dbatools.io

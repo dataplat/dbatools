@@ -70,7 +70,7 @@ function Invoke-DbaDbPiiScan {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: Data Masking, Database, Personal Information, GDPR, Policy Compliance
+        Tags: DataMasking, GDPR, PII
         Author: Sander Stad (@sqlstad, sqlstad.nl)
 
         Website: https://dbatools.io

@@ -24,7 +24,7 @@ function Get-DbaErrorLogConfig {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: Instance, ErrorLog
+        Tags: Instance, ErrorLog, Logging
         Author: Shawn Melton (@wsmelton), https://wsmelton.github.io
 
         Website: https://dbatools.io

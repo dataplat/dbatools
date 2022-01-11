@@ -45,7 +45,7 @@ function Remove-DbaCredential {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: Credential
+        Tags: Security, Credential
         Author: Mikey Bronowski (@MikeyBronowski), https://bronowski.it
         dbatools PowerShell module (https://dbatools.io)
         Copyright: (c) 2021 by dbatools, licensed under MIT

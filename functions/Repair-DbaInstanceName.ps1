@@ -40,7 +40,7 @@ function Repair-DbaInstanceName {
         If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
     .NOTES
-        Tags: SPN
+        Tags: SPN, Instance, Utility
         Author: Chrissy LeMaire (@cl), netnerds.net
 
         Website: https://dbatools.io

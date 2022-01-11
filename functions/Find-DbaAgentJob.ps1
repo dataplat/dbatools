@@ -57,7 +57,7 @@ function Find-DbaAgentJob {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: Agent, Job
+        Tags: Agent, Job, Lookup
         Author: Stephen Bennett (https://sqlnotesfromtheunderground.wordpress.com/)
 
         Website: https://dbatools.io

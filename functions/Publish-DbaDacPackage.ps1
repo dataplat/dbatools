@@ -59,7 +59,7 @@ function Publish-DbaDacPackage {
         Path to the dac dll. If this is omitted, then the version of dac dll which is packaged with dbatools is used.
 
     .NOTES
-        Tags: Migration, Database, Dacpac, Bacpac
+        Tags: Deployment, Dacpac, Bacpac
         Author: Richie lee (@richiebzzzt)
 
         Website: https://dbatools.io

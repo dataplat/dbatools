@@ -19,7 +19,7 @@ function Get-DbaDbFileMapping {
     .PARAMETER Database
         The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
 
-   .PARAMETER InputObject
+    .PARAMETER InputObject
         Database object piped in from Get-DbaDatabase
 
     .PARAMETER EnableException
@@ -28,7 +28,7 @@ function Get-DbaDbFileMapping {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: Database
+        Tags: Storage, File, Data, Log, Backup
         Author: Chrissy LeMaire (@cl), netnerds.net | Andreas Jordan (@JordanOrdix), ordix.de
 
         Website: https://dbatools.io

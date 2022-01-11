@@ -91,7 +91,7 @@ $scriptBlock = {
                 $num_Error++
 
                 $Record = $null
-                [Sqlcollaborative.Dbatools.Message.LogHost]::OutQueueError.TryDequeue([ref]$Record)
+                $null = [Sqlcollaborative.Dbatools.Message.LogHost]::OutQueueError.TryDequeue([ref]$Record)
 
                 if ($Record) {
                     $Record | Export-Clixml -Path "$($root.FullName)\dbatools_$($pid)_error_$($num_Error).xml" -Depth 3
@@ -113,7 +113,7 @@ $scriptBlock = {
                 }
 
                 $Entry = $null
-                [Sqlcollaborative.Dbatools.Message.LogHost]::OutQueueLog.TryDequeue([ref]$Entry)
+                $null = [Sqlcollaborative.Dbatools.Message.LogHost]::OutQueueLog.TryDequeue([ref]$Entry)
                 if ($Entry) {
                     Add-Content -Path $CurrentFile -Value (ConvertTo-Csv -InputObject $Entry -NoTypeInformation)[1]
                 }

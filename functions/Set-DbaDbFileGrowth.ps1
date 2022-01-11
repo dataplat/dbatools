@@ -44,7 +44,7 @@ function Set-DbaDbFileGrowth {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: Database
+        Tags: Storage, Data, Log, File, Growth
         Author: Chrissy LeMaire (@cl), netnerds.net
         Website: https://dbatools.io
         Copyright: (c) 2021 by dbatools, licensed under MIT
@@ -101,7 +101,8 @@ function Set-DbaDbFileGrowth {
         }
 
         foreach ($db in $InputObject) {
-            $allfiles = @($db.FileGroups.Files, $db.LogFiles)
+            $allfiles = @($db.FileGroups.Files)
+            $allfiles += $db.LogFiles
             foreach ($file in $allfiles) {
                 if ($PSCmdlet.ShouldProcess($db.Parent.Name, "Setting filegrowth for $($file.Name) in $($db.name) to $($Growth)$($GrowthType)")) {
                     # SMO gave me some weird errors so I'm just gonna go with T-SQL

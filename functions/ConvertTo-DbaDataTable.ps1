@@ -31,7 +31,7 @@ function ConvertTo-DbaDataTable {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: DataTable, Table, Data
+        Tags: Table, Data
         Author: Chrissy LeMaire (@cl), netnerds.net
 
         Website: https://dbatools.io/

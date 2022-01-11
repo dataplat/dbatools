@@ -67,7 +67,7 @@ function Invoke-DbaDbDataGenerator {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: DataGeneration, Database
+        Tags: DataGeneration
         Author: Sander Stad (@sqlstad, sqlstad.nl)
 
         Website: https://dbatools.io

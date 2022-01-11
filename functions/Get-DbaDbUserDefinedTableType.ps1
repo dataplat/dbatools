@@ -4,7 +4,7 @@ function Get-DbaDbUserDefinedTableType {
         Gets database user defined table types
 
     .DESCRIPTION
-        Gets database user defined table tpes
+        Gets database user defined table types
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances

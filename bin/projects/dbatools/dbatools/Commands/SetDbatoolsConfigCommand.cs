@@ -394,7 +394,7 @@ namespace Sqlcollaborative.Dbatools.Commands
             object tempValue = Value;
 
             #region Validation
-            if (!DisableValidation.ToBool() && (_Config.Validation != null))
+            if (!DisableValidation.ToBool() && (!String.IsNullOrEmpty(_Config.Validation)))
             {
                 ScriptBlock tempValidation = ScriptBlock.Create(_Config.Validation.ToString());
                 //if ((tempValue != null) && ((tempValue as ICollection) != null))

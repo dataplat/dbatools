@@ -27,7 +27,7 @@ function Remove-DbaClientAlias {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: Alias
+        Tags: SqlClient, Alias
         Author: Chrissy LeMaire (@cl), netnerds.net
 
         Website: https://dbatools.io
@@ -38,15 +38,14 @@ function Remove-DbaClientAlias {
         https://dbatools.io/Remove-DbaClientAlias
 
     .EXAMPLE
-        PS C:\> Remove-DbaClientAlias -ComputerName workstationx -Alias sqlps
+        PS C:\> Remove-DbaClientAlias -ComputerName workstationX -Alias sqlps
 
-        Removes the sqlps SQL client alias on workstationx
+        Removes the sqlps SQL Client alias on workstationX
 
     .EXAMPLE
         PS C:\> Get-DbaClientAlias | Remove-DbaClientAlias
 
         Removes all SQL Server client aliases on the local computer
-
     #>
     [CmdletBinding(SupportsShouldProcess)]
     param (
@@ -58,7 +57,6 @@ function Remove-DbaClientAlias {
         [string[]]$Alias,
         [switch]$EnableException
     )
-
     begin {
         $scriptBlock = {
             $Alias = $args
@@ -97,7 +95,6 @@ function Remove-DbaClientAlias {
             }
         }
     }
-
     process {
         foreach ($computer in $ComputerName) {
             $null = Test-ElevationRequirement -ComputerName $computer -Continue

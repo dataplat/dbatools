@@ -61,8 +61,7 @@ function Install-DbaInstance {
         If the protocol fails to establish a connection
 
         Defaults:
-        * CredSSP when -Credential is specified - due to the fact that repository Path is usually a network share and credentials need to be passed to the remote host
-          to avoid the double-hop issue.
+        * CredSSP when -Credential is specified - due to the fact that repository Path is usually a network share and credentials need to be passed to the remote host to avoid the double-hop issue.
         * Default when -Credential is not specified. Will likely fail if a network path is specified.
 
     .PARAMETER Version
@@ -195,8 +194,9 @@ function Install-DbaInstance {
         Prompts you for confirmation before executing any changing operations within the command.
 
     .NOTES
-        Tags: Install
+        Tags: Deployment, Install
         Author: Reitse Eskens (@2meterDBA), Kirill Kravtsov (@nvarscar)
+
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT

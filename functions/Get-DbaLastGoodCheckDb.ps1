@@ -45,7 +45,7 @@ function Get-DbaLastGoodCheckDb {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: CHECKDB, Database
+        Tags: CHECKDB, Database, Utility
         Author: Jakob Bindslet (jakob@bindslet.dk)
 
         Website: https://dbatools.io

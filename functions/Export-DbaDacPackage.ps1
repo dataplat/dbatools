@@ -56,7 +56,7 @@ function Export-DbaDacPackage {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: Migration, Database, Dacpac
+        Tags: Dacpac, Deployment
         Author: Richie lee (@richiebzzzt)
 
         Website: https://dbatools.io

@@ -1,7 +1,7 @@
 function Invoke-DbaDbDecryptObject {
     <#
     .SYNOPSIS
-        Invoke-DbaDbDecryptObject returns the decrypted version of an object
+        Returns the decrypted version of an object
 
     .DESCRIPTION
         SQL Server provides an option to encrypt the code used in various types of objects.
@@ -52,7 +52,7 @@ function Invoke-DbaDbDecryptObject {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: Encryption, Decrypt, Database
+        Tags: Encryption, Decrypt, Utility
         Author: Sander Stad (@sqlstad), sqlstad.nl
 
         Website: https://dbatools.io

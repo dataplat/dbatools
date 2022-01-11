@@ -9,7 +9,7 @@ function New-DbaScriptingOption {
         See https://msdn.microsoft.com/en-us/library/microsoft.sqlserver.management.smo.scriptingoptions.aspx for more information
 
     .NOTES
-        Tags: Migration, Backup, DR
+        Tags: General, Script, Object
         Author: Chrissy LeMaire (@cl), netnerds.net
 
         Website: https://dbatools.io
