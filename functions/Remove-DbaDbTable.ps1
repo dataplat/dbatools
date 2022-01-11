@@ -59,19 +59,13 @@ function Remove-DbaDbTable {
 
         Removes table1, table2, table3 from db1 and db2 on the local and sql2016 SQL Server instances.
     #>
-    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High')]
+    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "High", DefaultParameterSetName = "Default")]
     param (
-        [Parameter(ParameterSetName = 'NonPipeline', Mandatory = $true, Position = 0)]
         [DbaInstanceParameter[]]$SqlInstance,
-        [Parameter(ParameterSetName = 'NonPipeline')]
         [PSCredential]$SqlCredential,
-        [Parameter(ParameterSetName = 'NonPipeline')]
         [string[]]$Database,
-        [Parameter(ParameterSetName = 'NonPipeline')]
         [string[]]$Table,
-        [parameter(ValueFromPipeline, ParameterSetName = 'Pipeline', Mandatory = $true)]
         [Microsoft.SqlServer.Management.Smo.Table[]]$InputObject,
-        [Parameter(ParameterSetName = 'NonPipeline')][Parameter(ParameterSetName = 'Pipeline')]
         [switch]$EnableException
     )
 
@@ -80,6 +74,10 @@ function Remove-DbaDbTable {
     }
 
     process {
+        if (-not $PSBoundParameters.SqlInstance -and -not $PSBoundParameters.InputObject) {
+            Stop-Function -Message "You must specify either SqlInstance or InputObject"
+            return
+        }
         if ($SqlInstance) {
             $params = $PSBoundParameters
             $null = $params.Remove('WhatIf')
