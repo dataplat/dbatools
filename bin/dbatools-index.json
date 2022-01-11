@@ -1,7 +1,7 @@
 ﻿[
     {
         "Name":  "Add-DbaAgDatabase",
-        "Description":  "Adds database(s) to an Availability Group on a SQL Server instance.\n\nAfter checking for prerequisites, the commands runs these five steps for every database:\nStep 1: Setting seeding mode if needed.\n    If -SeedingMode is used and the current seeding mode of the replica is not in the desired mode, the seeding mode of the replica is changed.\n    The seeding mode will not be changed back but stay in this mode.\n    If the seeding mode is changed to Automatic, the necessary rights to create databases will be granted.\nStep 2: Running backup and restore if needed.\n    Action is only taken for replicas with a desired seeding mode of Manual and where the database does not yet exist.\n    If -UseLastBackup is used, the restore will be performed based on the backup history of the database.\n    Otherwise a full and log backup will be taken at the primary and those will be restored at the replica.\nStep 3: Add the database to the Availability Group on the primary replica.\nStep 4: Add the database to the Availability Group on the secondary replicas.\nStep 5: Wait for the database to finish joining the Availability Group on the secondary replicas.\n\nUse Test-DbaAvailabilityGroup with -AddDatabase to test if all prerequisites are met.\n\nIn case you need a special setup for the database at the replicas, please do the backup restore part\n\nIf you have special requirements for the setup for the database at the replicas,\nperform the backup and restore part with Backup-DbaDatabase and Restore-DbaDatabase in advance.\nPlease make sure that the last log backup has been restored before running Add-DbaAgDatabase.\n\nKnown limitations:\n\nIt is not possible to use this command to add the database to a newly added replica,\nbecause the command fails if the database is already part of the Availability Group.\nThis limitation will be removed in a later version.",
+        "Description":  "Adds database(s) to an Availability Group on a SQL Server instance.\n\nAfter checking for prerequisites, the commands runs these five steps for every database:\nStep 1: Setting seeding mode if needed.\n    If -SeedingMode is used and the current seeding mode of the replica is not in the desired mode, the seeding mode of the replica is changed.\n    The seeding mode will not be changed back but stay in this mode.\n    If the seeding mode is changed to Automatic, the necessary rights to create databases will be granted.\nStep 2: Running backup and restore if needed.\n    Action is only taken for replicas with a desired seeding mode of Manual and where the database does not yet exist.\n    If -UseLastBackup is used, the restore will be performed based on the backup history of the database.\n    Otherwise a full and log backup will be taken at the primary and those will be restored at the replica.\nStep 3: Add the database to the Availability Group on the primary replica.\n    This step is skipped, if the database is already part of the Availability Group.\nStep 4: Add the database to the Availability Group on the secondary replicas.\n    This step is skipped for those replicas, where the database is already joined to the Availability Group.\nStep 5: Wait for the database to finish joining the Availability Group on the secondary replicas.\n\nUse Test-DbaAvailabilityGroup with -AddDatabase to test if all prerequisites are met.\n\nIf you have special requirements for the setup for the database at the replicas,\nperform the backup and restore part with Backup-DbaDatabase and Restore-DbaDatabase in advance.\nPlease make sure that the last log backup has been restored before running Add-DbaAgDatabase.",
         "Tags":  [
                      "AG",
                      "HA"
@@ -52,7 +52,7 @@
                        ],
                        [
                            "Secondary",
-                           "Not required - the command will figure this out. But use this parameter if secondary replicas listen on a non default port.",
+                           "Not required - the command will figure this out. But use this parameter if secondary replicas listen on a non default port.\r\nThis parameter can be used to only add the databases on specific secondary replicas.",
                            "",
                            false,
                            "false",
@@ -22172,12 +22172,12 @@
         "CommandName":  "Get-DbaNetworkCertificate",
         "Availability":  "Windows only",
         "Links":  "https://dbatools.io/Get-DbaNetworkCertificate",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaNetworkCertificate\nGets computer certificates on localhost that are candidates for using with SQL Server\u0027s network encryption\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaNetworkCertificate -ComputerName sql2016\nGets computer certificates on sql2016 that are being used for SQL Server network encryption",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaNetworkCertificate -SqlInstance sql2016\nGets computer certificate for the standard instance on sql2016 that is being used for SQL Server network encryption\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaNetworkCertificate -SqlInstance server1\\sql2017\nGets computer certificate for the named instance sql2017 on server1 that is being used for SQL Server network encryption",
         "Params":  [
                        [
+                           "SqlInstance",
+                           "The target SQL Server instance or instances. Defaults to standard instance on localhost. If target is a cluster, you must specify the distinct nodes.",
                            "ComputerName",
-                           "The target SQL Server instance or instances. Defaults to localhost. If target is a cluster, you must specify the distinct nodes.",
-                           "",
                            false,
                            "true (ByValue)",
                            "$env:COMPUTERNAME",
@@ -22202,7 +22202,7 @@
                            ""
                        ]
                    ],
-        "Syntax":  "Get-DbaNetworkCertificate [[-ComputerName] \u003cDbaInstanceParameter[]\u003e] [[-Credential] \u003cPSCredential\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Get-DbaNetworkCertificate [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-Credential] \u003cPSCredential\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Get-DbaNetworkConfiguration",
@@ -46966,6 +46966,96 @@
         "Syntax":  "Remove-DbaDbSynonym [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cString[]\u003e] [[-ExcludeDatabase] \u003cString[]\u003e] [[-Schema] \u003cString[]\u003e] [[-ExcludeSchema] \u003cString[]\u003e] [[-Synonym] \u003cString[]\u003e] [[-ExcludeSynonym] \u003cString[]\u003e] [[-InputObject] \u003cObject[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
+        "Name":  "Remove-DbaDbTable",
+        "Description":  "Removes database table(s), with supported piping from Get-DbaDbTable.",
+        "Tags":  [
+                     "Table",
+                     "Database"
+                 ],
+        "Synopsis":  "Removes database table(s) from each database and SQL Server instance.",
+        "Alias":  "",
+        "Author":  "Andreas Jordan (@JordanOrdix), ordix.de",
+        "CommandName":  "Remove-DbaDbTable",
+        "Availability":  "Windows, Linux, macOS",
+        "Links":  "https://dbatools.io/Remove-DbaDbTable",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eRemove-DbaDbTable -SqlInstance localhost, sql2016 -Database db1, db2 -Table table1, table2, table3\nRemoves table1, table2, table3 from db1 and db2 on the local and sql2016 SQL Server instances.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003e$tables = Get-DbaDbTable -SqlInstance localhost, sql2016 -Database db1, db2 -Table table1, table2, table3\nPS C:\\\u003e $tables | Remove-DbaDbTable\nRemoves table1, table2, table3 from db1 and db2 on the local and sql2016 SQL Server instances.",
+        "Params":  [
+                       [
+                           "SqlInstance",
+                           "The target SQL Server instance or instances.",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "SqlCredential",
+                           "Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).\nWindows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.\nFor MFA support, please use Connect-DbaInstance.",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "Database",
+                           "The target database(s).",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "Table",
+                           "The name(s) of the table(s).",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "InputObject",
+                           "Allows piping from Get-DbaDbTable.",
+                           "",
+                           false,
+                           "true (ByValue)",
+                           "",
+                           ""
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "",
+                           false,
+                           "false",
+                           "False",
+                           ""
+                       ],
+                       [
+                           "WhatIf",
+                           "Shows what would happen if the command were to run. No actions are actually performed.",
+                           "wi",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "Confirm",
+                           "Prompts you for confirmation before executing any changing operations within the command.\r\nThis is the default. Use -Confirm:$false to suppress these prompts.",
+                           "cf",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ]
+                   ],
+        "Syntax":  "Remove-DbaDbTable [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cString[]\u003e] [[-Table] \u003cString[]\u003e] [[-InputObject] \u003cTable[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+    },
+    {
         "Name":  "Remove-DbaDbTableData",
         "Description":  "This command does a batch delete of table data using the technique described by Aaron Bertrand here: https://sqlperformance.com/2013/03/io-subsystem/chunk-deletes. The main goal of this command is to ensure that the log file size is controlled while deleting data. This command can be used for doing both very large deletes or small deletes. Foreign keys are not temporarily removed, so the caller needs to perform deletes in the correct order with dependent tables or enable cascading deletes. When a database is using the full or bulk_logged recovery model this command will take log backups at the end of each batch if the -LogBackupPath or -AzureBaseUrl param is specified. If the database is using the simple recovery model then CHECKPOINTs will be performed for on-prem SQL Server databases. The object returned will contain metadata about the batch deletion process including the log backup details.\n\nThere are two categories of use cases for this command:\n1. Simplistic deletions from a table. In this scenario use the -Table and -BatchSize parameters. The DELETE statement is auto-generated by the this command.\n2. Complex deletions based on a join, where clause, or an order by clause. In this scenario use the -DeleteSql parameter to specify the DELETE statement.",
         "Tags":  [
@@ -47748,6 +47838,96 @@
                        ]
                    ],
         "Syntax":  "Remove-DbaLinkedServer [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-LinkedServer] \u003cString[]\u003e] [[-InputObject] \u003cObject[]\u003e] [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+    },
+    {
+        "Name":  "Remove-DbaLinkedServerLogin",
+        "Description":  "Removes a linked server login.",
+        "Tags":  [
+                     "Security",
+                     "Server"
+                 ],
+        "Synopsis":  "Removes a linked server login.",
+        "Alias":  "",
+        "Author":  "Adam Lancaster https://github.com/lancasteradam",
+        "CommandName":  "Remove-DbaLinkedServerLogin",
+        "Availability":  "Windows, Linux, macOS",
+        "Links":  "https://dbatools.io/Remove-DbaLinkedServerLogin",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eRemove-DbaLinkedServerLogin -SqlInstance sql01 -LinkedServer linkedServer1 -LocalLogin linkedServerLogin1 -Confirm:$false\nRemoves the linkedServerLogin1 from the linkedServer1 linked server on the sql01 instance.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003e$instance = Connect-DbaInstance -SqlInstance sql01\nPS C:\\\u003e$instance | Remove-DbaLinkedServerLogin -LinkedServer linkedServer1 -LocalLogin linkedServerLogin1 -Confirm:$false\nPasses in a SqlInstance via pipeline and removes the linkedServerLogin1 from the linkedServer1 linked server.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003e$linkedServer1 = Get-DbaLinkedServer -SqlInstance sql01 -LinkedServer linkedServer1\nPS C:\\\u003e$linkedServer1 | Remove-DbaLinkedServerLogin -LocalLogin linkedServerLogin1 -Confirm:$false\nPasses in a linked server via pipeline and removes the linkedServerLogin1.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003e$linkedServerLogin1 = Get-DbaLinkedServerLogin -SqlInstance sql01 -LinkedServer linkedServer1 -LocalLogin linkedServerLogin1\nPS C:\\\u003e$linkedServerLogin1 | Remove-DbaLinkedServerLogin -Confirm:$false\nPasses in a linked server login via pipeline and removes it.",
+        "Params":  [
+                       [
+                           "SqlInstance",
+                           "The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function\r\nto be executed against multiple SQL Server instances.",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "SqlCredential",
+                           "Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).\nWindows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.\nFor MFA support, please use Connect-DbaInstance.",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "LinkedServer",
+                           "The name(s) of the linked server(s).",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "LocalLogin",
+                           "The name(s) of the linked server login(s).",
+                           "",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "InputObject",
+                           "Allows piping from Connect-DbaInstance, Get-DbaLinkedServer, and Get-DbaLinkedServerLogin.",
+                           "",
+                           false,
+                           "true (ByValue)",
+                           "",
+                           ""
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "",
+                           false,
+                           "false",
+                           "False",
+                           ""
+                       ],
+                       [
+                           "WhatIf",
+                           "Shows what would happen if the command were to run. No actions are actually performed.",
+                           "wi",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ],
+                       [
+                           "Confirm",
+                           "Prompts you for confirmation before executing any changing operations within the command.",
+                           "cf",
+                           false,
+                           "false",
+                           "",
+                           ""
+                       ]
+                   ],
+        "Syntax":  "Remove-DbaLinkedServerLogin [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-LinkedServer] \u003cString[]\u003e] [[-LocalLogin] \u003cString[]\u003e] [[-InputObject] \u003cObject[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "Name":  "Remove-DbaLogin",
