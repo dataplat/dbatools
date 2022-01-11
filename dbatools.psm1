@@ -855,6 +855,7 @@ $script:xplat = @(
     'New-DbaRgWorkloadGroup',
     'Remove-DbaRgWorkloadGroup',
     'New-DbaLinkedServerLogin',
+    'Remove-DbaLinkedServerLogin',
     'Remove-DbaCredential',
     'Remove-DbaAgentProxy'
 )
