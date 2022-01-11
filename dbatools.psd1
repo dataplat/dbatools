@@ -721,6 +721,7 @@
         'Remove-DbaRgWorkloadGroup',
         'Get-DbaLinkedServerLogin',
         'New-DbaLinkedServerLogin',
+        'Remove-DbaLinkedServerLogin',
         'Remove-DbaCredential',
         'Remove-DbaAgentProxy'
     )
