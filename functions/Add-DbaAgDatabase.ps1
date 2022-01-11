@@ -16,22 +16,16 @@ function Add-DbaAgDatabase {
             If -UseLastBackup is used, the restore will be performed based on the backup history of the database.
             Otherwise a full and log backup will be taken at the primary and those will be restored at the replica.
         Step 3: Add the database to the Availability Group on the primary replica.
+            This step is skipped, if the database is already part of the Availability Group.
         Step 4: Add the database to the Availability Group on the secondary replicas.
+            This step is skipped for those replicas, where the database is already joined to the Availability Group.
         Step 5: Wait for the database to finish joining the Availability Group on the secondary replicas.
 
         Use Test-DbaAvailabilityGroup with -AddDatabase to test if all prerequisites are met.
 
-        In case you need a special setup for the database at the replicas, please do the backup restore part
-
         If you have special requirements for the setup for the database at the replicas,
         perform the backup and restore part with Backup-DbaDatabase and Restore-DbaDatabase in advance.
         Please make sure that the last log backup has been restored before running Add-DbaAgDatabase.
-
-        Known limitations:
-
-        It is not possible to use this command to add the database to a newly added replica,
-        because the command fails if the database is already part of the Availability Group.
-        This limitation will be removed in a later version.
 
     .PARAMETER SqlInstance
         The primary replica of the Availability Group. Server version must be SQL Server version 2012 or higher.
@@ -51,6 +45,7 @@ function Add-DbaAgDatabase {
 
     .PARAMETER Secondary
         Not required - the command will figure this out. But use this parameter if secondary replicas listen on a non default port.
+        This parameter can be used to only add the databases on specific secondary replicas.
 
     .PARAMETER SecondarySqlCredential
         Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
@@ -321,33 +316,38 @@ function Add-DbaAgDatabase {
                     Write-Message -Level Verbose -Message "Object of type AvailabilityDatabase for $($db.Name) will be created. $($progress['CurrentOperation'])"
                     Write-Progress @progress
 
-                    $agDb = New-Object Microsoft.SqlServer.Management.Smo.AvailabilityDatabase($ag, $db.Name)
-                    $progress['CurrentOperation'] = "State of AvailabilityDatabase for $($db.Name) is $($agDb.State)."
-                    Write-Message -Level Verbose -Message "Object of type AvailabilityDatabase for $($db.Name) is created. $($progress['CurrentOperation'])"
-                    Write-Progress @progress
-
-                    $agDb.Create()
-                    $progress['CurrentOperation'] = "State of AvailabilityDatabase for $($db.Name) is $($agDb.State)."
-                    Write-Message -Level Verbose -Message "Method Create of AvailabilityDatabase for $($db.Name) is executed. $($progress['CurrentOperation'])"
-                    Write-Progress @progress
-
-                    # Wait for state to become Existing
-                    # https://docs.microsoft.com/en-us/dotnet/api/microsoft.sqlserver.management.smo.sqlsmostate
-                    $timeout = (Get-Date).AddSeconds($timeoutExisting)
-                    while ($agDb.State -ne 'Existing') {
-                        $progress['CurrentOperation'] = "State of AvailabilityDatabase for $($db.Name) is $($agDb.State), waiting for Existing."
-                        Write-Message -Level Verbose -Message $progress['CurrentOperation']
+                    if ($ag.AvailabilityDatabases.Name -contains $db.Name) {
+                        Write-Message -Level Verbose -Message "Database $($db.Name) is already joined to Availability Group $AvailabilityGroup. No action will be taken on the primary replica."
+                    } else {
+                        $agDb = Get-DbaAgDatabase -SqlInstance $server -AvailabilityGroup $ag.Name -Database $db.Name
+                        $agDb = New-Object Microsoft.SqlServer.Management.Smo.AvailabilityDatabase($ag, $db.Name)
+                        $progress['CurrentOperation'] = "State of AvailabilityDatabase for $($db.Name) is $($agDb.State)."
+                        Write-Message -Level Verbose -Message "Object of type AvailabilityDatabase for $($db.Name) is created. $($progress['CurrentOperation'])"
                         Write-Progress @progress
 
-                        if ((Get-Date) -gt $timeout) {
-                            Stop-Function -Message "Failed to add database $($db.Name) to Availability Group $AvailabilityGroup. Timeout of $timeoutExisting seconds is reached. State of AvailabilityDatabase for $($db.Name) is still $($agDb.State)." -Continue
-                        }
-                        Start-Sleep -Milliseconds $waitWhile
-                        $agDb.Refresh()
-                    }
+                        $agDb.Create()
+                        $progress['CurrentOperation'] = "State of AvailabilityDatabase for $($db.Name) is $($agDb.State)."
+                        Write-Message -Level Verbose -Message "Method Create of AvailabilityDatabase for $($db.Name) is executed. $($progress['CurrentOperation'])"
+                        Write-Progress @progress
 
-                    # Get customized SMO for the output
-                    $output += Get-DbaAgDatabase -SqlInstance $server -AvailabilityGroup $AvailabilityGroup -Database $db.Name -EnableException
+                        # Wait for state to become Existing
+                        # https://docs.microsoft.com/en-us/dotnet/api/microsoft.sqlserver.management.smo.sqlsmostate
+                        $timeout = (Get-Date).AddSeconds($timeoutExisting)
+                        while ($agDb.State -ne 'Existing') {
+                            $progress['CurrentOperation'] = "State of AvailabilityDatabase for $($db.Name) is $($agDb.State), waiting for Existing."
+                            Write-Message -Level Verbose -Message $progress['CurrentOperation']
+                            Write-Progress @progress
+
+                            if ((Get-Date) -gt $timeout) {
+                                Stop-Function -Message "Failed to add database $($db.Name) to Availability Group $AvailabilityGroup. Timeout of $timeoutExisting seconds is reached. State of AvailabilityDatabase for $($db.Name) is still $($agDb.State)." -Continue
+                            }
+                            Start-Sleep -Milliseconds $waitWhile
+                            $agDb.Refresh()
+                        }
+
+                        # Get customized SMO for the output
+                        $output += Get-DbaAgDatabase -SqlInstance $server -AvailabilityGroup $AvailabilityGroup -Database $db.Name -EnableException
+                    }
                 } catch {
                     Stop-Function -Message "Failed to add database $($db.Name) to Availability Group $AvailabilityGroup" -ErrorRecord $_ -Continue
                 }
@@ -370,52 +370,57 @@ function Add-DbaAgDatabase {
                         Stop-Function -Message "Failed to get database $($db.Name) on replica $replicaName." -ErrorRecord $_ -Continue
                     }
 
-                    # Save SMO in array for the output
-                    $output += $replicaAgDb
-                    # Save SMO in hashtable for further processing
-                    $replicaAgDbSMO[$replicaName] = $replicaAgDb
-                    # Save target targetSynchronizationState for further processing
-                    # https://docs.microsoft.com/en-us/dotnet/api/microsoft.sqlserver.management.smo.availabilityreplicaavailabilitymode
-                    # https://docs.microsoft.com/en-us/dotnet/api/microsoft.sqlserver.management.smo.availabilitydatabasesynchronizationstate
-                    $availabilityMode = $ag.AvailabilityReplicas[$replicaName].AvailabilityMode
-                    if ($availabilityMode -eq 'AsynchronousCommit') {
-                        $targetSynchronizationState[$replicaName] = 'Synchronizing'
-                    } elseif ($availabilityMode -eq 'SynchronousCommit') {
-                        $targetSynchronizationState[$replicaName] = 'Synchronized'
+                    if ($replicaAgDb.IsJoined) {
+                        Write-Message -Level Verbose -Message "Database $($db.Name) is already joined to Availability Group $AvailabilityGroup. No action will be taken on the replica $replicaName."
+                        $replicaAgDbSMO[$replicaName] = $replicaAgDb
                     } else {
-                        $failure = $true
-                        Stop-Function -Message "Unexpected value '$availabilityMode' for AvailabilityMode on replica $replicaName." -Continue
-                    }
+                        # Save SMO in array for the output
+                        $output += $replicaAgDb
+                        # Save SMO in hashtable for further processing
+                        $replicaAgDbSMO[$replicaName] = $replicaAgDb
+                        # Save target targetSynchronizationState for further processing
+                        # https://docs.microsoft.com/en-us/dotnet/api/microsoft.sqlserver.management.smo.availabilityreplicaavailabilitymode
+                        # https://docs.microsoft.com/en-us/dotnet/api/microsoft.sqlserver.management.smo.availabilitydatabasesynchronizationstate
+                        $availabilityMode = $ag.AvailabilityReplicas[$replicaName].AvailabilityMode
+                        if ($availabilityMode -eq 'AsynchronousCommit') {
+                            $targetSynchronizationState[$replicaName] = 'Synchronizing'
+                        } elseif ($availabilityMode -eq 'SynchronousCommit') {
+                            $targetSynchronizationState[$replicaName] = 'Synchronized'
+                        } else {
+                            $failure = $true
+                            Stop-Function -Message "Unexpected value '$availabilityMode' for AvailabilityMode on replica $replicaName." -Continue
+                        }
 
-                    $progress['CurrentOperation'] = "State of AvailabilityDatabase for $($db.Name) on replica $replicaName is $($replicaAgDb.State)."
-                    Write-Message -Level Verbose -Message $progress['CurrentOperation']
-                    Write-Progress @progress
-
-                    # https://docs.microsoft.com/en-us/dotnet/api/microsoft.sqlserver.management.smo.sqlsmostate
-                    $timeout = (Get-Date).AddSeconds($timeoutExisting)
-                    while ($replicaAgDb.State -ne 'Existing') {
-                        $progress['CurrentOperation'] = "State of AvailabilityDatabase for $($db.Name) on replica $replicaName is $($replicaAgDb.State), waiting for Existing."
+                        $progress['CurrentOperation'] = "State of AvailabilityDatabase for $($db.Name) on replica $replicaName is $($replicaAgDb.State)."
                         Write-Message -Level Verbose -Message $progress['CurrentOperation']
                         Write-Progress @progress
 
-                        if ((Get-Date) -gt $timeout) {
-                            Stop-Function -Message "Failed to add database $($db.Name) on replica $replicaName. Timeout of $timeoutExisting seconds is reached. State of AvailabilityDatabase for $db is still $($replicaAgDb.State)." -Continue
-                        }
-                        Start-Sleep -Milliseconds $waitWhile
-                        $replicaAgDb.Refresh()
-                    }
-
-                    # With automatic seeding, .JoinAvailablityGroup() is not needed, just wait for the magic to happen
-                    if ($ag.AvailabilityReplicas[$replicaName].SeedingMode -ne 'Automatic') {
-                        try {
-                            $progress['CurrentOperation'] = "Joining database $($db.Name) on replica $replicaName."
+                        # https://docs.microsoft.com/en-us/dotnet/api/microsoft.sqlserver.management.smo.sqlsmostate
+                        $timeout = (Get-Date).AddSeconds($timeoutExisting)
+                        while ($replicaAgDb.State -ne 'Existing') {
+                            $progress['CurrentOperation'] = "State of AvailabilityDatabase for $($db.Name) on replica $replicaName is $($replicaAgDb.State), waiting for Existing."
                             Write-Message -Level Verbose -Message $progress['CurrentOperation']
                             Write-Progress @progress
 
-                            $replicaAgDb.JoinAvailablityGroup()
-                        } catch {
-                            $failure = $true
-                            Stop-Function -Message "Failed to join database $($db.Name) on replica $replicaName." -ErrorRecord $_ -Continue
+                            if ((Get-Date) -gt $timeout) {
+                                Stop-Function -Message "Failed to add database $($db.Name) on replica $replicaName. Timeout of $timeoutExisting seconds is reached. State of AvailabilityDatabase for $db is still $($replicaAgDb.State)." -Continue
+                            }
+                            Start-Sleep -Milliseconds $waitWhile
+                            $replicaAgDb.Refresh()
+                        }
+
+                        # With automatic seeding, .JoinAvailablityGroup() is not needed, just wait for the magic to happen
+                        if ($ag.AvailabilityReplicas[$replicaName].SeedingMode -ne 'Automatic') {
+                            try {
+                                $progress['CurrentOperation'] = "Joining database $($db.Name) on replica $replicaName."
+                                Write-Message -Level Verbose -Message $progress['CurrentOperation']
+                                Write-Progress @progress
+
+                                $replicaAgDb.JoinAvailablityGroup()
+                            } catch {
+                                $failure = $true
+                                Stop-Function -Message "Failed to join database $($db.Name) on replica $replicaName." -ErrorRecord $_ -Continue
+                            }
                         }
                     }
                 }
@@ -444,6 +449,11 @@ function Add-DbaAgDatabase {
                     $stillWaiting = $false
                     $failure = $false
                     foreach ($replicaName in $replicaServerSMO.Keys) {
+                        if (-not $targetSynchronizationState[$replicaName]) {
+                            Write-Message -Level Verbose -Message "Database $($db.Name) is already joined to Availability Group $AvailabilityGroup. No action will be taken on the replica $replicaName."
+                            continue
+                        }
+
                         if (-not $replicaAgDbSMO[$replicaName].IsJoined -or $replicaAgDbSMO[$replicaName].SynchronizationState -ne $targetSynchronizationState[$replicaName]) {
                             $stillWaiting = $true
                         }
