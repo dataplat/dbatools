@@ -85,7 +85,6 @@ function Remove-DbaLinkedServerLogin {
         $linkedServerLoginsToDrop = @()
     }
     process {
-
         if ($SqlInstance -and (-not $LinkedServer)) {
             Stop-Function -Message "LinkedServer is required when SqlInstance is specified"
             return
@@ -95,31 +94,53 @@ function Remove-DbaLinkedServerLogin {
             $linkedServerLoginsToDrop += Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential | Get-DbaLinkedServerLogin -LinkedServer $LinkedServer -LocalLogin $LocalLogin
         }
 
-        foreach ($obj in $InputObject) {
+        foreach ($object in $InputObject) {
 
-            if ($obj -is [Microsoft.SqlServer.Management.Smo.Server]) {
+            if ($object -is [Microsoft.SqlServer.Management.Smo.Server]) {
 
                 if (Test-Bound -Not -ParameterName LinkedServer) {
                     Stop-Function -Message "LinkedServer is required" -Continue
                 }
 
-                $linkedServerLoginsToDrop += Get-DbaLinkedServerLogin -SqlInstance $obj -LinkedServer $LinkedServer -LocalLogin $LocalLogin
-            } elseif ($obj -is [Microsoft.SqlServer.Management.Smo.LinkedServer]) {
-                $linkedServerLoginsToDrop += $obj | Get-DbaLinkedServerLogin -LocalLogin $LocalLogin
-            } elseif ($obj -is [Microsoft.SqlServer.Management.Smo.LinkedServerLogin]) {
-                $linkedServerLoginsToDrop += $obj
+                $linkedServerLoginsToDrop += Get-DbaLinkedServerLogin -SqlInstance $object -LinkedServer $LinkedServer -LocalLogin $LocalLogin
+            } elseif ($object -is [Microsoft.SqlServer.Management.Smo.LinkedServer]) {
+                $linkedServerLoginsToDrop += $object | Get-DbaLinkedServerLogin -LocalLogin $LocalLogin
+            } elseif ($object -is [Microsoft.SqlServer.Management.Smo.LinkedServerLogin]) {
+                $linkedServerLoginsToDrop += $object
             }
         }
     }
     end {
 
         foreach ($lsLoginToDrop in $linkedServerLoginsToDrop) {
+            # grab info to be used in output.
+            $lsqlinstance = $lsLoginToDrop.Parent.Parent.Name
+            $lserver = $lsLoginToDrop.Parent.Name
+            $lsqlcomputername = $lsLoginToDrop.Parent.Parent.ComputerName
+            $lsqlinstancename = $lsLoginToDrop.Parent.Parent.ServiceName
+            $lsloginname = $lsLoginToDrop.Name
 
-            if ($Pscmdlet.ShouldProcess($lsLoginToDrop.Parent.Name, "Removing the linked server login $($lsLoginToDrop.Name) for the linked server $($lsLoginToDrop.Parent.Name) on $($lsLoginToDrop.Parent.Parent.Name)")) {
+            if ($Pscmdlet.ShouldProcess($lsqlinstance, "Removing the linked server login $lsloginname for the linked server $lserver on $lsqlinstance")) {
                 try {
                     $lsLoginToDrop.Drop()
+                    [PSCustomObject]@{
+                        ComputerName = $lsqlcomputername
+                        InstanceName = $lsqlinstancename
+                        SqlInstance  = $lsqlinstance
+                        LinkedServer = $lserver
+                        Login        = $lsLoginToDrop.Name
+                        Status       = "Removed"
+                    }
                 } catch {
-                    Stop-Function -Message "Failure on $($lsLoginToDrop.Parent.Parent.Name) to remove the linked server login $($lsLoginToDrop.Name) for the linked server $($lsLoginToDrop.Parent.Name)" -ErrorRecord $_ -Continue
+                    Stop-Function -Message "Failure on $lsqlinstance to remove the linked server login $lsloginname for the linked server $lserver" -ErrorRecord $_ -Continue
+                    [PSCustomObject]@{
+                        ComputerName = $lsqlcomputername
+                        InstanceName = $lsqlinstancename
+                        SqlInstance  = $lsqlinstance
+                        LinkedServer = $lserver
+                        Login        = $lsLoginToDrop.Name
+                        Status       = "Failure"
+                    }
                 }
             }
         }
