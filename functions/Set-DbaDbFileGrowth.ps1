@@ -101,7 +101,8 @@ function Set-DbaDbFileGrowth {
         }
 
         foreach ($db in $InputObject) {
-            $allfiles = @($db.FileGroups.Files + $db.LogFiles)
+            $allfiles = @($db.FileGroups.Files)
+            $allfiles += $db.LogFiles
             foreach ($file in $allfiles) {
                 if ($PSCmdlet.ShouldProcess($db.Parent.Name, "Setting filegrowth for $($file.Name) in $($db.name) to $($Growth)$($GrowthType)")) {
                     # SMO gave me some weird errors so I'm just gonna go with T-SQL
