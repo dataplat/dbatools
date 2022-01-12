@@ -1,10 +1,12 @@
 function New-DbaDbEncryptionKey {
     <#
     .SYNOPSIS
-        Creates a new database encryption key using encryption by server certificate
+        Creates a new database encryption key that is encrypted by the instance certificate
 
     .DESCRIPTION
         Creates a new database encryption key. If no database is specified, the encryption key will be created in master.
+
+        In order to encrypt the database encryption key with an asymmetric key, you must use an asymmetric key that resides on an extensible key management provider.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.
@@ -36,7 +38,9 @@ function New-DbaDbEncryptionKey {
         Enables piping from Get-DbaDatabase
 
     .PARAMETER Force
-        Create an encryption key even though the specified cert has not been backed up
+        When a certificate encryptor is used, this command will refuse to create an encryption key for a certificate that has not been backed up
+
+        Use Force to create an encryption key even though the specified cert has not been backed up
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
@@ -61,15 +65,19 @@ function New-DbaDbEncryptionKey {
         https://dbatools.io/New-DbaDbEncryptionKey
 
     .EXAMPLE
-        PS C:\> New-DbaDbEncryptionKey -SqlInstance Server1
+        PS C:\> $dbs = Get-DbaDatabase -SqlInstance sql01 -Database pubs
+        PS C:\> $db | New-DbaDbEncryptionKey
 
-        An encryption key will be used to do everything.
+        Creates an Aes256 encryption key for the pubs database on sql01. Automatically selects a cert database in master if one (and only one) non-system certificate exists.
+
+        Prompts for confirmation.
 
     .EXAMPLE
-        PS C:\> New-DbaDbEncryptionKey -SqlInstance Server1 -Database db1 -Confirm:$false
+        PS C:\> New-DbaDbEncryptionKey -SqlInstance sql01 -Database db1 -EncryptorName "sql01 cert" -EncryptionAlgorithm Aes192 -Confirm:$false
 
-        Suppresses all prompts then hits it
+        Creates an Aes192 encryption key for the pubs database on sql01 using the certiciated named "sql01 cert" in master.
 
+        Does not prompt for confirmation.
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low")]
     param (

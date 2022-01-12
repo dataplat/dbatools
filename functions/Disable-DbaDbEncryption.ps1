@@ -24,14 +24,12 @@ function Disable-DbaDbEncryption {
         The database that where encryption will be disabled
 
     .PARAMETER NoEncryptionKeyDrop
-        Encryption is not fully disabled until the Encryption Key is dropped
-
-        Consequently, this command will drop the key by default
+        Encryption is not fully disabled until the Encryption Key is dropped. Consequently, Disable-DbaDbEncryption will drop the key by default.
 
         Use this to keep the encryption key. Note that if you keep your key, your database will not be fully decrypted.
 
     .PARAMETER InputObject
-        Disables pipeline input from Get-DbaDatabase
+        Enables pipeline input from Get-DbaDatabase
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -68,7 +66,7 @@ function Disable-DbaDbEncryption {
     .EXAMPLE
         PS C:\> Get-DbaDatabase -SqlInstance sql2017 -Database db1 | Disable-DbaDbEncryption -Confirm:$false
 
-        Suppresses all prompts to disable database encryption on the db1 database on sql2017
+        Suppresses all prompts to disable database encryption on the db1 database on sql2017 (using piping)
 
     #>
     [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess, ConfirmImpact = "High")]

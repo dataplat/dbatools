@@ -131,7 +131,7 @@ function New-DbaDbCertificate {
                             Write-Message -Level Verbose -Message "Creating certificate with password"
                             $smocert.Create(($SecurePassword | ConvertFrom-SecurePass))
                         } else {
-                            Write-Message -Level Verbose -Message "Creating certificate without password"
+                            Write-Message -Level Verbose -Message "Creating certificate without password, so it'll be protected by the master key"
                             $smocert.Create()
                         }
 
