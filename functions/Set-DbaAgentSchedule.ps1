@@ -405,8 +405,10 @@ function Set-DbaAgentSchedule {
                         #region job step options
                         # Setting the options for the job schedule
                         if ($NewName) {
-                            Write-Message -Message "Setting job schedule name to $NewName for schedule $ScheduleName" -Level Verbose
-                            $JobSchedule.Rename($NewName)
+                            if ($Pscmdlet.ShouldProcess($server, "Setting job schedule $ScheduleName Name to $NewName")) {
+                            # Write-Message -Message "Setting job schedule name to $NewName for schedule $ScheduleName" -Level Verbose
+                                $JobSchedule.Rename($NewName)
+                            }
                         }
 
                         if ($Enabled) {
@@ -471,10 +473,10 @@ function Set-DbaAgentSchedule {
                         #endregion job step options
 
                         # Execute the query
-                        if ($PSCmdlet.ShouldProcess($instance, "Changing the schedule $ScheduleName for job $j on $instance")) {
+                        if ($PSCmdlet.ShouldProcess($instance, "Committing changes for schedule $ScheduleName for job $j on $instance")) {
                             try {
                                 # Excute the query and save the result
-                                Write-Message -Message "Changing the schedule $ScheduleName for job $j" -Level Verbose
+                                Write-Message -Message "Committing changes for schedule $ScheduleName for job $j" -Level Verbose
 
                                 $JobSchedule.Alter()
 
