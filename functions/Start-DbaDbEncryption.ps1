@@ -103,22 +103,16 @@ function Start-DbaDbEncryption {
     .EXAMPLE
         PS C:\> $masterkeypass = (Get-Credential justneedpassword).Password
         PS C:\> $certbackuppass = (Get-Credential justneedpassword).Password
-        PS C:\> Start-DbaDbEncryption -SqlInstance sql01
-
         PS C:\> $params = @{
-        >>SqlInstance = "sql01"
-        >>Name = "AzureBackupBlobStore"
-        >>Identity = "https://<Azure Storage Account Name>.blob.core.windows.net/<Blob Container Name>"
-        >>SecurePassword = (ConvertTo-SecureString '<Azure Storage Account Access Key>' -AsPlainText -Force)
-        >>}
-        PS C:\> New-DbaCredential @params
+        >>      SqlInstance             = "sql01"
+        >>      AllUserDatabases        = $true
+        >>      MasterKeySecurePassword = $passwd
+        >>      BackupPath              = "C:\temp"
+        >>      EnableException         = $true
+        >>  }
+        PS C:\> Start-DbaDbEncryption @params
 
-        xyz
-
-    .EXAMPLE
-        PS C:\> Start-DbaDbEncryption -SqlInstance Server1 -Database db1 -Confirm:$false
-
-        xyz
+        Encrypts a whole instances and backs things up
 
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "High")]
@@ -164,7 +158,7 @@ function Start-DbaDbEncryption {
             }
             $InputObject += Get-DbaDatabase @param | Where-Object Name -NotIn 'master', 'model', 'tempdb', 'msdb', 'resource'
         }
-
+        # BACKUP MASTER IF IT EXISTS AND HASN'T BEEN BACKED UP
         $PSDefaultParameterValues["Connect-DbaInstance:Verbose"] = $false
         foreach ($db in $InputObject) {
             try {

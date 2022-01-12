@@ -44,22 +44,22 @@ function Get-DbaDbEncryptionKey {
     .EXAMPLE
         PS C:\> Get-DbaDbEncryptionKey -SqlInstance sql2016
 
-        Gets all encryption keys
+        Gets all encryption keys from sql2016
 
     .EXAMPLE
-        PS C:\> Get-DbaDbEncryptionKey -SqlInstance Server1 -Database db1
+        PS C:\> Get-DbaDbEncryptionKey -SqlInstance sql01 -Database db1
 
-        Gets the encryption key for the db1 database
+        Gets the encryption key for the db1 database on the sql01 instance
 
     .EXAMPLE
-        PS C:\> Get-DbaDbEncryptionKey -SqlInstance Server1 -Database db1 -Certificate cert1
+        PS C:\> Get-DbaDbEncryptionKey -SqlInstance sql01 -Database db1 -Certificate cert1
 
         Gets the cert1 encryption key within the db1 database
 
     .EXAMPLE
-        PS C:\> Get-DbaDbEncryptionKey -SqlInstance Server1 -Database db1 -Subject 'Availability Group Cert'
+        PS C:\> Get-DbaDbEncryptionKey -SqlInstance sql01 -Database db1 -Subject 'Availability Group Cert'
 
-        Gets the encryption key within the db1 database that has the subject 'Availability Group Cert'
+        Gets the encryption key within the db1 database that has the subject 'Availability Group Cert' on sql01
 
     #>
     [CmdletBinding()]

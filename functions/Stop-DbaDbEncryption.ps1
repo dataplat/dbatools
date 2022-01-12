@@ -1,10 +1,10 @@
 function Stop-DbaDbEncryption {
     <#
     .SYNOPSIS
-        Disables encryption for all databases on an instance
+        Decrypts all databases on an instance
 
     .DESCRIPTION
-        Disables encryption for all databases on an instance
+        Decrypts all databases on an instance
 
         Removes the encryption key but does not touch certificates or master keys
 
@@ -41,15 +41,14 @@ function Stop-DbaDbEncryption {
         https://dbatools.io/Stop-DbaDbEncryption
 
     .EXAMPLE
-        PS C:\> Stop-DbaDbEncryption -SqlInstance Server1
+        PS C:\> Stop-DbaDbEncryption -SqlInstance sql01
 
-        xyz
+        Removes this does that
 
     .EXAMPLE
-        PS C:\> Stop-DbaDbEncryption -SqlInstance Server1 -Database db1 -Confirm:$false
+        PS C:\> Stop-DbaDbEncryption -SqlInstance sql01 -Confirm:$false
 
-        xyz
-
+        Removes this does that
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "High")]
     param (

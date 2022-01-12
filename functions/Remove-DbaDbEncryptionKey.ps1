@@ -45,14 +45,14 @@ function Remove-DbaDbEncryptionKey {
         https://dbatools.io/Remove-DbaDbEncryptionKey
 
     .EXAMPLE
-        PS C:\> Remove-DbaDbEncryptionKey -SqlInstance Server1 -Database test
+        PS C:\> Remove-DbaDbEncryptionKey -SqlInstance sql01 -Database test
 
-        The encryption key in the master database on server1 will be removed if it exists.
+        Removes the encryption key in the master database on sql01 if it exists.
 
     .EXAMPLE
-        PS C:\> Remove-DbaDbEncryptionKey -SqlInstance Server1 -Database db1 -Confirm:$false
+        PS C:\> Remove-DbaDbEncryptionKey -SqlInstance sql01 -Database db1 -Confirm:$false
 
-        Suppresses all prompts to remove the encryption key in the 'db1' database and drops the key.
+        Suppresses all prompts then removes the encryption key in the 'db1' database on sql01.
 
     #>
     [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess, ConfirmImpact = "High")]
