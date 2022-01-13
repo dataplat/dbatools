@@ -195,7 +195,7 @@ function Export-DbaScript {
             }
 
             if ($shorttype -eq "AvailabilityGroup") {
-                Write-Message -Level Verbose -Message "Invoking .Script() as a workaround for https://github.com/sqlcollaborative/dbatools/issues/5913."
+                Write-Message -Level Verbose -Message "Invoking .Script() as a workaround for https://github.com/dataplat/dbatools/issues/5913."
                 try {
                     $null = $InputObject.Script()
                 } catch {

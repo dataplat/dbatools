@@ -269,7 +269,7 @@ function Remove-DbaDbOrphanUser {
                                         Write-Message -Level Verbose -Message "User $dbuser does not own any schema. Will be dropped."
                                     }
 
-                                    # https://github.com/sqlcollaborative/dbatools/issues/7130
+                                    # https://github.com/dataplat/dbatools/issues/7130
                                     $dbUserName = $dbuser.ToString()
                                     if (-not ($dbUserName.StartsWith("[") -and $dbUserName.EndsWith("]"))) {
                                         $dbUserName = "[" + $dbUserName + "]"

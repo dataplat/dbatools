@@ -38,7 +38,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         Remove-DbaDatabase -SqlInstance $script:instance1 -Database $dbname, $dbName2 -Confirm:$false
     }
 
-    # See https://github.com/sqlcollaborative/dbatools/issues/7038
+    # See https://github.com/dataplat/dbatools/issues/7038
     Context "Ensure the database name is part of the generated filename" {
         It "Database name is included in the output filename" {
             $result = Export-DbaDacPackage -SqlInstance $script:instance1 -Database $dbname

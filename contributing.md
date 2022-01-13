@@ -18,7 +18,7 @@ Documentation is an area that is a good starting point whether you are new to op
 
 ## Contributing New Commands
 
-Start out reviewing the [list of functions and documentation](https://docs.dbatools.io), or pulling the list from the module with `Get-Command -Module dbatools -CommandType Function | Out-GridView`. If you find something similar already exists, open [a new issue on GitHub](https://GitHub.com/sqlcollaborative/dbatools/issues/new) to request an enhancement to that command. New ideas already accepted can be found on [Feature](https://github.com/sqlcollaborative/dbatools/labels/Feature) tagged issues. If nothing similar pops up, you can start a new issue for discussion or ping us in Slack with the details or requirements you need. (_GitHub issue is preferred to just have the history around._)
+Start out reviewing the [list of functions and documentation](https://docs.dbatools.io), or pulling the list from the module with `Get-Command -Module dbatools -CommandType Function | Out-GridView`. If you find something similar already exists, open [a new issue on GitHub](https://github.com/dataplat/dbatools/issues/new) to request an enhancement to that command. New ideas already accepted can be found on [Feature](https://github.com/dataplat/dbatools/labels/Feature) tagged issues. If nothing similar pops up, you can start a new issue for discussion or ping us in Slack with the details or requirements you need. (_GitHub issue is preferred to just have the history around._)
 
 ## Reporting Bugs
 
@@ -27,7 +27,7 @@ Start out reviewing the [list of functions and documentation](https://docs.dbato
 ## Fix Bugs
 
 We have a [step-by-step guide](https://dbatools.io/firstpull) if you don't know Github enough.
-[Open a PR](https://GitHub.com/sqlcollaborative/dbatools/pulls) targeting ideally just one ps1 file (the PR needs to target the *development* branch), with the name of the function being fixed as a title. Everyone will chime in reviewing the code and either approve the PR or request changes. The more targeted and focused the PR, the easier to merge, the fastest to go into the next release. Keep them as simple as possible to speed up the process.
+[Open a PR](https://github.com/dataplat/dbatools/pulls) targeting ideally just one ps1 file (the PR needs to target the *development* branch), with the name of the function being fixed as a title. Everyone will chime in reviewing the code and either approve the PR or request changes. The more targeted and focused the PR, the easier to merge, the fastest to go into the next release. Keep them as simple as possible to speed up the process.
 
 ## Parameters and Variables
 
@@ -42,7 +42,7 @@ We chose to follow the standards below when creating parameters and variables fo
 
 When you are working with "objects" in SQL Server, say with databases, what variable name you use should be based on what operation you are doing. You can find examples of various situations in the current code of the module to see more detailed examples. As an example: in situations where you are looping over the databases for an instance, try to use a plural variable name for the collection and then single or abbreviated name in the loop for each object of that collection. e.g. `foreach ($db in $databases) {...`.
 
-[This page](https://github.com/sqlcollaborative/dbatools/wiki/Standard-Documentation) sums up what we currently use. We aim at standardizing and reducing to a set of self-documenting and reusable parameters. If you have any questions around the above do not hesitate to ask in Slack.
+[This page](https://github.com/dataplat/dbatools/wiki/Standard-Documentation) sums up what we currently use. We aim at standardizing and reducing to a set of self-documenting and reusable parameters. If you have any questions around the above do not hesitate to ask in Slack.
 
 ## Formatting and indentation
 
@@ -61,7 +61,7 @@ To save resources and be more flexible, we split tests with tags into two main c
 - Every resource should be named with the `dbatoolsci_` prefix. _The test should attempt to clean up after itself leaving a pristine environment._
 - Try to write tests thinking they may run in each and every user's test environment.
 
-The [dbatools-templates repository](https://github.com/sqlcollaborative/dbatools-templates) holds examples, but you can also inspect/copy/cannibalize existing tests. You'll see that every test file is named with a simple convention `Verb-Noun*.Tests.ps1`, and this is required by [Pester](https://GitHub.com/pester/Pester), which is the de-facto standard for running tests in PowerShell.
+The [dbatools-templates repository](https://github.com/dataplat/dbatools-templates) holds examples, but you can also inspect/copy/cannibalize existing tests. You'll see that every test file is named with a simple convention `Verb-Noun*.Tests.ps1`, and this is required by [Pester](https://GitHub.com/pester/Pester), which is the de-facto standard for running tests in PowerShell.
 
 Tests make sure a "contract" is made between the code and its behavior: once a test is formalized, changes to the code itself or enhancement will be written making sure existing functionality is retained, making the entire dbatools experience more stable.
 

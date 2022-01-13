@@ -2371,7 +2371,7 @@
                            "",
                            false,
                            "false",
-                           "([Sqlcollaborative.Dbatools.Connection.ConnectionHost]::SqlConnectionTimeout)",
+                           "([dataplat.Dbatools.Connection.ConnectionHost]::SqlConnectionTimeout)",
                            ""
                        ],
                        [
@@ -9259,7 +9259,7 @@
     },
     {
         "Name":  "Export-DbaRepServerSetting",
-        "Description":  "Exports replication server settings to file.\n\nAll replication commands need SQL Server Management Studio installed and are therefore currently not supported.\nHave a look at this issue to get more information: https://github.com/sqlcollaborative/dbatools/issues/7428",
+        "Description":  "Exports replication server settings to file.\n\nAll replication commands need SQL Server Management Studio installed and are therefore currently not supported.\nHave a look at this issue to get more information: https://github.com/dataplat/dbatools/issues/7428",
         "Tags":  "Replication",
         "Synopsis":  "Exports replication server settings to file.",
         "Alias":  "",
@@ -24372,7 +24372,7 @@
     },
     {
         "Name":  "Get-DbaRepDistributor",
-        "Description":  "This function locates and enumerates distributor information for a given SQL Server instance.\n\nAll replication commands need SQL Server Management Studio installed and are therefore currently not supported.\nHave a look at this issue to get more information: https://github.com/sqlcollaborative/dbatools/issues/7428",
+        "Description":  "This function locates and enumerates distributor information for a given SQL Server instance.\n\nAll replication commands need SQL Server Management Studio installed and are therefore currently not supported.\nHave a look at this issue to get more information: https://github.com/dataplat/dbatools/issues/7428",
         "Tags":  "Replication",
         "Synopsis":  "Gets the information about a replication distributor for a given SQL Server instance.",
         "Alias":  "",
@@ -24414,7 +24414,7 @@
     },
     {
         "Name":  "Get-DbaRepPublication",
-        "Description":  "Quickly find all transactional, merge, and snapshot publications on a specific server or database.\n\nAll replication commands need SQL Server Management Studio installed and are therefore currently not supported.\nHave a look at this issue to get more information: https://github.com/sqlcollaborative/dbatools/issues/7428",
+        "Description":  "Quickly find all transactional, merge, and snapshot publications on a specific server or database.\n\nAll replication commands need SQL Server Management Studio installed and are therefore currently not supported.\nHave a look at this issue to get more information: https://github.com/dataplat/dbatools/issues/7428",
         "Tags":  "Replication",
         "Synopsis":  "Displays all publications for a server or database.",
         "Alias":  "",
@@ -24474,7 +24474,7 @@
     },
     {
         "Name":  "Get-DbaRepServer",
-        "Description":  "Gets a replication server object\n\nAll replication commands need SQL Server Management Studio installed and are therefore currently not supported.\nHave a look at this issue to get more information: https://github.com/sqlcollaborative/dbatools/issues/7428",
+        "Description":  "Gets a replication server object\n\nAll replication commands need SQL Server Management Studio installed and are therefore currently not supported.\nHave a look at this issue to get more information: https://github.com/dataplat/dbatools/issues/7428",
         "Tags":  "Replication",
         "Synopsis":  "Gets a replication server object",
         "Alias":  "",
@@ -47162,7 +47162,7 @@
                        ],
                        [
                            "InputObject",
-                           "Enables piped input of Microsoft.SqlServer.Management.Smo.Database, Microsoft.SqlServer.Management.Smo.Server, and Sqlcollaborative.Dbatools.Parameter.DbaInstanceParameter objects.",
+                           "Enables piped input of Microsoft.SqlServer.Management.Smo.Database, Microsoft.SqlServer.Management.Smo.Server, and dataplat.Dbatools.Parameter.DbaInstanceParameter objects.",
                            "",
                            false,
                            "true (ByValue)",
@@ -61428,7 +61428,7 @@
     },
     {
         "Name":  "Test-DbaDiskSpeed",
-        "Description":  "Obtains I/O statistics based on the DMV sys.dm_io_virtual_file_stats:\n\nhttps://docs.microsoft.com/en-us/sql/relational-databases/system-dynamic-management-views/sys-dm-io-virtual-file-stats-transact-sql\n\nThis command uses a query from Rich Benner\nhttps://github.com/RichBenner/PersonalCode/blob/master/Disk_Speed_Check.sql\n\n...and also based on further adaptations referenced at https://github.com/sqlcollaborative/dbatools/issues/6551#issue-623216718",
+        "Description":  "Obtains I/O statistics based on the DMV sys.dm_io_virtual_file_stats:\n\nhttps://docs.microsoft.com/en-us/sql/relational-databases/system-dynamic-management-views/sys-dm-io-virtual-file-stats-transact-sql\n\nThis command uses a query from Rich Benner\nhttps://github.com/RichBenner/PersonalCode/blob/master/Disk_Speed_Check.sql\n\n...and also based on further adaptations referenced at https://github.com/dataplat/dbatools/issues/6551#issue-623216718",
         "Tags":  [
                      "Diagnostic",
                      "Performance"
@@ -62534,7 +62534,7 @@
     },
     {
         "Name":  "Test-DbaRepLatency",
-        "Description":  "Creates tracer tokens to determine latency between the publisher/distributor and the distributor/subscriber\nfor all transactional publications for a server, database, or publication.\n\nAll replication commands need SQL Server Management Studio installed and are therefore currently not supported.\nHave a look at this issue to get more information: https://github.com/sqlcollaborative/dbatools/issues/7428",
+        "Description":  "Creates tracer tokens to determine latency between the publisher/distributor and the distributor/subscriber\nfor all transactional publications for a server, database, or publication.\n\nAll replication commands need SQL Server Management Studio installed and are therefore currently not supported.\nHave a look at this issue to get more information: https://github.com/dataplat/dbatools/issues/7428",
         "Tags":  "Replication",
         "Synopsis":  "Displays replication latency for all transactional publications for a server or database.",
         "Alias":  "",

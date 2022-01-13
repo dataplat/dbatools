@@ -4,7 +4,7 @@ function Invoke-DbaAsync {
             Runs a T-SQL script.
 
         .DESCRIPTION
-            Runs a T-SQL script. It's a stripped down version of https://github.com/sqlcollaborative/Invoke-SqlCmd2 and adapted to use dbatools' facilities.
+            Runs a T-SQL script. It's a stripped down version of https://github.com/dataplat/Invoke-SqlCmd2 and adapted to use dbatools' facilities.
             If you're looking for a public usable function, see Invoke-DbaQuery
 
         .PARAMETER SQLConnection

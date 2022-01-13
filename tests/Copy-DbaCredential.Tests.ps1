@@ -30,7 +30,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         }
 
         <#
-            New tests have been added for validating a credential that uses a crypto provider. (Ref: https://github.com/sqlcollaborative/dbatools/issues/7896)
+            New tests have been added for validating a credential that uses a crypto provider. (Ref: https://github.com/dataplat/dbatools/issues/7896)
 
             The new pester tests will only run if a crypto provider is registered and enabled.
 
@@ -116,7 +116,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         }
     }
 
-    # See https://github.com/sqlcollaborative/dbatools/issues/7896 and comments above in BeforeAll
+    # See https://github.com/dataplat/dbatools/issues/7896 and comments above in BeforeAll
     Context "Crypto provider cred" {
         It -Skip:(-not $cryptoProvider) "ensure copied credential is using the same crypto provider" {
             $results = Copy-DbaCredential -Source $instance2 -Destination $instance3 -Name dbatoolsci_thor_crypto
