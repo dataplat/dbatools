@@ -14,7 +14,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 }
 <#
     Integration test are custom to the command you are writing for.
-    Read https://github.com/sqlcollaborative/dbatools/blob/development/contributing.md#tests
+    Read https://github.com/dataplat/dbatools/blob/development/contributing.md#tests
     for more guidence
 #>
 

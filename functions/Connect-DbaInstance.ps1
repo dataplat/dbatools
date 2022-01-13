@@ -430,7 +430,7 @@ function Connect-DbaInstance {
 
             try {
                 if ($PSVersionTable.PSEdition -eq "Core") {
-                    Write-Message -Level Verbose "Generating access tokens is not supported on Core. Will try connection string with Active Directory Service Principal instead. See https://github.com/sqlcollaborative/dbatools/pull/7610 for more information."
+                    Write-Message -Level Verbose "Generating access tokens is not supported on Core. Will try connection string with Active Directory Service Principal instead. See https://github.com/dataplat/dbatools/pull/7610 for more information."
                     $tryconnstring = $true
                 } else {
                     Write-Message -Level Verbose "Tenant detected, getting access token"
@@ -892,7 +892,7 @@ function Connect-DbaInstance {
 
                     if ($authType -eq 'local ad') {
                         if ($IsLinux -or $IsMacOS) {
-                            Stop-Function -Target $instance -Message "Cannot use Windows credentials to connect when host is Linux or OS X. Use kinit instead. See https://github.com/sqlcollaborative/dbatools/issues/7602 for more info."
+                            Stop-Function -Target $instance -Message "Cannot use Windows credentials to connect when host is Linux or OS X. Use kinit instead. See https://github.com/dataplat/dbatools/issues/7602 for more info."
                             return
                         }
                         Write-Message -Level Debug -Message "ConnectAsUser will be set to '$true'"
@@ -1469,7 +1469,7 @@ function Connect-DbaInstance {
                         $null = $server.Information.Version
                         if ($server.ConnectionContext.IsOpen -eq $false) {
                             # Sometimes, however, the above may not connect as promised. Force it.
-                            # See https://github.com/sqlcollaborative/dbatools/pull/4426
+                            # See https://github.com/dataplat/dbatools/pull/4426
                             Write-Message -Level Debug -Message "We try connection with server.ConnectionContext.Connect()"
                             $server.ConnectionContext.Connect()
                         }
@@ -1477,7 +1477,7 @@ function Connect-DbaInstance {
                         if (-not $isAzure) {
                             # SqlConnectionObject.Open() enables connection pooling does not support
                             # alternative Windows Credentials and passes default credentials
-                            # See https://github.com/sqlcollaborative/dbatools/pull/3809
+                            # See https://github.com/dataplat/dbatools/pull/3809
                             Write-Message -Level Debug -Message "We try connection with server.ConnectionContext.SqlConnectionObject.Open()"
                             $server.ConnectionContext.SqlConnectionObject.Open()
                         }

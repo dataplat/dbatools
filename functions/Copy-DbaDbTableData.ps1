@@ -422,7 +422,7 @@ function Copy-DbaDbTableData {
 
                         # The legacy bulk copy library uses a 4 byte integer to track the RowsCopied, so the only option is to use
                         # integer wrap so that copy operations of row counts greater than [int32]::MaxValue will report accurate numbers.
-                        # See https://github.com/sqlcollaborative/dbatools/issues/6927 for more details
+                        # See https://github.com/dataplat/dbatools/issues/6927 for more details
                         $script:prevRowsCopied = [int64]0
                         $script:totalRowsCopied = [int64]0
 
