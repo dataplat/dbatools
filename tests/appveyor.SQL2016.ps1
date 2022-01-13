@@ -56,6 +56,14 @@ foreach ($file in (Get-ChildItem C:\github\appveyor-lab\sql2016-startup\*.sql -R
         $sql2016Startup = 1
     }
 }
+try {
+
+    $null = Set-DbaSpConfigure -SqlInstance $sqlinstance -Name ExtensibleKeyManagementEnabled -Value $true
+    $sql = "CREATE CRYPTOGRAPHIC PROVIDER dbatoolsci_AKV FROM FILE = 'C:\github\appveyor-lab\keytests\ekm\Microsoft.AzureKeyVaultService.EKM.dll'"
+    Invoke-DbaQuery -SqlInstance $sqlinstance -Query $sql
+} catch {
+    $sql2016Startup = 1
+}
 if ($sql2016Startup -eq 1) {
     Write-Host -Object "$indent something went wrong with startup scripts" -ForegroundColor DarkGreen
 }
