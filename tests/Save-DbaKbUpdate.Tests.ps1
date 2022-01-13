@@ -57,7 +57,7 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
         $results | Remove-Item -Confirm:$false
     }
 
-    # see https://github.com/sqlcollaborative/dbatools/issues/6745
+    # see https://github.com/dataplat/dbatools/issues/6745
     It "Ensuring that variable scope doesn't impact the command negatively" {
         $filter = "SQLServer*-KB-*x64*.exe"
 

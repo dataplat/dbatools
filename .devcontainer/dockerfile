@@ -28,5 +28,5 @@ RUN $ErrorActionPreference='Stop'; Install-Module -Name PSScriptAnalyzer -Force 
 
 # Git command prompt
 # Change this if you want to utilize your fork
-RUN git clone https://github.com/sqlcollaborative/dbatools.git ~/.bash-git-prompt --depth=1 \
+RUN git clone https://github.com/dataplat/dbatools.git ~/.bash-git-prompt --depth=1 \
     && echo "if [ -f \"$HOME/.bash-git-prompt/gitprompt.sh\" ]; then GIT_PROMPT_ONLY_IN_REPO=1 && source $HOME/.bash-git-prompt/gitprompt.sh; fi" >> "/root/.bashrc"

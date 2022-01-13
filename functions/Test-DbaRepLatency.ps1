@@ -8,7 +8,7 @@ function Test-DbaRepLatency {
         for all transactional publications for a server, database, or publication.
 
         All replication commands need SQL Server Management Studio installed and are therefore currently not supported.
-        Have a look at this issue to get more information: https://github.com/sqlcollaborative/dbatools/issues/7428
+        Have a look at this issue to get more information: https://github.com/dataplat/dbatools/issues/7428
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.

@@ -107,7 +107,7 @@ yet. We have taken great pains to avoid this issue but this notification indicat
 we have failed.
 
 Please, in order to help us prevent this from happening again, visit us at:
-https://github.com/sqlcollaborative/dbatools/issues
+https://github.com/dataplat/dbatools/issues
 and tell us about this failure. All information will be appreciated, but
 especially valuable are:
 - Exports of the exception: $Error | Export-Clixml error.xml -Depth 4
