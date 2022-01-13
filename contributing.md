@@ -94,7 +94,7 @@ If you don't want to wait for the entire test suite to run (i.e. you need to run
 
 ### Code Coverage, AKA improving tests
 
-A recent introduction in our CI pipeline is code coverage. [Dbatools' CodeCov](https://codecov.io/gh/sqlcollaborative/dbatools/branch/development) shows the percentage of the coverage. Each commit on GitHub triggers a build on AppVeyor. Every build on AppVeyor triggers a code coverage calculation, which is reported to `codecov.io` for public consumption. The more code covered the more stable the code will be. Once it reaches 100%, you can be pretty sure there will be zero surprises when you use the command.
+A recent introduction in our CI pipeline is code coverage. [Dbatools' CodeCov](https://codecov.io/gh/dataplat/dbatools/branch/development) shows the percentage of the coverage. Each commit on GitHub triggers a build on AppVeyor. Every build on AppVeyor triggers a code coverage calculation, which is reported to `codecov.io` for public consumption. The more code covered the more stable the code will be. Once it reaches 100%, you can be pretty sure there will be zero surprises when you use the command.
 
 If you want to start contributing new tests, choose the ones with no coverage. You can also inspect functions with low coverage and improve existing tests. [See improving test](https://dbatools.io/improving-tests/).
 
