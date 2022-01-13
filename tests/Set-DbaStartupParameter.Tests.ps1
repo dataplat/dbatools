@@ -21,7 +21,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     }
 
     Context "Validate command functionality" {
-        # See https://github.com/sqlcollaborative/dbatools/issues/7035
+        # See https://github.com/dataplat/dbatools/issues/7035
         It -Skip:$SkipLocalTest "Ensure the startup params are not duplicated when more than one server is modified in the same invocation" {
             $result = Set-DbaStartupParameter -SqlInstance $defaultInstance, $namedInstance -TraceFlag 3226 -Confirm:$false
 
@@ -40,7 +40,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $resultNamedInstance.TraceFlags[0] | Should -Be 3226
         }
 
-        # See https://github.com/sqlcollaborative/dbatools/issues/7035
+        # See https://github.com/dataplat/dbatools/issues/7035
         It -Skip:$SkipLocalTest "Ensure the correct instance name is returned" {
             $result = Set-DbaStartupParameter -SqlInstance $namedInstance -TraceFlag 3226 -Confirm:$false
 

@@ -102,7 +102,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         }
     }
 
-    # See https://github.com/sqlcollaborative/dbatools/issues/6744
+    # See https://github.com/dataplat/dbatools/issues/6744
     Context "Ensure implicit permissions are included in the result set" {
         It "the dbo user and db_owner users are returned in the result set with the CONTROL permission" {
             $results = Get-DbaPermission -SqlInstance $server -Database $dbName -ExcludeSystemObjects | Where-Object { $_.Grantee -in ($loginNameDBO, $loginNameDBOwner) }

@@ -241,7 +241,7 @@ Note that PowerShell sees commas as arrays, so you must surround the host name w
 
 #### Using Start-Transcript
 
-Due to an [issue](https://github.com/sqlcollaborative/dbatools/issues/2722) in the way PowerShell 5.1 works you need to use `Import-Module dbatools` before you run `Start-Transcript`. If this isn't done then your transcript will stop when the module is imported:
+Due to an [issue](https://github.com/dataplat/dbatools/issues/2722) in the way PowerShell 5.1 works you need to use `Import-Module dbatools` before you run `Start-Transcript`. If this isn't done then your transcript will stop when the module is imported:
 
 ```powershell
 Import-Module dbatools

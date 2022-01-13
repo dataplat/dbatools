@@ -66,7 +66,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             $results.Description | Should -Be $regSrvDesc3
         }
 
-        # see https://github.com/sqlcollaborative/dbatools/issues/7112
+        # see https://github.com/dataplat/dbatools/issues/7112
         It "moves a piped server to a target group" {
             $results = Get-DbaRegServer -SqlInstance $script:instance1 -Group $testGroupHR | Move-DbaRegServer -Group $testGroupFinance
             $results.Count | Should -Be 2
