@@ -406,7 +406,6 @@ function Set-DbaAgentSchedule {
                         # Setting the options for the job schedule
                         if ($NewName) {
                             if ($Pscmdlet.ShouldProcess($server, "Setting job schedule $ScheduleName Name to $NewName")) {
-                            # Write-Message -Message "Setting job schedule name to $NewName for schedule $ScheduleName" -Level Verbose
                                 $JobSchedule.Rename($NewName)
                             }
                         }
