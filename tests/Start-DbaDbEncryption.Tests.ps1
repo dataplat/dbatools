@@ -30,13 +30,15 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     Context "Command actually works" {
         It "should mass enable encryption" {
             $passwd = ConvertTo-SecureString "dbatools.IO" -AsPlainText -Force
-            $params = @{
-                All                     = $true
+            $splat = @{
+                SqlInstance             = $script:instance2
+                AllUserDatabases        = $true
                 MasterKeySecurePassword = $passwd
+                BackupSecurePassword    = $passwd
                 BackupPath              = "C:\temp"
                 EnableException         = $true
             }
-            $results = Start-DbaDbEncryption -SqlInstance $script:instance2 -AllUserDatabases  -MasterKeySecurePassword $passwd -BackupPath C:\temp -BackupSecurePassword $passwd
+            $results = Start-DbaDbEncryption @splat
             $results.Count | Should -Be 5
             $results | Select-Object -First 1 -ExpandProperty EncryptionEnabled | Should -Be $true
             $results | Select-Object -First 1 -ExpandProperty DatabaseName | Should -Match "random"
