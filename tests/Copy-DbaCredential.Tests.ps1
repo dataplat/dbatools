@@ -54,11 +54,14 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
 
             3. Run these SQL commands on the instance2 and instance3 servers:
 
-            CREATE CRYPTOGRAPHIC PROVIDER dbatoolsci_AKV
-            FROM FILE = 'C:\Program Files\SQL Server Connector for Microsoft Azure Key Vault\Microsoft.AzureKeyVaultService.EKM.dll';
+            CREATE CRYPTOGRAPHIC PROVIDER dbatoolsci_AKV FROM FILE = 'C:\github\appveyor-lab\keytests\ekm\Microsoft.AzureKeyVaultService.EKM.dll'
         #>
 
         # check to see if a crypto provider is present on the instances
+        $null = Set-DbaSpConfigure -SqlInstance $instance2, $instance3 -Name ExtensibleKeyManagementEnabled -Value $true
+        $sql = "CREATE CRYPTOGRAPHIC PROVIDER dbatoolsci_AKV FROM FILE = 'C:\github\appveyor-lab\keytests\ekm\Microsoft.AzureKeyVaultService.EKM.dll'"
+        Invoke-DbaQuery -SqlInstance $instance2, $instance3 -Query $sql
+
         $instance2CryptoProviders = $instance2.Query("SELECT name FROM sys.cryptographic_providers WHERE is_enabled = 1 ORDER BY name")
         $instance3CryptoProviders = $instance3.Query("SELECT name FROM sys.cryptographic_providers WHERE is_enabled = 1 ORDER BY name")
 
