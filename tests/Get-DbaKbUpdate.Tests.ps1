@@ -28,7 +28,7 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
         $results.KBLevel | Should -Be 4577194
     }
 
-    # see https://github.com/sqlcollaborative/dbatools/issues/6745
+    # see https://github.com/dataplat/dbatools/issues/6745
     It "Calling script uses a variable named filter" {
         $filter = "SQLServer*-KB-*x64*.exe"
 

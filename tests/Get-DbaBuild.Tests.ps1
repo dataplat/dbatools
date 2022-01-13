@@ -175,7 +175,7 @@ Describe "$CommandName Unit Test" -Tags Unittest {
                 $OrderedActualSPs = $ActualSPs | Sort-Object
                 ($ActualSPs -join ',') | Should -Be ($OrderedActualSPs -join ',')
             }
-            # see https://github.com/sqlcollaborative/dbatools/pull/2466
+            # see https://github.com/dataplat/dbatools/pull/2466
             It "KBList has only numbers on it" {
                 $NotNumbers = $Versions.KBList | Where-Object { $_ } | Where-Object { $_ -notmatch '^[\d]+$' }
                 if ($NotNumbers.Count -ne 0) {

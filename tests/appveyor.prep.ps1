@@ -14,7 +14,7 @@ if ($AllScenarioTests.Count -eq 0) {
 
 $sw = [system.diagnostics.stopwatch]::startNew()
 Write-Host -Object "appveyor.prep: Cloning lab materials"  -ForegroundColor DarkGreen
-git clone -q --branch=master --depth=1 https://github.com/sqlcollaborative/appveyor-lab.git C:\github\appveyor-lab
+git clone -q --branch=master --depth=1 https://github.com/dataplat/appveyor-lab.git C:\github\appveyor-lab
 
 #Get codecov (to upload coverage results)
 Write-Host -Object "appveyor.prep: Install codecov" -ForegroundColor DarkGreen
