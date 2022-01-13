@@ -66,7 +66,9 @@ $TestsRunGroups = @{
         'Get-DbaDbVirtualLogFile',
         'Get-DbaFile',
         'Get-DbaHelpIndex',
-        'Get-DbaExternalProcess'
+        'Get-DbaExternalProcess',
+        # just fails too often
+        'Remove-DbaDbTableData'
     )
     # do not run everywhere
     "disabled"          = @()
