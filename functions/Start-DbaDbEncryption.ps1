@@ -169,7 +169,8 @@ function Start-DbaDbEncryption {
                 $null = $server.Refresh()
 
                 if ($db.EncryptionEnabled) {
-                    Stop-Function -Message "Database $($db.Name) on $($server.Name) is already encrypted" -Continue
+                    Write-Message -Level Warning -Message "Database $($db.Name) on $($server.Name) is already encrypted"
+                    continue
                 }
 
                 # before doing anything, see if the master cert is in order
