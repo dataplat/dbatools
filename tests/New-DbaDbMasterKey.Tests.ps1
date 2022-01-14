@@ -17,3 +17,50 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Read https://github.com/dataplat/dbatools/blob/development/contributing.md#tests
     for more guidence.
 #>
+
+Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
+    BeforeAll {
+        $PSDefaultParameterValues["*:Confirm"] = $false
+        $passwd = ConvertTo-SecureString "dbatools.IO" -AsPlainText -Force
+        $masterkey = Get-DbaDbMasterKey -SqlInstance $script:instance1 -Database master
+        if (-not $masterkey) {
+            $delmasterkey = $true
+            $masterkey = New-DbaServiceMasterKey -SqlInstance $script:instance1 -SecurePassword $passwd
+        }
+        $mastercert = Get-DbaDbCertificate -SqlInstance $script:instance1 -Database master | Where-Object Name -notmatch "##" | Select-Object -First 1
+        if (-not $mastercert) {
+            $delmastercert = $true
+            $mastercert = New-DbaDbCertificate -SqlInstance $script:instance1
+        }
+        $db = New-DbaDatabase -SqlInstance $script:instance1
+    }
+
+    AfterAll {
+        if ($db) {
+            $db | Remove-DbaDatabase
+        }
+        if ($db1) {
+            $db1 | Remove-DbaDatabase
+        }
+        if ($delmastercert) {
+            $mastercert | Remove-DbaDbCertificate
+        }
+        if ($delmasterkey) {
+            $masterkey | Remove-DbaDbMasterKey
+        }
+    }
+
+    Context "Command actually works" {
+        It "should create master key on a database using piping" {
+            $PSDefaultParameterValues["*:Confirm"] = $false
+            $passwd = ConvertTo-SecureString "dbatools.IO" -AsPlainText -Force
+            $results = $db | New-DbaDbMasterKey -SecurePassword $passwd
+            $results.IsEncryptedByServer | Should -Be $true
+        }
+        It "should create master key on a database" {
+            $db1 = New-DbaDatabase -SqlInstance $script:instance1
+            $results = New-DbaDbMasterKey -SqlInstance $script:instance1 -Database $db1.Name -SecurePassword $passwd
+            $results.IsEncryptedByServer | Should -Be $true
+        }
+    }
+}

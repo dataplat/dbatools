@@ -23,16 +23,20 @@ function New-DbaDbCertificate {
         Optional name to create the certificate. Defaults to database name.
 
     .PARAMETER Subject
-        Optional subject to create the certificate.
+        Optional subject that will be used when creating all certificates
 
     .PARAMETER StartDate
-        Optional secure string used to create the certificate.
+        Optional start date that will be used when creating all certificates
+
+        By default, certs will start immediately
 
     .PARAMETER ExpirationDate
-        Optional secure string used to create the certificate.
+        Optional expiration that will be used when creating all certificates
+
+        By default, certs will last 5 years
 
     .PARAMETER ActiveForServiceBrokerDialog
-        Optional secure string used to create the certificate.
+        Microsoft has not provided a description so we can only assume the cert is active for service broker dialog
 
     .PARAMETER SecurePassword
         Optional password - if no password is supplied, the password will be protected by the master key
@@ -96,8 +100,8 @@ function New-DbaDbCertificate {
 
         foreach ($db in $InputObject) {
             if ((Test-Bound -Not -ParameterName Name)) {
-                Write-Message -Level Verbose -Message "Name of certificate not specified, setting it to '$db'"
                 $Name = $db.Name
+                Write-Message -Level Verbose -Message "Name of certificate not specified, setting it to '$name'"
             }
 
             if ((Test-Bound -Not -ParameterName Subject)) {
@@ -106,6 +110,7 @@ function New-DbaDbCertificate {
             }
 
             foreach ($cert in $Name) {
+                $null = $db.Certificates.Refresh()
                 if ($null -ne $db.Certificates[$cert]) {
                     Stop-Function -Message "Certificate '$cert' already exists in $($db.Name) on $($db.Parent.Name)" -Target $db -Continue
                 }
@@ -123,8 +128,10 @@ function New-DbaDbCertificate {
                         $smocert.ActiveForServiceBrokerDialog = $ActiveForServiceBrokerDialog
 
                         if ($SecurePassword) {
+                            Write-Message -Level Verbose -Message "Creating certificate with password"
                             $smocert.Create(($SecurePassword | ConvertFrom-SecurePass))
                         } else {
+                            Write-Message -Level Verbose -Message "Creating certificate without password, so it'll be protected by the master key"
                             $smocert.Create()
                         }
 
