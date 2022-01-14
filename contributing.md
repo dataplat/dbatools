@@ -100,7 +100,7 @@ If you want to start contributing new tests, choose the ones with no coverage. Y
 
 ## Bill of Health
 
-In order to the highest perfection possible in everything discussed above we have setup a **Bill of Health** on each public command. [See Bill of Health](https://sqlcollaborative.github.io/boh).
+In order to the highest perfection possible in everything discussed above we have setup a **Bill of Health** on each public command. [See Bill of Health](https://dataplat.github.io/boh).
 
 As commands expand in functionality and new commands are added the health can change on any given commit. As of right now we use this as reference to reach major release status (e.g. 1.0) for the module. We may continue to expand on the checks for later releases.
 
