@@ -1,7 +1,7 @@
 
 -- SQL Server 2012 Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: December 21, 2021
+-- Last Modified: January 13, 2022
 -- https://glennsqlperformance.com/
 -- https://sqlserverperformance.wordpress.com/
 -- YouTube: https://bit.ly/2PkoAM1 
@@ -25,7 +25,7 @@
 
 
 --******************************************************************************
---*   Copyright (C) 2021 Glenn Berry
+--*   Copyright (C) 2022 Glenn Berry
 --*   All rights reserved. 
 --*
 --*
@@ -1809,17 +1809,6 @@ ORDER BY bs.backup_finish_date DESC OPTION (RECOMPILE);
 -- Are you doing copy_only backups?
 -- Have you done any backup tuning with striped backups, or changing the parameters of the backup command?
 -- Where are the backups going to?
-
--- Get Last Good CheckDB date and time for the current database (Query 72) (Last Good CheckDB)
-SELECT DATABASEPROPERTYEX (DB_NAME(DB_ID()), 'LastGoodCheckDbTime') AS [Last Good CheckDB];
-------
-
--- The date and time of the last successful DBCC CHECKDB that ran on the current database
--- If DBCC CHECKDB has not been run on a database, 1900-01-01 00:00:00.000 is returned
-
--- DATABASEPROPERTYEX (Transact-SQL)
--- https://bit.ly/3FhvQ41
-
 
 
 -- Microsoft Visual Studio Dev Essentials
