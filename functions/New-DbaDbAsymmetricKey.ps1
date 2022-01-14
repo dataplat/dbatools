@@ -179,7 +179,7 @@ function New-DbaDbAsymmetricKey {
                         Add-Member -Force -InputObject $smokey -MemberType NoteProperty -Name SqlInstance -value $db.Parent.DomainInstanceName
                         Add-Member -Force -InputObject $smokey -MemberType NoteProperty -Name Database -value $db.Name
                         Add-Member -Force -InputObject $smokey -MemberType NoteProperty -Name Credential -value $Credential
-                        Select-DefaultView -InputObject $smokey -Property ComputerName, InstanceName, SqlInstance, Database, Name, Subject, StartDate, ActiveForServiceBrokerDialog, ExpirationDate, Issuer, LastBackupDate, Owner, PrivateKeyEncryptionType, Serial
+                        Select-DefaultView -InputObject $smokey -Property ComputerName, InstanceName, SqlInstance, Database, Name, Owner, KeyEncryptionAlgorithm, KeyLength, PrivateKeyEncryptionType, Thumbprint
                     } catch {
                         $ErrorActionPreference = $eap
                         Stop-Function -Message "Failed to create asymmetric key in $($db.Name) on $($db.Parent.Name)" -Target $smocert -ErrorRecord $_ -Continue

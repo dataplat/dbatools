@@ -28,7 +28,7 @@ function Get-DbaDbCertificate {
     .PARAMETER Certificate
         Get specific certificate by name
 
-    .PARAMETER Certificate
+    .PARAMETER Subject
         Get specific certificate by subject
 
     .PARAMETER EnableException
