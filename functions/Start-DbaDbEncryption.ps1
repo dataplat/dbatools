@@ -190,7 +190,11 @@ function Start-DbaDbEncryption {
 
                 $stepCounter = 0
                 Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Processing $($db.Name)"
+            } catch {
+                Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
+            }
 
+            try {
                 # Ensure a database master key exists in the master database
                 Write-Message -Level Verbose -Message "Ensure a database master key exists in the master database for $($server.Name)"
                 Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Ensure a database master key exists in the master database for $($server.Name)"
@@ -217,7 +221,11 @@ function Start-DbaDbEncryption {
                 $null = $server.Databases["master"].Refresh()
                 Write-Message -Level Verbose -Message "Backing up master key on $($server.Name)"
                 $null = Backup-DbaDbMasterKey @params
+            } catch {
+                Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
+            }
 
+            try {
                 Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Processing EncryptorType for $($db.Name) on $($server.Name)"
                 if ($EncryptorType -eq "Certificate") {
                     if (-not $mastercert) {
@@ -234,22 +242,22 @@ function Start-DbaDbEncryption {
                             $params.Subject = $CertificateSubject
                         }
                         $mastercert = New-DbaDbCertificate @params
-
-                        # Back up certificate
-                        $null = $server.Databases["master"].Refresh()
-                        $params = @{
-                            SqlInstance        = $server
-                            Database           = "master"
-                            Certificate        = $mastercert.Name
-                            Path               = $BackupPath
-                            EnableException    = $true
-                            EncryptionPassword = $BackupSecurePassword
-                        }
-                        Write-Message -Level Verbose -Message "Backing up master certificate"
-                        $null = Backup-DbaDbCertificate @params
                     } else {
                         Write-Message -Level Verbose -Message "master cert found on $($server.Name)"
                     }
+
+                    # Back up certificate
+                    $null = $server.Databases["master"].Refresh()
+                    $params = @{
+                        SqlInstance        = $server
+                        Database           = "master"
+                        Certificate        = $mastercert.Name
+                        Path               = $BackupPath
+                        EnableException    = $true
+                        EncryptionPassword = $BackupSecurePassword
+                    }
+                    Write-Message -Level Verbose -Message "Backing up master certificate on $($server.Name)"
+                    $null = Backup-DbaDbCertificate @params
 
                     if (-not $EncryptorName) {
                         Write-Message -Level Verbose -Message "Getting EncryptorName from master cert on $($server.Name)"
@@ -277,7 +285,11 @@ function Start-DbaDbEncryption {
                         $EncryptorName = $masterasym.Name
                     }
                 }
+            } catch {
+                Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
+            }
 
+            try {
                 Write-Message -Level Verbose -Message "Using EncryptorName '$EncryptorName'"
                 # Create a database master key in the target database
                 Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Creating database master key for $($db.Name) on $($server.Name)"
@@ -310,7 +322,11 @@ function Start-DbaDbEncryption {
                 }
                 Write-Message -Level Verbose -Message "Backing up master key for $($db.Name) on $($server.Name)"
                 $null = Backup-DbaDbMasterKey @params
+            } catch {
+                Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
+            }
 
+            try {
                 # Create a database certificate or asymmetric key in the target database
                 Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Creating a database certificate or asymmetric key in $($db.Name) on $($server.Name)"
                 if ($EncryptorType -eq "Certificate") {
@@ -362,9 +378,13 @@ function Start-DbaDbEncryption {
                     }
                 }
                 $null = $db.Refresh()
+            } catch {
+                Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
+            }
+
+            try {
                 # Create a database encryption key in the target database
                 # Enable database encryption on the target database
-
                 Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Creating database encryption key in $($db.Name) on $($server.Name)"
                 if ($db.HasDatabaseEncryptionKey) {
                     Write-Message -Level Verbose -Message "$($db.Name) on $($db.Parent.Name) already has a database encryption key"
@@ -374,7 +394,7 @@ function Start-DbaDbEncryption {
                 }
 
                 Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Enabling database encryption in $($db.Name) on $($server.Name)"
-                Write-Message -Level Verbose -Message "Enabling encryption for $($db.Name) on $($server.Name)"
+                Write-Message -Level Verbose -Message "Enabling encryption for $($db.Name) on $($server.Name) using $EncryptorType $EncryptorName"
                 $db | Enable-DbaDbEncryption -EncryptorName $EncryptorName
             } catch {
                 Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
