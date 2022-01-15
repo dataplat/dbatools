@@ -115,7 +115,7 @@ function Copy-DbaDbCertificate {
             $server = ($sourcecertificates | Select-Object -First 1).Parent.Parent
             $serviceAccount = $server.ServiceAccount
         } catch {
-            Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $Source
+            Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $PSItem -Target $Source
             return
         }
 
@@ -139,7 +139,7 @@ function Copy-DbaDbCertificate {
             try {
                 $destServer = Connect-DbaInstance -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential -MinimumVersion 10
             } catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
+                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $PSItem -Target $destinstance -Continue
             }
             $serviceAccount = $destserver.ServiceAccount
 
@@ -161,7 +161,7 @@ function Copy-DbaDbCertificate {
                             }
                             $masterkey = New-DbaServiceMasterKey @params
                         } catch {
-                            Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
+                            Stop-Function -Message "Failure" -ErrorRecord $PSItem -Continue
                         }
                     } else {
                         return $PSBoundParameters
@@ -196,7 +196,7 @@ function Copy-DbaDbCertificate {
                                 $domasterkeypasswordmessage = $false
                             } catch {
                                 $domasterkeymessage = "Master key auto-generation failure: $PSItem"
-                                Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
+                                Stop-Function -Message "Failure" -ErrorRecord $PSItem -Continue
                             }
 
                         } else {
@@ -256,13 +256,34 @@ function Copy-DbaDbCertificate {
                                     Database           = $db.Name
                                     Certificate        = $certname
                                     Path               = $SharedPath
+                                    Suffix             = $null # required so that it doesnt rename the cert
                                     EnableException    = $true
-                                    Suffix             = $null
                                     EncryptionPassword = $backupEncryptionPassword
                                     DecryptionPassword = $DecryptionPassword
                                 }
                                 Write-Message -Level Verbose -Message "Backing up certificate $cername for $($dbName) on $($server.Name)"
-                                $export = Backup-DbaDbCertificate @params
+                                try {
+                                    $tempPath = Join-DbaPath -SqlInstance $server -Path $SharedPath -ChildPath "$certname.cer"
+                                    $tempKey  = Join-DbaPath -SqlInstance $server -Path $SharedPath -ChildPath "$certname.pvk"
+
+                                    if ((Test-DbaPath -SqlInstance $server -Path $tempPath) -and (Test-DbaPath -SqlInstance $server -Path $tempKey)) {
+                                        $export = [pscustomobject]@{
+                                            Path = Join-DbaPath -SqlInstance $server -Path $SharedPath -ChildPath "$certname.cer"
+                                            Key  = Join-DbaPath -SqlInstance $server -Path $SharedPath -ChildPath "$certname.pvk"
+                                        }
+                                        # if files exist, then try to be helpful, otherwise, it just kills the whole process
+                                        # this workaround exists because if you rename the back file, you'll rename the cert on restore
+                                        Write-Message -Level Verbose -Message "ATTEMPTING TO USE FILES THAT ALREADY EXIST: $tempPath and $tempKey"
+                                        $usingtempfiles = $true
+                                    } else {
+                                        $export = Backup-DbaDbCertificate @params
+                                    }
+                                } catch {
+                                    $copyDbCertificateStatus.Status = "Failed"
+                                    $copyDbCertificateStatus.Notes = $PSItem
+                                    $copyDbCertificateStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                                    Stop-Function -Message "Issue backing up certificate $certname in $dbname on $($db.Parent.Name)" -Target $certname -ErrorRecord $PSItem -Continue
+                                }
 
                                 # Restore certificate
                                 $params = @{
@@ -280,9 +301,13 @@ function Copy-DbaDbCertificate {
                                 $copyDbCertificateStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                             } catch {
                                 $copyDbCertificateStatus.Status = "Failed"
+                                $copyDbCertificateStatus.Notes = $PSItem
                                 $copyDbCertificateStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-
-                                Stop-Function -Message "Issue creating certificate $certname from $($export.Path) for $dbname on $($db.Parent.Name)" -Target $certname -ErrorRecord $_
+                                if ($usingtempfiles) {
+                                    Stop-Function -Message "Issue creating certificate $certname from $($export.Path) for $dbname on $($db.Parent.Name). Note that $($export.Path) and $($export.Key) already existed so we tried to use them. If this is an issue, please move or rename both files and try again." -Target $certname -ErrorRecord $PSItem
+                                } else {
+                                    Stop-Function -Message "Issue creating certificate $certname from $($export.Path) for $dbname on $($db.Parent.Name)" -Target $certname -ErrorRecord $PSItem
+                                }
                             }
                         }
                     }
