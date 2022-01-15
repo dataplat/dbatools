@@ -6,9 +6,7 @@ function Copy-DbaDbCertificate {
     .DESCRIPTION
         By default, all certificates are copied.
 
-        If the certificate already exists on the destination, it will be skipped unless -Force is used.
-
-        This script does not yet copy dependencies or dependent objects.
+        If the certificate already exists on the destination, it will be skipped.
 
     .PARAMETER Source
         Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2000 or higher.
@@ -102,12 +100,12 @@ function Copy-DbaDbCertificate {
     begin {
         try {
             $parms = @{
-                SqlInstance        = $Source
-                SqlCredential      = $SourceSqlCredential
-                Database           = $Database
-                ExcludeDatabase    = $ExcludeDatabase
-                Certificate        = $Certificate
-                EnableException    = $true
+                SqlInstance     = $Source
+                SqlCredential   = $SourceSqlCredential
+                Database        = $Database
+                ExcludeDatabase = $ExcludeDatabase
+                Certificate     = $Certificate
+                EnableException = $true
             }
             # Get presumably user certs, no way to tell if its a system object
             $sourcecertificates = Get-DbaDbCertificate @parms | Where-Object Name -notlike "#*" | Where-Object Name -notin $ExcludeCertificate
@@ -131,7 +129,6 @@ function Copy-DbaDbCertificate {
         }
     }
     process {
-        # THIS MAKES ASSUMPTIONS ABOUT THE CERTIFICATE THAT ITS ENCRYPTED BY A MASTER KEY
         # FOR START-DBAMIGRATION, IT NEEDS TO JUST BE COPY-DBADBMASTER
 
         if (Test-FunctionInterrupt) { return }
