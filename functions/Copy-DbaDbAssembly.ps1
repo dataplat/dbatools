@@ -229,6 +229,7 @@ function Copy-DbaDbAssembly {
 
                     } catch {
                         $copyDbAssemblyStatus.Status = "Failed"
+                        $copyDbAssemblyStatus.Notes = $PSItem
                         $copyDbAssemblyStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 
                         Stop-Function -Message "Issue creating assembly." -Target $assemblyName -ErrorRecord $_
