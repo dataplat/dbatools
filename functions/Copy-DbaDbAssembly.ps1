@@ -165,7 +165,7 @@ function Copy-DbaDbAssembly {
                     $copyDbAssemblyStatus.Notes = "Destination database does not exist"
                     $copyDbAssemblyStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 
-                    Write-Message -Level Verbose -Message "Destination database $dbName does not exist. Skipping $assemblyName.";
+                    Write-Message -Level Verbose -Message "Destination database $dbName does not exist. Skipping $assemblyName."
                     continue
                 }
 
