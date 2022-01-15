@@ -14,7 +14,7 @@ $ScriptBlock = {
         $fakeBoundParameter
     )
 
-    $files = (Get-ChildItem "$script:PSModuleRoot\bin\xetemplates\*.xml").BaseName
+    $files = (Get-ChildItem "$script:PSModuleRoot\bin\XEtemplates\*.xml").BaseName
     foreach ($file in $files) {
         "'$file'"
     }

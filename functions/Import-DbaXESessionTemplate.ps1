@@ -125,7 +125,7 @@ function Import-DbaXESessionTemplate {
             $store = New-Object Microsoft.SqlServer.Management.XEvent.XEStore $SqlStoreConnection
 
             foreach ($file in $template) {
-                $templatepath = Join-DbaPath $script:PSModuleRoot "bin" "xetemplates" "$file.xml"
+                $templatepath = Join-DbaPath $script:PSModuleRoot "bin" "XEtemplates" "$file.xml"
                 if ((Test-Path $templatepath)) {
                     $Path += $templatepath
                 } else {
