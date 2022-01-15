@@ -1,10 +1,10 @@
 function Get-DbaXESessionTemplate {
     <#
     .SYNOPSIS
-        Parses Extended Event XML templates. Defaults to parsing templates in the dbatools template repository (\bin\xetemplates\).
+        Parses Extended Event XML templates. Defaults to parsing templates in the dbatools template repository (\bin\XEtemplates\).
 
     .DESCRIPTION
-        Parses Extended Event XML templates. Defaults to parsing templates in the dbatools template repository (\bin\xetemplates\).
+        Parses Extended Event XML templates. Defaults to parsing templates in the dbatools template repository (\bin\XEtemplates\).
 
         The default repository contains templates from:
         Microsoft's Templates that come with SSMS
@@ -18,7 +18,7 @@ function Get-DbaXESessionTemplate {
         http://sqlskills.com/blogs/jonathan
 
     .PARAMETER Path
-        The path to the template directory. Defaults to the dbatools template repository (\bin\xetemplates\).
+        The path to the template directory. Defaults to the dbatools template repository (\bin\XEtemplates\).
 
     .PARAMETER Pattern
         Specify a pattern for filtering. Alternatively, you can use Out-GridView -Passthru to select objects and pipe them to Import-DbaXESessionTemplate
@@ -71,7 +71,7 @@ function Get-DbaXESessionTemplate {
 
     [CmdletBinding()]
     param (
-        [string[]]$Path = "$script:PSModuleRoot\bin\xetemplates",
+        [string[]]$Path = "$script:PSModuleRoot\bin\XEtemplates",
         [string]$Pattern,
         [string[]]$Template,
         [switch]$EnableException
