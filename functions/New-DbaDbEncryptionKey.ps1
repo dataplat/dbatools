@@ -129,6 +129,7 @@ function New-DbaDbEncryptionKey {
 
             # asym is backed up with db, so only check certs for backups
             if ($Type -eq "Certificate") {
+                Write-Message -Level Verbose "Getting certificate '$EncryptorName' from $($db.Parent) on $($db.Parent.Name)"
                 $dbcert = Get-DbaDbCertificate -SqlInstance $db.Parent -Database master -Certificate $EncryptorName
                 if ($dbcert.LastBackupDate.Year -eq 1 -and -not $Force) {
                     Stop-Function -Message "Certificate ($EncryptorName) in master on $($db.Parent) has not been backed up. Please backup your certificate or use -Force to continue" -Continue
