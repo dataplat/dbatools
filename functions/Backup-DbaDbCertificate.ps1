@@ -153,18 +153,16 @@ function Backup-DbaDbCertificate {
             }
 
             $actualPath = "$actualPath".TrimEnd('\').TrimEnd('/')
-
             $fullCertName = (Join-DbaPath -SqlInstance $server $actualPath "$certName$Suffix")
             $exportPathKey = "$fullCertName.pvk"
 
             if ((Test-DbaPath -SqlInstance $server -Path "$fullCertName.cer")) {
                 if ($PSBoundParameter.Suffix) {
-                    Stop-Function -Message "$fullCertName.cer already exists on $($server.Name)" -Target $actualPath
+                    Stop-Function -Message "$fullCertName.cer already exists on $($server.Name)" -Target $actualPath -Continue
                 } else {
                     $date = Get-Date -format 'yyyyMMddHHmmssms'
                     $fullCertName = (Join-DbaPath -SqlInstance $server $actualPath "$certName$date")
                     $exportPathKey = "$fullCertName.pvk"
-
                 }
             }
 
