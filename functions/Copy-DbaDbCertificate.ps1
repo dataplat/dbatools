@@ -28,11 +28,29 @@ function Copy-DbaDbCertificate {
 
         For MFA support, please use Connect-DbaInstance.
 
+    .PARAMETER Database
+        The database(s) to process.
+
+    .PARAMETER ExcludeDatabase
+        The database(s) to exclude.
+
     .PARAMETER Certificate
-        The certificate(ies) to process. This list is auto-populated from the server. If unspecified, all certificates will be processed.
+        The certificate(s) to process.
 
     .PARAMETER ExcludeCertificate
-        The certificate(ies) to exclude. This list is auto-populated from the server.
+        The certificate(s) to exclude.
+
+    .PARAMETER SharedPath
+        Specifies the network location for the backup files. The SQL Server service accounts on both Source and Destination must have read/write permission to access this location.
+
+    .PARAMETER EncryptionPassword
+        A string value that specifies the secure password to encrypt the private key.
+
+    .PARAMETER DecryptionPassword
+        Secure string used to decrypt the private key.
+
+    .PARAMETER MasterKeyPassword
+        The password to encrypt the exported key. This must be a SecureString.
 
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
@@ -62,21 +80,16 @@ function Copy-DbaDbCertificate {
         https://dbatools.io/Copy-DbaDbCertificate
 
     .EXAMPLE
-        PS C:\> Copy-DbaDbCertificate -Source mssql1 -Destination mssql2
+        PS C:\> $params1 = @{
+        >>      Source = "sql01"
+        >>      Destination = "sql02"
+        >>      EncryptionPassword = $passwd
+        >>      MasterKeyPassword = $passwd
+        >>      SharedPath = "\\nas\sql\shared"
+        >>  }
+        PS C:\> Copy-DbaDbCertificate @params1 -Confirm:$false -OutVariable results
 
-        Copies all certificates from mssql1 to mssql2 using Windows credentials. If certificates with the same name exist on mssql2, they will be skipped.
-
-    .EXAMPLE
-        PS C:\> Copy-DbaDbCertificate -Source mssql1 -Destination mssql2 -Certificate dbname.certificatename, dbname3.anothercertificate -SourceSqlCredential $cred -Force
-
-        Copies two certificates, the dbname.certificatename and dbname3.anothercertificate from mssql1 to mssql2 using SQL credentials for mssql1 and Windows credentials for mssql2. If certificates with the same name exist on mssql2, they will be skipped.
-
-        In this example, anothercertificate will be copied to the dbname3 database on the server mssql2.
-
-    .EXAMPLE
-        PS C:\> Copy-DbaDbCertificate -Source mssql1 -Destination mssql2 -WhatIf -Force
-
-        Shows what would happen if the command were executed using force.
+        Copies database certificates for matching databases on sql02 and creates master keys if needed
 
     #>
     [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess, ConfirmImpact = "High")]
@@ -130,7 +143,7 @@ function Copy-DbaDbCertificate {
     }
     process {
         # FOR START-DBAMIGRATION, IT NEEDS TO JUST BE COPY-DBADBMASTER
-
+        # NEED TO DELETE ANY EXPORTED KEY
         if (Test-FunctionInterrupt) { return }
         foreach ($destinstance in $Destination) {
             try {
@@ -261,7 +274,7 @@ function Copy-DbaDbCertificate {
                                 Write-Message -Level Verbose -Message "Backing up certificate $cername for $($dbName) on $($server.Name)"
                                 try {
                                     $tempPath = Join-DbaPath -SqlInstance $server -Path $SharedPath -ChildPath "$certname.cer"
-                                    $tempKey  = Join-DbaPath -SqlInstance $server -Path $SharedPath -ChildPath "$certname.pvk"
+                                    $tempKey = Join-DbaPath -SqlInstance $server -Path $SharedPath -ChildPath "$certname.pvk"
 
                                     if ((Test-DbaPath -SqlInstance $server -Path $tempPath) -and (Test-DbaPath -SqlInstance $server -Path $tempKey)) {
                                         $export = [pscustomobject]@{
