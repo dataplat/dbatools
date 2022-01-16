@@ -43,6 +43,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
                 SharedPath         = "C:\temp"
             }
             $results = Copy-DbaDbCertificate @params1 -Confirm:$false | Where-Object SourceDatabase -EQ tempdb | Select-Object -First 1
+            $results.Notes | Should -Be $null
             $results.Status | Should -Be "Successful"
         }
     }
