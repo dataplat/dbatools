@@ -28,12 +28,29 @@ function Copy-DbaDbCertificate {
 
         For MFA support, please use Connect-DbaInstance.
 
+    .PARAMETER Database
+        The database(s) to process.
+
+    .PARAMETER ExcludeDatabase
+        The database(s) to exclude.
 
     .PARAMETER Certificate
-        The certificate(ies) to process. This list is auto-populated from the server. If unspecified, all certificates will be processed.
+        The certificate(s) to process.
 
     .PARAMETER ExcludeCertificate
-        The certificate(ies) to exclude. This list is auto-populated from the server.
+        The certificate(s) to exclude.
+
+    .PARAMETER SharedPath
+        Specifies the network location for the backup files. The SQL Server service accounts on both Source and Destination must have read/write permission to access this location.
+
+    .PARAMETER EncryptionPassword
+        A string value that specifies the secure password to encrypt the private key.
+
+    .PARAMETER DecryptionPassword
+        Secure string used to decrypt the private key.
+
+    .PARAMETER MasterKeyPassword
+        The password to encrypt the exported key. This must be a SecureString.
 
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
