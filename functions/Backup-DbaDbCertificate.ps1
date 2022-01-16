@@ -130,7 +130,7 @@ function Backup-DbaDbCertificate {
         [Security.SecureString]$EncryptionPassword,
         [Security.SecureString]$DecryptionPassword,
         [System.IO.FileInfo]$Path,
-        [string]$Suffix = "$(Get-Date -format 'yyyyMMddHHmmssms')",
+        [string]$Suffix,
         [parameter(ValueFromPipeline, ParameterSetName = "collection")]
         [Microsoft.SqlServer.Management.Smo.Certificate[]]$InputObject,
         [switch]$EnableException
@@ -153,10 +153,22 @@ function Backup-DbaDbCertificate {
             }
 
             $actualPath = "$actualPath".TrimEnd('\').TrimEnd('/')
+
             $fullCertName = (Join-DbaPath -SqlInstance $server $actualPath "$certName$Suffix")
             $exportPathKey = "$fullCertName.pvk"
 
-            if (!(Test-DbaPath -SqlInstance $server -Path $actualPath)) {
+            if ((Test-DbaPath -SqlInstance $server -Path "$fullCertName.cer")) {
+                if ($PSBoundParameter.Suffix) {
+                    Stop-Function -Message "$fullCertName.cer already exists on $($server.Name)" -Target $actualPath
+                } else {
+                    $date = Get-Date -format 'yyyyMMddHHmmssms'
+                    $fullCertName = (Join-DbaPath -SqlInstance $server $actualPath "$certName$date")
+                    $exportPathKey = "$fullCertName.pvk"
+
+                }
+            }
+
+            if (-not (Test-DbaPath -SqlInstance $server -Path $actualPath)) {
                 Stop-Function -Message "$SqlInstance cannot access $actualPath" -Target $actualPath
             }
 
