@@ -104,14 +104,18 @@ function Restore-DbaDbCertificate {
                 $directory = Split-Path $fullname
                 $filename = Split-Path $fullname -Leaf
                 $certname = [io.path]::GetFileNameWithoutExtension($filename)
+                $fullcertname = "$directory\$certname.cer"
+                $privatekey = "$directory\$certname.pvk"
+
+                if ($certname -match '([0-9]{4})(0[1-9]|1[0-2])(0[1-9]|[1-2][0-9]|3[0-1])(2[0-3]|[01][0-9])([0-5][0-9])([0-5][0-9])') {
+                    $certname = $certname.Replace($matches[0], "")
+                }
 
                 if ($Pscmdlet.ShouldProcess("$certname on $SqlInstance", "Importing Certificate")) {
                     $smocert = New-Object Microsoft.SqlServer.Management.Smo.Certificate
                     $smocert.Name = $certname
                     $smocert.Parent = $server.Databases[$Database]
                     Write-Message -Level Verbose -Message "Creating Certificate: $certname"
-                    $fullcertname = "$directory\$certname.cer"
-                    $privatekey = "$directory\$certname.pvk"
                     Write-Message -Level Verbose -Message "Full certificate path: $fullcertname"
                     Write-Message -Level Verbose -Message "Private key: $privatekey"
                     try {
