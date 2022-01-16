@@ -80,21 +80,16 @@ function Copy-DbaDbCertificate {
         https://dbatools.io/Copy-DbaDbCertificate
 
     .EXAMPLE
-        PS C:\> Copy-DbaDbCertificate -Source mssql1 -Destination mssql2
+        PS C:\> $params1 = @{
+        >>      Source = "sql01"
+        >>      Destination = "sql02"
+        >>      EncryptionPassword = $passwd
+        >>      MasterKeyPassword = $passwd
+        >>      SharedPath = "\\nas\sql\shared"
+        >>  }
+        PS C:\> Copy-DbaDbCertificate @params1 -Confirm:$false -OutVariable results
 
-        Copies all certificates from mssql1 to mssql2 using Windows credentials. If certificates with the same name exist on mssql2, they will be skipped.
-
-    .EXAMPLE
-        PS C:\> Copy-DbaDbCertificate -Source mssql1 -Destination mssql2 -Certificate dbname.certificatename, dbname3.anothercertificate -SourceSqlCredential $cred -Force
-
-        Copies two certificates, the dbname.certificatename and dbname3.anothercertificate from mssql1 to mssql2 using SQL credentials for mssql1 and Windows credentials for mssql2. If certificates with the same name exist on mssql2, they will be skipped.
-
-        In this example, anothercertificate will be copied to the dbname3 database on the server mssql2.
-
-    .EXAMPLE
-        PS C:\> Copy-DbaDbCertificate -Source mssql1 -Destination mssql2 -WhatIf -Force
-
-        Shows what would happen if the command were executed using force.
+        Copies database certificates for matching databases on sql02
 
     #>
     [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess, ConfirmImpact = "High")]
@@ -148,7 +143,7 @@ function Copy-DbaDbCertificate {
     }
     process {
         # FOR START-DBAMIGRATION, IT NEEDS TO JUST BE COPY-DBADBMASTER
-
+        # NEED TO DELETE ANY EXPORTED KEY
         if (Test-FunctionInterrupt) { return }
         foreach ($destinstance in $Destination) {
             try {
