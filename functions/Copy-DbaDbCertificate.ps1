@@ -89,7 +89,7 @@ function Copy-DbaDbCertificate {
         >>  }
         PS C:\> Copy-DbaDbCertificate @params1 -Confirm:$false -OutVariable results
 
-        Copies database certificates for matching databases on sql02
+        Copies database certificates for matching databases on sql02 and creates master keys if needed
 
     #>
     [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess, ConfirmImpact = "High")]
