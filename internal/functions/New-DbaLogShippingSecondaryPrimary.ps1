@@ -137,38 +137,35 @@ function New-DbaLogShippingSecondaryPrimary {
         }
     }
 
-    # Check the MonitorServer
-    if (-not $MonitorServer -and $Force) {
-        $MonitorServer = $SqlInstance
-        Write-Message -Message "Setting monitor server to $MonitorServer." -Level Verbose
-    }
+    # Check if MonitorServer is provided
+    if ($MonitorServer) {
+        # Check of the MonitorServerSecurityMode value is of type string and set the integer value
+        if ($MonitorServerSecurityMode -notin 0, 1) {
+            $MonitorServerSecurityMode = switch ($MonitorServerSecurityMode) { "WINDOWS" { 1 } "SQLSERVER" { 0 } }
+            Write-Message -Message "Setting monitor server security mode to $MonitorServerSecurityMode." -Level Verbose
+        }
 
-    # Check of the MonitorServerSecurityMode value is of type string and set the integer value
-    if ($MonitorServerSecurityMode -notin 0, 1) {
-        $MonitorServerSecurityMode = switch ($MonitorServerSecurityMode) { "WINDOWS" { 1 } "SQLSERVER" { 0 } }
-        Write-Message -Message "Setting monitor server security mode to $MonitorServerSecurityMode." -Level Verbose
-    }
+        # Check the MonitorServerSecurityMode if it's SQL Server authentication
+        if ($MonitorServerSecurityMode -eq 0 -and -not $MonitorCredential) {
+            Stop-Function -Message "The MonitorServerCredential cannot be empty when using SQL Server authentication." -Target $SqlInstance -Continue
+            return
+        } elseif ($MonitorServerSecurityMode -eq 0 -and $MonitorCredential) {
+            # Get the username and password from the credential
+            $MonitorLogin = $MonitorCredential.UserName
+            $MonitorPassword = $MonitorCredential.GetNetworkCredential().Password
 
-    # Check the MonitorServerSecurityMode if it's SQL Server authentication
-    if ($MonitorServerSecurityMode -eq 0 -and -not $MonitorCredential) {
-        Stop-Function -Message "The MonitorServerCredential cannot be empty when using SQL Server authentication." -Target $SqlInstance -Continue
-        return
-    } elseif ($MonitorServerSecurityMode -eq 0 -and $MonitorCredential) {
-        # Get the username and password from the credential
-        $MonitorLogin = $MonitorCredential.UserName
-        $MonitorPassword = $MonitorCredential.GetNetworkCredential().Password
+            # Check if the user is in the database
+            if ($ServerSecondary.Databases['master'].Users.Name -notcontains $MonitorLogin) {
+                Stop-Function -Message "User $MonitorLogin for monitor login must be in the master database." -Target $SqlInstance -Continue
+                return
+            }
+        }
 
-        # Check if the user is in the database
-        if ($ServerSecondary.Databases['master'].Users.Name -notcontains $MonitorLogin) {
-            Stop-Function -Message "User $MonitorLogin for monitor login must be in the master database." -Target $SqlInstance -Continue
+        # Check if the database is present on the primary sql server
+        if ($ServerPrimary.Databases.Name -notcontains $PrimaryDatabase) {
+            Stop-Function -Message "Database $PrimaryDatabase is not available on instance $PrimaryServer" -Target $PrimaryServer -Continue
             return
         }
-    }
-
-    # Check if the database is present on the primary sql server
-    if ($ServerPrimary.Databases.Name -notcontains $PrimaryDatabase) {
-        Stop-Function -Message "Database $PrimaryDatabase is not available on instance $PrimaryServer" -Target $PrimaryServer -Continue
-        return
     }
 
     # Set up the query
