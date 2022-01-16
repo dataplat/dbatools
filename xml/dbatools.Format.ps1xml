@@ -100,7 +100,6 @@
                     <TableColumnHeader/>
                     <TableColumnHeader/>
                     <TableColumnHeader/>
-                    <TableColumnHeader/>
                 </TableHeaders>
                 <TableRowEntries>
                     <TableRowEntry>
@@ -129,9 +128,6 @@
                             <TableColumnItem>
                                 <PropertyName>BlockSize</PropertyName>
                                 <Alignment>Right</Alignment>
-                            </TableColumnItem>
-                            <TableColumnItem>
-                                <PropertyName>IsSqlDisk</PropertyName>
                             </TableColumnItem>
                         </TableColumnItems>
                     </TableRowEntry>

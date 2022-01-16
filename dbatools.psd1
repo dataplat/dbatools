@@ -11,7 +11,7 @@
     RootModule             = 'dbatools.psm1'
 
     # Version number of this module.
-    ModuleVersion          = '1.1.49'
+    ModuleVersion          = '1.1.54'
 
     # ID used to uniquely identify this module
     GUID                   = '9d139310-ce45-41ce-8e8b-d76335aa1789'
@@ -81,6 +81,7 @@
         'Add-DbaServerRoleMember',
         'Backup-DbaComputerCertificate',
         'Backup-DbaDatabase',
+        'Test-DbaBackupEncrypted',
         'Backup-DbaDbCertificate',
         'Backup-DbaDbMasterKey',
         'Backup-DbaServiceMasterKey',
@@ -225,6 +226,13 @@
         'Get-DbaDbDbccOpenTran',
         'Get-DbaDbDetachedFileInfo',
         'Get-DbaDbEncryption',
+        'Disable-DbaDbEncryption',
+        'Enable-DbaDbEncryption',
+        'Get-DbaDbEncryptionKey',
+        'New-DbaDbEncryptionKey',
+        'Remove-DbaDbEncryptionKey',
+        'Start-DbaDbEncryption',
+        'Stop-DbaDbEncryption',
         'Get-DbaDbExtentDiff',
         'Get-DbaDbFeatureUsage',
         'Get-DbaDbFile',
@@ -266,6 +274,7 @@
         'Get-DbaDbStoredProcedure',
         'Get-DbaDbSynonym',
         'Get-DbaDbTable',
+        'Remove-DbaDbTable',
         'Get-DbaDbTrigger',
         'Get-DbaDbUdf',
         'Get-DbaDbUser',
@@ -720,6 +729,7 @@
         'Remove-DbaRgWorkloadGroup',
         'Get-DbaLinkedServerLogin',
         'New-DbaLinkedServerLogin',
+        'Remove-DbaLinkedServerLogin',
         'Remove-DbaCredential',
         'Remove-DbaAgentProxy'
     )

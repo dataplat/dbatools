@@ -1,7 +1,7 @@
 
 -- SQL Server 2017 Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: January 1, 2022
+-- Last Modified: January 14, 2022
 -- https://glennsqlperformance.com/
 -- https://sqlserverperformance.wordpress.com/
 -- YouTube: https://bit.ly/2PkoAM1 
@@ -98,7 +98,8 @@ SELECT @@SERVERNAME AS [Server Name], @@VERSION AS [SQL Server and OS Version In
 -- 14.0.3391.2		CU24								5/10/2021		https://support.microsoft.com/en-us/topic/kb5001228-cumulative-update-24-for-sql-server-2017-fc49353e-cbb6-4862-9178-c319ce6f9db4															
 -- 14.0.3401.7		CU25								7/12/2021		https://support.microsoft.com/en-us/topic/kb5003830-cumulative-update-25-for-sql-server-2017-357b80dc-43b5-447c-b544-7503eee189e9     
 -- 14.0.3411.3		CU26								9/14/2021		https://support.microsoft.com/en-us/topic/kb5005226-cumulative-update-26-for-sql-server-2017-121ddf2b-d383-44dc-9a07-d0dd5de84977
--- 14.0.3421.10		CU27							    10/27/2021		https://support.microsoft.com/en-us/topic/kb5006944-cumulative-update-27-for-sql-server-2017-79117c8f-9d54-42f8-9727-5870fe475187
+-- 14.0.3421.10		CU27							   10/27/2021		https://support.microsoft.com/en-us/topic/kb5006944-cumulative-update-27-for-sql-server-2017-79117c8f-9d54-42f8-9727-5870fe475187
+-- 14.0.3430.2		CU28							    1/13/2022		https://support.microsoft.com/en-us/topic/kb5008084-cumulative-update-28-for-sql-server-2017-b5c1f1ba-67d5-4313-87ad-087e6acde82a
 
 
 -- How to determine the version, edition and update level of SQL Server and its components 
@@ -1961,10 +1962,10 @@ ORDER BY total_worker_time DESC OPTION (RECOMPILE);
 -- https://bit.ly/2q1Q6BM
 
 
--- Get QueryStore Options for this database (Query 78) (QueryStore Options)
+-- Get Query Store Options for this database (Query 78) (Query Store Options)
 SELECT actual_state_desc, desired_state_desc, [interval_length_minutes],
        current_storage_size_mb, [max_storage_size_mb], 
-	   query_capture_mode_desc, size_based_cleanup_mode_desc
+	   query_capture_mode_desc, size_based_cleanup_mode_desc, wait_stats_capture_mode_desc
 FROM sys.database_query_store_options WITH (NOLOCK) OPTION (RECOMPILE);
 ------
 
@@ -2054,18 +2055,6 @@ ORDER BY bs.backup_finish_date DESC OPTION (RECOMPILE);
 -- In SQL Server 2016, native SQL Server backup compression actually works 
 -- much better with databases that are using TDE than in previous versions
 -- https://bit.ly/28Rpb2x
-
-
--- Get Last Good CheckDB date and time for the current database (Query 83) (Last Good CheckDB)
-SELECT DATABASEPROPERTYEX (DB_NAME(DB_ID()), 'LastGoodCheckDbTime') AS [Last Good CheckDB];
-------
-
--- The date and time of the last successful DBCC CHECKDB that ran on the current database
--- If DBCC CHECKDB has not been run on a database, 1900-01-01 00:00:00.000 is returned
-
--- DATABASEPROPERTYEX (Transact-SQL)
--- https://bit.ly/3FhvQ41
-
 
 
 -- Microsoft Visual Studio Dev Essentials

@@ -180,6 +180,10 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
         (New-DbaDbSnapshot -Database pubs).SnapshotOf | Should -Be "pubs"
     }
 
+    It "gets an XE template on Linux" {
+        (Get-DbaXESessionTemplate | Measure-Object).Count | Should -BeGreaterThan 40
+    }
+
     It "connects to Azure" {
         $PSDefaultParameterValues.Clear()
         $securestring = ConvertTo-SecureString $env:CLIENTSECRET -AsPlainText -Force

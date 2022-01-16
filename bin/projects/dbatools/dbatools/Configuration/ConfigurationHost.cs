@@ -13,12 +13,12 @@ namespace Sqlcollaborative.Dbatools.Configuration
         /// <summary>
         /// Hashtable containing all the configuration entries
         /// </summary>
-        public static Dictionary<string, Config> Configurations = new Dictionary<string, Config>();
+        public static Dictionary<string, Config> Configurations = new Dictionary<string, Config>(StringComparer.InvariantCultureIgnoreCase);
 
         /// <summary>
         /// Hashtable containing all the registered validations
         /// </summary>
-        public static Dictionary<string, ScriptBlock> Validation = new Dictionary<string, ScriptBlock>();
+        public static Dictionary<string, string> Validation = new Dictionary<string, string>(StringComparer.InvariantCultureIgnoreCase);
 
         /// <summary>
         /// Whether the import from registry has been completed. Prevents multiple imports and overwrites when importing the module multiple times.

@@ -1,17 +1,17 @@
 blank_issues_enabled: false
 contact_links:
   - name: Issues found with dbatools.io?
-    url: https://github.com/sqlcollaborative/web/issues/new
+    url: https://github.com/dataplat/web/issues/new
     about: Website is hosted via GitHub Pages under sqlcollaborative/web
   - name: Issues found with docs.dbatools.io?
-    url: https://github.com/sqlcollaborative/docs/issues/new
+    url: https://github.com/dataplat/docs/issues/new
     about: Website is hosted under sqlcollaborative/docs
   - name: Ask a question about dbatools or get support
-    url: https://github.com/sqlcollaborative/dbatools/discussions/new
+    url: https://github.com/dataplat/dbatools/discussions/new
     about: Get support via forums
   - name: Get an invite to our Slack channel
     url: https://dbatools.io/slack/
     about: Get support via chat
   - name: Say thank you
-    url: https://github.com/sqlcollaborative/dbatools/discussions/new
+    url: https://github.com/dataplat/dbatools/discussions/new
     about: Show and Tell us how you use dbatools & support our efforts in maintaining dbatools

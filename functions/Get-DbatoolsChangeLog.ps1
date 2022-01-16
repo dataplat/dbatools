@@ -43,7 +43,7 @@ function Get-DbatoolsChangeLog {
 
     try {
         if (-not $Local) {
-            Start-Process "https://github.com/sqlcollaborative/dbatools/blob/development/changelog.md"
+            Start-Process "https://github.com/dataplat/dbatools/blob/development/changelog.md"
         } else {
             $releasenotes = Get-Content $script:PSModuleRoot\changelog.md -Raw
 

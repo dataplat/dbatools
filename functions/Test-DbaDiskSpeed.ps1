@@ -13,7 +13,7 @@ function Test-DbaDiskSpeed {
         This command uses a query from Rich Benner
         https://github.com/RichBenner/PersonalCode/blob/master/Disk_Speed_Check.sql
 
-        ...and also based on further adaptations referenced at https://github.com/sqlcollaborative/dbatools/issues/6551#issue-623216718
+        ...and also based on further adaptations referenced at https://github.com/dataplat/dbatools/issues/6551#issue-623216718
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.

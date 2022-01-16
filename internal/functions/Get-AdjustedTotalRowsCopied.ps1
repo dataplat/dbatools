@@ -3,7 +3,7 @@ function Get-AdjustedTotalRowsCopied {
     .SYNOPSIS
         The legacy bulk copy library still uses a 4 byte integer to track the number of rows copied. That 4 byte integer is subject to overflow/wraparound
         if the number of rows copied is greater than an integer can support. The SqlRowsCopiedEventArgs.RowsCopied property is defined as an Int64
-        but a 4 byte integer is used in the underlying legacy library. See https://github.com/sqlcollaborative/dbatools/issues/6927 for more details.
+        but a 4 byte integer is used in the underlying legacy library. See https://github.com/dataplat/dbatools/issues/6927 for more details.
 
     .DESCRIPTION
         Determines the accurate total rows copied even if the bulkcopy.RowsCopied has experienced integer wrap.

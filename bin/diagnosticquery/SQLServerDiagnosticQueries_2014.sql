@@ -1,7 +1,7 @@
 
 -- SQL Server 2014 Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: January 1, 2022
+-- Last Modified: January 13, 2022
 -- https://glennsqlperformance.com/
 -- https://sqlserverperformance.wordpress.com/
 -- YouTube: https://bit.ly/2PkoAM1 
@@ -1876,18 +1876,6 @@ ORDER BY bs.backup_finish_date DESC OPTION (RECOMPILE);
 -- Are you doing encrypted backups?
 -- Have you done any backup tuning with striped backups, or changing the parameters of the backup command?
 -- Where are the backups going to?
-
-
--- Get Last Good CheckDB date and time for the current database (Query 75) (Last Good CheckDB)
-SELECT DATABASEPROPERTYEX (DB_NAME(DB_ID()), 'LastGoodCheckDbTime') AS [Last Good CheckDB];
-------
-
--- The date and time of the last successful DBCC CHECKDB that ran on the current database
--- If DBCC CHECKDB has not been run on a database, 1900-01-01 00:00:00.000 is returned
-
--- DATABASEPROPERTYEX (Transact-SQL)
--- https://bit.ly/3FhvQ41
-
 
 
 -- Microsoft Visual Studio Dev Essentials

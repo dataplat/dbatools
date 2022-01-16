@@ -442,6 +442,7 @@ $script:xplat = @(
     'Get-DbaDependency',
     'Find-DbaCommand',
     'Backup-DbaDatabase',
+    'Test-DbaBackupEncrypted',
     'New-DbaDirectory',
     'Get-DbaDbQueryStoreOption',
     'Set-DbaDbQueryStoreOption',
@@ -459,6 +460,13 @@ $script:xplat = @(
     'Get-DbaBackupDevice',
     'Get-DbaAgentProxy',
     'Get-DbaDbEncryption',
+    'Disable-DbaDbEncryption',
+    'Enable-DbaDbEncryption',
+    'Get-DbaDbEncryptionKey',
+    'New-DbaDbEncryptionKey',
+    'Remove-DbaDbEncryptionKey',
+    'Start-DbaDbEncryption',
+    'Stop-DbaDbEncryption',
     'Remove-DbaDatabase',
     'Get-DbaQueryExecutionTime',
     'Get-DbaTempdbUsage',
@@ -469,6 +477,7 @@ $script:xplat = @(
     'Set-DbaDbFileGrowth',
     'Read-DbaTransactionLog',
     'Get-DbaDbTable',
+    'Remove-DbaDbTable',
     'Invoke-DbaDbShrink',
     'Get-DbaEstimatedCompletionTime',
     'Get-DbaLinkedServer',
@@ -854,6 +863,7 @@ $script:xplat = @(
     'New-DbaRgWorkloadGroup',
     'Remove-DbaRgWorkloadGroup',
     'New-DbaLinkedServerLogin',
+    'Remove-DbaLinkedServerLogin',
     'Remove-DbaCredential',
     'Remove-DbaAgentProxy'
 )
@@ -1060,7 +1070,7 @@ while ($script:smoRunspace.Runspace.RunspaceAvailability -eq 'Busy') {
 The module import has hit a timeout while waiting for some background tasks to finish.
 This may result in some commands not working as intended.
 This should not happen under reasonable circumstances, please file an issue at:
-https://github.com/sqlcollaborative/dbatools/issues
+https://github.com/dataplat/dbatools/issues
 Or contact us directly in the #dbatools channel of the SQL Server Community Slack Channel:
 https://dbatools.io/slack/
 Timeout waiting for temporary runspaces reached! The Module import will complete, but some things may not work as intended

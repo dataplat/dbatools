@@ -104,7 +104,7 @@ function Get-DbaDbEncryption {
             foreach ($db in $dbs) {
                 Write-Message -Level Verbose -Message "Processing $db"
 
-                if ($db.EncryptionEnabled -eq $true) {
+                if ($db.EncryptionEnabled) {
                     $returnCertificate = [PSCustomObject]@{
                         ComputerName             = $server.ComputerName
                         InstanceName             = $server.ServiceName
@@ -136,9 +136,7 @@ function Get-DbaDbEncryption {
                         $returnCertificate.Owner = $serverCertificate.Owner
                         $returnCertificate.Object = $serverCertificate
                         $returnCertificate.ExpirationDate = $serverCertificate.ExpirationDate
-                        If ($true -eq $db.DatabaseEncryptionKey.Properties.Contains("EncryptionAlgorithm")) {
-                            $returnCertificate.EncryptionAlgorithm = $db.DatabaseEncryptionKey.Properties["EncryptionAlgorithm"].value
-                        }
+                        $returnCertificate.EncryptionAlgorithm = $db.DatabaseEncryptionKey.EncryptionAlgorithm
                     }
 
                     $returnCertificate
