@@ -442,6 +442,7 @@ $script:xplat = @(
     'Get-DbaDependency',
     'Find-DbaCommand',
     'Backup-DbaDatabase',
+    'Test-DbaBackupEncrypted',
     'New-DbaDirectory',
     'Get-DbaDbQueryStoreOption',
     'Set-DbaDbQueryStoreOption',
