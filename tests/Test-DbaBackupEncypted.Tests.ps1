@@ -54,7 +54,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         }
 
         It "should say a non-encryted file is not encrypted" {
-            $encryptor = (Get-DbaDbCertificate -SqlInstance sqlcs -Database master | Where-Object Name -notmatch "#" | Select-Object -First 1).Name
+            $encryptor = (Get-DbaDbCertificate -SqlInstance $script:instance2 -Database master | Where-Object Name -notmatch "#" | Select-Object -First 1).Name
             $db = New-DbaDatabase -SqlInstance $script:instance2
             $backup = Backup-DbaDatabase -SqlInstance $script:instance2 -Path C:\temp -EncryptionAlgorithm AES192 -EncryptionCertificate $encryptor -Database $db.Name
             $results = Test-DbaBackupEncypted -SqlInstance $script:instance2 -FilePath $backup.BackupPath
