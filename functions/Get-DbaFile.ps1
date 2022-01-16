@@ -94,7 +94,7 @@ function Get-DbaFile {
                     DROP TABLE #DirectoryTree;
 
                     CREATE TABLE #DirectoryTree (
-                       id int idENTITY(1,1)
+                       id int IDENTITY(1,1)
                        ,subdirectory nvarchar(512)
                        ,depth int
                        ,isfile bit
