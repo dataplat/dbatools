@@ -28,6 +28,7 @@ function Copy-DbaDbCertificate {
 
         For MFA support, please use Connect-DbaInstance.
 
+
     .PARAMETER Certificate
         The certificate(ies) to process. This list is auto-populated from the server. If unspecified, all certificates will be processed.
 
@@ -261,7 +262,7 @@ function Copy-DbaDbCertificate {
                                 Write-Message -Level Verbose -Message "Backing up certificate $cername for $($dbName) on $($server.Name)"
                                 try {
                                     $tempPath = Join-DbaPath -SqlInstance $server -Path $SharedPath -ChildPath "$certname.cer"
-                                    $tempKey  = Join-DbaPath -SqlInstance $server -Path $SharedPath -ChildPath "$certname.pvk"
+                                    $tempKey = Join-DbaPath -SqlInstance $server -Path $SharedPath -ChildPath "$certname.pvk"
 
                                     if ((Test-DbaPath -SqlInstance $server -Path $tempPath) -and (Test-DbaPath -SqlInstance $server -Path $tempKey)) {
                                         $export = [pscustomobject]@{

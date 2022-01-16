@@ -22,8 +22,8 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 
             $passwd = $(ConvertTo-SecureString -String "GoodPass1234!" -AsPlainText -Force)
             $tempdbmasterkey = New-DbaDbMasterKey -SqlInstance $script:instance2 -Database tempdb -Password $passwd -Confirm:$false
-            $certificateName1 = "Cert_$(Get-random)"
-            $certificateName2 = "Cert_$(Get-random)"
+            $certificateName1 = "Cert_$(Get-Random)"
+            $certificateName2 = "Cert_$(Get-Random)"
             $cert1 = New-DbaDbCertificate -SqlInstance $script:instance2 -Name $certificateName1 -Confirm:$false
             $cert2 = New-DbaDbCertificate -SqlInstance $script:instance2 -Name $certificateName2 -Database tempdb -Confirm:$false
         }
@@ -42,7 +42,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
                 MasterKeyPassword  = $passwd
                 SharedPath         = "C:\temp"
             }
-            $results = Copy-DbaDbCertificate @params1 -Confirm:$false | Where-Object SourceDatabase -eq tempdb | Select-Object -First 1
+            $results = Copy-DbaDbCertificate @params1 -Confirm:$false | Where-Object SourceDatabase -EQ tempdb | Select-Object -First 1
             $results.Status | Should -Be "Successful"
         }
     }
