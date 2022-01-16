@@ -81,6 +81,7 @@
         'Add-DbaServerRoleMember',
         'Backup-DbaComputerCertificate',
         'Backup-DbaDatabase',
+        'Test-DbaBackupEncypted',
         'Backup-DbaDbCertificate',
         'Backup-DbaDbMasterKey',
         'Backup-DbaServiceMasterKey',
