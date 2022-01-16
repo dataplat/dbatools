@@ -1,4 +1,4 @@
-function Test-DbaBackupEncypted {
+function Test-DbaBackupEncrypted {
     <#
     .SYNOPSIS
         Tests to see if a backup is encrypted
@@ -33,15 +33,15 @@ function Test-DbaBackupEncypted {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Test-DbaBackupEncypted
+        https://dbatools.io/Test-DbaBackupEncrypted
 
     .EXAMPLE
-        PS C:\> Test-DbaBackupEncypted -SqlInstance sql01 -Path /tmp/northwind.bak
+        PS C:\> Test-DbaBackupEncrypted -SqlInstance sql01 -Path /tmp/northwind.bak
 
         Test to see if /tmp/northwind.bak is encrypted
 
     .EXAMPLE
-        PS C:\> Get-ChildItem \\nas\sql\backups | Test-DbaBackupEncypted -SqlInstance sql01
+        PS C:\> Get-ChildItem \\nas\sql\backups | Test-DbaBackupEncrypted -SqlInstance sql01
 
         Test to see if all of the backups in \\nas\sql\backups are encrypted
     #>
