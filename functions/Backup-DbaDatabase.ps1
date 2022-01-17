@@ -293,6 +293,7 @@ function Backup-DbaDatabase {
                 return
             }
         }
+        # this had to be a function. making it a variable killed something. I'm guessing scoping issues
         Function Convert-BackupPath ($object) {
             if ($object -match "/|\\") {
                 if ($isdestlinux -and $object) {
@@ -549,8 +550,6 @@ function Backup-DbaDatabase {
             }
 
             Write-Message -Level Verbose -Message "Building file name"
-            #$isdestlinux
-            #####################################
             $BackupFinalName = ''
             $FinalBackupPath = @()
             $timestamp = Get-Date -Format $TimeStampFormat
