@@ -182,7 +182,7 @@ function Invoke-DbaAdvancedInstall {
     }
     if ($Credential) {
         $restartParams.Credential = $Credential
-        $restartParams.WsmanAuthentication = 'CredSSP'
+        $restartParams.WsmanAuthentication = $Authentication
     }
     $activity = "Installing SQL Server ($Version) components on $ComputerName"
     try {

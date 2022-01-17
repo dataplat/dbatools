@@ -97,7 +97,7 @@ Function Invoke-DbaAdvancedUpdate {
     }
     if ($Credential) {
         $restartParams.Credential = $Credential
-        $restartParams.WsmanAuthentication = 'CredSSP'
+        $restartParams.WsmanAuthentication = $Authentication
     }
     try {
         $restartNeeded = Test-PendingReboot -ComputerName $computer -Credential $Credential -NoPendingRename:$NoPendingRenameCheck
