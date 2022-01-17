@@ -16,26 +16,21 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     Context "Can create a database certificate" {
         BeforeAll {
+            $passwd = $(ConvertTo-SecureString -String "GoodPass1234!" -AsPlainText -Force)
             if (-not (Get-DbaDbMasterKey -SqlInstance $script:instance2 -Database master)) {
-                $masterkey = New-DbaDbMasterKey -SqlInstance $script:instance2 -Database master -Password $(ConvertTo-SecureString -String "GoodPass1234!" -AsPlainText -Force) -Confirm:$false
+                $masterkey = New-DbaDbMasterKey -SqlInstance $script:instance2 -Database master -SecurePassword $passwd -Confirm:$false
             }
 
-            $passwd = $(ConvertTo-SecureString -String "GoodPass1234!" -AsPlainText -Force)
-            $tempdbmasterkey = New-DbaDbMasterKey -SqlInstance $script:instance2 -Database tempdb -Password $passwd -Confirm:$false
-            $certificateName1 = "Cert_$(Get-Random)"
+            $newdbs = New-DbaDatabase -SqlInstance $script:instance2, -SqlInstance $script:instance3 -Name dbatoolscopycred
+            $null = New-DbaDbMasterKey -SqlInstance $script:instance2 -Database dbatoolscopycred -SecurePassword $passwd -Confirm:$false
             $certificateName2 = "Cert_$(Get-Random)"
-            $cert1 = New-DbaDbCertificate -SqlInstance $script:instance2 -Name $certificateName1 -Confirm:$false
-            $cert2 = New-DbaDbCertificate -SqlInstance $script:instance2 -Name $certificateName2 -Database tempdb -Confirm:$false
+            $null = New-DbaDbCertificate -SqlInstance $script:instance2 -Name $certificateName2 -Database dbatoolscopycred -Confirm:$false
         }
         AfterAll {
-            if ($tempdbmasterkey) {
-                $tempdbmasterkey | Remove-DbaDbMasterKey -Confirm:$false -ErrorAction SilentlyContinue
-            }
+            $null = $newdbs | Remove-DbaDatabase -Confirm:$false -ErrorAction SilentlyContinue
             if ($masterKey) {
                 $masterkey | Remove-DbaDbMasterKey -Confirm:$false -ErrorAction SilentlyContinue
             }
-            $null = $cert1 | Remove-DbaDbCertificate -Confirm:$false -ErrorAction SilentlyContinue
-            $null = $cert2 | Remove-DbaDbCertificate -Confirm:$false -ErrorAction SilentlyContinue
         }
         # doing it on docker instead. this works on linux and on a homelab so i dont know
         It "Successfully copies a certificate" {
@@ -45,10 +40,10 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
                 Destination        = $script:instance3
                 EncryptionPassword = $passwd
                 MasterKeyPassword  = $passwd
-                Database           = "tempdb"
+                Database           = "dbatoolscopycred"
                 SharedPath         = "C:\temp"
             }
-            $results = Copy-DbaDbCertificate @params1 -Confirm:$false | Where-Object SourceDatabase -eq tempdb | Select-Object -First 1
+            $results = Copy-DbaDbCertificate @params1 -Confirm:$false | Where-Object SourceDatabase -eq dbatoolscopycred | Select-Object -First 1
             $results.Notes | Should -Be $null
             $results.Status | Should -Be "Successful"
         }
