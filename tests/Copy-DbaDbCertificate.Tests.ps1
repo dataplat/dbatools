@@ -17,9 +17,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     Context "Can create a database certificate" {
         BeforeAll {
             $passwd = $(ConvertTo-SecureString -String "GoodPass1234!" -AsPlainText -Force)
-            if (-not (Get-DbaDbMasterKey -SqlInstance $script:instance2 -Database master)) {
-                $masterkey = New-DbaDbMasterKey -SqlInstance $script:instance2 -Database master -SecurePassword $passwd -Confirm:$false
-            }
+            $masterkey = New-DbaDbMasterKey -SqlInstance $script:instance2 -Database master -SecurePassword $passwd -Confirm:$false -ErrorAction SilentlyContinue
 
             $newdbs = New-DbaDatabase -SqlInstance $script:instance2, $script:instance3 -Name dbatoolscopycred
             $null = New-DbaDbMasterKey -SqlInstance $script:instance2 -Database dbatoolscopycred -SecurePassword $passwd -Confirm:$false
