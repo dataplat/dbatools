@@ -444,7 +444,7 @@ function Start-DbaMigration {
         }
 
         if ($Exclude -notcontains 'SysDbUserObjects') {
-            Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Migrating user objects in system databases (this can take a second)."
+            Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Migrating user objects in system databases (this can take a second)"
             Write-Message -Level Verbose -Message "Migrating user objects in system databases (this can take a second)."
             If ($Pscmdlet.ShouldProcess($destination, "Copying user objects.")) {
                 Copy-DbaSysDbUserObject -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -Force:$force

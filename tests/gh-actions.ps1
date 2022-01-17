@@ -25,12 +25,15 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
 
     It "migrates" {
         $params = @{
-            BackupRestore = $true
-            Exclude       = "LinkedServers", "Credentials", "DataCollector", "EndPoints", "PolicyManagement", "ResourceGovernor", "BackupDevices"
+            MasterKeyPassword = $cred.Password
+            BackupRestore     = $true
+            Exclude           = "LinkedServers", "Credentials", "DataCollector", "EndPoints", "PolicyManagement", "ResourceGovernor", "BackupDevices"
         }
-
+        $null = New-DbaDbCertificate -Name migrateme -Database master -Confirm:$false
         $results = Start-DbaMigration @params
         $results.Name | Should -Contain "Northwind"
+        $results | Where-Object Name -eq "Northwind" | Select-Object -ExpandProperty Status | Should -Be "Successful"
+        $results | Where-Object Name -eq "migrateme" | Select-Object -ExpandProperty Status | Should -Be "Successful"
     }
 
     It "sets up a mirror" {
