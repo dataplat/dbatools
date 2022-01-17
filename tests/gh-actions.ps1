@@ -184,6 +184,23 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
         (Get-DbaXESessionTemplate | Measure-Object).Count | Should -BeGreaterThan 40
     }
 
+    It "copies a certificate" {
+        $passwd = ConvertTo-SecureString $env:CLIENTSECRET -AsPlainText -Force
+        $null = New-DbaDbMasterKey -Database tempdb -SecurePassword $passwd -Confirm:$false
+        $certname = "Cert_$(Get-Random)"
+        $null = New-DbaDbCertificate -SqlInstance $script:instance2 -Name $certname -Database tempdb -Confirm:$false
+
+        $params1 = @{
+            EncryptionPassword = $passwd
+            MasterKeyPassword  = $passwd
+            Database           = "tempdb"
+            SharedPath         = "/tmp"
+        }
+        $results = Copy-DbaDbCertificate @params1 -Confirm:$false | Where-Object SourceDatabase -eq tempdb | Select-Object -First 1
+        $results.Notes | Should -Be $null
+        $results.Status | Should -Be "Successful"
+    }
+
     It "connects to Azure" {
         $PSDefaultParameterValues.Clear()
         $securestring = ConvertTo-SecureString $env:CLIENTSECRET -AsPlainText -Force
