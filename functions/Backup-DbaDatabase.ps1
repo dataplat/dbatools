@@ -409,6 +409,7 @@ function Backup-DbaDatabase {
             $failures = @()
             $dbName = $db.Name
             $server = $db.Parent
+            $isdestlinux = Test-HostOSLinux -SqlInstance $server
 
             if ($null -eq $PSBoundParameters.Path -and $PSBoundParameters.FilePath -ne 'NUL' -and $server.VersionMajor -eq 8) {
                 Write-Message -Message 'No backup folder passed in, setting it to instance default' -Level Verbose
@@ -465,6 +466,7 @@ function Backup-DbaDatabase {
             }
 
             if ($CompressBackup) {
+                ######## THIS IS WHERE WE FIX COMPRESSION
                 if ($db.EncryptionEnabled) {
                     $minVerForTDECompression = [version]'13.0.4446.0' #SQL Server 2016 CU 4
                     $flagTDESQLVersion = $minVerForTDECompression -le $Server.version
@@ -520,7 +522,8 @@ function Backup-DbaDatabase {
             }
 
             Write-Message -Level Verbose -Message "Building file name"
-
+            #$isdestlinux
+            #####################################
             $BackupFinalName = ''
             $FinalBackupPath = @()
             $timestamp = Get-Date -Format $TimeStampFormat
@@ -534,7 +537,7 @@ function Backup-DbaDatabase {
                 if ( '' -ne (Split-Path $FilePath)) {
                     Write-Message -Level Verbose -Message "Fully qualified path passed in"
                     # Because of #7860, don't use [IO.Path]::GetFullPath on MacOS
-                    if ($IsMacOS) {
+                    if ($IsMacOS -or $isdestlinux) {
                         $FinalBackupPath += $file.DirectoryName
                     } else {
                         $FinalBackupPath += [IO.Path]::GetFullPath($file.DirectoryName)
@@ -556,7 +559,7 @@ function Backup-DbaDatabase {
                 }
             }
 
-            if ($AzureBaseUrl -or $AzureCredential) {
+            if ($AzureBaseUrl -or $AzureCredential -or $isdestlinux) {
                 $slash = "/"
             } else {
                 $slash = "\"
@@ -589,7 +592,9 @@ function Backup-DbaDatabase {
                 }
             }
 
-            if (-not $IgnoreFileChecks -and -not $AzureBaseUrl) {
+            # Linux can't support making new directories yet, and it's likely that databases
+            # will be in one place
+            if (-not $IgnoreFileChecks -and -not $AzureBaseUrl -and -not $isdestlinux) {
                 $parentPaths = ($FinalBackupPath | ForEach-Object { Split-Path $_ } | Select-Object -Unique)
                 foreach ($parentPath in $parentPaths) {
                     if (-not (Test-DbaPath -SqlInstance $server -Path $parentPath)) {
@@ -605,7 +610,7 @@ function Backup-DbaDatabase {
             }
 
             # Because of #7860, don't use [IO.Path]::GetFullPath on MacOS
-            if ($null -eq $AzureBaseUrl -and $Path -and -not $IsMacOS) {
+            if ($null -eq $AzureBaseUrl -and $Path -and -not $IsMacOS -and -not $isdestlinux) {
                 $FinalBackupPath = $FinalBackupPath | ForEach-Object { [IO.Path]::GetFullPath($_) }
             }
 
