@@ -95,7 +95,7 @@ function New-DbaDbMasterKey {
 
         foreach ($db in $InputObject) {
             if ($null -ne $db.MasterKey) {
-                Stop-Function -Message "Master key already exists in the $db database on $($db.Parent.Name)" -Target $db -Continue
+                Stop-Function -Message "Master key already exists in the $($db.Name) database on $($db.Parent.Name)" -Target $db -Continue
             }
 
             if ($Pscmdlet.ShouldProcess($db.Parent.Name, "Creating master key for database '$($db.Name)'")) {

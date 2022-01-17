@@ -295,9 +295,9 @@ SET ENCRYPTION ON;
 GO
 "@
         $null = Invoke-DbaQuery -SqlInstance $script:instance2 -Query $createdb -Database encrypted
-        It "Should not compress an encrypted db" {
+        It "Should compress an encrypted db" {
             $results = Backup-DbaDatabase -SqlInstance $script:instance2 -Database encrypted -Compress
-            $results.script | Should -BeLike '*NO_COMPRESSION*'
+            $results.script | Should -BeLike '*D, COMPRESSION,*'
         }
         Remove-DbaDatabase -SqlInstance $script:instance2 -Database encrypted -confirm:$false
         $sqldrop =
@@ -328,7 +328,7 @@ go
 
     Context "Test Backup Encryption with Certificate" {
         $securePass = ConvertTo-SecureString "estBackupDir\master\script:instance1).split('\')[1])\Full\master-Full.bak" -AsPlainText -Force
-        New-DbaDbMasterKey -SqlInstance $script:instance2 -Database Master -SecurePassword $securePass -confirm:$false
+        New-DbaDbMasterKey -SqlInstance $script:instance2 -Database Master -SecurePassword $securePass -confirm:$false -ErrorAction SilentlyContinue
         $cert = New-DbaDbCertificate -SqlInstance $script:instance2 -Database master -Name BackupCertt -Subject BackupCertt
         $encBackupResults = Backup-DbaDatabase -SqlInstance $script:instance2 -Database master -EncryptionAlgorithm AES128 -EncryptionCertificate BackupCertt -BackupFileName 'encryptiontest.bak'
         It "Should encrypt the backup" {

@@ -19,6 +19,9 @@ function Restore-DbaDbCertificate {
     .PARAMETER Path
         The Path the contains the certificate and private key files. The path can be a directory or a specific certificate.
 
+    .PARAMETER KeyFilePath
+        The Path the contains the private key file. If one is not specified, we will try to find it for you.
+
     .PARAMETER DecryptionPassword
         Secure string used to decrypt the private key.
 
@@ -70,6 +73,7 @@ function Restore-DbaDbCertificate {
         [parameter(Mandatory, ValueFromPipeline)]
         [Alias("FullName")]
         [object[]]$Path,
+        [string[]]$KeyFilePath,
         [Security.SecureString]$EncryptionPassword,
         [string]$Database = "master",
         [Alias("Password", "SecurePassword")]
@@ -85,17 +89,18 @@ function Restore-DbaDbCertificate {
         }
 
         foreach ($dir in $Path) {
-            if (-not $SqlInstance.IsLocalHost -and -not $dir.StartsWith('\')) {
-                Stop-Function -Message "Path ($dir) must be a UNC share when SQL instance is not local." -Continue -Target $fullname
-            }
-
             if (-not (Test-DbaPath -SqlInstance $server -Path $dir)) {
                 Stop-Function -Message "$SqlInstance cannot access $dir" -Continue -Target $dir
             }
 
-            if (Test-Path $dir -PathType Container) {
-                Write-Message -Level Verbose -Message "Path is a directory - processing all cer's within"
-                $path = Get-ChildItem $dir "*.cer" | Select-Object -expand FullName
+            try {
+                $isdir = ($server.Query("EXEC master.dbo.xp_fileexist '$dir'")).Item(1)
+            } catch {
+                Stop-Function -Message $_ -ErrorRecord $_ -Target $server.Name -Continue
+            }
+            if ($isdir) {
+                Write-Message -Level Verbose -Message "Path is a directory - processing all certs within"
+                $path = (Get-DbaFile -SqlInstance $server -Path $dir -FileType cer).Filename
             }
 
             foreach ($fullname in $path) {
@@ -104,8 +109,13 @@ function Restore-DbaDbCertificate {
                 $directory = Split-Path $fullname
                 $filename = Split-Path $fullname -Leaf
                 $certname = [io.path]::GetFileNameWithoutExtension($filename)
-                $fullcertname = "$directory\$certname.cer"
-                $privatekey = "$directory\$certname.pvk"
+                $fullcertname = Join-DbaPath -SqlInstance $server -Path $directory -ChildPath "$certname.cer"
+
+                if (-not $KeyFilePath) {
+                    $privatekey = Join-DbaPath -SqlInstance $server -Path $directory -ChildPath "$certname.pvk"
+                } else {
+                    $privatekey = $KeyFilePath
+                }
 
                 if ($certname -match '([0-9]{4})(0[1-9]|1[0-2])(0[1-9]|[1-2][0-9]|3[0-1])(2[0-3]|[01][0-9])([0-5][0-9])([0-5][0-9])') {
                     $certname = $certname.Replace($matches[0], "")

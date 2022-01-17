@@ -220,6 +220,7 @@
         'Get-DbaDbccStatistic',
         'Get-DbaDbccUserOption',
         'Get-DbaDbCertificate',
+        'Copy-DbaDbCertificate',
         'Get-DbaDbCheckConstraint',
         'Get-DbaDbCompatibility',
         'Get-DbaDbCompression',

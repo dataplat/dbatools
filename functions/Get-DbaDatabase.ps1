@@ -329,7 +329,7 @@ function Get-DbaDatabase {
             }
 
             $defaults = 'ComputerName', 'InstanceName', 'SqlInstance', 'Name', 'Status', 'IsAccessible', 'RecoveryModel',
-            'LogReuseWaitStatus', 'Size as SizeMB', 'CompatibilityLevel as Compatibility', 'Collation', 'Owner',
+            'LogReuseWaitStatus', 'Size as SizeMB', 'CompatibilityLevel as Compatibility', 'Collation', 'Owner', 'EncryptionEnabled as Encrypted',
             'LastBackupDate as LastFullBackup', 'LastDifferentialBackupDate as LastDiffBackup',
             'LastLogBackupDate as LastLogBackup'
 

@@ -25,12 +25,16 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
 
     It "migrates" {
         $params = @{
-            BackupRestore = $true
-            Exclude       = "LinkedServers", "Credentials", "DataCollector", "EndPoints", "PolicyManagement", "ResourceGovernor", "BackupDevices"
+            MasterKeyPassword = $cred.Password
+            BackupRestore     = $true
+            Exclude           = "LinkedServers", "Credentials", "DataCollector", "EndPoints", "PolicyManagement", "ResourceGovernor", "BackupDevices"
         }
-
+        $null = New-DbaDbCertificate -Name migrateme -Database master -Confirm:$false
         $results = Start-DbaMigration @params
         $results.Name | Should -Contain "Northwind"
+        $results | Where-Object Name -eq "Northwind" | Select-Object -ExpandProperty Status | Should -Be "Successful"
+        $results | Where-Object Name -eq "migrateme" | Select-Object -ExpandProperty Status | Should -Be "Successful"
+        Get-DbaDbCertificate -SqlInstance localhost:14333 -Database master -Certificate migrateme | Should -Not -BeNull
     }
 
     It "sets up a mirror" {
@@ -182,6 +186,23 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
 
     It "gets an XE template on Linux" {
         (Get-DbaXESessionTemplate | Measure-Object).Count | Should -BeGreaterThan 40
+    }
+
+    It "copies a certificate" {
+        $passwd = ConvertTo-SecureString "dbatools.IOXYZ" -AsPlainText -Force
+        $null = New-DbaDbMasterKey -Database tempdb -SecurePassword $passwd -Confirm:$false
+        $certname = "Cert_$(Get-Random)"
+        $null = New-DbaDbCertificate -Name $certname -Database tempdb -Confirm:$false
+
+        $params1 = @{
+            EncryptionPassword = $passwd
+            MasterKeyPassword  = $passwd
+            Database           = "tempdb"
+            SharedPath         = "/shared"
+        }
+        $results = Copy-DbaDbCertificate @params1 -Confirm:$false | Where-Object SourceDatabase -eq tempdb | Select-Object -First 1
+        $results.Notes | Should -Be $null
+        $results.Status | Should -Be "Successful"
     }
 
     It "connects to Azure" {
