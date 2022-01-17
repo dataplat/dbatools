@@ -158,7 +158,7 @@ function Copy-DbaDbCertificate {
             }
 
             if (($sourcecertificates | Where-Object PrivateKeyEncryptionType -eq MasterKey)) {
-                $masterkey = Get-DbaDbMasterKey -SqlInstance $db.Parent -Database master
+                $masterkey = Get-DbaDbMasterKey -SqlInstance $destServer -Database master
                 if (-not $masterkey) {
                     Write-Message -Level Verbose -Message "master key not found, seeing if MasterKeyPassword was specified"
                     if ($MasterKeyPassword) {
@@ -172,9 +172,7 @@ function Copy-DbaDbCertificate {
                             }
                             $masterkey = New-DbaDbMasterKey @params
                         } catch {
-                            if ($PSItem -notmatch "already exists") {
-                                Stop-Function -Message "Failure" -ErrorRecord $PSItem -Continue
-                            }
+                            Stop-Function -Message "Failure" -ErrorRecord $PSItem -Continue
                         }
                     } else {
                         Stop-Function -Message "Master service key not found on $destinstance and MasterKeyPassword not specified, so it cannot be created" -Continue
