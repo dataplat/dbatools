@@ -94,7 +94,7 @@ function New-DbaDirectory {
             }
 
             [pscustomobject]@{
-                Server  = $SqlInstance
+                Server  = $instance
                 Path    = $Path
                 Created = $created
             }

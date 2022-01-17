@@ -90,7 +90,7 @@ function Get-DbaFile {
             $q1 += "DECLARE @myPath nvarchar(4000);
                     DECLARE @depth SMALLINT = $Depth;
 
-                    IF OBJECT_ID('tempdb..#DirectoryTree') IS NOT NULL
+                    IF OBJECT_id('tempdb..#DirectoryTree') IS NOT NULL
                     DROP TABLE #DirectoryTree;
 
                     CREATE TABLE #DirectoryTree (
@@ -112,22 +112,22 @@ function Get-DbaFile {
 
                     UPDATE #DirectoryTree
                        SET ParentDirectory = (
-                          SELECT MAX(Id) FROM #DirectoryTree
-                          WHERE Depth = d.Depth - 1 AND Id < d.Id   )
+                          SELECT MAX(id) FROM #DirectoryTree
+                          WHERE depth = d.depth - 1 AND id < d.id   )
                     FROM #DirectoryTree d
                     WHERE ParentDirectory is NULL;"
 
             $query_files_sql = "-- SEE all with full paths
                     WITH dirs AS (
                         SELECT
-                           Id,subdirectory,depth,isfile,ParentDirectory,flag
+                           id,subdirectory,depth,isfile,ParentDirectory,flag
                            , CAST (null AS NVARCHAR(MAX)) AS container
                            , CAST([subdirectory] AS NVARCHAR(MAX)) AS dpath
                            FROM #DirectoryTree
                            WHERE ParentDirectory IS NULL
                         UNION ALL
                         SELECT
-                           d.Id,d.subdirectory,d.depth,d.isfile,d.ParentDirectory,d.flag
+                           d.id,d.subdirectory,d.depth,d.isfile,d.ParentDirectory,d.flag
                            , dpath as container
                            , dpath +'\'+d.[subdirectory]
                         FROM #DirectoryTree AS d
@@ -169,13 +169,20 @@ function Get-DbaFile {
             }
 
             # Get the default data and log directories from the instance
-            if (-not (Test-Bound -ParameterName Path)) { $Path = (Get-DbaDefaultPath -SqlInstance $server).Data }
+            if (-not (Test-Bound -ParameterName Path)) {
+                $Path = (Get-DbaDefaultPath -SqlInstance $server).Data
+            }
+            if (Test-HostOSLinux -SqlInstance $server) {
+                $separator = "/"
+            } else {
+                $separator = "\"
+            }
 
             Write-Message -Level Verbose -Message "Adding paths"
             $sql = Get-SQLDirTreeQuery $Path
             Write-Message -Level Debug -Message $sql
 
-            # This should remain as not .Query() to be compat with a PSProvider Chrissy is working on
+            # This should remain as not .Query() to be compat with a PSProvider Chrissy was working on
             $datatable = $server.ConnectionContext.ExecuteWithResults($sql).Tables.Rows
 
             Write-Message -Level Verbose -Message "$($datatable.Rows.Count) files found."
@@ -183,24 +190,27 @@ function Get-DbaFile {
                 foreach ($row in $datatable) {
                     foreach ($type in $FileTypeComparison) {
                         if ($row.filename.ToLowerInvariant().EndsWith(".$type")) {
+                            $fullpath = $row.fullpath.Replace("\", $separator)
                             [pscustomobject]@{
                                 ComputerName   = $server.ComputerName
                                 InstanceName   = $server.ServiceName
                                 SqlInstance    = $server.DomainInstanceName
-                                Filename       = $row.fullpath
-                                RemoteFilename = Join-AdminUnc -Servername $server.ComputerName -Filepath $row.fullpath
+                                Filename       = $fullpath
+                                RemoteFilename = Join-AdminUnc -Servername $server.ComputerName -Filepath $fullpath
                             } | Select-DefaultView -ExcludeProperty ComputerName, InstanceName, RemoteFilename
                         }
                     }
                 }
             } else {
                 foreach ($row in $datatable) {
+                    $fullpath = $row.fullpath
+                    $fullpath = $row.fullpath.Replace("\", $separator)
                     [pscustomobject]@{
                         ComputerName   = $server.ComputerName
                         InstanceName   = $server.ServiceName
                         SqlInstance    = $server.DomainInstanceName
-                        Filename       = $row.fullpath
-                        RemoteFilename = Join-AdminUnc -Servername $server.ComputerName -Filepath $row.fullpath
+                        Filename       = $fullpath
+                        RemoteFilename = Join-AdminUnc -Servername $server.ComputerName -Filepath $fullpath
                     } | Select-DefaultView -ExcludeProperty ComputerName, InstanceName, RemoteFilename
                 }
             }

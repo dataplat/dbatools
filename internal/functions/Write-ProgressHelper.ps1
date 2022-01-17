@@ -15,7 +15,10 @@ function Write-ProgressHelper {
     if (-not $Activity) {
         $Activity = switch ($caller) {
             "Export-DbaInstance" {
-                "Performing Instance Export for $instance"
+                "Performing instance export for $instance"
+            }
+            "Start-DbaMigration" {
+                "Performing instance migration"
             }
             "Install-DbaSqlWatch" {
                 "Installing SQLWatch"
