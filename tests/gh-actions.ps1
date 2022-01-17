@@ -34,6 +34,7 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
         $results.Name | Should -Contain "Northwind"
         $results | Where-Object Name -eq "Northwind" | Select-Object -ExpandProperty Status | Should -Be "Successful"
         $results | Where-Object Name -eq "migrateme" | Select-Object -ExpandProperty Status | Should -Be "Successful"
+        Get-DbaDbCertificate -SqlInstance localhost:14333 -Database master -Certificate migrateme | Should -Not -BeNull
     }
 
     It "sets up a mirror" {

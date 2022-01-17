@@ -30,8 +30,8 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
                 $masterkey | Remove-DbaDbMasterKey -Confirm:$false -ErrorAction SilentlyContinue
             }
         }
-        # doing it on docker instead. this works on linux and on a homelab so i dont know
-        It "Successfully copies a certificate" {
+        # doing it on docker instead. this works on linux and on a windows homelab so i dont know
+        It -Skip "Successfully copies a certificate" {
             $passwd = $(ConvertTo-SecureString -String "GoodPass1234!" -AsPlainText -Force)
             $paramscopydb = @{
                 Source             = $script:instance2
@@ -44,6 +44,8 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $results = Copy-DbaDbCertificate @paramscopydb -Confirm:$false | Where-Object SourceDatabase -eq dbatoolscopycred | Select-Object -First 1
             $results.Notes | Should -Be $null
             $results.Status | Should -Be "Successful"
+
+            Get-DbaDbCertificate -SqlInstance $script:instance3 -Database dbatoolscopycred -Certificate $certificateName2 | Should -NotBeNull
         }
     }
 }
