@@ -297,9 +297,7 @@ function Backup-DbaDatabase {
 
     process {
         if (Test-FunctionInterrupt) { return }
-        if ($IsMacOS -or $IsLinux) {
-            $nonwindows = $true
-        }
+
         if (-not $SqlInstance -and -not $InputObject) {
             Stop-Function -Message "You must specify a server and database or pipe some databases"
             return
@@ -373,14 +371,6 @@ function Backup-DbaDatabase {
             if ( (Test-Bound AzureBaseUrl -Not) -and (Test-Bound Path -Not) -and $FilePath -ne 'NUL') {
                 Write-Message -Message 'No backup folder passed in, setting it to instance default' -Level Verbose
                 $Path = (Get-DbaDefaultPath -SqlInstance $server).Backup
-                if ($Path) {
-                    # it's very picky, don't cut corners
-                    $lastchar = $Path.substring($Path.length - 1, 1)
-                    if ($lastchar -eq "/" -or $lastchar -eq "\") {
-                        $Path = $Path.TrimEnd("/")
-                        $Path = $Path.TrimEnd("\")
-                    }
-                }
             }
 
             if (($MaxTransferSize % 64kb) -ne 0 -or $MaxTransferSize -gt 4mb) {
@@ -539,6 +529,8 @@ function Backup-DbaDatabase {
             }
 
             Write-Message -Level Verbose -Message "Building file name"
+            #$isdestlinux
+            #####################################
             $BackupFinalName = ''
             $FinalBackupPath = @()
             $timestamp = Get-Date -Format $TimeStampFormat
@@ -552,7 +544,7 @@ function Backup-DbaDatabase {
                 if ( '' -ne (Split-Path $FilePath)) {
                     Write-Message -Level Verbose -Message "Fully qualified path passed in"
                     # Because of #7860, don't use [IO.Path]::GetFullPath on MacOS
-                    if ($nonwindows -or $isdestlinux) {
+                    if ($IsMacOS -or $isdestlinux) {
                         $FinalBackupPath += $file.DirectoryName
                     } else {
                         $FinalBackupPath += [IO.Path]::GetFullPath($file.DirectoryName)
@@ -625,7 +617,7 @@ function Backup-DbaDatabase {
             }
 
             # Because of #7860, don't use [IO.Path]::GetFullPath on MacOS
-            if ($null -eq $AzureBaseUrl -and $Path -and -not $nonwindows -and -not $isdestlinux) {
+            if ($null -eq $AzureBaseUrl -and $Path -and -not $IsMacOS -and -not $isdestlinux) {
                 $FinalBackupPath = $FinalBackupPath | ForEach-Object { [IO.Path]::GetFullPath($_) }
             }
 
@@ -694,14 +686,6 @@ function Backup-DbaDatabase {
                                 $HeaderInfo = Get-DbaDbBackupHistory -SqlInstance $server -Database $dbName @gbhSwitch -IncludeCopyOnly -RecoveryFork $db.RecoveryForkGuid | Sort-Object -Property End -Descending | Select-Object -First 1
                             }
                             $Verified = $false
-                            $transformedbackupfolder = Split-Path $FinalBackupPath | Sort-Object -Unique
-                            if ($transformedbackupfolder -match "/|\\") {
-                                if ($isdestlinux -and $transformedbackupfolder) {
-                                    $transformedbackupfolder = $transformedbackupfolder.Replace("\", "/")
-                                } elseif ($transformedbackupfolder) {
-                                    $transformedbackupfolder = $transformedbackupfolder.Replace("/", "\")
-                                }
-                            }
                             if ($Verify) {
                                 $verifiedresult = [PSCustomObject]@{
                                     ComputerName         = $server.ComputerName
@@ -711,7 +695,7 @@ function Backup-DbaDatabase {
                                     BackupComplete       = $BackupComplete
                                     BackupFilesCount     = $FinalBackupPath.Count
                                     BackupFile           = (Split-Path $FinalBackupPath -Leaf)
-                                    BackupFolder         = $transformedbackupfolder
+                                    BackupFolder         = (Split-Path $FinalBackupPath | Sort-Object -Unique)
                                     BackupPath           = ($FinalBackupPath | Sort-Object -Unique)
                                     Script               = $script
                                     Notes                = $failures -join (',')
@@ -744,14 +728,7 @@ function Backup-DbaDatabase {
                                 $pathresult = "NUL:"
                             } else {
                                 $pathresult = (Split-Path $FinalBackupPath | Sort-Object -Unique)
-                                # in case a linux computer connects to a windows computer
-                                if ($isdestlinux -and $pathresult) {
-                                    $pathresult = $pathresult.Replace("\", "/")
-                                } elseif ($pathresult) {
-                                    $pathresult = $pathresult.Replace("/", "\")
-                                }
                             }
-
                             $HeaderInfo | Add-Member -Type NoteProperty -Name BackupFolder -Value $pathresult
                             $HeaderInfo | Add-Member -Type NoteProperty -Name BackupPath -Value ($FinalBackupPath | Sort-Object -Unique)
                             $HeaderInfo | Add-Member -Type NoteProperty -Name DatabaseName -Value $dbName
