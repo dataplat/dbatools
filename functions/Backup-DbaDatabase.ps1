@@ -283,11 +283,6 @@ function Backup-DbaDatabase {
                 $InputObject = $InputObject | Where-Object Name -notin $ExcludeDatabase
             }
 
-            if ( (Test-Bound AzureBaseUrl -Not) -and (Test-Bound Path -Not) -and $FilePath -ne 'NUL') {
-                Write-Message -Message 'No backup folder passed in, setting it to instance default' -Level Verbose
-                $Path = (Get-DbaDefaultPath -SqlInstance $server).Backup
-            }
-
             if ($Path.Count -gt 1) {
                 Write-Message -Level Verbose -Message "Multiple Backup Directories, striping"
                 $FileCount = $Path.Count
@@ -296,78 +291,6 @@ function Backup-DbaDatabase {
             if ($InputObject.Count -gt 1 -and $FilePath -ne '' -and $True -ne $ReplaceInName) {
                 Stop-Function -Message "1 BackupFile specified, but more than 1 database."
                 return
-            }
-
-            if (($MaxTransferSize % 64kb) -ne 0 -or $MaxTransferSize -gt 4mb) {
-                Stop-Function -Message "MaxTransferSize value must be a multiple of 64kb and no greater than 4MB"
-                return
-            }
-            if ($BlockSize) {
-                if ($BlockSize -notin (0.5kb, 1kb, 2kb, 4kb, 8kb, 16kb, 32kb, 64kb)) {
-
-                    Stop-Function -Message "Block size must be one of 0.5kb,1kb,2kb,4kb,8kb,16kb,32kb,64kb"
-                    return
-                }
-            }
-            if ($null -ne $AzureBaseUrl) {
-                $AzureBaseUrl = $AzureBaseUrl.Trim("/")
-                if ('' -ne $AzureCredential) {
-                    Write-Message -Message "Azure Credential name passed in, will proceed assuming it's value" -Level Verbose
-                    $FileCount = 1
-                } else {
-                    foreach ($baseUrl in $AzureBaseUrl) {
-                        $base = $baseUrl -split "/"
-                        if ( $base.Count -gt 4) {
-                            Write-Message "AzureURL contains a folder"
-                            $credentialName = $base[0] + "//" + $base[2] + "/" + $base[3]
-                        }
-                        Write-Message -Message "AzureUrl and no credential, testing for SAS credential"
-                        if (Get-DbaCredential -SqlInstance $server -Name $credentialName) {
-                            Write-Message -Message "Found a SAS backup credential" -Level Verbose
-                        } else {
-                            Stop-Function -Message "You must provide the credential name for the Azure Storage Account"
-                            return
-                        }
-                    }
-                }
-                $FileCount = $AzureBaseUrl.count
-                $Path = $AzureBaseUrl
-            }
-
-            if (Test-Bound 'EncryptionAlgorithm') {
-                if (!((Test-Bound 'EncryptionCertificate') -xor (Test-Bound 'EncryptionKey'))) {
-                    Stop-Function -Message 'EncryptionCertifcate and EncryptionKey are mutually exclusive, only provide on of them'
-                    return
-                } else {
-                    $encryptionOptions = New-Object Microsoft.SqlServer.Management.Smo.BackupEncryptionOptions
-                    if (Test-Bound 'EncryptionCertificate') {
-                        $tCertCheck = Get-DbaDbCertificate -SqlInstance $server -Database master -Certificate $EncryptionCertificate
-                        if ($null -eq $tCertCheck) {
-                            Stop-Function -Message "Certificate $EncryptionCertificate does not exist on $server so cannot be used for backups"
-                            return
-                        } else {
-                            $encryptionOptions.encryptorType = [Microsoft.SqlServer.Management.Smo.BackupEncryptorType]::ServerCertificate
-                            $encryptionOptions.encryptorName = $EncryptionCertificate
-                            $encryptionOptions.Algorithm = [Microsoft.SqlServer.Management.Smo.BackupEncryptionAlgorithm]::$EncryptionAlgorithm
-                        }
-                    }
-                    if (Test-Bound 'EncryptionKey') {
-                        # Should not end up here until Key encryption in implemented
-                        $tKeyCheck = Get-DbaDbAsymmetricKey -SqlInstance $server -Database master -Name $EncrytptionKey
-                        if ($null -eq $tKeyCheck) {
-                            Stop-Function -Message "AsymmetricKey $Encryptionkey does not exist on $server so cannot be used for backups"
-                            return
-                        } else {
-                            $encryptionOptions.encryptorType = [Microsoft.SqlServer.Management.Smo.BackupEncryptorType]::ServerAsymmetricKey
-                            $encryptionOptions.encryptorName = $EncryptionKey
-                            $encryptionOptions.Algorithm = [Microsoft.SqlServer.Management.Smo.BackupEncryptionAlgorithm]::$EncryptionAlgorithm
-                        }
-                    }
-                }
-            }
-
-            if ($OutputScriptOnly) {
-                $IgnoreFileChecks = $true
             }
         }
     }
@@ -409,7 +332,88 @@ function Backup-DbaDatabase {
             $failures = @()
             $dbName = $db.Name
             $server = $db.Parent
+            $null = $server.Refresh()
             $isdestlinux = Test-HostOSLinux -SqlInstance $server
+
+            if (Test-Bound 'EncryptionAlgorithm') {
+                if (!((Test-Bound 'EncryptionCertificate') -xor (Test-Bound 'EncryptionKey'))) {
+                    Stop-Function -Message 'EncryptionCertifcate and EncryptionKey are mutually exclusive, only provide on of them'
+                    return
+                } else {
+                    $encryptionOptions = New-Object Microsoft.SqlServer.Management.Smo.BackupEncryptionOptions
+                    if (Test-Bound 'EncryptionCertificate') {
+                        $tCertCheck = Get-DbaDbCertificate -SqlInstance $server -Database master -Certificate $EncryptionCertificate
+                        if ($null -eq $tCertCheck) {
+                            Stop-Function -Message "Certificate $EncryptionCertificate does not exist on $server so cannot be used for backups"
+                            return
+                        } else {
+                            $encryptionOptions.encryptorType = [Microsoft.SqlServer.Management.Smo.BackupEncryptorType]::ServerCertificate
+                            $encryptionOptions.encryptorName = $EncryptionCertificate
+                            $encryptionOptions.Algorithm = [Microsoft.SqlServer.Management.Smo.BackupEncryptionAlgorithm]::$EncryptionAlgorithm
+                        }
+                    }
+                    if (Test-Bound 'EncryptionKey') {
+                        # Should not end up here until Key encryption in implemented
+                        $tKeyCheck = Get-DbaDbAsymmetricKey -SqlInstance $server -Database master -Name $EncrytptionKey
+                        if ($null -eq $tKeyCheck) {
+                            Stop-Function -Message "AsymmetricKey $Encryptionkey does not exist on $server so cannot be used for backups"
+                            return
+                        } else {
+                            $encryptionOptions.encryptorType = [Microsoft.SqlServer.Management.Smo.BackupEncryptorType]::ServerAsymmetricKey
+                            $encryptionOptions.encryptorName = $EncryptionKey
+                            $encryptionOptions.Algorithm = [Microsoft.SqlServer.Management.Smo.BackupEncryptionAlgorithm]::$EncryptionAlgorithm
+                        }
+                    }
+                }
+            }
+
+
+            if ( (Test-Bound AzureBaseUrl -Not) -and (Test-Bound Path -Not) -and $FilePath -ne 'NUL') {
+                Write-Message -Message 'No backup folder passed in, setting it to instance default' -Level Verbose
+                $Path = (Get-DbaDefaultPath -SqlInstance $server).Backup
+            }
+
+            if (($MaxTransferSize % 64kb) -ne 0 -or $MaxTransferSize -gt 4mb) {
+                Stop-Function -Message "MaxTransferSize value must be a multiple of 64kb and no greater than 4MB"
+                return
+            }
+
+            if ($BlockSize) {
+                if ($BlockSize -notin (0.5kb, 1kb, 2kb, 4kb, 8kb, 16kb, 32kb, 64kb)) {
+
+                    Stop-Function -Message "Block size must be one of 0.5kb,1kb,2kb,4kb,8kb,16kb,32kb,64kb"
+                    return
+                }
+            }
+
+            if ($null -ne $AzureBaseUrl) {
+                $AzureBaseUrl = $AzureBaseUrl.Trim("/")
+                if ('' -ne $AzureCredential) {
+                    Write-Message -Message "Azure Credential name passed in, will proceed assuming it's value" -Level Verbose
+                    $FileCount = 1
+                } else {
+                    foreach ($baseUrl in $AzureBaseUrl) {
+                        $base = $baseUrl -split "/"
+                        if ( $base.Count -gt 4) {
+                            Write-Message "AzureURL contains a folder"
+                            $credentialName = $base[0] + "//" + $base[2] + "/" + $base[3]
+                        }
+                        Write-Message -Message "AzureUrl and no credential, testing for SAS credential"
+                        if (Get-DbaCredential -SqlInstance $server -Name $credentialName) {
+                            Write-Message -Message "Found a SAS backup credential" -Level Verbose
+                        } else {
+                            Stop-Function -Message "You must provide the credential name for the Azure Storage Account"
+                            return
+                        }
+                    }
+                }
+                $FileCount = $AzureBaseUrl.count
+                $Path = $AzureBaseUrl
+            }
+
+            if ($OutputScriptOnly) {
+                $IgnoreFileChecks = $true
+            }
 
             if ($null -eq $PSBoundParameters.Path -and $PSBoundParameters.FilePath -ne 'NUL' -and $server.VersionMajor -eq 8) {
                 Write-Message -Message 'No backup folder passed in, setting it to instance default' -Level Verbose
