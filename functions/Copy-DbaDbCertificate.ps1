@@ -172,7 +172,9 @@ function Copy-DbaDbCertificate {
                             }
                             $masterkey = New-DbaDbMasterKey @params
                         } catch {
-                            Stop-Function -Message "Failure" -ErrorRecord $PSItem -Continue
+                            if ($PSItem -notmatch "already exists") {
+                                Stop-Function -Message "Failure" -ErrorRecord $PSItem -Continue
+                            }
                         }
                     } else {
                         Stop-Function -Message "Master service key not found on $destinstance and MasterKeyPassword not specified, so it cannot be created" -Continue
