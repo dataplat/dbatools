@@ -174,7 +174,6 @@ function Copy-DbaDbCertificate {
                             Stop-Function -Message "Failure" -ErrorRecord $PSItem -Continue
                         }
                     } else {
-                        return $PSBoundParameters
                         Stop-Function -Message "Master service key not found on $destinstance and MasterKeyPassword not specified, so it cannot be created" -Continue
                     }
                 }
@@ -266,7 +265,6 @@ function Copy-DbaDbCertificate {
                                     Database           = $db.Name
                                     Certificate        = $certname
                                     Path               = $SharedPath
-                                    Suffix             = $null # required so that it doesnt rename the cert
                                     EnableException    = $true
                                     EncryptionPassword = $backupEncryptionPassword
                                     DecryptionPassword = $DecryptionPassword
