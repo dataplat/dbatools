@@ -142,8 +142,6 @@ function Copy-DbaDbCertificate {
         }
     }
     process {
-        # FOR START-DBAMIGRATION, IT NEEDS TO JUST BE COPY-DBADBMASTER
-        # NEED TO DELETE ANY EXPORTED KEY
         if (Test-FunctionInterrupt) { return }
         foreach ($destinstance in $Destination) {
             try {
