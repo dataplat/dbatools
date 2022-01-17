@@ -185,10 +185,10 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
     }
 
     It "copies a certificate" {
-        $passwd = ConvertTo-SecureString $env:CLIENTSECRET -AsPlainText -Force
+        $passwd = ConvertTo-SecureString "dbatools.IOXYZ" -AsPlainText -Force
         $null = New-DbaDbMasterKey -Database tempdb -SecurePassword $passwd -Confirm:$false
         $certname = "Cert_$(Get-Random)"
-        $null = New-DbaDbCertificate -SqlInstance $script:instance2 -Name $certname -Database tempdb -Confirm:$false
+        $null = New-DbaDbCertificate -Name $certname -Database tempdb -Confirm:$false
 
         $params1 = @{
             EncryptionPassword = $passwd
