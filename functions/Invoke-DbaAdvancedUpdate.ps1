@@ -97,6 +97,7 @@ Function Invoke-DbaAdvancedUpdate {
     }
     if ($Credential) {
         $restartParams.Credential = $Credential
+        $restartParams.WsmanAuthentication = 'CredSSP'
     }
     try {
         $restartNeeded = Test-PendingReboot -ComputerName $computer -Credential $Credential -NoPendingRename:$NoPendingRenameCheck
@@ -112,7 +113,7 @@ Function Invoke-DbaAdvancedUpdate {
             $null = Restart-Computer @restartParams
             $restarted = $true
         } catch {
-            Stop-Function -Message "Failed to restart computer" -ErrorRecord $_
+            Stop-Function -Message "Failed to restart computer $($computer)" -ErrorRecord $_
         }
     }
     Write-Message -Level Debug -Message "Processing $($computer) with $(($Actions | Measure-Object).Count) actions"
@@ -222,8 +223,8 @@ Function Invoke-DbaAdvancedUpdate {
                     $null = Restart-Computer @restartParams
                     $output.Restarted = $true
                 } catch {
-                    Stop-Function -Message "Failed to restart computer" -ErrorRecord $_
-                    return $output
+                    Stop-Function -Message "Failed to restart computer $($computer)" -ErrorRecord $_
+                    $output.Notes += "Restart is required for computer $($computer) to finish the installation of SQL$($currentAction.MajorVersion)$($currentAction.TargetLevel)"
                 }
             } else {
                 $output.Notes += "Restart is required for computer $($computer) to finish the installation of SQL$($currentAction.MajorVersion)$($currentAction.TargetLevel)"
