@@ -498,6 +498,7 @@ $script:xplat = @(
     'Remove-DbaAgentSchedule',
     'Backup-DbaDbCertificate',
     'Get-DbaDbCertificate',
+    'Copy-DbaDbCertificate',
     'Get-DbaEndpoint',
     'Get-DbaDbMasterKey',
     'Get-DbaSchemaChangeHistory',
