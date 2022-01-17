@@ -28,10 +28,14 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $cert2 = New-DbaDbCertificate -SqlInstance $script:instance2 -Name $certificateName2 -Database tempdb -Confirm:$false
         }
         AfterAll {
-            if ($tempdbmasterkey) { $tempdbmasterkey | Remove-DbaDbMasterKey -Confirm:$false }
-            if ($masterKey) { $masterkey | Remove-DbaDbMasterKey -Confirm:$false }
-            $null = $cert1 | Remove-DbaDbCertificate -Confirm:$false
-            $null = $cert2 | Remove-DbaDbCertificate -Confirm:$false
+            if ($tempdbmasterkey) {
+                $tempdbmasterkey | Remove-DbaDbMasterKey -Confirm:$false -ErrorAction SilentlyContinue
+            }
+            if ($masterKey) {
+                $masterkey | Remove-DbaDbMasterKey -Confirm:$false -ErrorAction SilentlyContinue
+            }
+            $null = $cert1 | Remove-DbaDbCertificate -Confirm:$false -ErrorAction SilentlyContinue
+            $null = $cert2 | Remove-DbaDbCertificate -Confirm:$false -ErrorAction SilentlyContinue
         }
 
         It "Successfully copies a certificate" {
@@ -40,9 +44,10 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
                 Destination        = $script:instance3
                 EncryptionPassword = $passwd
                 MasterKeyPassword  = $passwd
+                Database           = "tempdb"
                 SharedPath         = "C:\temp"
             }
-            $results = Copy-DbaDbCertificate @params1 -Confirm:$false | Where-Object SourceDatabase -EQ tempdb | Select-Object -First 1
+            $results = Copy-DbaDbCertificate @params1 -Confirm:$false | Where-Object SourceDatabase -eq tempdb | Select-Object -First 1
             $results.Notes | Should -Be $null
             $results.Status | Should -Be "Successful"
         }

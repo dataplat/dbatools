@@ -167,9 +167,10 @@ function Copy-DbaDbCertificate {
                             $params = @{
                                 SqlInstance     = $destServer
                                 SecurePassword  = $MasterKeyPassword
+                                Database        = "master"
                                 EnableException = $true
                             }
-                            $masterkey = New-DbaServiceMasterKey @params
+                            $masterkey = New-DbaDbMasterKey @params
                         } catch {
                             Stop-Function -Message "Failure" -ErrorRecord $PSItem -Continue
                         }
