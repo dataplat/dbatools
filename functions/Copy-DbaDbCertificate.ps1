@@ -121,7 +121,7 @@ function Copy-DbaDbCertificate {
                 EnableException = $true
             }
             # Get presumably user certs, no way to tell if its a system object
-            $sourcecertificates = Get-DbaDbCertificate @parms | Where-Object Name -notlike "#*" | Where-Object Name -notin $ExcludeCertificate
+            $sourcecertificates = Get-DbaDbCertificate @parms | Where-Object { $PSItem.Name -notlike "#*" -and $PSItem.Name -notin $ExcludeCertificate }
             $dbsnames = $sourcecertificates.Parent.Name | Select-Object -Unique
             $server = ($sourcecertificates | Select-Object -First 1).Parent.Parent
             $serviceAccount = $server.ServiceAccount
