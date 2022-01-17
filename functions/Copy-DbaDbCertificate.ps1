@@ -288,7 +288,7 @@ function Copy-DbaDbCertificate {
                                         $export = Backup-DbaDbCertificate @params
                                     }
                                 } catch {
-                                    $copyDbCertificateStatus.Status = "Failed"
+                                    $copyDbCertificateStatus.Status = "Failed $PSItem"
                                     $copyDbCertificateStatus.Notes = $PSItem
                                     $copyDbCertificateStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                                     Stop-Function -Message "Issue backing up certificate $certname in $dbname on $($db.Parent.Name)" -Target $certname -ErrorRecord $PSItem -Continue
@@ -309,6 +309,12 @@ function Copy-DbaDbCertificate {
                                 $copyDbCertificateStatus.Status = "Successful"
                                 $copyDbCertificateStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                             } catch {
+                                if ($export.Path) {
+                                    $null = Remove-Item -Force $export.Path -ErrorAction SilentlyContinue
+                                }
+                                if ($export.Key) {
+                                    $null = Remove-Item -Force $export.Key -ErrorAction SilentlyContinue
+                                }
                                 $copyDbCertificateStatus.Status = "Failed"
                                 $copyDbCertificateStatus.Notes = $PSItem
                                 $copyDbCertificateStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
