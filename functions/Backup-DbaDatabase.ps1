@@ -467,8 +467,8 @@ function Backup-DbaDatabase {
 
             if ($CompressBackup) {
                 if ($db.EncryptionEnabled) {
-                    # Newer versions of SQL Server automatically set the MAXTRANSFERSIZE to 128k, so
-                    # we let's do that for people as well
+                    # Newer versions of SQL Server automatically set the MAXTRANSFERSIZE to 128k
+                    # so let's do that for people as well
                     $minVerForTDECompression = [version]'13.0.4446.0' #SQL Server 2016 CU 4
                     $flagTDESQLVersion = $minVerForTDECompression -le $Server.version
                     if (-not (Test-Bound 'MaxTransferSize')) {
