@@ -194,7 +194,7 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
             EncryptionPassword = $passwd
             MasterKeyPassword  = $passwd
             Database           = "tempdb"
-            SharedPath         = "/tmp"
+            SharedPath         = "/shared"
         }
         $results = Copy-DbaDbCertificate @params1 -Confirm:$false | Where-Object SourceDatabase -eq tempdb | Select-Object -First 1
         $results.Notes | Should -Be $null
