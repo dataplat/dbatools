@@ -16,16 +16,16 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     Context "Can create a database certificate" {
         BeforeAll {
-            if (-not (Get-DbaDbMasterKey -SqlInstance $script:instance1 -Database master)) {
-                $masterkey = New-DbaDbMasterKey -SqlInstance $script:instance1 -Database master -Password $(ConvertTo-SecureString -String "GoodPass1234!" -AsPlainText -Force) -Confirm:$false
+            if (-not (Get-DbaDbMasterKey -SqlInstance $script:instance2 -Database master)) {
+                $masterkey = New-DbaDbMasterKey -SqlInstance $script:instance2 -Database master -Password $(ConvertTo-SecureString -String "GoodPass1234!" -AsPlainText -Force) -Confirm:$false
             }
 
             $passwd = $(ConvertTo-SecureString -String "GoodPass1234!" -AsPlainText -Force)
-            $tempdbmasterkey = New-DbaDbMasterKey -SqlInstance $script:instance1 -Database tempdb -Password $passwd -Confirm:$false
+            $tempdbmasterkey = New-DbaDbMasterKey -SqlInstance $script:instance2 -Database tempdb -Password $passwd -Confirm:$false
             $certificateName1 = "Cert_$(Get-Random)"
             $certificateName2 = "Cert_$(Get-Random)"
-            $cert1 = New-DbaDbCertificate -SqlInstance $script:instance1 -Name $certificateName1 -Confirm:$false
-            $cert2 = New-DbaDbCertificate -SqlInstance $script:instance1 -Name $certificateName2 -Database tempdb -Confirm:$false
+            $cert1 = New-DbaDbCertificate -SqlInstance $script:instance2 -Name $certificateName1 -Confirm:$false
+            $cert2 = New-DbaDbCertificate -SqlInstance $script:instance2 -Name $certificateName2 -Database tempdb -Confirm:$false
         }
         AfterAll {
             if ($tempdbmasterkey) {
@@ -40,8 +40,8 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 
         It "Successfully copies a certificate" {
             $params1 = @{
-                Source             = $script:instance1
-                Destination        = $script:instance2
+                Source             = $script:instance2
+                Destination        = $script:instance3
                 EncryptionPassword = $passwd
                 MasterKeyPassword  = $passwd
                 Database           = "tempdb"
