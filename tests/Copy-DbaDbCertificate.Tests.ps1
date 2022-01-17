@@ -39,6 +39,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         }
         # doing it on docker instead. this works on linux and on a homelab so i dont know
         It "Successfully copies a certificate" {
+            $passwd = $(ConvertTo-SecureString -String "GoodPass1234!" -AsPlainText -Force)
             $params1 = @{
                 Source             = $script:instance2
                 Destination        = $script:instance3
