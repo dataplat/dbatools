@@ -21,7 +21,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
                 $masterkey = New-DbaDbMasterKey -SqlInstance $script:instance2 -Database master -SecurePassword $passwd -Confirm:$false
             }
 
-            $newdbs = New-DbaDatabase -SqlInstance $script:instance2, -SqlInstance $script:instance3 -Name dbatoolscopycred
+            $newdbs = New-DbaDatabase -SqlInstance $script:instance2, $script:instance3 -Name dbatoolscopycred
             $null = New-DbaDbMasterKey -SqlInstance $script:instance2 -Database dbatoolscopycred -SecurePassword $passwd -Confirm:$false
             $certificateName2 = "Cert_$(Get-Random)"
             $null = New-DbaDbCertificate -SqlInstance $script:instance2 -Name $certificateName2 -Database dbatoolscopycred -Confirm:$false
@@ -35,7 +35,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         # doing it on docker instead. this works on linux and on a homelab so i dont know
         It "Successfully copies a certificate" {
             $passwd = $(ConvertTo-SecureString -String "GoodPass1234!" -AsPlainText -Force)
-            $params1 = @{
+            $paramscopydb = @{
                 Source             = $script:instance2
                 Destination        = $script:instance3
                 EncryptionPassword = $passwd
@@ -43,7 +43,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
                 Database           = "dbatoolscopycred"
                 SharedPath         = "C:\temp"
             }
-            $results = Copy-DbaDbCertificate @params1 -Confirm:$false | Where-Object SourceDatabase -eq dbatoolscopycred | Select-Object -First 1
+            $results = Copy-DbaDbCertificate @paramscopydb -Confirm:$false | Where-Object SourceDatabase -eq dbatoolscopycred | Select-Object -First 1
             $results.Notes | Should -Be $null
             $results.Status | Should -Be "Successful"
         }
