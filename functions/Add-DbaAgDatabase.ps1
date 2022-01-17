@@ -211,6 +211,7 @@ function Add-DbaAgDatabase {
                 Write-Progress @progress
                 $testSplat = @{
                     SqlInstance            = $db.Parent
+                    SqlCredential          = $SqlCredential
                     Secondary              = $Secondary
                     SecondarySqlCredential = $SecondarySqlCredential
                     AvailabilityGroup      = $AvailabilityGroup
