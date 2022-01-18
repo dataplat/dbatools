@@ -329,8 +329,8 @@ function Start-DbaDbEncryption {
                 $null = $db.Refresh()
                 $null = $server.Refresh()
 
-                $dbmastercerttest = Get-DbaFile -SqlInstance $server -Path $BackupPath | Where-Object FileName -match "$servername-$dbname"
-                if (-not $dbmastercerttest) {
+                $dbmasterkeytest = Get-DbaFile -SqlInstance $server -Path $BackupPath | Where-Object FileName -match "$servername-$dbname"
+                if (-not $dbmasterkeytest) {
                     # Back up master key
                     $params = @{
                         SqlInstance     = $server
