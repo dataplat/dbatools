@@ -182,6 +182,7 @@ function Invoke-DbaAdvancedInstall {
     }
     if ($Credential) {
         $restartParams.Credential = $Credential
+        $restartParams.WsmanAuthentication = $Authentication
     }
     $activity = "Installing SQL Server ($Version) components on $ComputerName"
     try {
@@ -199,7 +200,7 @@ function Invoke-DbaAdvancedInstall {
             $null = Restart-Computer @restartParams
             $output.Restarted = $true
         } catch {
-            Stop-Function -Message "Failed to restart computer" -ErrorRecord $_
+            Stop-Function -Message "Failed to restart computer $($ComputerName)" -ErrorRecord $_
         }
     }
     # save config if needed
@@ -325,8 +326,8 @@ function Invoke-DbaAdvancedInstall {
                 $null = Restart-Computer @restartParams
                 $output.Restarted = $true
             } catch {
-                Stop-Function -Message "Failed to restart computer $($ComputerName)" -ErrorRecord $_ -FunctionName Install-DbaInstance
-                return $output
+                Stop-Function -Message "Failed to restart computer $($ComputerName)" -ErrorRecord $_
+                $output.Notes += "Restart is required for computer $($ComputerName) to finish the installation of Sql Server version $Version"
             }
         } else {
             $output.Notes += "Restart is required for computer $($ComputerName) to finish the installation of Sql Server version $Version"
