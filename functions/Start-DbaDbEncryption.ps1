@@ -167,6 +167,8 @@ function Start-DbaDbEncryption {
                 # refresh in case we have a stale database
                 $null = $db.Refresh()
                 $null = $server.Refresh()
+                $servername = $server.Name
+                $dbname = $db.Name
 
                 if ($db.EncryptionEnabled) {
                     Write-Message -Level Warning -Message "Database $($db.Name) on $($server.Name) is already encrypted"
@@ -210,17 +212,23 @@ function Start-DbaDbEncryption {
                     $masterkey = New-DbaServiceMasterKey @params
                 }
 
-                # Back up master key
-                $params = @{
-                    SqlInstance     = $server
-                    Database        = "master"
-                    Path            = $BackupPath
-                    EnableException = $true
-                    SecurePassword  = $BackupSecurePassword
+                $null = $db.Refresh()
+                $null = $server.Refresh()
+
+                $dbmasterkeytest = Get-DbaFile -SqlInstance $server -Path $BackupPath | Where-Object FileName -match "$servername-master"
+                if (-not $dbmasterkeytest) {
+                    # has to be repeated in the event databases are piped in
+                    $params = @{
+                        SqlInstance     = $server
+                        Database        = "master"
+                        Path            = $BackupPath
+                        EnableException = $true
+                        SecurePassword  = $BackupSecurePassword
+                    }
+                    $null = $server.Databases["master"].Refresh()
+                    Write-Message -Level Verbose -Message "Backing up master key on $($server.Name)"
+                    $null = Backup-DbaDbMasterKey @params
                 }
-                $null = $server.Databases["master"].Refresh()
-                Write-Message -Level Verbose -Message "Backing up master key on $($server.Name)"
-                $null = Backup-DbaDbMasterKey @params
             } catch {
                 Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
             }
@@ -246,18 +254,24 @@ function Start-DbaDbEncryption {
                         Write-Message -Level Verbose -Message "master cert found on $($server.Name)"
                     }
 
-                    # Back up certificate
-                    $null = $server.Databases["master"].Refresh()
-                    $params = @{
-                        SqlInstance        = $server
-                        Database           = "master"
-                        Certificate        = $mastercert.Name
-                        Path               = $BackupPath
-                        EnableException    = $true
-                        EncryptionPassword = $BackupSecurePassword
+                    $null = $db.Refresh()
+                    $null = $server.Refresh()
+
+                    $mastercerttest = Get-DbaFile -SqlInstance $server -Path $BackupPath | Where-Object FileName -match "$($mastercert.Name).cer"
+                    if (-not $mastercerttest) {
+                        # Back up certificate
+                        $null = $server.Databases["master"].Refresh()
+                        $params = @{
+                            SqlInstance        = $server
+                            Database           = "master"
+                            Certificate        = $mastercert.Name
+                            Path               = $BackupPath
+                            EnableException    = $true
+                            EncryptionPassword = $BackupSecurePassword
+                        }
+                        Write-Message -Level Verbose -Message "Backing up master certificate on $($server.Name)"
+                        $null = Backup-DbaDbCertificate @params
                     }
-                    Write-Message -Level Verbose -Message "Backing up master certificate on $($server.Name)"
-                    $null = Backup-DbaDbCertificate @params
 
                     if (-not $EncryptorName) {
                         Write-Message -Level Verbose -Message "Getting EncryptorName from master cert on $($server.Name)"
@@ -312,16 +326,22 @@ function Start-DbaDbEncryption {
                     Write-Message -Level Verbose -Message "master key found in $($db.Name) on $($server.Name)"
                 }
 
-                # Back up master key
-                $params = @{
-                    SqlInstance     = $server
-                    Database        = $db.Name
-                    Path            = $BackupPath
-                    EnableException = $true
-                    SecurePassword  = $BackupSecurePassword
+                $null = $db.Refresh()
+                $null = $server.Refresh()
+
+                $dbmasterkeytest = Get-DbaFile -SqlInstance $server -Path $BackupPath | Where-Object FileName -match "$servername-$dbname"
+                if (-not $dbmasterkeytest) {
+                    # Back up master key
+                    $params = @{
+                        SqlInstance     = $server
+                        Database        = $db.Name
+                        Path            = $BackupPath
+                        EnableException = $true
+                        SecurePassword  = $BackupSecurePassword
+                    }
+                    Write-Message -Level Verbose -Message "Backing up master key for $($db.Name) on $($server.Name)"
+                    $null = Backup-DbaDbMasterKey @params
                 }
-                Write-Message -Level Verbose -Message "Backing up master key for $($db.Name) on $($server.Name)"
-                $null = Backup-DbaDbMasterKey @params
             } catch {
                 Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
             }
@@ -353,16 +373,20 @@ function Start-DbaDbEncryption {
 
                     # Back up certificate
                     $null = $db.Refresh()
-                    $params = @{
-                        SqlInstance        = $server
-                        Database           = $db.Name
-                        Certificate        = $dbcert.Name
-                        Path               = $BackupPath
-                        EnableException    = $true
-                        EncryptionPassword = $BackupSecurePassword
+                    $null = $server.Refresh()
+                    $dbcerttest = Get-DbaFile -SqlInstance $server -Path $BackupPath | Where-Object FileName -match "$($dbcert.Name).cer"
+                    if (-not $dbcerttest) {
+                        $params = @{
+                            SqlInstance        = $server
+                            Database           = $db.Name
+                            Certificate        = $dbcert.Name
+                            Path               = $BackupPath
+                            EnableException    = $true
+                            EncryptionPassword = $BackupSecurePassword
+                        }
+                        Write-Message -Level Verbose -Message "Backing up certificate for $($db.Name) on $($server.Name)"
+                        $null = Backup-DbaDbCertificate @params
                     }
-                    Write-Message -Level Verbose -Message "Backing up certificate for $($db.Name) on $($server.Name)"
-                    $null = Backup-DbaDbCertificate @params
                 } else {
                     $dbasymkey = Get-DbaDbAsymmetricKey -SqlInstance $server -Database $db.Name
 
