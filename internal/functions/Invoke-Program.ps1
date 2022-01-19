@@ -164,7 +164,10 @@ function Invoke-Program {
         }
 
         Write-Message -Level Debug -Message "Acceptable success return codes are [$($SuccessReturnCode -join ',')]"
-        Write-Message -Level Verbose -Message "Starting process [$Path] with arguments [$ArgumentList] on $ComputerName through $Authentication protocol"
+
+        $secureArgumentList = "$ArgumentList".Replace($($Credential.GetNetworkCredential().Password), "****************")
+        Write-Message -Level Verbose -Message "Starting process [$Path] with arguments [$secureArgumentList] on $ComputerName through $Authentication protocol"
+
         try {
             if ($Fallback) {
                 $output = Invoke-CommandWithFallback @params
