@@ -148,6 +148,8 @@ function New-DbaComputerCertificate {
             )
             $hex = [String]::Format("{0:X2}", $strLen)
 
+            if (($hex.length % 2) -gt 0) { $hex = "0$hex" }
+
             if ($strLen -gt 127) { [String]::Format("{0:X2}", 128 + ($hex.Length / 2)) + $hex }
             else { $hex }
         }
