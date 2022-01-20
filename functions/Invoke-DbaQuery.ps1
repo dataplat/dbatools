@@ -141,6 +141,13 @@ function Invoke-DbaQuery {
         PS C:\> $output.Value
 
         Creates an output parameter and uses it to invoke a stored procedure.
+
+    .EXAMPLE
+        PS C:\> $server = Connect-DbaInstance -SqlInstance localhost -Database master -AlwaysEncrypted
+        PS C:\> $inputparamSSN = New-DbaSqlParameter -Direction Input -ParameterName "@SSN" -DbType AnsiStringFixedLength -Size 11 -SqlValue "444-44-4444" -ForceColumnEncryption
+        PS C:\> Invoke-DbaQuery -SqlInstance $server -Query 'SELECT * FROM bar WHERE SSN_col = @SSN' -SqlParameter @inputparamSSN
+
+        Creates an input parameter using Always Encrypted
     #>
     [CmdletBinding(DefaultParameterSetName = "Query")]
     param (
