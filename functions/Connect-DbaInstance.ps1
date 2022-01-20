@@ -116,6 +116,11 @@ function Connect-DbaInstance {
     .PARAMETER WorkstationId
         Sets the name of the workstation connecting to SQL Server.
 
+    .PARAMETER AlwaysEncrypted
+        Sets "Column Encryption Setting=enabled" on the connection so you can work with Always Encrypted values.
+
+        For more informations, see https://docs.microsoft.com/en-us/sql/relational-databases/security/encryption/develop-using-always-encrypted-with-net-framework-data-provider
+
     .PARAMETER SqlConnectionOnly
         Instead of returning a rich SMO server object, this command will only return a SqlConnection object when setting this switch.
 
@@ -323,6 +328,7 @@ function Connect-DbaInstance {
         [int]$StatementTimeout = (Get-DbatoolsConfigValue -FullName 'sql.execution.timeout'),
         [switch]$TrustServerCertificate = (Get-DbatoolsConfigValue -FullName 'sql.connection.trustcert'),
         [string]$WorkstationId,
+        [switch]$AlwaysEncrypted,
         [string]$AppendConnectionString,
         [switch]$SqlConnectionOnly,
         [string]$AzureDomain = "database.windows.net",
@@ -725,6 +731,10 @@ function Connect-DbaInstance {
                     if ($MultiSubnetFailover) {
                         Write-Message -Level Debug -Message "AdditionalParameters will be appended by 'MultiSubnetFailover=True;'"
                         $sqlConnectionInfo.AdditionalParameters += 'MultiSubnetFailover=True;'
+                    }
+                    if ($AlwaysEncrypted) {
+                        Write-Message -Level Debug -Message "AdditionalParameters will be appended by 'Column Encryption Setting=enabled;'"
+                        $sqlConnectionInfo.AdditionalParameters += 'Column Encryption Setting=enabled;'
                     }
 
                     #ApplicationIntent      Property   string ApplicationIntent {get;set;}
