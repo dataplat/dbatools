@@ -165,7 +165,7 @@ function Invoke-Program {
 
         Write-Message -Level Debug -Message "Acceptable success return codes are [$($SuccessReturnCode -join ',')]"
 
-        $secureArgumentList = "$ArgumentList".Replace($($Credential.GetNetworkCredential().Password), "****************")
+        $secureArgumentList = $ArgumentList -replace '(PASSWORD|SAPWD)=".*', '$1="********"'
         Write-Message -Level Verbose -Message "Starting process [$Path] with arguments [$secureArgumentList] on $ComputerName through $Authentication protocol"
 
         try {
