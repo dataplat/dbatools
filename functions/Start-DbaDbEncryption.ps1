@@ -8,8 +8,6 @@ function Start-DbaDbEncryption {
 
         * Ensures a database master key exists in the master database and backs it up
         * Ensures a database certificate or asymmetric key exists in the master database and backs it up
-        * Creates a database master key in the target database and backs it up
-        * Creates a database certificate or asymmetric key in the target database and backs it up
         * Creates a database encryption key in the target database and backs it up
         * Enables database encryption on the target database and backs it up
 
@@ -299,109 +297,6 @@ function Start-DbaDbEncryption {
                         $EncryptorName = $masterasym.Name
                     }
                 }
-            } catch {
-                Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
-            }
-
-            try {
-                Write-Message -Level Verbose -Message "Using EncryptorName '$EncryptorName'"
-                # Create a database master key in the target database
-                Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Creating database master key for $($db.Name) on $($server.Name)"
-
-                $null = $server.Databases["master"].Refresh()
-                $dbmasterkey = $db | Get-DbaDbMasterKey
-
-                if (-not $dbmasterkey) {
-                    $params = @{
-                        SqlInstance     = $server
-                        Database        = $db.Name
-                        SecurePassword  = $MasterKeySecurePassword
-                        EnableException = $true
-                    }
-
-                    Write-Message -Level Verbose -Message "Creating master key in $($db.Name) on $($server.Name)"
-                    $dbmasterkey = New-DbaDbMasterKey @params
-                    $null = $db.Refresh()
-                } else {
-                    Write-Message -Level Verbose -Message "master key found in $($db.Name) on $($server.Name)"
-                }
-
-                $null = $db.Refresh()
-                $null = $server.Refresh()
-
-                $dbmasterkeytest = Get-DbaFile -SqlInstance $server -Path $BackupPath | Where-Object FileName -match "$servername-$dbname"
-                if (-not $dbmasterkeytest) {
-                    # Back up master key
-                    $params = @{
-                        SqlInstance     = $server
-                        Database        = $db.Name
-                        Path            = $BackupPath
-                        EnableException = $true
-                        SecurePassword  = $BackupSecurePassword
-                    }
-                    Write-Message -Level Verbose -Message "Backing up master key for $($db.Name) on $($server.Name)"
-                    $null = Backup-DbaDbMasterKey @params
-                }
-            } catch {
-                Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
-            }
-
-            try {
-                # Create a database certificate or asymmetric key in the target database
-                Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Creating a database certificate or asymmetric key in $($db.Name) on $($server.Name)"
-                if ($EncryptorType -eq "Certificate") {
-                    $dbcert = Get-DbaDbCertificate -SqlInstance $server -Database $db.Name
-
-                    if (-not $dbcert) {
-                        Write-Message -Level Verbose -Message "Cert not found for $($db.Name) on $($server.Name), creating one"
-                        $params = @{
-                            SqlInstance                  = $server
-                            Database                     = $db.Name
-                            StartDate                    = $CertificateStartDate
-                            ExpirationDate               = $CertificateExpirationDate
-                            ActiveForServiceBrokerDialog = $CertificateActiveForServiceBrokerDialog
-                            EnableException              = $true
-                        }
-
-                        if ($CertificateSubject) {
-                            $params.Subject = $CertificateSubject
-                        }
-                        $dbcert = New-DbaDbCertificate @params
-                    } else {
-                        Write-Message -Level Verbose -Message "Cert '$($dbcert.Name)' found in $($db.Name) on $($server.Name)"
-                    }
-
-                    # Back up certificate
-                    $null = $db.Refresh()
-                    $null = $server.Refresh()
-                    $dbcerttest = Get-DbaFile -SqlInstance $server -Path $BackupPath | Where-Object FileName -match "$($dbcert.Name).cer"
-                    if (-not $dbcerttest) {
-                        $params = @{
-                            SqlInstance        = $server
-                            Database           = $db.Name
-                            Certificate        = $dbcert.Name
-                            Path               = $BackupPath
-                            EnableException    = $true
-                            EncryptionPassword = $BackupSecurePassword
-                        }
-                        Write-Message -Level Verbose -Message "Backing up certificate for $($db.Name) on $($server.Name)"
-                        $null = Backup-DbaDbCertificate @params
-                    }
-                } else {
-                    $dbasymkey = Get-DbaDbAsymmetricKey -SqlInstance $server -Database $db.Name
-
-                    if (-not $dbasymkey) {
-                        Write-Message -Level Verbose -Message "Asymmetric key not found for $($db.Name) on $($server.Name),creating one"
-                        $params = @{
-                            SqlInstance     = $server
-                            Database        = $db.Name
-                            EnableException = $true
-                        }
-                        $dbasymkey = New-DbaDbAsymmetricKey @params
-                        $null = $db.Refresh()
-                    }
-                }
-                $null = $db.Refresh()
             } catch {
                 Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
             }
