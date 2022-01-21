@@ -78,6 +78,7 @@ function Backup-DbaServiceMasterKey {
         if ($KeyCredential) {
             $SecurePassword = $KeyCredential.Password
         }
+        $time = Get-Date -Format yyyMMddHHmmss
     }
     process {
         foreach ($instance in $SqlInstance) {
@@ -112,10 +113,15 @@ function Backup-DbaServiceMasterKey {
                 }
             }
 
-            $time = (Get-Date -Format yyyMMddHHmmss)
             $Path = $Path.TrimEnd("\")
+            $Path = $Path.TrimEnd("/")
             $fileinstance = $instance.ToString().Replace('\', '$')
-            $filename = Join-DbaPath -SqlInstance $server $Path "$fileinstance-SMK-$time.key"
+            $filename = Join-DbaPath -SqlInstance $server -Path $Path -ChildPath "$fileinstance-servicemasterkey.key"
+
+            # if the base file name exists, then default to old style of appending a timestamp
+            if (Test-DbaPath -SqlInstance $server -Path $filename) {
+                $filename = Join-DbaPath -SqlInstance $server -Path $Path -ChildPath "$fileinstance-servicemasterkey-$time.key"
+            }
 
             if ($Pscmdlet.ShouldProcess($instance, "Backing up service master key to $filename")) {
                 try {

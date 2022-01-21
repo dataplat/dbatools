@@ -31,6 +31,9 @@ function Restore-DbaDbCertificate {
     .PARAMETER Database
         The database where the certificate imports into. Defaults to master.
 
+    .PARAMETER Name
+        The optional name for the certificate, otherwise, it will be guessed from the certificate file name.
+
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
 
@@ -76,8 +79,9 @@ function Restore-DbaDbCertificate {
         [string[]]$KeyFilePath,
         [Security.SecureString]$EncryptionPassword,
         [string]$Database = "master",
+        [string]$Name,
         [Alias("Password", "SecurePassword")]
-        [Security.SecureString]$DecryptionPassword = (Read-Host "Password" -AsSecureString),
+        [Security.SecureString]$DecryptionPassword = (Read-Host "Decryption password" -AsSecureString),
         [switch]$EnableException
     )
     process {
@@ -117,15 +121,24 @@ function Restore-DbaDbCertificate {
                     $privatekey = $KeyFilePath
                 }
 
+                $instance = $server.Name
+                $fileinstance = $instance.ToString().Replace('\', '$')
+                $certname = $certname.Replace("$fileinstance-$Database-", "")
                 if ($certname -match '([0-9]{4})(0[1-9]|1[0-2])(0[1-9]|[1-2][0-9]|3[0-1])(2[0-3]|[01][0-9])([0-5][0-9])([0-5][0-9])') {
                     $certname = $certname.Replace($matches[0], "")
                 }
+                $certname = $certname.TrimEnd("-")
+                if ($PSBoundParameters.Name) {
+                    $certificatename = $Name
+                } else {
+                    $certificatename = $certname
+                }
 
-                if ($Pscmdlet.ShouldProcess("$certname on $SqlInstance", "Importing Certificate")) {
+                if ($Pscmdlet.ShouldProcess("$certificatename on $SqlInstance", "Importing certificate to $Database")) {
                     $smocert = New-Object Microsoft.SqlServer.Management.Smo.Certificate
-                    $smocert.Name = $certname
+                    $smocert.Name = $certificatename
                     $smocert.Parent = $server.Databases[$Database]
-                    Write-Message -Level Verbose -Message "Creating Certificate: $certname"
+                    Write-Message -Level Verbose -Message "Creating Certificate: $certificatename"
                     Write-Message -Level Verbose -Message "Full certificate path: $fullcertname"
                     Write-Message -Level Verbose -Message "Private key: $privatekey"
                     try {
@@ -145,9 +158,9 @@ function Restore-DbaDbCertificate {
                             Stop-Function -Message $_ -ErrorRecord $_ -Target $instance -Continue
                         }
                     }
+                    Get-DbaDbCertificate -SqlInstance $server -Database $Database -Certificate $smocert.Name
                 }
             }
-            Get-DbaDbCertificate -SqlInstance $server -Database $Database -Certificate $smocert.Name
         }
     }
 }
