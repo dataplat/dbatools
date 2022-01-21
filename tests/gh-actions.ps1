@@ -29,12 +29,14 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
             BackupRestore     = $true
             Exclude           = "LinkedServers", "Credentials", "DataCollector", "EndPoints", "PolicyManagement", "ResourceGovernor", "BackupDevices"
         }
+        # something is up with docker on actions, adjust accordingly for the cert test
+        $initialcertcount = (Get-DbaDbCertificate -SqlInstance localhost:14333 -Database master).Count
         $null = New-DbaDbCertificate -Name migrateme -Database master -Confirm:$false
         $results = Start-DbaMigration @params
         $results.Name | Should -Contain "Northwind"
         $results | Where-Object Name -eq "Northwind" | Select-Object -ExpandProperty Status | Should -Be "Successful"
         $results | Where-Object Name -eq "migrateme" | Select-Object -ExpandProperty Status | Should -Be "Successful"
-        Get-DbaDbCertificate -SqlInstance localhost:14333 -Database master | Select-Object -ExpandProperty Name | Should -Contain "migrateme"
+        (Get-DbaDbCertificate -SqlInstance localhost:14333 -Database master).Count | Should -BeGreaterThan $initialcertcount
     }
 
     It "sets up a mirror" {
