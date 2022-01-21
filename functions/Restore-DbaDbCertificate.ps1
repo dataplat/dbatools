@@ -124,6 +124,13 @@ function Restore-DbaDbCertificate {
                 $instance = $server.Name
                 $fileinstance = $instance.ToString().Replace('\', '$')
                 $certname = $certname.Replace("$fileinstance-$Database-", "")
+                if ($certname -match "-$Database-") {
+                    $tempcertname = $certname -split "-" | Select-Object -First 1 -Skip 2
+                    if ($tempcertname) {
+                        $certname = $tempcertname
+                    }
+                }
+
                 if ($certname -match '([0-9]{4})(0[1-9]|1[0-2])(0[1-9]|[1-2][0-9]|3[0-1])(2[0-3]|[01][0-9])([0-5][0-9])([0-5][0-9])') {
                     $certname = $certname.Replace($matches[0], "")
                 }
