@@ -24,9 +24,10 @@ function Install-DbaInstance {
         Note that the dowloaded installation media must be extracted and available to the server where the installation runs.
         NOTE: If no ProductID (PID) is found in the configuration files/parameters, Evaluation version is going to be installed.
 
-        When using CredSSP authentication, this function will configure CredSSP authentication for PowerShell Remoting sessions.
+        When using CredSSP authentication, this function will try to configure CredSSP authentication for PowerShell Remoting sessions.
         If this is not desired (e.g.: CredSSP authentication is managed externally, or is already configured appropriately,)
         it can be disabled by setting the dbatools configuration option 'commands.initialize-credssp.bypass' value to $true.
+        To be able to configure CredSSP, the command needs to be run in an elevated PowerShell session.
 
     .PARAMETER SqlInstance
         The target computer and, optionally, a new instance name and a port number.
@@ -42,7 +43,11 @@ function Install-DbaInstance {
         Securely provide the password for the sa account when using mixed mode authentication.
 
     .PARAMETER Credential
-        Used when executing installs against remote servers
+        Windows Credential with permission to log on to the remote server.
+        Must be specified for any remote connection if SQL Server installation media is located on a network folder.
+
+        Authentication will default to CredSSP if -Credential is used.
+        For CredSSP see also additional information in DESCRIPTION.
 
     .PARAMETER ConfigurationFile
         The path to the custom Configuration.ini file.
@@ -57,12 +62,14 @@ function Install-DbaInstance {
 
     .PARAMETER Authentication
         Chooses an authentication protocol for remote connections.
-        Allowed values: 'Default', 'Basic', 'Negotiate', 'NegotiateWithImplicitCredential', 'Credssp', 'Digest', 'Kerberos'
-        If the protocol fails to establish a connection
+        Allowed values: 'Default', 'Basic', 'Negotiate', 'NegotiateWithImplicitCredential', 'Credssp', 'Digest', 'Kerberos'.
+        If the protocol fails to establish a connection (HELP: What should be the end of this sentence?)
 
         Defaults:
         * CredSSP when -Credential is specified - due to the fact that repository Path is usually a network share and credentials need to be passed to the remote host to avoid the double-hop issue.
         * Default when -Credential is not specified. Will likely fail if a network path is specified.
+
+        For CredSSP see also additional information in DESCRIPTION.
 
     .PARAMETER Version
         SQL Server version you wish to install.
@@ -256,7 +263,7 @@ function Install-DbaInstance {
         [PSCredential]$SaCredential,
         [PSCredential]$Credential,
         [ValidateSet('Default', 'Basic', 'Negotiate', 'NegotiateWithImplicitCredential', 'Credssp', 'Digest', 'Kerberos')]
-        [string]$Authentication = 'Credssp',
+        [string]$Authentication = @('Credssp', 'Default')[$null -eq $Credential],
         [parameter(ValueFromPipeline)]
         [Alias("FilePath")]
         [object]$ConfigurationFile,

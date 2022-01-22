@@ -18,16 +18,11 @@ function Update-DbaInstance {
         * Repeat for each consequent KB and computer
 
         The impact of this function is set to High, if you don't want to receive interactive prompts, set -Confirm to $false.
-        Credentials are a required parameter for remote machines. Without specifying -Credential, the installation will fail due to lack of permissions.
 
-        CredSSP is a recommended transport for running the updates remotely. Update-DbaInstance will attempt to reconfigure
-        local and remote hosts to support CredSSP, which is why it is desirable to run this command in an elevated console at all times.
-        CVE-2018-0886 security update is required for both local and remote hosts. If CredSSP connections are failing, make sure to
-        apply recent security updates prior to doing anything else.
-
-        When using CredSSP authentication, this function will configure CredSSP authentication for PowerShell Remoting sessions.
+        When using CredSSP authentication, this function will try to configure CredSSP authentication for PowerShell Remoting sessions.
         If this is not desired (e.g.: CredSSP authentication is managed externally, or is already configured appropriately,)
         it can be disabled by setting the dbatools configuration option 'commands.initialize-credssp.bypass' value to $true.
+        To be able to configure CredSSP, the command needs to be run in an elevated PowerShell session.
 
         Always backup databases and configurations prior to upgrade.
 
@@ -37,6 +32,9 @@ function Update-DbaInstance {
     .PARAMETER Credential
         Windows Credential with permission to log on to the remote server.
         Must be specified for any remote connection if update Repository is located on a network folder.
+
+        Authentication will default to CredSSP if -Credential is used.
+        For CredSSP see also additional information in DESCRIPTION.
 
     .PARAMETER Type
         Type of the update: All | ServicePack | CumulativeUpdate.
@@ -72,11 +70,14 @@ function Update-DbaInstance {
 
     .PARAMETER Authentication
         Chooses an authentication protocol for remote connections.
-        If the protocol fails to establish a connection
+        Allowed values: 'Default', 'Basic', 'Negotiate', 'NegotiateWithImplicitCredential', 'Credssp', 'Digest', 'Kerberos'.
+        If the protocol fails to establish a connection (HELP: What should be the end of this sentence?)
 
         Defaults:
         * CredSSP when -Credential is specified - due to the fact that repository Path is usually a network share and credentials need to be passed to the remote host to avoid the double-hop issue.
         * Default when -Credential is not specified. Will likely fail if a network path is specified.
+
+        For CredSSP see also additional information in DESCRIPTION.
 
     .PARAMETER InstanceName
         Only updates a specific instance(s).
@@ -205,7 +206,7 @@ function Update-DbaInstance {
         [ValidateNotNull()]
         [int]$Throttle = 50,
         [ValidateSet('Default', 'Basic', 'Negotiate', 'NegotiateWithImplicitCredential', 'Credssp', 'Digest', 'Kerberos')]
-        [string]$Authentication = @('CredSSP', 'Default')[$null -eq $Credential],
+        [string]$Authentication = @('Credssp', 'Default')[$null -eq $Credential],
         [string]$ExtractPath,
         [string[]]$ArgumentList,
         [switch]$Download,
