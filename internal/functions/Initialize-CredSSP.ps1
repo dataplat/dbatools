@@ -9,6 +9,7 @@ function Initialize-CredSSP {
         Remote computer will be configured to act as a server and accept client connections from local computer.
 
         This function can be disabled by setting the value of configuration item "commands.initialize-credssp.bypass" to $true.
+        Configuration of CredSSP can and will be done by this command only from an elevated PowerShell session.
 
     .PARAMETER ComputerName
         Remote computer name
@@ -37,32 +38,42 @@ function Initialize-CredSSP {
         [bool]$EnableException
     )
 
-    #Check to see if this function is bypassed
-    if ( ( Get-DbatoolsConfigValue -FullName 'commands.initialize-credssp.bypass') -eq $true ) {
-        Write-Message -Level Verbose -Message "CredSSP initialization bypass (commands.initialize-credssp.bypass) is set to $true";
-        return;
+    # Check to see if this function is bypassed
+    if (Get-DbatoolsConfigValue -FullName 'commands.initialize-credssp.bypass') {
+        Write-Message -Level Verbose -Message "CredSSP initialization bypass (commands.initialize-credssp.bypass) is set to $true"
+        return
     }
 
-    #Configure local machine
-    #Start local WinRM service
+    # Configure local machine
+    # Start local WinRM service
     if ((Get-Service WinRM).Status -ne 'Running') {
         $null = Get-Service WinRM -ErrorAction Stop | Start-Service -ErrorAction Stop
         Start-Sleep -Seconds 1
     }
-    #Get current config
+
+    # The command Get-WSManCredSSP can only run in an elevated PowerShell session, so we test that.
+    # We return this command without error if we are not able to configure CredSSP.
+    # The calling command has to test a successful connection anyway, so we don't do that here.
+    $isElevated = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+    if (-not $isElevated) {
+        Write-Message -Level Verbose -Message "PowerShell session is not elevated, so we can only hope that CredSSP is configured"
+        return
+    }
+
+    # Get current config
     try {
         $sspList = Get-WSManCredSSP -ErrorAction Stop
-
     } catch {
         Stop-Function -Message "Failed to get a list of CredSSP hosts" -ErrorRecord $_
         return
     }
-    #Enable delegation to a remote server if not declared already
+
+    # Enable delegation to a remote server if not declared already
     if ($sspList -and $sspList[0] -notmatch "wsman\/$([regex]::Escape($ComputerName))[\,$]") {
         Write-Message -Level Verbose -Message "Configuring local host to use CredSSP"
         try {
             # Enable client SSP on local machine
-            $null = Enable-WSManCredSSP -role Client -DelegateComputer $ComputerName -Force -ErrorAction Stop
+            $null = Enable-WSManCredSSP -Role Client -DelegateComputer $ComputerName -Force -ErrorAction Stop
         } catch {
             Stop-Function -Message "Failed to configure local CredSSP as a client" -ErrorRecord $_
         }
