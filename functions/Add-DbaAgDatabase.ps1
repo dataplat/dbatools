@@ -7,19 +7,19 @@ function Add-DbaAgDatabase {
         Adds database(s) to an Availability Group on a SQL Server instance.
 
         After checking for prerequisites, the commands runs these five steps for every database:
-        Step 1: Setting seeding mode if needed.
-            If -SeedingMode is used and the current seeding mode of the replica is not in the desired mode, the seeding mode of the replica is changed.
-            The seeding mode will not be changed back but stay in this mode.
-            If the seeding mode is changed to Automatic, the necessary rights to create databases will be granted.
-        Step 2: Running backup and restore if needed.
-            Action is only taken for replicas with a desired seeding mode of Manual and where the database does not yet exist.
-            If -UseLastBackup is used, the restore will be performed based on the backup history of the database.
-            Otherwise a full and log backup will be taken at the primary and those will be restored at the replica.
-        Step 3: Add the database to the Availability Group on the primary replica.
-            This step is skipped, if the database is already part of the Availability Group.
-        Step 4: Add the database to the Availability Group on the secondary replicas.
-            This step is skipped for those replicas, where the database is already joined to the Availability Group.
-        Step 5: Wait for the database to finish joining the Availability Group on the secondary replicas.
+        * Step 1: Setting seeding mode if needed.
+          - If -SeedingMode is used and the current seeding mode of the replica is not in the desired mode, the seeding mode of the replica is changed.
+          - The seeding mode will not be changed back but stay in this mode.
+          - If the seeding mode is changed to Automatic, the necessary rights to create databases will be granted.
+        * Step 2: Running backup and restore if needed.
+          - Action is only taken for replicas with a desired seeding mode of Manual and where the database does not yet exist.
+          - If -UseLastBackup is used, the restore will be performed based on the backup history of the database.
+          - Otherwise a full and log backup will be taken at the primary and those will be restored at the replica.
+        * Step 3: Add the database to the Availability Group on the primary replica.
+          - This step is skipped, if the database is already part of the Availability Group.
+        * Step 4: Add the database to the Availability Group on the secondary replicas.
+          - This step is skipped for those replicas, where the database is already joined to the Availability Group.
+        * Step 5: Wait for the database to finish joining the Availability Group on the secondary replicas.
 
         Use Test-DbaAvailabilityGroup with -AddDatabase to test if all prerequisites are met.
 
