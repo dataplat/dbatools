@@ -293,6 +293,7 @@ function Backup-DbaDatabase {
                 return
             }
         }
+
         # this had to be a function. making it a variable killed something. I'm guessing scoping issues
         Function Convert-BackupPath ($object) {
             if ($object -match "/|\\") {
@@ -344,8 +345,16 @@ function Backup-DbaDatabase {
             $ProgressId = Get-Random
             $failures = @()
             $dbName = $db.Name
-            $server = $db.Parent
-            $null = $server.Refresh()
+            if ($db.gettype().name -eq 'Database') {
+                $server = $db.ComputerName
+                $dbName = $db.Name
+            } else {
+                $server = $db.Parent
+                $dbName = $db.Name
+                $null = $server.Refresh()
+            }
+
+
             $isdestlinux = Test-HostOSLinux -SqlInstance $server
 
             if (Test-Bound 'EncryptionAlgorithm') {
@@ -481,7 +490,9 @@ function Backup-DbaDatabase {
                 $CopyOnly = $false
             }
 
-            $server.ConnectionContext.StatementTimeout = 0
+            if ($null -ne $SqlInstance) {
+                $server.ConnectionContext.StatementTimeout = 0
+            }
             $backup = New-Object Microsoft.SqlServer.Management.Smo.Backup
             $backup.Database = $db.Name
             $Suffix = "bak"
@@ -612,7 +623,7 @@ function Backup-DbaDatabase {
                 for ($i = 0; $i -lt $FinalBackupPath.count; $i++) {
                     $FinalBackupPath[$i] = $FinalBackupPath[$i] -replace ('dbname', $dbName)
                     $FinalBackupPath[$i] = $FinalBackupPath[$i] -replace ('instancename', $SqlInstance.InstanceName)
-                    $FinalBackupPath[$i] = $FinalBackupPath[$i] -replace ('servername', $SqlInstance.ComputerName)
+                    $FinalBackupPath[$i] = $FinalBackupPath[$i] -replace ('servername', $server)
                     $FinalBackupPath[$i] = $FinalBackupPath[$i] -replace ('timestamp', $timestamp)
                     $FinalBackupPath[$i] = $FinalBackupPath[$i] -replace ('backuptype', $outputType)
                 }
