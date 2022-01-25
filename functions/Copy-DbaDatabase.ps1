@@ -1445,7 +1445,7 @@ function Copy-DbaDatabase {
                     }
 
                     if ($SetSourceOffline -and $sourceServer.databases[$DestinationdbName].status -notlike '*offline*') {
-                        if ($Pscmdlet.ShouldProcess($destinstance, "Setting $DestinationdbName offline on $source")) {
+                        if ($Pscmdlet.ShouldProcess($source, "Setting $DestinationdbName offline")) {
                             Stop-DbaProcess -SqlInstance $sourceServer -Database $DestinationdbName
                             Set-DbaDbState -SqlInstance $sourceServer -SqlCredential $SourceSqlCredential -database $DestinationdbName -Offline
                         }
