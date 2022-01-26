@@ -326,7 +326,7 @@ go
         }
     }
 
-    Context "Test Backup templating when db object piped in" {
+    Context "Test Backup templating when db object piped in issue 8100" {
         $results = Get-DbaDatabase -SqlInstance $script:instance1 -Database master,msdb | Backup-DbaDatabase -BackupDirectory $DestBackupDir\db\dbname\instancename\backuptype\  -BackupFileName dbname-backuptype.bak -ReplaceInName -BuildPath
         It "Should have replaced the markers" {
             $results[0].BackupPath | Should -BeLike "$DestBackupDir\db\master\$(($script:instance1).split('\')[1])\Full\master-Full.bak"

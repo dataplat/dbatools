@@ -345,6 +345,7 @@ function Backup-DbaDatabase {
             $ProgressId = Get-Random
             $failures = @()
             $dbName = $db.Name
+            # The following is needed to cope with either database or instance objects coming in via pipeline
             if ($db.gettype().name -ne 'Database') {
                 $server = $db.ComputerName
                 $dbName = $db.Name
@@ -620,6 +621,7 @@ function Backup-DbaDatabase {
             }
 
             if ($True -eq $ReplaceInName) {
+                # The following is needed as a piped in database will provide servername wrapped in []'s
                 if ($server -match '\[(.*)\]') {
                     $servertmp = $matches[1]
                 } else {
