@@ -33,7 +33,8 @@ function Restart-WinRMService {
             # Retrieve a session from the session cache, if available (it's unique per runspace)
             [array]$currentSessions = [Sqlcollaborative.Dbatools.Connection.ConnectionHost]::PSSessionGet($runspaceId, $ComputerName)
             Write-Message -Level Debug -Message "Removing $($currentSessions.Count) sessions from $ComputerName in runspace $runspaceId"
-            $currentSessions | Remove-PSSession
+            # "$currentSessions | Remove-PSSession" would fail with "Remove-PSSession : Cannot bind argument to parameter 'Session' because it is null." if $currentSessions is empty.
+            foreach ($session in $currentSessions) { $session | Remove-PSSession }
             Write-Message -Level Debug "Waiting for the WinRM service to restart on $ComputerName"
             $waitCounter = 0
             while ($waitCounter -lt $Timeout * 5) {
