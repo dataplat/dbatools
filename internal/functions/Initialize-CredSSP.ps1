@@ -54,7 +54,7 @@ function Initialize-CredSSP {
     # The command Get-WSManCredSSP can only run in an elevated PowerShell session, so we test that to be able to fail with a suitable message
     $isElevated = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
     if (-not $isElevated) {
-        Stop-Function -Message "Failed to configure CredSSP because the PowerShell session is not elevated" -ErrorRecord $_
+        Stop-Function -Message "Failed to configure CredSSP because the PowerShell session is not elevated"
     }
 
     # Get current config
