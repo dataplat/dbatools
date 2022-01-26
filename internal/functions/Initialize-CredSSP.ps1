@@ -55,6 +55,7 @@ function Initialize-CredSSP {
     $isElevated = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
     if (-not $isElevated) {
         Stop-Function -Message "Failed to configure CredSSP because the PowerShell session is not elevated"
+        return
     }
 
     # Get current config
