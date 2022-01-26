@@ -71,7 +71,8 @@ function Update-DbaInstance {
     .PARAMETER Authentication
         Chooses an authentication protocol for remote connections.
         Allowed values: 'Default', 'Basic', 'Negotiate', 'NegotiateWithImplicitCredential', 'Credssp', 'Digest', 'Kerberos'.
-        If the protocol fails to establish a connection (HELP: What should be the end of this sentence?)
+        If the protocol fails to establish a connection and explicit -Credentials were used, a failback authentication method would be attempted that configures PSSessionConfiguration
+        on the remote machine. This method, however, is considered insecure and would, therefore, prompt an additional confirmation when used.
 
         Defaults:
         * CredSSP when -Credential is specified - due to the fact that repository Path is usually a network share and credentials need to be passed to the remote host to avoid the double-hop issue.
