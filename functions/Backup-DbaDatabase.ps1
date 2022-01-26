@@ -345,7 +345,7 @@ function Backup-DbaDatabase {
             $ProgressId = Get-Random
             $failures = @()
             $dbName = $db.Name
-            if ($db.gettype().name -eq 'Database') {
+            if ($db.gettype().name -ne 'Database') {
                 $server = $db.ComputerName
                 $dbName = $db.Name
             } else {
@@ -620,10 +620,15 @@ function Backup-DbaDatabase {
             }
 
             if ($True -eq $ReplaceInName) {
+                if ($server -match '\[(.*)\]') {
+                    $servertmp = $matches[1]
+                } else {
+                    $servertmp = $server
+                }
                 for ($i = 0; $i -lt $FinalBackupPath.count; $i++) {
                     $FinalBackupPath[$i] = $FinalBackupPath[$i] -replace ('dbname', $dbName)
                     $FinalBackupPath[$i] = $FinalBackupPath[$i] -replace ('instancename', $SqlInstance.InstanceName)
-                    $FinalBackupPath[$i] = $FinalBackupPath[$i] -replace ('servername', $server)
+                    $FinalBackupPath[$i] = $FinalBackupPath[$i] -replace ('servername', $servertmp)
                     $FinalBackupPath[$i] = $FinalBackupPath[$i] -replace ('timestamp', $timestamp)
                     $FinalBackupPath[$i] = $FinalBackupPath[$i] -replace ('backuptype', $outputType)
                 }
