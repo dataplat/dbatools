@@ -443,43 +443,43 @@ function Update-DbaInstance {
                 #Exit the actions loop altogether - nothing can be installed here anyways
                 Stop-Function -Message "$resolvedName is pending a reboot. Reboot the computer before proceeding." -Continue
             }
+            # test connection
+            if ($Credential -and -not ([DbaInstanceParameter]$resolvedName).IsLocalHost) {
+                $totalSteps += 1
+                Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Testing $Authentication protocol"
+                Write-Message -Level Verbose -Message "Attempting to test $Authentication protocol for remote connections"
+                try {
+                    $connectSuccess = Invoke-Command2 -ComputerName $resolvedName -Credential $Credential -Authentication $Authentication -ScriptBlock { $true } -Raw
+                } catch {
+                    $connectSuccess = $false
+                }
+                # if we use CredSSP, we might be able to configure it
+                if (-not $connectSuccess -and $Authentication -eq 'Credssp') {
+                    $totalSteps += 1
+                    Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Configuring CredSSP protocol"
+                    Write-Message -Level Verbose -Message "Attempting to configure CredSSP for remote connections"
+                    try {
+                        Initialize-CredSSP -ComputerName $resolvedName -Credential $Credential -EnableException $true
+                        $connectSuccess = Invoke-Command2 -ComputerName $resolvedName -Credential $Credential -Authentication $Authentication -ScriptBlock { $true } -Raw
+                    } catch {
+                        $connectSuccess = $false
+                        # tell the user why we could not configure CredSSP
+                        Write-Message -Level Warning -Message $_
+                    }
+                }
+                # in case we are still not successful, ask the user to use unsecure protocol once
+                if (-not $connectSuccess -and -not $notifiedUnsecure) {
+                    if ($PSCmdlet.ShouldProcess($resolvedName, "Primary protocol ($Authentication) failed, sending credentials via potentially unsecure protocol")) {
+                        $notifiedUnsecure = $true
+                    } else {
+                        Stop-Function -Message "Failed to connect to $resolvedName through $Authentication protocol. No actions will be performed on that computer." -Continue -ContinueLabel computers
+                    }
+                }
+            }
             $upgrades = @()
             :actions foreach ($actionItem in $actions) {
                 # Clone action to use as a splat
                 $currentAction = $actionItem.Clone()
-                # test connection
-                if ($Credential -and -not ([DbaInstanceParameter]$resolvedName).IsLocalHost) {
-                    $totalSteps += 1
-                    Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Testing $Authentication protocol"
-                    Write-Message -Level Verbose -Message "Attempting to test $Authentication protocol for remote connections"
-                    try {
-                        $connectSuccess = Invoke-Command2 -ComputerName $resolvedName -Credential $Credential -Authentication $Authentication -ScriptBlock { $true } -Raw
-                    } catch {
-                        $connectSuccess = $false
-                    }
-                    # if we use CredSSP, we might be able to configure it
-                    if (-not $connectSuccess -and $Authentication -eq 'Credssp') {
-                        $totalSteps += 1
-                        Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Configuring CredSSP protocol"
-                        Write-Message -Level Verbose -Message "Attempting to configure CredSSP for remote connections"
-                        try {
-                            Initialize-CredSSP -ComputerName $resolvedName -Credential $Credential -EnableException $true
-                            $connectSuccess = Invoke-Command2 -ComputerName $resolvedName -Credential $Credential -Authentication $Authentication -ScriptBlock { $true } -Raw
-                        } catch {
-                            $connectSuccess = $false
-                            # tell the user why we could not configure CredSSP
-                            Write-Message -Level Warning -Message $_
-                        }
-                    }
-                    # in case we are still not successful, ask the user to use unsecure protocol once
-                    if (-not $connectSuccess -and -not $notifiedUnsecure) {
-                        if ($PSCmdlet.ShouldProcess($resolvedName, "Primary protocol ($Authentication) failed, sending credentials via potentially unsecure protocol")) {
-                            $notifiedUnsecure = $true
-                        } else {
-                            Stop-Function -Message "Failed to connect to $resolvedName through $Authentication protocol. No actions will be performed on that computer." -Continue -ContinueLabel computers
-                        }
-                    }
-                }
                 # Pass only relevant components
                 if ($currentAction.MajorVersion) {
                     Write-Message -Level Debug -Message "Limiting components to version $($currentAction.MajorVersion)"
