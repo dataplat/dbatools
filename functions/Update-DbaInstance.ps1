@@ -447,18 +447,30 @@ function Update-DbaInstance {
             :actions foreach ($actionItem in $actions) {
                 # Clone action to use as a splat
                 $currentAction = $actionItem.Clone()
-                # Attempt to configure CredSSP for the remote host when credentials are defined
-                if ($Credential -and -not ([DbaInstanceParameter]$resolvedName).IsLocalHost -and $Authentication -eq 'Credssp') {
-                    Write-Message -Level Verbose -Message "Attempting to configure CredSSP for remote connections"
-                    Initialize-CredSSP -ComputerName $resolvedName -Credential $Credential -EnableException $false
-                    # Verify remote connection and confirm using unsecure credentials
+                # test connection
+                if ($Credential -and -not ([DbaInstanceParameter]$resolvedName).IsLocalHost) {
+                    $totalSteps += 1
+                    Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Testing $Authentication protocol"
+                    Write-Message -Level Verbose -Message "Attempting to test $Authentication protocol for remote connections"
                     try {
-                        $secureProtocol = Invoke-Command2 -ComputerName $resolvedName -Credential $Credential -Authentication $Authentication -ScriptBlock { $true } -Raw
+                        $connectSuccess = Invoke-Command2 -ComputerName $resolvedName -Credential $Credential -Authentication $Authentication -ScriptBlock { $true } -Raw
                     } catch {
-                        $secureProtocol = $false
+                        $connectSuccess = $false
                     }
-                    # only ask once about using unsecure protocol
-                    if (-not $secureProtocol -and -not $notifiedUnsecure) {
+                    # if we use CredSSP, we might be able to configure it
+                    if (-not $connectSuccess -and $Authentication -eq 'Credssp') {
+                        $totalSteps += 1
+                        Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Configuring CredSSP protocol"
+                        Write-Message -Level Verbose -Message "Attempting to configure CredSSP for remote connections"
+                        try {
+                            Initialize-CredSSP -ComputerName $resolvedName -Credential $Credential -EnableException $true
+                            $connectSuccess = Invoke-Command2 -ComputerName $resolvedName -Credential $Credential -Authentication $Authentication -ScriptBlock { $true } -Raw
+                        } catch {
+                            $connectSuccess = $false
+                        }
+                    }
+                    # in case we are still not successful, ask the user to use unsecure protocol once
+                    if (-not $connectSuccess -and -not $notifiedUnsecure) {
                         if ($PSCmdlet.ShouldProcess($resolvedName, "Primary protocol ($Authentication) failed, sending credentials via potentially unsecure protocol")) {
                             $notifiedUnsecure = $true
                         } else {
