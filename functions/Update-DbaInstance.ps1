@@ -467,6 +467,8 @@ function Update-DbaInstance {
                             $connectSuccess = Invoke-Command2 -ComputerName $resolvedName -Credential $Credential -Authentication $Authentication -ScriptBlock { $true } -Raw
                         } catch {
                             $connectSuccess = $false
+                            # tell the user why we could not configure CredSSP
+                            Write-Message -Level Warning -Message $_
                         }
                     }
                     # in case we are still not successful, ask the user to use unsecure protocol once
