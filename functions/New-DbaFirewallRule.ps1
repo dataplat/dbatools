@@ -34,7 +34,7 @@ function New-DbaFirewallRule {
             Group       = 'SQL Server'
             Enabled     = 'True'
             Direction   = 'Inbound'
-            Protocol    = 'UPD'
+            Protocol    = 'UDP'
             LocalPort   = '1434'
 
     .PARAMETER SqlInstance
