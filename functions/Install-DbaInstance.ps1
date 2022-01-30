@@ -24,9 +24,10 @@ function Install-DbaInstance {
         Note that the dowloaded installation media must be extracted and available to the server where the installation runs.
         NOTE: If no ProductID (PID) is found in the configuration files/parameters, Evaluation version is going to be installed.
 
-        When using CredSSP authentication, this function will configure CredSSP authentication for PowerShell Remoting sessions.
+        When using CredSSP authentication, this function will try to configure CredSSP authentication for PowerShell Remoting sessions.
         If this is not desired (e.g.: CredSSP authentication is managed externally, or is already configured appropriately,)
         it can be disabled by setting the dbatools configuration option 'commands.initialize-credssp.bypass' value to $true.
+        To be able to configure CredSSP, the command needs to be run in an elevated PowerShell session.
 
     .PARAMETER SqlInstance
         The target computer and, optionally, a new instance name and a port number.
@@ -42,7 +43,11 @@ function Install-DbaInstance {
         Securely provide the password for the sa account when using mixed mode authentication.
 
     .PARAMETER Credential
-        Used when executing installs against remote servers
+        Windows Credential with permission to log on to the remote server.
+        Must be specified for any remote connection if SQL Server installation media is located on a network folder.
+
+        Authentication will default to CredSSP if -Credential is used.
+        For CredSSP see also additional information in DESCRIPTION.
 
     .PARAMETER ConfigurationFile
         The path to the custom Configuration.ini file.
@@ -57,12 +62,15 @@ function Install-DbaInstance {
 
     .PARAMETER Authentication
         Chooses an authentication protocol for remote connections.
-        Allowed values: 'Default', 'Basic', 'Negotiate', 'NegotiateWithImplicitCredential', 'Credssp', 'Digest', 'Kerberos'
-        If the protocol fails to establish a connection
+        Allowed values: 'Default', 'Basic', 'Negotiate', 'NegotiateWithImplicitCredential', 'Credssp', 'Digest', 'Kerberos'.
+        If the protocol fails to establish a connection and explicit -Credentials were used, a failback authentication method would be attempted that configures PSSessionConfiguration
+        on the remote machine. This method, however, is considered insecure and would, therefore, prompt an additional confirmation when used.
 
         Defaults:
         * CredSSP when -Credential is specified - due to the fact that repository Path is usually a network share and credentials need to be passed to the remote host to avoid the double-hop issue.
         * Default when -Credential is not specified. Will likely fail if a network path is specified.
+
+        For CredSSP see also additional information in DESCRIPTION.
 
     .PARAMETER Version
         SQL Server version you wish to install.
@@ -256,7 +264,7 @@ function Install-DbaInstance {
         [PSCredential]$SaCredential,
         [PSCredential]$Credential,
         [ValidateSet('Default', 'Basic', 'Negotiate', 'NegotiateWithImplicitCredential', 'Credssp', 'Digest', 'Kerberos')]
-        [string]$Authentication = 'Credssp',
+        [string]$Authentication = @('Credssp', 'Default')[$null -eq $Credential],
         [parameter(ValueFromPipeline)]
         [Alias("FilePath")]
         [object]$ConfigurationFile,
@@ -478,19 +486,32 @@ function Install-DbaInstance {
                 #Exit the actions loop altogether - nothing can be installed here anyways
                 Stop-Function -Message "$computer is pending a reboot. Reboot the computer before proceeding." -Continue
             }
-            # Attempt to configure CredSSP for the remote host when credentials are defined
-            if ($Credential -and -not ([DbaInstanceParameter]$computer).IsLocalHost -and $Authentication -eq 'Credssp') {
-                Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Configuring CredSSP protocol"
-                Write-Message -Level Verbose -Message "Attempting to configure CredSSP for remote connections"
-                Initialize-CredSSP -ComputerName $fullComputerName -Credential $Credential -EnableException $false
-                # Verify remote connection and confirm using unsecure credentials
+            # test connection
+            if ($Credential -and -not ([DbaInstanceParameter]$computer).IsLocalHost) {
+                $totalSteps += 1
+                Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Testing $Authentication protocol"
+                Write-Message -Level Verbose -Message "Attempting to test $Authentication protocol for remote connections"
                 try {
-                    $secureProtocol = Invoke-Command2 -ComputerName $fullComputerName -Credential $Credential -Authentication $Authentication -ScriptBlock { $true } -Raw
+                    $connectSuccess = Invoke-Command2 -ComputerName $fullComputerName -Credential $Credential -Authentication $Authentication -ScriptBlock { $true } -Raw
                 } catch {
-                    $secureProtocol = $false
+                    $connectSuccess = $false
                 }
-                # only ask once about using unsecure protocol
-                if (-not $secureProtocol -and -not $notifiedUnsecure) {
+                # if we use CredSSP, we might be able to configure it
+                if (-not $connectSuccess -and $Authentication -eq 'Credssp') {
+                    $totalSteps += 1
+                    Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Configuring CredSSP protocol"
+                    Write-Message -Level Verbose -Message "Attempting to configure CredSSP for remote connections"
+                    try {
+                        Initialize-CredSSP -ComputerName $fullComputerName -Credential $Credential -EnableException $true
+                        $connectSuccess = Invoke-Command2 -ComputerName $fullComputerName -Credential $Credential -Authentication $Authentication -ScriptBlock { $true } -Raw
+                    } catch {
+                        $connectSuccess = $false
+                        # tell the user why we could not configure CredSSP
+                        Write-Message -Level Warning -Message $_
+                    }
+                }
+                # in case we are still not successful, ask the user to use unsecure protocol once
+                if (-not $connectSuccess -and -not $notifiedUnsecure) {
                     if ($PSCmdlet.ShouldProcess($fullComputerName, "Primary protocol ($Authentication) failed, sending credentials via potentially unsecure protocol")) {
                         $notifiedUnsecure = $true
                     } else {
