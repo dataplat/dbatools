@@ -90,6 +90,7 @@ function Backup-DbaDbMasterKey {
         if ($Credential) {
             $SecurePassword = $Credential.Password
         }
+        $time = Get-Date -Format yyyMMddHHmmss
     }
     process {
         foreach ($instance in $SqlInstance) {
@@ -97,7 +98,9 @@ function Backup-DbaDbMasterKey {
         }
 
         foreach ($db in $InputObject) {
+            $dbname = $db.Name
             $server = $db.Parent
+            $instance = $server.Name
 
             if (Test-Bound -ParameterName Path -Not) {
                 $Path = $server.BackupDirectory
@@ -107,19 +110,21 @@ function Backup-DbaDbMasterKey {
                 Stop-Function -Message "Path discovery failed. Please explicitly specify -Path" -Target $server -Continue
             }
 
-            if (!(Test-DbaPath -SqlInstance $server -Path $Path)) {
+            if (-not (Test-DbaPath -SqlInstance $server -Path $Path)) {
                 Stop-Function -Message "$instance cannot access $Path" -Target $server -ErrorRecord $_ -Continue
             }
 
-            if (!$db.IsAccessible) {
+            $actualPath = "$Path".TrimEnd('\').TrimEnd('/')
+
+            if (-not $db.IsAccessible) {
                 Write-Message -Level Warning -Message "Database $db is not accessible. Skipping."
                 continue
             }
 
             $masterkey = $db.MasterKey
 
-            if (!$masterkey) {
-                Write-Message -Message "No master key exists in the $db database on $instance" -Target $db -Level Verbose
+            if (-not $masterkey) {
+                Write-Message -Message "No master key exists in the $dbname database on $instance" -Target $db -Level Verbose
                 continue
             }
 
@@ -133,15 +138,22 @@ function Backup-DbaDbMasterKey {
                 }
             }
 
-            $time = (Get-Date -Format yyyMMddHHmmss)
-            $dbName = $db.name
-            $Path = $Path.TrimEnd("\").TrimEnd("/")
-            $fileinstance = $instance.ToString().Replace('\', '$')
-            $filename = (Join-DbaPath $Path "$fileinstance-$dbName-$time.key" -SqlInstance $server)
 
-            if ($Pscmdlet.ShouldProcess($instance, "Backing up master key to $filename")) {
+            if (-not (Test-DbaPath -SqlInstance $server -Path $actualPath)) {
+                Stop-Function -Message "$SqlInstance cannot access $actualPath" -Target $actualPath
+            }
+
+            $fileinstance = $instance.ToString().Replace('\', '$')
+            $fullKeyName = Join-DbaPath -SqlInstance $server -Path $actualPath -ChildPath "$fileinstance-$dbname-masterkey"
+
+            # if the base file name exists, then default to old style of appending a timestamp
+            if (Test-DbaPath -SqlInstance $server -Path "$fullKeyName.key") {
+                $fullKeyName = "$fullKeyName-$time"
+            }
+
+            if ($Pscmdlet.ShouldProcess($instance, "Backing up master key to $fullKeyName")) {
                 try {
-                    $masterkey.Export($filename, ($SecurePassword | ConvertFrom-SecurePass))
+                    $masterkey.Export("$fullKeyName.key", ($SecurePassword | ConvertFrom-SecurePass))
                     $status = "Success"
                 } catch {
                     $status = "Failure"
@@ -152,7 +164,7 @@ function Backup-DbaDbMasterKey {
                 Add-Member -Force -InputObject $masterkey -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
                 Add-Member -Force -InputObject $masterkey -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
                 Add-Member -Force -InputObject $masterkey -MemberType NoteProperty -Name Database -value $dbName
-                Add-Member -Force -InputObject $masterkey -MemberType NoteProperty -Name Filename -value $filename
+                Add-Member -Force -InputObject $masterkey -MemberType NoteProperty -Name Filename -value $fullKeyName
                 Add-Member -Force -InputObject $masterkey -MemberType NoteProperty -Name Status -value $status
 
                 Select-DefaultView -InputObject $masterkey -Property ComputerName, InstanceName, SqlInstance, Database, 'Filename as Path', Status
