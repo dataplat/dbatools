@@ -134,7 +134,7 @@ function Copy-DbaCredential {
             try {
                 $sourceCredentials = Get-DecryptedObject -SqlInstance $sourceServer -Type Credential -EnableException
             } catch {
-                Stop-Function -Message "Failed to decrypted credentials" -ErrorRecord $_
+                Stop-Function -Message "Failed to decrypt credentials on $($sourceServer.Name)" -ErrorRecord $_
                 return
             }
 
