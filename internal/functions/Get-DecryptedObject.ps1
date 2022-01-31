@@ -24,40 +24,28 @@ function Get-DecryptedObject {
     Write-Message -Level Verbose -Message "Querying service master key"
     $sql = "SELECT substring(crypt_property,9,len(crypt_property)-8) as smk FROM sys.key_encryptions WHERE key_id=102 and (thumbprint=0x03 or thumbprint=0x0300000001)"
     try {
-        $smkbytes = $server.Query($sql).smk
+        $smkBytes = $server.Query($sql).smk
     } catch {
-        Stop-Function -Message "Can't execute query on $sourcename" -Target $server -ErrorRecord $_
+        Stop-Function -Message "Can't execute query on $sourceName" -Target $server -ErrorRecord $_
         return
     }
 
     $fullComputerName = Resolve-DbaComputerName -ComputerName $server -Credential $Credential
-    $instance = $server.InstanceName
     $serviceInstanceId = $server.ServiceInstanceId
-
-    Write-Message -Level Verbose -Message "Get entropy from the registry - hopefully finds the right SQL server instance"
-
-    try {
-        [byte[]]$entropy = Invoke-Command2 -Raw -Credential $Credential -ComputerName $fullComputerName -argumentlist $serviceInstanceId {
-            $serviceInstanceId = $args[0]
-            $entropy = (Get-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Microsoft SQL Server\$serviceInstanceId\Security\" -ErrorAction Stop).Entropy
-            return $entropy
-        }
-    } catch {
-        Stop-Function -Message "Can't access registry keys on $sourceName. Do you have administrative access to the Windows registry on $SqlInstance Otherwise, we're out of ideas." -Target $source
-        return
-    }
 
     Write-Message -Level Verbose -Message "Decrypt the service master key"
     try {
-        $serviceKey = Invoke-Command2 -Raw -Credential $Credential -ComputerName $fullComputerName -ArgumentList $smkbytes, $Entropy {
+        $serviceKey = Invoke-Command2 -Raw -Credential $Credential -ComputerName $fullComputerName -ArgumentList $serviceInstanceId, $smkBytes {
+            $serviceInstanceId = $args[0]
+            $smkBytes = $args[1]
             Add-Type -AssemblyName System.Security
             Add-Type -AssemblyName System.Core
-            $smkbytes = $args[0]; $Entropy = $args[1]
-            $serviceKey = [System.Security.Cryptography.ProtectedData]::Unprotect($smkbytes, $Entropy, 'LocalMachine')
+            $entropy = (Get-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Microsoft SQL Server\$serviceInstanceId\Security\").Entropy
+            $serviceKey = [System.Security.Cryptography.ProtectedData]::Unprotect($smkBytes, $entropy, 'LocalMachine')
             return $serviceKey
         }
     } catch {
-        Stop-Function -Message "Can't unprotect registry data on $sourcename. Do you have administrative access to the Windows registry on $sourcename? Otherwise, we're out of ideas." -Target $source
+        Stop-Function -Message "Can't unprotect registry data on $sourceName. Do you have administrative access to the Windows registry on $sourceName? Otherwise, we're out of ideas." -Target $sourceName
         return
     }
 
@@ -67,7 +55,7 @@ function Get-DecryptedObject {
 
     if (($serviceKey.Length -ne 16) -and ($serviceKey.Length -ne 32)) {
         Write-Message -Level Verbose -Message "ServiceKey found: $serviceKey.Length"
-        Stop-Function -Message "Unknown key size. Do you have administrative access to the Windows registry on $sourcename? Otherwise, we're out of ideas." -Target $source
+        Stop-Function -Message "Unknown key size. Do you have administrative access to the Windows registry on $sourceName? Otherwise, we're out of ideas." -Target $sourceName
         return
     }
 
@@ -106,12 +94,13 @@ function Get-DecryptedObject {
         Ignore links with blank credentials (integrated auth ?)
     #>
 
-    Write-Message -Level Verbose -Message "Query link server password information from the Db."
+    Write-Message -Level Verbose -Message "Query password information from the Db."
 
     if ($server.Name -like 'ADMIN:*') {
         Write-Message -Level Verbose -Message "We already have a dac, so we use it."
         $results = $server.Query($sql)
     } else {
+        $instance = $server.InstanceName
         if (-not $server.IsClustered) {
             $connString = "Server=ADMIN:$fullComputerName\$instance;Trusted_Connection=True;Pooling=false"
         } else {
@@ -124,7 +113,7 @@ function Get-DecryptedObject {
                         $server.Configuration.RemoteDacConnectionsEnabled.ConfigValue = $true
                         $server.Configuration.Alter()
                     } catch {
-                        Stop-Function -Message "Failure enabling remote DAC on clustered instance $sourcename" -Target $source -ErrorRecord $_
+                        Stop-Function -Message "Failure enabling remote DAC on clustered instance $sourceName" -Target $sourceName -ErrorRecord $_
                         return
                     }
                 }
@@ -158,7 +147,7 @@ function Get-DecryptedObject {
                 }
             }
         } catch {
-            Stop-Function -Message "Can't establish local DAC connection on $sourcename." -Target $server -ErrorRecord $_
+            Stop-Function -Message "Can't establish local DAC connection on $sourceName." -Target $server -ErrorRecord $_
         }
 
         if ($server.IsClustered -and $dacEnabled -eq $false) {
@@ -168,7 +157,7 @@ function Get-DecryptedObject {
                     $server.Configuration.RemoteDacConnectionsEnabled.ConfigValue = $false
                     $server.Configuration.Alter()
                 } catch {
-                    Stop-Function -Message "Failure disabling remote DAC on clustered instance $sourcename" -Target $server -ErrorRecord $_
+                    Stop-Function -Message "Failure disabling remote DAC on clustered instance $sourceName" -Target $server -ErrorRecord $_
                 }
             }
         }
