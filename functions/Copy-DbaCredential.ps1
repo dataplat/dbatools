@@ -131,7 +131,13 @@ function Copy-DbaCredential {
             )
 
             Write-Message -Level Verbose -Message "Collecting Credential logins and passwords on $($sourceServer.Name)"
-            $sourceCredentials = Get-DecryptedObject -SqlInstance $sourceServer -Type Credential
+            try {
+                $sourceCredentials = Get-DecryptedObject -SqlInstance $sourceServer -Type Credential -EnableException
+            } catch {
+                Stop-Function -Message "Failed to decrypted credentials" -ErrorRecord $_
+                return
+            }
+
             $credentialList = Get-DbaCredential -SqlInstance $sourceServer -Name $Name -ExcludeName $ExcludeName -Identity $Identity -ExcludeIdentity $ExcludeIdentity
 
             Write-Message -Level Verbose -Message "Starting migration"
