@@ -130,24 +130,29 @@ function Get-DecryptedObject {
 
     try {
         $results = Invoke-Command2 -ErrorAction Stop -Raw -Credential $Credential -ComputerName $fullComputerName -ArgumentList $connString, $sql {
-            $connString = $args[0]
-            $sql = $args[1]
-            $conn = New-Object System.Data.SqlClient.SQLConnection($connString)
-            $cmd = New-Object System.Data.SqlClient.SqlCommand($sql, $conn)
-            $dt = New-Object System.Data.DataTable
-            $conn.open()
-            $dt.Load($cmd.ExecuteReader())
-            $conn.Close()
-            $conn.Dispose()
-            return $dt
+            try {
+                $connString = $args[0]
+                $sql = $args[1]
+                $conn = New-Object System.Data.SqlClient.SQLConnection($connString)
+                $cmd = New-Object System.Data.SqlClient.SqlCommand($sql, $conn)
+                $dt = New-Object System.Data.DataTable
+                $conn.open()
+                $dt.Load($cmd.ExecuteReader())
+                $conn.Close()
+                $conn.Dispose()
+                return $dt
+            } catch {
+                $exception = $_
+                try {
+                    $conn.Close()
+                    $conn.Dispose()
+                } catch {
+                    $null = 1
+                }
+                throw $exception
+            }
         }
     } catch {
-        try {
-            $conn.Close()
-            $conn.Dispose()
-        } catch {
-            $null = 1
-        }
         Stop-Function -Message "Can't establish local DAC connection on $sourcename." -Target $server -ErrorRecord $_
         return
     }
