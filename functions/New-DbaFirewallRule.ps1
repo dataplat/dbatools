@@ -37,6 +37,17 @@ function New-DbaFirewallRule {
             Protocol    = 'UDP'
             LocalPort   = '1434'
 
+        The firewall rule for the dedicated admin connection (DAC) will have the following configuration (parameters for New-NetFirewallRule):
+            DisplayName = 'SQL Server default instance (DAC)' or 'SQL Server instance <InstanceName> (DAC)'
+            Name        = 'SQL Server default instance (DAC)' or 'SQL Server instance <InstanceName> (DAC)'
+            Group       = 'SQL Server'
+            Enabled     = 'True'
+            Direction   = 'Inbound'
+            Protocol    = 'TCP'
+            LocalPort   = '<Port>' (typically 1434 for a default instance, but will be fetched from ERRORLOG)
+        The firewall rule for the DAC will only be created if the DAC is configured for listening remotely.
+        Use `Set-DbaSpConfigure -SqlInstance SRV1 -Name RemoteDacConnectionsEnabled -Value 1` to enable remote DAC before running this command.
+
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.
 
@@ -48,9 +59,11 @@ function New-DbaFirewallRule {
         Valid values are:
             Engine - for the SQL Server instance
             Browser - for the SQL Server Browser
-        If this parameter is not used, the firewall rule for the SQL Server instance will be created
-        and in case the instance is listening on a port other than 1433,
-        also the firewall rule for the SQL Server Browser will be created if not already in place.
+            DAC - for the dedicated admin connection (DAC)
+        If this parameter is not used:
+            The firewall rule for the SQL Server instance will be created.
+            In case the instance is listening on a port other than 1433, also the firewall rule for the SQL Server Browser will be created if not already in place.
+            In case the DAC is configured for listening remotely, also the firewall rule for the DAC will be created.
 
     .PARAMETER Configuration
         A hashtable with custom configuration parameters that are used when calling New-NetFirewallRule.
@@ -107,7 +120,7 @@ function New-DbaFirewallRule {
         [parameter(Mandatory, ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$Credential,
-        [ValidateSet('Engine', 'Browser')]
+        [ValidateSet('Engine', 'Browser', 'DAC')]
         [string[]]$Type,
         [hashtable]$Configuration,
         [switch]$Force,
@@ -260,6 +273,60 @@ function New-DbaFirewallRule {
                 }
 
                 $rules += $rule
+            }
+
+            # Create rule for the dedicated admin connection (DAC)
+            if (-not $PSBoundParameters.Type -or 'DAC' -in $PSBoundParameters.Type) {
+                # As we create firewall rules, we probably don't have access to the instance yet. So we have to get the port of the DAC via Invoke-Command2.
+                # Get-DbaStartupParameter also uses Invoke-Command2 to get the location of ERRORLOG.
+                # We only scan the current log because this command is typically run shortly after the installation and should include the needed information.
+                try {
+                    $errorLogPath = Get-DbaStartupParameter -SqlInstance $instance -Credential $Credential -Simple -EnableException | Select-Object -ExpandProperty ErrorLog
+                    $dacMessage = Invoke-Command2 -Raw -ComputerName $instance.ComputerName -ArgumentList $errorLogPath -ScriptBlock {
+                        Get-Content -Path $args[0] |
+                            Select-String -Pattern 'Dedicated admin connection support was established for listening.+' |
+                            Select-Object -Last 1 |
+                            ForEach-Object { $_.Matches.Value }
+                    }
+                    Write-Message -Level Debug -Message "Last DAC message in ERRORLOG: '$dacMessage'"
+                } catch {
+                    Stop-Function -Message "Failed to execute command to get information for DAC on $($instance.ComputerName) for instance $($instance.InstanceName)." -Target $instance -ErrorRecord $_ -Continue
+                }
+
+                if (-not $dacMessage) {
+                    Write-Message -Level Warning -Message "No information about the dedicated admin connection (DAC) found in ERRORLOG, cannot create firewall rule for DAC. Use 'Set-DbaSpConfigure -SqlInstance '$instance' -Name RemoteDacConnectionsEnabled -Value 1' to enable remote DAC and try again."
+                } elseif ($dacMessage -match 'locally') {
+                    Write-Message -Level Verbose -Message "Dedicated admin connection is only listening locally, so no firewall rule is needed."
+                } else {
+                    $dacPort = $dacMessage -replace '^.* (\d+).$', '$1'
+                    Write-Message -Level Verbose -Message "Dedicated admin connection is listening remotely on port $dacPort."
+
+                    # Apply the defaults
+                    $rule = @{
+                        Type         = 'DAC'
+                        InstanceName = $instance.InstanceName
+                        Config       = @{
+                            Group     = 'SQL Server'
+                            Enabled   = 'True'
+                            Direction = 'Inbound'
+                            Protocol  = 'TCP'
+                            LocalPort = $dacPort
+                        }
+                    }
+
+                    # Test for default or named instance
+                    if ($instance.InstanceName -eq 'MSSQLSERVER') {
+                        $rule.Config.DisplayName = 'SQL Server default instance (DAC)'
+                        $rule.Config.Name = 'SQL Server default instance (DAC)'
+                        $rule.SqlInstance = $instance.ComputerName
+                    } else {
+                        $rule.Config.DisplayName = "SQL Server instance $($instance.InstanceName) (DAC)"
+                        $rule.Config.Name = "SQL Server instance $($instance.InstanceName) (DAC)"
+                        $rule.SqlInstance = $instance.ComputerName + '\' + $instance.InstanceName
+                    }
+
+                    $rules += $rule
+                }
             }
 
             foreach ($rule in $rules) {
