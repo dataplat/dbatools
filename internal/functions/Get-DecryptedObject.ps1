@@ -79,35 +79,6 @@ function Get-DecryptedObject {
         $ivlen = 16
     }
 
-    <#
-        Query link server password information from the Db.
-        Remove header from pwdhash, extract IV (as iv) and ciphertext (as pass)
-        Ignore links with blank credentials (integrated auth ?)
-    #>
-
-    Write-Message -Level Verbose -Message "Query link server password information from the Db."
-
-    if (-not $server.IsClustered) {
-        $connString = "Server=ADMIN:$fullComputerName\$instance;Trusted_Connection=True;Pooling=false"
-    } else {
-        $dacEnabled = $server.Configuration.RemoteDacConnectionsEnabled.ConfigValue
-
-        if ($dacEnabled -eq $false) {
-            If ($Pscmdlet.ShouldProcess($server.Name, "Enabling remote DAC on clustered instance.")) {
-                try {
-                    Write-Message -Level Verbose -Message "DAC must be enabled for clusters, even when accessed from active node. Enabling."
-                    $server.Configuration.RemoteDacConnectionsEnabled.ConfigValue = $true
-                    $server.Configuration.Alter()
-                } catch {
-                    Stop-Function -Message "Failure enabling remote DAC on clustered instance $sourcename" -Target $source -ErrorRecord $_
-                    return
-                }
-            }
-        }
-
-        $connString = "Server=ADMIN:$sourceName;Trusted_Connection=True;Pooling=false;"
-    }
-
     <# NOTE: This query is accessing syslnklgns table. Can only be done via the DAC connection #>
 
     $sql = switch ($Type) {
@@ -129,43 +100,76 @@ function Get-DecryptedObject {
 
     Write-Message -Level Debug -Message $sql
 
-    try {
-        $results = Invoke-Command2 -Raw -Credential $Credential -ComputerName $fullComputerName -ArgumentList $connString, $sql {
-            try {
-                $connString = $args[0]
-                $sql = $args[1]
-                $conn = New-Object System.Data.SqlClient.SQLConnection($connString)
-                $cmd = New-Object System.Data.SqlClient.SqlCommand($sql, $conn)
-                $dt = New-Object System.Data.DataTable
-                $conn.open()
-                $dt.Load($cmd.ExecuteReader())
-                $conn.Close()
-                $conn.Dispose()
-                return $dt
-            } catch {
-                $exception = $_
+    <#
+        Query link server password information from the Db.
+        Remove header from pwdhash, extract IV (as iv) and ciphertext (as pass)
+        Ignore links with blank credentials (integrated auth ?)
+    #>
+
+    Write-Message -Level Verbose -Message "Query link server password information from the Db."
+
+    if ($server.Name -like 'ADMIN:*') {
+        Write-Message -Level Verbose -Message "We already have a dac, so we use it."
+        $results = $server.Query($sql)
+    } else {
+        if (-not $server.IsClustered) {
+            $connString = "Server=ADMIN:$fullComputerName\$instance;Trusted_Connection=True;Pooling=false"
+        } else {
+            $dacEnabled = $server.Configuration.RemoteDacConnectionsEnabled.ConfigValue
+
+            if ($dacEnabled -eq $false) {
+                If ($Pscmdlet.ShouldProcess($server.Name, "Enabling remote DAC on clustered instance.")) {
+                    try {
+                        Write-Message -Level Verbose -Message "DAC must be enabled for clusters, even when accessed from active node. Enabling."
+                        $server.Configuration.RemoteDacConnectionsEnabled.ConfigValue = $true
+                        $server.Configuration.Alter()
+                    } catch {
+                        Stop-Function -Message "Failure enabling remote DAC on clustered instance $sourcename" -Target $source -ErrorRecord $_
+                        return
+                    }
+                }
+            }
+
+            $connString = "Server=ADMIN:$sourceName;Trusted_Connection=True;Pooling=false;"
+        }
+
+        try {
+            $results = Invoke-Command2 -Raw -Credential $Credential -ComputerName $fullComputerName -ArgumentList $connString, $sql {
                 try {
+                    $connString = $args[0]
+                    $sql = $args[1]
+                    $conn = New-Object System.Data.SqlClient.SQLConnection($connString)
+                    $cmd = New-Object System.Data.SqlClient.SqlCommand($sql, $conn)
+                    $dt = New-Object System.Data.DataTable
+                    $conn.open()
+                    $dt.Load($cmd.ExecuteReader())
                     $conn.Close()
                     $conn.Dispose()
+                    return $dt
                 } catch {
-                    $null = 1
+                    $exception = $_
+                    try {
+                        $conn.Close()
+                        $conn.Dispose()
+                    } catch {
+                        $null = 1
+                    }
+                    throw $exception
                 }
-                throw $exception
             }
+        } catch {
+            Stop-Function -Message "Can't establish local DAC connection on $sourcename." -Target $server -ErrorRecord $_
         }
-    } catch {
-        Stop-Function -Message "Can't establish local DAC connection on $sourcename." -Target $server -ErrorRecord $_
-    }
 
-
-    if ($server.IsClustered -and $dacEnabled -eq $false) {
-        If ($Pscmdlet.ShouldProcess($server.Name, "Disabling remote DAC on clustered instance.")) {
-            try {
-                Write-Message -Level Verbose -Message "Setting remote DAC config back to 0."
-                $server.Configuration.RemoteDacConnectionsEnabled.ConfigValue = $false
-                $server.Configuration.Alter()
-            } catch {
-                Stop-Function -Message "Failure disabling remote DAC on clustered instance $sourcename" -Target $server -ErrorRecord $_
+        if ($server.IsClustered -and $dacEnabled -eq $false) {
+            If ($Pscmdlet.ShouldProcess($server.Name, "Disabling remote DAC on clustered instance.")) {
+                try {
+                    Write-Message -Level Verbose -Message "Setting remote DAC config back to 0."
+                    $server.Configuration.RemoteDacConnectionsEnabled.ConfigValue = $false
+                    $server.Configuration.Alter()
+                } catch {
+                    Stop-Function -Message "Failure disabling remote DAC on clustered instance $sourcename" -Target $server -ErrorRecord $_
+                }
             }
         }
     }
