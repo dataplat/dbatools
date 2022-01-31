@@ -21,7 +21,7 @@ function Install-DbaInstance {
         * Change the TCP port after the installation is done
         * Enable 'Perform volume maintenance tasks' for the SQL Server account
 
-        Note that the dowloaded installation media must be extracted and available to the server where the installation runs.
+        Note that the downloaded installation media must be extracted and available to the server where the installation runs.
         NOTE: If no ProductID (PID) is found in the configuration files/parameters, Evaluation version is going to be installed.
 
         When using CredSSP authentication, this function will try to configure CredSSP authentication for PowerShell Remoting sessions.
