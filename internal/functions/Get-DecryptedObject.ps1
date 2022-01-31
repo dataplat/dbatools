@@ -129,7 +129,7 @@ function Get-DecryptedObject {
     Write-Message -Level Debug -Message $sql
 
     try {
-        $results = Invoke-Command2 -ErrorAction Stop -Raw -Credential $Credential -ComputerName $fullComputerName -ArgumentList $connString, $sql {
+        $results = Invoke-Command2 -Raw -Credential $Credential -ComputerName $fullComputerName -ArgumentList $connString, $sql {
             try {
                 $connString = $args[0]
                 $sql = $args[1]
