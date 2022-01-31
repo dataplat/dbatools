@@ -94,6 +94,10 @@ $scriptBlock = {
             'SqlServer.XEvent'
         )
     }
+    # XEvent stuff kills CI/CD
+    if ($PSVersionTable.OS -match "ARM64") {
+        $names = $names | Where-Object { $PSItem -notmatch "XE" }
+    }
     #endregion Names
 
     $basePath = $dllRoot
