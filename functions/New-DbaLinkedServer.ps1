@@ -38,6 +38,15 @@ function New-DbaLinkedServer {
     .PARAMETER Catalog
         The catalog or default database.
 
+    .PARAMETER SecurityContext
+        Specifies the security context option found on the SSMS Security tab of the linked server. This is a separate configuration from the mapping of a local login to a remote login. It specifies the connection behavior for a login that is not explicitly mapped. 'NoConnection' means that a connection will not be made. 'WithoutSecurityContext' means the connection will be made without using a security context. 'CurrentSecurityContext' means the connection will be made using the login's current security context. 'SpecifiedSecurityContext' means the specified username and password will be used. The default value is 'WithoutSecurityContext'. For more details see the Microsoft documentation for sp_addlinkedsrvlogin and also review the SSMS Security tab of the linked server.
+
+    .PARAMETER SecurityContextRemoteUser
+        Specifies the remote login name. This param is used when SecurityContext is set to SpecifiedSecurityContext. To map a local login to a remote login use New-DbaLinkedServerLogin.
+
+    .PARAMETER SecurityContextRemoteUserPassword
+        Specifies the remote login password. This param is used when SecurityContext is set to SpecifiedSecurityContext. To map a local login to a remote login use New-DbaLinkedServerLogin. NOTE: passwords are sent to the SQL Server instance in plain text. Check with your security administrator before using this parameter.
+
     .PARAMETER InputObject
         Allows piping from Connect-DbaInstance.
 
@@ -72,6 +81,11 @@ function New-DbaLinkedServer {
         PS C:\>Connect-DbaInstance -SqlInstance sql01 | New-DbaLinkedServer -LinkedServer linkedServer1 -ServerProduct mssql -Provider sqlncli -DataSource sql02
 
         Creates a new linked server named linkedServer1 on the sql01 instance. The link is via the SQL Native Client and is connected to the sql02 instance. The sql01 instance is passed in via pipeline.
+
+    .EXAMPLE
+        PS C:\>New-DbaLinkedServer -SqlInstance sql01 -LinkedServer linkedServer1 -ServerProduct mssql -Provider sqlncli -DataSource sql02 -SecurityContext CurrentSecurityContext
+
+        Creates a new linked server named linkedServer1 on the sql01 instance. The link is via the SQL Native Client and is connected to the sql02 instance. Connections with logins that are not explicitly mapped to the remote server will use the current login's security context.
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'Low')]
     param (
@@ -84,6 +98,10 @@ function New-DbaLinkedServer {
         [string]$Location,
         [string]$ProviderString,
         [string]$Catalog,
+        [ValidateSet('NoConnection', 'WithoutSecurityContext', 'CurrentSecurityContext', 'SpecifiedSecurityContext')]
+        [string]$SecurityContext = 'WithoutSecurityContext',
+        [string]$SecurityContextRemoteUser,
+        [Security.SecureString]$SecurityContextRemoteUserPassword,
         [parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.Server[]]$InputObject,
         [switch]$EnableException
@@ -93,6 +111,16 @@ function New-DbaLinkedServer {
         if (Test-Bound -Not -ParameterName LinkedServer) {
             Stop-Function -Message "LinkedServer is required"
             return
+        }
+
+        if ($SecurityContext -eq "SpecifiedSecurityContext") {
+            if (Test-Bound -Not -ParameterName SecurityContextRemoteUser) {
+                Stop-Function -Message "SecurityContextRemoteUser is required when SpecifiedSecurityContext is used"
+                return
+            } elseif (Test-Bound -Not -ParameterName SecurityContextRemoteUserPassword) {
+                Stop-Function -Message "SecurityContextRemoteUserPassword is required when SpecifiedSecurityContext is used"
+                return
+            }
         }
 
         foreach ($instance in $SqlInstance) {
@@ -134,6 +162,18 @@ function New-DbaLinkedServer {
                     }
 
                     $newLinkedServer.Create()
+
+                    if (Test-Bound SecurityContext) {
+                        if ($SecurityContext -eq 'NoConnection') {
+                            $server.Query("EXEC master.dbo.sp_droplinkedsrvlogin @rmtsrvname = N'$LinkedServer', @locallogin = NULL")
+                        } elseif ($SecurityContext -eq 'WithoutSecurityContext') {
+                            $server.Query("EXEC master.dbo.sp_addlinkedsrvlogin @rmtsrvname = N'$LinkedServer', @locallogin = NULL , @useself = N'False', @rmtuser = N''")
+                        } elseif ($SecurityContext -eq 'CurrentSecurityContext') {
+                            $server.Query("EXEC master.dbo.sp_addlinkedsrvlogin @rmtsrvname = N'$LinkedServer', @locallogin = NULL , @useself = N'True', @rmtuser = N''")
+                        } elseif ($SecurityContext -eq 'SpecifiedSecurityContext') {
+                            $server.Query("EXEC master.dbo.sp_addlinkedsrvlogin @rmtsrvname = N'$LinkedServer', @locallogin = NULL , @useself = N'False', @rmtuser = N'$SecurityContextRemoteUser', @rmtpassword = N'$($SecurityContextRemoteUserPassword | ConvertFrom-SecurePass)'")
+                        }
+                    }
 
                     $server | Get-DbaLinkedServer -LinkedServer $LinkedServer
                 } catch {
