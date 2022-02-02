@@ -79,7 +79,7 @@ function Set-DbaDbFileGrowth {
     .EXAMPLE
         PS C:\> Set-DbaDbFileGrowth -SqlInstance sql2017 -Database test -GrowthType GB -Growth 1 -FileType Data
 
-        Allows you to set growth to Data or Log independently
+        Sets growth to 1GB for only data files for database test
 
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Medium")]
@@ -90,11 +90,11 @@ function Set-DbaDbFileGrowth {
         [ValidateSet("KB", "MB", "GB", "TB")]
         [string]$GrowthType = "MB",
         [int]$Growth = 64,
+        [ValidateSet('All', 'Data', 'Log')]
+        [string]$FileType = "All",
         [parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
-        [switch]$EnableException,
-        [ValidateSet('All', 'Data', 'Log')]
-        [string]$FileType = "All"
+        [switch]$EnableException
     )
     process {
         if (Test-Bound -Not Database, InputObject) {
