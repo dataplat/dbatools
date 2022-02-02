@@ -45,7 +45,7 @@ function Remove-DbaDbCheckConstraint {
         Author: Mikey Bronowski (@MikeyBronowski), https://bronowski.it
 
         Website: https://dbatools.io
-        Copyright: (c) 2021 by dbatools, licensed under MIT
+        Copyright: (c) 2022 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
