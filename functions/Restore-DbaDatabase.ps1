@@ -134,7 +134,6 @@ function Restore-DbaDatabase {
 
     .PARAMETER Continue
         If specified we will to attempt to recover more transaction log backups onto  database(s) in Recovering or Standby states
-        When specified, WithReplace will be set to true
 
     .PARAMETER ExecuteAs
         If value provided the restore will be executed under this login's context. The login must exist, and have the relevant permissions to perform the restore
