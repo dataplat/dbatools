@@ -624,12 +624,20 @@ function Backup-DbaDatabase {
                 # The following is needed as a piped in database will provide servername wrapped in []'s
                 if ($server -match '\[(.*)\]') {
                     $servertmp = $matches[1]
+                    # We then need to catch the instance name if it exists
+                    if ($matches[1] -match '(.*)\\(.*)') {
+                        $servertmp = $matches[1]
+                        $instanceName = $matches[2]
+                    } else {
+                        $instanceName = 'MSSQLSERVER'
+                    }
                 } else {
                     $servertmp = $server
+                    $instanceName = $SqlInstance.InstanceName
                 }
                 for ($i = 0; $i -lt $FinalBackupPath.count; $i++) {
                     $FinalBackupPath[$i] = $FinalBackupPath[$i] -replace ('dbname', $dbName)
-                    $FinalBackupPath[$i] = $FinalBackupPath[$i] -replace ('instancename', $SqlInstance.InstanceName)
+                    $FinalBackupPath[$i] = $FinalBackupPath[$i] -replace ('instancename', $instanceName)
                     $FinalBackupPath[$i] = $FinalBackupPath[$i] -replace ('servername', $servertmp)
                     $FinalBackupPath[$i] = $FinalBackupPath[$i] -replace ('timestamp', $timestamp)
                     $FinalBackupPath[$i] = $FinalBackupPath[$i] -replace ('backuptype', $outputType)
