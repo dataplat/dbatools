@@ -24,11 +24,13 @@ function Get-DbaFirewallRule {
 
     .PARAMETER Type
         Returns firewall rules for the given type(s).
+
         Valid values are:
-            Engine - for the SQL Server instance
-            Browser - for the SQL Server Browser
-            DAC - for the dedicated admin connection (DAC)
-            AllInstance - for all firewall rules on the target computer related to SQL Server
+        * Engine - for the SQL Server instance
+        * Browser - for the SQL Server Browser
+        * DAC - for the dedicated admin connection (DAC)
+        * AllInstance - for all firewall rules on the target computer related to SQL Server
+
         If this parameter is not used, the firewall rule for the SQL Server instance will be returned
         and in case the instance is listening on a port other than 1433,
         also the firewall rule for the SQL Server Browser will be returned.
