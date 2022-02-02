@@ -118,7 +118,7 @@ function Export-DbaCredential {
 
         foreach ($input in $InputObject) {
             $server = $input.Parent
-            $instance = $server.Name
+            $instance = $server.DomainInstanceName
 
             if ($serverArray -notcontains $instance) {
                 try {
@@ -128,9 +128,10 @@ function Export-DbaCredential {
 
                         foreach ($cred in $server.Credentials) {
                             $credObject = [PSCustomObject]@{
-                                Name     = '[' + $cred.Name + ']'
-                                Identity = $cred.Identity.ToString()
-                                Password = ''
+                                Name      = $cred.Name
+                                Quotename = $server.Query("SELECT QUOTENAME('$($cred.Name.Replace("'", "''"))') AS quotename").quotename
+                                Identity  = $cred.Identity.ToString()
+                                Password  = ''
                             }
                             $creds.Add($credObject) | Out-Null
                         }
@@ -165,10 +166,10 @@ function Export-DbaCredential {
 
                 $serverArray += $instance
 
-                $key = $input.Parent.Name + '::[' + $input.Name + ']'
+                $key = $instance + '::' + $input.Name
                 $credentialArray.add( $key, $true )
             } else {
-                $key = $input.Parent.Name + '::[' + $input.Name + ']'
+                $key = $instance + '::' + $input.Name
                 $credentialArray.add( $key, $true )
             }
         }
@@ -184,16 +185,16 @@ function Export-DbaCredential {
 
                 $key = $currentCred.SqlInstance + '::' + $currentCred.Name
                 if ( $credentialArray.ContainsKey($key) ) {
-                    $name = $currentCred.Name.Replace("'", "''")
+                    $quotename = $currentCred.Quotename
                     $identity = $currentCred.Identity.Replace("'", "''")
                     if ($currentCred.ExcludePassword) {
-                        $sql += "CREATE CREDENTIAL $name WITH IDENTITY = N'$identity', SECRET = N'<EnterStrongPasswordHere>'"
+                        $sql += "CREATE CREDENTIAL $quotename WITH IDENTITY = N'$identity', SECRET = N'<EnterStrongPasswordHere>'"
                     } else {
                         $password = $currentCred.Password.Replace("'", "''")
-                        $sql += "CREATE CREDENTIAL $name WITH IDENTITY = N'$identity', SECRET = N'$password'"
+                        $sql += "CREATE CREDENTIAL $quotename WITH IDENTITY = N'$identity', SECRET = N'$password'"
                     }
 
-                    Write-Message -Level Verbose -Message "Created Script for $name"
+                    Write-Message -Level Verbose -Message "Created Script for $quotename"
                 }
             }
 
