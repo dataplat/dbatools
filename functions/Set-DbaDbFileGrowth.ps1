@@ -30,7 +30,7 @@ function Set-DbaDbFileGrowth {
         The growth value. 64 by default.
 
     .PARAMETER FileType
-        Apply changes to only DATA, LOG or ALL data files
+        Apply changes to only DATA, LOG or ALL files
 
     .PARAMETER InputObject
         Allows piping from Get-DbaDatabase
