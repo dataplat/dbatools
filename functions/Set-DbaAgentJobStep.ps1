@@ -277,7 +277,7 @@ function Set-DbaAgentJobStep {
                     # Setting the options for the job step
                     if ($NewName) {
                         if ($Pscmdlet.ShouldProcess($server, "Setting job step name to $NewName for $StepName")) {
-                            $JobSchedule.Rename($NewName)
+                            $jobStep.Rename($NewName)
                         }
                     }
 
