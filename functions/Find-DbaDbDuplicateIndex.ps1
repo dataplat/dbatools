@@ -312,7 +312,7 @@ function Find-DbaDbDuplicateIndex {
                     ,i.[type_desc] AS IndexType
                     ,i.is_disabled AS IsDisabled
                     ,i.has_filter AS IsFiltered
-					,i.is_unique AS IsUnique
+                    ,i.is_unique AS IsUnique
                 FROM sys.indexes AS i
                 WHERE i.index_id > 0 -- Exclude HEAPS
                     AND i.[type_desc] IN (
@@ -349,7 +349,7 @@ function Find-DbaDbDuplicateIndex {
                 ,COALESCE(CSPC.[RowCount],0) AS 'RowCount'
                 ,CI1.IsDisabled
                 ,CI1.IsFiltered
-				,CI1.IsUnique
+                ,CI1.IsUnique
             FROM CTE_IndexCols AS CI1
             LEFT JOIN CTE_IndexSpace AS CSPC ON CI1.[object_id] = CSPC.[object_id]
                 AND CI1.index_id = CSPC.index_id
