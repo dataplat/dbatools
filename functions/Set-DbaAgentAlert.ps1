@@ -132,7 +132,7 @@ function Set-DbaAgentAlert {
             #region alert options
             # Settings the options for the alert
             if ($NewName) {
-                if ($Pscmdlet.ShouldProcess($server, "Setting alert name to $NewName for $Alert")) {
+                if ($Pscmdlet.ShouldProcess($server, "Setting alert name to $NewName for $a")) {
                     $JobSchedule.Rename($NewName)
                 }
             }
