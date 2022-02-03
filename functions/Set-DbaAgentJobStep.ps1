@@ -253,7 +253,7 @@ function Set-DbaAgentJobStep {
                         Stop-Function -Message "Job '$j' doesn't exist on $server" -Target $server -Continue
                     }
 
-                    $currentJobStep = $currentJob.JobSteps | Where-Object Name -eq $StepName
+                    $currentJobStep = $currentJob.JobSteps | Where-Object Name -EQ $StepName
 
                     if (-not $Force -and (-not $currentJobStep)) {
                         Stop-Function -Message "Step '$StepName' doesn't exist for job $j on $server. If you would like to add a new job step use -Force" -Target $server -Continue
@@ -276,8 +276,9 @@ function Set-DbaAgentJobStep {
                     #region job step options
                     # Setting the options for the job step
                     if ($NewName) {
-                        Write-Message -Message "Setting job step name to $NewName" -Level Verbose
-                        $jobStep.Rename($NewName)
+                        if ($Pscmdlet.ShouldProcess($server, "Setting job step name to $NewName for $StepName")) {
+                            $JobSchedule.Rename($NewName)
+                        }
                     }
 
                     if ($Subsystem) {
@@ -372,9 +373,9 @@ function Set-DbaAgentJobStep {
                     #region job step options
 
                     # Execute
-                    if ($PSCmdlet.ShouldProcess($server, "Changing the job step '$StepName' for job '$j'")) {
+                    if ($PSCmdlet.ShouldProcess($server, "Committing changes for job step '$StepName' for job '$j'")) {
                         try {
-                            Write-Message -Message "Changing the job step '$StepName' for job '$j' on $server" -Level Verbose
+                            Write-Message -Message "Committing changes for '$StepName' for job '$j' on $server" -Level Verbose
 
                             # Change the job step
                             $jobStep.Alter()
