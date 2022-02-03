@@ -253,7 +253,7 @@ function Set-DbaAgentJobStep {
                         Stop-Function -Message "Job '$j' doesn't exist on $server" -Target $server -Continue
                     }
 
-                    $currentJobStep = $currentJob.JobSteps | Where-Object Name -EQ $StepName
+                    $currentJobStep = $currentJob.JobSteps | Where-Object Name -eq $StepName
 
                     if (-not $Force -and (-not $currentJobStep)) {
                         Stop-Function -Message "Step '$StepName' doesn't exist for job $j on $server. If you would like to add a new job step use -Force" -Target $server -Continue
