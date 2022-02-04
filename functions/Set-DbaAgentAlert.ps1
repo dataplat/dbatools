@@ -132,8 +132,9 @@ function Set-DbaAgentAlert {
             #region alert options
             # Settings the options for the alert
             if ($NewName) {
-                Write-Message -Message "Setting alert name to $NewName" -Level Verbose
-                $currentAlert.Rename($NewName)
+                if ($Pscmdlet.ShouldProcess($server, "Setting alert name to $NewName for $currentAlert")) {
+                    $currentAlert.Rename($NewName)
+                }
             }
 
             if ($Enabled) {
@@ -149,9 +150,9 @@ function Set-DbaAgentAlert {
             #endregion alert options
 
             # Execute
-            if ($PSCmdlet.ShouldProcess($SqlInstance, "Changing the alert $a")) {
+            if ($PSCmdlet.ShouldProcess($SqlInstance, "Committing changes for alert $a")) {
                 try {
-                    Write-Message -Message "Changing the alert" -Level Verbose
+                    Write-Message -Message "Committing changes for alert $a" -Level Verbose
 
                     # Change the alert
                     $currentAlert.Alter()
