@@ -82,7 +82,7 @@ function Get-DecryptedObject {
             WHERE len(pwdhash) > 0"
         }
         "Credential" {
-            "SELECT QUOTENAME(name) AS name,credential_identity,substring(imageval,5,$ivlen) iv, substring(imageval,$($ivlen + 5),len(imageval)-$($ivlen + 4)) pass from sys.credentials cred inner join sys.sysobjvalues obj on cred.credential_id = obj.objid where valclass=28 and valnum=2"
+            "SELECT name,QUOTENAME(name) quotename,credential_identity,substring(imageval,5,$ivlen) iv, substring(imageval,$($ivlen + 5),len(imageval)-$($ivlen + 4)) pass from sys.credentials cred inner join sys.sysobjvalues obj on cred.credential_id = obj.objid where valclass=28 and valnum=2"
         }
     }
 
@@ -185,15 +185,18 @@ function Get-DecryptedObject {
 
         if ($Type -eq "LinkedServer") {
             $name = $result.srvname
+            $quotename = $null
             $identity = $result.Name
         } else {
             $name = $result.name
+            $quotename = $result.quotename
             $identity = $result.credential_identity
         }
         [pscustomobject]@{
-            Name     = $name
-            Identity = $identity
-            Password = $encode.GetString($decrypted)
+            Name      = $name
+            Quotename = $quotename
+            Identity  = $identity
+            Password  = $encode.GetString($decrypted)
         }
     }
 }
