@@ -222,6 +222,7 @@
         'Get-DbaDbCertificate',
         'Copy-DbaDbCertificate',
         'Get-DbaDbCheckConstraint',
+        'Remove-DbaDbCheckConstraint',
         'Get-DbaDbCompatibility',
         'Get-DbaDbCompression',
         'Get-DbaDbDbccOpenTran',
