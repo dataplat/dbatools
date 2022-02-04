@@ -76,6 +76,9 @@ function Add-DbaAgDatabase {
     .PARAMETER UseLastBackup
         Use the last full and log backup of the database. A log backup must be the last backup.
 
+    .PARAMETER AdvancedBackupParams
+        Provide additional parameters to the backup command as a hashtable.
+
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
 
@@ -117,6 +120,11 @@ function Add-DbaAgDatabase {
         PS C:\> Get-DbaDbSharePoint -SqlInstance sqlcluster -ConfigDatabase SharePoint_Config_2019 | Add-DbaAgDatabase -AvailabilityGroup SharePoint
 
         Adds SharePoint databases as found in SharePoint_Config_2019 on sqlcluster to ag1 on sqlcluster
+
+    .EXAMPLE
+        PS C:\> Add-DbaAgDatabase -SqlInstance sql2017a -AvailabilityGroup ag1 -Database db1 -Secondary sql2017b -SeedingMode Manual -SharedPath \\FS\Backup -AdvancedBackupParams @{ CompressBackup = $true ; FileCount = 3 }
+
+        Adds db1 to ag1 on sql2017a and sql2017b. Uses compression and three files while taking the backups.
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'Low')]
     param (
@@ -147,6 +155,9 @@ function Add-DbaAgDatabase {
         [Parameter(ParameterSetName = 'NonPipeline')]
         [Parameter(ParameterSetName = 'Pipeline')]
         [switch]$UseLastBackup,
+        [Parameter(ParameterSetName = 'NonPipeline')]
+        [Parameter(ParameterSetName = 'Pipeline')]
+        [hashtable]$AdvancedBackupParams,
         [Parameter(ParameterSetName = 'NonPipeline')]
         [Parameter(ParameterSetName = 'Pipeline')]
         [switch]$EnableException
@@ -282,8 +293,13 @@ function Add-DbaAgDatabase {
                     if ($Pscmdlet.ShouldProcess($server, "Taking full and log backup of database $($db.Name)")) {
                         try {
                             Write-Message -Level Verbose -Message "Taking full and log backup of database $($db.Name)."
-                            $fullbackup = $db | Backup-DbaDatabase -BackupDirectory $SharedPath -Type Full -EnableException
-                            $logbackup = $db | Backup-DbaDatabase -BackupDirectory $SharedPath -Type Log -EnableException
+                            if ($AdvancedBackupParams) {
+                                $fullbackup = $db | Backup-DbaDatabase -BackupDirectory $SharedPath -Type Full -EnableException @AdvancedBackupParams
+                                $logbackup = $db | Backup-DbaDatabase -BackupDirectory $SharedPath -Type Log -EnableException @AdvancedBackupParams
+                            } else {
+                                $fullbackup = $db | Backup-DbaDatabase -BackupDirectory $SharedPath -Type Full -EnableException
+                                $logbackup = $db | Backup-DbaDatabase -BackupDirectory $SharedPath -Type Log -EnableException
+                            }
                             $backups = $fullbackup, $logbackup
                         } catch {
                             Stop-Function -Message "Failed to take full and log backup of database $($db.Name)." -ErrorRecord $_ -Continue
