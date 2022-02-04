@@ -214,6 +214,17 @@ function New-DbaDbTable {
        Creates a new table on sql2017 in tempdb with the name testtable and one column
 
     .EXAMPLE
+       PS C:\> $col = @{
+       >> Name      = 'Id'
+       >> Type      = 'varchar'
+       >> MaxLength = 36
+       >> DefaultEx = 'NEWID()'
+       >> }
+       PS C:\> New-DbaDbTable -SqlInstance sql2017 -Database tempdb -Name testtable -ColumnMap $col
+
+       Creates a new table on sql2017 in tempdb with the name testtable and one column. Uses "DefaultEx" to interpret the value as an expression and not as a string.
+
+    .EXAMPLE
         PS C:\> # Create collection
         >> $cols = @()
 
@@ -427,7 +438,15 @@ function New-DbaDbTable {
                         $sqlColumn = New-Object Microsoft.SqlServer.Management.Smo.Column $object, $column.Name, $dataType
                         $sqlColumn.Nullable = $column.Nullable
 
-                        if ($column.Default) {
+                        if ($column.DefaultEx) {
+                            # override the default that would add quotes to an expression
+                            if ($column.DefaultName) {
+                                $dfName = $column.DefaultName
+                            } else {
+                                $dfName = "DF_$name`_$($column.Name)"
+                            }
+                            $sqlColumn.AddDefaultConstraint($dfName).Text = $column.DefaultEx
+                        } elseif ($column.Default) {
                             if ($column.DefaultName) {
                                 $dfName = $column.DefaultName
                             } else {
