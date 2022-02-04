@@ -635,6 +635,7 @@ $script:xplat = @(
     'Invoke-DbaDbDecryptObject',
     'Get-DbaDbForeignKey',
     'Get-DbaDbCheckConstraint',
+    'Remove-DbaDbCheckConstraint',
     'Set-DbaAgentAlert',
     'Get-DbaWaitResource',
     'Get-DbaDbPageInfo',
