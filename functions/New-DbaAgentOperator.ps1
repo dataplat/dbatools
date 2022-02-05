@@ -241,7 +241,7 @@ function New-DbaAgentOperator {
             }
         }
 
-        if ($IsFailsafeOperator -and ($FailsafeNotificationMethod -notin ('NotifyMail', 'NotifyPager'))) {
+        if ($IsFailsafeOperator -and ($FailsafeNotificationMethod -notin ('NotifyEmail', 'NotifyPager'))) {
             Stop-Function -Message "You must specify a notifiation method for the failsafe operator."
             return
         }
