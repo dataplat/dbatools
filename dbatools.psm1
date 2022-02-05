@@ -536,6 +536,8 @@ $script:xplat = @(
     'Get-DbaDbUdf',
     'Get-DbaDbPartitionFunction',
     'Get-DbaDbPartitionScheme',
+    'Remove-DbaDbPartitionScheme',
+    'Remove-DbaDbPartitionFunction',
     'Get-DbaDefaultPath',
     'Get-DbaDbStoredProcedure',
     'Test-DbaDbCompression',
