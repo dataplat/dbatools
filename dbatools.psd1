@@ -261,6 +261,8 @@
         'Get-DbaDbPageInfo',
         'Get-DbaDbPartitionFunction',
         'Get-DbaDbPartitionScheme',
+        'Remove-DbaDbPartitionScheme',
+        'Remove-DbaDbPartitionFunction',
         'Get-DbaDbQueryStoreOption',
         'Get-DbaDbRecoveryModel',
         'Get-DbaDbRestoreHistory',
