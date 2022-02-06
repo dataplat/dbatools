@@ -35,6 +35,10 @@ function Get-DbaUserPermission {
     .PARAMETER IncludeSystemObjects
         Allows you to include output on sys schema objects.
 
+    .PARAMETER ExcludeSecurables
+        For databases with a large number of objects getting object level permissions can be undesirable. Including this
+        switch will exclude specific object level permissions and simply return roles for users.
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -42,7 +46,7 @@ function Get-DbaUserPermission {
 
     .NOTES
         Tags: Security, User
-        Author: Brandon Abshire, netnerds.net
+        Author: Brandon Abshire, netnerds.net, josh smith
 
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
@@ -78,6 +82,7 @@ function Get-DbaUserPermission {
         [switch]$ExcludeSystemDatabase,
         [switch]$IncludePublicGuest,
         [switch]$IncludeSystemObjects,
+        [switch]$ExcludeSecurables
         [switch]$EnableException
     )
 
@@ -121,7 +126,10 @@ function Get-DbaUserPermission {
                             FROM    master.sys.syslogins sl
                                     LEFT JOIN tempdb.[STIG].[server_role_members] srm ON sl.name = srm.Member
                             WHERE   sl.name NOT LIKE 'NT %'
-                                    AND sl.name NOT LIKE '##%'
+                                    AND sl.name NOT LIKE '##%'"
+        if -not ($ExcludeSecurables) {
+
+            $serverSQL = $serverSQL + "
                             UNION
                             SELECT  'SERVER SECURABLES' AS Type ,
                                     sl.name ,
@@ -139,6 +147,7 @@ function Get-DbaUserPermission {
                                     LEFT JOIN tempdb.[STIG].[server_permissions] sp ON sl.name = sp.Grantee
                             WHERE   sl.name NOT LIKE 'NT %'
                                     AND sl.name NOT LIKE '##%';"
+        }
 
         $dbSQL = "SELECT  'DB ROLE MEMBERS' AS type ,
                                 Member ,
@@ -152,7 +161,11 @@ function Get-DbaUserPermission {
                                 ' ' AS [Grantor] ,
                                 ' ' AS [Grantor Type] ,
                                 ' ' AS [Source View]
-                        FROM    tempdb.[STIG].[database_role_members]
+                        FROM    tempdb.[STIG].[database_role_members]"
+
+        if -not ($ExcludeSecurables) {
+
+            $dbSQL =  $dbSQL + "
                         UNION
                         SELECT DISTINCT
                                 'DB SECURABLES' AS Type ,
@@ -174,6 +187,7 @@ function Get-DbaUserPermission {
                         WHERE	dp.Grantor IS NOT NULL
                                 AND dp.Grantee NOT IN ('public', 'guest')
                                 AND [Schema/Owner] <> 'sys'"
+        }
 
         if ($IncludePublicGuest) { $dbSQL = $dbSQL.Replace("AND dp.Grantee NOT IN ('public', 'guest')", "") }
         if ($IncludeSystemObjects) { $dbSQL = $dbSQL.Replace("AND [Schema/Owner] <> 'sys'", "") }
