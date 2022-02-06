@@ -401,9 +401,14 @@ function New-DbaDbTable {
 
         foreach ($db in $InputObject) {
             $server = $db.Parent
-            if ($Pscmdlet.ShouldProcess("Creating new object $name in $db on $server")) {
+            if ($Pscmdlet.ShouldProcess("Creating new table [$Schema].[$Name] in $db on $server")) {
+                # Test if table already exists. This ways we can drop the table if part of the creation fails.
+                $existingTable = $db.tables | Where-Object { $_.Schema -eq $Schema -and $_.Name -eq $Name }
+                if ($existingTable) {
+                    Stop-Function -Message "Table [$Schema].[$Name] already exists in $db on $server" -Continue
+                }
                 try {
-                    $object = New-Object -TypeName Microsoft.SqlServer.Management.Smo.Table $db, $name, $schema
+                    $object = New-Object -TypeName Microsoft.SqlServer.Management.Smo.Table $db, $Name, $Schema
                     $properties = $PSBoundParameters | Where-Object Key -notin 'SqlInstance', 'SqlCredential', 'Name', 'Schema', 'ColumnMap', 'ColumnObject', 'InputObject', 'EnableException', 'Passthru'
 
                     foreach ($prop in $properties.Key) {
@@ -475,8 +480,10 @@ function New-DbaDbTable {
                     }
 
                     # user has specified a schema that does not exist yet
-                    if (-not ($db | Get-DbaDbSchema -Schema $schema -IncludeSystemSchemas)) {
-                        $schemaObject = New-Object -TypeName Microsoft.SqlServer.Management.Smo.Schema $db, $schema
+                    $schemaObject = $null
+                    if (-not ($db | Get-DbaDbSchema -Schema $Schema -IncludeSystemSchemas)) {
+                        Write-Message -Level Verbose -Message "Schema $Schema does not exist in $db and will be created."
+                        $schemaObject = New-Object -TypeName Microsoft.SqlServer.Management.Smo.Schema $db, $Schema
                     }
 
                     if ($Passthru) {
@@ -495,9 +502,22 @@ function New-DbaDbTable {
                         }
                         $null = Invoke-Create -Object $object
                     }
-                    $db | Get-DbaDbTable -Table "[$schema].[$Name]"
+                    $db | Get-DbaDbTable -Table "[$Schema].[$Name]"
                 } catch {
-                    Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
+                    $exception = $_
+                    Write-Message -Level Warning -Message "Failed to create table or failure while adding constraints. Will try to remove table."
+                    try {
+                        # If creation of a constraint fails, the table is already created - so it has to be droped.
+                        # But $object.Drop() or $object.DropIfExists() don't work as expected.
+                        # Maybe try again in a later version of the SMO...
+                        $db.Tables | Where-Object { $_.Schema -eq $Schema -and $_.Name -eq $Name } | ForEach-Object { $_.Drop() }
+                        if ($schemaObject) {
+                            $db.Schemas[$Schema].Drop()
+                        }
+                    } catch {
+                        Write-Message -Level Warning -Message "Failed to drop table: $_. Maybe table still exists."
+                    }
+                    Stop-Function -Message "Failure" -ErrorRecord $exception -Continue
                 }
             }
         }
