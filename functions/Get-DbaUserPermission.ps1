@@ -86,7 +86,7 @@ function Get-DbaUserPermission {
     )
 
     begin {
-        $endSQL = "	   BEGIN TRY DROP FUNCTION STIG.server_effective_permissions END TRY BEGIN CATCH END CATCH;
+        $endSQL = "       BEGIN TRY DROP FUNCTION STIG.server_effective_permissions END TRY BEGIN CATCH END CATCH;
                        GO
                        BEGIN TRY DROP VIEW STIG.server_permissions END TRY BEGIN CATCH END CATCH;
                        GO
@@ -163,7 +163,7 @@ function Get-DbaUserPermission {
                             WHERE   sl.name NOT LIKE 'NT %'
                                     AND sl.name NOT LIKE '##%';"
 
-            $dbSQL =  $dbSQL + "
+            $dbSQL = $dbSQL + "
                         UNION
                         SELECT DISTINCT
                                 'DB SECURABLES' AS Type ,
@@ -182,7 +182,7 @@ function Get-DbaUserPermission {
                                 FULL JOIN tempdb.[STIG].[database_permissions] dp ON ( drm.Member = dp.Grantee
                                                                                       OR drm.Role = dp.Grantee
                                                                                      )
-                        WHERE	dp.Grantor IS NOT NULL
+                        WHERE    dp.Grantor IS NOT NULL
                                 AND dp.Grantee NOT IN ('public', 'guest')
                                 AND [Schema/Owner] <> 'sys'"
         }
