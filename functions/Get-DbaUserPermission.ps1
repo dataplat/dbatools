@@ -36,7 +36,7 @@ function Get-DbaUserPermission {
         Allows you to include output on sys schema objects.
 
     .PARAMETER ExcludeSecurables
-        Allow you to exclude object-level permissions from the output, and only return role permission(s).
+        Allows you to exclude object-level permissions from the output, and only return role permission(s).
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
