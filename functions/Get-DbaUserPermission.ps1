@@ -82,7 +82,7 @@ function Get-DbaUserPermission {
         [switch]$ExcludeSystemDatabase,
         [switch]$IncludePublicGuest,
         [switch]$IncludeSystemObjects,
-        [switch]$ExcludeSecurables
+        [switch]$ExcludeSecurables,
         [switch]$EnableException
     )
 
@@ -127,7 +127,7 @@ function Get-DbaUserPermission {
                                     LEFT JOIN tempdb.[STIG].[server_role_members] srm ON sl.name = srm.Member
                             WHERE   sl.name NOT LIKE 'NT %'
                                     AND sl.name NOT LIKE '##%'"
-        if -not ($ExcludeSecurables) {
+        if (-not $ExcludeSecurables) {
 
             $serverSQL = $serverSQL + "
                             UNION
@@ -163,7 +163,7 @@ function Get-DbaUserPermission {
                                 ' ' AS [Source View]
                         FROM    tempdb.[STIG].[database_role_members]"
 
-        if -not ($ExcludeSecurables) {
+        if (-not $ExcludeSecurables) {
 
             $dbSQL =  $dbSQL + "
                         UNION
