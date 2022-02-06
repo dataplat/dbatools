@@ -126,6 +126,22 @@ function Get-DbaUserPermission {
                                     LEFT JOIN tempdb.[STIG].[server_role_members] srm ON sl.name = srm.Member
                             WHERE   sl.name NOT LIKE 'NT %'
                                     AND sl.name NOT LIKE '##%'"
+
+        $dbSQL = "SELECT  'DB ROLE MEMBERS' AS type ,
+                                Member ,
+                                ISNULL(Role, 'None') AS [Role/Securable/Class],
+                                ' ' AS [Schema/Owner] ,
+                                ' ' AS [Securable] ,
+                                ' ' AS [Grantee Type] ,
+                                ' ' AS [Grantee] ,
+                                ' ' AS [Permission] ,
+                                ' ' AS [State] ,
+                                ' ' AS [Grantor] ,
+                                ' ' AS [Grantor Type] ,
+                                ' ' AS [Source View]
+                        FROM    tempdb.[STIG].[database_role_members]"
+
+        # append unions to get securables if not excluded:
         if (-not $ExcludeSecurables) {
 
             $serverSQL = $serverSQL + "
@@ -146,23 +162,6 @@ function Get-DbaUserPermission {
                                     LEFT JOIN tempdb.[STIG].[server_permissions] sp ON sl.name = sp.Grantee
                             WHERE   sl.name NOT LIKE 'NT %'
                                     AND sl.name NOT LIKE '##%';"
-        }
-
-        $dbSQL = "SELECT  'DB ROLE MEMBERS' AS type ,
-                                Member ,
-                                ISNULL(Role, 'None') AS [Role/Securable/Class],
-                                ' ' AS [Schema/Owner] ,
-                                ' ' AS [Securable] ,
-                                ' ' AS [Grantee Type] ,
-                                ' ' AS [Grantee] ,
-                                ' ' AS [Permission] ,
-                                ' ' AS [State] ,
-                                ' ' AS [Grantor] ,
-                                ' ' AS [Grantor Type] ,
-                                ' ' AS [Source View]
-                        FROM    tempdb.[STIG].[database_role_members]"
-
-        if (-not $ExcludeSecurables) {
 
             $dbSQL =  $dbSQL + "
                         UNION
