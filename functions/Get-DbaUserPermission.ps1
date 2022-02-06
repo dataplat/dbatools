@@ -45,7 +45,7 @@ function Get-DbaUserPermission {
 
     .NOTES
         Tags: Security, User
-        Author: Brandon Abshire, netnerds.net, josh smith
+        Author: Brandon Abshire, netnerds.net | Josh Smith
 
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
