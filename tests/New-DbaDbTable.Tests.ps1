@@ -99,7 +99,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             }
         }
         It "Creates the table" {
-            $null = New-DbaDbTable -SqlInstance $script:instance1 -Database $dbname -Name $tablename4 -ColumnMap $map -EnableException | Should Not Throw
+            { $null = New-DbaDbTable -SqlInstance $script:instance1 -Database $dbname -Name $tablename4 -ColumnMap $map -EnableException } | Should Not Throw
         }
     }
     Context "Should create the schema if it doesn't exist" {
