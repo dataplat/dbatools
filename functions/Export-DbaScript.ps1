@@ -167,6 +167,10 @@ function Export-DbaScript {
             if (($($ScriptingOptionsObject.ScriptBatchTerminator)) -and ([string]::IsNullOrWhitespace($BatchSeparator))) {
                 Write-Message -Level Warning -Message "Setting ScriptBatchTerminator to true and also having BatchSeperarator as an empty or null string may produce unintended results."
             }
+            # Save those properties that will be changed in the process block so that they can be reset at the end
+            $soAppendToFile = $ScriptingOptionsObject.AppendToFile
+            $soToFileOnly = $ScriptingOptionsObject.ToFileOnly
+            $soFileName = $ScriptingOptionsObject.FileName
         }
 
         $eol = [System.Environment]::NewLine
@@ -225,12 +229,9 @@ function Export-DbaScript {
                 if ($ScriptingOptionsObject) {
                     $scripter.Options = $ScriptingOptionsObject
                     $scriptBatchTerminator = $ScriptingOptionsObject.ScriptBatchTerminator
-                    $soAppendToFile = $ScriptingOptionsObject.AppendToFile
-                    $soToFileOnly = $ScriptingOptionsObject.ToFileOnly
-                    $soFileName = $ScriptingOptionsObject.FileName
                 }
 
-                if (-not $passthru) {
+                if (-not $Passthru) {
                     $scriptPath = Get-ExportFilePath -Path $PSBoundParameters.Path -FilePath $PSBoundParameters.FilePath -Type sql -ServerName $serverName
                 } else {
                     $scriptPath = 'Console'
@@ -242,7 +243,7 @@ function Export-DbaScript {
                     $prefix = "/*$eol`tCreated by $executingUser using dbatools $commandName for objects on $serverName at $(Get-Date)$eol`tSee https://dbatools.io/$commandName for more information$eol*/"
                 }
 
-                if ($passthru) {
+                if ($Passthru) {
                     if ($null -ne $prefix) {
                         $prefix | Out-String
                     }
@@ -262,7 +263,7 @@ function Export-DbaScript {
                 if ($Pscmdlet.ShouldProcess($env:computername, "Exporting $object from $server to $scriptPath")) {
                     Write-Message -Level Verbose -Message "Exporting $object"
 
-                    if ($passthru) {
+                    if ($Passthru) {
                         if ($ScriptingOptionsObject) {
                             $ScriptingOptionsObject.FileName = $null
                             foreach ($scriptpart in $scripter.EnumScript($object)) {
@@ -287,14 +288,10 @@ function Export-DbaScript {
                                 # Option to script batch terminator via ScriptingOptionsObject needs to write to file only
                                 $ScriptingOptionsObject.AppendToFile = $true
                                 $ScriptingOptionsObject.ToFileOnly = $true
-                                if (-not  $ScriptingOptionsObject.FileName) {
+                                if (-not $ScriptingOptionsObject.FileName) {
                                     $ScriptingOptionsObject.FileName = $scriptPath
                                 }
                                 $null = $object.Script($ScriptingOptionsObject)
-                                # Reset the changed values of the $ScriptingOptionsObject in case it is reused later
-                                $ScriptingOptionsObject.AppendToFile = $soAppendToFile
-                                $ScriptingOptionsObject.ToFileOnly = $soToFileOnly
-                                $ScriptingOptionsObject.FileName = $soFileName
                             } else {
                                 $ScriptingOptionsObject.FileName = $null
                                 $scriptInFull = foreach ($scriptpart in $scripter.EnumScript($object)) {
@@ -306,7 +303,6 @@ function Export-DbaScript {
                                     $scriptpart
                                 }
                                 $scriptInFull | Out-File -FilePath $scriptPath -Encoding $encoding -Append
-                                $ScriptingOptionsObject.FileName = $soFileName
                             }
                         } else {
                             $scriptInFull = foreach ($scriptpart in $scripter.EnumScript($object)) {
@@ -321,7 +317,7 @@ function Export-DbaScript {
                         }
                     }
 
-                    if (-not $passthru) {
+                    if (-not $Passthru) {
                         Write-Message -Level Verbose -Message "Exported $object on $($server.Name) to $scriptPath"
                         Get-ChildItem -Path $scriptPath
                     }
@@ -332,6 +328,13 @@ function Export-DbaScript {
                     $message = $_.Exception
                 }
                 Stop-Function -Message "Failure on $($server.Name) | $message" -Target $server
+            } finally {
+                # Reset the changed values of the $ScriptingOptionsObject in case it is reused later
+                if ($ScriptingOptionsObject) {
+                    $ScriptingOptionsObject.AppendToFile = $soAppendToFile
+                    $ScriptingOptionsObject.ToFileOnly = $soToFileOnly
+                    $ScriptingOptionsObject.FileName = $soFileName
+                }
             }
         }
     }
