@@ -505,14 +505,13 @@ function New-DbaDbTable {
                     $db | Get-DbaDbTable -Table "[$Schema].[$Name]"
                 } catch {
                     $exception = $_
-                    Write-Message -Level Warning -Message "Failed to create table or failure while adding constraints. Will try to remove table."
+                    Write-Message -Level Verbose -Message "Failed to create table or failure while adding constraints. Will try to remove table (and schema)."
                     try {
-                        # If creation of a constraint fails, the table is already created - so it has to be droped.
-                        # But $object.Drop() or $object.DropIfExists() don't work as expected.
-                        # Maybe try again in a later version of the SMO...
-                        $db.Tables | Where-Object { $_.Schema -eq $Schema -and $_.Name -eq $Name } | ForEach-Object { $_.Drop() }
+                        $object.Refresh()
+                        $object.DropIfExists()
                         if ($schemaObject) {
-                            $db.Schemas[$Schema].Drop()
+                            $schemaObject.Refresh()
+                            $schemaObject.DropIfExists()
                         }
                     } catch {
                         Write-Message -Level Warning -Message "Failed to drop table: $_. Maybe table still exists."
