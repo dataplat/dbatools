@@ -33,6 +33,9 @@ function Get-DbaDbRestoreHistory {
     .PARAMETER Last
         If this switch is enabled, the last restore action performed on each database is returned.
 
+    .PARAMETER RestoreType
+        Return the history for a specific type of restore. The possible values are 'Database', 'File', 'Filegroup', 'Differential', 'Log', 'Verifyonly', 'Revert'. This is an optional parameter so there is no default value.
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -75,6 +78,10 @@ function Get-DbaDbRestoreHistory {
 
         Returns database restore information for every database on every server listed in the Central Management Server on sql2016.
 
+    .EXAMPLE
+        PS C:\> Get-DbaDbRestoreHistory -SqlInstance sql2016 -RestoreType Log
+
+        Returns log restore information for every database on the sql2016 instance.
     #>
     [CmdletBinding()]
     param (
@@ -86,6 +93,8 @@ function Get-DbaDbRestoreHistory {
         [datetime]$Since,
         [switch]$Force,
         [switch]$Last,
+        [ValidateSet('Database', 'File', 'Filegroup', 'Differential', 'Log', 'Verifyonly', 'Revert')]
+        [string]$RestoreType,
         [switch]$EnableException
     )
 
@@ -164,12 +173,25 @@ function Get-DbaDbRestoreHistory {
                     $wherearray += "rsh.restore_date >= CONVERT(datetime,'$($Since.ToString("yyyy-MM-ddTHH:mm:ss", [System.Globalization.CultureInfo]::InvariantCulture))',126)"
                 }
 
-
                 if ($last) {
                     $wherearray += "rsh.restore_history_id in
                         (select max(restore_history_id) from msdb.dbo.restorehistory
                         group by destination_database_name
                         )"
+                }
+
+                if ($RestoreType) {
+                    $wherearray += "rsh.restore_type =
+                                        (CASE
+                                            WHEN '$RestoreType' = 'Database'        THEN 'D'
+                                            WHEN '$RestoreType' = 'File'            THEN 'F'
+                                            WHEN '$RestoreType' = 'Filegroup'       THEN 'G'
+                                            WHEN '$RestoreType' = 'Differential'    THEN 'I'
+                                            WHEN '$RestoreType' = 'Log'             THEN 'L'
+                                            WHEN '$RestoreType' = 'Verifyonly'      THEN 'V'
+                                            WHEN '$RestoreType' = 'Revert'          THEN 'R'
+                                            ELSE 'D'
+                                        END)"
                 }
 
                 if ($where.length -gt 0) {
