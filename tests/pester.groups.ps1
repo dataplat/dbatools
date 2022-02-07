@@ -61,7 +61,6 @@ $TestsRunGroups = @{
         'Export-DbaDacPackage',
         'New-DbaDbTransfer',
         'Remove-DbaAgDatabase',
-        'New-DbaDbTable',
         'Get-DbaDbSynonym',
         'Get-DbaDbVirtualLogFile',
         'Get-DbaFile',

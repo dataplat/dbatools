@@ -214,15 +214,23 @@ function New-DbaDbTable {
        Creates a new table on sql2017 in tempdb with the name testtable and one column
 
     .EXAMPLE
-       PS C:\> $col = @{
-       >> Name      = 'Id'
-       >> Type      = 'varchar'
-       >> MaxLength = 36
-       >> DefaultEx = 'NEWID()'
+       PS C:\> $cols = @( )
+       >> $cols += @{
+       >>     Name              = 'Id'
+       >>     Type              = 'varchar'
+       >>     MaxLength         = 36
+       >>     DefaultExpression = 'NEWID()'
        >> }
-       PS C:\> New-DbaDbTable -SqlInstance sql2017 -Database tempdb -Name testtable -ColumnMap $col
+       >> $cols += @{
+       >>     Name          = 'Since'
+       >>     Type          = 'datetime2'
+       >>     DefaultString = '2021-12-31'
+       >> }
+       PS C:\> New-DbaDbTable -SqlInstance sql2017 -Database tempdb -Name testtable -ColumnMap $cols
 
-       Creates a new table on sql2017 in tempdb with the name testtable and one column. Uses "DefaultEx" to interpret the value as an expression and not as a string.
+       Creates a new table on sql2017 in tempdb with the name testtable and two columns.
+       Uses "DefaultExpression" to interpret the value "NEWID()" as an expression regardless of the data type of the column.
+       Uses "DefaultString" to interpret the value "2021-12-31" as a string regardless of the data type of the column.
 
     .EXAMPLE
         PS C:\> # Create collection
@@ -401,9 +409,14 @@ function New-DbaDbTable {
 
         foreach ($db in $InputObject) {
             $server = $db.Parent
-            if ($Pscmdlet.ShouldProcess("Creating new object $name in $db on $server")) {
+            if ($Pscmdlet.ShouldProcess("Creating new table [$Schema].[$Name] in $db on $server")) {
+                # Test if table already exists. This ways we can drop the table if part of the creation fails.
+                $existingTable = $db.tables | Where-Object { $_.Schema -eq $Schema -and $_.Name -eq $Name }
+                if ($existingTable) {
+                    Stop-Function -Message "Table [$Schema].[$Name] already exists in $db on $server" -Continue
+                }
                 try {
-                    $object = New-Object -TypeName Microsoft.SqlServer.Management.Smo.Table $db, $name, $schema
+                    $object = New-Object -TypeName Microsoft.SqlServer.Management.Smo.Table $db, $Name, $Schema
                     $properties = $PSBoundParameters | Where-Object Key -notin 'SqlInstance', 'SqlCredential', 'Name', 'Schema', 'ColumnMap', 'ColumnObject', 'InputObject', 'EnableException', 'Passthru'
 
                     foreach ($prop in $properties.Key) {
@@ -438,21 +451,18 @@ function New-DbaDbTable {
                         $sqlColumn = New-Object Microsoft.SqlServer.Management.Smo.Column $object, $column.Name, $dataType
                         $sqlColumn.Nullable = $column.Nullable
 
-                        if ($column.DefaultEx) {
+                        if ($column.DefaultName) {
+                            $dfName = $column.DefaultName
+                        } else {
+                            $dfName = "DF_$name`_$($column.Name)"
+                        }
+                        if ($column.DefaultExpression) {
                             # override the default that would add quotes to an expression
-                            if ($column.DefaultName) {
-                                $dfName = $column.DefaultName
-                            } else {
-                                $dfName = "DF_$name`_$($column.Name)"
-                            }
-                            $sqlColumn.AddDefaultConstraint($dfName).Text = $column.DefaultEx
+                            $sqlColumn.AddDefaultConstraint($dfName).Text = $column.DefaultExpression
+                        } elseif ($column.DefaultString) {
+                            # override the default that would not add quotes to a date string
+                            $sqlColumn.AddDefaultConstraint($dfName).Text = "'$($column.DefaultString)'"
                         } elseif ($column.Default) {
-                            if ($column.DefaultName) {
-                                $dfName = $column.DefaultName
-                            } else {
-                                $dfName = "DF_$name`_$($column.Name)"
-                            }
-
                             if ($sqlDbType -in @('NVarchar', 'NChar', 'NVarcharMax', 'NCharMax')) {
                                 $sqlColumn.AddDefaultConstraint($dfName).Text = "N'$($column.Default)'"
                             } elseif ($sqlDbType -in @('Varchar', 'Char', 'VarcharMax', 'CharMax')) {
@@ -475,8 +485,10 @@ function New-DbaDbTable {
                     }
 
                     # user has specified a schema that does not exist yet
-                    if (-not ($db | Get-DbaDbSchema -Schema $schema -IncludeSystemSchemas)) {
-                        $schemaObject = New-Object -TypeName Microsoft.SqlServer.Management.Smo.Schema $db, $schema
+                    $schemaObject = $null
+                    if (-not ($db | Get-DbaDbSchema -Schema $Schema -IncludeSystemSchemas)) {
+                        Write-Message -Level Verbose -Message "Schema $Schema does not exist in $db and will be created."
+                        $schemaObject = New-Object -TypeName Microsoft.SqlServer.Management.Smo.Schema $db, $Schema
                     }
 
                     if ($Passthru) {
@@ -495,9 +507,21 @@ function New-DbaDbTable {
                         }
                         $null = Invoke-Create -Object $object
                     }
-                    $db | Get-DbaDbTable -Table "[$schema].[$Name]"
+                    $db | Get-DbaDbTable -Table "[$Schema].[$Name]"
                 } catch {
-                    Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
+                    $exception = $_
+                    Write-Message -Level Verbose -Message "Failed to create table or failure while adding constraints. Will try to remove table (and schema)."
+                    try {
+                        $object.Refresh()
+                        $object.DropIfExists()
+                        if ($schemaObject) {
+                            $schemaObject.Refresh()
+                            $schemaObject.DropIfExists()
+                        }
+                    } catch {
+                        Write-Message -Level Warning -Message "Failed to drop table: $_. Maybe table still exists."
+                    }
+                    Stop-Function -Message "Failure" -ErrorRecord $exception -Continue
                 }
             }
         }
