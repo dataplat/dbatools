@@ -214,15 +214,23 @@ function New-DbaDbTable {
        Creates a new table on sql2017 in tempdb with the name testtable and one column
 
     .EXAMPLE
-       PS C:\> $col = @{
-       >> Name              = 'Id'
-       >> Type              = 'varchar'
-       >> MaxLength         = 36
-       >> DefaultExpression = 'NEWID()'
+       PS C:\> $cols = @( )
+       >> $cols += @{
+       >>     Name              = 'Id'
+       >>     Type              = 'varchar'
+       >>     MaxLength         = 36
+       >>     DefaultExpression = 'NEWID()'
        >> }
-       PS C:\> New-DbaDbTable -SqlInstance sql2017 -Database tempdb -Name testtable -ColumnMap $col
+       >> $cols += @{
+       >>     Name          = 'Since'
+       >>     Type          = 'datetime2'
+       >>     DefaultString = '2021-12-31'
+       >> }
+       PS C:\> New-DbaDbTable -SqlInstance sql2017 -Database tempdb -Name testtable -ColumnMap $cols
 
-       Creates a new table on sql2017 in tempdb with the name testtable and one column. Uses "DefaultExpression" to interpret the value as an expression and not as a string.
+       Creates a new table on sql2017 in tempdb with the name testtable and two columns.
+       Uses "DefaultExpression" to interpret the value "NEWID()" as an expression regardless of the data type of the column.
+       Uses "DefaultString" to interpret the value "2021-12-31" as a string regardless of the data type of the column.
 
     .EXAMPLE
         PS C:\> # Create collection
@@ -443,21 +451,18 @@ function New-DbaDbTable {
                         $sqlColumn = New-Object Microsoft.SqlServer.Management.Smo.Column $object, $column.Name, $dataType
                         $sqlColumn.Nullable = $column.Nullable
 
+                        if ($column.DefaultName) {
+                            $dfName = $column.DefaultName
+                        } else {
+                            $dfName = "DF_$name`_$($column.Name)"
+                        }
                         if ($column.DefaultExpression) {
                             # override the default that would add quotes to an expression
-                            if ($column.DefaultName) {
-                                $dfName = $column.DefaultName
-                            } else {
-                                $dfName = "DF_$name`_$($column.Name)"
-                            }
                             $sqlColumn.AddDefaultConstraint($dfName).Text = $column.DefaultExpression
+                        } elseif ($column.DefaultString) {
+                            # override the default that would not add quotes to a date string
+                            $sqlColumn.AddDefaultConstraint($dfName).Text = "'$($column.DefaultString)'"
                         } elseif ($column.Default) {
-                            if ($column.DefaultName) {
-                                $dfName = $column.DefaultName
-                            } else {
-                                $dfName = "DF_$name`_$($column.Name)"
-                            }
-
                             if ($sqlDbType -in @('NVarchar', 'NChar', 'NVarcharMax', 'NCharMax')) {
                                 $sqlColumn.AddDefaultConstraint($dfName).Text = "N'$($column.Default)'"
                             } elseif ($sqlDbType -in @('Varchar', 'Char', 'VarcharMax', 'CharMax')) {
