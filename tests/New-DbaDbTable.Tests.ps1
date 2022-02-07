@@ -20,6 +20,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         $tablename = "dbatoolssci_$(Get-Random)"
         $tablename2 = "dbatoolssci2_$(Get-Random)"
         $tablename3 = "dbatoolssci2_$(Get-Random)"
+        $tablename4 = "dbatoolssci2_$(Get-Random)"
     }
     AfterAll {
         $null = Invoke-DbaQuery -SqlInstance $script:instance1 -Database $dbname -Query "drop table $tablename, $tablename2"
@@ -82,7 +83,25 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             $table.Columns.IdentityIncrement | Should -Be $map.IdentityIncrement
         }
     }
-
+    Context "Should create the table with using DefaultExpression and DefaultString" {
+        BeforeEach {
+            $map = @( )
+            $map += @{
+                Name              = 'Id'
+                Type              = 'varchar'
+                MaxLength         = 36
+                DefaultExpression = 'NEWID()'
+            }
+            $map += @{
+                Name          = 'Since'
+                Type          = 'datetime2'
+                DefaultString = '2021-12-31'
+            }
+        }
+        It "Creates the table" {
+            { $null = New-DbaDbTable -SqlInstance $script:instance1 -Database $dbname -Name $tablename4 -ColumnMap $map -EnableException } | Should Not Throw
+        }
+    }
     Context "Should create the schema if it doesn't exist" {
 
         It "schema created" {
