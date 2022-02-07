@@ -193,7 +193,6 @@ function Set-DbaDbCompression {
                             $obj.AlreadyProcessed = "True"
                             $obj
                         }
-                        # TODO: Should we output those objects that could not be processed due to the max run time? All objects or only those in the foreach?
                     }
                 } else {
                     if ($Pscmdlet.ShouldProcess($db, "Applying $CompressionType compression")) {
