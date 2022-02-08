@@ -1172,15 +1172,18 @@ function Invoke-DbaDbLogShipping {
                         if ($RestoreDataFolder) {
                             $DatabaseRestoreDataFolder = $RestoreDataFolder
                         } else {
-                            Write-Message -Message "Restore data folder or restore log folder are not set. Using server defaults" -Level Verbose
+                            Write-Message -Message "Restore data folder is not set. Using server default." -Level Verbose
                             $DatabaseRestoreDataFolder = $DestinationServer.DefaultFile
                         }
+                        Write-Message -Message "Restore data folder is set to $DatabaseRestoreDataFolder" -Level Verbose
 
                         if ($RestoreLogFolder) {
                             $DatabaseRestoreLogFolder = $RestoreLogFolder
                         } else {
+                            Write-Message -Message "Restore log folder is not set. Using server default." -Level Verbose
                             $DatabaseRestoreLogFolder = $DestinationServer.DefaultLog
                         }
+                        Write-Message -Message "Restore log folder is set to $DatabaseRestoreLogFolder" -Level Verbose
 
                         # Check if the restore data folder exists
                         Write-Message -Message "Testing database restore data path $DatabaseRestoreDataFolder" -Level Verbose
