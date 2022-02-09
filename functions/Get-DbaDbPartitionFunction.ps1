@@ -1,13 +1,13 @@
 function Get-DbaDbPartitionFunction {
     <#
     .SYNOPSIS
-        Gets database Partition Functions
+        Gets database Partition Functions.
 
     .DESCRIPTION
-        Gets database Partition Functions
+        Gets database Partition Functions.
 
     .PARAMETER SqlInstance
-        The target SQL Server instance or instances
+        The target SQL Server instance or instances.
 
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
@@ -17,13 +17,13 @@ function Get-DbaDbPartitionFunction {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        To get users from specific database(s)
+        To get users from specific database(s).
 
     .PARAMETER ExcludeDatabase
-        The database(s) to exclude - this list is auto populated from the server
+        The database(s) to exclude - this list is auto populated from the server.
 
     .PARAMETER PartitionFunction
-        The name(s) of the partition function(s)
+        The name(s) of the partition function(s).
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
