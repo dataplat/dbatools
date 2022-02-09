@@ -1,10 +1,10 @@
 function Get-DbaDbPartitionScheme {
     <#
     .SYNOPSIS
-        Gets database Partition Schemes
+        Gets database Partition Schemes.
 
     .DESCRIPTION
-        Gets database Partition Schemes
+        Gets database Partition Schemes.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances
@@ -17,10 +17,13 @@ function Get-DbaDbPartitionScheme {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        To get users from specific database(s)
+        To get users from specific database(s).
 
     .PARAMETER ExcludeDatabase
-        The database(s) to exclude - this list is auto populated from the server
+        The database(s) to exclude - this list is auto populated from the server.
+
+    .PARAMETER PartitionScheme
+        The name(s) of the partition scheme(s).
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -41,22 +44,27 @@ function Get-DbaDbPartitionScheme {
     .EXAMPLE
         PS C:\> Get-DbaDbPartitionScheme -SqlInstance sql2016
 
-        Gets all database Partition Schemes
+        Gets all database partition schemes.
 
     .EXAMPLE
         PS C:\> Get-DbaDbPartitionScheme -SqlInstance Server1 -Database db1
 
-        Gets the Partition Schemes for the db1 database
+        Gets the partition schemes for the db1 database.
 
     .EXAMPLE
         PS C:\> Get-DbaDbPartitionScheme -SqlInstance Server1 -ExcludeDatabase db1
 
-        Gets the Partition Schemes for all databases except db1
+        Gets the partition schemes for all databases except db1.
 
     .EXAMPLE
         PS C:\> 'Sql1','Sql2/sqlexpress' | Get-DbaDbPartitionScheme
 
-        Gets the Partition Schemes for the databases on Sql1 and Sql2/sqlexpress
+        Gets the partition schemes for the databases on Sql1 and Sql2/sqlexpress.
+
+    .EXAMPLE
+        PS C:\> Get-DbaDbPartitionScheme -SqlInstance localhost -Database TestDB -PartitionScheme partSch01
+
+        Gets the partition scheme partSch01 for the TestDB on localhost.
 
     #>
     [CmdletBinding()]
@@ -66,6 +74,8 @@ function Get-DbaDbPartitionScheme {
         [PSCredential]$SqlCredential,
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
+        [Alias("Name")]
+        [string[]]$PartitionScheme,
         [switch]$EnableException
     )
 
@@ -92,14 +102,18 @@ function Get-DbaDbPartitionScheme {
                     continue
                 }
 
-                $PartitionSchemes = $db.PartitionSchemes
+                $partitionSchemes = $db.PartitionSchemes
 
-                if (!$PartitionSchemes) {
+                if ($PartitionScheme) {
+                    $partitionSchemes = $partitionSchemes | Where-Object { $_.Name -in $PartitionScheme }
+                }
+
+                if (!$partitionSchemes) {
                     Write-Message -Message "No Partition Schemes exist in the $db database on $instance" -Target $db -Level Verbose
                     continue
                 }
 
-                $PartitionSchemes | ForEach-Object {
+                $partitionSchemes | ForEach-Object {
 
                     Add-Member -Force -InputObject $_ -MemberType NoteProperty -Name ComputerName -value $server.ComputerName
                     Add-Member -Force -InputObject $_ -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
