@@ -157,6 +157,7 @@ function Stop-Function {
         $Line = $callStack.Position.StartLineNumber
     }
 
+    $instance = $null
     if ($Target -and $FunctionName -match "Connect-.*Instance") {
         $instance = $Target
         $isconnstring = ([DbaInstanceParameter]$instance).IsConnectionString
