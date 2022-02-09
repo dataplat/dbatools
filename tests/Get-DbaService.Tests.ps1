@@ -5,7 +5,7 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
         [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'ComputerName', 'InstanceName', 'Credential', 'Type', 'ServiceName', 'AdvancedProperties', 'EnableException'
+        [object[]]$knownParameters = 'ComputerName', 'InstanceName', 'SqlInstance', 'Credential', 'Type', 'ServiceName', 'AdvancedProperties', 'EnableException'
         $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
         It "Should only contain our specific parameters" {
             (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
@@ -71,6 +71,14 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 
         It "verifies that startup mode of the service is 'Automatic'" {
             $results.StartMode | Should Be 'Automatic'
+        }
+    }
+    Context "Command actually works with SqlInstance" {
+        $results = @( )
+        $results += Get-DbaService -SqlInstance $script:instance2 -Type Engine
+
+        It "shows exactly one service" {
+            $results.Count | Should Be 1
         }
     }
 }
