@@ -23,7 +23,7 @@ function Get-DbaDbPartitionFunction {
         The database(s) to exclude - this list is auto populated from the server
 
     .PARAMETER PartitionFunction
-        The name(s) of the partition functions(s)
+        The name(s) of the partition function(s)
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
