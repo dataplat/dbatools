@@ -9,10 +9,15 @@ function Get-DbaService {
         Requires Local Admin rights on destination computer(s).
 
     .PARAMETER ComputerName
-        The target SQL Server instance or instances.
+        The target computer(s).
 
     .PARAMETER InstanceName
-        Only returns services that belong to the specific instances.
+        Only returns services that belong to the specific instances on all target computers.
+
+    .PARAMETER SqlInstance
+        Use a combination of computername and instancename to get the SQL Server related services for specific instances on specific computers.
+
+        Parameters ComputerName and InstanceName will be ignored if SqlInstance is used.
 
     .PARAMETER Credential
         Credential object used to connect to the computer as a different user.
@@ -67,6 +72,11 @@ function Get-DbaService {
         Gets the SQL Server related services related to the default instance MSSQLSERVER on computers sql1 and sql2.
 
     .EXAMPLE
+        PS C:\> Get-DbaService -SqlInstance sql1, sql1\test, sql2\test
+
+        Gets the SQL Server related services related to the default instance MSSQLSERVER on computers sql1, the named instances test on sql1 and sql2.
+
+    .EXAMPLE
         PS C:\> Get-DbaService -ComputerName $MyServers -Type SSRS
 
         Gets the SQL Server related services of type "SSRS" (Reporting Services) on computers in the variable MyServers.
@@ -97,6 +107,8 @@ function Get-DbaService {
         [Parameter(ParameterSetName = "Search")]
         [Alias("Instance")]
         [string[]]$InstanceName,
+        [Parameter(ParameterSetName = "Search")]
+        [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$Credential,
         [Parameter(ParameterSetName = "Search")]
         [ValidateSet("Agent", "Browser", "Engine", "FullText", "SSAS", "SSIS", "SSRS", "PolyBase", "Launchpad")]
@@ -108,6 +120,11 @@ function Get-DbaService {
     )
 
     begin {
+        if ($SqlInstance) {
+            # If SqlInstance is used, we select the list of computers for ComputerName
+            $ComputerName = $SqlInstance | Select-Object -ExpandProperty ComputerName -Unique
+        }
+
         #Dictionary to transform service type IDs into the names from Microsoft.SqlServer.Management.Smo.Wmi.ManagedComputer.Services.Type
         $ServiceIdMap = @(
             @{ Name = "Engine"; Id = 1 },
@@ -147,6 +164,11 @@ function Get-DbaService {
     }
     process {
         foreach ($computer in $ComputerName.ComputerName) {
+            if ($SqlInstance) {
+                # If SqlInstance is used, we select the list of instances for the current computer
+                $InstanceName = $SqlInstance | Where-Object ComputerName -eq $computer | Select-Object -ExpandProperty InstanceName
+            }
+
             try {
                 $resolvedComputerName = (Resolve-DbaNetworkName -ComputerName $computer -Credential $Credential -EnableException).FullComputerName
                 $null = Get-DbaCmObject -ComputerName $resolvedComputerName -Credential $Credential -Namespace root\Microsoft -ClassName __NAMESPACE -EnableException
