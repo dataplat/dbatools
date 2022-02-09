@@ -85,12 +85,16 @@ function Get-TestsForBuildScenario {
             throw "something went wrong, nothing to test"
         }
         $testsThatDependOn = @()
-        foreach($t in $AllTests) {
+        foreach ($t in $AllTests) {
             # get tests for other functions that rely upon rely upon the selected ones
             $testsThatDependOn += Get-AllTestsIndications -Path $t -ModuleBase $ModuleBase
+
         }
+        $AllTests = (($testsThatDependOn + $AllTests) | Select-Object -Unique)
+        # re-filter disabled tests that may have been picked up by dependency tracking
+        $AllTests = $AllTests | Where-Object { ($_.Name -replace '^([^.]+)(.+)?.Tests.ps1', '$1') -notin $TestsRunGroups['disabled'] }
+        $AllTests = $AllTests | Where-Object { ($_.Name -replace '^([^.]+)(.+)?.Tests.ps1', '$1') -notin $TestsRunGroups['appveyor_disabled'] }
         if (-not($Silent)) {
-            $AllTests = (($testsThatDependOn + $AllTests) | Select-Object -Unique)
             Write-Host -ForegroundColor DarkGreen "Commit message: Extended to $($AllTests.Count) for all the dependencies"
         }
     } else {
@@ -124,7 +128,7 @@ function Get-TestsForBuildScenario {
                 Write-Host -ForegroundColor DarkGreen "Test Parts    : part $($env:PART) on total $($AllScenarioTests.Count)"
             }
             #shuffle things a bit (i.e. with natural sorting most of the *get* fall into the first part, all the *set* in the last, etc)
-            $AllScenarioTestsShuffled = $AllScenarioTests | Sort-Object -Property @{Expression = { $_.Name.Split('-')[-1].Replace('Dba', '') }; Ascending = $true}
+            $AllScenarioTestsShuffled = $AllScenarioTests | Sort-Object -Property @{Expression = { $_.Name.Split('-')[-1].Replace('Dba', '') }; Ascending = $true }
             $scenarioParts = Split-ArrayInParts -array $AllScenarioTestsShuffled -parts $denom
             $AllScenarioTests = $scenarioParts[$num - 1] | Sort-Object -Property Name
         } catch {
@@ -151,7 +155,7 @@ function Get-TestIndications($Path, $ModuleBase, $eval) {
         $f = $everything | Where-Object Name -eq $func_name
         # hacky, I know, but every occurrence of any function plus a space kinda denotes usage !?
         $searchme = "$f "
-        foreach($f in $everything) {
+        foreach ($f in $everything) {
             $source = $f.Definition
             $CBH = $CBHRex.match($source).Value
             # This fails very hard sometimes
@@ -174,7 +178,7 @@ function Get-TestIndications($Path, $ModuleBase, $eval) {
             $testpaths += $res.FullName
         }
     }
-    foreach($item in $testpaths) {
+    foreach ($item in $testpaths) {
         $eval[$item] = 1
     }
     return $eval
@@ -183,15 +187,15 @@ function Get-TestIndications($Path, $ModuleBase, $eval) {
 function Get-AllTestsIndications($Path, $ModuleBase) {
     # takes a test file path and figures out what to run for tests (i.e. functions that depend on this, till the top level is reached)
     $baseTests = $Path
-    $evaluated = @{}
+    $evaluated = @{ }
     $evaluated = Get-TestIndications -Path $baseTests -ModuleBase $ModuleBase -eval $evaluated
-    $seen = @{}
+    $seen = @{ }
     while ($true) {
         $currKeys = @()
-        foreach($k in $evaluated.Keys) {
+        foreach ($k in $evaluated.Keys) {
             $currKeys += $k
         }
-        foreach($key in $currKeys) {
+        foreach ($key in $currKeys) {
             #write-host -fore Yellow "eval $key"
             if ($key -in $seen.Keys) {
                 #write-host -fore Yellow "skipping $key, already seen"
