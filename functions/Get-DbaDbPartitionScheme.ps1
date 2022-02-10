@@ -1,7 +1,7 @@
 function Get-DbaDbPartitionScheme {
     <#
     .SYNOPSIS
-        Gets database Partition Schemes.
+        Gets database partition scheme(s).
 
     .DESCRIPTION
         Gets database Partition Schemes.
