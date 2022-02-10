@@ -96,6 +96,7 @@
         'Copy-DbaAgentAlert',
         'Copy-DbaAgentJob',
         'Copy-DbaAgentJobCategory',
+        'Set-DbaDbPartitionFunction',
         'Copy-DbaAgentOperator',
         'Copy-DbaAgentProxy',
         'Copy-DbaAgentSchedule',
