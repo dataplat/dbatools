@@ -148,7 +148,7 @@ function New-DbaLogShippingPrimaryDatabase {
         Write-Message -Message "Setting backup compression to 0." -Level Verbose
         $BackupCompression = 0
     } elseif (-not $CompressBackup) {
-        $defaultCompression = (Get-DbaSpConfigure -SqlInstance $SqlInstance -ConfigName DefaultBackupCompression).ConfiguredValue
+        $defaultCompression = (Get-DbaSpConfigure -SqlInstance $server -ConfigName DefaultBackupCompression).ConfiguredValue
         Write-Message -Message "Setting backup compression to default value $defaultCompression." -Level Verbose
         $BackupCompression = $defaultCompression
 
@@ -212,7 +212,7 @@ function New-DbaLogShippingPrimaryDatabase {
             ,@backup_job_id = @LS_BackupJobId OUTPUT
             ,@primary_id = @LS_PrimaryId OUTPUT "
 
-    if ($SqlInstance.Version.Major -gt 9) {
+    if ($server.Version.Major -gt 9) {
         $Query += ",@backup_compression = $BackupCompression"
     }
 

@@ -14,6 +14,11 @@ function Start-DbaService {
     .PARAMETER InstanceName
         Only affects services that belong to the specific instances.
 
+    .PARAMETER SqlInstance
+        Use a combination of computername and instancename to get the SQL Server related services for specific instances on specific computers.
+
+        Parameters ComputerName and InstanceName will be ignored if SqlInstance is used.
+
     .PARAMETER Credential
         Credential object used to connect to the computer as a different user.
 
@@ -79,6 +84,8 @@ function Start-DbaService {
         [DbaInstanceParameter[]]$ComputerName = $env:COMPUTERNAME,
         [Alias("Instance")]
         [string[]]$InstanceName,
+        [Parameter(ParameterSetName = "Server")]
+        [DbaInstanceParameter[]]$SqlInstance,
         [ValidateSet("Agent", "Browser", "Engine", "FullText", "SSAS", "SSIS", "SSRS")]
         [string[]]$Type,
         [parameter(ValueFromPipeline, Mandatory, ParameterSetName = "Service")]
@@ -93,6 +100,7 @@ function Start-DbaService {
         if ($PsCmdlet.ParameterSetName -eq "Server") {
             $serviceParams = @{ ComputerName = $ComputerName }
             if ($InstanceName) { $serviceParams.InstanceName = $InstanceName }
+            if ($SqlInstance) { $serviceParams.SqlInstance = $SqlInstance }
             if ($Type) { $serviceParams.Type = $Type }
             if ($Credential) { $serviceParams.Credential = $Credential }
             if ($EnableException) { $serviceParams.EnableException = $EnableException }
