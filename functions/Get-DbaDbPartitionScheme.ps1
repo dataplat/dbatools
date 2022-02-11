@@ -20,7 +20,7 @@ function Get-DbaDbPartitionScheme {
         To get users from specific database(s).
 
     .PARAMETER ExcludeDatabase
-        The database(s) to exclude - this list is auto populated from the server.
+        The database(s) to exclude - this list is auto-populated from the server.
 
     .PARAMETER PartitionScheme
         The name(s) of the partition scheme(s).
