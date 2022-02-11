@@ -71,7 +71,7 @@ function Get-DbaStartupParameter {
 
                 $displayName = "SQL Server ($instanceName)"
 
-                $criptBlock = {
+                $scriptBlock = {
                     $computerName = $args[0]
                     $displayName = $args[1]
 
@@ -176,9 +176,9 @@ function Get-DbaStartupParameter {
                 # This command is in the internal function
                 # It's sorta like Invoke-Command.
                 if ($credential) {
-                    Invoke-ManagedComputerCommand -Server $computerName -Credential $credential -ScriptBlock $criptBlock -ArgumentList $computerName, $displayName
+                    Invoke-ManagedComputerCommand -Server $computerName -Credential $credential -ScriptBlock $scriptBlock -ArgumentList $computerName, $displayName
                 } else {
-                    Invoke-ManagedComputerCommand -Server $computerName -ScriptBlock $criptBlock -ArgumentList $computerName, $displayName
+                    Invoke-ManagedComputerCommand -Server $computerName -ScriptBlock $scriptBlock -ArgumentList $computerName, $displayName
                 }
             } catch {
                 Stop-Function -Message "$instance failed." -ErrorRecord $_ -Continue -Target $instance
