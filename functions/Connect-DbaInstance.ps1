@@ -563,6 +563,7 @@ function Connect-DbaInstance {
                 Write-Message -Level Verbose -Message "String is passed in, will build server object from instance object and other parameters, do some checks and then return the server object"
                 $inputObjectType = 'String'
                 $serverName = $instance.FullSmoName
+                Write-Message -Level Debug -Message "VeryDebug: serverName is $serverName"
             }
 
             # Check for ignored parameters
@@ -672,6 +673,7 @@ function Connect-DbaInstance {
 
                 # Best way to get connection pooling to work is to use SqlConnectionInfo -> ServerConnection -> Server
                 $sqlConnectionInfo = New-Object -TypeName Microsoft.SqlServer.Management.Common.SqlConnectionInfo -ArgumentList $serverName
+                Write-Message -Level Debug -Message "VeryDebug: sqlConnectionInfo.ConnectionString is $($sqlConnectionInfo.ConnectionString)"
 
                 # But if we have an AccessToken, we need ConnectionString -> SqlConnection -> ServerConnection -> Server
                 # We will get the ConnectionString from the SqlConnectionInfo, so let's move on
@@ -860,6 +862,7 @@ function Connect-DbaInstance {
                     Write-Message -Level Debug -Message "Building ServerConnection from SqlConnectionInfo"
                     $serverConnection = New-Object -TypeName Microsoft.SqlServer.Management.Common.ServerConnection -ArgumentList $sqlConnectionInfo
                     Write-Message -Level Debug -Message "ServerConnection was built"
+                    Write-Message -Level Debug -Message "VeryDebug: serverConnection.ConnectionString is $($serverConnection.ConnectionString)"
                 }
 
                 if ($authType -eq 'local ad') {
@@ -880,6 +883,7 @@ function Connect-DbaInstance {
                 Write-Message -Level Debug -Message "Building Server from ServerConnection"
                 $server = New-Object -TypeName Microsoft.SqlServer.Management.Smo.Server -ArgumentList $serverConnection
                 Write-Message -Level Debug -Message "Server was built"
+                Write-Message -Level Debug -Message "VeryDebug: server.ConnectionContext.ConnectionString is $($server.ConnectionContext.ConnectionString)"
 
                 # Set properties of ConnectionContext that are not part of SqlConnectionInfo
                 if (Test-Bound -ParameterName 'BatchSeparator') {
