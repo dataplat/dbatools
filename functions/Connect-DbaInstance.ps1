@@ -885,6 +885,9 @@ function Connect-DbaInstance {
                 Write-Message -Level Debug -Message "Server was built"
                 Write-Message -Level Debug -Message "VeryDebug: server.ConnectionContext.ConnectionString is $($server.ConnectionContext.ConnectionString)"
 
+                Write-Message -Level Debug -Message "VeryDebug: serverConnection is from assembly '$($serverConnection.GetType().Assembly.FullName)' at '$($serverConnection.GetType().Assembly.Location)'"
+                Write-Message -Level Debug -Message "VeryDebug: server is from assembly '$($server.GetType().Assembly.FullName)' at '$($server.GetType().Assembly.Location)'"
+
                 # Set properties of ConnectionContext that are not part of SqlConnectionInfo
                 if (Test-Bound -ParameterName 'BatchSeparator') {
                     Write-Message -Level Debug -Message "Setting ConnectionContext.BatchSeparator to '$BatchSeparator'"
