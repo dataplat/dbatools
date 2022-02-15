@@ -129,7 +129,7 @@ function Set-DbaResourceGovernor {
                 $server.ResourceGovernor.Alter()
             }
 
-            Get-DbaResourceGovernor -SqlInstance $instance
+            Get-DbaResourceGovernor -SqlInstance $server
         }
     }
 }
