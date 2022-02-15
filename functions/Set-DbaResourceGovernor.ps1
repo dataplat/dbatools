@@ -127,6 +127,7 @@ function Set-DbaResourceGovernor {
             # Execute
             if ($PSCmdlet.ShouldProcess($instance, "Changing Resource Governor")) {
                 $server.ResourceGovernor.Alter()
+                $server.ResourceGovernor.Refresh()
             }
 
             Get-DbaResourceGovernor -SqlInstance $server
