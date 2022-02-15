@@ -23,6 +23,15 @@ function Add-DbaAgReplica {
 
         This parameter is only supported if the replica is added to just one instance.
 
+    .PARAMETER ClusterType
+        Cluster type of the Availability Group. Only supported in SQL Server 2017 and above.
+        Options include: Wsfc, External or None.
+
+        Defaults to Wsfc (Windows Server Failover Cluster).
+
+        The default can be changed with:
+        Set-DbatoolsConfig -FullName 'AvailabilityGroups.Default.ClusterType' -Value '...' -Passthru | Register-DbatoolsConfig
+
     .PARAMETER AvailabilityMode
         Sets the availability mode of the availability group replica. Options are: AsynchronousCommit and SynchronousCommit. SynchronousCommit is default.
 
