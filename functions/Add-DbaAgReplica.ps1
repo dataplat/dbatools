@@ -133,6 +133,8 @@ function Add-DbaAgReplica {
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [string]$Name,
+        [ValidateSet('Wsfc', 'External', 'None')]
+        [string]$ClusterType = (Get-DbatoolsConfigValue -FullName 'AvailabilityGroups.Default.ClusterType' -Fallback 'Wsfc'),
         [ValidateSet('AsynchronousCommit', 'SynchronousCommit')]
         [string]$AvailabilityMode = "SynchronousCommit",
         [ValidateSet('Automatic', 'Manual', 'External')]
@@ -256,6 +258,21 @@ function Add-DbaAgReplica {
 
                     if ($SeedingMode -and $server.VersionMajor -ge 13) {
                         $replica.SeedingMode = $SeedingMode
+                    }
+
+                    # Add cluster permissions
+                    if ($ClusterType -eq 'Wsfc') {
+                        if ($Pscmdlet.ShouldProcess($server.Name, "Adding cluster permissions for availability group named $($InputObject.Name)")) {
+                            Write-Message -Level Verbose -Message "WSFC Cluster requires granting [NT AUTHORITY\SYSTEM] a few things. Setting now."
+                            $sql = "GRANT ALTER ANY AVAILABILITY GROUP TO [NT AUTHORITY\SYSTEM]
+                                GRANT CONNECT SQL TO [NT AUTHORITY\SYSTEM]
+                                GRANT VIEW SERVER STATE TO [NT AUTHORITY\SYSTEM]"
+                            try {
+                                $null = $server.Query($sql)
+                            } catch {
+                                Stop-Function -Message "Failure adding cluster service account permissions." -ErrorRecord $_
+                            }
+                        }
                     }
 
                     $serviceAccount = $server.ServiceAccount.Trim()

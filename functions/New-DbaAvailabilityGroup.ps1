@@ -510,6 +510,7 @@ function New-DbaAvailabilityGroup {
 
                 $replicaparams = @{
                     InputObject                   = $ag
+                    ClusterType                   = $ClusterType
                     AvailabilityMode              = $AvailabilityMode
                     FailoverMode                  = $FailoverMode
                     BackupPriority                = $BackupPriority
@@ -538,26 +539,6 @@ function New-DbaAvailabilityGroup {
                 }
                 Stop-Function -Message $msg -ErrorRecord $_ -Target $Primary
                 return
-            }
-        }
-
-        # Add cluster permissions
-        if ($ClusterType -eq 'Wsfc') {
-            Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Adding endpoint connect permissions"
-
-            if ($Pscmdlet.ShouldProcess($Primary, "Adding cluster permissions for availability group named $Name")) {
-                Write-Message -Level Verbose -Message "WSFC Cluster requires granting [NT AUTHORITY\SYSTEM] a few things. Setting now."
-                $sql = "GRANT ALTER ANY AVAILABILITY GROUP TO [NT AUTHORITY\SYSTEM]
-                    GRANT CONNECT SQL TO [NT AUTHORITY\SYSTEM]
-                    GRANT VIEW SERVER STATE TO [NT AUTHORITY\SYSTEM]"
-                try {
-                    $null = $server.Query($sql)
-                    foreach ($second in $secondaries) {
-                        $null = $second.Query($sql)
-                    }
-                } catch {
-                    Stop-Function -Message "Failure adding cluster service account permissions" -ErrorRecord $_
-                }
             }
         }
 
@@ -621,22 +602,6 @@ function New-DbaAvailabilityGroup {
                     Stop-Function -Message "Failure" -ErrorRecord $_ -Target $second -Continue
                 }
                 $second.AvailabilityGroups.Refresh()
-            }
-        }
-
-        Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Granting permissions on availability group, this may take a moment"
-        if ($SeedingMode -eq 'Automatic') {
-            try {
-                if ($Pscmdlet.ShouldProcess($server.Name, "Seeding mode is automatic. Adding CreateAnyDatabase permissions to availability group.")) {
-                    $sql = "ALTER AVAILABILITY GROUP [$Name] GRANT CREATE ANY DATABASE"
-                    $null = $server.Query($sql)
-                    foreach ($second in $secondaries) {
-                        $null = $second.Query($sql)
-                    }
-                }
-            } catch {
-                # Log the exception but keep going
-                Stop-Function -Message "Failure" -ErrorRecord $_
             }
         }
 
