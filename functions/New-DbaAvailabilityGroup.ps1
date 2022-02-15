@@ -605,6 +605,22 @@ function New-DbaAvailabilityGroup {
             }
         }
 
+        Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Granting permissions on availability group, this may take a moment"
+        if ($SeedingMode -eq 'Automatic') {
+            try {
+                if ($Pscmdlet.ShouldProcess($server.Name, "Seeding mode is automatic. Adding CreateAnyDatabase permissions to availability group.")) {
+                    $sql = "ALTER AVAILABILITY GROUP [$Name] GRANT CREATE ANY DATABASE"
+                    $null = $server.Query($sql)
+                    foreach ($second in $secondaries) {
+                        $null = $second.Query($sql)
+                    }
+                }
+            } catch {
+                # Log the exception but keep going
+                Stop-Function -Message "Failure" -ErrorRecord $_
+            }
+        }
+
         # Wait for the availability group to be ready
         Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Waiting for replicas to be connected and ready"
         do {
