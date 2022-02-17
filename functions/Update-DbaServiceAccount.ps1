@@ -226,7 +226,8 @@ function Update-DbaServiceAccount {
                             if ($serviceObject.ServiceType -eq 'Engine') {
                                 $sqlInstance = $svc.ComputerName
                                 if ($svc.ServiceName -ne 'MSSQLSERVER') {
-                                    $sqlInstance += '\' + $svc.ServiceName
+                                    $instanceName = $svc.ServiceName -replace '^MSSQL\$', ''
+                                    $sqlInstance += '\' + $instanceName
                                 }
                                 # We try to get the certificate, but don't fail in case we are not able to.
                                 $certificate = Get-DbaNetworkConfiguration -SqlInstance $sqlInstance -Credential $Credential -OutputType Certificate
