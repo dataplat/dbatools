@@ -347,7 +347,7 @@ function Add-DbaAgReplica {
                                 try {
                                     $null = Grant-DbaAgPermission -SqlInstance $server -Type AvailabilityGroup -AvailabilityGroup $InputObject.Name -Permission CreateAnyDatabase -EnableException
                                 } catch {
-                                    Stop-Function -Message "Failure" -ErrorRecord $_
+                                    Stop-Function -Message "Failure granting CreateAnyDatabase permission to the availability group" -ErrorRecord $_
                                 }
                             }
                         }
@@ -355,7 +355,7 @@ function Add-DbaAgReplica {
                             try {
                                 $null = Grant-DbaAgPermission -SqlInstance $server -Type Endpoint -Login $serviceAccount -Permission Connect -EnableException
                             } catch {
-                                Stop-Function -Message "Failure" -ErrorRecord $_
+                                Stop-Function -Message "Failure granting Connect permission for the endpoint to service account $serviceAccount" -ErrorRecord $_
                             }
                         }
                     }

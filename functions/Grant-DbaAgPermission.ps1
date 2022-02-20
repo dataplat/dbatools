@@ -180,7 +180,7 @@ function Grant-DbaAgPermission {
                                 Status       = "Success"
                             }
                         } catch {
-                            Stop-Function -Message "Failure" -ErrorRecord $_ -Target $ag -Continue
+                            Stop-Function -Message "Failure granting $perm to $($account.Name)" -ErrorRecord $_ -Target $ag -Continue
                         }
                     }
                 }
