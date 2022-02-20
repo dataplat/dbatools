@@ -269,8 +269,7 @@ function Add-DbaAgDatabase {
                                 $replica.Alter()
                                 if ($SeedingMode -eq 'Automatic') {
                                     Write-Message -Level Verbose -Message "Setting GrantAvailabilityGroupCreateDatabasePrivilege on server $($replicaServerSMO[$replicaName]) for Availability Group $AvailabilityGroup."
-                                    $replicaServerSMO[$replicaName].GrantAvailabilityGroupCreateDatabasePrivilege($AvailabilityGroup)
-                                    $replicaServerSMO[$replicaName].Alter()
+                                    $null = Grant-DbaAgPermission -SqlInstance $replicaServerSMO[$replicaName] -Type AvailabilityGroup -AvailabilityGroup $AvailabilityGroup -Permission CreateAnyDatabase
                                 }
                             } catch {
                                 $failure = $true

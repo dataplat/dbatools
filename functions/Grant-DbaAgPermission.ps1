@@ -126,10 +126,11 @@ function Grant-DbaAgPermission {
             } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
-            if ($perm -contains "CreateAnyDatabase") {
+            if ($Permission -contains "CreateAnyDatabase") {
                 foreach ($ag in $AvailabilityGroup) {
                     try {
-                        $server.Query("ALTER AVAILABILITY GROUP $ag GRANT CREATE ANY DATABASE")
+                        $server.GrantAvailabilityGroupCreateDatabasePrivilege($ag)
+                        $server.Alter()
                     } catch {
                         Stop-Function -Message "Failure" -ErrorRecord $_ -Target $instance
                         return
