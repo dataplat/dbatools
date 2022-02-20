@@ -75,14 +75,14 @@ function Grant-DbaAgPermission {
         https://dbatools.io/Grant-DbaAgPermission
 
     .EXAMPLE
-        PS C:\> Grant-DbaAgPermission -SqlInstance sql2017a -Type AvailabilityGroup -AvailabilityGroup SharePoint -Login ad\spservice -Permission CreateAnyDatabase
+        PS C:\> Grant-DbaAgPermission -SqlInstance sql2017a -Type AvailabilityGroup -AvailabilityGroup SharePoint -Permission CreateAnyDatabase
 
-        Adds CreateAnyDatabase permissions to ad\spservice on the SharePoint availability group on sql2017a. Does not prompt for confirmation.
+        Adds CreateAnyDatabase permissions to the SharePoint availability group on sql2017a. Does not prompt for confirmation.
 
     .EXAMPLE
-        PS C:\> Grant-DbaAgPermission -SqlInstance sql2017a -Type AvailabilityGroup -AvailabilityGroup ag1, ag2 -Login ad\spservice -Permission CreateAnyDatabase -Confirm
+        PS C:\> Grant-DbaAgPermission -SqlInstance sql2017a -Type AvailabilityGroup -AvailabilityGroup ag1, ag2 -Permission CreateAnyDatabase -Confirm
 
-        Adds CreateAnyDatabase permissions to ad\spservice on the ag1 and ag2 availability groups on sql2017a. Prompts for confirmation.
+        Adds CreateAnyDatabase permissions to the ag1 and ag2 availability groups on sql2017a. Prompts for confirmation.
 
     .EXAMPLE
         PS C:\> Get-DbaLogin -SqlInstance sql2017a | Out-GridView -Passthru | Grant-DbaAgPermission -Type EndPoint
@@ -106,12 +106,12 @@ function Grant-DbaAgPermission {
     )
     process {
         if (Test-Bound -Not SqlInstance, InputObject) {
-            Stop-Function -Message "You must supply either -SqlInstance or an Input Object"\
+            Stop-Function -Message "You must supply either -SqlInstance or an Input Object"
             return
         }
 
-        if ($SqlInstance -and -not $Login -and -not $AvailabilityGroup) {
-            Stop-Function -Message "You must specify one or more logins when using the SqlInstance parameter."
+        if ($Type -contains "Endpoint" -and $SqlInstance -and -not $Login) {
+            Stop-Function -Message "You must specify one or more logins when using the Endpoint type together with the SqlInstance parameter."
             return
         }
 

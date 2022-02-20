@@ -303,15 +303,6 @@ function Add-DbaAgReplica {
                         $serviceAccount = "$saName`$"
                     }
 
-                    if ($server.HostPlatform -ne "Linux") {
-                        if ($Pscmdlet.ShouldProcess($second.Name, "Granting Connect permission to service account: $serviceAccount")) {
-                            if ($SeedingMode -eq "Automatic") {
-                                $null = Grant-DbaAgPermission -SqlInstance $server -Type AvailabilityGroup -AvailabilityGroup $InputObject.Name -Login $serviceAccount -Permission CreateAnyDatabase
-                            }
-                            $null = Grant-DbaAgPermission -SqlInstance $server -Login $serviceAccount -Type Endpoint -Permission Connect
-                        }
-                    }
-
                     if ($ConfigureXESession) {
                         try {
                             Write-Message -Level Debug -Message "Getting session 'AlwaysOn_health' on $instance."
@@ -340,7 +331,6 @@ function Add-DbaAgReplica {
                         return $replica
                     }
 
-                    $defaults = 'ComputerName', 'InstanceName', 'SqlInstance', 'AvailabilityGroup', 'Name', 'Role', 'RollupSynchronizationState', 'AvailabilityMode', 'BackupPriority', 'EndpointUrl', 'SessionTimeout', 'FailoverMode', 'ReadonlyRoutingList'
                     $InputObject.AvailabilityReplicas.Add($replica)
                     $agreplica = $InputObject.AvailabilityReplicas[$Name]
                     if ($InputObject.State -eq 'Existing') {
@@ -348,12 +338,35 @@ function Add-DbaAgReplica {
                         $null = Join-DbaAvailabilityGroup -SqlInstance $instance -SqlCredential $SqlCredential -AvailabilityGroup $InputObject.Name
                         $agreplica.Alter()
                     }
+
+                    if ($server.HostPlatform -ne "Linux") {
+                        # Only grant CreateAnyDatabase permission if AG already exists.
+                        # If this command is started from New-DbaAvailabilityGroup, this will be done there after AG is created.
+                        if ($SeedingMode -eq "Automatic" -and $InputObject.State -eq 'Existing') {
+                            if ($Pscmdlet.ShouldProcess($second.Name, "Granting CreateAnyDatabase permission to the availability group")) {
+                                try {
+                                    $null = Grant-DbaAgPermission -SqlInstance $server -Type AvailabilityGroup -AvailabilityGroup $InputObject.Name -Permission CreateAnyDatabase -EnableException
+                                } catch {
+                                    Stop-Function -Message "Failure" -ErrorRecord $_
+                                }
+                            }
+                        }
+                        if ($Pscmdlet.ShouldProcess($second.Name, "Granting Connect permission for the endpoint to service account $serviceAccount")) {
+                            try {
+                                $null = Grant-DbaAgPermission -SqlInstance $server -Type Endpoint -Login $serviceAccount -Permission Connect -EnableException
+                            } catch {
+                                Stop-Function -Message "Failure" -ErrorRecord $_
+                            }
+                        }
+                    }
+
                     Add-Member -Force -InputObject $agreplica -MemberType NoteProperty -Name ComputerName -Value $agreplica.Parent.ComputerName
                     Add-Member -Force -InputObject $agreplica -MemberType NoteProperty -Name InstanceName -Value $agreplica.Parent.InstanceName
                     Add-Member -Force -InputObject $agreplica -MemberType NoteProperty -Name SqlInstance -Value $agreplica.Parent.SqlInstance
                     Add-Member -Force -InputObject $agreplica -MemberType NoteProperty -Name AvailabilityGroup -Value $agreplica.Parent.Name
                     Add-Member -Force -InputObject $agreplica -MemberType NoteProperty -Name Replica -Value $agreplica.Name # backwards compat
 
+                    $defaults = 'ComputerName', 'InstanceName', 'SqlInstance', 'AvailabilityGroup', 'Name', 'Role', 'RollupSynchronizationState', 'AvailabilityMode', 'BackupPriority', 'EndpointUrl', 'SessionTimeout', 'FailoverMode', 'ReadonlyRoutingList'
                     Select-DefaultView -InputObject $agreplica -Property $defaults
                 } catch {
                     $msg = $_.Exception.InnerException.InnerException.Message
