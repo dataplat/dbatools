@@ -242,6 +242,7 @@ ON fd.Drive = LEFT(df.physical_name, 1);
                 InstanceName             = $server.ServiceName
                 SqlInstance              = $server.DomainInstanceName
                 Database                 = $db.name
+                DatabaseID               = $db.ID
                 FileGroupName            = $result.FileGroupName
                 ID                       = $result.ID
                 Type                     = $result.Type
