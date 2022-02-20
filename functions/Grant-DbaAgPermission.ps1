@@ -132,7 +132,7 @@ function Grant-DbaAgPermission {
                         $server.GrantAvailabilityGroupCreateDatabasePrivilege($ag)
                         $server.Alter()
                     } catch {
-                        Stop-Function -Message "Failure" -ErrorRecord $_ -Target $instance
+                        Stop-Function -Message "Failure executing GrantAvailabilityGroupCreateDatabasePrivilege for Availability Group $ag" -ErrorRecord $_ -Target $instance
                         return
                     }
                 }
@@ -144,7 +144,7 @@ function Grant-DbaAgPermission {
                         try {
                             $InputObject += New-DbaLogin -SqlInstance $server -Login $account -EnableException
                         } catch {
-                            Stop-Function -Message "Failure" -ErrorRecord $_ -Target $instance
+                            Stop-Function -Message "Failure creating login $account" -ErrorRecord $_ -Target $instance
                             return
                         }
                     }
@@ -180,7 +180,7 @@ function Grant-DbaAgPermission {
                                 Status       = "Success"
                             }
                         } catch {
-                            Stop-Function -Message "Failure granting $perm to $($account.Name)" -ErrorRecord $_ -Target $ag -Continue
+                            Stop-Function -Message "Failure granting $perm on endpoint to $($account.Name)" -ErrorRecord $_ -Target $account -Continue
                         }
                     }
                 }
@@ -207,7 +207,7 @@ function Grant-DbaAgPermission {
                                     Status       = "Success"
                                 }
                             } catch {
-                                Stop-Function -Message "Failure" -ErrorRecord $_ -Target $ag -Continue
+                                Stop-Function -Message "Failure granting $perm on availability group $($ag.Name) to $($account.Name)" -ErrorRecord $_ -Target $ag -Continue
                             }
                         }
                     }
