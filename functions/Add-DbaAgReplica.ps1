@@ -284,25 +284,6 @@ function Add-DbaAgReplica {
                         }
                     }
 
-                    $serviceAccount = $server.ServiceAccount.Trim()
-                    $saName = ([DbaInstanceParameter]($server.DomainInstanceName)).ComputerName
-
-                    if ($serviceAccount) {
-                        if ($serviceAccount.StartsWith("NT ")) {
-                            $serviceAccount = "$saName`$"
-                        }
-                        if ($serviceAccount.StartsWith("$saName")) {
-                            $serviceAccount = "$saName`$"
-                        }
-                        if ($serviceAccount.StartsWith(".")) {
-                            $serviceAccount = "$saName`$"
-                        }
-                    }
-
-                    if (-not $serviceAccount) {
-                        $serviceAccount = "$saName`$"
-                    }
-
                     if ($ConfigureXESession) {
                         try {
                             Write-Message -Level Debug -Message "Getting session 'AlwaysOn_health' on $instance."
@@ -351,11 +332,15 @@ function Add-DbaAgReplica {
                                 }
                             }
                         }
-                        if ($Pscmdlet.ShouldProcess($second.Name, "Granting Connect permission for the endpoint to service account $serviceAccount")) {
-                            try {
-                                $null = Grant-DbaAgPermission -SqlInstance $server -Type Endpoint -Login $serviceAccount -Permission Connect -EnableException
-                            } catch {
-                                Stop-Function -Message "Failure granting Connect permission for the endpoint to service account $serviceAccount" -ErrorRecord $_
+                        # In case a certificate is used, the endpoint is owned by the certificate and this step is not needed and in most cases not possible as the instance does not run under a domain account.
+                        if (-not $Certificate) {
+                            $serviceAccount = $server.ServiceAccount
+                            if ($Pscmdlet.ShouldProcess($second.Name, "Granting Connect permission for the endpoint to service account $serviceAccount")) {
+                                try {
+                                    $null = Grant-DbaAgPermission -SqlInstance $server -Type Endpoint -Login $serviceAccount -Permission Connect -EnableException
+                                } catch {
+                                    Stop-Function -Message "Failure granting Connect permission for the endpoint to service account $serviceAccount" -ErrorRecord $_
+                                }
                             }
                         }
                     }
