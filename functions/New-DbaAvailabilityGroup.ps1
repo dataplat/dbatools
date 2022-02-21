@@ -625,6 +625,20 @@ function New-DbaAvailabilityGroup {
 
         $wait = 0
 
+        # This can not be moved to Add-DbaAgReplica, as the AG has to be existing to grant this permission
+        if ($SeedingMode -eq "Automatic") {
+            if ($Pscmdlet.ShouldProcess($second.Name, "Granting CreateAnyDatabase permission to the availability group on every replica")) {
+                try {
+                    $null = Grant-DbaAgPermission -SqlInstance $server -Type AvailabilityGroup -AvailabilityGroup $Name -Permission CreateAnyDatabase -EnableException
+                    foreach ($second in $secondaries) {
+                        $null = Grant-DbaAgPermission -SqlInstance $second -Type AvailabilityGroup -AvailabilityGroup $Name -Permission CreateAnyDatabase -EnableException
+                    }
+                } catch {
+                    Stop-Function -Message "Failure" -ErrorRecord $_
+                }
+            }
+        }
+
         # Add databases
         Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Adding databases"
         if ($Database) {
