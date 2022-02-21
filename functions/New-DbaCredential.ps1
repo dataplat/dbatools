@@ -25,6 +25,10 @@ function New-DbaCredential {
     .PARAMETER SecurePassword
         Secure string used to authenticate the Credential Identity
 
+    .PARAMETER NoPassword
+        Some credentials for specific identities, such as "Managed Identity", don't need a password.
+        This is used, as example, to do backups to URL (storage account)
+
     .PARAMETER MappedClassType
         Sets the class associated with the credential.
 
@@ -88,8 +92,20 @@ function New-DbaCredential {
 
         Create a credential on Server1 using a SAS token for Backup To URL. The Name is the full URI for the blob container that will be the backup target.
         The SecurePassword will be the Shared Access Token (SAS), as a SecureString.
+
+    .EXAMPLE
+        PS C:\> $managedIdentityParams = @{
+        >>SqlInstance = "server1"
+        >>Name = "https://<azure storage account name>.blob.core.windows.net/<blob container>"
+        >>Identity = "Managed Identity"
+        >>NoPassword = $true
+        >>}
+        PS C:\> New-DbaCredential @managedIdentityParams
+
+        Create a credential on Server1 using a Managed Identity for Backup To URL. The Name is the full URI for the blob container that will be the backup target.
+        As no password is needed in this case, we use the NoPassword parameter.
     #>
-    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Medium")]
+    [CmdletBinding(DefaultParameterSetName = 'Password', SupportsShouldProcess, ConfirmImpact = "Medium")]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
@@ -98,8 +114,11 @@ function New-DbaCredential {
         [parameter(Mandatory)]
         [Alias("CredentialIdentity")]
         [string[]]$Identity,
+        [parameter(ParameterSetName = 'Password')]
         [Alias("Password")]
         [Security.SecureString]$SecurePassword,
+        [parameter(ParameterSetName = 'NoPassword')]
+        [switch]$NoPassword,
         [ValidateSet('CryptographicProvider', 'None')]
         [string]$MappedClassType = "None",
         [string]$ProviderName,
@@ -117,8 +136,10 @@ function New-DbaCredential {
     }
 
     process {
-        if (!$SecurePassword) {
-            Read-Host -AsSecureString -Prompt "Enter the credential password"
+        if ($PSCmdlet.ParameterSetName -eq "Password") {
+            if (!$SecurePassword) {
+                Read-Host -AsSecureString -Prompt "Enter the credential password"
+            }
         }
 
         foreach ($instance in $SqlInstance) {
@@ -135,7 +156,9 @@ function New-DbaCredential {
                     if ($force) {
                         Write-Message -Level Verbose -Message "Dropping credential $Name"
                         try {
-                            $currentCred.Drop()
+                            if ($Pscmdlet.ShouldProcess($SqlInstance, "Dropping credential '$Name' on $instance")) {
+                                $currentCred.Drop()
+                            }
                         } catch {
                             Stop-Function -Message "Error dropping credential $Name" -Target $name -Continue
                         }
@@ -145,12 +168,16 @@ function New-DbaCredential {
                 }
 
 
-                if ($Pscmdlet.ShouldProcess($SqlInstance, "Creating credential for database '$cred' on $instance")) {
+                if ($Pscmdlet.ShouldProcess($SqlInstance, "Creating credential '$cred' on $instance")) {
                     try {
                         $credential = New-Object Microsoft.SqlServer.Management.Smo.Credential -ArgumentList $server, $Name
                         $credential.MappedClassType = $mappedClass
                         $credential.ProviderName = $ProviderName
-                        $credential.Create($Identity, $SecurePassword)
+                        if ($SecurePassword) {
+                            $credential.Create($Identity, $SecurePassword)
+                        } else {
+                            $credential.Create($Identity)
+                        }
 
                         Add-Member -Force -InputObject $credential -MemberType NoteProperty -Name ComputerName -value $server.ComputerName
                         Add-Member -Force -InputObject $credential -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
