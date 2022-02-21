@@ -6,7 +6,7 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
         [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Name', 'Identity', 'SecurePassword', 'MappedClassType', 'ProviderName', 'Force', 'EnableException'
+        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Name', 'Identity', 'SecurePassword', '$NoPassword', 'MappedClassType', 'ProviderName', 'Force', 'EnableException'
         $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
         It "Should only contain our specific parameters" {
             (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
@@ -49,6 +49,25 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             $results = Get-DbaCredential -SqlInstance $script:instance2 -Identity dbatoolsci_thorsmomma
             $results.Name | Should Be "dbatoolsci_thorsmomma"
             $results.Identity | Should Be "dbatoolsci_thorsmomma"
+        }
+    }
+
+    Context "Create a new credential without password" {
+        It "Should create new credentials with the proper properties but without password" {
+            $credentialParams = @{
+                SqlInstance = $script:instance2
+                Name = "https://mystorageaccount.blob.core.windows.net/mycontainer"
+                Identity = 'Managed Identity'
+                NoPassword = $true
+            }
+            $results = New-DbaCredential $credentialParams
+            $results.Name | Should Be "https://mystorageaccount.blob.core.windows.net/mycontainer"
+            $results.Identity | Should Be "Managed Identity"
+        }
+        It "Gets the newly created credential that doesn't have password" {
+            $results = Get-DbaCredential -SqlInstance $script:instance2 -Identity "Managed Identity"
+            $results.Name | Should Be "https://mystorageaccount.blob.core.windows.net/mycontainer"
+            $results.Identity | Should Be "Managed Identity"
         }
     }
 }
