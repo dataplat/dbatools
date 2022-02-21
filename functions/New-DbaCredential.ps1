@@ -174,9 +174,9 @@ function New-DbaCredential {
                         $credential.MappedClassType = $mappedClass
                         $credential.ProviderName = $ProviderName
                         if ($SecurePassword) {
-                            $credential.Create($Identity, $SecurePassword)
+                            $credential.Create($cred, $SecurePassword)
                         } else {
-                            $credential.Create($Identity)
+                            $credential.Create($cred)
                         }
 
                         Add-Member -Force -InputObject $credential -MemberType NoteProperty -Name ComputerName -value $server.ComputerName
