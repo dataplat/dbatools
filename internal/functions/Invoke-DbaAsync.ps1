@@ -268,6 +268,7 @@ function Invoke-DbaAsync {
                     $handler = [Microsoft.Data.SqlClient.SqlInfoMessageEventHandler] { Write-Verbose -Message "$($_)" }
                     $conn.add_InfoMessage($handler)
                 }
+                $Err = $null
                 try {
                     [void]$da.fill($ds)
                 } catch {
