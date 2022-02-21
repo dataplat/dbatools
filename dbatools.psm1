@@ -1102,8 +1102,22 @@ if ($option.LoadTypes -or
 #. Import-ModuleFile "$script:PSModuleRoot\bin\type-extensions.ps1"
 #Write-ImportTime -Text "Loaded type extensions"
 
-$td = (Get-TypeData -TypeName Microsoft.SqlServer.Management.Smo.Server)
-[Sqlcollaborative.Dbatools.dbaSystem.SystemHost]::ModuleImported = $true;
+
+
+# no idea what this is for
+$null = (Get-TypeData -TypeName Microsoft.SqlServer.Management.Smo.Server)
+
+
+Write-ImportTime -Text "Checking for conflicting SMO types"
+$loadedversion = [AppDomain]::CurrentDomain.GetAssemblies() | Where-Object { $_.Fullname -like "Microsoft.SqlServer.SMO,*" }
+if ($loadedversion -notmatch "dbatools") {
+    if (Get-DbatoolsConfigValue -FullName Import.SmoCheck) {
+        Write-Warning -Message 'An alternative SMO library has already been loaded in this session. This may cause unexpected behavior. See https://github.com/dataplat/dbatools/issues/8168 for more information.'
+        Write-Warning -Message 'To disable this message, type: Set-DbatoolsConfig -Name Import.SmoCheck -Value $false -PassThru | Register-DbatoolsConfig'
+    }
+}
+
+Write-ImportTime -Text "Checking to see if SqlServer or SQLPS has been loaded"
 $loadedModuleNames = Get-Module | Select-Object -ExpandProperty Name
 if ($loadedModuleNames -contains 'sqlserver' -or $loadedModuleNames -contains 'sqlps') {
     if (Get-DbatoolsConfigValue -FullName Import.SqlpsCheck) {
@@ -1111,6 +1125,8 @@ if ($loadedModuleNames -contains 'sqlserver' -or $loadedModuleNames -contains 's
         Write-Warning -Message 'To disable this message, type: Set-DbatoolsConfig -Name Import.SqlpsCheck -Value $false -PassThru | Register-DbatoolsConfig'
     }
 }
+
+[Sqlcollaborative.Dbatools.dbaSystem.SystemHost]::ModuleImported = $true
 #endregion Post-Import Cleanup
 
 # Removal of runspaces is needed to successfully close PowerShell ISE
