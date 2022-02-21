@@ -1100,13 +1100,7 @@ if ($option.LoadTypes -or
     Write-ImportTime -Text "Loaded type extensions"
 }
 #. Import-ModuleFile "$script:PSModuleRoot\bin\type-extensions.ps1"
-#Write-ImportTime -Text "Loaded type extensions"
-
-
-
-# no idea what this is for
-$null = (Get-TypeData -TypeName Microsoft.SqlServer.Management.Smo.Server)
-
+# Write-ImportTime -Text "Loaded type extensions"
 
 Write-ImportTime -Text "Checking for conflicting SMO types"
 $loadedversion = [AppDomain]::CurrentDomain.GetAssemblies() | Where-Object { $_.Fullname -like "Microsoft.SqlServer.SMO,*" }
