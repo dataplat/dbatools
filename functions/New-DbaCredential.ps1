@@ -57,14 +57,14 @@ function New-DbaCredential {
         https://dbatools.io/New-DbaCredential
 
     .EXAMPLE
-        PS C:\> New-DbaCredential -SqlInstance Server1
+        PS C:\> New-DbaCredential -SqlInstance Server1 -Name MyCredential -Identity "ad\user" -SecurePassword (ConvertTo-SecureString 'myStr0ngPwd' -AsPlainText -Force)
 
-        You will be prompted to securely enter your password, then a credential will be created in the master database on server1 if it does not exist.
+        It will create a credential named "MyCredential" that as "ad\user" as identity and a passowrd on server1 if it does not exist.
 
     .EXAMPLE
-        PS C:\> New-DbaCredential -SqlInstance Server1 -Confirm:$false
+        PS C:\> New-DbaCredential -SqlInstance Server1 -Identity "MyIdentity"
 
-        Suppresses all prompts to install but prompts to securely enter your password and creates a credential on Server1.
+        It will create a credential with identity value "MyIdentity" and same name without a passowrd on server1 if it does not exist.
 
     .EXAMPLE
         PS C:\> $params = @{
@@ -105,7 +105,7 @@ function New-DbaCredential {
         [parameter(Mandatory, ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [object]$Name = $Identity,
+        [string]$Name = $Identity,
         [parameter(Mandatory)]
         [Alias("CredentialIdentity")]
         [string]$Identity,
