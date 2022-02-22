@@ -172,7 +172,7 @@ function Copy-DbaDbTableData {
         >> Destination = 'server1'
         >> Database = 'AdventureWorks2017'
         >> DestinationDatabase = 'AdventureWorks2017'
-        >> Table = '[AdventureWorks2017].[Person].[EmailPromotion]'
+        >> DestinationTable = '[AdventureWorks2017].[Person].[EmailPromotion]'
         >> BatchSize = 10000
         >> Query = "SELECT * FROM [OtherDb].[Person].[Person] where EmailPromotion = 1"
         >> }
