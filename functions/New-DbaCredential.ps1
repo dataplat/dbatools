@@ -25,10 +25,6 @@ function New-DbaCredential {
     .PARAMETER SecurePassword
         Secure string used to authenticate the Credential Identity
 
-    .PARAMETER NoPassword
-        Some credentials for specific identities, such as "Managed Identity", don't need a password.
-        This is used, as example, to do backups to URL (storage account)
-
     .PARAMETER MappedClassType
         Sets the class associated with the credential.
 
@@ -105,20 +101,17 @@ function New-DbaCredential {
         Create a credential on Server1 using a Managed Identity for Backup To URL. The Name is the full URI for the blob container that will be the backup target.
         As no password is needed in this case, we use the NoPassword parameter.
     #>
-    [CmdletBinding(DefaultParameterSetName = 'Password', SupportsShouldProcess, ConfirmImpact = "Medium")]
+    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Medium")]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [object[]]$Name = $Identity,
+        [object]$Name = $Identity,
         [parameter(Mandatory)]
         [Alias("CredentialIdentity")]
-        [string[]]$Identity,
-        [parameter(ParameterSetName = 'Password')]
+        [string]$Identity,
         [Alias("Password")]
         [Security.SecureString]$SecurePassword,
-        [parameter(ParameterSetName = 'NoPassword')]
-        [switch]$NoPassword,
         [ValidateSet('CryptographicProvider', 'None')]
         [string]$MappedClassType = "None",
         [string]$ProviderName,
@@ -136,11 +129,6 @@ function New-DbaCredential {
     }
 
     process {
-        if ($PSCmdlet.ParameterSetName -eq "Password") {
-            if (!$SecurePassword) {
-                Read-Host -AsSecureString -Prompt "Enter the credential password"
-            }
-        }
 
         foreach ($instance in $SqlInstance) {
             try {
@@ -149,44 +137,43 @@ function New-DbaCredential {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
-            foreach ($cred in $Identity) {
-                $currentCred = $server.Credentials[$Name]
+            $currentCred = $server.Credentials[$Name]
 
-                if ($currentCred) {
-                    if ($force) {
-                        Write-Message -Level Verbose -Message "Dropping credential $Name"
-                        try {
-                            if ($Pscmdlet.ShouldProcess($SqlInstance, "Dropping credential '$Name' on $instance")) {
-                                $currentCred.Drop()
-                            }
-                        } catch {
-                            Stop-Function -Message "Error dropping credential $Name" -Target $name -Continue
-                        }
-                    } else {
-                        Stop-Function -Message "Credential exists and Force was not specified" -Target $Name -Continue
-                    }
-                }
-
-
-                if ($Pscmdlet.ShouldProcess($SqlInstance, "Creating credential '$cred' on $instance")) {
+            if ($currentCred) {
+                if ($force) {
+                    Write-Message -Level Verbose -Message "Dropping credential $Name"
                     try {
-                        $credential = New-Object Microsoft.SqlServer.Management.Smo.Credential -ArgumentList $server, $Name
-                        $credential.MappedClassType = $mappedClass
-                        $credential.ProviderName = $ProviderName
-                        if ($SecurePassword) {
-                            $credential.Create($cred, $SecurePassword)
-                        } else {
-                            $credential.Create($cred)
+                        if ($Pscmdlet.ShouldProcess($SqlInstance, "Dropping credential '$Name' on $instance")) {
+                            $currentCred.Drop()
                         }
-
-                        Add-Member -Force -InputObject $credential -MemberType NoteProperty -Name ComputerName -value $server.ComputerName
-                        Add-Member -Force -InputObject $credential -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
-                        Add-Member -Force -InputObject $credential -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
-
-                        Select-DefaultView -InputObject $credential -Property ComputerName, InstanceName, SqlInstance, Name, Identity, CreateDate, MappedClassType, ProviderName
                     } catch {
-                        Stop-Function -Message "Failed to create credential in $cred on $instance" -Target $credential -InnerErrorRecord $_ -Continue
+                        Stop-Function -Message "Error dropping credential $Name" -Target $name -Continue
                     }
+                } else {
+                    Stop-Function -Message "Credential exists and Force was not specified" -Target $Name -Continue
+                }
+            }
+
+            if ($Pscmdlet.ShouldProcess($SqlInstance, "Creating credential '$Name' on $instance")) {
+                try {
+                    $credential = New-Object Microsoft.SqlServer.Management.Smo.Credential -ArgumentList $server, $Name
+                    $credential.MappedClassType = $mappedClass
+                    $credential.ProviderName = $ProviderName
+                    if ($SecurePassword) {
+                        Write-Message -Level Verbose -Message "Creating credential with identity '$Identity' with password"
+                        $credential.Create($Identity, $SecurePassword)
+                    } else {
+                        Write-Message -Level Verbose -Message "Password was not provided, creating credential with identity '$Identity' without password"
+                        $credential.Create($Identity)
+                    }
+
+                    Add-Member -Force -InputObject $credential -MemberType NoteProperty -Name ComputerName -value $server.ComputerName
+                    Add-Member -Force -InputObject $credential -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
+                    Add-Member -Force -InputObject $credential -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
+
+                    Select-DefaultView -InputObject $credential -Property ComputerName, InstanceName, SqlInstance, Name, Identity, CreateDate, MappedClassType, ProviderName
+                } catch {
+                    Stop-Function -Message "Failed to create credential in $cred on $instance" -Target $credential -InnerErrorRecord $_ -Continue
                 }
             }
         }
