@@ -59,12 +59,12 @@ function New-DbaCredential {
     .EXAMPLE
         PS C:\> New-DbaCredential -SqlInstance Server1 -Name MyCredential -Identity "ad\user" -SecurePassword (ConvertTo-SecureString 'myStr0ngPwd' -AsPlainText -Force)
 
-        It will create a credential named "MyCredential" that as "ad\user" as identity and a passowrd on server1 if it does not exist.
+        It will create a credential named "MyCredential" that as "ad\user" as identity and a password on server1 if it does not exist.
 
     .EXAMPLE
         PS C:\> New-DbaCredential -SqlInstance Server1 -Identity "MyIdentity"
 
-        It will create a credential with identity value "MyIdentity" and same name but without a passowrd on server1 if it does not exist.
+        It will create a credential with identity value "MyIdentity" and same name but without a password on server1 if it does not exist.
 
     .EXAMPLE
         PS C:\> $params = @{
