@@ -94,12 +94,11 @@ function New-DbaCredential {
         >>SqlInstance = "server1"
         >>Name = "https://<azure storage account name>.blob.core.windows.net/<blob container>"
         >>Identity = "Managed Identity"
-        >>NoPassword = $true
         >>}
         PS C:\> New-DbaCredential @managedIdentityParams
 
         Create a credential on Server1 using a Managed Identity for Backup To URL. The Name is the full URI for the blob container that will be the backup target.
-        As no password is needed in this case, we use the NoPassword parameter.
+        As no password is needed in this case, we just don't pass the -SecurePassword parameter.
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Medium")]
     param (
