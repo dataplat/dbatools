@@ -57,14 +57,14 @@ function New-DbaCredential {
         https://dbatools.io/New-DbaCredential
 
     .EXAMPLE
-        PS C:\> New-DbaCredential -SqlInstance Server1
+        PS C:\> New-DbaCredential -SqlInstance Server1 -Name MyCredential -Identity "ad\user" -SecurePassword (ConvertTo-SecureString 'myStr0ngPwd' -AsPlainText -Force)
 
-        You will be prompted to securely enter your password, then a credential will be created in the master database on server1 if it does not exist.
+        It will create a credential named "MyCredential" that as "ad\user" as identity and a password on server1 if it does not exist.
 
     .EXAMPLE
-        PS C:\> New-DbaCredential -SqlInstance Server1 -Confirm:$false
+        PS C:\> New-DbaCredential -SqlInstance Server1 -Identity "MyIdentity"
 
-        Suppresses all prompts to install but prompts to securely enter your password and creates a credential on Server1.
+        It will create a credential with identity value "MyIdentity" and same name but without a password on server1 if it does not exist.
 
     .EXAMPLE
         PS C:\> $params = @{
@@ -88,16 +88,27 @@ function New-DbaCredential {
 
         Create a credential on Server1 using a SAS token for Backup To URL. The Name is the full URI for the blob container that will be the backup target.
         The SecurePassword will be the Shared Access Token (SAS), as a SecureString.
+
+    .EXAMPLE
+        PS C:\> $managedIdentityParams = @{
+        >>SqlInstance = "server1"
+        >>Name = "https://<azure storage account name>.blob.core.windows.net/<blob container>"
+        >>Identity = "Managed Identity"
+        >>}
+        PS C:\> New-DbaCredential @managedIdentityParams
+
+        Create a credential on Server1 using a Managed Identity for Backup To URL. The Name is the full URI for the blob container that will be the backup target.
+        As no password is needed in this case, we just don't pass the -SecurePassword parameter.
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Medium")]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [object[]]$Name = $Identity,
+        [string]$Name = $Identity,
         [parameter(Mandatory)]
         [Alias("CredentialIdentity")]
-        [string[]]$Identity,
+        [string]$Identity,
         [Alias("Password")]
         [Security.SecureString]$SecurePassword,
         [ValidateSet('CryptographicProvider', 'None')]
@@ -117,9 +128,6 @@ function New-DbaCredential {
     }
 
     process {
-        if (!$SecurePassword) {
-            Read-Host -AsSecureString -Prompt "Enter the credential password"
-        }
 
         foreach ($instance in $SqlInstance) {
             try {
@@ -128,38 +136,43 @@ function New-DbaCredential {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
-            foreach ($cred in $Identity) {
-                $currentCred = $server.Credentials[$Name]
+            $currentCred = $server.Credentials[$Name]
 
-                if ($currentCred) {
-                    if ($force) {
-                        Write-Message -Level Verbose -Message "Dropping credential $Name"
-                        try {
-                            $currentCred.Drop()
-                        } catch {
-                            Stop-Function -Message "Error dropping credential $Name" -Target $name -Continue
-                        }
-                    } else {
-                        Stop-Function -Message "Credential exists and Force was not specified" -Target $Name -Continue
-                    }
-                }
-
-
-                if ($Pscmdlet.ShouldProcess($SqlInstance, "Creating credential for database '$cred' on $instance")) {
+            if ($currentCred) {
+                if ($force) {
+                    Write-Message -Level Verbose -Message "Dropping credential $Name"
                     try {
-                        $credential = New-Object Microsoft.SqlServer.Management.Smo.Credential -ArgumentList $server, $Name
-                        $credential.MappedClassType = $mappedClass
-                        $credential.ProviderName = $ProviderName
-                        $credential.Create($Identity, $SecurePassword)
-
-                        Add-Member -Force -InputObject $credential -MemberType NoteProperty -Name ComputerName -value $server.ComputerName
-                        Add-Member -Force -InputObject $credential -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
-                        Add-Member -Force -InputObject $credential -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
-
-                        Select-DefaultView -InputObject $credential -Property ComputerName, InstanceName, SqlInstance, Name, Identity, CreateDate, MappedClassType, ProviderName
+                        if ($Pscmdlet.ShouldProcess($SqlInstance, "Dropping credential '$Name' on $instance")) {
+                            $currentCred.Drop()
+                        }
                     } catch {
-                        Stop-Function -Message "Failed to create credential in $cred on $instance" -Target $credential -InnerErrorRecord $_ -Continue
+                        Stop-Function -Message "Error dropping credential $Name" -Target $name -Continue
                     }
+                } else {
+                    Stop-Function -Message "Credential exists and Force was not specified" -Target $Name -Continue
+                }
+            }
+
+            if ($Pscmdlet.ShouldProcess($SqlInstance, "Creating credential '$Name' on $instance")) {
+                try {
+                    $credential = New-Object Microsoft.SqlServer.Management.Smo.Credential -ArgumentList $server, $Name
+                    $credential.MappedClassType = $mappedClass
+                    $credential.ProviderName = $ProviderName
+                    if ($SecurePassword) {
+                        Write-Message -Level Verbose -Message "Creating credential with identity '$Identity' with password"
+                        $credential.Create($Identity, $SecurePassword)
+                    } else {
+                        Write-Message -Level Verbose -Message "Password was not provided, creating credential with identity '$Identity' without password"
+                        $credential.Create($Identity)
+                    }
+
+                    Add-Member -Force -InputObject $credential -MemberType NoteProperty -Name ComputerName -value $server.ComputerName
+                    Add-Member -Force -InputObject $credential -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
+                    Add-Member -Force -InputObject $credential -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
+
+                    Select-DefaultView -InputObject $credential -Property ComputerName, InstanceName, SqlInstance, Name, Identity, CreateDate, MappedClassType, ProviderName
+                } catch {
+                    Stop-Function -Message "Failed to create credential in $cred on $instance" -Target $credential -InnerErrorRecord $_ -Continue
                 }
             }
         }
