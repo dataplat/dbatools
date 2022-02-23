@@ -204,15 +204,19 @@ function Get-DbaUserPermission {
             $tempdb = $server.Databases['tempdb']
 
             if ($Database) {
-                $dbs = $dbs | Where-Object { $Database -contains $_.Name }
+                $dbs = $dbs | Where-Object { $Database -contains $_.Name -and $_.IsAccessible -eq $true }
             }
 
             if ($ExcludeDatabase) {
-                $dbs = $dbs | Where-Object Name -NotIn $ExcludeDatabase
+                $dbs = $dbs | Where-Object Name -NotIn $ExcludeDatabase -and $_.IsAccessible -eq $true
             }
 
             if ($ExcludeSystemDatabase) {
-                $dbs = $dbs | Where-Object IsSystemObject -eq $false
+                $dbs = $dbs | Where-Object IsSystemObject -eq $false -and IsAccessible -eq $true
+            }
+
+            if ($null -eq $Database) {
+                Stop-Function -Message "Failure: Database is not accessible." -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
             #reset $serverDT
