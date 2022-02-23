@@ -51,4 +51,22 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             $results.Identity | Should Be "dbatoolsci_thorsmomma"
         }
     }
+
+    Context "Create a new credential without password" {
+        It "Should create new credentials with the proper properties but without password" {
+            $credentialParams = @{
+                SqlInstance = $script:instance2
+                Name = "https://mystorageaccount.blob.core.windows.net/mycontainer"
+                Identity = 'Managed Identity'
+            }
+            $results = New-DbaCredential @credentialParams
+            $results.Name | Should Be "https://mystorageaccount.blob.core.windows.net/mycontainer"
+            $results.Identity | Should Be "Managed Identity"
+        }
+        It "Gets the newly created credential that doesn't have password" {
+            $results = Get-DbaCredential -SqlInstance $script:instance2 -Identity "Managed Identity"
+            $results.Name | Should Be "https://mystorageaccount.blob.core.windows.net/mycontainer"
+            $results.Identity | Should Be "Managed Identity"
+        }
+    }
 }

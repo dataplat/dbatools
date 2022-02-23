@@ -1,10 +1,10 @@
 function Invoke-DbaDbUpgrade {
     <#
     .SYNOPSIS
-        Take a database and upgrades it to compatibility of the SQL Instance its hosted on. Based on https://thomaslarock.com/2014/06/upgrading-to-sql-server-2014-a-dozen-things-to-check/
+        Take a database and upgrades it to compatibility of the SQL Instance its hosted on and updates the target recovery time to the new default of 60 seconds. Based on https://thomaslarock.com/2014/06/upgrading-to-sql-server-2014-a-dozen-things-to-check/
 
     .DESCRIPTION
-        Updates compatibility level, then runs CHECKDB with data_purity, DBCC updateusage, sp_updatestats and finally sp_refreshview against all user views.
+        Updates compatibility level and target recovery time, then runs CHECKDB with data_purity, DBCC updateusage, sp_updatestats and finally sp_refreshview against all user views.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.
@@ -17,7 +17,7 @@ function Invoke-DbaDbUpgrade {
         For MFA support, please use Connect-DbaInstance..
 
     .PARAMETER Database
-        The database(s) to process - this list is autopopulated from the server. If unspecified, all databases will be processed.
+        The database(s) to process - this list is autopopulated from the server. If unspecified, you have to use -ExcludeDatabase to exclude some user databases or -AllUserDatabases to process all user databases.
 
     .PARAMETER ExcludeDatabase
         The database(s) to exclude - this list is autopopulated from the server
@@ -74,6 +74,7 @@ function Invoke-DbaDbUpgrade {
 
         Runs the below processes against the databases
         -- Puts compatibility of database to level of SQL Instance
+        -- Changes the target recovery time to the new default of 60 seconds (for SQL Server 2016 and newer)
         -- Runs CHECKDB DATA_PURITY
         -- Runs DBCC UPDATESUSAGE
         -- Updates all users statistics
@@ -147,47 +148,58 @@ function Invoke-DbaDbUpgrade {
         foreach ($db in $InputObject) {
             # create objects to use in updates
             $server = $db.Parent
-            $ServerVersion = $server.VersionMajor
-            Write-Message -Level Verbose -Message "SQL Server is using Version: $ServerVersion"
+            $serverVersion = $server.VersionMajor
+            Write-Message -Level Verbose -Message "SQL Server is using Version: $serverVersion"
 
-            $ogcompat = $db.CompatibilityLevel
-            $dbName = $db.Name
-            $dbversion = switch ($db.CompatibilityLevel) {
-                "Version100" { 10 } # SQL Server 2008
-                "Version110" { 11 } # SQL Server 2012
-                "Version120" { 12 } # SQL Server 2014
-                "Version130" { 13 } # SQL Server 2016
-                "Version140" { 14 } # SQL Server 2017
-                default { 9 } # SQL Server 2005
-            }
+            $dbLevel = $db.CompatibilityLevel
+            $serverLevel = [Microsoft.SqlServer.Management.Smo.CompatibilityLevel]"Version$($serverVersion)0"
+            $levelOk = $dbLevel -eq $serverLevel
+            $timeOk = if ($serverVersion -ge 13 -and $db.TargetRecoveryTime -ne 60) { $false } else { $true }
+
             if (-not $Force) {
-                # skip over databases at the correct level, unless -Force
-                if ($dbversion -ge $ServerVersion) {
-                    Write-Message -Level VeryVerbose -Message "Skipping $db because compatibility is at the correct level. Use -Force if you want to run all the additional steps"
+                # skip over databases at the correct level and correct target recovery time, unless -Force
+                if ($levelOk -and $timeOk) {
+                    Write-Message -Level VeryVerbose -Message "Skipping $db because compatibility is at the correct level and target recovery time is correct. Use -Force if you want to run all the additional steps."
                     continue
                 }
             }
+
             Write-Message -Level Verbose -Message "Updating $db compatibility to SQL Instance level"
-            if ($dbversion -lt $ServerVersion) {
-                If ($Pscmdlet.ShouldProcess($server, "Updating $db version on $server from $dbversion to $ServerVersion")) {
-                    $Comp = $ServerVersion * 10
-                    $tsqlComp = "ALTER DATABASE $db SET COMPATIBILITY_LEVEL = $Comp"
+            if (-not $levelOk) {
+                If ($Pscmdlet.ShouldProcess($server, "Updating $db compatibility on $server from $dbLevel to $serverLevel")) {
                     try {
-                        $db.ExecuteNonQuery($tsqlComp)
-                        $comResult = $Comp
+                        $db.CompatibilityLevel = $serverLevel
+                        $db.Alter()
+                        $CompatibilityResult = $serverLevel.ToString().Replace('Version', '')
                     } catch {
                         Write-Message -Level Warning -Message "Failed run Compatibility Upgrade" -ErrorRecord $_ -Target $instance
-                        $comResult = "Fail"
+                        $CompatibilityResult = "Fail"
                     }
                 }
             } else {
-                $comResult = "No change"
+                $CompatibilityResult = "No change"
+            }
+
+            Write-Message -Level Verbose -Message "Updating $db target recovery time to 60 seconds on SQL Server 2016 or newer"
+            if (-not $timeOk) {
+                If ($Pscmdlet.ShouldProcess($server, "Updating $db target recovery time on $server from $($db.TargetRecoveryTime) seconds to 60 seconds")) {
+                    try {
+                        $db.TargetRecoveryTime = 60
+                        $db.Alter()
+                        $targetRecoveryTimeResult = 60
+                    } catch {
+                        Write-Message -Level Warning -Message "Failed to change target recovery time" -ErrorRecord $_ -Target $instance
+                        $targetRecoveryTimeResult = "Fail"
+                    }
+                }
+            } else {
+                $targetRecoveryTimeResult = "No change"
             }
 
             if (!($NoCheckDb)) {
                 Write-Message -Level Verbose -Message "Updating $db with DBCC CHECKDB DATA_PURITY"
                 If ($Pscmdlet.ShouldProcess($server, "Updating $db with DBCC CHECKDB DATA_PURITY")) {
-                    $tsqlCheckDB = "DBCC CHECKDB ('$dbName') WITH DATA_PURITY, NO_INFOMSGS"
+                    $tsqlCheckDB = "DBCC CHECKDB ('$($db.Name)') WITH DATA_PURITY, NO_INFOMSGS"
                     try {
                         $db.ExecuteNonQuery($tsqlCheckDB)
                         $DataPurityResult = "Success"
@@ -267,9 +279,10 @@ function Invoke-DbaDbUpgrade {
                     InstanceName          = $server.ServiceName
                     SqlInstance           = $server.DomainInstanceName
                     Database              = $db.name
-                    OriginalCompatibility = $ogcompat.ToString().Replace('Version', '')
+                    OriginalCompatibility = $dbLevel.ToString().Replace('Version', '')
                     CurrentCompatibility  = $db.CompatibilityLevel.ToString().Replace('Version', '')
-                    Compatibility         = $comResult
+                    Compatibility         = $CompatibilityResult
+                    TargetRecoveryTime    = $targetRecoveryTimeResult
                     DataPurity            = $DataPurityResult
                     UpdateUsage           = $UpdateUsageResult
                     UpdateStats           = $UpdateStatsResult
