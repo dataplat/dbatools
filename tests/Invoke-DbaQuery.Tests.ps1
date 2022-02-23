@@ -5,7 +5,7 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
         [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'Query', 'QueryTimeout', 'File', 'SqlObject', 'As', 'SqlParameter', 'AppendServerInstance', 'MessagesToOutput', 'InputObject', 'ReadOnly', 'EnableException', 'CommandType'
+        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'Query', 'QueryTimeout', 'File', 'SqlObject', 'As', 'SqlParameter', 'AppendServerInstance', 'MessagesToOutput', 'InputObject', 'ReadOnly', 'EnableException', 'CommandType', 'NoExec'
         $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
         It "Should only contain our specific parameters" {
             (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
@@ -284,5 +284,20 @@ END"
         $result.Count | Should -Be 2
         $result[0].somestring | Should -Be 'string1'
         (Get-Date -Date $result[1].somedate -f 'yyyy-MM-ddTHH:mm:ss') | Should -Be '2021-07-15T02:03:00'
+    }
+
+    It "support NOEXEC mode" {
+        $result = Invoke-DbaQuery -SqlInstance $script:instance2 -Database tempdb -Query "SELECT 1" -NoExec
+        $result | Should -BeNullOrEmpty
+        #for multiple batches, too
+        $q = @'
+SELECT 1
+GO
+SELECT 2
+'@
+        $result = Invoke-DbaQuery -SqlInstance $script:instance2 -Database tempdb -Query $q -NoExec
+        $result | Should -BeNullOrEmpty
+
+        { Invoke-DbaQuery -SqlInstance $script:instance2 -Database tempdb -Query "SELEC p FROM c" -NoExec -EnableException } | Should -Throw "Incorrect syntax near 'selec'"
     }
 }

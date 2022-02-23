@@ -61,6 +61,10 @@ function Invoke-DbaQuery {
         Specifies the type of command represented by the query string. Valid options for this parameter are 'Text', 'TableDirect', and 'StoredProcedure'.
         Default is 'Text'. Further information: https://docs.microsoft.com/en-us/dotnet/api/system.data.sqlclient.sqlcommand.commandtype
 
+    .PARAMETER NoExec
+        Use this switch to prepend SET NOEXEC ON and append SET NOEXEC OFF to each statement, useful for checking query formal errors
+
+
     .NOTES
         Tags: Database, Query, Utility
         Author: Friedrich Weinmann (@FredWeinmann)
@@ -176,6 +180,7 @@ function Invoke-DbaQuery {
         [parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
         [switch]$ReadOnly,
+        [switch]$NoExec,
         [switch]$EnableException
     )
 
@@ -213,7 +218,9 @@ function Invoke-DbaQuery {
         if (Test-Bound -ParameterName "Verbose") {
             $splatInvokeDbaSqlAsync["Verbose"] = $Verbose
         }
-
+        if (Test-Bound -ParameterName "NoExec") {
+            $splatInvokeDbaSqlAsync["NoExec"] = $NoExec
+        }
 
         if (Test-Bound -ParameterName "File") {
             $files = @()
@@ -349,6 +356,7 @@ function Invoke-DbaQuery {
             Stop-Function -Category InvalidArgument -Message "Please provide either SqlInstance or InputObject"
             return
         }
+
 
         foreach ($db in $InputObject) {
             if (!$db.IsAccessible) {
