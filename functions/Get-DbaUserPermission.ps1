@@ -216,7 +216,7 @@ function Get-DbaUserPermission {
             }
 
             if ($null -eq $Database) {
-                Stop-Function -Message "Failure: Database is not accessible." -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+                Stop-Function -Message "Failure: No accessible databases selected." -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
             #reset $serverDT
