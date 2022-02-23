@@ -510,6 +510,7 @@ function New-DbaAvailabilityGroup {
 
                 $replicaparams = @{
                     InputObject                   = $ag
+                    ClusterType                   = $ClusterType
                     AvailabilityMode              = $AvailabilityMode
                     FailoverMode                  = $FailoverMode
                     BackupPriority                = $BackupPriority
@@ -538,26 +539,6 @@ function New-DbaAvailabilityGroup {
                 }
                 Stop-Function -Message $msg -ErrorRecord $_ -Target $Primary
                 return
-            }
-        }
-
-        # Add cluster permissions
-        if ($ClusterType -eq 'Wsfc') {
-            Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Adding endpoint connect permissions"
-
-            if ($Pscmdlet.ShouldProcess($Primary, "Adding cluster permissions for availability group named $Name")) {
-                Write-Message -Level Verbose -Message "WSFC Cluster requires granting [NT AUTHORITY\SYSTEM] a few things. Setting now."
-                $sql = "GRANT ALTER ANY AVAILABILITY GROUP TO [NT AUTHORITY\SYSTEM]
-                    GRANT CONNECT SQL TO [NT AUTHORITY\SYSTEM]
-                    GRANT VIEW SERVER STATE TO [NT AUTHORITY\SYSTEM]"
-                try {
-                    $null = $server.Query($sql)
-                    foreach ($second in $secondaries) {
-                        $null = $second.Query($sql)
-                    }
-                } catch {
-                    Stop-Function -Message "Failure adding cluster service account permissions" -ErrorRecord $_
-                }
             }
         }
 
@@ -643,6 +624,20 @@ function New-DbaAvailabilityGroup {
         }
 
         $wait = 0
+
+        # This can not be moved to Add-DbaAgReplica, as the AG has to be existing to grant this permission
+        if ($SeedingMode -eq "Automatic") {
+            if ($Pscmdlet.ShouldProcess($second.Name, "Granting CreateAnyDatabase permission to the availability group on every replica")) {
+                try {
+                    $null = Grant-DbaAgPermission -SqlInstance $server -Type AvailabilityGroup -AvailabilityGroup $Name -Permission CreateAnyDatabase -EnableException
+                    foreach ($second in $secondaries) {
+                        $null = Grant-DbaAgPermission -SqlInstance $second -Type AvailabilityGroup -AvailabilityGroup $Name -Permission CreateAnyDatabase -EnableException
+                    }
+                } catch {
+                    Stop-Function -Message "Failure" -ErrorRecord $_
+                }
+            }
+        }
 
         # Add databases
         Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Adding databases"
