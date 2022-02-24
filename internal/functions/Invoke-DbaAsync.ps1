@@ -31,9 +31,11 @@ function Invoke-DbaAsync {
         .PARAMETER AppendServerInstance
             If this switch is enabled, the SQL Server instance will be appended to PSObject and DataRow output.
 
-
         .PARAMETER MessagesToOutput
             Use this switch to have on the output stream messages too (e.g. PRINT statements). Output will hold the resultset too. See examples for detail
+
+        .PARAMETER NoExec
+            Use this switch to prepend SET NOEXEC ON and append SET NOEXEC OFF to each statement
 
         .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -68,6 +70,9 @@ function Invoke-DbaAsync {
 
         [switch]
         $MessagesToOutput,
+
+        [switch]
+        $NoExec,
 
         [switch]$EnableException
     )
@@ -177,7 +182,11 @@ function Invoke-DbaAsync {
         # Only execute non-empty statements
         $Pieces = $Pieces | Where-Object { $_.Trim().Length -gt 0 }
         foreach ($piece in $Pieces) {
-            $cmd = New-Object Microsoft.Data.SqlClient.SqlCommand($piece, $conn)
+            $runningStatement = $piece
+            if ($NoExec) {
+                $runningStatement = "SET NOEXEC ON; " + $piece + " ;SET NOEXEC OFF;"
+            }
+            $cmd = New-Object Microsoft.Data.SqlClient.SqlCommand($runningStatement, $conn)
             $cmd.CommandType = $CommandType
             $cmd.CommandTimeout = $QueryTimeout
 
