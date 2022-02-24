@@ -1,13 +1,13 @@
 function Get-DbaDbPartitionFunction {
     <#
     .SYNOPSIS
-        Gets database Partition Functions
+        Gets database Partition Functions.
 
     .DESCRIPTION
-        Gets database Partition Functions
+        Gets database Partition Functions.
 
     .PARAMETER SqlInstance
-        The target SQL Server instance or instances
+        The target SQL Server instance or instances.
 
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
@@ -17,10 +17,13 @@ function Get-DbaDbPartitionFunction {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        To get users from specific database(s)
+        To get users from specific database(s).
 
     .PARAMETER ExcludeDatabase
-        The database(s) to exclude - this list is auto populated from the server
+        The database(s) to exclude - this list is auto populated from the server.
+
+    .PARAMETER PartitionFunction
+        The name(s) of the partition function(s).
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -28,7 +31,7 @@ function Get-DbaDbPartitionFunction {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: Database
+        Tags: Database, Partition
         Author: Klaas Vandenberghe ( @PowerDbaKlaas )
 
         Website: https://dbatools.io
@@ -41,22 +44,27 @@ function Get-DbaDbPartitionFunction {
     .EXAMPLE
         PS C:\> Get-DbaDbPartitionFunction -SqlInstance sql2016
 
-        Gets all database Partition Functions
+        Gets all database partition functions.
 
     .EXAMPLE
         PS C:\> Get-DbaDbPartitionFunction -SqlInstance Server1 -Database db1
 
-        Gets the Partition Functions for the db1 database
+        Gets the partition functions for the db1 database.
 
     .EXAMPLE
         PS C:\> Get-DbaDbPartitionFunction -SqlInstance Server1 -ExcludeDatabase db1
 
-        Gets the Partition Functions for all databases except db1
+        Gets the partition functions for all databases except db1.
 
     .EXAMPLE
         PS C:\> 'Sql1','Sql2/sqlexpress' | Get-DbaDbPartitionFunction
 
-        Gets the Partition Functions for the databases on Sql1 and Sql2/sqlexpress
+        Gets the partition functions for the databases on Sql1 and Sql2/sqlexpress.
+
+    .EXAMPLE
+        PS C:\> Get-DbaDbPartitionFunction -SqlInstance localhost -Database TestDB -PartitionFunction partFun01
+
+        Gets the partition function partFun01 for the TestDB on localhost.
 
     #>
     [CmdletBinding()]
@@ -66,6 +74,8 @@ function Get-DbaDbPartitionFunction {
         [PSCredential]$SqlCredential,
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
+        [Alias("Name")]
+        [string[]]$PartitionFunction,
         [switch]$EnableException
     )
 
@@ -92,14 +102,18 @@ function Get-DbaDbPartitionFunction {
                     continue
                 }
 
-                $partitionfunctions = $db.partitionfunctions
+                $partitionFunctions = $db.partitionfunctions
+
+                if ($PartitionFunction) {
+                    $partitionFunctions = $partitionFunctions | Where-Object { $_.Name -in $PartitionFunction }
+                }
 
                 if (!$partitionfunctions) {
                     Write-Message -Message "No Partition Functions exist in the $db database on $instance" -Target $db -Level Verbose
                     continue
                 }
 
-                $partitionfunctions | ForEach-Object {
+                $partitionFunctions | ForEach-Object {
 
                     Add-Member -Force -InputObject $_ -MemberType NoteProperty -Name ComputerName -value $server.ComputerName
                     Add-Member -Force -InputObject $_ -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
