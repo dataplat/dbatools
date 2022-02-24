@@ -200,23 +200,23 @@ function Get-DbaUserPermission {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
-            $dbs = $server.Databases
+            $dbs = $server.Databases | Where-Object { $_.IsAccessible -eq $true }
             $tempdb = $server.Databases['tempdb']
 
             if ($Database) {
-                $dbs = $dbs | Where-Object { $Database -contains $_.Name -and $_.IsAccessible -eq $true }
+                $dbs = $dbs | Where-Object { $Database -contains $_.Name }
+
+                if ($null -eq $dbs) {
+                    Write-Message -Message "Database is not available!" -Level Warning
+                }
             }
 
             if ($ExcludeDatabase) {
-                $dbs = $dbs | Where-Object Name -NotIn $ExcludeDatabase -and $_.IsAccessible -eq $true
+                $dbs = $dbs | Where-Object Name -NotIn $ExcludeDatabase
             }
 
             if ($ExcludeSystemDatabase) {
-                $dbs = $dbs | Where-Object IsSystemObject -eq $false -and IsAccessible -eq $true
-            }
-
-            if ($null -eq $Database) {
-                Stop-Function -Message "Failure: No accessible databases selected." -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+                $dbs = $dbs | Where-Object IsSystemObject -eq $false
             }
 
             #reset $serverDT
