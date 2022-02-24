@@ -184,7 +184,7 @@ function Invoke-DbaAsync {
         foreach ($piece in $Pieces) {
             $runningStatement = $piece
             if ($NoExec) {
-                $runningStatement = "SET NOEXEC ON; " + $piece + " SET NOEXEC OFF;"
+                $runningStatement = "SET NOEXEC ON; " + $piece + " ;SET NOEXEC OFF;"
             }
             $cmd = New-Object Microsoft.Data.SqlClient.SqlCommand($runningStatement, $conn)
             $cmd.CommandType = $CommandType
