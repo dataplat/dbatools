@@ -205,10 +205,6 @@ function Get-DbaUserPermission {
 
             if ($Database) {
                 $dbs = $dbs | Where-Object { $Database -contains $_.Name }
-
-                if ($null -eq $dbs) {
-                    Write-Message -Message "Database is not available!" -Level Warning
-                }
             }
 
             if ($ExcludeDatabase) {
@@ -225,7 +221,12 @@ function Get-DbaUserPermission {
             foreach ($db in $dbs) {
                 Write-Message -Level Verbose -Message "Processing $db on $instance"
 
-                $db.ExecuteNonQuery($endSQL)
+                try {
+                    $db.ExecuteNonQuery($endSQL)
+                } catch {
+                    # here to avoid empty catch
+                    $null = 1
+                } # this will fail if the database is not accessible (i.e. restoring etc.)
 
                 if ($db.IsAccessible -eq $false) {
                     Stop-Function -Message "The database $db is not accessible" -Continue
