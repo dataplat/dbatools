@@ -202,6 +202,7 @@ function Get-DbaUserPermission {
 
             $dbs = $server.Databases
             $tempdb = $server.Databases['tempdb']
+            $master = $server.Databases['master']
 
             if ($Database) {
                 $dbs = $dbs | Where-Object { $Database -contains $_.Name }
@@ -215,53 +216,80 @@ function Get-DbaUserPermission {
                 $dbs = $dbs | Where-Object IsSystemObject -eq $false
             }
 
-            #reset $serverDT
-            $serverDT = $null
+            # grab server data (just the one time):
+            Write-Message -Level Verbose -Message "Building data table for server objects"
+
+            $master.ExecuteNonQuery($endSQL)
+
+            $sqlFile = Join-Path -Path $script:PSModuleRoot -ChildPath "bin\stig.sql"
+            $sql = [System.IO.File]::ReadAllText("$sqlFile")
+            $sql = $sql.Replace("<TARGETDB>", $master.Name)
+
+            try {
+                $serverDT = $master.Query($serverSQL)
+            } catch {
+                # here to avoid an empty catch
+                $null = 1
+            }  # sometimes it complains about not being able to drop the stig schema if the person Ctrl-C'd before.
+
+            foreach ($row in $serverDT) {
+                [PSCustomObject]@{
+                    ComputerName       = $server.ComputerName
+                    InstanceName       = $server.ServiceName
+                    SqlInstance        = $server.DomainInstanceName
+                    Object             = 'SERVER'
+                    Type               = $row.Type
+                    Member             = $row.Member
+                    RoleSecurableClass = $row.'Role/Securable/Class'
+                    SchemaOwner        = $row.'Schema/Owner'
+                    Securable          = $row.Securable
+                    GranteeType        = $row.'Grantee Type'
+                    Grantee            = $row.Grantee
+                    Permission         = $row.Permission
+                    State              = $row.State
+                    Grantor            = $row.Grantor
+                    GrantorType        = $row.'Grantor Type'
+                    SourceView         = $row.'Source View'
+                }
+            }
 
             foreach ($db in $dbs) {
                 Write-Message -Level Verbose -Message "Processing $db on $instance"
 
-                try {
+                # don't attempt to execute queries on inaccessible databases:
+                if ($db.isAccessible -eq $false) {
+                    Write-Message -Level Warning -Message "Database $db on $instance is not accessible"
+                } else {
                     $db.ExecuteNonQuery($endSQL)
-                } catch {
-                    # here to avoid empty catch
-                    $null = 1
-                } # this will fail if the database is not accessible (i.e. restoring etc.)
 
-                if ($db.IsAccessible -eq $false) {
-                    Stop-Function -Message "The database $db is not accessible" -Continue
-                }
+                    $sqlFile = Join-Path -Path $script:PSModuleRoot -ChildPath "bin\stig.sql"
+                    $sql = [System.IO.File]::ReadAllText("$sqlFile")
+                    $sql = $sql.Replace("<TARGETDB>", $db.Name)
 
-                $sqlFile = Join-Path -Path $script:PSModuleRoot -ChildPath "bin\stig.sql"
-                $sql = [System.IO.File]::ReadAllText("$sqlFile")
-                $sql = $sql.Replace("<TARGETDB>", $db.Name)
-
-                #Create objects in active database
-                Write-Message -Level Verbose -Message "Creating objects"
-                try {
-                    $db.ExecuteNonQuery($sql)
-                } catch {
-                    # here to avoid an empty catch
-                    $null = 1
-                } # sometimes it complains about not being able to drop the stig schema if the person Ctrl-C'd before.
-
-                #Grab permissions data
-                if (-not $serverDT) {
-                    Write-Message -Level Verbose -Message "Building data table for server objects"
-
+                    #Create objects in active database
+                    Write-Message -Level Verbose -Message "Creating objects"
                     try {
-                        $serverDT = $db.Query($serverSQL)
+                        $db.ExecuteNonQuery($sql)
+                    } catch {
+                        # here to avoid an empty catch
+                        $null = 1
+                    } # sometimes it complains about not being able to drop the stig schema if the person Ctrl-C'd before.
+
+
+                    Write-Message -Level Verbose -Message "Building data table for $db objects"
+                    try {
+                        $dbDT = $db.Query($dbSQL)
                     } catch {
                         # here to avoid an empty catch
                         $null = 1
                     }
 
-                    foreach ($row in $serverDT) {
+                    foreach ($row in $dbDT) {
                         [PSCustomObject]@{
                             ComputerName       = $server.ComputerName
                             InstanceName       = $server.ServiceName
                             SqlInstance        = $server.DomainInstanceName
-                            Object             = 'SERVER'
+                            Object             = $db.Name
                             Type               = $row.Type
                             Member             = $row.Member
                             RoleSecurableClass = $row.'Role/Securable/Class'
@@ -277,36 +305,6 @@ function Get-DbaUserPermission {
                         }
                     }
                 }
-
-                Write-Message -Level Verbose -Message "Building data table for $db objects"
-                try {
-                    $dbDT = $db.Query($dbSQL)
-                } catch {
-                    # here to avoid an empty catch
-                    $null = 1
-                }
-
-                foreach ($row in $dbDT) {
-                    [PSCustomObject]@{
-                        ComputerName       = $server.ComputerName
-                        InstanceName       = $server.ServiceName
-                        SqlInstance        = $server.DomainInstanceName
-                        Object             = $db.Name
-                        Type               = $row.Type
-                        Member             = $row.Member
-                        RoleSecurableClass = $row.'Role/Securable/Class'
-                        SchemaOwner        = $row.'Schema/Owner'
-                        Securable          = $row.Securable
-                        GranteeType        = $row.'Grantee Type'
-                        Grantee            = $row.Grantee
-                        Permission         = $row.Permission
-                        State              = $row.State
-                        Grantor            = $row.Grantor
-                        GrantorType        = $row.'Grantor Type'
-                        SourceView         = $row.'Source View'
-                    }
-                }
-
                 #Delete objects
                 Write-Message -Level Verbose -Message "Deleting objects"
                 try {
