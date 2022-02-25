@@ -200,7 +200,7 @@ function Get-DbaUserPermission {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
-            $dbs = $server.Databases | Where-Object { $_.IsAccessible -eq $true }
+            $dbs = $server.Databases
             $tempdb = $server.Databases['tempdb']
 
             if ($Database) {
