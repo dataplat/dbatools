@@ -14,7 +14,7 @@ function Add-DbaAgDatabase {
         * Step 2: Running backup and restore if needed.
           - Action is only taken for replicas with a desired seeding mode of Manual and where the database does not yet exist.
           - If -UseLastBackup is used, the restore will be performed based on the backup history of the database.
-          - Otherwise a full and log backup will be taken at the primary and those will be restored at the replica.
+          - Otherwise a full and log backup will be taken at the primary and those will be restored at the replica using the same folder structure.
         * Step 3: Add the database to the Availability Group on the primary replica.
           - This step is skipped, if the database is already part of the Availability Group.
         * Step 4: Add the database to the Availability Group on the secondary replicas.
@@ -310,7 +310,7 @@ function Add-DbaAgDatabase {
                     if ($Pscmdlet.ShouldProcess($replicaServerSMO[$replicaName], "Restore database $($db.Name) to replica $replicaName")) {
                         try {
                             Write-Message -Level Verbose -Message "Restore database $($db.Name) to replica $replicaName."
-                            $null = $backups | Restore-DbaDatabase -SqlInstance $replicaServerSMO[$replicaName] -NoRecovery -TrustDbBackupHistory -EnableException
+                            $null = $backups | Restore-DbaDatabase -SqlInstance $replicaServerSMO[$replicaName] -NoRecovery -TrustDbBackupHistory -ReuseSourceFolderStructure -EnableException
                         } catch {
                             $failure = $true
                             Stop-Function -Message "Failed to restore database $($db.Name) to replica $replicaName." -ErrorRecord $_ -Continue
