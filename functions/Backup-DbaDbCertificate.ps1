@@ -213,6 +213,7 @@ function Backup-DbaDbCertificate {
                         InstanceName   = $server.ServiceName
                         SqlInstance    = $server.DomainInstanceName
                         Database       = $db.Name
+                        DatabaseID     = $db.ID
                         Certificate    = $certName
                         Path           = $exportPathCert
                         Key            = $exportPathKey
@@ -235,6 +236,7 @@ function Backup-DbaDbCertificate {
                         InstanceName   = $server.ServiceName
                         SqlInstance    = $server.DomainInstanceName
                         Database       = $db.Name
+                        DatabaseID     = $db.ID
                         Certificate    = $certName
                         Path           = $exportPathCert
                         Key            = $exportPathKey
