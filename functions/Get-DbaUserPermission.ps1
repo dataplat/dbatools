@@ -219,18 +219,23 @@ function Get-DbaUserPermission {
             # grab server data (just the one time):
             Write-Message -Level Verbose -Message "Building data table for server objects"
 
-            $master.ExecuteNonQuery($endSQL)
-
             $sqlFile = Join-Path -Path $script:PSModuleRoot -ChildPath "bin\stig.sql"
             $sql = [System.IO.File]::ReadAllText("$sqlFile")
             $sql = $sql.Replace("<TARGETDB>", $master.Name)
+
+            try {
+                $master.ExecuteNonQuery($sql)
+            } catch {
+                # here to avoid an empty catch
+                $null = 1
+            } # sometimes it complains about not being able to drop the stig schema if the person Ctrl-C'd before.
 
             try {
                 $serverDT = $master.Query($serverSQL)
             } catch {
                 # here to avoid an empty catch
                 $null = 1
-            }  # sometimes it complains about not being able to drop the stig schema if the person Ctrl-C'd before.
+            }
 
             foreach ($row in $serverDT) {
                 [PSCustomObject]@{
@@ -253,6 +258,16 @@ function Get-DbaUserPermission {
                 }
             }
 
+            #delete objects from running server permissions query
+            Write-Message -Level Verbose -Message "Deleting objects"
+            try {
+                $tempdb.ExecuteNonQuery($endSQL)
+            } catch {
+                # here to avoid an empty catch
+                $null = 1
+            }
+
+            # now that we have server level permissions get any database level perms
             foreach ($db in $dbs) {
                 Write-Message -Level Verbose -Message "Processing $db on $instance"
 
@@ -274,7 +289,6 @@ function Get-DbaUserPermission {
                         # here to avoid an empty catch
                         $null = 1
                     } # sometimes it complains about not being able to drop the stig schema if the person Ctrl-C'd before.
-
 
                     Write-Message -Level Verbose -Message "Building data table for $db objects"
                     try {
