@@ -293,11 +293,11 @@ function Restore-DbaDatabase {
         >>
         PS C:\> $files | Restore-DbaDatabase @params
         PS C:\> Invoke-DbaQuery -SQLInstance server\instance1 -Query "select top 1 * from Restored.dbo.steps order by dt desc"
-        PS C:\> $params.RestoredTime = (get-date "15:09:30 22/05/2017")
+        PS C:\> $params.RestoreTime = (get-date "15:09:30 22/05/2017")
         PS C:\> $params.NoRecovery = $false
         PS C:\> $params.Add("Continue",$true)
         PS C:\> $files | Restore-DbaDatabase @params
-        PS C:\> Invoke-DbaQuery -SQLInstance server\instance1 -Query "select top 1 * from restored.dbo.steps order by dt desc"
+        PS C:\> Invoke-DbaQuery -SQLInstance server\instance1 -Query "select top 1 * from Restored.dbo.steps order by dt desc"
         PS C:\> Restore-DbaDatabase -SqlInstance server\instance1 -DestinationFilePrefix prefix -DatabaseName Restored -Continue -WithReplace
 
         In this example we step through the backup files held in c:\dbatools\db1 folder.
@@ -352,7 +352,7 @@ function Restore-DbaDatabase {
     .EXAMPLE
         PS C:\> Restore-DbaDatabase -SqlInstance server1 -Path \\ServerName\ShareName\File -DatabaseName database -DatabaseName database -StopMark OvernightStart -StopBefore -StopAfterDate Get-Date('21:00 10/05/2020')
 
-        Restores the backups from \\ServerName\ShareName\File as database, stops before the first 'OvernightStop' mark that occurs after '21:00 10/05/2020'.
+        Restores the backups from \\ServerName\ShareName\File as database, stops before the first 'OvernightStart' mark that occurs after '21:00 10/05/2020'.
 
         Note that Date time needs to be specified in your local SQL Server culture
     #>
