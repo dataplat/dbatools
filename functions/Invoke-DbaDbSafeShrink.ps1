@@ -1,7 +1,7 @@
 function Invoke-DbaDbSafeShrink {
     <#
     .SYNOPSIS
-        Shrinks all data files in a database safely. Can be used to safely recover disk space after deleting large amounts of data. Only data files can be shrunk. Still not 
+        Shrinks all data files in a database safely. Can be used to safely recover disk space after deleting large amounts of data. Only data files can be shrunk. Still not
         advisable to use on a production system during production hours.
 
         - This command can double the used space size of a file group while it is shrinking it. You should have as much free space needed as the used space size of your largest file group.
@@ -19,11 +19,11 @@ function Invoke-DbaDbSafeShrink {
 
     .DESCRIPTION
         This function is written as to follow the following recommendation from Paul Randal: https://www.sqlskills.com/blogs/paul/why-you-should-not-shrink-your-data-files/
-        
+
         QUOTE:
             The method I like to recommend is as follows:
             - Create a new filegroup
-            - Move all affected tables and indexes into the new filegroup using the CREATE INDEX … WITH (DROP_EXISTING = ON) ON syntax, to move the tables and remove fragmentation from them at the same time
+            - Move all affected tables and indexes into the new filegroup using the CREATE INDEX ï¿½ WITH (DROP_EXISTING = ON) ON syntax, to move the tables and remove fragmentation from them at the same time
             - Drop the old filegroup that you were going to shrink anyway (or shrink it way down if its the primary filegroup)
 
     .PARAMETER SqlInstance
@@ -61,7 +61,7 @@ function Invoke-DbaDbSafeShrink {
     .PARAMETER MinimumFreeSpace
         Measured in bits - but no worries! PowerShell has a very cool way of formatting bits. Just specify something like: 1MB or 10GB. See the examples for more information.
 
-        If specified, the shrink will only occur if the total free space exceeds this value. 
+        If specified, the shrink will only occur if the total free space exceeds this value.
         If not specified then all databases will be shrunk regardless of how much free space is available.
 
     .PARAMETER EnableException
@@ -76,7 +76,7 @@ function Invoke-DbaDbSafeShrink {
         Website: https://dbatools.io
         Copyright: (c) 2022 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
-        
+
     .LINK
         https://dbatools.io/Invoke-DbaDbSafeShrink
 
@@ -122,7 +122,7 @@ function Invoke-DbaDbSafeShrink {
 
         #private functions
         function MoveIndexes ($server, $db, $fromFG, $toFG) {
-            Write-Message -Level Verbose -Message "DATABASE [$($db.Name)]" 
+            Write-Message -Level Verbose -Message "DATABASE [$($db.Name)]"
             foreach ($table in $db.Tables) {
                 $tableName = "[$($table.Schema)].[$($table.Name)]"
                 Write-Message -Level Verbose -Message "-TABLE: $tableName"
@@ -133,8 +133,8 @@ function Invoke-DbaDbSafeShrink {
                         # set the new filegroup, and the dropexisting property so the script will generate properly
                         $index.FileGroup = $toFG
                         $index.DropExistingIndex = $true
-                        $indexScript = $index.Script() 
-                
+                        $indexScript = $index.Script()
+
                         $server.Query($indexScript, $db.Name)
                     }
                 }
@@ -143,7 +143,7 @@ function Invoke-DbaDbSafeShrink {
 
         function PeformFileOperation($server, $db, $sql) {
             #TIM C: There might be a better way to approach this, but this works until a better way comes along
-            # A t-log backup could be occurring which would cause this script to break, so lets pause for a bit to try again, if we get that specific error 
+            # A t-log backup could be occurring which would cause this script to break, so lets pause for a bit to try again, if we get that specific error
             # https://blog.sqlauthority.com/2014/11/09/sql-server-fix-error-msg-3023-level-16-state-2-backup-file-manipulation-operations-such-as-alter-database-add-file-and-encryption-changes-on-a-database-must-be-serialized/
             $tryAgain = $false
             $tryAgainCount = 0
@@ -192,7 +192,7 @@ function Invoke-DbaDbSafeShrink {
             [int]$shrinkIncrement = $size * $percent
 
             if ($shrinkIncrement -gt 0) {
-                for($x = $size; $x -gt 1; $x -= $shrinkIncrement) {
+                for ($x = $size; $x -gt 1; $x -= $shrinkIncrement) {
                     $size = $x
                     $sql = $rawsql -f $x
                     Write-Message -Level Verbose -Message "PERFORMING: $sql"
@@ -208,23 +208,23 @@ function Invoke-DbaDbSafeShrink {
             if (!$shrinkFG) {
                 $createFGSql = "
                     ALTER DATABASE [$($db.Name)] ADD FILEGROUP $shrinkName
-    	            ALTER DATABASE [$($db.Name)]
-    	                ADD FILE (
-    		                NAME = '$shrinkName',
-    		                FILENAME = '$($baseFile.FileName)_$shrinkName.mdf',
+                    ALTER DATABASE [$($db.Name)]
+                        ADD FILE (
+                            NAME = '$shrinkName',
+                            FILENAME = '$($baseFile.FileName)_$shrinkName.mdf',
                             FILEGROWTH = $($baseFile.Growth)$($baseFile.GrowthType),
                             SIZE = $($fileSize)KB
-    	                )
-    	            TO FILEGROUP $shrinkName
+                        )
+                    TO FILEGROUP $shrinkName
                 "
 
-                Write-Message -Level Verbose -Message "CREATING FILEGROUP / FILE $shrinkName" 
+                Write-Message -Level Verbose -Message "CREATING FILEGROUP / FILE $shrinkName"
                 PeformFileOperation -server $server -db $db -sql "$createFGSql"
             }
         }
 
         function RemoveShrinkFileGroup($server, $db) {
-            Write-Message -Level Verbose -Message "REMOVING $shrinkName FG AND FILE" 
+            Write-Message -Level Verbose -Message "REMOVING $shrinkName FG AND FILE"
             $sql = "
                 ALTER DATABASE [$($db.Name)] REMOVE FILE $shrinkName
                 ALTER DATABASE [$($db.Name)] REMOVE FILEGROUP $shrinkName
@@ -294,7 +294,7 @@ function Invoke-DbaDbSafeShrink {
                             continue
                         }
 
-                        $output = @{} 
+                        $output = @{}
 
                         foreach ($file in $fileGroup.Files) {
                             [dbasize]$startingSize = $file.Size
@@ -307,24 +307,24 @@ function Invoke-DbaDbSafeShrink {
                             Write-Message -Level Verbose -Message "Initial Free space: $($spaceAvailable)"
 
                             $object = [PSCustomObject]@{
-                                ComputerName                = $server.ComputerName
-                                InstanceName                = $server.ServiceName
-                                SqlInstance                 = $server.DomainInstanceName
-                                Database                    = $db.name
-                                FileGroup                   = $fileGroup.Name
-                                File                        = $file.name
-                                Start                       = (Get-Date)
-                                End                         = $null
-                                Elapsed                     = $null
-                                Success                     = $null
-                                InitialSize                 = ($startingSize * 1024)
-                                InitialUsed                 = ($spaceUsed * 1024)
-                                InitialAvailable            = ($spaceAvailable * 1024)
-                                FinalAvailable              = $null
-                                FinalSize                   = $null
-                                PercentShrunk               = $null
+                                ComputerName     = $server.ComputerName
+                                InstanceName     = $server.ServiceName
+                                SqlInstance      = $server.DomainInstanceName
+                                Database         = $db.name
+                                FileGroup        = $fileGroup.Name
+                                File             = $file.name
+                                Start            = (Get-Date)
+                                End              = $null
+                                Elapsed          = $null
+                                Success          = $null
+                                InitialSize      = ($startingSize * 1024)
+                                InitialUsed      = ($spaceUsed * 1024)
+                                InitialAvailable = ($spaceAvailable * 1024)
+                                FinalAvailable   = $null
+                                FinalSize        = $null
+                                PercentShrunk    = $null
                             }
-                            $output.Add("$($db.Name)_$($file.Name)", $object)                            
+                            $output.Add("$($db.Name)_$($file.Name)", $object)
                         }
 
                         try {
@@ -332,17 +332,17 @@ function Invoke-DbaDbSafeShrink {
                             CreateShrinkFileGroup -server $server -db $db -baseFile $primaryFile -fileSize $sumFileSize
 
                             # move all of the indexes off to the new temporary file group an file
-                            MoveIndexes -server $server -db $db -fromFG $fileGroup.Name -toFG "$shrinkName" 
+                            MoveIndexes -server $server -db $db -fromFG $fileGroup.Name -toFG "$shrinkName"
 
                             # now shrink all of the files in the file group down to the minimum size. even though these files are now empty, shrinking them takes a long time. go figure
-                            # sadly alter file with modify file can only be specified to make the file larger. 
+                            # sadly alter file with modify file can only be specified to make the file larger.
                             # https://docs.microsoft.com/en-us/sql/t-sql/statements/alter-database-transact-sql-file-and-filegroup-options?view=sql-server-ver15#:~:text=If%20SIZE%20is%20specified%2C%20the%20new%20size%20must%20be%20larger%20than%20the%20current%20file%20size.
                             foreach ($file in $fileGroup.Files) {
                                 ShrinkFile -server $server -db $db -file $file -minimum $minFileSize
                             }
 
                             # now that we have shrunk all of the files down to the minimum size, lets move all of the indexes back
-                            MoveIndexes -server $server -db $db -fromFG "$shrinkName" -toFG $fileGroup.Name 
+                            MoveIndexes -server $server -db $db -fromFG "$shrinkName" -toFG $fileGroup.Name
 
                             # finally we need to cleanup and remove the temporary filegroup and file
                             RemoveShrinkFileGroup -server $server -db $db
@@ -352,17 +352,17 @@ function Invoke-DbaDbSafeShrink {
                             $success = $false
                             Stop-Function -message "Failure" -EnableException $EnableException -ErrorRecord $_ -Continue
                             continue
-                        } 
+                        }
 
                         #now lets loop the files after the shink has done, and get our updated stats
                         foreach ($file in $fileGroup.Files) {
                             $file.Refresh()
-                            
+
                             [dbasize]$finalFileSize = $file.Size
                             [dbasize]$finalSpaceAvailable = ($file.Size - $file.UsedSpace)
                             Write-Message -Level Verbose -Message "Final file size: $($finalFileSize)"
                             Write-Message -Level Verbose -Message "Final file space available: $($finalSpaceAvailable)"
-                            
+
                             $out = $output["$($db.Name)_$($file.Name)"]
                             $out.end = Get-Date
                             $out.Elapsed = (New-TimeSpan -Start $out.Start -End $out.End).ToString("hh\:mm\:ss")
@@ -372,7 +372,7 @@ function Invoke-DbaDbSafeShrink {
                             $out.PercentShrunk = [math]::Round((($out.InitialSize.Megabyte - $out.FinalSize.Megabyte) / $out.InitialSize.Megabyte) * 100, 2)
                         }
 
-                        $output.Values 
+                        $output.Values
                     }
                 }
             }

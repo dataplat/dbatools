@@ -60,7 +60,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         }
 
         It "Shrinks just the data file(s)" {
-            $result = Invoke-DbaDbSafeShrink $server -Database $db.Name 
+            $result = Invoke-DbaDbSafeShrink $server -Database $db.Name
             $result.Database | Should -Be $db.Name
             $result.File | Should -Be $db.Name
             $result.Success | Should -Be $true
@@ -73,7 +73,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         }
 
         It "Does not shrink the database when the MinimumFreeSpace does not exceed the current free space" {
-            $result = Invoke-DbaDbSafeShrink $server -Database $db.Name -MinimumFreeSpace 1GB 
+            $result = Invoke-DbaDbSafeShrink $server -Database $db.Name -MinimumFreeSpace 1GB
             $result.Database | Should -Be $db.Name, $db.Name
             $result.File | Should -Be "$($db.Name)_log", $db.Name
             $result.Success | Should -Be $true, $true
