@@ -176,7 +176,7 @@ function Invoke-DbaDbSafeShrink {
             if ($size -gt $minimum) {
                 do {
                     Write-Message -Level Verbose -Message "LOOPING SHRINKFILE"
-                    $size = ShrinkFileIncremental -server $server -db $db -size $size -rawSql $rawsql | Select-Object -Last 1
+                    $size = ShrinkFileIncremental -server $server -db $db -size $size -rawSql $rawsql -minimum $minimum | Select-Object -Last 1
                 } while ($size -gt $minimum)
             }
 
@@ -185,14 +185,14 @@ function Invoke-DbaDbSafeShrink {
             $server.Query($sql, $db.Name)
         }
 
-        function ShrinkFileIncremental($server, $db, [string] $rawSql, [int]$size) {
+        function ShrinkFileIncremental($server, $db, [string] $rawSql, [int]$size, $minimum) {
             # this function tries to step down the shrink using a formula to calculate the step size based upon the size of the file
             # the bigger the file, the lower the percent, the smaller, the higher. shrinking large chunks at a time is very very slow
             $percent = (0.20 - (0.00007 * ($size / 1000)))
             [int]$shrinkIncrement = $size * $percent
 
             if ($shrinkIncrement -gt 0) {
-                for ($x = $size; $x -gt 1; $x -= $shrinkIncrement) {
+                for ($x = $size; $x -gt $minimum; $x -= $shrinkIncrement) {
                     $size = $x
                     $sql = $rawsql -f $x
                     Write-Message -Level Verbose -Message "PERFORMING: $sql"
