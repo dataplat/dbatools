@@ -328,6 +328,15 @@ function Invoke-DbaDbLogShipping {
     .PARAMETER StandbyDirectory
         Directory to place the standby file(s) in
 
+    .PARAMETER TemplateDatabase 
+        This allows the user to specify a template database used to configure log shipping, must be used with TemplateSqlInstance.
+        
+    .PARAMETER TemplateCredential
+        This allows the user to specify a credential used to connect to the TemplateSqlInstance.
+        
+    .PARAMETER TemplateSqlInstance
+        This allows the user to specify a template instance to connect to, used in conjuction with TemplateDatabase and/or TemplateCredential to copy a log shipping configuration in use.
+        
     .PARAMETER UseExistingFullBackup
         If the database is not initialized on the secondary instance it can be done by selecting an existing full backup
         and restore it for you.
@@ -511,7 +520,11 @@ function Invoke-DbaDbLogShipping {
         [switch]$UseExistingFullBackup,
         [string]$UseBackupFolder,
         [switch]$Force,
-        [switch]$EnableException
+        [switch]$EnableException,
+        [DbaInstanceParameter[]]$TemplateSqlInstance,
+        [System.Management.Automation.PSCredential]
+        $TempleSqlInstanceCredential,
+        [object]$TemplateDatabase
     )
 
     begin {
@@ -539,6 +552,36 @@ function Invoke-DbaDbLogShipping {
         $RegexDate = '(?<!\d)(?:(?:(?:1[6-9]|[2-9]\d)?\d{2})(?:(?:(?:0[13578]|1[02])31)|(?:(?:0[1,3-9]|1[0-2])(?:29|30)))|(?:(?:(?:(?:1[6-9]|[2-9]\d)?(?:0[48]|[2468][048]|[13579][26])|(?:(?:16|[2468][048]|[3579][26])00)))0229)|(?:(?:1[6-9]|[2-9]\d)?\d{2})(?:(?:0?[1-9])|(?:1[0-2]))(?:0?[1-9]|1\d|2[0-8]))(?!\d)'
         $RegexTime = '^(?:(?:([01]?\d|2[0-3]))?([0-5]?\d))?([0-5]?\d)$'
         $RegexUnc = '^\\(?:\\[^<>:`"/\\|?*]+)+$'
+
+	    # Check the template server parameter
+        if ($TemplateSqlInstance -and (-not $TemplateDatabase)) {
+			Stop-Function -Message "Template database parameter TemplateDatabase must be specified when using the TemplateSqlInstance parameter" -Target $SourceSqlInstance
+			return
+		} elseif ($TemplateDatabase -and (-not $TemplateSqlInstance)) {
+			Stop-Function -Message "Template sql instance parameter TemplateSqlInstance must be specified when using the TemplateDatabase parameter" -Target $SourceSqlInstance
+			return
+		}
+		$UsingTemplate = $false
+
+        # Check for both template parameters
+		if ($TemplateSqlInstance -and ($TemplateDatabase)) {
+
+			Write-Message -Message "Using template instance $TemplateSqlInstance and template database $TemplateDatabase to setup log shipping for $SourceSqlInstance to $DestinationSqlInstance" -Level Verbose
+
+			try {
+				$templateServer = Connect-DbaInstance -SqlInstance $TemplateSqlInstance -SqlCredential $TemplateSqlCredential
+			} catch {
+            Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $SourceSqlInstance
+            return
+			}
+
+			if ($TemplateDatabase -notin $TemplateServer.Databases.Name){
+				Stop-Function -Message "Template database $TemplateDatabase  cannot be found on instance $TemplateSqlInstance" -Target $SourceSqlInstance
+            }
+
+			$UsingTemplate = $true
+
+		}
 
 
         # Check the connection timeout
@@ -593,119 +636,248 @@ function Invoke-DbaDbLogShipping {
             Write-Message -Message "Destination database status set to NO RECOVERY" -Level Verbose
         }
 
-        # Setting defaults
-        if (-not $BackupRetention) {
-            $BackupRetention = 4320
-            Write-Message -Message "Backup retention set to $BackupRetention" -Level Verbose
-        }
-        if (-not $BackupThreshold) {
-            $BackupThreshold = 60
-            Write-Message -Message "Backup Threshold set to $BackupThreshold" -Level Verbose
-        }
-        if (-not $CopyRetention) {
-            $CopyRetention = 4320
-            Write-Message -Message "Copy retention set to $CopyRetention" -Level Verbose
-        }
-        if (-not $HistoryRetention) {
-            $HistoryRetention = 14420
-            Write-Message -Message "History retention set to $HistoryRetention" -Level Verbose
-        }
-        if (-not $RestoreAlertThreshold) {
-            $RestoreAlertThreshold = 45
-            Write-Message -Message "Restore alert Threshold set to $RestoreAlertThreshold" -Level Verbose
-        }
-        if (-not $RestoreDelay) {
-            $RestoreDelay = 0
-            Write-Message -Message "Restore delay set to $RestoreDelay" -Level Verbose
-        }
-        if (-not $RestoreRetention) {
-            $RestoreRetention = 4320
-            Write-Message -Message "Restore retention set to $RestoreRetention" -Level Verbose
-        }
-        if (-not $RestoreThreshold) {
-            $RestoreThreshold = 45
-            Write-Message -Message "Restore Threshold set to $RestoreThreshold" -Level Verbose
-        }
-        if (-not $PrimaryMonitorServerSecurityMode) {
-            $PrimaryMonitorServerSecurityMode = 1
-            Write-Message -Message "Primary monitor server security mode set to $PrimaryMonitorServerSecurityMode" -Level Verbose
-        }
-        if (-not $SecondaryMonitorServerSecurityMode) {
-            $SecondaryMonitorServerSecurityMode = 1
-            Write-Message -Message "Secondary monitor server security mode set to $SecondaryMonitorServerSecurityMode" -Level Verbose
-        }
-        if (-not $BackupScheduleFrequencyType) {
-            $BackupScheduleFrequencyType = "Daily"
-            Write-Message -Message "Backup frequency type set to $BackupScheduleFrequencyType" -Level Verbose
-        }
-        if (-not $BackupScheduleFrequencyInterval) {
-            $BackupScheduleFrequencyInterval = "EveryDay"
-            Write-Message -Message "Backup frequency interval set to $BackupScheduleFrequencyInterval" -Level Verbose
-        }
-        if (-not $BackupScheduleFrequencySubdayType) {
-            $BackupScheduleFrequencySubdayType = "Minutes"
-            Write-Message -Message "Backup frequency subday type set to $BackupScheduleFrequencySubdayType" -Level Verbose
-        }
-        if (-not $BackupScheduleFrequencySubdayInterval) {
-            $BackupScheduleFrequencySubdayInterval = 15
-            Write-Message -Message "Backup frequency subday interval set to $BackupScheduleFrequencySubdayInterval" -Level Verbose
-        }
-        if (-not $BackupScheduleFrequencyRelativeInterval) {
-            $BackupScheduleFrequencyRelativeInterval = "Unused"
-            Write-Message -Message "Backup frequency relative interval set to $BackupScheduleFrequencyRelativeInterval" -Level Verbose
-        }
-        if (-not $BackupScheduleFrequencyRecurrenceFactor) {
-            $BackupScheduleFrequencyRecurrenceFactor = 0
-            Write-Message -Message "Backup frequency recurrence factor set to $BackupScheduleFrequencyRecurrenceFactor" -Level Verbose
-        }
-        if (-not $CopyScheduleFrequencyType) {
-            $CopyScheduleFrequencyType = "Daily"
-            Write-Message -Message "Copy frequency type set to $CopyScheduleFrequencyType" -Level Verbose
-        }
-        if (-not $CopyScheduleFrequencyInterval) {
-            $CopyScheduleFrequencyInterval = "EveryDay"
-            Write-Message -Message "Copy frequency interval set to $CopyScheduleFrequencyInterval" -Level Verbose
-        }
-        if (-not $CopyScheduleFrequencySubdayType) {
-            $CopyScheduleFrequencySubdayType = "Minutes"
-            Write-Message -Message "Copy frequency subday type set to $CopyScheduleFrequencySubdayType" -Level Verbose
-        }
-        if (-not $CopyScheduleFrequencySubdayInterval) {
-            $CopyScheduleFrequencySubdayInterval = 15
-            Write-Message -Message "Copy frequency subday interval set to $CopyScheduleFrequencySubdayInterval" -Level Verbose
-        }
-        if (-not $CopyScheduleFrequencyRelativeInterval) {
-            $CopyScheduleFrequencyRelativeInterval = "Unused"
-            Write-Message -Message "Copy frequency relative interval set to $CopyScheduleFrequencyRelativeInterval" -Level Verbose
-        }
-        if (-not $CopyScheduleFrequencyRecurrenceFactor) {
-            $CopyScheduleFrequencyRecurrenceFactor = 0
-            Write-Message -Message "Copy frequency recurrence factor set to $CopyScheduleFrequencyRecurrenceFactor" -Level Verbose
-        }
-        if (-not $RestoreScheduleFrequencyType) {
-            $RestoreScheduleFrequencyType = "Daily"
-            Write-Message -Message "Restore frequency type set to $RestoreScheduleFrequencyType" -Level Verbose
-        }
-        if (-not $RestoreScheduleFrequencyInterval) {
-            $RestoreScheduleFrequencyInterval = "EveryDay"
-            Write-Message -Message "Restore frequency interval set to $RestoreScheduleFrequencyInterval" -Level Verbose
-        }
-        if (-not $RestoreScheduleFrequencySubdayType) {
-            $RestoreScheduleFrequencySubdayType = "Minutes"
-            Write-Message -Message "Restore frequency subday type set to $RestoreScheduleFrequencySubdayType" -Level Verbose
-        }
-        if (-not $RestoreScheduleFrequencySubdayInterval) {
-            $RestoreScheduleFrequencySubdayInterval = 15
-            Write-Message -Message "Restore frequency subday interval set to $RestoreScheduleFrequencySubdayInterval" -Level Verbose
-        }
-        if (-not $RestoreScheduleFrequencyRelativeInterval) {
-            $RestoreScheduleFrequencyRelativeInterval = "Unused"
-            Write-Message -Message "Restore frequency relative interval set to $RestoreScheduleFrequencyRelativeInterval" -Level Verbose
-        }
-        if (-not $RestoreScheduleFrequencyRecurrenceFactor) {
-            $RestoreScheduleFrequencyRecurrenceFactor = 0
-            Write-Message -Message "Restore frequency recurrence factor set to $RestoreScheduleFrequencyRecurrenceFactor" -Level Verbose
-        }
+        
+        # If using template query template database info
+		if ($UsingTemplate) {
+			# Getting template information
+
+			$templateLSInfo = Invoke-DbaQuery -SqlInstance $TemplateServer -Database master -Query 'sp_help_log_shipping_primary_database @database = @db' -SqlParameters @{ Db = $TemplateDatabase }
+
+			if ($templateLSInfo -eq '-1') {
+				Stop-Function -Message "Selected template database contains no log shipping information" -Target $SourceSqlInstance
+			}
+			Write-output $templateLSInfo
+
+
+			# Setting template values
+			if (-not $BackupRetention) {
+				$BackupRetention = 4320
+				Write-Message -Message "Backup retention set to $BackupRetention" -Level Verbose
+			}
+			if (-not $BackupThreshold) {
+				$BackupThreshold = 60
+				Write-Message -Message "Backup Threshold set to $BackupThreshold" -Level Verbose
+			}
+			if (-not $CopyRetention) {
+				$CopyRetention = 4320
+				Write-Message -Message "Copy retention set to $CopyRetention" -Level Verbose
+			}
+			if (-not $HistoryRetention) {
+				$HistoryRetention = 14420
+				Write-Message -Message "History retention set to $HistoryRetention" -Level Verbose
+			}
+			if (-not $RestoreAlertThreshold) {
+				$RestoreAlertThreshold = 45
+				Write-Message -Message "Restore alert Threshold set to $RestoreAlertThreshold" -Level Verbose
+			}
+			if (-not $RestoreDelay) {
+				$RestoreDelay = 0
+				Write-Message -Message "Restore delay set to $RestoreDelay" -Level Verbose
+			}
+			if (-not $RestoreRetention) {
+				$RestoreRetention = 4320
+				Write-Message -Message "Restore retention set to $RestoreRetention" -Level Verbose
+			}
+			if (-not $RestoreThreshold) {
+				$RestoreThreshold = 0
+				Write-Message -Message "Restore Threshold set to $RestoreThreshold" -Level Verbose
+			}
+			if (-not $PrimaryMonitorServerSecurityMode) {
+				$PrimaryMonitorServerSecurityMode = 1
+				Write-Message -Message "Primary monitor server security mode set to $PrimaryMonitorServerSecurityMode" -Level Verbose
+			}
+			if (-not $SecondaryMonitorServerSecurityMode) {
+				$SecondaryMonitorServerSecurityMode = 1
+				Write-Message -Message "Secondary monitor server security mode set to $SecondaryMonitorServerSecurityMode" -Level Verbose
+			}
+			if (-not $BackupScheduleFrequencyType) {
+				$BackupScheduleFrequencyType = "Daily"
+				Write-Message -Message "Backup frequency type set to $BackupScheduleFrequencyType" -Level Verbose
+			}
+			if (-not $BackupScheduleFrequencyInterval) {
+				$BackupScheduleFrequencyInterval = "EveryDay"
+				Write-Message -Message "Backup frequency interval set to $BackupScheduleFrequencyInterval" -Level Verbose
+			}
+			if (-not $BackupScheduleFrequencySubdayType) {
+				$BackupScheduleFrequencySubdayType = "Minutes"
+				Write-Message -Message "Backup frequency subday type set to $BackupScheduleFrequencySubdayType" -Level Verbose
+			}
+			if (-not $BackupScheduleFrequencySubdayInterval) {
+				$BackupScheduleFrequencySubdayInterval = 15
+				Write-Message -Message "Backup frequency subday interval set to $BackupScheduleFrequencySubdayInterval" -Level Verbose
+			}
+			if (-not $BackupScheduleFrequencyRelativeInterval) {
+				$BackupScheduleFrequencyRelativeInterval = "Unused"
+				Write-Message -Message "Backup frequency relative interval set to $BackupScheduleFrequencyRelativeInterval" -Level Verbose
+			}
+			if (-not $BackupScheduleFrequencyRecurrenceFactor) {
+				$BackupScheduleFrequencyRecurrenceFactor = 0
+				Write-Message -Message "Backup frequency recurrence factor set to $BackupScheduleFrequencyRecurrenceFactor" -Level Verbose
+			}
+			if (-not $CopyScheduleFrequencyType) {
+				$CopyScheduleFrequencyType = "Daily"
+				Write-Message -Message "Copy frequency type set to $CopyScheduleFrequencyType" -Level Verbose
+			}
+			if (-not $CopyScheduleFrequencyInterval) {
+				$CopyScheduleFrequencyInterval = "EveryDay"
+				Write-Message -Message "Copy frequency interval set to $CopyScheduleFrequencyInterval" -Level Verbose
+			}
+			if (-not $CopyScheduleFrequencySubdayType) {
+				$CopyScheduleFrequencySubdayType = "Minutes"
+				Write-Message -Message "Copy frequency subday type set to $CopyScheduleFrequencySubdayType" -Level Verbose
+			}
+			if (-not $CopyScheduleFrequencySubdayInterval) {
+				$CopyScheduleFrequencySubdayInterval = 15
+				Write-Message -Message "Copy frequency subday interval set to $CopyScheduleFrequencySubdayInterval" -Level Verbose
+			}
+			if (-not $CopyScheduleFrequencyRelativeInterval) {
+				$CopyScheduleFrequencyRelativeInterval = "Unused"
+				Write-Message -Message "Copy frequency relative interval set to $CopyScheduleFrequencyRelativeInterval" -Level Verbose
+			}
+			if (-not $CopyScheduleFrequencyRecurrenceFactor) {
+				$CopyScheduleFrequencyRecurrenceFactor = 0
+				Write-Message -Message "Copy frequency recurrence factor set to $CopyScheduleFrequencyRecurrenceFactor" -Level Verbose
+			}
+			if (-not $RestoreScheduleFrequencyType) {
+				$RestoreScheduleFrequencyType = "Daily"
+				Write-Message -Message "Restore frequency type set to $RestoreScheduleFrequencyType" -Level Verbose
+			}
+			if (-not $RestoreScheduleFrequencyInterval) {
+				$RestoreScheduleFrequencyInterval = "EveryDay"
+				Write-Message -Message "Restore frequency interval set to $RestoreScheduleFrequencyInterval" -Level Verbose
+			}
+			if (-not $RestoreScheduleFrequencySubdayType) {
+				$RestoreScheduleFrequencySubdayType = "Minutes"
+				Write-Message -Message "Restore frequency subday type set to $RestoreScheduleFrequencySubdayType" -Level Verbose
+			}
+			if (-not $RestoreScheduleFrequencySubdayInterval) {
+				$RestoreScheduleFrequencySubdayInterval = 15
+				Write-Message -Message "Restore frequency subday interval set to $RestoreScheduleFrequencySubdayInterval" -Level Verbose
+			}
+			if (-not $RestoreScheduleFrequencyRelativeInterval) {
+				$RestoreScheduleFrequencyRelativeInterval = "Unused"
+				Write-Message -Message "Restore frequency relative interval set to $RestoreScheduleFrequencyRelativeInterval" -Level Verbose
+			}
+			if (-not $RestoreScheduleFrequencyRecurrenceFactor) {
+				$RestoreScheduleFrequencyRecurrenceFactor = 0
+				Write-Message -Message "Restore frequency recurrence factor set to $RestoreScheduleFrequencyRecurrenceFactor" -Level Verbose
+			}
+		}
+		else {
+			# Setting defaults
+			if (-not $BackupRetention) {
+				$BackupRetention = 4320
+				Write-Message -Message "Backup retention set to $BackupRetention" -Level Verbose
+			}
+			if (-not $BackupThreshold) {
+				$BackupThreshold = 60
+				Write-Message -Message "Backup Threshold set to $BackupThreshold" -Level Verbose
+			}
+			if (-not $CopyRetention) {
+				$CopyRetention = 4320
+				Write-Message -Message "Copy retention set to $CopyRetention" -Level Verbose
+			}
+			if (-not $HistoryRetention) {
+				$HistoryRetention = 14420
+				Write-Message -Message "History retention set to $HistoryRetention" -Level Verbose
+			}
+			if (-not $RestoreAlertThreshold) {
+				$RestoreAlertThreshold = 45
+				Write-Message -Message "Restore alert Threshold set to $RestoreAlertThreshold" -Level Verbose
+			}
+			if (-not $RestoreDelay) {
+				$RestoreDelay = 0
+				Write-Message -Message "Restore delay set to $RestoreDelay" -Level Verbose
+			}
+			if (-not $RestoreRetention) {
+				$RestoreRetention = 4320
+				Write-Message -Message "Restore retention set to $RestoreRetention" -Level Verbose
+			}
+			if (-not $RestoreThreshold) {
+				$RestoreThreshold = 0
+				Write-Message -Message "Restore Threshold set to $RestoreThreshold" -Level Verbose
+			}
+			if (-not $PrimaryMonitorServerSecurityMode) {
+				$PrimaryMonitorServerSecurityMode = 1
+				Write-Message -Message "Primary monitor server security mode set to $PrimaryMonitorServerSecurityMode" -Level Verbose
+			}
+			if (-not $SecondaryMonitorServerSecurityMode) {
+				$SecondaryMonitorServerSecurityMode = 1
+				Write-Message -Message "Secondary monitor server security mode set to $SecondaryMonitorServerSecurityMode" -Level Verbose
+			}
+			if (-not $BackupScheduleFrequencyType) {
+				$BackupScheduleFrequencyType = "Daily"
+				Write-Message -Message "Backup frequency type set to $BackupScheduleFrequencyType" -Level Verbose
+			}
+			if (-not $BackupScheduleFrequencyInterval) {
+				$BackupScheduleFrequencyInterval = "EveryDay"
+				Write-Message -Message "Backup frequency interval set to $BackupScheduleFrequencyInterval" -Level Verbose
+			}
+			if (-not $BackupScheduleFrequencySubdayType) {
+				$BackupScheduleFrequencySubdayType = "Minutes"
+				Write-Message -Message "Backup frequency subday type set to $BackupScheduleFrequencySubdayType" -Level Verbose
+			}
+			if (-not $BackupScheduleFrequencySubdayInterval) {
+				$BackupScheduleFrequencySubdayInterval = 15
+				Write-Message -Message "Backup frequency subday interval set to $BackupScheduleFrequencySubdayInterval" -Level Verbose
+			}
+			if (-not $BackupScheduleFrequencyRelativeInterval) {
+				$BackupScheduleFrequencyRelativeInterval = "Unused"
+				Write-Message -Message "Backup frequency relative interval set to $BackupScheduleFrequencyRelativeInterval" -Level Verbose
+			}
+			if (-not $BackupScheduleFrequencyRecurrenceFactor) {
+				$BackupScheduleFrequencyRecurrenceFactor = 0
+				Write-Message -Message "Backup frequency recurrence factor set to $BackupScheduleFrequencyRecurrenceFactor" -Level Verbose
+			}
+			if (-not $CopyScheduleFrequencyType) {
+				$CopyScheduleFrequencyType = "Daily"
+				Write-Message -Message "Copy frequency type set to $CopyScheduleFrequencyType" -Level Verbose
+			}
+			if (-not $CopyScheduleFrequencyInterval) {
+				$CopyScheduleFrequencyInterval = "EveryDay"
+				Write-Message -Message "Copy frequency interval set to $CopyScheduleFrequencyInterval" -Level Verbose
+			}
+			if (-not $CopyScheduleFrequencySubdayType) {
+				$CopyScheduleFrequencySubdayType = "Minutes"
+				Write-Message -Message "Copy frequency subday type set to $CopyScheduleFrequencySubdayType" -Level Verbose
+			}
+			if (-not $CopyScheduleFrequencySubdayInterval) {
+				$CopyScheduleFrequencySubdayInterval = 15
+				Write-Message -Message "Copy frequency subday interval set to $CopyScheduleFrequencySubdayInterval" -Level Verbose
+			}
+			if (-not $CopyScheduleFrequencyRelativeInterval) {
+				$CopyScheduleFrequencyRelativeInterval = "Unused"
+				Write-Message -Message "Copy frequency relative interval set to $CopyScheduleFrequencyRelativeInterval" -Level Verbose
+			}
+			if (-not $CopyScheduleFrequencyRecurrenceFactor) {
+				$CopyScheduleFrequencyRecurrenceFactor = 0
+				Write-Message -Message "Copy frequency recurrence factor set to $CopyScheduleFrequencyRecurrenceFactor" -Level Verbose
+			}
+			if (-not $RestoreScheduleFrequencyType) {
+				$RestoreScheduleFrequencyType = "Daily"
+				Write-Message -Message "Restore frequency type set to $RestoreScheduleFrequencyType" -Level Verbose
+			}
+			if (-not $RestoreScheduleFrequencyInterval) {
+				$RestoreScheduleFrequencyInterval = "EveryDay"
+				Write-Message -Message "Restore frequency interval set to $RestoreScheduleFrequencyInterval" -Level Verbose
+			}
+			if (-not $RestoreScheduleFrequencySubdayType) {
+				$RestoreScheduleFrequencySubdayType = "Minutes"
+				Write-Message -Message "Restore frequency subday type set to $RestoreScheduleFrequencySubdayType" -Level Verbose
+			}
+			if (-not $RestoreScheduleFrequencySubdayInterval) {
+				$RestoreScheduleFrequencySubdayInterval = 15
+				Write-Message -Message "Restore frequency subday interval set to $RestoreScheduleFrequencySubdayInterval" -Level Verbose
+			}
+			if (-not $RestoreScheduleFrequencyRelativeInterval) {
+				$RestoreScheduleFrequencyRelativeInterval = "Unused"
+				Write-Message -Message "Restore frequency relative interval set to $RestoreScheduleFrequencyRelativeInterval" -Level Verbose
+			}
+			if (-not $RestoreScheduleFrequencyRecurrenceFactor) {
+				$RestoreScheduleFrequencyRecurrenceFactor = 0
+				Write-Message -Message "Restore frequency recurrence factor set to $RestoreScheduleFrequencyRecurrenceFactor" -Level Verbose
+			}
+		}
 
         # Checking for contradicting variables
         if ($NoInitialization -and ($GenerateFullBackup -or $UseExistingFullBackup)) {
