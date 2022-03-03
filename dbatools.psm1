@@ -479,6 +479,7 @@ $script:xplat = @(
     'Get-DbaDbTable',
     'Remove-DbaDbTable',
     'Invoke-DbaDbShrink',
+    'Invoke-DbaDbSafeShrink',
     'Get-DbaEstimatedCompletionTime',
     'Get-DbaLinkedServer',
     'New-DbaAgentJob',

@@ -21,7 +21,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         }
         BeforeEach {
             # Create Database with small size and grow it
-            $db = New-Object Microsoft.SqlServer.Management.SMO.Database($server, "dbatoolsci_shrinktest")
+            $db = New-Object Microsoft.SqlServer.Management.SMO.Database($server, "dbatoolsci_safeshrinktest")
 
             $primaryFileGroup = New-Object Microsoft.SqlServer.Management.Smo.Filegroup($db, "PRIMARY")
             $db.FileGroups.Add($primaryFileGroup)
