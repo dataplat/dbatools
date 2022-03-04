@@ -121,7 +121,7 @@ function Invoke-DbaDbSafeShrink {
         $StatementTimeoutSeconds = $StatementTimeout * 60
 
         #private functions
-        function MoveIndexes ($server, $db, $fromFG, $toFG) {
+        function Move-Indexes ($server, $db, $fromFG, $toFG) {
             Write-Message -Level Verbose -Message "DATABASE [$($db.Name)]"
             foreach ($table in $db.Tables) {
                 $tableName = "[$($table.Schema)].[$($table.Name)]"
@@ -141,7 +141,7 @@ function Invoke-DbaDbSafeShrink {
             }
         }
 
-        function PeformFileOperation($server, $db, $sql) {
+        function Invoke-FileOperation($server, $db, $sql) {
             #TIM C: There might be a better way to approach this, but this works until a better way comes along
             # A t-log backup could be occurring which would cause this script to break, so lets pause for a bit to try again, if we get that specific error
             # https://blog.sqlauthority.com/2014/11/09/sql-server-fix-error-msg-3023-level-16-state-2-backup-file-manipulation-operations-such-as-alter-database-add-file-and-encryption-changes-on-a-database-must-be-serialized/
@@ -168,7 +168,7 @@ function Invoke-DbaDbSafeShrink {
             } while ($tryAgain)
         }
 
-        function ShrinkFile($server, $db, $file, $minimum) {
+        function Invoke-ShrinkFile($server, $db, $file, $minimum) {
             $fileName = $file.Name
             [int]$size = $file.Size / 1000 #size is in KB, convert to MB for the shrink statement
             [int]$minimum = [Math]::Max(5, $minimum / 1000)
@@ -176,7 +176,7 @@ function Invoke-DbaDbSafeShrink {
             $rawsql = "DBCC SHRINKFILE($fileName, {0}) WITH NO_INFOMSGS;"
             if ($size -gt $minimum) {
                 Write-Message -Level Verbose -Message "LOOPING SHRINKFILE"
-                $size = ShrinkFileIncremental -server $server -db $db -size $size -rawSql $rawsql -minimum $minimum | Select-Object -Last 1
+                $size = Invoke-ShrinkFileIncremental -server $server -db $db -size $size -rawSql $rawsql -minimum $minimum | Select-Object -Last 1
             }
 
             $sql = $rawsql -f $minimum
@@ -184,7 +184,7 @@ function Invoke-DbaDbSafeShrink {
             $server.Query($sql, $db.Name)
         }
 
-        function ShrinkFileIncremental($server, $db, [string] $rawSql, [int]$size, $minimum) {
+        function Invoke-ShrinkFileIncremental($server, $db, [string] $rawSql, [int]$size, $minimum) {
             # this function tries to step down the shrink using a formula to calculate the step size based upon the size of the file
             # the bigger the file, the lower the percent, the smaller, the higher. shrinking large chunks at a time is very very slow
             $percent = (0.20 - (0.00007 * ($size / 1000)))
@@ -201,7 +201,7 @@ function Invoke-DbaDbSafeShrink {
             return $size
         }
 
-        function CreateShrinkFileGroup($server, $db, $baseFile, $fileSize) {
+        function New-ShrinkFileGroup($server, $db, $baseFile, $fileSize) {
             $shrinkFG = $db.FileGroups | Where-Object { $_.Name -ieq "$shrinkName" } | Select-Object -First 1
 
             # Each file size must be greater than or equal to 512 KB. so use math max to enforce that the size is at least 512
@@ -219,17 +219,17 @@ function Invoke-DbaDbSafeShrink {
                 "
 
                 Write-Message -Level Verbose -Message "CREATING FILEGROUP / FILE $shrinkName"
-                PeformFileOperation -server $server -db $db -sql "$createFGSql"
+                Invoke-FileOperation -server $server -db $db -sql "$createFGSql"
             }
         }
 
-        function RemoveShrinkFileGroup($server, $db) {
+        function Remove-ShrinkFileGroup($server, $db) {
             Write-Message -Level Verbose -Message "REMOVING $shrinkName FG AND FILE"
             $sql = "
                 ALTER DATABASE [$($db.Name)] REMOVE FILE $shrinkName
                 ALTER DATABASE [$($db.Name)] REMOVE FILEGROUP $shrinkName
             "
-            PeformFileOperation -server $server -db $db -sql "$sql"
+            Invoke-FileOperation -server $server -db $db -sql "$sql"
         }
     }
 
@@ -329,23 +329,23 @@ function Invoke-DbaDbSafeShrink {
 
                         try {
                             # create a new temporary file group based off the current primary file, and all used size
-                            CreateShrinkFileGroup -server $server -db $db -baseFile $primaryFile -fileSize $sumFileSize
+                            New-ShrinkFileGroup -server $server -db $db -baseFile $primaryFile -fileSize $sumFileSize
 
                             # move all of the indexes off to the new temporary file group an file
-                            MoveIndexes -server $server -db $db -fromFG $fileGroup.Name -toFG "$shrinkName"
+                            Move-Indexes -server $server -db $db -fromFG $fileGroup.Name -toFG "$shrinkName"
 
                             # now shrink all of the files in the file group down to the minimum size. even though these files are now empty, shrinking them takes a long time. go figure
                             # sadly alter file with modify file can only be specified to make the file larger.
                             # https://docs.microsoft.com/en-us/sql/t-sql/statements/alter-database-transact-sql-file-and-filegroup-options?view=sql-server-ver15#:~:text=If%20SIZE%20is%20specified%2C%20the%20new%20size%20must%20be%20larger%20than%20the%20current%20file%20size.
                             foreach ($file in $fileGroup.Files) {
-                                ShrinkFile -server $server -db $db -file $file -minimum $minFileSize
+                                Invoke-ShrinkFile -server $server -db $db -file $file -minimum $minFileSize
                             }
 
                             # now that we have shrunk all of the files down to the minimum size, lets move all of the indexes back
-                            MoveIndexes -server $server -db $db -fromFG "$shrinkName" -toFG $fileGroup.Name
+                            Move-Indexes -server $server -db $db -fromFG "$shrinkName" -toFG $fileGroup.Name
 
                             # finally we need to cleanup and remove the temporary filegroup and file
-                            RemoveShrinkFileGroup -server $server -db $db
+                            Remove-ShrinkFileGroup -server $server -db $db
 
                             $success = $true
                         } catch {
