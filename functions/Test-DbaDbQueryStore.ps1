@@ -120,7 +120,7 @@ function Test-DbaDbQueryStore {
                 }
                 'Microsoft.SqlServer.Management.Smo.Database' {
                     Write-Message -Level Verbose -Message "Processing Database through InputObject"
-                    $dbDatabases = $input | Where-Object { -not $_.IsSystemObject }
+                    $dbDatabases = $input | Where-Object { -not $ExcludeDatabase }
                 }
                 default {
                     Stop-Function -Message "InputObject is not a server or database."
