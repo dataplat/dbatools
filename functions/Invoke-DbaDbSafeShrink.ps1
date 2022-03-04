@@ -294,7 +294,7 @@ function Invoke-DbaDbSafeShrink {
                             continue
                         }
 
-                        $output = @{}
+                        $output = @{ }
 
                         foreach ($file in $fileGroup.Files) {
                             [dbasize]$startingSize = $file.Size

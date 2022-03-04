@@ -11,7 +11,7 @@ Describe "$global:CommandName Unit Tests" -Tag 'UnitTests' {
 
             $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
             $ref = ($knownParameters | Where-Object { $_ })
-            $compare = (Compare-Object -ReferenceObject $ref -DifferenceObject $params).Count 
+            $compare = (Compare-Object -ReferenceObject $ref -DifferenceObject $params).Count
             $compare | Should -Be 0
         }
     }
@@ -48,18 +48,18 @@ Describe "$global:CommandName Integration Tests" -Tags "IntegrationTests" {
             # create a table as the shrink only works when there is a table
             $server.Query("
                 IF OBJECT_ID('dbo.foo', 'U') IS NULL BEGIN
-	                CREATE TABLE dbo.foo (
-		                [id] INT NOT NULL IDENTITY,
-		                [data] sysname NOT NULL,
-		                CONSTRAINT [PK_foo_id] PRIMARY KEY CLUSTERED (id),
-	                ) ON [PRIMARY];
+                    CREATE TABLE dbo.foo (
+                        [id] INT NOT NULL IDENTITY,
+                        [data] sysname NOT NULL,
+                        CONSTRAINT [PK_foo_id] PRIMARY KEY CLUSTERED (id),
+                    ) ON [PRIMARY];
                 END", $db.Name)
-                
+
             $server.Query("
                 INSERT INTO dbo.[foo] (
                     [data]
                 )
-                SELECT name 
+                SELECT name
                 FROM master.dbo.[spt_values] AS [sv]
                 WHERE [sv].[name] IS NOT NULL", $db.Name)
 
