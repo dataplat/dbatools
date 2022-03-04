@@ -228,7 +228,7 @@ function Test-DbaDbQueryStore {
                 }
                 try {
                     foreach ($tf in $queryStoreTF) {
-                        if (($server.MajorVersion -gt 15 -and $tf.TraceFlag -eq 7752) -or $tf.TraceFlag -eq 7745) {
+                        if (($server.MajorVersion -lt 15 -and $tf.TraceFlag -eq 7752) -or $tf.TraceFlag -eq 7745) {
                             $tfEnabled = Get-DbaTraceFlag -SqlInstance $server -TraceFlag $tf.TraceFlag
                             [PSCustomObject]@{
                                 ComputerName     = $server.ComputerName
