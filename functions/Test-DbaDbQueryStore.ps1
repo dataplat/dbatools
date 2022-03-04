@@ -89,6 +89,11 @@ function Test-DbaDbQueryStore {
         [object[]]$InputObject,
         [switch]$EnableException
     )
+
+    begin {
+        $ExcludeDatabase += "master", "model", "tempdb"
+    }
+
     process {
         if (Test-FunctionInterrupt) { return }
 
@@ -107,11 +112,11 @@ function Test-DbaDbQueryStore {
             switch ($inputType) {
                 'Sqlcollaborative.Dbatools.Parameter.DbaInstanceParameter' {
                     Write-Message -Level Verbose -Message "Processing DbaInstanceParameter through InputObject"
-                    $dbDatabases = Get-DbaDatabase -SqlInstance $input -SqlCredential $SqlCredential -Database $Database -ExcludeDatabase $ExcludeDatabase -ExcludeSystem -OnlyAccessible
+                    $dbDatabases = Get-DbaDatabase -SqlInstance $input -SqlCredential $SqlCredential -Database $Database -ExcludeDatabase $ExcludeDatabase -OnlyAccessible
                 }
                 'Microsoft.SqlServer.Management.Smo.Server' {
                     Write-Message -Level Verbose -Message "Processing Server through InputObject"
-                    $dbDatabases = Get-DbaDatabase -SqlInstance $input -SqlCredential $SqlCredential -Database $Database -ExcludeDatabase $ExcludeDatabase -ExcludeSystem -OnlyAccessible
+                    $dbDatabases = Get-DbaDatabase -SqlInstance $input -SqlCredential $SqlCredential -Database $Database -ExcludeDatabase $ExcludeDatabase -OnlyAccessible
                 }
                 'Microsoft.SqlServer.Management.Smo.Database' {
                     Write-Message -Level Verbose -Message "Processing Database through InputObject"
@@ -127,6 +132,10 @@ function Test-DbaDbQueryStore {
                 $server = Connect-DbaInstance -SqlInstance $dbDatabases[0].Parent -SqlCredential $SqlCredential -MinimumVersion 13
             } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+            }
+
+            if ($server.DatabaseEngineType -eq "SqlAzureDatabase") {
+                $ExcludeDatabase += "msdb"
             }
 
             if ($Database) {
@@ -207,32 +216,36 @@ function Test-DbaDbQueryStore {
                 Stop-Function -Message "Unable to get Query Store data $server" -Target $server -ErrorRecord $_
             }
 
-            # Trace flags
-            $queryStoreTF = [PSCustomObject]@{
-                TraceFlag     = '7745'
-                Justification = 'SQL Server will not wait to write Query Store data to disk on shutdown\failover (can cause lose of Query Store data).'
-            },
-            [PSCustomObject]@{
-                TraceFlag     = '7752'
-                Justification = 'Load Query Store data asynchronously on SQL Server startup.'
-            }
-            try {
-                foreach ($tf in $queryStoreTF) {
-                    $tfEnabled = Get-DbaTraceFlag -SqlInstance $server -TraceFlag $tf.TraceFlag
-                    [PSCustomObject]@{
-                        ComputerName     = $server.ComputerName
-                        InstanceName     = $server.DbaInstanceName
-                        SqlInstance      = $server.Name
-                        Name             = ('Trace Flag {0} Enabled' -f $tf.TraceFlag)
-                        Value            = if ($tfEnabled) { 'Enabled' } else { 'Disabled' }
-                        RecommendedValue = $tf.TraceFlag
-                        IsBestPractice   = ($tfEnabled.TraceFlag -eq $tf.TraceFlag)
-                        Justification    = $tf.Justification
-                    }
-                    $tfEnabled = $null
+            if ($server.DatabaseEngineType -ne "SqlAzureDatabase") {
+                # Trace flags
+                $queryStoreTF = [PSCustomObject]@{
+                    TraceFlag     = '7745'
+                    Justification = 'SQL Server will not wait to write Query Store data to disk on shutdown\failover (can cause lose of Query Store data).'
+                },
+                [PSCustomObject]@{
+                    TraceFlag     = '7752'
+                    Justification = 'Load Query Store data asynchronously on SQL Server startup.'
                 }
-            } catch {
-                Stop-Function -Message "Unable to get Trace Flag data $server" -Target $server -ErrorRecord $_
+                try {
+                    foreach ($tf in $queryStoreTF) {
+                        if (($server.MajorVersion -gt 15 -and $tf.TraceFlag -eq 7752) -or $tf.TraceFlag -eq 7745) {
+                            $tfEnabled = Get-DbaTraceFlag -SqlInstance $server -TraceFlag $tf.TraceFlag
+                            [PSCustomObject]@{
+                                ComputerName     = $server.ComputerName
+                                InstanceName     = $server.DbaInstanceName
+                                SqlInstance      = $server.Name
+                                Name             = ('Trace Flag {0} Enabled' -f $tf.TraceFlag)
+                                Value            = if ($tfEnabled) { 'Enabled' } else { 'Disabled' }
+                                RecommendedValue = $tf.TraceFlag
+                                IsBestPractice   = ($tfEnabled.TraceFlag -eq $tf.TraceFlag)
+                                Justification    = $tf.Justification
+                            }
+                            $tfEnabled = $null
+                        }
+                    }
+                } catch {
+                    Stop-Function -Message "Unable to get Trace Flag data $server" -Target $server -ErrorRecord $_
+                }
             }
         }
     }
