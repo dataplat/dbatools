@@ -171,13 +171,12 @@ function Invoke-DbaDbSafeShrink {
         function ShrinkFile($server, $db, $file, $minimum) {
             $fileName = $file.Name
             [int]$size = $file.Size / 1000 #size is in KB, convert to MB for the shrink statement
+            [int]$minimum = [Math]::Max(5, $minimum / 1000)
 
             $rawsql = "DBCC SHRINKFILE($fileName, {0}) WITH NO_INFOMSGS;"
             if ($size -gt $minimum) {
-                do {
-                    Write-Message -Level Verbose -Message "LOOPING SHRINKFILE"
-                    $size = ShrinkFileIncremental -server $server -db $db -size $size -rawSql $rawsql -minimum $minimum | Select-Object -Last 1
-                } while ($size -gt $minimum)
+                Write-Message -Level Verbose -Message "LOOPING SHRINKFILE"
+                $size = ShrinkFileIncremental -server $server -db $db -size $size -rawSql $rawsql -minimum $minimum | Select-Object -Last 1
             }
 
             $sql = $rawsql -f $minimum
@@ -192,7 +191,7 @@ function Invoke-DbaDbSafeShrink {
             [int]$shrinkIncrement = $size * $percent
 
             if ($shrinkIncrement -gt 0) {
-                for ($x = $size; $x -gt $minimum; $x -= $shrinkIncrement) {
+                for ($x = ($size - $shrinkIncrement); $x -gt $minimum; $x -= $shrinkIncrement) {
                     $size = $x
                     $sql = $rawsql -f $x
                     Write-Message -Level Verbose -Message "PERFORMING: $sql"
@@ -205,6 +204,7 @@ function Invoke-DbaDbSafeShrink {
         function CreateShrinkFileGroup($server, $db, $baseFile, $fileSize) {
             $shrinkFG = $db.FileGroups | Where-Object { $_.Name -ieq "$shrinkName" } | Select-Object -First 1
 
+            # Each file size must be greater than or equal to 512 KB. so use math max to enforce that the size is at least 512
             if (!$shrinkFG) {
                 $createFGSql = "
                     ALTER DATABASE [$($db.Name)] ADD FILEGROUP $shrinkName
@@ -213,7 +213,7 @@ function Invoke-DbaDbSafeShrink {
                             NAME = '$shrinkName',
                             FILENAME = '$($baseFile.FileName)_$shrinkName.mdf',
                             FILEGROWTH = $($baseFile.Growth)$($baseFile.GrowthType),
-                            SIZE = $($fileSize)KB
+                            SIZE = $([Math]::Max(512, $fileSize))KB
                         )
                     TO FILEGROUP $shrinkName
                 "
@@ -287,7 +287,7 @@ function Invoke-DbaDbSafeShrink {
                         # this will be our minimum target when shrinking the file
                         $minFileSize = $usedSizes.Minimum * 0.75
 
-                        [dbasize]$spaceAvailable = ($totalSizes.Sum - $usedSizes.Sum)
+                        [dbasize]$spaceAvailable = (($totalSizes.Sum - $usedSizes.Sum) * 1024)
 
                         if ($MinimumFreeSpace -gt $spaceAvailable) {
                             Write-Message -Level Warning -Message "The total unused space $($spaceAvailable) of the filegroup $($fileGroup.Name) is less than or equal to the desired minimum free space $([dbasize]$MinimumFreeSpace). Skipping file group."
