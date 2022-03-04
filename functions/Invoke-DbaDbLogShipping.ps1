@@ -679,7 +679,7 @@ function Invoke-DbaDbLogShipping {
 				Write-Message -Message "Restore retention set to $RestoreRetention" -Level Verbose
 			}
 			if (-not $RestoreThreshold) {
-				$RestoreThreshold = 0
+				$RestoreThreshold = 45
 				Write-Message -Message "Restore Threshold set to $RestoreThreshold" -Level Verbose
 			}
 			if (-not $PrimaryMonitorServerSecurityMode) {
@@ -794,7 +794,7 @@ function Invoke-DbaDbLogShipping {
 				Write-Message -Message "Restore retention set to $RestoreRetention" -Level Verbose
 			}
 			if (-not $RestoreThreshold) {
-				$RestoreThreshold = 0
+				$RestoreThreshold = 45
 				Write-Message -Message "Restore Threshold set to $RestoreThreshold" -Level Verbose
 			}
 			if (-not $PrimaryMonitorServerSecurityMode) {
