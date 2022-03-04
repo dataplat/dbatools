@@ -24,7 +24,7 @@ Describe "$global:CommandName Integration Tests" -Tags "IntegrationTests" {
             # https://docs.microsoft.com/en-us/sql/connect/ado-net/introduction-microsoft-data-sqlclient-namespace?view=sql-server-ver15#breaking-changes-in-40
             # Breaking changes in 4.0
             #    - Changed Encrypt connection string property to be true by default. #1210 Read more
-            $server = Connect-DbaInstance -SqlInstance $global:instance2 -TrustServerCertificate
+            $server = Connect-DbaInstance -SqlInstance $script:instance2 -TrustServerCertificate
             $defaultPath = $server | Get-DbaDefaultPath
         }
         BeforeEach {
