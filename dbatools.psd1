@@ -449,7 +449,6 @@
         'Invoke-DbaDbMirroring',
         'Invoke-DbaDbPiiScan',
         'Invoke-DbaDbShrink',
-        'Invoke-DbaDbSafeShrink',
         'Invoke-DbaDbTransfer',
         'Invoke-DbaDbUpgrade',
         'Invoke-DbaDiagnosticQuery',
