@@ -37,6 +37,7 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
             $null = Remove-Item -Path $results.Path -ErrorAction SilentlyContinue -Confirm:$false
             $results.Certificate | Should -Be $cert.Name
             $results.Status -match "Success"
+            $results.DatabaseID | Should -Be (Get-DbaDatabase -SqlInstance $script:instance1 -Database $db1Name).ID
         }
 
         It "warns the caller if the cert cannot be found" {
