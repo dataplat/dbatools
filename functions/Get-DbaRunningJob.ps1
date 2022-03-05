@@ -61,9 +61,21 @@ function Get-DbaRunningJob {
         [switch]$EnableException
     )
     process {
-        if ($SqlInstance) {
-            Get-DbaAgentJob -SqlInstance $SqlInstance -SqlCredential $SqlCredential -IncludeExecution | Where-Object CurrentRunStatus -ne 'Idle'
+        foreach ($instance in $SqlInstance) {
+            try {
+                $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential
+            } catch {
+                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+            }
+
+            # Refresh JobServer information (including childs) in case $instance is an smo to get up to date information.
+            $server.JobServer.Jobs.Refresh($true)
+            Get-DbaAgentJob -SqlInstance $server -IncludeExecution | Where-Object CurrentRunStatus -ne 'Idle'
         }
-        $InputObject | Where-Object CurrentRunStatus -ne 'Idle'
+        foreach ($job in $InputObject) {
+            # Refresh job to get up to date information.
+            $job.Refresh()
+            $job | Where-Object CurrentRunStatus -ne 'Idle'
+        }
     }
 }
