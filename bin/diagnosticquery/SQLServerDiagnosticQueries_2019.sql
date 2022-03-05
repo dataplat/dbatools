@@ -1836,7 +1836,7 @@ SELECT OBJECT_NAME(t.[object_id]) AS [ObjectName], p.[rows] AS [Table Rows], p.i
        t.create_date, t.lock_on_bulk_load, t.is_replicated, t.has_replication_filter, 
        t.is_tracked_by_cdc, t.lock_escalation_desc, t.is_filetable, 
 	   t.is_memory_optimized, t.durability_desc, 
-	   t.temporal_type_desc, t.is_remote_data_archive_enabled, t.is_external -- new for SQL Server 2016
+	   t.temporal_type_desc, t.is_remote_data_archive_enabled, t.is_external 
 FROM sys.tables AS t WITH (NOLOCK)
 INNER JOIN sys.partitions AS p WITH (NOLOCK)
 ON t.[object_id] = p.[object_id]
