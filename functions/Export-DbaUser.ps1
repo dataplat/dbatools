@@ -75,7 +75,7 @@ function Export-DbaUser {
 
     .PARAMETER ScriptingOptionsObject
         A Microsoft.SqlServer.Management.Smo.ScriptingOptions object with the options that you want to use to generate the t-sql script.
-        You can use the NEw-DbaScriptingOption to generate it.
+        You can use the New-DbaScriptingOption to generate it.
 
     .PARAMETER ExcludeGoBatchSeparator
         If specified, will NOT script the 'GO' batch separator.

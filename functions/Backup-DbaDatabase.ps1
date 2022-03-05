@@ -33,7 +33,7 @@ function Backup-DbaDatabase {
         Passing in NUL as the FilePath will backup to the NUL: device
 
     .PARAMETER IncrementPrefix
-        If enables, this will prefix backup files with an incrementing integer (ie; '1-', '2-'). Using this has been alleged to improved restore times on some Azure based SQL Database platorms
+        If enabled, this will prefix backup files with an incrementing integer (ie; '1-', '2-'). Using this has been alleged to improved restore times on some Azure based SQL Database platforms
 
     .PARAMETER TimeStampFormat
         By default the command timestamps backups using the format yyyyMMddHHmm. Using this parameter this can be overridden. The timestamp format should be defined using the Get-Date formats, illegal formats will cause an error to be thrown
@@ -128,7 +128,7 @@ function Backup-DbaDatabase {
         Must specify one of EncryptionCertificate or EncryptionKey as well.
 
     .PARAMETER EncryptionCertificate
-        The name of the certificate to be used to encrypt the backups. The existance of the certificate will be checked, and will not proceed if it does not exist
+        The name of the certificate to be used to encrypt the backups. The existence of the certificate will be checked, and will not proceed if it does not exist
         Is mutually exclusive with the EncryptionKey option
 
     .PARAMETER EnableException
@@ -176,7 +176,7 @@ function Backup-DbaDatabase {
     .EXAMPLE
         PS C:\> Backup-DbaDatabase -SqlInstance Server1\Prod -Database db1 -Path \\filestore\backups\servername\instancename\dbname\backuptype -Type Full -ReplaceInName
 
-        Performs a full backup of db1 into the folder \\filestore\backups\server1\prod\db1
+        Performs a full backup of db1 into the folder \\filestore\backups\server1\prod\db1\Full
 
     .EXAMPLE
         PS C:\> Backup-DbaDatabase -SqlInstance Server1\Prod -Path \\filestore\backups\servername\instancename\dbname\backuptype -FilePath dbname-backuptype-timestamp.trn -Type Log -ReplaceInName
