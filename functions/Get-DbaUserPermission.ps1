@@ -189,7 +189,6 @@ function Get-DbaUserPermission {
 
         if ($IncludePublicGuest) { $dbSQL = $dbSQL.Replace("AND dp.Grantee NOT IN ('public', 'guest')", "") }
         if ($IncludeSystemObjects) { $dbSQL = $dbSQL.Replace("AND [Schema/Owner] <> 'sys'", "") }
-
     }
 
     process {
@@ -232,30 +231,29 @@ function Get-DbaUserPermission {
 
             try {
                 $serverDT = $master.Query($serverSQL)
-            } catch {
-                # here to avoid an empty catch
-                $null = 1
-            }
 
-            foreach ($row in $serverDT) {
-                [PSCustomObject]@{
-                    ComputerName       = $server.ComputerName
-                    InstanceName       = $server.ServiceName
-                    SqlInstance        = $server.DomainInstanceName
-                    Object             = 'SERVER'
-                    Type               = $row.Type
-                    Member             = $row.Member
-                    RoleSecurableClass = $row.'Role/Securable/Class'
-                    SchemaOwner        = $row.'Schema/Owner'
-                    Securable          = $row.Securable
-                    GranteeType        = $row.'Grantee Type'
-                    Grantee            = $row.Grantee
-                    Permission         = $row.Permission
-                    State              = $row.State
-                    Grantor            = $row.Grantor
-                    GrantorType        = $row.'Grantor Type'
-                    SourceView         = $row.'Source View'
+                foreach ($row in $serverDT) {
+                    [PSCustomObject]@{
+                        ComputerName       = $server.ComputerName
+                        InstanceName       = $server.ServiceName
+                        SqlInstance        = $server.DomainInstanceName
+                        Object             = 'SERVER'
+                        Type               = $row.Type
+                        Member             = $row.Member
+                        RoleSecurableClass = $row.'Role/Securable/Class'
+                        SchemaOwner        = $row.'Schema/Owner'
+                        Securable          = $row.Securable
+                        GranteeType        = $row.'Grantee Type'
+                        Grantee            = $row.Grantee
+                        Permission         = $row.Permission
+                        State              = $row.State
+                        Grantor            = $row.Grantor
+                        GrantorType        = $row.'Grantor Type'
+                        SourceView         = $row.'Source View'
+                    }
                 }
+            } catch {
+                Write-Message -Level warning "An error occured while retrieving server permissions."
             }
 
             #delete objects from running server permissions query
@@ -268,35 +266,31 @@ function Get-DbaUserPermission {
             }
 
             # now that we have server level permissions get any database level perms
-            foreach ($db in $dbs) {
+            foreach ($db in $dbs | Where-Object { $_.isAccessible -eq $true }) {
+                Write-Message -Level warning -Message "Database $db on $instance is not accessible and will be skipped."
+            }
+
+            foreach ($db in $dbs | Where-Object { $_.isAccessible -eq $true }) {
                 Write-Message -Level Verbose -Message "Processing $db on $instance"
 
-                # don't attempt to execute queries on inaccessible databases:
-                if ($db.isAccessible -eq $false) {
-                    Write-Message -Level Warning -Message "Database $db on $instance is not accessible"
-                } else {
-                    $db.ExecuteNonQuery($endSQL)
+                $db.ExecuteNonQuery($endSQL)
 
-                    $sqlFile = Join-Path -Path $script:PSModuleRoot -ChildPath "bin\stig.sql"
-                    $sql = [System.IO.File]::ReadAllText("$sqlFile")
-                    $sql = $sql.Replace("<TARGETDB>", $db.Name)
+                $sqlFile = Join-Path -Path $script:PSModuleRoot -ChildPath "bin\stig.sql"
+                $sql = [System.IO.File]::ReadAllText("$sqlFile")
+                $sql = $sql.Replace("<TARGETDB>", $db.Name)
 
-                    #Create objects in active database
-                    Write-Message -Level Verbose -Message "Creating objects"
-                    try {
-                        $db.ExecuteNonQuery($sql)
-                    } catch {
-                        # here to avoid an empty catch
-                        $null = 1
-                    } # sometimes it complains about not being able to drop the stig schema if the person Ctrl-C'd before.
+                #Create objects in active database
+                Write-Message -Level Verbose -Message "Creating objects"
+                try {
+                    $db.ExecuteNonQuery($sql)
+                } catch {
+                    # here to avoid an empty catch
+                    $null = 1
+                } # sometimes it complains about not being able to drop the stig schema if the person Ctrl-C'd before.
 
-                    Write-Message -Level Verbose -Message "Building data table for $db objects"
-                    try {
-                        $dbDT = $db.Query($dbSQL)
-                    } catch {
-                        # here to avoid an empty catch
-                        $null = 1
-                    }
+                Write-Message -Level Verbose -Message "Building data table for $db objects"
+                try {
+                    $dbDT = $db.Query($dbSQL)
 
                     foreach ($row in $dbDT) {
                         [PSCustomObject]@{
@@ -318,7 +312,10 @@ function Get-DbaUserPermission {
                             SourceView         = $row.'Source View'
                         }
                     }
+                } catch {
+                    Write-Message -Level warning -Message "There was an error retrieving the permissions for $db on $instance."
                 }
+
                 #Delete objects
                 Write-Message -Level Verbose -Message "Deleting objects"
                 try {
