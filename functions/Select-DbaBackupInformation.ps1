@@ -151,7 +151,7 @@ function Select-DbaBackupInformation {
             if ($true -eq $Continue) {
                 #Test if Database is in a continuing state and the LSN to continue from:
                 if ($Databasefilter -in ($ContinuePoints | Select-Object -Property Database).Database) {
-                    Write-Message -Message "$Database in ContinuePoints, will attmept to continue" -Level verbose
+                    Write-Message -Message "$Database in ContinuePoints, will attempt to continue" -Level verbose
                     $IgnoreFull = $True
                     #Check what the last backup restored was
                     if (($LastRestoreType | Where-Object { $_.Database -eq $Databasefilter }).RestoreType -eq 'log') {
@@ -162,7 +162,7 @@ function Select-DbaBackupInformation {
                         $IgnoreDiffs = $false
                     }
                 } else {
-                    Write-Message -Message "$Database not in ContinuePoints, will attmept normal restore" -Level Warning
+                    Write-Message -Message "$Database not in ContinuePoints, will attempt normal restore" -Level Warning
                 }
             }
 
