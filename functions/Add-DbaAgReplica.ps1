@@ -273,11 +273,26 @@ function Add-DbaAgReplica {
                     if ($ClusterType -eq 'Wsfc') {
                         if ($Pscmdlet.ShouldProcess($server.Name, "Adding cluster permissions for availability group named $($InputObject.Name)")) {
                             Write-Message -Level Verbose -Message "WSFC Cluster requires granting [NT AUTHORITY\SYSTEM] a few things. Setting now."
-                            $sql = "GRANT ALTER ANY AVAILABILITY GROUP TO [NT AUTHORITY\SYSTEM]
-                                GRANT CONNECT SQL TO [NT AUTHORITY\SYSTEM]
-                                GRANT VIEW SERVER STATE TO [NT AUTHORITY\SYSTEM]"
+                            # To support non-english systems, get the name of SYSTEM login by the sid
+                            # See SECURITY_LOCAL_SYSTEM_RID on https://docs.microsoft.com/en-us/windows/win32/secauthz/well-known-sids
+                            $systemLoginSidString = '1-1-0-0-0-0-0-5-18-0-0-0'
+                            $systemLoginName = ($server.Logins | Where-Object { ($_.Sid -join '-') -eq $systemLoginSidString }).Name
+                            if (-not $systemLoginName) {
+                                Write-Message -Level Verbose -Message "SYSTEM login not found, so we hope system language is english and create login [NT AUTHORITY\SYSTEM]"
+                                try {
+                                    $null = New-DbaLogin -SqlInstance $server -Login 'NT AUTHORITY\SYSTEM'
+                                    $systemLoginName = 'NT AUTHORITY\SYSTEM'
+                                } catch {
+                                    Stop-Function -Message "Failed to add login [NT AUTHORITY\SYSTEM]. If it's a non-english system you have to add the equivalent login manually." -ErrorRecord $_
+                                }
+                            }
+                            $permissionSet = New-Object -TypeName Microsoft.SqlServer.Management.SMO.ServerPermissionSet(
+                                [Microsoft.SqlServer.Management.SMO.ServerPermission]::AlterAnyAvailabilityGroup,
+                                [Microsoft.SqlServer.Management.SMO.ServerPermission]::ConnectSql,
+                                [Microsoft.SqlServer.Management.SMO.ServerPermission]::ViewServerState
+                            )
                             try {
-                                $null = $server.Query($sql)
+                                $server.Grant($permissionSet, $systemLoginName)
                             } catch {
                                 Stop-Function -Message "Failure adding cluster service account permissions." -ErrorRecord $_
                             }
