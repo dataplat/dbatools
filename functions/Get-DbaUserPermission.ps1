@@ -45,7 +45,7 @@ function Get-DbaUserPermission {
 
     .NOTES
         Tags: Security, User
-        Author: Brandon Abshire, netnerds.net | Josh Smith
+        Author: Brandon Abshire, netnerds.net | Josh Smith, accitentionaldba.com
 
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
@@ -201,7 +201,6 @@ function Get-DbaUserPermission {
 
             $dbs = $server.Databases
             $tempdb = $server.Databases['tempdb']
-            $master = $server.Databases['master']
 
             if ($Database) {
                 $dbs = $dbs | Where-Object { $Database -contains $_.Name }
@@ -220,17 +219,17 @@ function Get-DbaUserPermission {
 
             $sqlFile = Join-Path -Path $script:PSModuleRoot -ChildPath "bin\stig.sql"
             $sql = [System.IO.File]::ReadAllText("$sqlFile")
-            $sql = $sql.Replace("<TARGETDB>", $master.Name)
+            $sql = $sql.Replace("<TARGETDB>", 'master')
 
             try {
-                $master.ExecuteNonQuery($sql)
+                $tempdb.ExecuteNonQuery($sql)
             } catch {
                 # here to avoid an empty catch
                 $null = 1
             } # sometimes it complains about not being able to drop the stig schema if the person Ctrl-C'd before.
 
             try {
-                $serverDT = $master.Query($serverSQL)
+                $serverDT = $tempdb.Query($serverSQL)
 
                 foreach ($row in $serverDT) {
                     [PSCustomObject]@{
@@ -253,7 +252,7 @@ function Get-DbaUserPermission {
                     }
                 }
             } catch {
-                Write-Message -Level warning "An error occured while retrieving server permissions."
+                Stop-Function -Message "An error occurred while retrieving server permissions." -Continue -EnableException $EnableException
             }
 
             #delete objects from running server permissions query
@@ -267,7 +266,7 @@ function Get-DbaUserPermission {
 
             # now that we have server level permissions get any database level perms
             foreach ($db in $dbs | Where-Object { $_.isAccessible -eq $true }) {
-                Write-Message -Level warning -Message "Database $db on $instance is not accessible and will be skipped."
+                Stop-Function -Message "Database $db on $instance is not accessible." -Continue -EnableException $EnableException
             }
 
             foreach ($db in $dbs | Where-Object { $_.isAccessible -eq $true }) {
@@ -313,7 +312,7 @@ function Get-DbaUserPermission {
                         }
                     }
                 } catch {
-                    Write-Message -Level warning -Message "There was an error retrieving the permissions for $db on $instance."
+                    Stop-Function  -Message "There was an error retrieving the permissions for $db on $instance." -Continue -EnableException $EnableException
                 }
 
                 #Delete objects
