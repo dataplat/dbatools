@@ -260,8 +260,8 @@ function Get-DbaUserPermission {
                 }
 
                 try {
-                    #Write-Message -Level Verbose -Message "Removing STIG schema if it still exists from previous run"
-                    #$tempdb.ExecuteNonQuery($removeStigSQL)
+                    Write-Message -Level Verbose -Message "Removing STIG schema if it still exists from previous run"
+                    $tempdb.ExecuteNonQuery($removeStigSQL)
                     Write-Message -Level Verbose -Message "Creating STIG schema customized for current database"
                     $createStigSQL = $sql.Replace("<TARGETDB>", $db.Name)
                     Write-Message -Level Verbose -Message "Length of createStigSQL: $($createStigSQL.Length)"
