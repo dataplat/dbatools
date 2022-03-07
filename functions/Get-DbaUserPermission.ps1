@@ -220,21 +220,12 @@ function Get-DbaUserPermission {
             $sql = [System.IO.File]::ReadAllText("$sqlFile")
 
             try {
-                $tempdb.Schemas.Refresh()
-                if ($tempdb.Schemas['STIG']) {
-                    Write-Message -Level Verbose -Message "STIG schema found"
-                }
                 Write-Message -Level Verbose -Message "Removing STIG schema if it still exists from previous run"
                 $tempdb.ExecuteNonQuery($removeStigSQL)
                 $tempdb.Schemas.Refresh()
-                if ($tempdb.Schemas['STIG']) {
-                    Write-Message -Level Verbose -Message "STIG schema found"
-                }
                 Write-Message -Level Verbose -Message "Creating STIG schema customized for master database"
                 $createStigSQL = $sql.Replace("<TARGETDB>", 'master')
-                Write-Message -Level Verbose -Message "Length of createStigSQL: $($createStigSQL.Length)"
-                #$tempdb.ExecuteNonQuery($createStigSQL)
-                $tempdb | Invoke-DbaQuery -Query $createStigSQL -EnableException
+                $tempdb.ExecuteNonQuery($createStigSQL)
                 Write-Message -Level Verbose -Message "Building data table for server objects"
                 $serverDT = $tempdb.Query($serverSQL)
                 foreach ($row in $serverDT) {
@@ -270,16 +261,9 @@ function Get-DbaUserPermission {
                 }
 
                 try {
-                    $tempdb.Schemas.Refresh()
-                    if ($tempdb.Schemas['STIG']) {
-                        Write-Message -Level Verbose -Message "STIG schema found"
-                    }
                     Write-Message -Level Verbose -Message "Removing STIG schema if it still exists from previous run"
                     $tempdb.ExecuteNonQuery($removeStigSQL)
                     $tempdb.Schemas.Refresh()
-                    if ($tempdb.Schemas['STIG']) {
-                        Write-Message -Level Verbose -Message "STIG schema found"
-                    }
                     Write-Message -Level Verbose -Message "Creating STIG schema customized for current database"
                     $createStigSQL = $sql.Replace("<TARGETDB>", $db.Name)
                     Write-Message -Level Verbose -Message "Length of createStigSQL: $($createStigSQL.Length)"
