@@ -579,6 +579,15 @@ function Install-DbaInstance {
                 } catch {
                     Stop-Function -Message "Failed to read config file $ConfigurationFile" -ErrorRecord $_
                 }
+            } elseif ($Configuration.ACTION) {
+                # build minimal config if a custom ACTION is provided
+                $config = @{
+                    $mainKey = @{
+                        INSTANCENAME = $instance
+                        FEATURES     = $featureList
+                        QUIET        = "True"
+                    }
+                }
             } else {
                 # determine a default user to assign sqladmin permissions
                 if ($Credential) {
