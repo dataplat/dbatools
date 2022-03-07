@@ -225,7 +225,7 @@ function Get-DbaUserPermission {
                 Write-Message -Level Verbose -Message "Creating STIG schema customized for master database"
                 $createStigSQL = $sql.Replace("<TARGETDB>", 'master')
                 #$tempdb.ExecuteNonQuery($createStigSQL)
-                $tempdb | Invoke-DbaQuery -Query $createStigSQL
+                $tempdb | Invoke-DbaQuery -Query $createStigSQL -EnableException
                 Write-Message -Level Verbose -Message "Building data table for server objects"
                 $serverDT = $tempdb.Query($serverSQL)
                 foreach ($row in $serverDT) {
