@@ -216,7 +216,7 @@ function Get-DbaUserPermission {
             }
 
             Write-Message -Level Verbose -Message "Reading stig.sql"
-            $sqlFile = Join-Path -Path $script:PSModuleRoot -ChildPath "bin\stig.sql"
+            $sqlFile = Join-DbaPath -Path $script:PSModuleRoot -ChildPath "bin", "stig.sql"
             $sql = [System.IO.File]::ReadAllText("$sqlFile")
 
             try {
