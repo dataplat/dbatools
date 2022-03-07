@@ -15,7 +15,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     Context "Command returns proper info" {
-        $results = Get-DbaUserPermission -SqlInstance $script:instance3 -Database tempdb
+        $results = Get-DbaUserPermission -SqlInstance $script:instance1 -Database tempdb
 
         It "returns results" {
             $results.Count -gt 0 | Should Be $true
