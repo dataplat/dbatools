@@ -488,7 +488,7 @@ function Connect-DbaInstance {
                 - Get-DbaLogin
                 - Set-DbaLogin
                 - Get-DbaDefaultPath
-                - Get-DbaUserPermissions
+                - Get-DbaUserPermission
                 - Get-DbaXESession
                 - New-DbaCustomError
                 - Remove-DbaCustomError
