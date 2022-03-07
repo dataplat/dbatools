@@ -51,9 +51,11 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
     }
 
     It "gets some permissions" {
-        $results = Get-DbaUserPermission -Database "Northwind"
+        $results = Get-DbaUserPermission -Database "Northwind" -WarningVariable warn
+        $warn | Should -BeNullOrEmpty
+        ($results.Object | Select-Object -Unique).Count | Should -Be 2
         foreach ($result in $results) {
-            $results.Object -in "SERVER", "Northwind"
+            $results.Object | Should -BeIn "SERVER", "Northwind"
         }
     }
 
