@@ -179,9 +179,9 @@ function Copy-DbaDbTableData {
         >>
         PS C:\> Copy-DbaDbTableData @params
 
-        Copies data returned from the query on server1 into the AdventureWorks2017 on server1, using a 4-part name for the -Table parameter.
-        See the -Query param documentation for more details.
-        Copy is processed in BatchSize of 10000 rows.
+        Copies data returned from the query on server1 into the AdventureWorks2017 on server1, using a 4-part name for the DestinationTableTable parameter. Copy is processed in BatchSize of 10000 rows.
+
+        See the Query param documentation for more details.
 
     .EXAMPLE
        Copy-DbaDbTableData -SqlInstance sql1 -Database tempdb -View [tempdb].[dbo].[vw1] -DestinationTable [SampleDb].[SampleSchema].[SampleTable] -AutoCreateTable
