@@ -41,6 +41,11 @@ function Set-DbaNetworkConfiguration {
         Will enable the TCP/IP protocol if needed.
         Will set TcpIpProperties.ListenAll to $true if needed.
 
+    .PARAMETER ListenOnIPAddressOnly
+        Configures the instance to listen on specific IP addresses only. Listening on all other IP addresses will be disabled.
+        Takes an array of string with either the IP address (for listening on a dynamic port) or IP address and port seperated by ":".
+        IPv6 addresses must be enclosed in square brackets, e.g. [2001:db8:4006:812::200e] or [2001:db8:4006:812::200e]:1433 to be able to identify the port.
+
     .PARAMETER RestartService
         Every change to the network configuration needs a service restart to take effect.
         This switch will force a restart of the service if the network configuration has changed.
@@ -91,6 +96,12 @@ function Set-DbaNetworkConfiguration {
         Changes the value of the KeepAlive property for the default instance on sqlserver2014a and restarts the service.
         Does not prompt for confirmation.
 
+    .EXAMPLE
+        PS C:\> Set-DbaNetworkConfiguration -SqlInstance sql2016\test -ListenOnIPAddressOnly 192.168.3.41:1433 -RestartService
+
+        Ensures that the TCP/IP network protocol is enabled and configured to only listen on port 1433 of IP address 192.168.3.41.
+        Restarts the service if needed.
+
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "High", DefaultParameterSetName = 'NonPipeline')]
     param (
@@ -108,6 +119,8 @@ function Set-DbaNetworkConfiguration {
         [switch]$DynamicPortForIPAll,
         [Parameter(ParameterSetName = 'NonPipeline')]
         [int[]]$StaticPortForIPAll,
+        [Parameter(ParameterSetName = 'NonPipeline')]
+        [string[]]$ListenOnIPAddressOnly,
         [Parameter(ParameterSetName = 'NonPipeline')][Parameter(ParameterSetName = 'Pipeline')]
         [switch]$RestartService,
         [parameter(ValueFromPipeline, ParameterSetName = 'Pipeline', Mandatory = $true)]
@@ -279,12 +292,12 @@ function Set-DbaNetworkConfiguration {
     }
 
     process {
-        if ($SqlInstance -and (Test-Bound -Not -ParameterName EnableProtocol, DisableProtocol, DynamicPortForIPAll, StaticPortForIPAll)) {
+        if ($SqlInstance -and (Test-Bound -Not -ParameterName EnableProtocol, DisableProtocol, DynamicPortForIPAll, StaticPortForIPAll, ListenOnIPAddressOnly)) {
             Stop-Function -Message "You must choose an action if SqlInstance is used."
             return
         }
 
-        if ($SqlInstance -and (Test-Bound -ParameterName EnableProtocol, DisableProtocol, DynamicPortForIPAll, StaticPortForIPAll -Not -Max 1)) {
+        if ($SqlInstance -and (Test-Bound -ParameterName EnableProtocol, DisableProtocol, DynamicPortForIPAll, StaticPortForIPAll, ListenOnIPAddressOnly -Not -Max 1)) {
             Stop-Function -Message "Only one action is allowed at a time."
             return
         }
@@ -360,6 +373,83 @@ function Set-DbaNetworkConfiguration {
                 $port = $StaticPortForIPAll -join ','
                 Write-Message -Level Verbose -Message "Will set property TcpPort of IPAll to '$port' on $instance."
                 $ipAll.TcpPort = $port
+            }
+
+            if ($ListenOnIPAddressOnly) {
+                if (-not $netConf.TcpIpEnabled) {
+                    Write-Message -Level Verbose -Message "Will enable protocol TcpIp on $instance."
+                    $netConf.TcpIpEnabled = $true
+                }
+                if (-not $netConf.TcpIpProperties.Enabled) {
+                    Write-Message -Level Verbose -Message "Will set property Enabled of protocol TcpIp to True on $instance."
+                    $netConf.TcpIpProperties.Enabled = $true
+                }
+                if ($netConf.TcpIpProperties.ListenAll) {
+                    Write-Message -Level Verbose -Message "Will set property ListenAll of protocol TcpIp to False on $instance."
+                    $netConf.TcpIpProperties.ListenAll = $false
+                }
+                $ipAddresses = $netConf.TcpIpAddresses | Where-Object { $_.Name -ne 'IPAll' }
+                foreach ($ip in $ipAddresses) {
+                    if ($ip.IpAddress -match ':') {
+                        # IPv6: Remove interface id
+                        $address = $ip.IpAddress -replace '^(.*)%.*$', '$1'
+                    } else {
+                        # IPv4: Do nothing special
+                        $address = $ip.IpAddress
+                    }
+                    # Is the current IP one of those to be configured?
+                    $isTarget = $false
+                    foreach ($listenIP in $ListenOnIPAddressOnly) {
+                        if ($listenIP -match '^\[(.+)\]:?(\d*)$') {
+                            # IPv6
+                            $listenAddress = $Matches.1
+                            $listenPort = $Matches.2
+                        } elseif ($listenIP -match '^([^:]+):?(\d*)$') {
+                            # IPv4
+                            $listenAddress = $Matches.1
+                            $listenPort = $Matches.2
+                        } else {
+                            Write-Message -Level Verbose -Message "$listenIP is not a valid IP address. Skipping."
+                            continue
+                        }
+                        if ($listenAddress -eq $address) {
+                            $isTarget = $true
+                            break
+                        }
+                    }
+                    if ($isTarget) {
+                        if (-not $ip.Enabled) {
+                            Write-Message -Level Verbose -Message "Will set property Enabled of IP address $($ip.IpAddress) to True on $instance."
+                            $ip.Enabled = $true
+                        }
+                        if ($listenPort) {
+                            # configure for static port
+                            if ($ip.TcpDynamicPorts -ne '') {
+                                Write-Message -Level Verbose -Message "Will set property TcpDynamicPorts of IP address $($ip.IpAddress) to '' on $instance."
+                                $ip.TcpDynamicPorts = ''
+                            }
+                            if ($ip.TcpPort -ne $listenPort) {
+                                Write-Message -Level Verbose -Message "Will set property TcpPort of IP address $($ip.IpAddress) to '$listenPort' on $instance."
+                                $ip.TcpPort = $listenPort
+                            }
+                        } else {
+                            # configure for dynamic port
+                            if ($ip.TcpDynamicPorts -ne '0') {
+                                Write-Message -Level Verbose -Message "Will set property TcpDynamicPorts of IP address $($ip.IpAddress) to '0' on $instance."
+                                $ip.TcpDynamicPorts = '0'
+                            }
+                            if ($ip.TcpPort -ne '') {
+                                Write-Message -Level Verbose -Message "Will set property TcpPort of IP address $($ip.IpAddress) to '' on $instance."
+                                $ip.TcpPort = ''
+                            }
+                        }
+                    } else {
+                        if ($ip.Enabled) {
+                            Write-Message -Level Verbose -Message "Will set property Enabled of IP address $($ip.IpAddress) to False on $instance."
+                            $ip.Enabled = $false
+                        }
+                    }
+                }
             }
 
             $InputObject += $netConf
