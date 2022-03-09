@@ -41,7 +41,7 @@ function Set-DbaNetworkConfiguration {
         Will enable the TCP/IP protocol if needed.
         Will set TcpIpProperties.ListenAll to $true if needed.
 
-    .PARAMETER ListenOnIPAddressOnly
+    .PARAMETER IpAddress
         Configures the instance to listen on specific IP addresses only. Listening on all other IP addresses will be disabled.
         Takes an array of string with either the IP address (for listening on a dynamic port) or IP address and port seperated by ":".
         IPv6 addresses must be enclosed in square brackets, e.g. [2001:db8:4006:812::200e] or [2001:db8:4006:812::200e]:1433 to be able to identify the port.
@@ -120,7 +120,7 @@ function Set-DbaNetworkConfiguration {
         [Parameter(ParameterSetName = 'NonPipeline')]
         [int[]]$StaticPortForIPAll,
         [Parameter(ParameterSetName = 'NonPipeline')]
-        [string[]]$ListenOnIPAddressOnly,
+        [string[]]$IpAddress,
         [Parameter(ParameterSetName = 'NonPipeline')][Parameter(ParameterSetName = 'Pipeline')]
         [switch]$RestartService,
         [parameter(ValueFromPipeline, ParameterSetName = 'Pipeline', Mandatory = $true)]
@@ -375,7 +375,7 @@ function Set-DbaNetworkConfiguration {
                 $ipAll.TcpPort = $port
             }
 
-            if ($ListenOnIPAddressOnly) {
+            if ($IpAddress) {
                 if (-not $netConf.TcpIpEnabled) {
                     Write-Message -Level Verbose -Message "Will enable protocol TcpIp on $instance."
                     $netConf.TcpIpEnabled = $true
@@ -388,8 +388,7 @@ function Set-DbaNetworkConfiguration {
                     Write-Message -Level Verbose -Message "Will set property ListenAll of protocol TcpIp to False on $instance."
                     $netConf.TcpIpProperties.ListenAll = $false
                 }
-                $ipAddresses = $netConf.TcpIpAddresses | Where-Object { $_.Name -ne 'IPAll' }
-                foreach ($ip in $ipAddresses) {
+                foreach ($ip in ($netConf.TcpIpAddresses | Where-Object { $_.Name -ne 'IPAll' })) {
                     if ($ip.IpAddress -match ':') {
                         # IPv6: Remove interface id
                         $address = $ip.IpAddress -replace '^(.*)%.*$', '$1'
@@ -399,7 +398,7 @@ function Set-DbaNetworkConfiguration {
                     }
                     # Is the current IP one of those to be configured?
                     $isTarget = $false
-                    foreach ($listenIP in $ListenOnIPAddressOnly) {
+                    foreach ($listenIP in $IpAddress) {
                         if ($listenIP -match '^\[(.+)\]:?(\d*)$') {
                             # IPv6
                             $listenAddress = $Matches.1
