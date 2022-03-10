@@ -97,7 +97,7 @@ function Set-DbaNetworkConfiguration {
         Does not prompt for confirmation.
 
     .EXAMPLE
-        PS C:\> Set-DbaNetworkConfiguration -SqlInstance sql2016\test -ListenOnIPAddressOnly 192.168.3.41:1433 -RestartService
+        PS C:\> Set-DbaNetworkConfiguration -SqlInstance sql2016\test -IpAddress 192.168.3.41:1433 -RestartService
 
         Ensures that the TCP/IP network protocol is enabled and configured to only listen on port 1433 of IP address 192.168.3.41.
         Restarts the service if needed.
@@ -292,12 +292,12 @@ function Set-DbaNetworkConfiguration {
     }
 
     process {
-        if ($SqlInstance -and (Test-Bound -Not -ParameterName EnableProtocol, DisableProtocol, DynamicPortForIPAll, StaticPortForIPAll, ListenOnIPAddressOnly)) {
+        if ($SqlInstance -and (Test-Bound -Not -ParameterName EnableProtocol, DisableProtocol, DynamicPortForIPAll, StaticPortForIPAll, IpAddress)) {
             Stop-Function -Message "You must choose an action if SqlInstance is used."
             return
         }
 
-        if ($SqlInstance -and (Test-Bound -ParameterName EnableProtocol, DisableProtocol, DynamicPortForIPAll, StaticPortForIPAll, ListenOnIPAddressOnly -Not -Max 1)) {
+        if ($SqlInstance -and (Test-Bound -ParameterName EnableProtocol, DisableProtocol, DynamicPortForIPAll, StaticPortForIPAll, IpAddress -Not -Max 1)) {
             Stop-Function -Message "Only one action is allowed at a time."
             return
         }
