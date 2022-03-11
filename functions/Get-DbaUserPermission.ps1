@@ -86,7 +86,7 @@ function Get-DbaUserPermission {
     )
 
     begin {
-        $removeStigSQL = "       BEGIN TRY DROP FUNCTION STIG.server_effective_permissions END TRY BEGIN CATCH END CATCH;
+        $endSQL = "       BEGIN TRY DROP FUNCTION STIG.server_effective_permissions END TRY BEGIN CATCH END CATCH;
                        GO
                        BEGIN TRY DROP VIEW STIG.server_permissions END TRY BEGIN CATCH END CATCH;
                        GO
@@ -215,65 +215,48 @@ function Get-DbaUserPermission {
                 $dbs = $dbs | Where-Object IsSystemObject -eq $false
             }
 
-            Write-Message -Level Verbose -Message "Reading stig.sql"
-            $sqlFile = Join-DbaPath -Path $script:PSModuleRoot -ChildPath "bin", "stig.sql"
-            $sql = [System.IO.File]::ReadAllText("$sqlFile")
-
-            try {
-                Write-Message -Level Verbose -Message "Removing STIG schema if it still exists from previous run"
-                $tempdb.ExecuteNonQuery($removeStigSQL)
-                Write-Message -Level Verbose -Message "Creating STIG schema customized for master database"
-                $createStigSQL = $sql.Replace("<TARGETDB>", 'master')
-                $tempdb.ExecuteNonQuery($createStigSQL)
-                Write-Message -Level Verbose -Message "Building data table for server objects"
-                $serverDT = $tempdb.Query($serverSQL)
-                foreach ($row in $serverDT) {
-                    [PSCustomObject]@{
-                        ComputerName       = $server.ComputerName
-                        InstanceName       = $server.ServiceName
-                        SqlInstance        = $server.DomainInstanceName
-                        Object             = 'SERVER'
-                        Type               = $row.Type
-                        Member             = $row.Member
-                        RoleSecurableClass = $row.'Role/Securable/Class'
-                        SchemaOwner        = $row.'Schema/Owner'
-                        Securable          = $row.Securable
-                        GranteeType        = $row.'Grantee Type'
-                        Grantee            = $row.Grantee
-                        Permission         = $row.Permission
-                        State              = $row.State
-                        Grantor            = $row.Grantor
-                        GrantorType        = $row.'Grantor Type'
-                        SourceView         = $row.'Source View'
-                    }
-                }
-            } catch {
-                Stop-Function -Message "Failed to create or use STIG schema on $instance" -ErrorRecord $_ -Target $instance -Continue
-            }
+            #reset $serverDT
+            $serverDT = $null
 
             foreach ($db in $dbs) {
                 Write-Message -Level Verbose -Message "Processing $db on $instance"
 
+                $db.ExecuteNonQuery($endSQL)
+
                 if ($db.IsAccessible -eq $false) {
-                    Write-Message -Level Warning -Message "The database $db on $instance is not accessible. Skipping."
-                    continue
+                    Stop-Function -Message "The database $db is not accessible" -Continue
                 }
 
+                $sqlFile = Join-Path -Path $script:PSModuleRoot -ChildPath "bin\stig.sql"
+                $sql = [System.IO.File]::ReadAllText("$sqlFile")
+                $sql = $sql.Replace("<TARGETDB>", $db.Name)
+
+                #Create objects in active database
+                Write-Message -Level Verbose -Message "Creating objects"
                 try {
-                    Write-Message -Level Verbose -Message "Removing STIG schema if it still exists from previous run"
-                    $tempdb.ExecuteNonQuery($removeStigSQL)
-                    Write-Message -Level Verbose -Message "Creating STIG schema customized for current database"
-                    $createStigSQL = $sql.Replace("<TARGETDB>", $db.Name)
-                    Write-Message -Level Verbose -Message "Length of createStigSQL: $($createStigSQL.Length)"
-                    $tempdb.ExecuteNonQuery($createStigSQL)
-                    Write-Message -Level Verbose -Message "Building data table for database objects"
-                    $dbDT = $tempdb.Query($dbSQL)
-                    foreach ($row in $dbDT) {
+                    $db.ExecuteNonQuery($sql)
+                } catch {
+                    # here to avoid an empty catch
+                    $null = 1
+                } # sometimes it complains about not being able to drop the stig schema if the person Ctrl-C'd before.
+
+                #Grab permissions data
+                if (-not $serverDT) {
+                    Write-Message -Level Verbose -Message "Building data table for server objects"
+
+                    try {
+                        $serverDT = $db.Query($serverSQL)
+                    } catch {
+                        # here to avoid an empty catch
+                        $null = 1
+                    }
+
+                    foreach ($row in $serverDT) {
                         [PSCustomObject]@{
                             ComputerName       = $server.ComputerName
                             InstanceName       = $server.ServiceName
                             SqlInstance        = $server.DomainInstanceName
-                            Object             = $db.Name
+                            Object             = 'SERVER'
                             Type               = $row.Type
                             Member             = $row.Member
                             RoleSecurableClass = $row.'Role/Securable/Class'
@@ -288,13 +271,47 @@ function Get-DbaUserPermission {
                             SourceView         = $row.'Source View'
                         }
                     }
-                } catch {
-                    Stop-Function -Message "Failed to create or use STIG schema for database $db on $instance" -ErrorRecord $_ -Target $instance -Continue
                 }
-            }
 
-            Write-Message -Level Verbose -Message "Removing STIG schema from tempdb"
-            $tempdb.ExecuteNonQuery($removeStigSQL)
+                Write-Message -Level Verbose -Message "Building data table for $db objects"
+                try {
+                    $dbDT = $db.Query($dbSQL)
+                } catch {
+                    # here to avoid an empty catch
+                    $null = 1
+                }
+
+                foreach ($row in $dbDT) {
+                    [PSCustomObject]@{
+                        ComputerName       = $server.ComputerName
+                        InstanceName       = $server.ServiceName
+                        SqlInstance        = $server.DomainInstanceName
+                        Object             = $db.Name
+                        Type               = $row.Type
+                        Member             = $row.Member
+                        RoleSecurableClass = $row.'Role/Securable/Class'
+                        SchemaOwner        = $row.'Schema/Owner'
+                        Securable          = $row.Securable
+                        GranteeType        = $row.'Grantee Type'
+                        Grantee            = $row.Grantee
+                        Permission         = $row.Permission
+                        State              = $row.State
+                        Grantor            = $row.Grantor
+                        GrantorType        = $row.'Grantor Type'
+                        SourceView         = $row.'Source View'
+                    }
+                }
+
+                #Delete objects
+                Write-Message -Level Verbose -Message "Deleting objects"
+                try {
+                    $tempdb.ExecuteNonQuery($endSQL)
+                } catch {
+                    # here to avoid an empty catch
+                    $null = 1
+                }
+                #Sashay Away
+            }
         }
     }
 }
