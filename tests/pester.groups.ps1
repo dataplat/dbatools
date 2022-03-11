@@ -32,7 +32,6 @@ $TestsRunGroups = @{
         # times out
         'Copy-DbaResourceGovernor',
         # fails on newer version of SMO
-        'Get-DbaUserPermission',
         'Invoke-DbaBalanceDataFiles',
         'Invoke-DbaWhoisActive',
         'Install-DbaDarlingData',
