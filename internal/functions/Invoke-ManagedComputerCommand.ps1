@@ -48,10 +48,15 @@ function Invoke-ManagedComputerCommand {
     [scriptblock]$setupScriptBlock = {
         $ipaddr = $args[$args.GetUpperBound(0)]
 
+        $setupVerbose = @( )
+        $setupVerbose += "Starting WMI initialization at $ipaddr"
+
         # Just in case we go remote, ensure the assembly is loaded
         [void][System.Reflection.Assembly]::LoadWithPartialName('Microsoft.SqlServer.SqlWmiManagement')
         $wmi = New-Object Microsoft.SqlServer.Management.Smo.Wmi.ManagedComputer $ipaddr
-        $null = $wmi.Initialize()
+        $result = $wmi.Initialize()
+
+        $setupVerbose += "Finished WMI initialization with $result"
     }
 
     $prescriptblock = $setupScriptBlock.ToString()
@@ -61,7 +66,17 @@ function Invoke-ManagedComputerCommand {
     Write-Message -Level Verbose -Message "Connecting to SQL WMI on $computer."
 
     try {
-        Invoke-Command2 -ScriptBlock $ScriptBlock -ArgumentList $ArgumentList -Credential $Credential -ErrorAction Stop
+        $result = Invoke-Command2 -ScriptBlock $ScriptBlock -ArgumentList $ArgumentList -Credential $Credential -ErrorAction Stop
+        if ($result.Exception) {
+            # The new code pattern for WMI calls like in Set-DbaNetworkConfiguration is used where all exceptions are catched and return as part of an object.
+            foreach ($msg in $result.Verbose) {
+                Write-Message -Level Verbose -Message $msg
+            }
+            Stop-Function -Message "Execution against $computer failed." -Target $computer -ErrorRecord $result.Exception
+        } else {
+            # The old code pattern is used or no exception was catched, so just return the result
+            $result
+        }
     } catch {
         Write-Message -Level Verbose -Message "Local connection attempt to $computer failed. Connecting remotely."
 
