@@ -143,9 +143,15 @@ function Set-DbaNetworkConfiguration {
             $targetConf = $args[0]
             $changes = @()
             $verbose = @()
+            $verbose += $setupVerbose
             $exception = $null
 
             try {
+                $verbose += "Starting code from Set-DbaNetworkConfiguration"
+
+                # If WMI object is empty, there are no client protocols - so we test for that to see if initialization was successful
+                $verbose += "Found $($wmi.ServerInstances.Count) instances and $($wmi.ClientProtocols.Count) client protocols inside of WMI object"
+
                 $verbose += "Getting server protocols for $($targetConf.InstanceName)"
                 $wmiServerProtocols = ($wmi.ServerInstances | Where-Object { $_.Name -eq $targetConf.InstanceName } ).ServerProtocols
 
