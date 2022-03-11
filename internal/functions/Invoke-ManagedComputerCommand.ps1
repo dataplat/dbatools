@@ -72,7 +72,7 @@ function Invoke-ManagedComputerCommand {
             foreach ($msg in $result.Verbose) {
                 Write-Message -Level Verbose -Message $msg
             }
-            Stop-Function -Message "Execution against $computer failed." -Target $computer -ErrorRecord $result.Exception
+            Stop-Function -Message "Execution against $computer failed." -Target $computer -ErrorRecord $result.Exception -EnableException $true
         } else {
             # The old code pattern is used or no exception was catched, so just return the result
             $result
