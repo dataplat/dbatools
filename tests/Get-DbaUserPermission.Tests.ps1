@@ -29,6 +29,8 @@ exec sp_addrolemember 'userrole','bob';
 
         $results = Get-DbaUserPermission -SqlInstance $script:instance1 -Database $dbName
 
+        $null = Remove-DbaDatabase -SqlInstance $script:instance1 -Database $dbName -Confirm:$false
+
         It "returns results" {
             $results.Count -gt 0 | Should Be $true
         }
