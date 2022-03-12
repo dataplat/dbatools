@@ -15,15 +15,34 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     Context "Command returns proper info" {
-        $results = Get-DbaUserPermission -SqlInstance $script:instance1 -Database tempdb
+        $dbName = "dbatoolsci_UserPermission"
+        $sql = @'
+create user alice without login;
+create user bob without login;
+create role userrole AUTHORIZATION dbo;
+exec sp_addrolemember 'userrole','alice';
+exec sp_addrolemember 'userrole','bob';
+'@
+
+        $db = New-DbaDatabase -SqlInstance $script:instance1 -Name $dbName
+        $db.ExecuteNonQuery($sql)
+
+        $results = Get-DbaUserPermission -SqlInstance $script:instance1 -Database $dbName
+
+        $null = Remove-DbaDatabase -SqlInstance $script:instance1 -Database $dbName -Confirm:$false
 
         It "returns results" {
             $results.Count -gt 0 | Should Be $true
         }
 
         foreach ($result in $results) {
-            It "returns only tempdb or server results" {
-                $result.Object -in 'tempdb', 'SERVER' | Should Be $true
+            It "returns only $dbName or server results" {
+                $result.Object | Should -BeIn $dbName, 'SERVER'
+            }
+            if ($result.Object -eq $dbName -and $result.RoleSecurableClass -eq 'DATABASE') {
+                It "returns correct securable" {
+                    $result.Securable | Should Be $dbName
+                }
             }
         }
     }
