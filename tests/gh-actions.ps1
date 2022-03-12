@@ -51,11 +51,29 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
     }
 
     It "gets some permissions" {
-        $results = Get-DbaUserPermission -Database "Northwind" -WarningVariable warn
+        $dbName = "UserPermission"
+        $sql = @'
+create user alice without login;
+create user bob without login;
+create role userrole AUTHORIZATION dbo;
+exec sp_addrolemember 'userrole','alice';
+exec sp_addrolemember 'userrole','bob';
+'@
+
+        $db = New-DbaDatabase -Name $dbName
+        $db.ExecuteNonQuery($sql)
+
+        $results = Get-DbaUserPermission -Database $dbName -WarningVariable warn
+
+        $null = Remove-DbaDatabase -Database $dbName -Confirm:$false
+
         $warn | Should -BeNullOrEmpty
         ($results.Object | Select-Object -Unique).Count | Should -Be 2
         foreach ($result in $results) {
-            $results.Object | Should -BeIn "SERVER", "Northwind"
+            $results.Object | Should -BeIn "SERVER", $dbName
+            if ($result.Object -eq $dbName -and $result.RoleSecurableClass -eq 'DATABASE') {
+                $result.Securable | Should -Be $dbName
+            }
         }
     }
 

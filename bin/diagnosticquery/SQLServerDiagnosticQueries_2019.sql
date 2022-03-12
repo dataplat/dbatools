@@ -1,7 +1,7 @@
 
 -- SQL Server 2019 Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: February 1, 2022
+-- Last Modified: March 6, 2022
 -- https://glennsqlperformance.com/ 
 -- https://sqlserverperformance.wordpress.com/
 -- YouTube: https://bit.ly/2PkoAM1 
@@ -2077,7 +2077,9 @@ AND es.session_id <> @@SPID OPTION (RECOMPILE);
 -- Get any resumable index rebuild operation information (Query 82) (Resumable Index Rebuild)
 SELECT OBJECT_NAME(iro.object_id) AS [Object Name], iro.index_id, iro.name AS [Index Name],
        iro.sql_text, iro.last_max_dop_used, iro.partition_number, iro.state_desc, 
-	   iro.start_time, iro.percent_complete
+       iro.start_time, CONVERT(decimal(15,2),iro.percent_complete) AS [Percent Complete], 
+	   iro.last_pause_time, iro.total_execution_time AS [Execution Min],
+       CONVERT(decimal(15,2),iro.total_execution_time * (100.0 - iro.percent_complete)/iro.percent_complete) AS [Approx Execution Min Left] 
 FROM  sys.index_resumable_operations AS iro WITH (NOLOCK)
 OPTION (RECOMPILE);
 ------ 
