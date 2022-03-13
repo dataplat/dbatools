@@ -35,6 +35,32 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $results.IsAccessible | Should Be $true
         }
     }
+    
+}
+
+Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
+    BeforeAll {
+
+        $random = Get-Random
+        $dbname1 = "dbatoolsci_Backup_$random"
+        $dbname2 = "dbatoolsci_NoBackup_$random"
+        New-DbaDatabase -SqlInstance $script:instance1 -name $dbname1 ,$dbname2
+        $dbname1 | Backup-DbaDatabase -Type Full -FilePath NUL
+    }
+    AfterAll {
+        $null = Get-DbaDatabase -SqlInstance $script:instance1 -Database $dbname1, $dbname2 | Remove-DbaDatabase -Confirm:$false
+    }
+
+    Context "Results return if no backup" {
+        $results = Get-DbaDatabase -SqlInstance $script:instance1 -Database $dbname1 -NoFullBackup
+        It "Should not report as database has full backup" {
+            ($results).Count | Should Be 0
+        }
+        $results = Get-DbaDatabase -SqlInstance $script:instance1 -Database $dbname2 -NoFullBackup
+        It "Should report 1 database with no full backup" {
+            ($results | Where-Object Database -match "master").Count | Should Be 1
+        }
+    }
 }
 
 Describe "$commandname Unit Tests" -Tags "UnitTests", Get-DBADatabase {
