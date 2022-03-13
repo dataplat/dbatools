@@ -58,7 +58,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         }
         $results = Get-DbaDatabase -SqlInstance $script:instance1 -Database $dbname2 -NoFullBackup
         It "Should report 1 database with no full backup" {
-            ($results | Where-Object Database -match "master").Count | Should Be 1
+            ($results).Count | Should Be 1
         }
     }
 }
