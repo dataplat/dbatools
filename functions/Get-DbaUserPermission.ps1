@@ -267,7 +267,7 @@ function Get-DbaUserPermission {
                     Write-Message -Level Verbose -Message "Length of createStigSQL: $($createStigSQL.Length)"
                     $tempdb.ExecuteNonQuery($createStigSQL)
                     Write-Message -Level Verbose -Message "Building data table for database objects"
-                    $dbDT = $tempdb.Query($dbSQL)
+                    $dbDT = $db.Query($dbSQL)
                     foreach ($row in $dbDT) {
                         [PSCustomObject]@{
                             ComputerName       = $server.ComputerName
