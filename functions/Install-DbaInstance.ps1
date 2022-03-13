@@ -58,6 +58,13 @@ function Install-DbaInstance {
         For example, to define a custom server collation you can use the following parameter:
         PS> Install-DbaInstance -Version 2017 -Configuration @{ SQLCOLLATION = 'Latin1_General_BIN' }
 
+        As long as you don't specify the item ACTION, some items are already set by the command, like SQLSYSADMINACCOUNTS or *SVCSTARTUPTYPE.
+        If you specify the item ACTION, only INSTANCENAME and FEATURES are set based on the corresponding parameters and QUIET is set to True.
+        You will have to set all other needed items for your specific ACTION.
+        But this way it is possible to use the command so install a Failover Cluster Instance or even to remove a SQL Server instance.
+
+        More information about how to install a Failover Cluster Instance can be found here: https://github.com/dataplat/dbatools/discussions/7447
+
         Full list of parameters can be found here: https://docs.microsoft.com/en-us/sql/database-engine/install-windows/install-sql-server-from-the-command-prompt#Install
 
     .PARAMETER Authentication
@@ -578,6 +585,15 @@ function Install-DbaInstance {
                     $config = Read-IniFile -Path $ConfigurationFile
                 } catch {
                     Stop-Function -Message "Failed to read config file $ConfigurationFile" -ErrorRecord $_
+                }
+            } elseif ($Configuration.ACTION) {
+                # build minimal config if a custom ACTION is provided
+                $config = @{
+                    $mainKey = @{
+                        INSTANCENAME = $instance
+                        FEATURES     = $featureList
+                        QUIET        = "True"
+                    }
                 }
             } else {
                 # determine a default user to assign sqladmin permissions
