@@ -410,7 +410,7 @@ function New-DbaAgentJob {
             Add-TeppCacheItem -SqlInstance $server -Type job -Name $Job
 
             # Return the job
-            Get-DbaAgentJob -SqlInstance $server | Where-Object Name -eq $currentjob.name
+            Get-DbaAgentJob -SqlInstance $server | Where-Object Name -eq $Job
         }
     }
 
