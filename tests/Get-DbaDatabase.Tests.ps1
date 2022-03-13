@@ -45,7 +45,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         $dbname1 = "dbatoolsci_Backup_$random"
         $dbname2 = "dbatoolsci_NoBackup_$random"
         New-DbaDatabase -SqlInstance $script:instance1 -name $dbname1 ,$dbname2
-        $NULL = Backup-DbaDatabase -SqlInstance . -Type Full -FilePath nul -Database $dbname1  
+        $NULL = Backup-DbaDatabase -SqlInstance $script:instance1 -Type Full -FilePath nul -Database $dbname1  
     }
     AfterAll {
         $null = Get-DbaDatabase -SqlInstance $script:instance1 -Database $dbname1, $dbname2 | Remove-DbaDatabase -Confirm:$false
