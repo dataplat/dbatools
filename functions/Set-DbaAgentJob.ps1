@@ -308,6 +308,9 @@ function Set-DbaAgentJob {
                         # Add schedule to job
                         if ($PSCmdlet.ShouldProcess($server, "Adding schedule id $sID to job $($currentjob.Name)")) {
                             $currentjob.AddSharedSchedule($sID)
+
+                            # Refresh the SMO - another bug in SMO? As this should not be needed...
+                            $currentjob.Refresh()
                         }
                     } else {
                         Stop-Function -Message "Schedule $s cannot be found on instance $instance" -Target $s -Continue
@@ -324,6 +327,9 @@ function Set-DbaAgentJob {
                         # Add schedule to job
                         if ($PSCmdlet.ShouldProcess($server, "Adding schedule id $sID to job $($currentjob.Name)")) {
                             $currentjob.AddSharedSchedule($sID)
+
+                            # Refresh the SMO - another bug in SMO? As this should not be needed...
+                            $currentjob.Refresh()
                         }
                     } else {
                         Stop-Function -Message "Schedule ID $sID cannot be found on instance $instance" -Target $sID -Continue
@@ -510,7 +516,11 @@ function Set-DbaAgentJob {
                 } catch {
                     Stop-Function -Message "Something went wrong changing the job" -ErrorRecord $_ -Target $instance -Continue
                 }
-                Get-DbaAgentJob -SqlInstance $server | Where-Object Name -eq $currentjob.name
+
+                # Refresh the SMO - another bug in SMO? As this should not be needed...
+                $currentjob.Refresh()
+
+                Get-DbaAgentJob -SqlInstance $server -Job $currentjob.Name
             }
         }
     }
