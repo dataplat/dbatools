@@ -264,6 +264,13 @@ function Copy-DbaDbMail {
             $sourceMailServers = $sourceServer.Mail.Accounts.MailServers
             $destMailServers = $destServer.Mail.Accounts.MailServers
 
+            Write-Message -Message "Getting mail server credentials." -Level Verbose
+            $sql = "SELECT credentials.name AS credential_name, sysmail_server.account_id FROM sys.credentials JOIN msdb.dbo.sysmail_server ON credentials.credential_id = sysmail_server.credential_id"
+            $credentialAccounts = @($sourceServer.Query($sql))
+            if ($credentialAccounts.Count -gt 0) {
+                $decryptedCredentials = Get-DecryptedObject -SqlInstance $sourceServer -Type Credential | Where-Object { $_.Name -in $credentialAccounts.credential_name }
+            }
+
             Write-Message -Message "Migrating mail servers." -Level Verbose
             foreach ($mailServer in $sourceMailServers) {
                 $mailServerName = $mailServer.name
@@ -308,6 +315,16 @@ function Copy-DbaDbMail {
                         Write-Message -Message "Copying mail server $mailServerName." -Level Verbose
                         $sql = $mailServer.Script() | Out-String
                         $sql = $sql -replace "(?<=@account_name=N'[\d\w\s']*)$sourceRegEx(?=[\d\w\s']*',)", $destinstance
+                        $credentialName = ($credentialAccounts | Where-Object { $_.account_id -eq $mailServer.Parent.ID }).credential_name
+                        if ($credentialName) {
+                            $decryptedCred = $decryptedCredentials | Where-Object { $_.Name -eq $credentialName }
+                            if ($decryptedCred) {
+                                $password = $decryptedCred.Password.Replace("'", "''")
+                                $sql = $sql -replace "@password=N''", "@password=N'$($password)'"
+                            } else {
+                                Write-Message -Level Warning -Message "Failed to get mail server password, it will need to be entered manually on the destination."
+                            }
+                        }
                         Write-Message -Message $sql -Level Debug
                         $destServer.Query($sql) | Out-Null
                         $copyMailServerStatus.Status = "Successful"
