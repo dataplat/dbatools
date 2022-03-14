@@ -265,8 +265,8 @@ function Copy-DbaDbMail {
             $destMailServers = $destServer.Mail.Accounts.MailServers
 
             Write-Message -Message "Getting mail server credentials." -Level Verbose
-            $credentialAccounts = @($sourceServer.Query("SELECT credentials.name AS credential_name, sysmail_server.account_id FROM sys.credentials
-            JOIN msdb.dbo.sysmail_server ON credentials.credential_id = sysmail_server.credential_id"))
+            $sql = "SELECT credentials.name AS credential_name, sysmail_server.account_id FROM sys.credentials JOIN msdb.dbo.sysmail_server ON credentials.credential_id = sysmail_server.credential_id"
+            $credentialAccounts = @($sourceServer.Query($sql))
             if ($credentialAccounts.Count -gt 0) {
                 $decryptedCredentials = Get-DecryptedObject -SqlInstance $sourceServer -Type Credential | Where-Object { $_.Name -in $credentialAccounts.credential_name }
             }
@@ -315,7 +315,7 @@ function Copy-DbaDbMail {
                         Write-Message -Message "Copying mail server $mailServerName." -Level Verbose
                         $sql = $mailServer.Script() | Out-String
                         $sql = $sql -replace "(?<=@account_name=N'[\d\w\s']*)$sourceRegEx(?=[\d\w\s']*',)", $destinstance
-                        $credentialName = ($credentialAccounts | Where-Object {$_.account_id -eq $mailServer.Parent.ID }).credential_name
+                        $credentialName = ($credentialAccounts | Where-Object { $_.account_id -eq $mailServer.Parent.ID }).credential_name
                         if ($credentialName) {
                             $decryptedCred = $decryptedCredentials | Where-Object { $_.Name -eq $credentialName }
                             if ($decryptedCred) {
