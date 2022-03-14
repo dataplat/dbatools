@@ -345,17 +345,8 @@ function Backup-DbaDatabase {
             $ProgressId = Get-Random
             $failures = @()
             $dbName = $db.Name
-            # The following is needed to cope with either database or instance objects coming in via pipeline
-            if ($db.gettype().name -ne 'Database') {
-                $server = $db.ComputerName
-                $dbName = $db.Name
-            } else {
-                $server = $db.Parent
-                $dbName = $db.Name
-                $null = $server.Refresh()
-            }
-
-
+            $server = $db.Parent
+            $null = $server.Refresh()
             $isdestlinux = Test-HostOSLinux -SqlInstance $server
 
             if (Test-Bound 'EncryptionAlgorithm') {
@@ -491,9 +482,7 @@ function Backup-DbaDatabase {
                 $CopyOnly = $false
             }
 
-            if ($null -ne $SqlInstance) {
-                $server.ConnectionContext.StatementTimeout = 0
-            }
+            $server.ConnectionContext.StatementTimeout = 0
             $backup = New-Object Microsoft.SqlServer.Management.Smo.Backup
             $backup.Database = $db.Name
             $Suffix = "bak"
@@ -621,24 +610,10 @@ function Backup-DbaDatabase {
             }
 
             if ($True -eq $ReplaceInName) {
-                # The following is needed as a piped in database will provide servername wrapped in []'s
-                if ($server -match '\[(.*)\]') {
-                    $servertmp = $matches[1]
-                    # We then need to catch the instance name if it exists
-                    if ($matches[1] -match '(.*)\\(.*)') {
-                        $servertmp = $matches[1]
-                        $instanceName = $matches[2]
-                    } else {
-                        $instanceName = 'MSSQLSERVER'
-                    }
-                } else {
-                    $servertmp = $server
-                    $instanceName = $SqlInstance.InstanceName
-                }
                 for ($i = 0; $i -lt $FinalBackupPath.count; $i++) {
                     $FinalBackupPath[$i] = $FinalBackupPath[$i] -replace ('dbname', $dbName)
-                    $FinalBackupPath[$i] = $FinalBackupPath[$i] -replace ('instancename', $instanceName)
-                    $FinalBackupPath[$i] = $FinalBackupPath[$i] -replace ('servername', $servertmp)
+                    $FinalBackupPath[$i] = $FinalBackupPath[$i] -replace ('instancename', $server.ServiceName)
+                    $FinalBackupPath[$i] = $FinalBackupPath[$i] -replace ('servername', $server.ComputerName)
                     $FinalBackupPath[$i] = $FinalBackupPath[$i] -replace ('timestamp', $timestamp)
                     $FinalBackupPath[$i] = $FinalBackupPath[$i] -replace ('backuptype', $outputType)
                 }
