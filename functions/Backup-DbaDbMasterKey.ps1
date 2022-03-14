@@ -160,10 +160,14 @@ function Backup-DbaDbMasterKey {
                     Write-Message -Level Warning -Message "Backup failure: $($_.Exception.InnerException)"
                 }
 
+                # Sleep for a second to avoid another export in the same second
+                Start-Sleep -Seconds 1
+
                 Add-Member -Force -InputObject $masterkey -MemberType NoteProperty -Name ComputerName -value $server.ComputerName
                 Add-Member -Force -InputObject $masterkey -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
                 Add-Member -Force -InputObject $masterkey -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
                 Add-Member -Force -InputObject $masterkey -MemberType NoteProperty -Name Database -value $dbName
+                Add-Member -Force -InputObject $masterkey -MemberType NoteProperty -Name DatabaseID -value $db.ID
                 Add-Member -Force -InputObject $masterkey -MemberType NoteProperty -Name Filename -value $fullKeyName
                 Add-Member -Force -InputObject $masterkey -MemberType NoteProperty -Name Status -value $status
 

@@ -149,7 +149,7 @@ function Backup-DbaDbCertificate {
             $server = $db.Parent
             $instance = $server.Name
 
-            if (Test-Bound -ParameterName Path -Not) {
+            if (-not $Path) {
                 $Path = $server.BackupDirectory
             }
 
@@ -208,11 +208,15 @@ function Backup-DbaDbCertificate {
                         $cert.export($exportPathCert)
                     }
 
+                    # Sleep for a second to avoid another export in the same second
+                    Start-Sleep -Seconds 1
+
                     [pscustomobject]@{
                         ComputerName   = $server.ComputerName
                         InstanceName   = $server.ServiceName
                         SqlInstance    = $server.DomainInstanceName
                         Database       = $db.Name
+                        DatabaseID     = $db.ID
                         Certificate    = $certName
                         Path           = $exportPathCert
                         Key            = $exportPathKey
@@ -235,6 +239,7 @@ function Backup-DbaDbCertificate {
                         InstanceName   = $server.ServiceName
                         SqlInstance    = $server.DomainInstanceName
                         Database       = $db.Name
+                        DatabaseID     = $db.ID
                         Certificate    = $certName
                         Path           = $exportPathCert
                         Key            = $exportPathKey

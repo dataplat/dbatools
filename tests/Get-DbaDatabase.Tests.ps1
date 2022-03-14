@@ -4,11 +4,11 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
+        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
         [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'ExcludeUser', 'ExcludeSystem', 'Owner', 'Encrypted', 'Status', 'Access', 'RecoveryModel', 'NoFullBackup', 'NoFullBackupSince', 'NoLogBackup', 'NoLogBackupSince', 'EnableException', 'IncludeLastUsed', 'OnlyAccessible'
         $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
         It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
         }
     }
 }
@@ -33,6 +33,32 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         $results = Get-DbaDatabase -SqlInstance $script:instance1 -Database master
         It "master is accessible" {
             $results.IsAccessible | Should Be $true
+        }
+    }
+
+}
+
+Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
+    BeforeAll {
+
+        $random = Get-Random
+        $dbname1 = "dbatoolsci_Backup_$random"
+        $dbname2 = "dbatoolsci_NoBackup_$random"
+        New-DbaDatabase -SqlInstance $script:instance1 -name $dbname1 , $dbname2
+        $NULL = Backup-DbaDatabase -SqlInstance $script:instance1 -Type Full -FilePath nul -Database $dbname1
+    }
+    AfterAll {
+        $null = Get-DbaDatabase -SqlInstance $script:instance1 -Database $dbname1, $dbname2 | Remove-DbaDatabase -Confirm:$false
+    }
+
+    Context "Results return if no backup" {
+        $results = Get-DbaDatabase -SqlInstance $script:instance1 -Database $dbname1 -NoFullBackup
+        It "Should not report as database has full backup" {
+            ($results).Count | Should Be 0
+        }
+        $results = Get-DbaDatabase -SqlInstance $script:instance1 -Database $dbname2 -NoFullBackup
+        It "Should report 1 database with no full backup" {
+            ($results).Count | Should Be 1
         }
     }
 }

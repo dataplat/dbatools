@@ -67,7 +67,6 @@ Function Compare-DbaCollationSensitiveObject {
         [switch]$Eq,
         [parameter(Mandatory, ParameterSetName = 'Ne')]
         [switch]$Ne,
-        [parameter(Mandatory)]
         [object]$Value,
         [parameter(Mandatory)]
         [String]$Collation)
