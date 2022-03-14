@@ -29,12 +29,14 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
             BackupRestore     = $true
             Exclude           = "LinkedServers", "Credentials", "DataCollector", "EndPoints", "PolicyManagement", "ResourceGovernor", "BackupDevices"
         }
+        # something is up with docker on actions, adjust accordingly for the cert test
+        $initialcertcount = (Get-DbaDbCertificate -SqlInstance localhost:14333 -Database master).Count
         $null = New-DbaDbCertificate -Name migrateme -Database master -Confirm:$false
         $results = Start-DbaMigration @params
         $results.Name | Should -Contain "Northwind"
         $results | Where-Object Name -eq "Northwind" | Select-Object -ExpandProperty Status | Should -Be "Successful"
         $results | Where-Object Name -eq "migrateme" | Select-Object -ExpandProperty Status | Should -Be "Successful"
-        Get-DbaDbCertificate -SqlInstance localhost:14333 -Database master -Certificate migrateme | Should -Not -BeNull
+        (Get-DbaDbCertificate -SqlInstance localhost:14333 -Database master).Count | Should -BeGreaterThan $initialcertcount
     }
 
     It "sets up a mirror" {
@@ -49,9 +51,29 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
     }
 
     It "gets some permissions" {
-        $results = Get-DbaUserPermission -Database "Northwind"
+        $dbName = "UserPermission"
+        $sql = @'
+create user alice without login;
+create user bob without login;
+create role userrole AUTHORIZATION dbo;
+exec sp_addrolemember 'userrole','alice';
+exec sp_addrolemember 'userrole','bob';
+'@
+
+        $db = New-DbaDatabase -Name $dbName
+        $db.ExecuteNonQuery($sql)
+
+        $results = Get-DbaUserPermission -Database $dbName -WarningVariable warn
+
+        $null = Remove-DbaDatabase -Database $dbName -Confirm:$false
+
+        $warn | Should -BeNullOrEmpty
+        ($results.Object | Select-Object -Unique).Count | Should -Be 2
         foreach ($result in $results) {
-            $results.Object -in "SERVER", "Northwind"
+            $results.Object | Should -BeIn "SERVER", $dbName
+            if ($result.Object -eq $dbName -and $result.RoleSecurableClass -eq 'DATABASE') {
+                $result.Securable | Should -Be $dbName
+            }
         }
     }
 

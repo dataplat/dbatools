@@ -1,7 +1,7 @@
 
 -- SQL Server 2019 Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: January 13, 2022
+-- Last Modified: March 6, 2022
 -- https://glennsqlperformance.com/ 
 -- https://sqlserverperformance.wordpress.com/
 -- YouTube: https://bit.ly/2PkoAM1 
@@ -84,7 +84,8 @@ SELECT @@SERVERNAME AS [Server Name], @@VERSION AS [SQL Server and OS Version In
 -- 15.0.4138.2		CU11								6/10/2021		https://support.microsoft.com/en-us/topic/kb5003249-cumulative-update-11-for-sql-server-2019-657b2977-a0f1-4e1f-8b93-8c2ca8b6bef5
 -- 15.0.4153.1		CU12								 8/4/2021		https://support.microsoft.com/en-us/topic/kb5004524-cumulative-update-12-for-sql-server-2019-45b2d82a-c7d0-4eb8-aa17-d4bad4059987
 -- 15.0.4178.1		CU13								10/5/2021		https://support.microsoft.com/en-us/topic/kb5005679-cumulative-update-13-for-sql-server-2019-5c1be850-460a-4be4-a569-fe11f0adc535							
--- 15.0.4188.2		CU14								11/22/2021		https://support.microsoft.com/sl-si/topic/kb5007182-cumulative-update-14-for-sql-server-2019-67b00a61-4f30-4a36-a5db-b506c47e563b	
+-- 15.0.4188.2		CU14							   11/22/2021		https://support.microsoft.com/sl-si/topic/kb5007182-cumulative-update-14-for-sql-server-2019-67b00a61-4f30-4a36-a5db-b506c47e563b
+-- 15.0.4198.2		CU15								1/27/2022		https://support.microsoft.com/en-us/topic/kb5008996-cumulative-update-15-for-sql-server-2019-4b6a8ee9-1c61-482d-914f-36e429901fb6
 
 
 -- How to determine the version, edition and update level of SQL Server and its components 
@@ -1835,7 +1836,7 @@ SELECT OBJECT_NAME(t.[object_id]) AS [ObjectName], p.[rows] AS [Table Rows], p.i
        t.create_date, t.lock_on_bulk_load, t.is_replicated, t.has_replication_filter, 
        t.is_tracked_by_cdc, t.lock_escalation_desc, t.is_filetable, 
 	   t.is_memory_optimized, t.durability_desc, 
-	   t.temporal_type_desc, t.is_remote_data_archive_enabled, t.is_external -- new for SQL Server 2016
+	   t.temporal_type_desc, t.is_remote_data_archive_enabled, t.is_external 
 FROM sys.tables AS t WITH (NOLOCK)
 INNER JOIN sys.partitions AS p WITH (NOLOCK)
 ON t.[object_id] = p.[object_id]
@@ -2076,7 +2077,9 @@ AND es.session_id <> @@SPID OPTION (RECOMPILE);
 -- Get any resumable index rebuild operation information (Query 82) (Resumable Index Rebuild)
 SELECT OBJECT_NAME(iro.object_id) AS [Object Name], iro.index_id, iro.name AS [Index Name],
        iro.sql_text, iro.last_max_dop_used, iro.partition_number, iro.state_desc, 
-	   iro.start_time, iro.percent_complete
+       iro.start_time, CONVERT(decimal(15,2),iro.percent_complete) AS [Percent Complete], 
+	   iro.last_pause_time, iro.total_execution_time AS [Execution Min],
+       CONVERT(decimal(15,2),iro.total_execution_time * (100.0 - iro.percent_complete)/iro.percent_complete) AS [Approx Execution Min Left] 
 FROM  sys.index_resumable_operations AS iro WITH (NOLOCK)
 OPTION (RECOMPILE);
 ------ 

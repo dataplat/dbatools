@@ -12,7 +12,7 @@ function Set-DbaResourceGovernor {
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.
 
-    .PARAMETER Credential
+    .PARAMETER SqlCredential
         Credential object used to connect to the Windows server as a different user
 
     .PARAMETER Enabled
@@ -71,7 +71,8 @@ function Set-DbaResourceGovernor {
     param (
         [parameter(Mandatory, ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
-        [PSCredential]$Credential,
+        [Alias("Credential")]
+        [PSCredential]$SqlCredential,
         [switch]$Enabled,
         [switch]$Disabled,
         [string]$ClassifierFunction,
@@ -126,9 +127,10 @@ function Set-DbaResourceGovernor {
             # Execute
             if ($PSCmdlet.ShouldProcess($instance, "Changing Resource Governor")) {
                 $server.ResourceGovernor.Alter()
+                $server.ResourceGovernor.Refresh()
             }
 
-            Get-DbaResourceGovernor -SqlInstance $instance
+            Get-DbaResourceGovernor -SqlInstance $server
         }
     }
 }

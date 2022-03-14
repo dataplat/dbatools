@@ -7,19 +7,19 @@ function Add-DbaAgDatabase {
         Adds database(s) to an Availability Group on a SQL Server instance.
 
         After checking for prerequisites, the commands runs these five steps for every database:
-        Step 1: Setting seeding mode if needed.
-            If -SeedingMode is used and the current seeding mode of the replica is not in the desired mode, the seeding mode of the replica is changed.
-            The seeding mode will not be changed back but stay in this mode.
-            If the seeding mode is changed to Automatic, the necessary rights to create databases will be granted.
-        Step 2: Running backup and restore if needed.
-            Action is only taken for replicas with a desired seeding mode of Manual and where the database does not yet exist.
-            If -UseLastBackup is used, the restore will be performed based on the backup history of the database.
-            Otherwise a full and log backup will be taken at the primary and those will be restored at the replica.
-        Step 3: Add the database to the Availability Group on the primary replica.
-            This step is skipped, if the database is already part of the Availability Group.
-        Step 4: Add the database to the Availability Group on the secondary replicas.
-            This step is skipped for those replicas, where the database is already joined to the Availability Group.
-        Step 5: Wait for the database to finish joining the Availability Group on the secondary replicas.
+        * Step 1: Setting seeding mode if needed.
+          - If -SeedingMode is used and the current seeding mode of the replica is not in the desired mode, the seeding mode of the replica is changed.
+          - The seeding mode will not be changed back but stay in this mode.
+          - If the seeding mode is changed to Automatic, the necessary rights to create databases will be granted.
+        * Step 2: Running backup and restore if needed.
+          - Action is only taken for replicas with a desired seeding mode of Manual and where the database does not yet exist.
+          - If -UseLastBackup is used, the restore will be performed based on the backup history of the database.
+          - Otherwise a full and log backup will be taken at the primary and those will be restored at the replica using the same folder structure.
+        * Step 3: Add the database to the Availability Group on the primary replica.
+          - This step is skipped, if the database is already part of the Availability Group.
+        * Step 4: Add the database to the Availability Group on the secondary replicas.
+          - This step is skipped for those replicas, where the database is already joined to the Availability Group.
+        * Step 5: Wait for the database to finish joining the Availability Group on the secondary replicas.
 
         Use Test-DbaAvailabilityGroup with -AddDatabase to test if all prerequisites are met.
 
@@ -76,6 +76,9 @@ function Add-DbaAgDatabase {
     .PARAMETER UseLastBackup
         Use the last full and log backup of the database. A log backup must be the last backup.
 
+    .PARAMETER AdvancedBackupParams
+        Provide additional parameters to the backup command as a hashtable.
+
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
 
@@ -117,6 +120,11 @@ function Add-DbaAgDatabase {
         PS C:\> Get-DbaDbSharePoint -SqlInstance sqlcluster -ConfigDatabase SharePoint_Config_2019 | Add-DbaAgDatabase -AvailabilityGroup SharePoint
 
         Adds SharePoint databases as found in SharePoint_Config_2019 on sqlcluster to ag1 on sqlcluster
+
+    .EXAMPLE
+        PS C:\> Add-DbaAgDatabase -SqlInstance sql2017a -AvailabilityGroup ag1 -Database db1 -Secondary sql2017b -SeedingMode Manual -SharedPath \\FS\Backup -AdvancedBackupParams @{ CompressBackup = $true ; FileCount = 3 }
+
+        Adds db1 to ag1 on sql2017a and sql2017b. Uses compression and three files while taking the backups.
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'Low')]
     param (
@@ -147,6 +155,9 @@ function Add-DbaAgDatabase {
         [Parameter(ParameterSetName = 'NonPipeline')]
         [Parameter(ParameterSetName = 'Pipeline')]
         [switch]$UseLastBackup,
+        [Parameter(ParameterSetName = 'NonPipeline')]
+        [Parameter(ParameterSetName = 'Pipeline')]
+        [hashtable]$AdvancedBackupParams,
         [Parameter(ParameterSetName = 'NonPipeline')]
         [Parameter(ParameterSetName = 'Pipeline')]
         [switch]$EnableException
@@ -258,8 +269,7 @@ function Add-DbaAgDatabase {
                                 $replica.Alter()
                                 if ($SeedingMode -eq 'Automatic') {
                                     Write-Message -Level Verbose -Message "Setting GrantAvailabilityGroupCreateDatabasePrivilege on server $($replicaServerSMO[$replicaName]) for Availability Group $AvailabilityGroup."
-                                    $replicaServerSMO[$replicaName].GrantAvailabilityGroupCreateDatabasePrivilege($AvailabilityGroup)
-                                    $replicaServerSMO[$replicaName].Alter()
+                                    $null = Grant-DbaAgPermission -SqlInstance $replicaServerSMO[$replicaName] -Type AvailabilityGroup -AvailabilityGroup $AvailabilityGroup -Permission CreateAnyDatabase
                                 }
                             } catch {
                                 $failure = $true
@@ -282,8 +292,13 @@ function Add-DbaAgDatabase {
                     if ($Pscmdlet.ShouldProcess($server, "Taking full and log backup of database $($db.Name)")) {
                         try {
                             Write-Message -Level Verbose -Message "Taking full and log backup of database $($db.Name)."
-                            $fullbackup = $db | Backup-DbaDatabase -BackupDirectory $SharedPath -Type Full -EnableException
-                            $logbackup = $db | Backup-DbaDatabase -BackupDirectory $SharedPath -Type Log -EnableException
+                            if ($AdvancedBackupParams) {
+                                $fullbackup = $db | Backup-DbaDatabase -BackupDirectory $SharedPath -Type Full -EnableException @AdvancedBackupParams
+                                $logbackup = $db | Backup-DbaDatabase -BackupDirectory $SharedPath -Type Log -EnableException @AdvancedBackupParams
+                            } else {
+                                $fullbackup = $db | Backup-DbaDatabase -BackupDirectory $SharedPath -Type Full -EnableException
+                                $logbackup = $db | Backup-DbaDatabase -BackupDirectory $SharedPath -Type Log -EnableException
+                            }
                             $backups = $fullbackup, $logbackup
                         } catch {
                             Stop-Function -Message "Failed to take full and log backup of database $($db.Name)." -ErrorRecord $_ -Continue
@@ -295,7 +310,7 @@ function Add-DbaAgDatabase {
                     if ($Pscmdlet.ShouldProcess($replicaServerSMO[$replicaName], "Restore database $($db.Name) to replica $replicaName")) {
                         try {
                             Write-Message -Level Verbose -Message "Restore database $($db.Name) to replica $replicaName."
-                            $null = $backups | Restore-DbaDatabase -SqlInstance $replicaServerSMO[$replicaName] -NoRecovery -TrustDbBackupHistory -EnableException
+                            $null = $backups | Restore-DbaDatabase -SqlInstance $replicaServerSMO[$replicaName] -NoRecovery -TrustDbBackupHistory -ReuseSourceFolderStructure -EnableException
                         } catch {
                             $failure = $true
                             Stop-Function -Message "Failed to restore database $($db.Name) to replica $replicaName." -ErrorRecord $_ -Continue

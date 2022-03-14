@@ -29,6 +29,9 @@ function Set-DbaDbFileGrowth {
     .PARAMETER Growth
         The growth value. 64 by default.
 
+    .PARAMETER FileType
+        Apply changes to only DATA, LOG or ALL files
+
     .PARAMETER InputObject
         Allows piping from Get-DbaDatabase
 
@@ -72,6 +75,12 @@ function Set-DbaDbFileGrowth {
         PS C:\> Set-DbaDbFileGrowth -SqlInstance sql2017, sql2016, sql2012 -Database test -WhatIf
 
         Shows what would happen if the command were executed
+
+    .EXAMPLE
+        PS C:\> Set-DbaDbFileGrowth -SqlInstance sql2017 -Database test -GrowthType GB -Growth 1 -FileType Data
+
+        Sets growth to 1GB for only data files for database test
+
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Medium")]
     param (
@@ -81,6 +90,8 @@ function Set-DbaDbFileGrowth {
         [ValidateSet("KB", "MB", "GB", "TB")]
         [string]$GrowthType = "MB",
         [int]$Growth = 64,
+        [ValidateSet('All', 'Data', 'Log')]
+        [string]$FileType = "All",
         [parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
         [switch]$EnableException
@@ -101,8 +112,15 @@ function Set-DbaDbFileGrowth {
         }
 
         foreach ($db in $InputObject) {
-            $allfiles = @($db.FileGroups.Files)
-            $allfiles += $db.LogFiles
+
+            $allfiles = @()
+            if ($FileType -in ('Log', 'All')) {
+                $allfiles += $db.LogFiles
+            }
+            if ($FileType -in ('Data', 'All')) {
+                $allfiles += $db.FileGroups.Files
+            }
+
             foreach ($file in $allfiles) {
                 if ($PSCmdlet.ShouldProcess($db.Parent.Name, "Setting filegrowth for $($file.Name) in $($db.name) to $($Growth)$($GrowthType)")) {
                     # SMO gave me some weird errors so I'm just gonna go with T-SQL

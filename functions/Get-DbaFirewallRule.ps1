@@ -24,10 +24,13 @@ function Get-DbaFirewallRule {
 
     .PARAMETER Type
         Returns firewall rules for the given type(s).
+
         Valid values are:
-            Engine - for the SQL Server instance
-            Browser - for the SQL Server Browser
-            AllInstance - for all firewall rules on the target computer related to SQL Server
+        * Engine - for the SQL Server instance
+        * Browser - for the SQL Server Browser
+        * DAC - for the dedicated admin connection (DAC)
+        * AllInstance - for all firewall rules on the target computer related to SQL Server
+
         If this parameter is not used, the firewall rule for the SQL Server instance will be returned
         and in case the instance is listening on a port other than 1433,
         also the firewall rule for the SQL Server Browser will be returned.
@@ -78,7 +81,7 @@ function Get-DbaFirewallRule {
         [parameter(Mandatory, ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$Credential,
-        [ValidateSet('Engine', 'Browser', 'AllInstance')]
+        [ValidateSet('Engine', 'Browser', 'DAC', 'AllInstance')]
         [string[]]$Type,
         [switch]$EnableException
     )
@@ -178,11 +181,19 @@ function Get-DbaFirewallRule {
                     $typeName = 'Browser'
                     $instanceName = $null
                     $sqlInstanceName = $null
+                } elseif ($rule.Name -eq 'SQL Server default instance (DAC)') {
+                    $typeName = 'DAC'
+                    $instanceName = 'MSSQLSERVER'
+                    $sqlInstanceName = $instance.ComputerName
                 } elseif ($rule.Name -eq 'SQL Server default instance') {
                     $typeName = 'Engine'
                     $instanceName = 'MSSQLSERVER'
                     $sqlInstanceName = $instance.ComputerName
-                } else {
+                } elseif ($rule.Name -match 'SQL Server instance .+ \(DAC\)') {
+                    $typeName = 'DAC'
+                    $instanceName = $rule.Name -replace '^SQL Server instance (.+) \(DAC\)$', '$1'
+                    $sqlInstanceName = $instance.ComputerName + '\' + $instanceName
+                } elseif ($rule.Name -match 'SQL Server instance .+') {
                     $typeName = 'Engine'
                     $instanceName = $rule.Name -replace '^SQL Server instance (.+)$', '$1'
                     $sqlInstanceName = $instance.ComputerName + '\' + $instanceName
@@ -208,9 +219,9 @@ function Get-DbaFirewallRule {
                 Write-Message -Level Verbose -Message 'Returning all rules for target computer'
                 $outputRules += $rules
             } elseif ($null -eq $Type) {
-                Write-Message -Level Verbose -Message 'Returning rule for instance and maybe for Browser'
+                Write-Message -Level Verbose -Message 'Returning rule for instance, DAC and maybe for Browser'
                 # Get the rule for the instance
-                $outputRules += $rules | Where-Object { $_.Type -eq 'Engine' -and $_.InstanceName -eq $instance.InstanceName }
+                $outputRules += $rules | Where-Object { $_.Type -in 'Engine', 'DAC' -and $_.InstanceName -eq $instance.InstanceName }
                 if ($outputRules.Count -eq 0) {
                     Write-Message -Level Verbose -Message 'No rule found for instance'
                 } elseif ($outputRules.LocalPort -eq '1433') {
@@ -227,6 +238,10 @@ function Get-DbaFirewallRule {
                 if ('Browser' -in $Type) {
                     Write-Message -Level Verbose -Message 'Returning rule for Browser'
                     $outputRules += $rules | Where-Object { $_.Type -eq 'Browser' }
+                }
+                if ('DAC' -in $Type) {
+                    Write-Message -Level Verbose -Message 'Returning rule for DAC'
+                    $outputRules += $rules | Where-Object { $_.Type -eq 'DAC' -and $_.InstanceName -eq $instance.InstanceName }
                 }
             }
             $outputRules | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, DisplayName, Type, Protocol, LocalPort, Program

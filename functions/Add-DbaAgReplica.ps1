@@ -23,6 +23,15 @@ function Add-DbaAgReplica {
 
         This parameter is only supported if the replica is added to just one instance.
 
+    .PARAMETER ClusterType
+        Cluster type of the Availability Group. Only supported in SQL Server 2017 and above.
+        Options include: Wsfc, External or None.
+
+        Defaults to Wsfc (Windows Server Failover Cluster).
+
+        The default can be changed with:
+        Set-DbatoolsConfig -FullName 'AvailabilityGroups.Default.ClusterType' -Value '...' -Passthru | Register-DbatoolsConfig
+
     .PARAMETER AvailabilityMode
         Sets the availability mode of the availability group replica. Options are: AsynchronousCommit and SynchronousCommit. SynchronousCommit is default.
 
@@ -133,6 +142,8 @@ function Add-DbaAgReplica {
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [string]$Name,
+        [ValidateSet('Wsfc', 'External', 'None')]
+        [string]$ClusterType = (Get-DbatoolsConfigValue -FullName 'AvailabilityGroups.Default.ClusterType' -Fallback 'Wsfc'),
         [ValidateSet('AsynchronousCommit', 'SynchronousCommit')]
         [string]$AvailabilityMode = "SynchronousCommit",
         [ValidateSet('Automatic', 'Manual', 'External')]
@@ -258,29 +269,33 @@ function Add-DbaAgReplica {
                         $replica.SeedingMode = $SeedingMode
                     }
 
-                    $serviceAccount = $server.ServiceAccount.Trim()
-                    $saName = ([DbaInstanceParameter]($server.DomainInstanceName)).ComputerName
-
-                    if ($serviceAccount) {
-                        if ($serviceAccount.StartsWith("NT ")) {
-                            $serviceAccount = "$saName`$"
-                        }
-                        if ($serviceAccount.StartsWith("$saName")) {
-                            $serviceAccount = "$saName`$"
-                        }
-                        if ($serviceAccount.StartsWith(".")) {
-                            $serviceAccount = "$saName`$"
-                        }
-                    }
-
-                    if (-not $serviceAccount) {
-                        $serviceAccount = "$saName`$"
-                    }
-
-                    if ($server.HostPlatform -ne "Linux") {
-                        if ($Pscmdlet.ShouldProcess($second.Name, "Granting Connect permission to service account: $serviceAccount")) {
-                            $null = Grant-DbaAgPermission -SqlInstance $server -Type AvailabilityGroup -AvailabilityGroup $InputObject.Name -Login $serviceAccount -Permission CreateAnyDatabase
-                            $null = Grant-DbaAgPermission -SqlInstance $server -Login $serviceAccount -Type Endpoint -Permission Connect
+                    # Add cluster permissions
+                    if ($ClusterType -eq 'Wsfc') {
+                        if ($Pscmdlet.ShouldProcess($server.Name, "Adding cluster permissions for availability group named $($InputObject.Name)")) {
+                            Write-Message -Level Verbose -Message "WSFC Cluster requires granting [NT AUTHORITY\SYSTEM] a few things. Setting now."
+                            # To support non-english systems, get the name of SYSTEM login by the sid
+                            # See SECURITY_LOCAL_SYSTEM_RID on https://docs.microsoft.com/en-us/windows/win32/secauthz/well-known-sids
+                            $systemLoginSidString = '1-1-0-0-0-0-0-5-18-0-0-0'
+                            $systemLoginName = ($server.Logins | Where-Object { ($_.Sid -join '-') -eq $systemLoginSidString }).Name
+                            if (-not $systemLoginName) {
+                                Write-Message -Level Verbose -Message "SYSTEM login not found, so we hope system language is english and create login [NT AUTHORITY\SYSTEM]"
+                                try {
+                                    $null = New-DbaLogin -SqlInstance $server -Login 'NT AUTHORITY\SYSTEM'
+                                    $systemLoginName = 'NT AUTHORITY\SYSTEM'
+                                } catch {
+                                    Stop-Function -Message "Failed to add login [NT AUTHORITY\SYSTEM]. If it's a non-english system you have to add the equivalent login manually." -ErrorRecord $_
+                                }
+                            }
+                            $permissionSet = New-Object -TypeName Microsoft.SqlServer.Management.SMO.ServerPermissionSet(
+                                [Microsoft.SqlServer.Management.SMO.ServerPermission]::AlterAnyAvailabilityGroup,
+                                [Microsoft.SqlServer.Management.SMO.ServerPermission]::ConnectSql,
+                                [Microsoft.SqlServer.Management.SMO.ServerPermission]::ViewServerState
+                            )
+                            try {
+                                $server.Grant($permissionSet, $systemLoginName)
+                            } catch {
+                                Stop-Function -Message "Failure adding cluster service account permissions." -ErrorRecord $_
+                            }
                         }
                     }
 
@@ -312,7 +327,6 @@ function Add-DbaAgReplica {
                         return $replica
                     }
 
-                    $defaults = 'ComputerName', 'InstanceName', 'SqlInstance', 'AvailabilityGroup', 'Name', 'Role', 'RollupSynchronizationState', 'AvailabilityMode', 'BackupPriority', 'EndpointUrl', 'SessionTimeout', 'FailoverMode', 'ReadonlyRoutingList'
                     $InputObject.AvailabilityReplicas.Add($replica)
                     $agreplica = $InputObject.AvailabilityReplicas[$Name]
                     if ($InputObject.State -eq 'Existing') {
@@ -320,12 +334,39 @@ function Add-DbaAgReplica {
                         $null = Join-DbaAvailabilityGroup -SqlInstance $instance -SqlCredential $SqlCredential -AvailabilityGroup $InputObject.Name
                         $agreplica.Alter()
                     }
+
+                    if ($server.HostPlatform -ne "Linux") {
+                        # Only grant CreateAnyDatabase permission if AG already exists.
+                        # If this command is started from New-DbaAvailabilityGroup, this will be done there after AG is created.
+                        if ($SeedingMode -eq "Automatic" -and $InputObject.State -eq 'Existing') {
+                            if ($Pscmdlet.ShouldProcess($second.Name, "Granting CreateAnyDatabase permission to the availability group")) {
+                                try {
+                                    $null = Grant-DbaAgPermission -SqlInstance $server -Type AvailabilityGroup -AvailabilityGroup $InputObject.Name -Permission CreateAnyDatabase -EnableException
+                                } catch {
+                                    Stop-Function -Message "Failure granting CreateAnyDatabase permission to the availability group" -ErrorRecord $_
+                                }
+                            }
+                        }
+                        # In case a certificate is used, the endpoint is owned by the certificate and this step is not needed and in most cases not possible as the instance does not run under a domain account.
+                        if (-not $Certificate) {
+                            $serviceAccount = $server.ServiceAccount
+                            if ($Pscmdlet.ShouldProcess($second.Name, "Granting Connect permission for the endpoint to service account $serviceAccount")) {
+                                try {
+                                    $null = Grant-DbaAgPermission -SqlInstance $server -Type Endpoint -Login $serviceAccount -Permission Connect -EnableException
+                                } catch {
+                                    Stop-Function -Message "Failure granting Connect permission for the endpoint to service account $serviceAccount" -ErrorRecord $_
+                                }
+                            }
+                        }
+                    }
+
                     Add-Member -Force -InputObject $agreplica -MemberType NoteProperty -Name ComputerName -Value $agreplica.Parent.ComputerName
                     Add-Member -Force -InputObject $agreplica -MemberType NoteProperty -Name InstanceName -Value $agreplica.Parent.InstanceName
                     Add-Member -Force -InputObject $agreplica -MemberType NoteProperty -Name SqlInstance -Value $agreplica.Parent.SqlInstance
                     Add-Member -Force -InputObject $agreplica -MemberType NoteProperty -Name AvailabilityGroup -Value $agreplica.Parent.Name
                     Add-Member -Force -InputObject $agreplica -MemberType NoteProperty -Name Replica -Value $agreplica.Name # backwards compat
 
+                    $defaults = 'ComputerName', 'InstanceName', 'SqlInstance', 'AvailabilityGroup', 'Name', 'Role', 'RollupSynchronizationState', 'AvailabilityMode', 'BackupPriority', 'EndpointUrl', 'SessionTimeout', 'FailoverMode', 'ReadonlyRoutingList'
                     Select-DefaultView -InputObject $agreplica -Property $defaults
                 } catch {
                     $msg = $_.Exception.InnerException.InnerException.Message

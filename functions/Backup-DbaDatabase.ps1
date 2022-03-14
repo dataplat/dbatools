@@ -33,7 +33,7 @@ function Backup-DbaDatabase {
         Passing in NUL as the FilePath will backup to the NUL: device
 
     .PARAMETER IncrementPrefix
-        If enables, this will prefix backup files with an incrementing integer (ie; '1-', '2-'). Using this has been alleged to improved restore times on some Azure based SQL Database platorms
+        If enabled, this will prefix backup files with an incrementing integer (ie; '1-', '2-'). Using this has been alleged to improved restore times on some Azure based SQL Database platforms
 
     .PARAMETER TimeStampFormat
         By default the command timestamps backups using the format yyyyMMddHHmm. Using this parameter this can be overridden. The timestamp format should be defined using the Get-Date formats, illegal formats will cause an error to be thrown
@@ -128,7 +128,7 @@ function Backup-DbaDatabase {
         Must specify one of EncryptionCertificate or EncryptionKey as well.
 
     .PARAMETER EncryptionCertificate
-        The name of the certificate to be used to encrypt the backups. The existance of the certificate will be checked, and will not proceed if it does not exist
+        The name of the certificate to be used to encrypt the backups. The existence of the certificate will be checked, and will not proceed if it does not exist
         Is mutually exclusive with the EncryptionKey option
 
     .PARAMETER EnableException
@@ -176,7 +176,7 @@ function Backup-DbaDatabase {
     .EXAMPLE
         PS C:\> Backup-DbaDatabase -SqlInstance Server1\Prod -Database db1 -Path \\filestore\backups\servername\instancename\dbname\backuptype -Type Full -ReplaceInName
 
-        Performs a full backup of db1 into the folder \\filestore\backups\server1\prod\db1
+        Performs a full backup of db1 into the folder \\filestore\backups\server1\prod\db1\Full
 
     .EXAMPLE
         PS C:\> Backup-DbaDatabase -SqlInstance Server1\Prod -Path \\filestore\backups\servername\instancename\dbname\backuptype -FilePath dbname-backuptype-timestamp.trn -Type Log -ReplaceInName
@@ -717,10 +717,6 @@ function Backup-DbaDatabase {
                 try {
                     if ($Pscmdlet.ShouldProcess($server.Name, "Backing up $dbName to $humanBackupFile")) {
                         if ($OutputScriptOnly -ne $True) {
-                            $Filelist = @()
-                            $FileList += $server.Databases[$dbName].FileGroups.Files | Select-Object @{ Name = "FileType"; Expression = { "D" } }, @{ Name = "Type"; Expression = { "D" } }, @{ Name = "LogicalName"; Expression = { $_.Name } }, @{ Name = "PhysicalName"; Expression = { $_.FileName } }
-                            $FileList += $server.Databases[$dbName].LogFiles | Select-Object @{ Name = "FileType"; Expression = { "L" } }, @{ Name = "Type"; Expression = { "L" } }, @{ Name = "LogicalName"; Expression = { $_.Name } }, @{ Name = "PhysicalName"; Expression = { $_.FileName } }
-
                             $backup.SqlBackup($server)
                             $script = $backup.Script($server)
                             Write-Progress -Id $ProgressId -Activity "Backing up database $dbName to $backupfile" -Status "Complete" -Completed
@@ -730,6 +726,10 @@ function Backup-DbaDatabase {
                             } else {
                                 $HeaderInfo = Get-DbaDbBackupHistory -SqlInstance $server -Database $dbName @gbhSwitch -IncludeCopyOnly -RecoveryFork $db.RecoveryForkGuid | Sort-Object -Property End -Descending | Select-Object -First 1
                             }
+                            $Filelist = @()
+                            $FileList += $Headerinfo.FileList | Where-Object { $_.FileType -eq "D" } | Select-Object FileType, LogicalName , PhysicalName, @{ Name = "Type"; Expression = { "D" } }
+                            $FileList += $Headerinfo.FileList | Where-Object { $_.FileType -eq "L" } | Select-Object FileType, LogicalName , PhysicalName, @{ Name = "Type"; Expression = { "L" } }
+
                             $Verified = $false
                             if ($Verify) {
                                 $verifiedresult = [PSCustomObject]@{
@@ -782,6 +782,7 @@ function Backup-DbaDatabase {
                             $HeaderInfo | Add-Member -Type NoteProperty -Name BackupFolder -Value $pathresult
                             $HeaderInfo | Add-Member -Type NoteProperty -Name BackupPath -Value ($FinalBackupPath | Sort-Object -Unique)
                             $HeaderInfo | Add-Member -Type NoteProperty -Name DatabaseName -Value $dbName
+                            $HeaderInfo | Add-Member -Type NoteProperty -Name DatabaseId -Value $db.ID
                             $HeaderInfo | Add-Member -Type NoteProperty -Name Notes -Value ($failures -join (','))
                             $HeaderInfo | Add-Member -Type NoteProperty -Name Script -Value $script
                             $HeaderInfo | Add-Member -Type NoteProperty -Name Verified -Value $Verified

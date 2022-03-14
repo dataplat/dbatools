@@ -24,11 +24,14 @@ function Remove-DbaFirewallRule {
 
     .PARAMETER Type
         Removes firewall rules for the given type(s).
+
         Valid values are:
-            Engine - for the SQL Server instance
-            Browser - for the SQL Server Browser
-            AllInstance - for all firewall rules on the target computer related to SQL Server
-        The default is 'Engine'.
+        * Engine - for the SQL Server instance
+        * Browser - for the SQL Server Browser
+        * DAC - for the dedicated admin connection (DAC)
+        * AllInstance - for all firewall rules on the target computer related to SQL Server
+
+        The default is @('Engine', 'DAC').
         As the Browser might be needed by other instances, the firewall rule for the SQL Server Browser is
         never removed with the firewall rule of the instance but only removed if 'Browser' is used.
 
@@ -85,8 +88,8 @@ function Remove-DbaFirewallRule {
         [Parameter(ParameterSetName = 'NonPipeline')]
         [PSCredential]$Credential,
         [Parameter(ParameterSetName = 'NonPipeline')]
-        [ValidateSet('Engine', 'Browser', 'AllInstance')]
-        [string[]]$Type = 'Engine',
+        [ValidateSet('Engine', 'Browser', 'DAC', 'AllInstance')]
+        [string[]]$Type = @('Engine', 'DAC'),
         [parameter(ValueFromPipeline, ParameterSetName = 'Pipeline', Mandatory = $true)]
         [object[]]$InputObject,
         [Parameter(ParameterSetName = 'NonPipeline')][Parameter(ParameterSetName = 'Pipeline')]

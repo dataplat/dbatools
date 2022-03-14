@@ -140,35 +140,42 @@ function Backup-DbaDbCertificate {
         if (-not $EncryptionPassword -and $DecryptionPassword) {
             Stop-Function -Message "If you specify a decryption password, you must also specify an encryption password" -Target $DecryptionPassword
         }
+        $time = Get-Date -Format yyyMMddHHmmss
 
         function export-cert ($cert) {
             $certName = $cert.Name
             $db = $cert.Parent
+            $dbname = $db.Name
             $server = $db.Parent
             $instance = $server.Name
-            $actualPath = $Path
 
-            if ($null -eq $actualPath) {
-                $actualPath = Get-SqlDefaultPaths -SqlInstance $server -filetype Data
+            if (-not $Path) {
+                $Path = $server.BackupDirectory
             }
 
-            $actualPath = "$actualPath".TrimEnd('\').TrimEnd('/')
-            $fullCertName = (Join-DbaPath -SqlInstance $server $actualPath "$certName$Suffix")
-            $exportPathKey = "$fullCertName.pvk"
-
-            if ((Test-DbaPath -SqlInstance $server -Path "$fullCertName.cer")) {
-                if ($PSBoundParameter.Suffix) {
-                    Stop-Function -Message "$fullCertName.cer already exists on $($server.Name)" -Target $actualPath -Continue
-                } else {
-                    $date = Get-Date -format 'yyyyMMddHHmmssms'
-                    $fullCertName = (Join-DbaPath -SqlInstance $server $actualPath "$certName$date")
-                    $exportPathKey = "$fullCertName.pvk"
-                }
+            if (-not $Path) {
+                Stop-Function -Message "Path discovery failed. Please explicitly specify -Path" -Target $server -Continue
             }
+
+            $actualPath = "$Path".TrimEnd('\').TrimEnd('/')
 
             if (-not (Test-DbaPath -SqlInstance $server -Path $actualPath)) {
                 Stop-Function -Message "$SqlInstance cannot access $actualPath" -Target $actualPath
             }
+
+            $fileinstance = $instance.ToString().Replace('\', '$')
+            $fullCertName = Join-DbaPath -SqlInstance $server -Path $actualPath -ChildPath "$fileinstance-$dbname-$certName$Suffix"
+
+            # if the base file name exists, then default to old style of appending a timestamp
+            if (Test-DbaPath -SqlInstance $server -Path "$fullCertName.cer") {
+                if ($Suffix) {
+                    Stop-Function -Message "$fullCertName.cer already exists on $($server.Name)" -Target $actualPath -Continue
+                } else {
+                    $fullCertName = "$fullCertName-$time"
+                }
+            }
+
+            $exportPathKey = "$fullCertName.pvk"
 
             if ($Pscmdlet.ShouldProcess($instance, "Exporting certificate $certName from $db on $instance to $actualPath")) {
                 Write-Message -Level Verbose -Message "Exporting Certificate: $certName to $fullCertName"
@@ -201,11 +208,15 @@ function Backup-DbaDbCertificate {
                         $cert.export($exportPathCert)
                     }
 
+                    # Sleep for a second to avoid another export in the same second
+                    Start-Sleep -Seconds 1
+
                     [pscustomobject]@{
                         ComputerName   = $server.ComputerName
                         InstanceName   = $server.ServiceName
                         SqlInstance    = $server.DomainInstanceName
                         Database       = $db.Name
+                        DatabaseID     = $db.ID
                         Certificate    = $certName
                         Path           = $exportPathCert
                         Key            = $exportPathKey
@@ -228,6 +239,7 @@ function Backup-DbaDbCertificate {
                         InstanceName   = $server.ServiceName
                         SqlInstance    = $server.DomainInstanceName
                         Database       = $db.Name
+                        DatabaseID     = $db.ID
                         Certificate    = $certName
                         Path           = $exportPathCert
                         Key            = $exportPathKey

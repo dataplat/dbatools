@@ -35,6 +35,9 @@ function Get-DbaUserPermission {
     .PARAMETER IncludeSystemObjects
         Allows you to include output on sys schema objects.
 
+    .PARAMETER ExcludeSecurables
+        Allows you to exclude object-level permissions from the output, and only return role permission(s).
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -42,7 +45,7 @@ function Get-DbaUserPermission {
 
     .NOTES
         Tags: Security, User
-        Author: Brandon Abshire, netnerds.net
+        Author: Brandon Abshire, netnerds.net | Josh Smith
 
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
@@ -78,11 +81,12 @@ function Get-DbaUserPermission {
         [switch]$ExcludeSystemDatabase,
         [switch]$IncludePublicGuest,
         [switch]$IncludeSystemObjects,
+        [switch]$ExcludeSecurables,
         [switch]$EnableException
     )
 
     begin {
-        $endSQL = "	   BEGIN TRY DROP FUNCTION STIG.server_effective_permissions END TRY BEGIN CATCH END CATCH;
+        $removeStigSQL = "       BEGIN TRY DROP FUNCTION STIG.server_effective_permissions END TRY BEGIN CATCH END CATCH;
                        GO
                        BEGIN TRY DROP VIEW STIG.server_permissions END TRY BEGIN CATCH END CATCH;
                        GO
@@ -121,7 +125,26 @@ function Get-DbaUserPermission {
                             FROM    master.sys.syslogins sl
                                     LEFT JOIN tempdb.[STIG].[server_role_members] srm ON sl.name = srm.Member
                             WHERE   sl.name NOT LIKE 'NT %'
-                                    AND sl.name NOT LIKE '##%'
+                                    AND sl.name NOT LIKE '##%'"
+
+        $dbSQL = "SELECT  'DB ROLE MEMBERS' AS type ,
+                                Member ,
+                                ISNULL(Role, 'None') AS [Role/Securable/Class],
+                                ' ' AS [Schema/Owner] ,
+                                ' ' AS [Securable] ,
+                                ' ' AS [Grantee Type] ,
+                                ' ' AS [Grantee] ,
+                                ' ' AS [Permission] ,
+                                ' ' AS [State] ,
+                                ' ' AS [Grantor] ,
+                                ' ' AS [Grantor Type] ,
+                                ' ' AS [Source View]
+                        FROM    tempdb.[STIG].[database_role_members]"
+
+        # append unions to get securables if not excluded:
+        if (-not $ExcludeSecurables) {
+
+            $serverSQL = $serverSQL + "
                             UNION
                             SELECT  'SERVER SECURABLES' AS Type ,
                                     sl.name ,
@@ -140,19 +163,7 @@ function Get-DbaUserPermission {
                             WHERE   sl.name NOT LIKE 'NT %'
                                     AND sl.name NOT LIKE '##%';"
 
-        $dbSQL = "SELECT  'DB ROLE MEMBERS' AS type ,
-                                Member ,
-                                ISNULL(Role, 'None') AS [Role/Securable/Class],
-                                ' ' AS [Schema/Owner] ,
-                                ' ' AS [Securable] ,
-                                ' ' AS [Grantee Type] ,
-                                ' ' AS [Grantee] ,
-                                ' ' AS [Permission] ,
-                                ' ' AS [State] ,
-                                ' ' AS [Grantor] ,
-                                ' ' AS [Grantor Type] ,
-                                ' ' AS [Source View]
-                        FROM    tempdb.[STIG].[database_role_members]
+            $dbSQL = $dbSQL + "
                         UNION
                         SELECT DISTINCT
                                 'DB SECURABLES' AS Type ,
@@ -171,9 +182,10 @@ function Get-DbaUserPermission {
                                 FULL JOIN tempdb.[STIG].[database_permissions] dp ON ( drm.Member = dp.Grantee
                                                                                       OR drm.Role = dp.Grantee
                                                                                      )
-                        WHERE	dp.Grantor IS NOT NULL
+                        WHERE    dp.Grantor IS NOT NULL
                                 AND dp.Grantee NOT IN ('public', 'guest')
                                 AND [Schema/Owner] <> 'sys'"
+        }
 
         if ($IncludePublicGuest) { $dbSQL = $dbSQL.Replace("AND dp.Grantee NOT IN ('public', 'guest')", "") }
         if ($IncludeSystemObjects) { $dbSQL = $dbSQL.Replace("AND [Schema/Owner] <> 'sys'", "") }
@@ -203,78 +215,24 @@ function Get-DbaUserPermission {
                 $dbs = $dbs | Where-Object IsSystemObject -eq $false
             }
 
-            #reset $serverDT
-            $serverDT = $null
+            Write-Message -Level Verbose -Message "Reading stig.sql"
+            $sqlFile = Join-DbaPath -Path $script:PSModuleRoot -ChildPath "bin", "stig.sql"
+            $sql = [System.IO.File]::ReadAllText("$sqlFile")
 
-            foreach ($db in $dbs) {
-                Write-Message -Level Verbose -Message "Processing $db on $instance"
-
-                $db.ExecuteNonQuery($endSQL)
-
-                if ($db.IsAccessible -eq $false) {
-                    Stop-Function -Message "The database $db is not accessible" -Continue
-                }
-
-                $sqlFile = Join-Path -Path $script:PSModuleRoot -ChildPath "bin\stig.sql"
-                $sql = [System.IO.File]::ReadAllText("$sqlFile")
-                $sql = $sql.Replace("<TARGETDB>", $db.Name)
-
-                #Create objects in active database
-                Write-Message -Level Verbose -Message "Creating objects"
-                try {
-                    $db.ExecuteNonQuery($sql)
-                } catch {
-                    # here to avoid an empty catch
-                    $null = 1
-                } # sometimes it complains about not being able to drop the stig schema if the person Ctrl-C'd before.
-
-                #Grab permissions data
-                if (-not $serverDT) {
-                    Write-Message -Level Verbose -Message "Building data table for server objects"
-
-                    try {
-                        $serverDT = $db.Query($serverSQL)
-                    } catch {
-                        # here to avoid an empty catch
-                        $null = 1
-                    }
-
-                    foreach ($row in $serverDT) {
-                        [PSCustomObject]@{
-                            ComputerName       = $server.ComputerName
-                            InstanceName       = $server.ServiceName
-                            SqlInstance        = $server.DomainInstanceName
-                            Object             = 'SERVER'
-                            Type               = $row.Type
-                            Member             = $row.Member
-                            RoleSecurableClass = $row.'Role/Securable/Class'
-                            SchemaOwner        = $row.'Schema/Owner'
-                            Securable          = $row.Securable
-                            GranteeType        = $row.'Grantee Type'
-                            Grantee            = $row.Grantee
-                            Permission         = $row.Permission
-                            State              = $row.State
-                            Grantor            = $row.Grantor
-                            GrantorType        = $row.'Grantor Type'
-                            SourceView         = $row.'Source View'
-                        }
-                    }
-                }
-
-                Write-Message -Level Verbose -Message "Building data table for $db objects"
-                try {
-                    $dbDT = $db.Query($dbSQL)
-                } catch {
-                    # here to avoid an empty catch
-                    $null = 1
-                }
-
-                foreach ($row in $dbDT) {
+            try {
+                Write-Message -Level Verbose -Message "Removing STIG schema if it still exists from previous run"
+                $tempdb.ExecuteNonQuery($removeStigSQL)
+                Write-Message -Level Verbose -Message "Creating STIG schema customized for master database"
+                $createStigSQL = $sql.Replace("<TARGETDB>", 'master')
+                $tempdb.ExecuteNonQuery($createStigSQL)
+                Write-Message -Level Verbose -Message "Building data table for server objects"
+                $serverDT = $tempdb.Query($serverSQL)
+                foreach ($row in $serverDT) {
                     [PSCustomObject]@{
                         ComputerName       = $server.ComputerName
                         InstanceName       = $server.ServiceName
                         SqlInstance        = $server.DomainInstanceName
-                        Object             = $db.Name
+                        Object             = 'SERVER'
                         Type               = $row.Type
                         Member             = $row.Member
                         RoleSecurableClass = $row.'Role/Securable/Class'
@@ -289,17 +247,54 @@ function Get-DbaUserPermission {
                         SourceView         = $row.'Source View'
                     }
                 }
-
-                #Delete objects
-                Write-Message -Level Verbose -Message "Deleting objects"
-                try {
-                    $tempdb.ExecuteNonQuery($endSQL)
-                } catch {
-                    # here to avoid an empty catch
-                    $null = 1
-                }
-                #Sashay Away
+            } catch {
+                Stop-Function -Message "Failed to create or use STIG schema on $instance" -ErrorRecord $_ -Target $instance -Continue
             }
+
+            foreach ($db in $dbs) {
+                Write-Message -Level Verbose -Message "Processing $db on $instance"
+
+                if ($db.IsAccessible -eq $false) {
+                    Write-Message -Level Warning -Message "The database $db on $instance is not accessible. Skipping."
+                    continue
+                }
+
+                try {
+                    Write-Message -Level Verbose -Message "Removing STIG schema if it still exists from previous run"
+                    $tempdb.ExecuteNonQuery($removeStigSQL)
+                    Write-Message -Level Verbose -Message "Creating STIG schema customized for current database"
+                    $createStigSQL = $sql.Replace("<TARGETDB>", $db.Name)
+                    Write-Message -Level Verbose -Message "Length of createStigSQL: $($createStigSQL.Length)"
+                    $tempdb.ExecuteNonQuery($createStigSQL)
+                    Write-Message -Level Verbose -Message "Building data table for database objects"
+                    $dbDT = $db.Query($dbSQL)
+                    foreach ($row in $dbDT) {
+                        [PSCustomObject]@{
+                            ComputerName       = $server.ComputerName
+                            InstanceName       = $server.ServiceName
+                            SqlInstance        = $server.DomainInstanceName
+                            Object             = $db.Name
+                            Type               = $row.Type
+                            Member             = $row.Member
+                            RoleSecurableClass = $row.'Role/Securable/Class'
+                            SchemaOwner        = $row.'Schema/Owner'
+                            Securable          = $row.Securable
+                            GranteeType        = $row.'Grantee Type'
+                            Grantee            = $row.Grantee
+                            Permission         = $row.Permission
+                            State              = $row.State
+                            Grantor            = $row.Grantor
+                            GrantorType        = $row.'Grantor Type'
+                            SourceView         = $row.'Source View'
+                        }
+                    }
+                } catch {
+                    Stop-Function -Message "Failed to create or use STIG schema for database $db on $instance" -ErrorRecord $_ -Target $instance -Continue
+                }
+            }
+
+            Write-Message -Level Verbose -Message "Removing STIG schema from tempdb"
+            $tempdb.ExecuteNonQuery($removeStigSQL)
         }
     }
 }

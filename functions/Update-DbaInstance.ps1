@@ -18,16 +18,11 @@ function Update-DbaInstance {
         * Repeat for each consequent KB and computer
 
         The impact of this function is set to High, if you don't want to receive interactive prompts, set -Confirm to $false.
-        Credentials are a required parameter for remote machines. Without specifying -Credential, the installation will fail due to lack of permissions.
 
-        CredSSP is a recommended transport for running the updates remotely. Update-DbaInstance will attempt to reconfigure
-        local and remote hosts to support CredSSP, which is why it is desirable to run this command in an elevated console at all times.
-        CVE-2018-0886 security update is required for both local and remote hosts. If CredSSP connections are failing, make sure to
-        apply recent security updates prior to doing anything else.
-
-        When using CredSSP authentication, this function will configure CredSSP authentication for PowerShell Remoting sessions.
+        When using CredSSP authentication, this function will try to configure CredSSP authentication for PowerShell Remoting sessions.
         If this is not desired (e.g.: CredSSP authentication is managed externally, or is already configured appropriately,)
         it can be disabled by setting the dbatools configuration option 'commands.initialize-credssp.bypass' value to $true.
+        To be able to configure CredSSP, the command needs to be run in an elevated PowerShell session.
 
         Always backup databases and configurations prior to upgrade.
 
@@ -37,6 +32,9 @@ function Update-DbaInstance {
     .PARAMETER Credential
         Windows Credential with permission to log on to the remote server.
         Must be specified for any remote connection if update Repository is located on a network folder.
+
+        Authentication will default to CredSSP if -Credential is used.
+        For CredSSP see also additional information in DESCRIPTION.
 
     .PARAMETER Type
         Type of the update: All | ServicePack | CumulativeUpdate.
@@ -72,11 +70,15 @@ function Update-DbaInstance {
 
     .PARAMETER Authentication
         Chooses an authentication protocol for remote connections.
-        If the protocol fails to establish a connection
+        Allowed values: 'Default', 'Basic', 'Negotiate', 'NegotiateWithImplicitCredential', 'Credssp', 'Digest', 'Kerberos'.
+        If the protocol fails to establish a connection and explicit -Credentials were used, a failback authentication method would be attempted that configures PSSessionConfiguration
+        on the remote machine. This method, however, is considered insecure and would, therefore, prompt an additional confirmation when used.
 
         Defaults:
         * CredSSP when -Credential is specified - due to the fact that repository Path is usually a network share and credentials need to be passed to the remote host to avoid the double-hop issue.
         * Default when -Credential is not specified. Will likely fail if a network path is specified.
+
+        For CredSSP see also additional information in DESCRIPTION.
 
     .PARAMETER InstanceName
         Only updates a specific instance(s).
@@ -205,7 +207,7 @@ function Update-DbaInstance {
         [ValidateNotNull()]
         [int]$Throttle = 50,
         [ValidateSet('Default', 'Basic', 'Negotiate', 'NegotiateWithImplicitCredential', 'Credssp', 'Digest', 'Kerberos')]
-        [string]$Authentication = @('CredSSP', 'Default')[$null -eq $Credential],
+        [string]$Authentication = @('Credssp', 'Default')[$null -eq $Credential],
         [string]$ExtractPath,
         [string[]]$ArgumentList,
         [switch]$Download,
@@ -441,29 +443,43 @@ function Update-DbaInstance {
                 #Exit the actions loop altogether - nothing can be installed here anyways
                 Stop-Function -Message "$resolvedName is pending a reboot. Reboot the computer before proceeding." -Continue
             }
+            # test connection
+            if ($Credential -and -not ([DbaInstanceParameter]$resolvedName).IsLocalHost) {
+                $totalSteps += 1
+                Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Testing $Authentication protocol"
+                Write-Message -Level Verbose -Message "Attempting to test $Authentication protocol for remote connections"
+                try {
+                    $connectSuccess = Invoke-Command2 -ComputerName $resolvedName -Credential $Credential -Authentication $Authentication -ScriptBlock { $true } -Raw
+                } catch {
+                    $connectSuccess = $false
+                }
+                # if we use CredSSP, we might be able to configure it
+                if (-not $connectSuccess -and $Authentication -eq 'Credssp') {
+                    $totalSteps += 1
+                    Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Configuring CredSSP protocol"
+                    Write-Message -Level Verbose -Message "Attempting to configure CredSSP for remote connections"
+                    try {
+                        Initialize-CredSSP -ComputerName $resolvedName -Credential $Credential -EnableException $true
+                        $connectSuccess = Invoke-Command2 -ComputerName $resolvedName -Credential $Credential -Authentication $Authentication -ScriptBlock { $true } -Raw
+                    } catch {
+                        $connectSuccess = $false
+                        # tell the user why we could not configure CredSSP
+                        Write-Message -Level Warning -Message $_
+                    }
+                }
+                # in case we are still not successful, ask the user to use unsecure protocol once
+                if (-not $connectSuccess -and -not $notifiedUnsecure) {
+                    if ($PSCmdlet.ShouldProcess($resolvedName, "Primary protocol ($Authentication) failed, sending credentials via potentially unsecure protocol")) {
+                        $notifiedUnsecure = $true
+                    } else {
+                        Stop-Function -Message "Failed to connect to $resolvedName through $Authentication protocol. No actions will be performed on that computer." -Continue -ContinueLabel computers
+                    }
+                }
+            }
             $upgrades = @()
             :actions foreach ($actionItem in $actions) {
                 # Clone action to use as a splat
                 $currentAction = $actionItem.Clone()
-                # Attempt to configure CredSSP for the remote host when credentials are defined
-                if ($Credential -and -not ([DbaInstanceParameter]$resolvedName).IsLocalHost -and $Authentication -eq 'Credssp') {
-                    Write-Message -Level Verbose -Message "Attempting to configure CredSSP for remote connections"
-                    Initialize-CredSSP -ComputerName $resolvedName -Credential $Credential -EnableException $false
-                    # Verify remote connection and confirm using unsecure credentials
-                    try {
-                        $secureProtocol = Invoke-Command2 -ComputerName $resolvedName -Credential $Credential -Authentication $Authentication -ScriptBlock { $true } -Raw
-                    } catch {
-                        $secureProtocol = $false
-                    }
-                    # only ask once about using unsecure protocol
-                    if (-not $secureProtocol -and -not $notifiedUnsecure) {
-                        if ($PSCmdlet.ShouldProcess($resolvedName, "Primary protocol ($Authentication) failed, sending credentials via potentially unsecure protocol")) {
-                            $notifiedUnsecure = $true
-                        } else {
-                            Stop-Function -Message "Failed to connect to $resolvedName through $Authentication protocol. No actions will be performed on that computer." -Continue -ContinueLabel computers
-                        }
-                    }
-                }
                 # Pass only relevant components
                 if ($currentAction.MajorVersion) {
                     Write-Message -Level Debug -Message "Limiting components to version $($currentAction.MajorVersion)"

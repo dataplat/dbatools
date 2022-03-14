@@ -65,6 +65,9 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $results.DatabaseName.Count | Should -Be 1
             $results.BackupComplete | Should -Be $true
         }
+        It "Database ID should be returned" {
+            $results.DatabaseID | Should -Be (Get-DbaDatabase -SqlInstance $script:instance1 -Database master).ID
+        }
     }
 
     Context "Database should backup 2 databases" {
@@ -152,7 +155,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 
     Context "Should stripe if multiple backupfolders specified" {
         $backupPaths = "$DestBackupDir\stripe1", "$DestBackupDir\stripe2", "$DestBackupDir\stripe3"
-        $null = New-item -Path $backupPaths -ItemType Directory
+        $null = New-Item -Path $backupPaths -ItemType Directory
 
 
         $results = Backup-DbaDatabase -SqlInstance $script:instance1 -Database master -BackupDirectory $backupPaths
@@ -319,7 +322,7 @@ go
     }
 
     Context "Test Backup templating" {
-        $results = Backup-DbaDatabase -SqlInstance $script:instance1 -Database master,msdb -BackupDirectory $DestBackupDir\dbname\instancename\backuptype\  -BackupFileName dbname-backuptype.bak -ReplaceInName -BuildPath
+        $results = Backup-DbaDatabase -SqlInstance $script:instance1 -Database master, msdb -BackupDirectory $DestBackupDir\dbname\instancename\backuptype\  -BackupFileName dbname-backuptype.bak -ReplaceInName -BuildPath
         It "Should have replaced the markers" {
             $results[0].BackupPath | Should -BeLike "$DestBackupDir\master\$(($script:instance1).split('\')[1])\Full\master-Full.bak"
             $results[1].BackupPath | Should -BeLike "$DestBackupDir\msdb\$(($script:instance1).split('\')[1])\Full\msdb-Full.bak"

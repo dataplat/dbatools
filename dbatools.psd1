@@ -11,7 +11,7 @@
     RootModule             = 'dbatools.psm1'
 
     # Version number of this module.
-    ModuleVersion          = '1.1.59'
+    ModuleVersion          = '1.1.79'
 
     # ID used to uniquely identify this module
     GUID                   = '9d139310-ce45-41ce-8e8b-d76335aa1789'
@@ -222,6 +222,7 @@
         'Get-DbaDbCertificate',
         'Copy-DbaDbCertificate',
         'Get-DbaDbCheckConstraint',
+        'Remove-DbaDbCheckConstraint',
         'Get-DbaDbCompatibility',
         'Get-DbaDbCompression',
         'Get-DbaDbDbccOpenTran',
@@ -260,6 +261,8 @@
         'Get-DbaDbPageInfo',
         'Get-DbaDbPartitionFunction',
         'Get-DbaDbPartitionScheme',
+        'Remove-DbaDbPartitionScheme',
+        'Remove-DbaDbPartitionFunction',
         'Get-DbaDbQueryStoreOption',
         'Get-DbaDbRecoveryModel',
         'Get-DbaDbRestoreHistory',
