@@ -149,7 +149,7 @@ function Backup-DbaDbCertificate {
             $server = $db.Parent
             $instance = $server.Name
 
-            if (Test-Bound -ParameterName Path -Not) {
+            if (-not $Path) {
                 $Path = $server.BackupDirectory
             }
 
