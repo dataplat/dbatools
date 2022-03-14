@@ -149,7 +149,7 @@ function Backup-DbaDbCertificate {
             $server = $db.Parent
             $instance = $server.Name
 
-            if (Test-Bound -ParameterName Path -Not) {
+            if (-not $Path) {
                 $Path = $server.BackupDirectory
             }
 
@@ -207,6 +207,9 @@ function Backup-DbaDbCertificate {
                         $exportPathKey = "Password required to export key"
                         $cert.export($exportPathCert)
                     }
+
+                    # Sleep for a second to avoid another export in the same second
+                    Start-Sleep -Seconds 1
 
                     [pscustomobject]@{
                         ComputerName   = $server.ComputerName
