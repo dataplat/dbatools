@@ -208,6 +208,9 @@ function Backup-DbaDbCertificate {
                         $cert.export($exportPathCert)
                     }
 
+                    # Sleep for a second to avoid another export in the same second
+                    Start-Sleep -Seconds 1
+
                     [pscustomobject]@{
                         ComputerName   = $server.ComputerName
                         InstanceName   = $server.ServiceName
