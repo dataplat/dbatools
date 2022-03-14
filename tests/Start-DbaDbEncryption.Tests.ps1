@@ -32,13 +32,13 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $passwd = ConvertTo-SecureString "dbatools.IO" -AsPlainText -Force
             $splat = @{
                 SqlInstance             = $script:instance2
-                AllUserDatabases        = $true
+                Database                = $alldbs.Name
                 MasterKeySecurePassword = $passwd
                 BackupSecurePassword    = $passwd
                 BackupPath              = "C:\temp"
-                EnableException         = $true
             }
-            $results = Start-DbaDbEncryption @splat
+            $results = Start-DbaDbEncryption @splat -WarningVariable warn
+            $warn | Should -BeNullOrEmpty
             $results.Count | Should -Be 5
             $results | Select-Object -First 1 -ExpandProperty EncryptionEnabled | Should -Be $true
             $results | Select-Object -First 1 -ExpandProperty DatabaseName | Should -Match "random"
