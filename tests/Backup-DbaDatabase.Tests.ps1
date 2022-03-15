@@ -329,6 +329,14 @@ go
         }
     }
 
+    Context "Test Backup templating when db object piped in issue 8100" {
+        $results = Get-DbaDatabase -SqlInstance $script:instance1 -Database master,msdb | Backup-DbaDatabase -BackupDirectory $DestBackupDir\db2\dbname\instancename\backuptype\  -BackupFileName dbname-backuptype.bak -ReplaceInName -BuildPath
+        It "Should have replaced the markers" {
+            $results[0].BackupPath | Should -BeLike "$DestBackupDir\db2\master\$(($script:instance1).split('\')[1])\Full\master-Full.bak"
+            $results[1].BackupPath | Should -BeLike "$DestBackupDir\db2\msdb\$(($script:instance1).split('\')[1])\Full\msdb-Full.bak"
+        }
+    }
+
     Context "Test Backup Encryption with Certificate" {
         $securePass = ConvertTo-SecureString "estBackupDir\master\script:instance1).split('\')[1])\Full\master-Full.bak" -AsPlainText -Force
         New-DbaDbMasterKey -SqlInstance $script:instance2 -Database Master -SecurePassword $securePass -confirm:$false -ErrorAction SilentlyContinue
