@@ -394,13 +394,16 @@ function New-DbaAgentJob {
                     Write-Message -Message "Applying the target (local) to job $Job" -Level Verbose
                     $currentjob.ApplyToTargetServer("(local)")
 
+                    # Refresh the SMO - another bug in SMO? As this should not be needed...
+                    $currentjob.Refresh()
+
                     # If a schedule needs to be attached
                     if ($Schedule) {
-                        $null = Set-DbaAgentJob -SqlInstance $instance -Job $currentjob -Schedule $Schedule -SqlCredential $SqlCredential
+                        $null = Set-DbaAgentJob -SqlInstance $server -Job $currentjob -Schedule $Schedule
                     }
 
                     if ($ScheduleId) {
-                        $null = Set-DbaAgentJob -SqlInstance $instance -Job $currentjob -ScheduleId $ScheduleId -SqlCredential $SqlCredential
+                        $null = Set-DbaAgentJob -SqlInstance $server -Job $currentjob -ScheduleId $ScheduleId
                     }
                 } catch {
                     Stop-Function -Message "Something went wrong creating the job" -Target $currentjob -ErrorRecord $_ -Continue
@@ -409,7 +412,7 @@ function New-DbaAgentJob {
 
             Add-TeppCacheItem -SqlInstance $server -Type job -Name $Job
 
-            Get-DbaAgentJob -SqlInstance $instance | Where-Object Name -eq $Job
+            Get-DbaAgentJob -SqlInstance $server -Job $Job
         }
     }
 
