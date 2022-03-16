@@ -131,23 +131,22 @@ function Set-DbaNetworkConfiguration {
 
     begin {
         $wmiScriptBlock = {
-            # This scriptblock will be processed by Invoke-ManagedComputerCommand.
-            # It is extended there above this line by the following lines:
-            #   $ipaddr = $args[$args.GetUpperBound(0)]
-            #   [void][System.Reflection.Assembly]::LoadWithPartialName('Microsoft.SqlServer.SqlWmiManagement')
-            #   $wmi = New-Object Microsoft.SqlServer.Management.Smo.Wmi.ManagedComputer $ipaddr
-            #   $null = $wmi.Initialize()
-            # So we can use $wmi here and assume that there is a successful connection.
-
+            # This scriptblock will be processed by Invoke-Command2 on the target machine.
             # We take on object as the first parameter which has to include the instance name and the target network configuration.
             $targetConf = $args[0]
             $changes = @()
             $verbose = @()
-            $verbose += $setupVerbose
             $exception = $null
 
             try {
-                $verbose += "Starting code from Set-DbaNetworkConfiguration"
+                $verbose += "Starting initialization of WMI object"
+
+                # As we go remote, ensure the assembly is loaded
+                [void][System.Reflection.Assembly]::LoadWithPartialName('Microsoft.SqlServer.SqlWmiManagement')
+                $wmi = New-Object Microsoft.SqlServer.Management.Smo.Wmi.ManagedComputer
+                $result = $wmi.Initialize()
+
+                $verbose += "Initialization of WMI object finished with $result"
 
                 # If WMI object is empty, there are no client protocols - so we test for that to see if initialization was successful
                 $verbose += "Found $($wmi.ServerInstances.Count) instances and $($wmi.ClientProtocols.Count) client protocols inside of WMI object"
@@ -472,17 +471,22 @@ function Set-DbaNetworkConfiguration {
                 }
 
                 if ($Pscmdlet.ShouldProcess("Setting network configuration for instance $($netConf.InstanceName) on $($netConf.ComputerName)")) {
-                    $return = Invoke-ManagedComputerCommand -ComputerName $netConf.ComputerName -Credential $Credential -ScriptBlock $wmiScriptBlock -ArgumentList $netConf
-                    $output.Changes = $return.Changes
-                    foreach ($msg in $return.Verbose) {
-                        Write-Message -Level Verbose -Message $msg
+                    $computerName = Resolve-DbaComputerName -ComputerName $netConf.ComputerName -Credential $Credential
+                    $null = Test-ElevationRequirement -ComputerName $computerName -EnableException $true
+                    $result = Invoke-Command2 -ScriptBlock $wmiScriptBlock -ArgumentList $netConf -ComputerName $computerName -Credential $Credential -ErrorAction Stop
+                    foreach ($verbose in $result.Verbose) {
+                        Write-Message -Level Verbose -Message $verbose
                     }
-                    if ($return.Exception) {
-                        Stop-Function -Message "Setting network configuration for instance $($netConf.InstanceName) on $($netConf.ComputerName) failed with: $($return.Exception)" -Target $netConf.ComputerName -ErrorRecord $output.Exception -Continue
+                    $output.Changes = $result.Changes
+                    if ($result.Exception) {
+                        # The new code pattern for WMI calls is used where all exceptions are catched and return as part of an object.
+                        $output.Exception = $result.Exception
+                        Write-Message -Level Verbose -Message "Execution against $computerName failed with: $($result.Exception)"
+                        Stop-Function -Message "Setting network configuration for instance $($netConf.InstanceName) on $($netConf.ComputerName) failed with: $($result.Exception)" -Target $netConf.ComputerName -ErrorRecord $result.Exception -Continue
                     }
                 }
 
-                if ($return.Changes.Count -gt 0) {
+                if ($result.Changes.Count -gt 0) {
                     $output.RestartNeeded = $true
                     if ($RestartService) {
                         if ($Pscmdlet.ShouldProcess("Restarting service for instance $($netConf.InstanceName) on $($netConf.ComputerName)")) {
