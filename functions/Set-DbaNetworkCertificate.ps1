@@ -160,8 +160,16 @@ function Set-DbaNetworkCertificate {
                     return
                 }
 
+                #Grant permissions to the Service SID
+                $sqlSSID = "NT SERVICE\MSSQLSERVER"
+                if ($instanceName -ne "MSSQLSERVER") {
+                    $sqlSSID = "NT SERVICE\MSSQL$" + $instanceName
+                }
+
                 $permission = $serviceAccount, "Read", "Allow"
                 $accessRule = New-Object -TypeName System.Security.AccessControl.FileSystemAccessRule -ArgumentList $permission
+                $permission += $sqlSSID, "Read", "Allow"
+                $accessRuleSSID = New-Object -TypeName System.Security.AccessControl.FileSystemAccessRule -ArgumentList $permission
 
                 if ($null -ne $cert.PrivateKey) {
                     $keyPath = $env:ProgramData + "\Microsoft\Crypto\RSA\MachineKeys\"
@@ -182,6 +190,7 @@ function Set-DbaNetworkCertificate {
 
                 $acl = Get-Acl -Path $keyFullPath
                 $null = $acl.AddAccessRule($accessRule)
+                $null = $acl.AddAccessRule($accessRuleSSID)
                 Set-Acl -Path $keyFullPath -AclObject $acl
 
                 if ($acl) {
