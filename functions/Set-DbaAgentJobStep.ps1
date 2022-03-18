@@ -50,7 +50,7 @@ function Set-DbaAgentJobStep {
 
     .PARAMETER OnFailAction
         The action to perform if the step fails.
-        Allowed values  "QuitWithSuccess" (default), "QuitWithFailure", "GoToNextStep", "GoToStep".
+        Allowed values  "QuitWithFailure" (default), "QuitWithSuccess", "GoToNextStep", "GoToStep".
         The text value van either be lowercase, uppercase or something in between as long as the text is correct.
 
     .PARAMETER OnFailStepId
