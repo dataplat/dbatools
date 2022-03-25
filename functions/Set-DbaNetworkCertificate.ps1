@@ -168,7 +168,7 @@ function Set-DbaNetworkCertificate {
 
                 $permission = $serviceAccount, "Read", "Allow"
                 $accessRule = New-Object -TypeName System.Security.AccessControl.FileSystemAccessRule -ArgumentList $permission
-                $permission += $sqlSSID, "Read", "Allow"
+                $permission = $sqlSSID, "Read", "Allow"
                 $accessRuleSSID = New-Object -TypeName System.Security.AccessControl.FileSystemAccessRule -ArgumentList $permission
 
                 if ($null -ne $cert.PrivateKey) {
