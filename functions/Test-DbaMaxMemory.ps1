@@ -85,11 +85,10 @@ function Test-DbaMaxMemory {
                     }
                     $instanceCount = ($serverService | Where-Object State -Like Running | Where-Object InstanceName | Where-Object ServiceType -eq 'Engine' | Group-Object InstanceName | Measure-Object Count).Count
 
-                    $otherConsumers = $serverService|Where-Object ServiceType -in ('SSAS','SSRS','SSIS')
-                    if($null -ne $otherConsumers)
-                    {
+                    $otherConsumers = $serverService | Where-Object ServiceType -in ('SSAS', 'SSRS', 'SSIS')
+                    if ($null -ne $otherConsumers) {
                         Write-Message -Level Warning -Message "The memory calculation maybe inccurate as the following SQL components have also been detected: $($otherConsumers.ServiceType -join(','))"
-                    } 
+                    }
 
                 }
             } catch {
