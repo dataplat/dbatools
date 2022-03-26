@@ -179,7 +179,7 @@ function Set-DbaLogin {
         [string]$DefaultDatabase,
         [switch]$Unlock,
         [Alias("MustChange")]
-        [switch]PasswordMustChange,
+        [switch]$PasswordMustChange,
         [string]$NewName,
         [switch]$Disable,
         [switch]$Enable,
@@ -429,7 +429,7 @@ function Set-DbaLogin {
                     }
 
                     try {
-                        $l.ChangePassword($NewSecurePassword, $Unlock, PasswordMustChange)
+                        $l.ChangePassword($NewSecurePassword, $Unlock, $PasswordMustChange)
                         $passwordChanged = $true
 
                         if (Test-Bound PasswordMustChange) {
