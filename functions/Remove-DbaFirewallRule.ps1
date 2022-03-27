@@ -138,7 +138,7 @@ function Remove-DbaFirewallRule {
         foreach ($instance in $SqlInstance) {
             try {
                 Write-Message -Level Verbose -Message "Get firewall rules from $($instance.ComputerName)."
-                $InputObject = Get-DbaFirewallRule -SqlInstance $instance -Credential $Credential -Type $Type -EnableException
+                $InputObject += Get-DbaFirewallRule -SqlInstance $instance -Credential $Credential -Type $Type -EnableException
             } catch {
                 Stop-Function -Message "Failed to collect firewall rules from $($instance.ComputerName)." -Target $instance -ErrorRecord $_ -Continue
             }
