@@ -5,7 +5,7 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
         [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('WhatIf', 'Confirm') }
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Login', 'SecurePassword', 'DefaultDatabase', 'Unlock', 'MustChange', 'NewName', 'Disable', 'Enable', 'DenyLogin', 'GrantLogin', 'PasswordPolicyEnforced', 'PasswordExpirationEnabled', 'AddRole', 'RemoveRole', 'Force', 'InputObject', 'EnableException'
+        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Login', 'SecurePassword', 'DefaultDatabase', 'Unlock', 'PasswordMustChange', 'NewName', 'Disable', 'Enable', 'DenyLogin', 'GrantLogin', 'PasswordPolicyEnforced', 'PasswordExpirationEnabled', 'AddRole', 'RemoveRole', 'Force', 'InputObject', 'EnableException'
         $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
         It "Should only contain our specific parameters" {
             (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
@@ -266,11 +266,11 @@ Describe "$CommandName Integration Tests" -Tag 'IntegrationTests' {
             $results.IsLocked | Should -Be $false
         }
 
-        It "MustChange" {
+        It "PasswordMustChange" {
             # password is required
-            $changeResult = Set-DbaLogin -SqlInstance $script:instance2 -Login "testlogin1_$random" -MustChange -ErrorVariable error
+            $changeResult = Set-DbaLogin -SqlInstance $script:instance2 -Login "testlogin1_$random" -PasswordMustChange -ErrorVariable error
             $changeResult | Should -BeNullOrEmpty
-            $error.Exception | Should -Match "You must specify a password when using the -MustChange parameter"
+            $error.Exception | Should -Match "You must specify a password when using the -PasswordMustChange parameter"
 
             # ensure the policy settings are off
             $result = Set-DbaLogin -SqlInstance $script:instance2 -Login "testlogin1_$random" -PasswordPolicyEnforced:$false -PasswordExpirationEnabled:$false
@@ -283,19 +283,19 @@ Describe "$CommandName Integration Tests" -Tag 'IntegrationTests' {
             $changeResult.PasswordExpirationEnabled | Should Be $true
 
             # check_policy and check_expiration must be set on the login
-            $changeResult = Set-DbaLogin -SqlInstance $script:instance2 -Login "testlogin1_$random", "testlogin2_$random" -MustChange -Password $password1 -ErrorVariable error
+            $changeResult = Set-DbaLogin -SqlInstance $script:instance2 -Login "testlogin1_$random", "testlogin2_$random" -PasswordMustChange -Password $password1 -ErrorVariable error
             $changeResult.Count | Should -Be 1
             $changeResult.LoginName | Should -Be "testlogin2_$random"
             $error.Exception | Should -Match "Unable to change the password and set the must_change option for \[testlogin1_$random\] because check_policy = False and check_expiration = False"
 
-            $changeResult = Set-DbaLogin -SqlInstance $script:instance2 -Login "testlogin1_$random" -MustChange -Password $password1 -PasswordPolicyEnforced -PasswordExpirationEnabled
+            $changeResult = Set-DbaLogin -SqlInstance $script:instance2 -Login "testlogin1_$random" -PasswordMustChange -Password $password1 -PasswordPolicyEnforced -PasswordExpirationEnabled
             $changeResult.MustChangePassword | Should -Be $true
             $changeResult.PasswordChanged | Should -Be $true
             $changeResult.PasswordPolicyEnforced | Should Be $true
             $changeResult.PasswordExpirationEnabled | Should Be $true
 
             # now change the password and set the must_change
-            $changeResult = Set-DbaLogin -SqlInstance $script:instance2 -Login "testlogin2_$random" -MustChange -Password $password1
+            $changeResult = Set-DbaLogin -SqlInstance $script:instance2 -Login "testlogin2_$random" -PasswordMustChange -Password $password1
             $changeResult.MustChangePassword | Should -Be $true
             $changeResult.PasswordChanged | Should -Be $true
 
