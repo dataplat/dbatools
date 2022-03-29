@@ -463,16 +463,18 @@ function Copy-DbaDbTableData {
                         $reader.Close()
 
                         [pscustomobject]@{
-                            SourceInstance      = $server.Name
-                            SourceDatabase      = $Database
-                            SourceSchema        = $sqlObject.Schema
-                            SourceTable         = $sqlObject.Name
-                            DestinationInstance = $destServer.Name
-                            DestinationDatabase = $DestinationDatabase
-                            DestinationSchema   = $desttable.Schema
-                            DestinationTable    = $desttable.Name
-                            RowsCopied          = $RowsTotal
-                            Elapsed             = [prettytimespan]$elapsed.Elapsed
+                            SourceInstance        = $server.Name
+                            SourceDatabase        = $Database
+                            SourceDatabaseID      = $sqlObject.Parent.ID
+                            SourceSchema          = $sqlObject.Schema
+                            SourceTable           = $sqlObject.Name
+                            DestinationInstance   = $destServer.Name
+                            DestinationDatabase   = $DestinationDatabase
+                            DestinationDatabaseID = $desttable.Parent.ID
+                            DestinationSchema     = $desttable.Schema
+                            DestinationTable      = $desttable.Name
+                            RowsCopied            = $RowsTotal
+                            Elapsed               = [prettytimespan]$elapsed.Elapsed
                         }
                     }
                 } catch {
