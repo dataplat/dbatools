@@ -74,8 +74,8 @@ function Get-DbaTraceFlag {
             $tflags = $server.EnumActiveGlobalTraceFlags()
 
             if ($tFlags.Rows.Count -eq 0) {
-                Write-Message -Level Output -Message "No global trace flags enabled"
-                return
+                Write-Message -Level Verbose -Message "No global trace flags enabled"
+                continue
             }
 
             if ($TraceFlag) {
