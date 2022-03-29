@@ -217,15 +217,17 @@ function Copy-DbaDbCertificate {
                         Write-Message -Level VeryVerbose -Message "Processing $certname on $dbName"
 
                         $copyDbCertificateStatus = [pscustomobject]@{
-                            SourceServer        = $Source
-                            SourceDatabase      = $dbName
-                            DestinationServer   = $destServer.Name
-                            DestinationDatabase = $dbName
-                            type                = "Database Certificate"
-                            Name                = $certname
-                            Status              = $null
-                            Notes               = $null
-                            DateTime            = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
+                            SourceServer          = $Source
+                            SourceDatabase        = $dbName
+                            SourceDatabaseID      = $cert.Parent.ID
+                            DestinationServer     = $destServer.Name
+                            DestinationDatabase   = $dbName
+                            DestinationDatabaseID = $db.ID
+                            type                  = "Database Certificate"
+                            Name                  = $certname
+                            Status                = $null
+                            Notes                 = $null
+                            DateTime              = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
                         }
 
                         if ($domasterkeymessage) {
@@ -296,6 +298,7 @@ function Copy-DbaDbCertificate {
                                 $params = @{
                                     SqlInstance        = $db.Parent
                                     Database           = $db.Name
+                                    Name               = $export.Certificate
                                     Path               = $export.Path
                                     KeyFilePath        = $export.Key
                                     EnableException    = $true
