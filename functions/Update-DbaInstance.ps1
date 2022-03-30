@@ -4,7 +4,7 @@ function Update-DbaInstance {
         Invokes installation of SQL Server Service Packs and Cumulative Updates on local and remote servers.
 
     .DESCRIPTION
-        Starts and automated process of updating SQL Server installation to a specific version defined in the parameters.
+        Starts an automated process of updating SQL Server installation to a specific version defined in the parameters.
         The command will:
 
         * Search for SQL Server installations in a remote registry
