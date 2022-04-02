@@ -128,37 +128,40 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
             }
         }
 
-        Context 'Raise warning when another component detected' {
-            Mock Connect-DbaInstance -MockWith {
-                "nothing"
+    }
+}
+
+Describe "$commandname Unit Tests" -Tag 'UnitTests' {
+
+    Context 'Raise warning when another component detected' {
+        Mock Connect-DbaInstance -MockWith {
+            "nothing"
+        }
+
+        Mock Get-DbaMaxMemory -MockWith {
+            New-Object PSObject -Property @{
+                ComputerName = "SQL2016"
+                InstanceName = "MSSQLSERVER"
+                SqlInstance  = "SQL2016"
+                Total        = 4096
+                MaxValue     = 2147483647
             }
+        }
 
-            Mock Get-DbaMaxMemory -MockWith {
-                New-Object PSObject -Property @{
-                    ComputerName = "SQL2016"
-                    InstanceName = "MSSQLSERVER"
-                    SqlInstance  = "SQL2016"
-                    Total        = 4096
-                    MaxValue     = 2147483647
-                }
+        Mock Get-DbaService -MockWith {
+            New-Object PSObject -Property @{
+                InstanceName = "foo"
+                State        = "Running"
+                ServiceType  = "SSRS"
             }
+        }
 
-            Mock Get-DbaService -MockWith {
-                New-Object PSObject -Property @{
-                    InstanceName = "foo"
-                    State        = "Running"
-                    ServiceType  = "SSRS"
-                }
-            }
-
-            It 'Should return a warning' {
-                Mock Get-DbaMaxMemory -MockWith { }
-
-                $result = Test-DbaMaxMemory -SqlInstance 'ABC' -WarningVariable warnvar
-                $warnvar | Should -BeLike "*The memory calculation maybe inaccurate as the following SQL components have also been detected*"
-            }
-
+        It 'Should return a warning' {
+            Mock Get-DbaMaxMemory -MockWith { }
+            $result = Test-DbaMaxMemory -SqlInstance 'ABC' -WarningVariable warnvar
+            $warnvar | Should -BeLike "*The memory calculation maybe inaccurate as the following SQL components have also been detected*"
         }
 
     }
+
 }
