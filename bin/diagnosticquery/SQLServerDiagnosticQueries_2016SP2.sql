@@ -1,7 +1,7 @@
 
 -- SQL Server 2016 SP2 Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: March 2, 2022
+-- Last Modified: April 1, 2022
 -- https://glennsqlperformance.com/
 -- https://sqlserverperformance.wordpress.com/
 -- YouTube: https://bit.ly/2PkoAM1 
@@ -1072,7 +1072,8 @@ ORDER BY ec.client_net_address, es.[program_name] OPTION (RECOMPILE);
 SELECT AVG(current_tasks_count) AS [Avg Task Count], 
 AVG(work_queue_count) AS [Avg Work Queue Count],
 AVG(runnable_tasks_count) AS [Avg Runnable Task Count],
-AVG(pending_disk_io_count) AS [Avg Pending DiskIO Count]
+AVG(pending_disk_io_count) AS [Avg Pending DiskIO Count],
+GETDATE() AS [System Time]
 FROM sys.dm_os_schedulers WITH (NOLOCK)
 WHERE scheduler_id < 255 OPTION (RECOMPILE);
 ------
