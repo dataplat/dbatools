@@ -293,6 +293,7 @@ function Backup-DbaDatabase {
                 return
             }
         }
+
         # this had to be a function. making it a variable killed something. I'm guessing scoping issues
         Function Convert-BackupPath ($object) {
             if ($object -match "/|\\") {
@@ -611,8 +612,8 @@ function Backup-DbaDatabase {
             if ($True -eq $ReplaceInName) {
                 for ($i = 0; $i -lt $FinalBackupPath.count; $i++) {
                     $FinalBackupPath[$i] = $FinalBackupPath[$i] -replace ('dbname', $dbName)
-                    $FinalBackupPath[$i] = $FinalBackupPath[$i] -replace ('instancename', $SqlInstance.InstanceName)
-                    $FinalBackupPath[$i] = $FinalBackupPath[$i] -replace ('servername', $SqlInstance.ComputerName)
+                    $FinalBackupPath[$i] = $FinalBackupPath[$i] -replace ('instancename', $server.ServiceName)
+                    $FinalBackupPath[$i] = $FinalBackupPath[$i] -replace ('servername', $server.ComputerName)
                     $FinalBackupPath[$i] = $FinalBackupPath[$i] -replace ('timestamp', $timestamp)
                     $FinalBackupPath[$i] = $FinalBackupPath[$i] -replace ('backuptype', $outputType)
                 }

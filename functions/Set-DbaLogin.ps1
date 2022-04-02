@@ -30,7 +30,7 @@ function Set-DbaLogin {
         Switch to unlock an account. This can be used in conjunction with the -SecurePassword or -Force parameters.
         The default is false.
 
-    .PARAMETER MustChange
+    .PARAMETER PasswordMustChange
         Does the user need to change his/her password. This will only be used in conjunction with the -SecurePassword parameter.
         It is required that the login have both PasswordPolicyEnforced (check_policy) and PasswordExpirationEnabled (check_expiration) enabled for the login. See the Microsoft documentation for ALTER LOGIN for more details.
         The default is false.
@@ -95,7 +95,7 @@ function Set-DbaLogin {
     .EXAMPLE
         PS C:\> $SecurePassword = ConvertTo-SecureString "PlainTextPassword" -AsPlainText -Force
         PS C:\> $cred = New-Object System.Management.Automation.PSCredential ("username", $SecurePassword)
-        PS C:\> Set-DbaLogin -SqlInstance sql1 -Login login1 -SecurePassword $cred -Unlock -MustChange
+        PS C:\> Set-DbaLogin -SqlInstance sql1 -Login login1 -SecurePassword $cred -Unlock -PasswordMustChange
 
         Set the new password for login1 using a credential, unlock the account and set the option
         that the user must change password at next logon.
@@ -178,7 +178,8 @@ function Set-DbaLogin {
         [Alias("DefaultDB")]
         [string]$DefaultDatabase,
         [switch]$Unlock,
-        [switch]$MustChange,
+        [Alias("MustChange")]
+        [switch]$PasswordMustChange,
         [string]$NewName,
         [switch]$Disable,
         [switch]$Enable,
@@ -228,8 +229,8 @@ function Set-DbaLogin {
             Stop-Function -Message 'You must specify a password when using the -Unlock parameter or use the -Force parameter. See the help documentation for this command.'
         }
 
-        if ((Test-Bound MustChange) -and (Test-Bound SecurePassword -Not)) {
-            Stop-Function -Message 'You must specify a password when using the -MustChange parameter. See the command help for more details.'
+        if ((Test-Bound PasswordMustChange) -and (Test-Bound SecurePassword -Not)) {
+            Stop-Function -Message 'You must specify a password when using the -PasswordMustChange parameter. See the command help for more details.'
         }
     }
 
@@ -420,7 +421,7 @@ function Set-DbaLogin {
 
                 # Change the password after the Alter() because the must_change requires the policy settings to be enabled first.
                 if (Test-bound -ParameterName 'SecurePassword') {
-                    if (Test-Bound MustChange) {
+                    if (Test-Bound PasswordMustChange) {
                         # Validate if the check_policy and check_expiration options are enabled on the login. These are required for the must_change option for alter login.
                         if ((-not $l.PasswordPolicyEnforced) -or (-not $l.PasswordExpirationEnabled)) {
                             Stop-Function -Message "Unable to change the password and set the must_change option for $l because check_policy = $($l.PasswordPolicyEnforced) and check_expiration = $($l.PasswordExpirationEnabled). See the command help for additional information on the -MustChange parameter." -Target $l -Continue
@@ -428,11 +429,11 @@ function Set-DbaLogin {
                     }
 
                     try {
-                        $l.ChangePassword($NewSecurePassword, $Unlock, $MustChange)
+                        $l.ChangePassword($NewSecurePassword, $Unlock, $PasswordMustChange)
                         $passwordChanged = $true
 
-                        if (Test-Bound MustChange) {
-                            $l.Refresh()  # necessary so that the read only property MustChangePassword is updated
+                        if (Test-Bound PasswordMustChange) {
+                            $l.Refresh()  # necessary so that the read only property PasswordMustChange is updated
                         }
                     } catch {
                         $notes += "Couldn't change password"

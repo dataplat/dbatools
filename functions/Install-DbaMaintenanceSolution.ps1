@@ -373,7 +373,7 @@ function Install-DbaMaintenanceSolution {
             [pscustomobject]@{
                 ComputerName = $server.ComputerName
                 InstanceName = $server.ServiceName
-                SqlInstance  = $instance
+                SqlInstance  = $server.DomainInstanceName
                 Results      = $result
             }
 
