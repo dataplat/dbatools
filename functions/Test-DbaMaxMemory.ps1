@@ -93,7 +93,7 @@ function Test-DbaMaxMemory {
 
                     $otherConsumers = $serverService | Where-Object ServiceType -in ('SSAS', 'SSRS', 'SSIS')
                     if ($null -ne $otherConsumers) {
-                        Write-Message -Level Warning -Message "The memory calculation maybe inccurate as the following SQL components have also been detected: $($otherConsumers.ServiceType -join(','))"
+                        Write-Message -Level Warning -Message "The memory calculation maybe inaccurate as the following SQL components have also been detected: $($otherConsumers.ServiceType -join(','))"
                     }
 
 

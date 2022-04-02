@@ -4,11 +4,11 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
+        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
         [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Credential', 'EnableException'
         $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
         It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
         }
     }
 }
@@ -45,6 +45,7 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
                 New-Object PSObject -Property @{
                     InstanceName = "foo"
                     State        = "Running"
+                    ServiceType  = "Engine"
                 }
             }
 
@@ -126,5 +127,38 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
                 $result.RecommendedValue | Should Be 25600
             }
         }
+
+        Context 'Raise warning when another component detected' {
+            Mock Connect-DbaInstance -MockWith {
+                "nothing"
+            }
+
+            Mock Get-DbaMaxMemory -MockWith {
+                New-Object PSObject -Property @{
+                    ComputerName = "SQL2016"
+                    InstanceName = "MSSQLSERVER"
+                    SqlInstance  = "SQL2016"
+                    Total        = 4096
+                    MaxValue     = 2147483647
+                }
+            }
+
+            Mock Get-DbaService -MockWith {
+                New-Object PSObject -Property @{
+                    InstanceName = "foo"
+                    State        = "Running"
+                    ServiceType  = "SSRS"
+                }
+            }
+
+            It 'Should return a warning' {
+                Mock Get-DbaMaxMemory -MockWith { }
+
+                $result = Test-DbaMaxMemory -SqlInstance 'ABC' -WarningVariable warnvar
+                $warnvar | Should -BeLike "*The memory calculation maybe inaccurate as the following SQL components have also been detected*"
+            }
+
+        }
+
     }
 }
