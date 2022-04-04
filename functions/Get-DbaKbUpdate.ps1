@@ -172,6 +172,9 @@ function Get-DbaKbUpdate {
                         Write-Message -Level Verbose -Message "Downloading detailed information for updateid=$updateid"
                         $detaildialog = Invoke-TlsWebRequest -Uri "https://www.catalog.update.microsoft.com/ScopedViewInline.aspx?updateid=$updateid" -UseBasicParsing -ErrorAction Stop
                         $description = Get-Info -Text $detaildialog -Pattern '<span id="ScopedViewHandler_desc">'
+                        if (-not $description) {
+                            Write-Message -Level Warning -Message "The response from the webserver did not include the expected information. Please try again later if you need the detailed information."
+                        }
                         $lastmodified = Get-Info -Text $detaildialog -Pattern '<span id="ScopedViewHandler_date">'
                         $size = Get-Info -Text $detaildialog -Pattern '<span id="ScopedViewHandler_size">'
                         $classification = Get-Info -Text $detaildialog -Pattern '<span id="ScopedViewHandler_labelClassification_Separator" class="labelTitle">'
