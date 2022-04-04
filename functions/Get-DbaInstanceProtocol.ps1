@@ -71,12 +71,10 @@ function Get-DbaInstanceProtocol {
                 try {
                     $cmGetInstanceParams = @{
                         ComputerName = $Computer
+                        Credential = $Credential
                         Namespace    = $cmNamespace
                         Query        = "SELECT * FROM __NAMESPACE WHERE Name Like 'ComputerManagement%'"
                         ErrorAction  = 'Stop'
-                    }
-                    if ($PSBoundParameters.ContainsKey('Credential')) {
-                        $cmGetInstanceParams.Credential = $Credential
                     }
                     $namespaces = Get-DbaCmObject @cmGetInstanceParams
                     Write-Message -Level Verbose -Message "Successfully retrieved namespaces from $Computer. Total found: $($namespaces.Count)"
