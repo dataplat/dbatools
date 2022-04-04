@@ -71,7 +71,7 @@ function Get-DbaInstanceProtocol {
                 try {
                     $cmGetInstanceParams = @{
                         ComputerName = $Computer
-                        Credential = $Credential
+                        Credential   = $Credential
                         Namespace    = $cmNamespace
                         Query        = "SELECT * FROM __NAMESPACE WHERE Name Like 'ComputerManagement%'"
                         ErrorAction  = 'Stop'
