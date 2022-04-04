@@ -83,7 +83,7 @@ function Get-DbaInstanceProtocol {
                 }
                 if ($namespaces) {
                     try {
-                        $instance = $namespaces | Where-Object { (Get-DbaCmObject -ComputerName $Computer -Credential $Credential -Namespace "root\Microsoft\SqlServer\$($_.Name)" -ClassName ServerNetworkProtocol -ErrorAction Stop).count -gt 0 } | Sort-Object Name -Descending | Select-Object -First 1
+                        $instance = $namespaces | Where-Object { (Get-DbaCmObject -ComputerName $Computer -Credential $Credential -Namespace "$cmNamespace\$($_.Name)" -ClassName ServerNetworkProtocol -ErrorAction Stop).count -gt 0 } | Sort-Object Name -Descending | Select-Object -First 1
                         Write-Message -Level Verbose -Message "Successfully retrieved ServerNetworkProtocol data from $Computer"
                     } catch {
                         Stop-Function -Message "Failed to retrieve Network Protcol data" -ErrorRecord $_ -Target $Computer -Continue
@@ -95,7 +95,7 @@ function Get-DbaInstanceProtocol {
                     $instanceName = $instance.Name
                     Write-Message -Level Verbose -Message "Getting Cim class ServerNetworkProtocol in Namespace $instanceName on $Computer"
                     try {
-                        $prot = Get-DbaCmObject -ComputerName $Computer -Credential $Credential -Namespace "root\Microsoft\SQLServer\$($instanceName)" -ClassName ServerNetworkProtocol -ErrorAction Stop
+                        $prot = Get-DbaCmObject -ComputerName $Computer -Credential $Credential -Namespace "$cmNamespace\$($instanceName)" -ClassName ServerNetworkProtocol -ErrorAction Stop
 
                         $prot | Add-Member -Force -MemberType ScriptMethod -Name Enable -Value { Invoke-CimMethod -MethodName SetEnable -InputObject $this }
                         $prot | Add-Member -Force -MemberType ScriptMethod -Name Disable -Value { Invoke-CimMethod -MethodName SetDisable -InputObject $this }
