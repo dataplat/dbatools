@@ -59,29 +59,37 @@ function Get-DbaKbUpdate {
     begin {
         # Wishing Microsoft offered an RSS feed. Since they don't, we are forced to parse webpages.
         function Get-Info ($Text, $Pattern) {
-            $info = $Text -Split $Pattern
-            if ($Pattern -match "labelTitle") {
-                $part = ($info[1] -Split '</span>')[1]
-                $part = $part.Replace("<div>", "")
-                ($part -Split '</div>')[0].Trim()
-            } elseif ($Pattern -match "span ") {
-                ($info[1] -Split '</span>')[0].Trim()
-            } else {
-                ($info[1] -Split ';')[0].Replace("'", "").Trim()
+            try {
+                $info = $Text -Split $Pattern
+                if ($Pattern -match "labelTitle") {
+                    $part = ($info[1] -Split '</span>')[1]
+                    $part = $part.Replace("<div>", "")
+                    ($part -Split '</div>')[0].Trim()
+                } elseif ($Pattern -match "span ") {
+                    ($info[1] -Split '</span>')[0].Trim()
+                } else {
+                    ($info[1] -Split ';')[0].Replace("'", "").Trim()
+                }
+            } catch {
+                Write-Message -Level Verbose -Message "Failed to get info with pattern '$Pattern'"
             }
         }
 
         function Get-SuperInfo ($Text, $Pattern) {
-            $info = $Text -Split $Pattern
-            if ($Pattern -match "supersededbyInfo") {
-                $part = ($info[1] -Split '<span id="ScopedViewHandler_labelSupersededUpdates_Separator" class="labelTitle">')[0]
-            } else {
-                $part = ($info[1] -Split '<div id="languageBox" style="display: none">')[0]
-            }
-            $nomarkup = ($part -replace '<[^>]+>', '').Trim() -split [Environment]::NewLine
-            foreach ($line in $nomarkup) {
-                $clean = $line.Trim()
-                if ($clean) { $clean }
+            try {
+                $info = $Text -Split $Pattern
+                if ($Pattern -match "supersededbyInfo") {
+                    $part = ($info[1] -Split '<span id="ScopedViewHandler_labelSupersededUpdates_Separator" class="labelTitle">')[0]
+                } else {
+                    $part = ($info[1] -Split '<div id="languageBox" style="display: none">')[0]
+                }
+                $nomarkup = ($part -replace '<[^>]+>', '').Trim() -split [Environment]::NewLine
+                foreach ($line in $nomarkup) {
+                    $clean = $line.Trim()
+                    if ($clean) { $clean }
+                }
+            } catch {
+                Write-Message -Level Verbose -Message "Failed to get superinfo with pattern '$Pattern'"
             }
         }
 
@@ -161,8 +169,12 @@ function Get-DbaKbUpdate {
                     }
 
                     if (-not $Simple) {
+                        Write-Message -Level Verbose -Message "Downloading detailed information for updateid=$updateid"
                         $detaildialog = Invoke-TlsWebRequest -Uri "https://www.catalog.update.microsoft.com/ScopedViewInline.aspx?updateid=$updateid" -UseBasicParsing -ErrorAction Stop
                         $description = Get-Info -Text $detaildialog -Pattern '<span id="ScopedViewHandler_desc">'
+                        if (-not $description) {
+                            Write-Message -Level Warning -Message "The response from the webserver did not include the expected information. Please try again later if you need the detailed information."
+                        }
                         $lastmodified = Get-Info -Text $detaildialog -Pattern '<span id="ScopedViewHandler_date">'
                         $size = Get-Info -Text $detaildialog -Pattern '<span id="ScopedViewHandler_size">'
                         $classification = Get-Info -Text $detaildialog -Pattern '<span id="ScopedViewHandler_labelClassification_Separator" class="labelTitle">'
@@ -188,7 +200,7 @@ function Get-DbaKbUpdate {
                         }
                     }
 
-                    $links = $downloaddialog | Select-String -AllMatches -Pattern "(http[s]?\://download\.windowsupdate\.com\/[^\'\""]*)" | Select-Object -Unique
+                    $links = $downloaddialog | Select-String -AllMatches -Pattern "(http[s]?\://[^/]*download\.windowsupdate\.com\/[^\'\""]*)" | Select-Object -Unique
 
                     foreach ($link in $links) {
                         $build = Get-DbaBuild -Kb "KB$kb" -WarningAction SilentlyContinue
