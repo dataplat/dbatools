@@ -83,7 +83,7 @@ function Test-DbaMaxMemory {
                     } else {
                         $serverService = Get-DbaService -ComputerName $instance -EnableException
                     }
-                    $instanceCount = ($serverService | Where-Object State -Like Running | Where-Object InstanceName | Group-Object InstanceName | Measure-Object Count).Count
+                    $instanceCount = ($serverService | Where-Object { ($_.State -Like 'Running') -and ($_.ServiceType -eq 'Engine') } | Group-Object InstanceName | Measure-Object Count).Count
                 }
             } catch {
                 Write-Message -Level Warning -Message "Couldn't get accurate SQL Server instance count on $instance. Defaulting to 1." -Target $instance -ErrorRecord $_
