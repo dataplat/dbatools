@@ -5,11 +5,11 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
         It "Should only contain our specific parameters" {
-            [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
+            [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
             [object[]]$knownParameters = 'AutoCreateTable', 'BatchSize', 'BulkCopyTimeout', 'CheckConstraints', 'CommandTimeout', 'Database', 'Destination', 'DestinationDatabase', 'DestinationSqlCredential', 'DestinationTable', 'EnableException', 'FireTriggers', 'InputObject', 'KeepIdentity', 'KeepNulls', 'NoTableLock', 'NotifyAfter', 'Query', 'SqlCredential', 'SqlInstance', 'Table', 'Truncate', 'View'
             $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
 
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should -Be 0
+            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should -Be 0
         }
     }
 }
@@ -51,10 +51,12 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     }
 
     It "copies the table data" {
-        $null = Copy-DbaDbTableData -SqlInstance $script:instance1 -Database tempdb -Table dbatoolsci_example -DestinationTable dbatoolsci_example2
+        $results = Copy-DbaDbTableData -SqlInstance $script:instance1 -Database tempdb -Table dbatoolsci_example -DestinationTable dbatoolsci_example2
         $table1count = $db.Query("select id from dbo.dbatoolsci_example")
         $table2count = $db.Query("select id from dbo.dbatoolsci_example2")
         $table1count.Count | Should -Be $table2count.Count
+        $results.SourceDatabaseID | Should -Be $db.ID
+        $results.DestinationDatabaseID | Should -Be $db.ID
     }
 
     It "copies the table data to another instance" {
@@ -74,7 +76,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     It "supports piping more than one table" {
         $results = Get-DbaDbTable -SqlInstance $script:instance1 -Database tempdb -Table dbatoolsci_example2, dbatoolsci_example | Copy-DbaDbTableData -DestinationTable dbatoolsci_example3
         $results.Count | Should -Be 2
-        $results.RowsCopied | Measure-Object -Sum | Select -Expand Sum | Should -Be 20
+        $results.RowsCopied | Measure-Object -Sum | select -Expand Sum | Should -Be 20
     }
 
     It "opens and closes connections properly" {

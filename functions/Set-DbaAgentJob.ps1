@@ -510,7 +510,11 @@ function Set-DbaAgentJob {
                 } catch {
                     Stop-Function -Message "Something went wrong changing the job" -ErrorRecord $_ -Target $instance -Continue
                 }
-                Get-DbaAgentJob -SqlInstance $server | Where-Object Name -eq $currentjob.name
+
+                # Refresh the SMO - another bug in SMO? As this should not be needed...
+                $currentjob.Refresh()
+
+                Get-DbaAgentJob -SqlInstance $server -Job $currentjob.Name
             }
         }
     }

@@ -39,13 +39,15 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
                 EncryptionPassword = $passwd
                 MasterKeyPassword  = $passwd
                 Database           = "dbatoolscopycred"
-                SharedPath         = "C:\temp"
+                SharedPath         = $script:appveyorlabrepo
             }
             $results = Copy-DbaDbCertificate @paramscopydb -Confirm:$false | Where-Object SourceDatabase -eq dbatoolscopycred | Select-Object -First 1
             $results.Notes | Should -Be $null
             $results.Status | Should -Be "Successful"
+            $results.SourceDatabaseID | Should -Be (Get-DbaDatabase -SqlInstance $script:instance2 -Database dbatoolscopycred).ID
+            $results.DestinationDatabaseID | Should -Be (Get-DbaDatabase -SqlInstance $script:instance3 -Database dbatoolscopycred).ID
 
-            Get-DbaDbCertificate -SqlInstance $script:instance3 -Database dbatoolscopycred -Certificate $certificateName2 | Should -NotBeNull
+            Get-DbaDbCertificate -SqlInstance $script:instance3 -Database dbatoolscopycred -Certificate $certificateName2 | Should -Not -BeNullOrEmpty
         }
     }
 }

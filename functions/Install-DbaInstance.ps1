@@ -595,6 +595,10 @@ function Install-DbaInstance {
                         QUIET        = "True"
                     }
                 }
+                # To support failover cluster instance:
+                if ($Configuration.ACTION -in 'AddNode', 'RemoveNode') {
+                    $config.$mainKey.Remove('FEATURES')
+                }
             } else {
                 # determine a default user to assign sqladmin permissions
                 if ($Credential) {

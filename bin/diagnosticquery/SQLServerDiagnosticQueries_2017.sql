@@ -1,7 +1,7 @@
 
 -- SQL Server 2017 Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: March 6, 2022
+-- Last Modified: April 1, 2022
 -- https://glennsqlperformance.com/
 -- https://sqlserverperformance.wordpress.com/
 -- YouTube: https://bit.ly/2PkoAM1 
@@ -100,6 +100,7 @@ SELECT @@SERVERNAME AS [Server Name], @@VERSION AS [SQL Server and OS Version In
 -- 14.0.3411.3		CU26								9/14/2021		https://support.microsoft.com/en-us/topic/kb5005226-cumulative-update-26-for-sql-server-2017-121ddf2b-d383-44dc-9a07-d0dd5de84977
 -- 14.0.3421.10		CU27							   10/27/2021		https://support.microsoft.com/en-us/topic/kb5006944-cumulative-update-27-for-sql-server-2017-79117c8f-9d54-42f8-9727-5870fe475187
 -- 14.0.3430.2		CU28							    1/13/2022		https://support.microsoft.com/en-us/topic/kb5008084-cumulative-update-28-for-sql-server-2017-b5c1f1ba-67d5-4313-87ad-087e6acde82a
+-- 14.0.3436.1		CU29								3/30/2022		https://support.microsoft.com/en-us/topic/kb5010786-cumulative-update-29-for-sql-server-2017-8b3b4122-ed46-4d33-9d80-256c513ae42e
 
 
 -- How to determine the version, edition and update level of SQL Server and its components 
@@ -1105,7 +1106,8 @@ ORDER BY ec.client_net_address, es.[program_name] OPTION (RECOMPILE);
 SELECT AVG(current_tasks_count) AS [Avg Task Count], 
 AVG(work_queue_count) AS [Avg Work Queue Count],
 AVG(runnable_tasks_count) AS [Avg Runnable Task Count],
-AVG(pending_disk_io_count) AS [Avg Pending DiskIO Count]
+AVG(pending_disk_io_count) AS [Avg Pending DiskIO Count],
+GETDATE() AS [System Time]
 FROM sys.dm_os_schedulers WITH (NOLOCK)
 WHERE scheduler_id < 255 OPTION (RECOMPILE);
 ------
