@@ -132,36 +132,49 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
 }
 
 Describe "$commandname Unit Tests" -Tag 'UnitTests' {
+    InModuleScope dbatools {
+        Context 'Raise warning when another component detected' {
 
-    Context 'Raise warning when another component detected' {
-        Mock Connect-DbaInstance -MockWith {
-            "nothing"
-        }
+            It 'Should return a warning' {
+                Mock Get-DbaService -MockWith {
 
-        Mock Get-DbaMaxMemory -MockWith {
-            New-Object PSObject -Property @{
-                ComputerName = "SQL2016"
-                InstanceName = "MSSQLSERVER"
-                SqlInstance  = "SQL2016"
-                Total        = 4096
-                MaxValue     = 2147483647
+                    @{
+                        InstanceName = "foo"
+                        State        = "Running"
+                        ServiceType  = "SSRS"
+                    },
+                    @{
+                        InstanceName = "foo"
+                        State        = "Running"
+                        ServiceType  = "Engine"
+                    }
+                }
+                Mock Connect-DbaInstance {
+                    $obj = [PSCustomObject]@{
+                        Name                 = 'BASEName'
+                        NetName              = 'BASENetName'
+                        ComputerName         = 'BASEComputerName'
+                        InstanceName         = 'BASEInstanceName'
+                        DomainInstanceName   = 'BASEDomainInstanceName'
+                        InstallDataDirectory = 'BASEInstallDataDirectory'
+                        ErrorLogPath         = 'BASEErrorLog_{0}_{1}_{2}_Path' -f "'", '"', ']'
+                        ServiceName          = 'BASEServiceName'
+                        VersionMajor         = 12
+                        ConnectionContext    = New-Object PSObject
+                    }
+                    Add-Member -InputObject $obj.ConnectionContext -Name ConnectionString  -MemberType NoteProperty -Value 'put=an=equal=in=it'
+                    $obj.PSObject.TypeNames.Clear()
+                    $obj.PSObject.TypeNames.Add("Microsoft.SqlServer.Management.Smo.Server")
+                    return $obj
+                }
+
+
+
+                $result = Test-DbaMaxMemory -SqlInstance 'ABC'  -WarningVariable warnvar -WarningAction Continue
+                $warnvar | Should -BeLike "*The memory calculation maybe inaccurate as the following SQL components have also been detected*"
             }
-        }
 
-        Mock Get-DbaService -MockWith {
-            New-Object PSObject -Property @{
-                InstanceName = "foo"
-                State        = "Running"
-                ServiceType  = "SSRS"
-            }
-        }
 
-        It 'Should return a warning' {
-            Mock Get-DbaMaxMemory -MockWith { }
-            $result = Test-DbaMaxMemory -SqlInstance 'ABC' -WarningVariable warnvar
-            $warnvar | Should -BeLike "*The memory calculation maybe inaccurate as the following SQL components have also been detected*"
         }
-
     }
-
 }
