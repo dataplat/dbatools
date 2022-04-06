@@ -83,7 +83,20 @@ function Test-DbaMaxMemory {
                     } else {
                         $serverService = Get-DbaService -ComputerName $instance -EnableException
                     }
-                    $instanceCount = ($serverService | Where-Object State -Like Running | Where-Object InstanceName | Group-Object InstanceName | Measure-Object Count).Count
+
+                    $instanceCount = ($serverService | Where-Object State -Like Running | Where-Object InstanceName | Where-Object ServiceType -eq 'Engine' | Group-Object InstanceName | Measure-Object Count).Count
+
+                    if ($instanceCount -eq 0) {
+                        Write-Message -Level Warning -Message "Couldn't get accurate SQL Server instance count on $instance. Defaulting to 1."
+                        $instanceCount = 1
+                    }
+
+                    $otherConsumers = $serverService | Where-Object ServiceType -in ('SSAS', 'SSRS', 'SSIS')
+                    if ($null -ne $otherConsumers) {
+                        Write-Message -Level Warning -Message "The memory calculation may be inaccurate as the following SQL components have also been detected: $($otherConsumers.ServiceType -join(','))"
+                    }
+
+
                 }
             } catch {
                 Write-Message -Level Warning -Message "Couldn't get accurate SQL Server instance count on $instance. Defaulting to 1." -Target $instance -ErrorRecord $_
