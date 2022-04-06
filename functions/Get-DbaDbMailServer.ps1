@@ -75,7 +75,7 @@ function Get-DbaDbMailServer {
         [switch]$EnableException
     )
     process {
-        foreach ($instance in $SqlInstance) {
+        if ($SqlInstance) {
             $InputObject += Get-DbaDbMail -SqlInstance $SqlInstance -SqlCredential $SqlCredential
         }
 
