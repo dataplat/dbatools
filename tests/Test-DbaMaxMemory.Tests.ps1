@@ -171,7 +171,7 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
 
 
                 $result = Test-DbaMaxMemory -SqlInstance 'ABC'  -WarningVariable warnvar -WarningAction Continue
-                $warnvar | Should -BeLike "*The memory calculation maybe inaccurate as the following SQL components have also been detected*"
+                $warnvar | Should -BeLike "*The memory calculation may be inaccurate as the following SQL components have also been detected*"
             }
 
 
