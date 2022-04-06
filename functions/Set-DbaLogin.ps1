@@ -465,7 +465,7 @@ function Set-DbaLogin {
                 Add-Member -Force -InputObject $l -MemberType NoteProperty -Name LoginName -Value $l.Name
                 Add-Member -Force -InputObject $l -MemberType NoteProperty -Name DenyLogin -Value $l.DenyWindowsLogin
 
-                $defaults = 'ComputerName', 'InstanceName', 'SqlInstance', 'LoginName', 'DenyLogin', 'IsDisabled', 'IsLocked',
+                $defaults = 'ComputerName', 'InstanceName', 'SqlInstance', 'Name', 'DenyLogin', 'IsDisabled', 'IsLocked',
                 'PasswordPolicyEnforced', 'PasswordExpirationEnabled', 'MustChangePassword', 'PasswordChanged', 'ServerRole', 'Notes'
 
                 Select-DefaultView -InputObject $l -Property $defaults
