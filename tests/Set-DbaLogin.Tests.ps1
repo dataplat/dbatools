@@ -285,7 +285,7 @@ Describe "$CommandName Integration Tests" -Tag 'IntegrationTests' {
             # check_policy and check_expiration must be set on the login
             $changeResult = Set-DbaLogin -SqlInstance $script:instance2 -Login "testlogin1_$random", "testlogin2_$random" -PasswordMustChange -Password $password1 -ErrorVariable error
             $changeResult.Count | Should -Be 1
-            $changeResult.LoginName | Should -Be "testlogin2_$random"
+            $changeResult.Name | Should -Be "testlogin2_$random"
             $error.Exception | Should -Match "Unable to change the password and set the must_change option for \[testlogin1_$random\] because check_policy = False and check_expiration = False"
 
             $changeResult = Set-DbaLogin -SqlInstance $script:instance2 -Login "testlogin1_$random" -PasswordMustChange -Password $password1 -PasswordPolicyEnforced -PasswordExpirationEnabled
