@@ -76,7 +76,7 @@ function Enable-DbaAgHadr {
     process {
         foreach ($instance in $SqlInstance) {
 
-            $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential
+            $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential -DisableException
             if ($null -ne $server) {
                 $computer = $computerFullName = $server.ComputerName
                 $instanceName = $server.DomainInstanceName
