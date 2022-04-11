@@ -1,10 +1,10 @@
 function Get-DbaAgHadr {
     <#
     .SYNOPSIS
-        Gets the Hadr service setting on the specified SQL Server instance.
+        Gets the running Hadr setting on the specified SQL Server instance.
 
     .DESCRIPTION
-        Gets the Hadr setting, from the service level, and returns true or false for the specified SQL Server instance.
+        Gets the running Hadr setting, from the instance level, and returns true or false for the specified SQL Server instance.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.
