@@ -10,6 +10,13 @@ function Enable-DbaAgHadr {
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.
 
+    .PARAMETER SqlCredential
+        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
+
     .PARAMETER Credential
         Credential object used to connect to the Windows server as a different user
 
@@ -58,6 +65,7 @@ function Enable-DbaAgHadr {
     param (
         [parameter(Mandatory, ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
+        [PSCredential]$SqlCredential,
         [PSCredential]$Credential,
         [switch]$Force,
         [switch]$EnableException
@@ -67,8 +75,9 @@ function Enable-DbaAgHadr {
     }
     process {
         foreach ($instance in $SqlInstance) {
-            $computer = $computerFullName = $instance.ComputerName
-            $instanceName = $instance.InstanceName
+            $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential
+            $computer = $computerFullName = server.ComputerName
+            $instanceName = server.DomainInstanceName
             if (-not (Test-ElevationRequirement -ComputerName $instance)) {
                 return
             }
@@ -107,7 +116,7 @@ function Enable-DbaAgHadr {
             }
 
             if ($noChange -eq $false) {
-                if ($PSCmdlet.ShouldProcess($instance, "Changing Hadr from $isHadrEnabled to 1 for $instance")) {
+                if ($PSCmdlet.ShouldProcess($instance, "Changing Hadr from $isHadrEnabled to True for $instance")) {
                     try {
                         Invoke-ManagedComputerCommand -ComputerName $computerFullName -Credential $Credential -ScriptBlock $scriptBlock -ArgumentList $instanceName
                     } catch {
