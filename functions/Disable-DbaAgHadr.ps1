@@ -76,8 +76,8 @@ function Disable-DbaAgHadr {
         foreach ($instance in $SqlInstance) {
             $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential
             if ($null -ne $server) {
-                $computer = $computerFullName = server.ComputerName
-                $instanceName = server.DomainInstanceName
+                $computer = $computerFullName = $server.ComputerName
+                $instanceName = $server.DomainInstanceName
             }
             else {
                 $computer = $computerFullName = $instance.ComputerName
