@@ -75,8 +75,14 @@ function Disable-DbaAgHadr {
     process {
         foreach ($instance in $SqlInstance) {
             $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential
-            $computer = $computerFullName = server.ComputerName
-            $instanceName = server.DomainInstanceName
+            if ($null -ne $server) {
+                $computer = $computerFullName = server.ComputerName
+                $instanceName = server.DomainInstanceName
+            }
+            else {
+                $computer = $computerFullName = $instance.ComputerName
+                $instanceName = $instance.InstanceName
+            }
             if (-not (Test-ElevationRequirement -ComputerName $instance)) {
                 return
             }
