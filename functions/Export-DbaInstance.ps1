@@ -383,8 +383,13 @@ function Export-DbaInstance {
             if ($Exclude -notcontains 'ReplicationSettings') {
                 Write-Message -Level Verbose -Message "Exporting replication settings"
                 Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Exporting replication settings"
-                $null = Export-DbaRepServerSetting -SqlInstance $instance -SqlCredential $SqlCredential -FilePath "$exportPath\replication.sql"
-                Get-ChildItem -ErrorAction Ignore -Path "$exportPath\replication.sql"
+
+                try {
+                    $null = Export-DbaRepServerSetting -SqlInstance $instance -SqlCredential $SqlCredential -FilePath "$exportPath\replication.sql" -EnableException
+                    Get-ChildItem -ErrorAction Ignore -Path "$exportPath\replication.sql"
+                } catch {
+                    Write-Message -Level Verbose -Message "Replication failed, skipping"
+                }
             }
 
             if ($Exclude -notcontains 'SysDbUserObjects') {
