@@ -108,8 +108,8 @@ function Copy-DbaDbAssembly {
             try {
                 # a bug here requires a try/catch
                 $userAssemblies = $database.Assemblies | Where-Object IsSystemObject -eq $false
-                foreach ($assembly in $userAssemblies) {
-                    $sourceAssemblies += $assembly
+                foreach ($asmb in $userAssemblies) {
+                    $sourceAssemblies += $asmb
                 }
             } catch {
                 #here to avoid an empty catch
@@ -134,8 +134,8 @@ function Copy-DbaDbAssembly {
                 try {
                     # a bug here requires a try/catch
                     $userAssemblies = $database.Assemblies | Where-Object IsSystemObject -eq $false
-                    foreach ($assembly in $userAssemblies) {
-                        $destAssemblies += $assembly
+                    foreach ($asmb in $userAssemblies) {
+                        $destAssemblies += $asmb
                     }
                 } catch {
                     #here to avoid an empty catch
@@ -148,15 +148,17 @@ function Copy-DbaDbAssembly {
                 $destDb = $destServer.Databases[$dbName]
                 Write-Message -Level VeryVerbose -Message "Processing $assemblyName on $dbName"
                 $copyDbAssemblyStatus = [pscustomobject]@{
-                    SourceServer        = $sourceServer.Name
-                    SourceDatabase      = $dbName
-                    DestinationServer   = $destServer.Name
-                    DestinationDatabase = $destDb
-                    type                = "Database Assembly"
-                    Name                = $assemblyName
-                    Status              = $null
-                    Notes               = $null
-                    DateTime            = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
+                    SourceServer          = $sourceServer.Name
+                    SourceDatabase        = $dbName
+                    SourceDatabaseID      = $currentAssembly.Parent.ID
+                    DestinationServer     = $destServer.Name
+                    DestinationDatabase   = $destDb
+                    DestinationDatabaseID = $destDb.ID
+                    type                  = "Database Assembly"
+                    Name                  = $assemblyName
+                    Status                = $null
+                    Notes                 = $null
+                    DateTime              = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
                 }
 
 
@@ -189,24 +191,24 @@ function Copy-DbaDbAssembly {
                     }
                 }
 
-                if ($destServer.Databases[$dbName].Assemblies.Name -contains $currentAssembly.name) {
+                if ($destDb.Query("SELECT name FROM sys.assemblies WHERE name = '$assemblyName'").name) {
                     if ($force -eq $false) {
                         $copyDbAssemblyStatus.Status = "Skipped"
                         $copyDbAssemblyStatus.Notes = "Already exists on destination"
                         $copyDbAssemblyStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 
-                        Write-Message -Level Verbose -Message "Assembly $assemblyName exists at destination in the $dbName database. Use -Force to drop and migrate."
-                        continue
+                        Stop-Function -Message "Assembly $assemblyName exists at destination in the $dbName database. Use -Force to drop and migrate." -Target $assemblyName -Continue
                     } else {
-                        if ($Pscmdlet.ShouldProcess($destinstance, "Dropping assembly $assemblyName and recreating")) {
+                        if ($Pscmdlet.ShouldProcess($destinstance, "Dropping assembly $assemblyName on $($destDb.Name) on $($destServer.Name)")) {
                             try {
                                 Write-Message -Level Verbose -Message "Dropping assembly $assemblyName."
-                                Write-Message -Level Verbose -Message "This won't work if there are dependencies."
-                                $destServer.Databases[$dbName].Assemblies[$assemblyName].Drop()
-                                Write-Message -Level Verbose -Message "Copying assembly $assemblyName."
-                                $sql = $currentAssembly.Script()
-                                Write-Message -Level Debug -Message $sql
-                                $destServer.Query($sql, $dbName)
+
+                                if ($destDb.Query("SELECT a.name FROM sys.assemblies a WHERE a.name = '$assemblyName' AND EXISTS (SELECT 1 FROM sys.assembly_references b WHERE b.assembly_id = a.assembly_id OR b.referenced_assembly_id = a.assembly_id)").name) {
+                                    Write-Message -Level Verbose -Message "This won't work if there are dependencies."
+                                    throw "$assemblyName has dependencies but this command does not yet support dependent objects"
+                                }
+
+                                $destDb.Query("DROP ASSEMBLY $assemblyName")
                             } catch {
                                 $copyDbAssemblyStatus.Status = "Failed"
                                 $copyDbAssemblyStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
@@ -221,8 +223,8 @@ function Copy-DbaDbAssembly {
                     try {
                         Write-Message -Level Verbose -Message "Copying assembly $assemblyName from database."
                         $sql = $currentAssembly.Script()
-                        Write-Message -Level Debug -Message $sql
-                        $destServer.Query($sql, $dbName)
+                        Write-Message -Level Debug -Message ($sql -join ' ')
+                        $destDb.Query($sql, $dbName)
 
                         $copyDbAssemblyStatus.Status = "Successful"
                         $copyDbAssemblyStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
