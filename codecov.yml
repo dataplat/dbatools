@@ -1,7 +1,11 @@
-﻿coverage:
+coverage:
   status:
-    project: off
-    patch: off
+    project:
+      default:
+        informational: true
+    patch:
+      default:
+        informational: true
 comment: off
 
 fixes:
