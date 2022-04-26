@@ -23,7 +23,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         $altend = (Get-Date).AddDays(5).ToString('yyyyMMdd')
     }
     AfterAll {
-        $null = Remove-DbaAgentJob -SqlInstance $script:instance2 -Job 'dbatoolsci_setschedule1', 'dbatoolsci_setschedule2'
+        $null = Remove-DbaAgentJob -SqlInstance $script:instance2 -Job 'dbatoolsci_setschedule1', 'dbatoolsci_setschedule2' -Confirm:$false
     }
     Context "Should rename schedule" {
         BeforeAll {
