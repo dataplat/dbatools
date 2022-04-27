@@ -21,7 +21,7 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
         $destjobs = Get-DbaAgentJob -SqlInstance $script:instance3
     }
     AfterAll {
-        $null = Remove-DbaAgentJob -SqlInstance $script:instance2, $script:instance3 -Job dbatoolsci_copyjob, dbatoolsci_copyjob_disabled
+        $null = Remove-DbaAgentJob -SqlInstance $script:instance2, $script:instance3 -Job dbatoolsci_copyjob, dbatoolsci_copyjob_disabled -Confirm:$false
     }
 
     Context "Command copies jobs properly" {

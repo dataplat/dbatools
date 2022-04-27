@@ -24,7 +24,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         }
 
         AfterAll {
-            Remove-DbaAgentJob -SqlInstance $script:instance2 -Job "dbatoolsci_job_1_$random", "dbatoolsci_job_2_$random", "dbatoolsci_job_3_$random"
+            Remove-DbaAgentJob -SqlInstance $script:instance2 -Job "dbatoolsci_job_1_$random", "dbatoolsci_job_2_$random", "dbatoolsci_job_3_$random" -Confirm:$false
         }
 
         It "Should have the right name and description" {

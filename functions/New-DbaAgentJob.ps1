@@ -250,7 +250,7 @@ function New-DbaAgentJob {
 
                 if ($PSCmdlet.ShouldProcess($instance, "Removing the job $Job on $instance")) {
                     try {
-                        Remove-DbaAgentJob -SqlInstance $server -Job $Job -EnableException
+                        Remove-DbaAgentJob -SqlInstance $server -Job $Job -EnableException -Confirm:$false
                         $server.JobServer.Refresh()
                     } catch {
                         Stop-Function -Message "Couldn't remove job $Job from $instance" -Target $instance -Continue -ErrorRecord $_

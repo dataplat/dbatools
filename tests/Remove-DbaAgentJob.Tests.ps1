@@ -24,7 +24,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         AfterAll {
             if (Get-DbaAgentSchedule -SqlInstance $script:instance3 -Schedule dbatoolsci_daily) { Remove-DbaAgentSchedule -SqlInstance $script:instance3 -Schedule dbatoolsci_daily -Confirm:$false }
         }
-        $null = Remove-DbaAgentJob -SqlInstance $script:instance3 -Job dbatoolsci_testjob
+        $null = Remove-DbaAgentJob -SqlInstance $script:instance3 -Job dbatoolsci_testjob -Confirm:$false
         It "Should have deleted job: dbatoolsci_testjob" {
             (Get-DbaAgentJob -SqlInstance $script:instance3 -Job dbatoolsci_testjob) | Should BeNullOrEmpty
         }
@@ -44,7 +44,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         AfterAll {
             if (Get-DbaAgentSchedule -SqlInstance $script:instance3 -Schedule dbatoolsci_weekly) { Remove-DbaAgentSchedule -SqlInstance $script:instance3 -Schedule dbatoolsci_weekly -Confirm:$false }
         }
-        $null = Remove-DbaAgentJob -SqlInstance $script:instance3 -Job dbatoolsci_testjob_schedule -KeepUnusedSchedule
+        $null = Remove-DbaAgentJob -SqlInstance $script:instance3 -Job dbatoolsci_testjob_schedule -KeepUnusedSchedule -Confirm:$false
         It "Should have deleted job: dbatoolsci_testjob_schedule" {
             (Get-DbaAgentJob -SqlInstance $script:instance3 -Job dbatoolsci_testjob_schedule) | Should BeNullOrEmpty
         }
@@ -60,7 +60,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             $server = Connect-DbaInstance -SqlInstance $script:instance3
         }
         It "Should have deleted job: dbatoolsci_testjob_history" {
-            $null = Get-DbaAgentJob -SqlInstance $script:instance3 -Job dbatoolsci_testjob_history | Remove-DbaAgentJob -KeepHistory
+            $null = Get-DbaAgentJob -SqlInstance $script:instance3 -Job dbatoolsci_testjob_history | Remove-DbaAgentJob -KeepHistory -Confirm:$false
             (Get-DbaAgentJob -SqlInstance $script:instance3 -Job dbatoolsci_testjob_history) | Should BeNullOrEmpty
         }
         It -Skip "Should not have deleted history: dbatoolsci_testjob_history" {
