@@ -343,7 +343,7 @@ function Install-DbaMaintenanceSolution {
                     if ($jobs) {
                         $jobs | ForEach-Object {
                             if ($Pscmdlet.ShouldProcess($instance, "Dropping job $_.name")) {
-                                $null = Remove-DbaAgentJob -SqlInstance $server -Job $_.name
+                                $null = Remove-DbaAgentJob -SqlInstance $server -Job $_.name -Confirm:$false
                             }
                         }
                     }

@@ -34,6 +34,6 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         }
 
         # Cleanup and ignore all output
-        Remove-DbaAgentJob -SqlInstance $script:instance2 -Job "Job One" *> $null
+        Remove-DbaAgentJob -SqlInstance $script:instance2 -Job "Job One" -Confirm:$false *> $null
     }
 }

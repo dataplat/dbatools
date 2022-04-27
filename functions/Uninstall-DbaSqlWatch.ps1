@@ -108,7 +108,7 @@ Function Uninstall-DbaSqlWatch {
             if ($PSCmdlet.ShouldProcess($server, "Removing SqlWatch SQL Agent jobs")) {
                 try {
                     Write-Message -Level Verbose -Message "Removing SQL Agent jobs from $server."
-                    $agentJobs | Remove-DbaAgentJob | Out-Null
+                    $agentJobs | Remove-DbaAgentJob -Confirm:$false | Out-Null
                 } catch {
                     Stop-Function -Message "Could not remove all SqlWatch Agent Jobs on $server." -ErrorRecord $_ -Target $server -Continue
                 }

@@ -29,8 +29,8 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     AfterAll {
         $null = Remove-DbaDatabase -Confirm:$false -SqlInstance $script:instance2 -Database $db1, $db2
         $null = Remove-DbaDatabase -Confirm:$false -SqlInstance $script:instance3 -Database $db1
-        $null = Remove-DbaAgentJob -Confirm:$false -SqlInstance $script:instance2 -Job 'Rationalised Database Restore Script for dbatoolsci_safely'
-        $null = Remove-DbaAgentJob -Confirm:$false -SqlInstance $script:instance3 -Job 'Rationalised Database Restore Script for dbatoolsci_safely_otherInstance'
+        $null = Remove-DbaAgentJob -Confirm:$false -SqlInstance $script:instance2 -Job 'Rationalised Database Restore Script for dbatoolsci_safely' -Confirm:$false
+        $null = Remove-DbaAgentJob -Confirm:$false -SqlInstance $script:instance3 -Job 'Rationalised Database Restore Script for dbatoolsci_safely_otherInstance' -Confirm:$false
     }
     Context "Command actually works" {
         It "Should have database name of $db1" {

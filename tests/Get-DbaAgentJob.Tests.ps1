@@ -20,7 +20,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $null = New-DbaAgentJob -SqlInstance $script:instance2 -Job dbatoolsci_testjob_disabled -Disabled
         }
         AfterAll {
-            $null = Remove-DbaAgentJob -SqlInstance $script:instance2 -Job dbatoolsci_testjob, dbatoolsci_testjob_disabled
+            $null = Remove-DbaAgentJob -SqlInstance $script:instance2 -Job dbatoolsci_testjob, dbatoolsci_testjob_disabled -Confirm:$false
         }
         $results = Get-DbaAgentJob -SqlInstance $script:instance2 | Where-Object { $_.Name -match "dbatoolsci" }
         It "Should get 2 dbatoolsci jobs" {
@@ -38,7 +38,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $null = New-DbaAgentJob -SqlInstance $script:instance2 -Job dbatoolsci_testjob_disabled -Disabled
         }
         AfterAll {
-            $null = Remove-DbaAgentJob -SqlInstance $script:instance2 -Job dbatoolsci_testjob, dbatoolsci_testjob_disabled
+            $null = Remove-DbaAgentJob -SqlInstance $script:instance2 -Job dbatoolsci_testjob, dbatoolsci_testjob_disabled -Confirm:$false
         }
         $results = Get-DbaAgentJob -SqlInstance $script:instance2 -ExcludeDisabledJobs | Where-Object { $_.Name -match "dbatoolsci" }
         It "Should return only enabled jobs" {
@@ -51,7 +51,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $null = New-DbaAgentJob -SqlInstance $script:instance2 -Job dbatoolsci_testjob_disabled -Disabled
         }
         AfterAll {
-            $null = Remove-DbaAgentJob -SqlInstance $script:instance2 -Job dbatoolsci_testjob, dbatoolsci_testjob_disabled
+            $null = Remove-DbaAgentJob -SqlInstance $script:instance2 -Job dbatoolsci_testjob, dbatoolsci_testjob_disabled -Confirm:$false
         }
         $results = Get-DbaAgentJob -SqlInstance $script:instance2 -ExcludeJob dbatoolsci_testjob | Where-Object { $_.Name -match "dbatoolsci" }
         It "Should not return excluded job" {
@@ -69,7 +69,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         AfterAll {
             $null = Remove-DbaAgentJobCategory -SqlInstance $script:instance2 -Category 'Cat1', 'Cat2' -Confirm:$false
 
-            $null = Remove-DbaAgentJob -SqlInstance $script:instance2 -Job dbatoolsci_testjob_cat1, dbatoolsci_testjob_cat2
+            $null = Remove-DbaAgentJob -SqlInstance $script:instance2 -Job dbatoolsci_testjob_cat1, dbatoolsci_testjob_cat2 -Confirm:$false
         }
         $results = Get-DbaAgentJob -SqlInstance $script:instance2 -ExcludeCategory 'Cat2' | Where-Object { $_.Name -match "dbatoolsci" }
         It "Should not return excluded job" {
@@ -91,7 +91,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $null = New-DbaAgentJobStep -SqlInstance $script:instance2 -Job $jobName2 -StepName "TSQL-z" -Subsystem TransactSql -Database "master"
         }
         AfterAll {
-            $null = Remove-DbaAgentJob -SqlInstance $script:instance2 -Job $jobName1, $jobName2
+            $null = Remove-DbaAgentJob -SqlInstance $script:instance2 -Job $jobName1, $jobName2 -Confirm:$false
         }
         $resultSingleDatabase = Get-DbaAgentJob -SqlInstance $script:instance2 -Database tempdb
         It "Returns result with single database" {
