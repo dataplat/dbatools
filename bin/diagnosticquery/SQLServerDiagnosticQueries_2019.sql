@@ -1,7 +1,7 @@
 
 -- SQL Server 2019 Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: April 1, 2022
+-- Last Modified: April 22, 2022
 -- https://glennsqlperformance.com/ 
 -- https://sqlserverperformance.wordpress.com/
 -- YouTube: https://bit.ly/2PkoAM1 
@@ -86,6 +86,7 @@ SELECT @@SERVERNAME AS [Server Name], @@VERSION AS [SQL Server and OS Version In
 -- 15.0.4178.1		CU13								10/5/2021		https://support.microsoft.com/en-us/topic/kb5005679-cumulative-update-13-for-sql-server-2019-5c1be850-460a-4be4-a569-fe11f0adc535							
 -- 15.0.4188.2		CU14							   11/22/2021		https://support.microsoft.com/sl-si/topic/kb5007182-cumulative-update-14-for-sql-server-2019-67b00a61-4f30-4a36-a5db-b506c47e563b
 -- 15.0.4198.2		CU15								1/27/2022		https://support.microsoft.com/en-us/topic/kb5008996-cumulative-update-15-for-sql-server-2019-4b6a8ee9-1c61-482d-914f-36e429901fb6
+-- 15.0.4223.1		CU16								4/18/2022		https://support.microsoft.com/en-us/topic/kb5011644-cumulative-update-16-for-sql-server-2019-74377be1-4340-4445-93a7-ff843d346896
 
 
 -- How to determine the version, edition and update level of SQL Server and its components 
@@ -822,8 +823,10 @@ OPTION (RECOMPILE);
 SELECT db.[name] AS [Database Name], SUSER_SNAME(db.owner_sid) AS [Database Owner],
 db.[compatibility_level] AS [DB Compatibility Level], 
 db.recovery_model_desc AS [Recovery Model], 
-db.log_reuse_wait_desc AS [Log Reuse Wait Description], 
-CONVERT(DECIMAL(18,2), ls.cntr_value/1024.0) AS [Log Size (MB)], CONVERT(DECIMAL(18,2), lu.cntr_value/1024.0) AS [Log Used (MB)],
+db.log_reuse_wait_desc AS [Log Reuse Wait Description],
+CONVERT(DECIMAL(18,2), ds.cntr_value/1024.0) AS [Total Data File Size on Disk (MB)],
+CONVERT(DECIMAL(18,2), ls.cntr_value/1024.0) AS [Total Log File Size on Disk (MB)], 
+CONVERT(DECIMAL(18,2), lu.cntr_value/1024.0) AS [Log File Used (MB)],
 CAST(CAST(lu.cntr_value AS FLOAT) / CAST(ls.cntr_value AS FLOAT)AS DECIMAL(18,2)) * 100 AS [Log Used %], 
 db.page_verify_option_desc AS [Page Verify Option], db.user_access_desc, db.state_desc, db.containment_desc,
 db.is_mixed_page_allocation_on,  
@@ -839,10 +842,13 @@ LEFT OUTER JOIN sys.dm_os_performance_counters AS lu WITH (NOLOCK)
 ON db.name = lu.instance_name
 LEFT OUTER JOIN sys.dm_os_performance_counters AS ls WITH (NOLOCK)
 ON db.name = ls.instance_name
+INNER JOIN sys.dm_os_performance_counters AS ds WITH (NOLOCK)
+ON db.name = ds.instance_name
 LEFT OUTER JOIN sys.dm_database_encryption_keys AS de WITH (NOLOCK)
 ON db.database_id = de.database_id
 WHERE lu.counter_name LIKE N'Log File(s) Used Size (KB)%' 
 AND ls.counter_name LIKE N'Log File(s) Size (KB)%'
+AND ds.counter_name LIKE N'Data File(s) Size (KB)%'
 AND ls.cntr_value > 0 
 ORDER BY db.[name] OPTION (RECOMPILE);
 ------
