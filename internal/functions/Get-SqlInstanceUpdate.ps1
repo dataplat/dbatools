@@ -46,7 +46,7 @@ function Get-SqlInstanceUpdate {
             return
         }
         ## Find the architecture of the computer
-        if ($arch = (Get-DbaCmObject -ComputerName $computer -ClassName 'Win32_ComputerSystem').SystemType) {
+        if ($arch = (Get-DbaCmObject -ComputerName $computer -Credential $Credential -ClassName 'Win32_ComputerSystem').SystemType) {
             if ($arch -eq 'x64-based PC') {
                 $arch = 'x64'
             } else {
