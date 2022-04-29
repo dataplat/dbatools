@@ -91,7 +91,7 @@ function Rename-DbaLogin {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
-            $Databases = $server.Databases | Where-Object IsAccessible
+            $databases = $server.Databases | Where-Object IsAccessible
             $currentLogin = $server.Logins[$Login]
 
             if ( -not $currentLogin) {
@@ -133,7 +133,7 @@ function Rename-DbaLogin {
 
             if ($Force) {
                 foreach ($db in $dbenums) {
-                    $db = $databases[$db.DBName]
+                    $db = $databases | Where-Object Name -eq $db.DBName
                     $user = $db.Users[$Login]
                     if ($user) {
                         Write-Message -Level Verbose -Message "Starting update for $db"
