@@ -80,33 +80,21 @@ function Watch-DbaDbLogin {
     #>
     [CmdletBinding(DefaultParameterSetName = "Default")]
     param (
-        [parameter(Mandatory)]
         [DbaInstance]$SqlInstance,
+        [PSCredential]$SqlCredential,
         [object]$Database,
         [string]$Table = "DbaTools-WatchDbLogins",
-        [PSCredential]$SqlCredential,
-
         # Central Management Server
         [string]$SqlCms,
-
         # File with one server per line
         [string]$ServersFromFile,
-
         #Pre-connected servers to query
         [parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.Server[]]$InputObject,
-
         [switch]$EnableException
     )
 
     process {
-        try {
-            $serverDest = Connect-DbaInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
-        } catch {
-            Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $SqlInstance
-            return
-        }
-
         $systemdbs = "master", "msdb", "model", "tempdb"
         $excludedPrograms = "Microsoft SQL Server Management Studio - Query", "SQL Management"
 
@@ -121,12 +109,20 @@ function Watch-DbaDbLogin {
                 return
             }
         }
-        if (Test-Bound 'ServersFromFile') {
+        if ($ServersFromFile) {
             if (Test-Path $ServersFromFile) {
                 $servers = Get-Content $ServersFromFile
             } else {
                 Stop-Function -Message "$ServersFromFile was not found." -Target $ServersFromFile
                 return
+            }
+        }
+
+        if ($SqlInstance) {
+            if ($servers) {
+                $servers += $SqlInstance
+            } else {
+                $servers = $SqlInstance
             }
         }
 
