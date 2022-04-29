@@ -156,7 +156,7 @@ function New-DbaDiagnosticAdsNotebook {
 
         $preamble | Out-File $Path
         $cells | ConvertTo-Json | Out-File -FilePath $Path -Append
-        "}}" | Out-File -FilePath $Path -Append
+        "}" | Out-File -FilePath $Path -Append
         Get-ChildItem -Path $Path
     }
 }
