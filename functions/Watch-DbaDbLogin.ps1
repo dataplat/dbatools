@@ -166,12 +166,13 @@ function Watch-DbaDbLogin {
                 , s.login_name AS [Login]
                 , ISNULL(s.host_name,N'') AS [Host]
                 , ISNULL(s.program_name,N'') AS [Program]
-                , ISNULL(r.database_id,N'') AS [DatabaseId]
-                , ISNULL(DB_NAME(r.database_id),N'') AS [Database]
+                , ISNULL(r.database_id,s.database_id) AS [DatabaseId]
+                , ISNULL(DB_NAME(r.database_id),(DB_NAME(s.database_id))) AS [Database]
                 , CAST(~s.is_user_process AS bit) AS [IsSystem]
                 , CaptureTime = (SELECT GETDATE())
-            FROM sys.dm_exec_sessions AS s
-            LEFT OUTER JOIN sys.dm_exec_requests AS r
+                ,s.database_id
+                FROM sys.dm_exec_sessions AS s
+                LEFT OUTER JOIN sys.dm_exec_requests AS r
                 ON r.session_id = s.session_id"
             Write-Message -Level Debug -Message $sql
 
