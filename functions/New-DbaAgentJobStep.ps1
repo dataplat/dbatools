@@ -248,7 +248,7 @@ function New-DbaAgentJobStep {
                             Write-Message -Message "Step $StepName already exists for job. Force is used. Removing existing step" -Level Verbose
 
                             # Remove the job step based on the name
-                            Remove-DbaAgentJobStep -SqlInstance $instance -Job $currentJob -StepName $StepName -SqlCredential $SqlCredential
+                            Remove-DbaAgentJobStep -SqlInstance $instance -Job $currentJob -StepName $StepName -SqlCredential $SqlCredential -Confirm:$false
 
                             # Set the name job step object
                             $jobStep.Name = $StepName
@@ -279,7 +279,7 @@ function New-DbaAgentJobStep {
 
                             # Remove the existing job step
                             $StepName = ($currentJob.JobSteps | Where-Object { $_.ID -eq 1 }).Name
-                            Remove-DbaAgentJobStep -SqlInstance $instance -Job $currentJob -StepName $StepName -SqlCredential $SqlCredential
+                            Remove-DbaAgentJobStep -SqlInstance $instance -Job $currentJob -StepName $StepName -SqlCredential $SqlCredential -Confirm:$false
 
                             # Set the ID job step object
                             $jobStep.ID = $StepId
