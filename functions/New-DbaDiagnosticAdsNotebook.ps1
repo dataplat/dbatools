@@ -76,6 +76,7 @@ function New-DbaDiagnosticAdsNotebook {
         [switch]$EnableException
     )
     process {
+        $PSDefaultParameterValues["Out-File:Encoding"] = "UTF8"
         # validate input parameters: you cannot provide $TargetVersion and $SqlInstance
         # together. If you specify a SqlInstance, version will be determined from metadata
         if (-not $TargetVersion -and -not $SqlInstance) {
