@@ -60,8 +60,9 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
 
         It "Should be a schedule on an existing job and have the correct frequency type" {
+            $jobId = (Get-DbaAgentJob -SqlInstance $script:instance2 -Job dbatoolsci_newschedule).JobID
             foreach ($key in $results.keys) {
-                $($results[$key].parent)        | Should -Be 'dbatoolsci_newschedule'
+                $results[$key].EnumJobReferences() | Should -Contain $jobId
                 $results[$key].FrequencyTypes   | Should -BeIn $scheduleOptions
 
                 if ($key -in @('IdleComputer', 'OnIdle')) {
