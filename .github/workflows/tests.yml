@@ -76,9 +76,10 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      - name: Install SQL Server localdb
+      - name: Install SQL Server
         uses: potatoqualitee/mssqlsuite@v1.3
         with:
+          sa-password: dbatools.I0
           install: sqlengine
 
       - name: Run pwsh tests
