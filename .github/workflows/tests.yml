@@ -47,6 +47,7 @@ jobs:
           install: localdb
 
       - name: Connect to localdb instance
+        shell: powershell
         run: |
           #sqllocaldb create dbatools
           Import-Module ./dbatools.psm1 -Force
