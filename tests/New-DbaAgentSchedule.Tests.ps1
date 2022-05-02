@@ -118,8 +118,9 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
 
         It "Should be a schedule on an existing job and have the correct interval for the frequency type" {
+            $jobId = (Get-DbaAgentJob -SqlInstance $script:instance2 -Job dbatoolsci_newschedule).JobID
             foreach ($key in $results.keys) {
-                $($results[$key].parent) | Should -Be 'dbatoolsci_newschedule'
+                $results[$key].EnumJobReferences() | Should -Contain $jobId
 
                 if ($results[$key].FrequencyTypes -eq "Monthly") {
                     $results[$key].FrequencyInterval | Should -Be $key
@@ -177,8 +178,9 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
 
         It "Should be a schedule on an existing job and have a valid frequency subday type" {
+            $jobId = (Get-DbaAgentJob -SqlInstance $script:instance2 -Job dbatoolsci_newschedule).JobID
             foreach ($key in $results.keys) {
-                $($results[$key].parent)            | Should -Be 'dbatoolsci_newschedule'
+                $results[$key].EnumJobReferences() | Should -Contain $jobId
                 $results[$key].FrequencySubdayTypes | Should -BeIn $scheduleOptions
 
                 if ($key -in @('Second', 'Seconds')) {
@@ -234,8 +236,9 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
 
         It "Should be a schedule on an existing job and have a valid frequency relative interval" {
+            $jobId = (Get-DbaAgentJob -SqlInstance $script:instance2 -Job dbatoolsci_newschedule).JobID
             foreach ($key in $results.keys) {
-                $($results[$key].parent)                    | Should -Be 'dbatoolsci_newschedule'
+                $results[$key].EnumJobReferences() | Should -Contain $jobId
                 $results[$key].FrequencyRelativeIntervals   | Should -BeIn $scheduleOptions
                 $results[$key].FrequencyRelativeIntervals   | Should -Be $key
             }
