@@ -113,7 +113,8 @@ function Get-DbaEstimatedCompletionTime {
                 dateadd(second,estimated_completion_time/1000, getdate()) as EstimatedCompletionTime,
                 s.Text
              FROM sys.dm_exec_requests r
-            CROSS APPLY sys.dm_exec_sql_text(r.sql_handle) s"
+            CROSS APPLY sys.dm_exec_sql_text(r.sql_handle) s
+            WHERE r.estimated_completion_time > 0"
     }
 
     process {
