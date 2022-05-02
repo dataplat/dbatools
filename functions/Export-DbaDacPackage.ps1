@@ -262,6 +262,8 @@ function Export-DbaDacPackage {
                         $startprocess = New-Object System.Diagnostics.ProcessStartInfo
                         if ($IsLinux) {
                             $startprocess.FileName = "$script:PSModuleRoot/bin/smo/coreclr/sqlpackage"
+                        } elseif ($IsMacOS) {
+                            $startprocess.FileName = "$script:PSModuleRoot/bin/smo/coreclr/mac/sqlpackage"
                         } else {
                             $startprocess.FileName = "$script:PSModuleRoot\bin\smo\sqlpackage.exe"
                         }
