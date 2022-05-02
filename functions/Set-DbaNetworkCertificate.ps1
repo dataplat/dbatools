@@ -25,6 +25,10 @@ function Set-DbaNetworkCertificate {
     .PARAMETER Thumbprint
         The thumbprint of the target certificate
 
+    .PARAMETER RestartService
+        Every change to the network certificate needs a service restart to take effect.
+        This switch will force a restart of the service.
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -69,6 +73,7 @@ function Set-DbaNetworkCertificate {
         [System.Security.Cryptography.X509Certificates.X509Certificate2]$Certificate,
         [parameter(Mandatory, ParameterSetName = "Thumbprint", ValueFromPipelineByPropertyName)]
         [string]$Thumbprint,
+        [switch]$RestartService,
         [switch]$EnableException
     )
 
@@ -222,6 +227,11 @@ function Set-DbaNetworkCertificate {
             if ($PScmdlet.ShouldProcess("local", "Connecting to $instanceName to import new cert")) {
                 try {
                     Invoke-Command2 -Raw -ComputerName $resolved.fqdn -Credential $Credential -ArgumentList $regRoot, $serviceAccount, $instanceName, $vsname, $Thumbprint -ScriptBlock $scriptBlock -ErrorAction Stop
+                    if ($RestartService) {
+                        $null = Restart-DbaService -SqlInstance $instance -Force
+                    } else {
+                        Write-Message -Level Warning -Message "New certificate will not take effect until SQL Server services are restarted for $instance"
+                    }
                 } catch {
                     Stop-Function -Message "Failed to connect to $($resolved.fqdn) using PowerShell remoting." -ErrorRecord $_ -Target $instance -Continue
                 }
