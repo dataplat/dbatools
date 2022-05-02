@@ -35,6 +35,7 @@ $scriptBlock = {
     #region Names
     if ($PSVersionTable.PSEdition -eq "Core") {
         $names = @(
+            'win\System.Security.SecureString',
             'win\Microsoft.Data.SqlClient',
             'Microsoft.Data.Tools.Sql.BatchParser',
             'Microsoft.SqlServer.ConnectionInfo',
@@ -48,7 +49,6 @@ $scriptBlock = {
             'Microsoft.SqlServer.Management.XEventEnum',
             'Microsoft.SqlServer.Smo',
             'Microsoft.SqlServer.SmoExtended',
-            'win\System.Security.SecureString',
             'win\Microsoft.Data.Tools.Utilities',
             'win\Microsoft.SqlServer.Dac',
             'win\Microsoft.SqlServer.Dac.Extensions',
@@ -128,6 +128,9 @@ $scriptBlock = {
     foreach ($name in $names) {
         if ($name.StartsWith("win\") -and ($isLinux -or $IsMacOS)) {
             $name = $name.Replace("win\", "")
+            if ($IsMacOS -and $name -eq "System.Security.SecureString") {
+                $name = "mac\$name"
+            }
         }
         $x64only = 'Microsoft.SqlServer.Replication', 'Microsoft.SqlServer.XEvent.Linq', 'Microsoft.SqlServer.BatchParser', 'Microsoft.SqlServer.Rmo', 'Microsoft.SqlServer.BatchParserClient'
         if ($name -in $x64only -and $env:PROCESSOR_ARCHITECTURE -eq "x86") {
