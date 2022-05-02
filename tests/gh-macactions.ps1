@@ -1,6 +1,11 @@
 Describe "Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
-        $PSDefaultParameterValues["*:SqlInstance"] = "(localdb)\MSSQLLocalDB"
+
+        $password = ConvertTo-SecureString "dbatools.IO" -AsPlainText -Force
+        $cred = New-Object -TypeName System.Management.Automation.PSCredential -ArgumentList "sa", $password
+
+        $PSDefaultParameterValues["*:SqlInstance"] = "localhost"
+        $PSDefaultParameterValues["*:SqlCredential"] = $cred
         $PSDefaultParameterValues["*:Confirm"] = $false
         $global:ProgressPreference = "SilentlyContinue"
 
@@ -15,7 +20,7 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
             SELECT top 100 object_id
             FROM sys.objects")
 
-        $publishprofile = New-DbaDacProfile -Database $dbname -Path C:\temp
+        $publishprofile = New-DbaDacProfile -Database $dbname -Path /tmp
         $extractOptions = New-DbaDacOption -Action Export
         $extractOptions.ExtractAllTableData = $true
         $dacpac = Export-DbaDacPackage -Database $dbname -DacOption $extractOptions

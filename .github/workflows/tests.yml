@@ -79,7 +79,7 @@ jobs:
       - name: Install SQL Server localdb
         uses: potatoqualitee/mssqlsuite@v1.3
         with:
-          install: localdb
+          install: sqlengine
 
       - name: Run pwsh tests
         env:
