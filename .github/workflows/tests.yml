@@ -49,6 +49,7 @@ jobs:
       - name: Create localdb instance
         run: |
           sqllocaldb create dbatools
+          Import-Module ./dbatools.psm1 -Force
           Connect-DbaInstance -SqlInstance "(localdb)\dbatools"
 
       - name: Run PowerShell tests
