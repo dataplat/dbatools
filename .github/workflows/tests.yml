@@ -44,7 +44,12 @@ jobs:
       - name: Install SQL Server
         uses: potatoqualitee/mssqlsuite@v1.3
         with:
-          install: sqlengine
+          install: localdb
+
+      - name: Create localdb instance
+        run: |
+          sqllocaldb create dbatools
+          Connect-DbaInstance -SqlInstance "(localdb)\dbatools"
 
       - name: Run PowerShell tests
         env:
