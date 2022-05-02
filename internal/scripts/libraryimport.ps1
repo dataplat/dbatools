@@ -52,6 +52,7 @@ $scriptBlock = {
             'Microsoft.Data.Tools.Utilities',
             'Microsoft.SqlServer.Dac',
             'Microsoft.SqlServer.Dac.Extensions',
+            'System.Resources.Extensions',
             'Microsoft.SqlServer.Types',
             'Microsoft.SqlServer.Management.RegisteredServers',
             'Microsoft.SqlTools.Hosting',
