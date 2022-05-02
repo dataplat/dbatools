@@ -2,7 +2,7 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
         $PSDefaultParameterValues["*:SqlInstance"] = "(localdb)\MSSQLLocalDB"
         $PSDefaultParameterValues["*:Confirm"] = $false
-        $PSDefaultParameterValues["*:WarningAction"] = "SilentlyContinue"
+        #$PSDefaultParameterValues["*:WarningAction"] = "SilentlyContinue"
         $global:ProgressPreference = "SilentlyContinue"
 
         Import-Module ./dbatools.psm1 -Force
@@ -20,8 +20,15 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
         $extractOptions = New-DbaDacOption -Action Export
         $extractOptions.ExtractAllTableData = $true
         $dacpac = Export-DbaDacPackage -Database $dbname -DacOption $extractOptions
+        Write-Host "~~~~~~~~~~ dacpac output ~~~~~~~~~~"
+        $dacpac
         $null = Remove-DbaDatabase -Database $db.Name
         $results = $dacpac | Publish-DbaDacPackage -PublishXml $publishprofile.FileName -Database $dbname -Confirm:$false
+        Write-Host "~~~~~~~~~~ results output ~~~~~~~~~~"
+        $results
+
+        Write-Host "~~~~~~~~~~ results.results output ~~~~~~~~~~"
+        $results.Result
         $results.Result | Should -BeLike '*Update complete.*'
         $ids = Invoke-DbaQuery -Database $dbname -Query 'SELECT id FROM dbo.example'
         $ids.id | Should -Not -BeNullOrEmpty
