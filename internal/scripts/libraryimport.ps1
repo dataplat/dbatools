@@ -48,7 +48,7 @@ $scriptBlock = {
             'Microsoft.SqlServer.Management.XEventEnum',
             'Microsoft.SqlServer.Smo',
             'Microsoft.SqlServer.SmoExtended',
-            'System.Security.SecureString',
+            'win\System.Security.SecureString',
             'win\Microsoft.Data.Tools.Utilities',
             'win\Microsoft.SqlServer.Dac',
             'win\Microsoft.SqlServer.Dac.Extensions',
