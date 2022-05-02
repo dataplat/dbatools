@@ -1,6 +1,6 @@
 Describe "Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
-        $PSDefaultParameterValues["*:SqlInstance"] = "(localdb)\dbatools"
+        $PSDefaultParameterValues["*:SqlInstance"] = "(localdb)\MSSQLLocalDB"
         $PSDefaultParameterValues["*:Confirm"] = $false
         $PSDefaultParameterValues["*:WarningAction"] = "SilentlyContinue"
         $global:ProgressPreference = "SilentlyContinue"

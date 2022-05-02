@@ -41,16 +41,16 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      - name: Install SQL Server
+      - name: Install SQL Server localdb
         uses: potatoqualitee/mssqlsuite@v1.3
         with:
           install: localdb
 
-      - name: Create localdb instance
+      - name: Connect to localdb instance
         run: |
-          sqllocaldb create dbatools
+          #sqllocaldb create dbatools
           Import-Module ./dbatools.psm1 -Force
-          Connect-DbaInstance -SqlInstance "(localdb)\dbatools"
+          Connect-DbaInstance -SqlInstance "(localdb)\MSSQLLocalDB"
 
       - name: Run PowerShell tests
         env:
