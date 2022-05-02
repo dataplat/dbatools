@@ -116,9 +116,6 @@ function Export-DbaDacPackage {
     )
     begin {
         $null = Test-ExportDirectory -Path $Path
-        if ($IsMacOS) {
-            Stop-Function -Message "OS X not supported. Please use Linux or Windows."
-        }
     }
     process {
         if (Test-FunctionInterrupt) { return }
