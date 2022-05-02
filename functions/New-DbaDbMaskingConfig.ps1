@@ -605,7 +605,12 @@ function New-DbaDbMaskingConfig {
                 Write-Message -Message "Writing masking config" -Level Verbose
                 try {
                     $filenamepart = $server.Name.Replace('\', '$').Replace('TCP:', '').Replace(',', '.')
-                    $temppath = Join-Path -Path $Path -ChildPath "$($filenamepart).$($db.Name).DataMaskingConfig.json"
+
+                    if ($Table) {
+                        $temppath = Join-Path -Path $Path -ChildPath "$($filenamepart).$($db.Name).$($Table -join '-').DataMaskingConfig.json"
+                    } else {
+                        $temppath = Join-Path -Path $Path -ChildPath "$($filenamepart).$($db.Name).DataMaskingConfig.json"
+                    }
 
                     if (-not $script:isWindows) {
                         $temppath = $temppath.Replace("\", "/")
