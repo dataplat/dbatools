@@ -20,7 +20,7 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
             SELECT top 100 object_id
             FROM sys.objects")
 
-        $publishprofile = New-DbaDacProfile -Database $dbname -Path /tmp
+        $publishprofile = New-DbaDacProfile -Database $dbname -Path $home
         $extractOptions = New-DbaDacOption -Action Export
         $extractOptions.ExtractAllTableData = $true
         $dacpac = Export-DbaDacPackage -Database $dbname -DacOption $extractOptions
