@@ -96,8 +96,11 @@ function Invoke-Command2 {
             }
             if (Test-Windows -NoWarn) {
                 $psSessionOptionsSplat = @{
-                    IdleTimeout      = (New-TimeSpan -Minutes 10).TotalMilliSeconds
-                    IncludePortInSPN = (Get-DbatoolsConfigValue -FullName 'PSRemoting.PsSessionOption.IncludePortInSPN' -Fallback $false)
+                    IdleTimeout         = (New-TimeSpan -Minutes 10).TotalMilliSeconds
+                    IncludePortInSPN    = (Get-DbatoolsConfigValue -FullName 'PSRemoting.PsSessionOption.IncludePortInSPN' -Fallback $false)
+                    SkipCACheck         = (Get-DbatoolsConfigValue -FullName 'PSRemoting.PsSessionOption.SkipCACheck' -Fallback $false)
+                    SkipCNCheck         = (Get-DbatoolsConfigValue -FullName 'PSRemoting.PsSessionOption.SkipCNCheck' -Fallback $false)
+                    SkipRevocationCheck = (Get-DbatoolsConfigValue -FullName 'PSRemoting.PsSessionOption.SkipRevocationCheck' -Fallback $false)
                 }
                 $sessionOption = New-PSSessionOption @psSessionOptionsSplat
                 $psSessionSplat += @{ SessionOption = $sessionOption }
