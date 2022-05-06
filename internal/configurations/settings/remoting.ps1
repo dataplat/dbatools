@@ -7,5 +7,9 @@ Set-DbatoolsConfig -FullName 'PSRemoting.Sessions.Enable' -Value $true -Initiali
 # New-PSSessionOption
 Set-DbatoolsConfig -FullName 'PSRemoting.PsSessionOption.IncludePortInSPN' -Value $false -Initialize -Validation bool -Description 'Changes the value of -IncludePortInSPN parameter used by New-PsSessionOption which is used for dbatools internally when working with PSRemoting.'
 
+Set-DbatoolsConfig -FullName 'PSRemoting.PsSessionOption.SkipCACheck' -Value $false -Initialize -Validation bool -Description 'Changes the value of -SkipCACheck parameter used by New-PsSessionOption which is used for dbatools internally when working with PSRemoting.'
+Set-DbatoolsConfig -FullName 'PSRemoting.PsSessionOption.SkipCNCheck' -Value $false -Initialize -Validation bool -Description 'Changes the value of -SkipCNCheck parameter used by New-PsSessionOption which is used for dbatools internally when working with PSRemoting.'
+Set-DbatoolsConfig -FullName 'PSRemoting.PsSessionOption.SkipRevocationCheck' -Value $false -Initialize -Validation bool -Description 'Changes the value of -SkipRevocationCheck parameter used by New-PsSessionOption which is used for dbatools internally when working with PSRemoting.'
+
 # New-PSSession
 Set-DbatoolsConfig -FullName 'PSRemoting.PsSession.UseSSL' -Value $false -Initialize -Validation bool -Description 'Changes the value of -UseSSL parameter used by New-PsSession which is used for dbatools internally when working with PSRemoting.'

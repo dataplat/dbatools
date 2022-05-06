@@ -48,6 +48,9 @@ function Copy-DbaDatabase {
 
         Backups will be immediately deleted after use unless -NoBackupCleanup is specified.
 
+    .PARAMETER AdvancedBackupParams
+        Provide additional parameters to the backup command as a hashtable.
+
     .PARAMETER SharedPath
         Specifies the network location for the backup files. The SQL Server service accounts must have read/write permission on this path.
         Can be either a full path 'c:\backups', a UNC path '\\server\backups' or an Azure storage Account 'https://example.blob.core.windows.net/sql/'
@@ -193,6 +196,11 @@ function Copy-DbaDatabase {
         PS C:\> Copy-DbaDatabase -Source sql2014 -Destination managedinstance.cus19c972e4513d6.database.windows.net -DestinationSqlCredential $cred -Database MyDb -NewName AzureDb -WithReplace -BackupRestore -SharedPath https://someblob.blob.core.windows.net/sql -AzureCredential AzBlobCredential
 
         Migrates Mydb from instance sql2014 to AzureDb on the specified Azure SQL Manage Instance, replacing the existing AzureDb if it exists, using the blob storage account https://someblob.blob.core.windows.net/sql using the Sql Server Credential AzBlobCredential
+
+    .EXAMPLE
+        PS C:\> Copy-DbaDatabase -Source sql2014a -Destination sqlcluster -BackupRestore -SharedPath \\FS\Backup -AdvancedBackupParams @{ CompressBackup = $true }
+
+        Migrates all user databases to sqlcluster. Uses the parameter CompressBackup with the backup command to save some space on the shared path.
     #>
     [CmdletBinding(DefaultParameterSetName = "DbBackup", SupportsShouldProcess, ConfirmImpact = "Medium")]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseOutputTypeCorrectly", "", Justification = "PSSA Rule Ignored by BOH")]
@@ -211,6 +219,8 @@ function Copy-DbaDatabase {
         [switch]$AllDatabases,
         [parameter(Mandatory, ParameterSetName = "DbBackup")]
         [switch]$BackupRestore,
+        [parameter(ParameterSetName = "DbBackup")]
+        [hashtable]$AdvancedBackupParams,
         [parameter(ParameterSetName = "DbBackup",
             HelpMessage = "Specify a valid network share in the format \\server\share that can be accessed by your account and the SQL Server service accounts for both Source and Destination.")]
         [string]$SharedPath,
@@ -1209,10 +1219,18 @@ function Copy-DbaDatabase {
                                 $backupTmpResult = $backupCollection | Where-Object Database -eq $dbName
                                 if (-not $backupTmpResult) {
                                     if ($SharedPath -like 'https*') {
-                                        $backupTmpResult = Backup-DbaDatabase -SqlInstance $sourceServer -Database $dbName -AzureBaseUrl $SharedPath -FileCount $numberfiles -CopyOnly:$CopyOnly -AzureCredential $AzureCredential
+                                        if ($AdvancedBackupParams) {
+                                            $backupTmpResult = Backup-DbaDatabase -SqlInstance $sourceServer -Database $dbName -AzureBaseUrl $SharedPath -FileCount $numberfiles -CopyOnly:$CopyOnly -AzureCredential $AzureCredential @AdvancedBackupParams
+                                        } else {
+                                            $backupTmpResult = Backup-DbaDatabase -SqlInstance $sourceServer -Database $dbName -AzureBaseUrl $SharedPath -FileCount $numberfiles -CopyOnly:$CopyOnly -AzureCredential $AzureCredential
+                                        }
 
                                     } else {
-                                        $backupTmpResult = Backup-DbaDatabase -SqlInstance $sourceServer -Database $dbName -BackupDirectory $SharedPath -FileCount $numberfiles -CopyOnly:$CopyOnly
+                                        if ($AdvancedBackupParams) {
+                                            $backupTmpResult = Backup-DbaDatabase -SqlInstance $sourceServer -Database $dbName -BackupDirectory $SharedPath -FileCount $numberfiles -CopyOnly:$CopyOnly @AdvancedBackupParams
+                                        } else {
+                                            $backupTmpResult = Backup-DbaDatabase -SqlInstance $sourceServer -Database $dbName -BackupDirectory $SharedPath -FileCount $numberfiles -CopyOnly:$CopyOnly
+                                        }
                                     }
 
                                     if ((-not $backupTmpResult) -or (-not $backupTmpResult.BackupComplete)) {
