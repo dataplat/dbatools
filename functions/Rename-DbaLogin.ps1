@@ -101,7 +101,7 @@ function Rename-DbaLogin {
             if ($Pscmdlet.ShouldProcess($SqlInstance, "Changing Login name from  [$Login] to [$NewLogin]")) {
                 $output = @()
                 try {
-                    $dbenums = $currentLogin.EnumDatabaseMappings()
+                    $dbMappings = $currentLogin.EnumDatabaseMappings()
                     $null = $currentLogin.Rename($NewLogin)
                     $output += [pscustomobject]@{
                         ComputerName  = $server.ComputerName
@@ -115,7 +115,7 @@ function Rename-DbaLogin {
                         Status        = "Successful"
                     }
                 } catch {
-                    $dbenums = $null
+                    $dbMappings = $null
                     [pscustomobject]@{
                         ComputerName  = $server.ComputerName
                         InstanceName  = $server.ServiceName
@@ -132,8 +132,8 @@ function Rename-DbaLogin {
             }
 
             if ($Force) {
-                foreach ($db in $dbenums) {
-                    $db = $databases | Where-Object Name -eq $db.DBName
+                foreach ($mapping in $dbMappings) {
+                    $db = $databases | Where-Object Name -eq $mapping.DBName
                     $user = $db.Users[$Login]
                     if ($user) {
                         Write-Message -Level Verbose -Message "Starting update for $db"
