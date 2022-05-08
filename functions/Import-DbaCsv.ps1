@@ -356,7 +356,7 @@ function Import-DbaCsv {
             $sqldatatypes = @();
 
             foreach ($column in $Columns) {
-                $sqldatatypes += "[$column] varchar(MAX)"
+                $sqldatatypes += "[$column] nvarchar(MAX)"
             }
 
             $sql = "BEGIN CREATE TABLE [$schema].[$table] ($($sqldatatypes -join ' NULL,')) END"

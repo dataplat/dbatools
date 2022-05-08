@@ -28,7 +28,7 @@ function Test-DbaLastBackup {
 
         For MFA support, please use Connect-DbaInstance.
 
-    .PARAMETER DestinationCredential
+    .PARAMETER DestinationSqlCredential
         Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
 
         Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
@@ -189,14 +189,14 @@ function Test-DbaLastBackup {
         The use of the MaxDop parameter will limit the number of processors used during the DBCC command
     #>
     [CmdletBinding(SupportsShouldProcess)]
-    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingPlainTextForPassword", "", Justification = "For Parameters DestinationCredential and AzureCredential")]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingPlainTextForPassword", "", Justification = "For Parameters DestinationSqlCredential and AzureCredential")]
     param (
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
         [DbaInstanceParameter]$Destination,
-        [object]$DestinationCredential,
+        [object]$DestinationSqlCredential,
         [string]$DataDirectory,
         [string]$LogDirectory,
         [string]$FileStreamDirectory,
@@ -239,7 +239,7 @@ function Test-DbaLastBackup {
 
             if (-not (Test-Bound -ParameterName Destination)) {
                 $destination = $sourceserver.Name
-                $DestinationCredential = $SqlCredential
+                $DestinationSqlCredential = $SqlCredential
             }
 
             if ($db.LastFullBackup.Year -eq 1) {
@@ -265,7 +265,7 @@ function Test-DbaLastBackup {
             }
 
             try {
-                $destserver = Connect-DbaInstance -SqlInstance $Destination -SqlCredential $DestinationCredential
+                $destserver = Connect-DbaInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
             } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $Destination -Continue
             }
@@ -509,7 +509,7 @@ function Test-DbaLastBackup {
                     }
                 }
 
-                $destserver = Connect-DbaInstance -SqlInstance $Destination -SqlCredential $DestinationCredential
+                $destserver = Connect-DbaInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
 
                 if (-not $NoCheck -and -not $VerifyOnly) {
                     # shouldprocess is taken care of in Start-DbccCheck
