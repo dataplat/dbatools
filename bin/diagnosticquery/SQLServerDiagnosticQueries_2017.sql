@@ -1,7 +1,7 @@
 
 -- SQL Server 2017 Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: May 1, 2022
+-- Last Modified: May 8, 2022
 -- https://glennsqlperformance.com/
 -- https://sqlserverperformance.wordpress.com/
 -- YouTube: https://bit.ly/2PkoAM1 
@@ -301,6 +301,8 @@ FROM sys.dm_server_services WITH (NOLOCK) OPTION (RECOMPILE);
 -- Last backup information by database  (Query 8) (Last Backup By Database)
 SELECT ISNULL(d.[name], bs.[database_name]) AS [Database], d.recovery_model_desc AS [Recovery Model], 
        d.log_reuse_wait_desc AS [Log Reuse Wait Desc],
+	CONVERT(DECIMAL(18,2), ds.cntr_value/1024.0) AS [Total Data File Size on Disk (MB)],
+	CONVERT(DECIMAL(18,2), ls.cntr_value/1024.0) AS [Total Log File Size on Disk (MB)], 
 	CAST(CAST(lu.cntr_value AS FLOAT) / CAST(ls.cntr_value AS FLOAT) AS DECIMAL(18,2)) * 100 AS [Log Used %],
     MAX(CASE WHEN bs.[type] = 'D' THEN bs.backup_finish_date ELSE NULL END) AS [Last Full Backup],
     MAX(CASE WHEN bs.[type] = 'I' THEN bs.backup_finish_date ELSE NULL END) AS [Last Differential Backup],
@@ -316,12 +318,17 @@ LEFT OUTER JOIN sys.dm_os_performance_counters AS lu WITH (NOLOCK)
 ON d.name = lu.instance_name
 LEFT OUTER JOIN sys.dm_os_performance_counters AS ls WITH (NOLOCK)
 ON d.name = ls.instance_name
+INNER JOIN sys.dm_os_performance_counters AS ds WITH (NOLOCK)
+ON d.name = ds.instance_name
 WHERE d.name <> N'tempdb'
 AND lu.counter_name LIKE N'Log File(s) Used Size (KB)%' 
 AND ls.counter_name LIKE N'Log File(s) Size (KB)%'
+AND ds.counter_name LIKE N'Data File(s) Size (KB)%'
 AND ls.cntr_value > 0 
-GROUP BY ISNULL(d.[name], bs.[database_name]), d.recovery_model_desc, d.log_reuse_wait_desc, d.[name], 
-CAST(CAST(lu.cntr_value AS FLOAT) / CAST(ls.cntr_value AS FLOAT) AS DECIMAL(18,2)) * 100
+GROUP BY ISNULL(d.[name], bs.[database_name]), d.recovery_model_desc, d.log_reuse_wait_desc, d.[name],
+         CONVERT(DECIMAL(18,2), ds.cntr_value/1024.0),
+	     CONVERT(DECIMAL(18,2), ls.cntr_value/1024.0), 
+         CAST(CAST(lu.cntr_value AS FLOAT) / CAST(ls.cntr_value AS FLOAT) AS DECIMAL(18,2)) * 100
 ORDER BY d.recovery_model_desc, d.[name] OPTION (RECOMPILE);
 ------
 

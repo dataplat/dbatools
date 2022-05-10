@@ -99,6 +99,9 @@ function Add-DbaAgReplica {
         Configure the AlwaysOn_health extended events session to start automatically as the SSMS wizard would do.
         https://docs.microsoft.com/en-us/sql/database-engine/availability-groups/windows/always-on-extended-events#BKMK_alwayson_health
 
+    .PARAMETER SessionTimeout
+        How many seconds an availability replica waits for a ping response from a connected replica before considering the connection to have failed.
+
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
 
@@ -162,6 +165,7 @@ function Add-DbaAgReplica {
         [string]$ReadonlyRoutingConnectionUrl,
         [string]$Certificate,
         [switch]$ConfigureXESession,
+        [int]$SessionTimeout,
         [parameter(ValueFromPipeline, Mandatory)]
         [Microsoft.SqlServer.Management.Smo.AvailabilityGroup]$InputObject,
         [switch]$EnableException
@@ -267,6 +271,14 @@ function Add-DbaAgReplica {
 
                     if ($SeedingMode -and $server.VersionMajor -ge 13) {
                         $replica.SeedingMode = $SeedingMode
+                    }
+
+                    if ($SessionTimeout) {
+                        if ($SessionTimeout -lt 10) {
+                            $Message = "We recommend that you keep the time-out period at 10 seconds or greater. Setting the value to less than 10 seconds creates the possibility of a heavily loaded system missing pings and falsely declaring failure. Please see sqlps.io/agrec for more information."
+                            Write-Message -Level Warning -Message $Message
+                        }
+                        $replica.SessionTimeout = $SessionTimeout
                     }
 
                     # Add cluster permissions
