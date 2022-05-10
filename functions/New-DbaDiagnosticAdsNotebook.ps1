@@ -137,8 +137,8 @@ function New-DbaDiagnosticAdsNotebook {
         }
 
         $outputObject = @{
-            metadata = @{
-                kernelspec = @{
+            metadata       = @{
+                kernelspec    = @{
                     name         = "SQL"
                     display_name = "SQL"
                     language     = "sql"
