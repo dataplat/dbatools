@@ -132,31 +132,28 @@ function New-DbaDiagnosticAdsNotebook {
         $cells = @()
 
         Invoke-DbaDiagnosticQueryScriptParser $diagnosticScriptPath.FullName | Where-Object { -not $_.DBSpecific -or $IncludeDatabaseSpecific } | ForEach-Object {
-            $cells += [pscustomobject]@{cell_type = "markdown"; source = "## $($_.QueryName)`n`n$($_.Description)" }
-            $cells += [pscustomobject]@{cell_type = "code"; source = $_.Text }
+            $cells += @{cell_type = "markdown"; source = "## $($_.QueryName)`n`n$($_.Description)"; metadata = "" }
+            $cells += @{cell_type = "code"; source = $_.Text; metadata = "" }
         }
 
-        $preamble = '
-        {
-            "metadata": {
-                "kernelspec": {
-                    "name": "SQL",
-                    "display_name": "SQL",
-                    "language": "sql"
-                },
-                "language_info": {
-                    "name": "sql",
-                    "version": ""
+        $outputObject = @{
+            metadata       = @{
+                kernelspec    = @{
+                    name         = "SQL"
+                    display_name = "SQL"
+                    language     = "sql"
                 }
-            },
-            "nbformat_minor": 2,
-            "nbformat": 4,
-            "cells":
-        '
+                language_info = @{
+                    name    = "sql"
+                    version = ""
+                }
+            }
+            nbformat_minor = 2
+            nbformat       = 4
+            cells          = $cells
+        }
 
-        $preamble | Out-File $Path
-        $cells | ConvertTo-Json | Out-File -FilePath $Path -Append
-        "}}" | Out-File -FilePath $Path -Append
+        [IO.File]::WriteAllLines($Path, (ConvertTo-Json -InputObject $outputObject -Depth 3))
         Get-ChildItem -Path $Path
     }
 }
