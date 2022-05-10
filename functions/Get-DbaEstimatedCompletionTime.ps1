@@ -24,6 +24,8 @@ function Get-DbaEstimatedCompletionTime {
 
         For additional information, check out https://blogs.sentryone.com/loriedwards/patience-dm-exec-requests/ and https://docs.microsoft.com/en-us/sql/relational-databases/system-dynamic-management-views/sys-dm-exec-requests-transact-sql
 
+        The command will only return queries that provide estimated completion time, all other running queries will be filtered out.
+
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.
 
@@ -113,7 +115,8 @@ function Get-DbaEstimatedCompletionTime {
                 dateadd(second,estimated_completion_time/1000, getdate()) as EstimatedCompletionTime,
                 s.Text
              FROM sys.dm_exec_requests r
-            CROSS APPLY sys.dm_exec_sql_text(r.sql_handle) s"
+            CROSS APPLY sys.dm_exec_sql_text(r.sql_handle) s
+            WHERE r.estimated_completion_time > 0"
     }
 
     process {
@@ -126,12 +129,12 @@ function Get-DbaEstimatedCompletionTime {
 
             if ($Database) {
                 $includedatabases = $Database -join "','"
-                $sql = "$sql WHERE DB_NAME(r.database_id) in ('$includedatabases')"
+                $sql = "$sql AND DB_NAME(r.database_id) in ('$includedatabases')"
             }
 
             if ($ExcludeDatabase) {
                 $excludedatabases = $ExcludeDatabase -join "','"
-                $sql = "$sql WHERE DB_NAME(r.database_id) not in ('$excludedatabases')"
+                $sql = "$sql AND DB_NAME(r.database_id) not in ('$excludedatabases')"
             }
 
             Write-Message -Level Debug -Message $sql
