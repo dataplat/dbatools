@@ -479,6 +479,8 @@ function Set-DbaAgentSchedule {
 
                                 $JobSchedule.Alter()
 
+                                # Return updated schedule
+                                Get-DbaAgentSchedule -SqlInstance $server -ScheduleUid $JobSchedule.ScheduleUid
                             } catch {
                                 Stop-Function -Message "Something went wrong changing the schedule" -Target $instance -ErrorRecord $_ -Continue
                                 return
