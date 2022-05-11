@@ -551,7 +551,8 @@ function New-DbaAgentSchedule {
 
                             Add-TeppCacheItem -SqlInstance $server -Type schedule -Name $Schedule
 
-                            $JobSchedule
+                            # Output the job schedule
+                            Get-DbaAgentSchedule -SqlInstance $server -ScheduleUid $JobSchedule.ScheduleUid
                         }
                     }
                 } # foreach object job
@@ -634,7 +635,7 @@ function New-DbaAgentSchedule {
                     Add-TeppCacheItem -SqlInstance $server -Type schedule -Name $Schedule
 
                     # Output the job schedule
-                    $JobSchedule
+                    Get-DbaAgentSchedule -SqlInstance $server -ScheduleUid $JobSchedule.ScheduleUid
                 }
             }
         } # foreach object instance
