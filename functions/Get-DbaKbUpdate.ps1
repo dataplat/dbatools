@@ -57,6 +57,45 @@ function Get-DbaKbUpdate {
         [switch]$EnableException
     )
     begin {
+        # Create kb specific web requests because it really wants a session variable, it seems
+        # This seems to fix the issue with results not being populated sometimes
+        function Invoke-KbTlsWebRequest {
+            # IWR is crazy slow for large downloads
+            $currentProgressPref = $ProgressPreference
+            $ProgressPreference = "SilentlyContinue"
+
+            if (-not $IsLinux -and -not $IsMacOs) {
+                $regproxy = Get-ItemProperty -Path "Registry::HKCU\Software\Microsoft\Windows\CurrentVersion\Internet Settings"
+                $proxy = $regproxy.ProxyServer
+
+                if ($proxy -and -not ([System.Net.Webrequest]::DefaultWebProxy).Address -and $regproxy.ProxyEnable) {
+                    [System.Net.Webrequest]::DefaultWebProxy = New-Object System.Net.WebProxy $proxy
+                    [System.Net.Webrequest]::DefaultWebProxy.Credentials = [System.Net.CredentialCache]::DefaultNetworkCredentials
+                }
+            }
+
+            $currentVersionTls = [Net.ServicePointManager]::SecurityProtocol
+            $currentSupportableTls = [Math]::Max($currentVersionTls.value__, [Net.SecurityProtocolType]::Tls.value__)
+            $availableTls = [enum]::GetValues('Net.SecurityProtocolType') | Where-Object { $_ -gt $currentSupportableTls }
+            $availableTls | ForEach-Object {
+                [Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor $_
+            }
+
+            if ($script:websession) {
+                Invoke-WebRequest @Args -WebSession $script:websession -UseBasicParsing -ErrorAction Stop
+            } else {
+                Invoke-WebRequest @Args -SessionVariable websession -UseBasicParsing -ErrorAction Stop
+                $script:websession = $websession
+            }
+
+            [Net.ServicePointManager]::SecurityProtocol = $currentVersionTls
+            $ProgressPreference = $currentProgressPref
+        }
+
+        # Initialize
+        if (-not $script:websession) {
+            $null = Invoke-KbTlsWebRequest -Uri "https://www.catalog.update.microsoft.com/"
+        }
         # Wishing Microsoft offered an RSS feed. Since they don't, we are forced to parse webpages.
         function Get-Info ($Text, $Pattern) {
             try {
@@ -127,11 +166,11 @@ function Get-DbaKbUpdate {
                 # Thanks! https://keithga.wordpress.com/2017/05/21/new-tool-get-the-latest-windows-10-cumulative-updates/
                 $kb = $kb.Replace("KB", "").Replace("kb", "").Replace("Kb", "")
 
-                $results = Invoke-TlsWebRequest -Uri "http://www.catalog.update.microsoft.com/Search.aspx?q=KB$kb" -UseBasicParsing -ErrorAction Stop
+                $results = Invoke-KbTlsWebRequest -Uri "http://www.catalog.update.microsoft.com/Search.aspx?q=KB$kb"
 
                 $kbids = $results.InputFields |
                     Where-Object { $_.type -eq 'Button' -and $_.Value -eq 'Download' } |
-                    Select-Object -ExpandProperty  ID
+                    Select-Object -ExpandProperty ID
 
                 if (-not $kbids) {
                     Write-Message -Level Warning -Message "No results found for $Name"
@@ -149,7 +188,7 @@ function Get-DbaKbUpdate {
                     Write-Message -Level Verbose -Message "Downloading information for $guid"
                     $post = @{ size = 0; updateID = $guid; uidInfo = $guid } | ConvertTo-Json -Compress
                     $body = @{ updateIDs = "[$post]" }
-                    $downloaddialog = Invoke-TlsWebRequest -Uri 'https://www.catalog.update.microsoft.com/DownloadDialog.aspx' -Method Post -Body $body -UseBasicParsing -ErrorAction Stop | Select-Object -ExpandProperty Content
+                    $downloaddialog = Invoke-KbTlsWebRequest -Uri 'https://www.catalog.update.microsoft.com/DownloadDialog.aspx' -Method Post -Body $body | Select-Object -ExpandProperty Content
 
                     # sorry, don't know regex. this is ugly af.
                     $title = Get-Info -Text $downloaddialog -Pattern 'enTitle ='
@@ -170,10 +209,15 @@ function Get-DbaKbUpdate {
 
                     if (-not $Simple) {
                         Write-Message -Level Verbose -Message "Downloading detailed information for updateid=$updateid"
-                        $detaildialog = Invoke-TlsWebRequest -Uri "https://www.catalog.update.microsoft.com/ScopedViewInline.aspx?updateid=$updateid" -UseBasicParsing -ErrorAction Stop
+                        $detaildialog = Invoke-KbTlsWebRequest -Uri "https://www.catalog.update.microsoft.com/ScopedViewInline.aspx?updateid=$updateid"
                         $description = Get-Info -Text $detaildialog -Pattern '<span id="ScopedViewHandler_desc">'
                         if (-not $description) {
-                            Write-Message -Level Warning -Message "The response from the webserver did not include the expected information. Please try again later if you need the detailed information."
+                            # try again
+                            $detaildialog = Invoke-KbTlsWebRequest -Uri "https://www.catalog.update.microsoft.com/ScopedViewInline.aspx?updateid=$updateid"
+                            $description = Get-Info -Text $detaildialog -Pattern '<span id="ScopedViewHandler_desc">'
+                            if (-not $description) {
+                                Write-Message -Level Warning -Message "The response from the webserver did not include the expected information. Please try again later if you need the detailed information."
+                            }
                         }
                         $lastmodified = Get-Info -Text $detaildialog -Pattern '<span id="ScopedViewHandler_date">'
                         $size = Get-Info -Text $detaildialog -Pattern '<span id="ScopedViewHandler_size">'
@@ -187,8 +231,8 @@ function Get-DbaKbUpdate {
                         $networkrequired = Get-Info -Text $detaildialog -Pattern '<span id="ScopedViewHandler_connectivity">'
                         $uninstallnotes = Get-Info -Text $detaildialog -Pattern '<span id="ScopedViewHandler_labelUninstallNotes_Separator" class="labelTitle">'
                         $uninstallsteps = Get-Info -Text $detaildialog -Pattern '<span id="ScopedViewHandler_labelUninstallSteps_Separator" class="labelTitle">'
-                        $supersededby = Get-SuperInfo -Text $detaildialog -Pattern '<div id="supersededbyInfo" TABINDEX="1" >'
-                        $supersedes = Get-SuperInfo -Text $detaildialog -Pattern '<div id="supersedesInfo" TABINDEX="1">'
+                        $supersededby = Get-SuperInfo -Text $detaildialog -Pattern '<div id="supersededbyInfo".*>'
+                        $supersedes = Get-SuperInfo -Text $detaildialog -Pattern '<div id="supersedesInfo".*>'
 
                         $product = $supportedproducts -split ","
                         if ($product.Count -gt 1) {
