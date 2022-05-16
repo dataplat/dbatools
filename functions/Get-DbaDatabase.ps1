@@ -258,7 +258,9 @@ function Get-DbaDatabase {
             function Invoke-QueryRawDatabases {
                 try {
                     if ($server.isAzure) {
-                        $server.Query("SELECT db.name, db.state, dp.name AS [Owner] FROM sys.databases AS db LEFT JOIN sys.database_principals AS dp ON dp.sid = db.owner_sid")
+                        # this doesn't seem to work, but at least...works better?
+                        $dbquery = "SELECT db.name, db.state, dp.name AS [Owner] FROM sys.databases AS db LEFT JOIN sys.database_principals AS dp ON dp.sid = db.owner_sid"
+                        $server.ConnectionContext.ExecuteWithResults($dbquery).Tables
                     } elseif ($server.VersionMajor -eq 8) {
                         $server.Query("
                             SELECT name,
@@ -280,6 +282,7 @@ function Get-DbaDatabase {
                     Stop-Function -Message "Failure" -ErrorRecord $_
                 }
             }
+
             $backed_info = Invoke-QueryRawDatabases
             $backed_info = $backed_info | Where-Object {
                 ($_.name -in $Database -or !$Database) -and
@@ -287,6 +290,7 @@ function Get-DbaDatabase {
                 ($_.Owner -in $Owner -or !$Owner) -and
                 ($_.state -ne 6 -or !$OnlyAccessible)
             }
+
 
             $inputObject = @()
             foreach ($dt in $backed_info) {
