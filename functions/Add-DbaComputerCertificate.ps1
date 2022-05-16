@@ -113,7 +113,7 @@ function Add-DbaComputerCertificate {
                 # import the cert to memory but don't store it to persist to the store
                 $bytes = [System.IO.File]::ReadAllBytes($Path)
                 $Certificate = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2
-                $Certificate.Import($bytes, $SecurePassword, "Exportable, EphemeralKeySet")
+                $null = $Certificate.Import($bytes, $SecurePassword, "Exportable, EphemeralKeySet")
             } catch {
                 Stop-Function -Message "Can't import certificate." -ErrorRecord $_
                 return
