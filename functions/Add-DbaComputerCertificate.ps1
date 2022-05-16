@@ -6,8 +6,6 @@ function Add-DbaComputerCertificate {
     .DESCRIPTION
         Adds a computer certificate from a local or remote computer.
 
-        Note, this command does initially import the key to memory of the host then exports it to the remote server.
-
     .PARAMETER ComputerName
         The target SQL Server instance or instances. Defaults to localhost.
 
@@ -103,6 +101,21 @@ function Add-DbaComputerCertificate {
         [switch]$EnableException
     )
     begin {
+        if ("NonExportable" -in $Flag) {
+            $flags = ($Flag | Where-Object { $PSItem -ne "Exportable" -and $PSItem -ne "NonExportable" } ) -join ","
+
+            # It needs at least one flag
+            if (-not $flags) {
+                if ($Store -eq "LocalMachine") {
+                    $flags = "MachineKeySet"
+                } else {
+                    $flags = "UserKeySet"
+                }
+            }
+        } else {
+            $flags = $Flag -join ","
+        }
+
         if ($Path) {
             if (-not (Test-Path -Path $Path)) {
                 Stop-Function -Message "Path ($Path) does not exist." -Category InvalidArgument
@@ -110,10 +123,10 @@ function Add-DbaComputerCertificate {
             }
 
             try {
-                # import the cert to memory but don't store it to persist to the store
+                # local and remote flags need to match
                 $bytes = [System.IO.File]::ReadAllBytes($Path)
                 $Certificate = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2
-                $null = $Certificate.Import($bytes, $SecurePassword, "Exportable, EphemeralKeySet")
+                $null = $Certificate.Import($bytes, $SecurePassword, $flags)
             } catch {
                 Stop-Function -Message "Can't import certificate." -ErrorRecord $_
                 return
@@ -127,23 +140,8 @@ function Add-DbaComputerCertificate {
                 [SecureString]$SecurePassword,
                 $Store,
                 $Folder,
-                $Flag
+                $flags
             )
-
-            if ("NonExportable" -in $Flag) {
-                $flags = ($Flag | Where-Object { $PSItem -ne "Exportable" -and $PSItem -ne "NonExportable" } ) -join ","
-
-                # It needs at least one flag
-                if (-not $flags) {
-                    if ($Store -eq "LocalMachine") {
-                        $flags = "MachineKeySet"
-                    } else {
-                        $flags = "UserKeySet"
-                    }
-                }
-            } else {
-                $flags = $Flag -join ","
-            }
 
             $cert = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2
             $cert.Import($CertificateData, $SecurePassword, $flags)
@@ -167,7 +165,6 @@ function Add-DbaComputerCertificate {
         }
 
         foreach ($cert in $Certificate) {
-
             try {
                 $certData = $cert.Export([System.Security.Cryptography.X509Certificates.X509ContentType]::PFX, $SecurePassword)
             } catch {
@@ -177,7 +174,7 @@ function Add-DbaComputerCertificate {
             foreach ($computer in $ComputerName) {
                 if ($PSCmdlet.ShouldProcess("local", "Connecting to $computer to import cert")) {
                     try {
-                        Invoke-Command2 -ComputerName $computer -Credential $Credential -ArgumentList $certdata, $SecurePassword, $Store, $Folder, $Flag -ScriptBlock $scriptBlock -ErrorAction Stop |
+                        Invoke-Command2 -ComputerName $computer -Credential $Credential -ArgumentList $certdata, $SecurePassword, $Store, $Folder, $flags -ScriptBlock $scriptBlock -ErrorAction Stop |
                             Select-DefaultView -Property FriendlyName, DnsNameList, Thumbprint, NotBefore, NotAfter, Subject, Issuer
                     } catch {
                         Stop-Function -Message "Failure" -ErrorRecord $_ -Target $computer -Continue
