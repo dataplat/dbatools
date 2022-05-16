@@ -201,6 +201,11 @@ function Copy-DbaDatabase {
         PS C:\> Copy-DbaDatabase -Source sql2014a -Destination sqlcluster -BackupRestore -SharedPath \\FS\Backup -AdvancedBackupParams @{ CompressBackup = $true }
 
         Migrates all user databases to sqlcluster. Uses the parameter CompressBackup with the backup command to save some space on the shared path.
+
+    .EXAMPLE
+        PS C:\> Copy-DbaDatabase -Source sqlcs -Destination sqlcs -Database t -DetachAttach -NewName t_copy -Reattach
+
+        Copies database t from sqlcs to the same server (sqlcs) using the detach/copy/attach method. The new database will be named t_copy and the original database will be reattached.
     #>
     [CmdletBinding(DefaultParameterSetName = "DbBackup", SupportsShouldProcess, ConfirmImpact = "Medium")]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseOutputTypeCorrectly", "", Justification = "PSSA Rule Ignored by BOH")]
@@ -310,42 +315,6 @@ function Copy-DbaDatabase {
                 } catch {
                     "$Path\$ChildPath"
                 }
-            }
-        }
-
-        function Join-AdminUnc {
-            <#
-        .SYNOPSIS
-        Internal function. Parses a path to make it an admin UNC.
-        #>
-            [CmdletBinding()]
-            param (
-                [Parameter(Mandatory)]
-                [ValidateNotNullOrEmpty()]
-                [string]$servername,
-                [Parameter(Mandatory)]
-                [ValidateNotNullOrEmpty()]
-                [string]$filepath
-
-            )
-
-            if ($script:sameserver -or (-not $script:isWindows)) {
-                return $filepath
-            }
-            if (-not $filepath) {
-                return
-            }
-            if ($filepath.StartsWith("\\")) {
-                return $filepath
-            }
-
-            $servername = $servername.Split("\")[0]
-
-            if ($filepath -and $filepath -ne [System.DbNull]::Value) {
-                $newpath = Join-Path "\\$servername\" $filepath.replace(':', '$')
-                return $newpath
-            } else {
-                return
             }
         }
 
