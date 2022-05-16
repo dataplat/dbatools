@@ -257,7 +257,7 @@ function Get-DbaDatabase {
             }
             function Invoke-QueryRawDatabases {
                 try {
-                    if ($server.isAzure) {s
+                    if ($server.isAzure) {
                         $dbquery = "SELECT db.name, db.state, dp.name AS [Owner] FROM sys.databases AS db LEFT JOIN sys.database_principals AS dp ON dp.sid = db.owner_sid"
                         $server.ConnectionContext.ExecuteWithResults($dbquery).Tables
                     } elseif ($server.VersionMajor -eq 8) {
