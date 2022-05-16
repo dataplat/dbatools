@@ -303,23 +303,23 @@ function Get-DbaDatabase {
             if ($server.isAzure) {
                 $inputObject = $inputObject |
                     Where-Object {
-                    ($_.Name -in $Database -or !$Database) -and
-                    ($_.Name -notin $ExcludeDatabase -or !$ExcludeDatabase) -and
-                    ($_.Owner -in $Owner -or !$Owner) -and
-                    ($_.RecoveryModel -in $RecoveryModel -or !$_.RecoveryModel) -and
+                        ($_.Name -in $Database -or !$Database) -and
+                        ($_.Name -notin $ExcludeDatabase -or !$ExcludeDatabase) -and
+                        ($_.Owner -in $Owner -or !$Owner) -and
+                        ($_.RecoveryModel -in $RecoveryModel -or !$_.RecoveryModel) -and
                         $_.EncryptionEnabled -in $Encrypt
                     }
             } else {
                 $inputObject = $inputObject |
                     Where-Object {
-                    ($_.Name -in $Database -or !$Database) -and
-                    ($_.Name -notin $ExcludeDatabase -or !$ExcludeDatabase) -and
-                    ($_.Owner -in $Owner -or !$Owner) -and
+                        ($_.Name -in $Database -or !$Database) -and
+                        ($_.Name -notin $ExcludeDatabase -or !$ExcludeDatabase) -and
+                        ($_.Owner -in $Owner -or !$Owner) -and
                         $_.ReadOnly -in $Readonly -and
                         $_.IsAccessible -in $AccessibleFilter -and
                         $_.IsSystemObject -in $DBType -and
                         ((Compare-Object @($_.Status.tostring().split(',').trim()) $Status -ExcludeDifferent -IncludeEqual).inputobject.count -ge 1 -or !$status) -and
-                    ($_.RecoveryModel -in $RecoveryModel -or !$_.RecoveryModel) -and
+                        ($_.RecoveryModel -in $RecoveryModel -or !$_.RecoveryModel) -and
                         $_.EncryptionEnabled -in $Encrypt
                     }
             }
