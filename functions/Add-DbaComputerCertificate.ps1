@@ -6,6 +6,8 @@ function Add-DbaComputerCertificate {
     .DESCRIPTION
         Adds a computer certificate from a local or remote computer.
 
+        Note, this command does initially import the key to memory of the host then exports it to the remote server.
+
     .PARAMETER ComputerName
         The target SQL Server instance or instances. Defaults to localhost.
 
@@ -37,6 +39,9 @@ function Add-DbaComputerCertificate {
 
             Exportable
             Imported keys are marked as exportable.
+
+            NonExportable
+            Expliictly mark keys as nonexportable.
 
             PersistKeySet
             The key associated with a PFX file is persisted when importing a certificate.
@@ -76,6 +81,11 @@ function Add-DbaComputerCertificate {
 
         Adds the local C:\temp\cert.cer to the local computer's LocalMachine\My (Personal) certificate store.
 
+    .EXAMPLE
+        PS C:\> Add-DbaComputerCertificate -Path C:\temp\cert.cer
+
+        Adds the local C:\temp\cert.cer to the local computer's LocalMachine\My (Personal) certificate store.
+
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low")]
     param (
@@ -88,13 +98,11 @@ function Add-DbaComputerCertificate {
         [string]$Path,
         [string]$Store = "LocalMachine",
         [string]$Folder = "My",
-        [ValidateSet("DefaultKeySet", "EphemeralKeySet", "Exportable", "PersistKeySet", "UserProtected")]
+        [ValidateSet("EphemeralKeySet", "Exportable", "PersistKeySet", "UserProtected", "NonExportable")]
         [string[]]$Flag = @("Exportable", "PersistKeySet"),
         [switch]$EnableException
     )
-
     begin {
-
         if ($Path) {
             if (-not (Test-Path -Path $Path)) {
                 Stop-Function -Message "Path ($Path) does not exist." -Category InvalidArgument
@@ -102,11 +110,10 @@ function Add-DbaComputerCertificate {
             }
 
             try {
-                # This may be too much, but oh well
+                # import the cert to memory but don't store it to persist to the store
                 $bytes = [System.IO.File]::ReadAllBytes($Path)
                 $Certificate = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2
-                $flags = $Flag -join ","
-                $Certificate.Import($bytes, $SecurePassword, $flags)
+                $Certificate.Import($bytes, $SecurePassword, "Exportable, EphemeralKeySet")
             } catch {
                 Stop-Function -Message "Can't import certificate." -ErrorRecord $_
                 return
@@ -115,26 +122,38 @@ function Add-DbaComputerCertificate {
 
         #region Remoting Script
         $scriptBlock = {
-
             param (
                 $CertificateData,
-
                 [SecureString]$SecurePassword,
-
                 $Store,
-
-                $Folder
+                $Folder,
+                $Flag
             )
 
+            if ("NonExportable" -in $Flag) {
+                $flags = ($Flag | Where-Object { $PSItem -ne "Exportable" -and $PSItem -ne "NonExportable" } ) -join ","
+
+                # It needs at least one flag
+                if (-not $flags) {
+                    if ($Store -eq "LocalMachine") {
+                        $flags = "MachineKeySet"
+                    } else {
+                        $flags = "UserKeySet"
+                    }
+                }
+            } else {
+                $flags = $Flag -join ","
+            }
+
             $cert = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2
-            $cert.Import($CertificateData, $SecurePassword, [System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]::DefaultKeySet)
-            Write-Message -Level Verbose -Message "Importing cert to $Folder\$Store"
+            $cert.Import($CertificateData, $SecurePassword, $flags)
+            Write-Verbose -Message "Importing cert to $Folder\$Store"
             $tempStore = New-Object System.Security.Cryptography.X509Certificates.X509Store($Folder, $Store)
             $tempStore.Open('ReadWrite')
             $tempStore.Add($cert)
             $tempStore.Close()
 
-            Write-Message -Level Verbose -Message "Searching Cert:\$Store\$Folder"
+            Write-Verbose -Message "Searching Cert:\$Store\$Folder"
             Get-ChildItem "Cert:\$Store\$Folder" -Recurse | Where-Object { $_.Thumbprint -eq $cert.Thumbprint }
         }
         #endregion Remoting Script
@@ -156,10 +175,9 @@ function Add-DbaComputerCertificate {
             }
 
             foreach ($computer in $ComputerName) {
-
                 if ($PSCmdlet.ShouldProcess("local", "Connecting to $computer to import cert")) {
                     try {
-                        Invoke-Command2 -ComputerName $computer -Credential $Credential -ArgumentList $certdata, $SecurePassword, $Store, $Folder -ScriptBlock $scriptBlock -ErrorAction Stop |
+                        Invoke-Command2 -ComputerName $computer -Credential $Credential -ArgumentList $certdata, $SecurePassword, $Store, $Folder, $Flag -ScriptBlock $scriptBlock -ErrorAction Stop |
                             Select-DefaultView -Property FriendlyName, DnsNameList, Thumbprint, NotBefore, NotAfter, Subject, Issuer
                     } catch {
                         Stop-Function -Message "Failure" -ErrorRecord $_ -Target $computer -Continue
