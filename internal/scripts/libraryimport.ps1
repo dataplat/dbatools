@@ -130,7 +130,7 @@ $scriptBlock = {
     foreach ($name in $names) {
         if ($name.StartsWith("win\") -and ($isLinux -or $IsMacOS)) {
             $name = $name.Replace("win\", "")
-            if ($IsMacOS -and $name -eq "System.Security.SecureString") {
+            if ($IsMacOS -and $name -in "Azure.Core", "Azure.Identity", "System.Security.SecureString") {
                 $name = "mac\$name"
             }
         }
