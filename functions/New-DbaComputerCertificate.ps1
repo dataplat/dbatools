@@ -70,7 +70,7 @@ function New-DbaComputerCertificate {
             The key associated with a PFX file is persisted when importing a certificate.
 
             UserProtected
-            Notify the user through a dialog box or other method that the key is accessed. The Cryptographic Service Provider (CSP) in use defines the precise behavior.
+            Notify the user through a dialog box or other method that the key is accessed. The Cryptographic Service Provider (CSP) in use defines the precise behavior. NOTE: This can only be used when you add a certificate to localhost, as it causes a prompt to appear.
 
     .PARAMETER Dns
         Specify the Dns entries listed in SAN. By default, it will be ComputerName + FQDN, or in the case of clusters, clustername + cluster FQDN.
@@ -128,6 +128,11 @@ function New-DbaComputerCertificate {
         PS C:\> New-DbaComputerCertificate -SelfSigned
 
         Creates a self-signed certificate
+
+    .EXAMPLE
+        PS C:\> Add-DbaComputerCertificate -ComputerName sql01 -Path C:\temp\sql01.pfx -Confirm:$false -Flag NonExportable
+
+        Adds the local C:\temp\sql01.pfx to sql01's LocalMachine\My (Personal) certificate store and marks the private key as non-exportable. Skips confirmation prompt.
 
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low")]
@@ -418,6 +423,9 @@ function New-DbaComputerCertificate {
                 }
 
                 if ($PScmdlet.ShouldProcess($computer, "Attempting to import new cert")) {
+                    if ($flags -contains "UserProtected" -and -not $computer.IsLocalHost) {
+                        Stop-Function -Message "UserProtected flag is only valid for localhost because it causes a prompt, skipping for $computer" -Continue
+                    }
                     try {
                         $thumbprint = (Invoke-Command2 -ComputerName $computer -Credential $Credential -ArgumentList $certdata, $SecurePassword, $Store, $Folder, $flags -ScriptBlock $scriptBlock -ErrorAction Stop -Verbose).Thumbprint
                         Get-DbaComputerCertificate -ComputerName $computer -Credential $Credential -Thumbprint $thumbprint
