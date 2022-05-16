@@ -84,6 +84,12 @@ function Add-DbaComputerCertificate {
 
         Adds the local C:\temp\cert.cer to the local computer's LocalMachine\My (Personal) certificate store.
 
+
+    .EXAMPLE
+        PS C:\> Add-DbaComputerCertificate -ComputerName sql01 -Path C:\temp\sql01.pfx -Confirm:$false -Flag NonExportable
+
+        Adds the local C:\temp\sql01.pfx to sql01's LocalMachine\My (Personal) certificate store and marks the private key as non-exportable.
+
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low")]
     param (
@@ -116,6 +122,7 @@ function Add-DbaComputerCertificate {
             $flags = $Flag -join ","
         }
 
+        Write-Message -Level Verbose -Message "Flags: $flags"
         if ($Path) {
             if (-not (Test-Path -Path $Path)) {
                 Stop-Function -Message "Path ($Path) does not exist." -Category InvalidArgument
@@ -123,10 +130,10 @@ function Add-DbaComputerCertificate {
             }
 
             try {
-                # local and remote flags need to match
+                # local has to be exportable to export to remote
                 $bytes = [System.IO.File]::ReadAllBytes($Path)
                 $Certificate = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2
-                $null = $Certificate.Import($bytes, $SecurePassword, $flags)
+                $null = $Certificate.Import($bytes, $SecurePassword, "Exportable, PersistKeySet")
             } catch {
                 Stop-Function -Message "Can't import certificate." -ErrorRecord $_
                 return
@@ -172,7 +179,10 @@ function Add-DbaComputerCertificate {
             }
 
             foreach ($computer in $ComputerName) {
-                if ($PSCmdlet.ShouldProcess("local", "Connecting to $computer to import cert")) {
+                if ($PSCmdlet.ShouldProcess("$computer", "Attempting to import cert")) {
+                    if ($flags -contains "UserProtected" -and -not $computer.IsLocalHost) {
+                        Stop-Function -Message "UserProtected flag is only valid for localhost because it causes a prompt, skipping for $computer" -Continue
+                    }
                     try {
                         Invoke-Command2 -ComputerName $computer -Credential $Credential -ArgumentList $certdata, $SecurePassword, $Store, $Folder, $flags -ScriptBlock $scriptBlock -ErrorAction Stop |
                             Select-DefaultView -Property FriendlyName, DnsNameList, Thumbprint, NotBefore, NotAfter, Subject, Issuer
