@@ -145,7 +145,7 @@ function Add-DbaComputerCertificate {
 
             $cert = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2
             $cert.Import($CertificateData, $SecurePassword, $flags)
-            Write-Verbose -Message "Importing cert to $Folder\$Store"
+            Write-Verbose -Message "Importing cert to $Folder\$Store using flags: $flags"
             $tempStore = New-Object System.Security.Cryptography.X509Certificates.X509Store($Folder, $Store)
             $tempStore.Open('ReadWrite')
             $tempStore.Add($cert)
