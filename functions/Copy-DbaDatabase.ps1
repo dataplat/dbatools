@@ -1274,7 +1274,6 @@ function Copy-DbaDatabase {
                             if ($restoreResult -eq $true) {
                                 Write-Message -Level Verbose -Message "Successfully restored $dbName to $destinstance."
                                 $copyDatabaseStatus.Status = "Successful"
-                                $copyDatabaseStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                             } else {
                                 if ($ReuseSourceFolderStructure) {
                                     Write-Message -Level Verbose -Message "Failed to restore $dbName to $destinstance. You specified -ReuseSourceFolderStructure. Does the exact same destination directory structure exist?"
@@ -1398,7 +1397,6 @@ function Copy-DbaDatabase {
                             if ($migrationResult -eq $true) {
                                 Write-Message -Level Verbose -Message "Successfully attached $dbName to $destinstance."
                                 $copyDatabaseStatus.Status = "Successful"
-                                $copyDatabaseStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                             } else {
                                 Write-Message -Level Verbose -Message "Failed to attach $dbName to $destinstance. Aborting routine for this database."
 
@@ -1412,6 +1410,8 @@ function Copy-DbaDatabase {
                     }
                     $NewDatabase = Get-DbaDatabase -SqlInstance $destServer -database $DestinationdbName
 
+                    $propfailures = @()
+
                     # restore potentially lost settings
                     if ($destServer.VersionMajor -ge 9 -and $NoRecovery -eq $false) {
                         if ($sourceDbOwnerChaining -ne $NewDatabase.DatabaseOwnershipChaining) {
@@ -1421,9 +1421,8 @@ function Copy-DbaDatabase {
                                     $NewDatabase.Alter()
                                     Write-Message -Level Verbose -Message "Successfully updated DatabaseOwnershipChaining for $sourceDbOwnerChaining on $DestinationdbName on $destinstance."
                                 } catch {
-                                    $copyDatabaseStatus.Status = "Successful - failed to apply DatabaseOwnershipChaining."
-                                    $copyDatabaseStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                                    Stop-Function -Message "Failed to update DatabaseOwnershipChaining for $sourceDbOwnerChaining on $DestinationdbName on $destinstance." -Target $destinstance -ErrorRecord $_ -Continue
+                                    Write-Message -Level Warning -Message "Failed to update DatabaseOwnershipChaining for $sourceDbOwnerChaining on $DestinationdbName on $destinstance."
+                                    $propfailures += "Ownership chaining"
                                 }
                             }
                         }
@@ -1435,9 +1434,8 @@ function Copy-DbaDatabase {
                                     $NewDatabase.Alter()
                                     Write-Message -Level Verbose -Message "Successfully updated Trustworthy to $sourceDbTrustworthy for $DestinationdbName on $destinstance"
                                 } catch {
-                                    $copyDatabaseStatus.Status = "Successful - failed to apply Trustworthy"
-                                    $copyDatabaseStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                                    Stop-Function -Message "Failed to update Trustworthy to $sourceDbTrustworthy for $DestinationdbName on $destinstance." -Target $destinstance -ErrorRecord $_ -Continue
+                                    Write-Message -Level Warning -Message "Failed to update Trustworthy to $sourceDbTrustworthy for $DestinationdbName on $destinstance."
+                                    $propfailures += "Trustworthy"
                                 }
                             }
                         }
@@ -1449,9 +1447,9 @@ function Copy-DbaDatabase {
                                     $NewDatabase.Alter()
                                     Write-Message -Level Verbose -Message "Successfully updated BrokerEnabled to $sourceDbBrokerEnabled for $DestinationdbName on $destinstance."
                                 } catch {
-                                    $copyDatabaseStatus.Status = "Successful - failed to apply BrokerEnabled"
-                                    $copyDatabaseStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                                    Stop-Function -Message "Failed to update BrokerEnabled to $sourceDbBrokerEnabled for $DestinationdbName on $destinstance." -Target $destinstance -ErrorRecord $_ -Continue
+                                    Write-Message -Level Warning -Message "Failed to update BrokerEnabled to $sourceDbBrokerEnabled for $DestinationdbName on $destinstance."
+
+                                    $propfailures += "Message broker"
                                 }
                             }
                         }
@@ -1466,11 +1464,19 @@ function Copy-DbaDatabase {
                                     $result = Set-DbaDbState -SqlInstance $destserver -Database $DestinationdbName -ReadWrite -EnableException
                                 }
                             } catch {
-                                $copyDatabaseStatus.Status = "Successful - failed to apply ReadOnly."
-                                $copyDatabaseStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                                Stop-Function -Message "Failed to update ReadOnly status on $DestinationdbName." -Target $destinstance -ErrorRecord $_ -Continue
+                                Write-Message -Level Verbose -Message "Failed to update ReadOnly status on $DestinationdbName."
+                                $propfailures = "Read only"
                             }
                         }
+                    }
+
+                    if ($Pscmdlet.ShouldProcess("console", "Outputting object")) {
+                        if ($propfailures.Count -gt 0) {
+                            $propfailure = $propfailures -join ", "
+                            $copyDatabaseStatus.Notes = "Failed to apply the following properties: $propfailure"
+                        }
+
+                        $copyDatabaseStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                     }
 
                     if ($SetSourceOffline -and $sourceServer.databases[$DestinationdbName].status -notlike '*offline*') {
