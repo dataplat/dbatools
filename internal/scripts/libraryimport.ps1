@@ -35,6 +35,8 @@ $scriptBlock = {
     #region Names
     if ($PSVersionTable.PSEdition -eq "Core") {
         $names = @(
+            'win\Azure.Core',
+            'win\Azure.Identity',
             'win\System.Security.SecureString',
             'win\Microsoft.Data.SqlClient',
             'Microsoft.Data.Tools.Sql.BatchParser',
