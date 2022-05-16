@@ -58,6 +58,23 @@ function New-DbaComputerCertificate {
     .PARAMETER SelfSigned
         Creates a self-signed certificate. All other parameters can still apply except CaServer and CaName because the command does not go and get the certificate signed.
 
+    .PARAMETER Flag
+        Defines where and how to import the private key of an X.509 certificate.
+
+        Defaults to: Exportable, PersistKeySet
+
+            EphemeralKeySet
+            The key associated with a PFX file is created in memory and not persisted on disk when importing a certificate.
+
+            Exportable
+            Imported keys are marked as exportable.
+
+            PersistKeySet
+            The key associated with a PFX file is persisted when importing a certificate.
+
+            UserProtected
+            Notify the user through a dialog box or other method that the key is accessed. The Cryptographic Service Provider (CSP) in use defines the precise behavior.
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -126,6 +143,8 @@ function New-DbaComputerCertificate {
         [int]$KeyLength = 1024,
         [string]$Store = "LocalMachine",
         [string]$Folder = "My",
+        [ValidateSet("DefaultKeySet", "EphemeralKeySet", "Exportable", "PersistKeySet", "UserProtected")]
+        [string[]]$Flag = @("Exportable", "PersistKeySet"),
         [string[]]$Dns,
         [switch]$SelfSigned,
         [switch]$EnableException
@@ -363,7 +382,8 @@ function New-DbaComputerCertificate {
 
                 $scriptBlock = {
                     $cert = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2
-                    $cert.Import($args[0], $args[1], "Exportable,PersistKeySet")
+                    $flags = $Flag -join ","
+                    $cert.Import($args[0], $args[1], $flags)
 
                     $certstore = New-Object System.Security.Cryptography.X509Certificates.X509Store($args[3], $args[2])
                     $certstore.Open('ReadWrite')

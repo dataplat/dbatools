@@ -27,6 +27,23 @@ function Add-DbaComputerCertificate {
     .PARAMETER Folder
         Certificate folder. Default is My (Personal).
 
+    .PARAMETER Flag
+        Defines where and how to import the private key of an X.509 certificate.
+
+        Defaults to: Exportable, PersistKeySet
+
+            EphemeralKeySet
+            The key associated with a PFX file is created in memory and not persisted on disk when importing a certificate.
+
+            Exportable
+            Imported keys are marked as exportable.
+
+            PersistKeySet
+            The key associated with a PFX file is persisted when importing a certificate.
+
+            UserProtected
+            Notify the user through a dialog box or other method that the key is accessed. The Cryptographic Service Provider (CSP) in use defines the precise behavior.
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -71,13 +88,15 @@ function Add-DbaComputerCertificate {
         [string]$Path,
         [string]$Store = "LocalMachine",
         [string]$Folder = "My",
+        [ValidateSet("DefaultKeySet", "EphemeralKeySet", "Exportable", "PersistKeySet", "UserProtected")]
+        [string[]]$Flag = @("Exportable", "PersistKeySet"),
         [switch]$EnableException
     )
 
     begin {
 
         if ($Path) {
-            if (!(Test-Path -Path $Path)) {
+            if (-not (Test-Path -Path $Path)) {
                 Stop-Function -Message "Path ($Path) does not exist." -Category InvalidArgument
                 return
             }
@@ -86,7 +105,8 @@ function Add-DbaComputerCertificate {
                 # This may be too much, but oh well
                 $bytes = [System.IO.File]::ReadAllBytes($Path)
                 $Certificate = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2
-                $Certificate.Import($bytes, $SecurePassword, [System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]::DefaultKeySet)
+                $flags = $Flag -join ","
+                $Certificate.Import($bytes, $SecurePassword, $flags)
             } catch {
                 Stop-Function -Message "Can't import certificate." -ErrorRecord $_
                 return
