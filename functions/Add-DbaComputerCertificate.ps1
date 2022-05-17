@@ -27,6 +27,26 @@ function Add-DbaComputerCertificate {
     .PARAMETER Folder
         Certificate folder. Default is My (Personal).
 
+    .PARAMETER Flag
+        Defines where and how to import the private key of an X.509 certificate.
+
+        Defaults to: Exportable, PersistKeySet
+
+            EphemeralKeySet
+            The key associated with a PFX file is created in memory and not persisted on disk when importing a certificate.
+
+            Exportable
+            Imported keys are marked as exportable.
+
+            NonExportable
+            Expliictly mark keys as nonexportable.
+
+            PersistKeySet
+            The key associated with a PFX file is persisted when importing a certificate.
+
+            UserProtected
+            Notify the user through a dialog box or other method that the key is accessed. The Cryptographic Service Provider (CSP) in use defines the precise behavior. NOTE: This can only be used when you add a certificate to localhost, as it causes a prompt to appear.
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -59,6 +79,16 @@ function Add-DbaComputerCertificate {
 
         Adds the local C:\temp\cert.cer to the local computer's LocalMachine\My (Personal) certificate store.
 
+    .EXAMPLE
+        PS C:\> Add-DbaComputerCertificate -Path C:\temp\cert.cer
+
+        Adds the local C:\temp\cert.cer to the local computer's LocalMachine\My (Personal) certificate store.
+
+    .EXAMPLE
+        PS C:\> Add-DbaComputerCertificate -ComputerName sql01 -Path C:\temp\sql01.pfx -Confirm:$false -Flag NonExportable
+
+        Adds the local C:\temp\sql01.pfx to sql01's LocalMachine\My (Personal) certificate store and marks the private key as non-exportable. Skips confirmation prompt.
+
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low")]
     param (
@@ -71,22 +101,38 @@ function Add-DbaComputerCertificate {
         [string]$Path,
         [string]$Store = "LocalMachine",
         [string]$Folder = "My",
+        [ValidateSet("EphemeralKeySet", "Exportable", "PersistKeySet", "UserProtected", "NonExportable")]
+        [string[]]$Flag = @("Exportable", "PersistKeySet"),
         [switch]$EnableException
     )
-
     begin {
+        if ("NonExportable" -in $Flag) {
+            $flags = ($Flag | Where-Object { $PSItem -ne "Exportable" -and $PSItem -ne "NonExportable" } ) -join ","
 
+            # It needs at least one flag
+            if (-not $flags) {
+                if ($Store -eq "LocalMachine") {
+                    $flags = "MachineKeySet"
+                } else {
+                    $flags = "UserKeySet"
+                }
+            }
+        } else {
+            $flags = $Flag -join ","
+        }
+
+        Write-Message -Level Verbose -Message "Flags: $flags"
         if ($Path) {
-            if (!(Test-Path -Path $Path)) {
+            if (-not (Test-Path -Path $Path)) {
                 Stop-Function -Message "Path ($Path) does not exist." -Category InvalidArgument
                 return
             }
 
             try {
-                # This may be too much, but oh well
+                # local has to be exportable to export to remote
                 $bytes = [System.IO.File]::ReadAllBytes($Path)
                 $Certificate = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2
-                $Certificate.Import($bytes, $SecurePassword, [System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]::DefaultKeySet)
+                $null = $Certificate.Import($bytes, $SecurePassword, "Exportable, PersistKeySet")
             } catch {
                 Stop-Function -Message "Can't import certificate." -ErrorRecord $_
                 return
@@ -95,26 +141,23 @@ function Add-DbaComputerCertificate {
 
         #region Remoting Script
         $scriptBlock = {
-
             param (
                 $CertificateData,
-
                 [SecureString]$SecurePassword,
-
                 $Store,
-
-                $Folder
+                $Folder,
+                $flags
             )
 
             $cert = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2
-            $cert.Import($CertificateData, $SecurePassword, [System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]::DefaultKeySet)
-            Write-Message -Level Verbose -Message "Importing cert to $Folder\$Store"
+            $cert.Import($CertificateData, $SecurePassword, $flags)
+            Write-Verbose -Message "Importing cert to $Folder\$Store using flags: $flags"
             $tempStore = New-Object System.Security.Cryptography.X509Certificates.X509Store($Folder, $Store)
             $tempStore.Open('ReadWrite')
             $tempStore.Add($cert)
             $tempStore.Close()
 
-            Write-Message -Level Verbose -Message "Searching Cert:\$Store\$Folder"
+            Write-Verbose -Message "Searching Cert:\$Store\$Folder"
             Get-ChildItem "Cert:\$Store\$Folder" -Recurse | Where-Object { $_.Thumbprint -eq $cert.Thumbprint }
         }
         #endregion Remoting Script
@@ -128,7 +171,6 @@ function Add-DbaComputerCertificate {
         }
 
         foreach ($cert in $Certificate) {
-
             try {
                 $certData = $cert.Export([System.Security.Cryptography.X509Certificates.X509ContentType]::PFX, $SecurePassword)
             } catch {
@@ -136,10 +178,12 @@ function Add-DbaComputerCertificate {
             }
 
             foreach ($computer in $ComputerName) {
-
-                if ($PSCmdlet.ShouldProcess("local", "Connecting to $computer to import cert")) {
+                if ($PSCmdlet.ShouldProcess("$computer", "Attempting to import cert")) {
+                    if ($flags -contains "UserProtected" -and -not $computer.IsLocalHost) {
+                        Stop-Function -Message "UserProtected flag is only valid for localhost because it causes a prompt, skipping for $computer" -Continue
+                    }
                     try {
-                        Invoke-Command2 -ComputerName $computer -Credential $Credential -ArgumentList $certdata, $SecurePassword, $Store, $Folder -ScriptBlock $scriptBlock -ErrorAction Stop |
+                        Invoke-Command2 -ComputerName $computer -Credential $Credential -ArgumentList $certdata, $SecurePassword, $Store, $Folder, $flags -ScriptBlock $scriptBlock -ErrorAction Stop |
                             Select-DefaultView -Property FriendlyName, DnsNameList, Thumbprint, NotBefore, NotAfter, Subject, Issuer
                     } catch {
                         Stop-Function -Message "Failure" -ErrorRecord $_ -Target $computer -Continue
