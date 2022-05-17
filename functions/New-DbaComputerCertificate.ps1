@@ -52,6 +52,26 @@ function New-DbaComputerCertificate {
     .PARAMETER Folder
         Certificate folder - defaults to My (Personal)
 
+    .PARAMETER Flag
+        Defines where and how to import the private key of an X.509 certificate.
+
+        Defaults to: Exportable, PersistKeySet
+
+            EphemeralKeySet
+            The key associated with a PFX file is created in memory and not persisted on disk when importing a certificate.
+
+            Exportable
+            Imported keys are marked as exportable.
+
+            NonExportable
+            Expliictly mark keys as nonexportable.
+
+            PersistKeySet
+            The key associated with a PFX file is persisted when importing a certificate.
+
+            UserProtected
+            Notify the user through a dialog box or other method that the key is accessed. The Cryptographic Service Provider (CSP) in use defines the precise behavior. NOTE: This can only be used when you add a certificate to localhost, as it causes a prompt to appear.
+
     .PARAMETER Dns
         Specify the Dns entries listed in SAN. By default, it will be ComputerName + FQDN, or in the case of clusters, clustername + cluster FQDN.
 
@@ -109,6 +129,11 @@ function New-DbaComputerCertificate {
 
         Creates a self-signed certificate
 
+    .EXAMPLE
+        PS C:\> Add-DbaComputerCertificate -ComputerName sql01 -Path C:\temp\sql01.pfx -Confirm:$false -Flag NonExportable
+
+        Adds the local C:\temp\sql01.pfx to sql01's LocalMachine\My (Personal) certificate store and marks the private key as non-exportable. Skips confirmation prompt.
+
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low")]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseOutputTypeCorrectly", "", Justification = "PSSA Rule Ignored by BOH")]
@@ -126,11 +151,28 @@ function New-DbaComputerCertificate {
         [int]$KeyLength = 1024,
         [string]$Store = "LocalMachine",
         [string]$Folder = "My",
+        [ValidateSet("EphemeralKeySet", "Exportable", "PersistKeySet", "UserProtected", "NonExportable")]
+        [string[]]$Flag = @("Exportable", "PersistKeySet"),
         [string[]]$Dns,
         [switch]$SelfSigned,
         [switch]$EnableException
     )
     begin {
+        if ("NonExportable" -in $Flag) {
+            $flags = ($Flag | Where-Object { $PSItem -ne "Exportable" -and $PSItem -ne "NonExportable" } ) -join ","
+
+            # It needs at least one flag
+            if (-not $flags) {
+                if ($Store -eq "LocalMachine") {
+                    $flags = "MachineKeySet"
+                } else {
+                    $flags = "UserKeySet"
+                }
+            }
+        } else {
+            $flags = $Flag -join ","
+        }
+
         $englishCodes = 9, 1033, 2057, 3081, 4105, 5129, 6153, 7177, 8201, 9225
         if ($englishCodes -notcontains (Get-DbaCmObject -ClassName Win32_OperatingSystem).OSLanguage) {
             Stop-Function -Message "Currently, this command is only supported in English OS locales. OS Locale detected: $([System.Globalization.CultureInfo]::GetCultureInfo([int](Get-DbaCmObject Win32_OperatingSystem).OSLanguage).DisplayName)`nWe apologize for the inconvenience and look into providing universal language support in future releases."
@@ -362,19 +404,30 @@ function New-DbaComputerCertificate {
                 }
 
                 $scriptBlock = {
-                    $cert = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2
-                    $cert.Import($args[0], $args[1], "Exportable,PersistKeySet")
+                    param (
+                        $CertificateData,
+                        [SecureString]$SecurePassword,
+                        $Store,
+                        $Folder,
+                        $flags
+                    )
+                    Write-Verbose -Message "Importing cert to $Folder\$Store using flags: $flags"
 
-                    $certstore = New-Object System.Security.Cryptography.X509Certificates.X509Store($args[3], $args[2])
+                    $cert = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2
+                    $cert.Import($CertificateData, $SecurePassword, $flags)
+                    $certstore = New-Object System.Security.Cryptography.X509Certificates.X509Store($Folder, $Store)
                     $certstore.Open('ReadWrite')
                     $certstore.Add($cert)
                     $certstore.Close()
-                    Get-ChildItem "Cert:\$($args[2])\$($args[3])" -Recurse | Where-Object { $_.Thumbprint -eq $cert.Thumbprint }
+                    Get-ChildItem "Cert:\$($Store)\$($Folder)" -Recurse | Where-Object { $_.Thumbprint -eq $cert.Thumbprint }
                 }
 
-                if ($PScmdlet.ShouldProcess("local", "Connecting to $computer to import new cert")) {
+                if ($PScmdlet.ShouldProcess($computer, "Attempting to import new cert")) {
+                    if ($flags -contains "UserProtected" -and -not $computer.IsLocalHost) {
+                        Stop-Function -Message "UserProtected flag is only valid for localhost because it causes a prompt, skipping for $computer" -Continue
+                    }
                     try {
-                        $thumbprint = (Invoke-Command2 -ComputerName $computer -Credential $Credential -ArgumentList $certdata, $SecurePassword, $Store, $Folder -ScriptBlock $scriptBlock -ErrorAction Stop).Thumbprint
+                        $thumbprint = (Invoke-Command2 -ComputerName $computer -Credential $Credential -ArgumentList $certdata, $SecurePassword, $Store, $Folder, $flags -ScriptBlock $scriptBlock -ErrorAction Stop -Verbose).Thumbprint
                         Get-DbaComputerCertificate -ComputerName $computer -Credential $Credential -Thumbprint $thumbprint
                     } catch {
                         Stop-Function -Message "Issue importing new cert on $computer" -ErrorRecord $_ -Target $computer -Continue
