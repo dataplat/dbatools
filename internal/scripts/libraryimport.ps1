@@ -35,6 +35,9 @@ $scriptBlock = {
     #region Names
     if ($PSVersionTable.PSEdition -eq "Core") {
         $names = @(
+            'win\Azure.Core',
+            'win\Azure.Identity',
+            'win\System.Security.SecureString',
             'win\Microsoft.Data.SqlClient',
             'Microsoft.Data.Tools.Sql.BatchParser',
             'Microsoft.SqlServer.ConnectionInfo',
@@ -48,18 +51,18 @@ $scriptBlock = {
             'Microsoft.SqlServer.Management.XEventEnum',
             'Microsoft.SqlServer.Smo',
             'Microsoft.SqlServer.SmoExtended',
-            'System.Security.SecureString',
-            'Microsoft.Data.Tools.Utilities',
-            'Microsoft.SqlServer.Dac',
-            'Microsoft.SqlServer.Dac.Extensions',
-            'Microsoft.SqlServer.Types',
+            'win\Microsoft.Data.Tools.Utilities',
+            'win\Microsoft.SqlServer.Dac',
+            'win\Microsoft.SqlServer.Dac.Extensions',
+            'win\System.Resources.Extensions',
+            'win\Microsoft.SqlServer.Types',
             'Microsoft.SqlServer.Management.RegisteredServers',
             'Microsoft.SqlTools.Hosting',
             'Microsoft.SqlTools.ManagedBatchParser',
             'Microsoft.SqlServer.Management.Dmf',
             'Microsoft.SqlServer.XE.Core',
             'System.Net.Http',
-            'Microsoft.Identity.Client',
+            'win\Microsoft.Identity.Client',
             'Microsoft.SqlServer.XEvent.XELite',
             'SqlServer.XEvent'
         )
@@ -127,6 +130,9 @@ $scriptBlock = {
     foreach ($name in $names) {
         if ($name.StartsWith("win\") -and ($isLinux -or $IsMacOS)) {
             $name = $name.Replace("win\", "")
+            if ($IsMacOS -and $name -in "Azure.Core", "Azure.Identity", "System.Security.SecureString") {
+                $name = "mac\$name"
+            }
         }
         $x64only = 'Microsoft.SqlServer.Replication', 'Microsoft.SqlServer.XEvent.Linq', 'Microsoft.SqlServer.BatchParser', 'Microsoft.SqlServer.Rmo', 'Microsoft.SqlServer.BatchParserClient'
         if ($name -in $x64only -and $env:PROCESSOR_ARCHITECTURE -eq "x86") {
