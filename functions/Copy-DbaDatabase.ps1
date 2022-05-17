@@ -298,64 +298,6 @@ function Copy-DbaDatabase {
             $ConfirmPreference = 'none'
         }
 
-        function Join-Path {
-            <#
-        An internal command that does not require the local path to exist
-
-        Boo, this does not work, but keeping it for future ref.
-        #>
-            [CmdletBinding()]
-            param (
-                [string]$Path,
-                [string]$ChildPath
-            )
-            process {
-                try {
-                    [IO.Path]::Combine($Path, $ChildPath)
-                } catch {
-                    "$Path\$ChildPath"
-                }
-            }
-        }
-
-        if ($IsLinux -or $IsMacOs) {
-            function Join-AdminUnc {
-                <#
-            .SYNOPSIS
-            Internal function. Parses a path to make it an admin UNC.
-            #>
-                [CmdletBinding()]
-                param (
-                    [Parameter(Mandatory)]
-                    [ValidateNotNullOrEmpty()]
-                    [string]$servername,
-                    [Parameter(Mandatory)]
-                    [ValidateNotNullOrEmpty()]
-                    [string]$filepath
-
-                )
-
-                if ($script:sameserver -or (-not $script:isWindows)) {
-                    return $filepath
-                }
-                if (-not $filepath) {
-                    return
-                }
-                if ($filepath.StartsWith("\\")) {
-                    return $filepath
-                }
-
-                $servername = $servername.Split("\")[0]
-
-                if ($filepath -and $filepath -ne [System.DbNull]::Value) {
-                    $newpath = Join-Path "\\$servername\" $filepath.replace(':', '$')
-                    return $newpath
-                } else {
-                    return
-                }
-            }
-        }
-
         function Get-SqlFileStructure {
             $dbcollection = @{
             };
@@ -1042,14 +984,14 @@ function Copy-DbaDatabase {
                             $splitFileName = $splitFileName.replace($dbName, $destinationDbName)
                         }
                         $splitFileName = $prefix + $splitFileName
-                        $filestructure.databases[$dbName].Destination.$key.remotefilename = Join-Path $SplitPath $splitFileName
+                        $filestructure.databases[$dbName].Destination.$key.remotefilename = Join-DbaPath -Path $SplitPath -ChildPath $splitFileName
                         $splitFileName = Split-Path $filestructure.databases[$dbName].Destination[$key].physical -Leaf
                         $SplitPath = Split-Path $fileStructure.databases[$dbName].Destination[$key].physical
                         if ($replaceInFile) {
                             $splitFileName = $splitFileName.replace($dbName, $destinationDbName)
                         }
                         $splitFileName = $prefix + $splitFileName
-                        $filestructure.databases[$dbName].Destination.$key.physical = Join-Path $SplitPath $splitFileName
+                        $filestructure.databases[$dbName].Destination.$key.physical = Join-DbaPath -Path $SplitPath -ChildPath $splitFileName
                     }
 
                     $copyDatabaseStatus = [pscustomobject]@{
