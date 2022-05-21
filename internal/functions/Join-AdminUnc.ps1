@@ -14,8 +14,10 @@ function Join-AdminUnc {
 
     )
 
-    if (!$filepath -or $IsLinux -or $IsMacOs) { return }
-    if ($filepath.StartsWith("\\")) { return $filepath }
+    if (-not $filepath -or $IsLinux -or $IsMacOs -or $filepath.StartsWith("\\")) {
+        $filepath
+        return
+    }
 
     $servername = $servername.Split("\")[0]
 
