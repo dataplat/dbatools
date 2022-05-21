@@ -80,38 +80,21 @@ function Watch-DbaDbLogin {
     #>
     [CmdletBinding(DefaultParameterSetName = "Default")]
     param (
-        [parameter(Mandatory)]
         [DbaInstance]$SqlInstance,
+        [PSCredential]$SqlCredential,
         [object]$Database,
         [string]$Table = "DbaTools-WatchDbLogins",
-        [PSCredential]$SqlCredential,
-
         # Central Management Server
         [string]$SqlCms,
-
         # File with one server per line
         [string]$ServersFromFile,
-
         #Pre-connected servers to query
         [parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.Server[]]$InputObject,
-
         [switch]$EnableException
     )
 
     process {
-        if (Test-Bound 'SqlCms', 'ServersFromFile', 'InputObject' -Not) {
-            Stop-Function -Message "You must specify a server list source using -SqlCms or -ServersFromFile or pipe in connected instances. See the command documentation and examples for more details."
-            return
-        }
-
-        try {
-            $serverDest = Connect-DbaInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
-        } catch {
-            Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $SqlInstance
-            return
-        }
-
         $systemdbs = "master", "msdb", "model", "tempdb"
         $excludedPrograms = "Microsoft SQL Server Management Studio - Query", "SQL Management"
 
@@ -126,12 +109,20 @@ function Watch-DbaDbLogin {
                 return
             }
         }
-        if (Test-Bound 'ServersFromFile') {
+        if ($ServersFromFile) {
             if (Test-Path $ServersFromFile) {
                 $servers = Get-Content $ServersFromFile
             } else {
                 Stop-Function -Message "$ServersFromFile was not found." -Target $ServersFromFile
                 return
+            }
+        }
+
+        if ($SqlInstance) {
+            if ($servers) {
+                $servers += $SqlInstance
+            } else {
+                $servers = $SqlInstance
             }
         }
 
@@ -166,12 +157,13 @@ function Watch-DbaDbLogin {
                 , s.login_name AS [Login]
                 , ISNULL(s.host_name,N'') AS [Host]
                 , ISNULL(s.program_name,N'') AS [Program]
-                , ISNULL(r.database_id,N'') AS [DatabaseId]
-                , ISNULL(DB_NAME(r.database_id),N'') AS [Database]
+                , ISNULL(r.database_id,s.database_id) AS [DatabaseId]
+                , ISNULL(DB_NAME(r.database_id),(DB_NAME(s.database_id))) AS [Database]
                 , CAST(~s.is_user_process AS bit) AS [IsSystem]
                 , CaptureTime = (SELECT GETDATE())
-            FROM sys.dm_exec_sessions AS s
-            LEFT OUTER JOIN sys.dm_exec_requests AS r
+                ,s.database_id
+                FROM sys.dm_exec_sessions AS s
+                LEFT OUTER JOIN sys.dm_exec_requests AS r
                 ON r.session_id = s.session_id"
             Write-Message -Level Debug -Message $sql
 

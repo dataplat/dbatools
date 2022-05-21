@@ -323,8 +323,8 @@ function Get-DbaBackupInformation {
                         Name       = "Size"
                         Expression = { [dbasize]$PSItem.Size }
                     } -Unique)
-                $historyObject.TotalSize = ($group.Group.BackupSize.Byte | Measure-Object -Sum).Sum
-                $HistoryObject.CompressedBackupSize = ($group.Group.CompressedBackupSize.Byte | Measure-Object -Sum).Sum
+                $historyObject.TotalSize = $group.Group[0].BackupSize.Byte
+                $HistoryObject.CompressedBackupSize = $group.Group[0].CompressedBackupSize.Byte
                 $historyObject.Type = $description
                 $historyObject.BackupSetId = $group.group[0].BackupSetGUID
                 $historyObject.DeviceType = 'Disk'
