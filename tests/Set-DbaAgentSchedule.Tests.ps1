@@ -188,7 +188,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 
     Context "Should set schedules with various frequency subday type" {
         BeforeAll {
-            foreach ($FrequencySubdayType in ('Time', 'Seconds', 'Minutes', 'Hours')) {
+            foreach ($FrequencySubdayType in ('1', 'Once', 'Time', '2', 'Seconds', 'Second', '4', 'Minutes', 'Minute', '8', 'Hours', 'Hour')) {
                 $variables = @{SqlInstance    = $script:instance2
                     Schedule                  = "dbatoolsci_$FrequencySubdayType"
                     Job                       = 'dbatoolsci_setschedule1'
@@ -211,7 +211,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
         $schedules = Get-DbaAgentSchedule -SqlInstance $script:instance2 | Where-Object {$_.name -like 'dbatools*'}
         foreach ($schedule in $schedules) {
-            foreach ($FrequencySubdayType in ('Time', '1', 'Seconds', '2', 'Minutes', '4', 'Hours', '8')) {
+            foreach ($FrequencySubdayType in ('1', 'Once', 'Time', '2', 'Seconds', 'Second', '4', 'Minutes', 'Minute', '8', 'Hours', 'Hour')) {
                 $variables = @{SqlInstance    = $script:instance2
                     Schedule                  = "$schedule"
                     Job                       = 'dbatoolsci_setschedule1'
