@@ -548,7 +548,7 @@ function Import-DbaCsv {
                         $quotematch = (Get-Content -Path $file -TotalCount 1 -ErrorAction Stop).ToString()
 
                         if ((-not $KeepOrdinalOrder -and -not $AutoCreateTable) -or ($quotematch -match "'" -or $quotematch -match '"')) {
-                            if ($PSBoundParameters.ColumnMap) {
+                            if ($ColumnMap) {
                                 Write-Message -Level Verbose -Message "ColumnMap was supplied. Additional auto-mapping will not be attempted."
                             } elseif ($NoHeaderRow) {
                                 Write-Message -Level Verbose -Message "NoHeaderRow was supplied. Additional auto-mapping will not be attempted."
@@ -569,7 +569,7 @@ function Import-DbaCsv {
                             }
                         }
 
-                        if ($ColumnMap) {
+                        if ($PSBoundParameters.ColumnMap) {
                             foreach ($columnname in $ColumnMap) {
                                 foreach ($key in $columnname.Keys) {
                                     $null = $bulkcopy.ColumnMappings.Add($key, $columnname[$key])
