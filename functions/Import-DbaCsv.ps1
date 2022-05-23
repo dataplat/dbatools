@@ -569,7 +569,7 @@ function Import-DbaCsv {
                             }
                         }
 
-                        if ($PSBoundParameters.ColumnMap) {
+                        if ($ColumnMap) {
                             foreach ($columnname in $ColumnMap) {
                                 foreach ($key in $columnname.Keys) {
                                     $null = $bulkcopy.ColumnMappings.Add($key, $columnname[$key])
