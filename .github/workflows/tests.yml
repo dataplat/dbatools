@@ -67,25 +67,3 @@ jobs:
           CLIENTSECRET: ${{secrets.CLIENTSECRET}}
         shell: pwsh
         run: $null = Invoke-Pester ./tests/gh-winactions.ps1 -Output Detailed -PassThru
-
-  macos-tests:
-    runs-on: macos-latest
-    env:
-      GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
-
-    steps:
-      - uses: actions/checkout@v2
-
-      - name: Install SQL Server
-        uses: potatoqualitee/mssqlsuite@v1.3
-        with:
-          sa-password: dbatools.I0
-          install: sqlengine
-
-      - name: Run pwsh tests
-        env:
-          TENANTID: ${{secrets.TENANTID}}
-          CLIENTID: ${{secrets.CLIENTID}}
-          CLIENTSECRET: ${{secrets.CLIENTSECRET}}
-        shell: pwsh
-        run: $null = Invoke-Pester ./tests/gh-macactions.ps1 -Output Detailed -PassThru
