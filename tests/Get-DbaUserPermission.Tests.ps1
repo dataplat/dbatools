@@ -46,4 +46,21 @@ exec sp_addrolemember 'userrole','bob';
             }
         }
     }
+
+    Context "Command do not return error when database as different collation" {
+        $dbName = "dbatoolsci_UserPermissionDiffCollation"
+        $dbCollation = "Latin1_General_CI_AI"
+
+        $null = New-DbaDatabase -SqlInstance $script:instance1 -Name $dbName -Collation $dbCollation
+
+        $results = Get-DbaUserPermission -SqlInstance $script:instance1 -Database $dbName -WarningVariable warnvar
+        It "Should not warn about collation conflict" {
+            $warnvar | Should -Be $null
+        }
+        It "returns results" {
+            $results.Count -gt 0 | Should Be $true
+        }
+
+        $null = Remove-DbaDatabase -SqlInstance $script:instance1 -Database $dbName -Confirm:$false
+    }
 }
