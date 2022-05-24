@@ -56,7 +56,7 @@ function Set-DbaAgentSchedule {
 
     .PARAMETER FrequencySubdayType
         Specifies the units for the subday FrequencyInterval.
-        Allowed values are 1, "Time", 2, "Seconds", 4, "Minutes", 8 or "Hours"
+        Allowed values are 1, 'Once', 'Time', 2, 'Seconds', 'Second', 4, 'Minutes', 'Minute', 8, 'Hours', 'Hour'
 
     .PARAMETER FrequencySubdayInterval
         The number of subday type periods to occur between each execution of a job.
@@ -152,7 +152,7 @@ function Set-DbaAgentSchedule {
         [ValidateSet('Once', 'OneTime', 'Daily', 'Weekly', 'Monthly', 'MonthlyRelative', 'AgentStart', 'AutoStart', 'IdleComputer', 'OnIdle', 1, 4, 8, 16, 32, 64, 128)]
         [object]$FrequencyType,
         [object[]]$FrequencyInterval,
-        [ValidateSet(1, "Time", 2, "Seconds", 4, "Minutes", 8, "Hours")]
+        [ValidateSet(1, 'Once', 'Time', 2, 'Seconds', 'Second', 4, 'Minutes', 'Minute', 8, 'Hours', 'Hour')]
         [object]$FrequencySubdayType,
         [int]$FrequencySubdayInterval,
         [ValidateSet('Unused', 'First', 'Second', 'Third', 'Fourth', 'Last')]
@@ -191,10 +191,14 @@ function Set-DbaAgentSchedule {
         if ($FrequencySubdayType -notin 0, 1, 2, 4, 8) {
             [int]$FrequencySubdayType =
             switch ($FrequencySubdayType) {
+                "Once" { 1 }
                 "Time" { 1 }
                 "Seconds" { 2 }
+                "Second" { 2 }
                 "Minutes" { 4 }
+                "Minute" { 4 }
                 "Hours" { 8 }
+                "Hour" { 8 }
                 default { 0 }
             }
         }
@@ -217,14 +221,13 @@ function Set-DbaAgentSchedule {
         }
 
         # Check the subday interval
-        if (($FrequencySubdayType -in 2, 4) -and (-not ($FrequencySubdayInterval -ge 1 -or $FrequencySubdayInterval -le 59))) {
-            Stop-Function -Message "Subday interval $FrequencySubdayInterval must be between 1 and 59 when subday type is 2, 'Seconds', 4 or 'Minutes'" -Target $SqlInstance
+        if (($FrequencySubdayType -in 2, "Seconds", 4, "Minutes") -and (-not ($FrequencySubdayInterval -ge 1 -or $FrequencySubdayInterval -le 59))) {
+            Stop-Function -Message "Subday interval $FrequencySubdayInterval must be between 1 and 59 when subday type is 'Seconds' or 'Minutes'" -Target $SqlInstance
             return
-        } elseif (($FrequencySubdayType -eq 8) -and (-not ($FrequencySubdayInterval -ge 1 -and $FrequencySubdayInterval -le 23))) {
-            Stop-Function -Message "Subday interval $FrequencySubdayInterval must be between 1 and 23 when subday type is 8 or 'Hours" -Target $SqlInstance
+        } elseif (($FrequencySubdayType -eq 8, "Hours") -and (-not ($FrequencySubdayInterval -ge 1 -and $FrequencySubdayInterval -le 23))) {
+            Stop-Function -Message "Subday interval $FrequencySubdayInterval must be between 1 and 23 when subday type is 'Hours'" -Target $SqlInstance
             return
         }
-
 
         # Check of the FrequencyInterval value is of type string and set the integer value
         if (($null -ne $FrequencyType)) {
