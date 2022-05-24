@@ -379,6 +379,9 @@ function Import-DbaCsv {
     }
     process {
         foreach ($filename in $Path) {
+            if (-not $PSBoundParameters.ColumnMap) {
+                $ColumnMap = $null
+            }
 
             if ($filename.FullName) {
                 $filename = $filename.FullName
