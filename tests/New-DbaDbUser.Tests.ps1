@@ -11,18 +11,6 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
             (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
         }
     }
-    Context "Should error out if the database does not exist" {
-        Mock Connect-DbaInstance -MockWith {
-            $obj = [PSCustomObject]@{
-                Databases    = [String]::Empty
-                IsAccessible = $false
-            }
-            return $obj
-        } -ModuleName dbatools
-        It "Errors out when the databases does not exist and -EnableException is specified" {
-            { New-DbaDbUser -SqlInstance localhost -Database 'NotAtAllReal' -Username $userName -EnableException } | Should -Throw
-        }
-    }
 }
 
 Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
@@ -44,7 +32,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         It "Tries to create the user with an invalid default schema" {
             $results = New-DbaDbUser -SqlInstance $script:instance3 -Database $dbname -Login $userName -DefaultSchema invalidSchemaName -WarningVariable warningMessage
             $results | Should -BeNullOrEmpty
-            $warningMessage | Should -BeLike "*DefaultSchema invalidSchemaName does not exist in the database*"
+            $warningMessage | Should -BeLike "*Invalid DefaultSchema*"
         }
     }
     Context "Should create the user with login" {
