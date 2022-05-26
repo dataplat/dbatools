@@ -47,7 +47,7 @@ $TestsRunGroups = @{
         'Read-DbaXEFile',
         'Stop-DbaXESession',
         'Test-DbaTempDbConfig',
-        'New-DbaDbUser',
+        #'New-DbaDbUser',
         'Stop-DbaXESession',
         'New-DbaLogin',
         'Watch-DbaDbLogin',
