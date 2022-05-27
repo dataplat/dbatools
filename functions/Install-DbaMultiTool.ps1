@@ -26,7 +26,7 @@ function Install-DbaMultiTool {
     .PARAMETER Branch
         Specifies an alternate branch of the DBA MultiTool to install.
         Allowed values:
-            master (default)
+            main (default)
             development
 
     .PARAMETER LocalFile
@@ -61,9 +61,9 @@ function Install-DbaMultiTool {
         https://dbatools.io/Install-DbaMultiTool
 
     .EXAMPLE
-        PS C:\> Install-DbaMultiTool -SqlInstance server1 -Database master
+        PS C:\> Install-DbaMultiTool -SqlInstance server1 -Database main
 
-        Logs into server1 with Windows authentication and then installs the DBA MultiTool in the master database.
+        Logs into server1 with Windows authentication and then installs the DBA MultiTool in the main database.
 
     .EXAMPLE
         PS C:\> Install-DbaMultiTool -SqlInstance server1\instance1 -Database DBA
@@ -71,34 +71,34 @@ function Install-DbaMultiTool {
         Logs into server1\instance1 with Windows authentication and then installs the DBA MultiTool in the DBA database.
 
     .EXAMPLE
-        PS C:\> Install-DbaMultiTool -SqlInstance server1\instance1 -Database master -SqlCredential $cred
+        PS C:\> Install-DbaMultiTool -SqlInstance server1\instance1 -Database main -SqlCredential $cred
 
-        Logs into server1\instance1 with SQL authentication and then installs the DBA MultiTool in the master database.
+        Logs into server1\instance1 with SQL authentication and then installs the DBA MultiTool in the main database.
 
     .EXAMPLE
         PS C:\> Install-DbaMultiTool -SqlInstance sql2016\standardrtm, sql2016\sqlexpress, sql2014
 
-        Logs into sql2016\standardrtm, sql2016\sqlexpress and sql2014 with Windows authentication and then installs the DBA MultiTool in the master database.
+        Logs into sql2016\standardrtm, sql2016\sqlexpress and sql2014 with Windows authentication and then installs the DBA MultiTool in the main database.
 
     .EXAMPLE
         PS C:\> $servers = "sql2016\standardrtm", "sql2016\sqlexpress", "sql2014"
         PS C:\> $servers | Install-DbaMultiTool
 
-        Logs into sql2016\standardrtm, sql2016\sqlexpress and sql2014 with Windows authentication and then installs the DBA MultiTool in the master database.
+        Logs into sql2016\standardrtm, sql2016\sqlexpress and sql2014 with Windows authentication and then installs the DBA MultiTool in the main database.
 
     .EXAMPLE
         PS C:\> Install-DbaMultiTool -SqlInstance sql2016 -Branch development
 
-        Installs the development branch version of the DBA MultiTool in the master database on sql2016 instance.
+        Installs the development branch version of the DBA MultiTool in the main database on sql2016 instance.
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Medium")]
     param (
         [Parameter(Mandatory, ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [ValidateSet('master', 'development')]
-        [string]$Branch = "master",
-        [object]$Database = "master",
+        [ValidateSet('main', 'development')]
+        [string]$Branch = "main",
+        [object]$Database = "main",
         [string]$LocalFile,
         [switch]$Force,
         [switch]$EnableException
