@@ -98,7 +98,7 @@ function Install-DbaMultiTool {
         [PSCredential]$SqlCredential,
         [ValidateSet('main', 'development')]
         [string]$Branch = "main",
-        [object]$Database = "main",
+        [object]$Database = "master",
         [string]$LocalFile,
         [switch]$Force,
         [switch]$EnableException
