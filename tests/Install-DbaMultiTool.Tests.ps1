@@ -15,7 +15,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     Context "Testing DBA MultiTool installer with download" {
         BeforeAll {
-            $branch = "master"
+            $branch = "main"
             $database = "dbatoolsci_multitool_$(Get-Random)"
             $server = Connect-DbaInstance -SqlInstance $script:instance2
             $server.Query("CREATE DATABASE $database")
@@ -55,7 +55,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     }
     Context "Testing DBA MultiTool installer with LocalFile" {
         BeforeAll {
-            $branch = "master"
+            $branch = "main"
             $database = "dbatoolsci_multitool_$(Get-Random)"
             $server = Connect-DbaInstance -SqlInstance $script:instance3
             $server.Query("CREATE DATABASE $database")
