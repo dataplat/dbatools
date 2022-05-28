@@ -11,6 +11,18 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
             (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
         }
     }
+    Context "Should error out if the database does not exist" {
+        Mock Connect-DbaInstance -MockWith {
+            $obj = [PSCustomObject]@{
+                Databases    = [String]::Empty
+                IsAccessible = $false
+            }
+            return $obj
+        } -ModuleName dbatools
+        It "Errors out when the databases does not exist and -EnableException is specified" {
+            { New-DbaDbUser -SqlInstance localhost -Database 'NotAtAllReal' -Username $userName -EnableException } | Should -Throw
+        }
+    }
 }
 
 Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
@@ -21,32 +33,32 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
 
         $password = 'MyV3ry$ecur3P@ssw0rd'
         $securePassword = ConvertTo-SecureString $password -AsPlainText -Force
-        $null = New-DbaLogin -SqlInstance $script:instance2 -Login $userName -Password $securePassword -Force
-        $null = New-DbaDatabase -SqlInstance $script:instance2 -Name $dbname
+        $null = New-DbaLogin -SqlInstance $script:instance3 -Login $userName -Password $securePassword -Force
+        $null = New-DbaDatabase -SqlInstance $script:instance3 -Name $dbname
     }
     AfterAll {
-        $null = Remove-DbaDatabase -SqlInstance $script:instance2 -Database $dbname -Confirm:$false
-        $null = Remove-DbaLogin -SqlInstance $script:instance2 -Login $userName -Confirm:$false
+        $null = Remove-DbaDatabase -SqlInstance $script:instance3 -Database $dbname -Confirm:$false
+        $null = Remove-DbaLogin -SqlInstance $script:instance3 -Login $userName -Confirm:$false
     }
     Context "Test error handling" {
         It "Tries to create the user with an invalid default schema" {
-            $results = New-DbaDbUser -SqlInstance $script:instance2 -Database $dbname -Login $userName -DefaultSchema invalidSchemaName -WarningVariable warningMessage
+            $results = New-DbaDbUser -SqlInstance $script:instance3 -Database $dbname -Login $userName -DefaultSchema invalidSchemaName -WarningVariable warningMessage
             $results | Should -BeNullOrEmpty
-            $warningMessage | Should -BeLike "*Invalid DefaultSchema*"
+            $warningMessage | Should -BeLike "*DefaultSchema invalidSchemaName does not exist in the database*"
         }
     }
     Context "Should create the user with login" {
         It "Creates the user and get it" {
-            New-DbaDbUser -SqlInstance $script:instance2 -Database $dbname -Login $userName -DefaultSchema guest
-            $newDbUser = Get-DbaDbUser -SqlInstance $script:instance2 -Database $dbname | Where-Object Name -eq $userName
+            New-DbaDbUser -SqlInstance $script:instance3 -Database $dbname -Login $userName -DefaultSchema guest
+            $newDbUser = Get-DbaDbUser -SqlInstance $script:instance3 -Database $dbname | Where-Object Name -eq $userName
             $newDbUser.Name | Should Be $userName
             $newDbUser.DefaultSchema | Should -Be 'guest'
         }
     }
     Context "Should create the user without login" {
         It "Creates the user and get it. Login property is empty" {
-            New-DbaDbUser -SqlInstance $script:instance2 -Database $dbname -User $userNameWithoutLogin -DefaultSchema guest
-            $results = Get-DbaDbUser -SqlInstance $script:instance2 -Database $dbname | Where-Object Name -eq $userNameWithoutLogin
+            New-DbaDbUser -SqlInstance $script:instance3 -Database $dbname -User $userNameWithoutLogin -DefaultSchema guest
+            $results = Get-DbaDbUser -SqlInstance $script:instance3 -Database $dbname | Where-Object Name -eq $userNameWithoutLogin
             $results.Name | Should Be $userNameWithoutLogin
             $results.DefaultSchema | Should -Be 'guest'
             $results.Login | Should -BeNullOrEmpty
@@ -59,15 +71,15 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
 
             $password = 'MyV3ry$ecur3P@ssw0rd'
             $securePassword = ConvertTo-SecureString $password -AsPlainText -Force
-            $null = New-DbaLogin -SqlInstance $script:instance2 -Login $loginName -Password $securePassword -Force
-            $null = New-DbaDatabase -SqlInstance $script:instance2 -Name $dbs
+            $null = New-DbaLogin -SqlInstance $script:instance3 -Login $loginName -Password $securePassword -Force
+            $null = New-DbaDatabase -SqlInstance $script:instance3 -Name $dbs
         }
         AfterAll {
-            $null = Remove-DbaDatabase -SqlInstance $script:instance2 -Database $dbs -Confirm:$false
-            $null = Remove-DbaLogin -SqlInstance $script:instance2 -Login $loginName -Confirm:$false
+            $null = Remove-DbaDatabase -SqlInstance $script:instance3 -Database $dbs -Confirm:$false
+            $null = Remove-DbaLogin -SqlInstance $script:instance3 -Login $loginName -Confirm:$false
         }
         It "Should add login to all databases provided" {
-            $results = New-DbaDbUser -SqlInstance $script:instance2 -Login $loginName -Database $dbs -Force -EnableException
+            $results = New-DbaDbUser -SqlInstance $script:instance3 -Login $loginName -Database $dbs -Force -EnableException
             $results.Count | Should -Be 3
             $results.Name | Should -Be $loginName, $loginName, $loginName
             $results.DefaultSchema | Should -Be dbo, dbo, dbo
