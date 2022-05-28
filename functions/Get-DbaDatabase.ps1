@@ -258,7 +258,8 @@ function Get-DbaDatabase {
             function Invoke-QueryRawDatabases {
                 try {
                     if ($server.isAzure) {
-                        $server.Query("SELECT db.name, db.state, dp.name AS [Owner] FROM sys.databases AS db LEFT JOIN sys.database_principals AS dp ON dp.sid = db.owner_sid")
+                        $dbquery = "SELECT db.name, db.state, dp.name AS [Owner] FROM sys.databases AS db LEFT JOIN sys.database_principals AS dp ON dp.sid = db.owner_sid"
+                        $server.ConnectionContext.ExecuteWithResults($dbquery).Tables
                     } elseif ($server.VersionMajor -eq 8) {
                         $server.Query("
                             SELECT name,
@@ -280,6 +281,7 @@ function Get-DbaDatabase {
                     Stop-Function -Message "Failure" -ErrorRecord $_
                 }
             }
+
             $backed_info = Invoke-QueryRawDatabases
             $backed_info = $backed_info | Where-Object {
                 ($_.name -in $Database -or !$Database) -and
@@ -288,26 +290,39 @@ function Get-DbaDatabase {
                 ($_.state -ne 6 -or !$OnlyAccessible)
             }
 
+
             $inputObject = @()
             foreach ($dt in $backed_info) {
                 if ($server.DatabaseEngineType -eq "SqlAzureDatabase") {
-                    $inputObject += $server.Databases[$dt.name]
+                    # Enumeration via $server.Databases[$dt.name] no longer works in azure
+                    $inputObject += New-Object Microsoft.SqlServer.Management.Smo.Database $server, $dt.Name
                 } else {
                     $inputObject += $server.Databases | Where-Object Name -ceq $dt.name
                 }
             }
-            $inputObject = $inputObject |
-                Where-Object {
-                    ($_.Name -in $Database -or !$Database) -and
-                    ($_.Name -notin $ExcludeDatabase -or !$ExcludeDatabase) -and
-                    ($_.Owner -in $Owner -or !$Owner) -and
-                    $_.ReadOnly -in $Readonly -and
-                    $_.IsAccessible -in $AccessibleFilter -and
-                    $_.IsSystemObject -in $DBType -and
-                    ((Compare-Object @($_.Status.tostring().split(',').trim()) $Status -ExcludeDifferent -IncludeEqual).inputobject.count -ge 1 -or !$status) -and
-                    ($_.RecoveryModel -in $RecoveryModel -or !$_.RecoveryModel) -and
-                    $_.EncryptionEnabled -in $Encrypt
-                }
+            if ($server.isAzure) {
+                $inputObject = $inputObject |
+                    Where-Object {
+                        ($_.Name -in $Database -or !$Database) -and
+                        ($_.Name -notin $ExcludeDatabase -or !$ExcludeDatabase) -and
+                        ($_.Owner -in $Owner -or !$Owner) -and
+                        ($_.RecoveryModel -in $RecoveryModel -or !$_.RecoveryModel) -and
+                        $_.EncryptionEnabled -in $Encrypt
+                    }
+            } else {
+                $inputObject = $inputObject |
+                    Where-Object {
+                        ($_.Name -in $Database -or !$Database) -and
+                        ($_.Name -notin $ExcludeDatabase -or !$ExcludeDatabase) -and
+                        ($_.Owner -in $Owner -or !$Owner) -and
+                        $_.ReadOnly -in $Readonly -and
+                        $_.IsAccessible -in $AccessibleFilter -and
+                        $_.IsSystemObject -in $DBType -and
+                        ((Compare-Object @($_.Status.tostring().split(',').trim()) $Status -ExcludeDifferent -IncludeEqual).inputobject.count -ge 1 -or !$status) -and
+                        ($_.RecoveryModel -in $RecoveryModel -or !$_.RecoveryModel) -and
+                        $_.EncryptionEnabled -in $Encrypt
+                    }
+            }
             if ($NoFullBackup -or $NoFullBackupSince) {
                 $lastFullBackups = Get-DbaDbBackupHistory -SqlInstance $server -LastFull
                 $lastCopyOnlyBackups = Get-DbaDbBackupHistory -SqlInstance $server -LastFull -IncludeCopyOnly | Where-Object IsCopyOnly

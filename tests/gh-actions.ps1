@@ -39,6 +39,25 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
         (Get-DbaDbCertificate -SqlInstance localhost:14333 -Database master).Count | Should -BeGreaterThan $initialcertcount
     }
 
+    It "publishes a package" {
+        $db = New-DbaDatabase
+        $dbname = $db.Name
+        $null = $db.Query("CREATE TABLE dbo.example (id int, PRIMARY KEY (id));
+            INSERT dbo.example
+            SELECT top 100 object_id
+            FROM sys.objects")
+
+        $publishprofile = New-DbaDacProfile -Database $dbname -Path /tmp
+        $extractOptions = New-DbaDacOption -Action Export
+        $extractOptions.ExtractAllTableData = $true
+        $dacpac = Export-DbaDacPackage -Database $dbname -DacOption $extractOptions
+
+        $results = $dacpac | Publish-DbaDacPackage -PublishXml $publishprofile.FileName -Database $dbname -SqlInstance localhost:14333 -Confirm:$false
+        $results.Result | Should -BeLike '*Update complete.*'
+        $ids = Invoke-DbaQuery -Database $dbname -SqlInstance localhost:14333 -Query 'SELECT id FROM dbo.example'
+        $ids.id | Should -Not -BeNullOrEmpty
+    }
+
     It "sets up a mirror" {
         $newdb = New-DbaDatabase
         $params = @{

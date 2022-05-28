@@ -129,7 +129,6 @@ function Find-DbaOrphanedFile {
 
                 UPDATE #enum
                 SET parent = @dir,
-                fs_filename = ltrim(rtrim(e.fs_filename)),
                 parent_id = (SELECT MAX(i.id) FROM #enum i WHERE i.id < e.id AND i.depth = e.depth-1 AND i.is_file = 0)
                 FROM #enum e
                 WHERE e.parent IS NULL;

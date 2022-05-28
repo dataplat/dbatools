@@ -22,9 +22,13 @@ function Get-DecryptedObject {
     # Query Service Master Key from the database - remove padding from the key
     # key_id 102 eq service master key, thumbprint 3 means encrypted with machinekey
     Write-Message -Level Verbose -Message "Querying service master key"
-    $sql = "SELECT substring(crypt_property,9,len(crypt_property)-8) as smk FROM sys.key_encryptions WHERE key_id=102 and (thumbprint=0x03 or thumbprint=0x0300000001)"
     try {
+        $sql = "SELECT substring(crypt_property,9,len(crypt_property)-8) as smk FROM sys.key_encryptions WHERE key_id=102 and thumbprint=0x0300000001"
         $smkBytes = $server.Query($sql).smk
+        if (-not $smkBytes) {
+            $sql = "SELECT substring(crypt_property,9,len(crypt_property)-8) as smk FROM sys.key_encryptions WHERE key_id=102 and thumbprint=0x03"
+            $smkBytes = $server.Query($sql).smk
+        }
     } catch {
         Stop-Function -Message "Can't execute query on $sourceName" -Target $server -ErrorRecord $_
         return

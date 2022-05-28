@@ -475,7 +475,7 @@ USE tempdb;
                         P.[Source View]
                     FROM
                         STIG.database_permissions P
-                        INNER JOIN Targets T ON T.[Principal] = P.[Grantee]
+                        INNER JOIN Targets T ON T.[Principal] COLLATE DATABASE_DEFAULT = P.[Grantee] COLLATE DATABASE_DEFAULT
                     ORDER BY
                         P.[Securable Type or Class],
                         P.[Schema/Owner],

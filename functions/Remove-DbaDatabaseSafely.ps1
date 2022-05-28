@@ -21,7 +21,7 @@ function Remove-DbaDatabaseSafely {
     .PARAMETER Destination
         If specified, Agent jobs will be created on this server. By default, the jobs will be created on the server specified by SqlInstance. You must have sysadmin access and the server must be SQL Server 2000 or higher. The SQL Agent service will be started if it is not already running.
 
-    .PARAMETER DestinationCredential
+    .PARAMETER DestinationSqlCredential
         Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
 
         Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
@@ -124,7 +124,7 @@ function Remove-DbaDatabaseSafely {
         [PSCredential]$SqlCredential,
         [object[]]$Database,
         [DbaInstanceParameter]$Destination = $SqlInstance,
-        [PSCredential]$DestinationCredential,
+        [PSCredential]$DestinationSqlCredential,
         [Alias("NoCheck")]
         [switch]$NoDbccCheckDb,
         [parameter(Mandatory)]
@@ -155,13 +155,13 @@ function Remove-DbaDatabaseSafely {
 
         if (-not $Destination) {
             $Destination = $SqlInstance
-            $DestinationCredential = $SqlCredential
+            $DestinationSqlCredential = $SqlCredential
         }
 
         if ($SqlInstance -ne $Destination) {
 
             try {
-                $destserver = Connect-DbaInstance -SqlInstance $Destination -SqlCredential $DestinationCredential
+                $destserver = Connect-DbaInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
             } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $Destination -Continue
             }
@@ -358,15 +358,15 @@ function Remove-DbaDatabaseSafely {
                     }
 
                     ## Create a Job Category
-                    if (!(Get-DbaAgentJobCategory -SqlInstance $destination -SqlCredential $DestinationCredential -Category $categoryname)) {
-                        New-DbaAgentJobCategory -SqlInstance $destination -SqlCredential $DestinationCredential -Category $categoryname
+                    if (!(Get-DbaAgentJobCategory -SqlInstance $destination -SqlCredential $DestinationSqlCredential -Category $categoryname)) {
+                        New-DbaAgentJobCategory -SqlInstance $destination -SqlCredential $DestinationSqlCredential -Category $categoryname
                     }
 
                     try {
                         if ($Pscmdlet.ShouldProcess($destination, "Creating Agent Job $jobname on $destination")) {
                             $jobParams = @{
                                 SqlInstance   = $destination
-                                SqlCredential = $DestinationCredential
+                                SqlCredential = $DestinationSqlCredential
                                 Job           = $jobname
                                 Category      = $categoryname
                                 Description   = "This job will restore the $dbName database using the final backup located at $filename."
@@ -389,7 +389,7 @@ function Remove-DbaDatabaseSafely {
 
                         $jobStepParams = @{
                             SqlInstance     = $destination
-                            SqlCredential   = $DestinationCredential
+                            SqlCredential   = $DestinationSqlCredential
                             Job             = $job
                             StepName        = $jobStepName
                             SubSystem       = 'TransactSql'
