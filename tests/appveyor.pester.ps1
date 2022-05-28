@@ -239,9 +239,10 @@ if (-not $Finalize) {
         $errorFile = "$ModuleBase\dbatools_errors.xml"
         Write-Host -ForegroundColor DarkGreen "Dumping message log into $msgFile"
         Get-DbatoolsLog | Select-Object FunctionName, Level, TimeStamp, Message | Export-Clixml -Path $msgFile -ErrorAction Stop
-        Write-Host -ForegroundColor DarkGreen "Dumping error log into $errorFile"
+        Write-Host -ForegroundColor Yellow "Skipping dump of error log into $errorFile"
         try {
-            Get-DbatoolsError -All -ErrorAction Stop | Export-Clixml -Depth 1 -Path $errorFile -ErrorAction Stop
+            # Uncomment this when needed
+            #Get-DbatoolsError -All -ErrorAction Stop | Export-Clixml -Depth 1 -Path $errorFile -ErrorAction Stop
         } catch {
             Set-Content -Path $errorFile -Value 'None'
         }
