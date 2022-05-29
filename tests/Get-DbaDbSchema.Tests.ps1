@@ -34,8 +34,10 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         $null = New-DbaDbUser -SqlInstance $instance1, $instance2 -Database $newDbName -Login $userName
         $null = New-DbaDbUser -SqlInstance $instance1, $instance2 -Database $newDbName -Login $userName2
 
-        $newDbs[0].Query("CREATE SCHEMA $schemaName AUTHORIZATION $userName")
-        $newDbs[1].Query("CREATE SCHEMA $schemaName2 AUTHORIZATION $userName2")
+        $newDbs[0].Query("CREATE SCHEMA $schemaName AUTHORIZATION [$userName]")
+        $newDbs[0].Schemas.Refresh()
+        $newDbs[1].Query("CREATE SCHEMA $schemaName2 AUTHORIZATION [$userName2]")
+        $newDbs[1].Schemas.Refresh()
     }
 
     AfterAll {
