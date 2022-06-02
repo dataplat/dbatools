@@ -146,32 +146,49 @@ function Watch-DbaDbLogin {
         #>
         foreach ($instance in $InputObject) {
 
-            if (!(Test-SqlSa $instance)) {
+            if (-not (Test-SqlSa $instance)) {
                 Write-Message -Level Warning -Message "Not a sysadmin on $instance, resultset would be underwhelming. Skipping.";
                 continue
             }
 
-            $sql = "
-            SELECT
-                s.login_time AS [LoginTime]
-                , s.login_name AS [Login]
-                , ISNULL(s.host_name,N'') AS [Host]
-                , ISNULL(s.program_name,N'') AS [Program]
-                , ISNULL(r.database_id,s.database_id) AS [DatabaseId]
-                , ISNULL(DB_NAME(r.database_id),(DB_NAME(s.database_id))) AS [Database]
-                , CAST(~s.is_user_process AS bit) AS [IsSystem]
-                , CaptureTime = (SELECT GETDATE())
-                ,s.database_id
+            if ($instance.VersionMajor -le 10) {
+                $sql = "
+                SELECT
+                    s.login_time AS [LoginTime]
+                    , s.login_name AS [Login]
+                    , ISNULL(s.host_name,N'') AS [Host]
+                    , ISNULL(s.program_name,N'') AS [Program]
+                    , ISNULL(r.database_id,N'') AS [DatabaseId]
+                    , ISNULL(DB_NAME(r.database_id),N'') AS [Database]
+                    , CAST(~s.is_user_process AS bit) AS [IsSystem]
+                    , CaptureTime = (SELECT GETDATE())
                 FROM sys.dm_exec_sessions AS s
                 LEFT OUTER JOIN sys.dm_exec_requests AS r
-                ON r.session_id = s.session_id"
+                    ON r.session_id = s.session_id"
+            } else {
+                $sql = "
+                SELECT
+                    s.login_time AS [LoginTime]
+                    , s.login_name AS [Login]
+                    , ISNULL(s.host_name,N'') AS [Host]
+                    , ISNULL(s.program_name,N'') AS [Program]
+                    , ISNULL(r.database_id,s.database_id) AS [DatabaseId]
+                    , ISNULL(DB_NAME(r.database_id),(DB_NAME(s.database_id))) AS [Database]
+                    , CAST(~s.is_user_process AS bit) AS [IsSystem]
+                    , CaptureTime = (SELECT GETDATE())
+                    ,s.database_id
+                    FROM sys.dm_exec_sessions AS s
+                    LEFT OUTER JOIN sys.dm_exec_requests AS r
+                    ON r.session_id = s.session_id"
+            }
+
             Write-Message -Level Debug -Message $sql
 
             $procs = $instance.Query($sql) | Where-Object { $_.Host -ne $instance.ComputerName -and ![string]::IsNullOrEmpty($_.Host) }
             $procs = $procs | Where-Object { $systemdbs -notcontains $_.Database -and $excludedPrograms -notcontains $_.Program }
 
             if ($procs.Count -gt 0) {
-                $procs | Select-Object @{Label = "ComputerName"; Expression = { $instance.ComputerName } }, @{Label = "InstanceName"; Expression = { $instance.ServiceName } }, @{Label = "SqlInstance"; Expression = { $instance.DomainInstanceName } }, LoginTime, Login, Host, Program, DatabaseId, Database, IsSystem, CaptureTime | ConvertTo-DbaDataTable | Write-DbaDbTableData -SqlInstance $serverDest -Database $Database -Table $Table -AutoCreateTable
+                $procs | Select-Object @{Label = "ComputerName"; Expression = { $instance.ComputerName } }, @{Label = "InstanceName"; Expression = { $instance.ServiceName } }, @{Label = "SqlInstance"; Expression = { $instance.DomainInstanceName } }, LoginTime, Login, Host, Program, DatabaseId, Database, IsSystem, CaptureTime | ConvertTo-DbaDataTable | Write-DbaDbTableData -SqlInstance $instance -Database $Database -Table $Table -AutoCreateTable
 
                 Write-Message -Level Output -Message "Added process information for $instance to datatable."
             } else {
