@@ -1,7 +1,7 @@
 
 -- SQL Server 2016 SP2 Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: May 8, 2022
+-- Last Modified: June 1, 2022
 -- https://glennsqlperformance.com/
 -- https://sqlserverperformance.wordpress.com/
 -- YouTube: https://bit.ly/2PkoAM1 
@@ -1704,8 +1704,8 @@ SELECT TOP(25) OBJECT_NAME(objectid) AS [ObjectName],
                cp.objtype, cp.usecounts, cp.size_in_bytes, qp.query_plan
 FROM sys.dm_exec_cached_plans AS cp WITH (NOLOCK)
 CROSS APPLY sys.dm_exec_query_plan(cp.plan_handle) AS qp
-WHERE CAST(query_plan AS NVARCHAR(MAX)) LIKE N'%MissingIndex%'
-AND dbid = DB_ID()
+WHERE CAST(qp.query_plan AS NVARCHAR(MAX)) LIKE N'%MissingIndex%'
+AND qp.dbid = DB_ID()
 ORDER BY cp.usecounts DESC OPTION (RECOMPILE);
 ------
 
