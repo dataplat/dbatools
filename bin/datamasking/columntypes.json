@@ -1,6 +1,8 @@
 [
     {
         "TypeName": "Address",
+        "MaskingType": "Address",
+        "SubType": "StreetAddress",
         "Synonym": [
             "Address",
             "Location",
@@ -39,6 +41,8 @@
     },
     {
         "TypeName": "Creditcard",
+        "MaskingType": "Finance",
+        "SubType": "CreditcardNumber",
         "Synonym": [
             "Creditcard",
             "CreditcardNumber"
@@ -53,6 +57,8 @@
     },
     {
         "TypeName": "City",
+        "MaskingType": "Address",
+        "SubType": "City",
         "Synonym": [
             "City"
         ]
@@ -78,6 +84,8 @@
     },
     {
         "TypeName": "Firstname",
+        "MaskingType": "Name",
+        "SubType": "Firstname",
         "Synonym": [
             "Firstname",
             "Forename"
@@ -85,6 +93,8 @@
     },
     {
         "TypeName": "Fullname",
+        "MaskingType": "Name",
+        "SubType": "FullName",
         "Synonym": [
             "Fullname",
             "TypeName"
@@ -99,6 +109,8 @@
     },
     {
         "TypeName": "Lastname",
+        "MaskingType": "Name",
+        "SubType": "Lastname",
         "Synonym": [
             "Lastname",
             "Surname"
@@ -153,6 +165,8 @@
     },
     {
         "TypeName": "Zipcode",
+        "MaskingType": "Address",
+        "SubType": "Zipcode",
         "Synonym": [
             "Zipcode",
             "Zip",

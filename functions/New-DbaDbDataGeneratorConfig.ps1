@@ -198,57 +198,19 @@ function New-DbaDbDataGeneratorConfig {
                         $columnobject.Name -in $_.Synonym
                     }
 
-                    # Currently, only some types are supported, because only for some types there is a definition of type and subtype in the below.
-                    # Future plan is to change the columntypes.json by adding the target type and subtype.
-                    # Until then, we filter here for the currently supported types:
+                    # Currently, only some types are supported.
+                    # First step is already taken and the target type and subtype are added to columntypes.json. More types will be added later.
                     $dataGenType = $dataGenType | Where-Object TypeName -in "firstname", "lastname", "fullname", "creditcard", "address", "city", "zipcode"
 
                     if ($dataGenType) {
-                        # Make it easier to get the type name
-                        $dataGenType = $dataGenType | Select-Object TypeName -ExpandProperty TypeName
-
-                        $maskingType = $null
-                        $maskingSubtype = $null
-
-                        switch ($dataGenType.ToLowerInvariant()) {
-                            "firstname" {
-                                $maskingType = "Name"
-                                $maskingSubtype = "Firstname"
-                            }
-                            "lastname" {
-                                $maskingType = "Name"
-                                $maskingSubtype = "Lastname"
-                            }
-                            "fullname" {
-                                $maskingType = "Name"
-                                $maskingSubtype = "FullName"
-                            }
-                            "creditcard" {
-                                $maskingType = "Finance"
-                                $maskingSubtype = "CreditcardNumber"
-                            }
-                            "address" {
-                                $maskingType = "Address"
-                                $maskingSubtype = "StreetAddress"
-                            }
-                            "city" {
-                                $maskingType = "Address"
-                                $maskingSubtype = "City"
-                            }
-                            "zipcode" {
-                                $maskingType = "Address"
-                                $maskingSubtype = "Zipcode"
-                            }
-                        }
-
                         $columns += [PSCustomObject]@{
                             Name            = $columnobject.Name
                             ColumnType      = $columnType
                             CharacterString = $null
                             MinValue        = $min
                             MaxValue        = $columnLength
-                            MaskingType     = $maskingType
-                            SubType         = $maskingSubtype
+                            MaskingType     = $dataGenType.MaskingType
+                            SubType         = $dataGenType.SubType
                             Identity        = $columnobject.Identity
                             ForeignKey      = $columnobject.IsForeignKey
                             Composite       = $false
