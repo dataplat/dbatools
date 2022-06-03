@@ -198,11 +198,16 @@ function New-DbaDbDataGeneratorConfig {
                         $columnobject.Name -in $_.Synonym
                     }
 
+                    # Currently, only some types are supported, because only for some types there is a definition of type and subtype in the below.
+                    # Future plan is to change the columntypes.json by adding the target type and subtype.
+                    # Until then, we filter here for the currently supported types:
+                    $dataGenType = $dataGenType | Where-Object TypeName -in "firstname", "lastname", "fullname", "creditcard", "address", "city", "zipcode"
+
                     if ($dataGenType) {
                         # Make it easier to get the type name
                         $dataGenType = $dataGenType | Select-Object TypeName -ExpandProperty TypeName
 
-                        $maskingType = $null
+                        $maskingType = "Random"
                         $maskingSubtype = $null
 
                         switch ($dataGenType.ToLowerInvariant()) {
