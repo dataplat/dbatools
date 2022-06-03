@@ -109,14 +109,14 @@ function Invoke-DbaDbDataGenerator {
 
         # Create the faker objects
         try {
-            $faker = New-Object Bogus.Faker($Locale)
+            $script:faker = New-Object Bogus.Faker($Locale)
         } catch {
             Stop-Function -Message "Could not load randomizer class" -Continue
         }
 
         $supportedDataTypes = 'bigint', 'bit', 'bool', 'char', 'date', 'datetime', 'datetime2', 'decimal', 'int', 'float', 'guid', 'money', 'numeric', 'nchar', 'ntext', 'nvarchar', 'real', 'smalldatetime', 'smallint', 'text', 'time', 'tinyint', 'uniqueidentifier', 'userdefineddatatype', 'varchar'
-        $supportedFakerMaskingTypes = ($faker | Get-Member -MemberType Property | Select-Object Name -ExpandProperty Name)
-        $supportedFakerSubTypes = ($faker | Get-Member -MemberType Property) | ForEach-Object { ($faker.$($_.Name)) | Get-Member -MemberType Method | Where-Object { $_.Name -notlike 'To*' -and $_.Name -notlike 'Get*' -and $_.Name -notlike 'Trim*' -and $_.Name -notin 'Add', 'Equals', 'CompareTo', 'Clone', 'Contains', 'CopyTo', 'EndsWith', 'IndexOf', 'IndexOfAny', 'Insert', 'IsNormalized', 'LastIndexOf', 'LastIndexOfAny', 'Normalize', 'PadLeft', 'PadRight', 'Remove', 'Replace', 'Split', 'StartsWith', 'Substring', 'Letter', 'Lines', 'Paragraph', 'Paragraphs', 'Sentence', 'Sentences' } | Select-Object name -ExpandProperty Name }
+        $supportedFakerMaskingTypes = ($script:faker | Get-Member -MemberType Property | Select-Object Name -ExpandProperty Name)
+        $supportedFakerSubTypes = ($script:faker | Get-Member -MemberType Property) | ForEach-Object { ($script:faker.$($_.Name)) | Get-Member -MemberType Method | Where-Object { $_.Name -notlike 'To*' -and $_.Name -notlike 'Get*' -and $_.Name -notlike 'Trim*' -and $_.Name -notin 'Add', 'Equals', 'CompareTo', 'Clone', 'Contains', 'CopyTo', 'EndsWith', 'IndexOf', 'IndexOfAny', 'Insert', 'IsNormalized', 'LastIndexOf', 'LastIndexOfAny', 'Normalize', 'PadLeft', 'PadRight', 'Remove', 'Replace', 'Split', 'StartsWith', 'Substring', 'Letter', 'Lines', 'Paragraph', 'Paragraphs', 'Sentence', 'Sentences' } | Select-Object name -ExpandProperty Name }
         $supportedFakerSubTypes += "Date"
         #$foreignKeyQuery = Get-Content -Path "$script:PSModuleRoot\bin\datageneration\ForeignKeyHierarchy.sql"
     }
@@ -256,7 +256,7 @@ function Invoke-DbaDbDataGenerator {
                                             }
 
                                         } catch {
-                                            Stop-Function -Message "Failure" -Target $faker -Continue -ErrorRecord $_
+                                            Stop-Function -Message "Failure" -Target $script:faker -Continue -ErrorRecord $_
                                         }
 
                                         # Check if the value is already present as a property
@@ -395,7 +395,7 @@ function Invoke-DbaDbDataGenerator {
                                         }
 
                                     } catch {
-                                        Stop-Function -Message "Failure" -Target $faker -Continue -ErrorRecord $_
+                                        Stop-Function -Message "Failure" -Target $script:faker -Continue -ErrorRecord $_
                                     }
 
                                 }
