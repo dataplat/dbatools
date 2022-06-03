@@ -198,10 +198,6 @@ function New-DbaDbDataGeneratorConfig {
                         $columnobject.Name -in $_.Synonym
                     }
 
-                    # Currently, only some types are supported.
-                    # First step is already taken and the target type and subtype are added to columntypes.json. More types will be added later.
-                    $dataGenType = $dataGenType | Where-Object TypeName -in "firstname", "lastname", "fullname", "creditcard", "address", "city", "zipcode"
-
                     if ($dataGenType) {
                         $columns += [PSCustomObject]@{
                             Name            = $columnobject.Name
