@@ -217,7 +217,7 @@ function Invoke-DbaDbDataGenerator {
                                             if ($PSBoundParameters.MaxValue -and $columnMaskInfo.SubType -eq 'String' -and $columnMaskInfo.MaxValue -gt $MaxValue) {
                                                 $columnMaskInfo.MaxValue = $MaxValue
                                             }
-                                            if ($columnMaskInfo.ColumnType -in $supportedDataTypes) {
+                                            if ($columnMaskInfo.ColumnType -in $supportedDataTypes -and $columnMaskInfo.MaskingType -eq 'Random') {
                                                 $newValue = Get-DbaRandomizedValue -DataType $columnMaskInfo.ColumnType -Locale $Locale -Min $columnMaskInfo.MinValue -Max $columnMaskInfo.MaxValue
                                             } else {
                                                 $newValue = Get-DbaRandomizedValue -RandomizerType $columnMaskInfo.MaskingType -RandomizerSubtype $columnMaskInfo.SubType -Locale $Locale -Min $columnMaskInfo.MinValue -Max $columnMaskInfo.MaxValue
@@ -249,7 +249,7 @@ function Invoke-DbaDbDataGenerator {
                                             if ($PSBoundParameters.MaxValue -and $columnMaskInfo.SubType -eq 'String' -and $columnMaskInfo.MaxValue -gt $MaxValue) {
                                                 $columnMaskInfo.MaxValue = $MaxValue
                                             }
-                                            if ($columnMaskInfo.ColumnType -in $supportedDataTypes) {
+                                            if ($columnMaskInfo.ColumnType -in $supportedDataTypes -and $columnMaskInfo.MaskingType -eq 'Random') {
                                                 $newValue = Get-DbaRandomizedValue -DataType $columnMaskInfo.ColumnType -Locale $Locale -Min $columnMaskInfo.MinValue -Max $columnMaskInfo.MaxValue
                                             } else {
                                                 $newValue = Get-DbaRandomizedValue -RandomizerType $columnMaskInfo.MaskingType -RandomizerSubtype $columnMaskInfo.SubType -Locale $Locale -Min $columnMaskInfo.MinValue -Max $columnMaskInfo.MaxValue
@@ -388,7 +388,7 @@ function Invoke-DbaDbDataGenerator {
                                         if ($PSBoundParameters.MaxValue -and $columnobject.SubType -eq 'String' -and $columnobject.MaxValue -gt $MaxValue) {
                                             $columnobject.MaxValue = $MaxValue
                                         }
-                                        if ($columnobject.ColumnType -in $supportedDataTypes) {
+                                        if ($columnobject.ColumnType -in $supportedDataTypes -and $columnobject.MaskingType -eq 'Random') {
                                             $columnValue = Get-DbaRandomizedValue -DataType $columnobject.ColumnType -CharacterString $charstring -Locale $Locale -Min $columnobject.MinValue -Max $columnobject.MaxValue
                                         } else {
                                             $columnValue = Get-DbaRandomizedValue -RandomizerType $columnobject.MaskingType -RandomizerSubtype $columnobject.SubType -CharacterString $charstring -Locale $Locale -Min $columnobject.MinValue -Max $columnobject.MaxValue
