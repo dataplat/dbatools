@@ -339,11 +339,7 @@ function New-DbaDbDataGeneratorConfig {
                 if (-not $script:isWindows) {
                     $temppath = $temppath.Replace("\", "/")
                 }
-                if (Test-Path -Path $temppath -PathType Leaf) {
-                    if ($Pscmdlet.ShouldProcess("$temppath", "Saving results to json")) {
-                        Set-Content -Path $temppath -Value ($results | ConvertTo-Json -Depth 5)
-                    }
-                } else {
+                if ($Pscmdlet.ShouldProcess("$temppath", "Saving results to json")) {
                     Set-Content -Path $temppath -Value ($results | ConvertTo-Json -Depth 5)
                     Get-ChildItem -Path $temppath
                 }
