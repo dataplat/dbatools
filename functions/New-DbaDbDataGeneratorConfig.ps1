@@ -207,7 +207,7 @@ function New-DbaDbDataGeneratorConfig {
                         # Make it easier to get the type name
                         $dataGenType = $dataGenType | Select-Object TypeName -ExpandProperty TypeName
 
-                        $maskingType = "Random"
+                        $maskingType = $null
                         $maskingSubtype = $null
 
                         switch ($dataGenType.ToLowerInvariant()) {
