@@ -24,23 +24,23 @@ function New-DbaDbDataGeneratorConfig {
         Databases to process through
 
     .PARAMETER Table
-        Tables to process. By default all the tables will be processed
+        Tables to process. By default all the tables will be processed.
 
     .PARAMETER ResetIdentity
         Resets the identity column for a table to it's starting value. By default it will continue with the next identity.
 
     .PARAMETER TruncateTable
-        Truncates the tabel befoe inserting the values
+        Truncates the tabel befoe inserting the values.
 
     .PARAMETER Rows
         Amount of rows that need to be generated. The default is 1000.
 
     .PARAMETER Path
         Path where to save the generated JSON files.
-        The naming convention will be "servername.databasename.tables.json"
+        The naming convention will be "servername.databasename.tables.json".
 
     .PARAMETER Force
-        Forcefully execute commands when needed
+        Forcefully execute commands when needed.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
@@ -136,7 +136,7 @@ function New-DbaDbDataGeneratorConfig {
 
             # Get the tables
             if ($Table) {
-                $tablecollection = $db.Tables | Where-Object Name -in $Table
+                $tablecollection = $db | Get-DbaDbTable -Table $Table
             } else {
                 $tablecollection = $db.Tables
             }
