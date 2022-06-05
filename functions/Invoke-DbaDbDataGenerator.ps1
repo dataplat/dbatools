@@ -300,7 +300,7 @@ function Invoke-DbaDbDataGenerator {
                         Write-ProgressHelper -StepNumber ($stepcounter++) -TotalSteps $tables.Tables.Count -Activity "Generating data" -Message "Inserting $($tableobject.Rows) rows in $($tableobject.Schema).$($tableobject.Name) in $($db.Name) on $instance"
 
                         if ($tableobject.TruncateTable) {
-                            $query += "TRUNCATE TABLE [$($tableobject.Schema)].[$($tableobject.Name)];`n"
+                            $query = "TRUNCATE TABLE [$($tableobject.Schema)].[$($tableobject.Name)]"
 
                             try {
                                 $null = Invoke-DbaQuery -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $db.Name -Query $query
@@ -318,10 +318,17 @@ function Invoke-DbaDbDataGenerator {
 
                             try {
                                 $identityValues = Invoke-DbaQuery -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $db.Name -Query $query
+                                if ($identityValues.CurrentIdentity -eq 1) {
+                                    $query = "SELECT COUNT(*) FROM [$($tableobject.Schema)].[$($tableobject.Name)]"
+                                    $rowcount = Invoke-DbaQuery -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $db.Name -Query $query -As SingleValue
+                                    if ($rowcount -eq 0) {
+                                        $identityValues.CurrentIdentity = 0
+                                    }
+                                }
                             } catch {
                                 Write-Message -Level VeryVerbose -Message "$query"
                                 $errormessage = $_.Exception.Message.ToString()
-                                Stop-Function -Message "Error setting identity values from $($tableobject.Schema).$($tableobject.Name): $errormessage" -Target $query -Continue -ErrorRecord $_
+                                Stop-Function -Message "Error getting identity values from $($tableobject.Schema).$($tableobject.Name): $errormessage" -Target $query -Continue -ErrorRecord $_
                             }
 
                             $insertQuery += "SET IDENTITY_INSERT [$($tableobject.Schema)].[$($tableobject.Name)] ON;`n"
