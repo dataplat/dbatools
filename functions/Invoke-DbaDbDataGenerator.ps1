@@ -300,7 +300,7 @@ function Invoke-DbaDbDataGenerator {
                         Write-ProgressHelper -StepNumber ($stepcounter++) -TotalSteps $tables.Tables.Count -Activity "Generating data" -Message "Inserting $($tableobject.Rows) rows in $($tableobject.Schema).$($tableobject.Name) in $($db.Name) on $instance"
 
                         if ($tableobject.TruncateTable) {
-                            $query = "TRUNCATE TABLE [$($tableobject.Schema)].[$($tableobject.Name)]"
+                            $query = "TRUNCATE TABLE [$($tableobject.Schema)].[$($tableobject.Name)];"
 
                             try {
                                 $null = Invoke-DbaQuery -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $db.Name -Query $query
@@ -318,8 +318,11 @@ function Invoke-DbaDbDataGenerator {
 
                             try {
                                 $identityValues = Invoke-DbaQuery -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $db.Name -Query $query
+                                # https://docs.microsoft.com/en-us/sql/t-sql/functions/ident-current-transact-sql says:
+                                # When the IDENT_CURRENT value is NULL (because the table has never contained rows or has been truncated), the IDENT_CURRENT function returns the seed value.
+                                # So if we get a 1 back, we count the rows so that the first row added to an empty table gets the number 1.
                                 if ($identityValues.CurrentIdentity -eq 1) {
-                                    $query = "SELECT COUNT(*) FROM [$($tableobject.Schema)].[$($tableobject.Name)]"
+                                    $query = "SELECT COUNT(*) FROM [$($tableobject.Schema)].[$($tableobject.Name)];"
                                     $rowcount = Invoke-DbaQuery -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $db.Name -Query $query -As SingleValue
                                     if ($rowcount -eq 0) {
                                         $identityValues.CurrentIdentity = 0
