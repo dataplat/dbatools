@@ -186,9 +186,6 @@ function New-DbaDbDataGeneratorConfig {
                     $columnLength = $columnobject.Datatype.MaximumLength
                     $columnType = $columnobject.DataType.SqlDataType.ToString().ToLowerInvariant()
 
-                    if ($columnobject.InPrimaryKey -and $columnobject.DataType.SqlDataType.ToString().ToLowerInvariant() -notmatch 'date') {
-                        $min = 2
-                    }
                     if (-not $columnType) {
                         $columnType = $columnobject.DataType.Name.ToLowerInvariant()
                     }
