@@ -591,8 +591,23 @@ function Import-DbaCsv {
 
                     # Write to server :D
                     try {
+
+                        [Action[double]] $progressCallback = {
+                            param($progress)
+
+                            if (-not $NoProgress) {
+                                $timetaken = [math]::Round($elapsed.Elapsed.TotalSeconds, 2)
+                                $percent = [int]($progress * 100)
+                                Write-ProgressHelper -StepNumber $percent -TotalSteps 100 -Activity "Importing from $file" -Message ([System.String]::Format("Progress: {0} rows {1}% in {2} seconds", $script:totalRowsCopied, $percent, $timetaken))
+                            }
+                        }
+
+                        $stream = [System.IO.File]::OpenRead($File);
+                        $progressStream = New-Object Sqlcollaborative.Dbatools.IO.ProgressStream($stream, $progressCallback, 0.01)
+                        $textReader = New-Object System.IO.StreamReader($progressStream, [System.Text.Encoding]::$Encoding)
+
                         $reader = New-Object LumenWorks.Framework.IO.Csv.CsvReader(
-                            (New-Object System.IO.StreamReader($file, [System.Text.Encoding]::$Encoding)),
+                            $textReader,
                             $FirstRowHeader,
                             $Delimiter,
                             $Quote,
@@ -631,12 +646,7 @@ function Import-DbaCsv {
 
                                 $tstamp = $(Get-Date -format 'yyyyMMddHHmmss')
                                 Write-Message -Level Verbose -Message "[$tstamp] The bulk copy library reported RowsCopied = $($args[1].RowsCopied). The previous RowsCopied = $($script:prevRowsCopied). The adjusted total rows copied = $($script:totalRowsCopied)"
-
-                                if (-not $NoProgress) {
-                                    $timetaken = [math]::Round($elapsed.Elapsed.TotalSeconds, 2)
-                                    Write-ProgressHelper -StepNumber 1 -TotalSteps 2 -Activity "Importing from $file" -Message ([System.String]::Format("Progress: {0} rows in {2} seconds", $script:totalRowsCopied, $percent, $timetaken)) -ExcludePercent
-                                }
-
+                                # progress is written by the ProgressStream callback
                                 # save the previous count of rows copied to be used on the next event notification
                                 $script:prevRowsCopied = $args[1].RowsCopied
                             })
