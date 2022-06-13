@@ -46,8 +46,8 @@ function Restore-DbaDatabase {
         This parameter can only be specified alongside DestinationDataDirectory.
 
     .PARAMETER DestinationFileStreamDirectory
-        Path to restore FileStream data to
-        This parameter can only be specified alongside DestinationDataDirectory
+        Path to restore FileStream data to.
+        This parameter can only be specified alongside DestinationDataDirectory.
 
     .PARAMETER RestoreTime
         Specify a DateTime object to which you want the database restored to. Default is to the latest point available in the specified backups.
@@ -99,7 +99,7 @@ function Restore-DbaDatabase {
 
     .PARAMETER DestinationFilePrefix
         This value will be prefixed to ALL restored files (log and data). This is just a simple string prefix.
-        If you want to perform more complex rename operations then please use the FileMapping parameter
+        If you want to perform more complex rename operations then please use the FileMapping parameter.
         This will apply to all file move options, except for FileMapping.
 
     .PARAMETER DestinationFileSuffix
