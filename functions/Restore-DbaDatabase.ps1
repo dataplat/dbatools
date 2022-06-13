@@ -1,7 +1,7 @@
 function Restore-DbaDatabase {
     <#
     .SYNOPSIS
-        Restores a SQL Server Database from a set of backup files
+        Restores a SQL Server Database from a set of backup files.
 
     .DESCRIPTION
         Upon being passed a list of potential backups files this command will scan the files, select those that contain SQL Server
@@ -9,7 +9,7 @@ function Restore-DbaDatabase {
         full restore chain to the point in time requested by the caller.
 
         The function defaults to working on a remote instance. This means that all paths passed in must be relative to the remote instance.
-        XpDirTree will be used to perform the file scans
+        XpDirTree will be used to perform the file scans.
 
         Various means can be used to pass in a list of files to be considered. The default is to recursively scan the folder
         passed in.
@@ -27,19 +27,19 @@ function Restore-DbaDatabase {
     .PARAMETER Path
         Path to SQL Server backup files.
 
-        Paths passed in as strings will be scanned using the desired method, default is a recursive folder scan
-        Accepts multiple paths separated by ','
+        Paths passed in as strings will be scanned using the desired method, default is a recursive folder scan.
+        Accepts multiple paths separated by ','.
 
         Or it can consist of FileInfo objects, such as the output of Get-ChildItem or Get-Item. This allows you to work with
-        your own file structures as needed
+        your own file structures as needed.
 
     .PARAMETER DatabaseName
         Name to restore the database under.
-        Only works with a single database restore. If multiple database are found in the provided paths then we will exit
+        Only works with a single database restore. If multiple database are found in the provided paths then we will exit.
 
     .PARAMETER DestinationDataDirectory
         Path to restore the SQL Server backups to on the target instance.
-        If only this parameter is specified, then all database files (data and log) will be restored to this location
+        If only this parameter is specified, then all database files (data and log) will be restored to this location.
 
     .PARAMETER DestinationLogDirectory
         Path to restore the database log files to.
@@ -50,21 +50,21 @@ function Restore-DbaDatabase {
         This parameter can only be specified alongside DestinationDataDirectory
 
     .PARAMETER RestoreTime
-        Specify a DateTime object to which you want the database restored to. Default is to the latest point  available in the specified backups
+        Specify a DateTime object to which you want the database restored to. Default is to the latest point available in the specified backups.
 
     .PARAMETER NoRecovery
-        Indicates if the databases should be recovered after last restore. Default is to recover
+        Indicates if the databases should be recovered after last restore. Default is to recover.
 
     .PARAMETER WithReplace
         Switch indicated is the restore is allowed to replace an existing database.
 
     .PARAMETER XpDirTree
-        Switch that indicated file scanning should be performed by the SQL Server instance using xp_dirtree
-        This will scan recursively from the passed in path
+        Switch that indicated file scanning should be performed by the SQL Server instance using xp_dirtree.
+        This will scan recursively from the passed in path.
         You must have sysadmin role membership on the instance for this to work.
 
     .PARAMETER OutputScriptOnly
-        Switch indicates that ONLY T-SQL scripts should be generated, no restore takes place
+        Switch indicates that ONLY T-SQL scripts should be generated, no restore takes place.
         Due to the limitations of SMO, this switch cannot be combined with VeriyOnly, and a warning will be raised if it is.
 
     .PARAMETER VerifyOnly
@@ -73,134 +73,135 @@ function Restore-DbaDatabase {
 
     .PARAMETER MaintenanceSolutionBackup
         Switch to indicate the backup files are in a folder structure as created by Ola Hallengreen's maintenance scripts.
-        This switch enables a faster check for suitable backups. Other options require all files to be read first to ensure we have an anchoring full backup. Because we can rely on specific locations for backups performed with OlaHallengren's backup solution, we can rely on file locations.
+        This switch enables a faster check for suitable backups. Other options require all files to be read first to ensure we have an anchoring full backup.
+        Because we can rely on specific locations for backups performed with OlaHallengren's backup solution, we can rely on file locations.
 
     .PARAMETER FileMapping
         A hashtable that can be used to move specific files to a location.
         `$FileMapping = @{'DataFile1'='c:\restoredfiles\Datafile1.mdf';'DataFile3'='d:\DataFile3.mdf'}`
-        And files not specified in the mapping will be restored to their original location
-        This Parameter is exclusive with DestinationDataDirectory
+        And files not specified in the mapping will be restored to their original location.
+        This Parameter is exclusive with DestinationDataDirectory.
 
     .PARAMETER IgnoreLogBackup
-        This switch tells the function to ignore transaction log backups. The process will restore to the latest full or differential backup point only
+        This switch tells the function to ignore transaction log backups. The process will restore to the latest full or differential backup point only.
 
     .PARAMETER IgnoreDiffBackup
-        This switch tells the function to ignore differential backups. The process will restore to the latest full and onwards with transaction log backups only
+        This switch tells the function to ignore differential backups. The process will restore to the latest full and onwards with transaction log backups only.
 
     .PARAMETER UseDestinationDefaultDirectories
-        Switch that tells the restore to use the default Data and Log locations on the target server. If they don't exist, the function will try to create them
+        Switch that tells the restore to use the default Data and Log locations on the target server. If they don't exist, the function will try to create them.
 
     .PARAMETER ReuseSourceFolderStructure
         By default, databases will be migrated to the destination Sql Server's default data and log directories. You can override this by specifying -ReuseSourceFolderStructure.
-        The same structure on the SOURCE will be kept exactly, so consider this if you're migrating between different versions and use part of Microsoft's default Sql structure (MSSql12.INSTANCE, etc)
+        The same structure on the SOURCE will be kept exactly, so consider this if you're migrating between different versions and use part of Microsoft's default Sql structure (MSSql12.INSTANCE, etc).
 
         *Note, to reuse destination folder structure, specify -WithReplace
 
     .PARAMETER DestinationFilePrefix
-        This value will be prefixed to ALL restored files (log and data). This is just a simple string prefix. If you want to perform more complex rename operations then please use the FileMapping parameter
-
-        This will apply to all file move options, except for FileMapping
+        This value will be prefixed to ALL restored files (log and data). This is just a simple string prefix.
+        If you want to perform more complex rename operations then please use the FileMapping parameter
+        This will apply to all file move options, except for FileMapping.
 
     .PARAMETER DestinationFileSuffix
-        This value will be suffixed to ALL restored files (log and data). This is just a simple string suffix. If you want to perform more complex rename operations then please use the FileMapping parameter
-
-        This will apply to all file move options, except for FileMapping
+        This value will be suffixed to ALL restored files (log and data). This is just a simple string suffix.
+        If you want to perform more complex rename operations then please use the FileMapping parameter.
+        This will apply to all file move options, except for FileMapping.
 
     .PARAMETER RestoredDatabaseNamePrefix
-        A string which will be prefixed to the start of the restore Database's Name
+        A string which will be prefixed to the start of the restore Database's Name.
         Useful if restoring a copy to the same sql server for testing.
 
     .PARAMETER TrustDbBackupHistory
         This switch can be used when piping the output of Get-DbaDbBackupHistory or Backup-DbaDatabase into this command.
-        It allows the user to say that they trust that the output from those commands is correct, and skips the file header read portion of the process. This means a faster process, but at the risk of not knowing till halfway through the restore that something is wrong with a file.
+        It allows the user to say that they trust that the output from those commands is correct, and skips the file header read portion of the process.
+        This means a faster process, but at the risk of not knowing till halfway through the restore that something is wrong with a file.
 
     .PARAMETER MaxTransferSize
-        Parameter to set the unit of transfer. Values must be a multiple by 64kb
+        Parameter to set the unit of transfer. Values must be a multiple by 64kb.
 
     .PARAMETER Blocksize
-        Specifies the block size to use. Must be one of 0.5kb,1kb,2kb,4kb,8kb,16kb,32kb or 64kb
-        Can be specified in bytes
-        Refer to https://msdn.microsoft.com/en-us/library/ms178615.aspx for more detail
+        Specifies the block size to use. Must be one of 0.5kb,1kb,2kb,4kb,8kb,16kb,32kb or 64kb.
+        Can be specified in bytes.
+        Refer to https://msdn.microsoft.com/en-us/library/ms178615.aspx for more detail.
 
     .PARAMETER BufferCount
         Number of I/O buffers to use to perform the operation.
-        Refer to https://msdn.microsoft.com/en-us/library/ms178615.aspx for more detail
+        Refer to https://msdn.microsoft.com/en-us/library/ms178615.aspx for more detail.
 
     .PARAMETER NoXpDirRecurse
-        If specified, prevents the XpDirTree process from recursing (its default behaviour)
+        If specified, prevents the XpDirTree process from recursing (its default behaviour).
 
     .PARAMETER DirectoryRecurse
-        If specified the specified directory will be recursed into (overriding the default behaviour)
+        If specified the specified directory will be recursed into (overriding the default behaviour).
 
     .PARAMETER Continue
-        If specified we will to attempt to recover more transaction log backups onto  database(s) in Recovering or Standby states
+        If specified we will to attempt to recover more transaction log backups onto database(s) in Recovering or Standby states.
 
     .PARAMETER ExecuteAs
-        If value provided the restore will be executed under this login's context. The login must exist, and have the relevant permissions to perform the restore
+        If value provided the restore will be executed under this login's context. The login must exist, and have the relevant permissions to perform the restore.
 
     .PARAMETER StandbyDirectory
-        If a directory is specified the database(s) will be restored into a standby state, with the standby file placed into this directory (which must exist, and be writable by the target Sql Server instance)
+        If a directory is specified the database(s) will be restored into a standby state, with the standby file placed into this directory (which must exist, and be writable by the target Sql Server instance).
 
     .PARAMETER AzureCredential
-        The name of the SQL Server credential to be used if restoring from an Azure hosted backup using Storage Access Keys
-        If a backup path beginning http is passed in and this parameter is not specified then if a credential with a name matching the URL
+        The name of the SQL Server credential to be used if restoring from an Azure hosted backup using Storage Access Keys.
+        If a backup path beginning http is passed in and this parameter is not specified then if a credential with a name matching the URL.
 
     .PARAMETER ReplaceDbNameInFile
-        If switch set and occurrence of the original database's name in a data or log file will be replace with the name specified in the DatabaseName parameter
+        If specified any occurrence of the original database's name in a data or log file will be replaced with the name specified in the DatabaseName parameter.
 
     .PARAMETER Recover
-        If set will perform recovery on the indicated database
+        If set will perform recovery on the indicated database.
 
     .PARAMETER GetBackupInformation
-        Passing a string value into this parameter will cause a global variable to be created holding the output of Get-DbaBackupInformation
+        Passing a string value into this parameter will cause a global variable to be created holding the output of Get-DbaBackupInformation.
 
     .PARAMETER SelectBackupInformation
-        Passing a string value into this parameter will cause a global variable to be created holding the output of Select-DbaBackupInformation
+        Passing a string value into this parameter will cause a global variable to be created holding the output of Select-DbaBackupInformation.
 
     .PARAMETER FormatBackupInformation
-        Passing a string value into this parameter will cause a global variable to be created holding the output of Format-DbaBackupInformation
+        Passing a string value into this parameter will cause a global variable to be created holding the output of Format-DbaBackupInformation.
 
     .PARAMETER TestBackupInformation
-        Passing a string value into this parameter will cause a global variable to be created holding the output of Test-DbaBackupInformation
+        Passing a string value into this parameter will cause a global variable to be created holding the output of Test-DbaBackupInformation.
 
     .PARAMETER StopAfterGetBackupInformation
-        Switch which will cause the function to exit after returning GetBackupInformation
+        Switch which will cause the function to exit after returning GetBackupInformation.
 
     .PARAMETER StopAfterSelectBackupInformation
-        Switch which will cause the function to exit after returning SelectBackupInformation
+        Switch which will cause the function to exit after returning SelectBackupInformation.
 
     .PARAMETER StopAfterFormatBackupInformation
-        Switch which will cause the function to exit after returning FormatBackupInformation
+        Switch which will cause the function to exit after returning FormatBackupInformation.
 
     .PARAMETER StopAfterTestBackupInformation
-        Switch which will cause the function to exit after returning TestBackupInformation
+        Switch which will cause the function to exit after returning TestBackupInformation.
 
     .PARAMETER StatementTimeOut
-        Timeout in minutes. Defaults to infinity (restores can take a while.)
+        Timeout in minutes. Defaults to infinity (restores can take a while).
 
     .PARAMETER KeepCDC
-        Indicates whether CDC information should be restored as part of the database
+        Indicates whether CDC information should be restored as part of the database.
 
     .PARAMETER KeepReplication
-        Indicates whether replication configuration should be restored as part of the database restore operation
+        Indicates whether replication configuration should be restored as part of the database restore operation.
 
     .PARAMETER PageRestore
         Passes in an object from Get-DbaSuspectPages containing suspect pages from a single database.
         Setting this Parameter will cause an Online Page restore if the target Instance is Enterprise Edition, or offline if not.
-        This will involve taking a tail log backup, so you must check your restore chain once it has completed
+        This will involve taking a tail log backup, so you must check your restore chain once it has completed.
 
     .PARAMETER PageRestoreTailFolder
-        This parameter passes in a location for the tail log backup required for page level restore
+        This parameter passes in a location for the tail log backup required for page level restore.
 
     .PARAMETER StopMark
-        Marked point in the transaction log to stop the restore at (Mark is created via BEGIN TRANSACTION (https://docs.microsoft.com/en-us/sql/t-sql/language-elements/begin-transaction-transact-sql?view=sql-server-ver15))
+        Marked point in the transaction log to stop the restore at (Mark is created via BEGIN TRANSACTION (https://docs.microsoft.com/en-us/sql/t-sql/language-elements/begin-transaction-transact-sql?view=sql-server-ver15)).
 
     .PARAMETER StopBefore
         Switch to indicate the restore should stop before StopMark occurs, default is to stop when mark is created.
 
     .PARAMETER StopAfterDate
-        By default the restore will stop at the first occurence of StopMark found in the chain, passing a datetime where will cause it to stop the first StopMark atfer that datetime
-
+        By default the restore will stop at the first occurence of StopMark found in the chain, passing a datetime where will cause it to stop the first StopMark atfer that datetime.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -208,10 +209,10 @@ function Restore-DbaDatabase {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .PARAMETER Confirm
-        Prompts to confirm certain actions
+        Prompts to confirm certain actions.
 
     .PARAMETER WhatIf
-        Shows what would happen if the command would execute, but does not actually perform the command
+        Shows what would happen if the command would execute, but does not actually perform the command.
 
     .NOTES
         Tags: DisasterRecovery, Backup, Restore
