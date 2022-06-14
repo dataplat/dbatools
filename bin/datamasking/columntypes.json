@@ -1,6 +1,8 @@
 [
     {
         "TypeName": "Address",
+        "MaskingType": "Address",
+        "SubType": "StreetAddress",
         "Synonym": [
             "Address",
             "Location",
@@ -10,6 +12,8 @@
     },
     {
         "TypeName": "Bic",
+        "MaskingType": "Finance",
+        "SubType": "Bic",
         "Synonym": [
             "Bic",
             "BicAddress"
@@ -17,6 +21,8 @@
     },
     {
         "TypeName": "Bitcoin",
+        "MaskingType": "Finance",
+        "SubType": "BitcoinAddress",
         "Synonym": [
             "Bitcoin",
             "BitcoinAddress"
@@ -24,6 +30,8 @@
     },
     {
         "TypeName": "Email",
+        "MaskingType": "Internet",
+        "SubType": "Email",
         "Synonym": [
             "Email",
             "E-mail",
@@ -32,6 +40,8 @@
     },
     {
         "TypeName": "Ethereum",
+        "MaskingType": "Finance",
+        "SubType": "EthereumAddress",
         "Synonym": [
             "Ethereum",
             "EthereumAddress"
@@ -39,6 +49,8 @@
     },
     {
         "TypeName": "Creditcard",
+        "MaskingType": "Finance",
+        "SubType": "CreditcardNumber",
         "Synonym": [
             "Creditcard",
             "CreditcardNumber"
@@ -46,6 +58,8 @@
     },
     {
         "TypeName": "CreditcardCVV",
+        "MaskingType": "Finance",
+        "SubType": "CreditCardCvv",
         "Synonym": [
             "Cvv",
             "CreditcardCvv"
@@ -53,12 +67,16 @@
     },
     {
         "TypeName": "City",
+        "MaskingType": "Address",
+        "SubType": "City",
         "Synonym": [
             "City"
         ]
     },
     {
         "TypeName": "Company",
+        "MaskingType": "Company",
+        "SubType": "CompanyName",
         "Synonym": [
             "Company",
             "CompanyName"
@@ -66,18 +84,24 @@
     },
     {
         "TypeName": "Country",
+        "MaskingType": "Address",
+        "SubType": "Country",
         "Synonym": [
             "Country"
         ]
     },
     {
         "TypeName": "CountryCode",
+        "MaskingType": "Address",
+        "SubType": "CountryCode",
         "Synonym": [
             "CountryCode"
         ]
     },
     {
         "TypeName": "Firstname",
+        "MaskingType": "Name",
+        "SubType": "Firstname",
         "Synonym": [
             "Firstname",
             "Forename"
@@ -85,6 +109,8 @@
     },
     {
         "TypeName": "Fullname",
+        "MaskingType": "Name",
+        "SubType": "FullName",
         "Synonym": [
             "Fullname",
             "TypeName"
@@ -92,6 +118,8 @@
     },
     {
         "TypeName": "Iban",
+        "MaskingType": "Finance",
+        "SubType": "Iban",
         "Synonym": [
             "Iban",
             "IbanNumber"
@@ -99,6 +127,8 @@
     },
     {
         "TypeName": "Lastname",
+        "MaskingType": "Name",
+        "SubType": "Lastname",
         "Synonym": [
             "Lastname",
             "Surname"
@@ -106,6 +136,8 @@
     },
     {
         "TypeName": "Latitude",
+        "MaskingType": "Address",
+        "SubType": "Latitude",
         "Synonym": [
             "Latitude",
             "Lat"
@@ -113,6 +145,8 @@
     },
     {
         "TypeName": "Longitude",
+        "MaskingType": "Address",
+        "SubType": "Longitude",
         "Synonym": [
             "Longitude",
             "Lon"
@@ -120,6 +154,8 @@
     },
     {
         "TypeName": "Phone",
+        "MaskingType": "Phone",
+        "SubType": "PhoneNumber",
         "Synonym": [
             "Fax",
             "FaxNumber",
@@ -131,12 +167,16 @@
     },
     {
         "TypeName": "State",
+        "MaskingType": "Address",
+        "SubType": "State",
         "Synonym": [
             "State"
         ]
     },
     {
         "TypeName": "StateAbbr",
+        "MaskingType": "Address",
+        "SubType": "StateAbbr",
         "Synonym": [
             "StateAbbreviation",
             "StateCode"
@@ -144,6 +184,8 @@
     },
     {
         "TypeName": "Username",
+        "MaskingType": "Internet",
+        "SubType": "UserName",
         "Synonym": [
             "Login",
             "LoginId",
@@ -153,6 +195,8 @@
     },
     {
         "TypeName": "Zipcode",
+        "MaskingType": "Address",
+        "SubType": "Zipcode",
         "Synonym": [
             "Zipcode",
             "Zip",
