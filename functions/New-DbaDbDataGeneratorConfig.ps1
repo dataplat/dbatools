@@ -24,23 +24,23 @@ function New-DbaDbDataGeneratorConfig {
         Databases to process through
 
     .PARAMETER Table
-        Tables to process. By default all the tables will be processed
+        Tables to process. By default all the tables will be processed.
 
     .PARAMETER ResetIdentity
         Resets the identity column for a table to it's starting value. By default it will continue with the next identity.
 
     .PARAMETER TruncateTable
-        Truncates the tabel befoe inserting the values
+        Truncates the tabel befoe inserting the values.
 
     .PARAMETER Rows
         Amount of rows that need to be generated. The default is 1000.
 
     .PARAMETER Path
         Path where to save the generated JSON files.
-        The naming convention will be "servername.databasename.tables.json"
+        The naming convention will be "servername.databasename.tables.json".
 
     .PARAMETER Force
-        Forcefully execute commands when needed
+        Forcefully execute commands when needed.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
@@ -136,7 +136,7 @@ function New-DbaDbDataGeneratorConfig {
 
             # Get the tables
             if ($Table) {
-                $tablecollection = $db.Tables | Where-Object Name -in $Table
+                $tablecollection = $db | Get-DbaDbTable -Table $Table
             } else {
                 $tablecollection = $db.Tables
             }
@@ -186,9 +186,6 @@ function New-DbaDbDataGeneratorConfig {
                     $columnLength = $columnobject.Datatype.MaximumLength
                     $columnType = $columnobject.DataType.SqlDataType.ToString().ToLowerInvariant()
 
-                    if ($columnobject.InPrimaryKey -and $columnobject.DataType.SqlDataType.ToString().ToLowerInvariant() -notmatch 'date') {
-                        $min = 2
-                    }
                     if (-not $columnType) {
                         $columnType = $columnobject.DataType.Name.ToLowerInvariant()
                     }
@@ -199,51 +196,14 @@ function New-DbaDbDataGeneratorConfig {
                     }
 
                     if ($dataGenType) {
-                        # Make it easier to get the type name
-                        $dataGenType = $dataGenType | Select-Object TypeName -ExpandProperty TypeName
-
-                        $maskingType = $null
-                        $maskingSubtype = $null
-
-                        switch ($dataGenType.ToLowerInvariant()) {
-                            "firstname" {
-                                $maskingType = "Name"
-                                $maskingSubtype = "Firstname"
-                            }
-                            "lastname" {
-                                $maskingType = "Name"
-                                $maskingSubtype = "Lastname"
-                            }
-                            "fullname" {
-                                $maskingType = "Name"
-                                $maskingSubtype = "FullName"
-                            }
-                            "creditcard" {
-                                $maskingType = "Finance"
-                                $maskingSubtype = "CreditcardNumber"
-                            }
-                            "address" {
-                                $maskingType = "Address"
-                                $maskingSubtype = "StreetAddress"
-                            }
-                            "city" {
-                                $maskingType = "Address"
-                                $maskingSubtype = "City"
-                            }
-                            "zipcode" {
-                                $maskingType = "Address"
-                                $maskingSubtype = "Zipcode"
-                            }
-                        }
-
                         $columns += [PSCustomObject]@{
                             Name            = $columnobject.Name
                             ColumnType      = $columnType
                             CharacterString = $null
                             MinValue        = $min
                             MaxValue        = $columnLength
-                            MaskingType     = $maskingType
-                            SubType         = $maskingSubtype
+                            MaskingType     = $dataGenType.MaskingType
+                            SubType         = $dataGenType.SubType
                             Identity        = $columnobject.Identity
                             ForeignKey      = $columnobject.IsForeignKey
                             Composite       = $false
@@ -372,11 +332,7 @@ function New-DbaDbDataGeneratorConfig {
                 if (-not $script:isWindows) {
                     $temppath = $temppath.Replace("\", "/")
                 }
-                if (Test-Path -Path $temppath -PathType Leaf) {
-                    if ($Pscmdlet.ShouldProcess("$temppath", "Saving results to json")) {
-                        Set-Content -Path $temppath -Value ($results | ConvertTo-Json -Depth 5)
-                    }
-                } else {
+                if ($Pscmdlet.ShouldProcess("$temppath", "Saving results to json")) {
                     Set-Content -Path $temppath -Value ($results | ConvertTo-Json -Depth 5)
                     Get-ChildItem -Path $temppath
                 }

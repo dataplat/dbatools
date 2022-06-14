@@ -21,7 +21,7 @@ function Get-DbaRandomizedValue {
         Subtype to use.
 
     .PARAMETER Min
-        Minimum value used to generate certain lengths of values. Default is 0
+        Minimum value used to generate certain lengths of values. Default is 1
 
     .PARAMETER Max
         Maximum value used to generate certain lengths of values. Default is 255
