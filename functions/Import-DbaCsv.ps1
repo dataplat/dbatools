@@ -603,7 +603,7 @@ function Import-DbaCsv {
                         }
 
                         $stream = [System.IO.File]::OpenRead($File);
-                        $progressStream = New-Object Sqlcollaborative.Dbatools.IO.ProgressStream($stream, $progressCallback, 0.01)
+                        $progressStream = New-Object Sqlcollaborative.Dbatools.IO.ProgressStream($stream, $progressCallback, 0.05)
                         $textReader = New-Object System.IO.StreamReader($progressStream, [System.Text.Encoding]::$Encoding)
 
                         $reader = New-Object LumenWorks.Framework.IO.Csv.CsvReader(
