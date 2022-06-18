@@ -34,6 +34,9 @@ function Set-DbaTcpPort {
     .PARAMETER Confirm
         Prompts you for confirmation before executing any changing operations within the command.
 
+    .PARAMETER Force
+        Will restart SQL Server and SQL Server Agent service to apply the change.
+
     .NOTES
         Tags: Network, Connection, TCP, Configure
         Author: @H0s0n77
@@ -56,9 +59,9 @@ function Set-DbaTcpPort {
         Sets the port number 1433 for IP 192.168.1.22 on the sqlexpress instance on winserver. Does not prompt for confirmation.
 
     .EXAMPLE
-        PS C:\> Set-DbaTcpPort -SqlInstance sql2017, sql2019 -port 1337 -Credential ad\dba
+        PS C:\> Set-DbaTcpPort -SqlInstance sql2017, sql2019 -port 1337 -Credential ad\dba -Force
 
-        Sets the port number 1337 for all IP Addresses on SqlInstance sql2017 and sql2019 using the credentials for ad\dba. Prompts for confirmation.
+        Sets the port number 1337 for all IP Addresses on SqlInstance sql2017 and sql2019 using the credentials for ad\dba. Prompts for confirmation. Restarts the service.
 
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "High")]
@@ -70,6 +73,7 @@ function Set-DbaTcpPort {
         [ValidateRange(1, 65535)]
         [int]$Port,
         [IpAddress[]]$IpAddress,
+        [switch]$Force,
         [switch]$EnableException
     )
 
@@ -88,6 +92,8 @@ function Set-DbaTcpPort {
         }
 
         foreach ($instance in $SqlInstance) {
+            $computerFullName = $instance.ComputerName
+            $instanceName = $instance.InstanceName
             if (-not $IpAddress) {
                 if ($Pscmdlet.ShouldProcess($instance, "Setting port to $Port for IPAll of $instance")) {
                     Set-DbaNetworkConfiguration -SqlInstance $instance -Credential $Credential -StaticPortForIPAll $Port -EnableException:$EnableException -Confirm:$false
@@ -115,6 +121,17 @@ function Set-DbaTcpPort {
 
                 if ($Pscmdlet.ShouldProcess($instance, "Setting port to $Port for IP address $IpAddress of $instance")) {
                     $netConf | Set-DbaNetworkConfiguration -Credential $Credential -EnableException:$EnableException -Confirm:$false
+                }
+
+                if (Test-Bound -ParameterName Force) {
+                    if ($PSCmdlet.ShouldProcess($instance, "Force provided, restarting Engine and Agent service for $instance on $computerFullName")) {
+                        try {
+                            $null = Stop-DbaService -ComputerName $computerFullName -InstanceName $instanceName -Type Agent, Engine
+                            $null = Start-DbaService -ComputerName $computerFullName -InstanceName $instanceName -Type Agent, Engine
+                        } catch {
+                            Stop-Function -Message "Issue restarting $instance" -Target $instance -Continue
+                        }
+                    }
                 }
             }
         }
