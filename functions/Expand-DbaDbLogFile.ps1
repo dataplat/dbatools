@@ -491,6 +491,7 @@ function Expand-DbaDbLogFile {
                     InstanceName    = $server.ServiceName
                     SqlInstance     = $server.DomainInstanceName
                     Database        = $db
+                    DatabaseID      = $db.ID
                     ID              = $logfile.ID
                     Name            = $logfile.Name
                     LogFileCount    = $numLogfiles
