@@ -4,11 +4,11 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
+        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
         [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'InputObject', 'UpdateStatistics', 'Force', 'EnableException'
         $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
         It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
         }
     }
 }
@@ -24,9 +24,7 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
         # making room in the remote case a db with the same name exists
         $null = Get-DbaDatabase -SqlInstance $script:instance3 -Database $dbname | Remove-DbaDatabase -Confirm:$false
 
-        $server = Connect-DbaInstance -SqlInstance $script:instance3
-        $db1 = "dbatoolsci_dbsetstate_online"
-        $server.Query("CREATE DATABASE $dbname")
+        $db1 = New-DbaDatabase -SqlInstance $script:instance3 -Name $dbname
 
         # memorizing $fileStructure for a later test
         $fileStructure = New-Object System.Collections.Specialized.StringCollection
@@ -49,6 +47,7 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
 
         It "was successfull" {
             $results.DetachResult | Should Be "Success"
+            $results.DatabaseID | Should -Be $db1.ID
         }
 
         It "removed just one database" {
@@ -56,7 +55,7 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
         }
 
         It "has the correct properties" {
-            $ExpectedProps = 'ComputerName,InstanceName,SqlInstance,Database,DetachResult'.Split(',')
+            $ExpectedProps = 'ComputerName,InstanceName,SqlInstance,Database,DatabaseID,DetachResult'.Split(',')
             ($results.PsObject.Properties.Name | Sort-Object) | Should Be ($ExpectedProps | Sort-Object)
         }
     }
