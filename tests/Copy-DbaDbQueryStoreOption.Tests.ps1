@@ -62,11 +62,19 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 
             $result = Copy-DbaDbQueryStoreOption -Source $instance2 -SourceDatabase $db1Name -Destination $instance2 -Exclude $db4Name
 
-            ($result | Where-Object { $_.Status -eq 'Successful' }).Count | Should -Be 3
-            ($result | Where-Object { $_.SourceDatabase -eq $db1Name }).Count | Should -Be 3
-            ($result | Where-Object { $_.SourceDatabaseID -eq $db1.ID }).Count | Should -Be 3
-            $result.Name | Should -Be $db1Name, $db2Name, $db3Name
-            $result.DestinationDatabaseID | Should -Be $db1.ID, $db2.ID, $db3.ID
+            $result.Status | Should -Not -Contain 'Failed'
+            $result.Status | Should -Not -Contain 'Skipped'
+
+            $result.Name | Should -Contain $db1Name
+            $result.Name | Should -Contain $db2Name
+            $result.Name | Should -Contain $db3Name
+            $result.Name | Should -Not -Contain $db4Name
+
+            $result.SourceDatabaseID | Should -Contain $db1.ID
+
+            $result.DestinationDatabaseID | Should -Contain $db1.ID
+            $result.DestinationDatabaseID | Should -Contain $db2.ID
+            $result.DestinationDatabaseID | Should -Contain $db3.ID
 
             $dbQSOptions = Get-DbaDbQueryStoreOption -SqlInstance $instance2 -Database $db1Name, $db2Name, $db3Name
             ($dbQSOptions | Where-Object { $_.DataFlushIntervalInSeconds -eq ($originalQSOptionValue + 1) }).Count | Should -Be 3
