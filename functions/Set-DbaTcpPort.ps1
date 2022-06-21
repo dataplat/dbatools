@@ -126,8 +126,7 @@ function Set-DbaTcpPort {
                 if (Test-Bound -ParameterName Force) {
                     if ($PSCmdlet.ShouldProcess($instance, "Force provided, restarting Engine and Agent service for $instance on $computerFullName")) {
                         try {
-                            $null = Stop-DbaService -ComputerName $computerFullName -InstanceName $instanceName -Type Agent, Engine
-                            $null = Start-DbaService -ComputerName $computerFullName -InstanceName $instanceName -Type Agent, Engine
+                            $null = Restart-DbaService -ComputerName $computerFullName -InstanceName $instanceName -Type Agent, Engine
                         } catch {
                             Stop-Function -Message "Issue restarting $instance on $computerFullName" -Target $instance -Continue -ErrorRecord $_
                         }
