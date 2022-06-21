@@ -129,7 +129,7 @@ function Set-DbaTcpPort {
                             $null = Stop-DbaService -ComputerName $computerFullName -InstanceName $instanceName -Type Agent, Engine
                             $null = Start-DbaService -ComputerName $computerFullName -InstanceName $instanceName -Type Agent, Engine
                         } catch {
-                            Stop-Function -Message "Issue restarting $instance" -Target $instance -Continue
+                            Stop-Function -Message "Issue restarting $instance on $computerFullName" -Target $instance -Continue -ErrorRecord $_
                         }
                     }
                 }
