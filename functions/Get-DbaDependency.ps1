@@ -180,7 +180,7 @@ function Get-DbaDependency {
                     $NewObject.Dependent = $richobject.Name
                     $NewObject.Type = $Item.Urn.Type
                     $NewObject.Owner = $richobject.Owner
-                    $NewObject.IsSchemaBound = $Item.IsSchemaBound
+                    $NewObject.IsSchemaBound = $richobject.IsSchemaBound
                     $NewObject.Parent = $parent.Name
                     $NewObject.ParentType = $parent.Urn.Type
                     $NewObject.Tier = $Item.Tier
