@@ -97,5 +97,18 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $db.LogFiles[0].Size | Should BeLessThan $oldLogSize
             $db.FileGroups[0].Files[0].Size | Should BeLessThan $oldDataSize
         }
+
+        It "Shrinks just the data file(s) when FileType is Data and uses the StepSize" {
+            $result = Invoke-DbaDbShrink $server -Database $db.Name -FileType Data -StepSize 2MB -Verbose
+            $result.Database | Should -Be $db.Name
+            $result.File | Should -Be $db.Name
+            $result.Success | Should -Be $true
+            $db.Refresh()
+            $db.RecalculateSpaceUsage()
+            $db.FileGroups[0].Files[0].Refresh()
+            $db.LogFiles[0].Refresh()
+            $db.FileGroups[0].Files[0].Size | Should BeLessThan $oldDataSize
+            $db.LogFiles[0].Size | Should Be $oldLogSize
+        }
     }
 }
