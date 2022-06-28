@@ -194,6 +194,7 @@ function Dismount-DbaDatabase {
 
             If ($Pscmdlet.ShouldProcess($server, "Detaching $db on $server")) {
                 try {
+                    $dbID = $db.ID
                     $server.DetachDatabase($db.Name, $UpdateStatistics)
 
                     [pscustomobject]@{
@@ -201,6 +202,7 @@ function Dismount-DbaDatabase {
                         InstanceName = $server.ServiceName
                         SqlInstance  = $server.DomainInstanceName
                         Database     = $db.name
+                        DatabaseID   = $dbID
                         DetachResult = "Success"
                     }
                 } catch {
