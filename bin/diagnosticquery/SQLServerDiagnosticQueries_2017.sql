@@ -1,7 +1,7 @@
 
 -- SQL Server 2017 Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: June 14, 2022
+-- Last Modified: June 25, 2022
 -- https://glennsqlperformance.com/
 -- https://sqlserverperformance.wordpress.com/
 -- YouTube: https://bit.ly/2PkoAM1 
@@ -2010,6 +2010,7 @@ FROM sys.database_query_store_options WITH (NOLOCK) OPTION (RECOMPILE);
 
 -- Get input buffer information for the current database (Query 79) (Input Buffer)
 SELECT es.session_id, DB_NAME(es.database_id) AS [Database Name],
+       es.[program_name], es.[host_name], es.login_name,
        es.login_time, es.cpu_time, es.logical_reads, es.memory_usage,
        es.[status], ib.event_info AS [Input Buffer]
 FROM sys.dm_exec_sessions AS es WITH (NOLOCK)
