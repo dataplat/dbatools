@@ -158,7 +158,7 @@ function Get-DbaDbTable {
                     $tbl = $db.tables | Where-Object { $_.Name -in $fqtn.Table -and $fqtn.Schema -in ($_.Schema, $null) -and $fqtn.Database -in ($_.Parent.Name, $null) }
 
                     if (-not $tbl) {
-                        Write-Message -Level Verbose -Message "Could not find table $($fqtn.Name) in $db on $server"
+                        Write-Message -Level Verbose -Message "Could not find table $($fqtn.Table) in $db on $server"
                     }
                     $tables += $tbl
                 }
