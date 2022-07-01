@@ -86,8 +86,8 @@ Describe "$commandname Unit Tests" -Tags "UnitTests", Get-DBADatabase {
                         IsSystemObject = 'false'
                         RecoveryModel  = 'Full'
                         Owner          = 'sa'
-                        Collation      = 'SQL_Latin1_General_CP1_CI_AS'
                     }
+                    Collation = 'SQL_Latin1_General_CP1_CI_AS'
                 ) #databases
             } #object
         } -ModuleName dbatools #mock connect-SqlInstance
@@ -137,9 +137,9 @@ Describe "$commandname Unit Tests" -Tags "UnitTests", Get-DBADatabase {
                             RecoveryModel  = 'Full'
                             Owner          = 'sa'
                             IsAccessible   = $true
-                            Collation      = 'SQL_Latin1_General_CP1_CI_AS'
                         }
                     )
+                    Collation = 'SQL_Latin1_General_CP1_CI_AS'
                 } #object
             } -ModuleName dbatools #mock connect-SqlInstance
             function Invoke-QueryDBlastUsed { }
