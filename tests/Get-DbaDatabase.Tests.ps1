@@ -87,8 +87,8 @@ Describe "$commandname Unit Tests" -Tags "UnitTests", Get-DBADatabase {
                         RecoveryModel  = 'Full'
                         Owner          = 'sa'
                     }
-                    Collation = 'SQL_Latin1_General_CP1_CI_AS'
                 ) #databases
+                Collation = 'SQL_Latin1_General_CP1_CI_AS'
             } #object
         } -ModuleName dbatools #mock connect-SqlInstance
         function Invoke-QueryRawDatabases { }
