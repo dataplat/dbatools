@@ -86,6 +86,7 @@ Describe "$commandname Unit Tests" -Tags "UnitTests", Get-DBADatabase {
                         IsSystemObject = 'false'
                         RecoveryModel  = 'Full'
                         Owner          = 'sa'
+                        Collation      = 'SQL_Latin1_General_CP1_CI_AS'
                     }
                 ) #databases
             } #object
@@ -136,6 +137,7 @@ Describe "$commandname Unit Tests" -Tags "UnitTests", Get-DBADatabase {
                             RecoveryModel  = 'Full'
                             Owner          = 'sa'
                             IsAccessible   = $true
+                            Collation      = 'SQL_Latin1_General_CP1_CI_AS'
                         }
                     )
                 } #object
