@@ -294,7 +294,7 @@ function Get-DbaDatabase {
             $inputObject = @()
             foreach ($dt in $backed_info) {
                 try {
-                    $inputObject += $server.Databases | Compare-DbaCollationSensitiveObject -Property Name -Eq -Value $dt.name -Collation $server.Collation
+                    $inputObject += $server.Databases | Where-Object Name -ceq $dt.name
                 } catch {
                     # I've seen this only once and can not reproduce:
                     # The following exception occurred while trying to enumerate the collection: "Failed to connect to server XXXXX.database.windows.net.".

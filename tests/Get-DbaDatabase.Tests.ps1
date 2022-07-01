@@ -88,7 +88,6 @@ Describe "$commandname Unit Tests" -Tags "UnitTests", Get-DBADatabase {
                         Owner          = 'sa'
                     }
                 ) #databases
-                Collation = 'SQL_Latin1_General_CP1_CI_AS'
             } #object
         } -ModuleName dbatools #mock connect-SqlInstance
         function Invoke-QueryRawDatabases { }
@@ -139,7 +138,6 @@ Describe "$commandname Unit Tests" -Tags "UnitTests", Get-DBADatabase {
                             IsAccessible   = $true
                         }
                     )
-                    Collation = 'SQL_Latin1_General_CP1_CI_AS'
                 } #object
             } -ModuleName dbatools #mock connect-SqlInstance
             function Invoke-QueryDBlastUsed { }
