@@ -25,6 +25,12 @@ function Get-DbaDbStoredProcedure {
     .PARAMETER ExcludeSystemSp
         This switch removes all system objects from the Stored Procedure collection
 
+    .PARAMETER Name
+        Name(s) of the stored procedure(s) to return. It is possible to specify two-part names such as schemaname.procname and three-part names such as dbname.schemaname.procname.
+
+    .PARAMETER Schema
+        Only return procedures from the specified schema.
+
     .PARAMETER InputObject
         Enables piping from Get-DbaDatabase
 
@@ -74,6 +80,26 @@ function Get-DbaDbStoredProcedure {
 
         Pipe the databases from Get-DbaDatabase into Get-DbaDbStoredProcedure
 
+    .EXAMPLE
+        PS C:\> Get-DbaDbStoredProcedure -SqlInstance Server1 -Database db1 -Name schema1.proc1
+
+        Gets the Stored Procedure proc1 in the schema1 schema in the db1 database
+
+    .EXAMPLE
+        PS C:\> Get-DbaDbStoredProcedure -SqlInstance Server1 -Name db1.schema1.proc1
+
+        Gets the Stored Procedure proc1 in the schema1 schema in the db1 database
+
+    .EXAMPLE
+        PS C:\> Get-DbaDbStoredProcedure -SqlInstance Server1 -Database db1 -Name proc1
+
+        Gets the Stored Procedure proc1 in the db1 database
+
+    .EXAMPLE
+        PS C:\> Get-DbaDbStoredProcedure -SqlInstance Server1 -Database db1 -Schema schema1
+
+        Gets the Stored Procedures in schema1 for the db1 database
+
     #>
     [CmdletBinding()]
     param (
@@ -83,11 +109,36 @@ function Get-DbaDbStoredProcedure {
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
         [switch]$ExcludeSystemSp,
+        [string[]]$Name,
+        [string[]]$Schema,
         [Parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
         [switch]$EnableException
     )
+    begin {
+        if ($Name) {
+            $fqtns = @()
+            foreach ($t in $Name) {
+                $fqtn = Get-ObjectNameParts -ObjectName $t
 
+                if (!$fqtn.Parsed) {
+                    Write-Message -Level Warning -Message "Please check you are using proper two-part or three-part names. If your search value contains special characters you must use [ ] to wrap the name. The value $t could not be parsed as a valid name."
+                    Continue
+                }
+
+                $fqtns += [PSCustomObject] @{
+                    Database   = $fqtn.Database
+                    Schema     = $fqtn.Schema
+                    Procedure  = $fqtn.Name
+                    InputValue = $fqtn.InputValue
+                }
+            }
+            if (!$fqtns) {
+                Stop-Function -Message "No valid procedure name specified"
+                return
+            }
+        }
+    }
     process {
         if (Test-Bound SqlInstance) {
             $InputObject = Get-DbaDatabase -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $Database -ExcludeDatabase $ExcludeDatabase
@@ -103,7 +154,34 @@ function Get-DbaDbStoredProcedure {
                 continue
             }
 
-            foreach ($proc in $db.StoredProcedures) {
+            if ($fqtns) {
+                $procs = @()
+                foreach ($fqtn in $fqtns) {
+                    # If the user specified a database in a three-part name, and it's not the
+                    # database currently being processed, skip this procedure.
+                    if ($fqtn.Database) {
+                        if ($fqtn.Database -ne $db.Name) {
+                            continue
+                        }
+                    }
+
+                    $p = $db.StoredProcedures | Where-Object { $_.Name -in $fqtn.Procedure -and $fqtn.Schema -in ($_.Schema, $null) -and $fqtn.Database -in ($_.Parent.Name, $null) }
+
+                    if (-not $p) {
+                        Write-Message -Level Verbose -Message "Could not find procedure $($fqtn.Name) in $db on $server"
+                    }
+
+                    $procs += $p
+                }
+            } else {
+                $procs = $db.StoredProcedures
+            }
+
+            if ($Schema) {
+                $procs = $procs | Where-Object { $_.Schema -in $Schema }
+            }
+
+            foreach ($proc in $procs) {
                 if ( (Test-Bound -ParameterName ExcludeSystemSp) -and $proc.IsSystemObject ) {
                     continue
                 }
@@ -112,6 +190,7 @@ function Get-DbaDbStoredProcedure {
                 Add-Member -Force -InputObject $proc -MemberType NoteProperty -Name InstanceName -value $proc.Parent.InstanceName
                 Add-Member -Force -InputObject $proc -MemberType NoteProperty -Name SqlInstance -value $proc.Parent.SqlInstance
                 Add-Member -Force -InputObject $proc -MemberType NoteProperty -Name Database -value $db.Name
+                Add-Member -Force -InputObject $proc -MemberType NoteProperty -Name DatabaseId -value $db.Id
 
                 $defaults = 'ComputerName', 'InstanceName', 'SqlInstance', 'Database', 'Schema', 'ID as ObjectId', 'CreateDate',
                 'DateLastModified', 'Name', 'ImplementationType', 'Startup'
