@@ -33,7 +33,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 
             Write-Message -Level Warning -Message "Find-DbaDbUnusedIndex setting up the new database $dbName"
             Remove-DbaDatabase -SqlInstance $script:instance2 -Database $dbName -Confirm:$false
-            New-DbaDatabase -SqlInstance $script:instance2 -Name $dbName
+            $newDB = New-DbaDatabase -SqlInstance $script:instance2 -Name $dbName
 
             $indexName = "dbatoolsci_index_$random"
             $tableName = "dbatoolsci_table_$random"
@@ -54,6 +54,8 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 
         It "Should find the 'unused' index on each test sql instance" {
             $results = Find-DbaDbUnusedIndex -SqlInstance $script:instance2 -Database $dbName -IgnoreUptime -Seeks 10 -Scans 10 -Lookups 10
+            $results.Database | Should -Be $dbName
+            $results.DatabaseId | Should -Be $newDB.Id
 
             $testSQLinstance = $false
 
@@ -71,7 +73,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 
 
         It "Should return the expected columns on each test sql instance" {
-            [object[]]$expectedColumnArray = 'CompressionDescription', 'ComputerName', 'Database', 'IndexId', 'IndexName', 'IndexSizeMB', 'InstanceName', 'LastSystemLookup', 'LastSystemScan', 'LastSystemSeek', 'LastSystemUpdate', 'LastUserLookup', 'LastUserScan', 'LastUserSeek', 'LastUserUpdate', 'ObjectId', 'RowCount', 'Schema', 'SqlInstance', 'SystemLookup', 'SystemScans', 'SystemSeeks', 'SystemUpdates', 'Table', 'TypeDesc', 'UserLookups', 'UserScans', 'UserSeeks', 'UserUpdates'
+            [object[]]$expectedColumnArray = 'CompressionDescription', 'ComputerName', 'Database', 'DatabaseId', 'IndexId', 'IndexName', 'IndexSizeMB', 'InstanceName', 'LastSystemLookup', 'LastSystemScan', 'LastSystemSeek', 'LastSystemUpdate', 'LastUserLookup', 'LastUserScan', 'LastUserSeek', 'LastUserUpdate', 'ObjectId', 'RowCount', 'Schema', 'SqlInstance', 'SystemLookup', 'SystemScans', 'SystemSeeks', 'SystemUpdates', 'Table', 'TypeDesc', 'UserLookups', 'UserScans', 'UserSeeks', 'UserUpdates'
 
             $testSQLinstance = $false
 
