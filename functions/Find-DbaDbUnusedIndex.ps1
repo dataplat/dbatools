@@ -137,7 +137,8 @@ function Find-DbaDbUnusedIndex {
         )
         SELECT  SERVERPROPERTY('MachineName') AS ComputerName,
         ISNULL(SERVERPROPERTY('InstanceName'), 'MSSQLSERVER') AS InstanceName,
-        SERVERPROPERTY('ServerName') AS SqlInstance, DB_NAME(database_id) AS 'Database'
+        SERVERPROPERTY('ServerName') AS SqlInstance, DB_NAME(d.database_id) AS 'Database'
+        ,d.database_id AS DatabaseId
         ,s.name AS 'Schema'
         ,t.name AS 'Table'
         ,i.object_id AS ObjectId
@@ -168,18 +169,21 @@ function Find-DbaDbUnusedIndex {
             ON t.schema_id = s.schema_id
         JOIN sys.indexes i
             ON i.object_id = t.object_id
+        JOIN sys.databases d
+            ON d.name = DB_NAME()
         LEFT OUTER JOIN sys.dm_db_index_usage_stats iu
             ON iu.object_id = i.object_id
                 AND iu.index_id = i.index_id
+                AND iu.database_id = d.database_id
         JOIN CTE_IndexSpace indexSpace
             ON indexSpace.index_id = i.index_id
                 AND indexSpace.object_id = i.object_id
-        WHERE iu.database_id = DB_ID()
-                AND OBJECTPROPERTY(i.[object_id], 'IsMSShipped') = 0
-                AND user_seeks < $Seeks
-                AND user_scans < $Scans
-                AND user_lookups < $Lookups
-                AND i.type_desc NOT IN ('HEAP', 'CLUSTERED COLUMNSTORE')"
+        WHERE
+            OBJECTPROPERTY(i.[object_id], 'IsMSShipped') = 0
+            AND user_seeks < $Seeks
+            AND user_scans < $Scans
+            AND user_lookups < $Lookups
+            AND i.type_desc NOT IN ('HEAP', 'CLUSTERED COLUMNSTORE')"
 
         # Replacement values for the SQL above
         $replaceParamCTE = "--REPLACEPARAMCTE"
