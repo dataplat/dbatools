@@ -104,7 +104,7 @@ Function Compare-DbaCollationSensitiveObject {
                 break
             }
             "Eq" {
-                if ($stringComparer.Compare($obj.Property, $Value) -eq 0) {
+                if ($stringComparer.Compare($obj.$Property, $Value) -eq 0) {
                     return $obj
                 }
                 break
