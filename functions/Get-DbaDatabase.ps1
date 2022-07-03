@@ -293,11 +293,14 @@ function Get-DbaDatabase {
 
             $inputObject = @()
             foreach ($dt in $backed_info) {
-                if ($server.DatabaseEngineType -eq "SqlAzureDatabase") {
-                    # Enumeration via $server.Databases[$dt.name] no longer works in azure
-                    $inputObject += New-Object Microsoft.SqlServer.Management.Smo.Database $server, $dt.Name
-                } else {
+                try {
                     $inputObject += $server.Databases | Where-Object Name -ceq $dt.name
+                } catch {
+                    # I've seen this only once and can not reproduce:
+                    # The following exception occurred while trying to enumerate the collection: "Failed to connect to server XXXXX.database.windows.net.".
+                    # So we implement the fallback that was used before #8333.
+                    Write-Message -Level Verbose -Message "Failure: $_"
+                    $inputObject += $server.Databases[$dt.name]
                 }
             }
             if ($server.isAzure) {
