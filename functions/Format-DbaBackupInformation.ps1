@@ -188,6 +188,8 @@ function Format-DbaBackupInformation {
                     Write-Message -Message " 1 PhysicalName = $($_.PhysicalName) " -Level Verbose
                     $Pname = [System.Io.FileInfo]$_.PhysicalName
                     $RestoreDir = $Pname.DirectoryName
+                    # Handle MacOS returning full path for BaseName
+                    $baseName = $Pname.BaseName.Split($PathSep)[-1]
                     if ($_.Type -eq 'D' -or $_.FileType -eq 'D') {
                         if ('' -ne $DataFileDirectory) {
                             $RestoreDir = $DataFileDirectory
@@ -206,7 +208,7 @@ function Format-DbaBackupInformation {
                         }
                     }
 
-                    $_.PhysicalName = $RestoreDir + $PathSep + $DatabaseFilePrefix + $Pname.BaseName + $DatabaseFileSuffix + $Pname.extension
+                    $_.PhysicalName = $RestoreDir + $PathSep + $DatabaseFilePrefix + $baseName + $DatabaseFileSuffix + $Pname.extension
                     Write-Message -Message "PhysicalName = $($_.PhysicalName) " -Level Verbose
                 }
             }
