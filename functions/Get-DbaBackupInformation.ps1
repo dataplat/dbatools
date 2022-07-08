@@ -236,11 +236,19 @@ function Get-DbaBackupInformation {
                             Write-Message -Level Verbose -Message "Skipping Log Backups as requested"
                         } else {
                             Write-Message -Level Verbose -Message "OLA - Getting folder contents"
-                            $Files += Get-XpDirTreeRestoreFile -Path $f -SqlInstance $server -NoRecurse:$NoXpDirRecurse
+                            try {
+                                $Files += Get-XpDirTreeRestoreFile -Path $f -SqlInstance $server -NoRecurse:$NoXpDirRecurse
+                            } catch {
+                                Stop-Function -Message "Failure on $($server.Name)" -ErrorRecord $PSItem -Target $server.Name -Continue
+                            }
                         }
                     } else {
                         Write-Message -Message "Testing a folder $f" -Level Verbose
-                        $Files += $Check = Get-XpDirTreeRestoreFile -Path $f -SqlInstance $server -NoRecurse:$NoXpDirRecurse
+                        try {
+                            $Files += $Check = Get-XpDirTreeRestoreFile -Path $f -SqlInstance $server -NoRecurse:$NoXpDirRecurse -EnableException
+                        } catch {
+                            Stop-Function -Message "Failure on $($server.Name)" -ErrorRecord $PSItem -Target $server.Name -Continue
+                        }
                         if ($null -eq $check) {
                             Write-Message -Message "Nothing returned from $f" -Level Verbose
                         }
@@ -290,7 +298,11 @@ function Get-DbaBackupInformation {
 
             if ($Files.Count -gt 0) {
                 Write-Message -Level Verbose -Message "Reading backup headers of $($Files.Count) files"
-                $FileDetails = Read-DbaBackupHeader -SqlInstance $server -Path $Files -AzureCredential $AzureCredential
+                try {
+                    $FileDetails = Read-DbaBackupHeader -SqlInstance $server -Path $Files -AzureCredential $AzureCredential -EnableException
+                } catch {
+                    Stop-Function -Message "Failure on $($server.Name)" -ErrorRecord $PSItem -Target $server.Name -Continue
+                }
             }
 
             $groupDetails = $FileDetails | Group-Object -Property BackupSetGUID
@@ -302,7 +314,11 @@ function Get-DbaBackupInformation {
                 }
                 $description = $group.Group[0].BackupTypeDescription
                 if (-not $description) {
-                    $header = Read-DbaBackupHeader -SqlInstance $server -Path $Path | Select-Object -First 1
+                    try {
+                        $header = Read-DbaBackupHeader -SqlInstance $server -Path $Path -EnableException | Select-Object -First 1
+                    } catch {
+                        Stop-Function -Message "Failure on $($server.Name)" -ErrorRecord $PSItem -Target $server.Name -Continue
+                    }
                     $description = switch ($header.BackupType) {
                         1 { "Full" }
                         2 { "Differential" }
