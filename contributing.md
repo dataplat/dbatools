@@ -46,7 +46,7 @@ When you are working with "objects" in SQL Server, say with databases, what vari
 
 ## Formatting and indentation
 
-We favour consistency throughout the project and accept PRs coming from anybody. Just know that you can reformat your new function leveraging Invoke-DbaFormatter which does the groundwork for you.
+We favour consistency throughout the project and accept PRs coming from anybody. Just know that you can reformat your new function leveraging Invoke-DbatoolsFormatter which does the groundwork for you.
 
 ## Tests
 
