@@ -1,7 +1,7 @@
 
 -- SQL Server 2008 Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: June 1, 2022
+-- Last Modified: July 5, 2022
 -- https://glennsqlperformance.com/
 -- https://sqlserverperformance.wordpress.com/
 -- YouTube: https://bit.ly/2PkoAM1 
@@ -44,6 +44,8 @@ IF NOT EXISTS (SELECT * WHERE CONVERT(varchar(128), SERVERPROPERTY('ProductVersi
 -- SQL and OS Version information for current instance  (Query 1) (Version Info)
 SELECT @@SERVERNAME AS [Server Name], @@VERSION AS [SQL Server and OS Version Info];
 ------
+
+-- SQL Server 2008 is out of both mainstream and extended support from Microsoft
 
 
 -- SQL Server 2008 RTM Builds       SQL Server 2008 SP1 Builds       SQL Server 2008 SP2 Builds		      SQL Server 2008 SP3 Builds						SQL Server 2008 SP4 Builds
