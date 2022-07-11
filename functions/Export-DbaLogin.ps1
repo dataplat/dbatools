@@ -281,6 +281,10 @@ function Export-DbaLogin {
                 }
             }
 
+            if ($Database) {
+                $serverLogins = $serverLogins | Where-Object { $_.Name -in $DbMapping.LoginName }
+            }
+
             foreach ($sourceLogin in $serverLogins) {
                 Write-Message -Level Verbose -Message "Processing login $sourceLogin"
                 $userName = $sourceLogin.name
