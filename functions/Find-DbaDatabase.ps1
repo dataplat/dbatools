@@ -116,6 +116,7 @@ function Find-DbaDatabase {
                     InstanceName       = $server.ServiceName
                     SqlInstance        = $server.Name
                     Name               = $db.Name
+                    Id                 = $db.Id
                     Size               = [dbasize]($db.Size * 1024 * 1024)
                     Owner              = $db.Owner
                     CreateDate         = $db.CreateDate
