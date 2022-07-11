@@ -27,11 +27,11 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         $user2 = "dbatoolsci_exportdbalogin_user2$random"
 
         $server = Connect-DbaInstance -SqlInstance $script:instance2
-        $null = $server.Query("CREATE DATABASE [$dbname1]")
+        $db1 = New-DbaDatabase -SqlInstance $server -Name $dbname1
         $null = $server.Query("CREATE LOGIN [$login1] WITH PASSWORD = 'GoodPass1234!'")
-        $server.Databases[$dbname1].ExecuteNonQuery("CREATE USER [$user1] FOR LOGIN [$login1]")
+        $db1.Query("CREATE USER [$user1] FOR LOGIN [$login1]")
 
-        $null = $server.Query("CREATE DATABASE [$dbname2]")
+        $db2 = New-DbaDatabase -SqlInstance $server -Name $dbname2
         $null = $server.Query("CREATE LOGIN [$login2] WITH PASSWORD = 'GoodPass1234!'")
         $null = $server.Query("ALTER LOGIN [$login2] DISABLE")
         $null = $server.Query("DENY CONNECT SQL TO [$login2]")
@@ -41,9 +41,13 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         } else {
             $null = $server.Query("ALTER SERVER ROLE [dbcreator] ADD MEMBER [$login2]")
         }
-        $server.Databases[$dbname2].ExecuteNonQuery("CREATE USER [$user2] FOR LOGIN [$login2]")
-        $server.Databases[$dbname2].ExecuteNonQuery("GRANT SELECT ON sys.tables TO [$user2] WITH GRANT OPTION")
+        $db2.Query("CREATE USER [$user2] FOR LOGIN [$login2]")
+        $db2.Query("GRANT SELECT ON sys.tables TO [$user2] WITH GRANT OPTION")
 
+        # login and user that have the same name but aren't linked
+        $login3 = "dbatoolsci_exportdbalogin_login3$random"
+        $server.Query("CREATE LOGIN [$login3] WITH PASSWORD = 'GoodPass1234!'")
+        $db1.Query("CREATE USER [$login3] WITHOUT LOGIN")
     }
     AfterAll {
         Remove-DbaDatabase -SqlInstance $script:instance2 -Database $dbname1 -Confirm:$false
@@ -56,6 +60,8 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         if ($ExportedCredential) {
             $null = Remove-Item -Path $($ExportedCredential.FullName) -ErrorAction SilentlyContinue
         }
+
+        Remove-DbaLogin -SqlInstance $script:instance2 -Login $login3 -Confirm:$false
     }
 
     Context "Executes with Exclude Parameters" {
@@ -119,6 +125,13 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
                 $results | Should Match "$login2|$dbname2"
                 $results | Should Not Match "$login1|$dbname1"
             }
+        }
+        It "Should Export only logins from the db that is piped in" {
+            $file = $db1 | Export-DbaLogin
+            $results = Get-Content -Path $file -Raw
+            $results | Should -Not -Match "$login2|$dbname2|$login3"
+            $results | Should -Match "$login1|$dbname1"
+            $results | Should -Match ([regex]::Escape("IF NOT EXISTS (SELECT * FROM sys.database_principals WHERE name = N'$user1')"))
         }
     }
     Context "Exports file to random and specified paths" {
