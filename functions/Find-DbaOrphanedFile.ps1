@@ -107,51 +107,194 @@ function Find-DbaOrphanedFile {
 
     begin {
         function Get-SQLDirTreeQuery {
-            param([object[]]$SqlPathList, [object[]]$UserPathList, $FileTypes, $SystemFiles, [Switch]$Recurse)
+            param([object[]]$SqlPathList, [object[]]$UserPathList, $FileTypes, $SystemFiles, [Switch]$Recurse, $ServerMajorVersion)
 
-            $q1 = "
-                CREATE TABLE #enum (
-                  id int IDENTITY
-                , fs_filename nvarchar(512)
-                , depth int
-                , is_file int
-                , parent nvarchar(512)
-                , parent_id int
-                );
-                DECLARE @dir nvarchar(512);
-                "
+            if ($ServerMajorVersion -ge 9) {
+                # CTEs added in SQL 2005
+                $q1 = "
+                    CREATE TABLE #enum (
+                      id int IDENTITY
+                    , fs_filename nvarchar(512)
+                    , depth int
+                    , is_file int
+                    , parent nvarchar(512)
+                    , parent_id int
+                    , is_user_path bit
+                    );
+                    DECLARE @dir nvarchar(512);
+                    "
 
-            $q2 = "
-                SET @dir = 'dirname';
+                $q2 = "
+                    SET @dir = 'dirname';
 
-                INSERT INTO #enum( fs_filename, depth, is_file )
-                EXEC xp_dirtree @dir, recurse, 1;
+                    INSERT INTO #enum( fs_filename, depth, is_file )
+                    EXEC xp_dirtree @dir, recurse, 1;
 
-                UPDATE #enum
-                SET parent = @dir,
-                parent_id = (SELECT MAX(i.id) FROM #enum i WHERE i.id < e.id AND i.depth = e.depth-1 AND i.is_file = 0)
-                FROM #enum e
-                WHERE e.parent IS NULL;
-                "
+                    UPDATE #enum
+                    SET parent = @dir,
+                    parent_id = (SELECT MAX(i.id) FROM #enum i WHERE i.id < e.id AND i.depth = e.depth-1 AND i.is_file = 0),
+                    is_user_path = _IS_USER_PATH_REPLACE_
+                    FROM #enum e
+                    WHERE e.parent IS NULL;
+                    "
 
-            $query_files_sql = "
-                SELECT e.fs_filename AS filename, e.parent
-                FROM #enum AS e
-                WHERE e.fs_filename NOT IN( 'xtp', '5', '`$FSLOG', '`$HKv2', 'filestream.hdr', '" + $($SystemFiles -join "','") + "' )
-                AND CASE
-                    WHEN e.fs_filename LIKE '%.%'
-                    THEN REVERSE(LEFT(REVERSE(e.fs_filename), CHARINDEX('.', REVERSE(e.fs_filename)) - 1))
-                    ELSE ''
-                    END IN('" + $($FileTypes -join "','") + "')
-                AND e.is_file = 1;
-                "
+                $query_files_sql = "
+                    ; WITH DistinctUserPath AS
+                    (   -- user paths to be used in the anchor for the recursive query below (FinalPath)
+                        SELECT
+                             DISTINCT
+                             parent          AS parent
+                        ,    0               AS depth
+                        ,    NULL            AS parent_id
+                        FROM
+                            #enum
+                        WHERE
+                            is_user_path = 1
+                    )
+                    , BaseDir AS
+                    (    -- dynamically assign an Id (using negative numbers to avoid any potential collision with the temp table)
+                        SELECT
+                            -ROW_NUMBER() OVER(ORDER BY parent)    AS Id
+                        ,    parent
+                        ,    depth
+                        ,    parent_id
+                        FROM
+                            DistinctUserPath
+                    )
+                    , AdjustedBaseDir AS
+                    (    -- Link the Ids for the constructed anchor rows
+                        SELECT
+                             e.id
+                        ,    e.fs_filename
+                        ,    e.depth
+                        ,    CASE WHEN e.parent_id IS NULL THEN b.Id ELSE e.parent_id END AS parent_id
+                        FROM
+                            #enum e
+                        JOIN
+                            BaseDir b
+                                ON e.parent = b.parent
+                        WHERE
+                            e.is_user_path = 1
+                    )
+                    , Combined AS
+                    (    -- combine anchor data and recursive data
+                        SELECT
+                             Id
+                        ,    parent
+                        ,    depth
+                        ,    parent_id
+                        FROM
+                            BaseDir
+                        UNION ALL
+                        SELECT
+                             Id
+                        ,    fs_filename
+                        ,    depth
+                        ,    parent_id
+                        FROM
+                            AdjustedBaseDir
+                    )
+                    , FinalPath AS
+                    (    -- recursive CTE to construct the full file path
+                        SELECT
+                             Id
+                        ,    parent
+                        ,    depth
+                        ,    parent_id
+                        ,    CAST(parent AS NVARCHAR(MAX))    AS FullPath
+                        FROM
+                            Combined
+                        WHERE
+                            parent_id IS NULL
+                        UNION ALL
+                        SELECT
+                             d.Id
+                        ,    d.parent
+                        ,    d.depth
+                        ,    d.parent_id
+                        ,    FullPath + '\' + d.parent
+                        FROM
+                            Combined d
+                        JOIN
+                            FinalPath fp
+                                ON d.parent_id = fp.Id
+                    )
+                    , OrigPath AS
+                    (    -- original data from #enum
+                        SELECT e.Id, e.fs_filename AS filename, e.parent, e.is_user_path
+                        FROM #enum AS e
+                        WHERE e.fs_filename NOT IN( 'xtp', '5', '`$FSLOG', '`$HKv2', 'filestream.hdr', '" + $($SystemFiles -join "','") + "' )
+                        AND CASE
+                            WHEN e.fs_filename LIKE '%.%'
+                            THEN REVERSE(LEFT(REVERSE(e.fs_filename), CHARINDEX('.', REVERSE(e.fs_filename)) - 1))
+                            ELSE ''
+                            END IN('" + $($FileTypes -join "','") + "')
+                        AND e.is_file = 1
+                    )
+                    SELECT
+                         filename                   AS filename
+                    ,    parent + '\' + filename    AS FullPath
+                    FROM
+                        OrigPath
+                    WHERE
+                        is_user_path = 0 -- paths known to SQL
+                    UNION ALL
+                    SELECT
+                         fp.parent      AS filename
+                    ,    fp.FullPath    AS FullPath
+                    FROM
+                        FinalPath fp
+                    JOIN
+                        OrigPath op
+                            ON fp.Id = op.Id
+                    WHERE
+                        op.is_user_path = 1;
+                    "
+            } else {
+                $q1 = "
+                    CREATE TABLE #enum (
+                      id int IDENTITY
+                    , fs_filename nvarchar(512)
+                    , depth int
+                    , is_file int
+                    , parent nvarchar(512)
+                    , parent_id int
+                    );
+                    DECLARE @dir nvarchar(512);
+                    "
+
+                $q2 = "
+                    SET @dir = 'dirname';
+
+                    INSERT INTO #enum( fs_filename, depth, is_file )
+                    EXEC xp_dirtree @dir, recurse, 1;
+
+                    UPDATE #enum
+                    SET parent = @dir,
+                    parent_id = (SELECT MAX(i.id) FROM #enum i WHERE i.id < e.id AND i.depth = e.depth-1 AND i.is_file = 0)
+                    FROM #enum e
+                    WHERE e.parent IS NULL;
+                    "
+
+                $query_files_sql = "
+                    SELECT e.fs_filename AS filename, e.parent
+                    FROM #enum AS e
+                    WHERE e.fs_filename NOT IN( 'xtp', '5', '`$FSLOG', '`$HKv2', 'filestream.hdr', '" + $($SystemFiles -join "','") + "' )
+                    AND CASE
+                        WHEN e.fs_filename LIKE '%.%'
+                        THEN REVERSE(LEFT(REVERSE(e.fs_filename), CHARINDEX('.', REVERSE(e.fs_filename)) - 1))
+                        ELSE ''
+                        END IN('" + $($FileTypes -join "','") + "')
+                    AND e.is_file = 1;
+                    "
+            }
 
             # build the query string based on how many directories they want to enumerate
             $sql = $q1
-            $sql += $($SqlPathList | Where-Object { $_ -ne '' } | ForEach-Object { "$([System.Environment]::Newline)$($q2.Replace('dirname',$_).Replace('recurse','1'))" } )
+            $sql += $($SqlPathList | Where-Object { $_ -ne '' } | ForEach-Object { "$([System.Environment]::Newline)$($q2.Replace('dirname',$_).Replace('recurse','1').Replace('_IS_USER_PATH_REPLACE_', '0'))" } )
             If ($UserPathList) {
                 $recurseVal = If ($Recurse) { '0' } Else { '1' }
-                $sql += $($UserPathList | Where-Object { $_ -ne '' } | ForEach-Object { "$([System.Environment]::Newline)$($q2.Replace('dirname',$_).Replace('recurse',$recurseVal))" } )
+                $sql += $($UserPathList | Where-Object { $_ -ne '' } | ForEach-Object { "$([System.Environment]::Newline)$($q2.Replace('dirname',$_).Replace('recurse',$recurseVal).Replace('_IS_USER_PATH_REPLACE_', '1'))" } )
             }
             $sql += $query_files_sql
             Write-Message -Level Debug -Message $sql
@@ -242,12 +385,11 @@ function Find-DbaOrphanedFile {
             if ($Path) {
                 $userpaths = $Path | ForEach-Object { $_.TrimEnd("\") } | Sort-Object -Unique
             }
-            $sql = Get-SQLDirTreeQuery -SqlPathList $sqlpaths -UserPathList $userpaths -FileTypes $fileTypeComparison -SystemFiles $systemfiles -Recurse:$Recurse
+            $sql = Get-SQLDirTreeQuery -SqlPathList $sqlpaths -UserPathList $userpaths -FileTypes $fileTypeComparison -SystemFiles $systemfiles -Recurse:$Recurse -ServerMajorVersion $server.VersionMajor
             $dirtreefiles = $server.Databases['master'].ExecuteWithResults($sql).Tables[0] | ForEach-Object {
-                $fullpath = [IO.Path]::combine($_.parent, $_.filename)
                 [PSCustomObject]@{
-                    FullPath   = $fullpath
-                    Comparison = [IO.Path]::GetFullPath($(Format-Path $fullpath))
+                    FullPath   = $_.Fullpath
+                    Comparison = [IO.Path]::GetFullPath($(Format-Path $_.Fullpath))
                 }
             }
             # Output files in the dirtree not known to SQL Server
