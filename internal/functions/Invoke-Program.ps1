@@ -54,7 +54,7 @@ function Invoke-Program {
 
     .NOTES
         Tags: Invoke, Program, Process, Session, PSSession, Authentication
-        Author: Kirill Kravtsov (@nvarscar) https://nvarscar.wordpress.com/
+        Author: Kirill Kravtsov (@nvarscar), nvarscar.wordpress.com
 
     .EXAMPLE
         PS C:\> Invoke-Program -ComputerName ServerA -Credentials $cred -Path "C:\temp\setup.exe" -ArgumentList '/quiet' -WorkingDirectory 'C:'

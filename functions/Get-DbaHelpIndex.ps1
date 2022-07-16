@@ -67,7 +67,7 @@ function Get-DbaHelpIndex {
 
     .NOTES
         Tags: Database, Index
-        Author: Nic Cain, https://sirsql.net/
+        Author: Nic Cain, sirsql.net
 
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT

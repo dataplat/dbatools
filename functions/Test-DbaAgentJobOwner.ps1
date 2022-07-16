@@ -35,7 +35,7 @@ function Test-DbaAgentJobOwner {
 
     .NOTES
         Tags: Agent, Job, Owner
-        Author: Michael Fal (@Mike_Fal), http://mikefal.net
+        Author: Michael Fal (@Mike_Fal), mikefal.net
 
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT

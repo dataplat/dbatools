@@ -26,7 +26,7 @@ function Test-DbaBackupEncrypted {
 
     .NOTES
         Tags: Backups, Encryption
-        Author: Chrissy LeMaire (@cl), http://netnerds.net
+        Author: Chrissy LeMaire (@cl), netnerds.net
 
         Website: https://dbatools.io
         Copyright: (c) 2022 by dbatools, licensed under MIT

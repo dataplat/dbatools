@@ -32,7 +32,7 @@ function Get-DbaDbCheckConstraint {
 
     .NOTES
         Tags: Database
-        Author: Claudio Silva (@ClaudioESSilva), https://claudioessilva.eu
+        Author: Claudio Silva (@ClaudioESSilva), claudioessilva.eu
 
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT

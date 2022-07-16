@@ -41,7 +41,7 @@ function Get-DbaService {
 
     .NOTES
         Tags: Service, SqlServer, Instance, Connect
-        Author: Klaas Vandenberghe ( @PowerDBAKlaas )
+        Author: Klaas Vandenberghe (@PowerDbaKlaas)
 
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT

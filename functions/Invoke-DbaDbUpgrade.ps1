@@ -1,10 +1,12 @@
 function Invoke-DbaDbUpgrade {
     <#
     .SYNOPSIS
-        Take a database and upgrades it to compatibility of the SQL Instance its hosted on and updates the target recovery time to the new default of 60 seconds. Based on https://thomaslarock.com/2014/06/upgrading-to-sql-server-2014-a-dozen-things-to-check/
+        Take a database and upgrades it to compatibility of the SQL Instance its hosted on and updates the target recovery time to the new default of 60 seconds.
 
     .DESCRIPTION
         Updates compatibility level and target recovery time, then runs CHECKDB with data_purity, DBCC updateusage, sp_updatestats and finally sp_refreshview against all user views.
+
+        Based on https://thomaslarock.com/2014/06/upgrading-to-sql-server-2014-a-dozen-things-to-check/
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.
@@ -60,7 +62,7 @@ function Invoke-DbaDbUpgrade {
 
     .NOTES
         Tags: Shrink, Database
-        Author: Stephen Bennett, https://sqlnotesfromtheunderground.wordpress.com/
+        Author: Stephen Bennett, sqlnotesfromtheunderground.wordpress.com
 
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT

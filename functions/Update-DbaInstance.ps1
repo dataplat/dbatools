@@ -118,7 +118,7 @@ function Update-DbaInstance {
 
     .NOTES
         Tags: Deployment, Install, Patching, Update
-        Author: Kirill Kravtsov (@nvarscar) https://nvarscar.wordpress.com/
+        Author: Kirill Kravtsov (@nvarscar), nvarscar.wordpress.com
 
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT

@@ -30,7 +30,7 @@ function Set-DbaExtendedProtection {
 
     .NOTES
         Tags: Instance, Security
-        Author: Cláudio Silva (@claudioessilva), https://claudioessilva.eu
+        Author: Cláudio Silva (@claudioessilva), claudioessilva.eu
 
         Website: https://dbatools.io
         Copyright: (c) 2019 by dbatools, licensed under MIT

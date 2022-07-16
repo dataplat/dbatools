@@ -39,7 +39,7 @@ function Remove-DbaDbMailAccount {
 
     .NOTES
         Tags: DatabaseMail, DbMail, Mail
-        Author: Mikey Bronowski (@MikeyBronowski), https://bronowski.it
+        Author: Mikey Bronowski (@MikeyBronowski), bronowski.it
         dbatools PowerShell module (https://dbatools.io)
         Copyright: (c) 2021 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT

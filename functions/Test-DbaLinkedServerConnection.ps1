@@ -24,7 +24,7 @@ function Test-DbaLinkedServerConnection {
 
     .NOTES
         Tags: LinkedServer
-        Author: Thomas LaRock ( https://thomaslarock.com )
+        Author: Thomas LaRock, thomaslarock.com
 
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT

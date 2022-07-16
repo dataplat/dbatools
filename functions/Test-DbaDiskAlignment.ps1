@@ -43,7 +43,7 @@ function Test-DbaDiskAlignment {
 
     .NOTES
         Tags: Storage, Disk, OS
-        Author: Constantine Kokkinos (@mobileck), https://constantinekokkinos.com
+        Author: Constantine Kokkinos (@mobileck), constantinekokkinos.com
 
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT

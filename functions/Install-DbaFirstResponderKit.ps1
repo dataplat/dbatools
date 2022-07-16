@@ -55,7 +55,7 @@ function Install-DbaFirstResponderKit {
 
     .NOTES
         Tags: Community, FirstResponderKit
-        Author: Tara Kizer, Brent Ozar Unlimited (https://www.brentozar.com/)
+        Author: Tara Kizer, Brent Ozar Unlimited (brentozar.com)
 
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT

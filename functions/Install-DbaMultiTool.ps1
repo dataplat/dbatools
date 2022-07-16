@@ -49,7 +49,7 @@ function Install-DbaMultiTool {
 
     .NOTES
         Tags: Community, DbaMultiTool
-        Author: John McCall (@lowlydba), https://lowlydba.com/
+        Author: John McCall (@lowlydba), lowlydba.com
 
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT

@@ -21,7 +21,7 @@ function Get-AdjustedTotalRowsCopied {
 
     .NOTES
         Tags: Import
-        Author: Adam Lancaster https://github.com/lancasteradam
+        Author: Adam Lancaster, github.com/lancasteradam
 
         Website: https://dbatools.io
         Copyright: (c) 2021 by dbatools, licensed under MIT

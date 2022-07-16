@@ -65,7 +65,7 @@ function Set-DbaRgResourcePool {
 
     .NOTES
         Tags: ResourcePool, ResourceGovernor
-        Author: John McCall (@lowlydba), https://www.lowlydba.com/
+        Author: John McCall (@lowlydba), lowlydba.com
 
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT

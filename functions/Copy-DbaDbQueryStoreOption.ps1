@@ -51,7 +51,7 @@ function Copy-DbaDbQueryStoreOption {
 
     .NOTES
         Tags: QueryStore
-        Author: Enrico van de Laar (@evdlaar) | Tracy Boggiano ( @Tracy Boggiano)
+        Author: Enrico van de Laar (@evdlaar) | Tracy Boggiano (@Tracy Boggiano)
 
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT

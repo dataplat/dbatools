@@ -53,7 +53,7 @@ function Find-DbaSimilarTable {
 
     .NOTES
         Tags: Table, Lookup
-        Author: Jana Sattainathan (@SQLJana), http://sqljana.wordpress.com
+        Author: Jana Sattainathan (@SQLJana), sqljana.wordpress.com
 
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
