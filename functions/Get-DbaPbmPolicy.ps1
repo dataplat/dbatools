@@ -35,7 +35,7 @@ function Get-DbaPbmPolicy {
 
     .NOTES
         Tags: Policy, PolicyBasedManagement, PBM
-        Author: Stephen Bennett, https://sqlnotesfromtheunderground.wordpress.com/
+        Author: Stephen Bennett, sqlnotesfromtheunderground.wordpress.com
 
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT

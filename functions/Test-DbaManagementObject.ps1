@@ -22,7 +22,7 @@ function Test-DbaManagementObject {
 
     .NOTES
         Tags: SMO
-        Author: Ben Miller (@DBAduck), http://dbaduck.com
+        Author: Ben Miller (@DBAduck), dbaduck.com
 
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT

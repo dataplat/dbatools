@@ -79,7 +79,7 @@ function Get-DbaDatabase {
 
     .NOTES
         Tags: Database
-        Author: Garry Bargsley (@gbargsley), http://blog.garrybargsley.com | Klaas Vandenberghe (@PowerDbaKlaas) | Simone Bizzotto ( @niphlod )
+        Author: Garry Bargsley (@gbargsley), blog.garrybargsley.com | Klaas Vandenberghe (@PowerDbaKlaas) | Simone Bizzotto (@niphlod)
 
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT

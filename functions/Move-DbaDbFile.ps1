@@ -67,7 +67,7 @@ function Move-DbaDbFile {
         https://dbatools.io/Move-DbaDbFile
 
     .EXAMPLE
-        PS C:\> Move-DbaDbFile -SqlInstance sql2017 -Database dbatools -FileType Data -FileDestination "D:\DATA2"
+        PS C:\> Move-DbaDbFile -SqlInstance sql2017 -Database dbatools -FileType Data -FileDestination D:\DATA2
 
         Copy all data files of dbatools database on sql2017 instance to the "D:\DATA2" path.
         Before it puts database offline and after copy each file will update database metadata and it ends by set the database back online

@@ -32,7 +32,7 @@ function Get-DbaAgentSchedule {
 
     .NOTES
         Tags: Agent, Schedule
-        Author: Chris McKeown (@devopsfu), http://www.devopsfu.com
+        Author: Chris McKeown (@devopsfu), devopsfu.com
 
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT

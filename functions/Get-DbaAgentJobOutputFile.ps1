@@ -31,7 +31,7 @@ function Get-DbaAgentJobOutputFile {
 
     .NOTES
         Tags: Agent, Job
-        Author: Rob Sewell (https://sqldbawithabeard.com) | Simone Bizzotto (@niphlod)
+        Author: Rob Sewell (sqldbawithabeard.com) | Simone Bizzotto (@niphlod)
 
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT

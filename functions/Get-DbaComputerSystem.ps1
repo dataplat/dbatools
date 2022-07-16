@@ -22,7 +22,7 @@ function Get-DbaComputerSystem {
 
     .NOTES
         Tags: Management, Computer, OS
-        Author: Shawn Melton (@wsmelton), https://wsmelton.github.io
+        Author: Shawn Melton (@wsmelton), wsmelton.github.io
 
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT

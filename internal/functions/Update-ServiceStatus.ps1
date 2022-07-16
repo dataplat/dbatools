@@ -30,7 +30,7 @@ function Update-ServiceStatus {
         Prompts you for confirmation before running the cmdlet.
 
     .NOTES
-        Author: Kirill Kravtsov ( @nvarscar )
+        Author: Kirill Kravtsov (@nvarscar)
         Tags:
         dbatools PowerShell module (https://dbatools.io)
        Copyright: (c) 2018 by dbatools, licensed under MIT

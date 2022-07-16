@@ -79,6 +79,14 @@ function Copy-DbaDbCertificate {
     .LINK
         https://dbatools.io/Copy-DbaDbCertificate
 
+
+    .EXAMPLE
+        PS C:\> Copy-DbaDbCertificate -Source sql01 -Destination sql02 -EncryptionPassword $cred.Password -MasterKeyPassword $cred.Password -SharedPath \\nas\sql\shared
+
+        Copies database certificates for matching databases on sql02 and creates master keys if needed
+
+        Uses password from $cred object created by Get-Credential
+
     .EXAMPLE
         PS C:\> $params1 = @{
         >>      Source = "sql01"

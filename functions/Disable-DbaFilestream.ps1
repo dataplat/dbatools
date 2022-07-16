@@ -37,7 +37,7 @@ function Disable-DbaFilestream {
 
     .NOTES
         Tags: Filestream
-        Author: Stuart Moore ( @napalmgram ) | Chrissy LeMaire ( @cl )
+        Author: Stuart Moore (@napalmgram) | Chrissy LeMaire (@cl)
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT

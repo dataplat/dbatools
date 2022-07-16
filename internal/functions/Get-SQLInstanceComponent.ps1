@@ -9,7 +9,7 @@ function Get-SQLInstanceComponent {
         Local or remote systems to query for SQL information.
     .NOTES
         Tags: Install, Patching, SP, CU, Instance
-        Author: Kirill Kravtsov (@nvarscar) https://nvarscar.wordpress.com/
+        Author: Kirill Kravtsov (@nvarscar), nvarscar.wordpress.com
 
         Based on https://github.com/adbertram/PSSqlUpdater
         The majority of this function was created by Boe Prox.

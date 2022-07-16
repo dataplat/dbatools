@@ -35,7 +35,7 @@ function Test-DbaWindowsLogin {
 
     .NOTES
         Tags: Login
-        Author: Stephen Bennett, https://sqlnotesfromtheunderground.wordpress.com/ | Chrissy LeMaire (@cl)
+        Author: Stephen Bennett, sqlnotesfromtheunderground.wordpress.com | Chrissy LeMaire (@cl)
 
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT

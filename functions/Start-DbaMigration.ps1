@@ -1,9 +1,7 @@
 function Start-DbaMigration {
     <#
     .SYNOPSIS
-        Migrates SQL Server *ALL* databases, logins, database mail profiles/accounts, credentials, SQL Agent objects, linked servers,
-        Central Management Server objects, server configuration settings (sp_configure), user objects in systems databases,
-        system triggers and backup devices from one SQL Server to another.
+        Migrates SQL Server *ALL* databases, logins, database mail profiles/accounts, credentials, SQL Agent objects, linked servers, Central Management Server objects, server configuration settings (sp_configure), user objects in systems databases, system triggers and backup devices from one SQL Server to another.
 
         For more granular control, please use Exclude or use the other functions available within the dbatools module.
 

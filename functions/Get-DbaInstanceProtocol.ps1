@@ -22,7 +22,7 @@ function Get-DbaInstanceProtocol {
 
     .NOTES
         Tags: Management, Protocol, OS
-        Author: Klaas Vandenberghe ( @PowerDBAKlaas )
+        Author: Klaas Vandenberghe (@PowerDbaKlaas)
 
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT

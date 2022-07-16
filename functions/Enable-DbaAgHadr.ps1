@@ -29,7 +29,7 @@ function Enable-DbaAgHadr {
 
     .NOTES
         Tags: AG, HA
-        Author: Shawn Melton (@wsmelton), http://wsmelton.github.io
+        Author: Shawn Melton (@wsmelton), wsmelton.github.io
 
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT

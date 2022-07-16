@@ -38,7 +38,7 @@ function Set-DbaAgentJobOutputFile {
 
     .NOTES
         Tags: Agent, Job, SqlAgent
-        Author: Rob Sewell, https://sqldbawithabeard.com
+        Author: Rob Sewell, sqldbawithabeard.com
 
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT

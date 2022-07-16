@@ -1,15 +1,15 @@
 function Copy-DbaXESessionTemplate {
     <#
     .SYNOPSIS
-        Copies non-Microsoft templates from the dbatools template repository (\bin\XEtemplates\) to $home\Documents\SQL Server Management Studio\Templates\XEventTemplates.
+        Copies non-Microsoft templates from the dbatools template repository (/bin/XEtemplates/) to $home\Documents\SQL Server Management Studio\Templates\XEventTemplates.
 
     .DESCRIPTION
-        Copies non-Microsoft templates from the dbatools template repository (\bin\XEtemplates\) to $home\Documents\SQL Server Management Studio\Templates\XEventTemplates.
+        Copies non-Microsoft templates from the dbatools template repository (/bin/XEtemplates/) to $home\Documents\SQL Server Management Studio\Templates\XEventTemplates.
 
         Useful for when you want to use the SSMS GUI.
 
     .PARAMETER Path
-        The path to the template directory. Defaults to the dbatools template repository (\bin\XEtemplates\).
+        The path to the template directory. Defaults to the dbatools template repository (/bin/XEtemplates/).
 
     .PARAMETER Destination
         Path to the Destination directory, defaults to $home\Documents\SQL Server Management Studio\Templates\XEventTemplates.
@@ -33,7 +33,7 @@ function Copy-DbaXESessionTemplate {
     .EXAMPLE
         PS C:\> Copy-DbaXESessionTemplate
 
-        Copies non-Microsoft templates from the dbatools template repository (\bin\XEtemplates\) to $home\Documents\SQL Server Management Studio\Templates\XEventTemplates.
+        Copies non-Microsoft templates from the dbatools template repository (/bin/XEtemplates/) to $home\Documents\SQL Server Management Studio\Templates\XEventTemplates.
 
     .EXAMPLE
         PS C:\> Copy-DbaXESessionTemplate -Path C:\temp\XEtemplates

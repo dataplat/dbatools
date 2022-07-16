@@ -5,8 +5,6 @@ function Export-DbaInstance {
         Central Management Server objects, server configuration settings (sp_configure), user objects in systems databases,
         system triggers and backup devices from one SQL Server to another.
 
-        For more granular control, please use one of the -Exclude parameters and use the other functions available within the dbatools module.
-
     .DESCRIPTION
         Export-DbaInstance consolidates most of the export scripts in dbatools into one command.
 
@@ -42,6 +40,8 @@ function Export-DbaInstance {
         1. Export files to a new timestamped folder. This is the default behavior and results in a simple historical archive within the local filesystem.
         2. Export files to an existing folder and overwrite pre-existing files. This can be accomplished using the -Force parameter.
         This results in a single folder location with the latest exported files. These files can then be checked into a source control system if needed.
+
+        For more granular control, please use one of the -Exclude parameters and use the other functions available within the dbatools module.
 
     .PARAMETER SqlInstance
         The target SQL Server instances

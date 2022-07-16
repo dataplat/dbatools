@@ -3,8 +3,6 @@ function Copy-DbaAgentJobCategory {
     .SYNOPSIS
         Copy-DbaAgentJobCategory migrates SQL Agent categories from one SQL Server to another. This is similar to sp_add_category.
 
-        https://msdn.microsoft.com/en-us/library/ms181597.aspx
-
     .DESCRIPTION
         By default, all SQL Agent categories for Jobs, Operators and Alerts are copied.
 

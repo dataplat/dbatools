@@ -29,7 +29,7 @@ function Get-DbaEndpoint {
 
     .NOTES
         Tags: Endpoint
-        Author: Garry Bargsley (@gbargsley), http://blog.garrybargsley.com
+        Author: Garry Bargsley (@gbargsley), blog.garrybargsley.com
 
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
