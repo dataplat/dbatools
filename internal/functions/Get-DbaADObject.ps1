@@ -35,7 +35,7 @@ function Get-DbaADObject {
             Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-    Author: Niphlod, https://github.com/niphlod
+    Author: Niphlod, github.com/niphlod
     Tags:
     dbatools PowerShell module (https://dbatools.io)
    Copyright: (c) 2018 by dbatools, licensed under MIT

@@ -39,7 +39,7 @@ function Remove-DbaDbPartitionFunction {
 
     .NOTES
         Tags: PartitionFunction, Database
-        Author: Mikey Bronowski (@MikeyBronowski), https://bronowski.it
+        Author: Mikey Bronowski (@MikeyBronowski), bronowski.it
 
         Website: https://dbatools.io
         Copyright: (c) 2022 by dbatools, licensed under MIT

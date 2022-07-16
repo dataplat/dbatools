@@ -38,7 +38,7 @@ function Set-DbaErrorLogConfig {
 
     .NOTES
         Tags: Instance, ErrorLog, Logging
-        Author: Shawn Melton (@wsmelton), https://wsmelton.github.com
+        Author: Shawn Melton (@wsmelton), wsmelton.github.com
 
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT

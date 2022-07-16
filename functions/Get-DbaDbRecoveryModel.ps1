@@ -35,7 +35,7 @@ function Get-DbaDbRecoveryModel {
 
     .NOTES
         Tags: Recovery, RecoveryModel, Backup
-        Author: Viorel Ciucu (@viorelciucu), https://www.cviorel.com
+        Author: Viorel Ciucu (@viorelciucu), cviorel.com
 
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT

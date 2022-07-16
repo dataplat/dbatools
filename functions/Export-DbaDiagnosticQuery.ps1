@@ -33,7 +33,7 @@ function Export-DbaDiagnosticQuery {
 
     .NOTES
         Tags: Community, GlennBerry
-        Author: Andre Kamman (@AndreKamman), http://clouddba.io
+        Author: Andre Kamman (@AndreKamman), clouddba.io
 
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT

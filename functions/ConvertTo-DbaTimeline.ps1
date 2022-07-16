@@ -74,7 +74,7 @@ function ConvertTo-DbaTimeline {
         $begin = @"
 <html>
 <head>
-<!-- Developed by Marcin Gminski, https://marcin.gminski.net, 2018 -->
+<!-- Developed by Marcin Gminski, marcin.gminski.net, 2018 -->
 <!-- Load jQuery required to autosize timeline -->
 <script src="https://code.jquery.com/jquery-3.3.1.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
 <!-- Load Bootstrap -->

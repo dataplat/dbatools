@@ -1,9 +1,7 @@
 function Test-DbaDiskSpeed {
     <#
     .SYNOPSIS
-        Obtains I/O statistics based on the DMV sys.dm_io_virtual_file_stats:
-
-        https://docs.microsoft.com/en-us/sql/relational-databases/system-dynamic-management-views/sys-dm-io-virtual-file-stats-transact-sql
+        Obtains I/O statistics based on the DMV sys.dm_io_virtual_file_stats
 
     .DESCRIPTION
         Obtains I/O statistics based on the DMV sys.dm_io_virtual_file_stats:

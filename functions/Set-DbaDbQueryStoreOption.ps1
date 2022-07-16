@@ -81,7 +81,7 @@ function Set-DbaDbQueryStoreOption {
 
     .NOTES
         Tags: QueryStore
-        Author: Enrico van de Laar (@evdlaar) | Tracy Boggiano ( @TracyBoggiano )
+        Author: Enrico van de Laar (@evdlaar) | Tracy Boggiano (@TracyBoggiano)
 
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT

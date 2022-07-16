@@ -34,7 +34,7 @@ function Set-DbaPrivilege {
 
     .NOTES
         Tags: Privilege, Security
-        Author: Klaas Vandenberghe ( @PowerDBAKlaas )
+        Author: Klaas Vandenberghe (@PowerDbaKlaas)
 
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT

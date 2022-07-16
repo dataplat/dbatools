@@ -23,7 +23,7 @@ function Get-DbaSpn {
 
     .NOTES
         Tags: SPN
-        Author: Drew Furgiuele (@pittfurg), http://www.port1433.com
+        Author: Drew Furgiuele (@pittfurg), port1433.com
 
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT

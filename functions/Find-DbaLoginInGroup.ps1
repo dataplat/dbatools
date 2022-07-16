@@ -22,7 +22,7 @@ function Find-DbaLoginInGroup {
 
     .NOTES
         Tags: Login, Group, Lookup
-        Author: Stephen Bennett, https://sqlnotesfromtheunderground.wordpress.com/ | Simone Bizzotto (@niphlod)
+        Author: Stephen Bennett, sqlnotesfromtheunderground.wordpress.com | Simone Bizzotto (@niphlod)
 
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT

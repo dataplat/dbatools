@@ -32,7 +32,7 @@ function Get-DbaAgentJobStep {
 
     .NOTES
         Tags: Agent, Job
-        Author: Klaas Vandenberghe (@PowerDbaKlaas), http://powerdba.eu
+        Author: Klaas Vandenberghe (@PowerDbaKlaas), powerdba.eu
 
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT

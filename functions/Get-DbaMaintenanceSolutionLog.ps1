@@ -32,7 +32,7 @@ function Get-DbaMaintenanceSolutionLog {
 
     .NOTES
         Tags: Community, OlaHallengren
-        Author: Klaas Vandenberghe (@powerdbaklaas) | Simone Bizzotto ( @niphlod )
+        Author: Klaas Vandenberghe (@powerdbaklaas) | Simone Bizzotto (@niphlod)
 
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT

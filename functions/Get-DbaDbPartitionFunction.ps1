@@ -32,7 +32,7 @@ function Get-DbaDbPartitionFunction {
 
     .NOTES
         Tags: Database, Partition
-        Author: Klaas Vandenberghe ( @PowerDbaKlaas )
+        Author: Klaas Vandenberghe (@PowerDbaKlaas)
 
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT

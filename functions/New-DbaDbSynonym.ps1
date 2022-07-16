@@ -56,7 +56,7 @@ function New-DbaDbSynonym {
 
     .NOTES
         Tags: Synonym, Database
-        Author: Mikey Bronowski (@MikeyBronowski), https://bronowski.it
+        Author: Mikey Bronowski (@MikeyBronowski), bronowski.it
 
         Website: https://dbatools.io
         Copyright: (c) 2021 by dbatools, licensed under MIT

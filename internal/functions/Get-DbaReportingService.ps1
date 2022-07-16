@@ -27,7 +27,7 @@ function Get-DbaReportingService {
 
     .NOTES
         Tags: Service, SqlServer, Instance, Connect
-        Author: Kirill Kravtsov ( @nvarscar )
+        Author: Kirill Kravtsov (@nvarscar)
 
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT

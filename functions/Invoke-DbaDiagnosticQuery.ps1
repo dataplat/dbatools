@@ -75,7 +75,7 @@ function Invoke-DbaDiagnosticQuery {
 
     .NOTES
         Tags: Community, GlennBerry
-        Author: Andre Kamman (@AndreKamman), http://andrekamman.com
+        Author: Andre Kamman (@AndreKamman), andrekamman.com
 
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT

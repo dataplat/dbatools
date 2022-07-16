@@ -60,7 +60,7 @@ function Remove-DbaDbTableData {
 
     .NOTES
         Tags: Table, Data
-        Author: Adam Lancaster https://github.com/lancasteradam
+        Author: Adam Lancaster, github.com/lancasteradam
 
         Website: https://dbatools.io
         Copyright: (c) 2020 by dbatools, licensed under MIT

@@ -39,7 +39,7 @@ function Remove-DbaDbFileGroup {
 
     .NOTES
         Tags: Storage, Data, File, FileGroup
-        Author: Adam Lancaster https://github.com/lancasteradam
+        Author: Adam Lancaster, github.com/lancasteradam
 
         dbatools PowerShell module (https://dbatools.io)
         Copyright: (c) 2021 by dbatools, licensed under MIT

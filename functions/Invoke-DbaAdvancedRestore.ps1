@@ -100,7 +100,7 @@ function Invoke-DbaAdvancedRestore {
 
     .NOTES
         Tags: Restore, Backup
-        Author: Stuart Moore (@napalmgram - http://stuart-moore.com)
+        Author: Stuart Moore (@napalmgram), stuart-moore.com
 
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
