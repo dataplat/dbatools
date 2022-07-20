@@ -51,10 +51,17 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 
             $backupFile = Backup-DbaDatabase -SqlInstance $script:instance2 -Database $dbname -Path $tmpBackupPath -Type Full
             $backupFile2 = Backup-DbaDatabase -SqlInstance $script:instance2 -Database $dbname2 -Path $tmpBackupPath2 -Type Full
+            Copy-Item -Path $backupFile.BackupPath -Destination "C:\" -Confirm:$false
+
+            $tmpBackupPath3 = Join-Path (Get-SqlDefaultPaths $server data) "dbatoolsci_$(Get-Random)"
+            $null = New-Item -Path $tmpBackupPath3 -type Container
         }
         AfterAll {
             Get-DbaDatabase -SqlInstance $script:instance2 -Database $dbname, $dbname2 | Remove-DbaDatabase -Confirm:$false
             Remove-Item $tmpdir -Recurse -Force -ErrorAction SilentlyContinue
+            Remove-Item $tmpdir2 -Recurse -Force -ErrorAction SilentlyContinue
+            Remove-Item "C:\$($backupFile.BackupFile)" -Force -ErrorAction SilentlyContinue
+            Remove-Item $tmpBackupPath3 -Recurse -Force -ErrorAction SilentlyContinue
         }
         It "Has the correct properties" {
             $null = Detach-DbaDatabase -SqlInstance $script:instance2 -Database $dbname -Force
@@ -87,11 +94,21 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $results = Find-DbaOrphanedFile -SqlInstance $script:instance2 -Path $tmpdir -Recurse
             $results.Filename.Count | Should -Be 1
 
+            Copy-Item -Path "$tmpdirInner\out.mdf" -Destination $tmpBackupPath3 -Confirm:$false
+
             $results = Find-DbaOrphanedFile -SqlInstance $script:instance2 -Path $tmpdir, $tmpdir2 -Recurse -FileType bak
             $results.Filename | Should -Contain $backupFile.BackupPath
             $results.Filename | Should -Contain $backupFile2.BackupPath
             $results.Filename | Should -Contain "$tmpdirInner\out.mdf"
-            $results.Count | Should -Be 3
+            $results.Filename | Should -Contain "$tmpBackupPath3\out.mdf"
+            $results.Count | Should -Be 4
+
+            $results = Find-DbaOrphanedFile -SqlInstance $script:instance2 -Recurse
+            $results.Filename | Should -Be "$tmpBackupPath3\out.mdf"
+        }
+        It "works with -Path" {
+            $results = Find-DbaOrphanedFile -SqlInstance $script:instance2 -Path "C:" -FileType bak
+            $results.Filename | Should -Contain "C:\$($backupFile.BackupFile)"
         }
     }
 }
