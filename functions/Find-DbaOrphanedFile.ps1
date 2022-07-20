@@ -109,38 +109,36 @@ function Find-DbaOrphanedFile {
         function Get-SQLDirTreeQuery {
             param([object[]]$SqlPathList, [object[]]$UserPathList, $FileTypes, $SystemFiles, [Switch]$Recurse, $ServerMajorVersion)
 
+            $q1 = "
+                CREATE TABLE #enum (
+                  id int IDENTITY
+                , fs_filename nvarchar(512)
+                , depth int
+                , is_file int
+                , parent nvarchar(512)
+                , parent_id int
+                );
+                DECLARE @dir nvarchar(512);
+                "
+
+            $q2 = "
+                SET @dir = 'dirname';
+
+                INSERT INTO #enum( fs_filename, depth, is_file )
+                EXEC xp_dirtree @dir, recurse, 1;
+
+                UPDATE #enum
+                SET parent = @dir,
+                parent_id = (SELECT MAX(i.id) FROM #enum i WHERE i.id < e.id AND i.depth = e.depth-1 AND i.is_file = 0)
+                FROM #enum e
+                WHERE e.parent IS NULL;
+                "
+
             if ($ServerMajorVersion -ge 9) {
                 # CTEs added in SQL 2005
-                $q1 = "
-                    CREATE TABLE #enum (
-                      id int IDENTITY
-                    , fs_filename nvarchar(512)
-                    , depth int
-                    , is_file int
-                    , parent nvarchar(512)
-                    , parent_id int
-                    , is_user_path bit
-                    );
-                    DECLARE @dir nvarchar(512);
-                    "
-
-                $q2 = "
-                    SET @dir = 'dirname';
-
-                    INSERT INTO #enum( fs_filename, depth, is_file )
-                    EXEC xp_dirtree @dir, recurse, 1;
-
-                    UPDATE #enum
-                    SET parent = @dir,
-                    parent_id = (SELECT MAX(i.id) FROM #enum i WHERE i.id < e.id AND i.depth = e.depth-1 AND i.is_file = 0),
-                    is_user_path = _IS_USER_PATH_REPLACE_
-                    FROM #enum e
-                    WHERE e.parent IS NULL;
-                    "
-
                 $query_files_sql = "
-                    ; WITH DistinctUserPath AS
-                    (   -- user paths to be used in the anchor for the recursive query below (FinalPath)
+                    ; WITH DistinctPath AS
+                    (   -- paths to be used in the anchor for the recursive query below (FinalPath)
                         SELECT
                              DISTINCT
                              parent          AS parent
@@ -148,8 +146,6 @@ function Find-DbaOrphanedFile {
                         ,    NULL            AS parent_id
                         FROM
                             #enum
-                        WHERE
-                            is_user_path = 1
                     )
                     , BaseDir AS
                     (    -- dynamically assign an Id (using negative numbers to avoid any potential collision with the temp table)
@@ -159,7 +155,7 @@ function Find-DbaOrphanedFile {
                         ,    depth
                         ,    parent_id
                         FROM
-                            DistinctUserPath
+                            DistinctPath
                     )
                     , AdjustedBaseDir AS
                     (    -- Link the Ids for the constructed anchor rows
@@ -167,14 +163,13 @@ function Find-DbaOrphanedFile {
                              e.id
                         ,    e.fs_filename
                         ,    e.depth
+                        ,    e.is_file
                         ,    CASE WHEN e.parent_id IS NULL THEN b.Id ELSE e.parent_id END AS parent_id
                         FROM
                             #enum e
                         JOIN
                             BaseDir b
                                 ON e.parent = b.parent
-                        WHERE
-                            e.is_user_path = 1
                     )
                     , Combined AS
                     (    -- combine anchor data and recursive data
@@ -182,6 +177,7 @@ function Find-DbaOrphanedFile {
                              Id
                         ,    parent
                         ,    depth
+                        ,    0          AS is_file
                         ,    parent_id
                         FROM
                             BaseDir
@@ -190,6 +186,7 @@ function Find-DbaOrphanedFile {
                              Id
                         ,    fs_filename
                         ,    depth
+                        ,    is_file
                         ,    parent_id
                         FROM
                             AdjustedBaseDir
@@ -198,8 +195,9 @@ function Find-DbaOrphanedFile {
                     (    -- recursive CTE to construct the full file path
                         SELECT
                              Id
-                        ,    parent
+                        ,    parent                           AS fs_filename
                         ,    depth
+                        ,    is_file
                         ,    parent_id
                         ,    CAST(parent AS NVARCHAR(MAX))    AS FullPath
                         FROM
@@ -211,6 +209,7 @@ function Find-DbaOrphanedFile {
                              d.Id
                         ,    d.parent
                         ,    d.depth
+                        ,    d.is_file
                         ,    d.parent_id
                         ,    FullPath + '\' + d.parent
                         FROM
@@ -219,63 +218,18 @@ function Find-DbaOrphanedFile {
                             FinalPath fp
                                 ON d.parent_id = fp.Id
                     )
-                    , OrigPath AS
-                    (    -- original data from #enum
-                        SELECT e.Id, e.fs_filename AS filename, e.parent, e.is_user_path
-                        FROM #enum AS e
-                        WHERE e.fs_filename NOT IN( 'xtp', '5', '`$FSLOG', '`$HKv2', 'filestream.hdr', '" + $($SystemFiles -join "','") + "' )
-                        AND CASE
-                            WHEN e.fs_filename LIKE '%.%'
-                            THEN REVERSE(LEFT(REVERSE(e.fs_filename), CHARINDEX('.', REVERSE(e.fs_filename)) - 1))
-                            ELSE ''
-                            END IN('" + $($FileTypes -join "','") + "')
-                        AND e.is_file = 1
-                    )
-                    SELECT
-                         filename                   AS filename
-                    ,    parent + '\' + filename    AS FullPath
-                    FROM
-                        OrigPath
-                    WHERE
-                        is_user_path = 0 -- paths known to SQL
-                    UNION ALL
-                    SELECT
-                         fp.parent      AS filename
-                    ,    fp.FullPath    AS FullPath
-                    FROM
-                        FinalPath fp
-                    JOIN
-                        OrigPath op
-                            ON fp.Id = op.Id
-                    WHERE
-                        op.is_user_path = 1;
+                    SELECT e.fs_filename AS filename, e.FullPath
+                    FROM FinalPath AS e
+                    WHERE e.fs_filename NOT IN( 'xtp', '5', '`$FSLOG', '`$HKv2', 'filestream.hdr', '" + $($SystemFiles -join "','") + "' )
+                    AND CASE
+                        WHEN e.fs_filename LIKE '%.%'
+                        THEN REVERSE(LEFT(REVERSE(e.fs_filename), CHARINDEX('.', REVERSE(e.fs_filename)) - 1))
+                        ELSE ''
+                        END IN('" + $($FileTypes -join "','") + "')
+                    AND e.is_file = 1
+                    ;
                     "
             } else {
-                $q1 = "
-                    CREATE TABLE #enum (
-                      id int IDENTITY
-                    , fs_filename nvarchar(512)
-                    , depth int
-                    , is_file int
-                    , parent nvarchar(512)
-                    , parent_id int
-                    );
-                    DECLARE @dir nvarchar(512);
-                    "
-
-                $q2 = "
-                    SET @dir = 'dirname';
-
-                    INSERT INTO #enum( fs_filename, depth, is_file )
-                    EXEC xp_dirtree @dir, recurse, 1;
-
-                    UPDATE #enum
-                    SET parent = @dir,
-                    parent_id = (SELECT MAX(i.id) FROM #enum i WHERE i.id < e.id AND i.depth = e.depth-1 AND i.is_file = 0)
-                    FROM #enum e
-                    WHERE e.parent IS NULL;
-                    "
-
                 $query_files_sql = "
                     SELECT e.fs_filename AS filename, e.parent
                     FROM #enum AS e
@@ -289,12 +243,12 @@ function Find-DbaOrphanedFile {
                     "
             }
 
+            $recurseVal = If ($Recurse) { '0' } Else { '1' }
             # build the query string based on how many directories they want to enumerate
             $sql = $q1
-            $sql += $($SqlPathList | Where-Object { $_ -ne '' } | ForEach-Object { "$([System.Environment]::Newline)$($q2.Replace('dirname',$_).Replace('recurse','1').Replace('_IS_USER_PATH_REPLACE_', '0'))" } )
+            $sql += $($SqlPathList | Where-Object { $_ -ne '' } | ForEach-Object { "$([System.Environment]::Newline)$($q2.Replace('dirname',$_).Replace('recurse',$recurseVal))" } )
             If ($UserPathList) {
-                $recurseVal = If ($Recurse) { '0' } Else { '1' }
-                $sql += $($UserPathList | Where-Object { $_ -ne '' } | ForEach-Object { "$([System.Environment]::Newline)$($q2.Replace('dirname',$_).Replace('recurse',$recurseVal).Replace('_IS_USER_PATH_REPLACE_', '1'))" } )
+                $sql += $($UserPathList | Where-Object { $_ -ne '' } | ForEach-Object { "$([System.Environment]::Newline)$($q2.Replace('dirname',$_).Replace('recurse',$recurseVal))" } )
             }
             $sql += $query_files_sql
             Write-Message -Level Debug -Message $sql
