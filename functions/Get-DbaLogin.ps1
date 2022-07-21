@@ -283,6 +283,13 @@ function Get-DbaLogin {
                     Add-Member -Force -InputObject $serverLogin -MemberType NoteProperty -Name PasswordHash -Value $loginProperties.PasswordHash
                     Add-Member -Force -InputObject $serverLogin -MemberType NoteProperty -Name PasswordLastSetTime -Value $loginProperties.PasswordLastSetTime
                 }
+
+                $sidString = '0x'
+                foreach ($element in $serverLogin.Sid) {
+                    $sidString += '{0:X2}' -f $element
+                }
+                Add-Member -Force -InputObject $serverLogin -MemberType NoteProperty -Name SidString -Value $sidString
+
                 Select-DefaultView -InputObject $serverLogin -Property ComputerName, InstanceName, SqlInstance, Name, LoginType, CreateDate, LastLogin, HasAccess, IsLocked, IsDisabled, MustChangePassword
             }
         }
