@@ -114,7 +114,11 @@ function Copy-DbaCredential {
             Stop-Function -Message "Copy-DbaCredential is only supported on Windows"
             return
         }
-        $null = Test-ElevationRequirement -ComputerName $Source.ComputerName
+        $results = Test-ElevationRequirement -ComputerName $Source.ComputerName
+
+        if (-not $results) {
+            return
+        }
 
         if ($Force) { $ConfirmPreference = 'none' }
 
