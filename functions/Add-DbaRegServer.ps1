@@ -123,7 +123,11 @@ function Add-DbaRegServer {
             return
         }
         if (-not $Name) {
-            $Name = $ServerName
+            if ($ServerObject) {
+                $Name = $ServerObject.Name
+            } else {
+                $Name = $ServerName
+            }
         }
 
         if ((-not $SqlInstance -and -not $InputObject) -or $ServerObject) {
@@ -170,7 +174,6 @@ function Add-DbaRegServer {
                         $InputObject += Add-DbaRegServerGroup -SqlInstance $instance -SqlCredential $SqlCredential -Name $Group
                     }
                 }
-
             } else {
                 $InputObject += Get-DbaRegServerGroup -SqlInstance $instance -SqlCredential $SqlCredential -Id 1
             }
