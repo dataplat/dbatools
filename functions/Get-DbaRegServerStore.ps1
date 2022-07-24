@@ -76,11 +76,13 @@ function Get-DbaRegServerStore {
         if (-not $PSBoundParameters.SqlInstance) {
             $file = [Microsoft.SqlServer.Management.RegisteredServers.RegisteredServersStore]::LocalFileStore.DomainInstanceName
             if ($file) {
-                if ((Test-Path -Path $file)) {
-                    $class = [Microsoft.SqlServer.Management.RegisteredServers.RegisteredServersStore]
-                    $initMethod = $class.GetMethod('InitChildObjects', [Reflection.BindingFlags]'Static,NonPublic')
-                    $initMethod.Invoke($null, @($file))
+                if (-not (Test-Path -Path $file)) {
+                    $regfile = Join-DbaPath -Path $script:PSModuleRoot -ChildPath bin, RegSrvr.xml
+                    Copy-Item -Path $regfile -Destination $file -Force
                 }
+                $class = [Microsoft.SqlServer.Management.RegisteredServers.RegisteredServersStore]
+                $initMethod = $class.GetMethod('InitChildObjects', [Reflection.BindingFlags]'Static,NonPublic')
+                $initMethod.Invoke($null, @($file))
             }
         }
     }
