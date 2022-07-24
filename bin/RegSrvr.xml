@@ -1,0 +1,189 @@
+<?xml version="1.0"?>
+<model xmlns="http://schemas.serviceml.org/smlif/2007/02">
+  <identity>
+    <name>urn:uuid:96fe1236-abf6-4a57-b54d-e9baab394fd1</name>
+    <baseURI>http://documentcollection/</baseURI>
+  </identity>
+  <xs:bufferSchema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+    <definitions xmlns:sfc="http://schemas.microsoft.com/sqlserver/sfc/serialization/2007/08">
+      <document>
+        <docinfo>
+          <aliases>
+            <alias>/system/schema/RegisteredServers</alias>
+          </aliases>
+          <sfc:version DomainVersion="1" />
+        </docinfo>
+        <data>
+          <xs:schema targetNamespace="http://schemas.microsoft.com/sqlserver/RegisteredServers/2007/08" xmlns:sfc="http://schemas.microsoft.com/sqlserver/sfc/serialization/2007/08" xmlns:sml="http://schemas.serviceml.org/sml/2007/02" xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
+            <xs:element name="RegisteredServersStore">
+              <xs:complexType>
+                <xs:sequence>
+                  <xs:any namespace="http://schemas.microsoft.com/sqlserver/RegisteredServers/2007/08" processContents="skip" minOccurs="0" maxOccurs="unbounded" />
+                </xs:sequence>
+              </xs:complexType>
+            </xs:element>
+            <xs:element name="ServerGroup">
+              <xs:complexType>
+                <xs:sequence>
+                  <xs:any namespace="http://schemas.microsoft.com/sqlserver/RegisteredServers/2007/08" processContents="skip" minOccurs="0" maxOccurs="unbounded" />
+                </xs:sequence>
+              </xs:complexType>
+            </xs:element>
+            <RegisteredServers:bufferData xmlns:RegisteredServers="http://schemas.microsoft.com/sqlserver/RegisteredServers/2007/08">
+              <instances xmlns:sfc="http://schemas.microsoft.com/sqlserver/sfc/serialization/2007/08">
+                <document>
+                  <docinfo>
+                    <aliases>
+                      <alias>/RegisteredServersStore</alias>
+                    </aliases>
+                    <sfc:version DomainVersion="1" />
+                  </docinfo>
+                  <data>
+                    <RegisteredServers:RegisteredServersStore xmlns:RegisteredServers="http://schemas.microsoft.com/sqlserver/RegisteredServers/2007/08" xmlns:sfc="http://schemas.microsoft.com/sqlserver/sfc/serialization/2007/08" xmlns:sml="http://schemas.serviceml.org/sml/2007/02" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+                      <RegisteredServers:ServerGroups>
+                        <sfc:Collection>
+                          <sfc:Reference sml:ref="true">
+                            <sml:Uri>/RegisteredServersStore/ServerGroup/AnalysisServicesServerGroup</sml:Uri>
+                          </sfc:Reference>
+                          <sfc:Reference sml:ref="true">
+                            <sml:Uri>/RegisteredServersStore/ServerGroup/CentralManagementServerGroup</sml:Uri>
+                          </sfc:Reference>
+                          <sfc:Reference sml:ref="true">
+                            <sml:Uri>/RegisteredServersStore/ServerGroup/DatabaseEngineServerGroup</sml:Uri>
+                          </sfc:Reference>
+                          <sfc:Reference sml:ref="true">
+                            <sml:Uri>/RegisteredServersStore/ServerGroup/IntegrationServicesServerGroup</sml:Uri>
+                          </sfc:Reference>
+                          <sfc:Reference sml:ref="true">
+                            <sml:Uri>/RegisteredServersStore/ServerGroup/ReportingServicesServerGroup</sml:Uri>
+                          </sfc:Reference>
+                          <sfc:Reference sml:ref="true">
+                            <sml:Uri>/RegisteredServersStore/ServerGroup/SqlServerCompactEditionServerGroup</sml:Uri>
+                          </sfc:Reference>
+                        </sfc:Collection>
+                      </RegisteredServers:ServerGroups>
+                    </RegisteredServers:RegisteredServersStore>
+                  </data>
+                </document>
+                <document>
+                  <docinfo>
+                    <aliases>
+                      <alias>/RegisteredServersStore/ServerGroup/AnalysisServicesServerGroup</alias>
+                    </aliases>
+                    <sfc:version DomainVersion="1" />
+                  </docinfo>
+                  <data>
+                    <RegisteredServers:ServerGroup xmlns:RegisteredServers="http://schemas.microsoft.com/sqlserver/RegisteredServers/2007/08" xmlns:sfc="http://schemas.microsoft.com/sqlserver/sfc/serialization/2007/08" xmlns:sml="http://schemas.serviceml.org/sml/2007/02" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+                      <RegisteredServers:Parent>
+                        <sfc:Reference sml:ref="true">
+                          <sml:Uri>/RegisteredServersStore</sml:Uri>
+                        </sfc:Reference>
+                      </RegisteredServers:Parent>
+                      <RegisteredServers:Name type="string">AnalysisServicesServerGroup</RegisteredServers:Name>
+                      <RegisteredServers:ServerType type="ServerType">AnalysisServices</RegisteredServers:ServerType>
+                    </RegisteredServers:ServerGroup>
+                  </data>
+                </document>
+                <document>
+                  <docinfo>
+                    <aliases>
+                      <alias>/RegisteredServersStore/ServerGroup/CentralManagementServerGroup</alias>
+                    </aliases>
+                    <sfc:version DomainVersion="1" />
+                  </docinfo>
+                  <data>
+                    <RegisteredServers:ServerGroup xmlns:RegisteredServers="http://schemas.microsoft.com/sqlserver/RegisteredServers/2007/08" xmlns:sfc="http://schemas.microsoft.com/sqlserver/sfc/serialization/2007/08" xmlns:sml="http://schemas.serviceml.org/sml/2007/02" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+                      <RegisteredServers:Parent>
+                        <sfc:Reference sml:ref="true">
+                          <sml:Uri>/RegisteredServersStore</sml:Uri>
+                        </sfc:Reference>
+                      </RegisteredServers:Parent>
+                      <RegisteredServers:Name type="string">CentralManagementServerGroup</RegisteredServers:Name>
+                      <RegisteredServers:ServerType type="ServerType">DatabaseEngine</RegisteredServers:ServerType>
+                    </RegisteredServers:ServerGroup>
+                  </data>
+                </document>
+                <document>
+                  <docinfo>
+                    <aliases>
+                      <alias>/RegisteredServersStore/ServerGroup/DatabaseEngineServerGroup</alias>
+                    </aliases>
+                    <sfc:version DomainVersion="1" />
+                  </docinfo>
+                  <data>
+                    <RegisteredServers:ServerGroup xmlns:RegisteredServers="http://schemas.microsoft.com/sqlserver/RegisteredServers/2007/08" xmlns:sfc="http://schemas.microsoft.com/sqlserver/sfc/serialization/2007/08" xmlns:sml="http://schemas.serviceml.org/sml/2007/02" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+                      <RegisteredServers:Parent>
+                        <sfc:Reference sml:ref="true">
+                          <sml:Uri>/RegisteredServersStore</sml:Uri>
+                        </sfc:Reference>
+                      </RegisteredServers:Parent>
+                      <RegisteredServers:Name type="string">DatabaseEngineServerGroup</RegisteredServers:Name>
+                      <RegisteredServers:ServerType type="ServerType">DatabaseEngine</RegisteredServers:ServerType>
+                    </RegisteredServers:ServerGroup>
+                  </data>
+                </document>
+                <document>
+                  <docinfo>
+                    <aliases>
+                      <alias>/RegisteredServersStore/ServerGroup/IntegrationServicesServerGroup</alias>
+                    </aliases>
+                    <sfc:version DomainVersion="1" />
+                  </docinfo>
+                  <data>
+                    <RegisteredServers:ServerGroup xmlns:RegisteredServers="http://schemas.microsoft.com/sqlserver/RegisteredServers/2007/08" xmlns:sfc="http://schemas.microsoft.com/sqlserver/sfc/serialization/2007/08" xmlns:sml="http://schemas.serviceml.org/sml/2007/02" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+                      <RegisteredServers:Parent>
+                        <sfc:Reference sml:ref="true">
+                          <sml:Uri>/RegisteredServersStore</sml:Uri>
+                        </sfc:Reference>
+                      </RegisteredServers:Parent>
+                      <RegisteredServers:Name type="string">IntegrationServicesServerGroup</RegisteredServers:Name>
+                      <RegisteredServers:ServerType type="ServerType">IntegrationServices</RegisteredServers:ServerType>
+                    </RegisteredServers:ServerGroup>
+                  </data>
+                </document>
+                <document>
+                  <docinfo>
+                    <aliases>
+                      <alias>/RegisteredServersStore/ServerGroup/ReportingServicesServerGroup</alias>
+                    </aliases>
+                    <sfc:version DomainVersion="1" />
+                  </docinfo>
+                  <data>
+                    <RegisteredServers:ServerGroup xmlns:RegisteredServers="http://schemas.microsoft.com/sqlserver/RegisteredServers/2007/08" xmlns:sfc="http://schemas.microsoft.com/sqlserver/sfc/serialization/2007/08" xmlns:sml="http://schemas.serviceml.org/sml/2007/02" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+                      <RegisteredServers:Parent>
+                        <sfc:Reference sml:ref="true">
+                          <sml:Uri>/RegisteredServersStore</sml:Uri>
+                        </sfc:Reference>
+                      </RegisteredServers:Parent>
+                      <RegisteredServers:Name type="string">ReportingServicesServerGroup</RegisteredServers:Name>
+                      <RegisteredServers:ServerType type="ServerType">ReportingServices</RegisteredServers:ServerType>
+                    </RegisteredServers:ServerGroup>
+                  </data>
+                </document>
+                <document>
+                  <docinfo>
+                    <aliases>
+                      <alias>/RegisteredServersStore/ServerGroup/SqlServerCompactEditionServerGroup</alias>
+                    </aliases>
+                    <sfc:version DomainVersion="1" />
+                  </docinfo>
+                  <data>
+                    <RegisteredServers:ServerGroup xmlns:RegisteredServers="http://schemas.microsoft.com/sqlserver/RegisteredServers/2007/08" xmlns:sfc="http://schemas.microsoft.com/sqlserver/sfc/serialization/2007/08" xmlns:sml="http://schemas.serviceml.org/sml/2007/02" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+                      <RegisteredServers:Parent>
+                        <sfc:Reference sml:ref="true">
+                          <sml:Uri>/RegisteredServersStore</sml:Uri>
+                        </sfc:Reference>
+                      </RegisteredServers:Parent>
+                      <RegisteredServers:Name type="string">SqlServerCompactEditionServerGroup</RegisteredServers:Name>
+                      <RegisteredServers:ServerType type="ServerType">SqlServerCompactEdition</RegisteredServers:ServerType>
+                    </RegisteredServers:ServerGroup>
+                  </data>
+                </document>
+              </instances>
+            </RegisteredServers:bufferData>
+          </xs:schema>
+        </data>
+      </document>
+    </definitions>
+  </xs:bufferSchema>
+</model>
