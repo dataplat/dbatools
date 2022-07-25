@@ -87,6 +87,7 @@ function Find-DbaDbDisabledIndex {
     begin {
         $sql = "
         SELECT DB_NAME() AS 'DatabaseName'
+        ,d.database_id AS DatabaseId
         ,s.name AS 'SchemaName'
         ,t.name AS 'TableName'
         ,i.object_id AS ObjectId
@@ -98,6 +99,8 @@ function Find-DbaDbDisabledIndex {
             ON t.schema_id = s.schema_id
         JOIN sys.indexes i
             ON i.object_id = t.object_id
+        JOIN sys.databases d
+            ON d.name = DB_NAME()
         WHERE i.is_disabled = 1"
     }
     process {
