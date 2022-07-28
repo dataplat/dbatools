@@ -99,10 +99,10 @@ function New-DbaDacOption {
                 }
             }
             function New-DacObject {
-                Param ([String]$TypeName, [hashtable]$Property=$Property)
+                Param ([String]$TypeName, [hashtable]$Property = $Property)
 
-                $dacOptionSplat = @{TypeName = $TypeName}
-                if ($Property) { $dacOptionSplat.Property = $Property}
+                $dacOptionSplat = @{TypeName = $TypeName }
+                if ($Property) { $dacOptionSplat.Property = $Property }
                 try {
                     New-Object @dacOptionSplat -ErrorAction Stop
                 } catch {
@@ -132,7 +132,7 @@ function New-DbaDacOption {
                         $output.DeployOptions = if ($Property -and 'DeployOptions' -in $Property.Keys) {
                             New-DacObject -TypeName Microsoft.SqlServer.Dac.DacDeployOptions -Property $Property.DeployOptions
                         } else {
-                            New-DacObject -TypeName Microsoft.SqlServer.Dac.DacDeployOptions -Property @{}
+                            New-DacObject -TypeName Microsoft.SqlServer.Dac.DacDeployOptions -Property @{ }
                         }
                     }
                     $output.GenerateDeploymentScript = $false
