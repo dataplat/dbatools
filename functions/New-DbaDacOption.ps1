@@ -20,6 +20,12 @@ function New-DbaDacOption {
     .PARAMETER PublishXml
         Specifies the publish profile which will include options and sqlCmdVariables.
 
+    .PARAMETER Property
+        A Hashtable that would be used to initialize Options object properties.
+        If you want to specify DeployOptions parameters, which is a property of the options object,
+        add the DeployOptions key with an appropriate hashtable as a value:
+        @{DeployOptions=@{ConnectionTimeout=5}}
+
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
 
@@ -51,6 +57,12 @@ function New-DbaDacOption {
         Uses DacOption object to set the CommandTimeout to 0 then extracts the dacpac for SharePoint_Config on sql2016 to C:\temp\SharePoint_Config.dacpac including all table data.
 
     .EXAMPLE
+        PS C:\> $options = New-DbaDacOption -Type Dacpac -Action Export -Property @{ExtractAllTableData=$true;CommandTimeout=0}
+        PS C:\> Export-DbaDacPackage -SqlInstance sql2016 -Database DB1 -Options $options
+
+        Creates a pre-initialized DacOption object and uses it to extrac a DacPac from the database.
+
+    .EXAMPLE
         PS C:\> $options = New-DbaDacOption -Type Dacpac -Action Publish
         PS C:\> $options.DeployOptions.DropObjectsNotInSource = $true
         PS C:\> Publish-DbaDacPackage -SqlInstance sql2016 -Database DB1 -Options $options -Path c:\temp\db.dacpac
@@ -66,6 +78,7 @@ function New-DbaDacOption {
         [ValidateSet('Publish', 'Export')]
         [string]$Action,
         [string]$PublishXml,
+        [hashtable]$Property,
         [switch]$EnableException
     )
     process {
@@ -85,17 +98,28 @@ function New-DbaDacOption {
                     }
                 }
             }
+            function New-DacObject {
+                Param ([String]$TypeName, [hashtable]$Property=$Property)
+
+                $dacOptionSplat = @{TypeName = $TypeName}
+                if ($Property) { $dacOptionSplat.Property = $Property}
+                try {
+                    New-Object @dacOptionSplat -ErrorAction Stop
+                } catch {
+                    Stop-Function -Message "Could not generate object $TypeName" -ErrorRecord $_
+                }
+            }
 
             # Pick proper option object depending on type and action
             if ($Action -eq 'Export') {
                 if ($Type -eq 'Dacpac') {
-                    New-Object -TypeName Microsoft.SqlServer.Dac.DacExtractOptions
+                    New-DacObject -TypeName Microsoft.SqlServer.Dac.DacExtractOptions
                 } elseif ($Type -eq 'Bacpac') {
-                    New-Object -TypeName Microsoft.SqlServer.Dac.DacExportOptions
+                    New-DacObject -TypeName Microsoft.SqlServer.Dac.DacExportOptions
                 }
             } elseif ($Action -eq 'Publish') {
                 if ($Type -eq 'Dacpac') {
-                    $output = New-Object -TypeName Microsoft.SqlServer.Dac.PublishOptions
+                    $output = New-DacObject -TypeName Microsoft.SqlServer.Dac.PublishOptions
                     if ($PublishXml) {
                         try {
                             $dacProfile = [Microsoft.SqlServer.Dac.DacProfile]::Load($PublishXml)
@@ -105,12 +129,16 @@ function New-DbaDacOption {
                             return
                         }
                     } else {
-                        $output.DeployOptions = New-Object -TypeName Microsoft.SqlServer.Dac.DacDeployOptions
+                        $output.DeployOptions = if ($Property -and 'DeployOptions' -in $Property.Keys) {
+                            New-DacObject -TypeName Microsoft.SqlServer.Dac.DacDeployOptions -Property $Property.DeployOptions
+                        } else {
+                            New-DacObject -TypeName Microsoft.SqlServer.Dac.DacDeployOptions -Property @{}
+                        }
                     }
                     $output.GenerateDeploymentScript = $false
                     $output
                 } elseif ($Type -eq 'Bacpac') {
-                    New-Object -TypeName Microsoft.SqlServer.Dac.DacImportOptions
+                    New-DacObject -TypeName Microsoft.SqlServer.Dac.DacImportOptions
                 }
             }
         }
