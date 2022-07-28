@@ -14,7 +14,10 @@ Describe "$commandname Unit Tests" -Tag "UnitTests" {
 }
 Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
-        $publishprofile = New-DbaDacProfile -SqlInstance $script:instance1 -Database whatever -Path TestDrive:\
+        $publishprofile = New-DbaDacProfile -SqlInstance $script:instance1 -Database whatever -Path C:\temp
+    }
+    AfterAll {
+        Remove-Item -Confirm:$false -Path $publishprofile.FileName -ErrorAction SilentlyContinue
     }
     It "Returns dacpac export options" {
         New-DbaDacOption -Action Export | Should -Not -BeNullOrEmpty
