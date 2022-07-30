@@ -56,14 +56,14 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
     It "Call without specific language" {
         $results = Get-DbaKbUpdate -Name KB5003279
         $results.KBLevel | Should -Be 5003279
-        $results.Classification -match 'Service Pack'
+        $results.Classification -match 'Service Packs'
         $results.Link -match '-enu_'
     }
 
     It "Call with specific language" {
         $results = Get-DbaKbUpdate -Name KB5003279 -Language ja
         $results.KBLevel | Should -Be 5003279
-        $results.Classification -match 'Service Pack'
+        $results.Classification -match 'Service Packs'
         $results.Link -match '-jpn_'
     }
 }
