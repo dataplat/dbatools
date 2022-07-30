@@ -5,7 +5,7 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
         [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'Name', 'Simple', 'EnableException'
+        [object[]]$knownParameters = 'Name', 'Simple', 'Language', 'EnableException'
         $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
         It "Should only contain our specific parameters" {
             (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
@@ -51,5 +51,19 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
         $results.KBLevel | Should -Contain 4057119
         $results.KBLevel | Should -Contain 4577194
         $results.KBLevel | Should -Contain 4564903
+    }
+
+    It "Call without specific language" {
+        $results = Get-DbaKbUpdate -Name KB5003279
+        $results.KBLevel | Should -Be 5003279
+        $results.Classification -match 'Service Pack'
+        $results.Link -match '-enu_'
+    }
+
+    It "Call with specific language" {
+        $results = Get-DbaKbUpdate -Name KB5003279 -Language ja
+        $results.KBLevel | Should -Be 5003279
+        $results.Classification -match 'Service Pack'
+        $results.Link -match '-jpn_'
     }
 }
