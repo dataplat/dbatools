@@ -1,7 +1,7 @@
 
 -- SQL Server 2014 Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: July 5, 2022
+-- Last Modified: July 29, 2022
 -- https://glennsqlperformance.com/
 -- https://sqlserverperformance.wordpress.com/
 -- YouTube: https://bit.ly/2PkoAM1 
@@ -99,6 +99,11 @@ SELECT @@SERVERNAME AS [Server Name], @@VERSION AS [SQL Server and OS Version In
 --																													12.0.5687		SP2 CU18		 7/29/2019 ---->	12.0.6329	SP3	CU4						7/29/2019
 --																																										12.0.6372.1	SP3 CU4 + Security Update	2/11/2020	
 --																																										12.0.6433.1	SP3 CU4 + Security Update	1/12/2021
+--																																										12.0.6439.10 SP3 CU4 + Security Update	6/14/2022
+
+
+-- KB5014164 - Description of the security update for SQL Server 2014 SP3 CU4: June 14, 2022
+-- https://support.microsoft.com/en-us/topic/kb5014164-description-of-the-security-update-for-sql-server-2014-sp3-cu4-june-14-2022-f3400be9-b2d3-4873-ae58-15e6e0cc686e
 
 -- KB4583462 - Description of the security update for SQL Server 2014 SP3 CU4: January 12, 2021
 -- https://support.microsoft.com/en-us/help/4583462/kb4583462-security-update-for-sql-server-2014-sp3-cu4
