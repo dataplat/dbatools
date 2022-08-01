@@ -18,8 +18,10 @@ function Get-DbaKbUpdate {
 
     .PARAMETER Language
         Cumulative Updates come in one file for all languages, but Service Packs have a file for every language.
+
         If you want to get only a specific language, use this parameter.
-        You have to use the two letter code that is used for Accept-Language HTTP header, e. g. "en" for english or "de" for german.
+
+        You you can press tab for auto-complete or use the two letter code that is used for Accept-Language HTTP header, e. g. "en" for English or "de" for German.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
