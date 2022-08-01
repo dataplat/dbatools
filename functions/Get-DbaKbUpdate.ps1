@@ -16,6 +16,13 @@ function Get-DbaKbUpdate {
     .PARAMETER Simple
         A lil faster. Returns, at the very least: Title, Architecture, Language, Hotfix, UpdateId and Link
 
+    .PARAMETER Language
+        Cumulative Updates come in one file for all languages, but Service Packs have a file for every language.
+
+        If you want to get only a specific language, use this parameter.
+
+        You you can press tab for auto-complete or use the two letter code that is used for Accept-Language HTTP header, e. g. "en" for English or "de" for German.
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
 
@@ -48,12 +55,24 @@ function Get-DbaKbUpdate {
         PS C:\> Get-DbaKbUpdate -Name KB4057119, 4057114 -Simple
 
         A lil faster. Returns, at the very least: Title, Architecture, Language, Hotfix, UpdateId and Link
+
+    .EXAMPLE
+        PS C:\> Get-DbaKbUpdate -Name KB4057119 -Language ja
+
+        Gets detailed information about KB4057119 in Japanese. This works for SQL Server or any other KB.
+        (Link property includes the links for Japanese version of SQL Server if the KB was Service Pack)
+
+    .EXAMPLE
+        PS C:\> Get-DbaKbUpdate -Name KB4057119 -Language ja | Save-DbaKbUpdate
+
+        Downloads Japanese version of KB4057119.
     #>
     [CmdletBinding()]
     param(
         [Parameter(Mandatory)]
         [string[]]$Name,
         [switch]$Simple,
+        [string]$Language,
         [switch]$EnableException
     )
     begin {
@@ -81,10 +100,14 @@ function Get-DbaKbUpdate {
                 [Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor $_
             }
 
-            if ($script:websession) {
+            if (-not $Language) {
+                $Language = "en-US;q=0.5,en;q=0.3"
+            }
+
+            if ($script:websession -and $script:websession.Headers."Accept-Language" -eq $Language) {
                 Invoke-WebRequest @Args -WebSession $script:websession -UseBasicParsing -ErrorAction Stop
             } else {
-                Invoke-WebRequest @Args -SessionVariable websession -UseBasicParsing -ErrorAction Stop
+                Invoke-WebRequest @Args -SessionVariable websession -Headers @{ "accept-language" = $Language } -UseBasicParsing -ErrorAction Stop
                 $script:websession = $websession
             }
 
@@ -96,6 +119,7 @@ function Get-DbaKbUpdate {
         if (-not $script:websession) {
             $null = Invoke-KbTlsWebRequest -Uri "https://www.catalog.update.microsoft.com/"
         }
+
         # Wishing Microsoft offered an RSS feed. Since they don't, we are forced to parse webpages.
         function Get-Info ($Text, $Pattern) {
             try {
@@ -169,7 +193,7 @@ function Get-DbaKbUpdate {
                 $results = Invoke-KbTlsWebRequest -Uri "http://www.catalog.update.microsoft.com/Search.aspx?q=KB$kb"
 
                 $kbids = $results.InputFields |
-                    Where-Object { $_.type -eq 'Button' -and $_.Value -eq 'Download' } |
+                    Where-Object { $_.type -eq 'Button' -and $_.class -eq 'flatBlueButtonDownload focus-only' } |
                     Select-Object -ExpandProperty ID
 
                 if (-not $kbids) {
@@ -209,11 +233,13 @@ function Get-DbaKbUpdate {
 
                     if (-not $Simple) {
                         Write-Message -Level Verbose -Message "Downloading detailed information for updateid=$updateid"
-                        $detaildialog = Invoke-KbTlsWebRequest -Uri "https://www.catalog.update.microsoft.com/ScopedViewInline.aspx?updateid=$updateid"
+
+                        # Multi-byte character is corrupted if passing BasicHtmlWebResponseObject to Get-Info -Text.
+                        $detaildialog = Invoke-KbTlsWebRequest -Uri "https://www.catalog.update.microsoft.com/ScopedViewInline.aspx?updateid=$updateid" | Select-Object -ExpandProperty Content
                         $description = Get-Info -Text $detaildialog -Pattern '<span id="ScopedViewHandler_desc">'
                         if (-not $description) {
                             # try again
-                            $detaildialog = Invoke-KbTlsWebRequest -Uri "https://www.catalog.update.microsoft.com/ScopedViewInline.aspx?updateid=$updateid"
+                            $detaildialog = Invoke-KbTlsWebRequest -Uri "https://www.catalog.update.microsoft.com/ScopedViewInline.aspx?updateid=$updateid" | Select-Object -ExpandProperty Content
                             $description = Get-Info -Text $detaildialog -Pattern '<span id="ScopedViewHandler_desc">'
                             if (-not $description) {
                                 Write-Message -Level Warning -Message "The response from the webserver did not include the expected information. Please try again later if you need the detailed information."
