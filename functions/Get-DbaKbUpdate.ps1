@@ -70,7 +70,7 @@ function Get-DbaKbUpdate {
         [Parameter(Mandatory)]
         [string[]]$Name,
         [switch]$Simple,
-        [string]$Language = "en",
+        [string]$Language,
         [switch]$EnableException
     )
     begin {
@@ -98,7 +98,11 @@ function Get-DbaKbUpdate {
                 [Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor $_
             }
 
-            if ($script:websession) {
+            if (-not $Language) {
+                $Language = "en-US;q=0.5,en;q=0.3"
+            }
+
+            if ($script:websession -and $script:websession.Headers."Accept-Language" -eq $Language) {
                 Invoke-WebRequest @Args -WebSession $script:websession -UseBasicParsing -ErrorAction Stop
             } else {
                 Invoke-WebRequest @Args -SessionVariable websession -Headers @{ "accept-language" = $Language } -UseBasicParsing -ErrorAction Stop
@@ -110,8 +114,9 @@ function Get-DbaKbUpdate {
         }
 
         # Initialize
-        $script:websession = $null   # Reset request header
-        $null = Invoke-KbTlsWebRequest -Uri "https://www.catalog.update.microsoft.com/"
+        if (-not $script:websession) {
+            $null = Invoke-KbTlsWebRequest -Uri "https://www.catalog.update.microsoft.com/"
+        }
 
         # Wishing Microsoft offered an RSS feed. Since they don't, we are forced to parse webpages.
         function Get-Info ($Text, $Pattern) {
