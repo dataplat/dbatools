@@ -14,8 +14,7 @@ body:
       label: "Verified issue does not already exist?"
       description: "Please search to see if an issue already exists for the bug you encountered."
       options:
-        - "Yes"
-        - "No"
+        - "I have searched and found no existing issue"
     validations:
       required: true
   - type: textarea
@@ -37,15 +36,13 @@ body:
         ```
     validations:
       required: true
-  - type: dropdown
+  - type: textarea
     id: latest
     attributes:
-      label: "Are you running the latest release?"
-      description: "Please ensure the bug/error can be reproduced in the latest release of the module"
-      options:
-        - "Yes"
+      label: "Please confirm that you are running the most recent version of dbatools"
+      description: "You can provide the output from: Get-Module dbatools | Select -ExpandProperty Version | Set-Clipboard"
     validations:
-      required: false
+      required: true
   - type: textarea
     id: other
     attributes:
