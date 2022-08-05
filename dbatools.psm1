@@ -958,6 +958,7 @@ $script:windowsonly = @(
     'Get-DbaWsfcNetworkInterface',
     'Get-DbaWsfcNode',
     'Get-DbaWsfcResource',
+    'Get-DbaWsfcResourceGroup',
     'Get-DbaWsfcResourceType',
     'Get-DbaWsfcRole',
     'Get-DbaWsfcSharedVolume',
