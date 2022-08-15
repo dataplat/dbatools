@@ -1,7 +1,7 @@
 
 -- SQL Server 2014 Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: August 1, 2022
+-- Last Modified: August 9, 2022
 -- https://glennsqlperformance.com/
 -- https://sqlserverperformance.wordpress.com/
 -- YouTube: https://bit.ly/2PkoAM1 
@@ -853,9 +853,10 @@ ORDER BY db.[name] OPTION (RECOMPILE);
 
 -- Missing Indexes for all databases by Index Advantage  (Query 32) (Missing Indexes All Databases)
 SELECT CONVERT(decimal(18,2), migs.user_seeks * migs.avg_total_user_cost * (migs.avg_user_impact * 0.01)) AS [index_advantage],
-FORMAT(migs.last_user_seek, 'yyyy-MM-dd HH:mm:ss') AS [last_user_seek], mid.[statement] AS [Database.Schema.Table],
+CONVERT(nvarchar(25), migs.last_user_seek, 20) AS [last_user_seek],
+mid.[statement] AS [Database.Schema.Table],
 COUNT(1) OVER(PARTITION BY mid.[statement]) AS [missing_indexes_for_table],
-COUNT(1) OVER(PARTITION BY mid.[statement], equality_columns) AS [similar_missing_indexes_for_table],
+COUNT(1) OVER(PARTITION BY mid.[statement], mid.equality_columns) AS [similar_missing_indexes_for_table],
 mid.equality_columns, mid.inequality_columns, mid.included_columns, migs.user_seeks, 
 CONVERT(decimal(18,2), migs.avg_total_user_cost) AS [avg_total_user_cost], migs.avg_user_impact 
 FROM sys.dm_db_missing_index_group_stats AS migs WITH (NOLOCK)
@@ -1385,8 +1386,8 @@ qs.total_worker_time/qs.execution_count AS [Avg Worker Time],
 qs.total_elapsed_time AS [Total Elapsed Time],
 qs.total_elapsed_time/qs.execution_count AS [Avg Elapsed Time],
 CASE WHEN CONVERT(nvarchar(max), qp.query_plan) COLLATE Latin1_General_BIN2 LIKE N'%<MissingIndexes>%' THEN 1 ELSE 0 END AS [Has Missing Index],
-FORMAT(qs.last_execution_time, 'yyyy-MM-dd HH:mm:ss', 'en-US') AS [Last Execution Time], 
-FORMAT(qs.creation_time, 'yyyy-MM-dd HH:mm:ss', 'en-US') AS [Plan Cached Time]
+CONVERT(nvarchar(25), qs.last_execution_time, 20) AS [Last Execution Time],
+CONVERT(nvarchar(25), qs.creation_time, 20) AS [Plan Cached Time]
 --,t.[text] AS [Complete Query Text], qp.query_plan AS [Query Plan] -- uncomment out these columns if not copying results to Excel
 FROM sys.dm_exec_query_stats AS qs WITH (NOLOCK)
 CROSS APPLY sys.dm_exec_sql_text(plan_handle) AS t 
@@ -1405,8 +1406,8 @@ qs.total_elapsed_time/qs.execution_count AS [Avg Elapsed Time],
 qs.total_worker_time/qs.execution_count AS [Avg Worker Time],    
 qs.total_logical_reads/qs.execution_count AS [Avg Logical Reads],
 CASE WHEN CONVERT(nvarchar(max), qp.query_plan) COLLATE Latin1_General_BIN2 LIKE N'%<MissingIndexes>%' THEN 1 ELSE 0 END AS [Has Missing Index],
-FORMAT(qs.last_execution_time, 'yyyy-MM-dd HH:mm:ss', 'en-US') AS [Last Execution Time], 
-FORMAT(qs.cached_time, 'yyyy-MM-dd HH:mm:ss', 'en-US') AS [Plan Cached Time]
+CONVERT(nvarchar(25), qs.last_execution_time, 20) AS [Last Execution Time],
+CONVERT(nvarchar(25), qs.cached_time, 20) AS [Plan Cached Time]
 -- ,qp.query_plan AS [Query Plan] -- Uncomment if you want the Query Plan
 FROM sys.procedures AS p WITH (NOLOCK)
 INNER JOIN sys.dm_exec_procedure_stats AS qs WITH (NOLOCK)
@@ -1429,8 +1430,8 @@ ISNULL(qs.execution_count/DATEDIFF(Minute, qs.cached_time, GETDATE()), 0) AS [Ca
 qs.total_worker_time/qs.execution_count AS [AvgWorkerTime], 
 qs.total_worker_time AS [TotalWorkerTime],
 CASE WHEN CONVERT(nvarchar(max), qp.query_plan) COLLATE Latin1_General_BIN2 LIKE N'%<MissingIndexes>%' THEN 1 ELSE 0 END AS [Has Missing Index],
-FORMAT(qs.last_execution_time, 'yyyy-MM-dd HH:mm:ss', 'en-US') AS [Last Execution Time], 
-FORMAT(qs.cached_time, 'yyyy-MM-dd HH:mm:ss', 'en-US') AS [Plan Cached Time]
+CONVERT(nvarchar(25), qs.last_execution_time, 20) AS [Last Execution Time],
+CONVERT(nvarchar(25), qs.cached_time, 20) AS [Plan Cached Time]
 -- ,qp.query_plan AS [Query Plan] -- Uncomment if you want the Query Plan
 FROM sys.procedures AS p WITH (NOLOCK)
 INNER JOIN sys.dm_exec_procedure_stats AS qs WITH (NOLOCK)
@@ -1452,8 +1453,8 @@ qs.total_worker_time/qs.execution_count AS [AvgWorkerTime], qs.execution_count,
 ISNULL(qs.execution_count/DATEDIFF(Minute, qs.cached_time, GETDATE()), 0) AS [Calls/Minute],
 qs.total_elapsed_time, qs.total_elapsed_time/qs.execution_count AS [avg_elapsed_time],
 CASE WHEN CONVERT(nvarchar(max), qp.query_plan) COLLATE Latin1_General_BIN2 LIKE N'%<MissingIndexes>%' THEN 1 ELSE 0 END AS [Has Missing Index],
-FORMAT(qs.last_execution_time, 'yyyy-MM-dd HH:mm:ss', 'en-US') AS [Last Execution Time], 
-FORMAT(qs.cached_time, 'yyyy-MM-dd HH:mm:ss', 'en-US') AS [Plan Cached Time]
+CONVERT(nvarchar(25), qs.last_execution_time, 20) AS [Last Execution Time],
+CONVERT(nvarchar(25), qs.cached_time, 20) AS [Plan Cached Time]
 -- ,qp.query_plan AS [Query Plan] -- Uncomment if you want the Query Plan
 FROM sys.procedures AS p WITH (NOLOCK)
 INNER JOIN sys.dm_exec_procedure_stats AS qs WITH (NOLOCK)
@@ -1474,8 +1475,8 @@ qs.total_logical_reads/qs.execution_count AS [AvgLogicalReads],qs.execution_coun
 ISNULL(qs.execution_count/DATEDIFF(Minute, qs.cached_time, GETDATE()), 0) AS [Calls/Minute], 
 qs.total_elapsed_time, qs.total_elapsed_time/qs.execution_count AS [avg_elapsed_time],
 CASE WHEN CONVERT(nvarchar(max), qp.query_plan) COLLATE Latin1_General_BIN2 LIKE N'%<MissingIndexes>%' THEN 1 ELSE 0 END AS [Has Missing Index], 
-FORMAT(qs.last_execution_time, 'yyyy-MM-dd HH:mm:ss', 'en-US') AS [Last Execution Time], 
-FORMAT(qs.cached_time, 'yyyy-MM-dd HH:mm:ss', 'en-US') AS [Plan Cached Time]
+CONVERT(nvarchar(25), qs.last_execution_time, 20) AS [Last Execution Time],
+CONVERT(nvarchar(25), qs.cached_time, 20) AS [Plan Cached Time]
 -- ,qp.query_plan AS [Query Plan] -- Uncomment if you want the Query Plan
 FROM sys.procedures AS p WITH (NOLOCK)
 INNER JOIN sys.dm_exec_procedure_stats AS qs WITH (NOLOCK)
@@ -1495,8 +1496,8 @@ SELECT TOP(25) p.name AS [SP Name],qs.total_physical_reads AS [TotalPhysicalRead
 qs.total_physical_reads/qs.execution_count AS [AvgPhysicalReads], qs.execution_count, 
 qs.total_logical_reads,qs.total_elapsed_time, qs.total_elapsed_time/qs.execution_count AS [avg_elapsed_time],
 CASE WHEN CONVERT(nvarchar(max), qp.query_plan) COLLATE Latin1_General_BIN2 LIKE N'%<MissingIndexes>%' THEN 1 ELSE 0 END AS [Has Missing Index],
-FORMAT(qs.last_execution_time, 'yyyy-MM-dd HH:mm:ss', 'en-US') AS [Last Execution Time], 
-FORMAT(qs.cached_time, 'yyyy-MM-dd HH:mm:ss', 'en-US') AS [Plan Cached Time]
+CONVERT(nvarchar(25), qs.last_execution_time, 20) AS [Last Execution Time],
+CONVERT(nvarchar(25), qs.cached_time, 20) AS [Plan Cached Time]
 -- ,qp.query_plan AS [Query Plan] -- Uncomment if you want the Query Plan 
 FROM sys.procedures AS p WITH (NOLOCK)
 INNER JOIN sys.dm_exec_procedure_stats AS qs WITH (NOLOCK)
@@ -1519,8 +1520,8 @@ qs.total_logical_writes/qs.execution_count AS [AvgLogicalWrites], qs.execution_c
 ISNULL(qs.execution_count/DATEDIFF(Minute, qs.cached_time, GETDATE()), 0) AS [Calls/Minute],
 qs.total_elapsed_time, qs.total_elapsed_time/qs.execution_count AS [avg_elapsed_time],
 CASE WHEN CONVERT(nvarchar(max), qp.query_plan) COLLATE Latin1_General_BIN2 LIKE N'%<MissingIndexes>%' THEN 1 ELSE 0 END AS [Has Missing Index], 
-FORMAT(qs.last_execution_time, 'yyyy-MM-dd HH:mm:ss', 'en-US') AS [Last Execution Time], 
-FORMAT(qs.cached_time, 'yyyy-MM-dd HH:mm:ss', 'en-US') AS [Plan Cached Time]
+CONVERT(nvarchar(25), qs.last_execution_time, 20) AS [Last Execution Time],
+CONVERT(nvarchar(25), qs.cached_time, 20) AS [Plan Cached Time]
 -- ,qp.query_plan AS [Query Plan] -- Uncomment if you want the Query Plan 
 FROM sys.procedures AS p WITH (NOLOCK)
 INNER JOIN sys.dm_exec_procedure_stats AS qs WITH (NOLOCK)
@@ -1543,8 +1544,8 @@ ISNULL(qs.execution_count/DATEDIFF(Minute, qs.cached_time, GETDATE()), 0) AS [Ca
 qs.total_elapsed_time/qs.execution_count AS [Avg Elapsed Time],
 qs.total_worker_time/qs.execution_count AS [Avg Worker Time],    
 qs.total_logical_reads/qs.execution_count AS [Avg Logical Reads],
-FORMAT(qs.last_execution_time, 'yyyy-MM-dd HH:mm:ss', 'en-US') AS [Last Execution Time], 
-FORMAT(qs.cached_time, 'yyyy-MM-dd HH:mm:ss', 'en-US') AS [Plan Cached Time]
+CONVERT(nvarchar(25), qs.last_execution_time, 20) AS [Last Execution Time],
+CONVERT(nvarchar(25), qs.cached_time, 20) AS [Plan Cached Time]
 -- ,qp.query_plan AS [Query Plan] -- Uncomment if you want the Query Plan
 FROM sys.procedures AS p WITH (NOLOCK)
 INNER JOIN sys.dm_exec_procedure_stats AS qs WITH (NOLOCK)
