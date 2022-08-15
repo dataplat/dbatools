@@ -183,7 +183,7 @@ function Find-DbaOrphanedFile {
                             BaseDir
                         UNION ALL
                         SELECT
-                             Id
+                             id
                         ,    fs_filename
                         ,    depth
                         ,    is_file
