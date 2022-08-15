@@ -62,7 +62,6 @@ function Get-DbaHelp {
         $availability = 'Windows, Linux, macOS'
 
         function Get-DbaDocsMD($doc_to_render) {
-
             $rtn = New-Object -TypeName "System.Collections.ArrayList"
             $null = $rtn.Add("# $($doc_to_render.CommandName)" )
             if ($doc_to_render.Author -or $doc_to_render.Availability) {
@@ -283,6 +282,93 @@ function Get-DbaHelp {
 
         $thebase.Params = $params
 
+        if ($thebase.CommandName -eq "Select-DbaObject") {
+            $thebase.Synopsis = "Wrapper around Select-Object, extends property parameter."
+            $thebase.Author = "Friedrich Weinmann (@FredWeinmann)"
+            $thebase.Description = "Wrapper around Select-Object, extends property parameter.
+
+            This function allows specifying in-line transformation of the properties specified without needing to use complex hashtables.
+            For example, renaming a property becomes as simple as 'Length as Size'
+
+            Also supported:
+
+            - Specifying a typename
+
+            - Picking the default display properties
+
+            - Adding to an existing object without destroying its type
+
+            See the description of the Property parameter for an exhaustive list of legal notations for in-line transformations."
+            $thebase.Examples = '    ---------------- Example 1: Renaming a property ----------------
+            Get-ChildItem | Select-DbaObject Name, "Length as Size"
+
+            Selects the properties Name and Length, renaming Length to Size in the process.
+
+            ------------------ Example 2: Converting type ------------------
+
+            Import-Csv .\file.csv | Select-DbaObject Name, "Length as Size to DbaSize"
+
+            Selects the properties Name and Length, renaming Length to Size and converting it to [DbaSize] (a userfriendly representation of
+            size numbers contained in the dbatools module)
+
+            ---------- Example 3: Selecting from another object 1 ----------
+
+            $obj = [PSCustomObject]@{ Name = "Foo" }
+            Get-ChildItem | Select-DbaObject FullName, Length, "Name from obj"
+
+            Selects the properties FullName and Length from the input and the Name property from the object stored in $obj
+
+            ---------- Example 4: Selecting from another object 2 ----------
+
+            $list = @()
+            $list += [PSCustomObject]@{ Type = "Foo"; ID = 1 }
+            $list += [PSCustomObject]@{ Type = "Bar"; ID = 2 }
+            $obj | Select-DbaObject Name, "ID from list WHERE Type = Name"
+
+            This allows you to LEFT JOIN contents of another variable. Note that it can only do simple property-matching at this point.
+
+            It will select Name from the objects stored in $obj, and for each of those the ID Property on any object in $list that has a
+            Type property of equal value as Name on the input.
+
+            ---------------- Example 5: Naming and styling ----------------
+
+            Get-ChildItem | Select-DbaObject Name, Length, FullName, Used, LastWriteTime, Mode -TypeName MyType -ShowExcludeProperty Mode,
+            Used
+
+            Lists all items in the current path, selects the properties specified (whether they exist or not) , then ...
+
+            - Sets the name to "MyType"
+
+            - Hides the properties "Mode" and "Used" from the default display set, causing them to be hidden from default view'
+            $thebase.Syntax = "Select-DbaObject [-Property <DbaSelectParameter[]>] [-Alias <SelectAliasParameter[]>] [-ScriptProperty <SelectScriptPropertyParameter[]>] [-ScriptMethod <SelectScriptMethodParameter[]>] [-InputObject ] [-ExcludeProperty <string[]>] [-ExpandProperty ] -Unique [-Last ] [-First ] [-Skip ] -Wait [-ShowProperty <string[]>] [-ShowExcludeProperty <string[]>] [-TypeName ] -KeepInputObject []
+
+            Select-DbaObject [-Property <DbaSelectParameter[]>] [-Alias <SelectAliasParameter[]>] [-ScriptProperty <SelectScriptPropertyParameter[]>] [-ScriptMethod <SelectScriptMethodParameter[]>] [-InputObject ] [-ExcludeProperty <string[]>] [-ExpandProperty ] -Unique [-SkipLast ] [-ShowProperty <string[]>] [-ShowExcludeProperty <string[]>] [-TypeName ] -KeepInputObject []
+
+            Select-DbaObject [-InputObject ] -Unique -Wait [-Index <int[]>] [-ShowProperty <string[]>] [-ShowExcludeProperty <string[]>] [-TypeName ] -KeepInputObject []"
+        }
+
+        if ($thebase.CommandName -eq "Set-DbatoolsConfig") {
+            $thebase.Name = "Set-DbatoolsConfig"
+            $thebase.CommandName = "Set-DbatoolsConfig"
+            $thebase.Synopsis = 'Sets configuration entries.'
+            $thebase.Author = "Friedrich Weinmann (@FredWeinmann)"
+            $thebase.Description = 'This function creates or changes configuration values. These can be used to provide dynamic configuration information outside the PowerShell variable system.'
+            $thebase.Examples = '---------------------- Example 1: Simple ----------------------
+            C:\PS> Set-DbatoolsConfig -FullName Path.DbatoolsData -Value E:\temp\dbatools
+
+            Updates the configuration entry for Path.DbatoolsData to E:\temp\dbatools'
+            $thebase.Syntax = 'Set-DbatoolsConfig -FullName <String> [-Value <Object>] [-Description <String>] [-Validation <String>] [-Handler <ScriptBlock>]
+            [-Hidden] [-Default] [-Initialize] [-DisableValidation] [-DisableHandler] [-EnableException] [-SimpleExport] [-ModuleExport]
+            [-PassThru] [-AllowDelete] [<CommonParameters>]
+
+            Set-DbatoolsConfig -FullName <String> [-Description <String>] [-Validation <String>] [-Handler <ScriptBlock>] [-Hidden]
+            [-Default] [-Initialize] [-DisableValidation] [-DisableHandler] [-EnableException] -PersistedValue <String> [-PersistedType
+            <ConfigurationValueType>] [-SimpleExport] [-ModuleExport] [-PassThru] [-AllowDelete] [<CommonParameters>]
+
+            Set-DbatoolsConfig -Name <String> [-Module <String>] [-Value <Object>] [-Description <String>] [-Validation <String>] [-Handler
+            <ScriptBlock>] [-Hidden] [-Default] [-Initialize] [-DisableValidation] [-DisableHandler] [-EnableException] [-SimpleExport]
+            [-ModuleExport] [-PassThru] [-AllowDelete] [<CommonParameters>]'
+        }
         if ($OutputAs -eq "PSObject") {
             [pscustomobject]$thebase
         } elseif ($OutputAs -eq "MDString") {
