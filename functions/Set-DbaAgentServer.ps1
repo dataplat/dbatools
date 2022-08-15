@@ -103,7 +103,7 @@ function Set-DbaAgentServer {
 
     .NOTES
         Tags: Agent, Server
-        Author: Cláudio Silva (@claudioessilva), claudioessilva.com
+        Author: Claudio Silva (@claudioessilva), claudioessilva.com
 
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT

@@ -57,7 +57,7 @@ function Move-DbaDbFile {
 
     .NOTES
         Tags: Database, Move, File
-        Author: Cláudio Silva (@claudioessilva), claudioeesilva.eu
+        Author: Claudio Silva (@claudioessilva), claudioeesilva.eu
 
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT

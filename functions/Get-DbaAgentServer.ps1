@@ -23,7 +23,7 @@ function Get-DbaAgentServer {
 
     .NOTES
         Tags: Job, Agent
-        Author: Cláudio Silva (@claudioessilva), claudioessilva.eu
+        Author: Claudio Silva (@claudioessilva), claudioessilva.eu
 
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
