@@ -83,6 +83,18 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             Get-DbaDatabase -SqlInstance $script:instance2 -Database $dbname | Should -BeNullOrEmpty
             Remove-Item $results.DatabaseScriptPath
         }
+        It "Performs a script generation using custom path" {
+            $opts = New-DbaDacOption -Action Publish -Property @{
+                GenerateDeploymentScript = $true
+                DatabaseScriptPath       = 'C:\Temp\testdb.sql'
+            }
+            $results = $dacpac | Publish-DbaDacPackage -Database $dbname -SqlInstance $script:instance2 -DacOption $opts -Confirm:$false
+            $results.Result | Should -BeLike '*Reporting and scripting deployment plan (Complete)*'
+            $results.DatabaseScriptPath | Should -Be 'C:\Temp\testdb.sql'
+            Test-Path ($results.DatabaseScriptPath) | Should -Be $true
+            Get-DbaDatabase -SqlInstance $script:instance2 -Database $dbname | Should -BeNullOrEmpty
+            Remove-Item $results.DatabaseScriptPath
+        }
     }
     Context "Bacpac tests" {
         BeforeAll {

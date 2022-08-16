@@ -135,7 +135,9 @@ function New-DbaDacOption {
                             New-DacObject -TypeName Microsoft.SqlServer.Dac.DacDeployOptions -Property @{ }
                         }
                     }
-                    $output.GenerateDeploymentScript = $false
+                    if ($null -eq $Property.GenerateDeploymentScript) {
+                        $output.GenerateDeploymentScript = $false
+                    }
                     $output
                 } elseif ($Type -eq 'Bacpac') {
                     New-DacObject -TypeName Microsoft.SqlServer.Dac.DacImportOptions
