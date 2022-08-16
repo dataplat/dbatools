@@ -8,7 +8,7 @@ param(
 $start = [DateTime]::Now
 
 If ($PSVersionTable.PSEdition -in "Desktop", $null) {
-    $netversion = Get-ChildItem 'HKLM:\SOFTWARE\Microsoft\NET Framework Setup\NDP' -Recurse | Get-ItemProperty -Name version -ErrorAction SilentlyContinue | Where-Object PSChildName -eq Full | Select-Object -First 1 -ExpandProperty Version
+    $netversion = Get-ChildItem 'HKLM:\SOFTWARE\Microsoft\NET Framework Setup\NDP' -Recurse -ErrorAction Ignore | Get-ItemProperty -Name version -ErrorAction Ignore | Where-Object PSChildName -eq Full | Select-Object -First 1 -ExpandProperty Version
     if ($netversion -lt [version]"4.6") {
         # it actually works with 4.6 somehow, but 4.6.2 and above is recommended
         throw "Modern versions of dbatools require at least .NET 4.6.2. Please update your .NET Framework or downgrade to dbatools 1.0.173"
