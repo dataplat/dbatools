@@ -277,8 +277,14 @@ function Publish-DbaDacPackage {
                 #Set output file paths when needed
                 $timeStamp = (Get-Date).ToString("yyMMdd_HHmmss_f")
                 if ($options.GenerateDeploymentScript) {
-                    $options.DatabaseScriptPath = Join-Path $OutputPath "$cleaninstance-$dbName`_DeployScript_$timeStamp.sql"
-                    $options.MasterDbScriptPath = Join-Path $OutputPath "$cleaninstance-$dbName`_Master.DeployScript_$timeStamp.sql"
+                    if (-not $options.DatabaseScriptPath) {
+                        Write-Message -Level Verbose -Message "DatabaseScriptPath not set, using default path."
+                        $options.DatabaseScriptPath = Join-Path $OutputPath "$cleaninstance-$dbName`_DeployScript_$timeStamp.sql"
+                    }
+                    if (-not $options.MasterDbScriptPath) {
+                        Write-Message -Level Verbose -Message "MasterDbScriptPath not set, using default path."
+                        $options.MasterDbScriptPath = Join-Path $OutputPath "$cleaninstance-$dbName`_Master.DeployScript_$timeStamp.sql"
+                    }
                 }
                 if ($connString -notmatch 'Database=') {
                     $connString = "$connString;Database=$dbName"
