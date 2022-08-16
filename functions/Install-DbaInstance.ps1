@@ -699,7 +699,13 @@ function Install-DbaInstance {
             # Apply custom configuration keys if provided
             if ($Configuration) {
                 foreach ($key in $Configuration.Keys) {
-                    $configNode.$key = [string]$Configuration.$key
+                    if ($key -eq "SQLUSERDBDATADIR") {
+                        # fix for our book
+                        $key = "SQLUSERDBDIR"
+                        $configNode.$key = [string]$Configuration."SQLUSERDBDATADIR"
+                    } else {
+                        $configNode.$key = [string]$Configuration.$key
+                    }
                     if ($key -eq 'UpdateSource' -and $configNode.$key -and $Configuration.Keys -notcontains 'UPDATEENABLED') {
                         #enable updates since now we have a source
                         $configNode.UPDATEENABLED = "True"
