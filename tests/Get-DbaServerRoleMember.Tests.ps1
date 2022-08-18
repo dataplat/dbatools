@@ -74,5 +74,6 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 
     AfterAll {
         Remove-DbaLogin -SqlInstance $instance -Login $testLogin -Force -Confirm:$false
+        Remove-DbaLogin -SqlInstance $instance1 -Login $testLogin -Force -Confirm:$false
     }
 }
