@@ -222,6 +222,7 @@ function Invoke-DbaAdvancedInstall {
     $WinRMPort = Get-DbatoolsConfigValue -FullName 'PSRemoting.PsSession.Port' -Fallback $null
     if (($null -ne $WinRMPort) -and ($WinRMPort -gt -1)) {
         $connectionParams.Port = $WinRMPort
+        Write-Message -Level Verbose -Message "Using Port: $($connectionParams.Port)"
     }
 
     if ($Credential) { $connectionParams.Credential = $Credential }

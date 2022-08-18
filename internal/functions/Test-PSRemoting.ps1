@@ -30,6 +30,7 @@ function Test-PSRemoting {
             }
             if (($null -ne $Port) -and ($Port -gt -1)) {
                 $psWSManSplat.Port = $Port
+                Write-Message -Level Verbose -Message "Test using Port: $($psWSManSplat.Port)"
             }
 
             $null = Test-WSMan @psWSManSplat

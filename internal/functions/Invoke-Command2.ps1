@@ -100,6 +100,7 @@ function Invoke-Command2 {
             }
             if (($null -ne $Port) -and ($Port -gt -1)) {
                 $psSessionSplat.Port = $Port
+                Write-Message -Level Verbose -Message "Using Port: $($psSessionSplat.Port)"
             }
             if (Test-Windows -NoWarn) {
                 $psSessionOptionsSplat = @{
