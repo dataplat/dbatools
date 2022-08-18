@@ -218,6 +218,12 @@ function Invoke-DbaAdvancedInstall {
         ErrorAction  = "Stop"
         UseSSL       = (Get-DbatoolsConfigValue -FullName 'PSRemoting.PsSession.UseSSL' -Fallback $false)
     }
+
+    $Port = Get-DbatoolsConfigValue -FullName 'PSRemoting.PsSession.Port' -Fallback $null
+    if (($null -ne $Port) -and ($Port -gt -1)) {
+        $connectionParams += @{ Port = $Port }
+    }
+
     if ($Credential) { $connectionParams.Credential = $Credential }
     # need to figure out where to store the config file
     if ($isLocalHost) {
