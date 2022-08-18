@@ -21,6 +21,10 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         $testLogin = 'getDbaInstanceRoleMemberLogin'
         $null = New-DbaLogin -SqlInstance $instance -Login $testLogin -Password $password1
         $null = Set-DbaLogin -SqlInstance $instance -Login $testLogin -AddRole 'dbcreator'
+
+        $instance1 = Connect-DbaInstance -SqlInstance $script:instance1
+        $null = New-DbaLogin -SqlInstance $instance1 -Login $testLogin -Password $password1
+        $null = Set-DbaLogin -SqlInstance $instance1 -Login $testLogin -AddRole 'dbcreator'
     }
 
     Context "Functionality" {
@@ -59,9 +63,17 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $uniqueLogins.Count | Should -BeExactly 1
             $uniqueLogins | Should -Contain $testLogin
         }
+
+        It 'Returns results for all instances' {
+            $result = Get-DbaServerRoleMember -SqlInstance $instance, $instance1 -Login $testLogin
+
+            $uniqueInstances = $result.SqlInstance | Select-Object -Unique
+            $uniqueInstances.Count | Should -BeExactly 2
+        }
     }
 
     AfterAll {
         Remove-DbaLogin -SqlInstance $instance -Login $testLogin -Force -Confirm:$false
+        Remove-DbaLogin -SqlInstance $instance1 -Login $testLogin -Force -Confirm:$false
     }
 }
