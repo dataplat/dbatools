@@ -148,7 +148,7 @@ function Get-DbaServerRoleMember {
                 foreach ($member in $members) {
                     $loginList = $server.Logins | Where-Object { $_.Name -eq $member }
 
-                    if ($login) {
+                    if ($loginList) {
                         [PSCustomObject]@{
                             ComputerName = $server.ComputerName
                             InstanceName = $server.ServiceName
