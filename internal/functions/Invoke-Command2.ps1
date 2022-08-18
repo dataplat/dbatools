@@ -99,7 +99,7 @@ function Invoke-Command2 {
                 UseSSL         = $UseSSL
             }
             if (($null -ne $Port) -and ($Port -gt -1)) {
-                $psSessionSplat += @{ Port = $Port }
+                $psSessionSplat.Port = $Port
             }
             if (Test-Windows -NoWarn) {
                 $psSessionOptionsSplat = @{

@@ -29,7 +29,7 @@ function Test-PSRemoting {
                 ErrorAction    = 'Stop'
             }
             if (($null -ne $Port) -and ($Port -gt -1)) {
-                $psWSManSplat += @{ Port = $Port }
+                $psWSManSplat.Port = $Port
             }
 
             $null = Test-WSMan @psWSManSplat
