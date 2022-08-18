@@ -399,8 +399,9 @@ function Invoke-DbaQuery {
                     $connDbaInstanceParams.ApplicationIntent = "ReadOnly"
                 }
                 # Test for a windows credential and request a non-pooled connection in that case to keep the security context (see #7725 for details)
-                if ($SqlCredential.UserName -like '*\*' -or $SqlCredential.UserName -like '*@*') {
-                    Write-Message -Level Debug -Message "Windows credential detected, so requesting a non-pooled connection"
+                # Nevermind! Let's just change to nonpooling for everything (#8491)
+                if ($instance.InputObject.GetType().Name -ne "Server") {
+                    Write-Message -Level Debug -Message "A string instance was detected, requesting a non-pooled connection"
                     $connDbaInstanceParams.NonPooledConnection = $true
                 }
                 $server = Connect-DbaInstance @connDbaInstanceParams
