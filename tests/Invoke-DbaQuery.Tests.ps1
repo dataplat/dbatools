@@ -308,6 +308,6 @@ SELECT 2
                 GO
                 drop procedure #DropStatistics
                 go"
-        { Invoke-DbaQuery -SqlInstance $script:instance2 -Database tempdb -Query $sql } | Should -Not -Throw
+        { Invoke-DbaQuery -SqlInstance $script:instance2 -Database tempdb -Query $sql -EnableException } | Should -Not -Throw
     }
 }
