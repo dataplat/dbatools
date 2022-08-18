@@ -389,22 +389,26 @@ function Invoke-DbaQuery {
             # We suppress the verbosity of all other functions in order to be sure the output is consistent with what you get, e.g., executing the same in SSMS
             Write-Message -Level Debug -Message "SqlInstance passed in, will work on: $instance"
             try {
-                $connDbaInstanceParams = @{
-                    SqlInstance   = $instance
-                    SqlCredential = $SqlCredential
-                    Database      = $Database
-                    Verbose       = $false
+                $noConnectionChangeNeeded =                                                                  # we want to bypass Connect-DbaInstance if
+                    ($instance.InputObject.GetType().Name -eq "Server") -and                                 # we have Server SMO object and
+                    (-not $ReadOnly) -and                                                                    # no readonly intent is requested and
+                    (-not $Database -or $instance.InputObject.ConnectionContext.DatabaseName -eq $Database)  # the database is not set or the currently connected
+                if ($noConnectionChangeNeeded) {
+                    Write-Message -Level Debug -Message "Current connection will be reused"
+                    $server = $instance.InputObject
+                } else {
+                    $connDbaInstanceParams = @{
+                        SqlInstance         = $instance
+                        SqlCredential       = $SqlCredential
+                        Database            = $Database
+                        NonPooledConnection = $true           # see #8491 for details, also #7725 is still relevant
+                        Verbose             = $false
+                    }
+                    if ($ReadOnly) {
+                        $connDbaInstanceParams.ApplicationIntent = "ReadOnly"
+                    }
+                    $server = Connect-DbaInstance @connDbaInstanceParams
                 }
-                if ($ReadOnly) {
-                    $connDbaInstanceParams.ApplicationIntent = "ReadOnly"
-                }
-                # Test for a windows credential and request a non-pooled connection in that case to keep the security context (see #7725 for details)
-                # Nevermind! Let's just change to nonpooling for everything (#8491)
-                if ($instance.InputObject.GetType().Name -ne "Server") {
-                    Write-Message -Level Debug -Message "A string instance was detected, requesting a non-pooled connection"
-                    $connDbaInstanceParams.NonPooledConnection = $true
-                }
-                $server = Connect-DbaInstance @connDbaInstanceParams
             } catch {
                 Stop-Function -Message "Failure" -ErrorRecord $_ -Target $instance -Continue
             }
