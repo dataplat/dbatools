@@ -23,7 +23,7 @@ function Test-PSRemoting {
         try {
             $psWSManSplat = @{
                 ComputerName   = $ComputerName.ComputerName
-                Authentication = Default
+                Authentication = "Default"
                 Credential     = $Credential
                 UseSSL         = $UseSSL
                 ErrorAction    = 'Stop'
