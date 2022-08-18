@@ -103,13 +103,13 @@ function Watch-DbaXESession {
 
             try {
                 if ($raw) {
-                    return (Read-SqlXEvent -ConnectionString $server.ConnectionContext.ConnectionString -SessionName $sessionname -ErrorAction Stop)
+                    return (SqlServer.XEvent\Read-SqlXEvent -ConnectionString $server.ConnectionContext.ConnectionString -SessionName $sessionname -ErrorAction Stop)
                 }
 
-                # use the Read-SqlXEvent cmdlet from Microsoft
+                # use the SqlServer.XEvent\Read-SqlXEvent cmdlet from Microsoft
                 # because the underlying Class uses Tasks
                 # which is hard to handle in PowerShell
-                Read-SqlXEvent -ConnectionString $server.ConnectionContext.ConnectionString -SessionName $sessionname -ErrorAction Stop | ForEach-Object -Process {
+                SqlServer.XEvent\Read-SqlXEvent -ConnectionString $server.ConnectionContext.ConnectionString -SessionName $sessionname -ErrorAction Stop | ForEach-Object -Process {
 
                     $hash = [ordered]@{ }
 
