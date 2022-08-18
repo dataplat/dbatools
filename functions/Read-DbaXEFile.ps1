@@ -96,14 +96,14 @@ function Read-DbaXEFile {
             }
 
             if ($Raw) {
-                return (Read-SqlXEvent -FileName $currentfile)
+                return (SqlServer.XEvent\Read-SqlXEvent -FileName $currentfile)
             }
 
-            # use the Read-SqlXEvent cmdlet from Microsoft
+            # use the SqlServer.XEvent\Read-SqlXEvent cmdlet from Microsoft
             # because the underlying Class uses Tasks
             # which is hard to handle in PowerShell
 
-            $enum = Read-SqlXEvent -FileName $currentfile
+            $enum = SqlServer.XEvent\Read-SqlXEvent -FileName $currentfile
             $newcolumns = ($enum.Fields.Name | Select-Object -Unique)
 
             $actions = ($enum.Actions.Name | Select-Object -Unique)
