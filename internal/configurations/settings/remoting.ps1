@@ -13,3 +13,4 @@ Set-DbatoolsConfig -FullName 'PSRemoting.PsSessionOption.SkipRevocationCheck' -V
 
 # New-PSSession
 Set-DbatoolsConfig -FullName 'PSRemoting.PsSession.UseSSL' -Value $false -Initialize -Validation bool -Description 'Changes the value of -UseSSL parameter used by New-PsSession which is used for dbatools internally when working with PSRemoting.'
+Set-DbatoolsConfig -FullName 'PSRemoting.PsSession.Port' -Value $null -Initialize -Validation integerpositive -Description 'Changes the -Port parameter value used by New-PsSession which is used for dbatools internally when working with PSRemoting. Use it when you don''t work with default port number. To reset, use Set-DbatoolsConfig -FullName ''PSRemoting.PsSession.Port'' -Value $null'
