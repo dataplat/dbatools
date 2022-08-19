@@ -181,6 +181,12 @@ function Reset-DbaAdmin {
                         ErrorAction  = "Stop"
                         UseSSL       = (Get-DbatoolsConfigValue -FullName 'PSRemoting.PsSession.UseSSL' -Fallback $false)
                     }
+
+                    $Port = Get-DbatoolsConfigValue -FullName 'PSRemoting.PsSession.Port' -Fallback $null
+                    if (($null -ne $Port) -and ($Port -gt -1)) {
+                        $connectionParams += @{ Port = $Port }
+                    }
+
                     $session = New-PSSession @connectionParams
                 } catch {
                     Stop-Function -Continue -ErrorRecord $_ -Message "Can't access $hostName using PSSession. Check your firewall settings and ensure Remoting is enabled or run the script locally."

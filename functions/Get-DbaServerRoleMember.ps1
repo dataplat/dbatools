@@ -146,17 +146,17 @@ function Get-DbaServerRoleMember {
                 }
 
                 foreach ($member in $members) {
-                    $login = $server.Logins | Where-Object { $_.Name -eq $member }
+                    $loginList = $server.Logins | Where-Object { $_.Name -eq $member }
 
-                    if ($login) {
+                    if ($loginList) {
                         [PSCustomObject]@{
                             ComputerName = $server.ComputerName
                             InstanceName = $server.ServiceName
                             SqlInstance  = $server.DomainInstanceName
                             Role         = $role.Name
-                            Name         = $login.Name
+                            Name         = $loginList.Name
                             SmoRole      = $role
-                            SmoLogin     = $login
+                            SmoLogin     = $loginList
                         }
                     }
                 }
