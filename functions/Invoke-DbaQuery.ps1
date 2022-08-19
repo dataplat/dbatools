@@ -252,7 +252,7 @@ function Invoke-DbaQuery {
                     }
                     "System.String" {
                         try {
-                            if (Test-PsVersion -Maximum 4) {
+                            if (Test-PSVersion -Maximum 4) {
                                 $uri = [uri]$item
                             } else {
                                 $uri = New-Object uri -ArgumentList $item
@@ -290,7 +290,7 @@ function Invoke-DbaQuery {
 
                                 foreach ($path in $paths) {
                                     if (-not $path.PSIsContainer) {
-                                        if (Test-PsVersion -Is 3) {
+                                        if (Test-PSVersion -Is 3) {
                                             if (([uri]$path.FullName).Scheme -ne 'file') {
                                                 Stop-Function -Message "Could not resolve path $path as filesystem object"
                                                 return
@@ -389,21 +389,26 @@ function Invoke-DbaQuery {
             # We suppress the verbosity of all other functions in order to be sure the output is consistent with what you get, e.g., executing the same in SSMS
             Write-Message -Level Debug -Message "SqlInstance passed in, will work on: $instance"
             try {
-                $connDbaInstanceParams = @{
-                    SqlInstance   = $instance
-                    SqlCredential = $SqlCredential
-                    Database      = $Database
-                    Verbose       = $false
+                $noConnectionChangeNeeded = # we want to bypass Connect-DbaInstance if
+                ($instance.InputObject.GetType().Name -eq "Server") -and # we have Server SMO object and
+                (-not $ReadOnly) -and # no readonly intent is requested and
+                (-not $Database -or $instance.InputObject.ConnectionContext.DatabaseName -eq $Database)  # the database is not set or the currently connected
+                if ($noConnectionChangeNeeded) {
+                    Write-Message -Level Debug -Message "Current connection will be reused"
+                    $server = $instance.InputObject
+                } else {
+                    $connDbaInstanceParams = @{
+                        SqlInstance         = $instance
+                        SqlCredential       = $SqlCredential
+                        Database            = $Database
+                        NonPooledConnection = $true           # see #8491 for details, also #7725 is still relevant
+                        Verbose             = $false
+                    }
+                    if ($ReadOnly) {
+                        $connDbaInstanceParams.ApplicationIntent = "ReadOnly"
+                    }
+                    $server = Connect-DbaInstance @connDbaInstanceParams
                 }
-                if ($ReadOnly) {
-                    $connDbaInstanceParams.ApplicationIntent = "ReadOnly"
-                }
-                # Test for a windows credential and request a non-pooled connection in that case to keep the security context (see #7725 for details)
-                if ($SqlCredential.UserName -like '*\*' -or $SqlCredential.UserName -like '*@*') {
-                    Write-Message -Level Debug -Message "Windows credential detected, so requesting a non-pooled connection"
-                    $connDbaInstanceParams.NonPooledConnection = $true
-                }
-                $server = Connect-DbaInstance @connDbaInstanceParams
             } catch {
                 Stop-Function -Message "Failure" -ErrorRecord $_ -Target $instance -Continue
             }
