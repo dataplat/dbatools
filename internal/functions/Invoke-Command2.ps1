@@ -33,6 +33,9 @@ function Invoke-Command2 {
         .PARAMETER UseSSL
             Enables SSL
 
+        .PARAMETER Port
+            Uses a specific Port to connect
+
         .PARAMETER ArgumentList
             Any arguments to pass to the scriptblock being run
 
@@ -62,6 +65,7 @@ function Invoke-Command2 {
         [string]$Authentication = 'Default',
         [string]$ConfigurationName,
         [switch]$UseSSL = (Get-DbatoolsConfigValue -FullName 'PSRemoting.PsSession.UseSSL' -Fallback $false),
+        [int]$Port = (Get-DbatoolsConfigValue -FullName 'PSRemoting.PsSession.Port' -Fallback $null),
         [switch]$Raw,
         [version]$RequiredPSVersion
     )
@@ -93,6 +97,10 @@ function Invoke-Command2 {
                 Name           = $sessionName
                 ErrorAction    = 'Stop'
                 UseSSL         = $UseSSL
+            }
+            if (($null -ne $Port) -and ($Port -gt -1)) {
+                $psSessionSplat.Port = $Port
+                Write-Message -Level Verbose -Message "Using Port: $($psSessionSplat.Port)"
             }
             if (Test-Windows -NoWarn) {
                 $psSessionOptionsSplat = @{
