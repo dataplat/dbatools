@@ -300,4 +300,14 @@ SELECT 2
 
         { Invoke-DbaQuery -SqlInstance $script:instance2 -Database tempdb -Query "SELEC p FROM c" -NoExec -EnableException } | Should -Throw "Incorrect syntax near 'selec'"
     }
+
+    It "supports dropping temp objects (#8472)" {
+        $sql = "CREATE PROC #DropStatistics
+                AS
+                SELECT 1
+                GO
+                drop procedure #DropStatistics
+                go"
+        { Invoke-DbaQuery -SqlInstance $script:instance2 -Database tempdb -Query $sql -EnableException } | Should -Not -Throw
+    }
 }
