@@ -252,7 +252,7 @@ function Invoke-DbaQuery {
                     }
                     "System.String" {
                         try {
-                            if (Test-PsVersion -Maximum 4) {
+                            if (Test-PSVersion -Maximum 4) {
                                 $uri = [uri]$item
                             } else {
                                 $uri = New-Object uri -ArgumentList $item
@@ -290,7 +290,7 @@ function Invoke-DbaQuery {
 
                                 foreach ($path in $paths) {
                                     if (-not $path.PSIsContainer) {
-                                        if (Test-PsVersion -Is 3) {
+                                        if (Test-PSVersion -Is 3) {
                                             if (([uri]$path.FullName).Scheme -ne 'file') {
                                                 Stop-Function -Message "Could not resolve path $path as filesystem object"
                                                 return
@@ -389,10 +389,10 @@ function Invoke-DbaQuery {
             # We suppress the verbosity of all other functions in order to be sure the output is consistent with what you get, e.g., executing the same in SSMS
             Write-Message -Level Debug -Message "SqlInstance passed in, will work on: $instance"
             try {
-                $noConnectionChangeNeeded =                                                                  # we want to bypass Connect-DbaInstance if
-                    ($instance.InputObject.GetType().Name -eq "Server") -and                                 # we have Server SMO object and
-                    (-not $ReadOnly) -and                                                                    # no readonly intent is requested and
-                    (-not $Database -or $instance.InputObject.ConnectionContext.DatabaseName -eq $Database)  # the database is not set or the currently connected
+                $noConnectionChangeNeeded = # we want to bypass Connect-DbaInstance if
+                ($instance.InputObject.GetType().Name -eq "Server") -and # we have Server SMO object and
+                (-not $ReadOnly) -and # no readonly intent is requested and
+                (-not $Database -or $instance.InputObject.ConnectionContext.DatabaseName -eq $Database)  # the database is not set or the currently connected
                 if ($noConnectionChangeNeeded) {
                     Write-Message -Level Debug -Message "Current connection will be reused"
                     $server = $instance.InputObject
