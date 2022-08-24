@@ -219,8 +219,8 @@ function Invoke-DbaAdvancedInstall {
         UseSSL       = (Get-DbatoolsConfigValue -FullName 'PSRemoting.PsSession.UseSSL' -Fallback $false)
     }
 
-    $WinRMPort = Get-DbatoolsConfigValue -FullName 'PSRemoting.PsSession.Port' -Fallback $null
-    if (($null -ne $WinRMPort) -and ($WinRMPort -gt -1)) {
+    [nullable[int]]$WinRMPort = Get-DbatoolsConfigValue -FullName 'PSRemoting.PsSession.Port' -Fallback $null
+    if (($null -ne $WinRMPort) -and ($WinRMPort -gt 0)) {
         $connectionParams.Port = $WinRMPort
         Write-Message -Level Verbose -Message "Using Port: $($connectionParams.Port)"
     }
