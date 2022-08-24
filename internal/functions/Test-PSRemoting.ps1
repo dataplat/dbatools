@@ -16,7 +16,7 @@ function Test-PSRemoting {
 
     process {
         $UseSSL = Get-DbatoolsConfigValue -FullName 'PSRemoting.PsSession.UseSSL' -Fallback $false
-        $Port = Get-DbatoolsConfigValue -FullName 'PSRemoting.PsSession.Port' -Fallback $null
+        [nullable[int]]$Port = Get-DbatoolsConfigValue -FullName 'PSRemoting.PsSession.Port' -Fallback $null
 
         Write-Message -Level VeryVerbose -Message "Testing $($ComputerName.Computername)"
 
@@ -28,7 +28,7 @@ function Test-PSRemoting {
                 UseSSL         = $UseSSL
                 ErrorAction    = 'Stop'
             }
-            if (($null -ne $Port) -and ($Port -gt -1)) {
+            if (($null -ne $Port) -and ($Port -gt 0)) {
                 $psWSManSplat.Port = $Port
                 Write-Message -Level Verbose -Message "Test using Port: $($psWSManSplat.Port)"
             }

@@ -65,7 +65,7 @@ function Invoke-Command2 {
         [string]$Authentication = 'Default',
         [string]$ConfigurationName,
         [switch]$UseSSL = (Get-DbatoolsConfigValue -FullName 'PSRemoting.PsSession.UseSSL' -Fallback $false),
-        [int]$Port = (Get-DbatoolsConfigValue -FullName 'PSRemoting.PsSession.Port' -Fallback $null),
+        [nullable[int]]$Port = (Get-DbatoolsConfigValue -FullName 'PSRemoting.PsSession.Port' -Fallback $null),
         [switch]$Raw,
         [version]$RequiredPSVersion
     )
@@ -98,7 +98,7 @@ function Invoke-Command2 {
                 ErrorAction    = 'Stop'
                 UseSSL         = $UseSSL
             }
-            if (($null -ne $Port) -and ($Port -gt -1)) {
+            if (($null -ne $Port) -and ($Port -gt 0)) {
                 $psSessionSplat.Port = $Port
                 Write-Message -Level Verbose -Message "Using Port: $($psSessionSplat.Port)"
             }
