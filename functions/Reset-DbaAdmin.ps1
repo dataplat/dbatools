@@ -182,8 +182,8 @@ function Reset-DbaAdmin {
                         UseSSL       = (Get-DbatoolsConfigValue -FullName 'PSRemoting.PsSession.UseSSL' -Fallback $false)
                     }
 
-                    $Port = Get-DbatoolsConfigValue -FullName 'PSRemoting.PsSession.Port' -Fallback $null
-                    if (($null -ne $Port) -and ($Port -gt -1)) {
+                    [nullable[int]]$Port = Get-DbatoolsConfigValue -FullName 'PSRemoting.PsSession.Port' -Fallback $null
+                    if (($null -ne $Port) -and ($Port -gt 0)) {
                         $connectionParams += @{ Port = $Port }
                     }
 
