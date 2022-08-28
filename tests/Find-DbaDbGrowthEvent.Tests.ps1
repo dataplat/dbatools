@@ -16,7 +16,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     Context "Command actually works" {
         BeforeAll {
-            $server = Connect-DbaInstance -SqlInstance $script:instance3
+            $server = Connect-DbaInstance -SqlInstance $script:instance1
             $random = Get-Random
             $databaseName1 = "dbatoolsci1_$random"
             $db1 = New-DbaDatabase -SqlInstance $server -Name $databaseName1
