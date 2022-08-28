@@ -162,6 +162,7 @@ function Find-DbaDbGrowthEvent {
                             CONVERT(INT,(DENSE_RANK() OVER (ORDER BY [StartTime] DESC))%2) AS OrderRank,
                                 CONVERT(INT, [EventClass]) AS EventClass,
                             [DatabaseName],
+                            (SELECT database_id FROM sys.databases WHERE Name = [DatabaseName]) AS DatabaseId,
                             [Filename],
                             CONVERT(INT,(Duration/1000)) AS Duration,
                             $(if (-not $UseLocalTime) { "
@@ -202,7 +203,7 @@ function Find-DbaDbGrowthEvent {
                         0 AS [HostName],
                         0 AS [SessionLoginName],
                         0 AS [SPID]
-            END	TRY
+            END    TRY
             BEGIN CATCH
                 SELECT
                     SERVERPROPERTY('MachineName') AS ComputerName,
