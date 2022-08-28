@@ -45,8 +45,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 
         It "Should find auto growth events in the default trace" {
             $results = Find-DbaDbGrowthEvent -SqlInstance $server -Database $databaseName1 -EventType Growth
-            $results.EventClass | Should -Contain 92 # data file growth
-            $results.EventClass | Should -Contain 93 # log file growth
+            ($results | Where-Object { $_.EventClass -in (92, 93) }).count | Should -BeGreaterThan 0
             $results.DatabaseName | unique | Should -Be $databaseName1
             $results.DatabaseId | unique | Should -Be $db1.ID
         }
