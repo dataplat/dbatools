@@ -144,6 +144,8 @@
         'Export-DbaDacPackage',
         'Export-DbaDbRole',
         'Export-DbaDbTableData',
+        'Export-DbaBinaryFile',
+        'Import-DbaBinaryFile',
         'Export-DbaDiagnosticQuery',
         'Export-DbaExecutionPlan',
         'Export-DbaInstance',
