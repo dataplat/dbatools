@@ -4,11 +4,11 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
+        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
         [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'Pattern', 'IncludeSystemObjects', 'IncludeSystemDatabases', 'EnableException'
         $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
         It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
         }
     }
 }
@@ -36,6 +36,7 @@ AS
         }
         It "Should find v_dbatoolsci_sysadmin in Master" {
             $results.Database | Should Be "Master"
+            $results.DatabaseId | Should -Be (Get-DbaDatabase -SqlInstance $script:instance2 -Database Master).ID
         }
     }
     Context "Command finds View in a User Database" {
@@ -59,6 +60,7 @@ AS
         }
         It "Should find v_dbatoolsci_sysadmin in dbatoolsci_viewdb Database" {
             $results.Database | Should Be "dbatoolsci_viewdb"
+            $results.DatabaseId | Should -Be (Get-DbaDatabase -SqlInstance $script:instance2 -Database dbatoolsci_viewdb).ID
         }
         $results = Find-DbaView -SqlInstance $script:instance2 -Pattern dbatools* -ExcludeDatabase 'dbatoolsci_viewdb'
         It "Should find no results when Excluding dbatoolsci_viewdb" {
