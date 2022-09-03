@@ -125,7 +125,7 @@ function Export-DbaBinaryFile {
 
             if (-not $PSBoundParameters.Query) {
                 if (-not $PSBoundParameters.FileNameColumn) {
-                    $FileNameColumn = ($tbl.Columns | Where-Object Name -match Name).Name
+                    $FileNameColumn = ($tbl.Columns | Where-Object Name -Match Name).Name
                     if ($FileNameColumn.Count -gt 1) {
                         Stop-Function -Message "Multiple column names match the phrase 'name' in $($tbl.Name) in $($tbl.Parent.Name) on $($server.Name). Please specify the column to use with -FileNameColumn" -Continue
                     }
@@ -162,8 +162,7 @@ function Export-DbaBinaryFile {
                 $out = [array]::CreateInstance('Byte', $bufferSize)
 
                 # Looping through records
-                while ($reader.Read())
-                {
+                while ($reader.Read()) {
                     if (-not $PSBoundParameters.FilePath -and $Path) {
                         $FilePath = Join-Path -Path $Path -ChildPath (Split-Path -Path $reader.GetString(0) -Leaf)
                     }
