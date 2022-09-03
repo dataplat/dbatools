@@ -26,10 +26,16 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
     }
 
-    It "exports the table data" {
-        $results = Import-DbaBinaryFile -SqlInstance sqlcs -Database tempdb -Table BunchOFiles -FilePath C:\github\appveyor-lab\azure\adalsql.msi
+    It "imports files into table data" {
+        $results = Import-DbaBinaryFile -SqlInstance sqlcs -Database tempdb -Table BunchOFiles -FilePath $script:appveyorlabrepo\azure\adalsql.msi
         $results.Database.Count | Should -Be 1
         $results.Database | Should -Be "tempdb"
         $results.FilePath | Should -match "adalsql.msi"
+    }
+    It "imports files into table data from piped" {
+        $results = Get-ChildItem -Path $script:appveyorlabrepo\certificates | Import-DbaBinaryFile -SqlInstance sqlcs -Database tempdb -Table BunchOFiles
+        $results.Database.Count | Should -Be 2
+        $results.Database | Should -Be "tempdb"
+        $results.FilePath | Should -Be @("localhost.crt","localhost.pfx")
     }
 }

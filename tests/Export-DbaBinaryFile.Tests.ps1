@@ -17,8 +17,8 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     BeforeAll {
         $db = Get-DbaDatabase -SqlInstance $script:instance1 -Database tempdb
         $null = $db.Query("CREATE TABLE [dbo].[BunchOFiles]([FileName123] [nvarchar](50) NULL, [TheFile123] [image] NULL)")
-        $null = Import-DbaBinaryFile -SqlInstance $script:instance1 -Database tempdb -Table BunchOFiles -FilePath C:\github\appveyor-lab\azure\adalsql.msi
-        $null = Get-ChildItem C:\github\appveyor-lab\certificates | Import-DbaBinaryFile -SqlInstance $script:instance1 -Database tempdb -Table BunchOFiles
+        $null = Import-DbaBinaryFile -SqlInstance $script:instance1 -Database tempdb -Table BunchOFiles -FilePath $script:appveyorlabrepo\azure\adalsql.msi
+        $null = Get-ChildItem $script:appveyorlabrepo\certificates | Import-DbaBinaryFile -SqlInstance $script:instance1 -Database tempdb -Table BunchOFiles
     }
     AfterAll {
         try {
@@ -28,7 +28,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
     }
 
-    It "exports the table data" {
+    It "exports the table data to file" {
         $results = Export-DbaBinaryFile -SqlInstance $script:instance1 -Database tempdb -Path C:\temp\exports
         $results.Name.Count | Should -Be 3
         $results.Name | Should -Be @('adalsql.msi', 'localhost.crt', 'localhost.pfx')

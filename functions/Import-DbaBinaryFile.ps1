@@ -60,12 +60,12 @@ function Import-DbaBinaryFile {
         https://dbatools.io/Import-DbaBinaryFile
 
     .EXAMPLE
-        PS C:\> Get-ChildItem C:\github\appveyor-lab\azure | Import-DbaBinaryFile -SqlInstance sqlcs -Database tempdb -Table BunchOFiles
+        PS C:\> Get-ChildItem $script:appveyorlabrepo\azure | Import-DbaBinaryFile -SqlInstance sqlcs -Database tempdb -Table BunchOFiles
 
         XYZ
 
     .EXAMPLE
-        PS C:\> Import-DbaBinaryFile -SqlInstance sqlcs -Database tempdb -Table BunchOFiles -FilePath C:\github\appveyor-lab\azure\adalsql.msi
+        PS C:\> Import-DbaBinaryFile -SqlInstance sqlcs -Database tempdb -Table BunchOFiles -FilePath $script:appveyorlabrepo\azure\adalsql.msi
 
         XYZ
     #>
@@ -136,7 +136,7 @@ function Import-DbaBinaryFile {
             foreach ($file in $FilePath) {
                 $file = $file.FullName
                 $filename = Split-Path -Path $file -Leaf
-                if ($Pscmdlet.ShouldProcess($env:computername, "Importing $file")) {
+                if ($Pscmdlet.ShouldProcess($env:computername, "Importing $file to $($tbl.Name) in $($tbl.Parent.Name) on $($server.Name)")) {
                     try {
                         $filestream = New-Object System.IO.FileStream $file, Open
                         Write-Message -Level Verbose -Message "Importing $filename"
