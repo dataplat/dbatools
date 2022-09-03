@@ -4,11 +4,11 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
+        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
         [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'Pattern', 'TriggerLevel', 'IncludeSystemObjects', 'IncludeSystemDatabases', 'EnableException'
         $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
         It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
         }
     }
 }
@@ -18,11 +18,11 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
+        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
         [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'Pattern', 'TriggerLevel', 'IncludeSystemObjects', 'IncludeSystemDatabases', 'EnableException'
         $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
         It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
         }
     }
 }
@@ -54,6 +54,7 @@ ON ALL SERVER;
         $results = Find-DbaTrigger -SqlInstance $script:instance2 -Pattern dbatoolsci* -IncludeSystemDatabases -IncludeSystemObjects -TriggerLevel Server
         It "Should find a specific Trigger at the Server Level" {
             $results.TriggerLevel | Should Be "Server"
+            $results.DatabaseId | Should -BeNullOrEmpty
         }
         It "Should find a specific Trigger named dbatoolsci_ddl_trig_database" {
             $results.Name | Should Be "dbatoolsci_ddl_trig_database"
@@ -68,7 +69,7 @@ ON ALL SERVER;
             ## All Triggers adapted from examples on:
             ## https://docs.microsoft.com/en-us/sql/t-sql/statements/create-trigger-transact-sql?view=sql-server-2017
 
-            $null = New-DbaDatabase -SqlInstance $script:instance2 -Name 'dbatoolsci_triggerdb'
+            $dbatoolsci_triggerdb = New-DbaDatabase -SqlInstance $script:instance2 -Name 'dbatoolsci_triggerdb'
             $DatabaseTrigger = @"
 CREATE TRIGGER dbatoolsci_safety
 ON DATABASE
@@ -98,6 +99,7 @@ GO
         $results = Find-DbaTrigger -SqlInstance $script:instance2 -Pattern dbatoolsci* -Database 'dbatoolsci_triggerdb' -TriggerLevel Database
         It "Should find a specific Trigger at the Database Level" {
             $results.TriggerLevel | Should Be "Database"
+            $results.DatabaseId | Should -Be $dbatoolsci_triggerdb.ID
         }
         It "Should find a specific Trigger named dbatoolsci_safety" {
             $results.Name | Should Be "dbatoolsci_safety"
@@ -106,6 +108,7 @@ GO
         $results = Find-DbaTrigger -SqlInstance $script:instance2 -Pattern dbatoolsci* -Database 'dbatoolsci_triggerdb' -ExcludeDatabase Master -TriggerLevel Object
         It "Should find a specific Trigger at the Object Level" {
             $results.TriggerLevel | Should Be "Object"
+            $results.DatabaseId | Should -Be $dbatoolsci_triggerdb.ID
         }
         It "Should find a specific Trigger named dbatoolsci_reminder1" {
             $results.Name | Should Be "dbatoolsci_reminder1"
@@ -116,6 +119,7 @@ GO
         $results = Find-DbaTrigger -SqlInstance $script:instance2 -Pattern dbatoolsci* -TriggerLevel All
         It "Should find 2 Triggers when TriggerLevel is All" {
             $results.name | Should Be @('dbatoolsci_safety', 'dbatoolsci_reminder1')
+            $results.DatabaseId | Should -Be $dbatoolsci_triggerdb.ID, $dbatoolsci_triggerdb.ID
         }
     }
 }
