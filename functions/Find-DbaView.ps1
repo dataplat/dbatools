@@ -148,6 +148,7 @@ function Find-DbaView {
                                 ComputerName   = $server.ComputerName
                                 SqlInstance    = $server.ServiceName
                                 Database       = $db.Name
+                                DatabaseId     = $db.ID
                                 Schema         = $vw.Schema
                                 Name           = $vw.Name
                                 Owner          = $vw.Owner
@@ -179,6 +180,7 @@ function Find-DbaView {
                                 ComputerName   = $server.ComputerName
                                 SqlInstance    = $server.ServiceName
                                 Database       = $db.Name
+                                DatabaseId     = $db.ID
                                 Schema         = $vw.Schema
                                 Name           = $vw.Name
                                 Owner          = $vw.Owner
