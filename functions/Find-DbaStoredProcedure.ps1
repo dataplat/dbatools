@@ -150,6 +150,7 @@ function Find-DbaStoredProcedure {
                             ComputerName             = $server.ComputerName
                             SqlInstance              = $server.ServiceName
                             Database                 = $db.Name
+                            DatabaseId               = $db.ID
                             Schema                   = $sp.Schema
                             Name                     = $sp.Name
                             Owner                    = $sp.Owner

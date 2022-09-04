@@ -4,11 +4,11 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
+        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
         [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'Pattern', 'IncludeSystemObjects', 'IncludeSystemDatabases', 'EnableException'
         $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
         It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
         }
     }
 }
@@ -32,6 +32,7 @@ AS
         $results = Find-DbaStoredProcedure -SqlInstance $script:instance2 -Pattern dbatools* -IncludeSystemDatabases
         It "Should find a specific StoredProcedure named cp_dbatoolsci_sysadmin" {
             $results.Name | Should Contain "cp_dbatoolsci_sysadmin"
+            $results.DatabaseId | Should -Be (Get-DbaDatabase -SqlInstance $script:instance2 -Database master).ID
         }
     }
     Context "Command finds Procedures in a User Database" {
@@ -51,6 +52,7 @@ AS
         $results = Find-DbaStoredProcedure -SqlInstance $script:instance2 -Pattern dbatools* -Database 'dbatoolsci_storedproceduredb'
         It "Should find a specific StoredProcedure named sp_dbatoolsci_custom" {
             $results.Name | Should Contain "sp_dbatoolsci_custom"
+            $results.DatabaseId | Should -Be (Get-DbaDatabase -SqlInstance $script:instance2 -Database dbatoolsci_storedproceduredb).ID
         }
         It "Should find sp_dbatoolsci_custom in dbatoolsci_storedproceduredb" {
             $results.Database | Should Contain "dbatoolsci_storedproceduredb"
