@@ -128,6 +128,7 @@ function Find-DbaTrigger {
                             SqlInstance      = $server.ServiceName
                             TriggerLevel     = "Server"
                             Database         = $null
+                            DatabaseId       = $null
                             Object           = $null
                             Name             = $trigger.Name
                             IsSystemObject   = $trigger.IsSystemObject
@@ -191,6 +192,7 @@ function Find-DbaTrigger {
                                         SqlInstance      = $server.ServiceName
                                         TriggerLevel     = "Database"
                                         Database         = $db.name
+                                        DatabaseId       = $db.ID
                                         Object           = $tr.Parent
                                         Name             = $tr.Name
                                         IsSystemObject   = $tr.IsSystemObject
@@ -234,6 +236,7 @@ function Find-DbaTrigger {
                                         SqlInstance      = $server.ServiceName
                                         TriggerLevel     = "Object"
                                         Database         = $db.name
+                                        DatabaseId       = $db.ID
                                         Object           = $tr.Parent
                                         Name             = $tr.Name
                                         IsSystemObject   = $tr.IsSystemObject
@@ -268,6 +271,7 @@ function Find-DbaTrigger {
                                         SqlInstance      = $server.ServiceName
                                         TriggerLevel     = "Database"
                                         Database         = $db.name
+                                        DatabaseId       = $db.ID
                                         Object           = $tr.Parent
                                         Name             = $tr.Name
                                         IsSystemObject   = $tr.IsSystemObject
@@ -303,6 +307,7 @@ function Find-DbaTrigger {
                                         SqlInstance      = $server.ServiceName
                                         TriggerLevel     = "Object"
                                         Database         = $db.name
+                                        DatabaseId       = $db.ID
                                         Object           = $tr.Parent
                                         Name             = $tr.Name
                                         IsSystemObject   = $tr.IsSystemObject
