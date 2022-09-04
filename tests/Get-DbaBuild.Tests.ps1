@@ -156,8 +156,8 @@ Describe "$CommandName Unit Test" -Tags Unittest {
             It "No multiple Names around" {
                 ($Versions.Name | Where-Object { $_ }).Count | Should -Be 1
             }
-            It "has a single version tagged as RTM" {
-                ($Versions.SP -eq 'RTM').Count | Should -Be 1
+            It "has a two versions tagged as RTM" {
+                ($Versions.SP -eq 'RTM').Count | Should -Be 2
             }
             It "SP Property is formatted correctly" {
                 $Versions.SP | Where-Object { $_ } | Should -Match '^RTM$|^SP[\d]+$|^RC'
