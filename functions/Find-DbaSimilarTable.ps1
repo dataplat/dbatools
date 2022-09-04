@@ -124,11 +124,13 @@ function Find-DbaSimilarTable {
                       100 * COUNT(c2.COLUMN_NAME) /*Matching_Column_Count*/ / MIN(ColCountsByTable.Column_Count) /*Column_Count*/ AS MatchPercent,
                       DENSE_RANK() OVER(ORDER BY c.TABLE_CATALOG, c.TABLE_SCHEMA, c.TABLE_NAME) TableNameRankInDB,
                       c.TABLE_CATALOG AS DatabaseName,
+                      (SELECT database_id FROM sys.databases WHERE Name = c.TABLE_CATALOG) AS DatabaseId,
                       c.TABLE_SCHEMA AS SchemaName,
                       c.TABLE_NAME AS TableName,
                       t.TABLE_TYPE AS TableType,
                       MIN(ColCountsByTable.Column_Count) AS ColumnCount,
                       c2.TABLE_CATALOG AS MatchingDatabaseName,
+                      (SELECT database_id FROM sys.databases WHERE Name = c2.TABLE_CATALOG) AS MatchingDatabaseId,
                       c2.TABLE_SCHEMA AS MatchingSchemaName,
                       c2.TABLE_NAME AS MatchingTableName,
                       t2.TABLE_TYPE AS MatchingTableType,
@@ -254,12 +256,14 @@ function Find-DbaSimilarTable {
                         MatchingTable             = "$($row.MatchingDatabaseName).$($row.MatchingSchemaName).$($row.MatchingTableName)"
                         MatchPercent              = $row.MatchPercent
                         OriginalDatabaseName      = $row.DatabaseName
+                        OriginalDatabaseId        = $row.DatabaseId
                         OriginalSchemaName        = $row.SchemaName
                         OriginalTableName         = $row.TableName
                         OriginalTableNameRankInDB = $row.TableNameRankInDB
                         OriginalTableType         = $row.TableType
                         OriginalColumnCount       = $row.ColumnCount
                         MatchingDatabaseName      = $row.MatchingDatabaseName
+                        MatchingDatabaseId        = $row.MatchingDatabaseId
                         MatchingSchemaName        = $row.MatchingSchemaName
                         MatchingTableName         = $row.MatchingTableName
                         MatchingTableType         = $row.MatchingTableType
