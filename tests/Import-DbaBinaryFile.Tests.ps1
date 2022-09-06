@@ -15,7 +15,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     BeforeAll {
-        $db = Get-DbaDatabase -SqlInstance $script:instance1 -Database tempdb
+        $db = Get-DbaDatabase -SqlInstance $script:instance2 -Database tempdb
         $null = $db.Query("CREATE TABLE [dbo].[BunchOFiles]([FileName123] [nvarchar](50) NULL, [TheFile123] [image] NULL)")
     }
     AfterAll {
@@ -27,12 +27,12 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     }
 
     It "imports files into table data" {
-        $results = Import-DbaBinaryFile -SqlInstance sqlcs -Database tempdb -Table BunchOFiles -FilePath $script:appveyorlabrepo\azure\adalsql.msi -WarningAction Continue -ErrorAction Stop -EnableException
+        $results = Import-DbaBinaryFile -SqlInstance $script:instance2 -Database tempdb -Table BunchOFiles -FilePath $script:appveyorlabrepo\azure\adalsql.msi -WarningAction Continue -ErrorAction Stop -EnableException
         $results.Database | Should -Be "tempdb"
         $results.FilePath | Should -match "adalsql.msi"
     }
     It "imports files into table data from piped" {
-        $results = Get-ChildItem -Path $script:appveyorlabrepo\certificates | Import-DbaBinaryFile -SqlInstance sqlcs -Database tempdb -Table BunchOFiles -WarningAction Continue -ErrorAction Stop -EnableException
+        $results = Get-ChildItem -Path $script:appveyorlabrepo\certificates | Import-DbaBinaryFile -SqlInstance $script:instance2 -Database tempdb -Table BunchOFiles -WarningAction Continue -ErrorAction Stop -EnableException
         $results.Database | Should -Be @("tempdb", "tempdb")
         Split-Path -Path $results.FilePath -Leaf | Should -Be @("localhost.crt", "localhost.pfx")
     }
