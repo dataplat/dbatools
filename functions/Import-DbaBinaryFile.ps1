@@ -4,7 +4,9 @@ function Import-DbaBinaryFile {
         Imports binary files into SQL Server
 
     .DESCRIPTION
-        Imports binary files into SQL Server
+        Imports binary files into SQL Server.
+
+        If specific filename and binary columns aren't specified, the command will guess based on the datatype (binary/image) for the binary column and a match for "name" as the filename column.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. This can be a collection and receive pipeline input.
@@ -20,7 +22,7 @@ function Import-DbaBinaryFile {
         The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
 
     .PARAMETER Table
-        Define a specific table you would like to query. You can specify up to three-part name like db.sch.tbl.
+        Define a specific table you would like to upload to. You can specify up to three-part name like db.sch.tbl.
 
         If the object has special characters please wrap them in square brackets [ ].
         Using dbo.First.Table will try to find table named 'Table' on schema 'First' and database 'dbo'.
@@ -29,13 +31,26 @@ function Import-DbaBinaryFile {
         The correct way to find a table Name] in schema Schema.Name is by passing [Schema.Name].[Name]]]
 
     .PARAMETER Schema
-        Only return tables from the specified schema
+        The specific schema to use. If not specified, the default schema will be used.
 
     .PARAMETER FilePath
         Specifies the full file path of the output file. Accepts pipeline input from Get-ChildItem.
 
     .PARAMETER Statement
-        Sup
+        To upload files, you basically have to use a statement line this:
+
+        INSERT INTO db.tbl ([FileNameColumn], [bBinaryColumn]) VALUES (@FileName, @FileContents)
+
+        We try our best to guess the column names, but if you need to specify the SQL statement, use this parameter. The only required parameter is @FileContents. If you want to use a filename column, you must use @FileName.
+
+    .PARAMETER FileNameColumn
+        The column name that will contain the filename. If not specified, we will try to guess based on the column name.
+
+    .PARAMETER BinaryColumn
+        The column name that will contain the binary data. If not specified, we will try to guess based on the column name.
+
+    .PARAMETER NoFileNameColumn
+        If you don't have a filename column, use this switch.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed
@@ -60,14 +75,19 @@ function Import-DbaBinaryFile {
         https://dbatools.io/Import-DbaBinaryFile
 
     .EXAMPLE
-        PS C:\> Get-ChildItem $script:appveyorlabrepo\azure | Import-DbaBinaryFile -SqlInstance sqlcs -Database tempdb -Table BunchOFiles
+        PS C:\> Get-ChildItem C:\photos | Import-DbaBinaryFile -SqlInstance sqlcs -Database employees -Table photos
 
-        XYZ
+        Imports all photos from C:\photos into the photos table in the employees database on sqlcs. Automatically guesses the column names for the image and filename columns.
 
     .EXAMPLE
-        PS C:\> Import-DbaBinaryFile -SqlInstance sqlcs -Database tempdb -Table BunchOFiles -FilePath $script:appveyorlabrepo\azure\adalsql.msi
+        PS C:\> Import-DbaBinaryFile -SqlInstance sqlcs -Database tempdb -Table BunchOFiles -FilePath C:\azure\adalsql.msi
 
-        XYZ
+        Imports the file adalsql.msi into the BunchOFiles table in the tempdb database on sqlcs. Automatically guesses the column names for the image and filename columns.
+
+    .EXAMPLE
+        PS C:\> Import-DbaBinaryFile -SqlInstance sqlcs -Database tempdb -Table BunchOFiles -FilePath C:\azure\adalsql.msi -FileNameColumn fname -BinaryColumn data
+
+        Imports the file adalsql.msi into the BunchOFiles table in the tempdb database on sqlcs. Uses the fname and data columns for the filename and binary data.
     #>
     [CmdletBinding(SupportsShouldProcess)]
     param (
@@ -79,6 +99,9 @@ function Import-DbaBinaryFile {
         [string]$Table,
         [string]$Schema,
         [string]$Statement,
+        [string]$FileNameColumn,
+        [string]$BinaryColumn,
+        [switch]$NoFileNameColumn,
         [parameter(Mandatory, ValueFromPipeline)]
         [System.IO.FileInfo[]]$FilePath,
         [switch]$EnableException
@@ -109,10 +132,9 @@ function Import-DbaBinaryFile {
             # if none or multiple, make them specify the filename column or extension
             $server = $tbl.Parent.Parent
             $db = $tbl.Parent
-            $connection = $server.ConnectionContext.SqlConnectionObject
 
             if (-not $Statement) {
-                if (-not $PSBoundParameters.FileNameColumn) {
+                if (-not $PSBoundParameters.FileNameColumn -and -not $NoFileNameColumn) {
                     $FileNameColumn = ($tbl.Columns | Where-Object Name -match Name).Name
                     if ($FileNameColumn.Count -gt 1) {
                         Stop-Function -Message "Multiple column names match the phrase 'name' in $($tbl.Name) in $($tbl.Parent.Name) on $($server.Name). Please specify the column to use with -FileNameColumn" -Continue
@@ -145,7 +167,11 @@ function Import-DbaBinaryFile {
                         $fileBytes = $binaryreader.ReadBytes($filestream.Length)
 
                         if (-not $Statement) {
-                            $Statement = "INSERT INTO $db.$tbl ([$FileNameColumn], [$BinaryColumn]) VALUES (@FileName, @FileContents)"
+                            if ($NoFileNameColumn) {
+                                $Statement = "INSERT INTO $db.$tbl ([$BinaryColumn]) VALUES (@FileContents)"
+                            } else {
+                                $Statement = "INSERT INTO $db.$tbl ([$FileNameColumn], [$BinaryColumn]) VALUES (@FileName, @FileContents)"
+                            }
                         }
 
                         Write-Message -Level Verbose -Message "Statement: $Statement"
@@ -155,9 +181,10 @@ function Import-DbaBinaryFile {
 
                         $datatype = ($tbl.Columns | Where-Object Name -eq $BinaryColumn).DataType
                         Write-Message -Level Verbose -Message "Binary column datatype is $datatype"
-
+                        if (-not $NoFileNameColumn) {
+                            $null = $cmd.Parameters.AddWithValue("@FileName", $filename)
+                        }
                         $null = $cmd.Parameters.Add("@FileContents", $datatype).Value = $fileBytes
-                        $null = $cmd.Parameters.AddWithValue("@FileName", $filename)
                         $null = $cmd.ExecuteScalar()
 
                         $filestream.Close()

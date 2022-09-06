@@ -6,6 +6,8 @@ function Export-DbaBinaryFile {
     .DESCRIPTION
         Exports binary files from SQL Server
 
+        If specific filename and binary columns aren't specified, the command will guess based on the datatype (binary/image) for the binary column and a match for "name" as the filename column.
+
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. This can be a collection and receive pipeline input.
 
@@ -32,19 +34,21 @@ function Export-DbaBinaryFile {
         Only return tables from the specified schema
 
     .PARAMETER Path
-        Specifies the full file path of the output file. Accepts pipeline input from Get-ChildItem.
+        Specifies the directory where files will be exported.
 
     .PARAMETER FilePath
-        Sup
+        The specific filename of the output file. If not specified, the filename will use the filename column to determine the filename.
 
     .PARAMETER FileNameColumn
-        Sup
+        The column name that contains the filename. If not specified, we'll try out best to figure it out.
 
     .PARAMETER BinaryColumn
-        Sup
+        The column name that contains the binary data. If not specified, we'll try out best to figure it out.
 
     .PARAMETER Query
-        Sup
+        Allows you to specify a custom query to use to return the data. If not specified, we'll try out best to figure it out.
+
+        Example query: "SELECT [fn], [data] FROM tempdb.dbo.files"
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed
@@ -71,12 +75,23 @@ function Export-DbaBinaryFile {
     .EXAMPLE
         PS C:\> Export-DbaBinaryFile -SqlInstance sqlcs -Database test -Path C:\temp\exports
 
-        XYZ
+        Exports all binary files from the test database on sqlcs to C:\temp\exports. Guesses the columns based on datatype and column name.
 
     .EXAMPLE
-        PS C:\> Export-DbaBinaryFile -SqlInstance sqlcs -Database test -Path C:\temp\exports
+        PS C:\> Export-DbaBinaryFile -SqlInstance sqlcs -Database employees -Table photos  -Path C:\temp\exports
 
-        XYZ
+        Exports all binary files from the photos table in the employees database on sqlcs to C:\temp\exports. Guesses the columns based on datatype and column name.
+
+    .EXAMPLE
+        PS C:\> Export-DbaBinaryFile -SqlInstance sqlcs -Database employees -Table photos -FileNameColumn fname -BinaryColumn data -Path C:\temp\exports
+
+        Exports all binary files from the photos table in the employees database on sqlcs to C:\temp\exports. Uses the fname and data columns for the filename and binary data.
+
+    .EXAMPLE
+        PS C:\> Export-DbaBinaryFile -SqlInstance sqlcs -Database employees -Table photos -Query "SELECT [FileName], [Data] FROM [employees].[dbo].[photos] WHERE FirstName = 'Potato' and LastName = 'Qualitee'" -FilePath C:\temp\PotatoQualitee.jpg
+
+        Exports all binary files from the photos table in the employees database on sqlcs to C:\temp\exports. Uses the fname and data columns for the filename and binary data.
+
     #>
     [CmdletBinding(SupportsShouldProcess)]
     param (
@@ -96,6 +111,10 @@ function Export-DbaBinaryFile {
     begin {
         if ($Path -and $FilePath) {
             Stop-Function -Message "You cannot specify both -Path and -FilePath"
+        }
+
+        if (-not $Path -and -not $FilePath) {
+            Stop-Function -Message "You must specify either -Path or -FilePath"
         }
         if ($Path) {
             if (-not (Test-Path -Path $Path -PathType Container)) {
@@ -121,7 +140,6 @@ function Export-DbaBinaryFile {
             # if none or multiple, make them specify the filename column or extension
             $server = $tbl.Parent.Parent
             $db = $tbl.Parent
-            $connection = $server.ConnectionContext.SqlConnectionObject
 
             if (-not $PSBoundParameters.Query) {
                 if (-not $PSBoundParameters.FileNameColumn) {
