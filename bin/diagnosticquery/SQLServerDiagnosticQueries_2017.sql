@@ -1,7 +1,7 @@
 
 -- SQL Server 2017 Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: September 1, 2022
+-- Last Modified: September 6, 2022
 -- https://glennsqlperformance.com/
 -- https://sqlserverperformance.wordpress.com/
 -- YouTube: https://bit.ly/2PkoAM1 
@@ -843,15 +843,14 @@ db.is_auto_create_stats_on, db.is_auto_update_stats_on, db.is_auto_update_stats_
 db.snapshot_isolation_state_desc, db.is_read_committed_snapshot_on, db.is_auto_close_on, db.is_auto_shrink_on, 
 db.target_recovery_time_in_seconds, db.is_cdc_enabled, db.is_published, db.is_distributor, db.is_sync_with_backup, 
 db.group_database_id, db.replica_id, db.is_memory_optimized_elevate_to_snapshot_on, 
-db.delayed_durability_desc, db.is_query_store_on, 
-db.is_temporal_history_retention_enabled, db.is_remote_data_archive_enabled, 
+db.delayed_durability_desc, db.is_query_store_on, db.is_temporal_history_retention_enabled,  
 db.is_master_key_encrypted_by_server, db.is_encrypted, de.encryption_state, de.percent_complete, de.key_algorithm, de.key_length
 FROM sys.databases AS db WITH (NOLOCK)
 LEFT OUTER JOIN sys.dm_os_performance_counters AS lu WITH (NOLOCK)
 ON db.name = lu.instance_name
 LEFT OUTER JOIN sys.dm_os_performance_counters AS ls WITH (NOLOCK)
 ON db.name = ls.instance_name
-INNER JOIN sys.dm_os_performance_counters AS ds WITH (NOLOCK)
+LEFT OUTER JOIN sys.dm_os_performance_counters AS ds WITH (NOLOCK)
 ON db.name = ds.instance_name
 LEFT OUTER JOIN sys.dm_database_encryption_keys AS de WITH (NOLOCK)
 ON db.database_id = de.database_id
@@ -1379,6 +1378,18 @@ ORDER BY total_worker_time DESC OPTION (RECOMPILE);
 -- https://bit.ly/2LVqiQ1
 
 
+-- Look for long duration buffer pool scans (Query 51) (Long Buffer Pool Scans)
+EXEC sys.xp_readerrorlog 0, 1, N'Buffer pool scan took';
+------
+
+-- Finds buffer pool scans that took more than 10 seconds in the current SQL Server Error log
+-- Only in SQL Server 2017 CU23 and later
+
+-- Operations that trigger buffer pool scan may run slowly on large-memory computers - SQL Server | Microsoft Docs
+-- https://bit.ly/3QrFC81
+
+
+
 -- Database specific queries *****************************************************************
 
 -- **** Please switch to a user database that you are interested in! *****
@@ -1717,9 +1728,10 @@ ORDER BY [Difference] DESC, [Total Writes] DESC, [Total Reads] ASC OPTION (RECOM
 
 -- Missing Indexes for current database by Index Advantage  (Query 66) (Missing Indexes)
 SELECT DISTINCT CONVERT(decimal(18,2), migs.user_seeks * migs.avg_total_user_cost * (migs.avg_user_impact * 0.01)) AS [index_advantage], 
-migs.last_user_seek, mid.[statement] AS [Database.Schema.Table],
-mid.equality_columns, mid.inequality_columns, mid.included_columns,
-migs.user_seeks, migs.avg_total_user_cost, migs.avg_user_impact,
+CONVERT(nvarchar(25), migs.last_user_seek, 20) AS [last_user_seek], 
+mid.[statement] AS [Database.Schema.Table],
+mid.equality_columns, mid.inequality_columns, mid.included_columns, migs.user_seeks, 
+CONVERT(decimal(18,2), migs.avg_total_user_cost) AS [avg_total_user_,cost], migs.avg_user_impact,
 OBJECT_NAME(mid.[object_id]) AS [Table Name], p.rows AS [Table Rows]
 FROM sys.dm_db_missing_index_group_stats AS migs WITH (NOLOCK)
 INNER JOIN sys.dm_db_missing_index_groups AS mig WITH (NOLOCK)
