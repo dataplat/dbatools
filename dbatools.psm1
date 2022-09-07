@@ -785,6 +785,8 @@ $script:xplat = @(
     'Get-DbaRandomizedDataset',
     'Get-DbaRandomizedType',
     'Export-DbaDbTableData',
+    'Export-DbaBinaryFile',
+    'Import-DbaBinaryFile',
     'Backup-DbaServiceMasterKey',
     'Invoke-DbaDbPiiScan',
     'New-DbaAzAccessToken',
