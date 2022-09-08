@@ -490,6 +490,10 @@ function Backup-DbaDatabase {
             $backup = New-Object Microsoft.SqlServer.Management.Smo.Backup
             $backup.Database = $db.Name
             if (Test-Bound -ParameterName Description) {
+                if ($Description.Length -gt 255) {
+                    Write-Message -Level Warning -Message 'Description is too long and will be truncated to 255 characters'
+                    $Description = $Description.Substring(0, 255)
+                }
                 $backup.BackupSetDescription = $Description
             }
             $Suffix = "bak"
