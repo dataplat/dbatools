@@ -131,6 +131,9 @@ function Backup-DbaDatabase {
         The name of the certificate to be used to encrypt the backups. The existence of the certificate will be checked, and will not proceed if it does not exist
         Is mutually exclusive with the EncryptionKey option
 
+    .PARAMETER Description
+        The text describing the backup set like in BACKUP ... WITH DESCRITION = ''.
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -238,6 +241,7 @@ function Backup-DbaDatabase {
         [ValidateSet('AES128', 'AES192', 'AES256', 'TRIPLEDES')]
         [String]$EncryptionAlgorithm,
         [String]$EncryptionCertificate,
+        [String]$Description,
         [switch]$EnableException
     )
 
@@ -485,6 +489,13 @@ function Backup-DbaDatabase {
             $server.ConnectionContext.StatementTimeout = 0
             $backup = New-Object Microsoft.SqlServer.Management.Smo.Backup
             $backup.Database = $db.Name
+            if (Test-Bound -ParameterName Description) {
+                if ($Description.Length -gt 255) {
+                    Write-Message -Level Warning -Message 'Description is too long and will be truncated to 255 characters'
+                    $Description = $Description.Substring(0, 255)
+                }
+                $backup.BackupSetDescription = $Description
+            }
             $Suffix = "bak"
 
             if ($null -ne $encryptionOptions) {
