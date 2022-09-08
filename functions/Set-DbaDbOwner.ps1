@@ -145,6 +145,8 @@ function Set-DbaDbOwner {
                     elseif ($db.Users.name -contains $TargetLogin) {
                         Write-Message -Level Warning -Message "$dbName on $instance has $TargetLogin as a mapped user. Mapped users can not be database owners."
                     } else {
+                        # Make sure the Owner property in the SMO is filled befor the change. See #8528 for details.
+                        $null = $db.Owner
                         $db.SetOwner($TargetLogin)
                         # The used version of the SMO does not update the .Owner property, so we have to force this:
                         $db.Alter()
