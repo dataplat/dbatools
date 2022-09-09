@@ -146,6 +146,7 @@
         'Export-DbaDbTableData',
         'Export-DbaBinaryFile',
         'Import-DbaBinaryFile',
+        'Get-DbaBinaryFileTable',
         'Export-DbaDiagnosticQuery',
         'Export-DbaExecutionPlan',
         'Export-DbaInstance',
