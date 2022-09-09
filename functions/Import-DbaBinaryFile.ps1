@@ -36,6 +36,9 @@ function Import-DbaBinaryFile {
     .PARAMETER FilePath
         Specifies the full file path of the output file. Accepts pipeline input from Get-ChildItem.
 
+    .PARAMETER Path
+        A directory full of files to import.
+
     .PARAMETER Statement
         To upload files, you basically have to use a statement line this:
 
@@ -51,6 +54,9 @@ function Import-DbaBinaryFile {
 
     .PARAMETER NoFileNameColumn
         If you don't have a filename column, use this switch.
+
+    .PARAMETER InputObject
+        Table objects to be piped in from Get-DbaDbTable or Get-DbaBinaryFileTable
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed
@@ -93,39 +99,68 @@ function Import-DbaBinaryFile {
     param (
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [parameter(Mandatory)]
         [string]$Database,
-        [parameter(Mandatory)]
         [string]$Table,
         [string]$Schema,
         [string]$Statement,
         [string]$FileNameColumn,
         [string]$BinaryColumn,
         [switch]$NoFileNameColumn,
-        [parameter(Mandatory, ValueFromPipeline)]
+        [parameter(ValueFromPipeline)]
+        [Microsoft.SqlServer.Management.Smo.Table[]]$InputObject,
+        [parameter(ValueFromPipelineByPropertyName)]
+        [Alias("FullName")]
         [System.IO.FileInfo[]]$FilePath,
+        [System.IO.FileInfo[]]$Path,
         [switch]$EnableException
     )
-    begin {
+    process {
+        # can't be in begin because it's piped in
+        if ((-not $Database -or -not $Table) -and -not $InputObject) {
+            Stop-Function -Message "You must specify either Database and Table or pipe in a table"
+            return
+        }
+
         if ($Path -and $FilePath) {
             Stop-Function -Message "You cannot specify both -Path and -FilePath"
+            return
+        }
+        if (-not $Path -and -not $FilePath) {
+            Stop-Function -Message "You cannot specify either -Path or -FilePath"
+            return
         }
         if ($Path) {
             if (-not (Test-Path -Path $Path -PathType Container)) {
                 Stop-Function -Message "Path $Path does not exist"
+                return
             }
         }
-    }
-    process {
-        if (Test-FunctionInterrupt) { return }
-        try {
-            $tables = Get-DbaDbTable -SqlInstance $SqlInstance -Database $Database -Table $Table -Schema $Schema -SqlCredential $SqlCredential -EnableException
-        } catch {
-            Stop-Function -Message "Failed to get tables" -ErrorRecord $PSItem
-            return
+
+        if ($FilePath) {
+            if (-not (Test-Path $FilePath)) {
+                Stop-Function -Message "File $FilePath does not exist" -Continue
+            }
+
+            if ((Get-Item -Path $FilePath).PSIsContainer) {
+                Stop-Function -Message "FilePath must be one or more files, not a directory. For directories, use Path" -Continue
+            }
         }
-        Write-Message -Level Verbose -Message "Found $($tables.count) tables"
-        foreach ($tbl in $tables) {
+
+        if ($Path) {
+            $FilePath = Get-ChildItem -Path $Path -Recurse -File
+        }
+
+        if (Test-FunctionInterrupt) { return }
+        if (-not $InputObject) {
+            try {
+                $InputObject = Get-DbaDbTable -SqlInstance $SqlInstance -Database $Database -Table $Table -Schema $Schema -SqlCredential $SqlCredential -EnableException
+            } catch {
+                Stop-Function -Message "Failed to get tables" -ErrorRecord $PSItem
+                return
+            }
+        }
+        Write-Message -Level Verbose -Message "Found $($InputObject.count) tables"
+        foreach ($tbl in $InputObject) {
             # auto detect column that is binary
             # if none or multiple, make them specify the binary column
             # auto detect column that is a name
@@ -187,14 +222,21 @@ function Import-DbaBinaryFile {
                         $null = $cmd.Parameters.Add("@FileContents", $datatype).Value = $fileBytes
                         $null = $cmd.ExecuteScalar()
 
-                        $filestream.Close()
-                        $filestream.Dispose()
-                        $binaryreader.Close()
-                        $binaryreader.Dispose()
+                        try {
+                            $cmd.Connection.Close()
+                            $cmd.Dispose()
+                            $filestream.Close()
+                            $filestream.Dispose()
+                            $binaryreader.Close()
+                            $binaryreader.Dispose()
+                        } catch {
+                            Write-Message -Level Verbose -Message "Something went wrong: $PSItem"
+                        }
+
                         [PSCustomObject]@{
-                            ComputerName = $server.NetName
-                            InstanceName = $server.ServiceName
-                            SqlInstance  = $server.DomainInstanceName
+                            ComputerName = $tbl.ComputerName
+                            InstanceName = $tbl.InstanceName
+                            SqlInstance  = $tbl.SqlInstance
                             Database     = $db.Name
                             Table        = $tbl.Name
                             FilePath     = $file
@@ -202,6 +244,16 @@ function Import-DbaBinaryFile {
                         }
                     } catch {
                         Stop-Function -Message "Failed to import $file" -ErrorRecord $PSItem -Continue
+                    } finally {
+                        if ($filestream.CanRead) {
+                            $filestream.Close()
+                            $filestream.Dispose()
+                        }
+                        if ($binaryreader) {
+                            $binaryreader.Close()
+                            $binaryreader.Dispose()
+                        }
+                        $null = $server | Disconnect-DbaInstance
                     }
                 }
             }
