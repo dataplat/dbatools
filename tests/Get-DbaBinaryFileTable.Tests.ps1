@@ -5,7 +5,7 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
         [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'Table', 'Schema', 'EnableException'
+        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'Table', 'Schema', 'EnableException', 'InputObject'
         $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
         It "Should only contain our specific parameters" {
             (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
@@ -28,8 +28,13 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
     }
 
-    It "returns a taable" {
+    It "returns a table" {
         $results = Get-DbaBinaryFileTable -SqlInstance $script:instance2 -Database tempdb
+        $results.Name.Count | Should -BeGreaterOrEqual 1
+    }
+
+    It "supports piping" {
+        $results = Get-DbaDbTable -SqlInstance $script:instance2 -Database tempdb | Get-DbaBinaryFileTable
         $results.Name.Count | Should -BeGreaterOrEqual 1
     }
 }

@@ -31,6 +31,9 @@ function Get-DbaBinaryFileTable {
     .PARAMETER Schema
         Only return tables from the specified schema
 
+    .PARAMETER InputObject
+        Table objects to be piped in from Get-DbaDbTable
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -53,9 +56,9 @@ function Get-DbaBinaryFileTable {
         Returns a table with binary columns which can be used with Export-DbaBinaryFile and Import-DbaBinaryFile.
 
     .EXAMPLE
-        PS C:\> Get-DbaBinaryFileTable -SqlInstance sqlcs -Database test | Export-DbaBinaryFile -Path C:\temp
+        PS C:\> Get-DbaBinaryFileTable -SqlInstance sqlcs -Database test | Out-GridView -Passthru | Export-DbaBinaryFile -Path C:\temp
 
-        Returns a table with binary columns which can be used with Export-DbaBinaryFile and Import-DbaBinaryFile.
+        Allows you to pick tables with columns to be exported by Export-DbaBinaryFile
     #>
     [CmdletBinding()]
     param (
@@ -64,19 +67,24 @@ function Get-DbaBinaryFileTable {
         [string[]]$Database,
         [string[]]$Table,
         [string[]]$Schema,
+        [parameter(ValueFromPipeline)]
+        [Microsoft.SqlServer.Management.Smo.Table[]]$InputObject,
         [switch]$EnableException
     )
     process {
         if (Test-FunctionInterrupt) { return }
-        try {
-            $tables = Get-DbaDbTable -SqlInstance $SqlInstance -Database $Database -Table $Table -Schema $Schema -SqlCredential $SqlCredential -EnableException
-        } catch {
-            Stop-Function -Message "Failed to get tables" -ErrorRecord $PSItem
-            return
+
+        if (-not $InputObject) {
+            try {
+                $InputObject = Get-DbaDbTable -SqlInstance $SqlInstance -Database $Database -Table $Table -Schema $Schema -SqlCredential $SqlCredential -EnableException
+            } catch {
+                Stop-Function -Message "Failed to get tables" -ErrorRecord $PSItem
+                return
+            }
         }
 
-        Write-Message -Level Verbose -Message "Found $($tables.count) tables"
-        foreach ($tbl in $tables) {
+        Write-Message -Level Verbose -Message "Found $($InputObject.count) tables"
+        foreach ($tbl in $InputObject) {
             $server = $tbl.Parent.Parent
             $BinaryColumn = ($tbl.Columns | Where-Object { $PSItem.DataType.Name -match "binary" -or $PSItem.DataType.Name -eq "image" }).Name
             $FileNameColumn = ($tbl.Columns | Where-Object Name -Match Name).Name
