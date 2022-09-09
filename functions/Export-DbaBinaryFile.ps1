@@ -50,6 +50,9 @@ function Export-DbaBinaryFile {
 
         Example query: "SELECT [fn], [data] FROM tempdb.dbo.files"
 
+    .PARAMETER InputObject
+        Table objects to be piped in from Get-DbaDbTable or Get-DbaBinaryFileTable
+
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed
 
@@ -90,7 +93,12 @@ function Export-DbaBinaryFile {
     .EXAMPLE
         PS C:\> Export-DbaBinaryFile -SqlInstance sqlcs -Database employees -Table photos -Query "SELECT [FileName], [Data] FROM [employees].[dbo].[photos] WHERE FirstName = 'Potato' and LastName = 'Qualitee'" -FilePath C:\temp\PotatoQualitee.jpg
 
-        Exports all binary files from the photos table in the employees database on sqlcs to C:\temp\exports. Uses the fname and data columns for the filename and binary data.
+        Exports the binary file from the photos table in the employees database on sqlcs to C:\temp\PotatoQualitee.jpg. Uses the query to determine the filename and binary data.
+
+    .EXAMPLE
+        PS C:\> Get-DbaBinaryFileTable -SqlInstance sqlcs -Database test | Out-GridView -Passthru | Export-DbaBinaryFile -Path C:\temp
+
+        Allows you to pick tables with columns to be exported by Export-DbaBinaryFile
 
     #>
     [CmdletBinding(SupportsShouldProcess)]
@@ -106,6 +114,8 @@ function Export-DbaBinaryFile {
         [string]$Query,
         [Alias("OutFile", "FileName")]
         [string]$FilePath,
+        [parameter(ValueFromPipeline)]
+        [Microsoft.SqlServer.Management.Smo.Table[]]$InputObject,
         [switch]$EnableException
     )
     begin {
@@ -125,15 +135,17 @@ function Export-DbaBinaryFile {
     }
     process {
         if (Test-FunctionInterrupt) { return }
-        try {
-            $tables = Get-DbaDbTable -SqlInstance $SqlInstance -Database $Database -Table $Table -Schema $Schema -SqlCredential $SqlCredential -EnableException
-        } catch {
-            Stop-Function -Message "Failed to get tables" -ErrorRecord $PSItem
-            return
+        if (-not $InputObject) {
+            try {
+                $InputObject = Get-DbaDbTable -SqlInstance $SqlInstance -Database $Database -Table $Table -Schema $Schema -SqlCredential $SqlCredential -EnableException
+            } catch {
+                Stop-Function -Message "Failed to get tables" -ErrorRecord $PSItem
+                return
+            }
         }
 
-        Write-Message -Level Verbose -Message "Found $($tables.count) tables"
-        foreach ($tbl in $tables) {
+        Write-Message -Level Verbose -Message "Found $($InputObject.count) tables"
+        foreach ($tbl in $InputObject) {
             # auto detect column that is binary
             # if none or multiple, make them specify the binary column
             # auto detect column that is a name
@@ -204,6 +216,7 @@ function Export-DbaBinaryFile {
                         $filestream.Close()
                         $filestream.Dispose()
                         $binarywriter.Close()
+                        $binarywriter.Dispose()
 
                         Get-ChildItem -Path $FilePath
                     }
@@ -211,8 +224,19 @@ function Export-DbaBinaryFile {
                 $reader.Close()
             } catch {
                 Stop-Function -Message "Failed to export binary file from $($tbl.Name) in $($tbl.Parent.Name) on $($server.Name)" -ErrorRecord $PSItem -Continue
+            } finally {
+                if (-not $reader.IsClosed ) {
+                    $reader.Close()
+                }
+                if ($filestream.CanRead) {
+                    $filestream.Close()
+                    $filestream.Dispose()
+                }
+                if ($binarywriter) {
+                    $binarywriter.Close()
+                    $binarywriter.Dispose()
+                }
             }
-
         }
     }
 }
