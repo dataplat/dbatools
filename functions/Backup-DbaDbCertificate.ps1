@@ -89,13 +89,13 @@ function Backup-DbaDbCertificate {
         Exports all certificates except those for AdventureWorks on the specified SQL Server to the default data path for the instance.
 
     .EXAMPLE
-        PS C:\> Backup-DbaDbCertificate -SqlInstance Server1 -Path \\Server1\Certificates -EncryptionPassword (ConvertTo-SecureString -force -AsPlainText GoodPass1234!!)
+        PS C:\> Backup-DbaDbCertificate -SqlInstance Server1 -Path \\Server1\Certificates -EncryptionPassword (Get-Credential nousernameneeded).Password
 
         Exports all the certificates and private keys on the specified SQL Server.
 
     .EXAMPLE
-        PS C:\> $EncryptionPassword = ConvertTo-SecureString -AsPlainText "GoodPass1234!!" -force
-        PS C:\> $DecryptionPassword = ConvertTo-SecureString -AsPlainText "Password4567!!" -force
+        PS C:\> $EncryptionPassword = (Get-Credential nousernameneeded).Password
+        PS C:\> $DecryptionPassword = (Get-Credential nousernameneeded).Password
         PS C:\> Backup-DbaDbCertificate -SqlInstance Server1 -EncryptionPassword $EncryptionPassword -DecryptionPassword $DecryptionPassword
 
         Exports all the certificates on the specified SQL Server using the supplied DecryptionPassword, since an EncryptionPassword is specified private keys are also exported.
