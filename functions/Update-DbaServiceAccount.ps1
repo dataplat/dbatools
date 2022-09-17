@@ -66,7 +66,7 @@ function Update-DbaServiceAccount {
         Requires Local Admin rights on destination computer(s).
 
     .EXAMPLE
-        PS C:\> $SecurePassword = (Get-Credential nousernameneeded).Password
+        PS C:\> $SecurePassword = (Get-Credential NoUsernameNeeded).Password
         PS C:\> Update-DbaServiceAccount -ComputerName sql1 -ServiceName 'MSSQL$MYINSTANCE' -SecurePassword $SecurePassword
 
         Changes the current service account's password of the service MSSQL$MYINSTANCE to 'Qwerty1234'

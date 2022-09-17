@@ -93,7 +93,7 @@ function Set-DbaLogin {
         https://dbatools.io/Set-DbaLogin
 
     .EXAMPLE
-        PS C:\> $SecurePassword = (Get-Credential nousernameneeded).Password
+        PS C:\> $SecurePassword = (Get-Credential NoUsernameNeeded).Password
         PS C:\> $cred = New-Object System.Management.Automation.PSCredential ("username", $SecurePassword)
         PS C:\> Set-DbaLogin -SqlInstance sql1 -Login login1 -SecurePassword $cred -Unlock -PasswordMustChange
 

@@ -143,7 +143,7 @@ function Write-DbaDbTableData {
         Performs a bulk insert of all the data in customers.csv into mydb.dbo.customers. Because Schema was not specified, dbo was used. NULL values in the destination table will be preserved.
 
     .EXAMPLE
-        PS C:\> $passwd = (Get-Credential nousernameneeded).Password
+        PS C:\> $passwd = (Get-Credential NoUsernameNeeded).Password
         PS C:\> $AzureCredential = New-Object System.Management.Automation.PSCredential("AzureAccount"),$passwd)
         PS C:\> $DataTable = Import-Csv C:\temp\customers.csv
         PS C:\> Write-DbaDbTableData -SqlInstance AzureDB.database.windows.net -InputObject $DataTable -Database mydb -Table customers -KeepNulls -SqlCredential $AzureCredential -BulkCopyTimeOut 300
