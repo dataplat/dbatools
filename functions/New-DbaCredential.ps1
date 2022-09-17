@@ -57,7 +57,7 @@ function New-DbaCredential {
         https://dbatools.io/New-DbaCredential
 
     .EXAMPLE
-        PS C:\> New-DbaCredential -SqlInstance Server1 -Name MyCredential -Identity "ad\user" -SecurePassword (ConvertTo-SecureString 'myStr0ngPwd' -AsPlainText -Force)
+        PS C:\> New-DbaCredential -SqlInstance Server1 -Name MyCredential -Identity "ad\user" -SecurePassword (Get-Credential NoUsernameNeeded).Password
 
         It will create a credential named "MyCredential" that as "ad\user" as identity and a password on server1 if it does not exist.
 
@@ -71,7 +71,7 @@ function New-DbaCredential {
         >>SqlInstance = "Server1"
         >>Name = "AzureBackupBlobStore"
         >>Identity = "https://<Azure Storage Account Name>.blob.core.windows.net/<Blob Container Name>"
-        >>SecurePassword = (ConvertTo-SecureString '<Azure Storage Account Access Key>' -AsPlainText -Force)
+        >>SecurePassword = (Get-Credential NoUsernameNeeded).Password # <Azure Storage Account Access Key>
         >>}
         PS C:\> New-DbaCredential @params
 
@@ -82,7 +82,7 @@ function New-DbaCredential {
         >>SqlInstance = "server1"
         >>Name = "https://<azure storage account name>.blob.core.windows.net/<blob container>"
         >>Identity = "SHARED ACCESS SIGNATURE"
-        >>SecurePassword = (ConvertTo-SecureString '<Shared Access Token>' -AsPlainText -Force)
+        >>SecurePassword = (Get-Credential NoUsernameNeeded).Password # <Shared Access Token>
         >>}
         PS C:\> New-DbaCredential @sasParams
 
