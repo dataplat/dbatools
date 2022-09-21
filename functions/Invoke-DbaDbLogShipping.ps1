@@ -23,7 +23,7 @@ function Invoke-DbaDbLogShipping {
         ** NTFS permissions
         The backup destination must have at least read/write permissions for the primary instance agent account.
         The backup destination must have at least read permissions for the secondary instance agent account.
-        The copy destination must have at least read/write permission for the secondary instance agent acount.
+        The copy destination must have at least read/write permission for the secondary instance agent account.
 
     .PARAMETER SourceSqlInstance
         Source SQL Server instance which contains the databases to be log shipped.
@@ -374,7 +374,7 @@ function Invoke-DbaDbLogShipping {
         >> GenerateFullBackup = $true
         >> RestoreScheduleFrequencyType = 'daily'
         >> RestoreScheduleFrequencyInterval = 1
-        >> SecondaryDatabaseSuffix = 'DR'
+        >> SecondaryDatabaseSuffix = 'LS'
         >> CopyDestinationFolder = '\\sql2\logshippingdest'
         >> Force = $true
         >> }
