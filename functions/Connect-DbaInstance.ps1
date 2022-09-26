@@ -119,7 +119,7 @@ function Connect-DbaInstance {
     .PARAMETER AlwaysEncrypted
         Sets "Column Encryption Setting=enabled" on the connection so you can work with Always Encrypted values.
 
-        For more informations, see https://docs.microsoft.com/en-us/sql/relational-databases/security/encryption/develop-using-always-encrypted-with-net-framework-data-provider
+        For more information, see https://docs.microsoft.com/en-us/sql/relational-databases/security/encryption/develop-using-always-encrypted-with-net-framework-data-provider
 
     .PARAMETER SqlConnectionOnly
         Instead of returning a rich SMO server object, this command will only return a SqlConnection object when setting this switch.
@@ -240,7 +240,7 @@ function Connect-DbaInstance {
 
     .EXAMPLE
         PS C:\> $cred = Get-Credential guid-app-id-here # appid for username, clientsecret for password
-        PS C:\> $server = Connect-DbaInstance -SqlInstance psdbatools.database.windows.net -Database abc -SqCredential $cred -Tenant guidheremaybename
+        PS C:\> $server = Connect-DbaInstance -SqlInstance psdbatools.database.windows.net -Database abc -SqlCredential $cred -Tenant guidheremaybename
         PS C:\> Invoke-DbaQuery -SqlInstance $server -Query "select 1 as test"
 
         When connecting from a non-Azure workstation, logs into Azure using Universal with MFA Support with a username and password, then performs a sample query.
@@ -566,7 +566,7 @@ function Connect-DbaInstance {
             }
 
             # Check for ignored parameters
-            # We do not check for SqlCredential as this parameter is widly used even if a server SMO is passed in and we don't want to outout a message for that
+            # We do not check for SqlCredential as this parameter is widely used even if a server SMO is passed in and we don't want to output a message for that
             $ignoredParameters = 'BatchSeparator', 'ClientName', 'ConnectTimeout', 'EncryptConnection', 'LockTimeout', 'MaxPoolSize', 'MinPoolSize', 'NetworkProtocol', 'PacketSize', 'PooledConnectionLifetime', 'SqlExecutionModes', 'TrustServerCertificate', 'WorkstationId', 'FailoverPartner', 'MultipleActiveResultSets', 'MultiSubnetFailover', 'AppendConnectionString', 'AccessToken'
             if ($inputObjectType -eq 'Server') {
                 if (Test-Bound -ParameterName $ignoredParameters) {
@@ -591,7 +591,7 @@ function Connect-DbaInstance {
             # Create smo server object
             if ($inputObjectType -eq 'Server') {
                 # Test if we have to copy the connection context
-                # Currently only if we have a different Database or have to swith to a NonPooledConnection or using a specific StatementTimeout or using ApplicationIntent
+                # Currently only if we have a different Database or have to switch to a NonPooledConnection or using a specific StatementTimeout or using ApplicationIntent
                 # We do not test for SqlCredential as this would change the behavior compared to the legacy code path
                 $copyContext = $false
                 if ($Database -and $inputObject.ConnectionContext.CurrentDatabase -ne $Database) {
