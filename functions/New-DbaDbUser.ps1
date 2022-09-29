@@ -197,7 +197,7 @@ function New-DbaDbUser {
                         if ($ExternalProvider) {
                             # Due to a bug at the time of writing, the user is created using T-SQL
                             # More info at: https://github.com/microsoft/sqlmanagementobjects/issues/112
-                            $sql = "CREATE USER [$Username] FROM EXTERNAL PROVIDER"
+                            $sql = "CREATE USER [$Username] FROM EXTERNAL PROVIDER WITH DEFAULT_SCHEMA = [$DefaultSchema]"
                             $db.Query($sql)
                             # Refresh the user list otherwise won't appear in the list
                             $db.Users.Refresh()
