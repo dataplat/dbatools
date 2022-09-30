@@ -34,6 +34,10 @@ function New-DbaDbUser {
     .PARAMETER DefaultSchema
         The default database schema for the user. If not specified this value will default to dbo.
 
+    .PARAMETER ExternalProvider
+        Specifies that the user is for Azure AD Authentication.
+        Equivalent to T-SQL: 'CREATE USER [claudio@********.onmicrosoft.com] FROM EXTERNAL PROVIDER`
+
     .PARAMETER Force
         If user exists, drop and recreate.
 
@@ -79,6 +83,11 @@ function New-DbaDbUser {
 
         Creates a new sql user named user1 mapped to Login1 in the specified database and specifies the default schema to be schema1.
 
+    .EXAMPLE
+        PS C:\> New-DbaDbUser -SqlInstance sqlserver2014 -Database DB1 -Username "claudio@********.onmicrosoft.com" -ExternalProvider
+
+        Creates a new sql user named 'claudio@********.onmicrosoft.com' mapped to Azure Active Directory (AAD) in the specified database.
+
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Medium")]
     param(
@@ -91,6 +100,7 @@ function New-DbaDbUser {
         [string]$Login,
         [string]$Username = $Login,
         [string]$DefaultSchema = 'dbo',
+        [switch]$ExternalProvider,
         [switch]$Force,
         [switch]$EnableException
     )
@@ -165,7 +175,10 @@ function New-DbaDbUser {
                     Remove-User -User $existingUser
                 }
 
-                if ($Login) {
+                if ($ExternalProvider) {
+                    Write-Message -Level Verbose -Message "Using UserType: External"
+                    $userType = [Microsoft.SqlServer.Management.Smo.UserType]::External
+                } elseif ($Login) {
                     # Does a user exist with same login?
                     $existingUser = $db.Users | Where-Object Login -eq $Login
                     if ($existingUser) {
@@ -181,14 +194,23 @@ function New-DbaDbUser {
 
                 if ($Pscmdlet.ShouldProcess($db, "Creating user $Username")) {
                     try {
-                        $smoUser = New-Object Microsoft.SqlServer.Management.Smo.User
-                        $smoUser.Parent = $db
-                        $smoUser.Name = $Username
-                        $smoUser.Login = $Login
-                        $smoUser.UserType = $userType
-                        $smoUser.DefaultSchema = $DefaultSchema
+                        if ($ExternalProvider) {
+                            # Due to a bug at the time of writing, the user is created using T-SQL
+                            # More info at: https://github.com/microsoft/sqlmanagementobjects/issues/112
+                            $sql = "CREATE USER [$Username] FROM EXTERNAL PROVIDER WITH DEFAULT_SCHEMA = [$DefaultSchema]"
+                            $db.Query($sql)
+                            # Refresh the user list otherwise won't appear in the list
+                            $db.Users.Refresh()
+                        } else {
+                            $smoUser = New-Object Microsoft.SqlServer.Management.Smo.User
+                            $smoUser.Parent = $db
+                            $smoUser.Name = $Username
+                            $smoUser.Login = $Login
+                            $smoUser.UserType = $userType
+                            $smoUser.DefaultSchema = $DefaultSchema
 
-                        $smoUser.Create()
+                            $smoUser.Create()
+                        }
                         Write-Message -Level Verbose -Message "Successfully added $Username in $db to $instance."
 
                         # Display Results
