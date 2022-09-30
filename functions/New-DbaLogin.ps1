@@ -452,7 +452,7 @@ function New-DbaLogin {
 
                         # Attempt to add login using SMO, then T-SQL
                         try {
-                            if ($loginType -in ("WindowsUser", "WindowsGroup", "AsymmetricKey", "Certificate","ExternalUser")) {
+                            if ($loginType -in ("WindowsUser", "WindowsGroup", "AsymmetricKey", "Certificate", "ExternalUser")) {
                                 if ($withParams) { $withParams = " WITH " + $withParams.TrimStart(',') }
                                 $newLogin.Create()
                             } elseif ($loginType -eq "SqlLogin") {
