@@ -89,6 +89,7 @@ function Get-DbaDbAssembly {
                         Add-Member -Force -InputObject $assembly -MemberType NoteProperty -Name InstanceName -value $assembly.Parent.Parent.ServiceName
                         Add-Member -Force -InputObject $assembly -MemberType NoteProperty -Name SqlInstance -value $assembly.Parent.Parent.DomainInstanceName
                         Add-Member -Force -InputObject $assembly -MemberType NoteProperty -Name Database -value $db.name
+                        Add-Member -Force -InputObject $assembly -MemberType NoteProperty -Name DatabaseId -value $db.Id
 
                         Select-DefaultView -InputObject $assembly -Property ComputerName, InstanceName, SqlInstance, Database, ID, Name, Owner, 'AssemblySecurityLevel as SecurityLevel', CreateDate, IsSystemObject, Version
                     }
