@@ -98,6 +98,7 @@ function Get-DbaDbAsymmetricKey {
                 Add-Member -Force -InputObject $akey -MemberType NoteProperty -Name InstanceName -value $db.InstanceName
                 Add-Member -Force -InputObject $akey -MemberType NoteProperty -Name SqlInstance -value $db.SqlInstance
                 Add-Member -Force -InputObject $akey -MemberType NoteProperty -Name Database -value $db.Name
+                Add-Member -Force -InputObject $akey -MemberType NoteProperty -Name DatabaseId -value $db.Id
 
                 Select-DefaultView -InputObject $akey -Property ComputerName, InstanceName, SqlInstance, Database, Name, Owner, KeyEncryptionAlgorithm, KeyLength, PrivateKeyEncryptionType, Thumbprint
             }
