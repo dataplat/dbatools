@@ -16,8 +16,10 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     Context "Gets the Db Assembly" {
         $results = Get-DbaDbAssembly -SqlInstance $script:instance2 | Where-Object { $_.parent.name -eq 'master' }
+        $masterDb = Get-DbaDatabase -SqlInstance $script:instance2 -Database master
         It "Gets results" {
             $results | Should Not Be $Null
+            $results.DatabaseId | Should -Be $masterDb.Id
         }
         It "Should have a name of Microsoft.SqlServer.Types" {
             $results.name | Should Be "Microsoft.SqlServer.Types"
@@ -26,7 +28,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $results.owner | Should Be "sys"
         }
         It "Should have a version matching the instance" {
-            $results.Version | Should Be 13.0.0.0
+            $results.Version | Should -Be $masterDb.assemblies.Version
         }
     }
 }
