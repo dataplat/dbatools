@@ -68,6 +68,10 @@ function New-DbaLogin {
     .PARAMETER NewSid
         Ignore sids from the piped login object to generate new sids on the server. Useful when copying login onto the same server
 
+    .PARAMETER ExternalProvider
+        Specifies that the login is for Azure AD Authentication.
+        Equivalent to T-SQL: 'CREATE LOGIN [claudio@********.onmicrosoft.com] FROM EXTERNAL PROVIDER`
+
     .PARAMETER Force
         If login exists, drop and recreate
 
@@ -124,6 +128,10 @@ function New-DbaLogin {
 
         Creates two new Windows Authentication backed login on sql1. The logins would be denied from logging in.
 
+    .EXAMPLE
+        PS C:\> New-DbaLogin -SqlInstance sql1 -Login "claudio@********.onmicrosoft.com" -ExternalProvider
+
+        Creates a new login named 'claudio@********.onmicrosoft.com' mapped to Azure Active Directory (AAD).
     #>
     [CmdletBinding(SupportsShouldProcess, DefaultParameterSetName = "Password", ConfirmImpact = "Low")]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingPlainTextForPassword", "", Justification = "For Parameters Password and MapToCredential")]
@@ -179,6 +187,7 @@ function New-DbaLogin {
         [switch]$Disabled,
         [switch]$DenyWindowsLogin,
         [switch]$NewSid,
+        [switch]$ExternalProvider,
         [switch]$Force,
         [switch]$EnableException
     )
@@ -298,6 +307,7 @@ function New-DbaLogin {
 
                     if ($PsCmdlet.ParameterSetName -eq "MapToCertificate") { $loginType = 'Certificate' }
                     elseif ($PsCmdlet.ParameterSetName -eq "MapToAsymmetricKey") { $loginType = 'AsymmetricKey' }
+                    elseif ($ExternalProvider) { $loginType = 'ExternalUser' } # Before 'SqlLogin' check otherwise will assume it's a SqlLogin and will rquest pwd
                     elseif ($loginItem.IndexOf('\') -eq -1) { $loginType = 'SqlLogin' }
                     else { $loginType = 'WindowsUser' }
                 }
@@ -384,7 +394,7 @@ function New-DbaLogin {
                             $newLogin.Set_Sid($currentSid)
                         }
 
-                        if ($loginType -in ("WindowsUser", "WindowsGroup", "SqlLogin")) {
+                        if ($loginType -in ("WindowsUser", "WindowsGroup", "SqlLogin", "ExternalUser")) {
                             if ($currentDefaultDatabase) {
                                 Write-Message -Level Verbose -Message "Setting $loginName default database to $currentDefaultDatabase"
                                 $withParams += ", DEFAULT_DATABASE = [$currentDefaultDatabase]"
@@ -442,7 +452,7 @@ function New-DbaLogin {
 
                         # Attempt to add login using SMO, then T-SQL
                         try {
-                            if ($loginType -in ("WindowsUser", "WindowsGroup", "AsymmetricKey", "Certificate")) {
+                            if ($loginType -in ("WindowsUser", "WindowsGroup", "AsymmetricKey", "Certificate", "ExternalUser")) {
                                 if ($withParams) { $withParams = " WITH " + $withParams.TrimStart(',') }
                                 $newLogin.Create()
                             } elseif ($loginType -eq "SqlLogin") {
@@ -468,6 +478,9 @@ function New-DbaLogin {
                                 elseif ($loginType -eq 'SqlLogin' -and $server.DatabaseEngineType -eq 'SqlAzureDatabase') {
                                     # Azure SQL doesn't support HASHED so we have to dump out the plain text password :(
                                     $sql = "CREATE LOGIN [$loginName] WITH PASSWORD = '$($SecurePassword | ConvertFrom-SecurePass)'"
+                                } elseif ($loginType -eq 'ExternalUser' -and ($server.DatabaseEngineType -eq 'SqlAzureDatabase' -or $server.DatabaseEngineEdition -eq 'SqlManagedInstance')) {
+                                    # Azure SQL DB and Azure SQL Managed Instance are the only ones that currently support FROM EXTERNAL PROVIDER syntax
+                                    $sql = "CREATE LOGIN [$loginName] FROM EXTERNAL PROVIDER" + $withParams
                                 } elseif ($loginType -eq 'SqlLogin' ) {
                                     $sql = "CREATE LOGIN [$loginName] WITH PASSWORD = $currentHashedPassword HASHED" + $withParams
                                 } else {
