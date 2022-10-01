@@ -20,7 +20,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         $algorithm = 'Rsa4096'
         $dbuser = 'keyowner'
         $database = 'GetAsKey'
-        New-DbaDatabase -SqlInstance $script:instance2 -Name $database
+        $newDB = New-DbaDatabase -SqlInstance $script:instance2 -Name $database
         $tPassword = ConvertTo-SecureString "ThisIsThePassword1" -AsPlainText -Force
         New-DbaDbMasterKey -SqlInstance $script:instance2 -Database $database -SecurePassword $tPassword -confirm:$false
         New-DbaDbUser -SqlInstance $script:instance2 -Database $database -UserName $dbuser
@@ -29,6 +29,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         It "Should Create new key in $database called $keyname" {
             $warnvar | Should -BeNullOrEmpty
             $results.database | Should -Be $database
+            $results.DatabaseId | Should -Be $newDB.ID
             $results.name | Should -Be $keyname
             $results.Owner | Should -Be $dbuser
             $results | Should -HaveCount 1
