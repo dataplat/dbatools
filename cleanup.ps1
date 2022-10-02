@@ -2,20 +2,23 @@
 param(
     $module = "dbatools"
 )
-
-$isElevated = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
-
 # Which process should we be looking for?
 if ($psedition -eq 'Core') {
     $process = "pwsh"
 } else {
     $process = "powershell"
 }
-$ise = Get-Process powershell_ise -ErrorAction SilentlyContinue
-if ($ise) {
-    return "PowerShell ISE found in use. Please close this program before using this script."
-}
+if (($PSVersionTable.PSVersion.Major -le 5) -or ($PSVersionTable.PSVersion.Major -gt 6 -and $PSVersionTable.OS -contains "Windows")) {
+    $isElevated = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
 
+    $ise = Get-Process powershell_ise -ErrorAction SilentlyContinue
+    if ($ise) {
+        return "PowerShell ISE found in use. Please close this program before using this script."
+    }
+} else {
+    $isElevated = $null;
+    $ise = $null;
+}
 $installedVersion = Get-InstalledModule $module -AllVersions | Select-Object Version, InstalledLocation
 Write-Output "The currently installed version(s) of $module is/are: "
 $installedVersion.Version
