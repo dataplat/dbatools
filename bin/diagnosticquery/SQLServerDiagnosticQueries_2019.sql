@@ -1,7 +1,7 @@
 
 -- SQL Server 2019 Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: September 28, 2022
+-- Last Modified: October 3, 2022
 -- https://glennsqlperformance.com/ 
 -- https://sqlserverperformance.wordpress.com/
 -- YouTube: https://bit.ly/2PkoAM1 
@@ -1522,7 +1522,7 @@ ORDER BY vlf_sequence_number DESC OPTION (RECOMPILE);
 
 
 -- Get database scoped configuration values for current database (Query 57) (Database-scoped Configurations)
-SELECT configuration_id, name, [value] AS [value_for_primary], value_for_secondary
+SELECT configuration_id, name, [value] AS [value_for_primary], value_for_secondary, is_value_default
 FROM sys.database_scoped_configurations WITH (NOLOCK) OPTION (RECOMPILE);
 ------
 
