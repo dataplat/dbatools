@@ -7,6 +7,8 @@ dotnet test --framework net462 --verbosity normal | Out-String -OutVariable test
 dotnet test --framework net6.0 --verbosity normal | Out-String -OutVariable test
 Pop-Location
 
+
+
 # Remove all the SMO directories that the build created -- they are elsewhere in the project
 #Get-ChildItem -Directory ".\bin\net462" | Remove-Item -Recurse -Confirm:$false
 #Get-ChildItem -Directory ".\bin\net6.0" | Remove-Item -Recurse -Confirm:$false

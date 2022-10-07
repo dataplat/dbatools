@@ -34,3 +34,5 @@ _NCrunch_*
 nCrunchTemp_*
 
 debug.log
+bin/net6.0
+bin/net462
