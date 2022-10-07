@@ -22,10 +22,12 @@ function New-DbaScriptingOption {
     .EXAMPLE
         PS C:\> $options = New-DbaScriptingOption
         PS C:\> $options.ScriptDrops = $false
-        PS C:\> $options.WithDependencies = $true
+        PS C:\> $options.WithDependencies = $false
+        PS C:\> $options.AgentAlertJob = $true
+        PS C:\> $options.AgentNotify = $true
         PS C:\> Get-DbaAgentJob -SqlInstance sql2016 | Export-DbaScript -ScriptingOptionObject $options
 
-        Exports Agent Jobs with the Scripting Options ScriptDrops set to $false and WithDependencies set to true
+        Exports Agent Jobs with the Scripting Options ScriptDrops/WithDependencies set to $false and AgentAlertJob/AgentNotify set to true
 
     #>
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseShouldProcessForStateChangingFunctions", "")]
