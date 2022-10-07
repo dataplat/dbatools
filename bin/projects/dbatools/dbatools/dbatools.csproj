@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <RootNamespace>Sqlcollaborative.Dbatools</RootNamespace>
-    <TargetFrameworks>net462;netcoreapp3.1</TargetFrameworks>
+    <TargetFrameworks>net462;net6.0</TargetFrameworks>
     <AssemblyTitle>dbatools</AssemblyTitle>
     <Company>sqlcollaborative</Company>
     <Product>dbatools</Product>

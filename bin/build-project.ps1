@@ -55,7 +55,7 @@ Write-Verbose -Message "Building the library with command $dotnet build $Project
 
 if ($MsbuildTarget -eq 'Build') {
     if ($PSVersionTable.PSVersion.Major -ge 6) {
-        $dll = (Resolve-Path -Path "$libraryBase\netcoreapp3.1\dbatools.dll" -ErrorAction Ignore)
+        $dll = (Resolve-Path -Path "$libraryBase\net6.0\dbatools.dll" -ErrorAction Ignore)
     } else {
         $dll = (Resolve-Path -Path "$libraryBase\net462\dbatools.dll" -ErrorAction Ignore)
     }

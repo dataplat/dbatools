@@ -36,7 +36,7 @@ Mostly for developers working on the library.
 
 $dll =
 if ($PSVersionTable.PSVersion.Major -ge 6) {
-    Join-Path $psModuleRoot "bin\netcoreapp3.1\dbatools.dll"
+    Join-Path $psModuleRoot "bin\net6.0\dbatools.dll"
 } else {
     Join-Path $psModuleRoot "bin\net462\dbatools.dll"
 }
