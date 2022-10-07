@@ -1,5 +1,5 @@
 # Go compile the DLLs
-cd C:\github\dbatools
+Set-Location C:\github\dbatools
 Push-Location ".\bin\projects\dbatools"
 dotnet publish --framework netcoreapp3.1 | Out-String -OutVariable build
 dotnet publish --framework net462 | Out-String -OutVariable build
