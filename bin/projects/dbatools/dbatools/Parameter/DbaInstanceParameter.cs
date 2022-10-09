@@ -269,7 +269,7 @@ namespace Sqlcollaborative.Dbatools.Parameter
 
             if (UtilityHost.IsLike(tempString, @".\*"))
             {
-                _ComputerName = Name;
+                _ComputerName = ".";
                 _NetworkProtocol = SqlConnectionProtocol.NP;
 
                 string instanceName = tempString.Substring(2);

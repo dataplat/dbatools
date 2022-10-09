@@ -103,6 +103,27 @@ namespace Sqlcollaborative.Dbatools.Parameter
         }
 
         /// <summary>
+        /// Checks that . is treated as a localhost connection
+        /// </summary>
+        [TestMethod]
+        public void TestDotHostnameWithInstance()
+        {
+            var dbaInstanceParamater = new DbaInstanceParameter(@".\instancename");
+
+            Assert.AreEqual(".", dbaInstanceParamater.ComputerName);
+            Assert.AreEqual("[.]", dbaInstanceParamater.SqlComputerName);
+            Assert.AreEqual(@".\instancename", dbaInstanceParamater.FullName);
+            Assert.IsTrue(dbaInstanceParamater.IsLocalHost);
+            Assert.AreEqual(@"NP:.\instancename", dbaInstanceParamater.FullSmoName);
+            Assert.AreEqual(@"instancename", dbaInstanceParamater.InstanceName);
+            Assert.AreEqual(@"[instancename]", dbaInstanceParamater.SqlInstanceName);
+            Assert.AreEqual(@"[.\instancename]", dbaInstanceParamater.SqlFullName);
+            Assert.AreEqual(SqlConnectionProtocol.NP, dbaInstanceParamater.NetworkProtocol);
+            Assert.IsTrue(dbaInstanceParamater.IsLocalHost);
+            Assert.IsFalse(dbaInstanceParamater.IsConnectionString);
+        }
+
+        /// <summary>
         /// Checks that localdb named instances
         /// </summary>
         [TestMethod]
