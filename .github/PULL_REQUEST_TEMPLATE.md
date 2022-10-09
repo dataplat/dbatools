@@ -1,4 +1,18 @@
 <!-- Below information IS REQUIRED with every PR -->
+## Please read -- recent changes to our repo
+On October 2, 2022, [we removed some bloat from our repository](https://github.com/dataplat/dbatools/issues/8542). This change requires that all contributors reclone or reset their repo using the following code:
+
+```
+git fetch
+git reset --hard origin/master
+```
+
+You can also just delete your dbatools directory and have GitHub Desktop reclone it.
+
+ - [ ] Please confirm you have the smaller repo (110MB .git directory vs 275MB .git directory)
+
+ Note this will likely have to happen once more in the future as we move the SMO and c# library to their own repository.
+
 ## Type of Change
 <!-- What type of change does your code introduce -->
  - [ ] Bug fix (non-breaking change, fixes #<!--issue number--> )
