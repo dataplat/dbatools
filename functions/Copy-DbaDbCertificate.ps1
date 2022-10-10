@@ -225,7 +225,7 @@ function Copy-DbaDbCertificate {
                         Write-Message -Level VeryVerbose -Message "Processing $certname on $dbName"
 
                         $copyDbCertificateStatus = [pscustomobject]@{
-                            SourceServer          = $Source
+                            SourceServer          = $cert.Parent.Parent.Name
                             SourceDatabase        = $dbName
                             SourceDatabaseID      = $cert.Parent.ID
                             DestinationServer     = $destServer.Name
@@ -265,7 +265,7 @@ function Copy-DbaDbCertificate {
                             continue
                         }
 
-                        if ($Pscmdlet.ShouldProcess($destinstance.Name, "Copying certificate $certname from database.")) {
+                        if ($Pscmdlet.ShouldProcess($destServer.Name, "Copying certificate $certname from database.")) {
                             try {
                                 # Back up certificate
                                 $null = $db.Refresh()
