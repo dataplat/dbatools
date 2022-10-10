@@ -277,6 +277,24 @@ function Backup-DbaDatabase {
                 return
             }
 
+            if ($FilePath -and -not $Path) {
+                try {
+                    # cl gave a bad example in dbatools in a month of lunches, accommodate it
+                    Write-Message -Level Verbose -Message "Checking to see if FilePath is a directory"
+                    $isdir = ($server.Query("EXEC master.dbo.xp_fileexist '$FilePath'")).Item(1)
+                } catch {
+                    # ignore
+                }
+
+                if ($isdir) {
+                    Write-Message -Level Verbose -Message "Ooops, FilePath is a directory, using it as the backup path"
+                    $PSBoundParameters.Path = $FilePath
+                    $Path = $FilePath
+                    $PSBoundParameters.FilePath = $null
+                    $FilePath = $null
+                }
+            }
+
             $InputObject = $server.Databases | Where-Object Name -ne 'tempdb'
 
             if ($Database) {
@@ -339,6 +357,23 @@ function Backup-DbaDatabase {
         $topProgressTarget = $InputObject.Count
         $topProgressNumber = 0
         foreach ($db in $InputObject) {
+            if ($FilePath -and -not $Path) {
+                try {
+                    # cl gave a bad example in dbatools in a month of lunches, accommodate it
+                    Write-Message -Level Verbose -Message "Checking to see if FilePath is a directory"
+                    $isdir = ($db.Query("EXEC master.dbo.xp_fileexist '$FilePath'")).Item(1)
+                } catch {
+                    # ignore
+                }
+
+                if ($isdir) {
+                    Write-Message -Level Verbose -Message "Ooops, FilePath is a directory, using it as the backup path"
+                    $PSBoundParameters.Path = $FilePath
+                    $Path = $FilePath
+                    $PSBoundParameters.FilePath = $null
+                    $FilePath = $null
+                }
+            }
             $topProgressPercent = [int]($topProgressNumber * 100 / $topProgressTarget)
             $topProgressNumber++
             if (-not $PSCmdlet.MyInvocation.ExpectingInput) {
