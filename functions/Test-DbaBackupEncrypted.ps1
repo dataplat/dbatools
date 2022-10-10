@@ -47,24 +47,21 @@ function Test-DbaBackupEncrypted {
     #>
     [CmdletBinding()]
     param (
-        [parameter(Mandatory)]
+        [parameter(ValueFromPipelineByPropertyName)]
         [DbaInstanceParameter]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [parameter(ValueFromPipeline, Mandatory)]
-        [Alias("FullName")]
+        [parameter(ValueFromPipelineByPropertyName, Mandatory)]
+        [Alias("FullName", "Path")]
         [string[]]$FilePath,
         [Switch]$EnableException
     )
-    begin {
+    process {
         try {
             $server = Connect-DbaInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
         } catch {
             Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $SqlInstance
             return
         }
-    }
-    process {
-        if (Test-FunctionInterrupt) { return }
 
         #for each database, create custom object for return set.
         foreach ($file in $FilePath) {
