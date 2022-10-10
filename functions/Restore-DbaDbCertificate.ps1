@@ -73,9 +73,11 @@ function Restore-DbaDbCertificate {
         [Parameter(Mandatory)]
         [DbaInstanceParameter]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [parameter(Mandatory, ValueFromPipeline)]
-        [Alias("FullName")]
-        [object[]]$Path,
+        [parameter(Mandatory, ValueFromPipelineByPropertyName)]
+        [Alias("FullName", "ExportPath")]
+        [string[]]$Path,
+        [parameter(Mandatory, ValueFromPipelineByPropertyName)]
+        [Alias("Key")]
         [string[]]$KeyFilePath,
         [Security.SecureString]$EncryptionPassword,
         [string]$Database = "master",
