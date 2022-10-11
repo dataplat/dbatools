@@ -191,6 +191,8 @@ function Get-DbaFile {
                     foreach ($type in $FileTypeComparison) {
                         if ($row.filename.ToLowerInvariant().EndsWith(".$type")) {
                             $fullpath = $row.fullpath.Replace("\", $separator)
+                            $fullpath = $fullpath.Replace("\\", "\")
+                            $fullpath = $fullpath.Replace("//", "/")
                             [pscustomobject]@{
                                 ComputerName   = $server.ComputerName
                                 InstanceName   = $server.ServiceName
@@ -204,7 +206,9 @@ function Get-DbaFile {
             } else {
                 foreach ($row in $datatable) {
                     $fullpath = $row.fullpath
-                    $fullpath = $row.fullpath.Replace("\", $separator)
+                    $fullpath = $fullpath.Replace("\", $separator)
+                    $fullpath = $fullpath.Replace("\\", "\")
+                    $fullpath = $fullpath.Replace("//", "/")
                     [pscustomobject]@{
                         ComputerName   = $server.ComputerName
                         InstanceName   = $server.ServiceName

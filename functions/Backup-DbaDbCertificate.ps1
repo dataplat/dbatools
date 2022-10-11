@@ -227,29 +227,13 @@ function Backup-DbaDbCertificate {
                         Status         = "Success"
                     } | Select-DefaultView -ExcludeProperty exportPathCert, exportPathKey, ExportPath, ExportKey
                 } catch {
-
                     if ($_.Exception.InnerException) {
                         $exception = $_.Exception.InnerException.ToString() -Split "Microsoft.Data.SqlClient.SqlException: "
                         $exception = ($exception[1] -Split "at Microsoft.SqlServer.Management.Common.ConnectionManager")[0]
                     } else {
                         $exception = $_.Exception
                     }
-                    [pscustomobject]@{
-                        ComputerName   = $server.ComputerName
-                        InstanceName   = $server.ServiceName
-                        SqlInstance    = $server.DomainInstanceName
-                        Database       = $db.Name
-                        DatabaseID     = $db.ID
-                        Certificate    = $certName
-                        Path           = $exportPathCert
-                        Key            = $exportPathKey
-                        ExportPath     = $exportPathCert
-                        ExportKey      = $exportPathKey
-                        exportPathCert = $exportPathCert
-                        exportPathKey  = $exportPathKey
-                        Status         = "Failure: $exception"
-                    } | Select-DefaultView -ExcludeProperty exportPathCert, exportPathKey, ExportPath, ExportKey
-                    Stop-Function -Message "$certName from $db on $instance cannot be exported." -Continue -Target $cert -ErrorRecord $_
+                    Stop-Function -Message "$certName from $db on $instance cannot be exported." -Continue -Target $cert -ErrorRecord $PSItem
                 }
             }
         }
