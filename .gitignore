@@ -36,3 +36,4 @@ nCrunchTemp_*
 debug.log
 bin/net6.0
 bin/net462
+bin/netcoreapp3.1
