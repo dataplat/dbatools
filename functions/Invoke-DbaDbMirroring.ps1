@@ -272,6 +272,7 @@ function Invoke-DbaDbMirroring {
                     }
                 }
 
+                $currentmirrordb = Get-DbaDatabase -SqlInstance $dest -Database $dbName
                 $primaryendpoint = Get-DbaEndpoint -SqlInstance $source | Where-Object EndpointType -eq DatabaseMirroring
                 $currentmirrorendpoint = Get-DbaEndpoint -SqlInstance $dest | Where-Object EndpointType -eq DatabaseMirroring
 
