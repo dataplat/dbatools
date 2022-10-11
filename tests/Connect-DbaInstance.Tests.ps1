@@ -78,6 +78,13 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $server.Databases.Name.Count -gt 0 | Should Be $true
         }
 
+        It "connects using a dot" {
+            $newinstance = $script:instance1.Replace("localhost", ".")
+            Write-Warning "Connecting to $newinstance"
+            $server = Connect-DbaInstance -SqlInstance $newinstance
+            $server.Databases.Name.Count -gt 0 | Should Be $true
+        }
+
         It "connects using a connection object" {
             Set-DbatoolsConfig -FullName commands.connect-dbainstance.smo.computername.source -Value 'instance.ComputerName'
             [Microsoft.Data.SqlClient.SqlConnection]$sqlconnection = "Data Source=$script:instance1;Initial Catalog=tempdb;Integrated Security=True;"
