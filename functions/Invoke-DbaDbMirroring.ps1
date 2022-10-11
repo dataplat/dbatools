@@ -8,7 +8,7 @@ function Invoke-DbaDbMirroring {
 
         * Verifies that a mirror is possible
         * Sets the recovery model to Full if needed
-        * If the database does not exist on mirror or witness, a backup/restore is performed
+        * If the database does not exist on mirror, a backup/restore is performed
         * Sets up endpoints if necessary
         * Creates a login and grants permissions to service accounts if needed
         * Starts endpoints if needed
@@ -126,7 +126,7 @@ function Invoke-DbaDbMirroring {
         can be mirrored from sql2017a to sql2017b. Logs in to sql2019 and sql2017a
         using Windows credentials and sql2017b using a SQL credential.
 
-        Drops existing pubs database on Mirror and Witness and restores them with
+        Drops existing pubs database on Mirror and restores it with
         a fresh backup.
 
         Does all the things in the description, does not prompt for confirmation.
@@ -269,36 +269,6 @@ function Invoke-DbaDbMirroring {
 
                     if ($SharedPath) {
                         Write-Message -Level Verbose -Message "Backups still exist on $SharedPath"
-                    }
-                }
-
-                $currentmirrordb = Get-DbaDatabase -SqlInstance $dest -Database $dbName
-
-                Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Copying $dbName from primary to witness"
-
-                if ($Witness -and (-not $validation.DatabaseExistsOnWitness -or $Force)) {
-                    if (-not $allbackups) {
-                        if ($UseLastBackup) {
-                            $allbackups = Get-DbaDbBackupHistory -SqlInstance $primarydb.Parent -Database $primarydb.Name -IncludeCopyOnly -Last
-                        } else {
-                            if ($Force -or $Pscmdlet.ShouldProcess("$Primary", "Creating full and log backups of $primarydb on $SharedPath")) {
-                                try {
-                                    $fullbackup = $primarydb | Backup-DbaDatabase -BackupDirectory $SharedPath -Type Full -EnableException
-                                    $logbackup = $primarydb | Backup-DbaDatabase -BackupDirectory $SharedPath -Type Log -EnableException
-                                    $allbackups = $fullbackup, $logbackup
-                                } catch {
-                                    Stop-Function -Message "Failure" -ErrorRecord $_ -Target $primarydb -Continue
-                                }
-                            }
-                        }
-                    }
-
-                    if ($Pscmdlet.ShouldProcess("$Witness", "Restoring full and log backups of $primarydb from $Primary")) {
-                        try {
-                            $null = $allbackups | Restore-DbaDatabase -SqlInstance $Witness -SqlCredential $WitnessSqlCredential -WithReplace -NoRecovery -TrustDbBackupHistory -EnableException
-                        } catch {
-                            Stop-Function -Message "Failure" -ErrorRecord $_ -Target $witserver -Continue
-                        }
                     }
                 }
 
