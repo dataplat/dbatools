@@ -48,7 +48,7 @@
     <PackageReference Include="Microsoft.SqlServer.XEvent.XELite" Version="2021.12.12.2" />
   </ItemGroup>
   <ItemGroup Condition="'$(TargetFramework)' == 'net6.0'">
-    <PackageReference Include="System.Management.Automation" Version="7.2.6" />
+    <PackageReference Include="System.Management.Automation" Version="7.1.7" />
   </ItemGroup>
   <ItemGroup Condition="'$(TargetFramework)' == 'net462'">
     <Reference Include="System.Management.Automation, Version=3.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
