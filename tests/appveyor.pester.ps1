@@ -242,7 +242,7 @@ if (-not $Finalize) {
         Write-Host -ForegroundColor Yellow "Skipping dump of error log into $errorFile"
         try {
             # Uncomment this when needed
-            #Get-DbatoolsError -All -ErrorAction Stop | Export-Clixml -Depth 1 -Path $errorFile -ErrorAction Stop
+            Get-DbatoolsError -All -ErrorAction Stop | Export-Clixml -Depth 1 -Path $errorFile -ErrorAction Stop
         } catch {
             Set-Content -Path $errorFile -Value 'None'
         }

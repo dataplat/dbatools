@@ -38,7 +38,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             }
             $null = $alldbs | Start-DbaDbEncryption @splat
             $backups = $alldbs | Select-Object -First 1 | Backup-DbaDatabase -Path C:\temp
-            $results = $backups.BackupPath | Test-DbaBackupEncrypted -SqlInstance $script:instance2
+            $results = $backups | Test-DbaBackupEncrypted -SqlInstance $script:instance2
             $results.Encrypted | Should -Be $true
         }
         It "should detect encryption from piped file" {

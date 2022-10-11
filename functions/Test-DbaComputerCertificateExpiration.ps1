@@ -83,18 +83,35 @@ function Test-DbaComputerCertificateExpiration {
     )
     process {
         foreach ($computer in $computername) {
+            Write-Message -Level Verbose "Processing $computer"
             try {
                 if ($Type -eq "SQL Server") {
+                    Write-Message -Level Verbose "Type is SQL Server, getting network SQL Server-only certificate"
                     $certs = Get-DbaNetworkCertificate -ComputerName $computer -Credential $Credential -EnableException:$true
                 } else {
-                    $parms = $PSBoundParameters
-                    $null = $parms.Remove("ComputerName")
-                    $null = $parms.Remove("Threshold")
-                    $null = $parms.Remove("EnableException")
-                    $certs = Get-DbaComputerCertificate @parms -EnableException:$true
+                    Write-Message -Level Verbose "Type is Service, getting all computer certificates on $computer"
+                    $parms = @{
+                        ComputerName    = $computer
+                        Store           = $Store
+                        Folder          = $Folder
+                        EnableException = $true
+                    }
+                    if ($Credential) {
+                        $parms.Credential = $Credential
+                    }
+                    if ($Path) {
+                        $parms.Path = $Path
+                    }
+                    if ($Thumbprint) {
+                        $parms.Thumbprint = $Thumbprint
+                    }
+
+                    $certs = Get-DbaComputerCertificate @parms
                 }
 
+                Write-Message -Level Verbose "Found $($certs.Name.Count) certificates"
                 foreach ($cert in $certs) {
+                    Write-Message -Level Verbose "Checking $($cert.Name) cert"
                     $expiration = $cert.NotAfter.Date.Subtract((Get-Date)).Days
                     if ($expiration -lt $Threshold) {
                         if ($cert.NotAfter -le (Get-Date)) {
