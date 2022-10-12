@@ -6,7 +6,7 @@
     <members>
         <member name="T:Sqlcollaborative.Dbatools.Commands.SelectDbaObjectCommand">
             <summary>
-            Implements the Select-DbaObject command
+            Implements the <c>Select-DbaObject</c> command
             </summary>
         </member>
         <member name="F:Sqlcollaborative.Dbatools.Commands.SelectDbaObjectCommand.InputObject">
@@ -136,7 +136,7 @@
         </member>
         <member name="T:Sqlcollaborative.Dbatools.Commands.SetDbatoolsConfigCommand">
             <summary>
-            Implements the Set-PSFConfig command
+            Implements the <c>Set-PSFConfig</c> command.
             </summary>
         </member>
         <member name="F:Sqlcollaborative.Dbatools.Commands.SetDbatoolsConfigCommand.FullName">
@@ -312,7 +312,7 @@
         </member>
         <member name="T:Sqlcollaborative.Dbatools.Commands.WriteMessageCommand">
             <summary>
-            Implements the Write-Message command, performing message handling and loggin
+            Implements the <c>Write-Message</c> command, performing message handling and logging.
             </summary>
         </member>
         <member name="F:Sqlcollaborative.Dbatools.Commands.WriteMessageCommand.Level">

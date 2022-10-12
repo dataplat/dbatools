@@ -34,9 +34,9 @@
   </PropertyGroup>
   <Import Project="$(VSToolsPath)\TeamTest\Microsoft.TestTools.targets" Condition="Exists('$(VSToolsPath)\TeamTest\Microsoft.TestTools.targets')" />
   <ItemGroup>
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.4.0-preview-20220726-02" />
-    <PackageReference Include="MSTest.TestAdapter" Version="2.3.0-preview-20220810-02" />
-    <PackageReference Include="MSTest.TestFramework" Version="2.3.0-preview-20220810-02" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.3.2" />
+    <PackageReference Include="MSTest.TestAdapter" Version="2.2.10" />
+    <PackageReference Include="MSTest.TestFramework" Version="2.2.10" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\dbatools\dbatools.csproj" />

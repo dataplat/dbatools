@@ -7,7 +7,7 @@ using Sqlcollaborative.Dbatools.Parameter;
 namespace Sqlcollaborative.Dbatools.Commands
 {
     /// <summary>
-    /// Implements the Select-DbaObject command
+    /// Implements the <c>Select-DbaObject</c> command
     /// </summary>
     [Cmdlet("Select", "DbaObject", DefaultParameterSetName = "DefaultParameter", RemotingCapability = RemotingCapability.None)]
     public class SelectDbaObjectCommand : PSCmdlet

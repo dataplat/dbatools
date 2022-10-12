@@ -1,14 +1,13 @@
 ﻿using Sqlcollaborative.Dbatools.Configuration;
 using System;
 using System.Collections;
-using System.Collections.Generic;
 using System.Linq;
 using System.Management.Automation;
 
 namespace Sqlcollaborative.Dbatools.Commands
 {
     /// <summary>
-    /// Implements the Set-PSFConfig command
+    /// Implements the <c>Set-PSFConfig</c> command.
     /// </summary>
     [Cmdlet("Set", "DbatoolsConfig", DefaultParameterSetName = "FullName")]
     public class SetDbatoolsConfigCommand : PSCmdlet

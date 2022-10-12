@@ -8,7 +8,7 @@ using System.Text.RegularExpressions;
 namespace Sqlcollaborative.Dbatools.Commands
 {
     /// <summary>
-    /// Implements the Write-Message command, performing message handling and loggin
+    /// Implements the <c>Write-Message</c> command, performing message handling and logging.
     /// </summary>
     [Cmdlet("Write", "Message")]
     public class WriteMessageCommand : PSCmdlet
@@ -324,7 +324,7 @@ else { Write-HostColor -String $string -DefaultColor ([Sqlcollaborative.Dbatools
                         ModuleName = callerFrame.InvocationInfo.MyCommand.ModuleName;
 
                 if (String.IsNullOrEmpty(File))
-                    File = callerFrame.Position.File;
+                    File = callerFrame.ScriptName;
 
                 if (Line <= 0)
                     Line = callerFrame.Position.EndLineNumber;
