@@ -34,7 +34,7 @@ Set-DbatoolsConfig -Name 'Path.DbatoolsLog' -Value "$([System.Environment]::GetF
 
 b) Retrieving the configuration value in your function
 # Put this in the function that uses this setting
-$path = Get-DbatoolsConfigValue -Name 'Path.DbatoolsLog' -FallBack $env:temp
+$path = Get-DbatoolsConfigValue -Name 'Path.DbatoolsLog' -FallBack $Env:TEMP
 
 # Explanation #
 #-------------#
