@@ -7,6 +7,14 @@ param(
 
 $start = [DateTime]::Now
 
+if (-not $Env:TEMP) {
+    if ($IsLinux -or $IsMacOS) {
+        $Env:TEMP = '/tmp/'
+    } else {
+        $Env:TEMP = [System.IO.Path]::GetTempPath()
+    }
+}
+
 If ($PSVersionTable.PSEdition -in "Desktop", $null) {
     $netversion = Get-ChildItem 'HKLM:\SOFTWARE\Microsoft\NET Framework Setup\NDP' -Recurse -ErrorAction Ignore | Get-ItemProperty -Name version -ErrorAction Ignore | Where-Object PSChildName -eq Full | Select-Object -First 1 -ExpandProperty Version
     if ($netversion -lt [version]"4.6") {

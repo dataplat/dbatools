@@ -65,7 +65,7 @@ Set-DbatoolsConfig -FullName 'Path.DbatoolsExport' -Value (Join-DbaPath -Path $d
 
 #region Managed Path Stuff
 #region $Path_Temp
-$path_Temp = $env:TEMP
+$path_Temp = $Env:TEMP
 if (-not $path_Temp) { $path_Temp = ([System.IO.Path]::GetTempPath()).TrimEnd("\/") }
 if (-not $path_Temp) { $path_Temp = ([System.IO.Path]::GetTempPath()).TrimEnd("\/") }
 if (-not $path_Temp) {

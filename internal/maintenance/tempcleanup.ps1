@@ -1,4 +1,11 @@
 $scriptBlock = {
-    Get-ChildItem -Path $env:TEMP -Filter dbatools* | Remove-Item -ErrorAction Ignore -Recurse
+    if (-not $Env:TEMP) {
+        if ($IsLinux -or $IsMacOS) {
+            $Env:TEMP = '/tmp/'
+        } else {
+            $Env:TEMP = [System.IO.Path]::GetTempPath()
+        }
+    }
+    Get-ChildItem -Path $Env:TEMP -Filter dbatools* | Remove-Item -ErrorAction Ignore -Recurse
 }
 Register-DbaMaintenanceTask -Name "tempcleanup" -ScriptBlock $scriptBlock -Once -Delay (New-TimeSpan -Minutes 1) -Priority Low
