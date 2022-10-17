@@ -28,7 +28,7 @@ function Set-DbatoolsPath {
     .EXAMPLE
         PS C:\> Set-DbatoolsPath -Name 'temp' -Path 'C:\temp'
 
-        Configures C:\temp as the current temp path. (does not override $env:temp !)
+        Configures C:\temp as the current temp path. (does not override $Env:TEMP !)
     #>
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseShouldProcessForStateChangingFunctions", "")]
     [CmdletBinding(DefaultParameterSetName = 'Default')]

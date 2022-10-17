@@ -3,7 +3,7 @@
 
 Function Install-ADAuthenticationLibraryforSQLServer {
     # from https://bzzzt.io/post/2018-05-25-horrible-adalsql-issue/
-    $workingFolder = Join-Path $env:temp ([System.IO.Path]::GetRandomFileName())
+    $workingFolder = Join-Path $Env:TEMP ([System.IO.Path]::GetRandomFileName())
     New-Item -ItemType Directory -Force -Path $workingFolder
 
     $Installer = 'C:\github\appveyor-lab\azure\adalsql.msi'
