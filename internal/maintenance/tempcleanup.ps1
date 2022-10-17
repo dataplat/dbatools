@@ -1,10 +1,6 @@
 $scriptBlock = {
     if (-not $Env:TEMP) {
-        if ($IsLinux -or $IsMacOS) {
-            $Env:TEMP = '/tmp/'
-        } else {
-            $Env:TEMP = [System.IO.Path]::GetTempPath()
-        }
+        $Env:TEMP = [System.IO.Path]::GetTempPath()
     }
     Get-ChildItem -Path $Env:TEMP -Filter dbatools* | Remove-Item -ErrorAction Ignore -Recurse
 }

@@ -8,11 +8,7 @@ param(
 $start = [DateTime]::Now
 
 if (-not $Env:TEMP) {
-    if ($IsLinux -or $IsMacOS) {
-        $Env:TEMP = '/tmp/'
-    } else {
-        $Env:TEMP = [System.IO.Path]::GetTempPath()
-    }
+    $Env:TEMP = [System.IO.Path]::GetTempPath()
 }
 
 If ($PSVersionTable.PSEdition -in "Desktop", $null) {
