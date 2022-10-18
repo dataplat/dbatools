@@ -119,5 +119,14 @@ namespace Sqlcollaborative.Dbatools.IO
         {
             inner.Write(buffer, offset, count);
         }
+
+        /// <inheritdoc/>
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                inner.Dispose();
+            }
+        }
     }
 }
