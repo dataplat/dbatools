@@ -803,7 +803,6 @@ function Backup-DbaDatabase {
                             $HeaderInfo | Add-Member -Type NoteProperty -Name BackupFolder -Value $pathresult
                             $HeaderInfo | Add-Member -Type NoteProperty -Name BackupPath -Value ($FinalBackupPath | Sort-Object -Unique)
                             $HeaderInfo | Add-Member -Type NoteProperty -Name DatabaseName -Value $dbName
-                            $HeaderInfo | Add-Member -Type NoteProperty -Name DatabaseId -Value $db.ID
                             $HeaderInfo | Add-Member -Type NoteProperty -Name Notes -Value ($failures -join (','))
                             $HeaderInfo | Add-Member -Type NoteProperty -Name Script -Value $script
                             $HeaderInfo | Add-Member -Type NoteProperty -Name Verified -Value $Verified

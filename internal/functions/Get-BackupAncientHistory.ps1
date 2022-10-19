@@ -60,6 +60,7 @@ function Get-BackupAncientHistory {
             SELECT
             a.Server,
              a.[Database],
+             a.DatabaseId,
              a.Username,
              a.Start,
              a.[End],
@@ -86,6 +87,7 @@ function Get-BackupAncientHistory {
             FROM (
             SELECT
               backupset.database_name AS [Database],
+              (SELECT database_id FROM sys.databases WHERE name = backupset.database_name) AS DatabaseId,
               backupset.user_name AS Username,
               backupset.backup_start_date AS Start,
               backupset.server_name as [Server],
@@ -148,6 +150,9 @@ function Get-BackupAncientHistory {
                 $historyObject.InstanceName = $server.ServiceName
                 $historyObject.SqlInstance = $server.DomainInstanceName
                 $historyObject.Database = $group.Group[0].Database
+                if ( $group.Group[0].DatabaseId -is [int] ) {
+                    $historyObject.DatabaseId = $group.Group[0].DatabaseId
+                }
                 $historyObject.UserName = $group.Group[0].UserName
                 $historyObject.Start = ($group.Group.Start | Measure-Object -Minimum).Minimum
                 $historyObject.End = ($group.Group.End | Measure-Object -Maximum).Maximum
