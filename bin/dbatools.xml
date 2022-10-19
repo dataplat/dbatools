@@ -1659,11 +1659,6 @@
             The Database that was backed up
             </summary>
         </member>
-        <member name="F:Sqlcollaborative.Dbatools.Database.BackupHistory.DatabaseId">
-            <summary>
-            The current database ID that corresponds with the name of the database that was backed up
-            </summary>
-        </member>
         <member name="F:Sqlcollaborative.Dbatools.Database.BackupHistory.UserName">
             <summary>
             The user that is running the backup
