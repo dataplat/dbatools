@@ -53,6 +53,10 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         It "Last Backup Should be a log backup" {
             $results[-1].Type | Should Be "Log"
         }
+        It "DatabaseId is returned" {
+            $results[0].Database | Should -Be $dbname
+            $results[0].DatabaseId | Should -Be $db.Id
+        }
     }
 
     Context "Get last history for all databases" {

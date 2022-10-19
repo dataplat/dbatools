@@ -427,6 +427,7 @@ function Get-DbaDbBackupHistory {
                         a.Server,
                         '' as AvailabilityGroupName,
                         a.[Database],
+                        a.DatabaseId,
                         a.Username,
                         a.Start,
                         a.[End],
@@ -459,6 +460,7 @@ function Get-DbaDbBackupHistory {
                         SELECT
                         RANK() OVER (ORDER BY backupset.last_lsn desc, backupset.backup_finish_date DESC) AS 'BackupSetRank',
                         backupset.database_name AS [Database],
+                        (SELECT database_id FROM sys.databases WHERE name = backupset.database_name) AS DatabaseId,
                         backupset.user_name AS Username,
                         backupset.backup_start_date AS Start,
                         backupset.server_name as [Server],
@@ -528,6 +530,7 @@ function Get-DbaDbBackupHistory {
                     $select = "
                     SELECT
                         backupset.database_name AS [Database],
+                        (SELECT database_id FROM sys.databases WHERE name = backupset.database_name) AS DatabaseId,
                         backupset.user_name AS Username,
                         backupset.server_name as [server],
                         backupset.backup_start_date AS [Start],
@@ -683,6 +686,9 @@ function Get-DbaDbBackupHistory {
                     $historyObject.InstanceName = $server.ServiceName
                     $historyObject.SqlInstance = $server.DomainInstanceName
                     $historyObject.Database = $commonFields.Database
+                    if ( $commonFields.DatabaseId -is [int] ) {
+                        $historyObject.DatabaseId = $commonFields.DatabaseId
+                    }
                     $historyObject.UserName = $commonFields.UserName
                     $historyObject.Start = $start
                     $historyObject.End = $end
