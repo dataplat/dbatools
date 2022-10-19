@@ -35,6 +35,11 @@ namespace Sqlcollaborative.Dbatools.Database
         public string Database;
 
         /// <summary>
+        /// The current database ID that corresponds with the name of the database that was backed up
+        /// </summary>
+        public string DatabaseId;
+
+        /// <summary>
         /// The user that is running the backup
         /// </summary>
         public string UserName;
