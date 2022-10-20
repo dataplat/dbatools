@@ -118,7 +118,7 @@ function Update-DbaMaintenanceSolution {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
-            $db = $server.Databases[$Database]
+            $db = $server.Databases | Where-Object Name -eq $Database
             if ($null -eq $db) {
                 Stop-Function -Message "Database $Database not found on $instance. Skipping." -Target $instance -Continue
             }
