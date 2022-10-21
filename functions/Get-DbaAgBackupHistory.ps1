@@ -76,7 +76,7 @@ function Get-DbaAgBackupHistory {
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-    
+
     .NOTES
         Tags: AG, HA
         Author: Chrissy LeMaire (@cl) | Stuart Moore (@napalmgram), Andreas Jordan
@@ -145,9 +145,8 @@ function Get-DbaAgBackupHistory {
         [switch]$IncludeMirror,
         [ValidateSet("Full", "Log", "Differential", "File", "Differential File", "Partial Full", "Partial Differential")]
         [string[]]$Type,
-        [ValidateSet("FirstLsn",  "DatabaseBackupLsn", "LastLsn")]
-        [string]
-        $LsnSort = "FirstLsn",
+        [ValidateSet("FirstLsn", "DatabaseBackupLsn", "LastLsn")]
+        [string]$LsnSort = "FirstLsn",
         [switch]$EnableException
     )
 
