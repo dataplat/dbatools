@@ -1,4 +1,4 @@
-function Get-DbaAgBackupHistory2 {
+function Get-DbaAgBackupHistory {
     <#
     .SYNOPSIS
         Returns backup history details for databases on a SQL Server Availability Group.
