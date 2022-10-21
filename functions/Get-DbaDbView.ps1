@@ -174,10 +174,10 @@ function Get-DbaDbView {
             $defaults = 'ComputerName', 'InstanceName', 'SqlInstance', 'Database', 'Schema', 'CreateDate', 'DateLastModified', 'Name'
             foreach ($sqlview in $views) {
 
-                Add-Member -Force -InputObject $sqlview -MemberType NoteProperty -Name ComputerName -value $db.Parent.ComputerName
-                Add-Member -Force -InputObject $sqlview -MemberType NoteProperty -Name InstanceName -value $db.Parent.InstanceName
-                Add-Member -Force -InputObject $sqlview -MemberType NoteProperty -Name SqlInstance -value $db.Parent.DomainInstanceName
-                Add-Member -Force -InputObject $sqlview -MemberType NoteProperty -Name Database -value $db.Name
+                Add-Member -Force -InputObject $sqlview -MemberType NoteProperty -Name ComputerName -Value $db.Parent.ComputerName
+                Add-Member -Force -InputObject $sqlview -MemberType NoteProperty -Name InstanceName -Value $db.Parent.ServiceName
+                Add-Member -Force -InputObject $sqlview -MemberType NoteProperty -Name SqlInstance -Value $db.Parent.DomainInstanceName
+                Add-Member -Force -InputObject $sqlview -MemberType NoteProperty -Name Database -Value $db.Name
 
                 Select-DefaultView -InputObject $sqlview -Property $defaults
             }
