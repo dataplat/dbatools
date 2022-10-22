@@ -68,10 +68,14 @@ function Get-DbaAgBackupHistory {
     .PARAMETER IncludeMirror
         By default mirrors of backups are not returned, this switch will cause them to be returned
 
+    .PARAMETER LsnSort
+        Specifies which of the returned LSN values you would like to use for sorting when using the LastFull, LastDiff and LastLog parameters.
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+
 
     .NOTES
         Tags: AG, HA
@@ -141,6 +145,8 @@ function Get-DbaAgBackupHistory {
         [switch]$IncludeMirror,
         [ValidateSet("Full", "Log", "Differential", "File", "Differential File", "Partial Full", "Partial Differential")]
         [string[]]$Type,
+        [ValidateSet("FirstLsn", "DatabaseBackupLsn", "LastLsn")]
+        [string]$LsnSort = "FirstLsn",
         [switch]$EnableException
     )
 
@@ -209,17 +215,17 @@ function Get-DbaAgBackupHistory {
         } elseif ($LastFull) {
             Write-Message -Level Verbose -Message "Filtering Ag backups for LastFull"
             Foreach ($AgDb in ( $AgResults.Database | Select-Object -Unique)) {
-                $AgResults | Where-Object { $_.Database -eq $AgDb } | Sort-Object -Property FirstLsn | Select-Object -Last 1
+                $AgResults | Where-Object { $_.Database -eq $AgDb } | Sort-Object -Property $LsnSort | Select-Object -Last 1
             }
         } elseif ($LastDiff) {
             Write-Message -Level Verbose -Message "Filtering Ag backups for LastDiff"
             Foreach ($AgDb in ( $AgResults.Database | Select-Object -Unique)) {
-                $AgResults | Where-Object { $_.Database -eq $AgDb } | Sort-Object -Property FirstLsn | Select-Object -Last 1
+                $AgResults | Where-Object { $_.Database -eq $AgDb } | Sort-Object -Property $LsnSort | Select-Object -Last 1
             }
         } elseif ($LastLog) {
             Write-Message -Level Verbose -Message "Filtering Ag backups for LastLog"
             Foreach ($AgDb in ( $AgResults.Database | Select-Object -Unique)) {
-                $AgResults | Where-Object { $_.Database -eq $AgDb } | Sort-Object -Property FirstLsn | Select-Object -Last 1
+                $AgResults | Where-Object { $_.Database -eq $AgDb } | Sort-Object -Property $LsnSort | Select-Object -Last 1
             }
         } else {
             Write-Message -Level Verbose -Message "Output Ag backups without filtering"
