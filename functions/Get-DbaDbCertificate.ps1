@@ -111,6 +111,7 @@ function Get-DbaDbCertificate {
                 Add-Member -Force -InputObject $cert -MemberType NoteProperty -Name InstanceName -value $db.InstanceName
                 Add-Member -Force -InputObject $cert -MemberType NoteProperty -Name SqlInstance -value $db.SqlInstance
                 Add-Member -Force -InputObject $cert -MemberType NoteProperty -Name Database -value $db.Name
+                Add-Member -Force -InputObject $cert -MemberType NoteProperty -Name DatabaseId -value $db.Id
 
                 Select-DefaultView -InputObject $cert -Property ComputerName, InstanceName, SqlInstance, Database, Name, Subject, StartDate, ActiveForServiceBrokerDialog, ExpirationDate, Issuer, LastBackupDate, Owner, PrivateKeyEncryptionType, Serial
             }
