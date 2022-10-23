@@ -66,18 +66,7 @@ function Invoke-ManagedComputerCommand {
     Write-Message -Level Verbose -Message "Connecting to SQL WMI on $computer."
 
     try {
-        $result = Invoke-Command2 -ScriptBlock $ScriptBlock -ArgumentList $ArgumentList -Credential $Credential -ErrorAction Stop
-        if ($result.Exception) {
-            # The new code pattern for WMI calls like in Set-DbaNetworkConfiguration is used where all exceptions are catched and return as part of an object.
-            foreach ($msg in $result.Verbose) {
-                Write-Message -Level Verbose -Message $msg
-            }
-            Write-Message -Level Verbose -Message "Execution against $computer failed with: $($result.Exception)"
-            Stop-Function -Message "Failed." -Target $computer -ErrorRecord $result.Exception -EnableException $true
-        } else {
-            # The old code pattern is used or no exception was catched, so just return the result
-            $result
-        }
+        Invoke-Command2 -ScriptBlock $ScriptBlock -ArgumentList $ArgumentList -Credential $Credential -ErrorAction Stop
     } catch {
         Write-Message -Level Verbose -Message "Local connection attempt to $computer failed. Connecting remotely."
 
