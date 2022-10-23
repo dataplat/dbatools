@@ -250,6 +250,9 @@ function Add-DbaAgDatabase {
             $targetSynchronizationState = @{ }
             $output = @( )
 
+            # Needed in Step 5, but we need the time where everything started
+            $startTime = $server.Query("SELECT GETDATE() StartTime").StartTime.ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ss", [System.Globalization.CultureInfo]::InvariantCulture)
+
             $progress['Activity'] = "Adding database $($db.Name) to Availability Group $AvailabilityGroup."
 
             $progress['Status'] = "Step 1/5: Setting seeding mode if needed."
@@ -483,16 +486,22 @@ function Add-DbaAgDatabase {
                             $syncProgress['Status'] = "IsJoined is $($replicaAgDbSMO[$replicaName].IsJoined), SynchronizationState is $($replicaAgDbSMO[$replicaName].SynchronizationState), replica is in desired state."
                         }
                         if ($ag.AvailabilityReplicas[$replicaName].SeedingMode -eq 'Automatic' -and $reportSeeding) {
-                            $seedingStats = $server.Query("SELECT TOP 1 * FROM sys.dm_hadr_physical_seeding_stats WHERE local_database_name = '$($db.Name)' AND remote_machine_name = '$($ag.AvailabilityReplicas[$replicaName].EndpointUrl)' ORDER BY start_time_utc DESC")
-                            if ($seedingStats) {
-                                if ($seedingStats.failure_message -ne [DBNull]::Value) {
+                            $physicalSeedingStats = $server.Query("SELECT TOP 1 * FROM sys.dm_hadr_physical_seeding_stats WHERE local_database_name = '$($db.Name)' AND remote_machine_name = '$($ag.AvailabilityReplicas[$replicaName].EndpointUrl)' ORDER BY start_time_utc DESC")
+                            if ($physicalSeedingStats) {
+                                if ($physicalSeedingStats.failure_message -ne [DBNull]::Value) {
                                     $failure = $true
-                                    Stop-Function -Message "Failed while seeding database $($db.Name) to $replicaName. failure_message: $($seedingStats.failure_message)." -Continue
+                                    Stop-Function -Message "Failed while seeding database $($db.Name) to $replicaName. failure_message: $($physicalSeedingStats.failure_message)." -Continue
                                 }
 
-                                $syncProgress['PercentComplete'] = [int]($seedingStats.transferred_size_bytes * 100.0 / $seedingStats.database_size_bytes)
-                                $syncProgress['SecondsRemaining'] = [int](($seedingStats.estimate_time_complete_utc - (Get-Date).ToUniversalTime()).TotalSeconds)
-                                $syncProgress['CurrentOperation'] = "Seeding state: $($seedingStats.internal_state_desc), $([int]($seedingStats.transferred_size_bytes/1024/1024)) out of $([int]($seedingStats.database_size_bytes/1024/1024)) MB transferred."
+                                $syncProgress['PercentComplete'] = [int]($physicalSeedingStats.transferred_size_bytes * 100.0 / $physicalSeedingStats.database_size_bytes)
+                                $syncProgress['SecondsRemaining'] = [int](($physicalSeedingStats.estimate_time_complete_utc - (Get-Date).ToUniversalTime()).TotalSeconds)
+                                $syncProgress['CurrentOperation'] = "Seeding state: $($physicalSeedingStats.internal_state_desc), $([int]($physicalSeedingStats.transferred_size_bytes/1024/1024)) out of $([int]($physicalSeedingStats.database_size_bytes/1024/1024)) MB transferred."
+                            }
+                            $automaticSeeding = $server.Query("SELECT TOP 1 * FROM sys.dm_hadr_automatic_seeding WHERE ag_id = '$($ag.UniqueId.Guid.ToUpper())' AND ag_db_id = '$($ag.AvailabilityDatabases[$db.Name].UniqueId.Guid.ToUpper())' AND ag_remote_replica_id = '$($ag.AvailabilityReplicas[$replicaName].UniqueId.Guid.ToUpper())' AND start_time > CONVERT(datetime, '$startTime', 126) ORDER BY start_time DESC")
+                            Write-Message -Level Verbose -Message "Current automatic seeding state: $($automaticSeeding.current_state)"
+                            if ($automaticSeeding.current_state -eq 'FAILED') {
+                                $failure = $true
+                                Stop-Function -Message "Failed while seeding database $($db.Name) to $replicaName. failure_message: $($automaticSeeding.failure_state_desc)." -Continue
                             }
                         }
                         Write-Message -Level Verbose -Message ($syncProgress['Status'] + $syncProgress['CurrentOperation'])
