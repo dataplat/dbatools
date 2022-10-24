@@ -298,7 +298,7 @@ SELECT 2
         $result = Invoke-DbaQuery -SqlInstance $script:instance2 -Database tempdb -Query $q -NoExec
         $result | Should -BeNullOrEmpty
 
-        { Invoke-DbaQuery -SqlInstance $script:instance2 -Database tempdb -Query "SELECT p FROM c" -NoExec -EnableException } | Should -Throw "Incorrect syntax near 'selec'"
+        { Invoke-DbaQuery -SqlInstance $script:instance2 -Database tempdb -Query "SELEC p FROM c" -NoExec -EnableException } | Should -Throw "Incorrect syntax near 'SELEC'"
     }
 
     It "supports dropping temp objects (#8472)" {
