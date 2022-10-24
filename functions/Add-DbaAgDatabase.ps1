@@ -250,9 +250,6 @@ function Add-DbaAgDatabase {
             $targetSynchronizationState = @{ }
             $output = @( )
 
-            # Needed in Step 5, but we need the time where everything started
-            $startTime = $server.Query("SELECT GETDATE() StartTime").StartTime.ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ss", [System.Globalization.CultureInfo]::InvariantCulture)
-
             $progress['Activity'] = "Adding database $($db.Name) to Availability Group $AvailabilityGroup."
 
             $progress['Status'] = "Step 1/5: Setting seeding mode if needed."
@@ -497,7 +494,7 @@ function Add-DbaAgDatabase {
                                 $syncProgress['SecondsRemaining'] = [int](($physicalSeedingStats.estimate_time_complete_utc - (Get-Date).ToUniversalTime()).TotalSeconds)
                                 $syncProgress['CurrentOperation'] = "Seeding state: $($physicalSeedingStats.internal_state_desc), $([int]($physicalSeedingStats.transferred_size_bytes/1024/1024)) out of $([int]($physicalSeedingStats.database_size_bytes/1024/1024)) MB transferred."
                             }
-                            $automaticSeeding = $server.Query("SELECT TOP 1 * FROM sys.dm_hadr_automatic_seeding WHERE ag_id = '$($ag.UniqueId.Guid.ToUpper())' AND ag_db_id = '$($ag.AvailabilityDatabases[$db.Name].UniqueId.Guid.ToUpper())' AND ag_remote_replica_id = '$($ag.AvailabilityReplicas[$replicaName].UniqueId.Guid.ToUpper())' AND start_time > CONVERT(datetime, '$startTime', 126) ORDER BY start_time DESC")
+                            $automaticSeeding = $server.Query("SELECT TOP 1 * FROM sys.dm_hadr_automatic_seeding WHERE ag_id = '$($ag.UniqueId.Guid.ToUpper())' AND ag_db_id = '$($ag.AvailabilityDatabases[$db.Name].UniqueId.Guid.ToUpper())' AND ag_remote_replica_id = '$($ag.AvailabilityReplicas[$replicaName].UniqueId.Guid.ToUpper())' ORDER BY start_time DESC")
                             Write-Message -Level Verbose -Message "Current automatic seeding state: $($automaticSeeding.current_state)"
                             if ($automaticSeeding.current_state -eq 'FAILED') {
                                 $failure = $true
