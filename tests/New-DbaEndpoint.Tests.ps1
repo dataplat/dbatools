@@ -25,7 +25,7 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
             Invoke-DbaQuery -SqlInstance $script:instance2 -Query "$create"
         }
     }
-    $results = New-DbaEndpoint -SqlInstance $script:instance2 -Type DatabaseMirroring -Role Partner -Name Mirroring -EncryptionAlgorithm RC4 -Confirm:$false | Start-DbaEndpoint -Confirm:$false
+    $results = New-DbaEndpoint -SqlInstance $script:instance2 -Type DatabaseMirroring -Role Partner -Name Mirroring -Confirm:$false | Start-DbaEndpoint -Confirm:$false
 
     It "creates an endpoint of the db mirroring type" {
         $results.EndpointType | Should -Be 'DatabaseMirroring'
