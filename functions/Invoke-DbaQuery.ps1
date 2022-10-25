@@ -216,7 +216,7 @@ function Invoke-DbaQuery {
             $splatInvokeDbaSqlAsync["MessagesToOutput"] = $MessagesToOutput
         }
         if (Test-Bound -ParameterName "Verbose") {
-            $splatInvokeDbaSqlAsync["Verbose"] = $Verbose
+            $splatInvokeDbaSqlAsync["Verbose"] = $PSBoundParameters.Verbose
         }
         if (Test-Bound -ParameterName "NoExec") {
             $splatInvokeDbaSqlAsync["NoExec"] = $NoExec
