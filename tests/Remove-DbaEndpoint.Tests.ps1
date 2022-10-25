@@ -18,7 +18,7 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
         $endpoint = Get-DbaEndpoint -SqlInstance $script:instance2 | Where-Object EndpointType -eq DatabaseMirroring
         $create = $endpoint | Export-DbaScript -Passthru
         $null = $endpoint | Remove-DbaEndpoint -Confirm:$false
-        $results = New-DbaEndpoint -SqlInstance $script:instance2 -Type DatabaseMirroring -Role Partner -Name Mirroring -EncryptionAlgorithm RC4 -Confirm:$false | Start-DbaEndpoint -Confirm:$false
+        $results = New-DbaEndpoint -SqlInstance $script:instance2 -Type DatabaseMirroring -Role Partner -Name Mirroring -Confirm:$false | Start-DbaEndpoint -Confirm:$false
     }
     AfterAll {
         if ($create) {
