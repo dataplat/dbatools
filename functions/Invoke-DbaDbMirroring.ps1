@@ -70,6 +70,22 @@ function Invoke-DbaDbMirroring {
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
 
+    .PARAMETER EndpointEncryption
+        Used to specify the state of encryption on the endpoint. Defaults to required.
+        Disabled
+        Required
+        Supported
+
+    .PARAMETER EncryptionAlgorithm
+        Specifies an encryption algorithm used on an endpoint. Defaults to Aes.
+
+        Options are:
+        AesRC4
+        Aes
+        None
+        RC4
+        RC4Aes
+
     .PARAMETER Confirm
         Prompts you for confirmation before executing any changing operations within the command.
 
@@ -154,6 +170,10 @@ function Invoke-DbaDbMirroring {
         [DbaInstanceParameter]$Witness,
         [PSCredential]$WitnessSqlCredential,
         [string[]]$Database,
+        [ValidateSet('Disabled', 'Required', 'Supported')]
+        [string]$EndpointEncryption = 'Required',
+        [ValidateSet('Aes', 'AesRC4', 'None', 'RC4', 'RC4Aes')]
+        [string]$EncryptionAlgorithm = 'Aes',
         [string]$SharedPath,
         [parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
@@ -278,14 +298,14 @@ function Invoke-DbaDbMirroring {
 
                 if (-not $primaryendpoint) {
                     Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Setting up endpoint for primary"
-                    $primaryendpoint = New-DbaEndpoint -SqlInstance $source -Type DatabaseMirroring -Role Partner -Name Mirroring -EncryptionAlgorithm RC4
+                    $primaryendpoint = New-DbaEndpoint -SqlInstance $source -Type DatabaseMirroring -Role Partner -Name Mirroring -EncryptionAlgorithm $EncryptionAlgorithm -EndpointEncryption $EndpointEncryption
                     $null = $primaryendpoint | Stop-DbaEndpoint
                     $null = $primaryendpoint | Start-DbaEndpoint
                 }
 
                 if (-not $currentmirrorendpoint) {
                     Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Setting up endpoint for mirror"
-                    $currentmirrorendpoint = New-DbaEndpoint -SqlInstance $dest -Type DatabaseMirroring -Role Partner -Name Mirroring -EncryptionAlgorithm RC4
+                    $currentmirrorendpoint = New-DbaEndpoint -SqlInstance $dest -Type DatabaseMirroring -Role Partner -Name Mirroring -EncryptionAlgorithm $EncryptionAlgorithm -EndpointEncryption $EndpointEncryption
                     $null = $currentmirrorendpoint | Stop-DbaEndpoint
                     $null = $currentmirrorendpoint | Start-DbaEndpoint
                 }
@@ -294,7 +314,7 @@ function Invoke-DbaDbMirroring {
                     Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Setting up endpoint for witness"
                     $witnessendpoint = Get-DbaEndpoint -SqlInstance $witserver | Where-Object EndpointType -eq DatabaseMirroring
                     if (-not $witnessendpoint) {
-                        $witnessendpoint = New-DbaEndpoint -SqlInstance $witserver -Type DatabaseMirroring -Role Witness -Name Mirroring -EncryptionAlgorithm RC4
+                        $witnessendpoint = New-DbaEndpoint -SqlInstance $witserver -Type DatabaseMirroring -Role Witness -Name Mirroring -EncryptionAlgorithm $EncryptionAlgorithm -EndpointEncryption $EndpointEncryption
                         $null = $witnessendpoint | Stop-DbaEndpoint
                         $null = $witnessendpoint | Start-DbaEndpoint
                     }
