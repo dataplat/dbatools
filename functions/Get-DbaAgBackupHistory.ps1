@@ -204,6 +204,7 @@ function Get-DbaAgBackupHistory {
         $null = $PSBoundParameters.Remove('SqlInstance')
         $null = $PSBoundParameters.Remove('AvailabilityGroup')
         $null = $PSBoundParameters.Remove('Last')
+        $null = $PSBoundParameters.Remove('LsnSort')
         $AgResults = Get-DbaDbBackupHistory -SqlInstance $serverList @PSBoundParameters
         foreach ($agr in $AgResults) {
             $agr.AvailabilityGroupName = $AvailabilityGroup
