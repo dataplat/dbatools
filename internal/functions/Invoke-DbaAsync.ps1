@@ -85,7 +85,7 @@ function Invoke-DbaAsync {
                 return
             }
         }
-        if (-not $PSBoundParameters.QueryTimeout) {
+        if (Test-Bound -Not -ParameterName "QueryTimeout") {
             $QueryTimeout = $SQLConnection.StatementTimeout
         }
         function Resolve-SqlError {
