@@ -30,12 +30,12 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
         Remove-DbaDatabase -Confirm:$false -SqlInstance $script:instance2, $script:instance3 -Database $startmigrationrestoredb, $detachattachdb
 
         $server = Connect-DbaInstance -SqlInstance $script:instance3
-        $server.Query("CREATE DATABASE $startmigrationrestoredb2; ALTER DATABASE $startmigrationrestoredb2 SET AUTO_CLOSE OFF WITH ROLLBACK IMMEDIATE")
+        Invoke-DbaQuery -SqlInstance $server -Query "CREATE DATABASE $startmigrationrestoredb2; ALTER DATABASE $startmigrationrestoredb2 SET AUTO_CLOSE OFF WITH ROLLBACK IMMEDIATE"
 
         $server = Connect-DbaInstance -SqlInstance $script:instance2
-        $server.Query("CREATE DATABASE $startmigrationrestoredb; ALTER DATABASE $startmigrationrestoredb SET AUTO_CLOSE OFF WITH ROLLBACK IMMEDIATE")
-        $server.Query("CREATE DATABASE $detachattachdb; ALTER DATABASE $detachattachdb SET AUTO_CLOSE OFF WITH ROLLBACK IMMEDIATE")
-        $server.Query("CREATE DATABASE $startmigrationrestoredb2; ALTER DATABASE $startmigrationrestoredb2 SET AUTO_CLOSE OFF WITH ROLLBACK IMMEDIATE")
+        Invoke-DbaQuery -SqlInstance $server -Query "CREATE DATABASE $startmigrationrestoredb; ALTER DATABASE $startmigrationrestoredb SET AUTO_CLOSE OFF WITH ROLLBACK IMMEDIATE"
+        Invoke-DbaQuery -SqlInstance $server -Query "CREATE DATABASE $detachattachdb; ALTER DATABASE $detachattachdb SET AUTO_CLOSE OFF WITH ROLLBACK IMMEDIATE"
+        Invoke-DbaQuery -SqlInstance $server -Query "CREATE DATABASE $startmigrationrestoredb2; ALTER DATABASE $startmigrationrestoredb2 SET AUTO_CLOSE OFF WITH ROLLBACK IMMEDIATE"
         $null = Set-DbaDbOwner -SqlInstance $script:instance2 -Database $startmigrationrestoredb, $detachattachdb -TargetLogin sa
     }
     AfterAll {
