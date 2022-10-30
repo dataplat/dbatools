@@ -4,11 +4,11 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
+        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
         [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'ExcludeSystemTable', 'EnableException'
         $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
         It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
         }
     }
 }
@@ -34,11 +34,12 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     Context "Command actually works" {
         It "returns no check constraints from excluded DB with -ExcludeDatabase" {
             $results = Get-DbaDbCheckConstraint -SqlInstance $script:instance2 -ExcludeDatabase master
-            $results.where( {$_.Database -eq 'master'}).count | Should Be 0
+            $results.where( { $_.Database -eq 'master' }).count | Should Be 0
         }
         It "returns only check constraints from selected DB with -Database" {
             $results = Get-DbaDbCheckConstraint -SqlInstance $script:instance2 -Database $dbname
-            $results.where( {$_.Database -ne 'master'}).count | Should Be 1
+            $results.where( { $_.Database -ne 'master' }).count | Should Be 1
+            $results.DatabaseId | Get-Unique | Should -Be (Get-DbaDatabase -SqlInstance $script:instance2 -Database $dbname).Id
         }
         It "Should include test check constraint: $ckName" {
             $results = Get-DbaDbCheckConstraint -SqlInstance $script:instance2 -Database $dbname -ExcludeSystemTable
