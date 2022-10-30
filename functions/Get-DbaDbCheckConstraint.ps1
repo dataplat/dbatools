@@ -116,6 +116,7 @@ function Get-DbaDbCheckConstraint {
                         Add-Member -Force -InputObject $ck -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
                         Add-Member -Force -InputObject $ck -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
                         Add-Member -Force -InputObject $ck -MemberType NoteProperty -Name Database -value $db.Name
+                        Add-Member -Force -InputObject $ck -MemberType NoteProperty -Name DatabaseId -value $db.Id
 
                         $defaults = 'ComputerName', 'InstanceName', 'SqlInstance', 'Database', 'Parent', 'ID', 'CreateDate',
                         'DateLastModified', 'Name', 'IsEnabled', 'IsChecked', 'NotForReplication', 'Text', 'State'
