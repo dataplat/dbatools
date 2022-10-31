@@ -221,7 +221,7 @@ function Get-DbaDbBackupHistory {
 
         if ($Since -is [timespan]) {
             $Since = (Get-Date).add($Since);
-        } elseif (-not ($Since -is [datetime])) {
+        } elseif ($Since -isnot [datetime]) {
             Stop-Function -Message "-Since must be either a DateTime or TimeSpan object."
             return
         }
