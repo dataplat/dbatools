@@ -158,7 +158,7 @@ function Get-DbaDbBackupHistory {
         [switch]$IncludeCopyOnly,
         [Parameter(ParameterSetName = "NoLast")]
         [switch]$Force,
-        [object]$Since = (Get-Date '01/01/1970'),
+        [psobject]$Since = (Get-Date '01/01/1970'),
         [ValidateScript( { ($_ -match '^(\{){0,1}[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}(\}){0,1}$') -or ('' -eq $_) })]
         [string]$RecoveryFork,
         [switch]$Last,
