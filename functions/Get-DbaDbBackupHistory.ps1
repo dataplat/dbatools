@@ -32,6 +32,7 @@ function Get-DbaDbBackupHistory {
 
     .PARAMETER Since
         Specifies a starting point for the search for backups. If a DateTime object is passed, that will be used. If a TimeSpan object is passed, that will be added to Get-Date and the resulting value will be used.
+        
     .PARAMETER RecoveryFork
         Specifies the Recovery Fork you want backup history for.
 
