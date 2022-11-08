@@ -219,7 +219,7 @@ function Import-DbaBinaryFile {
                         if (-not $NoFileNameColumn) {
                             $null = $cmd.Parameters.AddWithValue("@FileName", $filename)
                         }
-                        $null = $cmd.Parameters.Add("@FileContents", $datatype).Value = $fileBytes
+                        $null = $cmd.Parameters.AddWithValue("@FileContents", $datatype).Value = $fileBytes
                         $null = $cmd.ExecuteScalar()
 
                         try {
