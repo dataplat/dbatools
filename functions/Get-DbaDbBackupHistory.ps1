@@ -32,7 +32,7 @@ function Get-DbaDbBackupHistory {
 
     .PARAMETER Since
         Specifies a starting point for the search for backups. If a DateTime object is passed, that will be used. If a TimeSpan object is passed, that will be added to Get-Date and the resulting value will be used.
-        
+
     .PARAMETER RecoveryFork
         Specifies the Recovery Fork you want backup history for.
 
@@ -68,6 +68,9 @@ function Get-DbaDbBackupHistory {
 
     .PARAMETER IgnoreDiffBackup
         When this switch is enabled, Differential backups will be ignored.
+
+    .PARAMETER LsnSort
+        Specifies which of the returned LSN values you would like to use for sorting when using the LastFull, LastDiff and LastLog parameters.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -173,6 +176,8 @@ function Get-DbaDbBackupHistory {
         [string[]]$Type,
         [switch]$AgCheck,
         [switch]$IgnoreDiffBackup,
+        [ValidateSet("FirstLsn", "DatabaseBackupLsn", "LastLsn")]
+        [string]$LsnSort = "LastLsn",
         [switch]$EnableException
     )
 
@@ -210,6 +215,12 @@ function Get-DbaDbBackupHistory {
         $backupTypeFilter = @()
         foreach ($typeFilter in $Type) {
             $backupTypeFilter += $backupTypeMapping[$typeFilter]
+        }
+
+        $internalLsnSort = switch ($LsnSort) {
+            "FirstLsn" { "first_lsn" }
+            "DatabaseBackupLsn" { "database_backup_lsn" }
+            "LastLsn" { "last_lsn" }
         }
     }
 
@@ -428,6 +439,7 @@ function Get-DbaDbBackupHistory {
                     #     last_lsn cannot be out-of-order for the same database, and the same database cannot have different database_guid
                     #   - because someone could restore a very old backup with low lsn values and continue to use this database we filter
                     #     not only by database_guid but also by the recovery fork of the last backup (see issue #6730 for more details)
+                    #   - NEW: lsn order can now be based on first_lsn, database_backup_lsn or last_lsn with a default of last_lsn
                     $sql += "SELECT
                         a.BackupSetRank,
                         a.Server,
@@ -464,7 +476,7 @@ function Get-DbaDbBackupHistory {
                         a.KeyAlgorithm
                     FROM (
                         SELECT
-                        RANK() OVER (ORDER BY backupset.last_lsn desc, backupset.backup_finish_date DESC) AS 'BackupSetRank',
+                        RANK() OVER (ORDER BY backupset.$internalLsnSort desc, backupset.backup_finish_date DESC) AS 'BackupSetRank',
                         backupset.database_name AS [Database],
                         (SELECT database_id FROM sys.databases WHERE name = backupset.database_name) AS DatabaseId,
                         backupset.user_name AS Username,
@@ -604,7 +616,7 @@ function Get-DbaDbBackupHistory {
 
                 if ($Last -or $LastFull -or $LastLog -or $LastDiff) {
                     $tempWhere = $whereArray -join " AND "
-                    $whereArray += "type = 'Full' AND mediaset.media_set_id = (SELECT TOP 1 mediaset.media_set_id $from $tempWhere ORDER BY backupset.last_lsn DESC)"
+                    $whereArray += "type = 'Full' AND mediaset.media_set_id = (SELECT TOP 1 mediaset.media_set_id $from $tempWhere ORDER BY backupset.$internalLsnSort DESC)"
                 }
 
                 if ($IgnoreDiffBackup) {
@@ -630,7 +642,7 @@ function Get-DbaDbBackupHistory {
                     $where = "$where $whereArray"
                 }
 
-                $sql = "$select $from $where ORDER BY backupset.last_lsn DESC"
+                $sql = "$select $from $where ORDER BY backupset.$internalLsnSort DESC"
             }
 
             Write-Message -Level Debug -Message "SQL Statement: `n$sql"
