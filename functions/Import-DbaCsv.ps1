@@ -335,22 +335,31 @@ function Import-DbaCsv {
                 [Parameter(Mandatory)]
                 [bool]$FirstRowHeader,
                 [Microsoft.Data.SqlClient.SqlConnection]$sqlconn,
-                [Microsoft.Data.SqlClient.SqlTransaction]$transaction
+                [Microsoft.Data.SqlClient.SqlTransaction]$transaction,
+                [bool]$IsCompressed
             )
-            $reader = New-Object LumenWorks.Framework.IO.Csv.CsvReader(
-                (New-Object System.IO.StreamReader($Path, [System.Text.Encoding]::$Encoding)),
-                $FirstRowHeader,
-                $Delimiter,
-                $Quote,
-                $Escape,
-                $Comment,
-                [LumenWorks.Framework.IO.Csv.ValueTrimmingOptions]::$TrimmingOption,
-                $BufferSize,
-                $NullValue
-            )
-            $columns = $reader.GetFieldHeaders()
-            $reader.Close()
-            $reader.Dispose()
+
+            $stream = [System.IO.File]::OpenRead($Path);
+            if ($IsCompressed) {
+                $stream = New-Object System.IO.Compression.GZipStream($stream, [System.IO.Compression.CompressionMode]::Decompress)
+            }
+            try {
+                $reader = New-Object LumenWorks.Framework.IO.Csv.CsvReader(
+                    (New-Object System.IO.StreamReader($stream, [System.Text.Encoding]::$Encoding)),
+                    $FirstRowHeader,
+                    $Delimiter,
+                    $Quote,
+                    $Escape,
+                    $Comment,
+                    [LumenWorks.Framework.IO.Csv.ValueTrimmingOptions]::$TrimmingOption,
+                    $BufferSize,
+                    $NullValue
+                )
+                $columns = $reader.GetFieldHeaders()
+            } finally {
+                $reader.Close()
+                $reader.Dispose()
+            }
 
             # Get SQL datatypes by best guess on first data row
             $sqldatatypes = @();
@@ -393,30 +402,41 @@ function Import-DbaCsv {
 
             $file = (Resolve-Path -Path $filename).ProviderPath
 
-            # Does the second line contain the specified delimiter?
-            try {
-                $firstlines = Get-Content -Path $file -TotalCount 2 -ErrorAction Stop
-            } catch {
-                Stop-Function -Continue -Message "Failure reading $file" -ErrorRecord $_
-            }
-            if (-not $SingleColumn) {
-                if ($firstlines -notmatch $Delimiter) {
-                    Stop-Function -Message "Delimiter ($Delimiter) not found in first few rows of $file. If this is a single column import, please specify -SingleColumn"
-                    return
+            $ext = [System.IO.Path]::GetExtension($file).ToLower()
+
+            $isCompressed = $ext -eq '.gz'
+
+            if (-not $isCompressed) {
+                # Does the second line contain the specified delimiter?
+                try {
+                    $firstlines = Get-Content -Path $file -TotalCount 2 -ErrorAction Stop
+                } catch {
+                    Stop-Function -Continue -Message "Failure reading $file" -ErrorRecord $_
                 }
+                if (-not $SingleColumn) {
+                    if ($firstlines -notmatch $Delimiter) {
+                        Stop-Function -Message "Delimiter ($Delimiter) not found in first few rows of $file. If this is a single column import, please specify -SingleColumn"
+                        return
+                    }
+                }
+            }
+
+            $filename = [IO.Path]::GetFileNameWithoutExtension($file)
+
+            # already trimmed the ".gz", if there is a ".csv", trim it as well.
+            if ($isCompressed -and $filename.EndsWith(".csv", [System.StringComparison]::OrdinalIgnoreCase)) {
+                $filename = [IO.Path]::GetFileNameWithoutExtension($filename)
             }
 
             # Automatically generate Table name if not specified
             if (-not $PSBoundParameters.Table) {
-                $filename = [IO.Path]::GetFileNameWithoutExtension($file)
-
                 if ($filename.IndexOf('.') -ne -1) { $periodFound = $true }
 
                 if ($UseFileNameForSchema -and $periodFound -and -not $PSBoundParameters.Schema) {
                     $table = $filename.Remove(0, $filename.IndexOf('.') + 1)
                     Write-Message -Level Verbose -Message "Table name not specified, using $table from file name"
                 } else {
-                    $table = [IO.Path]::GetFileNameWithoutExtension($file)
+                    $table = $filename
                     Write-Message -Level Verbose -Message "Table name not specified, using $table"
                 }
             }
@@ -424,7 +444,6 @@ function Import-DbaCsv {
             # Use dbo as schema name if not specified in parms, or as first string before a period in filename
             if (-not ($PSBoundParameters.Schema)) {
                 if ($UseFileNameForSchema) {
-                    $filename = [IO.Path]::GetFileNameWithoutExtension($file)
                     if ($filename.IndexOf('.') -eq -1) {
                         $schema = "dbo"
                         Write-Message -Level Verbose -Message "Schema not specified, and not found in file name, using dbo"
@@ -496,7 +515,7 @@ function Import-DbaCsv {
                     Write-Message -Level Verbose -Message "Table does not exist"
                     if ($PSCmdlet.ShouldProcess($instance, "Creating table $table")) {
                         try {
-                            New-SqlTable -Path $file -Delimiter $Delimiter -FirstRowHeader $FirstRowHeader -SqlConn $sqlconn -Transaction $transaction
+                            New-SqlTable -Path $file -Delimiter $Delimiter -FirstRowHeader $FirstRowHeader -SqlConn $sqlconn -Transaction $transaction -IsCompressed $isCompressed
                         } catch {
                             Stop-Function -Continue -Message "Failure" -ErrorRecord $_
                         }
@@ -603,8 +622,12 @@ function Import-DbaCsv {
                         }
 
                         $stream = [System.IO.File]::OpenRead($File);
-                        $progressStream = New-Object Sqlcollaborative.Dbatools.IO.ProgressStream($stream, $progressCallback, 0.05)
-                        $textReader = New-Object System.IO.StreamReader($progressStream, [System.Text.Encoding]::$Encoding)
+                        $stream = New-Object Sqlcollaborative.Dbatools.IO.ProgressStream($stream, $progressCallback, 0.05)
+                        if ($isCompressed) {
+                            $stream = New-Object System.IO.Compression.GZipStream($stream, [System.IO.Compression.CompressionMode]::Decompress)
+                        }
+
+                        $textReader = New-Object System.IO.StreamReader($stream, [System.Text.Encoding]::$Encoding)
 
                         $reader = New-Object LumenWorks.Framework.IO.Csv.CsvReader(
                             $textReader,
@@ -644,7 +667,7 @@ function Import-DbaCsv {
                         $bulkCopy.Add_SqlRowsCopied( {
                                 $script:totalRowsCopied += (Get-AdjustedTotalRowsCopied -ReportedRowsCopied $args[1].RowsCopied -PreviousRowsCopied $script:prevRowsCopied).NewRowCountAdded
 
-                                $tstamp = $(Get-Date -format 'yyyyMMddHHmmss')
+                                $tstamp = $(Get-Date -Format 'yyyyMMddHHmmss')
                                 Write-Message -Level Verbose -Message "[$tstamp] The bulk copy library reported RowsCopied = $($args[1].RowsCopied). The previous RowsCopied = $($script:prevRowsCopied). The adjusted total rows copied = $($script:totalRowsCopied)"
                                 # progress is written by the ProgressStream callback
                                 # save the previous count of rows copied to be used on the next event notification
@@ -696,9 +719,9 @@ function Import-DbaCsv {
                         $script:totalRowsCopied += (Get-AdjustedTotalRowsCopied -ReportedRowsCopied $finalRowCountReported -PreviousRowsCopied $script:prevRowsCopied).NewRowCountAdded
 
                         if ($completed) {
-                            Write-Progress -id 1 -activity "Inserting $($script:totalRowsCopied) rows" -status "Complete" -Completed
+                            Write-Progress -Id 1 -Activity "Inserting $($script:totalRowsCopied) rows" -Status "Complete" -Completed
                         } else {
-                            Write-Progress -id 1 -activity "Inserting $($script:totalRowsCopied) rows" -status "Failed" -Completed
+                            Write-Progress -Id 1 -Activity "Inserting $($script:totalRowsCopied) rows" -Status "Failed" -Completed
                         }
                     }
                 }
