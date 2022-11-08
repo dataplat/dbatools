@@ -50,6 +50,8 @@ function New-DbaConnectionString {
         When opening a connection to a Azure SQL Database, set the connection timeout to 30 seconds.
 
     .PARAMETER EncryptConnection
+        Valid options are: 'Mandatory', 'Optional', 'Strict'
+
         When true, SQL Server uses SSL encryption for all data sent between the client and server if the server has a certificate installed. Recognized values are true, false, yes, and no. For more information, see Connection String Syntax.
 
         Beginning in .NET Framework 4.5, when TrustServerCertificate is false and Encrypt is true, the server name (or IP address) in a SQL Server SSL certificate must exactly match the server name (or IP address) specified in the connection string. Otherwise, the connection attempt will fail. For information about support for certificates whose subject starts with a wildcard character (*), see Accepted wildcards used by server certificates for server authentication.
@@ -194,7 +196,8 @@ function New-DbaConnectionString {
         [string]$ClientName = "custom connection",
         [int]$ConnectTimeout,
         [string]$Database,
-        [switch]$EncryptConnection,
+        [ValidateSet('Mandatory', 'Optional', 'Strict')]
+        [string]$EncryptConnection = (Get-DbatoolsConfigValue -FullName 'sql.connection.encrypt'),
         [string]$FailoverPartner,
         [switch]$IsActiveDirectoryUniversalAuth,
         [int]$LockTimeout,
@@ -210,7 +213,7 @@ function New-DbaConnectionString {
         [ValidateSet('CaptureSql', 'ExecuteAndCaptureSql', 'ExecuteSql')]
         [string]$SqlExecutionModes,
         [int]$StatementTimeout,
-        [switch]$TrustServerCertificate,
+        [switch]$TrustServerCertificate = (Get-DbatoolsConfigValue -FullName 'sql.connection.trustcert'),
         [string]$WorkstationId,
         [switch]$Legacy,
         [string]$AppendConnectionString
@@ -315,7 +318,12 @@ function New-DbaConnectionString {
                         if ($ClientName) { $connStringBuilder['Application Name'] = $ClientName }
                         if ($ConnectTimeout) { $connStringBuilder['Connect Timeout'] = $ConnectTimeout }
                         if ($Database) { $connStringBuilder['Initial Catalog'] = $Database }
-                        if ($EncryptConnection) { $connStringBuilder['Encrypt'] = $true } else { $connStringBuilder['Encrypt'] = $false }
+                        # https://learn.microsoft.com/en-us/dotnet/api/microsoft.data.sqlclient.sqlconnectionstringbuilder.encrypt?view=sqlclient-dotnet-standard-5.0
+                        if ($instance -notmatch "localdb") {
+                            if ($EncryptConnection) { $connStringBuilder['Encrypt'] = $EncryptConnection }
+                        } else {
+                            Write-Message -Level Verbose -Message "localdb detected, skipping unsupported keyword 'Encryption'"
+                        }
                         if ($FailoverPartner) { $connStringBuilder['Failover Partner'] = $FailoverPartner }
                         if ($MaxPoolSize) { $connStringBuilder['Max Pool Size'] = $MaxPoolSize }
                         if ($MinPoolSize) { $connStringBuilder['Min Pool Size'] = $MinPoolSize }

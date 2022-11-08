@@ -173,7 +173,13 @@ function Invoke-DbaAsync {
     }
     process {
         if (Test-FunctionInterrupt) { return }
-        $Conn = $SQLConnection.SqlConnectionObject
+
+        # $SQLConnection.SqlConnectionObject is a System.Data connection and we need a Microsoft.Data connection
+        if ($PSVersionTable.PSEdition -ne "Core") {
+            $Conn = New-Object Microsoft.Data.SqlClient.SqlConnection $SQLConnection.SqlConnectionObject.ConnectionString
+        } else {
+            $Conn = $SQLConnection.SqlConnectionObject
+        }
 
 
         Write-Message -Level Debug -Message "Stripping GOs from source"
@@ -186,7 +192,9 @@ function Invoke-DbaAsync {
             if ($NoExec) {
                 $runningStatement = "SET NOEXEC ON; " + $piece + " ;SET NOEXEC OFF;"
             }
-            $cmd = New-Object Microsoft.Data.SqlClient.SqlCommand($runningStatement, $conn)
+            $cmd = New-Object Microsoft.Data.SqlClient.SqlCommand
+            $cmd.CommandText = $runningStatement
+            $cmd.Connection = $conn
             $cmd.CommandType = $CommandType
             $cmd.CommandTimeout = $QueryTimeout
 

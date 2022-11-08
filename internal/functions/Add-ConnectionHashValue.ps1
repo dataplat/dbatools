@@ -8,11 +8,11 @@ function Add-ConnectionHashValue {
     Write-Message -Level Debug -Message "Adding to connection hash"
 
     if ($Value.ConnectionContext.NonPooledConnection -or $Value.NonPooledConnection) {
-        if (-not $script:connectionhash[$Key]) {
-            $script:connectionhash[$Key] = @( )
+        if (-not $script:connectionhash["$Key"]) {
+            $script:connectionhash["$Key"] = @( )
         }
-        $script:connectionhash[$Key] += $Value
+        $script:connectionhash["$Key"] += @($Value)
     } else {
-        $script:connectionhash[$Key] = $Value
+        $script:connectionhash["$Key"] = @($Value)
     }
 }
