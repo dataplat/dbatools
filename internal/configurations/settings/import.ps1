@@ -1,18 +1,18 @@
 # Handle dotsourcing on import
-Set-DbatoolsConfig -Name 'Import.DoDotSource' -Value $false -Initialize -Validation bool -Handler {
+Set-DbatoolsConfig -Name 'Import.SerialImport' -Value $false -Initialize -Validation bool -Handler {
     try {
         if (-not (Test-Path "HKCU:\SOFTWARE\Microsoft\WindowsPowerShell\dbatools\System")) {
             $null = New-Item "HKCU:\SOFTWARE\Microsoft\WindowsPowerShell\dbatools\System" -ItemType Container -Force -ErrorAction Stop
         }
         if ($args[0]) {
-            $null = New-ItemProperty "HKCU:\SOFTWARE\Microsoft\WindowsPowerShell\dbatools\System" -Name DoDotSource -PropertyType DWORD -Value 1 -Force -ErrorAction Stop
+            $null = New-ItemProperty "HKCU:\SOFTWARE\Microsoft\WindowsPowerShell\dbatools\System" -Name SerialImport -PropertyType DWORD -Value 1 -Force -ErrorAction Stop
         } else {
-            $null = New-ItemProperty "HKCU:\SOFTWARE\Microsoft\WindowsPowerShell\dbatools\System" -Name DoDotSource -PropertyType DWORD -Value 0 -Force -ErrorAction Stop
+            $null = New-ItemProperty "HKCU:\SOFTWARE\Microsoft\WindowsPowerShell\dbatools\System" -Name SerialImport -PropertyType DWORD -Value 0 -Force -ErrorAction Stop
         }
         # Scope Boundary exception: $cfg is defined in Set-DbatoolsConfig
         Register-DbatoolsConfig -Config $cfg
     } catch {
-        Write-Message -Level Warning -Message "Failed to apply configuration 'Import.DoDotSource'" -ErrorRecord $_ -Target 'Import.DoDotSource'
+        Write-Message -Level Warning -Message "Failed to apply configuration 'Import.SerialImport'" -ErrorRecord $_ -Target 'Import.SerialImport'
     }
 } -Description "Causes the module to be imported using dotsourcing. Security policy may require it, also useful for debugging. This configuration setting persists across all PowerShell consoles for this user."
 
