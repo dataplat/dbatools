@@ -7,7 +7,7 @@ function Invoke-DbaXEReplay {
         This command replays events from Read-DbaXEFile. It is simplistic in its approach.
 
         - Writes all queries to a temp sql file
-        - Executes temp file using . $sqlcmd so that batches are executed properly
+        - Executes temp file using sqlcmd so that batches are executed properly
         - Deletes temp file
 
     .PARAMETER SqlInstance
@@ -27,7 +27,7 @@ function Invoke-DbaXEReplay {
         Each Response can be limited to processing specific events, while ignoring all the other ones. When this attribute is omitted, all events are processed.
 
     .PARAMETER Raw
-        By dafault, the results of . $sqlcmd are collected, cleaned up and displayed. If you'd like to see all results immeidately, use Raw.
+        By dafault, the results of sqlcmd are collected, cleaned up and displayed. If you'd like to see all results immeidately, use Raw.
 
     .PARAMETER InputObject
         Accepts the object output of Read-DbaXESession.
@@ -87,7 +87,10 @@ function Invoke-DbaXEReplay {
         $filename = "$temp\dbatools-replay-$timestamp.sql"
         Set-Content $filename -Value $null
 
-        $sqlcmd = "$script:PSModuleRoot\bin\sqlcmd\sqlcmd.exe"
+        if (-not (Get-Command sqlcmd -ErrorAction Ignore)) {
+            Stop-Function -Message "sqlcmd is not installed. Please install the SQL Server Command Line Utilities."
+            return
+        }
     }
     process {
         if (Test-FunctionInterrupt) { return }
@@ -120,19 +123,19 @@ function Invoke-DbaXEReplay {
             if ($Raw) {
                 Write-Message -Message "Invoking XEReplay against $instance running on $($server.name) with raw output" -Level Verbose
                 if (Test-Bound -ParameterName SqlCredential) {
-                    . $sqlcmd -S $instance -i $filename -U $SqlCredential.Username -P $SqlCredential.GetNetworkCredential().Password
+                    . sqlcmd -S $instance -i $filename -U $SqlCredential.Username -P $SqlCredential.GetNetworkCredential().Password
                     continue
                 } else {
-                    . $sqlcmd -S $instance -i $filename
+                    . sqlcmd -S $instance -i $filename
                     continue
                 }
             }
 
             Write-Message -Message "Invoking XEReplay against $instance running on $($server.name)" -Level Verbose
             if (Test-Bound -ParameterName SqlCredential) {
-                $output = . $sqlcmd -S $instance -i $filename -U $SqlCredential.Username -P $SqlCredential.GetNetworkCredential().Password
+                $output = . sqlcmd -S $instance -i $filename -U $SqlCredential.Username -P $SqlCredential.GetNetworkCredential().Password
             } else {
-                $output = . $sqlcmd -S $instance -i $filename
+                $output = . sqlcmd -S $instance -i $filename
             }
 
             foreach ($line in $output) {
