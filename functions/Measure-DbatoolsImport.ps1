@@ -27,5 +27,5 @@ function Measure-DbatoolsImport {
 
         Displays the import load times of the dbatools PowerShell module
     #>
-    [Dataplat.Dbatools.dbaSystem.DebugHost]::ImportTime
+    $script:dbatools_ImportPerformance | Where-Object Duration -ne '00:00:00'
 }
