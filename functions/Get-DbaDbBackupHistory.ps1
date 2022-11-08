@@ -31,7 +31,7 @@ function Get-DbaDbBackupHistory {
         If this switch is enabled, a large amount of information is returned, similar to what SQL Server itself returns.
 
     .PARAMETER Since
-        Specifies a DateTime object to use as the starting point for the search for backups.
+        Specifies a starting point for the search for backups. If a DateTime object is passed, that will be used. If a TimeSpan object is passed, that will be added to Get-Date and the resulting value will be used.
 
     .PARAMETER RecoveryFork
         Specifies the Recovery Fork you want backup history for.
@@ -161,7 +161,7 @@ function Get-DbaDbBackupHistory {
         [switch]$IncludeCopyOnly,
         [Parameter(ParameterSetName = "NoLast")]
         [switch]$Force,
-        [DateTime]$Since = (Get-Date '01/01/1970'),
+        [psobject]$Since = (Get-Date '01/01/1970'),
         [ValidateScript( { ($_ -match '^(\{){0,1}[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}(\}){0,1}$') -or ('' -eq $_) })]
         [string]$RecoveryFork,
         [switch]$Last,
@@ -227,6 +227,13 @@ function Get-DbaDbBackupHistory {
     process {
         if ($AgCheck) {
             Stop-Function -Message "Parameter AGCheck is deprecated. This command does not check for history from replicas even if this paramater is not provided. The functionality to also get the history from all replicas if SqlInstance is part on an availability group has been moved to Get-DbaAgBackupHistory."
+            return
+        }
+
+        if ($Since -is [timespan]) {
+            $Since = (Get-Date).add($Since);
+        } elseif ($Since -isnot [datetime]) {
+            Stop-Function -Message "-Since must be either a DateTime or TimeSpan object."
             return
         }
 

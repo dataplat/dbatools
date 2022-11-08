@@ -4,11 +4,11 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
+        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
         [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'InputObject', 'EnableException'
         $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
         It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
         }
     }
 }
@@ -22,6 +22,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         Foreach ($row in $results) {
             It "Should return Compatiblity level of Version100 for $($row.database)" {
                 $row.Compatibility | Should Be "Version100"
+                $row.DatabaseId | Should -Be (Get-DbaDatabase -SqlInstance $script:instance1 -Database $row.Database).Id
             }
         }
     }
@@ -33,6 +34,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
         It "Should return Compatiblity level of Version100 for $($results.database)" {
             $results.Compatibility | Should Be "Version100"
+            $results.DatabaseId | Should -Be (Get-DbaDatabase -SqlInstance $script:instance1 -Database master).Id
         }
     }
 }

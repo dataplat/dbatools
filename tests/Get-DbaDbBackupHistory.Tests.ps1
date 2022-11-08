@@ -159,4 +159,22 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             ($Ignore | Where-Object Type -like '*diff*').count | Should -Be 0
         }
     }
+
+    Context "Testing the Since parameter" {
+        It "DateTime for -Since" {
+            $results = Get-DbaDbBackupHistory -SqlInstance $script:instance1 -Database $dbname -Since (Get-Date).AddMinutes(-5)
+            $results.count | Should -BeGreaterThan 0
+        }
+
+        It "TimeSpan for -Since" {
+            $results = Get-DbaDbBackupHistory -SqlInstance $script:instance1 -Database $dbname -Since (New-TimeSpan -Minutes -5)
+            $results.count | Should -BeGreaterThan 0
+        }
+
+        It "Invalid type for -Since" {
+            $results = Get-DbaDbBackupHistory -SqlInstance $script:instance1 -Database $dbname -Since "-" -WarningVariable warning
+            $results | Should -BeNullOrEmpty
+            $warning | Should -BeLike "*-Since must be either a DateTime or TimeSpan object*"
+        }
+    }
 }

@@ -88,6 +88,7 @@ function Get-DbaDbCompatibility {
                 InstanceName  = $server.ServiceName
                 SqlInstance   = $server.DomainInstanceName
                 Database      = $db.Name
+                DatabaseId    = $db.Id
                 Compatibility = $db.CompatibilityLevel
             }
         }
