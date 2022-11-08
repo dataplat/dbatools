@@ -59,8 +59,11 @@ function Get-DbaPbmStore {
         [PSCredential]$SqlCredential,
         [switch]$EnableException
     )
-
+    begin {
+        Add-PbmLibrary
+    }
     process {
+        if (Test-FunctionInterrupt) { return }
         if ($PSVersionTable.PSEdition -eq "Core") {
             Stop-Function -Message "This command is not supported on Linux or macOS"
             return

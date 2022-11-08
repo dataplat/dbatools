@@ -51,10 +51,14 @@ function Get-DbaPbmCategorySubscription {
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [Parameter(ValueFromPipeline)]
-        [Microsoft.SqlServer.Management.Dmf.PolicyStore[]]$InputObject,
+        [psobject[]]$InputObject,
         [switch]$EnableException
     )
+    begin {
+        Add-PbmLibrary
+    }
     process {
+        if (Test-FunctionInterrupt) { return }
         foreach ($instance in $SqlInstance) {
             $InputObject += Get-DbaPbmStore -SqlInstance $instance -SqlCredential $SqlCredential
         }

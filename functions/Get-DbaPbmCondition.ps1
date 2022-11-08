@@ -58,11 +58,15 @@ function Get-DbaPbmCondition {
         [PSCredential]$SqlCredential,
         [string[]]$Condition,
         [Parameter(ValueFromPipeline)]
-        [Microsoft.SqlServer.Management.Dmf.PolicyStore[]]$InputObject,
+        [psobject[]]$InputObject,
         [switch]$IncludeSystemObject,
         [switch]$EnableException
     )
+    begin {
+        Add-PbmLibrary
+    }
     process {
+        if (Test-FunctionInterrupt) { return }
         if ($PSVersionTable.PSEdition -eq "Core") {
             Stop-Function -Message "This command is not yet supported in PowerShell Core"
             return
