@@ -1,13 +1,16 @@
 foreach ($item in (Get-ChildItem "$script:PSModuleRoot\internal\maintenance" -Filter *.ps1)) {
-    if ($script:doDotSource) { . $item.FullName }
-    else { $ExecutionContext.InvokeCommand.InvokeScript($false, ([scriptblock]::Create([io.file]::ReadAllText($item.FullName))), $null, $null) }
+    if ($script:serialimport) {
+        . $item.FullName
+    }
+    else {
+        Import-Command -Path $item.FullName
+    }
 }
 
 $scriptBlock = {
     $script:___ScriptName = 'dbatools-maintenance'
 
     # Import module in a way where internals are available
-    $dbatools_disableTimeMeasurements = $true
     Import-Module "$([Dataplat.Dbatools.dbaSystem.SystemHost]::ModuleBase)\dbatools.psm1"
 
     try {
