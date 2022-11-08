@@ -36,11 +36,11 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             $null = Import-DbaCsv -SqlInstance $script:instance1 -Path $col2 -Database tempdb -Table cols
             $null = Import-DbaCsv -SqlInstance $script:instance1 -Path $pipe3 -Database tempdb -Table cols2 -Delimiter "|" -AutoCreateTable
             $results = Invoke-DbaQuery -SqlInstance $script:instance1 -Database tempdb -Query "select * from cols"
-            $results | Where-Object third -notmatch "three" | Should -BeNullOrEmpty
-            $results | Where-Object firstcol -notmatch "one" | Should -BeNullOrEmpty
+            $results | Where-Object third -NotMatch "three" | Should -BeNullOrEmpty
+            $results | Where-Object firstcol -NotMatch "one" | Should -BeNullOrEmpty
             $results = Invoke-DbaQuery -SqlInstance $script:instance1 -Database tempdb -Query "select * from cols2"
-            $results | Where-Object third -notmatch "three" | Should -BeNullOrEmpty
-            $results | Where-Object firstcol -notmatch "one" | Should -BeNullOrEmpty
+            $results | Where-Object third -NotMatch "three" | Should -BeNullOrEmpty
+            $results | Where-Object firstcol -NotMatch "one" | Should -BeNullOrEmpty
         }
 
         if (-not $env:appveyor) {

@@ -340,7 +340,7 @@ function Import-DbaCsv {
             )
 
             $stream = [System.IO.File]::OpenRead($Path);
-            if($IsCompressed) {
+            if ($IsCompressed) {
                 $stream = New-Object System.IO.Compression.GZipStream($stream, [System.IO.Compression.CompressionMode]::Decompress)
             }
             try {
@@ -667,7 +667,7 @@ function Import-DbaCsv {
                         $bulkCopy.Add_SqlRowsCopied( {
                                 $script:totalRowsCopied += (Get-AdjustedTotalRowsCopied -ReportedRowsCopied $args[1].RowsCopied -PreviousRowsCopied $script:prevRowsCopied).NewRowCountAdded
 
-                                $tstamp = $(Get-Date -format 'yyyyMMddHHmmss')
+                                $tstamp = $(Get-Date -Format 'yyyyMMddHHmmss')
                                 Write-Message -Level Verbose -Message "[$tstamp] The bulk copy library reported RowsCopied = $($args[1].RowsCopied). The previous RowsCopied = $($script:prevRowsCopied). The adjusted total rows copied = $($script:totalRowsCopied)"
                                 # progress is written by the ProgressStream callback
                                 # save the previous count of rows copied to be used on the next event notification
@@ -719,9 +719,9 @@ function Import-DbaCsv {
                         $script:totalRowsCopied += (Get-AdjustedTotalRowsCopied -ReportedRowsCopied $finalRowCountReported -PreviousRowsCopied $script:prevRowsCopied).NewRowCountAdded
 
                         if ($completed) {
-                            Write-Progress -id 1 -activity "Inserting $($script:totalRowsCopied) rows" -status "Complete" -Completed
+                            Write-Progress -Id 1 -Activity "Inserting $($script:totalRowsCopied) rows" -Status "Complete" -Completed
                         } else {
-                            Write-Progress -id 1 -activity "Inserting $($script:totalRowsCopied) rows" -status "Failed" -Completed
+                            Write-Progress -Id 1 -Activity "Inserting $($script:totalRowsCopied) rows" -Status "Failed" -Completed
                         }
                     }
                 }
