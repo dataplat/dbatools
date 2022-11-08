@@ -78,13 +78,23 @@ $scriptBlock = {
             $path = [Dataplat.Dbatools.Message.LogHost]::LoggingPath
             if (-not (Test-Path $path)) {
                 $root = New-Item $path -ItemType Directory -Force -ErrorAction Stop
-            } else { $root = Get-Item -Path $path }
+            } else {
+                $root = Get-Item -Path $path
+            }
 
             $errorFiles = Get-ChildItem -Path $root.FullName -Filter "dbatools_$($pid)_error_*.xml" | Sort-Object LastWriteTime -Descending
-            [int]$num_Error = if ($errorFiles) { (Select-String -InputObject $errorFiles[0].Name -Pattern "(\d+)" -AllMatches).Matches[1].Value } else { 0 }
+            [int]$num_Error = if ($errorFiles) {
+                (Select-String -InputObject $errorFiles[0].Name -Pattern "(\d+)" -AllMatches).Matches[1].Value
+            } else {
+                0
+            }
 
             $messageFiles = Get-ChildItem -Path $root.FullName -Filter "dbatools_$($pid)_message_*.xml" | Sort-Object LastWriteTime -Descending
-            [int]$num_Message = if ($messageFiles) { (Select-String -InputObject $messageFiles[0].Name -Pattern "(\d+)" -AllMatches).Matches[1].Value } else { 0 }
+            [int]$num_Message = if ($messageFiles) {
+                (Select-String -InputObject $messageFiles[0].Name -Pattern "(\d+)" -AllMatches).Matches[1].Value
+            } else {
+                0
+            }
 
             #region Process Errors
             while ([Dataplat.Dbatools.Message.LogHost]::OutQueueError.Count -gt 0) {
