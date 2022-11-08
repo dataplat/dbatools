@@ -7,6 +7,6 @@ $commonParam = @{
     Module   = $ExecutionContext.SessionState.Module
 }
 
-Import-DbaCmdlet @commonParam -Name Write-Message -Type ([Sqlcollaborative.Dbatools.Commands.WriteMessageCommand])
-Import-DbaCmdlet @commonParam -Name Select-DbaObject -Type ([Sqlcollaborative.Dbatools.Commands.SelectDbaObjectCommand])
-Import-DbaCmdlet @commonParam -Name Set-DbatoolsConfig -Type ([Sqlcollaborative.Dbatools.Commands.SetDbatoolsConfigCommand])
+Import-DbaCmdlet @commonParam -Name Write-Message -Type ([Dataplat.Dbatools.Commands.WriteMessageCommand])
+Import-DbaCmdlet @commonParam -Name Select-DbaObject -Type ([Dataplat.Dbatools.Commands.SelectDbaObjectCommand])
+Import-DbaCmdlet @commonParam -Name Set-DbatoolsConfig -Type ([Dataplat.Dbatools.Commands.SetDbatoolsConfigCommand])

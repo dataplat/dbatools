@@ -70,7 +70,7 @@ function Import-DbatoolsConfig {
         $ModuleVersion = 1,
 
         [Parameter(ParameterSetName = "ModuleName")]
-        [Sqlcollaborative.Dbatools.Configuration.ConfigScope]
+        [Dataplat.Dbatools.Configuration.ConfigScope]
         $Scope = "FileUserLocal, FileUserShared, FileSystem",
 
         [Parameter(ParameterSetName = "Path")]
@@ -146,7 +146,7 @@ function Import-DbatoolsConfig {
 
             foreach ($value in $data.Values) {
                 if (-not $value.KeepPersisted) { Set-DbatoolsConfig -FullName $value.FullName -Value $value.Value -EnableException:$EnableException }
-                else { Set-DbatoolsConfig -FullName $value.FullName -Value ([Sqlcollaborative.Dbatools.Configuration.ConfigurationHost]::ConvertFromPersistedValue($value.Value, $value.Type)) -EnableException:$EnableException }
+                else { Set-DbatoolsConfig -FullName $value.FullName -Value ([Dataplat.Dbatools.Configuration.ConfigurationHost]::ConvertFromPersistedValue($value.Value, $value.Type)) -EnableException:$EnableException }
             }
         }
     }

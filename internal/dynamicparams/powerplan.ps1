@@ -1,6 +1,6 @@
 #region Initialize Cache
-if (-not [Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Cache["powerplan"]) {
-    [Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Cache["powerplan"] = @()
+if (-not [Dataplat.Dbatools.TabExpansion.TabExpansionHost]::Cache["powerplan"]) {
+    [Dataplat.Dbatools.TabExpansion.TabExpansionHost]::Cache["powerplan"] = @()
 }
 #endregion Initialize Cache
 
@@ -15,7 +15,7 @@ $ScriptBlock = {
     )
 
 
-    foreach ($name in ([Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Cache["powerplan"] | Where-DbaObject -Like "$wordToComplete*")) {
+    foreach ($name in ([Dataplat.Dbatools.TabExpansion.TabExpansionHost]::Cache["powerplan"] | Where-DbaObject -Like "$wordToComplete*")) {
         New-DbaTeppCompletionResult -CompletionText $name -ToolTip $name
     }
 }
@@ -23,8 +23,8 @@ Register-DbaTeppScriptblock -ScriptBlock $ScriptBlock -Name "powerplan"
 #endregion Tepp Data return
 
 #region Initialize Cache
-if (-not [Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Cache["powerplan"]) {
-    [Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Cache["powerplan"] = 'High Performance', 'Balanced', 'Power saver'
+if (-not [Dataplat.Dbatools.TabExpansion.TabExpansionHost]::Cache["powerplan"]) {
+    [Dataplat.Dbatools.TabExpansion.TabExpansionHost]::Cache["powerplan"] = 'High Performance', 'Balanced', 'Power saver'
 }
 #endregion Initialize Cache
 Register-DbaTeppScriptblock -ScriptBlock $ScriptBlock -Name powerplan

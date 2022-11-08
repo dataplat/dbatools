@@ -58,7 +58,7 @@ function Unregister-DbatoolsConfig {
     [CmdletBinding(DefaultParameterSetName = 'Pipeline')]
     param (
         [Parameter(ValueFromPipeline = $true, ParameterSetName = 'Pipeline')]
-        [Sqlcollaborative.Dbatools.Configuration.Config[]]
+        [Dataplat.Dbatools.Configuration.Config[]]
         $ConfigurationItem,
 
         [Parameter(ValueFromPipeline = $true, ParameterSetName = 'Pipeline')]
@@ -73,7 +73,7 @@ function Unregister-DbatoolsConfig {
         [string]
         $Name = "*",
 
-        [Sqlcollaborative.Dbatools.Configuration.ConfigScope]
+        [Dataplat.Dbatools.Configuration.ConfigScope]
         $Scope = "UserDefault"
     )
 
@@ -154,7 +154,7 @@ function Unregister-DbatoolsConfig {
 
         foreach ($item in $FullName) {
             # Ignore string-casted configurations
-            if ($item -ceq "Sqlcollaborative.Dbatools.Configuration.Config") { continue }
+            if ($item -ceq "Dataplat.Dbatools.Configuration.Config") { continue }
 
             # Registry
             foreach ($hive in ($registryProperties | Where-Object { $_.PSObject.Properties.Name -eq $item })) {

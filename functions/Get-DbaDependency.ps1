@@ -173,7 +173,7 @@ function Get-DbaDependency {
                     $richobject = $Server.GetSmoObject($Item.urn)
                     $parent = $Server.GetSmoObject($Item.Parent.Urn)
 
-                    $NewObject = New-Object Sqlcollaborative.Dbatools.Database.Dependency
+                    $NewObject = New-Object Dataplat.Dbatools.Database.Dependency
                     $NewObject.ComputerName = $server.ComputerName
                     $NewObject.ServiceName = $server.ServiceName
                     $NewObject.SqlInstance = $server.DomainInstanceName

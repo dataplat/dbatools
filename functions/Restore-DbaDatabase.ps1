@@ -561,7 +561,7 @@ function Restore-DbaDatabase {
                 $DatabaseName = ''
             }
             Write-Message -message "ParameterSet  = Restore" -Level Verbose
-            if ($TrustDbBackupHistory -or $path[0].GetType().ToString() -eq 'Sqlcollaborative.Dbatools.Database.BackupHistory') {
+            if ($TrustDbBackupHistory -or $path[0].GetType().ToString() -eq 'Dataplat.Dbatools.Database.BackupHistory') {
                 foreach ($f in $path) {
                     Write-Message -Level Verbose -Message "Trust Database Backup History Set"
                     if ("BackupPath" -notin $f.PSObject.Properties.name) {
@@ -609,7 +609,7 @@ function Restore-DbaDatabase {
                     }
                 }
                 Write-Message -Level Verbose -Message "Unverified input, full scans - $($files -join ';')"
-                if ($BackupHistory.GetType().ToString() -eq 'Sqlcollaborative.Dbatools.Database.BackupHistory') {
+                if ($BackupHistory.GetType().ToString() -eq 'Dataplat.Dbatools.Database.BackupHistory') {
                     $BackupHistory = @($BackupHistory)
                 }
                 $BackupHistory += Get-DbaBackupInformation -SqlInstance $RestoreInstance -SqlCredential $SqlCredential -Path $files -DirectoryRecurse:$DirectoryRecurse -MaintenanceSolution:$MaintenanceSolutionBackup -IgnoreDiffBackup:$IgnoreDiffBackup -IgnoreLogBackup:$IgnoreLogBackup -AzureCredential $AzureCredential -NoXpDirRecurse:$NoXpDirRecurse

@@ -1,7 +1,7 @@
 $scriptBlock = {
-    while ([Sqlcollaborative.Dbatools.Connection.ConnectionHost]::PSSessionCountExpired -gt 0) {
+    while ([Dataplat.Dbatools.Connection.ConnectionHost]::PSSessionCountExpired -gt 0) {
         $session = $null
-        $session = [Sqlcollaborative.Dbatools.Connection.ConnectionHost]::PSSessionPurgeExpired()
+        $session = [Dataplat.Dbatools.Connection.ConnectionHost]::PSSessionPurgeExpired()
         if ($null -ne $session) { $session | Remove-PSSession }
     }
 }

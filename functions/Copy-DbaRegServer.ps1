@@ -117,7 +117,7 @@ function Copy-DbaRegServer {
                     Type              = "CMS Destination Group"
                     Status            = $null
                     Notes             = $null
-                    DateTime          = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
+                    DateTime          = [Dataplat.Dbatools.Utility.DbaDateTime](Get-Date)
                 }
 
                 if ($null -ne $destinationGroup) {
@@ -166,7 +166,7 @@ function Copy-DbaRegServer {
                     Type              = "CMS Instance"
                     Status            = $null
                     Notes             = $null
-                    DateTime          = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
+                    DateTime          = [Dataplat.Dbatools.Utility.DbaDateTime](Get-Date)
                 }
 
                 if ($serverName.ToLowerInvariant() -eq $toCmStore.DomainInstanceName.ToLowerInvariant()) {
@@ -252,7 +252,7 @@ function Copy-DbaRegServer {
                         Type              = "CMS Group"
                         Status            = $null
                         Notes             = $null
-                        DateTime          = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
+                        DateTime          = [Dataplat.Dbatools.Utility.DbaDateTime](Get-Date)
                     }
                 }
 

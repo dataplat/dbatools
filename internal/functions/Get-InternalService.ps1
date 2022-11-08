@@ -53,13 +53,13 @@ function Get-InternalService {
         $DisplayName,
 
         [Parameter(ValueFromPipeline)]
-        [Sqlcollaborative.Dbatools.Parameter.DbaInstanceParameter[]]
+        [Dataplat.Dbatools.Parameter.DbaInstanceParameter[]]
         $ComputerName = $env:COMPUTERNAME,
 
         [System.Management.Automation.PSCredential]
         $Credential,
 
-        [Sqlcollaborative.Dbatools.Connection.ManagementConnectionType[]]
+        [Dataplat.Dbatools.Connection.ManagementConnectionType[]]
         $DoNotUse,
 
         [switch]$EnableException

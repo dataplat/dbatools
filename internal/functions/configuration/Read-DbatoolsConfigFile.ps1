@@ -3,22 +3,22 @@ function Read-DbatoolsConfigFile
 <#
     .SYNOPSIS
         Reads a configuration file and parses it.
-    
+
     .DESCRIPTION
         Reads a configuration file and parses it.
-    
+
     .PARAMETER Path
         The path to the file to parse.
-    
+
     .PARAMETER WebLink
         The link to a website to download straight as raw json.
-    
+
     .PARAMETER RawJson
         Raw json data to interpret.
-    
+
     .EXAMPLE
         PS C:\> Read-DbatoolsConfigFile -Path config.json
-    
+
         Reads the config.json file and returns interpreted configuration objects.
 #>
     [CmdletBinding()]
@@ -26,16 +26,16 @@ function Read-DbatoolsConfigFile
         [Parameter(Mandatory = $true, ParameterSetName = 'Path')]
         [string]
         $Path,
-        
+
         [Parameter(Mandatory = $true, ParameterSetName = 'Weblink')]
         [string]
         $Weblink,
-        
+
         [Parameter(Mandatory = $true, ParameterSetName = 'RawJson')]
         [string]
         $RawJson
     )
-    
+
     #region Utility Function
     function New-ConfigItem
     {
@@ -43,21 +43,21 @@ function Read-DbatoolsConfigFile
         [CmdletBinding()]
         param (
             $FullName,
-            
+
             $Value,
-            
+
             $Type,
-            
+
             [switch]
             $KeepPersisted,
-            
+
             [switch]
             $Enforced,
-            
+
             [switch]
             $Policy
         )
-        
+
         [pscustomobject]@{
             FullName        = $FullName
             Value            = $Value
@@ -67,7 +67,7 @@ function Read-DbatoolsConfigFile
             Policy            = $Policy
         }
     }
-    
+
     function Get-WebContent
     {
         [CmdletBinding()]
@@ -75,13 +75,13 @@ function Read-DbatoolsConfigFile
             [string]
             $WebLink
         )
-        
+
         $webClient = New-Object System.Net.WebClient
         $webClient.Encoding = [System.Text.Encoding]::UTF8
         $webClient.DownloadString($WebLink)
     }
     #endregion Utility Function
-    
+
     if ($Path)
     {
         if (-not (Test-Path $Path)) { return }
@@ -95,16 +95,16 @@ function Read-DbatoolsConfigFile
     {
         $data = $RawJson | ConvertFrom-Json -ErrorAction Stop
     }
-    
+
     foreach ($item in $data)
     {
         #region No Version
         if (-not $item.Version)
         {
-            New-ConfigItem -FullName $item.FullName -Value ([Sqlcollaborative.Dbatools.Configuration.ConfigurationHost]::ConvertFromPersistedValue($item.Value, $item.Type))
+            New-ConfigItem -FullName $item.FullName -Value ([Dataplat.Dbatools.Configuration.ConfigurationHost]::ConvertFromPersistedValue($item.Value, $item.Type))
         }
         #endregion No Version
-        
+
         #region Version One
         if ($item.Version -eq 1)
         {
@@ -117,7 +117,7 @@ function Read-DbatoolsConfigFile
                 }
                 else
                 {
-                    New-ConfigItem -FullName $item.FullName -Value ([Sqlcollaborative.Dbatools.Configuration.ConfigurationHost]::ConvertFromPersistedValue($item.Value, $item.Type))
+                    New-ConfigItem -FullName $item.FullName -Value ([Dataplat.Dbatools.Configuration.ConfigurationHost]::ConvertFromPersistedValue($item.Value, $item.Type))
                 }
             }
         }

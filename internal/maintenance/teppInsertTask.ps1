@@ -1,5 +1,5 @@
 $scriptBlock = {
-    $ModuleRoot = [Sqlcollaborative.Dbatools.dbaSystem.SystemHost]::ModuleBase
+    $ModuleRoot = [Dataplat.Dbatools.dbaSystem.SystemHost]::ModuleBase
 
     $ExecutionContext.InvokeCommand.InvokeScript($false, ([scriptblock]::Create([io.file]::ReadAllText((Resolve-Path "$ModuleRoot\internal\functions\tabcompletion\Register-DbaTeppScriptblock.ps1").ProviderPath))), $null, $null)
     $ExecutionContext.InvokeCommand.InvokeScript($false, ([scriptblock]::Create([io.file]::ReadAllText((Resolve-Path "$ModuleRoot\internal\functions\tabcompletion\Register-DbaTeppInstanceCacheBuilder.ps1").ProviderPath))), $null, $null)
@@ -8,6 +8,6 @@ $scriptBlock = {
         $ExecutionContext.InvokeCommand.InvokeScript($false, ([scriptblock]::Create([io.file]::ReadAllText($file.FullName))), $null, $null)
     }
 
-    [Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::CalculateTabExpansion()
+    [Dataplat.Dbatools.TabExpansion.TabExpansionHost]::CalculateTabExpansion()
 }
 Register-DbaMaintenanceTask -Name "teppInsertTask" -ScriptBlock $scriptBlock -Once

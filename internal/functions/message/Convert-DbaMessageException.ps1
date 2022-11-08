@@ -40,23 +40,23 @@ function Convert-DbaMessageException {
 
     $typeName = $Exception.GetType().FullName.ToLowerInvariant()
 
-    if ([Sqlcollaborative.Dbatools.Message.MessageHost]::ExceptionTransforms.ContainsKey($typeName)) {
-        $scriptBlock = [Sqlcollaborative.Dbatools.Message.MessageHost]::ExceptionTransforms[$typeName]
+    if ([Dataplat.Dbatools.Message.MessageHost]::ExceptionTransforms.ContainsKey($typeName)) {
+        $scriptBlock = [Dataplat.Dbatools.Message.MessageHost]::ExceptionTransforms[$typeName]
         try {
             $tempException = $ExecutionContext.InvokeCommand.InvokeScript($false, ([scriptblock]::Create($scriptBlock.ToString())), $null, $Exception)
             return $tempException
         } catch {
-            [Sqlcollaborative.Dbatools.Message.MessageHost]::WriteTransformError($_, $FunctionName, $ModuleName, $Exception, "Exception", ([System.Management.Automation.Runspaces.Runspace]::DefaultRunspace.InstanceId))
+            [Dataplat.Dbatools.Message.MessageHost]::WriteTransformError($_, $FunctionName, $ModuleName, $Exception, "Exception", ([System.Management.Automation.Runspaces.Runspace]::DefaultRunspace.InstanceId))
             return $Exception
         }
     }
 
-    if ($transform = [Sqlcollaborative.Dbatools.Message.MessageHost]::ExceptionTransformList.Get($typeName, $ModuleName, $FunctionName)) {
+    if ($transform = [Dataplat.Dbatools.Message.MessageHost]::ExceptionTransformList.Get($typeName, $ModuleName, $FunctionName)) {
         try {
             $tempException = $ExecutionContext.InvokeCommand.InvokeScript($false, ([scriptblock]::Create($transform.ScriptBlock.ToString())), $null, $Exception)
             return $tempException
         } catch {
-            [Sqlcollaborative.Dbatools.Message.MessageHost]::WriteTransformError($_, $FunctionName, $ModuleName, $Exception, "Target", ([System.Management.Automation.Runspaces.Runspace]::DefaultRunspace.InstanceId))
+            [Dataplat.Dbatools.Message.MessageHost]::WriteTransformError($_, $FunctionName, $ModuleName, $Exception, "Target", ([System.Management.Automation.Runspaces.Runspace]::DefaultRunspace.InstanceId))
             return $Exception
         }
     }

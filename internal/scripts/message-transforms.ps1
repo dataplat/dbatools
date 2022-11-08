@@ -1,8 +1,8 @@
-Register-DbaMessageTransform -TargetType 'Sqlcollaborative.Dbatools.Parameter.DbaInstanceParameter' -ScriptBlock {
+Register-DbaMessageTransform -TargetType 'Dataplat.Dbatools.Parameter.DbaInstanceParameter' -ScriptBlock {
     $args[0].FullSmoName
 }
 Register-DbaMessageTransform -TargetType 'Microsoft.SqlServer.Management.Smo.Server' -ScriptBlock {
-    ([Sqlcollaborative.Dbatools.Parameter.DbaInstanceParameter]$args[0]).FullSmoName
+    ([Dataplat.Dbatools.Parameter.DbaInstanceParameter]$args[0]).FullSmoName
 }
 
 Register-DbaMessageTransform -ExceptionTypeFilter '*' -ScriptBlock {

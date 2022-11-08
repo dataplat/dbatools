@@ -37,7 +37,7 @@ function Remove-DbaMessageLevelModifier {
         $Name,
 
         [Parameter(ValueFromPipeline)]
-        [Sqlcollaborative.Dbatools.Message.MessageLevelModifier[]]
+        [Dataplat.Dbatools.Message.MessageLevelModifier[]]
         $Modifier,
 
         [switch]$EnableException
@@ -45,17 +45,17 @@ function Remove-DbaMessageLevelModifier {
 
     process {
         foreach ($item in $Name) {
-            if ($item -eq "Sqlcollaborative.Dbatools.Message.MessageLevelModifier") { continue }
+            if ($item -eq "Dataplat.Dbatools.Message.MessageLevelModifier") { continue }
 
-            if ([Sqlcollaborative.Dbatools.Message.MessageHost]::MessageLevelModifiers.ContainsKey($item.ToLowerInvariant())) {
-                [Sqlcollaborative.Dbatools.Message.MessageHost]::MessageLevelModifiers.Remove($item.ToLowerInvariant())
+            if ([Dataplat.Dbatools.Message.MessageHost]::MessageLevelModifiers.ContainsKey($item.ToLowerInvariant())) {
+                [Dataplat.Dbatools.Message.MessageHost]::MessageLevelModifiers.Remove($item.ToLowerInvariant())
             } else {
                 Stop-Function -Message "No message level modifier of name $item found." -EnableException $EnableException -Category InvalidArgument -Continue
             }
         }
         foreach ($item in $Modifier) {
-            if ([Sqlcollaborative.Dbatools.Message.MessageHost]::MessageLevelModifiers.ContainsKey($item.Name)) {
-                [Sqlcollaborative.Dbatools.Message.MessageHost]::MessageLevelModifiers.Remove($item.Name)
+            if ([Dataplat.Dbatools.Message.MessageHost]::MessageLevelModifiers.ContainsKey($item.Name)) {
+                [Dataplat.Dbatools.Message.MessageHost]::MessageLevelModifiers.Remove($item.Name)
             } else {
                 Stop-Function -Message "No message level modifier of name $($item.Name) found." -EnableException $EnableException -Category InvalidArgument -Continue
             }

@@ -137,7 +137,7 @@ function Get-DbaDiskSpace {
 
                 Write-Message -Level Verbose -Message "Processing disk: $($disk.Name)" -Target $computer.ComputerName
 
-                $info = New-Object Sqlcollaborative.Dbatools.Computer.DiskSpace
+                $info = New-Object Dataplat.Dbatools.Computer.DiskSpace
                 $info.ComputerName = $computer.ComputerName
                 $info.Name = $disk.Name
                 $info.Label = $disk.Label

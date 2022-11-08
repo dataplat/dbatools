@@ -33,7 +33,7 @@ function Convert-DbaMessageLevel {
     [CmdletBinding()]
     param (
         [Parameter(Mandatory)]
-        [Sqlcollaborative.Dbatools.Message.MessageLevel]
+        [Dataplat.Dbatools.Message.MessageLevel]
         $OriginalLevel,
 
         [Parameter(Mandatory)]
@@ -56,13 +56,13 @@ function Convert-DbaMessageLevel {
 
     $number = $OriginalLevel.value__
 
-    if ([Sqlcollaborative.Dbatools.Message.MessageHost]::NestedLevelDecrement -gt 0) {
+    if ([Dataplat.Dbatools.Message.MessageHost]::NestedLevelDecrement -gt 0) {
         $depth = (Get-PSCallStack).Count - 3
         if ($FromStopFunction) { $depth = $depth - 1 }
-        $number = $number + $depth * ([Sqlcollaborative.Dbatools.Message.MessageHost]::NestedLevelDecrement)
+        $number = $number + $depth * ([Dataplat.Dbatools.Message.MessageHost]::NestedLevelDecrement)
     }
 
-    foreach ($modifier in [Sqlcollaborative.Dbatools.Message.MessageHost]::MessageLevelModifiers.Values) {
+    foreach ($modifier in [Dataplat.Dbatools.Message.MessageHost]::MessageLevelModifiers.Values) {
         if ($modifier.AppliesTo($FunctionName, $ModuleName, $Tags)) {
             $number = $number + $modifier.Modifier
         }
@@ -71,5 +71,5 @@ function Convert-DbaMessageLevel {
     # Finalize number and return
     if ($number -lt 1) { $number = 1 }
     if ($number -gt 9) { $number = 9 }
-    return ([Sqlcollaborative.Dbatools.Message.MessageLevel]$number)
+    return ([Dataplat.Dbatools.Message.MessageLevel]$number)
 }

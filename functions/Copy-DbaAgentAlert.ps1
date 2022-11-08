@@ -123,7 +123,7 @@ function Copy-DbaAgentAlert {
                         Type              = "Alert Defaults"
                         Status            = $null
                         Notes             = $null
-                        DateTime          = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
+                        DateTime          = [Dataplat.Dbatools.Utility.DbaDateTime](Get-Date)
                     }
                     try {
                         Write-Message -Message "Creating Alert Defaults" -Level Verbose
@@ -154,7 +154,7 @@ function Copy-DbaAgentAlert {
                     Type              = "Agent Alert"
                     Notes             = $null
                     Status            = $null
-                    DateTime          = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
+                    DateTime          = [Dataplat.Dbatools.Utility.DbaDateTime](Get-Date)
                 }
                 if (($Alert -and $Alert -notcontains $alertName) -or ($ExcludeAlert -and $ExcludeAlert -contains $alertName)) {
                     continue
@@ -263,7 +263,7 @@ function Copy-DbaAgentAlert {
                         Type              = "Agent Alert Job Association"
                         Notes             = "Associated with $jobName"
                         Status            = $null
-                        DateTime          = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
+                        DateTime          = [Dataplat.Dbatools.Utility.DbaDateTime](Get-Date)
                     }
                     if ($PSCmdlet.ShouldProcess($destinstance, "Adding $alertName to $jobName")) {
                         try {
@@ -296,7 +296,7 @@ function Copy-DbaAgentAlert {
                             Type              = "Agent Alert Notification"
                             Notes             = $null
                             Status            = $null
-                            DateTime          = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
+                            DateTime          = [Dataplat.Dbatools.Utility.DbaDateTime](Get-Date)
                         }
                         # can't add them this way, we need to modify the existing one or give all options that are supported.
                         foreach ($notify in $notifications) {

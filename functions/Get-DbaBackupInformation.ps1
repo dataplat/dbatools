@@ -325,7 +325,7 @@ function Get-DbaBackupInformation {
                         3 { "Log" }
                     }
                 }
-                $historyObject = New-Object Sqlcollaborative.Dbatools.Database.BackupHistory
+                $historyObject = New-Object Dataplat.Dbatools.Database.BackupHistory
                 $historyObject.ComputerName = $group.Group[0].MachineName
                 $historyObject.InstanceName = $group.Group[0].ServiceName
                 $historyObject.SqlInstance = $group.Group[0].ServerName

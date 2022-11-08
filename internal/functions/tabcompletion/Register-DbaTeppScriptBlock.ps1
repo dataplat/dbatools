@@ -26,10 +26,10 @@ function Register-DbaTeppScriptblock {
         $Name
     )
 
-    $scp = New-Object Sqlcollaborative.Dbatools.TabExpansion.ScriptContainer
+    $scp = New-Object Dataplat.Dbatools.TabExpansion.ScriptContainer
     $scp.Name = $Name.ToLowerInvariant()
     $scp.ScriptBlock = $ScriptBlock
     $scp.LastDuration = New-TimeSpan -Seconds -1
 
-    [Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Scripts[$Name.ToLowerInvariant()] = $scp
+    [Dataplat.Dbatools.TabExpansion.TabExpansionHost]::Scripts[$Name.ToLowerInvariant()] = $scp
 }

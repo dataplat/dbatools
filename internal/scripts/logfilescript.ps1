@@ -11,14 +11,14 @@ $scriptBlock = {
         $totalLength = $Null
         $files = Get-ChildItem -Path $Path.FullName -Filter "dbatools_$($pid)_error_*.xml" | Sort-Object LastWriteTime
         $totalLength = $files | Measure-Object Length -Sum | Select-Object -ExpandProperty Sum
-        if (([Sqlcollaborative.Dbatools.Message.LogHost]::MaxErrorFileBytes) -gt $totalLength) { return }
+        if (([Dataplat.Dbatools.Message.LogHost]::MaxErrorFileBytes) -gt $totalLength) { return }
 
         $removed = 0
         foreach ($file in $files) {
             $removed += $file.Length
             Remove-Item -Path $file.FullName -Force -Confirm:$false
 
-            if (($totalLength - $removed) -lt ([Sqlcollaborative.Dbatools.Message.LogHost]::MaxErrorFileBytes)) { break }
+            if (($totalLength - $removed) -lt ([Dataplat.Dbatools.Message.LogHost]::MaxErrorFileBytes)) { break }
         }
     }
 
@@ -28,17 +28,17 @@ $scriptBlock = {
             $Path
         )
 
-        if ([Sqlcollaborative.Dbatools.Message.LogHost]::MaxMessagefileCount -eq 0) { return }
+        if ([Dataplat.Dbatools.Message.LogHost]::MaxMessagefileCount -eq 0) { return }
 
         $files = Get-ChildItem -Path $Path.FullName -Filter "dbatools_$($pid)_message_*.log" | Sort-Object LastWriteTime
-        if (([Sqlcollaborative.Dbatools.Message.LogHost]::MaxMessagefileCount) -ge $files.Count) { return }
+        if (([Dataplat.Dbatools.Message.LogHost]::MaxMessagefileCount) -ge $files.Count) { return }
 
         $removed = 0
         foreach ($file in $files) {
             $removed++
             Remove-Item -Path $file.FullName -Force -Confirm:$false
 
-            if (($files.Count - $removed) -le ([Sqlcollaborative.Dbatools.Message.LogHost]::MaxMessagefileCount)) { break }
+            if (($files.Count - $removed) -le ([Dataplat.Dbatools.Message.LogHost]::MaxMessagefileCount)) { break }
         }
     }
 
@@ -49,21 +49,21 @@ $scriptBlock = {
         )
 
         # Kill too old files
-        Get-ChildItem -Path "$($Path.FullName)\*" -Include "*.xml", "*.log" -Filter "*" | Where-Object LastWriteTime -LT ((Get-Date) - ([Sqlcollaborative.Dbatools.Message.LogHost]::MaxLogFileAge)) |Remove-Item -Force -Confirm:$false
+        Get-ChildItem -Path "$($Path.FullName)\*" -Include "*.xml", "*.log" -Filter "*" | Where-Object LastWriteTime -LT ((Get-Date) - ([Dataplat.Dbatools.Message.LogHost]::MaxLogFileAge)) |Remove-Item -Force -Confirm:$false
 
         # Handle the global overcrowding
         $files = Get-ChildItem -Path "$($Path.FullName)\*" -Include "*.xml", "*.log" -Filter "*" | Sort-Object LastWriteTime
         if (-not ($files)) { return }
         $totalLength = $files | Measure-Object Length -Sum | Select-Object -ExpandProperty Sum
 
-        if (([Sqlcollaborative.Dbatools.Message.LogHost]::MaxTotalFolderSize) -gt $totalLength) { return }
+        if (([Dataplat.Dbatools.Message.LogHost]::MaxTotalFolderSize) -gt $totalLength) { return }
 
         $removed = 0
         foreach ($file in $files) {
             $removed += $file.Length
             Remove-Item -Path $file.FullName -Force -Confirm:$false
 
-            if (($totalLength - $removed) -lt ([Sqlcollaborative.Dbatools.Message.LogHost]::MaxTotalFolderSize)) { break }
+            if (($totalLength - $removed) -lt ([Dataplat.Dbatools.Message.LogHost]::MaxTotalFolderSize)) { break }
         }
     }
     #endregion Helper Functions
@@ -71,11 +71,11 @@ $scriptBlock = {
     try {
         while ($true) {
             # This portion is critical to gracefully closing the script
-            if ([Sqlcollaborative.Dbatools.Runspace.RunspaceHost]::Runspaces[$___ScriptName.ToLowerInvariant()].State -notlike "Running") {
+            if ([Dataplat.Dbatools.Runspace.RunspaceHost]::Runspaces[$___ScriptName.ToLowerInvariant()].State -notlike "Running") {
                 break
             }
 
-            $path = [Sqlcollaborative.Dbatools.Message.LogHost]::LoggingPath
+            $path = [Dataplat.Dbatools.Message.LogHost]::LoggingPath
             if (-not (Test-Path $path)) {
                 $root = New-Item $path -ItemType Directory -Force -ErrorAction Stop
             } else { $root = Get-Item -Path $path }
@@ -87,11 +87,11 @@ $scriptBlock = {
             [int]$num_Message = if ($messageFiles) { (Select-String -InputObject $messageFiles[0].Name -Pattern "(\d+)" -AllMatches).Matches[1].Value } else { 0 }
 
             #region Process Errors
-            while ([Sqlcollaborative.Dbatools.Message.LogHost]::OutQueueError.Count -gt 0) {
+            while ([Dataplat.Dbatools.Message.LogHost]::OutQueueError.Count -gt 0) {
                 $num_Error++
 
                 $Record = $null
-                $null = [Sqlcollaborative.Dbatools.Message.LogHost]::OutQueueError.TryDequeue([ref]$Record)
+                $null = [Dataplat.Dbatools.Message.LogHost]::OutQueueError.TryDequeue([ref]$Record)
 
                 if ($Record) {
                     $Record | Export-Clixml -Path "$($root.FullName)\dbatools_$($pid)_error_$($num_Error).xml" -Depth 3
@@ -102,18 +102,18 @@ $scriptBlock = {
             #endregion Process Errors
 
             #region Process Logs
-            while ([Sqlcollaborative.Dbatools.Message.LogHost]::OutQueueLog.Count -gt 0) {
+            while ([Dataplat.Dbatools.Message.LogHost]::OutQueueLog.Count -gt 0) {
                 $CurrentFile = "$($root.FullName)\dbatools_$($pid)_message_$($num_Message).log"
                 if (Test-Path $CurrentFile) {
                     $item = Get-Item $CurrentFile
-                    if ($item.Length -gt ([Sqlcollaborative.Dbatools.Message.LogHost]::MaxMessagefileBytes)) {
+                    if ($item.Length -gt ([Dataplat.Dbatools.Message.LogHost]::MaxMessagefileBytes)) {
                         $num_Message++
                         $CurrentFile = "$($root.FullName)\dbatools_$($pid)_message_$($num_Message).log"
                     }
                 }
 
                 $Entry = $null
-                $null = [Sqlcollaborative.Dbatools.Message.LogHost]::OutQueueLog.TryDequeue([ref]$Entry)
+                $null = [Dataplat.Dbatools.Message.LogHost]::OutQueueLog.TryDequeue([ref]$Entry)
                 if ($Entry) {
                     Add-Content -Path $CurrentFile -Value (ConvertTo-Csv -InputObject $Entry -NoTypeInformation)[1]
                 }
@@ -127,7 +127,7 @@ $scriptBlock = {
         }
     } catch { }
     finally {
-        [Sqlcollaborative.Dbatools.Runspace.RunspaceHost]::Runspaces[$___ScriptName.ToLowerInvariant()].SignalStopped()
+        [Dataplat.Dbatools.Runspace.RunspaceHost]::Runspaces[$___ScriptName.ToLowerInvariant()].SignalStopped()
     }
 }
 

@@ -699,7 +699,7 @@ function Get-DbaDbBackupHistory {
                         $compressedBackupSize = $null
                         $ratio = 1
                     }
-                    $historyObject = New-Object Sqlcollaborative.Dbatools.Database.BackupHistory
+                    $historyObject = New-Object Dataplat.Dbatools.Database.BackupHistory
                     $historyObject.ComputerName = $server.ComputerName
                     $historyObject.InstanceName = $server.ServiceName
                     $historyObject.SqlInstance = $server.DomainInstanceName

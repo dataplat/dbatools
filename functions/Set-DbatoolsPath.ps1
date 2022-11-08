@@ -40,8 +40,8 @@ function Set-DbatoolsPath {
         [Parameter(ParameterSetName = 'Register', Mandatory = $true)]
         [switch]$Register,
         [Parameter(ParameterSetName = 'Register')]
-        [Sqlcollaborative.Dbatools.Configuration.ConfigScope]
-        $Scope = [Sqlcollaborative.Dbatools.Configuration.ConfigScope]::UserDefault
+        [Dataplat.Dbatools.Configuration.ConfigScope]
+        $Scope = [Dataplat.Dbatools.Configuration.ConfigScope]::UserDefault
     )
 
     process {

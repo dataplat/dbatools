@@ -106,7 +106,7 @@ function New-DbaCmConnection {
     [CmdletBinding(SupportsShouldProcess, DefaultParameterSetName = 'Credential')]
     param (
         [Parameter(ValueFromPipeline)]
-        [Sqlcollaborative.Dbatools.Parameter.DbaCmConnectionParameter[]]
+        [Dataplat.Dbatools.Parameter.DbaCmConnectionParameter[]]
         $ComputerName = $env:COMPUTERNAME,
         [Parameter(ParameterSetName = "Credential")]
         [PSCredential]
@@ -116,7 +116,7 @@ function New-DbaCmConnection {
         $UseWindowsCredentials,
         [switch]
         $OverrideExplicitCredential,
-        [Sqlcollaborative.Dbatools.Connection.ManagementConnectionType]
+        [Dataplat.Dbatools.Connection.ManagementConnectionType]
         $DisabledConnectionTypes = 'None',
         [switch]
         $DisableBadCredentialCache,
@@ -147,7 +147,7 @@ function New-DbaCmConnection {
                 if (-not $connectionObject.Success) { Stop-Function -Message "Failed to interpret computername input: $($connectionObject.InputObject)" -Category InvalidArgument -Target $connectionObject.InputObject -Continue }
                 Write-Message -Level VeryVerbose -Message "Processing computer: $($connectionObject.Connection.ComputerName)" -Target $connectionObject.Connection
 
-                $connection = New-Object -TypeName Sqlcollaborative.Dbatools.Connection.ManagementConnection -ArgumentList $connectionObject.Connection.ComputerName
+                $connection = New-Object -TypeName Dataplat.Dbatools.Connection.ManagementConnection -ArgumentList $connectionObject.Connection.ComputerName
                 if (Test-Bound "Credential") { $connection.Credentials = $Credential }
                 if (Test-Bound "UseWindowsCredentials") {
                     $connection.Credentials = $null
@@ -165,7 +165,7 @@ function New-DbaCmConnection {
 
                 if (-not $disable_cache) {
                     Write-Message -Level Verbose -Message "Writing connection to cache"
-                    [Sqlcollaborative.Dbatools.Connection.ConnectionHost]::Connections[$connectionObject.Connection.ComputerName] = $connection
+                    [Dataplat.Dbatools.Connection.ConnectionHost]::Connections[$connectionObject.Connection.ComputerName] = $connection
                 } else { Write-Message -Level Verbose -Message "Skipping writing to cache, since the cache has been disabled." }
                 $connection
             }

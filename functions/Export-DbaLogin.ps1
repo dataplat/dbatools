@@ -213,7 +213,7 @@ function Export-DbaLogin {
         foreach ($input in $InputObject) {
             $inputType = $input.GetType().FullName
             switch ($inputType) {
-                'Sqlcollaborative.Dbatools.Parameter.DbaInstanceParameter' {
+                'Dataplat.Dbatools.Parameter.DbaInstanceParameter' {
                     Write-Message -Level Verbose -Message "Processing Server through InputObject"
                     try {
                         $server = Connect-DbaInstance -SqlInstance $input -SqlCredential $SqlCredential

@@ -52,11 +52,11 @@ function Register-DbaRunspace {
         [switch]$EnableException
     )
 
-    if ([Sqlcollaborative.Dbatools.Runspace.RunspaceHost]::Runspaces.ContainsKey($Name.ToLowerInvariant())) {
+    if ([Dataplat.Dbatools.Runspace.RunspaceHost]::Runspaces.ContainsKey($Name.ToLowerInvariant())) {
         Write-Message -Level Verbose -Message "Updating runspace: $($Name.ToLowerInvariant())" -Target $Name.ToLowerInvariant()
-        [Sqlcollaborative.Dbatools.Runspace.RunspaceHost]::Runspaces[$Name.ToLowerInvariant()].SetScript($ScriptBlock)
+        [Dataplat.Dbatools.Runspace.RunspaceHost]::Runspaces[$Name.ToLowerInvariant()].SetScript($ScriptBlock)
     } else {
         Write-Message -Level Verbose -Message "Registering runspace: $($Name.ToLowerInvariant())" -Target $Name.ToLowerInvariant()
-        [Sqlcollaborative.Dbatools.Runspace.RunspaceHost]::Runspaces[$Name.ToLowerInvariant()] = New-Object Sqlcollaborative.Dbatools.Runspace.RunspaceContainer($Name.ToLowerInvariant(), $ScriptBlock)
+        [Dataplat.Dbatools.Runspace.RunspaceHost]::Runspaces[$Name.ToLowerInvariant()] = New-Object Dataplat.Dbatools.Runspace.RunspaceContainer($Name.ToLowerInvariant(), $ScriptBlock)
     }
 }

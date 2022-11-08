@@ -224,16 +224,16 @@ function Find-DbaInstance {
         [Parameter(Mandatory, ParameterSetName = 'Computer', ValueFromPipeline)]
         [DbaInstance[]]$ComputerName,
         [Parameter(Mandatory, ParameterSetName = 'Discover')]
-        [Sqlcollaborative.Dbatools.Discovery.DbaInstanceDiscoveryType]$DiscoveryType,
+        [Dataplat.Dbatools.Discovery.DbaInstanceDiscoveryType]$DiscoveryType,
         [System.Management.Automation.PSCredential]$Credential,
         [System.Management.Automation.PSCredential]$SqlCredential,
         [ValidateSet('Default', 'SQLService', 'Browser', 'TCPPort', 'All', 'SPN', 'Ping', 'SqlConnect', 'DNSResolve')]
-        [Sqlcollaborative.Dbatools.Discovery.DbaInstanceScanType[]]$ScanType = "Default",
+        [Dataplat.Dbatools.Discovery.DbaInstanceScanType[]]$ScanType = "Default",
         [Parameter(ParameterSetName = 'Discover')]
         [string[]]$IpAddress,
         [string]$DomainController,
         [int[]]$TCPPort = 1433,
-        [Sqlcollaborative.Dbatools.Discovery.DbaInstanceConfidenceLevel]$MinimumConfidence = 'Low',
+        [Dataplat.Dbatools.Discovery.DbaInstanceConfidenceLevel]$MinimumConfidence = 'Low',
         [switch]$EnableException
     )
 
@@ -260,10 +260,10 @@ function Find-DbaInstance {
                 [Parameter(ValueFromPipeline)][DbaInstance[]]$Target,
                 [PSCredential]$Credential,
                 [PSCredential]$SqlCredential,
-                [Sqlcollaborative.Dbatools.Discovery.DbaInstanceScanType]$ScanType,
+                [Dataplat.Dbatools.Discovery.DbaInstanceScanType]$ScanType,
                 [string]$DomainController,
                 [int[]]$TCPPort = 1433,
-                [Sqlcollaborative.Dbatools.Discovery.DbaInstanceConfidenceLevel]$MinimumConfidence,
+                [Dataplat.Dbatools.Discovery.DbaInstanceConfidenceLevel]$MinimumConfidence,
                 [switch]$EnableException
             )
 
@@ -295,7 +295,7 @@ function Find-DbaInstance {
                     #endregion Null variables to prevent scope lookup on conditional existence
 
                     #region Gather data
-                    if ($ScanType -band [Sqlcollaborative.Dbatools.Discovery.DbaInstanceScanType]::DNSResolve) {
+                    if ($ScanType -band [Dataplat.Dbatools.Discovery.DbaInstanceScanType]::DNSResolve) {
                         try {
                             Write-ProgressHelper -Activity "Processing: $($computer)" -StepNumber ($stepCounter++) -Message "Performing DNS resolution"
                             $resolution = [System.Net.Dns]::GetHostEntry($computer.ComputerName)
@@ -305,7 +305,7 @@ function Find-DbaInstance {
                         }
                     }
 
-                    if ($ScanType -band [Sqlcollaborative.Dbatools.Discovery.DbaInstanceScanType]::Ping) {
+                    if ($ScanType -band [Dataplat.Dbatools.Discovery.DbaInstanceScanType]::Ping) {
                         $ping = New-Object System.Net.NetworkInformation.Ping
                         try {
                             Write-ProgressHelper -Activity "Processing: $($computer)" -StepNumber ($stepCounter++) -Message "Waiting for ping response"
@@ -316,7 +316,7 @@ function Find-DbaInstance {
                         }
                     }
 
-                    if ($ScanType -band [Sqlcollaborative.Dbatools.Discovery.DbaInstanceScanType]::SPN) {
+                    if ($ScanType -band [Dataplat.Dbatools.Discovery.DbaInstanceScanType]::SPN) {
                         $computerByName = $computer.ComputerName
                         if ($resolution.HostName) { $computerByName = $resolution.HostName }
                         if ($computerByName -notmatch "$([dbargx]::IPv4)|$([dbargx]::IPv6)") {
@@ -334,7 +334,7 @@ function Find-DbaInstance {
                     Write-ProgressHelper -Activity "Processing: $($computer)" -StepNumber ($stepCounter++) -Message "Testing TCP ports"
                     $ports = $TCPPort | Test-TcpPort -ComputerName $computer
 
-                    if ($ScanType -band [Sqlcollaborative.Dbatools.Discovery.DbaInstanceScanType]::Browser) {
+                    if ($ScanType -band [Dataplat.Dbatools.Discovery.DbaInstanceScanType]::Browser) {
                         try {
                             Write-ProgressHelper -Activity "Processing: $($computer)" -StepNumber ($stepCounter++) -Message "Probing Browser service"
                             $browseResult = Get-SQLInstanceBrowserUDP -ComputerName $computer -EnableException
@@ -344,7 +344,7 @@ function Find-DbaInstance {
                         }
                     }
 
-                    if ($ScanType -band [Sqlcollaborative.Dbatools.Discovery.DbaInstanceScanType]::SqlService) {
+                    if ($ScanType -band [Dataplat.Dbatools.Discovery.DbaInstanceScanType]::SqlService) {
                         Write-ProgressHelper -Activity "Processing: $($computer)" -StepNumber ($stepCounter++) -Message "Finding SQL services using SQL WMI"
                         if ($Credential) {
                             $services = Get-DbaService -ComputerName $computer -Credential $Credential -EnableException -ErrorAction Ignore -WarningAction SilentlyCOntinue
@@ -391,8 +391,8 @@ function Find-DbaInstance {
                     #region Case: Nothing found
                     if ((-not $instanceNames) -and (-not $portsDetected)) {
                         if ($resolution -or ($pingReply.Status -like "Success")) {
-                            if ($MinimumConfidence -eq [Sqlcollaborative.Dbatools.Discovery.DbaInstanceConfidenceLevel]::None) {
-                                New-Object Sqlcollaborative.Dbatools.Discovery.DbaInstanceReport -Property @{
+                            if ($MinimumConfidence -eq [Dataplat.Dbatools.Discovery.DbaInstanceConfidenceLevel]::None) {
+                                New-Object Dataplat.Dbatools.Discovery.DbaInstanceReport -Property @{
                                     MachineName  = $computer.ComputerName
                                     ComputerName = $computer.ComputerName
                                     Ping         = $pingReply.Status -like 'Success'
@@ -412,7 +412,7 @@ function Find-DbaInstance {
 
                     #region Case: Named instance found
                     foreach ($instance in $instanceNames) {
-                        $object = New-Object Sqlcollaborative.Dbatools.Discovery.DbaInstanceReport
+                        $object = New-Object Dataplat.Dbatools.Discovery.DbaInstanceReport
                         $object.MachineName = $computer.ComputerName
                         $object.ComputerName = $computer.ComputerName
                         $object.InstanceName = $instance
@@ -461,7 +461,7 @@ function Find-DbaInstance {
                     foreach ($port in $portsDetected) {
                         if ($masterList.Port -contains $port) { continue }
 
-                        $object = New-Object Sqlcollaborative.Dbatools.Discovery.DbaInstanceReport
+                        $object = New-Object Dataplat.Dbatools.Discovery.DbaInstanceReport
                         $object.MachineName = $computer.ComputerName
                         $object.ComputerName = $computer.ComputerName
                         $object.Port = $port
@@ -496,7 +496,7 @@ function Find-DbaInstance {
                     }
                     #endregion Case: Port number found
 
-                    if ($ScanType -band [Sqlcollaborative.Dbatools.Discovery.DbaInstanceScanType]::SqlConnect) {
+                    if ($ScanType -band [Dataplat.Dbatools.Discovery.DbaInstanceScanType]::SqlConnect) {
                         $instanceHash = @{ }
                         $toDelete = @()
                         foreach ($dataSet in $masterList) {
@@ -731,7 +731,7 @@ function Find-DbaInstance {
 
                         #region Parse Output
                         $Response | Select-String "(ServerName;(\w+);InstanceName;(\w+);IsClustered;(\w+);Version;(\d+\.\d+\.\d+\.\d+);(tcp;(\d+)){0,1})" -AllMatches | Select-Object -ExpandProperty Matches | ForEach-Object {
-                            $obj = New-Object Sqlcollaborative.Dbatools.Discovery.DbaBrowserReply -Property @{
+                            $obj = New-Object Dataplat.Dbatools.Discovery.DbaBrowserReply -Property @{
                                 MachineName  = $computer.ComputerName
                                 ComputerName = $_.Groups[2].Value
                                 SqlInstance  = "$($_.Groups[2].Value)\$($_.Groups[3].Value)"
@@ -795,12 +795,12 @@ function Find-DbaInstance {
                         $client.Connect($ComputerName.ComputerName, $item)
                         if ($client.Connected) {
                             $client.Close()
-                            New-Object -TypeName Sqlcollaborative.Dbatools.Discovery.DbaPortReport -ArgumentList $ComputerName.ComputerName, $item, $true
+                            New-Object -TypeName Dataplat.Dbatools.Discovery.DbaPortReport -ArgumentList $ComputerName.ComputerName, $item, $true
                         } else {
-                            New-Object -TypeName Sqlcollaborative.Dbatools.Discovery.DbaPortReport -ArgumentList $ComputerName.ComputerName, $item, $false
+                            New-Object -TypeName Dataplat.Dbatools.Discovery.DbaPortReport -ArgumentList $ComputerName.ComputerName, $item, $false
                         }
                     } catch {
-                        New-Object -TypeName Sqlcollaborative.Dbatools.Discovery.DbaPortReport -ArgumentList $ComputerName.ComputerName, $item, $false
+                        New-Object -TypeName Dataplat.Dbatools.Discovery.DbaPortReport -ArgumentList $ComputerName.ComputerName, $item, $false
                     }
                 }
             }
@@ -1020,7 +1020,7 @@ function Find-DbaInstance {
             }
             'Discover' {
                 #region Discovery: DataSource Enumeration
-                if ($DiscoveryType -band ([Sqlcollaborative.Dbatools.Discovery.DbaInstanceDiscoveryType]::DataSourceEnumeration)) {
+                if ($DiscoveryType -band ([Dataplat.Dbatools.Discovery.DbaInstanceDiscoveryType]::DataSourceEnumeration)) {
                     try {
                         # Discover instances
                         foreach ($instance in ([System.Data.Sql.SqlDataSourceEnumerator]::Instance.GetDataSources())) {
@@ -1037,7 +1037,7 @@ function Find-DbaInstance {
                 #endregion Discovery: DataSource Enumeration
 
                 #region Discovery: SPN Search
-                if ($DiscoveryType -band ([Sqlcollaborative.Dbatools.Discovery.DbaInstanceDiscoveryType]::DomainSPN)) {
+                if ($DiscoveryType -band ([Dataplat.Dbatools.Discovery.DbaInstanceDiscoveryType]::DomainSPN)) {
                     try {
                         Get-DomainSPN -DomainController $DomainController -Credential $Credential -ErrorAction Stop | Invoke-SteppablePipeline -Pipeline $steppablePipeline
                     } catch {
@@ -1047,7 +1047,7 @@ function Find-DbaInstance {
                 #endregion Discovery: SPN Search
 
                 #region Discovery: IP Range
-                if ($DiscoveryType -band ([Sqlcollaborative.Dbatools.Discovery.DbaInstanceDiscoveryType]::IPRange)) {
+                if ($DiscoveryType -band ([Dataplat.Dbatools.Discovery.DbaInstanceDiscoveryType]::IPRange)) {
                     if ($IpAddress) {
                         foreach ($address in $IpAddress) {
                             Resolve-IPRange -IpAddress $address | Invoke-SteppablePipeline -Pipeline $steppablePipeline
@@ -1059,7 +1059,7 @@ function Find-DbaInstance {
                 #endregion Discovery: IP Range
 
                 #region Discovery: Windows Server Search
-                if ($DiscoveryType -band ([Sqlcollaborative.Dbatools.Discovery.DbaInstanceDiscoveryType]::DomainServer)) {
+                if ($DiscoveryType -band ([Dataplat.Dbatools.Discovery.DbaInstanceDiscoveryType]::DomainServer)) {
                     try {
                         Get-DomainServer -DomainController $DomainController -Credential $Credential -ErrorAction Stop | Invoke-SteppablePipeline -Pipeline $steppablePipeline
                     } catch {

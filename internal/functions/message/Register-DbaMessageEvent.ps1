@@ -48,7 +48,7 @@ function Register-DbaMessageEvent {
         You can find out the current runspace ID by running this:
         [System.Management.Automation.Runspaces.Runspace]::DefaultRunspace.InstanceId
         You can retrieve the primary runspace - the Guid used by the runspace the user sees - by running this:
-        [Sqlcollaborative.Dbatools.Utility.UtilityHost]::PrimaryRunspace
+        [Dataplat.Dbatools.Utility.UtilityHost]::PrimaryRunspace
 
     .EXAMPLE
         PS C:\> Register-DbaMessageEvent -Name 'Mymodule.OffloadTrigger' -ScriptBlock $ScriptBlock -Tag 'engine' -Module 'MyModule' -Level Warning
@@ -79,7 +79,7 @@ function Register-DbaMessageEvent {
 
         $TargetFilter,
 
-        [Sqlcollaborative.Dbatools.Message.MessageLevel[]]
+        [Dataplat.Dbatools.Message.MessageLevel[]]
         $LevelFilter,
 
         [string[]]
@@ -90,7 +90,7 @@ function Register-DbaMessageEvent {
     )
 
     $newName = $Name.ToLowerInvariant()
-    $eventSubscription = New-Object Sqlcollaborative.Dbatools.Message.MessageEventSubscription
+    $eventSubscription = New-Object Dataplat.Dbatools.Message.MessageEventSubscription
     $eventSubscription.Name = $newName
     $eventSubscription.ScriptBlock = $ScriptBlock
 
@@ -122,5 +122,5 @@ function Register-DbaMessageEvent {
         $eventSubscription.RunspaceFilter = $RunspaceFilter
     }
 
-    [Sqlcollaborative.Dbatools.Message.MessageHost]::Events[$newName] = $eventSubscription
+    [Dataplat.Dbatools.Message.MessageHost]::Events[$newName] = $eventSubscription
 }

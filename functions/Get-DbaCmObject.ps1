@@ -76,11 +76,11 @@ function Get-DbaCmObject {
         [Parameter(Mandatory, ParameterSetName = "Query")]
         [string]$Query,
         [Parameter(ValueFromPipeline)]
-        [Sqlcollaborative.Dbatools.Parameter.DbaCmConnectionParameter[]]
+        [Dataplat.Dbatools.Parameter.DbaCmConnectionParameter[]]
         $ComputerName = $env:COMPUTERNAME,
         [System.Management.Automation.PSCredential]$Credential,
         [string]$Namespace = "root\cimv2",
-        [Sqlcollaborative.Dbatools.Connection.ManagementConnectionType[]]
+        [Dataplat.Dbatools.Connection.ManagementConnectionType[]]
         $DoNotUse = "None",
         [switch]$Force,
         [switch]$SilentlyContinue,
@@ -89,7 +89,7 @@ function Get-DbaCmObject {
 
     begin {
         #region Configuration Values
-        $disable_cache = [Sqlcollaborative.Dbatools.Connection.ConnectionHost]::DisableCache
+        $disable_cache = [Dataplat.Dbatools.Connection.ConnectionHost]::DisableCache
 
         Write-Message -Level Verbose -Message "Configuration loaded | Cache disabled: $disable_cache"
         #endregion Configuration Values
@@ -128,7 +128,7 @@ function Get-DbaCmObject {
             if ($connection.CimDCOM -notlike "Disabled") { $enabledProtocols += ", CimDCOM" }
             if ($connection.Wmi -notlike "Disabled") { $enabledProtocols += ", Wmi" }
             if ($connection.PowerShellRemoting -notlike "Disabled") { $enabledProtocols += ", PowerShellRemoting" }
-            [Sqlcollaborative.Dbatools.Connection.ManagementConnectionType]$enabledProtocols = $enabledProtocols
+            [Dataplat.Dbatools.Connection.ManagementConnectionType]$enabledProtocols = $enabledProtocols
 
             # Create list of excluded connection types (Duplicates don't matter)
             $excluded = @()
@@ -137,7 +137,7 @@ function Get-DbaCmObject {
             :sub while ($true) {
                 try { $conType = $connection.GetConnectionType(($excluded -join ","), $Force) }
                 catch {
-                    if (-not $disable_cache) { [Sqlcollaborative.Dbatools.Connection.ConnectionHost]::Connections[$computer] = $connection }
+                    if (-not $disable_cache) { [Dataplat.Dbatools.Connection.ConnectionHost]::Connections[$computer] = $connection }
                     Stop-Function -Message "[$computer] Unable to find a connection to the target system. Ensure the name is typed correctly, and the server allows any of the following protocols: $enabledProtocols" -Target $computer -Category OpenError -Continue -ContinueLabel "main" -SilentlyContinue:$SilentlyContinue -ErrorRecord $_
                 }
 
@@ -152,7 +152,7 @@ function Get-DbaCmObject {
                             Write-Message -Level Verbose -Message "[$computer] Accessing computer using Cim over WinRM - Success"
                             $connection.ReportSuccess('CimRM')
                             $connection.AddGoodCredential($cred)
-                            if (-not $disable_cache) { [Sqlcollaborative.Dbatools.Connection.ConnectionHost]::Connections[$computer] = $connection }
+                            if (-not $disable_cache) { [Dataplat.Dbatools.Connection.ConnectionHost]::Connections[$computer] = $connection }
                             continue main
                         } catch {
                             Write-Message -Level Verbose -Message "[$computer] Accessing computer using Cim over WinRM - Failed"
@@ -167,7 +167,7 @@ function Get-DbaCmObject {
                                         # Ignore the global setting for bad credential cache disabling, since the connection object is aware of that state and will ignore input if it should.
                                         # This is due to the ability to locally override the global setting, thus it must be done on the object and can then be done in code
                                         $connection.AddBadCredential($cred)
-                                        if (-not $disable_cache) { [Sqlcollaborative.Dbatools.Connection.ConnectionHost]::Connections[$computer] = $connection }
+                                        if (-not $disable_cache) { [Dataplat.Dbatools.Connection.ConnectionHost]::Connections[$computer] = $connection }
                                         Stop-Function -Message "[$computer] Invalid connection credentials" -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $errorItem -SilentlyContinue:$SilentlyContinue -OverrideExceptionMessage
                                     } elseif ($errorItem.Exception.InnerException.MessageId -eq "HRESULT 0x80041013") {
                                         if ($ParSet -eq "Class") { Stop-Function -Message "[$computer] Failed to access $class in namespace $Namespace" -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $errorItem -SilentlyContinue:$SilentlyContinue -Exception $errorItem.Exception.InnerException }
@@ -264,7 +264,7 @@ function Get-DbaCmObject {
                             Write-Message -Level Verbose -Message "[$computer] Accessing computer using Cim over DCOM - Success"
                             $connection.ReportSuccess('CimDCOM')
                             $connection.AddGoodCredential($cred)
-                            if (-not $disable_cache) { [Sqlcollaborative.Dbatools.Connection.ConnectionHost]::Connections[$computer] = $connection }
+                            if (-not $disable_cache) { [Dataplat.Dbatools.Connection.ConnectionHost]::Connections[$computer] = $connection }
                             continue main
                         } catch {
                             Write-Message -Level Verbose -Message "[$computer] Accessing computer using Cim over DCOM - Failed"
@@ -279,7 +279,7 @@ function Get-DbaCmObject {
                                         # Ignore the global setting for bad credential cache disabling, since the connection object is aware of that state and will ignore input if it should.
                                         # This is due to the ability to locally override the global setting, thus it must be done on the object and can then be done in code
                                         $connection.AddBadCredential($cred)
-                                        if (-not $disable_cache) { [Sqlcollaborative.Dbatools.Connection.ConnectionHost]::Connections[$computer] = $connection }
+                                        if (-not $disable_cache) { [Dataplat.Dbatools.Connection.ConnectionHost]::Connections[$computer] = $connection }
                                         Stop-Function -Message "[$computer] Invalid connection credentials" -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $errorItem -SilentlyContinue:$SilentlyContinue -OverrideExceptionMessage
                                     } elseif ($errorItem.Exception.InnerException.MessageId -eq "HRESULT 0x80041013") {
                                         if ($ParSet -eq "Class") { Stop-Function -Message "[$computer] Failed to access $class in namespace $Namespace" -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $errorItem -SilentlyContinue:$SilentlyContinue -Exception $errorItem.Exception.InnerException }
@@ -397,7 +397,7 @@ function Get-DbaCmObject {
                             Write-Message -Level Verbose -Message "[$computer] Accessing computer using WMI - Success"
                             $connection.ReportSuccess('Wmi')
                             $connection.AddGoodCredential($cred)
-                            if (-not $disable_cache) { [Sqlcollaborative.Dbatools.Connection.ConnectionHost]::Connections[$computer] = $connection }
+                            if (-not $disable_cache) { [Dataplat.Dbatools.Connection.ConnectionHost]::Connections[$computer] = $connection }
                             continue main
                         } catch {
                             Write-Message -Level Verbose -Message "[$computer] Accessing computer using WMI - Failed" -ErrorRecord $_
@@ -406,7 +406,7 @@ function Get-DbaCmObject {
                                 # Ignore the global setting for bad credential cache disabling, since the connection object is aware of that state and will ignore input if it should.
                                 # This is due to the ability to locally override the global setting, thus it must be done on the object and can then be done in code
                                 $connection.AddBadCredential($cred)
-                                if (-not $disable_cache) { [Sqlcollaborative.Dbatools.Connection.ConnectionHost]::Connections[$computer] = $connection }
+                                if (-not $disable_cache) { [Dataplat.Dbatools.Connection.ConnectionHost]::Connections[$computer] = $connection }
                                 Stop-Function -Message "[$computer] Invalid connection credentials" -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $_ -SilentlyContinue:$SilentlyContinue
                             } elseif ($_.CategoryInfo.Category -eq "InvalidType") {
                                 Stop-Function -Message "[$computer] Invalid class name ($ClassName), not found in current namespace ($Namespace)" -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $_ -SilentlyContinue:$SilentlyContinue
@@ -439,7 +439,7 @@ function Get-DbaCmObject {
                             Write-Message -Level Verbose -Message "[$computer] Accessing computer using PowerShell Remoting - Success"
                             $connection.ReportSuccess('PowerShellRemoting')
                             $connection.AddGoodCredential($cred)
-                            if (-not $disable_cache) { [Sqlcollaborative.Dbatools.Connection.ConnectionHost]::Connections[$computer] = $connection }
+                            if (-not $disable_cache) { [Dataplat.Dbatools.Connection.ConnectionHost]::Connections[$computer] = $connection }
                             continue main
                         } catch {
                             # Will always consider authenticated, since any call with credentials to a server that doesn't exist will also carry invalid credentials error.
