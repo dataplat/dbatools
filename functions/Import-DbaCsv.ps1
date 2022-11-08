@@ -305,13 +305,6 @@ function Import-DbaCsv {
             Write-Message -Level Warning -Message "Schema and UseFileNameForSchema parameters both specified. UseSchemaInFileName will be ignored."
         }
 
-        try {
-            # SilentContinue isn't enough
-            Add-Type -Path "$script:PSModuleRoot\bin\csv\LumenWorks.Framework.IO.dll" -ErrorAction Stop
-        } catch {
-            $null = 1
-        }
-
         function New-SqlTable {
             <#
                 .SYNOPSIS
@@ -623,6 +616,7 @@ function Import-DbaCsv {
 
                         $stream = [System.IO.File]::OpenRead($File);
                         $stream = New-Object Dataplat.Dbatools.IO.ProgressStream($stream, $progressCallback, 0.05)
+
                         if ($isCompressed) {
                             $stream = New-Object System.IO.Compression.GZipStream($stream, [System.IO.Compression.CompressionMode]::Decompress)
                         }
