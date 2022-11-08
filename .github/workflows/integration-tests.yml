@@ -15,10 +15,10 @@ jobs:
       - name: Install and cache PowerShell modules
         uses: potatoqualitee/psmodulecache@v5.1
         with:
-          modules-to-cache: dbatools-core-library:2022.11.4
-          modules-to-cache-prerelease: dbatools-library:2022.11.4-preview
+          modules-to-cache: dbatools.core.library:2022.11.8
+          modules-to-cache-prerelease: dbatools.library:2022.11.8-preview
 
-      - name: Install and cache dbatools-library
+      - name: Install and cache dbatools.library
         run: |
           Import-Module ./dbatools.psd1 -Force
           Set-DbatoolsConfig -FullName sql.connection.trustcert -Value $true -Register
@@ -63,8 +63,8 @@ jobs:
         uses: potatoqualitee/psmodulecache@v5.1
         with:
           shell: powershell, pwsh
-          modules-to-cache: dbatools-core-library:2022.11.4
-          modules-to-cache-prerelease: dbatools-library:2022.11.4-preview
+          modules-to-cache: dbatools.core.library:2022.11.8
+          modules-to-cache-prerelease: dbatools.library:2022.11.8-preview
 
       - name: Install SQL Server localdb
         uses: potatoqualitee/mssqlsuite@v1.3

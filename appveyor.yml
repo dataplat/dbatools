@@ -15,7 +15,7 @@ cache:
   - C:\ProgramData\chocolatey\lib -> appveyor.yml
   - C:\Program Files\WindowsPowerShell\Modules\PSScriptAnalyzer -> appveyor.yml
   - C:\Program Files\WindowsPowerShell\Modules\Pester -> appveyor.yml
-  - C:\Program Files\WindowsPowerShell\Modules\dbatools-library -> dbatools.psd1
+  - C:\Program Files\WindowsPowerShell\Modules\dbatools.library -> dbatools.psd1
 
 #shallow_clone: true
 clone_depth: 100
@@ -81,7 +81,7 @@ before_test:
   # turn tests directory (at least) to CRLF, as it's faster to do this on the zipball rather than checking out the repo
   - cmd: pushd C:\github\dbatools\tests & unix2dos -q  *.ps1 & popd
   # don't clown -- for some reason it's just not installing the library
-  - ps: if (-not(Test-Path 'C:\Program Files\WindowsPowerShell\Modules\dbatools-library')) { Install-Module -Name dbatools-library -Force | Out-Null }
+  - ps: if (-not(Test-Path 'C:\Program Files\WindowsPowerShell\Modules\dbatools.library')) { Install-Module -Name dbatools.library -Force | Out-Null }
   # grab appveyor lab files and needed requirements for tests in CI
   - ps: .\Tests\appveyor.prep.ps1
 

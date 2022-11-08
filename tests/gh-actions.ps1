@@ -20,7 +20,7 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
 
         #$null = Get-XPlatVariable | Where-Object { $PSItem -notmatch "Copy-", "Migration" } | Sort-Object
         # load dbatools-lib
-        Import-Module dbatools-core-library
+        Import-Module dbatools.core.library
         Import-Module ./dbatools.psd1 -Force
     }
 
