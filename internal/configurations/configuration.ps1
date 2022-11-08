@@ -48,32 +48,42 @@ In step b), which will be run whenever the function is called within which it is
 If there is nothing there (for example, if the user accidentally removed or nulled the configuration), then it will fall back to using "$($env:temp)\dbatools.log"
 
 #>
-
 #region Paths
-$script:path_RegistryUserDefault = "HKCU:\SOFTWARE\Microsoft\WindowsPowerShell\dbatools\Config\Default"
-$script:path_RegistryUserEnforced = "HKCU:\SOFTWARE\Microsoft\WindowsPowerShell\dbatools\Config\Enforced"
-$script:path_RegistryMachineDefault = "HKLM:\SOFTWARE\Microsoft\WindowsPowerShell\dbatools\Config\Default"
-$script:path_RegistryMachineEnforced = "HKLM:\SOFTWARE\Microsoft\WindowsPowerShell\dbatools\Config\Enforced"
 $psVersionName = "WindowsPowerShell"
-if ($PSVersionTable.PSVersion.Major -ge 6) { $psVersionName = "PowerShell" }
+if ($PSVersionTable.PSVersion.Major -ge 6) {
+    $psVersionName = "PowerShell"
+}
+
+Write-ImportTime -Text "Config system: Set paths"
 
 #region User Local
 if ($IsLinux -or $IsMacOs) {
     # Defaults to $Env:XDG_CONFIG_HOME on Linux or MacOS ($HOME/.config/)
     $fileUserLocal = $Env:XDG_CONFIG_HOME
-    if (-not $fileUserLocal) { $fileUserLocal = Join-Path $HOME .config/ }
+    if (-not $fileUserLocal) {
+        $fileUserLocal = [IO.Path]::Combine($HOME, ".config/")
+    }
 
-    $script:path_FileUserLocal = Join-DbaPath $fileUserLocal $psVersionName "dbatools/"
+    $script:path_FileUserLocal = [IO.Path]::Combine($fileUserLocal, $psVersionName, "dbatools/")
 } else {
+    # sets some paths
+    $script:path_RegistryUserDefault = "HKCU:\SOFTWARE\Microsoft\WindowsPowerShell\dbatools\Config\Default"
+    $script:path_RegistryUserEnforced = "HKCU:\SOFTWARE\Microsoft\WindowsPowerShell\dbatools\Config\Enforced"
+    $script:path_RegistryMachineDefault = "HKLM:\SOFTWARE\Microsoft\WindowsPowerShell\dbatools\Config\Default"
+    $script:path_RegistryMachineEnforced = "HKLM:\SOFTWARE\Microsoft\WindowsPowerShell\dbatools\Config\Enforced"
+
     # Defaults to $localappdatapath on Windows
     if ($env:LOCALAPPDATA) {
         $localappdatapath = $env:LOCALAPPDATA
     } else {
         $localappdatapath = [System.Environment]::GetFolderPath("LocalApplicationData")
     }
-    $script:path_FileUserLocal = Join-Path $localappdatapath "$psVersionName\dbatools\Config"
-    if (-not $script:path_FileUserLocal) { $script:path_FileUserLocal = Join-Path ([Environment]::GetFolderPath("LocalApplicationData")) "$psVersionName\dbatools\Config" }
+    $script:path_FileUserLocal = [IO.Path]::Combine($localappdatapath, "$psVersionName\dbatools\Config")
+    if (-not $script:path_FileUserLocal) {
+        $script:path_FileUserLocal = [IO.Path]::Combine([Environment]::GetFolderPath("LocalApplicationData"), "$psVersionName\dbatools\Config")
+    }
 }
+Write-ImportTime -Text "Config system: Set more paths using Join-Path"
 #endregion User Local
 
 #region User Shared
@@ -81,73 +91,96 @@ if ($IsLinux -or $IsMacOs) {
     # Defaults to the first value in $Env:XDG_CONFIG_DIRS on Linux or MacOS (or $HOME/.local/share/)
     # Defaults to $HOME .local/share/
     # It previously was picking the first value in $Env:XDG_CONFIG_DIRS, but was causing and exception with ubuntu and xdg, saying that access to path /etc/xdg/xdg-ubuntu is denied.
-    $fileUserShared = Join-Path $HOME .local/share/
+    $fileUserShared = [IO.Path]::Combine($HOME, ".local/share/")
 
-    $script:path_FileUserShared = Join-DbaPath $fileUserShared $psVersionName "dbatools/"
+    $script:path_FileUserShared = [IO.Path]::Combine($fileUserShared, $psVersionName, "dbatools/")
     $script:AppData = $fileUserShared
 } else {
     # Defaults to [System.Environment]::GetFolderPath("ApplicationData") on Windows
-    $script:path_FileUserShared = Join-DbaPath $([System.Environment]::GetFolderPath("ApplicationData")) $psVersionName "dbatools" "Config"
+    $script:path_FileUserShared = [IO.Path]::Combine([System.Environment]::GetFolderPath("ApplicationData"), $psVersionName, "dbatools", "Config")
     $script:AppData = [System.Environment]::GetFolderPath("ApplicationData")
     if (-not $([System.Environment]::GetFolderPath("ApplicationData"))) {
-        $script:path_FileUserShared = Join-DbaPath $([Environment]::GetFolderPath("ApplicationData")) $psVersionName "dbatools" "Config"
+        $script:path_FileUserShared = [IO.Path]::Combine([Environment]::GetFolderPath("ApplicationData"), $psVersionName, "dbatools", "Config")
         $script:AppData = [System.Environment]::GetFolderPath("ApplicationData")
     }
 }
+Write-ImportTime -Text "Config system: Set even more paths, this time using Join-DbaPath"
 #endregion User Shared
 
 #region System
 if ($IsLinux -or $IsMacOs) {
     # Defaults to /etc/xdg elsewhere
-    $XdgConfigDirs = $Env:XDG_CONFIG_DIRS -split ([IO.Path]::PathSeparator) | Where-Object { $_ -and (Test-Path $_) }
-    if ($XdgConfigDirs.Count -gt 1) { $basePath = $XdgConfigDirs[1] }
-    else { $basePath = "/etc/xdg/" }
-    $script:path_FileSystem = Join-DbaPath $basePath $psVersionName "dbatools/"
+    $XdgConfigDirs = $Env:XDG_CONFIG_DIRS -split ([IO.Path]::CombinePathSeparator) | Where-Object { $PSItem -and ([IO.File]::Exists($PSItem)) }
+    if ($XdgConfigDirs.Count -gt 1) {
+        $basePath = $XdgConfigDirs[1]
+    } else {
+        $basePath = "/etc/xdg/"
+    }
+    $script:path_FileSystem = [IO.Path]::Combine($basePath, $psVersionName, "dbatools/")
 } else {
     # Defaults to $Env:ProgramData on Windows
-    $script:path_FileSystem = Join-DbaPath $Env:ProgramData $psVersionName "dbatools" "Config"
-    if (-not $script:path_FileSystem) { $script:path_FileSystem = Join-DbaPath ([Environment]::GetFolderPath("CommonApplicationData")) $psVersionName "dbatools" "Config" }
+    $script:path_FileSystem = [IO.Path]::Combine($Env:ProgramData, $psVersionName, "dbatools", "Config")
+    if (-not $script:path_FileSystem) {
+        $script:path_FileSystem = [IO.Path]::Combine([Environment]::GetFolderPath("CommonApplicationData"), $psVersionName, "dbatools", "Config")
+    }
 }
+
 #endregion System
 
 #region Special Paths
 # $script:AppData is already OS localized
-$script:path_Logging = Join-DbaPath $script:AppData $psVersionName "dbatools" "Logs"
-$script:path_typedata = Join-DbaPath $script:AppData $psVersionName "dbatools" "TypeData"
+$script:path_Logging = [IO.Path]::Combine($script:AppData, $psVersionName, "dbatools", "Logs")
+$script:path_typedata = [IO.Path]::Combine($script:AppData, $psVersionName, "dbatools", "TypeData")
 #endregion Special Paths
 #endregion Paths
 
 # Determine Registry Availability
-$script:NoRegistry = $false
+$script:NoRegistry = $true
 if (($PSVersionTable.PSVersion.Major -ge 6) -and ($PSVersionTable.OS -notlike "*Windows*")) {
     $script:NoRegistry = $true
 }
 
-$configpath = Resolve-Path "$script:PSModuleRoot\internal\configurations"
-
+$configpath = [IO.Path]::Combine($script:PSModuleRoot, "internal", "configurations")
+Write-ImportTime -Text "Config system: Set more paths and special paths"
 # Import configuration validation
-foreach ($file in (Get-ChildItem -Path (Resolve-Path "$configpath\validation"))) {
-    if ($script:doDotSource) { . $file.FullName }
-    else { . ([scriptblock]::Create([io.file]::ReadAllText($file.FullName))) }
+foreach ($file in (Get-ChildItem -Path ([IO.Path]::Combine($configpath, "validation")))) {
+    if ($script:serialimport) {
+        . $file.FullName
+        Write-ImportTime -Text "Config system: Imported some validation files with dot source"
+    } else {
+        Import-Command -Path $file.FullName
+        Write-ImportTime -Text "Config system: Imported some validation files with Import-Command"
+    }
 }
 
 # Import other configuration files
-foreach ($file in (Get-ChildItem -Path (Resolve-Path "$configpath\settings"))) {
-    if ($script:doDotSource) { . $file.FullName }
-    else { . ([scriptblock]::Create([io.file]::ReadAllText($file.FullName))) }
+
+foreach ($file in (Get-ChildItem -Path ([IO.Path]::Combine($configpath, "settings")))) {
+    if ($script:serialimport) {
+        . $file.FullName
+        Write-ImportTime -Text "Config system: Imported some settings files with dot source"
+    } else {
+        Import-Command -Path $file.FullName
+        Write-ImportTime -Text "Config system: Imported some settings files with Import-Command"
+    }
 }
 
-if (-not [Dataplat.Dbatools.Configuration.ConfigurationHost]::ImportFromRegistryDone) {
+if (-not $script:dbatools_ImportFromRegistryDone) {
     # Read config from all settings
     $config_hash = Read-DbatoolsConfigPersisted -Scope 127
 
     foreach ($value in $config_hash.Values) {
         try {
-            if (-not $value.KeepPersisted) { Set-DbatoolsConfig -FullName $value.FullName -Value $value.Value -EnableException }
-            else { Set-DbatoolsConfig -FullName $value.FullName -PersistedValue $value.Value -PersistedType $value.Type -EnableException }
+            if (-not $value.KeepPersisted) {
+                Set-DbatoolsConfig -FullName $value.FullName -Value $value.Value -EnableException
+            } else {
+                Set-DbatoolsConfig -FullName $value.FullName -PersistedValue $value.Value -PersistedType $value.Type -EnableException
+            }
             [Dataplat.Dbatools.Configuration.ConfigurationHost]::Configurations[$value.FullName.ToLowerInvariant()].PolicySet = $value.Policy
             [Dataplat.Dbatools.Configuration.ConfigurationHost]::Configurations[$value.FullName.ToLowerInvariant()].PolicyEnforced = $value.Enforced
-        } catch { }
+        } catch {
+            $null = 1
+        }
     }
 
     if ($null -ne $global:dbatools_config) {
@@ -156,5 +189,7 @@ if (-not [Dataplat.Dbatools.Configuration.ConfigurationHost]::ImportFromRegistry
         }
     }
 
-    [Dataplat.Dbatools.Configuration.ConfigurationHost]::ImportFromRegistryDone = $true
+    $script:dbatools_ImportFromRegistryDone = $true
+
+    Write-ImportTime -Text "Config system: Did some final checks"
 }
