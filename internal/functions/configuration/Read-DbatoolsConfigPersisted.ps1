@@ -1,6 +1,5 @@
-function Read-DbatoolsConfigPersisted
-{
-<#
+function Read-DbatoolsConfigPersisted {
+    <#
     .SYNOPSIS
         Reads configurations from persisted file / registry.
 
@@ -33,46 +32,26 @@ function Read-DbatoolsConfigPersisted
     [OutputType([System.Collections.Hashtable])]
     [CmdletBinding()]
     Param (
-        [Dataplat.Dbatools.Configuration.ConfigScope]
-        $Scope,
-
-        [string]
-        $Module,
-
-        [int]
-        $ModuleVersion = 1,
-
-        [System.Collections.Hashtable]
-        $Hashtable,
-
-        [switch]
-        $Default
+        [Dataplat.Dbatools.Configuration.ConfigScope]$Scope,
+        [string]$Module,
+        [int]$ModuleVersion = 1,
+        [System.Collections.Hashtable]$Hashtable,
+        [switch]$Default
     )
 
-    begin
-    {
+    begin {
         #region Helper Functions
-        function New-ConfigItem
-        {
+        function New-ConfigItem {
             [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseShouldProcessForStateChangingFunctions", "")]
             [CmdletBinding()]
             param (
                 $FullName,
-
                 $Value,
-
                 $Type,
-
-                [switch]
-                $KeepPersisted,
-
-                [switch]
-                $Enforced,
-
-                [switch]
-                $Policy
+                [switch]$KeepPersisted,
+                [switch]$Enforced,
+                [switch]$Policy
             )
-
             [pscustomobject]@{
                 FullName      = $FullName
                 Value         = $Value
@@ -83,32 +62,31 @@ function Read-DbatoolsConfigPersisted
             }
         }
 
-        function Read-Registry
-        {
+        function Read-Registry {
             [CmdletBinding()]
             param (
                 $Path,
-
-                [switch]
-                $Enforced
+                [switch]$Enforced
             )
 
-            if (-not (Test-Path $Path)) { return }
+            if ($Path.StartsWith("HK")) {
+                $Path = $Path.Replace('HKLM:\SOFTWARE','Registry::HKEY_Local_Machine\SOFTWARE')
+                $Path = $Path.Replace('HKCU:\SOFTWARE','Registry::HKEY_Current_User\SOFTWARE')
+            }
+
+            # test-path required for registry checks
+            if (-not (Test-Path -Path $Path)) { return }
 
             $common = 'PSPath', 'PSParentPath', 'PSChildName', 'PSDrive', 'PSProvider'
 
-            foreach ($item in ((Get-ItemProperty -Path $Path -ErrorAction Ignore).PSObject.Properties | Where-Object Name -NotIn $common))
-            {
-                if ($item.Value -like "Object:*")
-                {
+            foreach ($item in ((Get-ItemProperty -Path $Path -ErrorAction Ignore).PSObject.Properties | Where-Object Name -NotIn $common)) {
+                if ($item.Value -like "Object:*") {
                     $data = $item.Value.Split(":", 2)
                     New-ConfigItem -FullName $item.Name -Type $data[0] -Value $data[1] -KeepPersisted -Enforced:$Enforced -Policy
-                }
-                else
-                {
-                    try { New-ConfigItem -FullName $item.Name -Value ([Dataplat.Dbatools.Configuration.ConfigurationHost]::ConvertFromPersistedValue($item.Value)) -Policy }
-                    catch
-                    {
+                } else {
+                    try {
+                        New-ConfigItem -FullName $item.Name -Value ([Dataplat.Dbatools.Configuration.ConfigurationHost]::ConvertFromPersistedValue($item.Value)) -Policy
+                    } catch {
                         Write-Message -Level Warning -Message "Failed to load configuration from Registry: $($item.Name)" -ErrorRecord $_ -Target "$Path : $($item.Name)"
                     }
                 }
@@ -116,93 +94,104 @@ function Read-DbatoolsConfigPersisted
         }
         #endregion Helper Functions
 
-        if (-not $Hashtable) { $results = @{ } }
-        else { $results = $Hashtable }
+        if (-not $Hashtable) {
+            $results = @{ }
+        } else {
+            $results = $Hashtable
+        }
 
-        if ($Module) { $filename = "$($Module.ToLowerInvariant())-$($ModuleVersion).json" }
-        else { $filename = "psf_config.json" }
+        if ($Module) {
+            $filename = "$($Module.ToLowerInvariant())-$($ModuleVersion).json"
+        } else {
+            $filename = "psf_config.json"
+        }
     }
-    process
-    {
+    process {
         #region File - Computer Wide
-        if ($Scope -band 64)
-        {
-            foreach ($item in (Read-DbatoolsConfigFile -Path (Join-Path $script:path_FileSystem $filename)))
-            {
-                if (-not $Default) { $results[$item.FullName] = $item }
-                elseif (-not $results.ContainsKey($item.FullName)) { $results[$item.FullName] = $item }
+        if ($Scope -band 64) {
+            foreach ($item in (Read-DbatoolsConfigFile -Path ([IO.Path]::Combine($script:path_FileSystem, $filename)))) {
+                if (-not $Default) {
+                    $results[$item.FullName] = $item
+                } elseif (-not $results.ContainsKey($item.FullName)) {
+                    $results[$item.FullName] = $item
+                }
             }
         }
         #endregion File - Computer Wide
 
         #region Registry - Computer Wide
-        if (($Scope -band 4) -and (-not $script:NoRegistry))
-        {
-            foreach ($item in (Read-Registry -Path $script:path_RegistryMachineDefault))
-            {
-                if (-not $Default) { $results[$item.FullName] = $item }
-                elseif (-not $results.ContainsKey($item.FullName)) { $results[$item.FullName] = $item }
+        if (($Scope -band 4) -and (-not $script:NoRegistry)) {
+            foreach ($item in (Read-Registry -Path $script:path_RegistryMachineDefault)) {
+                if (-not $Default) {
+                    $results[$item.FullName] = $item
+                } elseif (-not $results.ContainsKey($item.FullName)) {
+                    $results[$item.FullName] = $item
+                }
             }
         }
         #endregion Registry - Computer Wide
 
         #region File - User Shared
-        if ($Scope -band 32)
-        {
-            foreach ($item in (Read-DbatoolsConfigFile -Path (Join-Path $script:path_FileUserShared $filename)))
-            {
-                if (-not $Default) { $results[$item.FullName] = $item }
-                elseif (-not $results.ContainsKey($item.FullName)) { $results[$item.FullName] = $item }
+        if ($Scope -band 32) {
+            foreach ($item in (Read-DbatoolsConfigFile -Path ([IO.Path]::Combine($script:path_FileUserShared, $filename)))) {
+                if (-not $Default) {
+                    $results[$item.FullName] = $item
+                } elseif (-not $results.ContainsKey($item.FullName)) {
+                    $results[$item.FullName] = $item
+                }
             }
         }
         #endregion File - User Shared
 
         #region Registry - User Shared
-        if (($Scope -band 1) -and (-not $script:NoRegistry))
-        {
-            foreach ($item in (Read-Registry -Path $script:path_RegistryUserDefault))
-            {
-                if (-not $Default) { $results[$item.FullName] = $item }
-                elseif (-not $results.ContainsKey($item.FullName)) { $results[$item.FullName] = $item }
+        if (($Scope -band 1) -and (-not $script:NoRegistry)) {
+            foreach ($item in (Read-Registry -Path $script:path_RegistryUserDefault)) {
+                if (-not $Default) {
+                    $results[$item.FullName] = $item
+                } elseif (-not $results.ContainsKey($item.FullName)) {
+                    $results[$item.FullName] = $item
+                }
             }
         }
         #endregion Registry - User Shared
 
         #region File - User Local
-        if ($Scope -band 16)
-        {
-            foreach ($item in (Read-DbatoolsConfigFile -Path (Join-Path $script:path_FileUserLocal $filename)))
-            {
-                if (-not $Default) { $results[$item.FullName] = $item }
-                elseif (-not $results.ContainsKey($item.FullName)) { $results[$item.FullName] = $item }
+        if ($Scope -band 16) {
+            foreach ($item in (Read-DbatoolsConfigFile -Path ([IO.Path]::Combine($script:path_FileUserLocal, $filename)))) {
+                if (-not $Default) {
+                    $results[$item.FullName] = $item
+                } elseif (-not $results.ContainsKey($item.FullName)) {
+                    $results[$item.FullName] = $item
+                }
             }
         }
         #endregion File - User Local
 
         #region Registry - User Enforced
-        if (($Scope -band 2) -and (-not $script:NoRegistry))
-        {
-            foreach ($item in (Read-Registry -Path $script:path_RegistryUserEnforced -Enforced))
-            {
-                if (-not $Default) { $results[$item.FullName] = $item }
-                elseif (-not $results.ContainsKey($item.FullName)) { $results[$item.FullName] = $item }
+        if (($Scope -band 2) -and (-not $script:NoRegistry)) {
+            foreach ($item in (Read-Registry -Path $script:path_RegistryUserEnforced -Enforced)) {
+                if (-not $Default) {
+                    $results[$item.FullName] = $item
+                } elseif (-not $results.ContainsKey($item.FullName)) {
+                    $results[$item.FullName] = $item
+                }
             }
         }
         #endregion Registry - User Enforced
 
         #region Registry - System Enforced
-        if (($Scope -band 8) -and (-not $script:NoRegistry))
-        {
-            foreach ($item in (Read-Registry -Path $script:path_RegistryMachineEnforced -Enforced))
-            {
-                if (-not $Default) { $results[$item.FullName] = $item }
-                elseif (-not $results.ContainsKey($item.FullName)) { $results[$item.FullName] = $item }
+        if (($Scope -band 8) -and (-not $script:NoRegistry)) {
+            foreach ($item in (Read-Registry -Path $script:path_RegistryMachineEnforced -Enforced)) {
+                if (-not $Default) {
+                    $results[$item.FullName] = $item
+                } elseif (-not $results.ContainsKey($item.FullName)) {
+                    $results[$item.FullName] = $item
+                }
             }
         }
         #endregion Registry - System Enforced
     }
-    end
-    {
+    end {
         $results
     }
 }
