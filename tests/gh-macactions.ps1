@@ -9,7 +9,7 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
         $PSDefaultParameterValues["*:Confirm"] = $false
         $global:ProgressPreference = "SilentlyContinue"
 
-        Import-Module ./dbatools.psm1 -Force
+        Import-Module ./dbatools.psd1 -Force
     }
 
     It "publishes a package" {

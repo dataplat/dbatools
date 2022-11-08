@@ -2,8 +2,8 @@ $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
 
-Add-Type -Path "$(Split-Path (Get-Module dbatools).Path)\bin\smo\Microsoft.SqlServer.Replication.dll" -ErrorAction Stop
-Add-Type -Path "$(Split-Path (Get-Module dbatools).Path)\bin\smo\Microsoft.SqlServer.Rmo.dll" -ErrorAction Stop
+
+Add-ReplicationLibrary
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {

@@ -13,7 +13,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     }
 }
 
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
+Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
         $random = Get-Random
         $job1Instance1 = New-DbaAgentJob -SqlInstance $script:instance1 -Job "dbatoolsci_job_1_$random"

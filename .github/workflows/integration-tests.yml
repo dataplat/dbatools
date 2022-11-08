@@ -1,0 +1,104 @@
+name: Run Cross Platform Tests
+on: [push]
+defaults:
+  run:
+    shell: pwsh
+jobs:
+  linux-tests:
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Install and cache PowerShell modules
+        uses: potatoqualitee/psmodulecache@v5.1
+        with:
+          modules-to-cache: dbatools-core-library:2022.11.4
+          modules-to-cache-prerelease: dbatools-library:2022.11.4-preview
+
+      - name: Install and cache dbatools-library
+        run: |
+          Import-Module ./dbatools.psd1 -Force
+          Set-DbatoolsConfig -FullName sql.connection.trustcert -Value $true -Register
+          Set-DbatoolsConfig -FullName sql.connection.encrypt -Value Optional -Register
+          Get-DbatoolsConfigValue -FullName sql.connection.encrypt | Write-Warning
+
+      - name:  Setup docker images
+        run: |
+          # create a shared network
+          docker network create localnet
+          # Expose engine and endpoint then setup a shared path for migrations
+          docker run -p 1433:1433  --volume shared:/shared:z --name mssql1 --hostname mssql1 --network localnet -d dbatools/sqlinstance
+          # Expose second engine and endpoint on different port
+          docker run -p 14333:1433 --volume shared:/shared:z --name mssql2 --hostname mssql2 --network localnet -d dbatools/sqlinstance2
+
+      - name: 👥 Clone appveyor repo
+        working-directory: /tmp
+        run: |
+          gh repo clone dataplat/appveyor-lab
+
+      - name: Run tests
+        env:
+          TENANTID: ${{secrets.TENANTID}}
+          CLIENTID: ${{secrets.CLIENTID}}
+          CLIENTSECRET: ${{secrets.CLIENTSECRET}}
+        run: |
+          Import-Module ./dbatools.psd1 -Force
+          Get-DbatoolsConfigValue -FullName sql.connection.trustcert | Write-Warning
+          Get-DbatoolsConfigValue -FullName sql.connection.encrypt | Write-Warning
+          $null = Invoke-Pester ./tests/gh-actions.ps1 -Output Detailed -PassThru
+
+  windows-tests:
+    runs-on: windows-latest
+    env:
+      GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
+
+    steps:
+      - name: Checkout dbatools repo
+        uses: actions/checkout@v3
+
+      - name: Install and cache PowerShell modules
+        uses: potatoqualitee/psmodulecache@v5.1
+        with:
+          shell: powershell, pwsh
+          modules-to-cache: dbatools-core-library:2022.11.4
+          modules-to-cache-prerelease: dbatools-library:2022.11.4-preview
+
+      - name: Install SQL Server localdb
+        uses: potatoqualitee/mssqlsuite@v1.3
+        with:
+          install: localdb
+
+      - name: Connect to localdb instance powershell
+        shell: powershell
+        run: |
+          Import-Module ./dbatools -Force
+          Set-DbatoolsConfig -FullName sql.connection.trustcert -Value $true -PassThru | Register-DbatoolsConfig -Scope FileUserShared
+          Set-DbatoolsConfig -FullName sql.connection.encrypt -Value Optional -PassThru | Register-DbatoolsConfig -Scope FileUserShared
+          Connect-DbaInstance -SqlInstance "(localdb)\MSSQLLocalDB"
+
+      - name: Connect to localdb instance pwsh
+        shell: pwsh
+        run: |
+          Import-Module ./dbatools -Force
+          Set-DbatoolsConfig -FullName sql.connection.trustcert -Value $true -PassThru | Register-DbatoolsConfig -Scope FileUserShared
+          Set-DbatoolsConfig -FullName sql.connection.encrypt -Value Optional -PassThru | Register-DbatoolsConfig -Scope FileUserShared
+          Connect-DbaInstance -SqlInstance "(localdb)\MSSQLLocalDB"
+
+      - name: Run pwsh tests
+        env:
+          TENANTID: ${{secrets.TENANTID}}
+          CLIENTID: ${{secrets.CLIENTID}}
+          CLIENTSECRET: ${{secrets.CLIENTSECRET}}
+        shell: pwsh
+        run: $null = Invoke-Pester ./tests/gh-winactions.ps1 -Output Detailed -PassThru
+
+      - name: Run PowerShell tests
+        env:
+          TENANTID: ${{secrets.TENANTID}}
+          CLIENTID: ${{secrets.CLIENTID}}
+          CLIENTSECRET: ${{secrets.CLIENTSECRET}}
+        shell: powershell
+        run: $null = Invoke-Pester ./tests/gh-winactions.ps1 -Output Detailed -PassThru

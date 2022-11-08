@@ -18,7 +18,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 
     $credLogin = 'credologino'
-    $certificateName = 'DBAToolsPesterlogincertificate'
+    $certificateName = 'dbatoolsPesterlogincertificate'
     $password = 'MyV3ry$ecur3P@ssw0rd'
     $securePassword = ConvertTo-SecureString $password -AsPlainText -Force
     $sid = '0xDBA700131337C0D30123456789ABCDEF'
