@@ -134,7 +134,7 @@ function Set-DbaCmConnection {
     [CmdletBinding(SupportsShouldProcess, DefaultParameterSetName = 'Credential')]
     param (
         [Parameter(ValueFromPipeline)]
-        [Sqlcollaborative.Dbatools.Parameter.DbaCmConnectionParameter[]]
+        [Dataplat.Dbatools.Parameter.DbaCmConnectionParameter[]]
         $ComputerName = $env:COMPUTERNAME,
         [Parameter(ParameterSetName = "Credential")]
         [PSCredential]$Credential,
@@ -142,7 +142,7 @@ function Set-DbaCmConnection {
         [switch]$UseWindowsCredentials,
         [switch]$OverrideExplicitCredential,
         [switch]$OverrideConnectionPolicy,
-        [Sqlcollaborative.Dbatools.Connection.ManagementConnectionType]$DisabledConnectionTypes = 'None',
+        [Dataplat.Dbatools.Connection.ManagementConnectionType]$DisabledConnectionTypes = 'None',
         [switch]$DisableBadCredentialCache,
         [switch]$DisableCimPersistence,
         [switch]$DisableCredentialAutoRegister,
@@ -243,7 +243,7 @@ function Set-DbaCmConnection {
 
                 if (-not $disable_cache) {
                     Write-Message -Level Verbose -Message "Writing connection to cache"
-                    [Sqlcollaborative.Dbatools.Connection.ConnectionHost]::Connections[$connectionObject.Connection.ComputerName] = $connection
+                    [Dataplat.Dbatools.Connection.ConnectionHost]::Connections[$connectionObject.Connection.ComputerName] = $connection
                 } else { Write-Message -Level Verbose -Message "Skipping writing to cache, since the cache has been disabled." }
                 $connection
             }

@@ -40,23 +40,23 @@ function Convert-DbaMessageTarget {
 
     $typeName = $Target.GetType().FullName.ToLowerInvariant()
 
-    if ([Sqlcollaborative.Dbatools.Message.MessageHost]::TargetTransforms.ContainsKey($typeName)) {
-        $scriptBlock = [Sqlcollaborative.Dbatools.Message.MessageHost]::TargetTransforms[$typeName]
+    if ([Dataplat.Dbatools.Message.MessageHost]::TargetTransforms.ContainsKey($typeName)) {
+        $scriptBlock = [Dataplat.Dbatools.Message.MessageHost]::TargetTransforms[$typeName]
         try {
             $tempTarget = $ExecutionContext.InvokeCommand.InvokeScript($false, ([scriptblock]::Create($scriptBlock.ToString())), $null, $Target)
             return $tempTarget
         } catch {
-            [Sqlcollaborative.Dbatools.Message.MessageHost]::WriteTransformError($_, $FunctionName, $ModuleName, $Target, "Target", ([System.Management.Automation.Runspaces.Runspace]::DefaultRunspace.InstanceId))
+            [Dataplat.Dbatools.Message.MessageHost]::WriteTransformError($_, $FunctionName, $ModuleName, $Target, "Target", ([System.Management.Automation.Runspaces.Runspace]::DefaultRunspace.InstanceId))
             return $Target
         }
     }
 
-    if ($transform = [Sqlcollaborative.Dbatools.Message.MessageHost]::TargetTransformlist.Get($typeName, $ModuleName, $FunctionName)) {
+    if ($transform = [Dataplat.Dbatools.Message.MessageHost]::TargetTransformlist.Get($typeName, $ModuleName, $FunctionName)) {
         try {
             $tempTarget = $ExecutionContext.InvokeCommand.InvokeScript($false, ([scriptblock]::Create($transform.ScriptBlock.ToString())), $null, $Target)
             return $tempTarget
         } catch {
-            [Sqlcollaborative.Dbatools.Message.MessageHost]::WriteTransformError($_, $FunctionName, $ModuleName, $Target, "Target", ([System.Management.Automation.Runspaces.Runspace]::DefaultRunspace.InstanceId))
+            [Dataplat.Dbatools.Message.MessageHost]::WriteTransformError($_, $FunctionName, $ModuleName, $Target, "Target", ([System.Management.Automation.Runspaces.Runspace]::DefaultRunspace.InstanceId))
             return $Target
         }
     }

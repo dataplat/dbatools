@@ -803,7 +803,7 @@
     <command:returnValues>
       <command:returnValue>
         <dev:type>
-          <maml:name>Sqlcollaborative.Dbatools.Configuration.Config</maml:name>
+          <maml:name>Dataplat.Dbatools.Configuration.Config</maml:name>
         </dev:type>
         <maml:description>
           <maml:para></maml:para>

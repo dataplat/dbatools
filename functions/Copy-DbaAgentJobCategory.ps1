@@ -135,7 +135,7 @@ function Copy-DbaAgentJobCategory {
                         Type              = "Agent Job Category"
                         Status            = $null
                         Notes             = $null
-                        DateTime          = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
+                        DateTime          = [Dataplat.Dbatools.Utility.DbaDateTime](Get-Date)
                     }
 
                     if ($jobCategories.Count -gt 0 -and $jobCategories -notcontains $categoryName) {
@@ -210,7 +210,7 @@ function Copy-DbaAgentJobCategory {
                         Name              = $categoryName
                         Status            = $null
                         Notes             = $null
-                        DateTime          = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
+                        DateTime          = [Dataplat.Dbatools.Utility.DbaDateTime](Get-Date)
                     }
 
                     if ($operatorCategories.Count -gt 0 -and $operatorCategories -notcontains $categoryName) {
@@ -294,7 +294,7 @@ function Copy-DbaAgentJobCategory {
                         Name              = $categoryName
                         Status            = $null
                         Notes             = $null
-                        DateTime          = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
+                        DateTime          = [Dataplat.Dbatools.Utility.DbaDateTime](Get-Date)
                     }
 
                     if ($alertCategories.Length -gt 0 -and $alertCategories -notcontains $categoryName) {

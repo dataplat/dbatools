@@ -152,7 +152,7 @@ function Copy-DbaDbQueryStoreOption {
                     DestinationDatabaseID = $destDB.ID
                     Type                  = "QueryStore Configuration"
                     Status                = $null
-                    DateTime              = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
+                    DateTime              = [Dataplat.Dbatools.Utility.DbaDateTime](Get-Date)
                 }
 
                 if ($destDB.IsAccessible -eq $false) {

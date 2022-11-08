@@ -13,7 +13,7 @@ $ScriptBlock = {
     )
 
 
-    foreach ($name in ([Sqlcollaborative.Dbatools.Configuration.ConfigurationHost]::Configurations.Values | Where-Object { -not $_.Hidden -and ($_.FullName -Like "$wordToComplete*") } | Select-Object -ExpandProperty FullName | Sort-Object)) {
+    foreach ($name in ([Dataplat.Dbatools.Configuration.ConfigurationHost]::Configurations.Values | Where-Object { -not $_.Hidden -and ($_.FullName -Like "$wordToComplete*") } | Select-Object -ExpandProperty FullName | Sort-Object)) {
         New-DbaTeppCompletionResult -CompletionText $name -ToolTip $name
     }
 }
@@ -39,7 +39,7 @@ $ScriptBlock = {
     $moduleName = "*"
     if ($fakeBoundParameter.Module) { $moduleName = $fakeBoundParameter.Module }
 
-    foreach ($name in ([Sqlcollaborative.Dbatools.Configuration.ConfigurationHost]::Configurations.Values | Where-Object { (-not $_.Hidden) -and ($_.Name -Like "$wordToComplete*") -and ($_.Module -like $moduleName) } | Select-Object -ExpandProperty Name | Sort-Object)) {
+    foreach ($name in ([Dataplat.Dbatools.Configuration.ConfigurationHost]::Configurations.Values | Where-Object { (-not $_.Hidden) -and ($_.Name -Like "$wordToComplete*") -and ($_.Module -like $moduleName) } | Select-Object -ExpandProperty Name | Sort-Object)) {
         New-DbaTeppCompletionResult -CompletionText $name -ToolTip $name
     }
 }
@@ -62,7 +62,7 @@ $ScriptBlock = {
     )
 
 
-    foreach ($name in ([Sqlcollaborative.Dbatools.Configuration.ConfigurationHost]::Configurations.Values.Module | Select-Object -Unique | Where-DbaObject -Like "$wordToComplete*" | Sort-Object )) {
+    foreach ($name in ([Dataplat.Dbatools.Configuration.ConfigurationHost]::Configurations.Values.Module | Select-Object -Unique | Where-DbaObject -Like "$wordToComplete*" | Sort-Object )) {
         New-DbaTeppCompletionResult -CompletionText $name -ToolTip $name
     }
 }

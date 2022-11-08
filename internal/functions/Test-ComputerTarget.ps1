@@ -35,7 +35,7 @@ function Test-ComputerTarget {
 
     process {
         foreach ($Computer in $ComputerName) {
-            [Sqlcollaborative.Dbatools.Utility.Validation]::IsValidComputerTarget($ComputerName)
+            [Dataplat.Dbatools.Utility.Validation]::IsValidComputerTarget($ComputerName)
         }
     }
 }

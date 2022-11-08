@@ -62,15 +62,15 @@ function Register-DbaMaintenanceTask {
         [System.TimeSpan]
         $Delay,
 
-        [Sqlcollaborative.Dbatools.Maintenance.MaintenancePriority]
+        [Dataplat.Dbatools.Maintenance.MaintenancePriority]
         $Priority = "Medium",
 
         [switch]$EnableException
     )
 
     #region Case: Task already registered
-    if ([Sqlcollaborative.Dbatools.Maintenance.MaintenanceHost]::Tasks.ContainsKey($Name.ToLowerInvariant())) {
-        $task = [Sqlcollaborative.Dbatools.Maintenance.MaintenanceHost]::Tasks[$Name.ToLowerInvariant()]
+    if ([Dataplat.Dbatools.Maintenance.MaintenanceHost]::Tasks.ContainsKey($Name.ToLowerInvariant())) {
+        $task = [Dataplat.Dbatools.Maintenance.MaintenanceHost]::Tasks[$Name.ToLowerInvariant()]
         if ($task.ScriptBlock -ne $ScriptBlock) { $task.ScriptBlock = $ScriptBlock }
         if (Test-Bound -ParameterName Once) { $task.Once = $Once }
         if (Test-Bound -ParameterName Interval) {
@@ -84,7 +84,7 @@ function Register-DbaMaintenanceTask {
 
     #region New Task
     else {
-        $task = New-Object Sqlcollaborative.Dbatools.Maintenance.MaintenanceTask
+        $task = New-Object Dataplat.Dbatools.Maintenance.MaintenanceTask
         $task.Name = $Name.ToLowerInvariant()
         $task.ScriptBlock = $ScriptBlock
         if (Test-Bound -ParameterName Once) { $task.Once = $true }
@@ -97,7 +97,7 @@ function Register-DbaMaintenanceTask {
         if (Test-Bound -ParameterName Delay) { $task.Delay = $Delay }
         $task.Priority = $Priority
         $task.Registered = Get-Date
-        [Sqlcollaborative.Dbatools.Maintenance.MaintenanceHost]::Tasks[$Name.ToLowerInvariant()] = $task
+        [Dataplat.Dbatools.Maintenance.MaintenanceHost]::Tasks[$Name.ToLowerInvariant()] = $task
     }
     #endregion New Task
 }

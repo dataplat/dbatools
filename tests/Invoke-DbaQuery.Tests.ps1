@@ -92,7 +92,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     It "supports http files" {
         $cleanup = "IF EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[CommandLog]') AND type in (N'U')) DROP TABLE [dbo].[CommandLog]"
         $null = Invoke-DbaQuery -SqlInstance $script:instance2 -Database tempdb -Query $cleanup
-        $CloudQuery = 'https://raw.githubusercontent.com/sqlcollaborative/appveyor-lab/master/sql2016-startup/ola/CommandLog.sql'
+        $CloudQuery = 'https://raw.githubusercontent.com/dataplat/appveyor-lab/master/sql2016-startup/ola/CommandLog.sql'
         $null = Invoke-DbaQuery -SqlInstance $script:instance2 -Database tempdb -File $CloudQuery
         $check = "SELECT name FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[CommandLog]') AND type in (N'U')"
         $results = Invoke-DbaQuery -SqlInstance $script:instance2 -Database tempdb -Query $check
@@ -102,7 +102,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     It "supports smo objects" {
         $cleanup = "IF EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[CommandLog]') AND type in (N'U')) DROP TABLE [dbo].[CommandLog]"
         $null = Invoke-DbaQuery -SqlInstance $script:instance2, $script:instance3 -Database tempdb -Query $cleanup
-        $CloudQuery = 'https://raw.githubusercontent.com/sqlcollaborative/appveyor-lab/master/sql2016-startup/ola/CommandLog.sql'
+        $CloudQuery = 'https://raw.githubusercontent.com/dataplat/appveyor-lab/master/sql2016-startup/ola/CommandLog.sql'
         $null = Invoke-DbaQuery -SqlInstance $script:instance2 -Database tempdb -File $CloudQuery
         $smoobj = Get-DbaDbTable -SqlInstance $script:instance2 -Database tempdb | Where-Object Name -EQ 'CommandLog'
         $null = Invoke-DbaQuery -SqlInstance $script:instance3 -Database tempdb -SqlObject $smoobj

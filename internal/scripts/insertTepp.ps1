@@ -5,7 +5,7 @@ if ($ExecutionContext.SessionState.InvokeCommand.GetCommand('TabExpansionPlusPlu
 }
 
 $functions = $executionContext.SessionState.InvokeCommand.GetCommands('*-Dba*', 'Function', $true) -as [Management.Automation.FunctionInfo[]]
-[Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::DbatoolsCommands = $functions
+[Dataplat.Dbatools.TabExpansion.TabExpansionHost]::DbatoolsCommands = $functions
 $names = $functions.Name
 
 #region Automatic TEPP by parameter name

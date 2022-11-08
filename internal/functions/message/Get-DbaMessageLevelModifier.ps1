@@ -28,5 +28,5 @@ function Get-DbaMessageLevelModifier {
         $Name = "*"
     )
 
-    ([Sqlcollaborative.Dbatools.Message.MessageHost]::MessageLevelModifiers.Values) | Where-Object Name -Like $Name
+    ([Dataplat.Dbatools.Message.MessageHost]::MessageLevelModifiers.Values) | Where-Object Name -Like $Name
 }

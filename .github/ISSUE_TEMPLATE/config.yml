@@ -2,10 +2,10 @@ blank_issues_enabled: false
 contact_links:
   - name: Issues found with dbatools.io?
     url: https://github.com/dataplat/web/issues/new
-    about: Website is hosted via GitHub Pages under sqlcollaborative/web
+    about: Website is hosted via GitHub Pages under dataplat/web
   - name: Issues found with docs.dbatools.io?
     url: https://github.com/dataplat/docs/issues/new
-    about: Website is hosted under sqlcollaborative/docs
+    about: Website is hosted under dataplat/docs
   - name: Ask a question about dbatools or get support
     url: https://github.com/dataplat/dbatools/discussions/new
     about: Get support via forums

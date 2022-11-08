@@ -66,9 +66,9 @@ function Test-DbaCmConnection {
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingWMICmdlet", "", Justification = "Using Get-WmiObject is used as a fallback for testing connections")]
     param (
         [Parameter(ValueFromPipeline)]
-        [Sqlcollaborative.Dbatools.Parameter.DbaCmConnectionParameter[]]$ComputerName = $env:COMPUTERNAME,
+        [Dataplat.Dbatools.Parameter.DbaCmConnectionParameter[]]$ComputerName = $env:COMPUTERNAME,
         [PSCredential]$Credential,
-        [Sqlcollaborative.Dbatools.Connection.ManagementConnectionType[]]$Type = @("CimRM", "CimDCOM", "Wmi", "PowerShellRemoting"),
+        [Dataplat.Dbatools.Connection.ManagementConnectionType[]]$Type = @("CimRM", "CimDCOM", "Wmi", "PowerShellRemoting"),
         [switch]$Force,
         [switch]$EnableException
     )
@@ -83,7 +83,7 @@ function Test-DbaCmConnection {
         function Test-ConnectionCimRM {
             [CmdletBinding()]
             param (
-                [Sqlcollaborative.Dbatools.Parameter.DbaCmConnectionParameter]
+                [Dataplat.Dbatools.Parameter.DbaCmConnectionParameter]
                 $ComputerName,
 
                 [System.Management.Automation.PSCredential]
@@ -119,7 +119,7 @@ function Test-DbaCmConnection {
         function Test-ConnectionCimDCOM {
             [CmdletBinding()]
             param (
-                [Sqlcollaborative.Dbatools.Parameter.DbaCmConnectionParameter]
+                [Dataplat.Dbatools.Parameter.DbaCmConnectionParameter]
                 $ComputerName,
 
                 [System.Management.Automation.PSCredential]
@@ -308,7 +308,7 @@ function Test-DbaCmConnection {
             }
             #endregion Connectivity Tests
 
-            if (-not $disable_cache) { [Sqlcollaborative.Dbatools.Connection.ConnectionHost]::Connections[$Computer] = $con }
+            if (-not $disable_cache) { [Dataplat.Dbatools.Connection.ConnectionHost]::Connections[$Computer] = $con }
             $con
         }
     }

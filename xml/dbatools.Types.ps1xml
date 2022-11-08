@@ -89,7 +89,7 @@ $this.Databases[$Database].ExecuteNonQuery($Command)
 </Members>
 </Type>
 <Type>
-<Name>Sqlcollaborative.Dbatools.dbaSystem.DbatoolsException</Name>
+<Name>Dataplat.Dbatools.dbaSystem.DbatoolsException</Name>
 <Members>
 <MemberSet>
 <Name>PSStandardMembers</Name>
@@ -103,7 +103,7 @@ $this.Databases[$Database].ExecuteNonQuery($Command)
 </Members>
 </Type>
 <Type>
-<Name>Sqlcollaborative.Dbatools.dbaSystem.DbatoolsExceptionRecord</Name>
+<Name>Dataplat.Dbatools.dbaSystem.DbatoolsExceptionRecord</Name>
 <Members>
 <MemberSet>
 <Name>PSStandardMembers</Name>

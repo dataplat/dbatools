@@ -136,7 +136,7 @@ function Copy-DbaSysDbUserObject {
                             Type              = "User schema in $systemDb"
                             Status            = $null
                             Notes             = $null
-                            DateTime          = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
+                            DateTime          = [Dataplat.Dbatools.Utility.DbaDateTime](Get-Date)
                         }
 
                         $destschema = $destdb.Schemas | Where-Object Name -eq $schema.Name
@@ -191,7 +191,7 @@ function Copy-DbaSysDbUserObject {
                             Type              = "User table in $systemDb"
                             Status            = $null
                             Notes             = $null
-                            DateTime          = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
+                            DateTime          = [Dataplat.Dbatools.Utility.DbaDateTime](Get-Date)
                         }
 
                         $desttable = $destdb.Tables.Item($table.Name, $table.Schema)
@@ -254,7 +254,7 @@ function Copy-DbaSysDbUserObject {
                             Type              = "$type in $systemDb"
                             Status            = $null
                             Notes             = $null
-                            DateTime          = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
+                            DateTime          = [Dataplat.Dbatools.Utility.DbaDateTime](Get-Date)
                         }
                         Write-Message -Level Debug -Message $sql
                         try {

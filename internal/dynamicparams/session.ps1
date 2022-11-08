@@ -1,6 +1,6 @@
 #region Initialize Cache
-if (-not [Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Cache["session"]) {
-    [Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Cache["session"] = @{ }
+if (-not [Dataplat.Dbatools.TabExpansion.TabExpansionHost]::Cache["session"]) {
+    [Dataplat.Dbatools.TabExpansion.TabExpansionHost]::Cache["session"] = @{ }
 }
 #endregion Initialize Cache
 
@@ -37,8 +37,8 @@ $ScriptBlock = {
         return
     }
 
-    if ([Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Cache["session"][$parServer.FullSmoName.ToLowerInvariant()]) {
-        foreach ($name in ([Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Cache["session"][$parServer.FullSmoName.ToLowerInvariant()] | Where-DbaObject -Like "$wordToComplete*")) {
+    if ([Dataplat.Dbatools.TabExpansion.TabExpansionHost]::Cache["session"][$parServer.FullSmoName.ToLowerInvariant()]) {
+        foreach ($name in ([Dataplat.Dbatools.TabExpansion.TabExpansionHost]::Cache["session"][$parServer.FullSmoName.ToLowerInvariant()] | Where-DbaObject -Like "$wordToComplete*")) {
             New-DbaTeppCompletionResult -CompletionText $name -ToolTip $name
         }
         return
@@ -46,7 +46,7 @@ $ScriptBlock = {
 
     try {
         $serverObject = Connect-DbaInstance -SqlInstance $parServer -SqlCredential $fakeBoundParameter['SqlCredential'] -ErrorAction Stop
-        foreach ($name in ([Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Cache["session"][$parServer.FullSmoName.ToLowerInvariant()] | Where-DbaObject -Like "$wordToComplete*")) {
+        foreach ($name in ([Dataplat.Dbatools.TabExpansion.TabExpansionHost]::Cache["session"][$parServer.FullSmoName.ToLowerInvariant()] | Where-DbaObject -Like "$wordToComplete*")) {
             New-DbaTeppCompletionResult -CompletionText $name -ToolTip $name
         }
         return
@@ -65,7 +65,7 @@ $ScriptBlock = {
     $SqlStoreConnection = New-Object Microsoft.SqlServer.Management.Sdk.Sfc.SqlStoreConnection $SqlConn
     $XEStore = New-Object  Microsoft.SqlServer.Management.XEvent.XEStore $SqlStoreConnection
     $xesessions = $XEStore.sessions
-    [Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Cache["session"][$FullSmoName] = $xesessions.Name
+    [Dataplat.Dbatools.TabExpansion.TabExpansionHost]::Cache["session"][$FullSmoName] = $xesessions.Name
 }
 Register-DbaTeppInstanceCacheBuilder -ScriptBlock $ScriptBlock
 #endregion Update Cache

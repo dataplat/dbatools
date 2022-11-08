@@ -74,7 +74,7 @@ function Get-DbaPageFileSetting {
                     $usage = $pagefileUsages | Where-Object Name -EQ $file.Name
 
                     # pagefile is not automatic managed, so return settings
-                    New-Object Sqlcollaborative.Dbatools.Computer.PageFileSetting -Property @{
+                    New-Object Dataplat.Dbatools.Computer.PageFileSetting -Property @{
                         ComputerName      = $computer.ComputerName
                         AutoPageFile      = $CompSys.automaticmanagedpagefile
                         FileName          = $file.name
@@ -91,7 +91,7 @@ function Get-DbaPageFileSetting {
                 }
             } else {
                 # pagefile is automatic managed, so there are no settings
-                New-Object Sqlcollaborative.Dbatools.Computer.PageFileSetting -Property @{
+                New-Object Dataplat.Dbatools.Computer.PageFileSetting -Property @{
                     ComputerName      = $computer
                     AutoPageFile      = $CompSys.automaticmanagedpagefile
                     FileName          = $null

@@ -47,7 +47,7 @@ function Register-DbaTeppArgumentCompleter {
             $fakeBoundParameter
         )
 
-        if ($teppScript = [Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::GetTeppScript($commandName, $parameterName)) {
+        if ($teppScript = [Dataplat.Dbatools.TabExpansion.TabExpansionHost]::GetTeppScript($commandName, $parameterName)) {
             $start = Get-Date
             $teppScript.LastExecution = $start
             $teppScript.LastDuration = New-Object System.TimeSpan(-1) # Null it, just in case. It's a new start.
@@ -69,10 +69,10 @@ function Register-DbaTeppArgumentCompleter {
             $lowername = $lowername.ToLowerInvariant()
         }
 
-        if ($All) { [Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::AddTabCompletionSet("*", $p, $lowername) }
+        if ($All) { [Dataplat.Dbatools.TabExpansion.TabExpansionHost]::AddTabCompletionSet("*", $p, $lowername) }
         else {
             foreach ($c in $Command) {
-                [Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::AddTabCompletionSet($c, $p, $lowername)
+                [Dataplat.Dbatools.TabExpansion.TabExpansionHost]::AddTabCompletionSet($c, $p, $lowername)
             }
         }
 

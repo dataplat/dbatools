@@ -31,7 +31,7 @@ function Restart-WinRMService {
             Write-Message -Level Debug "Removing existing local sessions to $ComputerName - they are no longer valid"
             $runspaceId = [System.Management.Automation.Runspaces.Runspace]::DefaultRunspace.InstanceId
             # Retrieve a session from the session cache, if available (it's unique per runspace)
-            [array]$currentSessions = [Sqlcollaborative.Dbatools.Connection.ConnectionHost]::PSSessionGet($runspaceId, $ComputerName)
+            [array]$currentSessions = [Dataplat.Dbatools.Connection.ConnectionHost]::PSSessionGet($runspaceId, $ComputerName)
             Write-Message -Level Debug -Message "Removing $($currentSessions.Count) sessions from $ComputerName in runspace $runspaceId"
             # "$currentSessions | Remove-PSSession" would fail with "Remove-PSSession : Cannot bind argument to parameter 'Session' because it is null." if $currentSessions is empty.
             foreach ($session in $currentSessions) { $session | Remove-PSSession }

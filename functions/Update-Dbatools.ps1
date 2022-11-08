@@ -52,7 +52,7 @@ function Update-Dbatools {
         [switch]$Cleanup,
         [switch]$EnableException
     )
-    $MyModuleBase = [SqlCollaborative.Dbatools.dbaSystem.SystemHost]::ModuleBase
+    $MyModuleBase = [Dataplat.Dbatools.dbaSystem.SystemHost]::ModuleBase
     $InstallScript = Join-Path -path $MyModuleBase -ChildPath "install.ps1";
     if ($Development) {
         Write-Message -Level Verbose -Message "Installing dev/beta channel via $Installscript.";
