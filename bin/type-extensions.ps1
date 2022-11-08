@@ -1,5 +1,5 @@
 # Only update on first import
-if (-not ([Sqlcollaborative.Dbatools.dbaSystem.SystemHost]::ModuleImported)) {
+if (-not ([Dataplat.Dbatools.dbaSystem.SystemHost]::ModuleImported)) {
     # Implement query accelerator for the server object
     Update-TypeData -TypeName Microsoft.SqlServer.Management.Smo.Server -MemberName Query -MemberType ScriptMethod -Value {
         param (

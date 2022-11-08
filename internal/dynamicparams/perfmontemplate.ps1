@@ -1,6 +1,6 @@
 #region Initialize Cache
-if (-not [Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Cache["perfmontemplate"]) {
-    [Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Cache["perfmontemplate"] = @{ }
+if (-not [Dataplat.Dbatools.TabExpansion.TabExpansionHost]::Cache["perfmontemplate"]) {
+    [Dataplat.Dbatools.TabExpansion.TabExpansionHost]::Cache["perfmontemplate"] = @{ }
 }
 #endregion Initialize Cache
 

@@ -8,19 +8,19 @@ $scriptBlock = {
 
     # Import module in a way where internals are available
     $dbatools_disableTimeMeasurements = $true
-    Import-Module "$([Sqlcollaborative.Dbatools.dbaSystem.SystemHost]::ModuleBase)\dbatools.psm1"
+    Import-Module "$([Dataplat.Dbatools.dbaSystem.SystemHost]::ModuleBase)\dbatools.psm1"
 
     try {
         #region Main Execution
         while ($true) {
             # This portion is critical to gracefully closing the script
-            if ([Sqlcollaborative.Dbatools.Runspace.RunspaceHost]::Runspaces[$___ScriptName.ToLowerInvariant()].State -notlike "Running") {
+            if ([Dataplat.Dbatools.Runspace.RunspaceHost]::Runspaces[$___ScriptName.ToLowerInvariant()].State -notlike "Running") {
                 break
             }
 
             $task = $null
             $tasksDone = @()
-            while ($task = [Sqlcollaborative.Dbatools.Maintenance.MaintenanceHost]::GetNextTask($tasksDone)) {
+            while ($task = [Dataplat.Dbatools.Maintenance.MaintenanceHost]::GetNextTask($tasksDone)) {
                 try { ([ScriptBlock]::Create($task.ScriptBlock.ToString())).Invoke() }
                 catch { Write-Message -EnableException $false -Level Verbose -Message "[Maintenance] Task '$($task.Name)' failed to execute: $_" -ErrorRecord $_ -FunctionName "task:Maintenance" -Target $task }
                 $task.LastExecution = Get-Date
@@ -32,7 +32,7 @@ $scriptBlock = {
         #endregion Main Execution
     } catch {  }
     finally {
-        [Sqlcollaborative.Dbatools.Runspace.RunspaceHost]::Runspaces[$___ScriptName.ToLowerInvariant()].SignalStopped()
+        [Dataplat.Dbatools.Runspace.RunspaceHost]::Runspaces[$___ScriptName.ToLowerInvariant()].SignalStopped()
     }
 }
 

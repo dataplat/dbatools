@@ -622,7 +622,7 @@ function Import-DbaCsv {
                         }
 
                         $stream = [System.IO.File]::OpenRead($File);
-                        $stream = New-Object Sqlcollaborative.Dbatools.IO.ProgressStream($stream, $progressCallback, 0.05)
+                        $stream = New-Object Dataplat.Dbatools.IO.ProgressStream($stream, $progressCallback, 0.05)
                         if ($isCompressed) {
                             $stream = New-Object System.IO.Compression.GZipStream($stream, [System.IO.Compression.CompressionMode]::Decompress)
                         }

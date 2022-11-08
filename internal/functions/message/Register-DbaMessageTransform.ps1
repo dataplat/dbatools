@@ -104,17 +104,17 @@ function Register-DbaMessageTransform {
     )
 
     process {
-        if ($TargetType) { [Sqlcollaborative.Dbatools.Message.MessageHost]::TargetTransforms[$TargetType.ToLowerInvariant()] = $ScriptBlock }
-        if ($ExceptionType) { [Sqlcollaborative.Dbatools.Message.MessageHost]::ExceptionTransforms[$ExceptionType.ToLowerInvariant()] = $ScriptBlock }
+        if ($TargetType) { [Dataplat.Dbatools.Message.MessageHost]::TargetTransforms[$TargetType.ToLowerInvariant()] = $ScriptBlock }
+        if ($ExceptionType) { [Dataplat.Dbatools.Message.MessageHost]::ExceptionTransforms[$ExceptionType.ToLowerInvariant()] = $ScriptBlock }
 
         if ($TargetTypeFilter) {
-            $condition = New-Object Sqlcollaborative.Dbatools.Message.TransformCondition($TargetTypeFilter, $ModuleNameFilter, $FunctionNameFilter, $ScriptBlock, "Target")
-            [Sqlcollaborative.Dbatools.Message.MessageHost]::TargetTransformList.Add($condition)
+            $condition = New-Object Dataplat.Dbatools.Message.TransformCondition($TargetTypeFilter, $ModuleNameFilter, $FunctionNameFilter, $ScriptBlock, "Target")
+            [Dataplat.Dbatools.Message.MessageHost]::TargetTransformList.Add($condition)
         }
 
         if ($ExceptionTypeFilter) {
-            $condition = New-Object Sqlcollaborative.Dbatools.Message.TransformCondition($ExceptionTypeFilter, $ModuleNameFilter, $FunctionNameFilter, $ScriptBlock, "Exception")
-            [Sqlcollaborative.Dbatools.Message.MessageHost]::ExceptionTransformList.Add($condition)
+            $condition = New-Object Dataplat.Dbatools.Message.TransformCondition($ExceptionTypeFilter, $ModuleNameFilter, $FunctionNameFilter, $ScriptBlock, "Exception")
+            [Dataplat.Dbatools.Message.MessageHost]::ExceptionTransformList.Add($condition)
         }
     }
 }

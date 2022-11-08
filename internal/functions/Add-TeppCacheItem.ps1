@@ -10,7 +10,7 @@ function Add-TeppCacheItem {
         The SQL Server instance.
 
     .PARAMETER Type
-        The type of object. Must be part of "[Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Cache.Keys".
+        The type of object. Must be part of "[Dataplat.Dbatools.TabExpansion.TabExpansionHost]::Cache.Keys".
 
     .PARAMETER Name
         The name of the object that should be added to the cache. Will not be added if already in cache.
@@ -35,9 +35,9 @@ function Add-TeppCacheItem {
         } else {
             $serverName = $SqlInstance.FullSmoName
         }
-        if ($serverName -in [Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Cache[$Type].Keys) {
-            if ($Name -notin [Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Cache[$Type][$serverName]) {
-                [Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Cache[$Type][$serverName] = @([Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Cache[$Type][$serverName]) + $Name | Sort-Object
+        if ($serverName -in [Dataplat.Dbatools.TabExpansion.TabExpansionHost]::Cache[$Type].Keys) {
+            if ($Name -notin [Dataplat.Dbatools.TabExpansion.TabExpansionHost]::Cache[$Type][$serverName]) {
+                [Dataplat.Dbatools.TabExpansion.TabExpansionHost]::Cache[$Type][$serverName] = @([Dataplat.Dbatools.TabExpansion.TabExpansionHost]::Cache[$Type][$serverName]) + $Name | Sort-Object
                 Write-Message -Level Debug -Message "$Name added to cache for $Type on $serverName."
             } else {
                 Write-Message -Level Debug -Message "$Name already in cache for $Type on $serverName."

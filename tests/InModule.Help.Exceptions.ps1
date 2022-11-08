@@ -3,9 +3,9 @@ $global:FunctionHelpTestExceptions = @(
 )
 
 $global:HelpTestEnumeratedArrays = @(
-    "Sqlcollaborative.Dbatools.Connection.ManagementConnectionType[]"
-    "Sqlcollaborative.Dbatools.Message.MessageLevel[]"
-    "Sqlcollaborative.Dbatools.Discovery.DbaInstanceScanType[]"
+    "Dataplat.Dbatools.Connection.ManagementConnectionType[]"
+    "Dataplat.Dbatools.Message.MessageLevel[]"
+    "Dataplat.Dbatools.Discovery.DbaInstanceScanType[]"
 )
 
 $global:HelpTestSkipParameterType = @{

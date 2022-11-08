@@ -272,7 +272,7 @@ function Export-DbaDbRole {
         foreach ($input in $InputObject) {
             $inputType = $input.GetType().FullName
             switch ($inputType) {
-                'Sqlcollaborative.Dbatools.Parameter.DbaInstanceParameter' {
+                'Dataplat.Dbatools.Parameter.DbaInstanceParameter' {
                     Write-Message -Level Verbose -Message "Processing DbaInstanceParameter through InputObject"
                     $databaseRoles = Get-DbaDbRole -SqlInstance $input -SqlCredential $SqlCredential -Database $Database -ExcludeDatabase $ExcludeDatabase -Role $Role -ExcludeRole $ExcludeRole -ExcludeFixedRole:$ExcludeFixedRole
                 }

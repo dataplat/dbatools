@@ -60,7 +60,7 @@ function Register-DbatoolsConfig {
     [CmdletBinding(DefaultParameterSetName = "Default")]
     Param (
         [Parameter(ParameterSetName = "Default", ValueFromPipeline = $true)]
-        [Sqlcollaborative.Dbatools.Configuration.Config[]]
+        [Dataplat.Dbatools.Configuration.Config[]]
         $Config,
 
         [Parameter(ParameterSetName = "Default", ValueFromPipeline = $true)]
@@ -75,7 +75,7 @@ function Register-DbatoolsConfig {
         [string]
         $Name = "*",
 
-        [Sqlcollaborative.Dbatools.Configuration.ConfigScope]
+        [Dataplat.Dbatools.Configuration.ConfigScope]
         $Scope = "UserDefault",
 
         [switch]$EnableException
@@ -89,11 +89,11 @@ function Register-DbatoolsConfig {
 
         # Linux and MAC default to local user store file
         if ($script:NoRegistry -and ($Scope -eq "UserDefault")) {
-            $Scope = [Sqlcollaborative.Dbatools.Configuration.ConfigScope]::FileUserLocal
+            $Scope = [Dataplat.Dbatools.Configuration.ConfigScope]::FileUserLocal
         }
         # Linux and MAC get redirection for SystemDefault to FileSystem
         if ($script:NoRegistry -and ($Scope -eq "SystemDefault")) {
-            $Scope = [Sqlcollaborative.Dbatools.Configuration.ConfigScope]::FileSystem
+            $Scope = [Dataplat.Dbatools.Configuration.ConfigScope]::FileSystem
         }
 
         $parSet = $PSCmdlet.ParameterSetName
@@ -101,10 +101,10 @@ function Register-DbatoolsConfig {
         function Write-Config {
             [CmdletBinding()]
             Param (
-                [Sqlcollaborative.Dbatools.Configuration.Config]
+                [Dataplat.Dbatools.Configuration.Config]
                 $Config,
 
-                [Sqlcollaborative.Dbatools.Configuration.ConfigScope]
+                [Dataplat.Dbatools.Configuration.ConfigScope]
                 $Scope,
 
                 [bool]
@@ -182,13 +182,13 @@ function Register-DbatoolsConfig {
                     }
 
                     foreach ($item in $FullName) {
-                        if ([Sqlcollaborative.Dbatools.Configuration.ConfigurationHost]::Configurations.ContainsKey($item.ToLowerInvariant())) {
-                            Write-Config -Config ([Sqlcollaborative.Dbatools.Configuration.ConfigurationHost]::Configurations[$item.ToLowerInvariant()]) -Scope $Scope -EnableException $EnableException
+                        if ([Dataplat.Dbatools.Configuration.ConfigurationHost]::Configurations.ContainsKey($item.ToLowerInvariant())) {
+                            Write-Config -Config ([Dataplat.Dbatools.Configuration.ConfigurationHost]::Configurations[$item.ToLowerInvariant()]) -Scope $Scope -EnableException $EnableException
                         }
                     }
                 }
                 "Name" {
-                    foreach ($item in ([Sqlcollaborative.Dbatools.Configuration.ConfigurationHost]::Configurations.Values | Where-Object Module -EQ $Module | Where-Object Name -Like $Name)) {
+                    foreach ($item in ([Dataplat.Dbatools.Configuration.ConfigurationHost]::Configurations.Values | Where-Object Module -EQ $Module | Where-Object Name -Like $Name)) {
                         Write-Config -Config $item -Scope $Scope -EnableException $EnableException
                     }
                 }
@@ -205,13 +205,13 @@ function Register-DbatoolsConfig {
                     }
 
                     foreach ($item in $FullName) {
-                        if (($configurationItems.FullName -notcontains $item) -and ([Sqlcollaborative.Dbatools.Configuration.ConfigurationHost]::Configurations.ContainsKey($item.ToLowerInvariant()))) {
-                            $configurationItems += [Sqlcollaborative.Dbatools.Configuration.ConfigurationHost]::Configurations[$item.ToLowerInvariant()]
+                        if (($configurationItems.FullName -notcontains $item) -and ([Dataplat.Dbatools.Configuration.ConfigurationHost]::Configurations.ContainsKey($item.ToLowerInvariant()))) {
+                            $configurationItems += [Dataplat.Dbatools.Configuration.ConfigurationHost]::Configurations[$item.ToLowerInvariant()]
                         }
                     }
                 }
                 "Name" {
-                    foreach ($item in ([Sqlcollaborative.Dbatools.Configuration.ConfigurationHost]::Configurations.Values | Where-Object Module -EQ $Module | Where-Object Name -Like $Name)) {
+                    foreach ($item in ([Dataplat.Dbatools.Configuration.ConfigurationHost]::Configurations.Values | Where-Object Module -EQ $Module | Where-Object Name -Like $Name)) {
                         if ($configurationItems.FullName -notcontains $item.FullName) { $configurationItems += $item }
                     }
                 }

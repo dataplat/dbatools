@@ -1,6 +1,6 @@
 # Code of Conduct
 
-SQLCollaborative Organization and the dbatools team is dedicated to providing a positive and harassment-free experience for everyone, regardless of age, gender, gender identity and expression, sexual orientation, disability, personal appearance, body size, ethnicity, race, religion, nationality, or level of experience. We do not tolerate harassment in any form, nor do we tolerate any behavior that would reasonably lead to someone being made to feel unsafe, insecure, or frightened for their physical or emotional well-being.
+The Data Platform Community Organization and the dbatools team is dedicated to providing a positive and harassment-free experience for everyone, regardless of age, gender, gender identity and expression, sexual orientation, disability, personal appearance, body size, ethnicity, race, religion, nationality, or level of experience. We do not tolerate harassment in any form, nor do we tolerate any behavior that would reasonably lead to someone being made to feel unsafe, insecure, or frightened for their physical or emotional well-being.
 
 This applies to all interactions here on GitHub, Slack, YouTube comments and YouTube chat. All communication should be appropriate for a professional audience including people of many different backgrounds.
 

@@ -96,23 +96,23 @@ function Get-DbatoolsLog {
         [switch]$LastError,
         [int]$Skip = 0,
         [guid]$Runspace,
-        [Sqlcollaborative.Dbatools.Message.MessageLevel[]]$Level,
+        [Dataplat.Dbatools.Message.MessageLevel[]]$Level,
         [switch]$Raw,
         [switch]$Errors
     )
     process {
         if ($Errors) {
-            $messages = [Sqlcollaborative.Dbatools.Message.LogHost]::GetErrors() | Where-Object {
+            $messages = [Dataplat.Dbatools.Message.LogHost]::GetErrors() | Where-Object {
                 ($_.FunctionName -like $FunctionName) -and ($_.ModuleName -like $ModuleName)
             }
         } else {
-            $messages = [Sqlcollaborative.Dbatools.Message.LogHost]::GetLog() | Where-Object {
+            $messages = [Dataplat.Dbatools.Message.LogHost]::GetLog() | Where-Object {
                 ($_.FunctionName -like $FunctionName) -and ($_.ModuleName -like $ModuleName)
             }
         }
 
         if (Test-Bound -ParameterName LastError) {
-            $messages = [Sqlcollaborative.Dbatools.Message.LogHost]::GetErrors() | Where-Object { ($_.FunctionName -like $FunctionName) -and ($_.ModuleName -like $ModuleName) } | Select-Object -Last 1
+            $messages = [Dataplat.Dbatools.Message.LogHost]::GetErrors() | Where-Object { ($_.FunctionName -like $FunctionName) -and ($_.ModuleName -like $ModuleName) } | Select-Object -Last 1
         }
 
         if (Test-Bound -ParameterName Target) {

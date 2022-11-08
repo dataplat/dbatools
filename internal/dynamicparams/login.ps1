@@ -1,6 +1,6 @@
 #region Initialize Cache
-if (-not [Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Cache["login"]) {
-    [Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Cache["login"] = @{ }
+if (-not [Dataplat.Dbatools.TabExpansion.TabExpansionHost]::Cache["login"]) {
+    [Dataplat.Dbatools.TabExpansion.TabExpansionHost]::Cache["login"] = @{ }
 }
 #endregion Initialize Cache
 
@@ -33,8 +33,8 @@ $ScriptBlock = {
         return
     }
 
-    if ([Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Cache["login"][$parServer.FullSmoName.ToLowerInvariant()]) {
-        foreach ($name in ([Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Cache["login"][$parServer.FullSmoName.ToLowerInvariant()] | Where-DbaObject -Like "$wordToComplete*")) {
+    if ([Dataplat.Dbatools.TabExpansion.TabExpansionHost]::Cache["login"][$parServer.FullSmoName.ToLowerInvariant()]) {
+        foreach ($name in ([Dataplat.Dbatools.TabExpansion.TabExpansionHost]::Cache["login"][$parServer.FullSmoName.ToLowerInvariant()] | Where-DbaObject -Like "$wordToComplete*")) {
             New-DbaTeppCompletionResult -CompletionText $name -ToolTip $name
         }
         return
@@ -42,7 +42,7 @@ $ScriptBlock = {
 
     try {
         $serverObject = Connect-DbaInstance -SqlInstance $parServer -SqlCredential $fakeBoundParameter['SqlCredential'] -ErrorAction Stop
-        foreach ($name in ([Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Cache["login"][$parServer.FullSmoName.ToLowerInvariant()] | Where-DbaObject -Like "$wordToComplete*")) {
+        foreach ($name in ([Dataplat.Dbatools.TabExpansion.TabExpansionHost]::Cache["login"][$parServer.FullSmoName.ToLowerInvariant()] | Where-DbaObject -Like "$wordToComplete*")) {
             New-DbaTeppCompletionResult -CompletionText $name -ToolTip $name
         }
         return
@@ -56,7 +56,7 @@ Register-DbaTeppScriptblock -ScriptBlock $ScriptBlock -Name Login
 
 #region Update Cache
 $ScriptBlock = {
-    [Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Cache["login"][$FullSmoName] = $server.Logins.Name
+    [Dataplat.Dbatools.TabExpansion.TabExpansionHost]::Cache["login"][$FullSmoName] = $server.Logins.Name
 }
 Register-DbaTeppInstanceCacheBuilder -ScriptBlock $ScriptBlock
 #endregion Update Cache

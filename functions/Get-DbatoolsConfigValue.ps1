@@ -53,7 +53,7 @@ function Get-DbatoolsConfigValue {
     $FullName = $FullName.ToLowerInvariant()
 
     $temp = $null
-    $temp = [Sqlcollaborative.Dbatools.Configuration.ConfigurationHost]::Configurations[$FullName].Value
+    $temp = [Dataplat.Dbatools.Configuration.ConfigurationHost]::Configurations[$FullName].Value
     if ($temp -eq $null) { $temp = $Fallback }
 
     if ($NotNull -and ($temp -eq $null)) {

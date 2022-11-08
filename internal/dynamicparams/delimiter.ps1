@@ -1,6 +1,6 @@
 #region Initialize Cache
-if (-not [Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Cache["delimiter"]) {
-    [Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Cache["delimiter"] = @{ }
+if (-not [Dataplat.Dbatools.TabExpansion.TabExpansionHost]::Cache["delimiter"]) {
+    [Dataplat.Dbatools.TabExpansion.TabExpansionHost]::Cache["delimiter"] = @{ }
 }
 #endregion Initialize Cache
 

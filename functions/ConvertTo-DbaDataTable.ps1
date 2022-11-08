@@ -137,7 +137,7 @@ function ConvertTo-DbaDataTable {
             # I couldn't decide on what to convert it to so the user can decide.
             # If the parameter is not used, TotalMilliseconds will be used as default.
             # Ticks are more accurate but I think milliseconds are more useful most of the time.
-            if (($type -eq 'System.TimeSpan') -or ($type -eq 'Sqlcollaborative.Dbatools.Utility.DbaTimeSpan') -or ($type -eq 'Sqlcollaborative.Dbatools.Utility.DbaTimeSpanPretty')) {
+            if (($type -eq 'System.TimeSpan') -or ($type -eq 'Dataplat.Dbatools.Utility.DbaTimeSpan') -or ($type -eq 'Dataplat.Dbatools.Utility.DbaTimeSpanPretty')) {
                 $special = $true
                 if ($timespantype -eq 'String') {
                     $value = $value.ToString()
@@ -149,7 +149,7 @@ function ConvertTo-DbaDataTable {
                     $type = 'System.Int64'
                 }
                 $specialType = 'Timespan'
-            } elseif ($type -eq 'Sqlcollaborative.Dbatools.Utility.Size') {
+            } elseif ($type -eq 'Dataplat.Dbatools.Utility.Size') {
                 $special = $true
                 switch ($sizetype) {
                     'Int64' {

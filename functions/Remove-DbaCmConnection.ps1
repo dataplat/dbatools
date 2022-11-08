@@ -44,7 +44,7 @@ function Remove-DbaCmConnection {
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High')]
     param (
         [Parameter(ValueFromPipeline, Mandatory)]
-        [Sqlcollaborative.Dbatools.Parameter.DbaCmConnectionParameter[]]$ComputerName,
+        [Dataplat.Dbatools.Parameter.DbaCmConnectionParameter[]]$ComputerName,
         [switch]$EnableException
     )
 
@@ -57,8 +57,8 @@ function Remove-DbaCmConnection {
             if (-not $connectionObject.Success) { Stop-Function -Message "Failed to interpret computername input: $($connectionObject.InputObject)" -Category InvalidArgument -Target $connectionObject.InputObject -Continue }
             Write-Message -Level VeryVerbose -Message "Removing from connection cache: $($connectionObject.Connection.ComputerName)" -Target $connectionObject.Connection.ComputerName
             if ($Pscmdlet.ShouldProcess($($connectionObject.Connection.ComputerName), "Removing Connection")) {
-                if ([Sqlcollaborative.Dbatools.Connection.ConnectionHost]::Connections.ContainsKey($connectionObject.Connection.ComputerName)) {
-                    $null = [Sqlcollaborative.Dbatools.Connection.ConnectionHost]::Connections.Remove($connectionObject.Connection.ComputerName)
+                if ([Dataplat.Dbatools.Connection.ConnectionHost]::Connections.ContainsKey($connectionObject.Connection.ComputerName)) {
+                    $null = [Dataplat.Dbatools.Connection.ConnectionHost]::Connections.Remove($connectionObject.Connection.ComputerName)
                     Write-Message -Level Verbose -Message "Successfully removed $($connectionObject.Connection.ComputerName)" -Target $connectionObject.Connection.ComputerName
                 } else {
                     Write-Message -Level Verbose -Message "Not found: $($connectionObject.Connection.ComputerName)" -Target $connectionObject.Connection.ComputerName

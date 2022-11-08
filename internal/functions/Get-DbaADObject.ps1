@@ -63,9 +63,9 @@ function Get-DbaADObject {
     As a last resort, searches in all the current forest for a ctrlb@super.contoso.com user using the UserPrincipalName format
 
     .EXAMPLE
-    Get-DbaADObject -ADObject "contoso\sqlcollaborative" -Type Group
+    Get-DbaADObject -ADObject "contoso\dataplat" -Type Group
 
-    Searches in the contoso domain for a sqlcollaborative group
+    Searches in the contoso domain for a dataplat group
 
     .EXAMPLE
     Get-DbaADObject -ADObject "contoso\SqlInstance2014$" -Type Group

@@ -123,7 +123,7 @@ function Copy-DbaBackupDevice {
                     Type              = "Backup Device"
                     Status            = $null
                     Notes             = $null
-                    DateTime          = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
+                    DateTime          = [Dataplat.Dbatools.Utility.DbaDateTime](Get-Date)
                 }
 
                 if ($BackupDevice -and $BackupDevice -notcontains $deviceName) {

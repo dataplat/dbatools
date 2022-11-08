@@ -63,7 +63,7 @@ function Reset-DbatoolsConfig {
     [CmdletBinding(DefaultParameterSetName = 'Pipeline', SupportsShouldProcess, ConfirmImpact = 'Low')]
     param (
         [Parameter(ValueFromPipeline = $true, ParameterSetName = 'Pipeline')]
-        [Sqlcollaborative.Dbatools.Configuration.Config[]]
+        [Dataplat.Dbatools.Configuration.Config[]]
         $ConfigurationItem,
 
         [Parameter(ValueFromPipeline = $true, ParameterSetName = 'Pipeline')]
@@ -95,7 +95,7 @@ function Reset-DbatoolsConfig {
         foreach ($nameItem in $FullName) {
             # The configuration items themselves can be cast to string, so they need to be filtered out,
             # otherwise on bind they would execute for this code-path as well.
-            if ($nameItem -ceq "Sqlcollaborative.Dbatools.Configuration.Config") { continue }
+            if ($nameItem -ceq "Dataplat.Dbatools.Configuration.Config") { continue }
 
             foreach ($item in (Get-DbatoolsConfig -FullName $nameItem)) {
                 if ($PSCmdlet.ShouldProcess($item.FullName, 'Reset to default value')) {

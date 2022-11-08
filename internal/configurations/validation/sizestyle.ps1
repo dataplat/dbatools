@@ -9,7 +9,7 @@ Register-DbatoolsConfigValidation -Name "sizestyle" -ScriptBlock {
         Message = ""
     }
 
-    try { [Sqlcollaborative.Dbatools.Utility.SizeStyle]$style = $Value }
+    try { [Dataplat.Dbatools.Utility.SizeStyle]$style = $Value }
     catch {
         $Result.Message = "Not a size style: $Value"
         $Result.Success = $False

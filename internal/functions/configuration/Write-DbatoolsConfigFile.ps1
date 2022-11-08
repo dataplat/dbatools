@@ -3,40 +3,40 @@ function Write-DbatoolsConfigFile
 <#
     .SYNOPSIS
         Handles config export to file.
-    
+
     .DESCRIPTION
         Handles config export to file.
-    
+
     .PARAMETER Config
         The configuration items to export.
-    
+
     .PARAMETER Path
         The path to export to.
         Needs to point to the specific file to export to.
         Will create the folder structure if needed.
-    
+
     .PARAMETER Replace
         Completely replaces previous file contents.
         By default, it will integrate settings into one coherent configuration file.
-    
+
     .EXAMPLE
         PS C:\> Write-DbatoolsConfigFile -Config $items -Path .\file.json
-    
+
         Exports all settings stored in $items to .\file.json.
         If the file already exists, the new settings will be merged into the existing file.
 #>
     [CmdletBinding()]
     Param (
-        [Sqlcollaborative.Dbatools.Configuration.Config[]]
+        [Dataplat.Dbatools.Configuration.Config[]]
         $Config,
-        
+
         [string]
         $Path,
-        
+
         [switch]
         $Replace
     )
-    
+
     begin
     {
         $parent = Split-Path -Path $Path
@@ -44,7 +44,7 @@ function Write-DbatoolsConfigFile
         {
             $null = New-Item $parent -ItemType Directory -Force
         }
-        
+
         $data = @{ }
         if ((Test-Path $Path) -and (-not $Replace))
         {
@@ -68,12 +68,12 @@ function Write-DbatoolsConfigFile
             }
             else
             {
-                $persisted = [Sqlcollaborative.Dbatools.Configuration.ConfigurationHost]::ConvertToPersistedValue($item.Value)
+                $persisted = [Dataplat.Dbatools.Configuration.ConfigurationHost]::ConvertToPersistedValue($item.Value)
                 $datum["Value"] = $persisted.PersistedValue
                 $datum["Type"] = $persisted.PersistedType
                 $datum["Style"] = "default"
             }
-            
+
             $data[$item.FullName] = [pscustomobject]$datum
         }
     }

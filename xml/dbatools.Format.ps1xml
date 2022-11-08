@@ -82,11 +82,11 @@
             </TableRowEntries>
           </TableControl>
         </View>
-        <!-- Sqlcollaborative.Dbatools.Computer.DiskSpace -->
+        <!-- Dataplat.Dbatools.Computer.DiskSpace -->
         <View>
-            <Name>Sqlcollaborative.Dbatools.Computer.DiskSpace</Name>
+            <Name>Dataplat.Dbatools.Computer.DiskSpace</Name>
             <ViewSelectedBy>
-                <TypeName>Sqlcollaborative.Dbatools.Computer.DiskSpace</TypeName>
+                <TypeName>Dataplat.Dbatools.Computer.DiskSpace</TypeName>
             </ViewSelectedBy>
             <TableControl>
                 <AutoSize/>
@@ -135,11 +135,11 @@
             </TableControl>
         </View>
 
-        <!-- Sqlcollaborative.Dbatools.Computer.PageFileSetting -->
+        <!-- Dataplat.Dbatools.Computer.PageFileSetting -->
         <View>
-            <Name>Sqlcollaborative.Dbatools.Computer.PageFileSetting</Name>
+            <Name>Dataplat.Dbatools.Computer.PageFileSetting</Name>
             <ViewSelectedBy>
-                <TypeName>Sqlcollaborative.Dbatools.Computer.PageFileSetting</TypeName>
+                <TypeName>Dataplat.Dbatools.Computer.PageFileSetting</TypeName>
             </ViewSelectedBy>
             <TableControl>
                 <AutoSize/>
@@ -186,11 +186,11 @@
             </TableControl>
         </View>
 
-        <!-- Sqlcollaborative.Dbatools.Configuration.Config -->
+        <!-- Dataplat.Dbatools.Configuration.Config -->
         <View>
-            <Name>Sqlcollaborative.Dbatools.Configuration.Config</Name>
+            <Name>Dataplat.Dbatools.Configuration.Config</Name>
             <ViewSelectedBy>
-                <TypeName>Sqlcollaborative.Dbatools.Configuration.Config</TypeName>
+                <TypeName>Dataplat.Dbatools.Configuration.Config</TypeName>
             </ViewSelectedBy>
             <GroupBy>
                 <PropertyName>Module</PropertyName>
@@ -232,11 +232,11 @@
             </TableControl>
         </View>
 
-        <!-- Sqlcollaborative.Dbatools.Connection.ManagementConnection -->
+        <!-- Dataplat.Dbatools.Connection.ManagementConnection -->
         <View>
-            <Name>Sqlcollaborative.Dbatools.Connection.ManagementConnection</Name>
+            <Name>Dataplat.Dbatools.Connection.ManagementConnection</Name>
             <ViewSelectedBy>
-                <TypeName>Sqlcollaborative.Dbatools.Connection.ManagementConnection</TypeName>
+                <TypeName>Dataplat.Dbatools.Connection.ManagementConnection</TypeName>
             </ViewSelectedBy>
             <TableControl>
                 <AutoSize/>
@@ -282,11 +282,11 @@
             </TableControl>
         </View>
 
-        <!-- Sqlcollaborative.Dbatools.Database.Dependency -->
+        <!-- Dataplat.Dbatools.Database.Dependency -->
         <View>
-            <Name>Sqlcollaborative.Dbatools.Database.Dependency</Name>
+            <Name>Dataplat.Dbatools.Database.Dependency</Name>
             <ViewSelectedBy>
-                <TypeName>Sqlcollaborative.Dbatools.Database.Dependency</TypeName>
+                <TypeName>Dataplat.Dbatools.Database.Dependency</TypeName>
             </ViewSelectedBy>
             <TableControl>
                 <AutoSize/>
@@ -337,11 +337,11 @@
             </TableControl>
         </View>
 
-        <!-- Sqlcollaborative.Dbatools.Database.BackupHistory -->
+        <!-- Dataplat.Dbatools.Database.BackupHistory -->
         <View>
-            <Name>Sqlcollaborative.Dbatools.Database.BackupHistory</Name>
+            <Name>Dataplat.Dbatools.Database.BackupHistory</Name>
             <ViewSelectedBy>
-                <TypeName>Sqlcollaborative.Dbatools.Database.BackupHistory</TypeName>
+                <TypeName>Dataplat.Dbatools.Database.BackupHistory</TypeName>
             </ViewSelectedBy>
             <TableControl>
                 <AutoSize/>
@@ -379,8 +379,8 @@
                             </TableColumnItem>
                             <TableColumnItem>
                                 <ScriptBlock>
-              if ([Sqlcollaborative.Dbatools.Utility.UtilityHost]::DisableCustomDateTime) { $_.Start }
-              else { $_.Start.ToString([Sqlcollaborative.Dbatools.Utility.UtilityHost]::FormatDateTime) }
+              if ([Dataplat.Dbatools.Utility.UtilityHost]::DisableCustomDateTime) { $_.Start }
+              else { $_.Start.ToString([Dataplat.Dbatools.Utility.UtilityHost]::FormatDateTime) }
                                 </ScriptBlock>
                             </TableColumnItem>
                             <TableColumnItem>
@@ -388,8 +388,8 @@
                             </TableColumnItem>
                             <TableColumnItem>
                                 <ScriptBlock>
-              if ([Sqlcollaborative.Dbatools.Utility.UtilityHost]::DisableCustomDateTime) { $_.End }
-              else { $_.End.ToString([Sqlcollaborative.Dbatools.Utility.UtilityHost]::FormatDateTime) }
+              if ([Dataplat.Dbatools.Utility.UtilityHost]::DisableCustomDateTime) { $_.End }
+              else { $_.End.ToString([Dataplat.Dbatools.Utility.UtilityHost]::FormatDateTime) }
                                 </ScriptBlock>
                             </TableColumnItem>
                         </TableColumnItems>
@@ -398,11 +398,11 @@
             </TableControl>
         </View>
 
-        <!-- Sqlcollaborative.Dbatools.Message.DbatoolsExceptionRecord -->
+        <!-- Dataplat.Dbatools.Message.DbatoolsExceptionRecord -->
         <View>
-            <Name>Sqlcollaborative.Dbatools.Message.DbatoolsExceptionRecord</Name>
+            <Name>Dataplat.Dbatools.Message.DbatoolsExceptionRecord</Name>
             <ViewSelectedBy>
-                <TypeName>Sqlcollaborative.Dbatools.Message.DbatoolsExceptionRecord</TypeName>
+                <TypeName>Dataplat.Dbatools.Message.DbatoolsExceptionRecord</TypeName>
             </ViewSelectedBy>
             <TableControl>
                 <AutoSize/>
@@ -442,11 +442,11 @@
             </TableControl>
         </View>
 
-        <!-- Sqlcollaborative.Dbatools.Message.LogEntry -->
+        <!-- Dataplat.Dbatools.Message.LogEntry -->
         <View>
-            <Name>Sqlcollaborative.Dbatools.Message.LogEntry</Name>
+            <Name>Dataplat.Dbatools.Message.LogEntry</Name>
             <ViewSelectedBy>
-                <TypeName>Sqlcollaborative.Dbatools.Message.LogEntry</TypeName>
+                <TypeName>Dataplat.Dbatools.Message.LogEntry</TypeName>
             </ViewSelectedBy>
             <TableControl>
                 <AutoSize/>
@@ -486,11 +486,11 @@
             </TableControl>
         </View>
 
-        <!-- Sqlcollaborative.Dbatools.Discovery.DbaInstanceReport -->
+        <!-- Dataplat.Dbatools.Discovery.DbaInstanceReport -->
         <View>
-            <Name>Sqlcollaborative.Dbatools.Discovery.DbaInstanceReport</Name>
+            <Name>Dataplat.Dbatools.Discovery.DbaInstanceReport</Name>
             <ViewSelectedBy>
-                <TypeName>Sqlcollaborative.Dbatools.Discovery.DbaInstanceReport</TypeName>
+                <TypeName>Dataplat.Dbatools.Discovery.DbaInstanceReport</TypeName>
             </ViewSelectedBy>
             <TableControl>
                 <AutoSize/>
@@ -570,11 +570,11 @@
                 </TableRowEntries>
             </TableControl>
         </View>
-        <!-- Sqlcollaborative.Dbatools.Validation.LinkedServerResult -->
+        <!-- Dataplat.Dbatools.Validation.LinkedServerResult -->
         <View>
-            <Name>Sqlcollaborative.Dbatools.Validation.LinkedServerResult</Name>
+            <Name>Dataplat.Dbatools.Validation.LinkedServerResult</Name>
             <ViewSelectedBy>
-                <TypeName>Sqlcollaborative.Dbatools.Validation.LinkedServerResult</TypeName>
+                <TypeName>Dataplat.Dbatools.Validation.LinkedServerResult</TypeName>
             </ViewSelectedBy>
             <TableControl>
                 <AutoSize/>

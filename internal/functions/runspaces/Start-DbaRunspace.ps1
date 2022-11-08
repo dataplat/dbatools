@@ -30,7 +30,7 @@ function Start-DbaRunspace {
         $Name,
 
         [Parameter(ValueFromPipeline)]
-        [Sqlcollaborative.Dbatools.Runspace.RunspaceContainer[]]
+        [Dataplat.Dbatools.Runspace.RunspaceContainer[]]
         $Runspace,
 
         [switch]$EnableException
@@ -39,12 +39,12 @@ function Start-DbaRunspace {
     process {
         foreach ($item in $Name) {
             # Ignore all output from Get-DbaRunspace - it'll be handled by the second loop
-            if ($item -eq "Sqlcollaborative.Dbatools.Runspace.runspacecontainer") { continue }
+            if ($item -eq "Dataplat.Dbatools.Runspace.runspacecontainer") { continue }
 
-            if ([Sqlcollaborative.Dbatools.Runspace.RunspaceHost]::Runspaces.ContainsKey($item.ToLowerInvariant())) {
+            if ([Dataplat.Dbatools.Runspace.RunspaceHost]::Runspaces.ContainsKey($item.ToLowerInvariant())) {
                 try {
                     Write-Message -Level Verbose -Message "Starting runspace: $($item.ToLowerInvariant())" -Target $item.ToLowerInvariant()
-                    [Sqlcollaborative.Dbatools.Runspace.RunspaceHost]::Runspaces[$item.ToLowerInvariant()].Start()
+                    [Dataplat.Dbatools.Runspace.RunspaceHost]::Runspaces[$item.ToLowerInvariant()].Start()
                 } catch {
                     Stop-Function -Message "Failed to start runspace: $($item.ToLowerInvariant())" -EnableException $EnableException -Target $item.ToLowerInvariant() -Continue
                 }

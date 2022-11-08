@@ -125,7 +125,7 @@ function Add-DbaServerRoleMember {
             }
 
             switch ($inputType) {
-                'Sqlcollaborative.Dbatools.Parameter.DbaInstanceParameter' {
+                'Dataplat.Dbatools.Parameter.DbaInstanceParameter' {
                     Write-Message -Level Verbose -Message "Processing DbaInstanceParameter through InputObject"
                     try {
                         $serverRoles = Get-DbaServerRole -SqlInstance $input -SqlCredential $SqlCredential -ServerRole $ServerRole -EnableException

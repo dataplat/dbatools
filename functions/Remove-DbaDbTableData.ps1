@@ -45,7 +45,7 @@ function Remove-DbaDbTableData {
         Used for log backups. See https://dbatools.io/Backup-DbaDatabase for information on this parameter. This function invokes Backup-DbaDatabase with -AzureCredential if it is provided.
 
     .PARAMETER InputObject
-        Enables piped input of Microsoft.SqlServer.Management.Smo.Database, Microsoft.SqlServer.Management.Smo.Server, and Sqlcollaborative.Dbatools.Parameter.DbaInstanceParameter objects.
+        Enables piped input of Microsoft.SqlServer.Management.Smo.Database, Microsoft.SqlServer.Management.Smo.Server, and Dataplat.Dbatools.Parameter.DbaInstanceParameter objects.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -213,7 +213,7 @@ function Remove-DbaDbTableData {
             $inputType = $input.GetType().FullName
             switch ($inputType) {
                 # get the db(s) based on the caller's parameters
-                'Sqlcollaborative.Dbatools.Parameter.DbaInstanceParameter' {
+                'Dataplat.Dbatools.Parameter.DbaInstanceParameter' {
                     Write-Message -Level Verbose -Message "Processing DbaInstanceParameter through InputObject"
                     $dbDatabases = Get-DbaDatabase -SqlInstance $input -SqlCredential $SqlCredential -Database $Database -ExcludeSystem
                 }

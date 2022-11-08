@@ -31,9 +31,9 @@ if ($IsLinux -or $IsMacOS) {
     $env:COMPUTERNAME = hostname
 }
 
-if ('Sqlcollaborative.Dbatools.dbaSystem.DebugHost' -as [Type]) {
+if ('Dataplat.Dbatools.dbaSystem.DebugHost' -as [Type]) {
     # If we've already got for module import,
-    [Sqlcollaborative.Dbatools.dbaSystem.DebugHost]::ImportTimeEntries.Clear() # clear it (since we're clearly re-importing)
+    [Dataplat.Dbatools.dbaSystem.DebugHost]::ImportTimeEntries.Clear() # clear it (since we're clearly re-importing)
 }
 
 #region Import helper functions
@@ -97,18 +97,18 @@ function Write-ImportTime {
         $script:dbatools_ImportPerformance = New-Object Collections.ArrayList
     }
 
-    if (-not ('Sqlcollaborative.Dbatools.Configuration.Config' -as [type])) {
+    if (-not ('Dataplat.Dbatools.Configuration.Config' -as [type])) {
         $script:dbatools_ImportPerformance.AddRange(@(New-Object PSObject -Property @{ Time = $timestamp; Action = $Text }))
     } else {
-        if ([Sqlcollaborative.Dbatools.dbaSystem.DebugHost]::ImportTimeEntries.Count -eq 0) {
+        if ([Dataplat.Dbatools.dbaSystem.DebugHost]::ImportTimeEntries.Count -eq 0) {
             foreach ($entry in $script:dbatools_ImportPerformance) {
-                $te = New-Object Sqlcollaborative.Dbatools.dbaSystem.StartTimeEntry($entry.Action, $entry.Time, [Management.Automation.Runspaces.Runspace]::DefaultRunspace.InstanceId)
-                [Sqlcollaborative.Dbatools.dbaSystem.DebugHost]::ImportTimeEntries.Add($te)
+                $te = New-Object Dataplat.Dbatools.dbaSystem.StartTimeEntry($entry.Action, $entry.Time, [Management.Automation.Runspaces.Runspace]::DefaultRunspace.InstanceId)
+                [Dataplat.Dbatools.dbaSystem.DebugHost]::ImportTimeEntries.Add($te)
             }
             $script:dbatools_ImportPerformance.Clear()
         }
-        $te = New-Object Sqlcollaborative.Dbatools.dbaSystem.StartTimeEntry($Text, $timestamp, ([Management.Automation.Runspaces.Runspace]::DefaultRunspace.InstanceId))
-        [Sqlcollaborative.Dbatools.dbaSystem.DebugHost]::ImportTimeEntries.Add($te)
+        $te = New-Object Dataplat.Dbatools.dbaSystem.StartTimeEntry($Text, $timestamp, ([Management.Automation.Runspaces.Runspace]::DefaultRunspace.InstanceId))
+        [Dataplat.Dbatools.dbaSystem.DebugHost]::ImportTimeEntries.Add($te)
     }
 }
 
@@ -222,7 +222,7 @@ whether the modulebase has been set (first thing it does after loading library t
 Theoretically, there's a minor cuncurrency collision risk with that, but since the cost is only
 a little import time loss if that happens ...
 #>
-if ((-not ('Sqlcollaborative.Dbatools.dbaSystem.DebugHost' -as [type])) -or (-not [Sqlcollaborative.Dbatools.dbaSystem.SystemHost]::ModuleBase)) {
+if ((-not ('Dataplat.Dbatools.dbaSystem.DebugHost' -as [type])) -or (-not [Dataplat.Dbatools.dbaSystem.SystemHost]::ModuleBase)) {
     . $script:psScriptRoot\internal\scripts\libraryimport.ps1
     Write-ImportTime -Text "Starting import SMO libraries"
 }
@@ -243,7 +243,7 @@ if ((-not ('Sqlcollaborative.Dbatools.dbaSystem.DebugHost' -as [type])) -or (-no
 Write-ImportTime -Text "Loading dbatools library"
 
 # Tell the library where the module is based, just in case
-[Sqlcollaborative.Dbatools.dbaSystem.SystemHost]::ModuleBase = $script:PSModuleRoot
+[Dataplat.Dbatools.dbaSystem.SystemHost]::ModuleBase = $script:PSModuleRoot
 
 if ($script:multiFileImport -or -not (Test-Path -Path "$psScriptRoot\allcommands.ps1")) {
     # All internal functions privately available within the toolset
@@ -279,8 +279,8 @@ Write-ImportTime -Text "Configuration System"
 
 # Resolving the path was causing trouble when it didn't exist yet
 # Not converting the path separators based on OS was also an issue.
-if (-not ([Sqlcollaborative.Dbatools.Message.LogHost]::LoggingPath)) {
-    [Sqlcollaborative.Dbatools.Message.LogHost]::LoggingPath = Join-DbaPath $script:AppData "PowerShell" "dbatools"
+if (-not ([Dataplat.Dbatools.Message.LogHost]::LoggingPath)) {
+    [Dataplat.Dbatools.Message.LogHost]::LoggingPath = Join-DbaPath $script:AppData "PowerShell" "dbatools"
 }
 
 # Run all optional code
@@ -1138,7 +1138,7 @@ if ($loadedModuleNames -contains 'sqlserver' -or $loadedModuleNames -contains 's
     }
 }
 
-[Sqlcollaborative.Dbatools.dbaSystem.SystemHost]::ModuleImported = $true
+[Dataplat.Dbatools.dbaSystem.SystemHost]::ModuleImported = $true
 #endregion Post-Import Cleanup
 
 # Removal of runspaces is needed to successfully close PowerShell ISE

@@ -79,7 +79,7 @@ function Export-DbatoolsConfig {
         $Name = "*",
 
         [Parameter(ParameterSetName = "Config", Mandatory = $true, ValueFromPipeline = $true)]
-        [Sqlcollaborative.Dbatools.Configuration.Config[]]
+        [Dataplat.Dbatools.Configuration.Config[]]
         $Config,
 
         [Parameter(ParameterSetName = "ModuleName", Mandatory = $true)]
@@ -91,7 +91,7 @@ function Export-DbatoolsConfig {
         $ModuleVersion = 1,
 
         [Parameter(ParameterSetName = "ModuleName")]
-        [Sqlcollaborative.Dbatools.Configuration.ConfigScope]
+        [Dataplat.Dbatools.Configuration.ConfigScope]
         $Scope = "FileUserShared",
 
         [Parameter(Position = 1, Mandatory = $true, ParameterSetName = 'Config')]

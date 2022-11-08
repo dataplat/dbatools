@@ -43,9 +43,9 @@ function Register-DbaTeppInstanceCacheBuilder {
         $Slow
     )
 
-    if ($Slow -and ([Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::TeppGatherScriptsSlow -notcontains $ScriptBlock)) {
-        [Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::TeppGatherScriptsSlow.Add($ScriptBlock)
-    } elseif ([Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::TeppGatherScriptsFast -notcontains $ScriptBlock) {
-        [Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::TeppGatherScriptsFast.Add($ScriptBlock)
+    if ($Slow -and ([Dataplat.Dbatools.TabExpansion.TabExpansionHost]::TeppGatherScriptsSlow -notcontains $ScriptBlock)) {
+        [Dataplat.Dbatools.TabExpansion.TabExpansionHost]::TeppGatherScriptsSlow.Add($ScriptBlock)
+    } elseif ([Dataplat.Dbatools.TabExpansion.TabExpansionHost]::TeppGatherScriptsFast -notcontains $ScriptBlock) {
+        [Dataplat.Dbatools.TabExpansion.TabExpansionHost]::TeppGatherScriptsFast.Add($ScriptBlock)
     }
 }

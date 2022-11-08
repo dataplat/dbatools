@@ -13,7 +13,7 @@ $ScriptBlock = {
     )
 
 
-    foreach ($name in (([Sqlcollaborative.Dbatools.Configuration.ConfigurationHost]::Configurations.Values | Where-Object FullName -like "path.managed.*").FullName -replace '^path\.managed\.')) {
+    foreach ($name in (([Dataplat.Dbatools.Configuration.ConfigurationHost]::Configurations.Values | Where-Object FullName -like "path.managed.*").FullName -replace '^path\.managed\.')) {
         if ($name -notlike "$wordToComplete*") { continue }
         New-DbaTeppCompletionResult -CompletionText $name -ToolTip $name
     }

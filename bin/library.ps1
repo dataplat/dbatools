@@ -91,8 +91,8 @@ if ($ImportLibrary) {
         }
 
         #region PowerShell TypeData
-        #Update-TypeData -TypeName "Sqlcollaborative.Dbatools.dbaSystem.DbatoolsException" -SerializationDepth 2 -ErrorAction Ignore
-        #Update-TypeData -TypeName "Sqlcollaborative.Dbatools.dbaSystem.DbatoolsExceptionRecord" -SerializationDepth 2 -ErrorAction Ignore
+        #Update-TypeData -TypeName "Dataplat.Dbatools.dbaSystem.DbatoolsException" -SerializationDepth 2 -ErrorAction Ignore
+        #Update-TypeData -TypeName "Dataplat.Dbatools.dbaSystem.DbatoolsExceptionRecord" -SerializationDepth 2 -ErrorAction Ignore
         #endregion PowerShell TypeData
     } catch {
         #region Warning

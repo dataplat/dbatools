@@ -96,7 +96,7 @@ function New-DbaMessageLevelModifier {
         return
     }
 
-    $levelModifier = New-Object Sqlcollaborative.Dbatools.Message.MessageLevelModifier
+    $levelModifier = New-Object Dataplat.Dbatools.Message.MessageLevelModifier
     $levelModifier.Name = $Name.ToLowerInvariant()
     $levelModifier.Modifier = $Modifier
 
@@ -124,7 +124,7 @@ function New-DbaMessageLevelModifier {
         $levelModifier.ExcludeTags = $ExcludeTags
     }
 
-    [Sqlcollaborative.Dbatools.Message.MessageHost]::MessageLevelModifiers[$levelModifier.Name] = $levelModifier
+    [Dataplat.Dbatools.Message.MessageHost]::MessageLevelModifiers[$levelModifier.Name] = $levelModifier
 
     $levelModifier
 }

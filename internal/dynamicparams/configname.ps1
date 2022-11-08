@@ -1,6 +1,6 @@
 #region Initialize Cache
-if (-not [Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Cache["configname"]) {
-    [Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Cache["configname"] = @{ }
+if (-not [Dataplat.Dbatools.TabExpansion.TabExpansionHost]::Cache["configname"]) {
+    [Dataplat.Dbatools.TabExpansion.TabExpansionHost]::Cache["configname"] = @{ }
 }
 #endregion Initialize Cache
 
@@ -37,8 +37,8 @@ $ScriptBlock = {
         return
     }
 
-    if ([Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Cache["configname"][$parServer.FullSmoName.ToLowerInvariant()]) {
-        foreach ($name in ([Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Cache["configname"][$parServer.FullSmoName.ToLowerInvariant()] | Where-DbaObject -Like "$wordToComplete*")) {
+    if ([Dataplat.Dbatools.TabExpansion.TabExpansionHost]::Cache["configname"][$parServer.FullSmoName.ToLowerInvariant()]) {
+        foreach ($name in ([Dataplat.Dbatools.TabExpansion.TabExpansionHost]::Cache["configname"][$parServer.FullSmoName.ToLowerInvariant()] | Where-DbaObject -Like "$wordToComplete*")) {
             New-DbaTeppCompletionResult -CompletionText $name -ToolTip $name
         }
         return
@@ -46,7 +46,7 @@ $ScriptBlock = {
 
     try {
         $serverObject = Connect-DbaInstance -SqlInstance $parServer -SqlCredential $fakeBoundParameter['SqlCredential'] -ErrorAction Stop
-        foreach ($name in ([Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Cache["configname"][$parServer.FullSmoName.ToLowerInvariant()] | Where-DbaObject -Like "$wordToComplete*")) {
+        foreach ($name in ([Dataplat.Dbatools.TabExpansion.TabExpansionHost]::Cache["configname"][$parServer.FullSmoName.ToLowerInvariant()] | Where-DbaObject -Like "$wordToComplete*")) {
             New-DbaTeppCompletionResult -CompletionText $name -ToolTip $name
         }
         return
@@ -61,7 +61,7 @@ Register-DbaTeppScriptblock -ScriptBlock $ScriptBlock -Name ConfigName
 #region Update Cache
 $ScriptBlock = {
 
-    [Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Cache["configname"][$FullSmoName] = (Get-Member -InputObject $server.Configuration -MemberType Property -Force | Where-Object Name -NotIn 'Parent',
+    [Dataplat.Dbatools.TabExpansion.TabExpansionHost]::Cache["configname"][$FullSmoName] = (Get-Member -InputObject $server.Configuration -MemberType Property -Force | Where-Object Name -NotIn 'Parent',
         'Properties').Name
 }
 Register-DbaTeppInstanceCacheBuilder -ScriptBlock $ScriptBlock

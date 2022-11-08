@@ -38,7 +38,7 @@ function Stop-DbaRunspace {
         $Name,
 
         [Parameter(ValueFromPipeline)]
-        [Sqlcollaborative.Dbatools.Runspace.RunspaceContainer[]]
+        [Dataplat.Dbatools.Runspace.RunspaceContainer[]]
         $Runspace,
 
         [switch]$EnableException
@@ -47,12 +47,12 @@ function Stop-DbaRunspace {
     process {
         foreach ($item in $Name) {
             # Ignore all output from Get-DbaRunspace - it'll be handled by the second loop
-            if ($item -eq "Sqlcollaborative.Dbatools.Runspace.runspacecontainer") { continue }
+            if ($item -eq "Dataplat.Dbatools.Runspace.runspacecontainer") { continue }
 
-            if ([Sqlcollaborative.Dbatools.Runspace.RunspaceHost]::Runspaces.ContainsKey($item.ToLowerInvariant())) {
+            if ([Dataplat.Dbatools.Runspace.RunspaceHost]::Runspaces.ContainsKey($item.ToLowerInvariant())) {
                 try {
                     Write-Message -Level Verbose -Message "Stopping runspace: $($item.ToLowerInvariant())" -Target $item.ToLowerInvariant()
-                    [Sqlcollaborative.Dbatools.Runspace.RunspaceHost]::Runspaces[$item.ToLowerInvariant()].Stop()
+                    [Dataplat.Dbatools.Runspace.RunspaceHost]::Runspaces[$item.ToLowerInvariant()].Stop()
                 } catch {
                     Stop-Function -Message "Failed to stop runspace: $($item.ToLowerInvariant())" -EnableException $EnableException -Target $item.ToLowerInvariant() -Continue
                 }

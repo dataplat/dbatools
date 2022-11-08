@@ -105,7 +105,7 @@ function Copy-DbaDbMail {
                 Type              = "Mail Configuration"
                 Status            = $null
                 Notes             = $null
-                DateTime          = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
+                DateTime          = [Dataplat.Dbatools.Utility.DbaDateTime](Get-Date)
             }
             if ($pscmdlet.ShouldProcess($destinstance, "Migrating all mail server configuration values.")) {
                 try {
@@ -141,7 +141,7 @@ function Copy-DbaDbMail {
                     Type              = "Mail Account"
                     Status            = $null
                     Notes             = $null
-                    DateTime          = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
+                    DateTime          = [Dataplat.Dbatools.Utility.DbaDateTime](Get-Date)
                 }
 
                 if ($accounts.count -gt 0 -and $accounts -notcontains $newAccountName) {
@@ -208,7 +208,7 @@ function Copy-DbaDbMail {
                     Type              = "Mail Profile"
                     Status            = $null
                     Notes             = $null
-                    DateTime          = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
+                    DateTime          = [Dataplat.Dbatools.Utility.DbaDateTime](Get-Date)
                 }
 
                 if ($profiles.count -gt 0 -and $profiles -notcontains $newProfileName) {
@@ -281,7 +281,7 @@ function Copy-DbaDbMail {
                     Type              = "Mail Server"
                     Status            = $null
                     Notes             = $null
-                    DateTime          = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
+                    DateTime          = [Dataplat.Dbatools.Utility.DbaDateTime](Get-Date)
                 }
                 if ($mailServers.count -gt 0 -and $mailServers -notcontains $mailServerName) {
                     continue
@@ -429,7 +429,7 @@ function Copy-DbaDbMail {
                         Name              = "Enabled on Destination"
                         Type              = "Mail Configuration"
                         Status            = if ($destDbMailEnabled -eq 1) { "Enabled" } else { $null }
-                        DateTime          = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
+                        DateTime          = [Dataplat.Dbatools.Utility.DbaDateTime](Get-Date)
                     }
                     try {
                         Write-Message -Message "Enabling Database Mail on $destServer." -Level Verbose

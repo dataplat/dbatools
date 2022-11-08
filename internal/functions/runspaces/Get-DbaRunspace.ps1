@@ -26,5 +26,5 @@ function Get-DbaRunspace {
         $Name = "*"
     )
 
-    [Sqlcollaborative.Dbatools.Runspace.RunspaceHost]::Runspaces.Values | Where-Object Name -Like $Name
+    [Dataplat.Dbatools.Runspace.RunspaceHost]::Runspaces.Values | Where-Object Name -Like $Name
 }

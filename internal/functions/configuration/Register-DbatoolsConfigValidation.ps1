@@ -36,5 +36,5 @@ function Register-DbatoolsConfigValidation {
         $ScriptBlock
     )
 
-    [Sqlcollaborative.Dbatools.Configuration.ConfigurationHost]::Validation[$Name.ToLowerInvariant()] = $ScriptBlock.ToString()
+    [Dataplat.Dbatools.Configuration.ConfigurationHost]::Validation[$Name.ToLowerInvariant()] = $ScriptBlock.ToString()
 }

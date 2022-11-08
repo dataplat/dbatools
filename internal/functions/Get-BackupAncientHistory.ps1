@@ -145,7 +145,7 @@ function Get-BackupAncientHistory {
 
                 Write-Message -Level Debug -Message "FileSQL: $fileSql"
 
-                $historyObject = New-Object Sqlcollaborative.Dbatools.Database.BackupHistory
+                $historyObject = New-Object Dataplat.Dbatools.Database.BackupHistory
                 $historyObject.ComputerName = $server.ComputerName
                 $historyObject.InstanceName = $server.ServiceName
                 $historyObject.SqlInstance = $server.DomainInstanceName

@@ -105,7 +105,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
 
     Context "Testing TotalSize regression test for #3517" {
         It "supports large numbers" {
-            $historyObject = New-Object Sqlcollaborative.Dbatools.Database.BackupHistory
+            $historyObject = New-Object Dataplat.Dbatools.Database.BackupHistory
             $server = Connect-DbaInstance $script:instance1
             $cast = $server.Query('select cast(1000000000000000 as numeric(20,0)) AS TotalSize')
             $historyObject.TotalSize = $cast.TotalSize

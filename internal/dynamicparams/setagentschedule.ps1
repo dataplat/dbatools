@@ -1,6 +1,6 @@
 #region Initialize Cache
-if (-not [Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Cache["setagentschedule"]) {
-    [Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Cache["setagentschedule"] = @{ }
+if (-not [Dataplat.Dbatools.TabExpansion.TabExpansionHost]::Cache["setagentschedule"]) {
+    [Dataplat.Dbatools.TabExpansion.TabExpansionHost]::Cache["setagentschedule"] = @{ }
 }
 #endregion Initialize Cache
 

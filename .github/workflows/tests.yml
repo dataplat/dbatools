@@ -24,7 +24,7 @@ jobs:
       - name: 👥 Clone appveyor repo
         working-directory: /tmp
         run: |
-          gh repo clone sqlcollaborative/appveyor-lab
+          gh repo clone dataplat/appveyor-lab
 
       - name: Run tests
         env:
