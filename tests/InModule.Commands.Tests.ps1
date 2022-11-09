@@ -5,7 +5,9 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
     Context "duplicate commands are not added" {
         It "only indexes one instance per command" {
-            $commandlist = Import-PowerShellDataFile -Path '$PSScriptRoot\..\dbatools.psd1'
+            # this no longer works in PS 5.1, no idea why, maybe it doesn't like the new test for core or desktop
+            # $commandlist = Import-PowerShellDataFile -Path '$PSScriptRoot\..\dbatools.psd1'
+            $commandlist = Invoke-Expression (Get-Content '$PSScriptRoot\..\dbatools.psd1' -Raw)
             $dupes = $commandlist.FunctionsToExport | Group-Object | Where-Object Count -gt 1
             $dupes.Name | Should -be $null
         }

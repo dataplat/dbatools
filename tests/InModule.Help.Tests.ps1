@@ -23,7 +23,7 @@ if ($env:appveyor) {
 
     foreach ($name in $names) {
         $library = Split-Path -Path (Get-Module dbatools*library).Path
-        $path = Join-DbaPath -Path $library -ChildPath lib, net462
+        $path = Join-DbaPath -Path $library -ChildPath lib
         Add-Type -Path (Join-Path -path $path -ChildPath "$name.dll") -ErrorAction SilentlyContinue
     }
 }

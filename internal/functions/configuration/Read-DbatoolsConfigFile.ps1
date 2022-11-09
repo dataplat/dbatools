@@ -66,7 +66,7 @@ function Read-DbatoolsConfigFile {
 
     if ($Path) {
         if (-not ([IO.File]::Exists($Path))) { return }
-        $data = [IO.File]::ReadAllText($Path,"UTF8") | ConvertFrom-Json -ErrorAction Stop
+        $data = [IO.File]::ReadAllText($Path) | ConvertFrom-Json -ErrorAction Stop
     }
     if ($Weblink) {
         $data = Get-WebContent -WebLink $Weblink | ConvertFrom-Json -ErrorAction Stop

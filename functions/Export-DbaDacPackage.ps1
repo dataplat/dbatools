@@ -246,11 +246,11 @@ function Export-DbaDacPackage {
                             $startprocess.FileName = $sqlpackage
                         } else {
                             if ($IsLinux) {
-                                $startprocess.FileName = "$script:libraryroot/lib/net6.0/sqlpackage"
+                                $startprocess.FileName = "$script:libraryroot/lib/sqlpackage"
                             } elseif ($IsMacOS) {
-                                $startprocess.FileName = "$script:libraryroot/lib/sqlpackage/mac/sqlpackage"
+                                $startprocess.FileName = "$script:libraryroot/lib/mac/sqlpackage"
                             } else {
-                                $startprocess.FileName = "$script:libraryroot\lib\sqlpackage\windows\sqlpackage.exe"
+                                $startprocess.FileName = "$script:libraryroot\lib\sqlpackage.exe"
                             }
                         }
                         $startprocess.Arguments = $sqlPackageArgs

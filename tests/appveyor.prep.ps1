@@ -29,7 +29,7 @@ if (-not(Test-Path 'C:\Program Files\WindowsPowerShell\Modules\PSScriptAnalyzer\
 #Get dbatools.library
 Write-Host -Object "appveyor.prep: Install dbatools.library" -ForegroundColor DarkGreen
 if (-not(Test-Path 'C:\Program Files\WindowsPowerShell\Modules\dbatools.library')) {
-    Install-Module -Name dbatools.library -Force | Out-Null
+    Install-Module -Name dbatools.library -Force -AllowPrerelease | Out-Null
 }
 
 #Get Pester (to run tests) - choco isn't working onall scenarios, weird
