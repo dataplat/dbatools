@@ -47,7 +47,7 @@ function Invoke-DbaAsync {
     param (
         [Alias('Connection', 'Conn')]
         [ValidateNotNullOrEmpty()]
-        [Microsoft.SqlServer.Management.Common.ServerConnection]$SQLConnection,
+        [Microsoft.SqlServer.Management.Common.ServerConnection]$SqlConnection,
 
         [Parameter(Mandatory, ParameterSetName = "Query")]
         [string]
@@ -86,7 +86,7 @@ function Invoke-DbaAsync {
             }
         }
         if (Test-Bound -Not -ParameterName "QueryTimeout") {
-            $QueryTimeout = $SQLConnection.StatementTimeout
+            $QueryTimeout = $SqlConnection.StatementTimeout
         }
         function Resolve-SqlError {
             param($Err)
@@ -174,13 +174,8 @@ function Invoke-DbaAsync {
     process {
         if (Test-FunctionInterrupt) { return }
 
-        # $SQLConnection.SqlConnectionObject is a System.Data connection and we need a Microsoft.Data connection
-        if ($PSVersionTable.PSEdition -ne "Core") {
-            $Conn = New-Object Microsoft.Data.SqlClient.SqlConnection $SQLConnection.SqlConnectionObject.ConnectionString
-        } else {
-            $Conn = $SQLConnection.SqlConnectionObject
-        }
-
+        # $SqlConnection.SqlConnectionObject is a no longer a System.Data connection, woo!
+        $Conn = $SqlConnection.SqlConnectionObject
 
         Write-Message -Level Debug -Message "Stripping GOs from source"
         $Pieces = $GoSplitterRegex.Split($Query)
@@ -305,7 +300,7 @@ function Invoke-DbaAsync {
                 if ($ds.Tables.Count -ne 0) {
                     $ds.Tables[0].Columns.Add($Column)
                     Foreach ($row in $ds.Tables[0]) {
-                        $row.ServerInstance = $SQLConnection.ServerInstance
+                        $row.ServerInstance = $SqlConnection.ServerInstance
                     }
                 }
             }
