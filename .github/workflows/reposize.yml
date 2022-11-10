@@ -8,15 +8,22 @@ jobs:
       GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
 
     steps:
+      - uses: actions/checkout@v1
       - uses: jwalton/gh-find-current-pr@v1
+        id: findpr
+        with:
+          state: all
+
       - name: Repository size should be less than 90MB
+        env:
+          PR: ${{ steps.findpr.outputs.pr }}
         shell: pwsh
         run: |
           cd /tmp
           gh repo clone dataplat/dbatools
           cd /tmp/dbatools
-          Write-Output "Checking out ${{PR}}"
-          gh pr checkout ${{PR}}
+          Write-Output "Checking out $env:PR"
+          gh pr checkout $env:PR
           $objects = git count-objects -v
           $sizepack = $objects -split '`n' | Where-Object { $PSItem -match "size-pack" }
           $size = $sizepack -split " " | Select-Object -Last 1
