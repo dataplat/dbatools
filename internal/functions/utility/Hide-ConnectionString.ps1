@@ -1,4 +1,5 @@
 function Hide-ConnectionString {
+    [CmdletBinding()]
     Param (
         [string]$ConnectionString
     )

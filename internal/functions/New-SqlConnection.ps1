@@ -7,6 +7,6 @@ function New-SqlConnection {
         [string]$SqlInstance,
         [PSCredential]$SqlCredential
     )
-    $connstring = (New-DbaConnectionStringBuilder -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Legacy).ToString()
-    New-Object System.Data.SqlClient.SqlConnection $connstring
+    $connstring = (New-DbaConnectionString -SqlInstance $SqlInstance -SqlCredential $SqlCredential).ToString()
+    New-Object Microsoft.Data.SqlClient.SqlConnection $connstring
 }

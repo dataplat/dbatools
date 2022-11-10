@@ -83,21 +83,6 @@ function New-DbaDacOption {
     )
     process {
         if ($PScmdlet.ShouldProcess("$type", "Creating New DacOptions of $action")) {
-            if (-not $script:core) {
-                $dacfxPath = "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Dac.dll"
-                if ((Test-Path $dacfxPath) -eq $false) {
-                    Stop-Function -Message 'Dac Fx library not found.' -EnableException $EnableException
-                    return
-                } else {
-                    try {
-                        Add-Type -Path $dacfxPath
-                        Write-Message -Level Verbose -Message "Dac Fx loaded."
-                    } catch {
-                        Stop-Function -Message 'No usable version of Dac Fx found.' -ErrorRecord $_
-                        return
-                    }
-                }
-            }
             function New-DacObject {
                 Param ([String]$TypeName, [hashtable]$Property = $Property)
 

@@ -56,26 +56,6 @@ Function Uninstall-DbaSqlWatch {
         [string]$Database = "master",
         [switch]$EnableException
     )
-
-    begin {
-
-        # validate database parameter
-
-        if (Test-Bound -Not -ParameterName 'DacfxPath') {
-            $dacfxPath = "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Dac.dll"
-        }
-
-        if ((Test-Path $dacfxPath) -eq $false) {
-            Stop-Function -Message 'No usable version of Dac Fx found.'
-        } else {
-            try {
-                Add-Type -Path $dacfxPath
-                Write-Message -Level Verbose -Message "Dac Fx loaded."
-            } catch {
-                Stop-Function -Message 'No usable version of Dac Fx found.' -ErrorRecord $_
-            }
-        }
-    }
     process {
         if (Test-FunctionInterrupt) {
             return

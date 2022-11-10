@@ -3,10 +3,6 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
 $base = (Get-Module -Name dbatools | Where-Object ModuleBase -notmatch net).ModuleBase
 
-# Add-Type -Path "$base\bin\smo\Microsoft.SqlServer.XE.Core.dll"
-# Add-Type -Path "$base\bin\smo\Microsoft.SqlServer.XEvent.Configuration.dll"
-# Add-Type -Path "$base\bin\smo\Microsoft.SqlServer.XEvent.dll"
-# Add-Type -Path "$base\bin\smo\Microsoft.SqlServer.XEvent.Linq.dll"
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {

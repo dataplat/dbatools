@@ -158,22 +158,6 @@ function Publish-DbaDacPackage {
 
             return $instance.ToString().Replace('\', '-').Replace('(', '').Replace(')', '')
         }
-
-        if ((Test-Bound -Not -ParameterName 'DacfxPath') -and (-not $script:core)) {
-            $dacfxPath = "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Dac.dll"
-
-            if ((Test-Path $dacfxPath) -eq $false) {
-                Stop-Function -Message 'No usable version of Dac Fx found.' -EnableException $EnableException
-                return
-            } else {
-                try {
-                    Add-Type -Path $dacfxPath
-                    Write-Message -Level Verbose -Message "Dac Fx loaded."
-                } catch {
-                    Stop-Function -Message 'No usable version of Dac Fx found.' -EnableException $EnableException -ErrorRecord $_
-                }
-            }
-        }
     }
 
     process {

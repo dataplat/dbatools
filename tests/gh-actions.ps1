@@ -16,11 +16,12 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
         $PSDefaultParameterValues["*:WitnessSqlCredential"] = $cred
         $PSDefaultParameterValues["*:Confirm"] = $false
         $PSDefaultParameterValues["*:SharedPath"] = "/shared"
-        $PSDefaultParameterValues["*:WarningAction"] = "SilentlyContinue"
         $global:ProgressPreference = "SilentlyContinue"
 
-        Import-Module ./dbatools.psm1 -Force
-        $null = Get-XPlatVariable | Where-Object { $PSItem -notmatch "Copy-", "Migration" } | Sort-Object
+        #$null = Get-XPlatVariable | Where-Object { $PSItem -notmatch "Copy-", "Migration" } | Sort-Object
+        # load dbatools-lib
+        Import-Module dbatools.core.library
+        Import-Module ./dbatools.psd1 -Force
     }
 
     It "migrates" {
@@ -265,6 +266,7 @@ exec sp_addrolemember 'userrole','bob';
 
 
 <#
+Need to add tests for CSV
 # fails on newer version of SMO
 'Invoke-DbaWhoisActive',
 'Remove-DbaAvailabilityGroup',

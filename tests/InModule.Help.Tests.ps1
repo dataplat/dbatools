@@ -15,17 +15,16 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 # quit failing appveyor
 if ($env:appveyor) {
     $names = @(
-        'Microsoft.SqlServer.XEvent.Linq',
         'Microsoft.SqlServer.Management.XEvent',
         'Microsoft.SqlServer.Management.XEventDbScoped',
         'Microsoft.SqlServer.Management.XEventDbScopedEnum',
-        'Microsoft.SqlServer.Management.XEventEnum',
-        'Microsoft.SqlServer.Replication',
-        'Microsoft.SqlServer.Rmo'
+        'Microsoft.SqlServer.Management.XEventEnum'
     )
 
     foreach ($name in $names) {
-        Add-Type -Path "C:\github\dbatools\bin\smo\$name.dll" -ErrorAction SilentlyContinue
+        $library = Split-Path -Path (Get-Module dbatools*library).Path
+        $path = Join-DbaPath -Path $library -ChildPath lib
+        Add-Type -Path (Join-Path -path $path -ChildPath "$name.dll") -ErrorAction SilentlyContinue
     }
 }
 

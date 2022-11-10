@@ -25,7 +25,11 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
         }
         # This takes a long time but I cannot figure out why every backup of this db is malformed
         $bacpac = "$script:appveyorlabrepo\bacpac\sharepoint_config.bacpac"
-        . "$PSScriptRoot\..\bin\smo\sqlpackage.exe" /Action:Import /tsn:$script:instance2 /tdn:Sharepoint_Config /sf:$bacpac /p:Storage=File
+        $sqlpackage = (Get-Command sqlpackage -ErrorAction Ignore).Source
+        if (-not $sqlpackage) {
+            $sqlpackage = Join-DbaPath -Path (Split-Path -Path (Get-Module dbatools*library).Path) -ChildPath lib, sqlpackage, windows, sqlpackage.exe
+        }
+        . $sqlpackage /Action:Import /tsn:$script:instance2 /tdn:Sharepoint_Config /sf:$bacpac /p:Storage=File
     }
     AfterAll {
         Remove-DbaDatabase -SqlInstance $script:instance2 -Database $spdb -Confirm:$false

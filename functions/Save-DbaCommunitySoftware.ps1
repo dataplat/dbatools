@@ -227,7 +227,9 @@ function Save-DbaCommunitySoftware {
             }
             if ($PSCmdlet.ShouldProcess($LocalFile, "Extracting archive to $zipFolder path")) {
                 try {
-                    Unblock-File $LocalFile -ErrorAction SilentlyContinue
+                    if (-not $IsLinux -and -not $isMac) {
+                        Unblock-File $LocalFile -ErrorAction SilentlyContinue
+                    }
                     Expand-Archive -LiteralPath $LocalFile -DestinationPath $zipFolder -Force -ErrorAction Stop
                 } catch {
                     Stop-Function -Message "Unable to extract $LocalFile to $zipFolder." -ErrorRecord $_
@@ -252,7 +254,10 @@ function Save-DbaCommunitySoftware {
             }
             if ($PSCmdlet.ShouldProcess($zipFile, "Extracting archive to $zipFolder path")) {
                 try {
-                    Unblock-File $zipFile -ErrorAction SilentlyContinue
+                    if (-not $IsLinux -and -not $isMac) {
+                        Unblock-File $zipFile -ErrorAction SilentlyContinue
+                    }
+
                     Expand-Archive -Path $zipFile -DestinationPath $zipFolder -Force -ErrorAction Stop
                 } catch {
                     Stop-Function -Message "Unable to extract $zipFile to $zipFolder." -ErrorRecord $_

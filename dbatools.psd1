@@ -47,7 +47,17 @@
     ProcessorArchitecture  = ''
 
     # Modules that must be imported into the global environment prior to importing this module
-    RequiredModules        = @()
+    RequiredModules        = @(
+        if ($PSEdition -eq 'Core') {
+            @(
+                @{ ModuleName = 'dbatools.core.library'; ModuleVersion = '2022.11.8' }
+            )
+        } else {
+            @(
+                @{ ModuleName = 'dbatools.library'; ModuleVersion = '2022.11.8' }
+            )
+        }
+    )
 
     # Assemblies that must be loaded prior to importing this module
     RequiredAssemblies     = @()
@@ -432,7 +442,6 @@
         'Install-DbaMaintenanceSolution',
         'Install-DbaMultiTool',
         'Install-DbaSqlWatch',
-        'Install-DbatoolsWatchUpdate',
         'Install-DbaWhoIsActive',
         'Invoke-DbaAdvancedInstall',
         'Invoke-DbaAdvancedRestore',
@@ -709,14 +718,12 @@
         'Test-DbaTempDbConfig',
         'Test-DbaWindowsLogin',
         'Uninstall-DbaSqlWatch',
-        'Uninstall-DbatoolsWatchUpdate',
         'Unregister-DbatoolsConfig',
         'Update-DbaBuildReference',
         'Update-DbaInstance',
         'Update-DbaServiceAccount',
         'Update-Dbatools',
         'Watch-DbaDbLogin',
-        'Watch-DbatoolsUpdate',
         'Watch-DbaXESession',
         'Write-DbaDbTableData',
         'Set-DbaAgentOperator',

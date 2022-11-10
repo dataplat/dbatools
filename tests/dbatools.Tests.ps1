@@ -43,7 +43,7 @@ Describe "$ModuleName style" -Tag 'Compliance' {
     - OTBS style, courtesy of PSSA's Invoke-Formatter, is what dbatools uses
     - UTF8 without BOM is what is going to be used in PS Core, so we adopt this standard for dbatools
     #>
-    $AllFiles = Get-ChildItem -Path $ModulePath -File -Recurse -Filter '*.ps*1' | Where-Object Name -ne 'allcommands.ps1'
+    $AllFiles = Get-ChildItem -Path $ModulePath -File -Recurse -Filter '*.ps*1' | Where-Object Name -ne 'dbatools.ps1'
     $AllFunctionFiles = Get-ChildItem -Path "$ModulePath\functions", "$ModulePath\internal\functions"-Filter '*.ps*1'
     Context "formatting" {
         $maxConcurrentJobs = $env:NUMBER_OF_PROCESSORS

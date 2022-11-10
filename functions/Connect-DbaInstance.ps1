@@ -301,7 +301,7 @@ function Connect-DbaInstance {
         [string]$BatchSeparator,
         [string]$ClientName = (Get-DbatoolsConfigValue -FullName 'sql.connection.clientname'),
         [int]$ConnectTimeout = ([Dataplat.Dbatools.Connection.ConnectionHost]::SqlConnectionTimeout),
-        [switch]$EncryptConnection = (Get-DbatoolsConfigValue -FullName 'sql.connection.encrypt'),
+        [string]$EncryptConnection = (Get-DbatoolsConfigValue -FullName 'sql.connection.encrypt'),
         [string]$FailoverPartner,
         [int]$LockTimeout,
         [int]$MaxPoolSize,
@@ -558,7 +558,7 @@ function Connect-DbaInstance {
                 Write-Message -Level Verbose -Message "Connection string is passed in, will build empty server object, set connection string from instance.InputObject, do some checks and then return the server object"
                 $inputObjectType = 'ConnectionString'
                 $serverName = $instance.FullSmoName
-                $connectionString = $instance.InputObject
+                $connectionString = $instance.InputObject | Convert-ConnectionString
             } else {
                 Write-Message -Level Verbose -Message "String is passed in, will build server object from instance object and other parameters, do some checks and then return the server object"
                 $inputObjectType = 'String'
@@ -749,10 +749,14 @@ function Connect-DbaInstance {
                     $sqlConnectionInfo.DatabaseName = $Database
                 }
 
-                #EncryptConnection      Property   bool EncryptConnection {get;set;}
-                if ($EncryptConnection) {
-                    Write-Message -Level Debug -Message "EncryptConnection will be set to '$EncryptConnection'"
-                    $sqlConnectionInfo.EncryptConnection = $EncryptConnection
+                if ($instance -notmatch "localdb") {
+                    #EncryptConnection      Property   bool EncryptConnection {get;set;}
+                    if ($EncryptConnection) {
+                        Write-Message -Level Debug -Message "EncryptConnection will be set to '$EncryptConnection'"
+                        $sqlConnectionInfo.EncryptConnection = $EncryptConnection
+                    }
+                } else {
+                    Write-Message -Level Verbose -Message "localdb detected, skipping unsupported keyword 'Encryption'"
                 }
 
                 #MaxPoolSize            Property   int MaxPoolSize {get;set;}

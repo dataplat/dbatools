@@ -131,8 +131,8 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
 
             $tableWithSchema = New-DbaDbTable -SqlInstance $script:instance1 -Database $dbname -Name $tableName -ColumnMap $map -Schema $schemaName -Passthru
             $tableWithSchema[0] | Should -Be "CREATE SCHEMA [$schemaName]"
-            $tableWithSchema[1] | Should -Match "$schemaName"
-            $tableWithSchema[1] | Should -Match "$tableName"
+            $tableWithSchema[2] | Should -Match "$schemaName"
+            $tableWithSchema[2] | Should -Match "$tableName"
         }
     }
 }

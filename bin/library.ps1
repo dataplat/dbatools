@@ -1,130 +1,90 @@
-# Current library Version the module expects
-$currentLibraryVersion = New-Object System.Version(0, 10, 0, 74)
+if ($PSVersionTable.PSEdition -ne "Core") {
+    $dir = (Join-Path $script:libraryroot "lib\").Replace('\', '\\')
 
-<#
-Library Versioning 101:
-The version consists of 4 segments: Major, Minor, Build, Revision
+    if (-not ("Redirector" -as [type])) {
+        $source = @"
+            using System;
+            using System.Linq;
+            using System.Reflection;
+            using System.Text.RegularExpressions;
 
-Major: Should always be equal to the main version number of the dbatools PowerShell project.
-Minor: Tracks major features within a major release. Increment on new features or significant structural changes. Reset to 0 when incrementing the major version.
-Build: Tracks lesser functionality upgrades. Increment on all minor upgrades, reset to 0 when introducing a new major feature or major version.
-Revision: Tracks all changes. Every single update to the library - bugfix, feature or redesign - increments the revision counter. It is never reset to 0.
+            public class Redirector
+            {
+                public Redirector()
+                {
+                    this.EventHandler = new ResolveEventHandler(AssemblyResolve);
+                }
 
-Updating the library version number:
-When changing the library version number, it is necessary to do so in TWO places:
-- At the top of this very library.ps1
-- Within dbatools.csproj
-These two locations MUST have matching version numbers, otherwise it will keep building the library and complaining about version mismatch!
-#>
+                public readonly ResolveEventHandler EventHandler;
 
-<#
-#---------------------------------#
-# Runtime configuration variables #
-#---------------------------------#
+                protected Assembly AssemblyResolve(object sender, ResolveEventArgs e)
+                {
+                    string[] dlls = {
+                        "System.Runtime.CompilerServices.Unsafe",
+                        "System.Resources.Extensions",
+                        "Microsoft.SqlServer.ConnectionInfo",
+                        "Microsoft.SqlServer.Smo",
+                        "Microsoft.Identity.Client",
+                        "System.Diagnostics.DiagnosticSource",
+                        "Microsoft.IdentityModel.Abstractions",
+                        "Microsoft.Data.SqlClient",
+                        "System.Configuration.ConfigurationManager",
+                        "Microsoft.SqlServer.Replication",
+                        "Microsoft.SqlServer.Rmo",
+                        "System.Private.CoreLib"
+                    };
 
-The library recognizes a few external variables in order to customize its behavior on import.
+                    var name = new AssemblyName(e.Name);
+                    var assemblyName = name.Name.ToString();
+                    foreach (string dll in dlls)
+                    {
+                        if (assemblyName == dll)
+                        {
+                            string filelocation = "$dir" + dll + ".dll";
+                            //Console.WriteLine(filelocation);
+                            return Assembly.LoadFrom(filelocation);
+                        }
+                    }
 
-$dbatools_strictsecuritymode
-Setting this to $true will cause dbatools to always load the library directly from the module directory.
-This is more secure, but less convenient when it comes to updating the module, as all consoles using it must be closed.
+                    foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
+                    {
+                        // maybe this needs to change?
+                        var info = assembly.GetName();
+                        if (info.FullName == e.Name) {
+                            return assembly;
+                        }
+                    }
+                    return null;
+                }
+            }
+"@
 
-$dbatools_alwaysbuildlibrary
-Setting this to $true will cause the module to always build the library from source, rather than reuse the binaries.
-Mostly for developers working on the library.
+        $null = Add-Type -TypeDefinition $source
+    }
 
-#>
-
-$dll =
-if ($PSVersionTable.PSVersion.Major -ge 6) {
-    Join-Path $psModuleRoot "bin\netcoreapp3.1\dbatools.dll"
-} else {
-    Join-Path $psModuleRoot "bin\net462\dbatools.dll"
+    try {
+        $redirector = New-Object Redirector
+        [System.AppDomain]::CurrentDomain.add_AssemblyResolve($redirector.EventHandler)
+    } catch {
+        # unsure
+    }
 }
 
-$ImportLibrary = $true # Always import the library, because it contains some internal cmdlets.
+$dll = Join-Path $script:libraryroot "lib\dbatools.dll"
 
-if ($ImportLibrary) {
-    #region Add Code
-    try {
-        # In strict security mode, only load from the already pre-compiled binary within the module
-        if ($script:strictSecurityMode) {
-            if (Test-Path -Path $dll) {
-                $dbaToolsAssembly = Import-Module "$dll"
-            } else {
-                throw "Library not found, terminating"
-            }
-        }
-        # Else we prioritize user convenience
-        else {
-            try {
-                if ((Test-Path -Path "$libraryBase/projects/dbatools/dbatools.sln")) {
-                    $sln = (Resolve-Path -Path "$libraryBase\projects\dbatools\dbatools.sln" -ErrorAction Stop)
-                    $hasProject = Test-Path -Path $sln -ErrorAction Stop
-                }
-            } catch {
-                $null = 1
-            }
+if ($IsWindows -and $PSVersionTable.PSEdition -eq "Core") {
+    $sqlclient = Join-Path $script:libraryroot "lib\win-sqlclient\Microsoft.Data.SqlClient.dll"
+} else {
+    $sqlclient = Join-Path $script:libraryroot "lib\Microsoft.Data.SqlClient.dll"
+}
 
-            if (-not $dll) {
-                $hasCompiledDll = $false
-            } else {
-                $hasCompiledDll = Test-Path -Path $dll -ErrorAction Stop
-            }
+try {
+    Import-Module $sqlclient
+    Import-Module $dll
+} catch {
+    throw "Couldn't import dbatools.dll | $PSItem"
+}
 
-            if ((-not $script:alwaysBuildLibrary) -and $hasCompiledDll -and ([System.Diagnostics.FileVersionInfo]::GetVersionInfo($dll).FileVersion -eq $currentLibraryVersion)) {
-                $start = Get-Date
-
-                try {
-                    Write-Verbose -Message "Found library at $dll, import"
-                    $dbaToolsAssembly = Import-Module -Name "$dll"
-                } catch {
-                    Write-Verbose -Message "Failed to copy and import, attempting to import straight from the module directory"
-                    $script:DllRoot = Resolve-Path -Path "$($script:PSModuleRoot)\bin\"
-                    Import-Module -Name "$(Join-Path -Path $script:DllRoot -ChildPath dbatools.dll)" -ErrorAction Stop
-                }
-                Write-Verbose -Message "Total duration: $((Get-Date) - $start)"
-            } elseif ($hasProject) {
-                . Import-ModuleFile (Resolve-Path -Path "$($script:PSModuleRoot)\bin\build-project.ps1")
-            } else {
-                throw "No valid dbatools library found! Check your module integrity"
-            }
-        }
-
-        #region PowerShell TypeData
-        #Update-TypeData -TypeName "Dataplat.Dbatools.dbaSystem.DbatoolsException" -SerializationDepth 2 -ErrorAction Ignore
-        #Update-TypeData -TypeName "Dataplat.Dbatools.dbaSystem.DbatoolsExceptionRecord" -SerializationDepth 2 -ErrorAction Ignore
-        #endregion PowerShell TypeData
-    } catch {
-        #region Warning
-        Write-Verbose @'
-Dear User,
-
-in the name of the dbatools team I apologize for the inconvenience.
-Generally, when something goes wrong we try to handle and interpret in an
-understandable manner. Unfortunately, something went awry with importing
-our main library, so all the systems making this possible would not be initialized
-yet. We have taken great pains to avoid this issue but this notification indicates
-we have failed.
-
-Please, in order to help us prevent this from happening again, visit us at:
-https://github.com/dataplat/dbatools/issues
-and tell us about this failure. All information will be appreciated, but
-especially valuable are:
-- Exports of the exception: $Error | Export-Clixml error.xml -Depth 4
-- Screenshots
-- Environment information (Operating System, Hardware Stats, .NET Version,
-  PowerShell Version and whatever else you may consider of potential impact.)
-
-Again, I apologize for the inconvenience and hope we will be able to speedily
-resolve the issue.
-
-Best Regards,
-Friedrich Weinmann
-aka "The guy who made most of The Library that Failed to import"
-
-'@
-        throw
-        #endregion Warning
-    }
-    #endregion Add Code
+if ($PSVersionTable.PSEdition -ne "Core") {
+    [System.AppDomain]::CurrentDomain.remove_AssemblyResolve($onAssemblyResolveEventHandler)
 }

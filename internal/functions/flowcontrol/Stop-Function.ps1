@@ -162,7 +162,11 @@ function Stop-Function {
         $instance = $Target
         $isconnstring = ([DbaInstanceParameter]$instance).IsConnectionString
         if ($isconnstring) {
-            $instance = Hide-ConnectionString $instance
+            try {
+                $instance = Hide-ConnectionString $instance -ErrorAction Ignore
+            } catch {
+                # sometimes this happens
+            }
         }
     }
     #endregion Initialize information on the calling command

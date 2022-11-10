@@ -125,23 +125,6 @@ function Export-DbaDacPackage {
             return
         }
 
-        if (-not $script:core) {
-            $dacfxPath = Resolve-Path -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Dac.dll"
-
-            if ((Test-Path $dacfxPath) -eq $false) {
-                Stop-Function -Message 'Dac Fx library not found.' -EnableException $EnableException
-                return
-            } else {
-                try {
-                    Add-Type -Path $dacfxPath
-                    Write-Message -Level Verbose -Message "Dac Fx loaded."
-                } catch {
-                    Stop-Function -Message 'No usable version of Dac Fx found.' -ErrorRecord $_
-                    return
-                }
-            }
-        }
-
         #check that at least one of the DB selection parameters was specified
         if (!$AllUserDatabases -and !$Database) {
             Stop-Function -Message "Either -Database or -AllUserDatabases should be specified" -Continue
@@ -257,12 +240,18 @@ function Export-DbaDacPackage {
 
                     try {
                         $startprocess = New-Object System.Diagnostics.ProcessStartInfo
-                        if ($IsLinux) {
-                            $startprocess.FileName = "$script:PSModuleRoot/bin/smo/coreclr/sqlpackage"
-                        } elseif ($IsMacOS) {
-                            $startprocess.FileName = "$script:PSModuleRoot/bin/smo/coreclr/mac/sqlpackage"
+
+                        $sqlpackage = (Get-Command sqlpackage -ErrorAction Ignore).Source
+                        if ($sqlpackage) {
+                            $startprocess.FileName = $sqlpackage
                         } else {
-                            $startprocess.FileName = "$script:PSModuleRoot\bin\smo\sqlpackage.exe"
+                            if ($IsLinux) {
+                                $startprocess.FileName = "$script:libraryroot/lib/sqlpackage"
+                            } elseif ($IsMacOS) {
+                                $startprocess.FileName = "$script:libraryroot/lib/mac/sqlpackage"
+                            } else {
+                                $startprocess.FileName = "$script:libraryroot\lib\sqlpackage.exe"
+                            }
                         }
                         $startprocess.Arguments = $sqlPackageArgs
                         $startprocess.RedirectStandardError = $true
