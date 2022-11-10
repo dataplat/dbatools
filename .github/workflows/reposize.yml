@@ -14,7 +14,9 @@ jobs:
       - name: Repository size should be less than 90MB
         shell: pwsh
         run: |
+          cd /tmp
           gh repo clone dataplat/dbatools
+          cd /tmp/dbatools
           $objects = git count-objects -v
           $sizepack = $objects -split '`n' | Where-Object { $PSItem -match "size-pack" }
           $size = $sizepack -split " " | Select-Object -Last 1
