@@ -1,0 +1,34 @@
+name: Check repo size
+on: [pull_request]
+
+jobs:
+  clone:
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
+
+    steps:
+      - uses: actions/checkout@v1
+      - uses: jwalton/gh-find-current-pr@v1
+        id: findpr
+        with:
+          state: all
+
+      - name: Repository size should be less than 90MB
+        env:
+          PR: ${{ steps.findpr.outputs.pr }}
+        shell: pwsh
+        run: |
+          cd /tmp
+          gh repo clone dataplat/dbatools
+          cd /tmp/dbatools
+          Write-Output "Checking out $env:PR"
+          gh pr checkout $env:PR
+          $objects = git count-objects -v
+          $sizepack = $objects -split '`n' | Where-Object { $PSItem -match "size-pack" }
+          $size = $sizepack -split " " | Select-Object -Last 1
+          Write-Output "Repo size is $size"
+          # old size = 110299 or 250000+
+          if ($size -gt 95000) { # Size is 89836, so 95000 should last a while
+            throw "This clone is outdated. Please reclone your repo and resubmit with the slimmed down repo. See https://github.com/dataplat/dbatools/pull/8637 for more information."
+          }
