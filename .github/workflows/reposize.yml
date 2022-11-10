@@ -15,8 +15,8 @@ jobs:
           cd /tmp
           gh repo clone dataplat/dbatools
           cd /tmp/dbatools
-          Write-Output "Checking out ${PR}"
-          gh pr checkout ${PR}
+          Write-Output "Checking out ${{PR}}"
+          gh pr checkout ${{PR}}
           $objects = git count-objects -v
           $sizepack = $objects -split '`n' | Where-Object { $PSItem -match "size-pack" }
           $size = $sizepack -split " " | Select-Object -Last 1
