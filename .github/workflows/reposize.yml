@@ -1,0 +1,24 @@
+name: Check repo size
+on: [pull_request]
+
+jobs:
+  # This workflow contains a single job called "build"
+  build:
+    # The type of runner that the job will run on
+    runs-on: ubuntu-latest
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v2
+      - name: Repository size should be less than 90MB
+        shell: pwsh
+        run: |
+          $objects = git count-objects -v
+          $sizepack = $objects -split '`n' | Where-Object { $PSItem -match "size-pack" }
+          $size = $sizepack -split " " | Select-Object -Last 1
+          Write-Output "Repo size is $size"
+          # old size = 110299 or 250000+
+          if ($size -gt 95000) { # Size is 89836, so 95000 should last a while
+            throw "This clone is outdated. Please reclone your repo and resubmit with the slimmed down repo. See https://github.com/dataplat/dbatools/pull/8637 for more information."
+          }
