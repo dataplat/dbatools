@@ -6,14 +6,15 @@ jobs:
   build:
     # The type of runner that the job will run on
     runs-on: ubuntu-latest
+    env:
+      GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
 
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-      - uses: actions/checkout@v2
       - name: Repository size should be less than 90MB
         shell: pwsh
         run: |
+          gh repo clone dataplat/dbatools
           $objects = git count-objects -v
           $sizepack = $objects -split '`n' | Where-Object { $PSItem -match "size-pack" }
           $size = $sizepack -split " " | Select-Object -Last 1
