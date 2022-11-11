@@ -477,7 +477,7 @@ function Export-DbaUser {
                         if ($Template) {
                             $grantee = "{templateUser}"
                         } else {
-                            $grantee = $databasePermission.Grantee
+                            $grantee = $objectPermission.Grantee
                         }
 
                         $outsql += "$grantObjectPermission $($objectPermission.PermissionType) ON $object TO [$grantee]$withGrant AS [$($objectPermission.Grantor)];"
