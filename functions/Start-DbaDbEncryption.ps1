@@ -116,6 +116,7 @@ function Start-DbaDbEncryption {
     param (
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
+        [Alias("Certificate", "CertificateName")]
         [string]$EncryptorName,
         [ValidateSet("AsymmetricKey", "Certificate")]
         [string]$EncryptorType = "Certificate",
