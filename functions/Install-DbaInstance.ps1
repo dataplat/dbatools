@@ -724,6 +724,9 @@ function Install-DbaInstance {
             $execParams += Update-ServiceCredential -Credential $SaCredential -PasswordName SAPWD
             # And root folders and other variables
             if (Test-Bound -ParameterName InstancePath) {
+                if ($InstancePath.Length -eq 2 -and $InstancePath.Substring(1, 1) -eq ":") {
+                    $InstancePath = "$InstancePath\"
+                }
                 $configNode.INSTANCEDIR = $InstancePath
             }
             if (Test-Bound -ParameterName DataPath) {
