@@ -11,7 +11,7 @@
     RootModule             = 'dbatools.psm1'
 
     # Version number of this module.
-    ModuleVersion          = '1.1.142'
+    ModuleVersion          = '2.0.0'
 
     # ID used to uniquely identify this module
     GUID                   = '9d139310-ce45-41ce-8e8b-d76335aa1789'
@@ -29,7 +29,9 @@
     Description            = "The community module that enables SQL Server Pros to automate database development and server administration"
 
     # Minimum version of the Windows PowerShell engine required by this module
-    PowerShellVersion      = '3.0'
+    # This is because of the way RequiredModules checks to see if its Core or not
+    # dbatools.legacy will still work on PowerShell 3.0 and 4.0
+    PowerShellVersion      = '5.1'
 
     # Name of the Windows PowerShell host required by this module
     PowerShellHostName     = ''
