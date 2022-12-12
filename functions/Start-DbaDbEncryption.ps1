@@ -28,7 +28,7 @@ function Start-DbaDbEncryption {
         The database or databases that will not be encrypted
 
     .PARAMETER EncryptorName
-        The name of the encryptor (Certificate or Asymmetric Key) in master that will be used. Tries to find one if one is not specified.
+        The name of the encryptor (Certificate or Asymmetric Key) in master that will be used. Tries to find one if one is not specified. If certificate does not exist and -Force is specified, one will be created with the given Encryptor Name.
 
         In order to encrypt the database encryption key with an asymmetric key, you must use an asymmetric key that resides on an extensible key management provider.
 
@@ -71,6 +71,9 @@ function Start-DbaDbEncryption {
 
     .PARAMETER InputObject
         Enables piping from Get-DbaDatabase
+
+    .PARAMETER Force
+        If EncryptorName is specified and certificate does not exist, one will be created with the given Encryptor Name.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
@@ -134,11 +137,17 @@ function Start-DbaDbEncryption {
         [parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
         [switch]$AllUserDatabases,
+        [switch]$Force,
         [switch]$EnableException
     )
     process {
         if (-not $SqlInstance -and -not $InputObject) {
             Stop-Function -Message "You must specify either SqlInstance or pipe in an InputObject from Get-DbaDatabase"
+            return
+        }
+
+        if ($Force -and -not $EncryptorName) {
+            Stop-Function -Message "You must specify an EncryptorName when using Force"
             return
         }
 
@@ -177,6 +186,12 @@ function Start-DbaDbEncryption {
                 # before doing anything, see if the master cert is in order
                 if ($EncryptorName) {
                     $mastercert = Get-DbaDbCertificate -SqlInstance $server -Database master | Where-Object Name -eq $EncryptorName
+                    if (-not $mastercert -and $Force) {
+                        $mastercert = New-DbaDbCertificate -SqlInstance $server -Database master -Name $EncryptorName
+
+                        $null = $server.Refresh()
+                        $null = $server.Databases["master"].Refresh()
+                    }
                 } else {
                     $mastercert = Get-DbaDbCertificate -SqlInstance $server -Database master | Where-Object Name -NotMatch "##"
                 }

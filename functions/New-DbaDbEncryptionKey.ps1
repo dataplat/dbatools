@@ -42,6 +42,8 @@ function New-DbaDbEncryptionKey {
 
         Use Force to create an encryption key even though the specified cert has not been backed up
 
+        Also, if EncryptorName is specified and the certificate does not exist, it will be created when Force is specified
+
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
 
@@ -132,6 +134,11 @@ function New-DbaDbEncryptionKey {
             if ($Type -eq "Certificate") {
                 Write-Message -Level Verbose "Getting certificate '$EncryptorName' from $($db.Parent) on $($db.Parent.Name)"
                 $dbcert = Get-DbaDbCertificate -SqlInstance $db.Parent -Database master -Certificate $EncryptorName
+                if (-not $dbcert -and $Force -and $EncryptorName) {
+                    $dbcert = New-DbaDbCertificate -SqlInstance $db.Parent -Database master -Name $EncryptorName
+                    $null = $db.Parent.Refresh()
+                    $null = $db.Parent.Databases["master"].Refresh()
+                }
                 if ($dbcert.LastBackupDate.Year -eq 1 -and -not $Force) {
                     Stop-Function -Message "Certificate ($EncryptorName) in master on $($db.Parent) has not been backed up. Please backup your certificate or use -Force to continue" -Continue
                 }
