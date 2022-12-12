@@ -75,6 +75,7 @@ function Enable-DbaDbEncryption {
         [DbaInstanceParameter[]]$SqlInstance,
         [System.Management.Automation.PSCredential]$SqlCredential,
         [string[]]$Database,
+        [Alias("Certificate", "CertificateName")]
         [string]$EncryptorName,
         [parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,

@@ -84,6 +84,7 @@ function New-DbaDbEncryptionKey {
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [string[]]$Database = "master",
+        [Alias("Certificate", "CertificateName")]
         [string]$EncryptorName,
         [ValidateSet("Certificate", "AsymmetricKey")]
         [string]$Type = "Certificate",
