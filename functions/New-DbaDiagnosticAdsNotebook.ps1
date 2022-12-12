@@ -19,7 +19,7 @@ function New-DbaDiagnosticAdsNotebook {
 
     .PARAMETER TargetVersion
         If you are not creating the notebook for a specific instance of SQL Server, you can specify the version that you want to create the notebook for.
-        Must be one of "2005", "2008", "2008R2", "2012", "2014", "2016", "2016SP2", "2017", "2019", "AzureSQLDatabase"
+        Must be one of "2005", "2008", "2008R2", "2012", "2014", "2016", "2016SP2", "2017", "2019", "2022", "AzureSQLDatabase"
 
     .PARAMETER Path
         Specifies the output path of the Jupyter Notebook
@@ -68,7 +68,7 @@ function New-DbaDiagnosticAdsNotebook {
     param(
         [DbaInstanceParameter]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [ValidateSet("2005", "2008", "2008R2", "2012", "2014", "2016", "2016SP2", "2017", "2019", "AzureSQLDatabase")]
+        [ValidateSet("2005", "2008", "2008R2", "2012", "2014", "2016", "2016SP2", "2017", "2019", "2022", "AzureSQLDatabase")]
         [String]$TargetVersion,
         [parameter(Mandatory = $true)]
         [String]$Path,
@@ -102,6 +102,7 @@ function New-DbaDiagnosticAdsNotebook {
                 "13.0"  = "2016"
                 "14.0"  = "2017"
                 "15.0"  = "2019"
+                "16.0"  = "2022"
             }
 
             try {
