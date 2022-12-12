@@ -220,6 +220,7 @@ function Copy-DbaSysDbUserObject {
                             $transfer = New-Object Microsoft.SqlServer.Management.Smo.Transfer $smodb
                             $null = $transfer.CopyAllObjects = $false
                             $null = $transfer.Options.WithDependencies = $true
+                            $null = $transfer.Options.Indexes = $true
                             $null = $transfer.ObjectList.Add($table)
                             if ($PSCmdlet.ShouldProcess($destServer, "Attempting to add table $table to $systemDb")) {
                                 try {
