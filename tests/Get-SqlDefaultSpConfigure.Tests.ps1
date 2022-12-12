@@ -16,14 +16,17 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 
 Describe "$CommandName Integration Tests" -Tag 'IntegrationTests' {
     Context "Try all versions of SQL" {
-        $versionName = @{8  = "2000"
-                        9  = "2005"
-                        10 = "2008/2008R2"
-                        11 = "2012"
-                        12 = "2014"
-                        13 = "2016"
-                        14 = "2017"
-                        15 = "2019"}
+        $versionName = @{
+            8  = "2000"
+            9  = "2005"
+            10 = "2008/2008R2"
+            11 = "2012"
+            12 = "2014"
+            13 = "2016"
+            14 = "2017"
+            15 = "2019"
+            16 = "2022"
+        }
 
         foreach ($version in 8..14){
             $results = Get-SqlDefaultSPConfigure -SqlVersion $version

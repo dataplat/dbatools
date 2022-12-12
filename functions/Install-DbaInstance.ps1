@@ -81,7 +81,7 @@ function Install-DbaInstance {
 
     .PARAMETER Version
         SQL Server version you wish to install.
-        This is the year version (e.g. "2008R2", "2017", "2019")
+        This is the year version (e.g. "2008R2", "2017", "2019", "2022")
 
     .PARAMETER InstanceName
         Name of the SQL Server instance to install. Overrides the instance name specified in -SqlInstance.
@@ -265,7 +265,7 @@ function Install-DbaInstance {
         [DbaInstanceParameter[]]$SqlInstance = $env:COMPUTERNAME,
         [parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
-        [ValidateSet("2008", "2008R2", "2012", "2014", "2016", "2017", "2019")]
+        [ValidateSet("2008", "2008R2", "2012", "2014", "2016", "2017", "2019", "2022")]
         [string]$Version,
         [string]$InstanceName,
         [PSCredential]$SaCredential,

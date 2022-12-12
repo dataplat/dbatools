@@ -233,6 +233,7 @@ function Invoke-DbaDiagnosticQuery {
                     13 { "2016" }
                     14 { "2017" }
                     15 { "2019" }
+                    16 { "2022" }
                 }
             }
 
