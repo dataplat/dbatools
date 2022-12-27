@@ -14,6 +14,7 @@ body:
       label: "Verified issue does not already exist?"
       description: "Please search to see if an issue already exists for the bug you encountered."
       options:
+        - "No, I did not search"
         - "I have searched and found no existing issue"
     validations:
       required: true
