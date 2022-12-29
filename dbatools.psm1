@@ -162,7 +162,7 @@ Write-ImportTime -Text "Checking for debugging preference"
     # https://becomelotr.wordpress.com/2017/02/13/expensive-dot-sourcing/
 #>
 
-if (-not (Test-Path -Path "$psScriptRoot\dbatools.ps1") -or $script:serialimport) {
+if (-not (Test-Path -Path "$psScriptRoot\dbatools.dat") -or $script:serialimport) {
     # All internal functions privately available within the toolset
     foreach ($file in (Get-ChildItem -Path "$psScriptRoot/internal/functions/" -Recurse -Filter *.ps1)) {
         . $file.FullName
