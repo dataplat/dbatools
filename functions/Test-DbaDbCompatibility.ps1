@@ -77,7 +77,7 @@ function Test-DbaDbCompatibility {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
-            $serverLevel = [Microsoft.SqlServer.Management.Smo.CompatibilityLevel]"Version$($server.VersionMajor)0"
+            $serverLevel = [Microsoft.SqlServer.Management.Smo.CompatibilityLevel]$server.Databases['master'].CompatibilityLevel
             $dbs = $server.Databases
 
             if ($Database) {

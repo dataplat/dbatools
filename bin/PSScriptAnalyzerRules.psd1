@@ -27,9 +27,8 @@
         'PSPlaceCloseBrace',
         'PSUseConsistentWhitespace',
         'PSUseConsistentIndentation',
-        'PSAlignAssignmentStatement',
-        'PSUseCorrectCasing'
-
+        'PSAlignAssignmentStatement'
+        # 'PSUseCorrectCasing' ## We do not like the use of -EQ, prefer -eq
     )
     Rules        = @{
         PSUseCompatibleSyntax      = @{
