@@ -94,7 +94,11 @@ if (($PSVersionTable.PSVersion.Major -lt 6) -or ($PSVersionTable.Platform -and $
 
     # this doesn't exist by default
     # https://github.com/PowerShell/PowerShell/issues/1262
-    $env:COMPUTERNAME = hostname
+    try {
+        $env:COMPUTERNAME = hostname
+    } catch {
+        $env:COMPUTERNAME = "unknown"
+    }
 }
 
 Write-ImportTime -Text "Setting some OS variables"
