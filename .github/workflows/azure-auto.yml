@@ -1,6 +1,6 @@
 name: Add PowerShell module to Azure Automation
 on:
-  push:
+  pull_request:
 jobs:
   addmodule:
     runs-on: ubuntu-latest
@@ -16,7 +16,8 @@ jobs:
 
       - name: Add the module
         uses: potatoqualitee/azautomodule@main
-        id: add
+        env:
+          GITHUB_TOKEN: ${{ secrets.GIST_PAT }}
         with:
           resource-group-name: azautomation
           automation-account-name: import-tester
