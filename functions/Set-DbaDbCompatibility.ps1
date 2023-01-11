@@ -28,6 +28,7 @@ function Set-DbaDbCompatibility {
         Version130 = SQL Server 2016
         Version140 = SQL Server 2017
         Version150 = SQL Server 2019
+        Version160 = SQL Server 2022
 
     .PARAMETER TargetCompatibility
         Deprecated parameter. Please use Compatibility instead.
@@ -41,6 +42,7 @@ function Set-DbaDbCompatibility {
         13 = SQL Server 2016
         14 = SQL Server 2017
         15 = SQL Server 2019
+        16 = SQL Server 2022
 
     .PARAMETER InputObject
         A collection of databases (such as returned by Get-DbaDatabase)
@@ -92,7 +94,7 @@ function Set-DbaDbCompatibility {
         [PSCredential]$SqlCredential,
         [string[]]$Database,
         [Microsoft.SqlServer.Management.Smo.CompatibilityLevel]$Compatibility,
-        [ValidateSet(9, 10, 11, 12, 13, 14, 15)]
+        [ValidateSet(9, 10, 11, 12, 13, 14, 15, 16)]
         [int]$TargetCompatibility,
         [parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
@@ -116,6 +118,7 @@ function Set-DbaDbCompatibility {
                     13 { "Version130" } # SQL Server 2016
                     14 { "Version140" } # SQL Server 2017
                     15 { "Version150" } # SQL Server 2019
+                    16 { "Version160" } # SQL Server 2022
                 }
             }
             Write-Message -Level Verbose -Message "TargetCompatibility $TargetCompatibility was converted to Compatibility $Compatibility."
