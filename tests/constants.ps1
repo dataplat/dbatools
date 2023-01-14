@@ -1,6 +1,6 @@
 # constants
 if (Test-Path "$PSScriptRoot\constants.local.ps1") {
-    Write-Verbose "tests\constants.local.ps1 found."
+    Write-Host "Tests will use local constants file: tests\constants.local.ps1." -ForegroundColor Cyan
     . "$PSScriptRoot\constants.local.ps1"
 } elseif ($env:CODESPACES -and ($env:TERM_PROGRAM -eq 'vscode' -and $env:REMOTE_CONTAINERS)) {
     $script:instance1 = "dbatools1"
