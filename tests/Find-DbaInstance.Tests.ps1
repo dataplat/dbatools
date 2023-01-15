@@ -4,9 +4,11 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'ComputerName', 'DiscoveryType', 'Credential', 'SqlCredential', 'ScanType', 'IpAddress', 'DomainController', 'TCPPort', 'MinimumConfidence', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
+        BeforeAll {
+            [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
+            [object[]]$knownParameters = 'ComputerName', 'DiscoveryType', 'Credential', 'SqlCredential', 'ScanType', 'IpAddress', 'DomainController', 'TCPPort', 'MinimumConfidence', 'EnableException'
+            $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
+        }
         It "Should only contain our specific parameters" {
             (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
         }
@@ -15,7 +17,9 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 
 Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     Context "Command finds appveyor instances" {
-        $results = Find-DbaInstance -ComputerName $env:COMPUTERNAME
+        BeforeAll {
+            $results = Find-DbaInstance -ComputerName $env:COMPUTERNAME -ScanType Browser, SqlConnect
+        }
         It "finds more than one SQL instance" {
             $results.count -gt 1
         }
@@ -27,6 +31,9 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         }
         It "finds the SQL2017 instance" {
             $results.InstanceName -contains 'SQL2017' | Should -Be $true
+        }
+        It "successfully connects" {
+            $results.SqlConnected | Should -Be $true
         }
     }
 }
