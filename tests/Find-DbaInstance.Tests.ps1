@@ -1,3 +1,8 @@
+param(
+    [string[]]
+    $TestServer
+)
+
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
@@ -16,21 +21,22 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 }
 
 Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
-    Context "Command finds appveyor instances" {
+    Context "Command finds SQL Server instances" {
         BeforeAll {
-            $results = Find-DbaInstance -ComputerName $env:COMPUTERNAME -ScanType Browser, SqlConnect
+            if ($env:APPVEYOR) {
+                $results = Find-DbaInstance -ComputerName $script:instance3 -ScanType Browser, SqlConnect
+            } else {
+                $results = Find-DbaInstance -ComputerName $TestServer -ScanType Browser, SqlConnect
+            }
         }
-        It "finds more than one SQL instance" {
-            $results.count -gt 1
+        It "Returns an object type of [Dataplat.Dbatools.Discovery.DbaInstanceReport]" {
+            $results | Should -BeOfType [Dataplat.Dbatools.Discovery.DbaInstanceReport]
         }
-        It "finds the SQL2008R2SP2 instance" {
-            $results.InstanceName -contains 'SQL2008R2SP2' | Should -Be $true
+        It "FullName is populated" {
+            $results.FullName | Should -Not -BeNullOrEmpty
         }
-        It "finds the SQL2016 instance" {
-            $results.InstanceName -contains 'SQL2016' | Should -Be $true
-        }
-        It "finds the SQL2017 instance" {
-            $results.InstanceName -contains 'SQL2017' | Should -Be $true
+        It "TcpConnected is true" {
+            $results.TcpConnected | Should -Be $true
         }
         It "successfully connects" {
             $results.SqlConnected | Should -Be $true
