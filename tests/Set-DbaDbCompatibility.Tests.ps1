@@ -3,8 +3,8 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context 'Validate parameters' {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
+    Context "Validate parameters" {
+        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('WhatIf', 'Confirm') }
         [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'Compatibility', 'InputObject', 'EnableException'
         $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
         It 'Should only contain our specific parameters' {
@@ -29,7 +29,7 @@ Describe "$CommandName Integration Tests" -Tag 'IntegrationTests' {
         $sqlCn.Refresh()
         $sqlCn.Databases.Refresh()
         $resultMatches = Set-DbaDbCompatibility -SqlInstance $sqlCn -Database 'master' -Verbose 4>&1
-        $verboseMsg = "*current Compatibility Level matches instance level*"
+        $verboseMsg = '*current Compatibility Level matches instance level*'
 
         $sqlCn.Refresh()
         $sqlCn.Databases.Refresh()
