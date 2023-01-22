@@ -13,7 +13,6 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
         }
     }
 }
-
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     BeforeAll {
         $db = Get-DbaDatabase -SqlInstance $script:instance1 -Database tempdb
@@ -35,6 +34,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             SELECT top 13 2
             FROM sys.objects")
     }
+
     AfterAll {
         try {
             $null = $db.Query("DROP TABLE dbo.dbatoolsci_example")
@@ -49,81 +49,83 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $null = 1
         }
     }
+    Context "Data movement" {
+        It "copies the table data" {
+            $results = Copy-DbaDbTableData -SqlInstance $script:instance1 -Database tempdb -Table dbatoolsci_example -DestinationTable dbatoolsci_example2
+            $table1count = $db.Query("select id from dbo.dbatoolsci_example")
+            $table2count = $db.Query("select id from dbo.dbatoolsci_example2")
+            $table1count.Count | Should -Be $table2count.Count
+            $results.SourceDatabaseID | Should -Be $db.ID
+            $results.DestinationDatabaseID | Should -Be $db.ID
+        }
 
-    It "copies the table data" {
-        $results = Copy-DbaDbTableData -SqlInstance $script:instance1 -Database tempdb -Table dbatoolsci_example -DestinationTable dbatoolsci_example2
-        $table1count = $db.Query("select id from dbo.dbatoolsci_example")
-        $table2count = $db.Query("select id from dbo.dbatoolsci_example2")
-        $table1count.Count | Should -Be $table2count.Count
-        $results.SourceDatabaseID | Should -Be $db.ID
-        $results.DestinationDatabaseID | Should -Be $db.ID
+        It "copies the table data to another instance" {
+            $null = Copy-DbaDbTableData -SqlInstance $script:instance1 -Destination $script:instance2 -Database tempdb -Table tempdb.dbo.dbatoolsci_example -DestinationTable dbatoolsci_example3
+            $table1count = $db.Query("select id from dbo.dbatoolsci_example")
+            $table2count = $db2.Query("select id from dbo.dbatoolsci_example3")
+            $table1count.Count | Should -Be $table2count.Count
+        }
+
+        It "Copy data using a query that relies on the default source database" {
+            $result = Copy-DbaDbTableData -SqlInstance $script:instance2 -Database tempdb -Table dbo.dbatoolsci_example4 -Query "SELECT TOP (1) Id FROM dbo.dbatoolsci_example4 ORDER BY Id DESC" -DestinationTable dbatoolsci_example3 -Truncate
+            $result.RowsCopied | Should -Be 1
+        }
+
+        It "Copy data using a query that uses a 3 part query" {
+            $result = Copy-DbaDbTableData -SqlInstance $script:instance2 -Database tempdb -Table dbo.dbatoolsci_example4 -Query "SELECT TOP (1) Id FROM tempdb.dbo.dbatoolsci_example4 ORDER BY Id DESC" -DestinationTable dbatoolsci_example3 -Truncate
+            $result.RowsCopied | Should -Be 1
+        }
     }
+    Context "Functionality checks" {
+        It "supports piping" {
+            $null = Get-DbaDbTable -SqlInstance $script:instance1 -Database tempdb -Table dbatoolsci_example | Copy-DbaDbTableData -DestinationTable dbatoolsci_example2 -Truncate
+            $table1count = $db.Query("select id from dbo.dbatoolsci_example")
+            $table2count = $db.Query("select id from dbo.dbatoolsci_example2")
+            $table1count.Count | Should -Be $table2count.Count
+        }
 
-    It "copies the table data to another instance" {
-        $null = Copy-DbaDbTableData -SqlInstance $script:instance1 -Destination $script:instance2 -Database tempdb -Table tempdb.dbo.dbatoolsci_example -DestinationTable dbatoolsci_example3
-        $table1count = $db.Query("select id from dbo.dbatoolsci_example")
-        $table2count = $db2.Query("select id from dbo.dbatoolsci_example3")
-        $table1count.Count | Should -Be $table2count.Count
-    }
+        It "supports piping more than one table" {
+            $results = Get-DbaDbTable -SqlInstance $script:instance1 -Database tempdb -Table dbatoolsci_example2, dbatoolsci_example | Copy-DbaDbTableData -DestinationTable dbatoolsci_example3
+            $results.Count | Should -Be 2
+            $results.RowsCopied | Measure-Object -Sum | Select-Object -Expand Sum | Should -Be 20
+        }
 
-    It "supports piping" {
-        $null = Get-DbaDbTable -SqlInstance $script:instance1 -Database tempdb -Table dbatoolsci_example | Copy-DbaDbTableData -DestinationTable dbatoolsci_example2 -Truncate
-        $table1count = $db.Query("select id from dbo.dbatoolsci_example")
-        $table2count = $db.Query("select id from dbo.dbatoolsci_example2")
-        $table1count.Count | Should -Be $table2count.Count
-    }
+        It "opens and closes connections properly" {
+            #regression test, see #3468
+            $results = Get-DbaDbTable -SqlInstance $script:instance1 -Database tempdb -Table 'dbo.dbatoolsci_example', 'dbo.dbatoolsci_example4' | Copy-DbaDbTableData -Destination $script:instance2 -DestinationDatabase tempdb -KeepIdentity -KeepNulls -BatchSize 5000 -Truncate
+            $results.Count | Should -Be 2
+            $table1DbCount = $db.Query("select id from dbo.dbatoolsci_example")
+            $table4DbCount = $db2.Query("select id from dbo.dbatoolsci_example4")
+            $table1Db2Count = $db.Query("select id from dbo.dbatoolsci_example")
+            $table4Db2Count = $db2.Query("select id from dbo.dbatoolsci_example4")
+            $table1DbCount.Count | Should -Be $table1Db2Count.Count
+            $table4DbCount.Count | Should -Be $table4Db2Count.Count
+            $results[0].RowsCopied | Should -Be 10
+            $results[1].RowsCopied | Should -Be 13
+            $table4Db2Check = $db2.Query("select id from dbo.dbatoolsci_example4 where id = 1")
+            $table4Db2Check.Count | Should -Be 13
+        }
 
-    It "supports piping more than one table" {
-        $results = Get-DbaDbTable -SqlInstance $script:instance1 -Database tempdb -Table dbatoolsci_example2, dbatoolsci_example | Copy-DbaDbTableData -DestinationTable dbatoolsci_example3
-        $results.Count | Should -Be 2
-        $results.RowsCopied | Measure-Object -Sum | select -Expand Sum | Should -Be 20
-    }
+        It "Should return nothing if Source and Destination are same" {
+            $result = Copy-DbaDbTableData -SqlInstance $script:instance1 -Database tempdb -Table dbatoolsci_example -Truncate
+            $result | Should -Be $null
+        }
 
-    It "opens and closes connections properly" {
-        #regression test, see #3468
-        $results = Get-DbaDbTable -SqlInstance $script:instance1 -Database tempdb -Table 'dbo.dbatoolsci_example', 'dbo.dbatoolsci_example4' | Copy-DbaDbTableData -Destination $script:instance2 -DestinationDatabase tempdb -KeepIdentity -KeepNulls -BatchSize 5000 -Truncate
-        $results.Count | Should -Be 2
-        $table1dbcount = $db.Query("select id from dbo.dbatoolsci_example")
-        $table4dbcount = $db2.Query("select id from dbo.dbatoolsci_example4")
-        $table1db2count = $db.Query("select id from dbo.dbatoolsci_example")
-        $table4db2count = $db2.Query("select id from dbo.dbatoolsci_example4")
-        $table1dbcount.Count | Should -Be $table1db2count.Count
-        $table4dbcount.Count | Should -Be $table4db2count.Count
-        $results[0].RowsCopied | Should -Be 10
-        $results[1].RowsCopied | Should -Be 13
-        $table4db2check = $db2.Query("select id from dbo.dbatoolsci_example4 where id = 1")
-        $table4db2check.Count | Should -Be 13
-    }
+        It "Should warn if the destinaton table doesn't exist" {
+            $result = Copy-DbaDbTableData -SqlInstance $script:instance1 -Database tempdb -Table dbatoolsci_example -DestinationTable dbatoolsci_doesntexist -WarningVariable tablewarning
+            $result | Should -Be $null
+            $tablewarning | Should -Match Auto
+        }
 
-    It "Should return nothing if Source and Destination are same" {
-        $result = Copy-DbaDbTableData -SqlInstance $script:instance1 -Database tempdb -Table dbatoolsci_example -Truncate
-        $result | Should -Be $null
-    }
+        It "automatically creates the table" {
+            $result = Copy-DbaDbTableData -SqlInstance $script:instance1 -Database tempdb -Table dbatoolsci_example -DestinationTable dbatoolsci_willexist -AutoCreateTable
+            $result.DestinationTable | Should -Be 'dbatoolsci_willexist'
+        }
 
-    It "Should warn if the destinaton table doesn't exist" {
-        $result = Copy-DbaDbTableData -SqlInstance $script:instance1 -Database tempdb -Table dbatoolsci_example -DestinationTable dbatoolsci_doesntexist -WarningVariable tablewarning
-        $result | Should -Be $null
-        $tablewarning | Should -match Auto
-    }
-
-    It "automatically creates the table" {
-        $result = Copy-DbaDbTableData -SqlInstance $script:instance1 -Database tempdb -Table dbatoolsci_example -DestinationTable dbatoolsci_willexist -AutoCreateTable
-        $result.DestinationTable | Should -Be 'dbatoolsci_willexist'
-    }
-
-    It "Should warn if the source database doesn't exist" {
-        $result = Copy-DbaDbTableData -SqlInstance $script:instance2 -Database tempdb_invalid -Table dbatoolsci_example -DestinationTable dbatoolsci_doesntexist -WarningVariable tablewarning
-        $result | Should -Be $null
-        $tablewarning | Should -match "cannot open database"
-    }
-
-    It "Copy data using a query that relies on the default source database" {
-        $result = Copy-DbaDbTableData -SqlInstance $script:instance2 -Database tempdb -Table dbo.dbatoolsci_example4 -Query "SELECT TOP (1) Id FROM dbo.dbatoolsci_example4 ORDER BY Id DESC" -DestinationTable dbatoolsci_example3 -Truncate
-        $result.RowsCopied | Should -Be 1
-    }
-
-    It "Copy data using a query that uses a 3 part query" {
-        $result = Copy-DbaDbTableData -SqlInstance $script:instance2 -Database tempdb -Table dbo.dbatoolsci_example4 -Query "SELECT TOP (1) Id FROM tempdb.dbo.dbatoolsci_example4 ORDER BY Id DESC" -DestinationTable dbatoolsci_example3 -Truncate
-        $result.RowsCopied | Should -Be 1
+        It "Should warn if the source database doesn't exist" {
+            $result = Copy-DbaDbTableData -SqlInstance $script:instance2 -Database tempdb_invalid -Table dbatoolsci_example -DestinationTable dbatoolsci_doesntexist -WarningVariable tablewarning
+            $result | Should -Be $null
+            $tablewarning | Should -Match "cannot open database"
+        }
     }
 }
