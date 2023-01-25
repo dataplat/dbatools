@@ -58,3 +58,4 @@ Describe "$CommandName Integration Tests" -Tag 'IntegrationTests' {
         }
     }
 }
+#$script:instance2
