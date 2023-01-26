@@ -92,6 +92,8 @@ jobs:
           TENANTID: ${{secrets.TENANTID}}
           CLIENTID: ${{secrets.CLIENTID}}
           CLIENTSECRET: ${{secrets.CLIENTSECRET}}
+          CLIENT_GUID: ${{secrets.CLIENT_GUID}}
+          CLIENT_GUID_SECRET: ${{secrets.CLIENT_GUID_SECRET}}
         shell: pwsh
         run: $null = Invoke-Pester ./tests/gh-winactions.ps1 -Output Detailed -PassThru
 
