@@ -15,14 +15,14 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 
 Describe "$CommandName Integration Tests" -Tag 'IntegrationTests' {
     BeforeAll {
-        $sqlCn = Connect-DbaInstance -SqlInstance $script:instance2
+        $sqlCn = Connect-DbaInstance -SqlInstance $script:instance1
         $sqlCn.Refresh()
         $dbNameNotMatches = "dbatoolscliCompatibilityLevelNotMatch_$(Get-Random -Minimum 600 -Maximum 1100)"
         $instanceLevel = $sqlCn.Databases['master'].CompatibilityLevel
         <# create a database that is one level down from instance level, any version tested against supports the prior level #>
         $previousCompatLevel = [int]($instanceLevel.ToString().Trim('Version')) - 10
         #$queryNot = "CREATE DATABASE $dbNameNotMatches"
-        $null = New-DbaDatabase -SqlInstance $script:instance2 -Name $dbNameNotMatches
+        $null = New-DbaDatabase -SqlInstance $script:instance1 -Name $dbNameNotMatches
         #$sqlCn.Query($queryNot)
         $queryAlter = "ALTER DATABASE $dbNameNotMatches SET COMPATIBILITY_LEVEL = $($previousCompatLevel)"
         $sqlCn.Query($queryAlter)
@@ -38,7 +38,7 @@ Describe "$CommandName Integration Tests" -Tag 'IntegrationTests' {
         $verboseSetMsg = '*Performing the operation "Setting*Compatibility Level*'
     }
     AfterAll {
-        $sqlCn = Connect-DbaInstance -SqlInstance $script:instance2
+        $sqlCn = Connect-DbaInstance -SqlInstance $script:instance1
         Remove-DbaDatabase -SqlInstance $sqlCn -Database $dbNameNotMatches -Confirm:$false
         $sqlCn.ConnectionContext.Disconnect()
     }
@@ -59,4 +59,3 @@ Describe "$CommandName Integration Tests" -Tag 'IntegrationTests' {
         }
     }
 }
-#$script:instance3
