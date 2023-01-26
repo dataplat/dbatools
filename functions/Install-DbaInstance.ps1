@@ -698,7 +698,7 @@ function Install-DbaInstance {
                 }
             }
             if ($canonicVersion -ge '16.0') {
-                $configNode.Remove('X86')
+                $null = $configNode.Remove('X86')
             }
             # Apply custom configuration keys if provided
             if ($Configuration) {
