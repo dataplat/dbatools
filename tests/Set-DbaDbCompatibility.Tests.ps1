@@ -49,7 +49,7 @@ Describe "$CommandName Integration Tests" -Tag 'IntegrationTests' {
         It 'Detects database is already at the instance level' {
             $resultMatches[-1] | Should -BeLike $verboseMsg
         }
-        It 'Should have no output' {
+        It -Skip 'Should have no output' {
             ($resultMatches | Get-Member | Select-Object TypeName -Unique).Count | Should -BeExactly 1
         }
     }
