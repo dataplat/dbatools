@@ -20,6 +20,7 @@ if ($PSVersionTable.PSEdition -ne "Core") {
                 protected Assembly AssemblyResolve(object sender, ResolveEventArgs e)
                 {
                     string[] dlls = {
+                        "System.Memory",
                         "System.Runtime.CompilerServices.Unsafe",
                         "System.Resources.Extensions",
                         "Microsoft.SqlServer.ConnectionInfo",

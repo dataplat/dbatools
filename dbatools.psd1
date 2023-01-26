@@ -52,11 +52,11 @@
     RequiredModules        = @(
         if ($PSEdition -eq 'Core') {
             @(
-                @{ ModuleName = 'dbatools.core.library'; ModuleVersion = '2022.11.8' }
+                @{ ModuleName = 'dbatools.core.library'; ModuleVersion = '2023.1.25' }
             )
         } else {
             @(
-                @{ ModuleName = 'dbatools.library'; ModuleVersion = '2022.11.8' }
+                @{ ModuleName = 'dbatools.library'; ModuleVersion = '2023.1.25' }
             )
         }
     )

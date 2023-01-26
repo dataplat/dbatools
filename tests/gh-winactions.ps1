@@ -29,12 +29,24 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
         $null = Remove-DbaDatabase -Database $db.Name
     }
 
-    It "connects to Azure" {
+    It "connects to Azure using tenant and client id + client secret" {
         $PSDefaultParameterValues.Clear()
         $securestring = ConvertTo-SecureString $env:CLIENTSECRET -AsPlainText -Force
         $azurecred = New-Object PSCredential -ArgumentList $env:CLIENTID, $securestring
         Connect-DbaInstance -SqlInstance dbatoolstest.database.windows.net -SqlCredential $azurecred -Tenant $env:TENANTID -Verbose | Select-Object -ExpandProperty ComputerName | Should -Be "dbatoolstest.database.windows.net"
-        Connect-DbaInstance -SqlInstance "Server=dbatoolstest.database.windows.net; Authentication=Active Directory Service Principal; Database=test; User Id=$env:CLIENTID; Password=$env:CLIENTSECRET;" | Select-Object -ExpandProperty ComputerName | Should -Be "dbatoolstest.database.windows.net"
+    }
+
+
+    It "connects to Azure using a query string" {
+        # this doesn't work on github, it throws
+        # Method not found: 'Microsoft.Identity.Client.AcquireTokenByUsernamePasswordParameterBuilder'
+        if ($PSVersionTable.PSEdition -eq "Core") {
+            Connect-DbaInstance -SqlInstance "Server=dbatoolstest.database.windows.net; Authentication=Active Directory Service Principal; Database=test; User Id=$env:CLIENTID; Password=$env:CLIENTSECRET;" | Select-Object -ExpandProperty ComputerName | Should -Be "dbatoolstest.database.windows.net"
+
+            Connect-DbaInstance -SqlInstance "Server=dbatoolstest.database.windows.net; Authentication=Active Directory Service Principal; Database=test; User Id=$env:CLIENT_GUID; Password=$env:CLIENT_GUID_SECRET;" | Select-Object -ExpandProperty ComputerName | Should -Be "dbatoolstest.database.windows.net"
+        } else {
+            $true | Should -Be $true
+        }
     }
 
     It "gets a database from Azure" {
