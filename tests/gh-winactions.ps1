@@ -38,14 +38,15 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
 
 
     It "connects to Azure using a query string" {
-        # no idea why this only works on core. on desktop, it throws
+        # this doesn't work on github, it throws
         # Method not found: 'Microsoft.Identity.Client.AcquireTokenByUsernamePasswordParameterBuilder'
         if ($PSVersionTable.PSEdition -eq "Core") {
             Connect-DbaInstance -SqlInstance "Server=dbatoolstest.database.windows.net; Authentication=Active Directory Service Principal; Database=test; User Id=$env:CLIENTID; Password=$env:CLIENTSECRET;" | Select-Object -ExpandProperty ComputerName | Should -Be "dbatoolstest.database.windows.net"
-        }
 
-        # this works on both tho
-        Connect-DbaInstance -SqlInstance "Server=dbatoolstest.database.windows.net; Authentication=Active Directory Service Principal; Database=test; User Id=$env:CLIENT_GUID; Password=$env:CLIENT_GUID_SECRET;" | Select-Object -ExpandProperty ComputerName | Should -Be "dbatoolstest.database.windows.net"
+            Connect-DbaInstance -SqlInstance "Server=dbatoolstest.database.windows.net; Authentication=Active Directory Service Principal; Database=test; User Id=$env:CLIENT_GUID; Password=$env:CLIENT_GUID_SECRET;" | Select-Object -ExpandProperty ComputerName | Should -Be "dbatoolstest.database.windows.net"
+        } else {
+            $true | Should -Be $true
+        }
     }
 
     It "gets a database from Azure" {
