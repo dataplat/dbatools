@@ -236,9 +236,7 @@ function Find-DbaInstance {
         [Dataplat.Dbatools.Discovery.DbaInstanceConfidenceLevel]$MinimumConfidence = 'Low',
         [switch]$EnableException
     )
-
     begin {
-
         #region Utility Functions
         function Test-SqlInstance {
             <#
@@ -257,7 +255,8 @@ function Find-DbaInstance {
         #>
             [CmdletBinding()]
             param (
-                [Parameter(ValueFromPipeline)][DbaInstance[]]$Target,
+                [Parameter(ValueFromPipeline)]
+                [DbaInstance[]]$Target,
                 [PSCredential]$Credential,
                 [PSCredential]$SqlCredential,
                 [Dataplat.Dbatools.Discovery.DbaInstanceScanType]$ScanType,
@@ -266,11 +265,9 @@ function Find-DbaInstance {
                 [Dataplat.Dbatools.Discovery.DbaInstanceConfidenceLevel]$MinimumConfidence,
                 [switch]$EnableException
             )
-
             begin {
                 [System.Collections.ArrayList]$computersScanned = @()
             }
-
             process {
                 foreach ($computer in $Target) {
                     $stepCounter = 0
@@ -501,7 +498,7 @@ function Find-DbaInstance {
                         $toDelete = @()
                         foreach ($dataSet in $masterList) {
                             try {
-                                $server = Connect-DbaInstance -SqlInstance $dataSet.FullSmoName -SqlCredential $SqlCredential
+                                $server = Connect-DbaInstance -SqlInstance $dataSet.SqlInstance -SqlCredential $SqlCredential
                                 $dataSet.SqlConnected = $true
                                 $dataSet.Confidence = 'High'
 
