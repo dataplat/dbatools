@@ -1,6 +1,7 @@
 name: Add PowerShell module to Azure Automation
 on:
-  pull_request:
+  push:
+    branch: development
 jobs:
   addmodule:
     runs-on: ubuntu-latest
