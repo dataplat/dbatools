@@ -1026,7 +1026,9 @@ $script:connectionhash = @{ }
 
 
 if (Get-DbatoolsConfigValue -FullName Import.EncryptionMessageCheck) {
-    if (((Get-DbatoolsConfigValue -FullName sql.connection.encrypt) -in "Mandatory", $true) -or -not (Get-DbatoolsConfigValue -FullName sql.connection.trustcert)) {
+    $trustcert = Get-DbatoolsConfigValue -FullName sql.connection.trustcert
+    $encrypt = Get-DbatoolsConfigValue -FullName sql.connection.encrypt
+    if (-not $trustcert -or $encrypt -in "Mandatory", "$true") {
         # keep it write-host for psv3
         Write-Message -Level Output -Message '
 /   /                                                                     /   /
