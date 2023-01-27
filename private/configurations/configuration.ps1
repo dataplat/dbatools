@@ -140,7 +140,7 @@ if (($PSVersionTable.PSVersion.Major -ge 6) -and ($PSVersionTable.OS -notlike "*
     $script:NoRegistry = $true
 }
 
-$configpath = [IO.Path]::Combine($script:PSModuleRoot, "internal", "configurations")
+$configpath = [IO.Path]::Combine($script:PSModuleRoot, "private", "configurations")
 Write-ImportTime -Text "Config system: Set more paths and special paths"
 # Import configuration validation
 foreach ($file in (Get-ChildItem -Path ([IO.Path]::Combine($configpath, "validation")))) {

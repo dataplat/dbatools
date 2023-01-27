@@ -1,7 +1,7 @@
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
-. "$PSScriptRoot\..\internal\functions\Get-DirectoryRestoreFile.ps1"
+. "$PSScriptRoot\..\private\functions\Get-DirectoryRestoreFile.ps1"
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {

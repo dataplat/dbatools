@@ -69,7 +69,7 @@ whether the modulebase has been set (first thing it does after loading library t
 Theoretically, there's a minor cuncurrency collision risk with that, but since the cost is only
 a little import time loss if that happens ...
 #>
-Import-Command -Path "$script:psScriptRoot/internal/scripts/libraryimport.ps1"
+Import-Command -Path "$script:psScriptRoot/private/scripts/libraryimport.ps1"
 Write-ImportTime -Text "Initial import of SMO libraries"
 
 Import-Command -Path "$psScriptRoot/bin/typealiases.ps1"
@@ -168,14 +168,14 @@ Write-ImportTime -Text "Checking for debugging preference"
 
 if (-not (Test-Path -Path "$psScriptRoot\dbatools.dat") -or $script:serialimport) {
     # All internal functions privately available within the toolset
-    foreach ($file in (Get-ChildItem -Path "$psScriptRoot/internal/functions/" -Recurse -Filter *.ps1)) {
+    foreach ($file in (Get-ChildItem -Path "$psScriptRoot/private/functions/" -Recurse -Filter *.ps1)) {
         . $file.FullName
     }
 
     Write-ImportTime -Text "Loading internal commands via dotsource"
 
     # All exported functions
-    foreach ($file in (Get-ChildItem -Path "$script:PSModuleRoot/functions/" -Recurse -Filter *.ps1)) {
+    foreach ($file in (Get-ChildItem -Path "$script:PSModuleRoot/public/" -Recurse -Filter *.ps1)) {
         . $file.FullName
     }
 
@@ -187,7 +187,7 @@ if (-not (Test-Path -Path "$psScriptRoot\dbatools.dat") -or $script:serialimport
 
 # Load configuration system - Should always go after library and path setting
 # this has its own Write-ImportTimes
-Import-Command -Path "$psScriptRoot/internal/configurations/configuration.ps1"
+Import-Command -Path "$psScriptRoot/private/configurations/configuration.ps1"
 
 # Resolving the path was causing trouble when it didn't exist yet
 # Not converting the path separators based on OS was also an issue.
@@ -201,33 +201,33 @@ if (-not ([Dataplat.Dbatools.Message.LogHost]::LoggingPath)) {
 # Validations were moved into the other files, in order to prevent having to update dbatools.psm1 every time
 
 if ($PSVersionTable.PSVersion.Major -lt 5) {
-    foreach ($file in (Get-ChildItem -Path "$script:PSScriptRoot/optional" -Filter *.ps1)) {
+    foreach ($file in (Get-ChildItem -Path "$script:PSScriptRoot/opt" -Filter *.ps1)) {
         Import-Command -Path $file.FullName
     }
     Write-ImportTime -Text "Loading Optional Commands"
 }
 
 # Process TEPP parameters
-Import-Command -Path "$psScriptRoot/internal/scripts/insertTepp.ps1"
+Import-Command -Path "$psScriptRoot/private/scripts/insertTepp.ps1"
 Write-ImportTime -Text "Loading TEPP"
 
 # Process transforms
-Import-Command -Path "$psScriptRoot/internal/scripts/message-transforms.ps1"
+Import-Command -Path "$psScriptRoot/private/scripts/message-transforms.ps1"
 Write-ImportTime -Text "Loading Message Transforms"
 
 # Load scripts that must be individually run at the end #
 #-------------------------------------------------------#
 
 # Start the logging system (requires the configuration system up and running)
-Import-Command -Path "$psScriptRoot/internal/scripts/logfilescript.ps1"
+Import-Command -Path "$psScriptRoot/private/scripts/logfilescript.ps1"
 Write-ImportTime -Text "Loading Script: Logging"
 
 # Start the tepp asynchronous update system (requires the configuration system up and running)
-Import-Command -Path "$psScriptRoot/internal/scripts/updateTeppAsync.ps1"
+Import-Command -Path "$psScriptRoot/private/scripts/updateTeppAsync.ps1"
 Write-ImportTime -Text "Loading Script: Asynchronous TEPP Cache"
 
 # Start the maintenance system (requires pretty much everything else already up and running)
-Import-Command -Path "$psScriptRoot/internal/scripts/dbatools-maintenance.ps1"
+Import-Command -Path "$psScriptRoot/private/scripts/dbatools-maintenance.ps1"
 Write-ImportTime -Text "Loading Script: Maintenance"
 
 # New 3-char aliases
@@ -1023,5 +1023,39 @@ Write-ImportTime -Text "Checking for some ISE stuff"
 
 # Create collection for servers
 $script:connectionhash = @{ }
+
+
+if (Get-DbatoolsConfigValue -FullName Import.EncryptionMessageCheck) {
+    $trustcert = Get-DbatoolsConfigValue -FullName sql.connection.trustcert
+    $encrypt = Get-DbatoolsConfigValue -FullName sql.connection.encrypt
+    if (-not $trustcert -or $encrypt -in "Mandatory", "$true") {
+        # keep it write-host for psv3
+        Write-Message -Level Output -Message '
+/   /                                                                     /   /
+| O |                                                                     | O |
+|   |- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -|   |
+| O |                                                                     | O |
+|   |                                                                     |   |
+| O |                                                                     | O |
+|   |                       C O M P U T E R                               |   |
+| O |                                                                     | O |
+|   |                               M E S S A G E                         |   |
+| O |                                                                     | O |
+|   |                                                                     |   |
+| O |- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -| O |
+|   |                                                                     |   |
+
+Microsoft changed the encryption defaults in their SqlClient library, which may
+cause your connections to fail.
+
+You can change the defaults with Set-DbatoolsConfig but dbatools also makes it
+easy to setup encryption. Check out dbatools.io/newdefaults for more information.
+
+To disable this message, run:
+
+Set-DbatoolsConfig -Name Import.EncryptionMessageCheck -Value $false -PassThru |
+Register-DbatoolsConfig'
+    }
+}
 
 [Dataplat.Dbatools.dbaSystem.SystemHost]::ModuleImported = $true

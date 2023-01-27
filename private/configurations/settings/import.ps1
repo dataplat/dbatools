@@ -72,3 +72,6 @@ Set-DbatoolsConfig -Name 'Import.SerialImport' -Value $false -Initialize -Valida
 
 # Check for SqlPs
 Set-DbatoolsConfig -Name 'Import.SqlpsCheck' -Value $true -Initialize -Validation bool -Description "Does not warn about sqlps being imported at the time of the dbatools import"
+
+# Check for Encryption
+Set-DbatoolsConfig -Name 'Import.EncryptionMessageCheck' -Value $true -Initialize -Validation bool -Description "Does not warn about new Microsoft encryption defaults"
