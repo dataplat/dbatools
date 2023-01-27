@@ -906,8 +906,11 @@ function Connect-DbaInstance {
                 $server.ConnectionContext.StatementTimeout = $StatementTimeout
             }
 
-            $maskedConnString = Hide-ConnectionString $server.ConnectionContext.ConnectionString
-            Write-Message -Level Debug -Message "The masked server.ConnectionContext.ConnectionString is $maskedConnString"
+            # we skip showing the masked string for DAC to prevent DAC from making a call to the server
+            if (-not $DedicatedAdminConnection) {
+                $maskedConnString = Hide-ConnectionString $server.ConnectionContext.ConnectionString
+                Write-Message -Level Debug -Message "The masked server.ConnectionContext.ConnectionString is $maskedConnString"
+            }
 
             # It doesn't matter which input we have, we pass this line and have a server SMO in $server to work with
             # It might be a brand new one or an already used one.
@@ -917,16 +920,15 @@ function Connect-DbaInstance {
             # But ConnectionContext.IsOpen does not tell the truth if the instance was just shut down
             # And we don't use $server.ConnectionContext.Connect() as this would create a non pooled connection
             # Instead we run a real T-SQL command and just SELECT something to be sure we have a valid connection and let the SMO handle the connection
-            Write-Message -Level Debug -Message "We connect to the instance by running SELECT 'dbatools is opening a new connection'"
-            try {
-                $null = $server.ConnectionContext.ExecuteWithResults("SELECT 'dbatools is opening a new connection'")
-            } catch {
-                if ($DedicatedAdminConnection) {
-                    Write-Message -Level Warning -Message "Failed to open dedicated admin connection (DAC) to $instance. Only one DAC connection is allowed, so maybe another DAC is still open."
+            if (-not $DedicatedAdminConnection) {
+                try {
+                    Write-Message -Level Debug -Message "We connect to the instance by running SELECT 'dbatools is opening a new connection'"
+                    $null = $server.ConnectionContext.ExecuteWithResults("SELECT 'dbatools is opening a new connection'")
+                    Write-Message -Level Debug -Message "We have a connected server object"
+                } catch {
+                    Stop-Function -Target $instance -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Continue
                 }
-                Stop-Function -Target $instance -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Continue
             }
-            Write-Message -Level Debug -Message "We have a connected server object"
 
             if ($AzureUnsupported -and $server.DatabaseEngineType -eq "SqlAzureDatabase") {
                 Stop-Function -Target $instance -Message "Azure SQL Database not supported" -Continue
@@ -964,26 +966,33 @@ function Connect-DbaInstance {
                         Write-Message -Level Debug -Message "No value found for ComputerName, so will use the default"
                     }
                 }
-                if (-not $computerName) {
-                    if ($server.DatabaseEngineType -eq "SqlAzureDatabase") {
-                        Write-Message -Level Debug -Message "We are on Azure, so server.ComputerName will be set to instance.ComputerName"
-                        $computerName = $instance.ComputerName
-                    } elseif ($server.HostPlatform -eq 'Linux') {
-                        Write-Message -Level Debug -Message "We are on Linux what is often on docker and the internal name is not useful, so server.ComputerName will be set to instance.ComputerName"
-                        $computerName = $instance.ComputerName
-                    } elseif ($server.NetName) {
-                        Write-Message -Level Debug -Message "We will set server.ComputerName to server.NetName"
-                        $computerName = $server.NetName
-                    } else {
-                        Write-Message -Level Debug -Message "We will set server.ComputerName to instance.ComputerName as server.NetName is empty"
-                        $computerName = $instance.ComputerName
+
+
+                if ($DedicatedAdminConnection) {
+                    $computerName = $instance.ComputerName
+                } else {
+                    if (-not $computerName) {
+                        if ($server.DatabaseEngineType -eq "SqlAzureDatabase") {
+                            Write-Message -Level Debug -Message "We are on Azure, so server.ComputerName will be set to instance.ComputerName"
+                            $computerName = $instance.ComputerName
+                        } elseif ($server.HostPlatform -eq 'Linux') {
+                            Write-Message -Level Debug -Message "We are on Linux what is often on docker and the internal name is not useful, so server.ComputerName will be set to instance.ComputerName"
+                            $computerName = $instance.ComputerName
+                        } elseif ($server.NetName) {
+                            Write-Message -Level Debug -Message "We will set server.ComputerName to server.NetName"
+                            $computerName = $server.NetName
+                        } else {
+                            Write-Message -Level Debug -Message "We will set server.ComputerName to instance.ComputerName as server.NetName is empty"
+                            $computerName = $instance.ComputerName
+                        }
+                        Write-Message -Level Debug -Message "ComputerName will be set to $computerName"
                     }
-                    Write-Message -Level Debug -Message "ComputerName will be set to $computerName"
                 }
                 Add-Member -InputObject $server -NotePropertyName ComputerName -NotePropertyValue $computerName -Force
             }
 
-            if (-not $server.IsAzure) {
+            if (-not $server.IsAzure -and -not $DedicatedAdminConnection) {
+                # so many things in this block make DAC complain, skip it
                 Add-Member -InputObject $server -NotePropertyName IsAzure -NotePropertyValue (Test-Azure -SqlInstance $instance) -Force
                 Add-Member -InputObject $server -NotePropertyName DbaInstanceName -NotePropertyValue $instance.InstanceName -Force
                 Add-Member -InputObject $server -NotePropertyName NetPort -NotePropertyValue $instance.Port -Force
@@ -992,7 +1001,14 @@ function Connect-DbaInstance {
             }
 
             Write-Message -Level Debug -Message "We return the server object"
-            $server
+            if ($DedicatedAdminConnection) {
+                # return DAC connections sooner rather than later because they serve
+                # a different purpose but also, otherwise, there are complaints in the event log
+                Add-Member -InputObject $server -NotePropertyName IsAzure -NotePropertyValue $false -Force
+                return $server
+            } else {
+                $server
+            }
 
             # Register the connected instance, so that the TEPP updater knows it's been connected to and starts building the cache
             [Dataplat.Dbatools.TabExpansion.TabExpansionHost]::SetInstance($instance.FullSmoName.ToLowerInvariant(), $server.ConnectionContext.Copy(), ($server.ConnectionContext.FixedServerRoles -match "SysAdmin"))
