@@ -318,7 +318,7 @@ function Invoke-DbaDbDataGenerator {
 
                             try {
                                 $identityValues = Invoke-DbaQuery -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $db.Name -Query $query
-                                # https://docs.microsoft.com/en-us/sql/t-sql/functions/ident-current-transact-sql says:
+                                # https://docs.microsoft.com/en-us/sql/t-sql/public/ident-current-transact-sql says:
                                 # When the IDENT_CURRENT value is NULL (because the table has never contained rows or has been truncated), the IDENT_CURRENT function returns the seed value.
                                 # So if we get a 1 back, we count the rows so that the first row added to an empty table gets the number 1.
                                 if ($identityValues.CurrentIdentity -eq 1) {

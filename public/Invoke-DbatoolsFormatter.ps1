@@ -26,9 +26,9 @@ function Invoke-DbatoolsFormatter {
         https://dbatools.io/Invoke-DbatoolsFormatter
 
     .EXAMPLE
-        PS C:\> Invoke-DbatoolsFormatter -Path C:\dbatools\functions\Get-DbaDatabase.ps1
+        PS C:\> Invoke-DbatoolsFormatter -Path C:\dbatools\public\Get-DbaDatabase.ps1
 
-        Reformats C:\dbatools\functions\Get-DbaDatabase.ps1 to dbatools' standards
+        Reformats C:\dbatools\public\Get-DbaDatabase.ps1 to dbatools' standards
     #>
     [CmdletBinding()]
     param (

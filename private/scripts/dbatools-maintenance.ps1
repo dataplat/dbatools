@@ -1,4 +1,4 @@
-foreach ($item in (Get-ChildItem "$script:PSModuleRoot\internal\maintenance" -Filter *.ps1)) {
+foreach ($item in (Get-ChildItem "$script:PSModuleRoot\private\maintenance" -Filter *.ps1)) {
     if ($script:serialimport) {
         . $item.FullName
     }

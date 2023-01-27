@@ -198,7 +198,7 @@ function Get-DbaHelp {
             }
             $null = $rtn.Add('')
             $null = $rtn.Add("`n" + '&nbsp;' + "`n")
-            $null = $rtn.Add('Want to see the source code for this command? Check out [' + $doc_to_render.CommandName + '](https://github.com/dataplat/dbatools/blob/master/functions/' + $doc_to_render.CommandName + '.ps1) on GitHub.')
+            $null = $rtn.Add('Want to see the source code for this command? Check out [' + $doc_to_render.CommandName + '](https://github.com/dataplat/dbatools/blob/master/public/' + $doc_to_render.CommandName + '.ps1) on GitHub.')
             $null = $rtn.Add("<br>")
             $null = $rtn.Add('Want to see the Bill Of Health for this command? Check out [' + $doc_to_render.CommandName + '](https://dataplat.github.io/boh#' + $doc_to_render.CommandName + ').')
             $null = $rtn.Add('')
