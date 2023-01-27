@@ -1024,4 +1024,36 @@ Write-ImportTime -Text "Checking for some ISE stuff"
 # Create collection for servers
 $script:connectionhash = @{ }
 
+
+if (Get-DbatoolsConfigValue -FullName Import.EncryptionMessageCheck) {
+    if (((Get-DbatoolsConfigValue -FullName sql.connection.encrypt) -in "Mandatory", $true) -or -not (Get-DbatoolsConfigValue -FullName sql.connection.trustcert)) {
+        # keep it write-host for psv3
+        Write-Message -Level Output -Message '
+/   /                                                                     /   /
+| O |                                                                     | O |
+|   |- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -|   |
+| O |                                                                     | O |
+|   |                                                                     |   |
+| O |                                                                     | O |
+|   |                       C O M P U T E R                               |   |
+| O |                                                                     | O |
+|   |                               M E S S A G E                         |   |
+| O |                                                                     | O |
+|   |                                                                     |   |
+| O |- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -| O |
+|   |                                                                     |   |
+
+Microsoft changed the encryption defaults in their SqlClient library, which may
+cause your connections to fail.
+
+You can change back the defaults with Set-DbatoolsConfig but dbatools makes it
+easy to setup encryption. Check out dbatools.io/newdefaults for more information.
+
+To disable this message, run:
+
+Set-DbatoolsConfig -Name Import.EncryptionMessageCheck -Value $false -PassThru |
+Register-DbatoolsConfig'
+    }
+}
+
 [Dataplat.Dbatools.dbaSystem.SystemHost]::ModuleImported = $true
