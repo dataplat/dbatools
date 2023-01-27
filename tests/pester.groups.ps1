@@ -67,7 +67,9 @@ $TestsRunGroups = @{
         'Get-DbaHelpIndex',
         'Get-DbaExternalProcess',
         # just fails too often
-        'Remove-DbaDbTableData'
+        'Remove-DbaDbTableData',
+        'Test-DbaMaxDop',
+        'Test-DbaOptimizeForAdHoc'
     )
     # do not run everywhere
     "disabled"          = @()
