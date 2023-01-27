@@ -201,7 +201,7 @@ if (-not ([Dataplat.Dbatools.Message.LogHost]::LoggingPath)) {
 # Validations were moved into the other files, in order to prevent having to update dbatools.psm1 every time
 
 if ($PSVersionTable.PSVersion.Major -lt 5) {
-    foreach ($file in (Get-ChildItem -Path "$script:PSScriptRoot/optional" -Filter *.ps1)) {
+    foreach ($file in (Get-ChildItem -Path "$script:PSScriptRoot/opt" -Filter *.ps1)) {
         Import-Command -Path $file.FullName
     }
     Write-ImportTime -Text "Loading Optional Commands"
