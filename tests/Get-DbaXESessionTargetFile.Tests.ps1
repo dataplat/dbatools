@@ -2,7 +2,7 @@ $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
 #Loading this function is needed since it is currently not in the manifest
-. "$PSScriptRoot\..\Functions\Get-DbaXESessionTargetFile.ps1"
+. "$PSScriptRoot\..\public\Get-DbaXESessionTargetFile.ps1"
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
