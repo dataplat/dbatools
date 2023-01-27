@@ -409,6 +409,7 @@ function Install-DbaInstance {
             2016 { '13.0' }
             2017 { '14.0' }
             2019 { '15.0' }
+            2022 { '16.0' }
             default {
                 Stop-Function -Message "Version $Version is not supported"
                 return
@@ -695,6 +696,9 @@ function Install-DbaInstance {
                 if ($cores) {
                     $configNode.SQLTEMPDBFILECOUNT = $cores
                 }
+            }
+            if ($canonicVersion -ge '16.0') {
+                $null = $configNode.Remove('X86')
             }
             # Apply custom configuration keys if provided
             if ($Configuration) {
