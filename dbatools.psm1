@@ -1046,7 +1046,7 @@ if (Get-DbatoolsConfigValue -FullName Import.EncryptionMessageCheck) {
 Microsoft changed the encryption defaults in their SqlClient library, which may
 cause your connections to fail.
 
-You can change back the defaults with Set-DbatoolsConfig but dbatools makes it
+You can change the defaults with Set-DbatoolsConfig but dbatools also makes it
 easy to setup encryption. Check out dbatools.io/newdefaults for more information.
 
 To disable this message, run:
