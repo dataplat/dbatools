@@ -906,6 +906,7 @@ function Connect-DbaInstance {
                 $server.ConnectionContext.StatementTimeout = $StatementTimeout
             }
 
+            # we skip showing the masked string for DAC to prevent DAC from making a call to the server
             if (-not $DedicatedAdminConnection) {
                 $maskedConnString = Hide-ConnectionString $server.ConnectionContext.ConnectionString
                 Write-Message -Level Debug -Message "The masked server.ConnectionContext.ConnectionString is $maskedConnString"
@@ -919,17 +920,14 @@ function Connect-DbaInstance {
             # But ConnectionContext.IsOpen does not tell the truth if the instance was just shut down
             # And we don't use $server.ConnectionContext.Connect() as this would create a non pooled connection
             # Instead we run a real T-SQL command and just SELECT something to be sure we have a valid connection and let the SMO handle the connection
-            try {
-                if (-not $DedicatedAdminConnection) {
+            if (-not $DedicatedAdminConnection) {
+                try {
                     Write-Message -Level Debug -Message "We connect to the instance by running SELECT 'dbatools is opening a new connection'"
                     $null = $server.ConnectionContext.ExecuteWithResults("SELECT 'dbatools is opening a new connection'")
                     Write-Message -Level Debug -Message "We have a connected server object"
+                } catch {
+                    Stop-Function -Target $instance -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Continue
                 }
-            } catch {
-                if ($DedicatedAdminConnection) {
-                    Write-Message -Level Warning -Message "Failed to open dedicated admin connection (DAC) to $instance. Only one DAC connection is allowed, so maybe another DAC is still open."
-                }
-                Stop-Function -Target $instance -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Continue
             }
 
             if ($AzureUnsupported -and $server.DatabaseEngineType -eq "SqlAzureDatabase") {
