@@ -7,11 +7,7 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
 
         if (-not (Get-Module dbatools)) {
             Write-Warning "Importing dbatools from source"
-            if ($isWindows) {
-                Import-Module dbatools.core.library
-            } else {
-                Import-Module dbatools.library
-            }
+            Import-Module dbatools.library
             Import-Module ./dbatools.psd1 -Force
         }
     }

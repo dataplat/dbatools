@@ -42,16 +42,11 @@ $script:libraryroot = Get-DbatoolsLibraryPath -ErrorAction Ignore
 
 if (-not $script:libraryroot) {
     # for the people who bypass the psd1
-    if ($PSVersionTable.PSEdition -eq "Core") {
-        Import-Module dbatools.core.library -ErrorAction Ignore
-        $script:libraryroot = Get-DbatoolsLibraryPath -ErrorAction Ignore
-    } else {
-        Import-Module dbatools.library -ErrorAction Ignore
-        $script:libraryroot = Get-DbatoolsLibraryPath -ErrorAction Ignore
-    }
+    Import-Module dbatools.library -ErrorAction Ignore
+    $script:libraryroot = Get-DbatoolsLibraryPath -ErrorAction Ignore
 
     if (-not $script:libraryroot) {
-        throw "dbatools library module not found, please install it from the PowerShell Gallery. dbatools.library if you're using PS Desktop or dbatools.core.library if you're using PS Core"
+        throw "The dbatools library, dbatools.library, was module not found. Please install it from the PowerShell Gallery."
     }
     Write-ImportTime -Text "Couldn't find location for dbatools library module, loading it up"
 }
