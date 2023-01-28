@@ -809,7 +809,8 @@
             # RequireLicenseAcceptance = ""
 
             # Indicates this is a pre-release/testing version of the module.
-            IsPrerelease = 'True'
+            IsPrerelease = 'true'
+            Prerelease   = 'preview'
         }
     }
 }
