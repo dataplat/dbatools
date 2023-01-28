@@ -1,5 +1,5 @@
-name: Run Cross Platform Tests
-on: [push]
+name: Run Prerelease Tests
+on: workflow_dispatch
 defaults:
   run:
     shell: pwsh
@@ -12,14 +12,20 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - name: Install and cache PowerShell modules
-        uses: potatoqualitee/psmodulecache@v5.2
-        with:
-          modules-to-cache: dbatools.library:2023.1.28, dbatools.core.library:2023.1.28
+      - name: Install dbatools prerelease
+        run: |
+          Set-PSRepository PSGallery -InstallationPolicy Trusted
+          Install-Module dbatools.core.library -AllowClobber
+          Install-Module dbatools -AllowPrerelease -AllowClobber
+
+      - name: Measure import speed on pwsh
+        run: |
+          Import-Module dbatools.core.library
+          Measure-Command { Import-Module dbatools }
+          Get-Module dbatools
 
       - name: Set encryption values
         run: |
-          Import-Module ./dbatools.psd1 -Force
           Set-DbatoolsConfig -FullName sql.connection.trustcert -Value $true -Register
           Set-DbatoolsConfig -FullName sql.connection.encrypt -Value Optional -Register
           Get-DbatoolsConfigValue -FullName sql.connection.encrypt | Write-Warning
@@ -46,7 +52,7 @@ jobs:
           CLIENT_GUID: ${{secrets.CLIENT_GUID}}
           CLIENT_GUID_SECRET: ${{secrets.CLIENT_GUID_SECRET}}
         run: |
-          Import-Module ./dbatools.psd1 -Force
+          Import-Module dbatools
           Get-DbatoolsConfigValue -FullName sql.connection.trustcert | Write-Warning
           Get-DbatoolsConfigValue -FullName sql.connection.encrypt | Write-Warning
           $null = Invoke-Pester ./tests/gh-actions.ps1 -Output Detailed -PassThru
@@ -60,11 +66,32 @@ jobs:
       - name: Checkout dbatools repo
         uses: actions/checkout@v3
 
-      - name: Install and cache PowerShell modules
-        uses: potatoqualitee/psmodulecache@v5.2
-        with:
-          shell: powershell, pwsh
-          modules-to-cache: dbatools.library:2023.1.28, dbatools.core.library:2023.1.28
+      - name: Install dbatools prerelease on pwsh
+        shell: pwsh
+        run: |
+          Set-PSRepository PSGallery -InstallationPolicy Trusted
+          Install-Module dbatools.core.library -AllowClobber
+          Install-Module dbatools -AllowPrerelease -AllowClobber
+
+      - name: Install dbatools prerelease on powershell
+        shell: powershell
+        run: |
+          Set-PSRepository PSGallery -InstallationPolicy Trusted
+          Install-Module dbatools.library -AllowClobber
+          Install-Module dbatools -AllowPrerelease -AllowClobber
+
+      - name: Measure import speed on pwsh
+        run: |
+          Import-Module dbatools.core.library
+          Measure-Command { Import-Module dbatools }
+          Get-Module dbatools
+
+      - name: Measure import speed on powershell
+        shell: powershell
+        run: |
+          Import-Module dbatools.library
+          Measure-Command { Import-Module dbatools }
+          Get-Module dbatools
 
       - name: Install SQL Server localdb
         uses: potatoqualitee/mssqlsuite@v1.3
@@ -74,7 +101,6 @@ jobs:
       - name: Connect to localdb instance powershell
         shell: powershell
         run: |
-          Import-Module ./dbatools -Force
           Set-DbatoolsConfig -FullName sql.connection.trustcert -Value $true -PassThru | Register-DbatoolsConfig -Scope FileUserShared
           Set-DbatoolsConfig -FullName sql.connection.encrypt -Value Optional -PassThru | Register-DbatoolsConfig -Scope FileUserShared
           Connect-DbaInstance -SqlInstance "(localdb)\MSSQLLocalDB"
@@ -82,7 +108,6 @@ jobs:
       - name: Connect to localdb instance pwsh
         shell: pwsh
         run: |
-          Import-Module ./dbatools -Force
           Set-DbatoolsConfig -FullName sql.connection.trustcert -Value $true -PassThru | Register-DbatoolsConfig -Scope FileUserShared
           Set-DbatoolsConfig -FullName sql.connection.encrypt -Value Optional -PassThru | Register-DbatoolsConfig -Scope FileUserShared
           Connect-DbaInstance -SqlInstance "(localdb)\MSSQLLocalDB"
@@ -95,7 +120,9 @@ jobs:
           CLIENT_GUID: ${{secrets.CLIENT_GUID}}
           CLIENT_GUID_SECRET: ${{secrets.CLIENT_GUID_SECRET}}
         shell: pwsh
-        run: $null = Invoke-Pester ./tests/gh-winactions.ps1 -Output Detailed -PassThru
+        run: |
+          Import-Module dbatools
+          $null = Invoke-Pester ./tests/gh-winactions.ps1 -Output Detailed -PassThru
 
       - name: Run PowerShell tests
         env:
@@ -103,4 +130,6 @@ jobs:
           CLIENTID: ${{secrets.CLIENTID}}
           CLIENTSECRET: ${{secrets.CLIENTSECRET}}
         shell: powershell
-        run: $null = Invoke-Pester ./tests/gh-winactions.ps1 -Output Detailed -PassThru
+        run: |
+          Import-Module dbatools
+          $null = Invoke-Pester ./tests/gh-winactions.ps1 -Output Detailed -PassThru

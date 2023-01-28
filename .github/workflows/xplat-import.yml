@@ -16,7 +16,7 @@ jobs:
     - name: Install and cache PowerShell modules
       uses: potatoqualitee/psmodulecache@v5.1
       with:
-          modules-to-cache-prerelease: dbatools.library:2023.1.25-preview, dbatools.core.library:2023.1.25-preview
+          modules-to-cache: dbatools.library:2023.1.28, dbatools.core.library:2023.1.28
 
     - name: Perform the import
       shell: pwsh
