@@ -17,6 +17,7 @@ jobs:
           Set-PSRepository PSGallery -InstallationPolicy Trusted
           Install-Module dbatools.core.library -AllowClobber
           Install-Module dbatools -AllowPrerelease -AllowClobber
+          Set-DbatoolsConfig -Name Import.EncryptionMessageCheck -Value $false -PassThru | Register-DbatoolsConfig
 
       - name: Measure import speed on pwsh
         run: |
