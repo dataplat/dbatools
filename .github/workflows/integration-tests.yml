@@ -15,7 +15,7 @@ jobs:
       - name: Install and cache PowerShell modules
         uses: potatoqualitee/psmodulecache@v5.2
         with:
-          modules-to-cache: dbatools.library:2023.1.28
+          modules-to-cache: dbatools.library:2023.1.29
 
       - name: Set encryption values
         run: |
@@ -64,7 +64,7 @@ jobs:
         uses: potatoqualitee/psmodulecache@v5.2
         with:
           shell: powershell, pwsh
-          modules-to-cache: dbatools.library:2023.1.28
+          modules-to-cache: dbatools.library:2023.1.29
 
       - name: Install SQL Server localdb
         uses: potatoqualitee/mssqlsuite@v1.3
