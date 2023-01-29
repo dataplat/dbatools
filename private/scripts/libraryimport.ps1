@@ -1,5 +1,16 @@
 if ($PSVersionTable.PSEdition -eq "Core") {
     $names = @(
+        'Microsoft.SqlServer.Server',
+        'Microsoft.SqlServer.Dac',
+        'Microsoft.SqlServer.Smo',
+        'Microsoft.SqlServer.SmoExtended',
+        'Microsoft.SqlServer.SqlWmiManagement',
+        'Microsoft.SqlServer.Management.RegisteredServers',
+        'Microsoft.SqlServer.Management.Collector',
+        'Microsoft.SqlServer.Management.XEvent',
+        'Microsoft.SqlServer.Management.XEventDbScoped',
+        'Microsoft.SqlServer.XEvent.XELite',
+        '../third-party/LumenWorks/LumenWorks.Framework.IO'
         'Azure.Core',
         'Azure.Identity',
         'Microsoft.IdentityModel.Abstractions'
@@ -32,7 +43,7 @@ if ($PSVersionTable.OS -match "ARM64") {
 $assemblies = [System.AppDomain]::CurrentDomain.GetAssemblies()
 
 try {
-    $null = Import-Module ([IO.Path]::Combine($script:libraryroot,"third-party", "bogus", "bogus.dll"))
+    $null = Import-Module ([IO.Path]::Combine($script:libraryroot, "third-party", "bogus", "bogus.dll"))
 } catch {
     Write-Error "Could not import $assemblyPath : $($_ | Out-String)"
 }
