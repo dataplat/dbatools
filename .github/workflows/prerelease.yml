@@ -15,13 +15,11 @@ jobs:
       - name: Install dbatools prerelease
         run: |
           Set-PSRepository PSGallery -InstallationPolicy Trusted
-          Install-Module dbatools.core.library -AllowClobber
-          Install-Module dbatools -AllowPrerelease -AllowClobber
+          Install-Module dbatools -AllowPrerelease
           Set-DbatoolsConfig -Name Import.EncryptionMessageCheck -Value $false -PassThru | Register-DbatoolsConfig
 
       - name: Measure import speed on pwsh
         run: |
-          Import-Module dbatools.core.library
           Measure-Command { Import-Module dbatools }
           Get-Module dbatools
 
@@ -71,19 +69,17 @@ jobs:
         shell: pwsh
         run: |
           Set-PSRepository PSGallery -InstallationPolicy Trusted
-          Install-Module dbatools.core.library -AllowClobber
-          Install-Module dbatools -AllowPrerelease -AllowClobber
+          Install-Module dbatools -AllowPrerelease
 
       - name: Install dbatools prerelease on powershell
         shell: powershell
         run: |
           Set-PSRepository PSGallery -InstallationPolicy Trusted
-          Install-Module dbatools.library -AllowClobber
-          Install-Module dbatools -AllowPrerelease -AllowClobber
+          Install-Module dbatools.library
+          Install-Module dbatools -AllowPrerelease
 
       - name: Measure import speed on pwsh
         run: |
-          Import-Module dbatools.core.library
           Measure-Command { Import-Module dbatools }
           Get-Module dbatools
 

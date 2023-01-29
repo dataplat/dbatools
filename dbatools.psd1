@@ -8,79 +8,49 @@
 @{
 
     # Script module or binary module file associated with this manifest.
-    RootModule            = 'dbatools.psm1'
+    RootModule         = 'dbatools.psm1'
 
     # Version number of this module.
-    ModuleVersion         = '2.0.0'
+    ModuleVersion      = '2.0.0'
 
     # ID used to uniquely identify this module
-    GUID                  = '9d139310-ce45-41ce-8e8b-d76335aa1789'
+    GUID               = '9d139310-ce45-41ce-8e8b-d76335aa1789'
 
     # Author of this module
-    Author                = 'the dbatools team'
+    Author             = 'the dbatools team'
 
     # Company or vendor of this module
-    CompanyName           = 'dbatools.io'
+    CompanyName        = 'dbatools.io'
 
     # Copyright statement for this module
-    Copyright             = 'Copyright (c) 2021 by dbatools, licensed under MIT'
+    Copyright          = 'Copyright (c) 2023 by dbatools, licensed under MIT'
 
     # Description of the functionality provided by this module
-    Description           = "The community module that enables SQL Server Pros to automate database development and server administration"
-
-    # Minimum version of the Windows PowerShell engine required by this module
-    # This is because of the way RequiredModules checks to see if its Core or not
-    # dbatools.legacy will still work on PowerShell 3.0 and 4.0
-    PowerShellVersion     = '5.1'
-
-    # Name of the Windows PowerShell host required by this module
-    PowerShellHostName    = ''
-
-    # Minimum version of the Windows PowerShell host required by this module
-    PowerShellHostVersion = ''
-
-    # Minimum version of the .NET Framework required by this module
-    # DotNetFrameworkVersion = '4.6.2'
-
-    # Minimum version of the common language runtime (CLR) required by this module
-    CLRVersion            = ''
-
-    # Processor architecture (None, X86, Amd64, IA64) required by this module
-    ProcessorArchitecture = ''
+    Description        = "The community module that enables SQL Server Pros to automate database development and server administration"
 
     # Modules that must be imported into the global environment prior to importing this module
-    RequiredModules       = @(
-        if ($PSEdition -eq 'Core') {
-            @(
-                @{ ModuleName = 'dbatools.core.library'; ModuleVersion = '2023.1.28' }
-            )
-        } else {
-            @(
-                @{ ModuleName = 'dbatools.library'; ModuleVersion = '2023.1.28' }
-            )
-        }
-    )
+    RequiredModules    = @{ ModuleName = 'dbatools.library'; ModuleVersion = '2023.1.29' }
 
     # Assemblies that must be loaded prior to importing this module
-    RequiredAssemblies    = @()
+    RequiredAssemblies = @()
 
     # Script files () that are run in the caller's environment prior to importing this module
-    ScriptsToProcess      = @()
+    ScriptsToProcess   = @()
 
     # Type files (xml) to be loaded when importing this module
-    TypesToProcess        = @("xml\dbatools.Types.ps1xml")
+    TypesToProcess     = @("xml\dbatools.Types.ps1xml")
 
     # Format files (xml) to be loaded when importing this module
     # "xml\dbatools.Format.ps1xml"
-    FormatsToProcess      = @("xml\dbatools.Format.ps1xml")
+    FormatsToProcess   = @("xml\dbatools.Format.ps1xml")
 
     # Modules to import as nested modules of the module specified in ModuleToProcess
-    NestedModules         = @()
+    NestedModules      = @()
 
     # Functions to export from this module
     # Specific functions to export for Core, etc are also found in psm1
     # FunctionsToExport specifically helps with AUTO-LOADING so do not remove
-    FunctionsToExport     = @(
+    FunctionsToExport  = @(
         'Get-DbaDbServiceBrokerQueue',
         'New-DbaLinkedServer',
         'Add-DbaAgDatabase',
@@ -754,18 +724,18 @@
     )
 
     # Cmdlets to export from this module
-    CmdletsToExport       = @(
+    CmdletsToExport    = @(
         'Select-DbaObject',
         'Set-DbatoolsConfig'
     )
 
     # Variables to export from this module
-    VariablesToExport     = ''
+    VariablesToExport  = ''
 
     # Aliases to export from this module
     # Aliases are stored in dbatools.psm1
     # The five listed below are intentional
-    AliasesToExport       = @(
+    AliasesToExport    = @(
         'Get-DbaRegisteredServer',
         'Attach-DbaDatabase',
         'Detach-DbaDatabase',
@@ -776,12 +746,12 @@
     )
 
     # List of all modules packaged with this module
-    ModuleList            = @()
+    ModuleList         = @()
 
     # List of all files packaged with this module
-    FileList              = ''
+    FileList           = ''
 
-    PrivateData           = @{
+    PrivateData        = @{
         # PSData is module packaging and gallery metadata embedded in PrivateData
         # It's for rebuilding PowerShellGet (and PoshCode) NuGet-style packages
         # We had to do this because it's the only place we're allowed to extend the manifest
@@ -810,7 +780,7 @@
 
             # Indicates this is a pre-release/testing version of the module.
             IsPrerelease = 'true'
-            Prerelease   = 'preview'
+            Prerelease   = 'preview1'
         }
     }
 }

@@ -22,7 +22,7 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
         # load dbatools-lib
         if (-not (Get-Module dbatools)) {
             Write-Warning "Importing dbatools from source"
-            Import-Module dbatools.core.library
+            Import-Module dbatools.library
             Import-Module ./dbatools.psd1 -Force
         }
     }
