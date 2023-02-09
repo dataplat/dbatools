@@ -1,4 +1,4 @@
-function Invoke-DbaDbAzSqlTips {
+function Invoke-DbaDbAzSqlTip {
     <#
     .SYNOPSIS
         Runs the get-sqldb-tips.sql script from the Microsoft SQL PM team against an Azure SQL Database.
@@ -62,7 +62,7 @@ function Invoke-DbaDbAzSqlTips {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Invoke-DbaDbAzSqlTips
+        https://dbatools.io/Invoke-DbaDbAzSqlTip
 
     .EXAMPLE
         PS C:\> Invoke-DbaDbAzSqlTip -SqlInstance dbatools1.database.windows.net -SqlCredential (Get-Credential) -Database ImportantDb
@@ -97,8 +97,6 @@ function Invoke-DbaDbAzSqlTips {
 
         Enter Azure AD username\password into Get-Credential, and then Invoke-DbaDbAzSqlTip will runs the Azure SQL Tips
         script against the ImportantDb database on the dbatools1.database.windows.net server using Azure AD.
-
-
     #>
     [CmdletBinding()]
     param (
@@ -178,7 +176,6 @@ function Invoke-DbaDbAzSqlTips {
 
             }
 
-            # all dbs?
             foreach ($db in $Database) {
 
                 try {
