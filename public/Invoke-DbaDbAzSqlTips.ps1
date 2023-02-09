@@ -62,7 +62,7 @@ function Invoke-DbaDbAzSqlTips {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Invoke-DbaDbAzSqlTip
+        https://dbatools.io/Invoke-DbaDbAzSqlTips
 
     .EXAMPLE
         PS C:\> Invoke-DbaDbAzSqlTip -SqlInstance dbatools1.database.windows.net -SqlCredential (Get-Credential) -Database ImportantDb

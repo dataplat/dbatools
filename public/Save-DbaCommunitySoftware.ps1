@@ -76,7 +76,7 @@ function Save-DbaCommunitySoftware {
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Medium")]
     param (
-        [ValidateSet('MaintenanceSolution', 'FirstResponderKit', 'DarlingData', 'SQLWATCH', 'WhoIsActive', 'DbaMultiTool','AzSqlTips')]
+        [ValidateSet('MaintenanceSolution', 'FirstResponderKit', 'DarlingData', 'SQLWATCH', 'WhoIsActive', 'DbaMultiTool', 'AzSqlTips')]
         [string]$Software,
         [string]$Branch,
         [string]$LocalFile,
