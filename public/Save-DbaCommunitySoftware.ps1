@@ -5,7 +5,7 @@ function Save-DbaCommunitySoftware {
 
     .DESCRIPTION
         Download and extract software from Github to update the local cached version of that software.
-        This command is run from inside of Install-Dba* and Update-Dba* commands to update the local cache if needed.
+        This command is run from inside of Install-Dba*, Update-Dba*, Invoke-DbaDbAzSqlTips commands to update the local cache if needed.
 
         In case you don't have internet access on the target computer, you can download the zip files from the following URLs
         at another computer, transfer them to the target computer or place them on a network share and then use -LocalFile
@@ -16,6 +16,7 @@ function Save-DbaCommunitySoftware {
         * SQLWATCH: https://github.com/marcingminski/sqlwatch/releases
         * WhoIsActive: https://github.com/amachanic/sp_whoisactive/releases
         * DbaMultiTool: https://github.com/LowlyDBA/dba-multitool/releases
+        * AzSqlTips: https://github.com/microsoft/azure-sql-tips/releases/
 
     .PARAMETER Software
         Name of the software to download.
@@ -26,6 +27,7 @@ function Save-DbaCommunitySoftware {
         * SQLWATCH: SQL Server Monitoring Solution created by Marcin Gminski (https://sqlwatch.io/)
         * WhoIsActive: Adam Machanic's comprehensive activity monitoring stored procedure sp_WhoIsActive (https://github.com/amachanic/sp_whoisactive)
         * DbaMultiTool: John McCall's T-SQL scripts for the long haul: optimizing storage, on-the-fly documentation, and general administrative needs (https://dba-multitool.org)
+        * AzSqlTips: Azure SQL PM team scripts to review Azure SQL Database design, health and performance.
 
     .PARAMETER Branch
         Specifies the branch. Defaults to master or main. Can only be used if Software is used.
@@ -74,7 +76,7 @@ function Save-DbaCommunitySoftware {
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Medium")]
     param (
-        [ValidateSet('MaintenanceSolution', 'FirstResponderKit', 'DarlingData', 'SQLWATCH', 'WhoIsActive', 'DbaMultiTool')]
+        [ValidateSet('MaintenanceSolution', 'FirstResponderKit', 'DarlingData', 'SQLWATCH', 'WhoIsActive', 'DbaMultiTool','AzSqlTips')]
         [string]$Software,
         [string]$Branch,
         [string]$LocalFile,
@@ -187,16 +189,32 @@ function Save-DbaCommunitySoftware {
             if (-not $LocalDirectory) {
                 $LocalDirectory = Join-Path -Path $dbatoolsData -ChildPath "dba-multitool-$Branch"
             }
-        }
-
-        # Test if we now have source and destination for the following actions.
-        if (-not ($Url -or $LocalFile)) {
-            Stop-Function -Message 'Url or LocalFile is missing.'
-            return
-        }
-        if (-not $LocalDirectory) {
-            Stop-Function -Message 'LocalDirectory is missing.'
-            return
+        } elseif ($Software -eq 'AzSqlTips') {
+            # We currently ignore -Branch as there is only one branch and there are no pre-releases.
+            if (-not $Url -and -not $LocalFile) {
+                $releasesUrl = "https://api.github.com/repos/microsoft/azure-sql-tips/releases"
+                try {
+                    try {
+                        $releasesJson = Invoke-TlsWebRequest -Uri $releasesUrl -UseBasicParsing -ErrorAction Stop
+                    } catch {
+                        # Try with default proxy and usersettings
+                        (New-Object System.Net.WebClient).Proxy.Credentials = [System.Net.CredentialCache]::DefaultNetworkCredentials
+                        $releasesJson = Invoke-TlsWebRequest -Uri $releasesUrl -UseBasicParsing -ErrorAction Stop
+                    }
+                } catch {
+                    Stop-Function -Message "Unable to get release information from $releasesUrl." -ErrorRecord $_
+                    return
+                }
+                $latestRelease = ($releasesJson | ConvertFrom-Json) | Select-Object -First 1
+                if ($null -eq $latestRelease) {
+                    Stop-Function -Message "No release found." -ErrorRecord $_
+                    return
+                }
+                $Url = $latestRelease.zipball_url
+            }
+            if (-not $LocalDirectory) {
+                $LocalDirectory = Join-Path -Path $dbatoolsData -ChildPath "AzSqlTips"
+            }
         }
 
         # First part is download and extract and we use the temp directory for that and clean up afterwards.
@@ -215,6 +233,15 @@ function Save-DbaCommunitySoftware {
             $null = New-Item -Path $zipFolder -ItemType Directory
             $null = New-Item -Path $appFolder -ItemType Directory
             Copy-Item -Path $LocalFile -Destination $appFile
+        } elseif ($Software -eq 'AzSqlTips' -and $LocalFile.EndsWith('.sql')) {
+            # For AzSqlTips, we allow to pass in the get-sqldb-tips.sql file or any other sql file with the source code.
+            # We create the zip folder with a subfolder named AzSqlTips and copy the LocalFile there as get-sqldb-tips.sql.
+            $appFolder = Join-DbaPath -Path $zipFolder -Child 'AzSqlTips\sqldb-tips'
+            $appFile = Join-DbaPath -Path $appFolder -Child 'get-sqldb-tips.sql'
+            $null = New-Item -Path $zipFolder -ItemType Directory
+            $null = New-Item -Path $appFolder -ItemType Directory
+            Copy-Item -Path $LocalFile -Destination $appFile
+
         } elseif ($LocalFile) {
             # No download, so we just extract the given file if it exists and is a zip file.
             if (-not (Test-Path $LocalFile)) {
@@ -306,6 +333,14 @@ function Save-DbaCommunitySoftware {
                 # Rename the directory from like 'dba-multitool-1.7.5' to 'dba-multitool-master' to be able to handle this like the other software.
                 if ($sourceDirectoryName -like 'dba-multitool-[0-9]*') {
                     Rename-Item -Path $sourceDirectory.FullName -NewName 'dba-multitool-master'
+                    $sourceDirectory = Get-ChildItem -Path $zipFolder -Directory
+                    $sourceDirectoryName = $sourceDirectory.Name
+                }
+            } elseif ($Software -eq 'AzSqlTips') {
+                # As this software is downloaded as a release, the directory has a different name.
+                # copy the sqldb-tips directory from like 'azure-sql-tips-1.10.zip' to 'AzSqlTips' to be able to handle this like the other software.
+                if ($sourceDirectoryName -like '*azure-sql-tips-*') {
+                    Rename-Item -Path $sourceDirectory.FullName -NewName 'AzSqlTips'
                     $sourceDirectory = Get-ChildItem -Path $zipFolder -Directory
                     $sourceDirectoryName = $sourceDirectory.Name
                 }
