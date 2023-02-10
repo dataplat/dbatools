@@ -64,6 +64,9 @@ function Invoke-DbaQuery {
     .PARAMETER NoExec
         Use this switch to prepend SET NOEXEC ON and append SET NOEXEC OFF to each statement, useful for checking query formal errors
 
+    .PARAMETER KeepSqlInstanceOpen
+        By default, the SqlInstance will be closed when this method completes.
+        If this switch is enabled, the SqlInstance will remain open. You must manually disconnect the SqlInstance when you are done with it.
 
     .NOTES
         Tags: Database, Query, Utility
@@ -181,7 +184,8 @@ function Invoke-DbaQuery {
         [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
         [switch]$ReadOnly,
         [switch]$NoExec,
-        [switch]$EnableException
+        [switch]$EnableException,
+        [switch]$KeepSqlInstanceOpen
     )
 
     begin {
@@ -390,8 +394,8 @@ function Invoke-DbaQuery {
             Write-Message -Level Debug -Message "SqlInstance passed in, will work on: $instance"
             try {
                 $noConnectionChangeNeeded = # we want to bypass Connect-DbaInstance if
-                ($instance.InputObject.GetType().Name -eq "Server") -and # we have Server SMO object and
-                (-not $ReadOnly) -and # no readonly intent is requested and
+                        ($instance.InputObject.GetType().Name -eq "Server") -and # we have Server SMO object and
+                        (-not $ReadOnly) -and # no readonly intent is requested and
                 (-not $Database -or $instance.InputObject.ConnectionContext.DatabaseName -eq $Database)  # the database is not set or the currently connected
                 if ($noConnectionChangeNeeded) {
                     Write-Message -Level Debug -Message "Current connection will be reused"
@@ -427,7 +431,9 @@ function Invoke-DbaQuery {
             } catch {
                 Stop-Function -Message "[$instance] Failed during execution" -ErrorRecord $_ -Target $instance -Continue
             }
-            if ($connDbaInstanceParams.NonPooledConnection) {
+
+            # Allowing the sqlInstance to remain open lets temp tables to persist after creation.
+            if ($connDbaInstanceParams.NonPooledConnection -and -not $KeepSqlInstanceOpen) {
                 # Close non-pooled connection as this is not done automatically. If it is a reused Server SMO, connection will be opened again automatically on next request.
                 $null = $server | Disconnect-DbaInstance -Verbose:$false
             }

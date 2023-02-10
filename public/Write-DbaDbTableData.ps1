@@ -97,6 +97,10 @@ function Write-DbaDbTableData {
         By default, all string columns will be NVARCHAR(MAX).
         If this switch is enabled, all columns will get the length specified by the column's MaxLength property (if specified).
 
+    .PARAMETER KeepSqlInstanceOpen
+        By default, the SqlInstance will be closed when this method completes.
+        If this switch is enabled, the SqlInstance will remain open. You must manually disconnect the SqlInstance when you are done with it.
+
     .NOTES
         Tags: Table, Data, Insert
         Author: Chrissy LeMaire (@cl), netnerds.net
@@ -204,7 +208,8 @@ function Write-DbaDbTableData {
         [int]$BulkCopyTimeOut = 5000,
         [hashtable]$ColumnMap,
         [switch]$EnableException,
-        [switch]$UseDynamicStringLength
+        [switch]$UseDynamicStringLength,
+        [switch]$KeepSqlInstanceOpen
     )
 
     begin {
@@ -212,7 +217,12 @@ function Write-DbaDbTableData {
         $steppablePipeline = $null
 
         if (-not $PSBoundParameters.Database) {
-            if ($SqlInstance.ConnectionContext.DatabaseName) {
+            # when giving an already open SqlConnection, it's ConnectionContext is in InputObject
+            if ($SqlInstance.InputObject.ConnectionContext.DatabaseName) {
+                $Database = $SqlInstance.InputObject.ConnectionContext.DatabaseName
+                $PSBoundParameters.Database = $SqlInstance.InputObject.ConnectionContext.DatabaseName
+                $databaseName = $SqlInstance.InputObject.ConnectionContext.DatabaseName
+            } elseif ($SqlInstance.ConnectionContext.DatabaseName) {
                 $Database = $SqlInstance.ConnectionContext.DatabaseName
                 $PSBoundParameters.Database = $SqlInstance.ConnectionContext.DatabaseName
                 $databaseName = $SqlInstance.ConnectionContext.DatabaseName
@@ -432,7 +442,12 @@ function Write-DbaDbTableData {
 
         #region Connect to server
         try {
-            $server = Connect-DbaInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $databaseName -NonPooledConnection
+            # if a connected SqlObject is given then use it instead of a new instance.
+            if ($SqlInstance.InputObject.ConnectionContext.IsOpen) {
+                $server = $SqlInstance.InputObject
+            } else {
+                $server = Connect-DbaInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $databaseName -NonPooledConnection
+            }
         } catch {
             Stop-Function -Message "Error occurred while establishing connection to $SqlInstance" -Category ConnectionError -ErrorRecord $_ -Target $SqlInstance
             return
@@ -718,6 +733,7 @@ function Write-DbaDbTableData {
 
             try { Invoke-BulkCopy -DataTable $dataTable[0] }
             catch {
+
                 Stop-Function -Message "Failed to bulk import to $fqtn" -ErrorRecord $_ -Target $SqlInstance
             }
         }
@@ -728,7 +744,10 @@ function Write-DbaDbTableData {
             $bulkCopy.Dispose()
         }
 
-        # Close non-pooled connection as this is not done automatically. If it is a reused Server SMO, connection will be opened again automatically on next request.
-        $null = $server | Disconnect-DbaInstance
+        # Allowing the sqlInstance to remain open lets temp tables to persist after creation.
+        if (-not $KeepSqlInstanceOpen) {
+            # Close non-pooled connection as this is not done automatically. If it is a reused Server SMO, connection will be opened again automatically on next request.
+            $null = $server | Disconnect-DbaInstance
+        }
     }
 }
