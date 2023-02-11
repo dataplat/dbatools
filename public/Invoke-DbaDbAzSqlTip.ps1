@@ -190,7 +190,7 @@ function Invoke-DbaDbAzSqlTip {
                     Invoke-DbaQuery -SqlInstance $connection -Database $db -Query $azTipsQuery -EnableException:$EnableException | ForEach-Object {
                         [PSCustomObject]@{
                             ComputerName        = $connection.ComputerName
-                            InstanceName        = $connection.ServiceName
+                            InstanceName        = $connection.Name
                             SqlInstance         = $connection.DomainInstanceName
                             Database            = $db
                             tip_id              = $PsItem.tip_id
