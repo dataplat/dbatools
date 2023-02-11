@@ -1,4 +1,4 @@
-function Invoke-DbaDbAzSqlTip {
+function Invoke-DbaAzSqlDbTip {
     <#
     .SYNOPSIS
         Runs the get-sqldb-tips.sql script from the Microsoft SQL PM team against an Azure SQL Database.
@@ -62,40 +62,40 @@ function Invoke-DbaDbAzSqlTip {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Invoke-DbaDbAzSqlTip
+        https://dbatools.io/Invoke-DbaAzSqlDbTip
 
     .EXAMPLE
-        PS C:\> Invoke-DbaDbAzSqlTip -SqlInstance dbatools1.database.windows.net -SqlCredential (Get-Credential) -Database ImportantDb
+        PS C:\> Invoke-DbaAzSqlDbTip -SqlInstance dbatools1.database.windows.net -SqlCredential (Get-Credential) -Database ImportantDb
 
         Runs the Azure SQL Tips script against the dbatools1.database.windows.net using the specified credentials for the ImportantDb.
 
     .EXAMPLE
-        PS C:\> Invoke-DbaDbAzSqlTip -SqlInstance dbatools1.database.windows.net -SqlCredential (Get-Credential) -Database ImportantDb -ReturnAllTips
+        PS C:\> Invoke-DbaAzSqlDbTip -SqlInstance dbatools1.database.windows.net -SqlCredential (Get-Credential) -Database ImportantDb -ReturnAllTips
 
         Runs the Azure SQL Tips script against the dbatools1.database.windows.net using the specified credentials for the ImportantDb and
         will return all the tips regardless of database state.
 
     .EXAMPLE
-        PS C:\> Invoke-DbaDbAzSqlTip -SqlInstance dbatools1.database.windows.net -SqlCredential (Get-Credential) -Database ImportantDb -LocalFile 'C:\temp\get-sqldb-tips.sql'
+        PS C:\> Invoke-DbaAzSqlDbTip -SqlInstance dbatools1.database.windows.net -SqlCredential (Get-Credential) -Database ImportantDb -LocalFile 'C:\temp\get-sqldb-tips.sql'
 
         Runs the Azure SQL Tips script that is available locally at 'C:\temp\get-sqldb-tips.sql' against the dbatools1.database.windows.net using the specified
         credentials for the ImportantDb and will return all the tips regardless of database state.
 
     .EXAMPLE
-        PS C:\> Invoke-DbaDbAzSqlTip -SqlInstance dbatools1.database.windows.net -SqlCredential (Get-Credential) -ExcludeDatabase TestDb
+        PS C:\> Invoke-DbaAzSqlDbTip -SqlInstance dbatools1.database.windows.net -SqlCredential (Get-Credential) -ExcludeDatabase TestDb
 
         Runs the Azure SQL Tips script against all the databases on the dbatools1.database.windows.net using the specified credentials except for TestDb.
 
     .EXAMPLE
-        PS C:\> Invoke-DbaDbAzSqlTip -SqlInstance dbatools1.database.windows.net -SqlCredential (Get-Credential) -AllUserDatabases
+        PS C:\> Invoke-DbaAzSqlDbTip -SqlInstance dbatools1.database.windows.net -SqlCredential (Get-Credential) -AllUserDatabases
 
         Runs the Azure SQL Tips script against all the databases on the dbatools1.database.windows.net using the specified credentials.
 
     .EXAMPLE
         PS C:\> $cred = Get-Credential
-        PS C:\> Invoke-DbaDbAzSqlTip -SqlInstance dbatools1.database.windows.net -SqlCredential $cred -Database ImportantDb
+        PS C:\> Invoke-DbaAzSqlDbTip -SqlInstance dbatools1.database.windows.net -SqlCredential $cred -Database ImportantDb
 
-        Enter Azure AD username\password into Get-Credential, and then Invoke-DbaDbAzSqlTip will runs the Azure SQL Tips
+        Enter Azure AD username\password into Get-Credential, and then Invoke-DbaAzSqlDbTip will runs the Azure SQL Tips
         script against the ImportantDb database on the dbatools1.database.windows.net server using Azure AD.
     #>
     [CmdletBinding()]

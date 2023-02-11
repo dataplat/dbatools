@@ -5,7 +5,7 @@ function Save-DbaCommunitySoftware {
 
     .DESCRIPTION
         Download and extract software from Github to update the local cached version of that software.
-        This command is run from inside of Install-Dba*, Update-Dba*, Invoke-DbaDbAzSqlTip commands to update the local cache if needed.
+        This command is run from inside of Install-Dba*, Update-Dba*, Invoke-DbaAzSqlDbTip commands to update the local cache if needed.
 
         In case you don't have internet access on the target computer, you can download the zip files from the following URLs
         at another computer, transfer them to the target computer or place them on a network share and then use -LocalFile
