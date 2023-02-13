@@ -56,6 +56,13 @@ function Register-DbatoolsConfig {
         PS C:\> Register-DbatoolsConfig -Module Message -Scope SystemMandatory
 
         Retrieves all configuration items of the module Message, then registers them in registry to enforce them for all users on the current system.
+
+    .EXAMPLE
+        PS C:\> Set-DbatoolsConfig -FullName sql.connection.trustcert -Value $true -PassThru | Register-DbatoolsConfig
+
+        Set the `sql.connection.trustcert` configuration to be $true, and then use the -PassThru parameter
+        to be able to pipe the output and register them in registry for the current user.
+
     #>
     [CmdletBinding(DefaultParameterSetName = "Default")]
     Param (
