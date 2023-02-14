@@ -23,6 +23,16 @@ function Invoke-DbaAzSqlDbTip {
 
         For MFA support, please use Connect-DbaInstance.
 
+    .PARAMETER AzureDomain
+        By default, this is set to database.windows.net In the event your AzureSqlDb is not on a database.windows.net domain,
+        you can set a custom domain using the AzureDomain parameter. This tells Connect-DbaInstance to login to the
+        database using the method that works best with Azure.
+
+    .PARAMETER Tenant
+        The TenantId for an Azure Instance.
+
+        Default: (Get-DbatoolsConfigValue -FullName 'azure.tenantid')
+
     .PARAMETER LocalFile
         Specifies the path to a local file to run AzSqlTips from. This can be either the zip file release from GitHub or just the tips SQL script.
         If this parameter is not specified, the latest version will be downloaded and installed from https://github.com/microsoft/azure-sql-tips/releases
@@ -97,12 +107,19 @@ function Invoke-DbaAzSqlDbTip {
 
         Enter Azure AD username\password into Get-Credential, and then Invoke-DbaAzSqlDbTip will runs the Azure SQL Tips
         script against the ImportantDb database on the dbatools1.database.windows.net server using Azure AD.
+
+    .EXAMPLE
+        PS C:\> Invoke-DbaAzSqlDbTip -SqlInstance dbatools1.database.windows.net -SqlCredential (Get-Credential) -Database ImportantDb -Tenant GUID-GUID-GUID
+
+        Run the Azure SQL Tips script against the ImportantDb database on the dbatools1.database.windows.net server specifying the Azure Tenant Id.
     #>
     [CmdletBinding()]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
+        [string]$AzureDomain = 'database.windows.net',
+        [string]$Tenant,
         [ValidateScript( { Test-Path -Path $_ -PathType Leaf })]
         [string]$LocalFile,
         [String[]]$Database,
@@ -154,7 +171,15 @@ function Invoke-DbaAzSqlDbTip {
         foreach ($instance in $SqlInstance) {
             try {
                 Write-Message -Message ('Connecting to {0}' -f $instance)
-                $connection = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential -StatementTimeout ($StatementTimeout * 60)
+
+                $connSplat = @{
+                    SqlInstance      = $instance
+                    SqlCredential    = $SqlCredential
+                    StatementTimeout = ($StatementTimeout * 60)
+                    AzureDomain      = $AzureDomain
+                    Tenant           = $Tenant
+                }
+                $connection = Connect-DbaInstance @connSplat
 
                 if ($connection.DatabaseEngineType -ne 'SqlAzureDatabase') {
                     Stop-Function -Message ('{0} is not an Azure SQL Database - this function only works against Azure  SQL Databases' -f $instance) -Continue
@@ -184,7 +209,7 @@ function Invoke-DbaAzSqlDbTip {
 
                     if ($failedInstConn) {
                         Write-Message -Message ('Connecting to {0}.{1}' -f $instance, $db)
-                        $connection = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential -StatementTimeout $StatementTimeout -Database $db
+                        $connection = Connect-DbaInstance @connSplat -Database $db
                     }
 
                     Invoke-DbaQuery -SqlInstance $connection -Database $db -Query $azTipsQuery -EnableException:$EnableException | ForEach-Object {
