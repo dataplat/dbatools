@@ -60,7 +60,7 @@ function Register-DbatoolsConfig {
     .EXAMPLE
         PS C:\> Set-DbatoolsConfig -FullName sql.connection.trustcert -Value $true -PassThru | Register-DbatoolsConfig
 
-        Set the `sql.connection.trustcert` configuration to be $true, and then use the -PassThru parameter
+        Set the "sql.connection.trustcert" configuration to be $true, and then use the -PassThru parameter
         to be able to pipe the output and register them in registry for the current user.
 
     #>
