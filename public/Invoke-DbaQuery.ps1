@@ -389,11 +389,11 @@ function Invoke-DbaQuery {
             # We suppress the verbosity of all other functions in order to be sure the output is consistent with what you get, e.g., executing the same in SSMS
             Write-Message -Level Debug -Message "SqlInstance passed in, will work on: $instance"
             try {
-                $noConnectionChangeNeeded = # we want to bypass Connect-DbaInstance if
+                $startedWithAnOpenConnection = # we want to bypass Connect-DbaInstance if
                 ($instance.InputObject.GetType().Name -eq "Server") -and # we have Server SMO object and
                 (-not $ReadOnly) -and # no readonly intent is requested and
                 (-not $Database -or $instance.InputObject.ConnectionContext.DatabaseName -eq $Database)  # the database is not set or the currently connected
-                if ($noConnectionChangeNeeded) {
+                if ($startedWithAnOpenConnection) {
                     Write-Message -Level Debug -Message "Current connection will be reused"
                     $server = $instance.InputObject
                 } else {
@@ -427,7 +427,8 @@ function Invoke-DbaQuery {
             } catch {
                 Stop-Function -Message "[$instance] Failed during execution" -ErrorRecord $_ -Target $instance -Continue
             }
-            if ($connDbaInstanceParams.NonPooledConnection) {
+            # if the given connection started out open, don't close it.
+            if ($connDbaInstanceParams.NonPooledConnection -and -not $startedWithAnOpenConnection) {
                 # Close non-pooled connection as this is not done automatically. If it is a reused Server SMO, connection will be opened again automatically on next request.
                 $null = $server | Disconnect-DbaInstance -Verbose:$false
             }
