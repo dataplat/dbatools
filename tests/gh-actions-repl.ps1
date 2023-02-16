@@ -97,13 +97,13 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
 
     Context "Enable-DbaReplPublishing works" {
         BeforeAll {
-            # if distribution is disabled - enable it
-            if (-not (Get-DbaReplDistributor).IsDistributor) {
-                Enable-DbaReplDistributor
-            }
             # if Publishing is enabled - disable it
             if ((Get-DbaReplServer).IsPublisher) {
                 Disable-DbaReplPublishing
+            }
+            # if distribution is disabled - enable it
+            if (-not (Get-DbaReplDistributor).IsDistributor) {
+                Enable-DbaReplDistributor
             }
         }
 
@@ -123,16 +123,16 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
             write-output -Message ('I am a distributor {0}' -f (Get-DbaReplServer).IsDistributor)
             write-output -Message ('I am a publisher {0}' -f (Get-DbaReplServer).IsPublisher)
 
-            # if distribution is disabled - enable it
-            if (-not (Get-DbaReplDistributor).IsDistributor) {
-                write-output -message 'I should enable distribution'
-                Enable-DbaReplDistributor -EnableException
-            }
-
             # if publishing is disabled - enable it
             if (-not (Get-DbaReplServer).IsPublisher) {
                 write-output -message 'I should enable publishing'
                 Enable-DbaReplPublishing -EnableException
+            }
+
+            # if distribution is disabled - enable it
+            if (-not (Get-DbaReplDistributor).IsDistributor) {
+                write-output -message 'I should enable distribution'
+                Enable-DbaReplDistributor -EnableException
             }
 
             write-output -Message ('I am a distributor {0}' -f (Get-DbaReplServer).IsDistributor)
