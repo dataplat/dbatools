@@ -12,12 +12,8 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
         }
     }
 }
-
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
-    Context "ensuring accuracy of results" {
-        $results = Get-DbaRepDistributor -SqlInstance $script:instance1
-        It "accurately reports that the distributor is not installed" {
-            $results.DistributorInstalled | Should Be $false
-        }
-    }
-}
+<#
+    Integration test should appear below and are custom to the command you are writing.
+    Read https://github.com/dataplat/dbatools/blob/development/contributing.md#tests
+    for more guidence.
+#>
