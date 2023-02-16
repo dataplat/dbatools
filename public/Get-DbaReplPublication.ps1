@@ -1,4 +1,4 @@
-function Get-DbaRepPublication {
+function Get-DbaReplPublication {
     <#
     .SYNOPSIS
         Displays all publications for a server or database.
@@ -26,7 +26,9 @@ function Get-DbaRepPublication {
         Limit by specific type of publication. Valid choices include: Transactional, Merge, Snapshot
 
     .PARAMETER EnableException
-        byng this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
         Tags: Replication
@@ -37,20 +39,20 @@ function Get-DbaRepPublication {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaRepPublication
+        https://dbatools.io/Get-DbaReplPublication
 
     .EXAMPLE
-        PS C:\> Get-DbaRepPublication -SqlInstance sql2008, sqlserver2012
+        PS C:\> Get-DbaReplPublication -SqlInstance sql2008, sqlserver2012
 
         Return all publications for servers sql2008 and sqlserver2012.
 
     .EXAMPLE
-        PS C:\> Get-DbaRepPublication -SqlInstance sql2008 -Database TestDB
+        PS C:\> Get-DbaReplPublication -SqlInstance sql2008 -Database TestDB
 
         Return all publications on server sql2008 for only the TestDB database
 
     .EXAMPLE
-        PS C:\> Get-DbaRepPublication -SqlInstance sql2008 -PublicationType Transactional
+        PS C:\> Get-DbaReplPublication -SqlInstance sql2008 -PublicationType Transactional
 
         Return all publications on server sql2008 for all databases that have Transactional publications
 
@@ -62,8 +64,9 @@ function Get-DbaRepPublication {
         [object[]]$Database,
         [PSCredential]$SqlCredential,
         [ValidateSet("Transactional", "Merge", "Snapshot")]
-        [object[]]$PublicationType,
+        [object[]]$PublicationType,     #TODO: change to just Type
         [switch]$EnableException
+        #TODO: add a name parameter
     )
     begin {
         Add-ReplicationLibrary
@@ -79,16 +82,13 @@ function Get-DbaRepPublication {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
-            $dbList = $server.Databases
-
+            $databases = $server.Databases | Where-Object { $_.IsAccessible -eq $true -and (-not $_.IsSystemObject) }
             if ($Database) {
-                $dbList = $dbList | Where-Object name -in $Database
+                $databases = $databases | Where-Object Name -In $Database
             }
 
-            $dbList = $dbList | Where-Object { ($_.ID -gt 4) -and ($_.status -ne "Offline") }
 
-
-            foreach ($db in $dbList) {
+            foreach ($db in $databases) {
 
                 if (($db.ReplicationOptions -ne "Published") -and ($db.ReplicationOptions -ne "MergePublished")) {
                     Write-Message -Level Verbose -Message "Skipping $($db.name). Database is not published."
@@ -106,12 +106,14 @@ function Get-DbaRepPublication {
 
                     [PSCustomObject]@{
                         ComputerName    = $server.ComputerName
-                        InstanceName    = $server.InstanceName
-                        SqlInstance     = $server.SqlInstance
+                        InstanceName    = $server.ServiceName
+                        SqlInstance     = $server.Name
                         Server          = $server.name
                         Database        = $db.name
-                        PublicationName = $pub.Name
-                        PublicationType = $pub.Type
+                        PublicationName = $pub.Name  #TODO: change to just name
+                        PublicationType = $pub.Type  #TODO: change to just Type
+                        Articles        = $pub.TransArticles #TODO what about merge articles?
+
                     }
                 }
             }

@@ -1,4 +1,4 @@
-function Export-DbaRepServerSetting {
+function Export-DbaReplServerSetting {
     <#
     .SYNOPSIS
         Exports replication server settings to file.
@@ -51,7 +51,7 @@ function Export-DbaRepServerSetting {
         Not real sure how to use this yet
 
     .PARAMETER InputObject
-        Allows piping from Get-DbaRepServer
+        Allows piping from Get-DbaReplServer
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -67,15 +67,15 @@ function Export-DbaRepServerSetting {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Export-DbaRepServerSetting
+        https://dbatools.io/Export-DbaReplServerSetting
 
     .EXAMPLE
-        PS C:\> Export-DbaRepServerSetting -SqlInstance sql2017 -Path C:\temp\replication.sql
+        PS C:\> Export-DbaReplServerSetting -SqlInstance sql2017 -Path C:\temp\replication.sql
 
         Exports the replication settings on sql2017 to the file C:\temp\replication.sql
 
     .EXAMPLE
-        PS C:\> Get-DbaRepServer -SqlInstance sql2017 | Export-DbaRepServerSettings -Path C:\temp\replication.sql
+        PS C:\> Get-DbaReplServer -SqlInstance sql2017 | Export-DbaReplServerSetting -Path C:\temp\replication.sql
 
         Exports the replication settings on sql2017 to the file C:\temp\replication.sql
 
@@ -104,7 +104,7 @@ function Export-DbaRepServerSetting {
     process {
         if (Test-FunctionInterrupt) { return }
         foreach ($instance in $SqlInstance) {
-            $InputObject += Get-DbaRepServer -SqlInstance $instance -SqlCredential $SqlCredential
+            $InputObject += Get-DbaReplServer -SqlInstance $instance -SqlCredential $SqlCredential
         }
 
         foreach ($repserver in $InputObject) {

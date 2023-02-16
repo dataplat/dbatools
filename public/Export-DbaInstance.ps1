@@ -385,7 +385,7 @@ function Export-DbaInstance {
                 Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Exporting replication settings"
 
                 try {
-                    $null = Export-DbaRepServerSetting -SqlInstance $instance -SqlCredential $SqlCredential -FilePath "$exportPath\replication.sql" -EnableException
+                    $null = Export-DbaReplServerSetting -SqlInstance $instance -SqlCredential $SqlCredential -FilePath "$exportPath\replication.sql" -EnableException
                     Get-ChildItem -ErrorAction Ignore -Path "$exportPath\replication.sql"
                 } catch {
                     Write-Message -Level Verbose -Message "Replication failed, skipping"
