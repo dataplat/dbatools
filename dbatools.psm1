@@ -295,9 +295,19 @@ $forever = @{
 foreach ($_ in $forever.GetEnumerator()) {
     Set-Alias -Name $_.Key -Value $_.Value
 }
+
+# Replication Aliases
+$replAliases = @{
+    'Get-DbaRepServer'           = 'Get-DbaReplServer'
+    'Export-DbaRepServerSetting' = 'Export-DbaReplServerSetting'
+    'Get-DbaRepDistributor'      = 'Get-DbaReplDistributor'
+    'Test-DbaRepLatency'         = 'Test-DbaReplLatency'
+}
+foreach ($_ in $replAliases.GetEnumerator()) {
+    Set-Alias -Name $_.Key -Value $_.Value
+}
 #endregion Aliases
 
-# apparently this is no longer required? :O
 if ($PSVersionTable.PSVersion.Major -lt 5) {
     # region Commands
     $script:xplat = @(
@@ -844,9 +854,10 @@ if ($PSVersionTable.PSVersion.Major -lt 5) {
         'Remove-DbaCredential',
         'Remove-DbaAgentProxy'
     )
+    #TODO: can repl commands be removed here?
     $script:noncoresmo = @(
         # SMO issues
-        'Get-DbaRepDistributor',
+        'Get-DbaReplDistributor',
         'Copy-DbaPolicyManagement',
         'Copy-DbaDataCollector',
         'Get-DbaPbmCategory',
@@ -855,10 +866,10 @@ if ($PSVersionTable.PSVersion.Major -lt 5) {
         'Get-DbaPbmObjectSet',
         'Get-DbaPbmPolicy',
         'Get-DbaPbmStore',
-        'Get-DbaRepPublication',
-        'Test-DbaRepLatency',
-        'Export-DbaRepServerSetting',
-        'Get-DbaRepServer'
+        'Get-DbaReplPublication',
+        'Test-DbaReplLatency',
+        'Export-DbaReplServerSetting',
+        'Get-DbaReplServer'
     )
     $script:windowsonly = @(
         # filesystem (\\ related),
