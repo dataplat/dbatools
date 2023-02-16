@@ -1,16 +1,16 @@
-function Get-DbaRepDistributor {
+function Get-DbaReplServer {
     <#
     .SYNOPSIS
-        Gets the information about a replication distributor for a given SQL Server instance.
+        Gets a replication server object
 
     .DESCRIPTION
-        This function locates and enumerates distributor information for a given SQL Server instance.
+        Gets a replication server object
 
         All replication commands need SQL Server Management Studio installed and are therefore currently not supported.
         Have a look at this issue to get more information: https://github.com/dataplat/dbatools/issues/7428
 
     .PARAMETER SqlInstance
-        The target SQL Server instance or instances.
+        The target SQL Server instance or instances
 
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
@@ -26,24 +26,29 @@ function Get-DbaRepDistributor {
 
     .NOTES
         Tags: Replication
-        Author: William Durkin (@sql_williamd)
+        Author: Chrissy LeMaire (@cl), netnerds.net
 
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaRepDistributor
+        https://dbatools.io/Get-DbaReplServer
 
     .EXAMPLE
-        PS C:\> Get-DbaRepDistributor -SqlInstance sql2008, sqlserver2012
+        PS C:\> Get-DbaReplServer -SqlInstance sql2016
 
-        Retrieve distributor information for servers sql2008 and sqlserver2012.
+        Gets the replication server object for sql2016 using Windows authentication
+
+    .EXAMPLE
+        PS C:\> Get-DbaReplServer -SqlInstance sql2016 -SqlCredential repadmin
+
+        Gets the replication server object for sql2016 using SQL authentication
 
     #>
     [CmdletBinding()]
     param (
-        [parameter(Mandatory, ValueFromPipeline)]
+        [Parameter(Mandatory, ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [switch]$EnableException
@@ -54,23 +59,22 @@ function Get-DbaRepDistributor {
     process {
         if (Test-FunctionInterrupt) { return }
         foreach ($instance in $SqlInstance) {
-            Write-Message -Level Verbose -Message "Attempting to retrieve distributor information from $instance"
-
-            # Connect to the distributor of the instance
             try {
+                # use System.Data instead of Microsoft.Data
                 $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential
-                $sqlconn = New-SqlConnection -SqlInstance $instance -SqlCredential $SqlCredential
+                $sqlCon = New-SqlConnection -SqlInstance $instance -SqlCredential $SqlCredential
+                $replServer = New-Object Microsoft.SqlServer.Replication.ReplicationServer $sqlCon
 
-                $distributor = New-Object Microsoft.SqlServer.Replication.ReplicationServer $sqlconn
+                $replServer | Add-Member -Type NoteProperty -Name ComputerName -Value $server.ComputerName -Force
+                $replServer | Add-Member -Type NoteProperty -Name InstanceName -Value $server.ServiceName -Force
+                $replServer | Add-Member -Type NoteProperty -Name SqlInstance -Value $server.DomainInstanceName -Force
+
+                Select-DefaultView -InputObject $replServer -Property ComputerName, InstanceName, SqlInstance, DistributorInstalled, DistributorAvailable, IsDistributor, IsPublisher, HasRemotePublisher, DistributionServer, DistributionDatabase, WorkingDirectory, AgentCheckupInterval, DistributionDatabases, DistributionPublishers, ReplicationDatabases, RegisteredSubscribers
             } catch {
                 Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
-
-            Add-Member -Force -InputObject $distributor -MemberType NoteProperty -Name ComputerName -Value $server.ComputerName
-            Add-Member -Force -InputObject $distributor -MemberType NoteProperty -Name InstanceName -Value $server.ServiceName
-            Add-Member -Force -InputObject $distributor -MemberType NoteProperty -Name SqlInstance -Value $server.DomainInstanceName
-
-            Select-DefaultView -InputObject $distributor -Property ComputerName, InstanceName, SqlInstance, IsPublisher, IsDistributor, DistributionServer, DistributionDatabase, DistributorInstalled, DistributorAvailable, HasRemotePublisher
         }
     }
 }
+
+# TODO: Replication databases are shown even if they have no pubs
