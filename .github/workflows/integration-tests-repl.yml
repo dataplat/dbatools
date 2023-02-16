@@ -1,4 +1,4 @@
-name: Run Cross Platform Tests - repl
+name: Run Replication Tests
 on: [push]
 defaults:
   run:
