@@ -18,7 +18,6 @@ Dropping an article invalidates the current snapshot; therefore a new snapshot m
 
 https://learn.microsoft.com/en-us/sql/relational-databases/replication/publish/add-articles-to-and-drop-articles-from-existing-publications?view=sql-server-ver16
 
-
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.
 
@@ -35,20 +34,11 @@ https://learn.microsoft.com/en-us/sql/relational-databases/replication/publish/a
     .PARAMETER PublicationName
         The name of the replication publication.
 
-    .PARAMETER Type
-        The flavour of replication.
+    .PARAMETER Schema
+        Source schema of the replicated object to remove from the publication.
 
-        Currently supported 'Transactional'
-
-        Coming soon 'Snapshot', 'Merge'
-
-    .PARAMETER LogReaderAgentCredential
-        Used to provide the credentials for the Microsoft Windows account under which the Log Reader Agent runs
-
-        Setting LogReaderAgentProcessSecurity is not required when the publication is created by a member of the sysadmin fixed server role.
-        In this case, the agent will impersonate the SQL Server Agent account. For more information, see Replication Agent Security Model.
-
-        TODO: Implement & test this
+    .PARAMETER Name
+        The name of the article to remove.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -69,13 +59,15 @@ https://learn.microsoft.com/en-us/sql/relational-databases/replication/publish/a
         Copyright: (c) 2022 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
+        https://learn.microsoft.com/en-us/sql/relational-databases/replication/publish/delete-an-article?view=sql-server-ver16
+
     .LINK
-        https://dbatools.io/New-DbaReplPublication
+        https://dbatools.io/Remove-DbaReplArticle
 
     .EXAMPLE
-        PS C:\> New-DbaReplPublication -SqlInstance mssql1 -Database Northwind -PublicationName PubFromPosh
+        PS C:\> Remove-DbaReplArticle -SqlInstance mssql1 -Database Pubs -PublicationName PubFromPosh -Name 'publishers'
 
-        Creates a publication called PubFromPosh for the Northwind database on mssql1
+        Removes the publishers article from a publication called PubFromPosh on mssql1
 
     #>
     [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess, ConfirmImpact = 'Medium')]
@@ -96,8 +88,6 @@ https://learn.microsoft.com/en-us/sql/relational-databases/replication/publish/a
         [parameter(Mandatory)]
         [String]$Name,
 
-        [String]$Filter, # some sql to horizontal filter "DiscontinuedDate IS NULL";
-
         [Switch]$EnableException
     )
     process {
@@ -112,31 +102,27 @@ https://learn.microsoft.com/en-us/sql/relational-databases/replication/publish/a
             try {
                 if ($PSCmdlet.ShouldProcess($instance, "Removing an article from $PublicationName")) {
 
-                    # based off this
-                    # https://learn.microsoft.com/en-us/sql/relational-databases/replication/publish/define-an-article?view=sql-server-ver16#RMOProcedure
-
-                    #TODO: add name field to Get-DbaReplPublication so don't have to where
-                    $pub = Get-DbaReplPublication -SqlInstance $instance -SqlCredential $SqlCredential | Where-Object PublicationName -eq $PublicationName
+                    $pub = Get-DbaReplPublication -SqlInstance $instance -SqlCredential $SqlCredential -Name -eq $PublicationName
 
                     if ($pub.PublicationType -eq 'Transactional') {
-
                         $article                    = New-Object Microsoft.SqlServer.Replication.TransArticle
-                        $article.ConnectionContext  = $replServer.ConnectionContext
-                        $article.Name               = $Name
-                        $article.SourceObjectOwner  = $Schema
-                        $article.PublicationName    = $PublicationName
-                        $article.DatabaseName       = $Database
-
-                        # think this is the default
-                        #$article.Type = ArticleOptions.LogBased
-
-                        if (($article.IsExistingObject)) {
-                            $article.Remove()
-                        } else {
-                            Stop-Function -Message "Article doesn't exist in $PublicationName on $instance" -ErrorRecord $_ -Target $instance -Continue
-                        }
+                    } elseif ($pub.PublicationType -eq 'Merge') {
+                        $article                    = New-Object Microsoft.SqlServer.Replication.MergeArticle
+                    } else {
+                        Stop-Function -Message "Publication is not a supported type, currently only Transactional and Merge publications are supported" -ErrorRecord $_ -Target $instance -Continue
                     }
-                    # TODO: what if it's not transactional
+
+                    $article.ConnectionContext  = $replServer.ConnectionContext
+                    $article.Name               = $Name
+                    $article.SourceObjectOwner  = $Schema
+                    $article.PublicationName    = $PublicationName
+                    $article.DatabaseName       = $Database
+
+                    if (($article.IsExistingObject)) {
+                        $article.Remove()
+                    } else {
+                        Stop-Function -Message "Article doesn't exist in $PublicationName on $instance" -ErrorRecord $_ -Target $instance -Continue
+                    }
                 }
             } catch {
                 Stop-Function -Message "Unable to remove article $ArticleName from $PublicationName on $instance" -ErrorRecord $_ -Target $instance -Continue
