@@ -15,6 +15,9 @@ function Get-DbaReplPublication {
     .PARAMETER Database
         The database(s) to process. If unspecified, all databases will be processed.
 
+    .PARAMETER Name
+        The name of the publication.
+
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
 
@@ -56,6 +59,10 @@ function Get-DbaReplPublication {
 
         Return all publications on server sql2008 for all databases that have Transactional publications
 
+    .EXAMPLE
+        PS C:\> Get-DbaReplPublication -SqlInstance mssql1 -Name Mergey
+
+        Returns the Mergey publications on server mssql1
     #>
     [CmdletBinding()]
     param (
@@ -63,10 +70,10 @@ function Get-DbaReplPublication {
         [DbaInstanceParameter[]]$SqlInstance,
         [object[]]$Database,
         [PSCredential]$SqlCredential,
+        [String]$Name,
         [ValidateSet("Transactional", "Merge", "Snapshot")]
         [object[]]$PublicationType,     #TODO: change to just Type
         [switch]$EnableException
-        #TODO: add a name parameter
     )
     begin {
         Add-ReplicationLibrary
@@ -96,10 +103,15 @@ function Get-DbaReplPublication {
 
                 $repDB = Connect-ReplicationDB -Server $server -Database $db
 
+
                 $pubTypes = $repDB.TransPublications + $repDB.MergePublications
 
                 if ($PublicationType) {
                     $pubTypes = $pubTypes | Where-Object Type -in $PublicationType
+                }
+
+                if ($Name) {
+                    $pubTypes = $pubTypes | Where-Object Name -in $Name
                 }
 
                 foreach ($pub in $pubTypes) {
