@@ -97,7 +97,7 @@ function New-DbaReplPublication {
             Write-Message -Level Verbose -Message "Creating a new publication on $instance"
 
             try {
-                if ($PSCmdlet.ShouldProcess($instance, "Enabling distribution on $instance")) {
+                if ($PSCmdlet.ShouldProcess($instance, "Creating a new publication on $instance")) {
 
                     # based off this
                     # https://learn.microsoft.com/en-us/sql/relational-databases/replication/publish/create-a-publication?view=sql-server-ver16
@@ -109,7 +109,7 @@ function New-DbaReplPublication {
                         throw "Database $Database not found on $instance"
                     }
 
-                    if ($Type -eq 'Transactional') {
+                    if ($Type -in ('Transactional', 'Snapshot')) {
                         $pubDatabase.EnabledTransPublishing = $true
                     } elseif ($Type -eq 'Merge') {
                         $pubDatabase.EnabledMergePublishing = $true
@@ -135,7 +135,7 @@ function New-DbaReplPublication {
                         Write-Message -Level Verbose -Message "Log Read Agent job already exists for $Database on $instance"
                     }
 
-                    if ($Type -eq 'Transactional') {
+                    if ($Type -in ('Transactional', 'Snapshot')) {
 
                         $transPub = New-Object Microsoft.SqlServer.Replication.TransPublication
                         $transPub.ConnectionContext = $replServer.ConnectionContext
@@ -145,10 +145,7 @@ function New-DbaReplPublication {
                         $transPub.Create()
 
                         # create the Snapshot Agent job
-                        #TODO: also for snapshot pub?
                         $transPub.CreateSnapshotAgent()
-
-                        #$transPub.CreateSnapshotAgent
 
                         <#
                         TODO: add these in?
@@ -163,19 +160,41 @@ function New-DbaReplPublication {
                         (Optional) The SqlStandardLogin and SqlStandardPassword or
                         SecureSqlStandardPassword fields of SnapshotGenerationAgentPublisherSecurity when using SQL Server Authentication to connect to the Publisher.
                         #>
-                    }
+                    } elseif ($Type -eq 'Merge') {
+                        $mergePub = New-Object Microsoft.SqlServer.Replication.MergePublication
+                        $mergePub.ConnectionContext = $replServer.ConnectionContext
+                        $mergePub.DatabaseName = $Database
+                        $mergePub.Name = $PublicationName
+                        $mergePub.Create()
 
-                    #TODO: merge?
+                        # create the Snapshot Agent job
+                        $mergePub.CreateSnapshotAgent()
+
+                        <#
+                        TODO: add these in?
+
+                        The Login and Password fields of SnapshotGenerationAgentProcessSecurity to provide the credentials for the Windows account under which the Snapshot Agent runs.
+                        This account is also used when the Snapshot Agent makes connections to the local Distributor and for any remote connections when using Windows Authentication.
+
+                        Note
+                        Setting SnapshotGenerationAgentProcessSecurity is not required when the publication is created by a member of the sysadmin fixed server role.
+                        For more information, see Replication Agent Security Model.
+
+                        (Optional) Use the inclusive logical OR operator (| in Visual C# and Or in Visual Basic) and the exclusive logical OR operator (^ in Visual C# and Xor in Visual Basic)
+                        to set the PublicationAttributes values for the Attributes property.
+
+                        #>
+
+                    }
 
 
 
                 }
             } catch {
-                Stop-Function -Message "Unable to enable replication distribution" -ErrorRecord $_ -Target $instance -Continue
+                Stop-Function -Message ("Unable to create publication - {0}" -f $_) -ErrorRecord $_ -Target $instance -Continue
             }
 
-            $replServer.Refresh()
-            $replServer
+            #TODO: What to return
 
         }
     }

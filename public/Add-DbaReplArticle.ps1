@@ -56,6 +56,8 @@ function Add-DbaReplArticle {
         Copyright: (c) 2022 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
+        https://learn.microsoft.com/en-us/sql/relational-databases/replication/publish/define-an-article?view=sql-server-ver16#RMOProcedure
+
     .LINK
         https://dbatools.io/New-DbaReplPublication
 
@@ -99,51 +101,42 @@ function Add-DbaReplArticle {
             try {
                 if ($PSCmdlet.ShouldProcess($instance, "Adding an article to $PublicationName")) {
 
-                    # based off this
-                    # https://learn.microsoft.com/en-us/sql/relational-databases/replication/publish/define-an-article?view=sql-server-ver16#RMOProcedure
+                    $pub = Get-DbaReplPublication -SqlInstance $instance -SqlCredential $SqlCredential -Name -eq $PublicationName
 
-                    #TODO: add name field to Get-DbaReplPublication so don't have to where
-                    $pub = Get-DbaReplPublication -SqlInstance $instance -SqlCredential $SqlCredential | Where-Object PublicationName -eq $PublicationName
-                    $pub
+                    $articleOptions = New-Object Microsoft.SqlServer.Replication.ArticleOptions
+
                     if ($pub.PublicationType -eq 'Transactional') {
-
-                        $article                    = New-Object Microsoft.SqlServer.Replication.TransArticle
-                        $article.ConnectionContext  = $replServer.ConnectionContext
-                        $article.Name               = $Name
-                        $article.DatabaseName       = $Database
-                        $article.SourceObjectName   = $Name
-                        $article.SourceObjectOwner  = $Schema
-                        $article.PublicationName    = $PublicationName
-
-                        # think this is the default
-                        #$article.Type = ArticleOptions.LogBased
-
-                        if ($articleFilter) {
-                            article.FilterClause = $Filter  #TODO: This doesn't seem to be working
-                        }
-
-                        if (-not ($article.IsExistingObject)) {
-                            $article.Create()
-                        } else {
-                            Stop-Function -Message "Article already exists in $PublicationName on $instance" -ErrorRecord $_ -Target $instance -Continue
-                        }
+                        $article = New-Object Microsoft.SqlServer.Replication.TransArticle
+                        $article.Type = $ArticleOptions::LogBased
+                    } elseif ($pub.PublicationType -eq 'Merge') {
+                        $article = New-Object Microsoft.SqlServer.Replication.MergeArticle
+                        $article.Type = $ArticleOptions::TableBased
+                    } else {
+                        Stop-Function -Message "Publication is not a supported type, currently only Transactional and Merge publications are supported" -ErrorRecord $_ -Target $instance -Continue
                     }
-                    # TODO: what if it's not transactional
 
-                    # TODO: Does the schema exist on the subscriber?
-                    <#
-                    // Ensure that we create the schema owner at the Subscriber.
-                    article.SchemaOption |= CreationScriptOptions.Schema;
-                    #>
+                    $article.ConnectionContext  = $replServer.ConnectionContext
+                    $article.Name               = $Name
+                    $article.DatabaseName       = $Database
+                    $article.SourceObjectName   = $Name
+                    $article.SourceObjectOwner  = $Schema
+                    $article.PublicationName    = $PublicationName
 
+                    if ($articleFilter) {
+                        article.FilterClause = $Filter  #TODO: This doesn't seem to be working
+                    }
+
+                    if (-not ($article.IsExistingObject)) {
+                        $article.Create()
+                    } else {
+                        Stop-Function -Message "Article already exists in $PublicationName on $instance" -ErrorRecord $_ -Target $instance -Continue
+                    }
                 }
             } catch {
                 Stop-Function -Message "Unable to add article $ArticleName to $PublicationName on $instance" -ErrorRecord $_ -Target $instance -Continue
             }
-
             #TODO: What should we return
             Get-DbaReplArticle -SqlInstance $instance -SqlCredential $SqlCredential -Publication $PublicationName -Article $Name
-
         }
     }
 }
