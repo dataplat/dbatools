@@ -94,7 +94,7 @@ function Test-DbaReplLatency {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
-            $publicationNames = Get-DbaReplPublication -SqlInstance $server -Database $Database -SqlCredential $SqlCredentials -PublicationType "Transactional"
+            $publicationNames = Get-DbaReplPublication -SqlInstance $server -Database $Database -SqlCredential $SqlCredentials -Type "Transactional"
 
             if ($PublicationName) {
                 $publicationNames = $publicationNames | Where-Object PublicationName -in $PublicationName
@@ -205,7 +205,7 @@ function Test-DbaReplLatency {
                             PublicationServer              = $publication.Server
                             PublicationDB                  = $publication.Database
                             PublicationName                = $publication.PublicationName
-                            PublicationType                = $publication.PublicationType
+                            PublicationType                = $publication.Type
                             DistributionServer             = $distributionServer
                             DistributionDB                 = $distributionDatabase
                             SubscriberServer               = $info.subscriber
@@ -213,7 +213,7 @@ function Test-DbaReplLatency {
                             PublisherToDistributorLatency  = $info.distributor_latency
                             DistributorToSubscriberLatency = $info.subscriber_latency
                             TotalLatency                   = $totalLatency
-                        } | Select-DefaultView -ExcludeProperty PublicationType
+                        } | Select-DefaultView -ExcludeProperty Type
 
 
                         if (!$RetainToken) {
