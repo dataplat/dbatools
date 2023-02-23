@@ -102,11 +102,11 @@ https://learn.microsoft.com/en-us/sql/relational-databases/replication/publish/a
             try {
                 if ($PSCmdlet.ShouldProcess($instance, "Removing an article from $PublicationName")) {
 
-                    $pub = Get-DbaReplPublication -SqlInstance $instance -SqlCredential $SqlCredential -Name -eq $PublicationName
+                    $pub = Get-DbaReplPublication -SqlInstance $instance -SqlCredential $SqlCredential -Name $PublicationName
 
-                    if ($pub.PublicationType -eq 'Transactional') {
+                    if ($pub.Type -eq 'Transactional') {
                         $article                    = New-Object Microsoft.SqlServer.Replication.TransArticle
-                    } elseif ($pub.PublicationType -eq 'Merge') {
+                    } elseif ($pub.Type -eq 'Merge') {
                         $article                    = New-Object Microsoft.SqlServer.Replication.MergeArticle
                     } else {
                         Stop-Function -Message "Publication is not a supported type, currently only Transactional and Merge publications are supported" -ErrorRecord $_ -Target $instance -Continue

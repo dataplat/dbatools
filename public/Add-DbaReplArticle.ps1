@@ -101,14 +101,14 @@ function Add-DbaReplArticle {
             try {
                 if ($PSCmdlet.ShouldProcess($instance, "Adding an article to $PublicationName")) {
 
-                    $pub = Get-DbaReplPublication -SqlInstance $instance -SqlCredential $SqlCredential -Name -eq $PublicationName
+                    $pub = Get-DbaReplPublication -SqlInstance $instance -SqlCredential $SqlCredential -Name $PublicationName
 
                     $articleOptions = New-Object Microsoft.SqlServer.Replication.ArticleOptions
 
-                    if ($pub.PublicationType -eq 'Transactional') {
+                    if ($pub.Type -eq 'Transactional') {
                         $article = New-Object Microsoft.SqlServer.Replication.TransArticle
                         $article.Type = $ArticleOptions::LogBased
-                    } elseif ($pub.PublicationType -eq 'Merge') {
+                    } elseif ($pub.Type -eq 'Merge') {
                         $article = New-Object Microsoft.SqlServer.Replication.MergeArticle
                         $article.Type = $ArticleOptions::TableBased
                     } else {

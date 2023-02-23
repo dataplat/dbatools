@@ -71,8 +71,9 @@ function Get-DbaReplPublication {
         [object[]]$Database,
         [PSCredential]$SqlCredential,
         [String]$Name,
+        [Alias("PublicationType")]
         [ValidateSet("Transactional", "Merge", "Snapshot")]
-        [object[]]$PublicationType,     #TODO: change to just Type
+        [object[]]$Type,
         [switch]$EnableException
     )
     begin {
@@ -94,7 +95,6 @@ function Get-DbaReplPublication {
                 $databases = $databases | Where-Object Name -In $Database
             }
 
-
             foreach ($db in $databases) {
 
                 if (($db.ReplicationOptions -ne "Published") -and ($db.ReplicationOptions -ne "MergePublished")) {
@@ -102,7 +102,6 @@ function Get-DbaReplPublication {
                 }
 
                 $repDB = Connect-ReplicationDB -Server $server -Database $db
-
 
                 $pubTypes = $repDB.TransPublications + $repDB.MergePublications
 
@@ -117,14 +116,14 @@ function Get-DbaReplPublication {
                 foreach ($pub in $pubTypes) {
 
                     [PSCustomObject]@{
-                        ComputerName    = $server.ComputerName
-                        InstanceName    = $server.ServiceName
-                        SqlInstance     = $server.Name
-                        Server          = $server.name
-                        Database        = $db.name
-                        PublicationName = $pub.Name  #TODO: change to just name
-                        PublicationType = $pub.Type  #TODO: change to just Type
-                        Articles        = $pub.TransArticles #TODO what about merge articles?
+                        ComputerName = $server.ComputerName
+                        InstanceName = $server.ServiceName
+                        SqlInstance  = $server.Name
+                        Server       = $server.name
+                        Database     = $db.name
+                        Name         = $pub.Name  #TODO: breaking change from PublicationName to Name
+                        Type         = $pub.Type  #TODO: breaking change from PublicationType to Type
+                        Articles     = $pub.TransArticles #TODO what about merge articles?
 
                     }
                 }
