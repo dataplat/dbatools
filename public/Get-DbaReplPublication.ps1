@@ -25,7 +25,7 @@ function Get-DbaReplPublication {
 
         For MFA support, please use Connect-DbaInstance.
 
-    .PARAMETER PublicationType
+    .PARAMETER Type
         Limit by specific type of publication. Valid choices include: Transactional, Merge, Snapshot
 
     .PARAMETER EnableException
@@ -55,7 +55,7 @@ function Get-DbaReplPublication {
         Return all publications on server sql2008 for only the TestDB database
 
     .EXAMPLE
-        PS C:\> Get-DbaReplPublication -SqlInstance sql2008 -PublicationType Transactional
+        PS C:\> Get-DbaReplPublication -SqlInstance sql2008 -Type Transactional
 
         Return all publications on server sql2008 for all databases that have Transactional publications
 
