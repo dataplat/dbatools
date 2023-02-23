@@ -20,9 +20,11 @@ function Get-DbaReplArticle {
         Specifies one or more database(s) to process. If unspecified, all databases will be processed.
 
     .PARAMETER PublicationName
+        #TODO change to Name
         Specifies one or more publication(s) to process. If unspecified, all publications will be processed.
 
     .PARAMETER PublicationType
+        #TODO change to Type
         Limit by specific type of publication. Valid choices include: Transactional, Merge, Snapshot
 
     .PARAMETER Article
