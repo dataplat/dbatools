@@ -231,6 +231,7 @@ function Write-DbaDbTableData {
             }
         }
 
+
         #region Utility Functions
         function Invoke-BulkCopy {
             <#
@@ -427,6 +428,7 @@ function Write-DbaDbTableData {
             $schemaName = $Schema
         }
 
+        $originalDatabaseName = $databaseName
         $tableName = $fqtnObj.Name
 
         $usingGlobalTempTable = $false
@@ -753,6 +755,10 @@ function Write-DbaDbTableData {
         if (-not ($startedWithANonPooledConnection -or $usingGlobalTempTable) ) {
             # Close non-pooled connection as this is not done automatically. If it is a reused Server SMO, connection will be opened again automatically on next request.
             $null = $server | Disconnect-DbaInstance
+        } elseif ($originalDatabaseName -ne $databaseName) {
+            # if a temptable was created, it sets the open connection's database to tempdb indefinitely. We want to get back to the original database context at the start of this command.
+            Write-Message -Level Verbose -Message "The current database has changed from the original database. switching back to the original database."
+            $context.ExecuteNonQuery("use [$originalDatabaseName]")
         }
     }
 }
