@@ -17,7 +17,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     BeforeAll {
         $dbname = "dbatoolsci_test_$(Get-Random)"
         $server = Connect-DbaInstance -SqlInstance $script:instance2
-        $db = New-DbaDatabase -SqlInstance $script:instance2 -Database $dbname
+        $null = $server.Query("Create Database [$dbname]")
         $null = $server.Query("select * into syscols from sys.all_columns
                                 select * into sysallparams from sys.all_parameters
                                 create clustered index CL_sysallparams on sysallparams (object_id)
@@ -25,15 +25,15 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     }
     AfterAll {
         Get-DbaProcess -SqlInstance $script:instance2 -Database $dbname | Stop-DbaProcess -WarningAction SilentlyContinue
-        $db | Remove-DbaDatabase -Confirm:$false
+        Remove-DbaDatabase -SqlInstance $script:instance2 -Database $dbname -Confirm:$false
     }
     $results = Get-DbaDbCompression -SqlInstance $script:instance2 -Database $dbname
 
     Context "Command handles heaps and clustered indexes" {
         It "Gets results" {
             $results | Should Not Be $null
-            $results.Database | Get-Unique | Should -Be $db.Name
-            $results.DatabaseId | Get-Unique | Should -Be $db.Id
+            $results.Database | Get-Unique | Should -Be $dbname
+            $results.DatabaseId | Get-Unique | Should -Be $server.Query("SELECT database_id FROM sys.databases WHERE name = '$dbname'").database_id
         }
         Foreach ($row in $results | Where-Object { $_.IndexId -le 1 }) {
             It "Should return compression level for object $($row.TableName)" {
