@@ -52,13 +52,12 @@ function Test-DbaSpn {
 
         Connects to a computer (SQLSERVERC) on a specified and queries WMI for all SQL instances and return "required" SPNs.
         It will then take each SPN it generates and query Active Directory to make sure the SPNs are set. Note that the credential you pass must have be a valid login with appropriate rights on the domain
-
     #>
     [cmdletbinding()]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseOutputTypeCorrectly", "", Justification = "PSSA Rule Ignored by BOH")]
     param (
         [Parameter(Mandatory, ValueFromPipeline)]
-        [DbaInstance[]]$ComputerName,
+        [DbaInstanceParameter[]]$ComputerName,
         [PSCredential]$Credential,
         [switch]$EnableException
     )
@@ -84,31 +83,6 @@ function Test-DbaSpn {
             Write-Message -Message "Resolved ComputerName to FQDN: $hostEntry" -Level Verbose
 
             $Scriptblock = {
-
-                function Convert-SqlVersion {
-                    [cmdletbinding()]
-                    param (
-                        [version]$version
-                    )
-
-                    switch ($version.Major) {
-                        9 { "SQL Server 2005" }
-                        10 {
-                            if ($version.Minor -eq 0) {
-                                "SQL Server 2008"
-                            } else {
-                                "SQL Server 2008 R2"
-                            }
-                        }
-                        11 { "SQL Server 2012" }
-                        12 { "SQL Server 2014" }
-                        13 { "SQL Server 2016" }
-                        14 { "SQL Server 2017" }
-                        15 { "SQL Server 2019" }
-                        default { $version }
-                    }
-                }
-
                 $spns = @()
                 $servereName = $args[0]
                 $hostEntry = $args[1]
@@ -157,7 +131,7 @@ function Test-DbaSpn {
 
                     $rawVersion = [version]($services.AdvancedProperties | Where-Object Name -EQ 'VERSION').Value
 
-                    $version = Convert-SqlVersion $rawVersion
+                    $version = $rawVersion
                     $skuName = ($services.AdvancedProperties | Where-Object Name -EQ 'SKUNAME').Value
 
                     $spn.SqlProduct = "$version $skuName"
@@ -229,7 +203,6 @@ function Test-DbaSpn {
                 }
                 $spns
             }
-
 
             try {
                 $spns = Invoke-ManagedComputerCommand -ComputerName $hostEntry -ScriptBlock $Scriptblock -ArgumentList $resolved.FullComputerName, $hostEntry, $computer.InstanceName -Credential $Credential -ErrorAction Stop
