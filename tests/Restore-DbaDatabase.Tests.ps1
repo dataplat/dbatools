@@ -683,6 +683,24 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         }
     }
 
+    Context "Test recovery via exported backup history" {
+        $DatabaseName = 'rectest'
+        Get-DbaDbBackupHistory -SqlInstance $script:instance2 -Database $DatabaseName -LastFull | Export-Clixml -Depth 5 -Path "C:\temp\${DatabaseName}.xml"
+        $results = Get-DbaBackupInformation -Import -Path "C:\temp\${DatabaseName}.xml" | Restore-DbaDatabase -SqlInstance $script:instance2 -TrustDbBackupHistory
+
+        It "Should have restored everything successfully" {
+            ($results.RestoreComplete -contains $false) | Should be $False
+            (($results | Measure-Object).count -gt 0) | Should be $True
+        }
+        $check = Get-DbaDatabase -SqlInstance $script:instance2 -Database $DatabaseName
+        It "Should have a non-zero backup size" {
+            ($check.BackupSize -gt 0) | Should Be $True
+        }
+        It "Should be a recovered database in normal status" {
+            'Normal' -in $check.status | Should Be $True
+        }
+    }
+
     Context "Checking we cope with a port number (#244)" {
         $DatabaseName = 'rectest'
         $results = Restore-DbaDatabase -SqlInstance $script:instance2_detailed -Path $script:appveyorlabrepo\singlerestore\singlerestore.bak -DatabaseName $DatabaseName -DestinationFilePrefix $DatabaseName -WithReplace
