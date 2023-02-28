@@ -112,6 +112,7 @@ function Get-DbaDbDbccOpenTran {
                         InstanceName = $server.ServiceName
                         SqlInstance  = $server.DomainInstanceName
                         Database     = $db.Name
+                        DatabaseId   = $db.Id
                         Cmd          = $query.ToString()
                         Output       = 'No active open transactions.'
                         Field        = $null
@@ -124,6 +125,7 @@ function Get-DbaDbDbccOpenTran {
                             InstanceName = $server.ServiceName
                             SqlInstance  = $server.DomainInstanceName
                             Database     = $db.Name
+                            DatabaseId   = $db.Id
                             Cmd          = $query.ToString()
                             Output       = 'Oldest active transaction'
                             Field        = $row[0]
