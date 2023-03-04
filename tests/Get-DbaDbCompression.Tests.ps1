@@ -4,18 +4,18 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
+        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
         [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'Table', 'EnableException'
         $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
         It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
         }
     }
 }
 
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     BeforeAll {
-        $dbname = "dbatoolsci_test_$(get-random)"
+        $dbname = "dbatoolsci_test_$(Get-Random)"
         $server = Connect-DbaInstance -SqlInstance $script:instance2
         $null = $server.Query("Create Database [$dbname]")
         $null = $server.Query("select * into syscols from sys.all_columns
@@ -32,8 +32,10 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     Context "Command handles heaps and clustered indexes" {
         It "Gets results" {
             $results | Should Not Be $null
+            $results.Database | Get-Unique | Should -Be $dbname
+            $results.DatabaseId | Get-Unique | Should -Be $server.Query("SELECT database_id FROM sys.databases WHERE name = '$dbname'").database_id
         }
-        Foreach ($row in $results | Where-Object {$_.IndexId -le 1}) {
+        Foreach ($row in $results | Where-Object { $_.IndexId -le 1 }) {
             It "Should return compression level for object $($row.TableName)" {
                 $row.DataCompression | Should BeIn ('None', 'Row', 'Page')
             }
@@ -43,7 +45,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         It "Gets results" {
             $results | Should Not Be $null
         }
-        Foreach ($row in $results | Where-Object {$_.IndexId -gt 1}) {
+        Foreach ($row in $results | Where-Object { $_.IndexId -gt 1 }) {
             It "Should return compression level for nonclustered index $($row.IndexName)" {
                 $row.DataCompression | Should BeIn ('None', 'Row', 'Page')
             }

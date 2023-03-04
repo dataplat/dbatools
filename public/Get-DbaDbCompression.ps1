@@ -111,6 +111,7 @@ function Get-DbaDbCompression {
                                     InstanceName    = $server.ServiceName
                                     SqlInstance     = $server.DomainInstanceName
                                     Database        = $db.Name
+                                    DatabaseId      = $db.Id
                                     Schema          = $obj.Schema
                                     TableName       = $obj.Name
                                     IndexName       = $null
@@ -131,6 +132,7 @@ function Get-DbaDbCompression {
                                     InstanceName    = $server.ServiceName
                                     SqlInstance     = $server.DomainInstanceName
                                     Database        = $db.Name
+                                    DatabaseId      = $db.Id
                                     Schema          = $obj.Schema
                                     TableName       = $obj.Name
                                     IndexName       = $index.Name

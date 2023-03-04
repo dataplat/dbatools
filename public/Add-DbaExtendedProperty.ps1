@@ -82,16 +82,6 @@ function Add-DbaExtendedProperty {
         https://dbatools.io/Add-DbaExtendedProperty
 
     .EXAMPLE
-        PS C:\> Add-DbaExtendedProperty -SqlInstance sql2016
-
-        Gets all extended properties on all databases
-
-    .EXAMPLE
-        PS C:\> Add-DbaExtendedProperty -SqlInstance Server1 -Database db1
-
-        Gets the extended properties for the db1 database
-
-    .EXAMPLE
         PS C:\> Add-DbaExtendedProperty -SqlInstance Server1 -Database db1 -Name version -Value "1.0.0"
 
         Sets the version extended property for the db1 database to 1.0.0
