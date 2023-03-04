@@ -5,7 +5,11 @@ defaults:
     shell: pwsh
 jobs:
   linux-tests:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, arm64]
     env:
       GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
 
