@@ -225,8 +225,10 @@ exec sp_addrolemember 'userrole','bob';
         (Test-DbaTempDbConfig).Rule | Should -Contain "File Growth in Percent"
     }
 
-    It "creates a snapshot" {
-        (New-DbaDbSnapshot -Database pubs).SnapshotOf | Should -Be "pubs"
+    if ((dpkg --print-architecture) -notmatch "arm") {
+        It "creates a snapshot" {
+            (New-DbaDbSnapshot -Database pubs).SnapshotOf | Should -Be "pubs"
+        }
     }
 
     It "gets an XE template on Linux" {
