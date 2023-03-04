@@ -79,6 +79,9 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             $schemas = Get-DbaDbSchema -SqlInstance $instance1 -Database $newDbName -Schema $schemaName
             $schemas.Count | Should -Be 1
             $schemas.Name | Should -Be $schemaName
+            $schemas.DatabaseName | Should -Be $newDbName
+            $schemas.DatabaseId | Should -Be $newDbs[0].Id
+            $schemas.ComputerName | Should -Be $instance1.ComputerName
         }
 
         It "get the dbo schema" {
