@@ -332,6 +332,7 @@ if ($PSVersionTable.PSVersion.Major -lt 5) {
         'New-DbaDbAsymmetricKey',
         'Remove-DbaDbAsymmetricKey',
         'Invoke-DbaDbTransfer',
+        'Invoke-DbaDbAzSqlTips',
         'New-DbaDbTransfer',
         'Remove-DbaDbData',
         'Resolve-DbaNetworkName',
