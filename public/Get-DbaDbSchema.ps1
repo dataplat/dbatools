@@ -126,7 +126,16 @@ function Get-DbaDbSchema {
         }
 
         foreach ($db in $InputObject) {
-            $db.Schemas | Where-Object { ($_.IsSystemObject -eq $false) -or ($_.IsSystemObject -eq $IncludeSystemSchemas) } | Where-Object { ($_.Name -in $Schema) -or ($null -eq $Schema) } | Where-Object { ($_.Owner -in $SchemaOwner) -or ($null -eq $SchemaOwner) }
+            $schemaList = $db.Schemas | Where-Object { ($_.IsSystemObject -eq $false) -or ($_.IsSystemObject -eq $IncludeSystemSchemas) } | Where-Object { ($_.Name -in $Schema) -or ($null -eq $Schema) } | Where-Object { ($_.Owner -in $SchemaOwner) -or ($null -eq $SchemaOwner) }
+
+            foreach ($sch in $schemaList) {
+                Add-Member -Force -InputObject $sch -MemberType NoteProperty -Name ComputerName -value $db.Parent.ComputerName
+                Add-Member -Force -InputObject $sch -MemberType NoteProperty -Name InstanceName -value $db.Parent.ServiceName
+                Add-Member -Force -InputObject $sch -MemberType NoteProperty -Name SqlInstance -value $db.Parent.DomainInstanceName
+                Add-Member -Force -InputObject $sch -MemberType NoteProperty -Name DatabaseName -value $db.Name
+                Add-Member -Force -InputObject $sch -MemberType NoteProperty -Name DatabaseId -value $db.Id
+                Select-DefaultView -InputObject $sch -Property ComputerName, InstanceName, SqlInstance, Name, IsSystemObject
+            }
         }
     }
 }
