@@ -29,6 +29,7 @@ if ($PSVersionTable.PSEdition -ne "Core") {
                         "System.Diagnostics.DiagnosticSource",
                         "Microsoft.IdentityModel.Abstractions",
                         "Microsoft.Data.SqlClient",
+                        "Microsoft.SqlServer.Types",
                         "System.Configuration.ConfigurationManager",
                         "Microsoft.SqlServer.Replication",
                         "Microsoft.SqlServer.Rmo",
