@@ -781,7 +781,7 @@
 
             # Indicates this is a pre-release/testing version of the module.
             IsPrerelease = 'true'
-            Prerelease   = 'preview1'
+            Prerelease   = 'preview2'
         }
     }
 }
