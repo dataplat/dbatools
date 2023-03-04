@@ -167,9 +167,9 @@ function Invoke-DbaBalanceDataFiles {
                 if (-not $Force) {
                     # Check the amount of disk space available
                     $query = "SELECT SUBSTRING(physical_name, 0, 4) AS 'Drive' ,
-                                        SUM(( size * 8 ) / 1024) AS 'SizeMB'
-                                FROM	sys.master_files
-                                WHERE	DB_NAME(database_id) = '$($db.Name)'
+                                        SUM(( CAST( size AS BIGINT ) * 8 ) / 1024) AS 'SizeMB'
+                                FROM    sys.master_files
+                                WHERE    DB_NAME(database_id) = '$($db.Name)'
                                 GROUP BY SUBSTRING(physical_name, 0, 4)"
                     # Execute the query
                     try {
