@@ -310,4 +310,15 @@ SELECT 2
                 go"
         { Invoke-DbaQuery -SqlInstance $script:instance2 -Database tempdb -Query $sql -EnableException } | Should -Not -Throw
     }
+
+    It "supports geography types (#8541)" {
+        $results = Invoke-DbaQuery -SqlInstance $script:instance2 -Query "select cast(null as geometry)"
+        $results.Column1 | Should -Be "Null"
+        $results = Invoke-DbaQuery -SqlInstance $script:instance2 -Query "select cast(null as geography)"
+        $results.Column1 | Should -Be "Null"
+        $results = Invoke-DbaQuery -SqlInstance $script:instance2 -Query "select cast(null as hierarchyid)"
+        $results.Column1 | Should -Be "NULL"
+    }
+
+
 }
