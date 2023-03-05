@@ -10,6 +10,6 @@ function Hide-ConnectionString {
         }
         return $connStringBuilder.ConnectionString
     } catch {
-        return "Failed to mask the connection string`: $($_.Exception.Message)"
+        return "Failed to mask the connection string"
     }
 }
