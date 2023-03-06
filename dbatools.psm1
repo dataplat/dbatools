@@ -16,7 +16,7 @@ function Write-ImportTime {
         $script:dbatools_previousImportPerformance = $script:start
     }
 
-    $duration = New-Timespan -Start $script:dbatools_previousImportPerformance -End $Timestamp
+    $duration = New-TimeSpan -Start $script:dbatools_previousImportPerformance -End $Timestamp
 
     if (-not $script:dbatools_ImportPerformance) {
         $script:dbatools_ImportPerformance = New-Object Collections.ArrayList
@@ -24,7 +24,7 @@ function Write-ImportTime {
 
     $script:dbatools_ImportPerformance.Add(
         [pscustomobject]@{
-            Action = $Text
+            Action   = $Text
             Duration = $duration
         })
 
@@ -74,7 +74,7 @@ Write-ImportTime -Text "Loading type aliases"
 [Dataplat.Dbatools.dbaSystem.SystemHost]::ModuleBase = $script:PSModuleRoot
 
 If ($PSVersionTable.PSEdition -in "Desktop", $null) {
-    $netversion = Get-ChildItem 'HKLM:\SOFTWARE\Microsoft\NET Framework Setup\NDP' -Recurse -ErrorAction Ignore | Get-ItemProperty -Name version -ErrorAction Ignore | Where-Object PSChildName -eq Full | Select-Object -First 1 -ExpandProperty Version
+    $netversion = Get-ChildItem 'HKLM:\SOFTWARE\Microsoft\NET Framework Setup\NDP' -Recurse -ErrorAction Ignore | Get-ItemProperty -Name version -ErrorAction Ignore | Where-Object PSChildName -EQ Full | Select-Object -First 1 -ExpandProperty Version
     if ($netversion -lt [version]"4.6") {
         # it actually works with 4.6 somehow, but 4.6.2 and above is recommended
         throw "Modern versions of dbatools require at least .NET 4.6.2. Please update your .NET Framework or downgrade to dbatools 1.0.173"
@@ -203,8 +203,10 @@ if ($PSVersionTable.PSVersion.Major -lt 5) {
 }
 
 # Process TEPP parameters
-Import-Command -Path "$psScriptRoot/private/scripts/insertTepp.ps1"
-Write-ImportTime -Text "Loading TEPP"
+if (-not $env:DBATOOLS_DISABLE_TEPP) {
+    Import-Command -Path "$psScriptRoot/private/scripts/insertTepp.ps1"
+    Write-ImportTime -Text "Loading TEPP"
+}
 
 # Process transforms
 Import-Command -Path "$psScriptRoot/private/scripts/message-transforms.ps1"
@@ -212,18 +214,27 @@ Write-ImportTime -Text "Loading Message Transforms"
 
 # Load scripts that must be individually run at the end #
 #-------------------------------------------------------#
-
+<#
+DBATOOLS_DISABLE_LOGGING    -- used to disable runspace that handles message logging to local filesystem
+DBATOOLS_DISABLE_TEPP       -- used to disable TEPP, we will not even import the code behind 😉
+#>
 # Start the logging system (requires the configuration system up and running)
-Import-Command -Path "$psScriptRoot/private/scripts/logfilescript.ps1"
-Write-ImportTime -Text "Loading Script: Logging"
+if (-not $env:DBATOOLS_DISABLE_LOGGING) {
+    Import-Command -Path "$psScriptRoot/private/scripts/logfilescript.ps1"
+    Write-ImportTime -Text "Loading Script: Logging"
+}
 
-# Start the tepp asynchronous update system (requires the configuration system up and running)
-Import-Command -Path "$psScriptRoot/private/scripts/updateTeppAsync.ps1"
-Write-ImportTime -Text "Loading Script: Asynchronous TEPP Cache"
+if (-not $env:DBATOOLS_DISABLE_TEPP) {
+    # Start the tepp asynchronous update system (requires the configuration system up and running)
+    Import-Command -Path "$psScriptRoot/private/scripts/updateTeppAsync.ps1"
+    Write-ImportTime -Text "Loading Script: Asynchronous TEPP Cache"
+}
 
-# Start the maintenance system (requires pretty much everything else already up and running)
-Import-Command -Path "$psScriptRoot/private/scripts/dbatools-maintenance.ps1"
-Write-ImportTime -Text "Loading Script: Maintenance"
+if (-not $env:DBATOOLS_DISABLE_LOGGING) {
+    # Start the maintenance system (requires pretty much everything else already up and running)
+    Import-Command -Path "$psScriptRoot/private/scripts/dbatools-maintenance.ps1"
+    Write-ImportTime -Text "Loading Script: Maintenance"
+}
 
 # New 3-char aliases
 $shortcuts = @{
@@ -1010,7 +1021,7 @@ Write-ImportTime -Text "Checking for SqlServer or SQLPS"
 # Removal of runspaces is needed to successfully close PowerShell ISE
 if (Test-Path -Path Variable:global:psISE) {
     $onRemoveScript = {
-        Get-Runspace | Where-Object Name -like dbatools* | ForEach-Object -Process { $_.Dispose() }
+        Get-Runspace | Where-Object Name -Like dbatools* | ForEach-Object -Process { $_.Dispose() }
     }
     $ExecutionContext.SessionState.Module.OnRemove += $onRemoveScript
     Register-EngineEvent -SourceIdentifier ([System.Management.Automation.PsEngineEvent]::Exiting) -Action $onRemoveScript
