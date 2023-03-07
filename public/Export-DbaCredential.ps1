@@ -106,7 +106,7 @@ function Export-DbaCredential {
 
                     $serverCreds = $server.Credentials
                     if (Test-Bound -ParameterName Identity) {
-                        $serverCreds = $serverCreds | Where-Object Identity -in $Identity
+                        $serverCreds = $serverCreds | Where-Object Identity -In $Identity
                     }
 
                     $InputObject += $serverCreds
@@ -128,10 +128,12 @@ function Export-DbaCredential {
 
                         foreach ($cred in $server.Credentials) {
                             $credObject = [PSCustomObject]@{
-                                Name      = $cred.Name
-                                Quotename = $server.Query("SELECT QUOTENAME('$($cred.Name.Replace("'", "''"))') AS quotename").quotename
-                                Identity  = $cred.Identity.ToString()
-                                Password  = ''
+                                Name            = $cred.Name
+                                Quotename       = $server.Query("SELECT QUOTENAME('$($cred.Name.Replace("'", "''"))') AS quotename").quotename
+                                Identity        = $cred.Identity.ToString()
+                                Password        = ''
+                                MappedClassType = $cred.MappedClassType
+                                ProviderName    = $cred.ProviderName
                             }
                             $creds.Add($credObject) | Out-Null
                         }
@@ -187,11 +189,21 @@ function Export-DbaCredential {
                 if ( $credentialArray.ContainsKey($key) ) {
                     $quotename = $currentCred.Quotename
                     $identity = $currentCred.Identity.Replace("'", "''")
+
+                    if ($currentCred.MappedClassType -like 'Cryptographic*') {
+                        $providerName = $currentCred.ProviderName
+                        $cryptoSql = " FOR CRYPTOGRAPHIC PROVIDER $providerName"
+                    } else {
+                        $cryptoSql = ""
+                    }
+
                     if ($currentCred.ExcludePassword) {
-                        $sql += "CREATE CREDENTIAL $quotename WITH IDENTITY = N'$identity', SECRET = N'<EnterStrongPasswordHere>'"
+                        $sql += "CREATE CREDENTIAL $quotename WITH IDENTITY = N'$identity', SECRET = N'<EnterStrongPasswordHere>'" + $cryptoSql
                     } else {
                         $password = $currentCred.Password.Replace("'", "''")
-                        $sql += "CREATE CREDENTIAL $quotename WITH IDENTITY = N'$identity', SECRET = N'$password'"
+                        $sql += "CREATE CREDENTIAL $quotename WITH IDENTITY = N'$identity', SECRET = N'$password'" + $cryptoSql
+
+
                     }
 
                     Write-Message -Level Verbose -Message "Created Script for $quotename"

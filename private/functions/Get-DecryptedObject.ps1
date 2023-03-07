@@ -86,7 +86,8 @@ function Get-DecryptedObject {
             WHERE len(pwdhash) > 0"
         }
         "Credential" {
-            "SELECT name,QUOTENAME(name) quotename,credential_identity,substring(imageval,5,$ivlen) iv, substring(imageval,$($ivlen + 5),len(imageval)-$($ivlen + 4)) pass from sys.credentials cred inner join sys.sysobjvalues obj on cred.credential_id = obj.objid where valclass=28 and valnum=2"
+            #"SELECT name,QUOTENAME(name) quotename,credential_identity,substring(imageval,5,$ivlen) iv, substring(imageval,$($ivlen + 5),len(imageval)-$($ivlen + 4)) pass from sys.credentials cred inner join sys.sysobjvalues obj on cred.credential_id = obj.objid where valclass=28 and valnum=2"
+            "SELECT cred.name,QUOTENAME(cred.name) quotename,credential_identity,substring(imageval,5,$ivlen) iv, substring(imageval,$($ivlen + 5),len(imageval)-$($ivlen + 4)) pass,target_type as 'mappedClassType', cp.name as 'ProviderName' from sys.credentials cred inner join sys.sysobjvalues obj on cred.credential_id = obj.objid left outer join sys.cryptographic_providers cp on cred.target_id = cp.provider_id where valclass=28 and valnum=2"
         }
     }
 
@@ -195,12 +196,16 @@ function Get-DecryptedObject {
             $name = $result.name
             $quotename = $result.quotename
             $identity = $result.credential_identity
+            $mappedClassType = $result.mappedClassType
+            $ProviderName = $result.ProviderName
         }
         [pscustomobject]@{
-            Name      = $name
-            Quotename = $quotename
-            Identity  = $identity
-            Password  = $encode.GetString($decrypted)
+            Name            = $name
+            Quotename       = $quotename
+            Identity        = $identity
+            Password        = $encode.GetString($decrypted)
+            MappedClassType = $mappedClassType
+            ProviderName    = $ProviderName
         }
     }
 }
