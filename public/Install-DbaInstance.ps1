@@ -486,7 +486,7 @@ function Install-DbaInstance {
             # test if the restart is needed
             Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Checking for pending restarts"
             try {
-                $restartNeeded = Test-PendingReboot -ComputerName $fullComputerName -Credential $Credential
+                $restartNeeded = Test-PendingReboot -ComputerName $fullComputerName -Credential $Credential -NoPendingRename:$NoPendingRenameCheck
             } catch {
                 Stop-Function -Message "Failed to get reboot status from $fullComputerName" -Continue -ErrorRecord $_
             }
