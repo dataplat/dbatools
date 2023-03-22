@@ -182,8 +182,24 @@ function Set-DbaNetworkCertificate {
                     $keyFullPath = $keyPath + $keyName
                 } else {
                     $keyPath = $env:ProgramData + '\Microsoft\Crypto\Keys\'
-                    $rsaKey = [System.Security.Cryptography.X509Certificates.RSACertificateExtensions]::GetRSAPrivateKey($cert)
-                    $keyName = $rsaKey.Key.UniqueName
+                    $algorithm = $cert.GetKeyAlgorithm()
+
+                    if ($algorithm.StartsWith("1.2.840.10045")){
+                        $ecdsaKey = [System.Security.Cryptography.X509Certificates.ECDsaCertificateExtensions]::GetECDsaPrivateKey($cert)
+                        $keyName = $ecdsaKey.Key.UniqueName
+                    }
+                    elseif($algorithm.StartsWith("1.2.840.113549")) {
+                        $rsaKey = [System.Security.Cryptography.X509Certificates.RSACertificateExtensions]::GetRSAPrivateKey($cert)
+                        $keyName = $rsaKey.Key.UniqueName
+                    }
+                    elseif($algorithm.StartsWith("1.3.14.3.2.12")) {
+                        $rsaKey = [System.Security.Cryptography.X509Certificates.DSACertificateExtensions]::GetDSAPrivateKey($cert)
+                        $keyName = $rsaKey.Key.UniqueName
+                    }
+                    else {
+                        Write-Warning "Unknown certificate key algorithm OID ""$algorithm""."
+                    }
+
                     $KeyFullPath = $keyPath + $keyName
                 }
 
