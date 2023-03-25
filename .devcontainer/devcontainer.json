@@ -13,6 +13,7 @@
     "vscode": {
       "extensions": [
         "ms-vscode.powershell",
+        "ms-mssql.mssql",
         "github.vscode-pull-request-github",
         "usernamehw.errorlens",
         "oderwat.indent-rainbow",
