@@ -19,7 +19,7 @@ RUN echo "export HISTFILE=/commandhistory/.bash_history" >> "/root/.bashrc" \
     && mkdir /workspace
 
 SHELL ["/opt/microsoft/powershell/7/pwsh", "-c"]
-RUN Set-PSRepository -Name PSGallery -Trusted
+RUN Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
 
 # Install Pester, has to be 4.4.3 because 4.4.2 has bug in Unix machines
 SHELL ["/opt/microsoft/powershell/7/pwsh", "-c"]
