@@ -18,12 +18,15 @@ RUN echo "export HISTFILE=/commandhistory/.bash_history" >> "/root/.bashrc" \
     && touch /commandhistory/.bash_history \
     && mkdir /workspace
 
+SHELL ["/opt/microsoft/powershell/7/pwsh", "-c"]
+RUN Set-PSRepository -Name PSGallery -Trusted
+
 # Install Pester, has to be 4.4.3 because 4.4.2 has bug in Unix machines
-SHELL ["/usr/bin/pwsh", "-c"]
+SHELL ["/opt/microsoft/powershell/7/pwsh", "-c"]
 RUN $ErrorActionPreference='Stop'; Install-Module -Name Pester -Force -SkipPublisherCheck -MaximumVersion 4.4.3;
 
 # Install PSScriptAnalyzer
-SHELL ["/usr/bin/pwsh", "-c"]
+SHELL ["/opt/microsoft/powershell/7/pwsh", "-c"]
 RUN $ErrorActionPreference='Stop'; Install-Module -Name PSScriptAnalyzer -Force -SkipPublisherCheck -MaximumVersion 1.18.2;
 
 # Git command prompt
