@@ -20,7 +20,17 @@
         "streetsidesoftware.code-spell-checker"
       ],
       "settings": {
-        "terminal.integrated.shell.*": "/usr/bin/pwsh"
+        "terminal.integrated.profiles.linux": {
+          "bash": {
+            "path": "bash",
+            "icon": "terminal-bash"
+          },
+          "pwsh": {
+            "path": "/opt/microsoft/powershell/7/pwsh",
+            "icon": "terminal-powershell"
+          }
+        },
+        "terminal.integrated.defaultProfile.linux": "pwsh"
       }
     }
   }
