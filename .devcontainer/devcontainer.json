@@ -10,18 +10,32 @@
         "MY_SERVER": "dbatools1"
     },
     "service": "dbatools1",
-    "settings": {
-        "terminal.integrated.shell.linux": "/usr/bin/pwsh"
-    },
     // Add the IDs of extensions you want installed when the container is created.
-    "extensions": [
-        "ms-vscode.powershell",
-        "github.vscode-pull-request-github",
-        "2gua.rainbow-brackets",
-        "oderwat.indent-rainbow",
-        "mhutchie.git-graph",
-        "usernamehw.errorlens"
-    ]
+    "customizations": {
+      "vscode": {
+        "extensions": [
+          "ms-vscode.powershell",
+          "github.vscode-pull-request-github",
+          "usernamehw.errorlens",
+          "oderwat.indent-rainbow",
+          "wengerk.highlight-bad-chars",
+          "streetsidesoftware.code-spell-checker"
+        ],
+        "settings": {
+          "terminal.integrated.profiles.linux": {
+            "bash": {
+              "path": "bash",
+              "icon": "terminal-bash"
+            },
+            "pwsh": {
+              "path": "pwsh",
+              "icon": "terminal-powershell"
+            }
+          },
+          "terminal.integrated.defaultProfile.linux": "pwsh"
+        }
+      }
+    }
     // Uncomment the next line if you want to keep your containers running after VS Code shuts down.
     // "shutdownAction": "none",
     // Uncomment the next line to run commands after the container is created - for example installing curl.
