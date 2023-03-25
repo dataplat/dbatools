@@ -21,10 +21,6 @@
       ],
       "settings": {
         "terminal.integrated.profiles.linux": {
-          "bash": {
-            "path": "bash",
-            "icon": "terminal-bash"
-          },
           "pwsh": {
             "path": "/opt/microsoft/powershell/7/pwsh",
             "icon": "terminal-powershell"
