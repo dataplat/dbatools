@@ -32,6 +32,12 @@ As of 2023 the project has been restructured but we also have a few different re
 
     This repository hosts the code to generate the published Docker images for the module.
 
+## Prequisites
+
+As noted above the `dbatools.library` is now a dependency on dbatools and therefore a dependency on any dbatools development. You can install this module via PowerShellGet or downloading from the PowerShell Gallery.
+
+> **NOTE** The library module will be maintained by the project maintainers at this time.
+
 ## Getting Help
 
 Our [dbatools-dev](https://aka.ms/sqlslack) Slack channel is the best avenue for asking for assistance or needing review of any work on the module. The main contributors try and stay active on this channel during the week.
