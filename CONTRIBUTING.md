@@ -10,11 +10,11 @@ As of 2023 the project has been restructured but we also have a few different re
 
 1. [dataplat/dbatools](https://github.com/dataplat/dbatools)
 
-    This is the primary project contributions are needed as it hosts all the PowerShell codebase for the 600+ PowerShell commands.
+    dbatools is the primary project that hosts the PowerShell codebase for the 600+ PowerShell commands in the module.
 
 1. [dataplat/dbatools.library](https://github.com/dataplat/dbatools.library)
 
-    As of v2 release the dbatools library, SMO library, and 3rd party libaries have been split out into both a separate repository and [PowerShell module](https://powershellgallery.com/packages/dbatools.library).
+    As of the v2 release, the libraries for dbatools have been moved into a dedicated repository. It is also published as a dependency to the dbatools module via the PowerShell Gallery. This includes the dbatools library, SMO library, and 3rd party libaries. Contributions to dbatools module will now require this module be installed for local testing: [dbatools.library](https://powershellgallery.com/packages/dbatools.library).
 
 1. [dataplat/appveyor-lab](https://github.com/dataplat/appveyor-lab)
 
@@ -27,8 +27,6 @@ As of 2023 the project has been restructured but we also have a few different re
 1. [dataplat/web](https://github.com/dataplat/web)
 
     This repository is were the [dbatools.io](https://dbatools.io) site content is hosted.
-
-    > **NOTE** Blog post content **is not** kept updated, they are descriptions of scenarios or situations at the time of posting by the author(s).
 
 1. [dataplat/docker](https://github.com/dataplat/docker)
 
