@@ -18,27 +18,27 @@ As of 2023 the project has been restructured but we also have a few different re
 
 1. [dataplat/appveyor-lab](https://github.com/dataplat/appveyor-lab)
 
-    We use Appveyor for running the Pester test for each function. We have this repository to store content that is used in our tests. This keeps the current repository clean from excess files just for testing. **Maintainers will determine if tests require files be placed in this repository**.
+    We use Appveyor for running the Pester tests for each function. We have this repository to store content that is used in our tests. This keeps the current repository clean from excess files just for testing. **Maintainers will determine if tests require files be placed in this repository**.
 
 1. [dataplat/docs](https://github.com/dataplat/docs)
 
-    This repository and content are auto-generated from the comment-based help (CBH) within each command for the module. Any things found wrong in a given command's help content is addressed in the dbatools module's repository.
+    This repository and content are auto-generated from the comment-based help (CBH) within each command for the module. Fixes and changes to the help content for a given command is addressed in the dbatools module's repository.
 
 1. [dataplat/web](https://github.com/dataplat/web)
 
     This repository is were the [dbatools.io](https://dbatools.io) site content is hosted.
 
-    > **NOTE** Blog post content **is not** kept updated, it is after all post from scenarios or situations at the time of posting by the author(s).
+    > **NOTE** Blog post content **is not** kept updated, they are descriptions of scenarios or situations at the time of posting by the author(s).
 
 1. [dataplat/docker](https://github.com/dataplat/docker)
 
-    This repository hosts the code to generate the published Docker image for the module.
+    This repository hosts the code to generate the published Docker images for the module.
 
 ## Getting Help
 
-Our [dbatools-dev](https://aka.ms/sqlslack) Slack channel is best avenue for asking for assistance or needing review of any work on the module. The main contributors stay active on this channel during the week for the most part.
+Our [dbatools-dev](https://aka.ms/sqlslack) Slack channel is the best avenue for asking for assistance or needing review of any work on the module. The main contributors try and stay active on this channel during the week.
 
-We also have our [Contributors](https://github.com/dataplat/dbatools/discussions/categories/contributors) category with GitHub Discussions that can be used for discussions, clarifications, or help in getting started with our project.
+We also have our [Contributors](https://github.com/dataplat/dbatools/discussions/categories/contributors) category within GitHub Discussions that can be used for discussions, clarifications, or help in getting started with our project.
 
 ## Expectations
 
@@ -52,7 +52,7 @@ There is always room for improvements in open-source projects from new technolog
 
 This can be anything from finding bugs in our current or preview release that our tests have missed to combing through our current issues to confirm they still exist.
 
-[Open a new issue](https://dbatools.io/new-issue/) GitHub and fill in all the details. The title should report the affected function, followed by a brief description (e.g. _Get-DbaDatabase - Add property x to default view_). The provided template holds the details maintainers and contributors will need in order to confirm whether it is reproducible.
+[Open a new issue](https://dbatools.io/new-issue/) on GitHub and fill in all the details. The title should report the affected function, followed by a brief description (e.g. _Get-DbaDatabase - Add property x to default view_). The provided template holds the details maintainers and contributors will need in order to confirm whether it is reproducible.
 
 ### 📃 Documentation
 
@@ -63,14 +63,14 @@ Contributions in this area can help you get familiar with our commands and some 
 We strive to have all of our documentation as accurate as possible so a few areas that you can help:
 
 - Examples: Do they actually work? Do they do what the associated description states? Are the parameters still accurate?
-- Grammar: We default to English language in our help documentation. Are there any grammar errors?
+- Grammar: We default to [U.S. English](https://en.wikipedia.org/wiki/American_English) language in our help documentation. Are there any grammar errors?
 - Anything else: fresh set of eyes on documentation can always find things we may have missed or spot checking for areas that can be improved.
 
 ### Fixing 🐛
 
 > **NOTE** Please ensure you have an issue to work on and any discussions on the fix you will implement are done in that issue. This helps keep the background on the change in one place and removes any guesswork.
 
-We have a [step-by-step guide](https://dbatools.io/firstpull) if you don't know Github enough.
+We have a [step-by-step guide](https://dbatools.io/firstpull) if your new to Github or need a refresh.
 
 [Open a PR](https://github.com/dataplat/dbatools/pulls) targeting ideally just one ps1 file (the PR needs to target the _development_ branch), with the name of the function being fixed as a title. Everyone will chime in reviewing the code and either approve the PR or request changes. The more targeted and focused the PR, the easier to merge, the fastest to go into the next release. Keep them as simple as possible to speed up the process.
 
@@ -102,7 +102,7 @@ Our project follows most of the same [standards the PowerShell Team promotes](ht
 
 We 💘 OTBS with this project. Contributors will find an easier experience with our formatting standards using [Visual Studio Code](https://aka.ms/vscode). If for some reason your instance of VS Code is not formatting the PowerShell file you can leveraging `Invoke-DbatoolsFormatter` which does the groundwork for you.
 
-**We do have a tests that will validate the format of the file in any Pull Request.**
+**We do have a Pester test that will validate the format of the file in any Pull Request.**
 
 ## Pester 🧪
 
@@ -140,7 +140,7 @@ Ideally:
 
 1. Whenever possible, write UnitTests.
 1. You should write IntegrationTests ideally running in **EITHER** the 2008R2 or the 2016 "scenario".
-1. Default and 216_2017 are the most resource constrained and are left to run the Copy-* commands which are the only ones **needing** two active instances.
+1. Default and 2016_2017 are the most resource constrained and are left to run the Copy-* commands which are the only ones **needing** two active instances.
 1. If you want to write tests that, e.g, target **BOTH** 2008R2 and 2016, try to avoid writing tests that need both instances to be active at the same time.
 
 AppVeyor is set up to recognize what "scenario" is required by your test, simply inspecting for the presence of combinations of `$script:instance1`, `$script:instance2` and `$script:instance3`. If you need to fall into case (4), write two test files, e.g. _Get-DbaFoo.first.Tests.ps1_ (targeting `$script:instance1` only) and _Get-DbaFoo.second.Tests.ps1_ (targeting `$script:instance2` only).
