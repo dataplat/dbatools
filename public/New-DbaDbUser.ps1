@@ -28,8 +28,11 @@ function New-DbaDbUser {
     .PARAMETER Login
         When specified, the user will be associated to this SQL login and have the same name as the Login.
 
-    .PARAMETER Username
+    .PARAMETER UserName
         When specified, the user will have this name.
+
+    .PARAMETER Password
+        When specified, the user will be created as a contained user. Standalone databases partial containment should be turned on to succeed. By default, in Azure SQL databases this is turned on.
 
     .PARAMETER DefaultSchema
         The default database schema for the user. If not specified this value will default to dbo.
@@ -88,135 +91,126 @@ function New-DbaDbUser {
 
         Creates a new sql user named 'claudio@********.onmicrosoft.com' mapped to Azure Active Directory (AAD) in the specified database.
 
+    .EXAMPLE
+        PS C:\> New-DbaDbUser -SqlInstance sqlserver2014 -Database DB1 -Username user1 -Password (ConvertTo-SecureString -String "DBATools" -AsPlainText)
+
+        Creates a new cointained sql user named user1 in the database given database with the password specified.
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Medium")]
     param(
-        [parameter(Mandatory, Position = 1)]
+        [parameter(Mandatory = $True, Position = 1)]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [string[]]$Database,
         [string[]]$ExcludeDatabase,
-        [switch]$IncludeSystem,
+        [switch]$IncludeSystem = $False,
+        [Parameter(ParameterSetName = "NoLogin", Mandatory = $True)]
+        [Parameter(ParameterSetName = "Login", Mandatory = $True)]
         [string]$Login,
-        [string]$Username = $Login,
+        [Parameter(ParameterSetName = "Login", Mandatory = $False)]
+        [Parameter(ParameterSetName = "NoLogin", Mandatory = $True)]
+        [Parameter(ParameterSetName = "ContainedSQLUser", Mandatory = $True)]
+        [Parameter(ParameterSetName = "ContainedAADUser", Mandatory = $True)]
+        [string]$UserName,
         [string]$DefaultSchema = 'dbo',
+        [Parameter(ParameterSetName = "ContainedSQLUser", Mandatory = $True)]
+        [securestring]$Password,
+        [Parameter(ParameterSetName = "ContainedAADUser", Mandatory = $True)]
         [switch]$ExternalProvider,
         [switch]$Force,
         [switch]$EnableException
     )
 
     begin {
+        $connParam = @{ }
+        if ($SqlCredential) { $connParam.SqlCredential = $SqlCredential }
+
+        # is this required?
         if ($Force) { $ConfirmPreference = 'none' }
 
-        function Remove-User {
-            param (
-                [Microsoft.SqlServer.Management.Smo.User]$User
-            )
-            if ($Force) {
-                if ($Pscmdlet.ShouldProcess($User, "Dropping existing user $($User.Name) in the database $($User.Parent.Name) on $instance because -Force was used")) {
-                    try {
-                        $User.Drop()
-                    } catch {
-                        Stop-Function -Message "Could not remove existing user $($User.Name) in the database $($User.Parent.Name) on $instance, skipping." -Target $User -ErrorRecord $_ -Continue
-                    }
-                }
-            } else {
-                Stop-Function -Message "User $($User.Name) already exists in the database $($User.Parent.Name) on $instance and -Force was not specified, skipping." -Target $User -Continue
-            }
+        # When user is created from login and no user name is provided then login name will be used as the user name
+        if ($Login -and -not($UserName)) {
+            $UserName = $Login
+        }
+
+        #Set appropriate user type
+        #Removed SQLLogin  user type. This is deprecated and the alternate is to map to SqlUser. Reference https://learn.microsoft.com/en-us/dotnet/api/microsoft.sqlserver.management.smo.usertype?view=sql-smo-160
+        if ($ExternalProvider) {
+            Write-Message -Level Verbose -Message "Using UserType: External"
+            $userType = [Microsoft.SqlServer.Management.Smo.UserType]::External
+        } elseif ($Password -or $Login) {
+            Write-Message -Level Verbose -Message "Using UserType: SqlUser"
+            $userType = [Microsoft.SqlServer.Management.Smo.UserType]::SqlUser
+        } else {
+            Write-Message -Level Verbose -Message "Using UserType: NoLogin"
+            $userType = [Microsoft.SqlServer.Management.Smo.UserType]::NoLogin
         }
     }
 
     process {
-        if (-not $Login -and -not $Username) {
-            Stop-Function -Message "One of -Login or -Username is needed."
-            return
-        }
 
         foreach ($instance in $SqlInstance) {
-            try {
-                $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential
-            } catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+            #prepare parameter values
+            $connParam.SqlInstance = $instance
+            $getDbParam = $connParam.Clone()
+            $getDbParam.OnlyAccessible = $True
+            if ($Database) { $getDbParam.Database = $Database }
+            if ($ExcludeDatabase) { $getDbParam.ExcludeDatabase = $ExcludeDatabase }
+            if (-not ($IncludeSystem)) { $getDbParam.ExcludeSystem = $True }
+
+            # Is the login exist?
+            if ($Login -and (-not(Get-DbaLogin @connParam -Login $Login))) {
+                Stop-Function -Message "Invalid Login: $Login is not found on $instance, skipping." -Target $instance -Continue
             }
 
-            # Does the given login exist?
-            if ($Login) {
-                $existingLogin = $server.Logins | Where-Object Name -eq $Login
-                if (-not $existingLogin) {
-                    Stop-Function -Message "Invalid Login: $Login is not found on $instance, skipping." -Target $instance -Continue
-                }
-            }
-
-            $databases = $server.Databases | Where-Object IsAccessible -eq $true
-
-            if ($Database) {
-                $databases = $databases | Where-Object Name -In $Database
-            } else {
-                if (-not $IncludeSystem) {
-                    $databases = $databases | Where-Object IsSystemObject -ne $true
-                }
-            }
-            if ($ExcludeDatabase) {
-                $databases = $databases | Where-Object Name -NotIn $ExcludeDatabase
-            }
+            $databases = Get-DbaDatabase @getDbParam
+            $getValidSchema = Get-DbaDbSchema -InputObject $databases -Schema $DefaultSchema -IncludeSystemSchemas
 
             foreach ($db in $databases) {
-                Write-Message -Level Verbose -Message "Add user $Username to database $db on $instance"
+                #prepare user query param
+                $userParam = $connParam.Clone()
+                $userParam.Database = $db.name
+                $userParam.User = $UserName
 
-                # Does a schema exist with the given name?
-                $existingSchema = $db.Schemas | Where-Object Name -eq $DefaultSchema
-                if (-not $existingSchema) {
-                    Stop-Function -Message "Invalid DefaultSchema: $DefaultSchema is not found in the database $db on $instance, skipping." -Continue
-                }
+                #check if the schema exists
+                if ($db.Name -in ($getValidSchema).Parent.Name) {
+                    if ($Pscmdlet.ShouldProcess($db, "Creating user $UserName")) {
+                        Write-Message -Level Verbose -Message "Add user $UserName to database $db on $instance"
 
-                # Does a user exist with the given name?
-                $existingUser = $db.Users | Where-Object Name -eq $Username
-                if ($existingUser) {
-                    Remove-User -User $existingUser
-                }
+                        #smo param builder
+                        $smoUser = New-Object Microsoft.SqlServer.Management.Smo.User
+                        $smoUser.Parent = $db
+                        $smoUser.Name = $UserName
+                        if ($Login) { $smoUser.Login = $Login }
+                        $smoUser.UserType = $userType
+                        $smoUser.DefaultSchema = $DefaultSchema
 
-                if ($ExternalProvider) {
-                    Write-Message -Level Verbose -Message "Using UserType: External"
-                    $userType = [Microsoft.SqlServer.Management.Smo.UserType]::External
-                } elseif ($Login) {
-                    # Does a user exist with same login?
-                    $existingUser = $db.Users | Where-Object Login -eq $Login
-                    if ($existingUser) {
-                        Remove-User -User $existingUser
-                    }
-
-                    Write-Message -Level Verbose -Message "Using UserType: SqlLogin"
-                    $userType = [Microsoft.SqlServer.Management.Smo.UserType]::SqlLogin
-                } else {
-                    Write-Message -Level Verbose -Message "Using UserType: NoLogin"
-                    $userType = [Microsoft.SqlServer.Management.Smo.UserType]::NoLogin
-                }
-
-                if ($Pscmdlet.ShouldProcess($db, "Creating user $Username")) {
-                    try {
-                        if ($ExternalProvider) {
-                            # Due to a bug at the time of writing, the user is created using T-SQL
-                            # More info at: https://github.com/microsoft/sqlmanagementobjects/issues/112
-                            $sql = "CREATE USER [$Username] FROM EXTERNAL PROVIDER WITH DEFAULT_SCHEMA = [$DefaultSchema]"
-                            $db.Query($sql)
-                            # Refresh the user list otherwise won't appear in the list
-                            $db.Users.Refresh()
-                        } else {
-                            $smoUser = New-Object Microsoft.SqlServer.Management.Smo.User
-                            $smoUser.Parent = $db
-                            $smoUser.Name = $Username
-                            $smoUser.Login = $Login
-                            $smoUser.UserType = $userType
-                            $smoUser.DefaultSchema = $DefaultSchema
-
-                            $smoUser.Create()
+                        #Check if the user exists already
+                        $userExists = Get-DbaDbUser @userParam
+                        if ($userExists -and -not($Force)) {
+                            Stop-Function -Message "User $($User.Name) already exists in the database $($User.Parent.Name) on $instance and -Force was not specified, skipping." -Target $User -Continue
+                        } elseif ($userExists -and $Force) {
+                            try {
+                                Write-Message -Level Verbose -Message "FORCE is used, user $UserName will be dropped in the database $($db.Name) on $instance"
+                                Remove-DbaDbUser @userParam -Force
+                            } catch {
+                                Stop-Function -Message "Could not remove existing user $($User.Name) in the database $($User.Parent.Name) on $instance, skipping." -Target $User -ErrorRecord $_ -Continue
+                            }
                         }
-                        Write-Message -Level Verbose -Message "Successfully added $Username in $db to $instance."
 
-                        # Display Results
-                        Get-DbaDbUser -SqlInstance $server -Database $db.Name -User $Username
-                    } catch {
-                        Stop-Function -Message "Failed to add user $Username in $db to $instance" -Category InvalidOperation -ErrorRecord $_ -Target $instance -Continue
+                        #Create the user
+                        try {
+                            if ($Password) {
+                                $smoUser.Create($Password)
+                            } else { $smoUser.Create() }
+                            #Verfiy the user creation
+                            Get-DbaDbUser @userParam
+                        } catch {
+                            Stop-Function -Message "Failed to add user $Username in $db to $instance" -Category InvalidOperation -ErrorRecord $_ -Target $instance -Continue
+                        }
+
+                    } else {
+                        Stop-Function -Message "Invalid DefaultSchema: $DefaultSchema is not found in the database $db on $instance, skipping." -Continue
                     }
                 }
             }
