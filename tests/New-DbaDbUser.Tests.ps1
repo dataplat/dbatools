@@ -24,7 +24,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         $securePassword = ConvertTo-SecureString $password -AsPlainText -Force
         $null = New-DbaLogin -SqlInstance $script:instance2 -Login $userName -Password $securePassword -Force
         $null = New-DbaDatabase -SqlInstance $script:instance2 -Name $dbname
-        $null = Invoke-DbaQuery -SqlInstance $script:instance2 -Query "ALTER DATABASE [$dbname] SET CONTAINMENT = PARTIAL WITH NO_WAIT"
+        Invoke-DbaQuery -SqlInstance $script:instance2 -Query "ALTER DATABASE [$dbname] SET CONTAINMENT = PARTIAL WITH NO_WAIT"
     }
     AfterAll {
         $null = Remove-DbaDatabase -SqlInstance $script:instance2 -Database $dbname -Confirm:$false
@@ -46,10 +46,10 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         }
     }
     Context "Should create the user with password" {
-        It "Creates the user and get it" {
+        It "Creates the contained sql user and get it." {
             New-DbaDbUser -SqlInstance $script:instance2 -Database $dbname -Username $userNameWithPassword -Password $securePassword -DefaultSchema guest
             $newDbUser = Get-DbaDbUser -SqlInstance $script:instance2 -Database $dbname | Where-Object Name -eq $userNameWithPassword
-            $newDbUser.Name | Should Be $userNameWithPassword
+            $newDbUser.Name | Should -Be $userNameWithPassword
             $newDbUser.DefaultSchema | Should -Be 'guest'
         }
     }
