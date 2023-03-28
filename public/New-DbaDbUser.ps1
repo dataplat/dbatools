@@ -104,7 +104,7 @@ function New-DbaDbUser {
         [string[]]$Database,
         [string[]]$ExcludeDatabase,
         [switch]$IncludeSystem = $False,
-        [Parameter(ParameterSetName = "NoLogin", Mandatory = $True)]
+        [Parameter(ParameterSetName = "NoLogin", Mandatory = $False)]
         [Parameter(ParameterSetName = "Login", Mandatory = $True)]
         [string]$Login,
         [Parameter(ParameterSetName = "Login", Mandatory = $False)]
@@ -209,9 +209,9 @@ function New-DbaDbUser {
                             Stop-Function -Message "Failed to add user $Username in $db to $instance" -Category InvalidOperation -ErrorRecord $_ -Target $instance -Continue
                         }
 
-                    } else {
-                        Stop-Function -Message "Invalid DefaultSchema: $DefaultSchema is not found in the database $db on $instance, skipping." -Continue
                     }
+                } else {
+                    Stop-Function -Message "Invalid DefaultSchema: $DefaultSchema is not found in the database $db on $instance, skipping." -Continue
                 }
             }
         }
