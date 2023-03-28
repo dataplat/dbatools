@@ -24,7 +24,8 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         $securePassword = ConvertTo-SecureString $password -AsPlainText -Force
         $null = New-DbaLogin -SqlInstance $script:instance2 -Login $userName -Password $securePassword -Force
         $null = New-DbaDatabase -SqlInstance $script:instance2 -Name $dbname
-        Invoke-DbaQuery -SqlInstance $script:instance2 -Query "ALTER DATABASE [$dbname] SET CONTAINMENT = PARTIAL WITH NO_WAIT"
+        $null = Set-DbaSpConfigure -SqlInstance $script:instance2 -Name ContainmentEnabled -Value 1
+        $null = Invoke-DbaQuery -SqlInstance $script:instance2 -Query "ALTER DATABASE [$dbname] SET CONTAINMENT = PARTIAL WITH NO_WAIT"
     }
     AfterAll {
         $null = Remove-DbaDatabase -SqlInstance $script:instance2 -Database $dbname -Confirm:$false
