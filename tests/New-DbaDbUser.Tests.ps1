@@ -24,12 +24,14 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         $securePassword = ConvertTo-SecureString $password -AsPlainText -Force
         $null = New-DbaLogin -SqlInstance $script:instance2 -Login $userName -Password $securePassword -Force
         $null = New-DbaDatabase -SqlInstance $script:instance2 -Name $dbname
+        $dbContainmentSpValue = (Get-DbaSpConfigure -SqlInstance $script:instance2 -Name ContainmentEnabled).ConfiguredValue
         $null = Set-DbaSpConfigure -SqlInstance $script:instance2 -Name ContainmentEnabled -Value 1
         $null = Invoke-DbaQuery -SqlInstance $script:instance2 -Query "ALTER DATABASE [$dbname] SET CONTAINMENT = PARTIAL WITH NO_WAIT"
     }
     AfterAll {
         $null = Remove-DbaDatabase -SqlInstance $script:instance2 -Database $dbname -Confirm:$false
         $null = Remove-DbaLogin -SqlInstance $script:instance2 -Login $userName -Confirm:$false
+        $null = Set-DbaSpConfigure -SqlInstance $script:instance2 -Name ContainmentEnabled -Value $dbContainmentSpValue
     }
     Context "Test error handling" {
         It "Tries to create the user with an invalid default schema" {
