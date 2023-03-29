@@ -42,6 +42,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             $server.Query("CREATE DATABASE $db1")
             $server.Query("CREATE DATABASE $db2")
             $server.Query("CREATE DATABASE $db3")
+            $server.Query("CREATE DATABASE $db4")
         }
         AfterAll {
             Remove-DbaDbSnapshot -SqlInstance $script:instance2 -Database $db1, $db2, $db3, $db4 -Confirm:$false
