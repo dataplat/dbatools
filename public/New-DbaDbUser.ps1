@@ -28,7 +28,7 @@ function New-DbaDbUser {
     .PARAMETER Login
         When specified, the user will be associated to this SQL login and have the same name as the Login.
 
-    .PARAMETER UserName
+    .PARAMETER Username
         When specified, the user will have this name.
 
     .PARAMETER Password
@@ -110,7 +110,7 @@ function New-DbaDbUser {
         [Parameter(ParameterSetName = "NoLogin", Mandatory = $True)]
         [Parameter(ParameterSetName = "ContainedSQLUser", Mandatory = $True)]
         [Parameter(ParameterSetName = "ContainedAADUser", Mandatory = $True)]
-        [string]$UserName,
+        [string]$Username,
         [string]$DefaultSchema = 'dbo',
         [Parameter(ParameterSetName = "ContainedSQLUser", Mandatory = $True)]
         [securestring]$Password,
@@ -128,8 +128,8 @@ function New-DbaDbUser {
         if ($Force) { $ConfirmPreference = 'none' }
 
         # When user is created from login and no user name is provided then login name will be used as the user name
-        if ($Login -and -not($UserName)) {
-            $UserName = $Login
+        if ($Login -and -not($Username)) {
+            $Username = $Login
         }
 
         #Set appropriate user type
@@ -175,17 +175,17 @@ function New-DbaDbUser {
                 #prepare user query param
                 $userParam = $connParam.Clone()
                 $userParam.Database = $dbSmo.name
-                $userParam.User = $UserName
+                $userParam.User = $Username
 
                 #check if the schema exists
                 if ($dbSmo.Name -in ($getValidSchema).Parent.Name) {
-                    if ($Pscmdlet.ShouldProcess($dbSmo, "Creating user $UserName")) {
-                        Write-Message -Level Verbose -Message "Add user [$UserName] to database [$dbSmo] on [$instance]"
+                    if ($Pscmdlet.ShouldProcess($dbSmo, "Creating user $Username")) {
+                        Write-Message -Level Verbose -Message "Add user [$Username] to database [$dbSmo] on [$instance]"
 
                         #smo param builder
                         $smoUser = New-Object Microsoft.SqlServer.Management.Smo.User
                         $smoUser.Parent = $dbSmo
-                        $smoUser.Name = $UserName
+                        $smoUser.Name = $Username
                         if ($Login) { $smoUser.Login = $Login }
                         $smoUser.UserType = $userType
                         $smoUser.DefaultSchema = $DefaultSchema
@@ -193,13 +193,13 @@ function New-DbaDbUser {
                         #Check if the user exists already
                         $userExists = Get-DbaDbUser @userParam
                         if ($userExists -and -not($Force)) {
-                            Stop-Function -Message "User [$UserName] already exists in the database $dbSmo on [$instance] and -Force was not specified, skipping." -Target $UserName -Continue -EnableException $False
+                            Stop-Function -Message "User [$Username] already exists in the database $dbSmo on [$instance] and -Force was not specified, skipping." -Target $Username -Continue -EnableException $False
                         } elseif ($userExists -and $Force) {
                             try {
-                                Write-Message -Level Verbose -Message "FORCE is used, user [$UserName] will be dropped in the database $dbSmo on [$instance]"
+                                Write-Message -Level Verbose -Message "FORCE is used, user [$Username] will be dropped in the database $dbSmo on [$instance]"
                                 Remove-DbaDbUser @userParam -Force
                             } catch {
-                                Stop-Function -Message "Could not remove existing user [$UserName] in the database $dbSmo on [$instance], skipping." -Target $User -ErrorRecord $_ -Continue
+                                Stop-Function -Message "Could not remove existing user [$Username] in the database $dbSmo on [$instance], skipping." -Target $User -ErrorRecord $_ -Continue
                             }
                         }
 
