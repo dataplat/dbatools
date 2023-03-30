@@ -104,7 +104,6 @@ function New-DbaDbUser {
         [string[]]$Database,
         [string[]]$ExcludeDatabase,
         [switch]$IncludeSystem = $False,
-        [Parameter(ParameterSetName = "NoLogin", Mandatory = $False)]
         [Parameter(ParameterSetName = "Login", Mandatory = $True)]
         [string]$Login,
         [Parameter(ParameterSetName = "Login", Mandatory = $False)]
@@ -160,26 +159,32 @@ function New-DbaDbUser {
 
             # Is the login exist?
             if ($Login -and (-not(Get-DbaLogin @connParam -Login $Login))) {
-                Stop-Function -Message "Invalid Login: $Login is not found on $instance, skipping." -Target $instance -Continue
+                Stop-Function -Message "Invalid Login: [$Login] is not found on [$instance], skipping." -Target $instance -Continue -EnableException $False
             }
 
             $databases = Get-DbaDatabase @getDbParam
             $getValidSchema = Get-DbaDbSchema -InputObject $databases -Schema $DefaultSchema -IncludeSystemSchemas
 
-            foreach ($db in $databases) {
+            foreach ($db in $Database) {
+                $dbSmo = $databases | Where-Object Name -eq $db
+
+                #Check if the database exists and online
+                if (-not($dbSmo)) {
+                    Stop-Function -Message "Invalid Database: [$db] is not found in the instance [$instance], skipping." -Continue -EnableException $False
+                }
                 #prepare user query param
                 $userParam = $connParam.Clone()
-                $userParam.Database = $db.name
+                $userParam.Database = $dbSmo.name
                 $userParam.User = $UserName
 
                 #check if the schema exists
-                if ($db.Name -in ($getValidSchema).Parent.Name) {
-                    if ($Pscmdlet.ShouldProcess($db, "Creating user $UserName")) {
-                        Write-Message -Level Verbose -Message "Add user $UserName to database $db on $instance"
+                if ($dbSmo.Name -in ($getValidSchema).Parent.Name) {
+                    if ($Pscmdlet.ShouldProcess($dbSmo, "Creating user $UserName")) {
+                        Write-Message -Level Verbose -Message "Add user [$UserName] to database [$dbSmo] on [$instance]"
 
                         #smo param builder
                         $smoUser = New-Object Microsoft.SqlServer.Management.Smo.User
-                        $smoUser.Parent = $db
+                        $smoUser.Parent = $dbSmo
                         $smoUser.Name = $UserName
                         if ($Login) { $smoUser.Login = $Login }
                         $smoUser.UserType = $userType
@@ -188,13 +193,13 @@ function New-DbaDbUser {
                         #Check if the user exists already
                         $userExists = Get-DbaDbUser @userParam
                         if ($userExists -and -not($Force)) {
-                            Stop-Function -Message "User $($User.Name) already exists in the database $($User.Parent.Name) on $instance and -Force was not specified, skipping." -Target $User -Continue
+                            Stop-Function -Message "User [$UserName] already exists in the database $dbSmo on [$instance] and -Force was not specified, skipping." -Target $UserName -Continue -EnableException $False
                         } elseif ($userExists -and $Force) {
                             try {
-                                Write-Message -Level Verbose -Message "FORCE is used, user $UserName will be dropped in the database $($db.Name) on $instance"
+                                Write-Message -Level Verbose -Message "FORCE is used, user [$UserName] will be dropped in the database $dbSmo on [$instance]"
                                 Remove-DbaDbUser @userParam -Force
                             } catch {
-                                Stop-Function -Message "Could not remove existing user $($User.Name) in the database $($User.Parent.Name) on $instance, skipping." -Target $User -ErrorRecord $_ -Continue
+                                Stop-Function -Message "Could not remove existing user [$UserName] in the database $dbSmo on [$instance], skipping." -Target $User -ErrorRecord $_ -Continue
                             }
                         }
 
@@ -206,12 +211,12 @@ function New-DbaDbUser {
                             #Verfiy the user creation
                             Get-DbaDbUser @userParam
                         } catch {
-                            Stop-Function -Message "Failed to add user $Username in $db to $instance" -Category InvalidOperation -ErrorRecord $_ -Target $instance -Continue
+                            Stop-Function -Message "Failed to add user [$Username] in $dbSmo to [$instance]" -Category InvalidOperation -ErrorRecord $_ -Target $instance -Continue
                         }
 
                     }
                 } else {
-                    Stop-Function -Message "Invalid DefaultSchema: $DefaultSchema is not found in the database $db on $instance, skipping." -Continue
+                    Stop-Function -Message "Invalid DefaultSchema: [$DefaultSchema] is not found in the database $dbSmo on [$instance], skipping." -Continue -EnableException $False
                 }
             }
         }
