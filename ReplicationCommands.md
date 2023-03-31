@@ -29,12 +29,12 @@ Meaning of the checkmarks:
 - [X] Get-DbaReplPublication -- #TODO: Exists but needs some love
 - [X] Disable-DbaReplPublishing
 - [X] Enable-DbaReplPublishing
-- [-] New-DbaReplPublication - Jess
-- [ ] Remove-DbaReplPublication
+- [X] New-DbaReplPublication - Jess
+- [X] Remove-DbaReplPublication
 
 ### Articles
-- [-] Add-DbaReplArticle - Jess
-- [ ] Remove-DbaReplArticle
+- [X] Add-DbaReplArticle - Jess
+- [X] Remove-DbaReplArticle - Jess
 - [-] Get-DbaReplArticle - Cláudio
 - [ ] Set-DbaReplArticle
 
@@ -45,8 +45,9 @@ Meaning of the checkmarks:
 
 ### Subscriptions
 - [ ] Get-DbaDbSubscription
-- [ ] New-DbaDbSubscription
 - [ ] Set-DbaReplDistributor (update properties)
+- [X] New-DbaDbSubscription
+- [X] Remove-DbaReplSubscription
 
 ### Monitoring\Troubleshooting
 
@@ -54,7 +55,7 @@ Meaning of the checkmarks:
 - [ ] Run-DbaReplSnapshotAgent ?
 - [ ] Get-DbaReplSnapshotAgentStatus
 - [ ] Get-DbaReplLogReaderAgentStatus
-- [ ] Test-DbaReplSnapFolder - similiar to Test-DbaPath but from replication service account perspective or something similiar to check If the share (UNC or Local) is accesable from both, publisher and subscriber side
+- [ ] Test-DbaReplSnapFolder - similar to Test-DbaPath but from replication service account perspective or something similar to check If the share (UNC or Local) is accessible from both, publisher and subscriber side
 
 ## How to run pester tests locally
 
@@ -73,3 +74,7 @@ Meaning of the checkmarks:
 Some additional scenarios for us to test commands against.
 
 - how the commands work when we have a "third site" involved , i mean if  we have the distribution db not on the Publication-Server and not on the Subscriber-Server (thats not so common, but it is a thing imo) - I saw some unusual behaviour with replcation commands when the setup is with a seperate Distribution-DB-Server.
+
+## Questions
+
+- Should parameter be `PublicationType` or `Type` and `PublicationName` or `Name`

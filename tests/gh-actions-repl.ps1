@@ -3,7 +3,7 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
         $password = ConvertTo-SecureString "dbatools.IO" -AsPlainText -Force
         $cred = New-Object -TypeName System.Management.Automation.PSCredential -ArgumentList "sqladmin", $password
 
-        $PSDefaultParameterValues["*:SqlInstance"] = "localhost"
+        $PSDefaultParameterValues["*:SqlInstance"] = "mssql1"
         $PSDefaultParameterValues["*:SqlCredential"] = $cred
         $PSDefaultParameterValues["*:Confirm"] = $false
         $PSDefaultParameterValues["*:SharedPath"] = "/shared"
@@ -14,6 +14,10 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
         # load dbatools-lib
         #Import-Module dbatools-core-library
         Import-Module ./dbatools.psd1 -Force
+
+        $null = New-DbaDatabase -Name ReplDb
+        $null = Invoke-DbaQuery -Database ReplDb -Query 'CREATE TABLE ReplicateMe ( id int identity (1,1) PRIMARY KEY, col1 varchar(10) )'
+
     }
 
     Context "Get-DbaReplDistributor works" {
@@ -171,4 +175,115 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
         }
 
     }
+
+    Context "New-DbaReplPublication works" -Tag test {
+        BeforeAll {
+            # if replication is disabled - enable it
+            if (-not (Get-DbaReplDistributor).IsDistributor) {
+                Enable-DbaReplDistributor
+            }
+            # if publishing is disabled - enable it
+            if (-not (Get-DbaReplServer).IsPublisher) {
+                Enable-DbaReplPublishing -PublisherSqlLogin $cred -EnableException
+            }
+        }
+
+        It "New-DbaReplPublication creates a Transactional publication" {
+            $name = 'TestPub'
+            New-DbaReplPublication -Database ReplDb -Type Transactional -PublicationName $Name
+            (Get-DbaReplPublication -Name $Name) | Should -Not -BeNullOrEmpty
+            (Get-DbaReplPublication -Name $Name).Database | Should -Be 'ReplDb'
+            (Get-DbaReplPublication -Name $Name).Type | Should -Be 'Transactional'
+        }
+        It "New-DbaReplPublication creates a Snapshot publication" {
+            $name = 'Snappy'
+            New-DbaReplPublication -Database ReplDb -Type Snapshot -PublicationName $name
+            (Get-DbaReplPublication -Name $name) | Should -Not -BeNullOrEmpty
+            (Get-DbaReplPublication -Name $name).Database | Should -Be 'ReplDb'
+            (Get-DbaReplPublication -Name $name).Type | Should -Be 'Snapshot'
+        }
+        It "New-DbaReplPublication creates a Merge publication" {
+            $name = 'Mergey'
+            New-DbaReplPublication -Database ReplDb -Type Merge -PublicationName $name
+            (Get-DbaReplPublication -Name $name) | Should -Not -BeNullOrEmpty
+            (Get-DbaReplPublication -Name $name).Database | Should -Be 'ReplDb'
+            (Get-DbaReplPublication -Name $name).Type | Should -Be 'Merge'
+        }
+
+    }
+
+    Context "Add-DbaReplArticle works" -Tag test {
+        BeforeAll {
+            # if replication is disabled - enable it
+            if (-not (Get-DbaReplDistributor).IsDistributor) {
+                Enable-DbaReplDistributor
+            }
+            # if publishing is disabled - enable it
+            if (-not (Get-DbaReplServer).IsPublisher) {
+                Enable-DbaReplPublishing -PublisherSqlLogin $cred -EnableException
+            }
+            # we need some publications too
+            $name = 'TestTrans'
+            if (-not (Get-DbaReplPublication -Name $name -Type Transactional )) {
+                $null = New-DbaReplPublication -Database ReplDb -Type Transactional -PublicationName $Name
+            }
+            $name = 'TestSnap'
+            if (-not (Get-DbaReplPublication -Name $name -Type Snapshot)) {
+                $null = New-DbaReplPublication -Database ReplDb -Type Snapshot -PublicationName $Name
+            }
+            $name = 'TestMerge'
+            if (-not (Get-DbaReplPublication -Name $name -Type Merge)) {
+                $null = New-DbaReplPublication -Database ReplDb -Type Merge -PublicationName $Name
+            }
+
+            $article =
+        }
+
+        It "Add-DbaReplArticle adds an article to a Transactional publication" {
+            $pubname = 'TestPub'
+            Add-DbaReplArticle -Database ReplDb -Type Transactional -PublicationName $Name
+            (Get-DbaReplPublication -Name $Name) | Should -Not -BeNullOrEmpty
+            (Get-DbaReplPublication -Name $Name).Database | Should -Be 'ReplDb'
+            (Get-DbaReplPublication -Name $Name).Type | Should -Be 'Transactional'
+        }
+        It "New-DbaReplPublication creates a Snapshot publication" {
+            $name = 'Snappy'
+            New-DbaReplPublication -Database ReplDb -Type Snapshot -PublicationName $name
+            (Get-DbaReplPublication -Name $name) | Should -Not -BeNullOrEmpty
+            (Get-DbaReplPublication -Name $name).Database | Should -Be 'ReplDb'
+            (Get-DbaReplPublication -Name $name).Type | Should -Be 'Snapshot'
+        }
+        It "New-DbaReplPublication creates a Merge publication" {
+            $name = 'Mergey'
+            New-DbaReplPublication -Database ReplDb -Type Merge -PublicationName $name
+            (Get-DbaReplPublication -Name $name) | Should -Not -BeNullOrEmpty
+            (Get-DbaReplPublication -Name $name).Database | Should -Be 'ReplDb'
+            (Get-DbaReplPublication -Name $name).Type | Should -Be 'Merge'
+        }
+
+    }
+
+    Context "Add-DbaReplArticle works" {
+        BeforeAll {
+            # if replication is disabled - enable it
+            if (-not (Get-DbaReplDistributor).IsDistributor) {
+                Enable-DbaReplDistributor
+            }
+            # if publishing is disabled - enable it
+            if (-not (Get-DbaReplServer).IsPublisher) {
+                Enable-DbaReplPublishing -PublisherSqlLogin $cred -EnableException
+            }
+
+        }
+
+        It "distribution starts enabled" {
+            (Get-DbaReplDistributor).IsDistributor | Should -Be $true
+        }
+
+        It "distribution is disabled" {
+            Disable-DbaReplDistributor
+            (Get-DbaReplDistributor).IsDistributor | Should -Be $false
+        }
+    }
+
 }

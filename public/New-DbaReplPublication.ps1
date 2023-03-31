@@ -94,13 +94,10 @@ function New-DbaReplPublication {
             } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
-            Write-Message -Level Verbose -Message "Creating a new publication on $instance"
+            Write-Message -Level Verbose -Message "Creating publication on $instance"
 
             try {
-                if ($PSCmdlet.ShouldProcess($instance, "Creating a new publication on $instance")) {
-
-                    # based off this
-                    # https://learn.microsoft.com/en-us/sql/relational-databases/replication/publish/create-a-publication?view=sql-server-ver16
+                if ($PSCmdlet.ShouldProcess($instance, "Creating publication on $instance")) {
 
                     $pubDatabase = New-Object Microsoft.SqlServer.Replication.ReplicationDatabase
                     $pubDatabase.ConnectionContext = $replServer.ConnectionContext
@@ -110,8 +107,10 @@ function New-DbaReplPublication {
                     }
 
                     if ($Type -in ('Transactional', 'Snapshot')) {
+                        Write-Message -Level Verbose -Message "Enable trans publishing publication on $instance.$Database"
                         $pubDatabase.EnabledTransPublishing = $true
                     } elseif ($Type -eq 'Merge') {
+                        Write-Message -Level Verbose -Message "Enable merge publishing publication on $instance.$Database"
                         $pubDatabase.EnabledMergePublishing = $true
                         $pubDatabase.CommitPropertyChanges
                     }
