@@ -22,20 +22,16 @@ function Add-DbaReplArticle {
     .PARAMETER PublicationName
         The name of the replication publication.
 
-    .PARAMETER Type
-        The flavour of replication.
+    .PARAMETER Schema
+        The schema name that contains the object to add as an article.
+        Default is dbo.
 
-        Currently supported 'Transactional'
+    .PARAMETER Name
+        The name of the object to add as an article.
 
-        Coming soon 'Snapshot', 'Merge'
-
-    .PARAMETER LogReaderAgentCredential
-        Used to provide the credentials for the Microsoft Windows account under which the Log Reader Agent runs
-
-        Setting LogReaderAgentProcessSecurity is not required when the publication is created by a member of the sysadmin fixed server role.
-        In this case, the agent will impersonate the SQL Server Agent account. For more information, see Replication Agent Security Model.
-
-        TODO: Implement & test this
+    .PARAMETER Filter
+        Horizontal filter for replication, implemented as a where clause, but don't include the word WHERE>
+        E.g. City = 'Seattle'
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -59,13 +55,18 @@ function Add-DbaReplArticle {
         https://learn.microsoft.com/en-us/sql/relational-databases/replication/publish/define-an-article?view=sql-server-ver16#RMOProcedure
 
     .LINK
-        https://dbatools.io/New-DbaReplPublication
+        https://dbatools.io/Add-DbaReplArticle
 
     .EXAMPLE
-        PS C:\> New-DbaReplPublication -SqlInstance mssql1 -Database Northwind -PublicationName PubFromPosh
+        PS C:\> Add-DbaReplArticle -SqlInstance mssql1 -Database Northwind -PublicationName PubFromPosh -Name TableToRepl
 
-        Creates a publication called PubFromPosh for the Northwind database on mssql1
+        Adds the TableToRepl table to the PubFromPosh publication from mssql1.Northwind
 
+
+    .EXAMPLE
+        PS C:\> Add-DbaReplArticle -SqlInstance mssql1 -Database Pubs -PublicationName TestPub -Name publishers -Filter "city = 'seattle'"
+
+        Adds the publishers table to the TestPub publication from mssql1.Pubs with a horizontal filter of only rows where city = 'seattle.
     #>
     [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess, ConfirmImpact = 'Medium')]
     param (
@@ -85,7 +86,7 @@ function Add-DbaReplArticle {
         [parameter(Mandatory)]
         [String]$Name,
 
-        [String]$Filter, # some sql to horizontal filter "DiscontinuedDate IS NULL";
+        [String]$Filter,
 
         [Switch]$EnableException
     )
@@ -105,14 +106,12 @@ function Add-DbaReplArticle {
 
                     $articleOptions = New-Object Microsoft.SqlServer.Replication.ArticleOptions
 
-                    if ($pub.Type -eq 'Transactional') {
+                    if ($pub.Type -in ('Transactional', 'Snapshot')) {
                         $article = New-Object Microsoft.SqlServer.Replication.TransArticle
                         $article.Type = $ArticleOptions::LogBased
                     } elseif ($pub.Type -eq 'Merge') {
                         $article = New-Object Microsoft.SqlServer.Replication.MergeArticle
                         $article.Type = $ArticleOptions::TableBased
-                    } else {
-                        Stop-Function -Message "Publication is not a supported type, currently only Transactional and Merge publications are supported" -ErrorRecord $_ -Target $instance -Continue
                     }
 
                     $article.ConnectionContext  = $replServer.ConnectionContext
@@ -122,8 +121,11 @@ function Add-DbaReplArticle {
                     $article.SourceObjectOwner  = $Schema
                     $article.PublicationName    = $PublicationName
 
-                    if ($articleFilter) {
-                        article.FilterClause = $Filter  #TODO: This doesn't seem to be working
+                    if ($Filter) {
+                        if ($Filter -like 'WHERE*') {
+                            Stop-Function -Message "Filter should not include the word 'WHERE'" -ErrorRecord $_ -Target $instance -Continue
+                        }
+                        $article.FilterClause = $Filter
                     }
 
                     if (-not ($article.IsExistingObject)) {
@@ -133,7 +135,7 @@ function Add-DbaReplArticle {
                     }
                 }
             } catch {
-                Stop-Function -Message "Unable to add article $ArticleName to $PublicationName on $instance" -ErrorRecord $_ -Target $instance -Continue
+                Stop-Function -Message "Unable to add article $Name to $PublicationName on $instance" -ErrorRecord $_ -Target $instance -Continue
             }
             #TODO: What should we return
             Get-DbaReplArticle -SqlInstance $instance -SqlCredential $SqlCredential -Publication $PublicationName -Article $Name

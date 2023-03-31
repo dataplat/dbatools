@@ -740,7 +740,10 @@
         'Get-DbaReplArticle',
         'Get-DbaReplArticleColumn',
         'Add-DbaReplArticle',
-        'Remove-DbaReplArticle'
+        'Remove-DbaReplArticle',
+        'Remove-DbaReplPublication',
+        'New-DbaReplSubscription',
+        'Remove-DbaReplSubscription'
     )
 
     # Cmdlets to export from this module

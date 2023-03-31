@@ -1,13 +1,10 @@
-function Get-DbaReplPublication {
+function Get-DbaReplSubscription {
     <#
     .SYNOPSIS
-        Displays all publications for a server or database.
+        Displays all subscriptions for a publication.
 
     .DESCRIPTION
-        Quickly find all transactional, merge, and snapshot publications on a specific server or database.
-
-        All replication commands need SQL Server Management Studio installed and are therefore currently not supported.
-        Have a look at this issue to get more information: https://github.com/dataplat/dbatools/issues/7428
+        Displays all subscriptions for a publication
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.

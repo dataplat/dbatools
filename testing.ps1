@@ -38,6 +38,7 @@ $PSDefaultParameterValues = @{
     "*:DestinationCredential"    = $credential
     "*:DestinationSqlCredential" = $credential
     "*:SourceSqlCredential"      = $credential
+    "*:PublisherSqlCredential"   = $credential
 }
 
 
@@ -76,7 +77,7 @@ Disable-DbaReplDistributor -SqlInstance  mssql1
 Enable-DbaReplPublishing -SqlInstance mssql1
 Disable-DbaReplPublishing -SqlInstance mssql1
 
-# add a publication
+# add a transactional publication
 $pub = @{
     SqlInstance     = 'mssql1'
     Database        = 'pubs'
@@ -86,6 +87,29 @@ $pub = @{
 }
 New-DbaReplPublication @pub
 
+
+
+# add a merge publication
+$pub = @{
+    SqlInstance     = 'mssql1'
+    Database        = 'pubs'
+    PublicationName = 'mergey'
+    Type            = 'Merge'
+
+}
+New-DbaReplPublication @pub
+
+# add a snapshot publication
+$pub = @{
+    SqlInstance     = 'mssql1'
+    Database        = 'pubs'
+    PublicationName = 'snappy'
+    Type            = 'Snapshot'
+
+}
+New-DbaReplPublication @pub
+
+
 # add an article
 
 $article = @{
@@ -93,6 +117,145 @@ $article = @{
     Database        = 'pubs'
     PublicationName = 'testpub'
     Name            = 'publishers'
-    Filter          = "where city = 'seattle'"  ## not working?
+    Filter          = "city = 'seattle'"  ## not working?
 }
 Add-DbaReplArticle @article
+
+
+# mergey
+$article = @{
+    SqlInstance     = 'mssql1'
+    Database        = 'pubs'
+    PublicationName = 'Mergey'
+    Name            = 'publishers'
+    Filter          = "city = 'seattle'"  ## not working?
+}
+Add-DbaReplArticle @article
+
+# snappy
+$article = @{
+    SqlInstance     = 'mssql1'
+    Database        = 'pubs'
+    PublicationName = 'snappy'
+    Name            = 'publishers'
+}
+Add-DbaReplArticle @article
+
+
+# remove an article
+$article = @{
+    SqlInstance     = 'mssql1'
+    Database        = 'pubs'
+    PublicationName = 'testpub'
+    Name            = 'publishers'
+}
+Remove-DbaReplArticle @article
+
+# remove an article
+$article = @{
+    SqlInstance     = 'mssql1'
+    Database        = 'pubs'
+    PublicationName = 'Mergey'
+    Name            = 'publishers'
+}
+Remove-DbaReplArticle @article
+
+
+
+## remove pubs
+$pub = @{
+    SqlInstance     = 'mssql1'
+    Database        = 'ReplDb'
+    Name            = 'Snappy'
+}
+Remove-DbaReplPublication @pub
+## remove pubs
+$pub = @{
+    SqlInstance     = 'mssql1'
+    Database        = 'ReplDb'
+    Name            = 'TestPub'
+}
+Remove-DbaReplPublication @pub
+## remove pubs
+$pub = @{
+    SqlInstance     = 'mssql1'
+    Database        = 'ReplDb'
+    Name            = 'Mergey'
+}
+Remove-DbaReplPublication @pub
+
+
+# add subscriptions.
+
+#transactional
+$sub = @{
+    SqlInstance               = 'mssql2'
+    Database                  = 'pubs'
+    PublicationDatabase       = 'pubs'
+    PublisherSqlInstance      = 'mssql1'
+    PublicationName           = 'testpub'
+    Type                      = 'Push'
+    SubscriptionSqlCredential = $credential
+
+}
+New-DbaReplSubscription @sub
+
+#merge
+$sub = @{
+    SqlInstance               = 'mssql2'
+    Database                  = 'Mergeypubs'
+    PublicationDatabase       = 'pubs'
+    PublisherSqlInstance      = 'mssql1'
+    PublicationName           = 'Mergey'
+    Type                      = 'Push'
+    SubscriptionSqlCredential = $credential
+
+}
+New-DbaReplSubscription @sub
+
+#snapshot
+$sub = @{
+    SqlInstance               = 'mssql2'
+    Database                  = 'Snappypubs'
+    PublicationDatabase       = 'pubs'
+    PublisherSqlInstance      = 'mssql1'
+    PublicationName           = 'Snappy'
+    Type                      = 'Push'
+    SubscriptionSqlCredential = $credential
+}
+New-DbaReplSubscription @sub
+
+
+# remove subscriptions
+$sub = @{
+    SqlInstance          = 'mssql2'
+    SubscriptionDatabase = 'pubs'
+    PublisherSqlInstance = 'mssql1'
+    PublicationDatabase  = 'pubs'
+    PublicationName      = 'testPub'
+}
+Remove-DbaReplSubscription @sub
+
+$sub = @{
+    SqlInstance          = 'mssql2'
+    SubscriptionDatabase = 'Mergeypubs'
+    PublisherSqlInstance = 'mssql1'
+    PublicationDatabase  = 'pubs'
+    PublicationName      = 'Mergey'
+}
+Remove-DbaReplSubscription @sub
+
+$sub = @{
+    SqlInstance          = 'mssql2'
+    PublisherSqlInstance = 'mssql1'
+    PublicationName      = 'snappy'
+    PublicationDatabase  = 'pubs'
+    SubscriptionDatabase = 'Snappypubs'
+}
+Remove-DbaReplSubscription @sub
+
+# TODO: Does the schema exist on the subscriber?
+<#
+// Ensure that we create the schema owner at the Subscriber.
+article.SchemaOption |= CreationScriptOptions.Schema;
+#>

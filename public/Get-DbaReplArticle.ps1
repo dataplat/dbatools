@@ -85,6 +85,7 @@ function Get-DbaReplArticle {
             }
 
             foreach ($db in $databases) {
+                Write-PSFMessage -Level Verbose -Message ('Working on {0}' -f $db)
 
                 $RMOdb = Connect-ReplicationDB -Server $server -Database $db
 
@@ -93,14 +94,24 @@ function Get-DbaReplArticle {
                 #    Write-Message -Level Verbose -Message "Skipping $($db.name). Database is not published."
                 #}
 
-                if ($PublicationType -eq 'Transactional') {
-                    $publications = $RMOdb.TransPublications
-                } else {
-                    $publications = $RMOdb.MergePublications
-                }
+                $publications = @()
+                $publications += $RMOdb.TransPublications
+                $publications += $RMOdb.MergePublications
+
+                $publications
+                break
+
+                #if ($PublicationType -in ('Snapshot','Transactional')) {
+                #    $publications = $RMOdb.TransPublications
+                #} elseif ($PublicationType -eq 'Merge') {
+                #    $publications = $RMOdb.MergePublications
+                #} else {
+                #    $RMOdb
+                #    $publications = @($RMOdb.TransPublications + $RMOdb.MergePublications)
+                #}
 
                 if ($Publication) {
-                    $publications = $publications | Where-Object Name -in $Publication
+                    $publications = $publications | Where-Object PublicationName -in $Publication
                 }
 
                 if ($PublicationType -eq 'Transactional') {
