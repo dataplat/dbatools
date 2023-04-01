@@ -104,7 +104,7 @@ function New-DbaDbUser {
         [string[]]$Database,
         [string[]]$ExcludeDatabase,
         [switch]$IncludeSystem = $False,
-        [Parameter(ParameterSetName = "Login", Mandatory = $True)]
+        [Parameter(Mandatory, ParameterSetName = "Login")]
         [string]$Login,
         [Parameter(ParameterSetName = "Login", Mandatory = $False)]
         [Parameter(ParameterSetName = "NoLogin", Mandatory = $True)]
