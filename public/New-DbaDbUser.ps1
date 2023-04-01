@@ -124,7 +124,6 @@ function New-DbaDbUser {
         $connParam = @{ }
         if ($SqlCredential) { $connParam.SqlCredential = $SqlCredential }
 
-        # is this required?
         if ($Force) { $ConfirmPreference = 'none' }
 
         # When user is created from login and no user name is provided then login name will be used as the user name
