@@ -98,7 +98,7 @@ function New-DbaDbUser {
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Medium")]
     param(
-        [parameter(Mandatory = $True, Position = 1)]
+        [parameter(Mandatory, Position = 1)]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [string[]]$Database,
