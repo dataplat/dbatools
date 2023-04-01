@@ -38,13 +38,15 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             $db1 = "dbatoolsci_SnapMe"
             $db2 = "dbatoolsci_SnapMe2"
             $db3 = "dbatoolsci_SnapMe3_Offline"
+            $db4 = "dbatoolsci_SnapMe4.WithDot"
             $server.Query("CREATE DATABASE $db1")
             $server.Query("CREATE DATABASE $db2")
             $server.Query("CREATE DATABASE $db3")
+            $server.Query("CREATE DATABASE [$db4]")
         }
         AfterAll {
-            Remove-DbaDbSnapshot -SqlInstance $script:instance2 -Database $db1, $db2, $db3 -Confirm:$false
-            Remove-DbaDatabase -Confirm:$false -SqlInstance $script:instance2 -Database $db1, $db2, $db3
+            Remove-DbaDbSnapshot -SqlInstance $script:instance2 -Database $db1, $db2, $db3, $db4 -Confirm:$false
+            Remove-DbaDatabase -Confirm:$false -SqlInstance $script:instance2 -Database $db1, $db2, $db3, $db4
         }
 
         It "Skips over offline databases nicely" {
@@ -88,6 +90,19 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             $result = Get-DbaDbSnapshot -SqlInstance $script:instance2 -Database $db2 | Select-Object -First 1
             $ExpectedPropsDefault = 'ComputerName', 'CreateDate', 'InstanceName', 'Name', 'SnapshotOf', 'SqlInstance', 'DiskUsage'
             ($result.PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames | Sort-Object) | Should Be ($ExpectedPropsDefault | Sort-Object)
+        }
+
+        It "Creates multiple snaps for db with dot in the name (see #8829)" {
+            $results = New-DbaDbSnapshot -SqlInstance $script:instance2 -EnableException -Database $db4
+            $results | Should Not Be $null
+            foreach ($result in $results) {
+                $result.SnapshotOf -in @($db4) | Should Be $true
+            }
+            $results = New-DbaDbSnapshot -SqlInstance $script:instance2 -EnableException -Database $db4
+            $results | Should Not Be $null
+            foreach ($result in $results) {
+                $result.SnapshotOf -in @($db4) | Should Be $true
+            }
         }
     }
 }
