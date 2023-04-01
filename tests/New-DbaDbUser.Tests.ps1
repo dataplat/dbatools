@@ -5,7 +5,7 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
         [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'IncludeSystem', 'Login', 'Username', 'DefaultSchema', 'ExternalProvider', 'Force', 'EnableException'
+        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'IncludeSystem', 'Login', 'Username', 'Password', 'DefaultSchema', 'ExternalProvider', 'Force', 'EnableException'
         $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
         It "Should only contain our specific parameters" {
             (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
@@ -17,16 +17,21 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
         $dbname = "dbatoolscidb_$(Get-Random)"
         $userName = "dbatoolscidb_UserWithLogin"
+        $userNameWithPassword = "dbatoolscidb_UserWithPassword"
         $userNameWithoutLogin = "dbatoolscidb_UserWithoutLogin"
 
         $password = 'MyV3ry$ecur3P@ssw0rd'
         $securePassword = ConvertTo-SecureString $password -AsPlainText -Force
         $null = New-DbaLogin -SqlInstance $script:instance2 -Login $userName -Password $securePassword -Force
         $null = New-DbaDatabase -SqlInstance $script:instance2 -Name $dbname
+        $dbContainmentSpValue = (Get-DbaSpConfigure -SqlInstance $script:instance2 -Name ContainmentEnabled).ConfiguredValue
+        $null = Set-DbaSpConfigure -SqlInstance $script:instance2 -Name ContainmentEnabled -Value 1
+        $null = Invoke-DbaQuery -SqlInstance $script:instance2 -Query "ALTER DATABASE [$dbname] SET CONTAINMENT = PARTIAL WITH NO_WAIT"
     }
     AfterAll {
         $null = Remove-DbaDatabase -SqlInstance $script:instance2 -Database $dbname -Confirm:$false
         $null = Remove-DbaLogin -SqlInstance $script:instance2 -Login $userName -Confirm:$false
+        $null = Set-DbaSpConfigure -SqlInstance $script:instance2 -Name ContainmentEnabled -Value $dbContainmentSpValue
     }
     Context "Test error handling" {
         It "Tries to create the user with an invalid default schema" {
@@ -40,6 +45,14 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             New-DbaDbUser -SqlInstance $script:instance2 -Database $dbname -Login $userName -DefaultSchema guest
             $newDbUser = Get-DbaDbUser -SqlInstance $script:instance2 -Database $dbname | Where-Object Name -eq $userName
             $newDbUser.Name | Should Be $userName
+            $newDbUser.DefaultSchema | Should -Be 'guest'
+        }
+    }
+    Context "Should create the user with password" {
+        It "Creates the contained sql user and get it." {
+            New-DbaDbUser -SqlInstance $script:instance2 -Database $dbname -Username $userNameWithPassword -Password $securePassword -DefaultSchema guest
+            $newDbUser = Get-DbaDbUser -SqlInstance $script:instance2 -Database $dbname | Where-Object Name -eq $userNameWithPassword
+            $newDbUser.Name | Should -Be $userNameWithPassword
             $newDbUser.DefaultSchema | Should -Be 'guest'
         }
     }
