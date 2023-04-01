@@ -251,6 +251,7 @@ function New-DbaDbSnapshot {
                         $counter += 1
                         # Linux can't handle windows paths, so split it
                         $basename = [IO.Path]::GetFileNameWithoutExtension((Split-Path $file.FileName -Leaf))
+                        $originalExtension = [IO.Path]::GetExtension((Split-Path $file.FileName -Leaf))
                         $basePath = Split-Path $file.FileName -Parent
                         # change path if specified
                         if ($Path.Length -gt 0) {
@@ -258,7 +259,7 @@ function New-DbaDbSnapshot {
                         }
 
                         # we need to avoid cases where basename is the same for multiple FG
-                        $fName = [IO.Path]::Combine($basePath, ("{0}_{1}_{2:0000}_{3:000}" -f $basename, $DefaultSuffix, (Get-Date).MilliSecond, $counter))
+                        $fName = [IO.Path]::Combine($basePath, ("{0}_{1}_{2:0000}_{3:000}{4}" -f $basename, $DefaultSuffix, (Get-Date).MilliSecond, $counter, $originalExtension))
                         # fixed extension is hardcoded as "ss", which seems a "de-facto" standard
                         $fName = [IO.Path]::ChangeExtension($fName, "ss")
                         Write-Message -Level Debug -Message "$fName"
