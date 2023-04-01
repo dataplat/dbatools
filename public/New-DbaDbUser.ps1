@@ -107,7 +107,7 @@ function New-DbaDbUser {
         [Parameter(Mandatory, ParameterSetName = "Login")]
         [string]$Login,
         [Parameter(ParameterSetName = "Login", Mandatory = $False)]
-        [Parameter(ParameterSetName = "NoLogin", Mandatory = $True)]
+        [Parameter(Mandatory, ParameterSetName = "NoLogin")]
         [Parameter(ParameterSetName = "ContainedSQLUser", Mandatory = $True)]
         [Parameter(ParameterSetName = "ContainedAADUser", Mandatory = $True)]
         [string]$Username,
