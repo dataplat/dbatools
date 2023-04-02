@@ -212,7 +212,7 @@ function Invoke-DbaDbLogShipping {
 
     .PARAMETER PrimaryMonitorServer
         Is the name of the monitor server for the primary server.
-        The default is the name of the primary sql server.
+        If ommitted logshipping will be monitored locally on the primary server.
 
     .PARAMETER PrimaryMonitorCredential
         Allows you to login to enter a secure credential. Only needs to be used when the PrimaryMonitorServerSecurityMode is 0 or "sqlserver"
@@ -308,7 +308,7 @@ function Invoke-DbaDbLogShipping {
 
     .PARAMETER SecondaryMonitorServer
         Is the name of the monitor server for the secondary server.
-        The default is the name of the secondary sql server.
+        If ommitted logshipping will be monitored locally on the secondary server.
 
     .PARAMETER SecondaryMonitorCredential
         Allows you to login to enter a secure credential. Only needs to be used when the SecondaryMonitorServerSecurityMode is 0 or "sqlserver"
@@ -1376,12 +1376,6 @@ function Invoke-DbaDbLogShipping {
                     }
                 }
 
-                # Check the primary monitor server
-                if ($Force -and (-not $PrimaryMonitorServer -or [string]$PrimaryMonitorServer -eq '' -or $null -eq $PrimaryMonitorServer)) {
-                    Write-Message -Message "Setting monitor server for primary server to $SourceSqlInstance." -Level Verbose
-                    $PrimaryMonitorServer = $SourceSqlInstance
-                }
-
                 # Check the PrimaryMonitorServerSecurityMode if it's SQL Server authentication
                 if ($PrimaryMonitorServerSecurityMode -eq 0) {
                     if ($PrimaryMonitorServerLogin) {
@@ -1402,12 +1396,6 @@ function Invoke-DbaDbLogShipping {
                     $SecondaryMonitorServerSecurityMode = switch ($SecondaryMonitorServerSecurityMode) {
                         "SQLSERVER" { 0 } "WINDOWS" { 1 } default { 1 }
                     }
-                }
-
-                # Check the secondary monitor server
-                if ($Force -and (-not $SecondaryMonitorServer -or [string]$SecondaryMonitorServer -eq '' -or $null -eq $SecondaryMonitorServer)) {
-                    Write-Message -Message "Setting secondary monitor server for $destInstance to $SourceSqlInstance." -Level Verbose
-                    $SecondaryMonitorServer = $SourceSqlInstance
                 }
 
                 # Check the MonitorServerSecurityMode if it's SQL Server authentication

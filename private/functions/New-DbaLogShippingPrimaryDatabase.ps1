@@ -48,7 +48,7 @@ function New-DbaLogShippingPrimaryDatabase {
 
         .PARAMETER MonitorServer
             Is the name of the monitor server.
-            The default is the name of the primary server.
+            If null a monitor server will not be passed to the procedure and SQL Server will default to creating the LS alert job locally
 
         .PARAMETER MonitorCredential
             Allows you to login to enter a secure credential.
@@ -199,9 +199,10 @@ function New-DbaLogShippingPrimaryDatabase {
 
     # Set the log shipping primary
     $Query = "
-        DECLARE @LS_BackupJobId AS uniqueidentifier;
-        DECLARE @LS_PrimaryId AS uniqueidentifier;
-        EXEC master.sys.sp_add_log_shipping_primary_database
+        DECLARE @LS_BackupJobId AS uniqueidentifier
+            ,@LS_PrimaryId AS uniqueidentifier
+            ,@SP_Add_RetCode AS INT;
+        EXEC @SP_Add_RetCode = master.sys.sp_add_log_shipping_primary_database
             @database = N'$Database'
             ,@backup_directory = N'$BackupDirectory'
             ,@backup_share = N'$BackupShare'
@@ -210,7 +211,7 @@ function New-DbaLogShippingPrimaryDatabase {
             ,@backup_threshold = $BackupThreshold
             ,@history_retention_period = $HistoryRetention
             ,@backup_job_id = @LS_BackupJobId OUTPUT
-            ,@primary_id = @LS_PrimaryId OUTPUT "
+            ,@primary_id = @LS_PrimaryId OUTPUT"
 
     if ($server.Version.Major -gt 9) {
         $Query += ",@backup_compression = $BackupCompression"
@@ -219,9 +220,7 @@ function New-DbaLogShippingPrimaryDatabase {
     if ($MonitorServer) {
         $Query += "
             ,@monitor_server = N'$MonitorServer'
-            ,@monitor_server_security_mode = $MonitorServerSecurityMode
-            ,@threshold_alert = $ThresholdAlert
-            ,@threshold_alert_enabled = $ThresholdAlertEnabled"
+            ,@monitor_server_security_mode = $MonitorServerSecurityMode"
 
         #if ($MonitorServer -and ($SqlInstance.Version.Major -ge 16)) {
         if ($server.Version.Major -ge 12) {
@@ -229,20 +228,33 @@ function New-DbaLogShippingPrimaryDatabase {
             if ($MonitorServer -and $MonitorServerSecurityMode -eq 0 ) {
                 $Query += "
                     ,@monitor_server_login = N'$MonitorLogin'
-                    ,@monitor_server_password = N'$MonitorPassword' "
+                    ,@monitor_server_password = N'$MonitorPassword'"
             }
         } else {
-            $Query += "
-                ,@ignoreremotemonitor = 1"
+            $Query += ",@ignoreremotemonitor = 1"
         }
     }
 
+    $Query += "
+            ,@threshold_alert = $ThresholdAlert
+            ,@threshold_alert_enabled = $ThresholdAlertEnabled"
+
     if ($Force -or ($server.Version.Major -gt 9)) {
-        $Query += "
-            ,@overwrite = 1;"
-    } else {
+        $Query += ",@overwrite = 1;"
+    }
+    else {
         $Query += ";"
     }
+
+    # ensure unexpected non-success results are caught and thrown as errors:
+    $Query += "
+    IF (@SP_Add_RetCode <> 0)
+    BEGIN
+        DECLARE @msg VARCHAR(1000);
+        SELECT @msg = 'Unexpected result executing sp_add_log_shipping_primary_database ('
+            + CAST (@SP_Add_RetCode AS VARCHAR(5)) + ').';
+        THROW 51000, @msg, 1;
+    END"
 
     # Execute the query to add the log shipping primary
     if ($PSCmdlet.ShouldProcess($SqlServer, ("Configuring logshipping for primary database $Database on $SqlInstance"))) {
