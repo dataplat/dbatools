@@ -1107,6 +1107,13 @@ function Copy-DbaDatabase {
                         }
                         continue
                     } elseif ($null -ne $destServer.Databases[$DestinationdbName] -and $force) {
+                        if ($sourceServer.Name -eq $destServer.Name -and $sourceServer.Databases[$DestinationdbName].Name -eq $destServer.Databases[$DestinationdbName].Name) {
+                            Write-Message -Level Verbose -Message "Source and destination database are the same. Aborting routine for this database."
+                            $copyDatabaseStatus.Status = "Failed"
+                            $copyDatabaseStatus.Notes = "Source and destination database are the same."
+                            $copyDatabaseStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                            continue
+                        }
                         if ($Pscmdlet.ShouldProcess($destinstance, "DROP DATABASE $DestinationdbName")) {
                             Write-Message -Level Verbose -Message "$DestinationdbName already exists. -Force was specified. Dropping $DestinationdbName on $destinstance."
                             $removeresult = Remove-DbaDatabase -SqlInstance $destserver -Database $DestinationdbName -Confirm:$false
