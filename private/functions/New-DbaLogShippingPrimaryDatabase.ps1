@@ -211,15 +211,14 @@ function New-DbaLogShippingPrimaryDatabase {
             ,@backup_threshold = $BackupThreshold
             ,@history_retention_period = $HistoryRetention
             ,@backup_job_id = @LS_BackupJobId OUTPUT
-            ,@primary_id = @LS_PrimaryId OUTPUT"
+            ,@primary_id = @LS_PrimaryId OUTPUT "
 
     if ($server.Version.Major -gt 9) {
         $Query += ",@backup_compression = $BackupCompression"
     }
 
     if ($MonitorServer) {
-        $Query += "
-            ,@monitor_server = N'$MonitorServer'
+        $Query += ",@monitor_server = N'$MonitorServer'
             ,@monitor_server_security_mode = $MonitorServerSecurityMode"
 
         #if ($MonitorServer -and ($SqlInstance.Version.Major -ge 16)) {

@@ -132,7 +132,7 @@ function New-DbaLogShippingSecondaryPrimary {
         Stop-Function -Message "The backup destination path should be formatted in the form \\server\share." -Target $SqlInstance
         return
     } else {
-        if (-not ((Test-DbaPath $BackupDestinationDirectory -SqlInstance $SqlInstance -SqlCredential $SqlCredential) -and ((Get-Item $BackupDestinationDirectory).PSProvider.Name -eq 'FileSystem'))) {
+        if (-not ((Test-DbaPath $BackupDestinationDirectory -SqlInstance $ServerSecondary) -and ((Get-Item $BackupDestinationDirectory).PSProvider.Name -eq 'FileSystem'))) {
             Stop-Function -Message "The backup destination path is not valid or can't be reached." -Target $SqlInstance
             return
         }
@@ -171,10 +171,10 @@ function New-DbaLogShippingSecondaryPrimary {
 
     # Set up the query
     $Query = "
-        DECLARE @LS_Secondary__CopyJobId AS uniqueidentifier
-        ,@LS_Secondary__RestoreJobId AS uniqueidentifier
-        ,@LS_Secondary__SecondaryId AS uniqueidentifier
-        ,@SP_Add_RetCode AS INT;
+        DECLARE @LS_Secondary__CopyJobId AS uniqueidentifier;
+        DECLARE @LS_Secondary__RestoreJobId AS uniqueidentifier;
+        DECLARE @LS_Secondary__SecondaryId AS uniqueidentifier;
+        DECLARE @SP_Add_RetCode AS INT;
         EXEC @SP_Add_RetCode = master.sys.sp_add_log_shipping_secondary_primary
                 @primary_server = N'$PrimaryServer'
                 ,@primary_database = N'$PrimaryDatabase'
