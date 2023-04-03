@@ -212,7 +212,7 @@ function Invoke-DbaDbLogShipping {
 
     .PARAMETER PrimaryMonitorServer
         Is the name of the monitor server for the primary server.
-        If ommitted logshipping will be monitored locally on the primary server.
+        Defaults to monitor on the instance provided via SourceSqlInstance param.
 
     .PARAMETER PrimaryMonitorCredential
         Allows you to login to enter a secure credential. Only needs to be used when the PrimaryMonitorServerSecurityMode is 0 or "sqlserver"
