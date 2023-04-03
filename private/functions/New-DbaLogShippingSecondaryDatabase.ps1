@@ -211,7 +211,7 @@ function New-DbaLogShippingSecondaryDatabase {
         ,@restore_threshold = $RestoreThreshold
         ,@threshold_alert = $ThresholdAlert
         ,@threshold_alert_enabled = $ThresholdAlertEnabled
-        ,@history_retention_period = $HistoryRetention"
+        ,@history_retention_period = $HistoryRetention "
 
 
     if ($ServerSecondary.Version.Major -le 12) {
