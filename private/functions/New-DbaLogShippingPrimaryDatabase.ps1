@@ -239,8 +239,7 @@ function New-DbaLogShippingPrimaryDatabase {
 
     if ($Force -or ($server.Version.Major -gt 9)) {
         $Query += ",@overwrite = 1;"
-    }
-    else {
+    } else {
         $Query += ";"
     }
 
