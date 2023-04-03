@@ -134,7 +134,7 @@ function New-DbaLogShippingPrimaryDatabase {
         Stop-Function -Message "The backup share path $BackupShare should be formatted in the form \\server\share." -Target $SqlInstance
         return
     } else {
-        if (-not ((Test-DbaPath $BackupShare -SqlInstance $SqlInstance -SqlCredential $SqlCredential) -and ((Get-Item $BackupShare).PSProvider.Name -eq 'FileSystem'))) {
+        if (-not ((Test-DbaPath $BackupShare -SqlInstance $server) -and ((Get-Item $BackupShare).PSProvider.Name -eq 'FileSystem'))) {
             Stop-Function -Message "The backup share path $BackupShare is not valid or can't be reached." -Target $SqlInstance
             return
         }
@@ -228,15 +228,14 @@ function New-DbaLogShippingPrimaryDatabase {
             if ($MonitorServer -and $MonitorServerSecurityMode -eq 0 ) {
                 $Query += "
                     ,@monitor_server_login = N'$MonitorLogin'
-                    ,@monitor_server_password = N'$MonitorPassword'"
+                    ,@monitor_server_password = N'$MonitorPassword' "
             }
         } else {
             $Query += ",@ignoreremotemonitor = 1"
         }
     }
 
-    $Query += "
-            ,@threshold_alert = $ThresholdAlert
+    $Query += ",@threshold_alert = $ThresholdAlert
             ,@threshold_alert_enabled = $ThresholdAlertEnabled"
 
     if ($Force -or ($server.Version.Major -gt 9)) {
