@@ -308,7 +308,7 @@ function Invoke-DbaDbLogShipping {
 
     .PARAMETER SecondaryMonitorServer
         Is the name of the monitor server for the secondary server.
-        If ommitted logshipping will be monitored locally on the secondary server.
+        Defaults to monitor on the instance provided via DestinationSqlInstance param.
 
     .PARAMETER SecondaryMonitorCredential
         Allows you to login to enter a secure credential. Only needs to be used when the SecondaryMonitorServerSecurityMode is 0 or "sqlserver"

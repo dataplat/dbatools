@@ -66,7 +66,7 @@ function New-DbaLogShippingSecondaryDatabase {
 
         .PARAMETER MonitorServer
             Is the name of the monitor server.
-            If null a monitor server will not be passed to the procedure and SQL Server will default to creating the LS alert job locally.
+            Defaults to the instance provided via SqlInstance param to create the alert job.
 
         .PARAMETER MonitorCredential
             Allows you to login to enter a secure credential.
