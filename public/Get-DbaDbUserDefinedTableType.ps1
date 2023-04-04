@@ -44,12 +44,17 @@ function Get-DbaDbUserDefinedTableType {
     .EXAMPLE
         PS C:\> Get-DbaDbUserDefinedTableType -SqlInstance sql2016
 
-        Gets all database Stored Procedures
+        Gets all database user defined table types in all the databases
 
     .EXAMPLE
         PS C:\> Get-DbaDbUserDefinedTableType -SqlInstance Server1 -Database db1
 
-        Gets the Stored Procedures for the db1 database
+        Gets all the user defined table types for the db1 database
+
+    .EXAMPLE
+        PS C:\> Get-DbaDbUserDefinedTableType -SqlInstance Server1 -Database db1 -Type type1
+
+        Gets type1 user defined table type from db1 database
 
     #>
     [CmdletBinding()]
