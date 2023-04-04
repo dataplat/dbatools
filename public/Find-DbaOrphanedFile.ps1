@@ -373,6 +373,9 @@ function Find-DbaOrphanedFile {
                     $fullpath = $dirtreematcher[$file]
 
                     $filename = Split-Path $fullpath -Leaf
+                    if ($IsLinux -or $IsMacOS) {
+                        $filename = $filename.Replace('\', '/')
+                    }
 
                     if ($filename -in $systemfiles) { continue }
 
