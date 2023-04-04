@@ -85,7 +85,9 @@ function Get-DbaDbUserDefinedTableType {
 
             if ($Type) {
                 $userDefinedTableTypes = $db.UserDefinedTableTypes | Where-Object Name -in $Type
-            } else { $userDefinedTableTypes = $db.UserDefinedTableTypes }
+            } else { 
+                $userDefinedTableTypes = $db.UserDefinedTableTypes
+            }
 
             foreach ($tabletype in $userDefinedTableTypes) {
                 if ( $tabletype.IsSystemObject ) {
