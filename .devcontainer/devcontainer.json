@@ -21,6 +21,10 @@
         "streetsidesoftware.code-spell-checker"
       ],
       "settings": {
+        "powershell.powerShellAdditionalExePaths": {
+            "PowerShell": "/opt/microsoft/powershell/7/pwsh"
+        },
+        "powershell.powerShellDefaultVersion": "PowerShell",
         "terminal.integrated.profiles.linux": {
           "pwsh": {
             "path": "/opt/microsoft/powershell/7/pwsh",
