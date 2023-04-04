@@ -31,6 +31,7 @@
             "icon": "terminal-powershell"
           }
         },
+        "terminal.integrated.shell.linux": "pwsh",
         "terminal.integrated.defaultProfile.linux": "pwsh"
       }
     }
