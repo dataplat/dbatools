@@ -66,7 +66,7 @@ function New-DbaLogShippingSecondaryDatabase {
 
         .PARAMETER MonitorServer
             Is the name of the monitor server.
-            The default is the name of the primary server.
+            Defaults to the instance provided via SqlInstance param to create the alert job.
 
         .PARAMETER MonitorCredential
             Allows you to login to enter a secure credential.
@@ -199,7 +199,8 @@ function New-DbaLogShippingSecondaryDatabase {
     }
 
     # Set up the query
-    $Query = "EXEC master.sys.sp_add_log_shipping_secondary_database
+    $Query = "DECLARE @SP_Add_RetCode INT;
+    EXEC @SP_Add_RetCode = master.sys.sp_add_log_shipping_secondary_database
         @secondary_database = '$SecondaryDatabase'
         ,@primary_server = '$PrimaryServer'
         ,@primary_database = '$PrimaryDatabase'
@@ -214,8 +215,7 @@ function New-DbaLogShippingSecondaryDatabase {
 
 
     if ($ServerSecondary.Version.Major -le 12) {
-        $Query += "
-        ,@ignoreremotemonitor = 1"
+        $Query += ",@ignoreremotemonitor = 1"
     }
 
     # Add inf extra options to the query when needed
@@ -236,6 +236,15 @@ function New-DbaLogShippingSecondaryDatabase {
     } else {
         $Query += ";"
     }
+
+    $Query += "
+        IF (@SP_Add_RetCode <> 0)
+        BEGIN
+            DECLARE @msg VARCHAR(1000);
+            SELECT @msg = 'Unexpected result executing sp_add_log_shipping_seondary_database ('
+                + CAST (@SP_Add_RetCode AS VARCHAR(5)) + ').';
+            THROW 51000, @msg, 1;
+        END"
 
     # Execute the query to add the log shipping primary
     if ($PSCmdlet.ShouldProcess($SqlServer, ("Configuring logshipping for secondary database $SecondaryDatabase on $SqlInstance"))) {
