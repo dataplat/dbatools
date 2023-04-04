@@ -71,10 +71,7 @@ function Write-HostColor {
 
                     while ($count -le $match.Count) {
                         if ($count -lt $Match.Count) {
-                            Write-Host -Object $row.SubString($index, ($match[$count].Index - $Index)) -ForegroundColor $DefaultColor -NoNewline
-                            try { Write-Host -Object $match[$count].Groups[2].Value -ForegroundColor $match[$count].Groups[1].Value -NoNewline -ErrorAction Stop }
-                            catch { Write-Host -Object $match[$count].Groups[2].Value -ForegroundColor $DefaultColor -NoNewline -ErrorAction Stop }
-
+                            Write-Host -Object $match[$count].Groups[2].Value -ForegroundColor $DefaultColor -NoNewline -ErrorAction Stop
                             $index = $match[$count].Index + $match[$count].Length
                             $count++
                         } else {
