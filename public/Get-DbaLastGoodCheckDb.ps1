@@ -172,12 +172,8 @@ function Get-DbaLastGoodCheckDb {
                 if ($lastKnownGood -isnot [datetime]) {
                     $lastKnownGood = Get-Date '1/1/1900 12:00:00 AM'
                 }
+                
                 $datecreated = $db.createDate
-
-                if ($lastKnownGood -isnot [datetime]) {
-                    $lastKnownGood = Get-Date '1/1/1900 12:00:00 AM'
-                }
-
                 if ($datecreated -isnot [datetime]) {
                     $datecreated = Get-Date '1/1/1900 12:00:00 AM'
                 }
