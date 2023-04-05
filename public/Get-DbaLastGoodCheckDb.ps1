@@ -172,9 +172,18 @@ function Get-DbaLastGoodCheckDb {
                 if ($lastKnownGood -isnot [datetime]) {
                     $lastKnownGood = Get-Date '1/1/1900 12:00:00 AM'
                 }
+                $datecreated = $db.createDate
+
+                if ($lastKnownGood -isnot [datetime]) {
+                    $lastKnownGood = Get-Date '1/1/1900 12:00:00 AM'
+                }
+
+                if ($datecreated -isnot [datetime]) {
+                    $datecreated = Get-Date '1/1/1900 12:00:00 AM'
+                }
 
                 $daysSinceCheckDb = (New-TimeSpan -Start $lastKnownGood -End (Get-Date)).Days
-                $daysSinceDbCreated = (New-TimeSpan -Start $db.createDate -End (Get-Date)).TotalDays
+                $daysSinceDbCreated = (New-TimeSpan -Start $datecreated -End (Get-Date)).TotalDays
 
                 if ($daysSinceCheckDb -lt 7) {
                     $Status = 'Ok'
@@ -187,6 +196,11 @@ function Get-DbaLastGoodCheckDb {
                 if ($lastKnownGood -eq '1/1/1900 12:00:00 AM') {
                     Remove-Variable -Name lastKnownGood, daysSinceCheckDb
                 }
+
+                if ($datecreated -eq '1/1/1900 12:00:00 AM') {
+                    Remove-Variable -Name daysSinceDbCreated, daysSinceCheckDb
+                }
+
 
                 [PSCustomObject]@{
                     ComputerName             = $server.ComputerName
