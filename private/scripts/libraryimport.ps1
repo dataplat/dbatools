@@ -22,6 +22,7 @@ if ($PSVersionTable.PSEdition -eq "Core") {
         'Microsoft.SqlServer.SmoExtended',
         'Microsoft.SqlServer.SqlWmiManagement',
         'Microsoft.SqlServer.Management.RegisteredServers',
+        'Microsoft.SqlServer.Management.IntegrationServices',
         'Microsoft.SqlServer.Management.Collector',
         'Microsoft.SqlServer.Management.XEvent',
         'Microsoft.SqlServer.Management.XEventDbScoped',

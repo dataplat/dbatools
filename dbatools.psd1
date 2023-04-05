@@ -29,7 +29,7 @@
     Description        = "The community module that enables SQL Server Pros to automate database development and server administration"
 
     # Modules that must be imported into the global environment prior to importing this module
-    RequiredModules    = @{ ModuleName = 'dbatools.library'; ModuleVersion = '2023.1.29' }
+    RequiredModules    = @{ ModuleName = 'dbatools.library'; ModuleVersion = '2023.4.4' }
 
     # Assemblies that must be loaded prior to importing this module
     RequiredAssemblies = @()
@@ -363,6 +363,9 @@
         'Get-DbaSpinLockStatistic',
         'Get-DbaSpn',
         'Get-DbaSsisExecutionHistory',
+        'Copy-DbaSsisCatalog',
+        'Get-DbaSsisEnvironmentVariable',
+        'New-DbaSsisCatalog',
         'Get-DbaStartupParameter',
         'Get-DbaStartupProcedure',
         'Get-DbaSuspectPage',
