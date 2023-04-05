@@ -170,7 +170,7 @@ function Get-DbaLastGoodCheckDb {
                 }
 
                 if (-not $lastKnownGood) {
-                    $lastKnownGood = Get-Date 0
+                    $lastKnownGood = Get-Date '1/1/1900 12:00:00 AM'
                 }
 
                 $daysSinceCheckDb = (New-TimeSpan -Start $lastKnownGood -End (Get-Date)).Days
