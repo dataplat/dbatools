@@ -136,10 +136,12 @@ function Copy-DbaAgentProxy {
 
                 # Proxy accounts rely on Credential accounts
                 if (-not $CredentialName) {
-                    $copyAgentProxyAccountStatus.Status = "Skipped"
-                    $copyAgentProxyAccountStatus.Notes = "Skipping migration of $proxyName due to misconfigured (empty) credential name"
-                    $copyAgentProxyAccountStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                    Write-Message -Level Verbose -Message "Skipping migration of $proxyName due to misconfigured (empty) credential name"
+                    if ($Pscmdlet.ShouldProcess($destinstance, "Skipping migration of $proxyName due to misconfigured (empty) credential name")) {
+                        $copyAgentProxyAccountStatus.Status = "Skipped"
+                        $copyAgentProxyAccountStatus.Notes = "Skipping migration of $proxyName due to misconfigured (empty) credential name"
+                        $copyAgentProxyAccountStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                        Write-Message -Level Verbose -Message "Skipping migration of $proxyName due to misconfigured (empty) credential name"
+                    }
                     continue
                 }
 
@@ -151,10 +153,12 @@ function Copy-DbaAgentProxy {
                 }
 
                 if ($null -eq $credentialtest) {
-                    $copyAgentProxyAccountStatus.Status = "Skipped"
-                    $copyAgentProxyAccountStatus.Notes = "Associated credential account, $CredentialName, does not exist on $destinstance"
-                    $copyAgentProxyAccountStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                    Write-Message -Level Verbose -Message "Associated credential account, $CredentialName, does not exist on $destinstance"
+                    if ($Pscmdlet.ShouldProcess($destinstance, "Associated credential account, $CredentialName, does not exist on $destinstance")) {
+                        $copyAgentProxyAccountStatus.Status = "Skipped"
+                        $copyAgentProxyAccountStatus.Notes = "Associated credential account, $CredentialName, does not exist on $destinstance"
+                        $copyAgentProxyAccountStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                        Write-Message -Level Verbose -Message "Associated credential account, $CredentialName, does not exist on $destinstance"
+                    }
                     continue
                 }
 
@@ -163,11 +167,13 @@ function Copy-DbaAgentProxy {
                     $copyAgentProxyAccountStatus.Type = "ProxyAccount"
 
                     if ($force -eq $false) {
-                        $copyAgentProxyAccountStatus.Status = "Skipped"
-                        $copyAgentProxyAccountStatus.Notes = "Already exists on destination"
-                        $copyAgentProxyAccountStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                        Write-Message -Level Verbose -Message "Server proxy account $proxyName exists at destination. Use -Force to drop and migrate."
-                        Continue
+                        if ($Pscmdlet.ShouldProcess($destinstance, "Server proxy account $proxyName exists at destination. Use -Force to drop and migrate.")) {
+                            $copyAgentProxyAccountStatus.Status = "Skipped"
+                            $copyAgentProxyAccountStatus.Notes = "Already exists on destination"
+                            $copyAgentProxyAccountStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                            Write-Message -Level Verbose -Message "Server proxy account $proxyName exists at destination. Use -Force to drop and migrate."
+                        }
+                        continue
                     } else {
                         if ($Pscmdlet.ShouldProcess($destinstance, "Dropping server proxy account $proxyName and recreating")) {
                             try {

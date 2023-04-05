@@ -162,11 +162,13 @@ function Copy-DbaLinkedServer {
                 # This does a check to warn of missing OleDbProviderSettings but should only be checked on SQL on Windows
                 if ($destServer.Settings.OleDbProviderSettings.Name.Length -ne 0) {
                     if (!$destServer.Settings.OleDbProviderSettings.Name -contains $provider -and !$provider.StartsWith("SQLN")) {
-                        $copyLinkedServer.Status = "Skipped"
-                        $copyLinkedServer.Notes = "Missing provider"
-                        $copyLinkedServer | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                        If ($pscmdlet.ShouldProcess($destinstance, "$($destServer.Name) does not support the $provider provider. Skipping $linkedServerName.")) {
+                            $copyLinkedServer.Status = "Skipped"
+                            $copyLinkedServer.Notes = "Missing provider"
+                            $copyLinkedServer | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 
-                        Write-Message -Level Verbose -Message "$($destServer.Name) does not support the $provider provider. Skipping $linkedServerName."
+                            Write-Message -Level Verbose -Message "$($destServer.Name) does not support the $provider provider. Skipping $linkedServerName."
+                        }
                         continue
                     }
                 }
