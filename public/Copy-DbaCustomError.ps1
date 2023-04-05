@@ -141,11 +141,13 @@ function Copy-DbaCustomError {
 
                 if ($destCustomErrors.ID -contains $customErrorId) {
                     if ($force -eq $false) {
-                        $copyCustomErrorStatus.Status = "Skipped"
-                        $copyCustomErrorStatus.Notes = "Already exists on destination"
-                        $copyCustomErrorStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                        If ($Pscmdlet.ShouldProcess($destinstance, "Custom error $customErrorId $language exists at destination. Use -Force to drop and migrate.")) {
+                            $copyCustomErrorStatus.Status = "Skipped"
+                            $copyCustomErrorStatus.Notes = "Already exists on destination"
+                            $copyCustomErrorStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 
-                        Write-Message -Level Verbose -Message "Custom error $customErrorId $language exists at destination. Use -Force to drop and migrate."
+                            Write-Message -Level Verbose -Message "Custom error $customErrorId $language exists at destination. Use -Force to drop and migrate."
+                        }
                         continue
                     } else {
                         If ($Pscmdlet.ShouldProcess($destinstance, "Dropping custom error $customErrorId $language and recreating")) {

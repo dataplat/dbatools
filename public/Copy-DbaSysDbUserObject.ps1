@@ -144,9 +144,12 @@ function Copy-DbaSysDbUserObject {
 
                         if ($destschema) {
                             if (-not $force) {
-                                $copyobject.Status = "Skipped"
-                                $copyobject.Notes = "Already exists on destination"
-                                $schmadoit = $false
+                                if ($PSCmdlet.ShouldProcess($destServer, "Skipping schema $schema because it already exists on the destination instance")) {
+                                    $copyobject.Status = "Skipped"
+                                    $copyobject.Notes = "Already exists on destination"
+                                    $schmadoit = $false
+                                }
+                                continue
                             } else {
                                 if ($PSCmdlet.ShouldProcess($destServer, "Dropping schema $schema in $systemDb")) {
                                     try {
@@ -199,9 +202,12 @@ function Copy-DbaSysDbUserObject {
 
                         if ($desttable) {
                             if (-not $force) {
-                                $copyobject.Status = "Skipped"
-                                $copyobject.Notes = "Already exists on destination"
-                                $doit = $false
+                                if ($PSCmdlet.ShouldProcess($destServer, "Skipping table $desttable because it already exists on the destination instance")) {
+                                    $copyobject.Status = "Skipped"
+                                    $copyobject.Notes = "Already exists on destination"
+                                    $doit = $false
+                                }
+                                continue
                             } else {
                                 if ($PSCmdlet.ShouldProcess($destServer, "Dropping table $table in $systemDb")) {
                                     try {
@@ -336,7 +342,10 @@ function Copy-DbaSysDbUserObject {
                                 $copyobject.Notes = (Get-ErrorMessage -Record $_)
                             }
                         }
-                        $copyobject | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+
+                        if ($PSCmdlet.ShouldProcess("console", "Outputting object status")) {
+                            $copyobject | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                        }
                     }
                 }
             } else {

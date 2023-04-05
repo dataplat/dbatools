@@ -132,11 +132,13 @@ function Copy-DbaBackupDevice {
 
                 if ($destBackupDevices.Name -contains $deviceName) {
                     if ($force -eq $false) {
-                        $copyBackupDeviceStatus.Status = "Skipped"
-                        $copyBackupDeviceStatus.Notes = "Already exists on destination"
-                        $copyBackupDeviceStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                        if ($Pscmdlet.ShouldProcess($destinstance, "Backup device $deviceName exists at destination. Use -Force to drop and migrate.")) {
+                            $copyBackupDeviceStatus.Status = "Skipped"
+                            $copyBackupDeviceStatus.Notes = "Already exists on destination"
+                            $copyBackupDeviceStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 
-                        Write-Message -Level Verbose -Message "backup device $deviceName exists at destination. Use -Force to drop and migrate."
+                            Write-Message -Level Verbose -Message "backup device $deviceName exists at destination. Use -Force to drop and migrate."
+                        }
                         continue
                     } else {
                         if ($Pscmdlet.ShouldProcess($destinstance, "Dropping backup device $deviceName")) {
@@ -166,9 +168,7 @@ function Copy-DbaBackupDevice {
                     }
                 }
 
-                if ($Pscmdlet.ShouldProcess("console", "Stating that the actual file copy is about to occur")) {
-                    Write-Message -Level Verbose -Message "Preparing to copy actual backup file"
-                }
+                Write-Message -Level Verbose -Message "Preparing to copy actual backup file"
 
                 $path = Split-Path $sourceServer.BackupDevices[$deviceName].PhysicalLocation
                 $destPath = Join-AdminUnc $destNetBios $path

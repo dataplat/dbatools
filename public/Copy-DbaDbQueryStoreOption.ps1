@@ -162,7 +162,7 @@ function Copy-DbaDbQueryStoreOption {
 
                 Write-Message -Message "Executing Set-DbaQueryStoreConfig." -Level Verbose
                 # Set the Query Store configuration through the Set-DbaQueryStoreConfig function
-                if ($PSCmdlet.ShouldProcess("$destDB", "Copying QueryStoreConfig")) {
+                if ($PSCmdlet.ShouldProcess($destServer, "Copying QueryStoreConfig for $destdb")) {
                     try {
                         if ($sourceServer.VersionMajor -eq 13) {
                             $setDbaDbQueryStoreOptionParameters = @{

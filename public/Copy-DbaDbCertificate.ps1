@@ -239,29 +239,35 @@ function Copy-DbaDbCertificate {
                         }
 
                         if ($domasterkeymessage) {
-                            $copyDbCertificateStatus.Status = "Skipped"
-                            $copyDbCertificateStatus.Notes = $domasterkeymessage
-                            $copyDbCertificateStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                            if ($Pscmdlet.ShouldProcess($destServer.Name, $domasterkeymessage)) {
+                                $copyDbCertificateStatus.Status = "Skipped"
+                                $copyDbCertificateStatus.Notes = $domasterkeymessage
+                                $copyDbCertificateStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 
-                            Write-Message -Level Verbose -Message $domasterkeymessage
+                                Write-Message -Level Verbose -Message $domasterkeymessage
+                            }
                             continue
                         }
 
                         if ($domasterkeypasswordmessage) {
-                            $copyDbCertificateStatus.Status = "Skipped"
-                            $copyDbCertificateStatus.Notes = "Master service key not found and MasterKeyPassword not provided for auto-creation"
-                            $copyDbCertificateStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                            if ($Pscmdlet.ShouldProcess($destServer.Name, "Master service key not found and MasterKeyPassword not provided for auto-creation")) {
+                                $copyDbCertificateStatus.Status = "Skipped"
+                                $copyDbCertificateStatus.Notes = "Master service key not found and MasterKeyPassword not provided for auto-creation"
+                                $copyDbCertificateStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 
-                            Write-Message -Level Verbose -Message "Master service key not found and MasterKeyPassword not provided for auto-creation"
+                                Write-Message -Level Verbose -Message "Master service key not found and MasterKeyPassword not provided for auto-creation"
+                            }
                             continue
                         }
                         $null = $db.Refresh()
                         if ($db.Certificates.Name -contains $certname) {
-                            $copyDbCertificateStatus.Status = "Skipped"
-                            $copyDbCertificateStatus.Notes = "Already exists on destination"
-                            $copyDbCertificateStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                            if ($Pscmdlet.ShouldProcess($destServer.Name, "Certificate $certname exists at destination in the $dbName database")) {
+                                $copyDbCertificateStatus.Status = "Skipped"
+                                $copyDbCertificateStatus.Notes = "Already exists on destination"
+                                $copyDbCertificateStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 
-                            Write-Message -Level Verbose -Message "Certificate $certname exists at destination in the $dbName database"
+                                Write-Message -Level Verbose -Message "Certificate $certname exists at destination in the $dbName database"
+                            }
                             continue
                         }
 

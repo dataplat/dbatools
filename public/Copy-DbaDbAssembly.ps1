@@ -163,11 +163,13 @@ function Copy-DbaDbAssembly {
 
 
                 if (!$destDb) {
-                    $copyDbAssemblyStatus.Status = "Skipped"
-                    $copyDbAssemblyStatus.Notes = "Destination database does not exist"
-                    $copyDbAssemblyStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                    if ($Pscmdlet.ShouldProcess($destinstance, "Destination database $dbName does not exist. Skipping $assemblyName.")) {
+                        $copyDbAssemblyStatus.Status = "Skipped"
+                        $copyDbAssemblyStatus.Notes = "Destination database does not exist"
+                        $copyDbAssemblyStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 
-                    Write-Message -Level Verbose -Message "Destination database $dbName does not exist. Skipping $assemblyName."
+                        Write-Message -Level Verbose -Message "Destination database $dbName does not exist. Skipping $assemblyName."
+                    }
                     continue
                 }
 
@@ -193,11 +195,12 @@ function Copy-DbaDbAssembly {
 
                 if ($destDb.Query("SELECT name FROM sys.assemblies WHERE name = '$assemblyName'").name) {
                     if ($force -eq $false) {
-                        $copyDbAssemblyStatus.Status = "Skipped"
-                        $copyDbAssemblyStatus.Notes = "Already exists on destination"
-                        $copyDbAssemblyStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-
-                        Stop-Function -Message "Assembly $assemblyName exists at destination in the $dbName database. Use -Force to drop and migrate." -Target $assemblyName -Continue
+                        if ($Pscmdlet.ShouldProcess($destinstance, "Destination database $dbName does not exist. Skipping $assemblyName.")) {
+                            $copyDbAssemblyStatus.Status = "Skipped"
+                            $copyDbAssemblyStatus.Notes = "Already exists on destination"
+                            $copyDbAssemblyStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                        }
+                        continue
                     } else {
                         if ($Pscmdlet.ShouldProcess($destinstance, "Dropping assembly $assemblyName on $($destDb.Name) on $($destServer.Name)")) {
                             try {

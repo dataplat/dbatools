@@ -165,7 +165,7 @@ function Copy-DbaAgentServer {
             }
 
             if ($ExcludeServerProperties) {
-                if ($Pscmdlet.ShouldProcess($destinstance, "Skipping property copy")) {
+                if ($Pscmdlet.ShouldProcess($destinstance, "Skipping Agent Server property copy")) {
                     $copyAgentPropStatus.Status = "Skipped"
                     $copyAgentPropStatus.Notes = $null
                     $copyAgentPropStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject

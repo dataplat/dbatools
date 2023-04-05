@@ -170,18 +170,18 @@ function Copy-DbaRegServer {
                 }
 
                 if ($serverName.ToLowerInvariant() -eq $toCmStore.DomainInstanceName.ToLowerInvariant()) {
-                    if ($Pscmdlet.ShouldProcess($destinstance, "Checking to see if server is the CMS equals current server name")) {
-                        if ($SwitchServerName) {
-                            $serverName = $fromCmStore.DomainInstanceName
-                            $instanceName = $fromCmStore.DomainInstanceName
-                            Write-Message -Level Verbose -Message "SwitchServerName was used and new CMS equals current server name. $($toCmStore.DomainInstanceName.ToLowerInvariant()) changed to $serverName."
-                        } else {
+                    if ($SwitchServerName) {
+                        $serverName = $fromCmStore.DomainInstanceName
+                        $instanceName = $fromCmStore.DomainInstanceName
+                        Write-Message -Level Verbose -Message "SwitchServerName was used and new CMS equals current server name. $($toCmStore.DomainInstanceName.ToLowerInvariant()) changed to $serverName."
+                    } else {
+                        if ($Pscmdlet.ShouldProcess($destinstance, "$serverName is Central Management Server. Add prohibited. Skipping.")) {
                             $copyInstanceStatus.Status = "Skipped"
                             $copyInstanceStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 
                             Write-Message -Level Verbose -Message "$serverName is Central Management Server. Add prohibited. Skipping."
-                            continue
                         }
+                        continue
                     }
                 }
 
@@ -258,7 +258,7 @@ function Copy-DbaRegServer {
 
                 if ($null -ne $toSubGroup) {
                     if ($force -eq $false) {
-                        if ($Pscmdlet.ShouldProcess($destinstance, "Checking to see if subgroup $fromSubGroupName exists")) {
+                        if ($Pscmdlet.ShouldProcess($destinstance, "Subgroup $fromSubGroupName exists at destination. Use -Force to drop and migrate.")) {
                             $copyGroupStatus.Status = "Skipped"
                             $copyGroupStatus.Notes = "Already exists on destination"
                             $copyGroupStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject

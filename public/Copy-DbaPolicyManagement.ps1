@@ -176,11 +176,13 @@ function Copy-DbaPolicyManagement {
                 }
 
                 if ($null -ne $destStore.PolicyCategories['Database']) {
-                    Write-Message -Level Verbose -Message "Policy category '$categoryName' was skipped because it already exists on $destination."
+                    if ($Pscmdlet.ShouldProcess($destinstance, "Attempting to drop $conditionName")) {
+                        Write-Message -Level Verbose -Message "Policy category '$categoryName' was skipped because it already exists on $destination."
 
-                    $copyCategoryStatus.Status = "Skipped"
-                    $copyCategoryStatus.Notes = "Already exists on destination"
-                    $copyCategoryStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                        $copyCategoryStatus.Status = "Skipped"
+                        $copyCategoryStatus.Notes = "Already exists on destination"
+                        $copyCategoryStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                    }
                     continue
                 }
 
@@ -224,11 +226,13 @@ function Copy-DbaPolicyManagement {
 
                 if ($null -ne $destStore.Conditions[$conditionName]) {
                     if ($force -eq $false) {
-                        Write-Message -Level Verbose -Message "condition '$conditionName' was skipped because it already exists on $destinstance. Use -Force to drop and recreate"
+                        if ($Pscmdlet.ShouldProcess($destinstance, "Condition '$conditionName' was skipped because it already exists on $destinstance. Use -Force to drop and recreate")) {
+                            Write-Message -Level Verbose -Message "condition '$conditionName' was skipped because it already exists on $destinstance. Use -Force to drop and recreate"
 
-                        $copyConditionStatus.Status = "Skipped"
-                        $copyConditionStatus.Notes = "Already exists on destination"
-                        $copyConditionStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                            $copyConditionStatus.Status = "Skipped"
+                            $copyConditionStatus.Notes = "Already exists on destination"
+                            $copyConditionStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                        }
                         continue
                     } else {
                         if ($Pscmdlet.ShouldProcess($destinstance, "Attempting to drop $conditionName")) {
@@ -291,11 +295,13 @@ function Copy-DbaPolicyManagement {
 
                 if ($null -ne $destStore.Policies[$policyName]) {
                     if ($force -eq $false) {
-                        Write-Message -Level Verbose -Message "Policy '$policyName' was skipped because it already exists on $destinstance. Use -Force to drop and recreate"
+                        if ($Pscmdlet.ShouldProcess($destinstance, "Policy '$policyName' was skipped because it already exists on $destinstance. Use -Force to drop and recreate")) {
+                            Write-Message -Level Verbose -Message "Policy '$policyName' was skipped because it already exists on $destinstance. Use -Force to drop and recreate"
 
-                        $copyPolicyStatus.Status = "Skipped"
-                        $copyPolicyStatus.Notes = "Already exists on destination"
-                        $copyPolicyStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                            $copyPolicyStatus.Status = "Skipped"
+                            $copyPolicyStatus.Notes = "Already exists on destination"
+                            $copyPolicyStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                        }
                         continue
                     } else {
                         if ($Pscmdlet.ShouldProcess($destinstance, "Attempting to drop $policyName")) {

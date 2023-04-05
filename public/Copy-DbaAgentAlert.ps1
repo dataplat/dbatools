@@ -171,8 +171,8 @@ function Copy-DbaAgentAlert {
                                 $copyAgentAlertStatus.Notes = "Operator(s) [$operatorList] do not exist on destination"
                                 $copyAgentAlertStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                                 Write-Message -Message "One or more operators alerted by [$alertName] is not present at the destination. Alert will not be copied. Use Copy-DbaAgentOperator to copy the operator(s) to the destination. Missing operator(s): $operatorList" -Level Warning
-                                continue
                             }
+                            continue
                         }
                     }
                 }

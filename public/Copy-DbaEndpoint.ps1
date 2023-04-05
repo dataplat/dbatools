@@ -133,11 +133,13 @@ function Copy-DbaEndpoint {
 
                 if ($destEndpoints.Name -contains $endpointName) {
                     if ($force -eq $false) {
-                        $copyEndpointStatus.Status = "Skipped"
-                        $copyEndpointStatus.Notes = "Already exists on destination"
-                        $copyEndpointStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                        if ($Pscmdlet.ShouldProcess($destinstance, "Server endpoint $endpointName exists at destination. Use -Force to drop and migrate.")) {
+                            $copyEndpointStatus.Status = "Skipped"
+                            $copyEndpointStatus.Notes = "Already exists on destination"
+                            $copyEndpointStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 
-                        Write-Message -Level Verbose -Message "Server endpoint $endpointName exists at destination. Use -Force to drop and migrate."
+                            Write-Message -Level Verbose -Message "Server endpoint $endpointName exists at destination. Use -Force to drop and migrate."
+                        }
                         continue
                     } else {
                         if ($Pscmdlet.ShouldProcess($destinstance, "Dropping server endpoint $endpointName and recreating.")) {

@@ -139,7 +139,6 @@ function Copy-DbaInstanceTrigger {
 
                 if ($destTriggers.Name -contains $triggerName) {
                     if ($force -eq $false) {
-
                         If ($pscmdlet.ShouldProcess($destinstance, "Server trigger $triggerName exists at destination. Use -Force to drop and migrate")) {
                             Write-Message -Level Verbose -Message "Server trigger $triggerName exists at destination. Use -Force to drop and migrate."
                             $copyTriggerStatus.Status = "Skipped"

@@ -157,11 +157,13 @@ function Copy-DbaInstanceAuditSpecification {
 
                 if ($destAudits.name -contains $auditSpecName) {
                     if ($force -eq $false) {
-                        Write-Message -Level Verbose -Message "Server audit $auditSpecName exists at destination. Use -Force to drop and migrate."
+                        if ($Pscmdlet.ShouldProcess($destinstance, "Server audit $auditSpecName exists at destination. Use -Force to drop and migrate.")) {
+                            Write-Message -Level Verbose -Message "Server audit $auditSpecName exists at destination. Use -Force to drop and migrate."
 
-                        $copyAuditSpecStatus.Status = "Skipped"
-                        $copyAuditSpecStatus.Notes = "Already exists on destination"
-                        $copyAuditSpecStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                            $copyAuditSpecStatus.Status = "Skipped"
+                            $copyAuditSpecStatus.Notes = "Already exists on destination"
+                            $copyAuditSpecStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                        }
                         continue
                     } else {
                         if ($Pscmdlet.ShouldProcess($destinstance, "Dropping server audit $auditSpecName and recreating")) {

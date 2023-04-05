@@ -248,11 +248,13 @@ function Copy-DbaResourceGovernor {
 
                 if ($null -ne $destServer.ResourceGovernor.ResourcePools[$poolName]) {
                     if ($force -eq $false) {
-                        Write-Message -Level Verbose -Message "Pool '$poolName' was skipped because it already exists on $destinstance. Use -Force to drop and recreate."
+                        if ($Pscmdlet.ShouldProcess($destinstance, "Pool '$poolName' was skipped because it already exists on $destinstance. Use -Force to drop and recreate.")) {
+                            Write-Message -Level Verbose -Message "Pool '$poolName' was skipped because it already exists on $destinstance. Use -Force to drop and recreate."
 
-                        $copyResourceGovPool.Status = "Skipped"
-                        $copyResourceGovPool.Notes = "Already exists on destination"
-                        $copyResourceGovPool | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                            $copyResourceGovPool.Status = "Skipped"
+                            $copyResourceGovPool.Notes = "Already exists on destination"
+                            $copyResourceGovPool | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                        }
                         continue
                     } else {
                         if ($Pscmdlet.ShouldProcess($destinstance, "Attempting to drop $poolName")) {
@@ -332,7 +334,7 @@ function Copy-DbaResourceGovernor {
                 }
             }
 
-            if ($Pscmdlet.ShouldProcess($destinstance, "Reconfiguring")) {
+            if ($Pscmdlet.ShouldProcess($destinstance, "Finalizing migration by reconfiguring Resource Governor.")) {
                 if ($destServer.Edition -notmatch 'Enterprise' -and $destServer.Edition -notmatch 'Datacenter' -and $destServer.Edition -notmatch 'Developer') {
                     Write-Message -Level Verbose -Message "The resource governor is not available in this edition of SQL Server. You can manipulate resource governor metadata but you will not be able to apply resource governor configuration. Only Enterprise edition of SQL Server supports resource governor."
                 } else {

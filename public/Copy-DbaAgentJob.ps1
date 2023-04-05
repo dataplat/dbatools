@@ -264,6 +264,8 @@ function Copy-DbaAgentJob {
                         $destServer.JobServer.Jobs.Refresh()
                         $destServer.JobServer.Jobs[$serverJob.name].IsEnabled = $sourceServer.JobServer.Jobs[$serverJob.name].IsEnabled
                         $destServer.JobServer.Jobs[$serverJob.name].Alter()
+                        $copyJobStatus.Status = "Successful"
+                        $copyJobStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                     } catch {
                         $copyJobStatus.Status = "Failed"
                         $copyJobStatus.Notes = (Get-ErrorMessage -Record $_)
@@ -286,10 +288,6 @@ function Copy-DbaAgentJob {
                         $serverJob.IsEnabled = $false
                         $serverJob.Alter()
                     }
-                }
-                if ($Pscmdlet.ShouldProcess($destinstance, "Reporting status of migration for $jobname")) {
-                    $copyJobStatus.Status = "Successful"
-                    $copyJobStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                 }
             }
         }
