@@ -169,6 +169,10 @@ function Get-DbaLastGoodCheckDb {
                     $dataPurityEnabled = $null
                 }
 
+                if (-not $lastKnownGood) {
+                    $lastKnownGood = Get-Date 0
+                }
+
                 $daysSinceCheckDb = (New-TimeSpan -Start $lastKnownGood -End (Get-Date)).Days
                 $daysSinceDbCreated = (New-TimeSpan -Start $db.createDate -End (Get-Date)).TotalDays
 
