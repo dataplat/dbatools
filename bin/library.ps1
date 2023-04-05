@@ -31,6 +31,8 @@ if ($PSVersionTable.PSEdition -ne "Core") {
                         "Microsoft.Data.SqlClient",
                         "Microsoft.SqlServer.Types",
                         "System.Configuration.ConfigurationManager",
+                        "Microsoft.SqlServer.Management.Sdk.Sfc",
+                        "Microsoft.SqlServer.Management.IntegrationServices",
                         "Microsoft.SqlServer.Replication",
                         "Microsoft.SqlServer.Rmo",
                         "System.Private.CoreLib"
