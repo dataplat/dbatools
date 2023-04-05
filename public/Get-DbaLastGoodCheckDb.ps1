@@ -134,7 +134,15 @@ function Get-DbaLastGoodCheckDb {
                     Stop-Function -Message "The database $($db.Name) is not accessible. Skipping database." -Continue -Target $db
                 }
 
-                if ($db.Parent.VersionMajor -lt 10 -or $db.Parent.DatabaseEngineType -match "Azure" -or $db.Parent.ConnectionContext.ExecuteScalar("SELECT IS_SRVROLEMEMBER('sysadmin')")) {
+                $isAzure = $db.Parent.DatabaseEngineType -match "Azure"
+
+                if (-not $isAzure) {
+                    $isAdmin = $db.Parent.ConnectionContext.ExecuteScalar("SELECT IS_SRVROLEMEMBER('sysadmin')")
+                } else {
+                    $isAdmin = $false
+                }
+
+                if ($db.Parent.VersionMajor -lt 10 -or $isAdmin) {
                     $dbNameQuoted = '[' + $db.Name.Replace(']', ']]') + ']'
                     $sql = "DBCC DBINFO ($dbNameQuoted) WITH TABLERESULTS"
                     Write-Message -Level Debug -Message "T-SQL: $sql"
