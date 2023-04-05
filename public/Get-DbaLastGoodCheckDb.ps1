@@ -198,7 +198,7 @@ function Get-DbaLastGoodCheckDb {
                 }
 
                 if ($datecreated -eq '1/1/1900 12:00:00 AM') {
-                    Remove-Variable -Name daysSinceDbCreated, daysSinceCheckDb
+                    Remove-Variable -Name datecreated
                 }
 
 
