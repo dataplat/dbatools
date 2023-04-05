@@ -272,7 +272,8 @@ exec sp_addrolemember 'userrole','bob';
         $PSDefaultParameterValues.Clear()
         $securestring = ConvertTo-SecureString $env:CLIENTSECRET -AsPlainText -Force
         $azurecred = New-Object PSCredential -ArgumentList $env:CLIENTID, $securestring
-        { Get-DbaLastGoodCheckDb -SqlInstance dbatoolstest.database.windows.net -SqlCredential $azurecred -Tenant $env:TENANTID } | Should -Not -Throw
+        $server = Connect-DbaInstance -SqlInstance dbatoolstest.database.windows.net -SqlCredential $azurecred -Tenant $env:TENANTID
+        { Get-DbaLastGoodCheckDb -SqlInstance $server } | Should -Not -Throw
     }
 }
 
