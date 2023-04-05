@@ -22,6 +22,9 @@ function Get-DbaDbUserDefinedTableType {
     .PARAMETER ExcludeDatabase
         The database(s) to exclude - this list is auto populated from the server
 
+    .PARAMETER Type
+        [OPTIONAL] When provided, the output will be filtered to return only the types given otherwise returns all the table types.
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -41,12 +44,17 @@ function Get-DbaDbUserDefinedTableType {
     .EXAMPLE
         PS C:\> Get-DbaDbUserDefinedTableType -SqlInstance sql2016
 
-        Gets all database Stored Procedures
+        Gets all database user defined table types in all the databases
 
     .EXAMPLE
         PS C:\> Get-DbaDbUserDefinedTableType -SqlInstance Server1 -Database db1
 
-        Gets the Stored Procedures for the db1 database
+        Gets all the user defined table types for the db1 database
+
+    .EXAMPLE
+        PS C:\> Get-DbaDbUserDefinedTableType -SqlInstance Server1 -Database db1 -Type type1
+
+        Gets type1 user defined table type from db1 database
 
     #>
     [CmdletBinding()]
@@ -56,6 +64,7 @@ function Get-DbaDbUserDefinedTableType {
         [PSCredential]$SqlCredential,
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
+        [string[]]$Type,
         [switch]$EnableException
     )
 
@@ -74,7 +83,13 @@ function Get-DbaDbUserDefinedTableType {
                 continue
             }
 
-            foreach ($tabletype in $db.UserDefinedTableTypes) {
+            if ($Type) {
+                $userDefinedTableTypes = $db.UserDefinedTableTypes | Where-Object Name -in $Type
+            } else {
+                $userDefinedTableTypes = $db.UserDefinedTableTypes
+            }
+
+            foreach ($tabletype in $userDefinedTableTypes) {
                 if ( $tabletype.IsSystemObject ) {
                     continue
                 }
@@ -84,7 +99,7 @@ function Get-DbaDbUserDefinedTableType {
                 Add-Member -Force -InputObject $tabletype -MemberType NoteProperty -Name SqlInstance -value $tabletype.Parent.SqlInstance
                 Add-Member -Force -InputObject $tabletype -MemberType NoteProperty -Name Database -value $db.Name
 
-                $defaults = 'ComputerName, InstanceName, SqlInstance, Database, ID, Name, Columns, Owner, CreateDate, IsSystemObject, Version'
+                $defaults = ('ComputerName', 'InstanceName', 'SqlInstance' , 'Database' , 'ID', 'Name', 'Columns', 'Owner', 'CreateDate', 'IsSystemObject', 'Version')
 
                 Select-DefaultView -InputObject $tabletype -Property $defaults
             }
