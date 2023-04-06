@@ -115,8 +115,11 @@ function Remove-DbaReplSubscription {
             try {
                 if ($PSCmdlet.ShouldProcess($instance, "Removing subscription to $PublicationName from $instance.$SubscriptionDatabase")) {
 
+
                     if ($pub.Type -in ('Transactional', 'Snapshot')) {
 
+                        #TODO: Only handles push subscriptions at the moment - need to add pull subscriptions
+                        # https://learn.microsoft.com/en-us/sql/relational-databases/replication/delete-a-pull-subscription?view=sql-server-ver16
                         $transSub = New-Object Microsoft.SqlServer.Replication.TransSubscription
                         $transSub.ConnectionContext = $replServer.ConnectionContext
                         $transSub.DatabaseName = $PublicationDatabase
