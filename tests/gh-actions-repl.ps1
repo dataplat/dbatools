@@ -106,12 +106,10 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
                 # if Publishing is enabled - disable it
                 if ((Get-DbaReplServer).IsPublisher) {
                     Disable-DbaReplPublishing
-                    write-verbose 'DISABLE PUB'
                 }
                 # if distribution is disabled - enable it
                 if (-not (Get-DbaReplDistributor).IsDistributor) {
                     Enable-DbaReplDistributor
-                    write-verbose 'ENABLE DIST'
                 }
             }
 
@@ -121,7 +119,7 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
 
             It "publishing is enabled" {
                 write-verbose 'work on enable'
-                Enable-DbaReplPublishing -EnableException
+                Enable-DbaReplPublishing -SqlInstance localhost -EnableException
                 (Get-DbaReplServer).IsPublisher | Should -Be $true
             }
         }
