@@ -118,9 +118,10 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
             }
 
             It "publishing is enabled" {
-                write-verbose 'work on enable'
                 Enable-DbaReplPublishing -SqlInstance localhost -EnableException
                 (Get-DbaReplServer).IsPublisher | Should -Be $true
+                'test' | Write-Warning
+                Get-DbatoolsError | Out-String | Write-Warning
             }
         }
 
