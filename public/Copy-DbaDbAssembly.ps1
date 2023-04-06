@@ -164,11 +164,10 @@ function Copy-DbaDbAssembly {
 
                 if (!$destDb) {
                     if ($Pscmdlet.ShouldProcess($destinstance, "Destination database $dbName does not exist. Skipping $assemblyName.")) {
+                        Write-Message -Level Verbose -Message "Destination database $dbName does not exist. Skipping $assemblyName."
                         $copyDbAssemblyStatus.Status = "Skipped"
                         $copyDbAssemblyStatus.Notes = "Destination database does not exist"
                         $copyDbAssemblyStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-
-                        Write-Message -Level Verbose -Message "Destination database $dbName does not exist. Skipping $assemblyName."
                     }
                     continue
                 }
@@ -195,7 +194,8 @@ function Copy-DbaDbAssembly {
 
                 if ($destDb.Query("SELECT name FROM sys.assemblies WHERE name = '$assemblyName'").name) {
                     if ($force -eq $false) {
-                        if ($Pscmdlet.ShouldProcess($destinstance, "Destination database $dbName does not exist. Skipping $assemblyName.")) {
+                        if ($Pscmdlet.ShouldProcess($destinstance, "Assembly $assemblyName exists at destination in the $dbName database. Use -Force to drop and migrate.")) {
+                            Write-Message -Level Verbose -Message "Assembly $assemblyName exists at destination in the $dbName database. Use -Force to drop and migrate."
                             $copyDbAssemblyStatus.Status = "Skipped"
                             $copyDbAssemblyStatus.Notes = "Already exists on destination"
                             $copyDbAssemblyStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
