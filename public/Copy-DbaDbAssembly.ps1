@@ -184,10 +184,11 @@ function Copy-DbaDbAssembly {
                             Write-Message -Level Debug -Message $sql
                             $destServer.Query($sql)
                         } catch {
-                            $copyDbAssemblyStatus.Status = "Failed"
+                            $copyDbAssemblyStatus.Status = "Failed to set security level to external"
+                            $copyDbAssemblyStatus.Notes = "$PSItem"
                             $copyDbAssemblyStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-
-                            Stop-Function -Message "Issue setting security level." -Target $destDb -ErrorRecord $_
+                            Write-Message -Level Verbose -Message "Failed to set security level to external for $dbName on $destinstance | $PSItem"
+                            continue
                         }
                     }
                 }
@@ -214,9 +215,10 @@ function Copy-DbaDbAssembly {
                                 $destDb.Query("DROP ASSEMBLY $assemblyName")
                             } catch {
                                 $copyDbAssemblyStatus.Status = "Failed"
+                                $copyDbAssemblyStatus.Notes = "$PSItem"
                                 $copyDbAssemblyStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-
-                                Stop-Function -Message "Issue dropping assembly." -Target $assemblyName -ErrorRecord $_ -Continue
+                                Write-Message -Level Verbose -Message "Failed to drop assembly $assemblyName for $dbName on $destinstance | $PSItem"
+                                continue
                             }
                         }
                     }
@@ -236,8 +238,8 @@ function Copy-DbaDbAssembly {
                         $copyDbAssemblyStatus.Status = "Failed"
                         $copyDbAssemblyStatus.Notes = $PSItem
                         $copyDbAssemblyStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-
-                        Stop-Function -Message "Issue creating assembly." -Target $assemblyName -ErrorRecord $_
+                        Write-Message -Level Verbose -Message "Failed to create assembly $assemblyName for $dbName on $destinstance | $PSItem"
+                        continue
                     }
                 }
             }

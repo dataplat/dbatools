@@ -136,8 +136,7 @@ function Copy-DbaBackupDevice {
                             $copyBackupDeviceStatus.Status = "Skipped"
                             $copyBackupDeviceStatus.Notes = "Already exists on destination"
                             $copyBackupDeviceStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-
-                            Write-Message -Level Verbose -Message "backup device $deviceName exists at destination. Use -Force to drop and migrate."
+                            Write-Message -Level Verbose -Message "Backup device $deviceName exists at destination. Use -Force to drop and migrate."
                         }
                         continue
                     } else {
@@ -148,8 +147,8 @@ function Copy-DbaBackupDevice {
                             } catch {
                                 $copyBackupDeviceStatus.Status = "Failed"
                                 $copyBackupDeviceStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-
-                                Stop-Function -Message "Issue dropping backup device" -Target $deviceName -ErrorRecord $_ -Continue
+                                Write-Message -Level Verbose -Message "Issue dropping backup device $deviceName on $destinstance | $PSItem"
+                                continue
                             }
                         }
                     }
@@ -163,8 +162,8 @@ function Copy-DbaBackupDevice {
                     } catch {
                         $copyBackupDeviceStatus.Status = "Failed"
                         $copyBackupDeviceStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-
-                        Stop-Function -Message "Issue scripting out backup device" -Target $deviceName -ErrorRecord $_ -Continue
+                        Write-Message -Level Verbose -Message "Issue scripting out backup device $deviceName on $destinstance | $PSItem"
+                        continue
                     }
                 }
 
@@ -190,8 +189,8 @@ function Copy-DbaBackupDevice {
                         } catch {
                             $copyBackupDeviceStatus.Status = "Failed"
                             $copyBackupDeviceStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-
-                            Stop-Function -Message "Issue updating script of backup device with new path" -Target $deviceName -ErrorRecord $_ -Continue
+                            Write-Message -Level Verbose -Message "Issue updating script of backup device $deviceName with new path on $destinstance | $PSItem"
+                            continue
                         }
                     }
                 }
@@ -203,8 +202,8 @@ function Copy-DbaBackupDevice {
                     } catch {
                         $copyBackupDeviceStatus.Status = "Failed"
                         $copyBackupDeviceStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-
-                        Stop-Function -Message "Issue copying backup device to destination" -Target $deviceName -ErrorRecord $_ -Continue
+                        Write-Message -Level Verbose -Message "Issue copying $sourcepath to $destPath for backup device $deviceName on $destinstance | $PSItem"
+                        continue
                     }
                 }
 
@@ -219,8 +218,8 @@ function Copy-DbaBackupDevice {
                     } catch {
                         $copyBackupDeviceStatus.Status = "Failed"
                         $copyBackupDeviceStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-
-                        Stop-Function -Message "Issue adding backup device" -Target $deviceName -ErrorRecord $_ -Continue
+                        Write-Message -Level Verbose -Message "Issue creating backup device $deviceName on $destinstance | $PSItem"
+                        continue
                     }
                 }
             }

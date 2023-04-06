@@ -157,7 +157,9 @@ function Copy-DbaDbQueryStoreOption {
 
                 if ($destDB.IsAccessible -eq $false) {
                     $copyQueryStoreStatus.Status = "Skipped"
-                    Stop-Function -Message "The database $destDB on server $destServer is not accessible. Skipping database." -Continue
+                    $copyQueryStoreStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                    Write-Message -Level Verbose -Message "The database $destDB on server on $destinstance is not accessible, skipping"
+                    continue
                 }
 
                 Write-Message -Message "Executing Set-DbaQueryStoreConfig." -Level Verbose
@@ -215,11 +217,13 @@ function Copy-DbaDbQueryStoreOption {
 
                         $null = Set-DbaDbQueryStoreOption @setDbaDbQueryStoreOptionParameters
                         $copyQueryStoreStatus.Status = "Successful"
+                        $copyQueryStoreStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                     } catch {
                         $copyQueryStoreStatus.Status = "Failed"
-                        Stop-Function -Message "Issue setting Query Store on $destDB." -Target $destDB -ErrorRecord $_ -Continue
+                        $copyQueryStoreStatus.Notes = "$PSItem"
+                        Write-Message -Level Verbose -Message "Issue setting Query Store  for $destDB on server on $destinstance"
+                        continue
                     }
-                    $copyQueryStoreStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                 }
             }
         }

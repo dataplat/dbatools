@@ -115,12 +115,13 @@ function Copy-DbaDbMail {
                     $destServer.Query($sql) | Out-Null
                     $mail.ConfigurationValues.Refresh()
                     $copyMailConfigStatus.Status = "Successful"
+                    $copyMailConfigStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                 } catch {
                     $copyMailConfigStatus.Status = "Failed"
                     $copyMailConfigStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                    Stop-Function -Message "Unable to migrate mail configuration." -Category InvalidOperation -InnerErrorRecord $_ -Target $destServer
+                    Write-Message -Level Verbose -Message "Unable to update mail server configuration on $destinstance | $PSItem"
+                    continue
                 }
-                $copyMailConfigStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
             }
         }
 
@@ -167,7 +168,8 @@ function Copy-DbaDbMail {
                         } catch {
                             $copyMailAccountStatus.Status = "Failed"
                             $copyMailAccountStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                            Stop-Function -Message "Issue dropping account." -Target $accountName -Category InvalidOperation -InnerErrorRecord $_ -Continue
+                            Write-Message -Level Verbose -Message "Issue dropping and recreating mail account $newAccountName on $destinstance | $PSItem"
+                            continue
                         }
                     }
                 }
@@ -183,7 +185,8 @@ function Copy-DbaDbMail {
                     } catch {
                         $copyMailAccountStatus.Status = "Failed"
                         $copyMailAccountStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                        Stop-Function -Message "Issue copying mail account." -Target $newAccountName -Category InvalidOperation -InnerErrorRecord $_
+                        Write-Message -Level Verbose -Message "Issue copying mail account $accountName to $destinstance | $PSItem"
+                        continue
                     }
                     $copyMailAccountStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                 }
@@ -234,7 +237,8 @@ function Copy-DbaDbMail {
                         } catch {
                             $copyMailProfileStatus.Status = "Failed"
                             $copyMailProfileStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                            Stop-Function -Message "Issue dropping profile." -Target $newProfileName -Category InvalidOperation -InnerErrorRecord $_ -Continue
+                            Write-Message -Level Verbose -Message "Issue dropping mail profile $newProfileName on $destinstance | $PSItem"
+                            continue
                         }
                     }
                 }
@@ -249,12 +253,13 @@ function Copy-DbaDbMail {
                         $destServer.Query($sql) | Out-Null
                         $destServer.Mail.Profiles.Refresh()
                         $copyMailProfileStatus.Status = "Successful"
+                        $copyMailProfileStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                     } catch {
                         $copyMailProfileStatus.Status = "Failed"
                         $copyMailProfileStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                        Stop-Function -Message "Issue copying mail profile." -Target $profileName -Category InvalidOperation -InnerErrorRecord $_
+                        Write-Message -Level Verbose -Message "Issue copying mail profile $profileName to $destinstance | $PSItem"
+                        continue
                     }
-                    $copyMailProfileStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                 }
             }
         }
@@ -304,8 +309,10 @@ function Copy-DbaDbMail {
                             $destServer.Mail.Accounts.MailServers[$mailServerName].Drop()
                         } catch {
                             $copyMailServerStatus.Status = "Failed"
+                            $copyMailServerStatus.Notes = (Get-ErrorMessage -Record $_)
                             $copyMailServerStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                            Stop-Function -Message "Issue dropping mail server." -Target $mailServerName -Category InvalidOperation -InnerErrorRecord $_ -Continue
+                            Write-Message -Level Verbose -Message "Failed to drop and recreate mail server $mailServerName on $destinstance | $PSItem"
+                            continue
                         }
                     }
                 }
@@ -328,12 +335,14 @@ function Copy-DbaDbMail {
                         Write-Message -Message $sql -Level Debug
                         $destServer.Query($sql) | Out-Null
                         $copyMailServerStatus.Status = "Successful"
+                        $copyMailServerStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                     } catch {
                         $copyMailServerStatus.Status = "Failed"
+                        $copyMailServerStatus.Notes = (Get-ErrorMessage -Record $_)
                         $copyMailServerStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                        Stop-Function -Message "Issue copying mail server" -Target $mailServerName -Category InvalidOperation -InnerErrorRecord $_
+                        Write-Message -Level Verbose -Message "Issue copying mail server $mailServerName on $destinstance | $PSItem"
+                        continue
                     }
-                    $copyMailServerStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                 }
             }
         }
@@ -436,12 +445,14 @@ function Copy-DbaDbMail {
                         $destServer.Configuration.DatabaseMailEnabled.ConfigValue = 1
                         $destServer.Alter()
                         $enableDBMailStatus.Status = "Successful"
+                        $enableDBMailStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                     } catch {
                         $enableDBMailStatus.Status = "Failed"
+                        $enableDBMailStatus.Notes = (Get-ErrorMessage -Record $_)
                         $enableDBMailStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                        Stop-Function -Message "Cannot enable Database Mail." -Category InvalidOperation -ErrorRecord $_ -Target $destServer
+                        Write-Message -Level Verbose -Message "Cannot enable database mail on $destinstance | $PSItem"
+                        continue
                     }
-                    $enableDBMailStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                 }
             }
         }

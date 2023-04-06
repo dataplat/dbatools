@@ -178,9 +178,8 @@ function Copy-DbaPolicyManagement {
                 }
 
                 if ($null -ne $destStore.PolicyCategories['Database']) {
-                    if ($Pscmdlet.ShouldProcess($destinstance, "Attempting to drop $conditionName")) {
+                    if ($Pscmdlet.ShouldProcess($destinstance, "Policy category '$categoryName' was skipped because it already exists on $destination")) {
                         Write-Message -Level Verbose -Message "Policy category '$categoryName' was skipped because it already exists on $destination."
-
                         $copyCategoryStatus.Status = "Skipped"
                         $copyCategoryStatus.Notes = "Already exists on destination"
                         $copyCategoryStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
@@ -195,15 +194,14 @@ function Copy-DbaPolicyManagement {
                         Write-Message -Level Verbose -Message "Copying policy category $categoryName"
                         $null = $destServer.Query($sql)
                         $destStore.PolicyCategories.Refresh()
-
                         $copyCategoryStatus.Status = "Successful"
                         $copyCategoryStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                     } catch {
                         $copyCategoryStatus.Status = "Failed"
                         $copyCategoryStatus.Notes = $_.Exception.Message
                         $copyCategoryStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-
-                        Stop-Function -Message "Issue creating policy category on $destination" -Target $categoryName -ErrorRecord $_
+                        Write-Message -Level Verbose -Message "Issue copying policy category $categoryName on $destinstance | $PSItem"
+                        continue
                     }
                 }
             }
@@ -230,14 +228,13 @@ function Copy-DbaPolicyManagement {
                     if ($force -eq $false) {
                         if ($Pscmdlet.ShouldProcess($destinstance, "Condition '$conditionName' was skipped because it already exists on $destinstance. Use -Force to drop and recreate")) {
                             Write-Message -Level Verbose -Message "condition '$conditionName' was skipped because it already exists on $destinstance. Use -Force to drop and recreate"
-
                             $copyConditionStatus.Status = "Skipped"
                             $copyConditionStatus.Notes = "Already exists on destination"
                             $copyConditionStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                         }
                         continue
                     } else {
-                        if ($Pscmdlet.ShouldProcess($destinstance, "Attempting to drop $conditionName")) {
+                        if ($Pscmdlet.ShouldProcess($destinstance, "Attempting to drop policy condition $conditionName")) {
                             Write-Message -Level Verbose -Message "Condition '$conditionName' exists on $destinstance. Force specified. Dropping $conditionName."
 
                             try {
@@ -251,7 +248,8 @@ function Copy-DbaPolicyManagement {
                                 $copyConditionStatus.Status = "Failed"
                                 $copyConditionStatus.Notes = (Get-ErrorMessage -Record $_).Message
                                 $copyConditionStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                                Stop-Function -Message "Issue dropping condition on $destinstance" -Target $conditionName -ErrorRecord $_ -Continue
+                                Write-Message -Level Verbose -Message "Issue dropping policy condition $conditionName on $destinstance | $PSItem"
+                                continue
                             }
                         }
                     }
@@ -271,8 +269,8 @@ function Copy-DbaPolicyManagement {
                         $copyConditionStatus.Status = "Failed"
                         $copyConditionStatus.Notes = (Get-ErrorMessage -Record $_).Message
                         $copyConditionStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-
-                        Stop-Function -Message "Issue creating condition on $destinstance" -Target $conditionName -ErrorRecord $_
+                        Write-Message -Level Verbose -Message "Issue creating policy condition $conditionName on $destinstance | $PSItem"
+                        continue
                     }
                 }
             }
@@ -316,8 +314,8 @@ function Copy-DbaPolicyManagement {
                                 $copyPolicyStatus.Status = "Failed"
                                 $copyPolicyStatus.Notes = (Get-ErrorMessage -Record $_).Message
                                 $copyPolicyStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-
-                                Stop-Function -Message "Issue dropping policy on $destinstance" -Target $policyName -ErrorRecord $_ -Continue
+                                Write-Message -Level Verbose -Message "Issue creating policy $policyName on $destinstance | $PSItem"
+                                continue
                             }
                         }
                     }
@@ -340,7 +338,9 @@ function Copy-DbaPolicyManagement {
                         $copyPolicyStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 
                         # This is usually because of a duplicate dependent from above. Just skip for now.
-                        Stop-Function -Message "Issue creating policy on $destinstance" -Target $policyName -ErrorRecord $_ -Continue
+                        # (no idea what the above means)
+                        Write-Message -Level Verbose -Message "Issue creating policy $policyName on $destinstance | $PSItem"
+                        continue
                     }
                 }
             }

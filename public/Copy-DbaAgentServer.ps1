@@ -180,7 +180,6 @@ function Copy-DbaAgentServer {
                         $sql = $sql -replace [Regex]::Escape("@auto_start="), [Regex]::Escape("--@auto_start=")
                         Write-Message -Level Debug -Message $sql
                         $null = $destServer.Query($sql)
-
                         $copyAgentPropStatus.Status = "Successful"
                         $copyAgentPropStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                     } catch {
@@ -189,6 +188,8 @@ function Copy-DbaAgentServer {
                         $copyAgentPropStatus.Status = "Failed"
                         $copyAgentPropStatus.Notes = $message
                         $copyAgentPropStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                        Write-Message -Level Verbose -Message "Issue copying SQL Agent properties on $destinstance | $PSItem"
+                        continue
                     }
                 }
             }

@@ -159,7 +159,8 @@ function Copy-DbaAgentJobCategory {
                                 } catch {
                                     $copyJobCategoryStatus.Status = "Failed"
                                     $copyJobCategoryStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                                    Stop-Function -Message "Issue dropping job category" -Target $categoryName -ErrorRecord $_ -Continue
+                                    Write-Message -Level Verbose -Message "Issue dropping job category $categoryName on $destinstance | $PSItem"
+                                    continue
                                 }
                             }
                         }
@@ -171,13 +172,13 @@ function Copy-DbaAgentJobCategory {
                             $sql = $jobCategory.Script() | Out-String
                             Write-Message -Level Debug -Message "SQL Statement: $sql"
                             $destServer.Query($sql)
-
                             $copyJobCategoryStatus.Status = "Successful"
                             $copyJobCategoryStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                         } catch {
                             $copyJobCategoryStatus.Status = "Failed"
                             $copyJobCategoryStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                            Stop-Function -Message "Issue copying job category" -Target $categoryName -ErrorRecord $_
+                            Write-Message -Level Verbose -Message "Issue copying job category $categoryName on $destinstance | $PSItem"
+                            continue
                         }
                     }
                 }
@@ -240,7 +241,8 @@ function Copy-DbaAgentJobCategory {
                                 } catch {
                                     $copyOperatorCategoryStatus.Status = "Failed"
                                     $copyOperatorCategoryStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                                    Stop-Function -Message "Issue dropping operator category" -Target $categoryName -ErrorRecord $_
+                                    Write-Message -Level Verbose -Message "Issue dropping operator category $categoryName on $destinstance | $PSItem"
+                                    continue
                                 }
                             }
                         }
@@ -257,7 +259,8 @@ function Copy-DbaAgentJobCategory {
                             } catch {
                                 $copyOperatorCategoryStatus.Status = "Failed"
                                 $copyOperatorCategoryStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                                Stop-Function -Message "Issue copying operator category" -Target $categoryName -ErrorRecord $_
+                                Write-Message -Level Verbose -Message "Issue copying operator category $categoryName on $destinstance | $PSItem"
+                                continue
                             }
                         }
                     }
@@ -326,7 +329,8 @@ function Copy-DbaAgentJobCategory {
                                 } catch {
                                     $copyAlertCategoryStatus.Status = "Failed"
                                     $copyAlertCategoryStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                                    Stop-Function -Message "Issue dropping alert category" -Target $categoryName -ErrorRecord $_
+                                    Write-Message -Level Verbose -Message "Issue dropping alert category $categoryName on $destinstance | $PSItem"
+                                    continue
                                 }
                             }
                         }
@@ -343,7 +347,8 @@ function Copy-DbaAgentJobCategory {
                             } catch {
                                 $copyAlertCategoryStatus.Status = "Failed"
                                 $copyAlertCategoryStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                                Stop-Function -Message "Issue creating alert category" -Target $categoryName -ErrorRecord $_
+                                Write-Message -Level Verbose -Message "Issue creating alert category $categoryName on $destinstance | $PSItem"
+                                continue
                             }
                         }
                     }

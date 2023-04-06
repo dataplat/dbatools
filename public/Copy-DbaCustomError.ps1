@@ -156,9 +156,10 @@ function Copy-DbaCustomError {
                                 $destServer.UserDefinedMessages[$customErrorId, $language].Drop()
                             } catch {
                                 $copyCustomErrorStatus.Status = "Failed"
+                                $copyCustomErrorStatus.Notes = "$PSItem"
                                 $copyCustomErrorStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-
-                                Stop-Function -Message "Issue dropping custom error" -Target $customErrorId -ErrorRecord $_ -Continue
+                                Write-Message -Level Verbose -Message "Issue dropping custom error $customErrorId $language on $destinstance | $PSItem"
+                                continue
                             }
                         }
                     }
@@ -170,14 +171,14 @@ function Copy-DbaCustomError {
                         $sql = $currentCustomError.Script() | Out-String
                         Write-Message -Level Debug -Message $sql
                         $destServer.Query($sql)
-
                         $copyCustomErrorStatus.Status = "Successful"
                         $copyCustomErrorStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                     } catch {
                         $copyCustomErrorStatus.Status = "Failed"
+                        $copyCustomErrorStatus.Notes = "$PSItem"
                         $copyCustomErrorStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-
-                        Stop-Function -Message "Issue creating custom error" -Target $customErrorId -ErrorRecord $_
+                        Write-Message -Level Verbose -Message "Issue creating custom error $customErrorId $language on $destinstance | $PSItem"
+                        continue
                     }
                 }
             }

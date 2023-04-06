@@ -157,10 +157,10 @@ function Copy-DbaStartupProcedure {
                                 $destServer.Query("DROP PROCEDURE [$($currentProcSchema)].[$($currentProcName)]")
                             } catch {
                                 $copyStartupProcStatus.Status = "Failed"
-                                $copyStartupProcStatus.Notes = $_
+                                $copyStartupProcStatus.Notes = (Get-ErrorMessage -Record $_)
                                 $copyStartupProcStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-
-                                Stop-Function -Message "Issue dropping startup procedure" -Target $currentProcFullName -ErrorRecord $_ -Continue
+                                Write-Message -Level Verbose -Message "Issue dropping startup procedure $currentProcFullName on $destinstance | $PSItem"
+                                continue
                             }
                         }
                     }
@@ -183,8 +183,10 @@ function Copy-DbaStartupProcedure {
                         $copyStartupProcStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                     } catch {
                         $copyStartupProcStatus.Status = "Failed"
-                        $copyStartupProcStatus.Notes = $_
+                        $copyStartupProcStatus.Notes = (Get-ErrorMessage -Record $_)
                         $copyStartupProcStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                        Write-Message -Level Verbose -Message "Issue creating startup procedure $currentProcFullName on $destinstance | $PSItem"
+                        continue
                     }
                 }
             }

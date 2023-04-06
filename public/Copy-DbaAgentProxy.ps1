@@ -183,7 +183,8 @@ function Copy-DbaAgentProxy {
                                 $copyAgentProxyAccountStatus.Status = "Failed"
                                 $copyAgentProxyAccountStatus.Notes = "Could not drop"
                                 $copyAgentProxyAccountStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                                Stop-Function -Message "Issue dropping proxy account" -Target $proxyName -ErrorRecord $_ -Continue
+                                Write-Message -Level Verbose -Message "Issue dropping proxy account $proxyName on $destinstance | $PSItem"
+                                continue
                             }
                         }
                     }
@@ -208,13 +209,12 @@ function Copy-DbaAgentProxy {
                             $copyAgentProxyAccountStatus.Status = "Skipping"
                             $copyAgentProxyAccountStatus.Notes = "Failure"
                             $copyAgentProxyAccountStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-
                             Write-Message -Level Verbose -Message "One or more subsystems do not exist on the destination server. Skipping that part."
                         } else {
                             $copyAgentProxyAccountStatus.Status = "Failed"
                             $copyAgentProxyAccountStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-
-                            Stop-Function -Message "Issue creating proxy account" -Target $proxyName -ErrorRecord $_
+                            Write-Message -Level Verbose -Message "Issue creating proxy account $proxyName on $destinstance | $PSItem"
+                            continue
                         }
                     }
                 }

@@ -100,7 +100,6 @@ function Copy-DbaInstanceAudit {
         [switch]$Force,
         [switch]$EnableException
     )
-
     begin {
         try {
             $sourceServer = Connect-DbaInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential -MinimumVersion 10
@@ -167,8 +166,8 @@ function Copy-DbaInstanceAudit {
                             } catch {
                                 $copyAuditStatus.Status = "Failed"
                                 $copyAuditStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-
-                                Stop-Function -Message "Issue dropping audit from destination." -Target $auditName -ErrorRecord $_
+                                Write-Message -Level Verbose -Message "Issue dropping audit from $destinstance | $PSItem"
+                                continue
                             }
                         }
                     }
@@ -217,8 +216,7 @@ function Copy-DbaInstanceAudit {
                         $copyAuditStatus.Status = "Failed"
                         $copyAuditStatus.Notes = (Get-ErrorMessage -Record $_)
                         $copyAuditStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-
-                        Stop-Function -Message "Issue creating audit." -Target $auditName -ErrorRecord $_
+                        Write-Message -Level Verbose -Message "Issue creating audit on $destinstance | $PSItem"
                     }
                 }
             }

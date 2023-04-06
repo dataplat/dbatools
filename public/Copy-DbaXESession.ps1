@@ -165,9 +165,10 @@ function Copy-DbaXESession {
                                 $destStore.Sessions[$sessionName].Drop()
                             } catch {
                                 $copyXeSessionStatus.Status = "Failed"
+                                $copyXeSessionStatus.Notes = (Get-ErrorMessage -Record $_)
                                 $copyXeSessionStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-
-                                Stop-Function -Message "Unable to drop session. Moving on." -Target $sessionName -ErrorRecord $_ -Continue
+                                Write-Message -Level Verbose -Message "Issue dropping Extended Event session $sessionName on $destinstance | $PSItem"
+                                continue
                             }
                         }
                     }
@@ -190,9 +191,10 @@ function Copy-DbaXESession {
                         $copyXeSessionStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                     } catch {
                         $copyXeSessionStatus.Status = "Failed"
+                        $copyXeSessionStatus.Notes = (Get-ErrorMessage -Record $_)
                         $copyXeSessionStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-
-                        Stop-Function -Message "Unable to create session." -Target $sessionName -ErrorRecord $_
+                        Write-Message -Level Verbose -Message "Issue creating Extended Event session $sessionName on $destinstance | $PSItem"
+                        continue
                     }
                 }
             }

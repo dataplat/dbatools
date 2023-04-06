@@ -159,13 +159,14 @@ function Copy-DbaSpConfigure {
                         } catch {
                             if ($_.Exception -match 'the same as the') {
                                 $copySpConfigStatus.Status = "Successful"
+                                $copySpConfigStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                             } else {
                                 $copySpConfigStatus.Status = "Failed"
                                 $copySpConfigStatus.Notes = (Get-ErrorMessage -Record $_)
+                                $copySpConfigStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                                Write-Message -Level Verbose -Message "Issue updating $sConfigName [$displayName] from $destOldConfigValue to $sConfiguredValue on $destinstance | $PSItem"
+                                continue
                             }
-                            $copySpConfigStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-
-                            Stop-Function -Message "Could not set $($destProp.ConfigName) to $sConfiguredValue." -Target $sConfigName -ErrorRecord $_
                         }
                     }
                 }

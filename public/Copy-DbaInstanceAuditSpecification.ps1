@@ -159,7 +159,6 @@ function Copy-DbaInstanceAuditSpecification {
                     if ($force -eq $false) {
                         if ($Pscmdlet.ShouldProcess($destinstance, "Server audit $auditSpecName exists at destination. Use -Force to drop and migrate.")) {
                             Write-Message -Level Verbose -Message "Server audit $auditSpecName exists at destination. Use -Force to drop and migrate."
-
                             $copyAuditSpecStatus.Status = "Skipped"
                             $copyAuditSpecStatus.Notes = "Already exists on destination"
                             $copyAuditSpecStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
@@ -174,8 +173,8 @@ function Copy-DbaInstanceAuditSpecification {
                                 $copyAuditSpecStatus.Status = "Failed"
                                 $copyAuditSpecStatus.Notes = (Get-ErrorMessage -Record $_)
                                 $copyAuditSpecStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-
-                                Stop-Function -Message "Issue dropping audit spec" -Target $auditSpecName -ErrorRecord $_ -Continue
+                                Write-Message -Level Verbose -Message "Issue dropping audit specification $auditSpecName on $destinstance | $PSItem"
+                                continue
                             }
                         }
                     }
@@ -186,15 +185,14 @@ function Copy-DbaInstanceAuditSpecification {
                         $sql = $auditSpec.Script() | Out-String
                         Write-Message -Level Debug -Message $sql
                         $destServer.Query($sql)
-
                         $copyAuditSpecStatus.Status = "Successful"
                         $copyAuditSpecStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                     } catch {
                         $copyAuditSpecStatus.Status = "Failed"
                         $copyAuditSpecStatus.Notes = (Get-ErrorMessage -Record $_)
                         $copyAuditSpecStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-
-                        Stop-Function -Message "Issue creating audit spec on destination" -Target $auditSpecName -ErrorRecord $_
+                        Write-Message -Level Verbose -Message "Issue creating audit specification $auditSpecName on $destinstance | $PSItem"
+                        continue
                     }
                 }
             }

@@ -187,7 +187,14 @@ function Copy-DbaCredential {
                         continue
                     } else {
                         if ($Pscmdlet.ShouldProcess($destinstance, "Dropping $credentialName")) {
-                            $destServer.Credentials[$credentialName].Drop()
+                            try {
+                                $destServer.Credentials[$credentialName].Drop()
+                            } catch {
+                                $copyCredentialStatus.Status = "Failed"
+                                $copyCredentialStatus.Notes = "$PSItem"
+                                Write-Message -Level Verbose -Message "Issue dropping $credentialName on $destinstance | $PSItem"
+                                continue
+                            }
                         }
                     }
                 }
@@ -218,9 +225,10 @@ function Copy-DbaCredential {
                     }
                 } catch {
                     $copyCredentialStatus.Status = "Failed"
+                    $copyCredentialStatus.Notes = "$PSItem"
                     $copyCredentialStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-
-                    Stop-Function -Message "Error creating credential" -Target $credentialName -ErrorRecord $_
+                    Write-Message -Level Verbose -Message "Issue creating $credentialName on $destinstance | $PSItem"
+                    continue
                 }
             }
         }

@@ -166,7 +166,6 @@ function Copy-DbaLinkedServer {
                             $copyLinkedServer.Status = "Skipped"
                             $copyLinkedServer.Notes = "Missing provider"
                             $copyLinkedServer | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-
                             Write-Message -Level Verbose -Message "$($destServer.Name) does not support the $provider provider. Skipping $linkedServerName."
                         }
                         continue
@@ -175,23 +174,29 @@ function Copy-DbaLinkedServer {
 
                 if ($null -ne $destServer.LinkedServers[$linkedServerName]) {
                     if (!$force) {
-                        if ($Pscmdlet.ShouldProcess($destinstance, "$linkedServerName exists $($destServer.Name). Skipping.")) {
+                        if ($Pscmdlet.ShouldProcess($destinstance, "Linked server $linkedServerName exists on $($destServer.Name)")) {
                             $copyLinkedServer.Status = "Skipped"
                             $copyLinkedServer.Notes = "Already exists on destination"
                             $copyLinkedServer | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-
-                            Write-Message -Level Verbose -Message "$linkedServerName exists $($destServer.Name). Skipping."
+                            Write-Message -Level Verbose -Message "Linked server $linkedServerName exists on $($destServer.Name)."
                         }
                         continue
                     } else {
                         if ($Pscmdlet.ShouldProcess($destinstance, "Dropping $linkedServerName")) {
-                            if ($currentLinkedServer.Name -eq 'repl_distributor') {
-                                Write-Message -Level Verbose -Message "repl_distributor cannot be dropped. Not going to try."
+                            try {
+                                if ($currentLinkedServer.Name -eq 'repl_distributor') {
+                                    Write-Message -Level Verbose -Message "repl_distributor cannot be dropped. Not going to try."
+                                    continue
+                                }
+                                $destServer.LinkedServers[$linkedServerName].Drop($true)
+                                $destServer.LinkedServers.refresh()
+                            } catch {
+                                $copyLinkedServer.Status = "Failed"
+                                $copyLinkedServer.Notes = "Issue dropping linked server $linkedServerName on $destinstance | $PSItem"
+                                $copyLinkedServer | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                                Write-Message -Level Verbose -Message "Issue dropping linked server $linkedServerName on $destinstance | $PSItem"
                                 continue
                             }
-
-                            $destServer.LinkedServers[$linkedServerName].Drop($true)
-                            $destServer.LinkedServers.refresh()
                         }
                     }
                 }
@@ -219,43 +224,41 @@ function Copy-DbaLinkedServer {
 
                         $destServer.LinkedServers.Refresh()
                         Write-Message -Level Verbose -Message "$linkedServerName successfully copied."
-
                         $copyLinkedServer.Status = "Successful"
                         $copyLinkedServer | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                     } catch {
+                        $copyLinkedServer.Notes = (Get-ErrorMessage -Record $_)
                         $copyLinkedServer.Status = "Failed"
                         $copyLinkedServer | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-
-                        Stop-Function -Message "Issue adding linked server $destServer." -Target $linkedServerName -InnerErrorRecord $_
-                        $skiplogins = $true
+                        Write-Message -Level Verbose -Message "Issue creating linked server $linkedServerName on $destinstance | $PSItem"
+                        continue
                     }
                 }
 
-                if ($skiplogins -ne $true) {
-                    $destlogins = $destServer.LinkedServers[$linkedServerName].LinkedServerLogins
-                    $lslogins = $sourcelogins | Where-Object { $_.Name -eq $linkedServerName }
+                $destlogins = $destServer.LinkedServers[$linkedServerName].LinkedServerLogins
+                $lslogins = $sourcelogins | Where-Object { $_.Name -eq $linkedServerName }
 
-                    foreach ($login in $lslogins) {
-                        $currentlogin = $destlogins | Where-Object { $_.RemoteUser -eq $login.Identity }
+                foreach ($login in $lslogins) {
+                    $currentlogin = $destlogins | Where-Object { $_.RemoteUser -eq $login.Identity }
 
-                        $copyLinkedServer.Type = $login.Identity
+                    $copyLinkedServer.Type = $login.Identity
 
-                        if ($currentlogin.RemoteUser.length -ne 0) {
-                            if ($Pscmdlet.ShouldProcess($destinstance, "Migrating linked server identity $($login.Identity)")) {
-                                try {
-                                    if ($login.Password) {
-                                        $currentlogin.SetRemotePassword($login.Password)
-                                        $currentlogin.Alter()
-                                    }
-
-                                    $copyLinkedServer.Status = "Successful"
-                                    $copyLinkedServer | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                                } catch {
-                                    $copyLinkedServer.Status = "Failed"
-                                    $copyLinkedServer | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-
-                                    Stop-Function -Message "Failed to copy login." -Target $login -InnerErrorRecord $_
+                    if ($currentlogin.RemoteUser.length -ne 0) {
+                        if ($Pscmdlet.ShouldProcess($destinstance, "Migrating linked server identity $($login.Identity)")) {
+                            try {
+                                if ($login.Password) {
+                                    $currentlogin.SetRemotePassword($login.Password)
+                                    $currentlogin.Alter()
                                 }
+
+                                $copyLinkedServer.Status = "Successful"
+                                $copyLinkedServer | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                            } catch {
+                                $copyLinkedServer.Status = "Failed"
+                                $copyLinkedServer.Notes = (Get-ErrorMessage -Record $_)
+                                $copyLinkedServer | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                                Write-Message -Level Verbose -Message "Issue creating linked server identity for $($login.Identity) on $destinstance | $PSItem"
+                                continue
                             }
                         }
                     }

@@ -240,7 +240,8 @@ function Copy-DbaAgentJob {
                                 $copyJobStatus.Status = "Failed"
                                 $copyJobStatus.Notes = (Get-ErrorMessage -Record $_).Message
                                 $copyJobStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                                Stop-Function -Message "Issue dropping job" -Target $jobName -ErrorRecord $_ -Continue
+                                Write-Message -Level Verbose -Message "Issue dropping job $jobName on $destinstance | $PSItem"
+                                continue
                             }
                         }
                     }
@@ -270,7 +271,8 @@ function Copy-DbaAgentJob {
                         $copyJobStatus.Status = "Failed"
                         $copyJobStatus.Notes = (Get-ErrorMessage -Record $_)
                         $copyJobStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                        Stop-Function -Message "Issue copying job" -Target $jobName -ErrorRecord $_ -Continue
+                        Write-Message -Level Verbose -Message "Issue copying job $jobName on $destinstance | $PSItem"
+                        continue
                     }
                 }
 

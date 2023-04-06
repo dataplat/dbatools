@@ -164,7 +164,8 @@ function Copy-DbaAgentSchedule {
                                 } catch {
                                     $copySharedScheduleStatus.Status = "Failed"
                                     $copySharedScheduleStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                                    Stop-Function -Message "Issue dropping schedule" -Target $scheduleName -ErrorRecord $_ -Continue
+                                    Write-Message -Level Verbose -Message "Issue dropping schedule $scheduleName on $destinstance | $PSItem"
+                                    continue
                                 }
                             }
                         }
@@ -184,7 +185,8 @@ function Copy-DbaAgentSchedule {
                     } catch {
                         $copySharedScheduleStatus.Status = "Failed"
                         $copySharedScheduleStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                        Stop-Function -Message "Issue creating schedule" -Target $scheduleName -ErrorRecord $_ -Continue
+                        Write-Message -Level Verbose -Message "Issue creating schedule $scheduleName on $destinstance | $PSItem"
+                        continue
                     }
                 }
             }
