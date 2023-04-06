@@ -33,6 +33,10 @@ jobs:
           # Expose second engine and endpoint on different port
           docker run -p 14333:1433 --volume shared:/shared:z --name mssql2 --hostname mssql2 --network localnet -d dbatools/sqlinstance2
 
+      - name: Add hostname to hosts file
+        run: |
+          echo "127.0.0.1 mssql" | sudo tee -a /etc/hosts
+
       - name: 👥 Clone appveyor repo
         working-directory: /tmp
         run: |
