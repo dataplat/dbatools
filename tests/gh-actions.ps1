@@ -267,6 +267,14 @@ exec sp_addrolemember 'userrole','bob';
         $server = Connect-DbaInstance -SqlInstance dbatoolstest.database.windows.net -SqlCredential $azurecred -Tenant $env:TENANTID
         (Get-DbaDatabase -SqlInstance $server -Database test).Name | Should -Be "test"
     }
+
+    It "tests Get-DbaLastGoodCheckDb against Azure" {
+        $PSDefaultParameterValues.Clear()
+        $securestring = ConvertTo-SecureString $env:CLIENTSECRET -AsPlainText -Force
+        $azurecred = New-Object PSCredential -ArgumentList $env:CLIENTID, $securestring
+        $server = Connect-DbaInstance -SqlInstance dbatoolstest.database.windows.net -SqlCredential $azurecred -Tenant $env:TENANTID
+        { Get-DbaLastGoodCheckDb -SqlInstance $server } | Should -Not -Throw
+    }
 }
 
 
