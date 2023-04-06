@@ -51,6 +51,7 @@
     # Specific functions to export for Core, etc are also found in psm1
     # FunctionsToExport specifically helps with AUTO-LOADING so do not remove
     FunctionsToExport  = @(
+        'Set-DbatoolsInsecureConnection',
         'Get-DbaDbServiceBrokerQueue',
         'New-DbaLinkedServer',
         'Add-DbaAgDatabase',
