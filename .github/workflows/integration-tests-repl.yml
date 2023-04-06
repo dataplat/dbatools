@@ -35,7 +35,7 @@ jobs:
 
       - name: Add hostname to hosts file
         run: |
-          echo "127.0.0.1 mssql" | sudo tee -a /etc/hosts
+          echo "127.0.0.1 mssql1 mssql2" | sudo tee -a /etc/hosts
 
       - name: 👥 Clone appveyor repo
         working-directory: /tmp
