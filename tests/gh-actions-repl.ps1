@@ -3,7 +3,7 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
         $password = ConvertTo-SecureString "dbatools.IO" -AsPlainText -Force
         $cred = New-Object -TypeName System.Management.Automation.PSCredential -ArgumentList "sqladmin", $password
 
-        $PSDefaultParameterValues["*:SqlInstance"] = "localhost"
+        $PSDefaultParameterValues["*:SqlInstance"] = "mssql1"
         $PSDefaultParameterValues["*:SqlCredential"] = $cred
         $PSDefaultParameterValues["*:Confirm"] = $false
         $PSDefaultParameterValues["*:SharedPath"] = "/shared"
