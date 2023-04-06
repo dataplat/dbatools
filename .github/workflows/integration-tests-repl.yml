@@ -51,4 +51,4 @@ jobs:
           Import-Module ./dbatools.psd1 -Force
           Get-DbatoolsConfigValue -FullName sql.connection.trustcert | Write-Warning
           Get-DbatoolsConfigValue -FullName sql.connection.encrypt | Write-Warning
-          $null = Invoke-Pester ./tests/gh-actions-repl.ps1 -Output Detailed -PassThru
+          Invoke-Pester ./tests/gh-actions-repl.ps1 -Output Detailed -PassThru
