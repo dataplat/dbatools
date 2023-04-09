@@ -139,7 +139,6 @@ function Copy-DbaInstanceTrigger {
 
                 if ($destTriggers.Name -contains $triggerName) {
                     if ($force -eq $false) {
-
                         If ($pscmdlet.ShouldProcess($destinstance, "Server trigger $triggerName exists at destination. Use -Force to drop and migrate")) {
                             Write-Message -Level Verbose -Message "Server trigger $triggerName exists at destination. Use -Force to drop and migrate."
                             $copyTriggerStatus.Status = "Skipped"
@@ -156,8 +155,8 @@ function Copy-DbaInstanceTrigger {
                                 $copyTriggerStatus.Status = "Failed"
                                 $copyTriggerStatus.Notes = (Get-ErrorMessage -Record $_)
                                 $copyTriggerStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-
-                                Stop-Function -Message "Issue dropping trigger on destination" -Target $triggerName -ErrorRecord $_ -Continue
+                                Write-Message -Level Verbose -Message "Issue dropping trigger $triggerName on $destinstance | $PSItem"
+                                continue
                             }
                         }
                     }
@@ -170,19 +169,17 @@ function Copy-DbaInstanceTrigger {
                         $sql = $sql -replace "CREATE ", "$($eol)GO$($eol)CREATE "
                         $sql = $sql -replace "ENABLE TRIGGER", "$($eol)GO$($eol)ENABLE TRIGGER"
                         Write-Message -Level Debug -Message $sql
-
                         foreach ($query in ($sql -split '\nGO\b')) {
                             $destServer.Query($query) | Out-Null
                         }
-
                         $copyTriggerStatus.Status = "Successful"
                         $copyTriggerStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                     } catch {
                         $copyTriggerStatus.Status = "Failed"
                         $copyTriggerStatus.Notes = (Get-ErrorMessage -Record $_)
                         $copyTriggerStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-
-                        Stop-Function -Message "Issue creating trigger on destination" -Target $triggerName -ErrorRecord $_
+                        Write-Message -Level Verbose -Message "Issue creating trigger $triggerName on $destinstance | $PSItem"
+                        continue
                     }
                 }
             }

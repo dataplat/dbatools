@@ -106,7 +106,7 @@
         'Copy-DbaResourceGovernor',
         'Copy-DbaSpConfigure',
         'Copy-DbaStartupProcedure',
-        'Copy-DbaSysDbUserObject',
+        'Copy-DbaSystemDbUserObject',
         'Copy-DbaXESession',
         'Copy-DbaXESessionTemplate',
         'Disable-DbaAgHadr',
@@ -747,7 +747,8 @@
         'Start-SqlMigration',
         'Write-DbaDataTable',
         'Get-DbaDbModule',
-        'Get-DbaBuildReference'
+        'Get-DbaBuildReference',
+        'Copy-DbaSysDbUserObject'
     )
 
     # List of all modules packaged with this module

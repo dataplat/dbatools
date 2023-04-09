@@ -240,7 +240,8 @@ function Copy-DbaAgentJob {
                                 $copyJobStatus.Status = "Failed"
                                 $copyJobStatus.Notes = (Get-ErrorMessage -Record $_).Message
                                 $copyJobStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                                Stop-Function -Message "Issue dropping job" -Target $jobName -ErrorRecord $_ -Continue
+                                Write-Message -Level Verbose -Message "Issue dropping job $jobName on $destinstance | $PSItem"
+                                continue
                             }
                         }
                     }
@@ -264,11 +265,14 @@ function Copy-DbaAgentJob {
                         $destServer.JobServer.Jobs.Refresh()
                         $destServer.JobServer.Jobs[$serverJob.name].IsEnabled = $sourceServer.JobServer.Jobs[$serverJob.name].IsEnabled
                         $destServer.JobServer.Jobs[$serverJob.name].Alter()
+                        $copyJobStatus.Status = "Successful"
+                        $copyJobStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                     } catch {
                         $copyJobStatus.Status = "Failed"
                         $copyJobStatus.Notes = (Get-ErrorMessage -Record $_)
                         $copyJobStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                        Stop-Function -Message "Issue copying job" -Target $jobName -ErrorRecord $_ -Continue
+                        Write-Message -Level Verbose -Message "Issue copying job $jobName on $destinstance | $PSItem"
+                        continue
                     }
                 }
 
@@ -286,10 +290,6 @@ function Copy-DbaAgentJob {
                         $serverJob.IsEnabled = $false
                         $serverJob.Alter()
                     }
-                }
-                if ($Pscmdlet.ShouldProcess($destinstance, "Reporting status of migration for $jobname")) {
-                    $copyJobStatus.Status = "Successful"
-                    $copyJobStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                 }
             }
         }

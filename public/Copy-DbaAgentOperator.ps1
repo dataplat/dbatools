@@ -154,8 +154,8 @@ function Copy-DbaAgentOperator {
                             } catch {
                                 $copyOperatorStatus.Status = "Failed"
                                 $copyOperatorStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-
-                                Stop-Function -Message "Issue dropping operator" -Category InvalidOperation -ErrorRecord $_ -Target $destServer -Continue
+                                Write-Message -Level Verbose -Message "Issue dropping operator $operatorName on $destinstance | $PSItem"
+                                continue
                             }
                         }
                     }
@@ -173,7 +173,8 @@ function Copy-DbaAgentOperator {
                     } catch {
                         $copyOperatorStatus.Status = "Failed"
                         $copyOperatorStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                        Stop-Function -Message "Issue creating operator." -Category InvalidOperation -ErrorRecord $_ -Target $destServer
+                        Write-Message -Level Verbose -Message "Issue creating operator $operatorName on $destinstance | $PSItem"
+                        continue
                     }
                 }
             }

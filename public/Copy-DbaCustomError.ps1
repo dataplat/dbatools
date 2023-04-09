@@ -141,11 +141,13 @@ function Copy-DbaCustomError {
 
                 if ($destCustomErrors.ID -contains $customErrorId) {
                     if ($force -eq $false) {
-                        $copyCustomErrorStatus.Status = "Skipped"
-                        $copyCustomErrorStatus.Notes = "Already exists on destination"
-                        $copyCustomErrorStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                        If ($Pscmdlet.ShouldProcess($destinstance, "Custom error $customErrorId $language exists at destination. Use -Force to drop and migrate.")) {
+                            $copyCustomErrorStatus.Status = "Skipped"
+                            $copyCustomErrorStatus.Notes = "Already exists on destination"
+                            $copyCustomErrorStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 
-                        Write-Message -Level Verbose -Message "Custom error $customErrorId $language exists at destination. Use -Force to drop and migrate."
+                            Write-Message -Level Verbose -Message "Custom error $customErrorId $language exists at destination. Use -Force to drop and migrate."
+                        }
                         continue
                     } else {
                         If ($Pscmdlet.ShouldProcess($destinstance, "Dropping custom error $customErrorId $language and recreating")) {
@@ -154,9 +156,10 @@ function Copy-DbaCustomError {
                                 $destServer.UserDefinedMessages[$customErrorId, $language].Drop()
                             } catch {
                                 $copyCustomErrorStatus.Status = "Failed"
+                                $copyCustomErrorStatus.Notes = "$PSItem"
                                 $copyCustomErrorStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-
-                                Stop-Function -Message "Issue dropping custom error" -Target $customErrorId -ErrorRecord $_ -Continue
+                                Write-Message -Level Verbose -Message "Issue dropping custom error $customErrorId $language on $destinstance | $PSItem"
+                                continue
                             }
                         }
                     }
@@ -168,14 +171,14 @@ function Copy-DbaCustomError {
                         $sql = $currentCustomError.Script() | Out-String
                         Write-Message -Level Debug -Message $sql
                         $destServer.Query($sql)
-
                         $copyCustomErrorStatus.Status = "Successful"
                         $copyCustomErrorStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                     } catch {
                         $copyCustomErrorStatus.Status = "Failed"
+                        $copyCustomErrorStatus.Notes = "$PSItem"
                         $copyCustomErrorStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-
-                        Stop-Function -Message "Issue creating custom error" -Target $customErrorId -ErrorRecord $_
+                        Write-Message -Level Verbose -Message "Issue creating custom error $customErrorId $language on $destinstance | $PSItem"
+                        continue
                     }
                 }
             }

@@ -163,11 +163,12 @@ function Copy-DbaDbAssembly {
 
 
                 if (!$destDb) {
-                    $copyDbAssemblyStatus.Status = "Skipped"
-                    $copyDbAssemblyStatus.Notes = "Destination database does not exist"
-                    $copyDbAssemblyStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-
-                    Write-Message -Level Verbose -Message "Destination database $dbName does not exist. Skipping $assemblyName."
+                    if ($Pscmdlet.ShouldProcess($destinstance, "Destination database $dbName does not exist. Skipping $assemblyName.")) {
+                        Write-Message -Level Verbose -Message "Destination database $dbName does not exist. Skipping $assemblyName."
+                        $copyDbAssemblyStatus.Status = "Skipped"
+                        $copyDbAssemblyStatus.Notes = "Destination database does not exist"
+                        $copyDbAssemblyStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                    }
                     continue
                 }
 
@@ -183,21 +184,24 @@ function Copy-DbaDbAssembly {
                             Write-Message -Level Debug -Message $sql
                             $destServer.Query($sql)
                         } catch {
-                            $copyDbAssemblyStatus.Status = "Failed"
+                            $copyDbAssemblyStatus.Status = "Failed to set security level to external"
+                            $copyDbAssemblyStatus.Notes = "$PSItem"
                             $copyDbAssemblyStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-
-                            Stop-Function -Message "Issue setting security level." -Target $destDb -ErrorRecord $_
+                            Write-Message -Level Verbose -Message "Failed to set security level to external for $dbName on $destinstance | $PSItem"
+                            continue
                         }
                     }
                 }
 
                 if ($destDb.Query("SELECT name FROM sys.assemblies WHERE name = '$assemblyName'").name) {
                     if ($force -eq $false) {
-                        $copyDbAssemblyStatus.Status = "Skipped"
-                        $copyDbAssemblyStatus.Notes = "Already exists on destination"
-                        $copyDbAssemblyStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-
-                        Stop-Function -Message "Assembly $assemblyName exists at destination in the $dbName database. Use -Force to drop and migrate." -Target $assemblyName -Continue
+                        if ($Pscmdlet.ShouldProcess($destinstance, "Assembly $assemblyName exists at destination in the $dbName database. Use -Force to drop and migrate.")) {
+                            Write-Message -Level Verbose -Message "Assembly $assemblyName exists at destination in the $dbName database. Use -Force to drop and migrate."
+                            $copyDbAssemblyStatus.Status = "Skipped"
+                            $copyDbAssemblyStatus.Notes = "Already exists on destination"
+                            $copyDbAssemblyStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                        }
+                        continue
                     } else {
                         if ($Pscmdlet.ShouldProcess($destinstance, "Dropping assembly $assemblyName on $($destDb.Name) on $($destServer.Name)")) {
                             try {
@@ -211,9 +215,10 @@ function Copy-DbaDbAssembly {
                                 $destDb.Query("DROP ASSEMBLY $assemblyName")
                             } catch {
                                 $copyDbAssemblyStatus.Status = "Failed"
+                                $copyDbAssemblyStatus.Notes = "$PSItem"
                                 $copyDbAssemblyStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-
-                                Stop-Function -Message "Issue dropping assembly." -Target $assemblyName -ErrorRecord $_ -Continue
+                                Write-Message -Level Verbose -Message "Failed to drop assembly $assemblyName for $dbName on $destinstance | $PSItem"
+                                continue
                             }
                         }
                     }
@@ -233,8 +238,8 @@ function Copy-DbaDbAssembly {
                         $copyDbAssemblyStatus.Status = "Failed"
                         $copyDbAssemblyStatus.Notes = $PSItem
                         $copyDbAssemblyStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-
-                        Stop-Function -Message "Issue creating assembly." -Target $assemblyName -ErrorRecord $_
+                        Write-Message -Level Verbose -Message "Failed to create assembly $assemblyName for $dbName on $destinstance | $PSItem"
+                        continue
                     }
                 }
             }

@@ -67,8 +67,7 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
     }
 
     It "forces a drop/create of the assembly in the target server" {
-        $results = Copy-DbaDbAssembly -Source $script:instance2 -Destination $script:instance3 -Assembly dbclrassembly.resolveDNS -WarningVariable warning
-        $warning | Should -BeLike "*Assembly resolveDNS exists at destination in the dbclrassembly database. Use -Force to drop and migrate."
+        $results = Copy-DbaDbAssembly -Source $script:instance2 -Destination $script:instance3 -Assembly dbclrassembly.resolveDNS
         $results.Status | Should -Be Skipped
         $results.Notes | Should -Be "Already exists on destination"
 

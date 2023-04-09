@@ -137,20 +137,28 @@ function Copy-DbaRegServer {
                             $destinationGroup.Drop()
                         } catch {
                             $copyDestinationGroupStatus.Status = "Failed"
+                            $copyDestinationGroupStatus.Notes = $_.Exception.Message
                             $copyDestinationGroupStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-
-                            Stop-Function -Message "Issue dropping group" -Target $groupName -ErrorRecord $_ -Continue
+                            Write-Message -Level Verbose -Message "Issue dropping group $groupName on $destinstance | $PSItem"
+                            continue
                         }
                     }
                 }
 
                 if ($Pscmdlet.ShouldProcess($destinstance, "Creating group $groupName")) {
-                    Write-Message -Level Verbose -Message "Creating group $($sourceGroup.Name)"
-                    $destinationGroup = New-Object Microsoft.SqlServer.Management.RegisteredServers.ServerGroup($currentServerGroup, $sourceGroup.Name)
-                    $destinationGroup.Create()
-
-                    $copyDestinationGroupStatus.Status = "Successful"
-                    $copyDestinationGroupStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                    try {
+                        Write-Message -Level Verbose -Message "Creating group $($sourceGroup.Name)"
+                        $destinationGroup = New-Object Microsoft.SqlServer.Management.RegisteredServers.ServerGroup($currentServerGroup, $sourceGroup.Name)
+                        $destinationGroup.Create()
+                        $copyDestinationGroupStatus.Status = "Successful"
+                        $copyDestinationGroupStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                    } catch {
+                        $copyDestinationGroupStatus.Status = "Failed"
+                        $copyDestinationGroupStatus.Notes = $_.Exception.Message
+                        $copyDestinationGroupStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                        Write-Message -Level Verbose -Message "Issue creating group $groupName on $destinstance | $PSItem"
+                        continue
+                    }
                 }
             }
 
@@ -158,7 +166,7 @@ function Copy-DbaRegServer {
             foreach ($instance in $sourceGroup.RegisteredServers) {
                 $instanceName = $instance.Name
                 $serverName = $instance.ServerName
-
+                $destinstance = $destServer.Name
                 $copyInstanceStatus = [pscustomobject]@{
                     SourceServer      = $sourceServer.Name
                     DestinationServer = $destServer.Name
@@ -170,18 +178,17 @@ function Copy-DbaRegServer {
                 }
 
                 if ($serverName.ToLowerInvariant() -eq $toCmStore.DomainInstanceName.ToLowerInvariant()) {
-                    if ($Pscmdlet.ShouldProcess($destinstance, "Checking to see if server is the CMS equals current server name")) {
-                        if ($SwitchServerName) {
-                            $serverName = $fromCmStore.DomainInstanceName
-                            $instanceName = $fromCmStore.DomainInstanceName
-                            Write-Message -Level Verbose -Message "SwitchServerName was used and new CMS equals current server name. $($toCmStore.DomainInstanceName.ToLowerInvariant()) changed to $serverName."
-                        } else {
+                    if ($SwitchServerName) {
+                        $serverName = $fromCmStore.DomainInstanceName
+                        $instanceName = $fromCmStore.DomainInstanceName
+                        Write-Message -Level Verbose -Message "SwitchServerName was used and new CMS equals current server name. $($toCmStore.DomainInstanceName.ToLowerInvariant()) changed to $serverName."
+                    } else {
+                        if ($Pscmdlet.ShouldProcess($destinstance, "$serverName is Central Management Server. Add prohibited. Skipping.")) {
                             $copyInstanceStatus.Status = "Skipped"
                             $copyInstanceStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-
                             Write-Message -Level Verbose -Message "$serverName is Central Management Server. Add prohibited. Skipping."
-                            continue
                         }
+                        continue
                     }
                 }
 
@@ -192,7 +199,6 @@ function Copy-DbaRegServer {
                             $copyInstanceStatus.Status = "Skipped"
                             $copyInstanceStatus.Notes = "Already exists on destination"
                             $copyInstanceStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-
                             Write-Message -Level Verbose -Message "Instance $instanceName exists in group $groupName at destination. Use -Force to drop and migrate."
                         }
                         continue
@@ -204,9 +210,10 @@ function Copy-DbaRegServer {
                             $destinationGroup.RegisteredServers[$instanceName].Drop()
                         } catch {
                             $copyInstanceStatus.Status = "Failed"
+                            $copyInstanceStatus.Notes = $_.Exception.Message
                             $copyInstanceStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-
-                            Stop-Function -Message "Issue dropping instance from group" -Target $instanceName -ErrorRecord $_ -Continue
+                            Write-Message -Level Verbose -Message "Issue dropping instance $instanceName from $groupName and recreating on $destinstance | $PSItem"
+                            continue
                         }
                     }
                 }
@@ -223,19 +230,20 @@ function Copy-DbaRegServer {
 
                     try {
                         $newServer.Create()
-
                         $copyInstanceStatus.Status = "Successful"
                         $copyInstanceStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                        Write-Message -Level Verbose -Message "Added Server $serverName as $instanceName to $($destinationGroup.Name)"
                     } catch {
                         $copyInstanceStatus.Status = "Failed"
+                        $copyInstanceStatus.Notes = $_.Exception.Message
                         $copyInstanceStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                         if ($_.Exception -match "same name") {
-                            Stop-Function -Message "Could not add Switched Server instance name." -Target $instanceName -ErrorRecord $_ -Continue
+                            Write-Message -Level Verbose -Message "Could not add Switched Server instance name on $instanceName"
                         } else {
-                            Stop-Function -Message "Failed to add $serverName" -Target $instanceName -ErrorRecord $_ -Continue
+                            Write-Message -Level Verbose -Message "Failed to add $serverName on $instanceName"
+                            continue
                         }
                     }
-                    Write-Message -Level Verbose -Message "Added Server $serverName as $instanceName to $($destinationGroup.Name)"
                 }
             }
 
@@ -258,11 +266,10 @@ function Copy-DbaRegServer {
 
                 if ($null -ne $toSubGroup) {
                     if ($force -eq $false) {
-                        if ($Pscmdlet.ShouldProcess($destinstance, "Checking to see if subgroup $fromSubGroupName exists")) {
+                        if ($Pscmdlet.ShouldProcess($destinstance, "Subgroup $fromSubGroupName exists at destination. Use -Force to drop and migrate.")) {
                             $copyGroupStatus.Status = "Skipped"
                             $copyGroupStatus.Notes = "Already exists on destination"
                             $copyGroupStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-
                             Write-Message -Level Verbose -Message "Subgroup $fromSubGroupName exists at destination. Use -Force to drop and migrate."
                         }
                         continue
@@ -274,20 +281,28 @@ function Copy-DbaRegServer {
                             $toSubGroup.Drop()
                         } catch {
                             $copyGroupStatus.Status = "Failed"
+                            $copyGroupStatus.Notes = $_.Exception.Message
                             $copyGroupStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-
-                            Stop-Function -Message "Issue dropping subgroup" -Target $toSubGroup -ErrorRecord $_ -Continue
+                            Write-Message -Level Verbose -Message "Issue dropping group $fromSubGroupName on $destinstance | $PSItem"
+                            continue
                         }
                     }
                 }
 
                 if ($Pscmdlet.ShouldProcess($destinstance, "Creating group $($fromSubGroup.Name)")) {
-                    Write-Message -Level Verbose -Message "Creating group $($fromSubGroup.Name)"
-                    $toSubGroup = New-Object Microsoft.SqlServer.Management.RegisteredServers.ServerGroup($destinationGroup, $fromSubGroup.Name)
-                    $toSubGroup.create()
-
-                    $copyGroupStatus.Status = "Successful"
-                    $copyGroupStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                    try {
+                        Write-Message -Level Verbose -Message "Creating group $($fromSubGroup.Name)"
+                        $toSubGroup = New-Object Microsoft.SqlServer.Management.RegisteredServers.ServerGroup($destinationGroup, $fromSubGroup.Name)
+                        $toSubGroup.create()
+                        $copyGroupStatus.Status = "Successful"
+                        $copyGroupStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                    } catch {
+                        $copyGroupStatus.Status = "Failed"
+                        $copyGroupStatus.Notes = $_.Exception.Message
+                        $copyGroupStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                        Write-Message -Level Verbose -Message "Issue creating group $($fromSubGroup.Name) to $destinstance | $PSItem"
+                        continue
+                    }
                 }
 
                 Invoke-ParseServerGroup -sourceGroup $fromSubGroup -destinationgroup $toSubGroup -SwitchServerName $SwitchServerName

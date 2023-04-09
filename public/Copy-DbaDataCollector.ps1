@@ -196,7 +196,6 @@ function Copy-DbaDataCollector {
                     if ($force -eq $false) {
                         if ($Pscmdlet.ShouldProcess($destinstance, "Collection Set '$collectionName' was skipped because it already exists on $destinstance. Use -Force to drop and recreate")) {
                             Write-Message -Level Verbose -Message "Collection Set '$collectionName' was skipped because it already exists on $destinstance. Use -Force to drop and recreate"
-
                             $copyCollectionSetStatus.Status = "Skipped"
                             $copyCollectionSetStatus.Notes = "Already exists on destination"
                             $copyCollectionSetStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
@@ -210,10 +209,11 @@ function Copy-DbaDataCollector {
                             try {
                                 $destStore.CollectionSets[$collectionName].Drop()
                             } catch {
-                                $copyCollectionSetStatus.Status = "Failed to drop on destination"
+                                $copyCollectionSetStatus.Status = "Failed to drop collection $collectionName on $destinstance"
                                 $copyCollectionSetStatus.Notes = (Get-ErrorMessage -Record $_)
                                 $copyCollectionSetStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                                Stop-Function -Message "Issue dropping collection" -Target $collectionName -ErrorRecord $_ -Continue
+                                Write-Message -Level Verbose -Message "Failed to drop collection $collectionName on $destinstance | $PSItem"
+                                continue
                             }
                         }
                     }
@@ -226,14 +226,13 @@ function Copy-DbaDataCollector {
                         Write-Message -Level Debug -Message $sql
                         Write-Message -Level Verbose -Message "Migrating collection set $collectionName"
                         $destServer.Query($sql)
-
                         $copyCollectionSetStatus.Status = "Successful"
                         $copyCollectionSetStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                     } catch {
                         $copyCollectionSetStatus.Status = "Failed to create collection"
                         $copyCollectionSetStatus.Notes = (Get-ErrorMessage -Record $_)
-
-                        Stop-Function -Message "Issue creating collection set" -Target $collectionName -ErrorRecord $_
+                        Write-Message -Level Verbose -Message "Issue creating collection $collectionName on $destinstance | $PSItem"
+                        continue
                     }
 
                     try {
@@ -249,8 +248,7 @@ function Copy-DbaDataCollector {
                         $copyCollectionSetStatus.Status = "Failed to start collection"
                         $copyCollectionSetStatus.Notes = (Get-ErrorMessage -Record $_)
                         $copyCollectionSetStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-
-                        Stop-Function -Message "Issue starting collection set" -Target $collectionName -ErrorRecord $_
+                        Write-Message -Level Verbose -Message "Issue starting collection $collectionName on $destinstance | $PSItem"
                     }
                 }
             }

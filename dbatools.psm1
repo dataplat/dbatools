@@ -254,6 +254,7 @@ $forever = @{
     'Write-DbaDataTable'      = 'Write-DbaDbTableData'
     'Get-DbaDbModule'         = 'Get-DbaModule'
     'Get-DbaBuildReference'   = 'Get-DbaBuild'
+    'Copy-DbaSysDbUserObject' = 'Copy-DbaSystemDbUserObject'
 }
 foreach ($_ in $forever.GetEnumerator()) {
     Set-Alias -Name $_.Key -Value $_.Value
@@ -283,7 +284,7 @@ if ($PSVersionTable.PSVersion.Major -lt 5) {
         'Copy-DbaXESession',
         'Copy-DbaInstanceTrigger',
         'Copy-DbaRegServer',
-        'Copy-DbaSysDbUserObject',
+        'Copy-DbaSystemDbUserObject',
         'Copy-DbaAgentProxy',
         'Copy-DbaAgentAlert',
         'Copy-DbaStartupProcedure',
