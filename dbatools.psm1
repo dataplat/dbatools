@@ -176,13 +176,18 @@ if (-not (Test-Path -Path "$psScriptRoot\dbatools.dat") -or $script:serialimport
 
     Write-ImportTime -Text "Loading external commands via dotsource"
 } else {
+    $datload = $true
     Import-Command -Path "$script:PSModuleRoot/dbatools.dat"
     Write-ImportTime -Text "Loading dbatools.ps1 using Import-Command"
 }
 
 # Load configuration system - Should always go after library and path setting
 # this has its own Write-ImportTimes
-Import-Command -Path "$psScriptRoot/private/configurations/configuration.ps1"
+if ($datload) {
+    Import-Command -Path "$psScriptRoot/private/configurations/configuration.dat"
+} else {
+    Import-Command -Path "$psScriptRoot/private/configurations/configuration.ps1"
+}
 
 # Resolving the path was causing trouble when it didn't exist yet
 # Not converting the path separators based on OS was also an issue.
@@ -196,8 +201,14 @@ if (-not ([Dataplat.Dbatools.Message.LogHost]::LoggingPath)) {
 # Validations were moved into the other files, in order to prevent having to update dbatools.psm1 every time
 
 if ($PSVersionTable.PSVersion.Major -lt 5) {
-    foreach ($file in (Get-ChildItem -Path "$script:PSScriptRoot/opt" -Filter *.ps1)) {
-        Import-Command -Path $file.FullName
+    if ($datload) {
+        foreach ($file in (Get-ChildItem -Path "$script:PSScriptRoot/opt" -Filter *.dat)) {
+            Import-Command -Path $file.FullName
+        }
+    } else {
+        foreach ($file in (Get-ChildItem -Path "$script:PSScriptRoot/opt" -Filter *.ps1)) {
+            Import-Command -Path $file.FullName
+        }
     }
     Write-ImportTime -Text "Loading Optional Commands"
 }
