@@ -1,8 +1,7 @@
-foreach ($item in (Get-ChildItem "$script:PSModuleRoot\private\maintenance" -Filter *.ps1)) {
+foreach ($item in (Get-ChildItem "$script:PSModuleRoot\private\maintenance" -File)) {
     if ($script:serialimport) {
         . $item.FullName
-    }
-    else {
+    } else {
         Import-Command -Path $item.FullName
     }
 }
