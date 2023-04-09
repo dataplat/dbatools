@@ -38,12 +38,12 @@ if (-not $Env:TEMP) {
     $Env:TEMP = [System.IO.Path]::GetTempPath()
 }
 
-$script:libraryroot = (Get-Item -Path (Get-DbatoolsLibraryPath -ErrorAction Ignore) -ErrorAction Ignore).FullName
+$script:libraryroot = Get-DbatoolsLibraryPath -ErrorAction Ignore -ErrorAction Ignore
 
 if (-not $script:libraryroot) {
     # for the people who bypass the psd1
     Import-Module dbatools.library -ErrorAction Ignore
-    $script:libraryroot = (Get-DbatoolsLibraryPath -ErrorAction Ignore).ToString()
+    $script:libraryroot = Get-DbatoolsLibraryPath -ErrorAction Ignore -ErrorAction Ignore
 
     if (-not $script:libraryroot) {
         throw "The dbatools library, dbatools.library, was module not found. Please install it from the PowerShell Gallery."
