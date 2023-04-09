@@ -196,7 +196,7 @@ function New-DbaConnectionString {
         [string]$ClientName = "custom connection",
         [int]$ConnectTimeout,
         [string]$Database,
-        [ValidateSet('Mandatory', 'Optional', 'Strict')]
+        [ValidateSet('Mandatory', 'Optional', 'Strict', 'True', 'False')]
         [string]$EncryptConnection = (Get-DbatoolsConfigValue -FullName 'sql.connection.encrypt'),
         [string]$FailoverPartner,
         [switch]$IsActiveDirectoryUniversalAuth,

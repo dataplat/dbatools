@@ -1,7 +1,7 @@
 
 -- SQL Server 2022 Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: January 11, 2023
+-- Last Modified: April 1, 2023
 -- https://glennsqlperformance.com/ 
 -- https://sqlserverperformance.wordpress.com/
 -- YouTube: https://bit.ly/2PkoAM1 
@@ -63,6 +63,9 @@ SELECT @@SERVERNAME AS [Server Name], @@VERSION AS [SQL Server and OS Version In
 -- 16.0.900.6		RC0									8/23/2022
 -- 16.0.950.9		RC1									9/22/2022
 -- 16.0.1000.6		RTM									11/16/2022
+-- 16.0.1050.5		RTM GDR								2/14/2023		https://support.microsoft.com/en-us/topic/kb5021522-description-of-the-security-update-for-sql-server-2022-gdr-february-14-2023-7a5a84ed-e99c-4537-b064-fa4499549c8e
+-- 16.0.4003.1		CU1									2/16/2023		https://learn.microsoft.com/en-us/troubleshoot/sql/releases/sqlserver-2022/cumulativeupdate1
+-- 16.0.4015.1		CU2									3/15/2023		https://learn.microsoft.com/en-US/troubleshoot/sql/releases/sqlserver-2022/cumulativeupdate2
 
 -- What's new in SQL Server 2022 (16.x)
 -- https://bit.ly/3MJEjR1
@@ -256,6 +259,7 @@ SELECT ISNULL(d.[name], bs.[database_name]) AS [Database], d.recovery_model_desc
 	CAST(CAST(lu.cntr_value AS FLOAT) / CAST(ls.cntr_value AS FLOAT) AS DECIMAL(18,2)) * 100 AS [Log Used %],
     MAX(CASE WHEN bs.[type] = 'D' THEN bs.backup_finish_date ELSE NULL END) AS [Last Full Backup],
 	MAX(CASE WHEN bs.[type] = 'D' THEN CONVERT (BIGINT, bs.compressed_backup_size / 1048576 ) ELSE NULL END) AS [Last Full Compressed Backup Size (MB)],
+	MAX(CASE WHEN bs.[type] = 'D' THEN CONVERT (DECIMAL(18,2), bs.backup_size /bs.compressed_backup_size ) ELSE NULL END) AS [Backup Compression Ratio],
 	MAX(CASE WHEN bs.[type] = 'D' THEN bs.compression_algorithm ELSE NULL END) AS [Last Full Backup Compression Algorithm],
     MAX(CASE WHEN bs.[type] = 'I' THEN bs.backup_finish_date ELSE NULL END) AS [Last Differential Backup],
     MAX(CASE WHEN bs.[type] = 'L' THEN bs.backup_finish_date ELSE NULL END) AS [Last Log Backup],

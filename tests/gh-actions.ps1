@@ -225,8 +225,10 @@ exec sp_addrolemember 'userrole','bob';
         (Test-DbaTempDbConfig).Rule | Should -Contain "File Growth in Percent"
     }
 
-    It "creates a snapshot" {
-        (New-DbaDbSnapshot -Database pubs).SnapshotOf | Should -Be "pubs"
+    if ((dpkg --print-architecture) -notmatch "arm") {
+        It "creates a snapshot" {
+            (New-DbaDbSnapshot -Database pubs).SnapshotOf | Should -Be "pubs"
+        }
     }
 
     It "gets an XE template on Linux" {
@@ -264,6 +266,14 @@ exec sp_addrolemember 'userrole','bob';
         $azurecred = New-Object PSCredential -ArgumentList $env:CLIENTID, $securestring
         $server = Connect-DbaInstance -SqlInstance dbatoolstest.database.windows.net -SqlCredential $azurecred -Tenant $env:TENANTID
         (Get-DbaDatabase -SqlInstance $server -Database test).Name | Should -Be "test"
+    }
+
+    It "tests Get-DbaLastGoodCheckDb against Azure" {
+        $PSDefaultParameterValues.Clear()
+        $securestring = ConvertTo-SecureString $env:CLIENTSECRET -AsPlainText -Force
+        $azurecred = New-Object PSCredential -ArgumentList $env:CLIENTID, $securestring
+        $server = Connect-DbaInstance -SqlInstance dbatoolstest.database.windows.net -SqlCredential $azurecred -Tenant $env:TENANTID
+        { Get-DbaLastGoodCheckDb -SqlInstance $server } | Should -Not -Throw
     }
 }
 

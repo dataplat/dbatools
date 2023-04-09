@@ -1,0 +1,35 @@
+FROM mcr.microsoft.com/mssql/server:2019-latest
+USER root
+# Install PowerShell
+RUN apt-get update && apt install -y powershell
+# install git
+RUN apt install -y git
+
+# some cleanup
+RUN apt-get autoremove -y \
+    && apt-get clean -y
+
+ENV GIT_PROMPT_START='\033[1;36dbatools>\033[0m\033[0;33m\w\a\033[0m'
+
+# Save command line history
+RUN echo "export HISTFILE=/commandhistory/.bash_history" >> "/root/.bashrc" \
+    && echo "export PROMPT_COMMAND='history -a'" >> "/root/.bashrc" \
+    && mkdir -p /commandhistory \
+    && touch /commandhistory/.bash_history \
+    && mkdir /workspace
+
+SHELL ["/opt/microsoft/powershell/7/pwsh", "-c"]
+RUN Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
+
+# Install Pester, has to be 4.4.3 because 4.4.2 has bug in Unix machines
+SHELL ["/opt/microsoft/powershell/7/pwsh", "-c"]
+RUN $ErrorActionPreference='Stop'; Install-Module -Name Pester -Force -SkipPublisherCheck -MaximumVersion 4.4.3;
+
+# Install PSScriptAnalyzer
+SHELL ["/opt/microsoft/powershell/7/pwsh", "-c"]
+RUN $ErrorActionPreference='Stop'; Install-Module -Name PSScriptAnalyzer -Force -SkipPublisherCheck -MaximumVersion 1.18.2;
+
+# Git command prompt
+# Change this if you want to utilize your fork
+RUN git clone https://github.com/dataplat/dbatools.git ~/.bash-git-prompt --depth=1 \
+    && echo "if [ -f \"$HOME/.bash-git-prompt/gitprompt.sh\" ]; then GIT_PROMPT_ONLY_IN_REPO=1 && source $HOME/.bash-git-prompt/gitprompt.sh; fi" >> "/root/.bashrc"

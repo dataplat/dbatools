@@ -5,7 +5,11 @@ defaults:
     shell: pwsh
 jobs:
   linux-tests:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, arm64]
     env:
       GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
 
@@ -15,7 +19,7 @@ jobs:
       - name: Install and cache PowerShell modules
         uses: potatoqualitee/psmodulecache@v5.2
         with:
-          modules-to-cache: dbatools.library:2023.1.29
+          modules-to-cache: dbatools.library:2023.4.9
 
       - name: Set encryption values
         run: |
@@ -64,7 +68,7 @@ jobs:
         uses: potatoqualitee/psmodulecache@v5.2
         with:
           shell: powershell, pwsh
-          modules-to-cache: dbatools.library:2023.1.29
+          modules-to-cache: dbatools.library:2023.4.9
 
       - name: Install SQL Server localdb
         uses: potatoqualitee/mssqlsuite@v1.3

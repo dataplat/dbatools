@@ -134,7 +134,7 @@ function Invoke-DbatoolsRenameHelper {
             'Copy-SqlSharedSchedule'            = 'Copy-DbaAgentSchedule'
             'Copy-SqlSpConfigure'               = 'Copy-DbaSpConfigure'
             'Copy-SqlSsisCatalog'               = 'Copy-DbaSsisCatalog'
-            'Copy-SqlSysDbUserObjects'          = 'Copy-DbaSysDbUserObject'
+            'Copy-SqlSysDbUserObjects'          = 'Copy-DbaSystemDbUserObject'
             'Copy-SqlUserDefinedMessage'        = 'Copy-SqlCustomError'
             'Expand-DbaTLogResponsibly'         = 'Expand-DbaDbLogFile'
             'Expand-SqlTLogResponsibly'         = 'Expand-DbaDbLogFile'

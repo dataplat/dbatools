@@ -1,29 +1,43 @@
 {
-    "name": "dbatools",
-    "workspaceFolder": "/workspace",
-    "dockerComposeFile": [
-        "docker-compose.yml"
-    ],
-    "remoteEnv": {
-        "LOCAL_WORKSPACE_FOLDER": "${localWorkspaceFolder}",
-        "MY_SERVERS": "dbatools1,dbatools2,dbatools3",
-        "MY_SERVER": "dbatools1"
-    },
-    "service": "dbatools1",
-    "settings": {
-        "terminal.integrated.shell.linux": "/usr/bin/pwsh"
-    },
-    // Add the IDs of extensions you want installed when the container is created.
-    "extensions": [
+  "name": "dbatools",
+  "workspaceFolder": "/workspace",
+  "dockerComposeFile": ["docker-compose.yml"],
+  "remoteEnv": {
+    "LOCAL_WORKSPACE_FOLDER": "${localWorkspaceFolder}",
+    "MY_SERVERS": "dbatools1,dbatools2,dbatools3",
+    "MY_SERVER": "dbatools1"
+  },
+  "service": "dbatools1",
+  // Add the IDs of extensions you want installed when the container is created.
+  "customizations": {
+    "vscode": {
+      "extensions": [
         "ms-vscode.powershell",
+        "ms-mssql.mssql",
         "github.vscode-pull-request-github",
-        "2gua.rainbow-brackets",
+        "usernamehw.errorlens",
         "oderwat.indent-rainbow",
-        "mhutchie.git-graph",
-        "usernamehw.errorlens"
-    ]
-    // Uncomment the next line if you want to keep your containers running after VS Code shuts down.
-    // "shutdownAction": "none",
-    // Uncomment the next line to run commands after the container is created - for example installing curl.
-    // "postCreateCommand": "apt-get update && apt-get install -y curl",
+        "wengerk.highlight-bad-chars",
+        "streetsidesoftware.code-spell-checker"
+      ],
+      "settings": {
+        "powershell.powerShellAdditionalExePaths": {
+            "PowerShell": "/opt/microsoft/powershell/7/pwsh"
+        },
+        "powershell.powerShellDefaultVersion": "PowerShell",
+        "terminal.integrated.profiles.linux": {
+          "pwsh": {
+            "path": "/opt/microsoft/powershell/7/pwsh",
+            "icon": "terminal-powershell"
+          }
+        },
+        "terminal.integrated.shell.linux": "pwsh",
+        "terminal.integrated.defaultProfile.linux": "pwsh"
+      }
+    }
+  }
+  // Uncomment the next line if you want to keep your containers running after VS Code shuts down.
+  // "shutdownAction": "none",
+  // Uncomment the next line to run commands after the container is created - for example installing curl.
+  // "postCreateCommand": "apt-get update && apt-get install -y curl",
 }

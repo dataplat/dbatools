@@ -1,7 +1,7 @@
 
 -- SQL Server 2014 Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: January 4, 2023
+-- Last Modified: April 1, 2023
 -- https://glennsqlperformance.com/
 -- https://sqlserverperformance.wordpress.com/
 -- YouTube: https://bit.ly/2PkoAM1 
@@ -92,15 +92,18 @@ SELECT @@SERVERNAME AS [Server Name], @@VERSION AS [SQL Server and OS Version In
 --																													12.0.5589		SP2 CU12		 6/18/2018
 --																													12.0.5590		SP2 CU13		 8/27/2018
 --																													12.0.5600		SP2 CU14	    10/15/2018
---																																										12.0.6024	SP3 RTM						10/30/2018
---																													12.0.5605		SP2 CU15		12/12/2018 ---->	12.0.6205	SP3 CU1						12/12/2018
---																													12.0.5626		SP2 CU16		 2/19/2019 ---->    12.0.6214	SP3 CU2						2/19/2019
---																													12.0.5632		SP2 CU17		 4/16/2019 ---->    12.0.6259   SP3 CU3						4/16/2019
---																													12.0.5687		SP2 CU18		 7/29/2019 ---->	12.0.6329	SP3	CU4						7/29/2019
---																																										12.0.6372.1	SP3 CU4 + Security Update	2/11/2020	
---																																										12.0.6433.1	SP3 CU4 + Security Update	1/12/2021
+--																																										12.0.6024	 SP3 RTM					10/30/2018
+--																													12.0.5605		SP2 CU15		12/12/2018 ---->	12.0.6205	 SP3 CU1					12/12/2018
+--																													12.0.5626		SP2 CU16		 2/19/2019 ---->    12.0.6214	 SP3 CU2					2/19/2019
+--																													12.0.5632		SP2 CU17		 4/16/2019 ---->    12.0.6259    SP3 CU3					4/16/2019
+--																													12.0.5687		SP2 CU18		 7/29/2019 ---->	12.0.6329	 SP3	CU4					7/29/2019
+--																																										12.0.6372.1	 SP3 CU4 + Security Update	2/11/2020	
+--																																										12.0.6433.1	 SP3 CU4 + Security Update	1/12/2021
 --																																										12.0.6439.10 SP3 CU4 + Security Update	6/14/2022
+--																																										12.0.6444.4	 SP3 CU4 + Security Update	2/14/2023
 
+-- KB5021045 - Description of the security update for SQL Server 2014 SP3 CU4: February 14, 2023
+-- https://support.microsoft.com/en-us/topic/kb5021045-description-of-the-security-update-for-sql-server-2014-sp3-cu4-february-14-2023-6c769b6c-beb7-4b65-ae22-29f3bbc2dd31
 
 -- KB5014164 - Description of the security update for SQL Server 2014 SP3 CU4: June 14, 2022
 -- https://support.microsoft.com/en-us/topic/kb5014164-description-of-the-security-update-for-sql-server-2014-sp3-cu4-june-14-2022-f3400be9-b2d3-4873-ae58-15e6e0cc686e
@@ -320,6 +323,7 @@ SELECT ISNULL(d.[name], bs.[database_name]) AS [Database], d.recovery_model_desc
 	CAST(CAST(lu.cntr_value AS FLOAT) / CAST(ls.cntr_value AS FLOAT) AS DECIMAL(18,2)) * 100 AS [Log Used %],
     MAX(CASE WHEN bs.[type] = 'D' THEN bs.backup_finish_date ELSE NULL END) AS [Last Full Backup],
 	MAX(CASE WHEN bs.[type] = 'D' THEN CONVERT (BIGINT, bs.compressed_backup_size / 1048576 ) ELSE NULL END) AS [Last Full Compressed Backup Size (MB)],
+	MAX(CASE WHEN bs.[type] = 'D' THEN CONVERT (DECIMAL(18,2), bs.backup_size /bs.compressed_backup_size ) ELSE NULL END) AS [Backup Compression Ratio],
     MAX(CASE WHEN bs.[type] = 'I' THEN bs.backup_finish_date ELSE NULL END) AS [Last Differential Backup],
     MAX(CASE WHEN bs.[type] = 'L' THEN bs.backup_finish_date ELSE NULL END) AS [Last Log Backup],
 	DATABASEPROPERTYEX ((d.[name]), 'LastGoodCheckDbTime') AS [Last Good CheckDB]

@@ -378,6 +378,27 @@ function Invoke-DbaAdvancedRestore {
                         if ($OutputScriptOnly -eq $false) {
                             $pathSep = Get-DbaPathSep -Server $server
                             $RestoreDirectory = ((Split-Path $backup.FileList.PhysicalName -Parent) | Sort-Object -Unique).Replace('\', $pathSep) -Join ','
+
+                            if ([bool]($backup.psobject.Properties.Name -contains 'CompressedBackupSize')) {
+                                $bytes = [pscustomobject]@{ Bytes = $backup.CompressedBackupSize.Byte }
+                                $sum = ($bytes | Measure-Object -Property Bytes -Sum).Sum
+                                $compressedbackupsize = [dbasize]($sum / $backup.FullName.Count)
+                                $compressedbackupsizemb = [Math]::Round($sum / $backup.FullName.Count / 1mb, 2)
+                            } else {
+                                $compressedbackupsize = $null
+                                $compressedbackupsizemb = $null
+                            }
+
+                            if ([bool]($backup.psobject.Properties.Name -contains 'TotalSize')) {
+                                $bytes = [pscustomobject]@{ Bytes = $backup.TotalSize.Byte }
+                                $sum = ($bytes | Measure-Object -Property Bytes -Sum).Sum
+                                $backupsize = [dbasize]($sum / $backup.FullName.Count)
+                                $backupsizemb = [Math]::Round($sum / $backup.FullName.Count / 1mb, 2)
+                            } else {
+                                $backupsize = $null
+                                $backupsizemb = $null
+                            }
+
                             [PSCustomObject]@{
                                 ComputerName           = $server.ComputerName
                                 InstanceName           = $server.ServiceName
@@ -392,14 +413,14 @@ function Invoke-DbaAdvancedRestore {
                                 RestoreComplete        = $restoreComplete
                                 BackupFilesCount       = $backup.FullName.Count
                                 RestoredFilesCount     = $backup.Filelist.PhysicalName.count
-                                BackupSizeMB           = if ([bool]($backup.psobject.Properties.Name -contains 'TotalSize')) { [Math]::Round(($backup | Measure-Object -Property TotalSize -Sum).Sum / $backup.FullName.Count / 1mb, 2) } else { $null }
-                                CompressedBackupSizeMB = if ([bool]($backup.psobject.Properties.Name -contains 'CompressedBackupSize')) { [Math]::Round(($backup | Measure-Object -Property CompressedBackupSize -Sum).Sum / $backup.FullName.Count / 1mb, 2) } else { $null }
+                                BackupSizeMB           = $backupsizemb
+                                CompressedBackupSizeMB = $compressedbackupsizemb
                                 BackupFile             = $backup.FullName -Join ','
                                 RestoredFile           = $((Split-Path $backup.FileList.PhysicalName -Leaf) | Sort-Object -Unique) -Join ','
                                 RestoredFileFull       = ($backup.Filelist.PhysicalName -Join ',')
                                 RestoreDirectory       = $RestoreDirectory
-                                BackupSize             = if ([bool]($backup.psobject.Properties.Name -contains 'TotalSize')) { [dbasize](($backup | Measure-Object -Property TotalSize -Sum).Sum / $backup.FullName.Count) } else { $null }
-                                CompressedBackupSize   = if ([bool]($backup.psobject.Properties.Name -contains 'CompressedBackupSize')) { [dbasize](($backup | Measure-Object -Property CompressedBackupSize -Sum).Sum / $backup.FullName.Count) } else { $null }
+                                BackupSize             = $backupsize
+                                CompressedBackupSize   = $compressedbackupsize
                                 BackupStartTime        = $backup.Start
                                 BackupEndTime          = $backup.End
                                 RestoreTargetTime      = if ($RestoreTime -lt (Get-Date)) { $RestoreTime } else { 'Latest' }

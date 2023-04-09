@@ -130,27 +130,28 @@ function Sync-DbaLoginPermission {
                     continue
                 }
 
-                if ($PSCmdlet.ShouldProcess($dest, "Syncing permissions for login $loginName")) {
-                    $copyLoginPermissionStatus = [pscustomobject]@{
-                        SourceServer      = $sourceserver.Name
-                        DestinationServer = $destServer.Name
-                        Name              = $loginName
-                        Type              = "Login Permissions"
-                        Status            = $null
-                        Notes             = $null
-                        DateTime          = [DbaDateTime](Get-Date)
-                    }
-                    Write-ProgressHelper -Activity "Executing Sync-DbaLoginPermission to sync login permissions from $($sourceServer.Name)" -StepNumber ($stepCounter++) -Message "Updating permissions for $loginName on $($destServer.Name)" -TotalSteps $allLogins.Count
-                    try {
-                        Update-SqlPermission -SourceServer $sourceServer -SourceLogin $sourceLogin -DestServer $destServer -DestLogin $destLogin -EnableException
-                        $copyLoginPermissionStatus.Status = "Successful"
+
+                $copyLoginPermissionStatus = [pscustomobject]@{
+                    SourceServer      = $sourceserver.Name
+                    DestinationServer = $destServer.Name
+                    Name              = $loginName
+                    Type              = "Login Permissions"
+                    Status            = $null
+                    Notes             = $null
+                    DateTime          = [DbaDateTime](Get-Date)
+                }
+                Write-ProgressHelper -Activity "Executing Sync-DbaLoginPermission to sync login permissions from $($sourceServer.Name)" -StepNumber ($stepCounter++) -Message "Updating permissions for $loginName on $($destServer.Name)" -TotalSteps $allLogins.Count
+                try {
+                    Update-SqlPermission -SourceServer $sourceServer -SourceLogin $sourceLogin -DestServer $destServer -DestLogin $destLogin -EnableException
+                    $copyLoginPermissionStatus.Status = "Successful"
+                    if ($PSCmdlet.ShouldProcess("Console", "Outputting results for login $loginName permission sync")) {
                         $copyLoginPermissionStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                    } catch {
-                        $copyLoginPermissionStatus.Status = "Failed"
-                        $copyLoginPermissionStatus.Notes = (Get-ErrorMessage -Record $_)
-                        $copyLoginPermissionStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                        Stop-Function -Message "Issue syncing permissions for login" -Target $loginName -ErrorRecord $_ -Continue
                     }
+                } catch {
+                    $copyLoginPermissionStatus.Status = "Failed"
+                    $copyLoginPermissionStatus.Notes = (Get-ErrorMessage -Record $_)
+                    $copyLoginPermissionStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                    Stop-Function -Message "Issue syncing permissions for login" -Target $loginName -ErrorRecord $_ -Continue
                 }
             }
         }

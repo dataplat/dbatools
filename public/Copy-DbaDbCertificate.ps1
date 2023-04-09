@@ -239,29 +239,32 @@ function Copy-DbaDbCertificate {
                         }
 
                         if ($domasterkeymessage) {
-                            $copyDbCertificateStatus.Status = "Skipped"
-                            $copyDbCertificateStatus.Notes = $domasterkeymessage
-                            $copyDbCertificateStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-
-                            Write-Message -Level Verbose -Message $domasterkeymessage
+                            if ($Pscmdlet.ShouldProcess($destServer.Name, $domasterkeymessage)) {
+                                $copyDbCertificateStatus.Status = "Skipped"
+                                $copyDbCertificateStatus.Notes = $domasterkeymessage
+                                $copyDbCertificateStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                                Write-Message -Level Verbose -Message $domasterkeymessage
+                            }
                             continue
                         }
 
                         if ($domasterkeypasswordmessage) {
-                            $copyDbCertificateStatus.Status = "Skipped"
-                            $copyDbCertificateStatus.Notes = "Master service key not found and MasterKeyPassword not provided for auto-creation"
-                            $copyDbCertificateStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-
-                            Write-Message -Level Verbose -Message "Master service key not found and MasterKeyPassword not provided for auto-creation"
+                            if ($Pscmdlet.ShouldProcess($destServer.Name, "Master service key not found and MasterKeyPassword not provided for auto-creation")) {
+                                $copyDbCertificateStatus.Status = "Skipped"
+                                $copyDbCertificateStatus.Notes = "Master service key not found and MasterKeyPassword not provided for auto-creation"
+                                $copyDbCertificateStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                                Write-Message -Level Verbose -Message "Master service key not found and MasterKeyPassword not provided for auto-creation"
+                            }
                             continue
                         }
                         $null = $db.Refresh()
                         if ($db.Certificates.Name -contains $certname) {
-                            $copyDbCertificateStatus.Status = "Skipped"
-                            $copyDbCertificateStatus.Notes = "Already exists on destination"
-                            $copyDbCertificateStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-
-                            Write-Message -Level Verbose -Message "Certificate $certname exists at destination in the $dbName database"
+                            if ($Pscmdlet.ShouldProcess($destServer.Name, "Certificate $certname exists at destination in the $dbName database")) {
+                                $copyDbCertificateStatus.Status = "Skipped"
+                                $copyDbCertificateStatus.Notes = "Already exists on destination"
+                                $copyDbCertificateStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                                Write-Message -Level Verbose -Message "Certificate $certname exists at destination in the $dbName database"
+                            }
                             continue
                         }
 
@@ -299,7 +302,8 @@ function Copy-DbaDbCertificate {
                                     $copyDbCertificateStatus.Status = "Failed $PSItem"
                                     $copyDbCertificateStatus.Notes = $PSItem
                                     $copyDbCertificateStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                                    Stop-Function -Message "Issue backing up certificate $certname in $dbname on $($db.Parent.Name)" -Target $certname -ErrorRecord $PSItem -Continue
+                                    Write-Message -Level Verbose -Message "Failed to create certificate $certname for $dbName on $destinstance | $PSItem"
+                                    continue
                                 }
 
                                 # Restore certificate
@@ -328,9 +332,9 @@ function Copy-DbaDbCertificate {
                                 $copyDbCertificateStatus.Notes = $PSItem
                                 $copyDbCertificateStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                                 if ($usingtempfiles) {
-                                    Stop-Function -Message "Issue creating certificate $certname from $($export.Path) for $dbname on $($db.Parent.Name). Note that $($export.Path) and $($export.Key) already existed so we tried to use them. If this is an issue, please move or rename both files and try again." -Target $certname -ErrorRecord $PSItem
+                                    Write-Message -Level Verbose -Message "Issue creating certificate $certname from $($export.Path) for $dbname on $($db.Parent.Name). Note that $($export.Path) and $($export.Key) already existed so we tried to use them. If this is an issue, please move or rename both files and try again."
                                 } else {
-                                    Stop-Function -Message "Issue creating certificate $certname from $($export.Path) for $dbname on $($db.Parent.Name)" -Target $certname -ErrorRecord $PSItem
+                                    Write-Message -Level Verbose -Message "Issue creating certificate $certname from $($export.Path) for $dbname on $($db.Parent.Name) | $PSItem"
                                 }
                             }
                         }

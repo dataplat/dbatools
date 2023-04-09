@@ -8,15 +8,15 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macOS-latest]
+        os: [ubuntu-latest, windows-latest, macOS-latest, arm64]
 
     steps:
     - uses: actions/checkout@v3
 
     - name: Install and cache PowerShell modules
-      uses: potatoqualitee/psmodulecache@v5.1
+      uses: potatoqualitee/psmodulecache@v5.2
       with:
-          modules-to-cache: dbatools.library:2023.1.29
+          modules-to-cache: dbatools.library:2023.4.9
 
     - name: Perform the import
       shell: pwsh

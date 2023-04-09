@@ -131,7 +131,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             $results = Copy-DbaCredential -Source $instance2 -Destination $instance3 -Name dbatoolsci_thor_crypto -WarningVariable warnings
             $instance3.Query("ALTER CRYPTOGRAPHIC PROVIDER $cryptoProvider ENABLE")
             $results.Status | Should Be Failed
-            $warnings | Should -Match "The cryptographic provider $cryptoProvider needs to be configured and enabled on"
+            $results.Notes | Should -Match "The cryptographic provider $cryptoProvider needs to be configured and enabled on"
         }
     }
 }

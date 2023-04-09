@@ -1,5 +1,6 @@
 if ($PSVersionTable.PSEdition -ne "Core") {
-    $dir = (Join-Path $script:libraryroot "lib\").Replace('\', '\\')
+    $dir = [System.IO.Path]::Combine($script:libraryroot, "lib")
+    $dir = ("$dir\").Replace('\', '\\')
 
     if (-not ("Redirector" -as [type])) {
         $source = @"
@@ -29,7 +30,10 @@ if ($PSVersionTable.PSEdition -ne "Core") {
                         "System.Diagnostics.DiagnosticSource",
                         "Microsoft.IdentityModel.Abstractions",
                         "Microsoft.Data.SqlClient",
+                        "Microsoft.SqlServer.Types",
                         "System.Configuration.ConfigurationManager",
+                        "Microsoft.SqlServer.Management.Sdk.Sfc",
+                        "Microsoft.SqlServer.Management.IntegrationServices",
                         "Microsoft.SqlServer.Replication",
                         "Microsoft.SqlServer.Rmo",
                         "System.Private.CoreLib"
@@ -71,12 +75,12 @@ if ($PSVersionTable.PSEdition -ne "Core") {
     }
 }
 
-$dll = Join-Path $script:libraryroot "lib\dbatools.dll"
+$dll = [System.IO.Path]::Combine($script:libraryroot, "lib", "dbatools.dll")
 
 if ($IsWindows -and $PSVersionTable.PSEdition -eq "Core") {
-    $sqlclient = Join-Path $script:libraryroot "lib\win-sqlclient\Microsoft.Data.SqlClient.dll"
+    $sqlclient = [System.IO.Path]::Combine($script:libraryroot, "lib", "win-sqlclient", "Microsoft.Data.SqlClient.dll")
 } else {
-    $sqlclient = Join-Path $script:libraryroot "lib\Microsoft.Data.SqlClient.dll"
+    $sqlclient = [System.IO.Path]::Combine($script:libraryroot, "lib", "Microsoft.Data.SqlClient.dll")
 }
 
 try {

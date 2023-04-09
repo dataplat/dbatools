@@ -1,7 +1,7 @@
 
 -- SQL Server 2016 SP2 Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: January 3, 2023
+-- Last Modified: April 1, 2023
 -- https://glennsqlperformance.com/
 -- https://sqlserverperformance.wordpress.com/
 -- YouTube: https://bit.ly/2PkoAM1 
@@ -89,6 +89,7 @@ SELECT @@SERVERNAME AS [Server Name], @@VERSION AS [SQL Server and OS Version In
 -- 13.0.6404.1		SP3 Hotfix					10/28/2021		https://support.microsoft.com/en-us/topic/kb5006943-on-demand-hotfix-update-package-for-sql-server-2016-sp3-94de2975-cd7d-47ed-b003-5d7daf4e2caf
 -- 13.0.6419.1		SP3 + GDR					6/14/2022		https://support.microsoft.com/en-us/topic/kb5014355-description-of-the-security-update-for-sql-server-2016-sp3-gdr-june-14-2022-bb5097a0-f8f1-4d2c-bfe1-af069ca3cc59
 -- 13.0.7016.1		Azure Connect Pack + GDR	6/14/2022		https://support.microsoft.com/en-us/topic/kb5015371-description-of-the-security-update-for-sql-server-2016-sp3-azure-connect-feature-pack-june-14-2022-d809657e-15a9-48fe-bd19-a8864ac5d3a4
+-- 13.0.7024.30		SP3 + GDR					2/14/2023		https://support.microsoft.com/en-us/topic/kb5021128-description-of-the-security-update-for-sql-server-2016-sp3-azure-connect-feature-pack-february-14-2023-89e54794-460a-41bd-981f-998290e7d46e
 
 -- How to determine the version, edition and update level of SQL Server and its components 
 -- https://bit.ly/2oAjKgW														
@@ -287,6 +288,7 @@ SELECT ISNULL(d.[name], bs.[database_name]) AS [Database], d.recovery_model_desc
 	CAST(CAST(lu.cntr_value AS FLOAT) / CAST(ls.cntr_value AS FLOAT) AS DECIMAL(18,2)) * 100 AS [Log Used %],
     MAX(CASE WHEN bs.[type] = 'D' THEN bs.backup_finish_date ELSE NULL END) AS [Last Full Backup],
 	MAX(CASE WHEN bs.[type] = 'D' THEN CONVERT (BIGINT, bs.compressed_backup_size / 1048576 ) ELSE NULL END) AS [Last Full Compressed Backup Size (MB)],
+	MAX(CASE WHEN bs.[type] = 'D' THEN CONVERT (DECIMAL(18,2), bs.backup_size /bs.compressed_backup_size ) ELSE NULL END) AS [Backup Compression Ratio],
     MAX(CASE WHEN bs.[type] = 'I' THEN bs.backup_finish_date ELSE NULL END) AS [Last Differential Backup],
     MAX(CASE WHEN bs.[type] = 'L' THEN bs.backup_finish_date ELSE NULL END) AS [Last Log Backup],
 	DATABASEPROPERTYEX ((d.[name]), 'LastGoodCheckDbTime') AS [Last Good CheckDB]

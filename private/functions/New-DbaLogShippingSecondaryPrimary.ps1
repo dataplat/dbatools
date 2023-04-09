@@ -32,6 +32,7 @@ function New-DbaLogShippingSecondaryPrimary {
 
         .PARAMETER MonitorServer
             Is the name of the monitor server. The default is the secondary server.
+            If null a monitor server will not be passed to the procedure and SQL Server will default to creating the LS alert job locally
 
         .PARAMETER MonitorServerLogin
             Is the username of the account used to access the monitor server.
@@ -131,7 +132,7 @@ function New-DbaLogShippingSecondaryPrimary {
         Stop-Function -Message "The backup destination path should be formatted in the form \\server\share." -Target $SqlInstance
         return
     } else {
-        if (-not ((Test-Path $BackupDestinationDirectory -PathType Container -IsValid) -and ((Get-Item $BackupDestinationDirectory).PSProvider.Name -eq 'FileSystem'))) {
+        if (-not ((Test-DbaPath $BackupDestinationDirectory -SqlInstance $ServerSecondary) -and ((Get-Item $BackupDestinationDirectory).PSProvider.Name -eq 'FileSystem'))) {
             Stop-Function -Message "The backup destination path is not valid or can't be reached." -Target $SqlInstance
             return
         }
@@ -170,10 +171,11 @@ function New-DbaLogShippingSecondaryPrimary {
 
     # Set up the query
     $Query = "
-        DECLARE @LS_Secondary__CopyJobId AS uniqueidentifier
-        DECLARE @LS_Secondary__RestoreJobId	AS uniqueidentifier
-        DECLARE @LS_Secondary__SecondaryId AS uniqueidentifier
-        EXEC master.sys.sp_add_log_shipping_secondary_primary
+        DECLARE @LS_Secondary__CopyJobId AS uniqueidentifier;
+        DECLARE @LS_Secondary__RestoreJobId AS uniqueidentifier;
+        DECLARE @LS_Secondary__SecondaryId AS uniqueidentifier;
+        DECLARE @SP_Add_RetCode AS INT;
+        EXEC @SP_Add_RetCode = master.sys.sp_add_log_shipping_secondary_primary
                 @primary_server = N'$PrimaryServer'
                 ,@primary_database = N'$PrimaryDatabase'
                 ,@backup_source_directory = N'$BackupSourceDirectory'
@@ -190,7 +192,6 @@ function New-DbaLogShippingSecondaryPrimary {
                 ,@monitor_server_security_mode = $($MonitorServerSecurityMode) "
     }
 
-
     # Check the MonitorServerSecurityMode if it's SQL Server authentication
     if ($MonitorServerSecurityMode -eq 0 -and $MonitorServer) {
         $Query += ",@monitor_server_login = N'$MonitorLogin'
@@ -203,6 +204,15 @@ function New-DbaLogShippingSecondaryPrimary {
         $Query += ";"
     }
 
+    # catch any non-success non error and throw:
+    $Query += "
+        IF (@SP_Add_RetCode <> 0)
+        BEGIN
+            DECLARE @msg VARCHAR(1000);
+            SELECT @msg = 'Unexpected result executing sp_add_log_shipping_secondary_primary ('
+                + CAST(@SP_Add_RetCode AS VARCHAR(5)) + ').';
+            THROW 51000, @msg, 1;
+        END"
     # Execute the query to add the log shipping primary
     if ($PSCmdlet.ShouldProcess($SqlServer, ("Configuring logshipping making settings for the primary database to secondary database on $SqlInstance"))) {
         try {

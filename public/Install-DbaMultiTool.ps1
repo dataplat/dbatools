@@ -140,6 +140,7 @@ function Install-DbaMultiTool {
                 $sqlScripts += Get-ChildItem $localCachedCopy -Filter "sp_doc.sql" -Recurse
                 $sqlScripts += Get-ChildItem $localCachedCopy -Filter "sp_sizeoptimiser.sql" -Recurse
                 $sqlScripts += Get-ChildItem $localCachedCopy -Filter "sp_estindex.sql" -Recurse
+                $sqlScripts += Get-ChildItem $localCachedCopy -Filter "sp_help_revlogin.sql" -Recurse
 
                 foreach ($script in $sqlScripts) {
                     $scriptName = $script.Name

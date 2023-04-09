@@ -137,9 +137,8 @@ function Copy-DbaAgentAlert {
                     } catch {
                         $copyAgentAlertStatus.Status = "Failed"
                         $copyAgentAlertStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                        Write-Message -Level Verbose -Message "Issue creating alert defaults | $PSitem"
+                        Write-Message -Level Verbose -Message "Issue creating alert defaults on $destinstance | $PSitem"
                     }
-                    $copyAgentAlertStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                 }
             }
 
@@ -171,8 +170,8 @@ function Copy-DbaAgentAlert {
                                 $copyAgentAlertStatus.Notes = "Operator(s) [$operatorList] do not exist on destination"
                                 $copyAgentAlertStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                                 Write-Message -Message "One or more operators alerted by [$alertName] is not present at the destination. Alert will not be copied. Use Copy-DbaAgentOperator to copy the operator(s) to the destination. Missing operator(s): $operatorList" -Level Warning
-                                continue
                             }
+                            continue
                         }
                     }
                 }
@@ -191,7 +190,6 @@ function Copy-DbaAgentAlert {
                     if ($PSCmdlet.ShouldProcess($destinstance, "Dropping alert $alertName and recreating")) {
                         try {
                             Write-Message -Message "Dropping Alert $alertName on $destServer." -Level Verbose
-
                             $sql = "EXEC msdb.dbo.sp_delete_alert @name = N'$($alertname)';"
                             Write-Message -Message $sql -Level Debug
                             $null = $destServer.Query($sql)
@@ -199,7 +197,8 @@ function Copy-DbaAgentAlert {
                         } catch {
                             $copyAgentAlertStatus.Status = "Failed"
                             $copyAgentAlertStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                            Stop-Function -Message "Issue dropping/recreating alert" -Category InvalidOperation -ErrorRecord $_ -Target $destServer -Continue
+                            Write-Message -Level Verbose -Message "Issue dropping/recreating alert $alertname on $destInstance | $PSItem"
+                            continue
                         }
                     }
                 }
@@ -243,7 +242,7 @@ function Copy-DbaAgentAlert {
                     } catch {
                         $copyAgentAlertStatus.Status = "Failed"
                         $copyAgentAlertStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                        Stop-Function -Message "Issue creating alert" -Category InvalidOperation -ErrorRecord $_ -Target $destServer -Continue
+                        Write-Message -Level Verbose -Message "Issue creating alert $alertname on $destinstance | $PSItem"
                     }
                 }
 
@@ -282,7 +281,8 @@ function Copy-DbaAgentAlert {
                         } catch {
                             $copyAgentAlertStatus.Status = "Failed"
                             $copyAgentAlertStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                            Stop-Function -Message "Issue adding alert to job" -Category InvalidOperation -ErrorRecord $_ -Target $destServer
+                            Write-Message -Level Verbose -Message "Issue adding alert to job to $destinstance | $PSItem"
+                            continue
                         }
                     }
                 }
@@ -324,7 +324,7 @@ function Copy-DbaAgentAlert {
                     } catch {
                         $copyAgentAlertStatus.Status = "Failed"
                         $copyAgentAlertStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                        Stop-Function -Message "Issue moving notifications for the alert" -Category InvalidOperation -ErrorRecord $_ -Target $destServer
+                        Write-Message -Level Verbose -Message "Issue moving notifications to $destinstance for the alert $alertName | $PSItem"
                     }
                 }
             }

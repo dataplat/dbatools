@@ -144,10 +144,12 @@ function Copy-DbaAgentJobCategory {
 
                     if ($destJobCategories.Name -contains $jobCategory.name) {
                         if ($force -eq $false) {
-                            $copyJobCategoryStatus.Status = "Skipped"
-                            $copyJobCategoryStatus.Notes = "Already exists on destination"
-                            $copyJobCategoryStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                            Write-Message -Level Verbose -Message "Job category $categoryName exists at destination. Use -Force to drop and migrate."
+                            If ($pscmdlet.ShouldProcess($destinstance, "Job category $categoryName exists at destination. Use -Force to drop and migrate.")) {
+                                $copyJobCategoryStatus.Status = "Skipped"
+                                $copyJobCategoryStatus.Notes = "Already exists on destination"
+                                $copyJobCategoryStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                                Write-Message -Level Verbose -Message "Job category $categoryName exists at destination. Use -Force to drop and migrate."
+                            }
                             continue
                         } else {
                             if ($Pscmdlet.ShouldProcess($destinstance, "Dropping job category $categoryName")) {
@@ -157,7 +159,8 @@ function Copy-DbaAgentJobCategory {
                                 } catch {
                                     $copyJobCategoryStatus.Status = "Failed"
                                     $copyJobCategoryStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                                    Stop-Function -Message "Issue dropping job category" -Target $categoryName -ErrorRecord $_ -Continue
+                                    Write-Message -Level Verbose -Message "Issue dropping job category $categoryName on $destinstance | $PSItem"
+                                    continue
                                 }
                             }
                         }
@@ -169,13 +172,13 @@ function Copy-DbaAgentJobCategory {
                             $sql = $jobCategory.Script() | Out-String
                             Write-Message -Level Debug -Message "SQL Statement: $sql"
                             $destServer.Query($sql)
-
                             $copyJobCategoryStatus.Status = "Successful"
                             $copyJobCategoryStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                         } catch {
                             $copyJobCategoryStatus.Status = "Failed"
                             $copyJobCategoryStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                            Stop-Function -Message "Issue copying job category" -Target $categoryName -ErrorRecord $_
+                            Write-Message -Level Verbose -Message "Issue copying job category $categoryName on $destinstance | $PSItem"
+                            continue
                         }
                     }
                 }
@@ -219,10 +222,12 @@ function Copy-DbaAgentJobCategory {
 
                     if ($destOperatorCategories.Name -contains $operatorCategory.Name) {
                         if ($force -eq $false) {
-                            $copyOperatorCategoryStatus.Status = "Skipped"
-                            $copyOperatorCategoryStatus.Notes = "Already exists on destination"
-                            $copyOperatorCategoryStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                            Write-Message -Level Verbose -Message "Operator category $categoryName exists at destination. Use -Force to drop and migrate."
+                            If ($pscmdlet.ShouldProcess($destinstance, "Operator category $categoryName exists at destination. Use -Force to drop and migrate.")) {
+                                $copyOperatorCategoryStatus.Status = "Skipped"
+                                $copyOperatorCategoryStatus.Notes = "Already exists on destination"
+                                $copyOperatorCategoryStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                                Write-Message -Level Verbose -Message "Operator category $categoryName exists at destination. Use -Force to drop and migrate."
+                            }
                             continue
                         } else {
                             if ($Pscmdlet.ShouldProcess($destinstance, "Dropping operator category $categoryName and recreating")) {
@@ -236,7 +241,8 @@ function Copy-DbaAgentJobCategory {
                                 } catch {
                                     $copyOperatorCategoryStatus.Status = "Failed"
                                     $copyOperatorCategoryStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                                    Stop-Function -Message "Issue dropping operator category" -Target $categoryName -ErrorRecord $_
+                                    Write-Message -Level Verbose -Message "Issue dropping operator category $categoryName on $destinstance | $PSItem"
+                                    continue
                                 }
                             }
                         }
@@ -253,7 +259,8 @@ function Copy-DbaAgentJobCategory {
                             } catch {
                                 $copyOperatorCategoryStatus.Status = "Failed"
                                 $copyOperatorCategoryStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                                Stop-Function -Message "Issue copying operator category" -Target $categoryName -ErrorRecord $_
+                                Write-Message -Level Verbose -Message "Issue copying operator category $categoryName on $destinstance | $PSItem"
+                                continue
                             }
                         }
                     }
@@ -303,10 +310,12 @@ function Copy-DbaAgentJobCategory {
 
                     if ($destAlertCategories.Name -contains $alertCategory.name) {
                         if ($force -eq $false) {
-                            $copyAlertCategoryStatus.Status = "Skipped"
-                            $copyAlertCategoryStatus.Notes = "Already exists on destination"
-                            $copyAlertCategoryStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                            Write-Message -Level Verbose -Message "Alert category $categoryName exists at destination. Use -Force to drop and migrate."
+                            If ($pscmdlet.ShouldProcess($destinstance, "Alert category $categoryName exists at destination. Use -Force to drop and migrate.")) {
+                                $copyAlertCategoryStatus.Status = "Skipped"
+                                $copyAlertCategoryStatus.Notes = "Already exists on destination"
+                                $copyAlertCategoryStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                                Write-Message -Level Verbose -Message "Alert category $categoryName exists at destination. Use -Force to drop and migrate."
+                            }
                             continue
                         } else {
                             if ($Pscmdlet.ShouldProcess($destinstance, "Dropping alert category $categoryName and recreating")) {
@@ -320,7 +329,8 @@ function Copy-DbaAgentJobCategory {
                                 } catch {
                                     $copyAlertCategoryStatus.Status = "Failed"
                                     $copyAlertCategoryStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                                    Stop-Function -Message "Issue dropping alert category" -Target $categoryName -ErrorRecord $_
+                                    Write-Message -Level Verbose -Message "Issue dropping alert category $categoryName on $destinstance | $PSItem"
+                                    continue
                                 }
                             }
                         }
@@ -337,7 +347,8 @@ function Copy-DbaAgentJobCategory {
                             } catch {
                                 $copyAlertCategoryStatus.Status = "Failed"
                                 $copyAlertCategoryStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                                Stop-Function -Message "Issue creating alert category" -Target $categoryName -ErrorRecord $_
+                                Write-Message -Level Verbose -Message "Issue creating alert category $categoryName on $destinstance | $PSItem"
+                                continue
                             }
                         }
                     }

@@ -10,7 +10,7 @@ PRs from repos that have not been recently reforked or recloned will be closed a
 <!-- What type of change does your code introduce -->
  - [ ] Bug fix (non-breaking change, fixes #<!--issue number--> )
  - [ ] New feature (non-breaking change, adds functionality, fixes #<!--issue number--> )
- - [ ] Breaking change (effects multiple commands or functionality, fixes #<!--issue number--> )
+ - [ ] Breaking change (affects multiple commands or functionality, fixes #<!--issue number--> )
  - [ ] Ran manual Pester test and has passed (`.\tests\manual.pester.ps1`)
  - [ ] Adding code coverage to existing functionality
  - [ ] Pester test is included

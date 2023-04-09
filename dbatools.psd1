@@ -29,7 +29,7 @@
     Description        = "The community module that enables SQL Server Pros to automate database development and server administration"
 
     # Modules that must be imported into the global environment prior to importing this module
-    RequiredModules    = @{ ModuleName = 'dbatools.library'; ModuleVersion = '2023.1.29' }
+    RequiredModules    = @{ ModuleName = 'dbatools.library'; ModuleVersion = '2023.4.9' }
 
     # Assemblies that must be loaded prior to importing this module
     RequiredAssemblies = @()
@@ -51,6 +51,7 @@
     # Specific functions to export for Core, etc are also found in psm1
     # FunctionsToExport specifically helps with AUTO-LOADING so do not remove
     FunctionsToExport  = @(
+        'Set-DbatoolsInsecureConnection',
         'Get-DbaDbServiceBrokerQueue',
         'New-DbaLinkedServer',
         'Add-DbaAgDatabase',
@@ -105,7 +106,7 @@
         'Copy-DbaResourceGovernor',
         'Copy-DbaSpConfigure',
         'Copy-DbaStartupProcedure',
-        'Copy-DbaSysDbUserObject',
+        'Copy-DbaSystemDbUserObject',
         'Copy-DbaXESession',
         'Copy-DbaXESessionTemplate',
         'Disable-DbaAgHadr',
@@ -363,6 +364,9 @@
         'Get-DbaSpinLockStatistic',
         'Get-DbaSpn',
         'Get-DbaSsisExecutionHistory',
+        'Copy-DbaSsisCatalog',
+        'Get-DbaSsisEnvironmentVariable',
+        'New-DbaSsisCatalog',
         'Get-DbaStartupParameter',
         'Get-DbaStartupProcedure',
         'Get-DbaSuspectPage',
@@ -415,6 +419,7 @@
         'Install-DbaMultiTool',
         'Install-DbaSqlWatch',
         'Install-DbaWhoIsActive',
+        'Invoke-DbaDbAzSqlTips',
         'Invoke-DbaAdvancedInstall',
         'Invoke-DbaAdvancedRestore',
         'Invoke-DbaAdvancedUpdate',
@@ -742,7 +747,8 @@
         'Start-SqlMigration',
         'Write-DbaDataTable',
         'Get-DbaDbModule',
-        'Get-DbaBuildReference'
+        'Get-DbaBuildReference',
+        'Copy-DbaSysDbUserObject'
     )
 
     # List of all modules packaged with this module
@@ -780,7 +786,7 @@
 
             # Indicates this is a pre-release/testing version of the module.
             IsPrerelease = 'true'
-            Prerelease   = 'preview1'
+            Prerelease   = 'preview3'
         }
     }
 }
