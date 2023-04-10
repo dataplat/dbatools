@@ -8,8 +8,8 @@ foreach ($item in (Get-ChildItem "$script:PSModuleRoot\private\maintenance" -Fil
 
 $scriptBlock = {
     $script:___ScriptName = 'dbatools-maintenance'
-
     # Import module in a way where internals are available
+    $script:disablerunspacetepp = $true
     Import-Module "$([Dataplat.Dbatools.dbaSystem.SystemHost]::ModuleBase)\dbatools.psm1"
 
     try {
@@ -23,8 +23,11 @@ $scriptBlock = {
             $task = $null
             $tasksDone = @()
             while ($task = [Dataplat.Dbatools.Maintenance.MaintenanceHost]::GetNextTask($tasksDone)) {
-                try { ([ScriptBlock]::Create($task.ScriptBlock.ToString())).Invoke() }
-                catch { Write-Message -EnableException $false -Level Verbose -Message "[Maintenance] Task '$($task.Name)' failed to execute: $_" -ErrorRecord $_ -FunctionName "task:Maintenance" -Target $task }
+                try {
+                    ([ScriptBlock]::Create($task.ScriptBlock.ToString())).Invoke()
+                } catch {
+                    Write-Message -EnableException $false -Level Verbose -Message "[Maintenance] Task '$($task.Name)' failed to execute: $_" -ErrorRecord $_ -FunctionName "task:Maintenance" -Target $task
+                }
                 $task.LastExecution = Get-Date
                 $tasksDone += $task.Name
             }
@@ -32,8 +35,9 @@ $scriptBlock = {
             Start-Sleep -Seconds 5
         }
         #endregion Main Execution
-    } catch {  }
-    finally {
+    } catch {
+        $null = 1
+    } finally {
         [Dataplat.Dbatools.Runspace.RunspaceHost]::Runspaces[$___ScriptName.ToLowerInvariant()].SignalStopped()
     }
 }

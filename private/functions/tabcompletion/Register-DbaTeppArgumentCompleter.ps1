@@ -69,8 +69,9 @@ function Register-DbaTeppArgumentCompleter {
             $lowername = $lowername.ToLowerInvariant()
         }
 
-        if ($All) { [Dataplat.Dbatools.TabExpansion.TabExpansionHost]::AddTabCompletionSet("*", $p, $lowername) }
-        else {
+        if ($All) {
+            [Dataplat.Dbatools.TabExpansion.TabExpansionHost]::AddTabCompletionSet("*", $p, $lowername)
+        } else {
             foreach ($c in $Command) {
                 [Dataplat.Dbatools.TabExpansion.TabExpansionHost]::AddTabCompletionSet($c, $p, $lowername)
             }

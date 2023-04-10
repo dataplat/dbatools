@@ -176,17 +176,19 @@ if (-not (Test-Path -Path "$psScriptRoot\dbatools.dat") -or $script:serialimport
 
     Write-ImportTime -Text "Loading external commands via dotsource"
 } else {
-    $datload = $true
     Import-Command -Path "$script:PSModuleRoot/dbatools.dat"
     Write-ImportTime -Text "Loading dbatools.ps1 using Import-Command"
+    foreach ($file in (Get-ChildItem -Path "$script:PSModuleRoot/private/functions/*.dat" -Recurse)) {
+        Import-Command -Path $file.FullName
+        Write-ImportTime -Text "Loaded $($file.FullName) using Import-Command"
+    }
+
 }
 
 # Load configuration system - Should always go after library and path setting
 # this has its own Write-ImportTimes
-if ($datload) {
-    Import-Command -Path "$psScriptRoot/private/configurations/configuration.dat"
-} else {
-    Import-Command -Path "$psScriptRoot/private/configurations/configuration.ps1"
+foreach ($file in (Get-ChildItem -File -Path "$psScriptRoot/private/configurations")) {
+    Import-Command -Path $file.FullName
 }
 
 # Resolving the path was causing trouble when it didn't exist yet
@@ -201,26 +203,24 @@ if (-not ([Dataplat.Dbatools.Message.LogHost]::LoggingPath)) {
 # Validations were moved into the other files, in order to prevent having to update dbatools.psm1 every time
 
 if ($PSVersionTable.PSVersion.Major -lt 5) {
-    if ($datload) {
-        foreach ($file in (Get-ChildItem -Path "$script:PSScriptRoot/opt" -Filter *.dat)) {
-            Import-Command -Path $file.FullName
-        }
-    } else {
-        foreach ($file in (Get-ChildItem -Path "$script:PSScriptRoot/opt" -Filter *.ps1)) {
-            Import-Command -Path $file.FullName
-        }
+    foreach ($file in (Get-ChildItem -File -Path "$script:PSScriptRoot/opt")) {
+        Import-Command -Path $file.FullName
     }
     Write-ImportTime -Text "Loading Optional Commands"
 }
 
 # Process TEPP parameters
-if (-not $env:DBATOOLS_DISABLE_TEPP) {
-    Import-Command -Path "$psScriptRoot/private/scripts/insertTepp.ps1"
+if (-not $env:DBATOOLS_DISABLE_TEPP -and -not $script:disablerunspacetepp -and -not (Get-Runspace -Name dbatools-import-tepp)) {
+    foreach ($file in (Get-ChildItem -File -Path "$psScriptRoot/private/scripts/insertTepp*")) {
+        Import-Command -Path $file.FullName
+    }
     Write-ImportTime -Text "Loading TEPP"
 }
 
 # Process transforms
-Import-Command -Path "$psScriptRoot/private/scripts/message-transforms.ps1"
+foreach ($file in (Get-ChildItem -File -Path "$psScriptRoot/private/scripts/message-transforms*")) {
+    Import-Command -Path $file.FullName
+}
 Write-ImportTime -Text "Loading Message Transforms"
 
 # Load scripts that must be individually run at the end #
@@ -231,19 +231,25 @@ DBATOOLS_DISABLE_TEPP       -- used to disable TEPP, we will not even import the
 #>
 # Start the logging system (requires the configuration system up and running)
 if (-not $env:DBATOOLS_DISABLE_LOGGING) {
-    Import-Command -Path "$psScriptRoot/private/scripts/logfilescript.ps1"
+    foreach ($file in (Get-ChildItem -File -Path "$psScriptRoot/private/scripts/logfilescript*")) {
+        Import-Command -Path $file.FullName
+    }
     Write-ImportTime -Text "Loading Script: Logging"
 }
 
-if (-not $env:DBATOOLS_DISABLE_TEPP) {
+if (-not $env:DBATOOLS_DISABLE_TEPP -and -not $script:disablerunspacetepp) {
     # Start the tepp asynchronous update system (requires the configuration system up and running)
-    Import-Command -Path "$psScriptRoot/private/scripts/updateTeppAsync.ps1"
+    foreach ($file in (Get-ChildItem -File -Path "$psScriptRoot/private/scripts/updateTeppAsync*")) {
+        Import-Command -Path $file.FullName
+    }
     Write-ImportTime -Text "Loading Script: Asynchronous TEPP Cache"
 }
 
 if (-not $env:DBATOOLS_DISABLE_LOGGING) {
     # Start the maintenance system (requires pretty much everything else already up and running)
-    Import-Command -Path "$psScriptRoot/private/scripts/dbatools-maintenance.ps1"
+    foreach ($file in (Get-ChildItem -File -Path "$psScriptRoot/private/scripts/dbatools-maintenance*")) {
+        Import-Command -Path $file.FullName
+    }
     Write-ImportTime -Text "Loading Script: Maintenance"
 }
 
