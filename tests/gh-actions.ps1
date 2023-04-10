@@ -21,9 +21,13 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
         #$null = Get-XPlatVariable | Where-Object { $PSItem -notmatch "Copy-", "Migration" } | Sort-Object
         # load dbatools-lib
         if (-not (Get-Module dbatools)) {
-            Write-Warning "Importing dbatools from source"
             Import-Module dbatools.library
-            Import-Module ./dbatools.psd1 -Force
+            try {
+                Import-Module dbatools -ErrorAction Stop
+            } catch {
+                Write-Warning "Importing dbatools from source"
+                Import-Module ./dbatools.psd1 -Force
+            }
         }
     }
 
