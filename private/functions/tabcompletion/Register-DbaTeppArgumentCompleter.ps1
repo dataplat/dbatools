@@ -52,8 +52,11 @@ function Register-DbaTeppArgumentCompleter {
             $teppScript.LastExecution = $start
             $teppScript.LastDuration = New-Object System.TimeSpan(-1) # Null it, just in case. It's a new start.
 
-            try { $ExecutionContext.InvokeCommand.InvokeScript($true, ([System.Management.Automation.ScriptBlock]::Create($teppScript.ScriptBlock.ToString())), $null, @($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameter)) }
-            catch { }
+            try {
+                $ExecutionContext.InvokeCommand.InvokeScript($true, ([System.Management.Automation.ScriptBlock]::Create($teppScript.ScriptBlock.ToString())), $null, @($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameter))
+            } catch {
+                $null = 1
+            }
 
             $teppScript.LastDuration = (Get-Date) - $start
         }
