@@ -1,11 +1,12 @@
 $scriptBlock = {
     $ModuleRoot = [Dataplat.Dbatools.dbaSystem.SystemHost]::ModuleBase
 
-    $ExecutionContext.InvokeCommand.InvokeScript($false, ([scriptblock]::Create([io.file]::ReadAllText((Resolve-Path "$ModuleRoot\private\functions\tabcompletion\Register-DbaTeppScriptblock.ps1").ProviderPath))), $null, $null)
-    $ExecutionContext.InvokeCommand.InvokeScript($false, ([scriptblock]::Create([io.file]::ReadAllText((Resolve-Path "$ModuleRoot\private\functions\tabcompletion\Register-DbaTeppInstanceCacheBuilder.ps1").ProviderPath))), $null, $null)
+    foreach ($file in (Get-ChildItem -Path "$ModuleRoot\private\functions\tabcompletion" -File)) {
+        Import-Command -Path $file.FullName
+    }
 
-    foreach ($file in (Get-ChildItem (Resolve-Path "$ModuleRoot\private\dynamicparams\*.ps1").ProviderPath)) {
-        $ExecutionContext.InvokeCommand.InvokeScript($false, ([scriptblock]::Create([io.file]::ReadAllText($file.FullName))), $null, $null)
+    foreach ($file in (Get-ChildItem -Path "$ModuleRoot\private\dynamicparams\" -File)) {
+        Import-Command -Path $file.FullName
     }
 
     [Dataplat.Dbatools.TabExpansion.TabExpansionHost]::CalculateTabExpansion()
