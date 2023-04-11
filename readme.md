@@ -18,7 +18,7 @@ _Need an invite to the SQL Community Slack workspace? Check out the [self-invite
 
 ## Installer
 
-dbatools now works on PowerShell Core (aka PowerShell 6+). This means that you can run a large majority of our commands on <strong>Linux</strong> and <strong>macOS </strong>🤩👍
+dbatools now works on PowerShell Core. This means that you can run a large majority of our commands on <strong>Linux</strong> and <strong>macOS </strong>🤩👍
 
 Run the following to install dbatools from the PowerShell Gallery (to install on a server or for all users, remove the `-Scope` parameter and run in an elevated session):
 
@@ -26,13 +26,7 @@ Run the following to install dbatools from the PowerShell Gallery (to install on
 Install-Module dbatools -Scope CurrentUser
 ```
 
-If you don't have a version of PowerShell that supports the PowerShell Gallery, you can install it manually:
-
-```powershell
-Invoke-Expression (Invoke-WebRequest https://dbatools.io/in)
-```
-
-> Note: please only use `Invoke-Expression (Invoke-WebRequest..)` from sources you trust, like us 👍
+If you use an earlier version of PowerShell that does not support the PowerShell Gallery, you can download `PowerShellGet` from [Microsoft's site](https://learn.microsoft.com/en-us/powershell/scripting/gallery/installing-psget?view=powershell-7.3) then run the command again.
 
 ## Usage scenarios
 
