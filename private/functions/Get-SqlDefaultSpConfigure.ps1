@@ -646,5 +646,107 @@ function Get-SqlDefaultSpConfigure {
             }
         }
         #endregion SQL2019
+
+        #region SQL2022
+        16 {
+            [pscustomobject]@{
+                "access check cache bucket count"    = 0
+                "access check cache quota"           = 0
+                "Ad Hoc Distributed Queries"         = 0
+                "ADR cleaner retry timeout (min)"    = 15
+                "ADR Cleaner Thread Count"           = 1
+                "ADR Preallocation Factor"           = 4
+                "affinity I/O mask"                  = 0
+                "affinity mask"                      = 0
+                "affinity64 I/O mask"                = 0
+                "affinity64 mask"                    = 0
+                "Agent XPs"                          = 0
+                "allow filesystem enumeration"       = 1
+                "allow polybase export"              = 0
+                "allow updates"                      = 0
+                "automatic soft-NUMA disabled"       = 0
+                "backup checksum default"            = 0
+                "backup compression algorithm"       = 0
+                "backup compression default"         = 0
+                "blocked process threshold (s)"      = 0
+                "c2 audit mode"                      = 0
+                "clr enabled"                        = 0
+                "clr strict security"                = 1
+                "column encryption enclave type"     = 0
+                "common criteria compliance enabled" = 0
+                "contained database authentication"  = 0
+                "cost threshold for parallelism"     = 5
+                "cross db ownership chaining"        = 0
+                "cursor threshold"                   = -1
+                "Data processed daily limit in TB"   = 2147483647
+                "Data processed monthly limit in TB" = 2147483647
+                "Data processed weekly limit in TB"  = 2147483647
+                "Database Mail XPs"                  = 0
+                "default full-text language"         = 1033
+                "default language"                   = 0
+                "default trace enabled"              = 1
+                "disallow results from triggers"     = 0
+                "EKM provider enabled"               = 0
+                "external scripts enabled"           = 0
+                "filestream access level"            = 0
+                "fill factor (%)"                    = 0
+                "ft crawl bandwidth (max)"           = 100
+                "ft crawl bandwidth (min)"           = 0
+                "ft notify bandwidth (max)"          = 100
+                "ft notify bandwidth (min)"          = 0
+                "hadoop connectivity"                = 0
+                "hardware offload config"            = 0
+                "hardware offload enabled"           = 0
+                "hardware offload mode"              = 0
+                "index create memory (KB)"           = 0
+                "in-doubt xact resolution"           = 0
+                "lightweight pooling"                = 0
+                "locks"                              = 0
+                "max degree of parallelism"          = 4
+                "max full-text crawl range"          = 4
+                "max server memory (MB)"             = 2147483647
+                "max text repl size (B)"             = 65536
+                "max worker threads"                 = 0
+                "media retention"                    = 0
+                "min memory per query (KB)"          = 1024
+                "min server memory (MB)"             = 0
+                "nested triggers"                    = 1
+                "network packet size (B)"            = 4096
+                "Ole Automation Procedures"          = 0
+                "open objects"                       = 0
+                "openrowset auto_create_statistics"  = 1
+                "optimize for ad hoc workloads"      = 0
+                "PH timeout (s)"                     = 60
+                "polybase enabled"                   = 0
+                "polybase network encryption"        = 1
+                "precompute rank"                    = 0
+                "priority boost"                     = 0
+                "query governor cost limit"          = 0
+                "query wait (s)"                     = -1
+                "recovery interval (min)"            = 0
+                "remote access"                      = 1
+                "remote admin connections"           = 0
+                "remote data archive"                = 0
+                "remote login timeout (s)"           = 10
+                "remote proc trans"                  = 0
+                "remote query timeout (s)"           = 600
+                "Replication XPs"                    = 0
+                "scan for startup procs"             = 0
+                "server trigger recursion"           = 1
+                "set working set size"               = 0
+                "show advanced options"              = 1
+                "SMO and DMO XPs"                    = 1
+                "suppress recovery model errors"     = 0
+                "tempdb metadata memory-optimized"   = 0
+                "transform noise words"              = 0
+                "two digit year cutoff"              = 2049
+                "user connections"                   = 0
+                "user options"                       = 0
+                "version high part of SQL Server"    = 1048576
+                "version low part of SQL Server"     = 65536006
+                "xp_cmdshell"                        = 0
+            }
+        }
+        #endregion SQL2022
     }
 }
