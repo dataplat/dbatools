@@ -1,5 +1,5 @@
 {
-    "LastUpdated": "2023-04-13T00:00:00",
+    "LastUpdated": "2023-04-14T00:00:00",
     "Data": [
         {
             "Version": "8.0.47",
@@ -4370,7 +4370,7 @@
         {
             "Version": "15.0.2000",
             "SP": "RTM",
-            "SupportedUntil": "2025-01-07"
+            "SupportedUntil": "2030-01-08"
         },
         {
             "Version": "15.0.2070",
@@ -4519,7 +4519,8 @@
         },
         {
             "Version": "16.0.1000",
-            "SP": "RTM"
+            "SP": "RTM",
+            "SupportedUntil": "2033-01-11"
         },
         {
             "Version": "16.0.1050",
