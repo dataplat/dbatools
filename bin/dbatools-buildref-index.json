@@ -4370,7 +4370,7 @@
         {
             "Version": "15.0.2000",
             "SP": "RTM",
-			"SupportedUntil": "2030-01-08"
+            "SupportedUntil": "2030-01-08"
         },
         {
             "Version": "15.0.2070",
@@ -4520,7 +4520,7 @@
         {
             "Version": "16.0.1000",
             "SP": "RTM",
-			"SupportedUntil": "2033-01-11"
+            "SupportedUntil": "2033-01-11"
         },
         {
             "Version": "16.0.1050",
