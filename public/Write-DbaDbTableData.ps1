@@ -211,11 +211,18 @@ function Write-DbaDbTableData {
         # Null variable to make sure upper-scope variables don't interfere later
         $steppablePipeline = $null
 
+        $context = if ($SqlInstance.InputObject.ConnectionContext) {
+            $SqlInstance.InputObject.ConnectionContext
+        } else {
+            $SqlInstance.ConnectionContext
+        }
+        $startedWithANonPooledConnection = [bool]$context.NonPooledConnection
+
         if (-not $PSBoundParameters.Database) {
-            if ($SqlInstance.ConnectionContext.DatabaseName) {
-                $Database = $SqlInstance.ConnectionContext.DatabaseName
-                $PSBoundParameters.Database = $SqlInstance.ConnectionContext.DatabaseName
-                $databaseName = $SqlInstance.ConnectionContext.DatabaseName
+            if ($context.DatabaseName) {
+                $Database = $context.DatabaseName
+                $PSBoundParameters.Database = $context.DatabaseName
+                $databaseName = $context.DatabaseName
             } else {
                 $dbname = (Invoke-DbaQuery -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Query "SELECT DB_NAME() AS dbname").dbname
                 $Database = $dbname
@@ -223,6 +230,7 @@ function Write-DbaDbTableData {
                 $databaseName = $dbname
             }
         }
+
 
         #region Utility Functions
         function Invoke-BulkCopy {
@@ -420,19 +428,35 @@ function Write-DbaDbTableData {
             $schemaName = $Schema
         }
 
+        $originalDatabaseName = $databaseName
         $tableName = $fqtnObj.Name
 
+        $usingGlobalTempTable = $false
         if ($tableName.StartsWith('#')) {
             Write-Message -Level Verbose -Message "The table $tableName should be in tempdb.dbo so we ignore input database and schema."
             $databaseName = 'tempdb'
             $schemaName = 'dbo'
+            if ($tableName.StartsWith('##')) {
+                # do not disconnect the SqlInstance if using a global temp table.
+                $usingGlobalTempTable = $true
+            } elseif (-not $startedWithANonPooledConnection) {
+                # if using a session temp table, you must also give an already created connection to be able to use it in the same session it was created in.
+                Write-Message -Level Warning -Message "The temp table being created will not be usable after this command completes. Either use a global temp table, like '#${tableName}', or pass a NonPooled SqlConnection."
+            }
         }
 
         $quotedFQTN = New-Object System.Text.StringBuilder
 
         #region Connect to server
         try {
-            $server = Connect-DbaInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $databaseName -NonPooledConnection
+            if ($startedWithANonPooledConnection) {
+                if (-not $context.IsOpen) {
+                    $context.SqlConnectionObject.Open()
+                }
+                $server = $SqlInstance.InputObject
+            } else {
+                $server = Connect-DbaInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $databaseName -NonPooledConnection
+            }
         } catch {
             Stop-Function -Message "Error occurred while establishing connection to $SqlInstance" -Category ConnectionError -ErrorRecord $_ -Target $SqlInstance
             return
@@ -728,7 +752,13 @@ function Write-DbaDbTableData {
             $bulkCopy.Dispose()
         }
 
-        # Close non-pooled connection as this is not done automatically. If it is a reused Server SMO, connection will be opened again automatically on next request.
-        $null = $server | Disconnect-DbaInstance
+        if (-not ($startedWithANonPooledConnection -or $usingGlobalTempTable) ) {
+            # Close non-pooled connection as this is not done automatically. If it is a reused Server SMO, connection will be opened again automatically on next request.
+            $null = $server | Disconnect-DbaInstance
+        } elseif ($originalDatabaseName -ne $databaseName) {
+            # if a temptable was created, it sets the open connection's database to tempdb indefinitely. We want to get back to the original database context at the start of this command.
+            Write-Message -Level Verbose -Message "The current database has changed from the original database. switching back to the original database."
+            $context.ExecuteNonQuery("use [$originalDatabaseName]")
+        }
     }
 }
