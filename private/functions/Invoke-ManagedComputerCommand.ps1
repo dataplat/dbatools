@@ -59,7 +59,7 @@ function Invoke-ManagedComputerCommand {
 
         if ($version -eq 0) {
             $setupVerbose += "Using latest version"
-            $null  = [System.Reflection.Assembly]::LoadWithPartialName('Microsoft.SqlServer.SqlWmiManagement')
+            $null = [System.Reflection.Assembly]::LoadWithPartialName('Microsoft.SqlServer.SqlWmiManagement')
         } else {
             $setupVerbose += "Attempting specific version $version"
             $dll = Get-ChildItem $env:windir\Microsoft.NET\assembly\GAC_MSIL\Microsoft.SqlServer.SqlWmiManagement, $env:windir\assembly\GAC_MSIL\Microsoft.SqlServer.SqlWmiManagement -Recurse -File | Where-Object FullName -like "*$version.0*"
