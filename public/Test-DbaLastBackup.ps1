@@ -397,8 +397,8 @@ function Test-DbaLastBackup {
                                 $backup.FullName = $backup.Path.Replace($file, $localdestfile)
                                 $removearray += $remotedestfile
                             } catch {
-                                $backup.Path = $sourcefile
-                                $backup.FullName = $sourcefile
+                                $backup.Path = $backup.Path.Replace($file, $sourcefile)
+                                $backup.FullName = $backup.Path.Replace($file, $sourcefile)
                             }
                         }
                     }
