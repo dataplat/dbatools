@@ -138,14 +138,21 @@ $dbatoolsSystemSystemNode.SerialImport -or
 $dbatoolsSystemUserNode.SerialImport -or
 $option.SerialImport
 
-#endregion Dot Sourcing
+
 $gitDir = $script:PSModuleRoot, '.git' -join [IO.Path]::DirectorySeparatorChar
+$pubDir = $script:PSModuleRoot, 'public' -join [IO.Path]::DirectorySeparatorChar
+
 if ($dbatools_enabledebug -or $option.Debug -or $DebugPreference -ne 'SilentlyContinue' -or [IO.Directory]::Exists($gitDir)) {
-    $script:serialimport = $true
+    if ([IO.Directory]::Exists($pubDir)) {
+        $script:serialimport = $true
+    } else {
+        Write-Message -Level Verbose -Message "Debugging is enabled, but the public folder is missing so we can't do a serial import to actually enable debugging."
+    }
 }
 Write-ImportTime -Text "Checking for debugging preference"
+#endregion Dot Sourcing
 
-# People will need to unblock files for themselves, removed
+# People will need to unblock files for themselves, unblocking code removed
 
 <#
     Do the rest of the loading
