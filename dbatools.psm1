@@ -51,23 +51,15 @@ if (-not $script:libraryroot) {
     Write-ImportTime -Text "Couldn't find location for dbatools library module, loading it up"
 }
 
-# Load our own custom library
-# Should always come before function imports
-. $psScriptRoot\bin\library.ps1
-Write-ImportTime -Text "Loading dbatools library"
+try {
+    $dll = [System.IO.Path]::Combine($script:libraryroot, "lib", "dbatools.dll")
+    Import-Module $dll
+} catch {
+    throw "Couldn't import dbatools library | $PSItem"
+}
+Write-ImportTime -Text "Imported dbatools library"
 
-<#
-If dbatools has not been imported yet, it also hasn't done libraries yet. Fix that.
-Previously checked for SMO being available, but that would break import with SqlServer loaded
-Some people also use the dbatools library for other things without the module, so also check,
-whether the modulebase has been set (first thing it does after loading library through dbatools import)
-Theoretically, there's a minor cuncurrency collision risk with that, but since the cost is only
-a little import time loss if that happens ...
-#>
-Import-Command -Path "$script:psScriptRoot/private/scripts/libraryimport.ps1"
-Write-ImportTime -Text "Initial import of SMO libraries"
-
-Import-Command -Path "$psScriptRoot/bin/typealiases.ps1"
+Import-Command -Path "$script:PSModuleRoot/bin/typealiases.ps1"
 Write-ImportTime -Text "Loading type aliases"
 
 # Tell the library where the module is based, just in case
@@ -146,14 +138,21 @@ $dbatoolsSystemSystemNode.SerialImport -or
 $dbatoolsSystemUserNode.SerialImport -or
 $option.SerialImport
 
-#endregion Dot Sourcing
+
 $gitDir = $script:PSModuleRoot, '.git' -join [IO.Path]::DirectorySeparatorChar
+$pubDir = $script:PSModuleRoot, 'public' -join [IO.Path]::DirectorySeparatorChar
+
 if ($dbatools_enabledebug -or $option.Debug -or $DebugPreference -ne 'SilentlyContinue' -or [IO.Directory]::Exists($gitDir)) {
-    $script:serialimport = $true
+    if ([IO.Directory]::Exists($pubDir)) {
+        $script:serialimport = $true
+    } else {
+        Write-Message -Level Verbose -Message "Debugging is enabled, but the public folder is missing so we can't do a serial import to actually enable debugging."
+    }
 }
 Write-ImportTime -Text "Checking for debugging preference"
+#endregion Dot Sourcing
 
-# People will need to unblock files for themselves, removed
+# People will need to unblock files for themselves, unblocking code removed
 
 <#
     Do the rest of the loading
@@ -161,9 +160,9 @@ Write-ImportTime -Text "Checking for debugging preference"
     # https://becomelotr.wordpress.com/2017/02/13/expensive-dot-sourcing/
 #>
 
-if (-not (Test-Path -Path "$psScriptRoot\dbatools.dat") -or $script:serialimport) {
+if (-not (Test-Path -Path "$script:PSModuleRoot\dbatools.dat") -or $script:serialimport) {
     # All internal functions privately available within the toolset
-    foreach ($file in (Get-ChildItem -Path "$psScriptRoot/private/functions/" -Recurse -Filter *.ps1)) {
+    foreach ($file in (Get-ChildItem -Path "$script:PSModuleRoot/private/functions/" -Recurse -Filter *.ps1)) {
         . $file.FullName
     }
 
@@ -187,7 +186,7 @@ if (-not (Test-Path -Path "$psScriptRoot\dbatools.dat") -or $script:serialimport
 
 # Load configuration system - Should always go after library and path setting
 # this has its own Write-ImportTimes
-foreach ($file in (Get-ChildItem -File -Path "$psScriptRoot/private/configurations")) {
+foreach ($file in (Get-ChildItem -File -Path "$script:PSModuleRoot/private/configurations")) {
     Import-Command -Path $file.FullName
 }
 
@@ -211,14 +210,14 @@ if ($PSVersionTable.PSVersion.Major -lt 5) {
 
 # Process TEPP parameters
 if (-not $env:DBATOOLS_DISABLE_TEPP -and -not $script:disablerunspacetepp -and -not (Get-Runspace -Name dbatools-import-tepp)) {
-    foreach ($file in (Get-ChildItem -File -Path "$psScriptRoot/private/scripts/insertTepp*")) {
+    foreach ($file in (Get-ChildItem -File -Path "$script:PSModuleRoot/private/scripts/insertTepp*")) {
         Import-Command -Path $file.FullName
     }
     Write-ImportTime -Text "Loading TEPP"
 }
 
 # Process transforms
-foreach ($file in (Get-ChildItem -File -Path "$psScriptRoot/private/scripts/message-transforms*")) {
+foreach ($file in (Get-ChildItem -File -Path "$script:PSModuleRoot/private/scripts/message-transforms*")) {
     Import-Command -Path $file.FullName
 }
 Write-ImportTime -Text "Loading Message Transforms"
@@ -231,7 +230,7 @@ DBATOOLS_DISABLE_TEPP       -- used to disable TEPP, we will not even import the
 #>
 # Start the logging system (requires the configuration system up and running)
 if (-not $env:DBATOOLS_DISABLE_LOGGING) {
-    foreach ($file in (Get-ChildItem -File -Path "$psScriptRoot/private/scripts/logfilescript*")) {
+    foreach ($file in (Get-ChildItem -File -Path "$script:PSModuleRoot/private/scripts/logfilescript*")) {
         Import-Command -Path $file.FullName
     }
     Write-ImportTime -Text "Loading Script: Logging"
@@ -239,7 +238,7 @@ if (-not $env:DBATOOLS_DISABLE_LOGGING) {
 
 if (-not $env:DBATOOLS_DISABLE_TEPP -and -not $script:disablerunspacetepp) {
     # Start the tepp asynchronous update system (requires the configuration system up and running)
-    foreach ($file in (Get-ChildItem -File -Path "$psScriptRoot/private/scripts/updateTeppAsync*")) {
+    foreach ($file in (Get-ChildItem -File -Path "$script:PSModuleRoot/private/scripts/updateTeppAsync*")) {
         Import-Command -Path $file.FullName
     }
     Write-ImportTime -Text "Loading Script: Asynchronous TEPP Cache"
@@ -247,7 +246,7 @@ if (-not $env:DBATOOLS_DISABLE_TEPP -and -not $script:disablerunspacetepp) {
 
 if (-not $env:DBATOOLS_DISABLE_LOGGING) {
     # Start the maintenance system (requires pretty much everything else already up and running)
-    foreach ($file in (Get-ChildItem -File -Path "$psScriptRoot/private/scripts/dbatools-maintenance*")) {
+    foreach ($file in (Get-ChildItem -File -Path "$script:PSModuleRoot/private/scripts/dbatools-maintenance*")) {
         Import-Command -Path $file.FullName
     }
     Write-ImportTime -Text "Loading Script: Maintenance"
