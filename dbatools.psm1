@@ -51,22 +51,6 @@ if (-not $script:libraryroot) {
     Write-ImportTime -Text "Couldn't find location for dbatools library module, loading it up"
 }
 
-# Load our own custom library
-# Should always come before function imports
-. $psScriptRoot\bin\library.ps1
-Write-ImportTime -Text "Loading dbatools library"
-
-<#
-If dbatools has not been imported yet, it also hasn't done libraries yet. Fix that.
-Previously checked for SMO being available, but that would break import with SqlServer loaded
-Some people also use the dbatools library for other things without the module, so also check,
-whether the modulebase has been set (first thing it does after loading library through dbatools import)
-Theoretically, there's a minor cuncurrency collision risk with that, but since the cost is only
-a little import time loss if that happens ...
-#>
-Import-Command -Path "$script:psScriptRoot/private/scripts/libraryimport.ps1"
-Write-ImportTime -Text "Initial import of SMO libraries"
-
 Import-Command -Path "$psScriptRoot/bin/typealiases.ps1"
 Write-ImportTime -Text "Loading type aliases"
 
