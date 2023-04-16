@@ -18,6 +18,8 @@ function Invoke-DbaBalanceDataFiles {
         A file group would have at least have 2 data files and should be writable.
         If a table is within such a file group it will be subject for processing. If not the table will be skipped.
 
+        Note: this command does not perform a disk space check for non-Windows machines so make sure you have enough space on the disk.
+
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.
 
@@ -164,7 +166,7 @@ function Invoke-DbaBalanceDataFiles {
             foreach ($db in $DatabaseCollection) {
                 $dataFilesStarting = Get-DbaDbFile -SqlInstance $server -Database $db.Name | Where-Object { $_.TypeDescription -eq 'ROWS' } | Select-Object ID, LogicalName, PhysicalName, Size, UsedSpace, AvailableSpace | Sort-Object ID
 
-                if (-not $Force) {
+                if (-not $Force -and $server.HostPlatform -eq "Windows") {
                     # Check the amount of disk space available
                     $query = "SELECT SUBSTRING(physical_name, 0, 4) AS 'Drive' ,
                                         SUM(( CAST( size AS BIGINT ) * 8 ) / 1024) AS 'SizeMB'
