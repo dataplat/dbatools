@@ -373,14 +373,14 @@ function Test-DbaLastBackup {
                     $removearray = @()
 
                     foreach ($backup in $lastbackup) {
-                        foreach ($file in $backup) {
-                            $filename = Split-Path -Path $file.FullName -Leaf
+                        foreach ($file in $backup.Path) {
+                            $filename = Split-Path -Path $file -Leaf
                             Write-Message -Level Verbose -Message "Processing $filename."
 
-                            $sourcefile = Join-AdminUnc -servername $instance.ComputerName -filepath "$($file.Path)"
+                            $sourcefile = Join-AdminUnc -servername $instance.ComputerName -filepath $file
 
-                            if ($instance.IsLocalHost) {
-                                $remotedestdirectory = Join-AdminUnc -servername $instance.ComputerName -filepath $copyPath
+                            if (-not $Destination.IsLocalHost) {
+                                $remotedestdirectory = Join-AdminUnc -servername $Destination.ComputerName -filepath $copyPath
                             } else {
                                 $remotedestdirectory = $copyPath
                             }
@@ -393,12 +393,12 @@ function Test-DbaLastBackup {
                             try {
                                 Write-Message -Level Verbose -Message "Copying $sourcefile to $remotedestfile."
                                 Copy-Item -Path $sourcefile -Destination $remotedestfile -ErrorAction Stop
-                                $backup.Path = $localdestfile
-                                $backup.FullName = $localdestfile
+                                $backup.Path = $backup.Path.Replace($file, $localdestfile)
+                                $backup.FullName = $backup.Path.Replace($file, $localdestfile)
                                 $removearray += $remotedestfile
                             } catch {
-                                $backup.Path = $sourcefile
-                                $backup.FullName = $sourcefile
+                                $backup.Path = $backup.Path.Replace($file, $sourcefile)
+                                $backup.FullName = $backup.Path.Replace($file, $sourcefile)
                             }
                         }
                     }
