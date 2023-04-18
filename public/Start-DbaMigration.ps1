@@ -373,15 +373,45 @@ function Start-DbaMigration {
         if ($Exclude -notcontains 'Databases') {
             Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Migrating databases"
             Write-Message -Level Verbose -Message "Migrating databases"
+
+            $CopyDatabaseSplat = @{
+                Source = $sourceserver;
+                Destination = $Destination;
+                DestinationSqlCredential = $DestinationSqlCredential;
+                SetSourceReadOnly = $SetSourceReadOnly;
+                ReuseSourceFolderStructure = $ReuseSourceFolderStructure;
+                AllDatabases = $true;
+                Force = $Force;
+                IncludeSupportDbs = $IncludeSupportDbs;
+                KeepCDC = $KeepCDC;
+                KeepReplication = $KeepReplication;
+            }
+
             if ($BackupRestore) {
+                $CopyDatabaseSplat += @{
+                    BackupRestore = $true;
+                    NoRecovery = $NoRecovery;
+                    WithReplace = $WithReplace;
+                }
                 if ($UseLastBackup) {
-                    Copy-DbaDatabase -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -AllDatabases -SetSourceReadOnly:$SetSourceReadOnly -ReuseSourceFolderStructure:$ReuseSourceFolderStructure -BackupRestore -Force:$Force -NoRecovery:$NoRecovery -WithReplace:$WithReplace -IncludeSupportDbs:$IncludeSupportDbs -UseLastBackup:$UseLastBackup -Continue:$Continue -KeepCDC:$KeepCDC -KeepReplication:$KeepReplication
+                    $CopyDatabaseSplat += @{
+                        UseLastBackup = $UseLastBackup;
+                        Continue = $Continue;
+                    }
                 } else {
-                    Copy-DbaDatabase -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -AllDatabases -SetSourceReadOnly:$SetSourceReadOnly -ReuseSourceFolderStructure:$ReuseSourceFolderStructure -BackupRestore -SharedPath $SharedPath -Force:$Force -NoRecovery:$NoRecovery -WithReplace:$WithReplace -IncludeSupportDbs:$IncludeSupportDbs -AzureCredential $AzureCredential -KeepCDC:$KeepCDC -KeepReplication:$KeepReplication
+                    $CopyDatabaseSplat += @{
+                        SharedPath = $SharedPath;
+                        AzureCredential = $AzureCredential;
+                    }
                 }
             } else {
-                Copy-DbaDatabase -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -AllDatabases -SetSourceReadOnly:$SetSourceReadOnly -ReuseSourceFolderStructure:$ReuseSourceFolderStructure -DetachAttach:$DetachAttach -Reattach:$Reattach -Force:$Force -IncludeSupportDbs:$IncludeSupportDbs -KeepCDC:$KeepCDC -KeepReplication:$KeepReplication
+                $CopyDatabaseSplat += @{
+                    DetachAttach = $DetachAttach;
+                    Reattach = $Reattach;
+                }
             }
+
+            Copy-DbaDatabase @CopyDatabaseSplat
         }
 
         if ($Exclude -notcontains 'Logins') {
