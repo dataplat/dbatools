@@ -176,12 +176,6 @@ if (-not (Test-Path -Path "$script:PSModuleRoot\dbatools.dat") -or $script:seria
     Write-ImportTime -Text "Loading external commands via dotsource"
 } else {
     Import-Command -Path "$script:PSModuleRoot/dbatools.dat"
-    Write-ImportTime -Text "Loading dbatools.ps1 using Import-Command"
-    foreach ($file in (Get-ChildItem -Path "$script:PSModuleRoot/private/functions/*.dat" -Recurse)) {
-        Import-Command -Path $file.FullName
-        Write-ImportTime -Text "Loaded $($file.FullName) using Import-Command"
-    }
-
 }
 
 # Load configuration system - Should always go after library and path setting
