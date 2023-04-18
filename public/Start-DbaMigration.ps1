@@ -383,8 +383,6 @@ function Start-DbaMigration {
                 AllDatabases = $true;
                 Force = $Force;
                 IncludeSupportDbs = $IncludeSupportDbs;
-                KeepCDC = $KeepCDC;
-                KeepReplication = $KeepReplication;
             }
 
             if ($BackupRestore) {
@@ -392,6 +390,8 @@ function Start-DbaMigration {
                     BackupRestore = $true;
                     NoRecovery = $NoRecovery;
                     WithReplace = $WithReplace;
+                    KeepCDC = $KeepCDC;
+                    KeepReplication = $KeepReplication;
                 }
                 if ($UseLastBackup) {
                     $CopyDatabaseSplat += @{
