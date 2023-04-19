@@ -375,39 +375,39 @@ function Start-DbaMigration {
             Write-Message -Level Verbose -Message "Migrating databases"
 
             $CopyDatabaseSplat = @{
-                Source = $sourceserver;
-                Destination = $Destination;
-                DestinationSqlCredential = $DestinationSqlCredential;
-                SetSourceReadOnly = $SetSourceReadOnly;
-                ReuseSourceFolderStructure = $ReuseSourceFolderStructure;
-                AllDatabases = $true;
-                Force = $Force;
-                IncludeSupportDbs = $IncludeSupportDbs;
+                Source                     = $sourceserver
+                Destination                = $Destination
+                DestinationSqlCredential   = $DestinationSqlCredential
+                SetSourceReadOnly          = $SetSourceReadOnly
+                ReuseSourceFolderStructure = $ReuseSourceFolderStructure
+                AllDatabases               = $true
+                Force                      = $Force
+                IncludeSupportDbs          = $IncludeSupportDbs
             }
 
             if ($BackupRestore) {
                 $CopyDatabaseSplat += @{
-                    BackupRestore = $true;
-                    NoRecovery = $NoRecovery;
-                    WithReplace = $WithReplace;
-                    KeepCDC = $KeepCDC;
-                    KeepReplication = $KeepReplication;
+                    BackupRestore   = $true
+                    NoRecovery      = $NoRecovery
+                    WithReplace     = $WithReplace
+                    KeepCDC         = $KeepCDC
+                    KeepReplication = $KeepReplication
                 }
                 if ($UseLastBackup) {
                     $CopyDatabaseSplat += @{
-                        UseLastBackup = $UseLastBackup;
-                        Continue = $Continue;
+                        UseLastBackup = $UseLastBackup
+                        Continue      = $Continue
                     }
                 } else {
                     $CopyDatabaseSplat += @{
-                        SharedPath = $SharedPath;
-                        AzureCredential = $AzureCredential;
+                        SharedPath      = $SharedPath
+                        AzureCredential = $AzureCredential
                     }
                 }
             } else {
                 $CopyDatabaseSplat += @{
-                    DetachAttach = $DetachAttach;
-                    Reattach = $Reattach;
+                    DetachAttach = $DetachAttach
+                    Reattach     = $Reattach
                 }
             }
 
