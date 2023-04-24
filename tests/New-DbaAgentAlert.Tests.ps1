@@ -5,7 +5,7 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
         [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Alert', 'Category', 'DatabaseName', 'DelayBetweenResponses', 'Disabled', 'EventDescriptionKeyword', 'EventSource', 'JobId', 'MessageId', 'NotificationMessage', 'PerformanceCondition', 'Severity', 'WmiEventNamespace', 'WmiEventQuery', 'NotifyMethod', 'Operator', 'EnableException'
+        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Alert', 'Category', 'Database', 'Operator', 'DelayBetweenResponses', 'Disabled', 'EventDescriptionKeyword', 'EventSource', 'JobId', 'Severity', 'MessageId', 'NotificationMessage', 'PerformanceCondition', 'WmiEventNamespace', 'WmiEventQuery', 'NotifyMethod', 'EnableException'
         $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
         It "Should only contain our specific parameters" {
             (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
@@ -14,8 +14,8 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 }
 
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
-    $parameters = @{
-        SqlInstance           = "localhost"
+    $parms = @{
+        SqlInstance           = $script:instance2
         Alert                 = "Test Alert"
         DelayBetweenResponses = 60
         Disabled              = $false
@@ -27,7 +27,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 
     Context 'Creating a new SQL Server Agent alert' {
         It 'Should create a new alert' {
-            $alert = New-DbaAgentAlert @parameters
+            $alert = New-DbaAgentAlert @parms
 
             # Assert
             $alert.Name | Should -Be 'Test Alert'
@@ -35,7 +35,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $alert.IsEnabled | Should -Be $true
             $alert.Severity | Should -Be 17
 
-            Get-DbaAgentAlert -SqlInstance $script:instance2 -Alert $alertParams.Alert | Should Not Be $null
+            Get-DbaAgentAlert -SqlInstance $script:instance2 -Alert $parms.Alert | Should -Not -BeNullOrEmpty
         }
     }
 }
