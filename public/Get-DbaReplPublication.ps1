@@ -112,7 +112,7 @@ function Get-DbaReplPublication {
                 if ($Name) {
                     $pubTypes = $pubTypes | Where-Object Name -in $Name
                 }
-
+                #TODO: Check why if -Database is not passed, I can't see the articles
                 foreach ($pub in $pubTypes) {
                     if ($pub.Type -eq 'Merge') {
                         $articles = $pub.MergeArticles
