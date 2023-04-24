@@ -19,10 +19,10 @@ function New-DbaAgentAlert {
     .PARAMETER Alert
         The name of the alert to create
 
-    .PARAMETER CategoryName
+    .PARAMETER Category
         The name of the category for the alert
 
-    .PARAMETER DatabaseName
+    .PARAMETER Database
         The name of the database to which the alert applies
 
     .PARAMETER DelayBetweenResponses
@@ -36,6 +36,9 @@ function New-DbaAgentAlert {
 
     .PARAMETER NotifyMethod
         The method to use to notify the user of the alert. Valid values are 'None', 'NotifyEmail', 'Pager', 'NetSend', 'NotifyAll'. It is NotifyAll by default.
+
+    .PARAMETER Operator
+        The name of the operator to use in the alert
 
     .PARAMETER EventSource
         The source of the event
@@ -97,18 +100,18 @@ function New-DbaAgentAlert {
         [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [string]$Alert,
-        [string]$CategoryName,
-        [string]$DatabaseName,
+        [string]$Category,
+        [string]$Database,
+        [string[]]$Operator,
         [int]$DelayBetweenResponses,
         [switch]$Disabled,
         [string]$EventDescriptionKeyword,
         [string]$EventSource,
         [string]$JobId = "00000000-0000-0000-0000-000000000000",
+        [int]$Severity,
         [int]$MessageId,
         [string]$NotificationMessage,
         [string]$PerformanceCondition,
-        [ValidateSet('Information', 'Warning', 'Critical')]
-        [string]$Severity,
         [string]$WmiEventNamespace,
         [string]$WmiEventQuery,
         [ValidateSet('None', 'NotifyEmail', 'Pager', 'NetSend', 'NotifyAll')]
@@ -116,6 +119,18 @@ function New-DbaAgentAlert {
         [switch]$EnableException
     )
     process {
+        if ($NotifyMethod) {
+            $null = Set-Variable -Name IncludeEventDescription -Value $NotifyMethod
+        }
+
+        if ($Category) {
+            $null = Set-Variable -Name CategoryName -Value $Category
+        }
+
+        if ($Database) {
+            $null = Set-Variable -Name DatabaseName -Value $Database
+        }
+
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential
@@ -125,43 +140,42 @@ function New-DbaAgentAlert {
 
             foreach ($name in $Alert) {
                 if ($name -in $server.JobServer.Alerts.Name) {
-                    Stop-Function -Message "Alert $name already exists on $instance" -Target $instance -Continue
+                    Stop-Function -Message "Alert '$name' already exists on $instance" -Target $instance -Continue
                 } else {
                     if ($PSCmdlet.ShouldProcess($instance, "Adding the alert $name")) {
                         try {
                             # Supply either a non-zero message ID, non-zero severity, non-null performance condition, or non-null WMI namespace and query.
                             $newalert = New-Object Microsoft.SqlServer.Management.Smo.Agent.Alert($server.JobServer, $name)
-                            $list = "CategoryName", "DatabaseName", "DelayBetweenResponses", "EventDescriptionKeyword", "EventSource", "JobID", "MessageID", "Name", "NotificationMessage", "PerformanceCondition", "WmiEventNamespace", "WmiEventQuery", "IncludeEventDescription", "IsEnabled", "Severity", "NotifyMethods"
+                            $list = "CategoryName", "DatabaseName", "DelayBetweenResponses", "EventDescriptionKeyword", "EventSource", "JobID", "MessageID", "NotificationMessage", "PerformanceCondition", "WmiEventNamespace", "WmiEventQuery", "IncludeEventDescription", "IsEnabled", "Severity"
 
                             foreach ($item in $list) {
                                 $value = (Get-Variable -Name $item -ErrorAction Ignore).Value
+
                                 if ($value) {
                                     $newalert.$item = $value
                                 }
                             }
-                            #$newAlert.CategoryName = $CategoryName
-                            #$newAlert.DatabaseName = $DatabaseName
-                            #$newAlert.DelayBetweenResponses = $DelayBetweenResponses
-                            #$newAlert.EventDescriptionKeyword = $EventDescriptionKeyword
-                            # I dont get it but this is NotifyMethods
-                            $newAlert.IncludeEventDescription = $NotifyMethod
-                            #$newAlert.IsEnabled = ($Disabled -eq $false)
-                            $newAlert.JobID = $JobID
-                            #$newAlert.MessageID = $MessageID
-                            #$newAlert.Name = $name
-                            #$newAlert.NotificationMessage = $NotificationMessage
-                            #$newAlert.PerformanceCondition = $PerformanceCondition
-                            $newAlert.Severity = $Severity
-                            #$newAlert.WmiEventNamespace = $WmiEventNamespace
-                            #$newAlert.WmiEventQuery = $WmiEventQuery
+
                             $newalert.Create()
-                            $server.JobServer.Refresh()
+
+                            if ($Operator -and $NotifyMethod) {
+                                foreach ($op in $Operator) {
+                                    try {
+                                        Write-Message -Level Verbose -Message "Adding notification of type $NotifyMethod for $op to $instance"
+                                        $newalert.AddNotification($op, [Microsoft.SqlServer.Management.Smo.Agent.NotifyMethods]::$NotifyMethod)
+                                        $newalert.Alter()
+                                    } catch {
+                                        Stop-Function -Message "Error adding notification of type $NotifyMethod for $op to $instance" -Target $name -Continue -ErrorRecord $_
+                                    }
+                                }
+                            }
+                            $null = $server.JobServer.Refresh()
                         } catch {
                             Stop-Function -Message "Something went wrong creating the alert $name on $instance" -Target $name -Continue -ErrorRecord $_
                         }
                     }
                 }
-                Get-DbaAgentAlert -SqlInstance $server -Category $name
+                Get-DbaAgentAlert -SqlInstance $server -Alert $name
             }
         }
     }
