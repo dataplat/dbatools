@@ -128,8 +128,9 @@ function Get-DbaReplArticle {
                     Add-Member -Force -InputObject $art -MemberType NoteProperty -Name ComputerName -Value $server.ComputerName
                     Add-Member -Force -InputObject $art -MemberType NoteProperty -Name InstanceName -Value $server.ServiceName
                     Add-Member -Force -InputObject $art -MemberType NoteProperty -Name SqlInstance -Value $server.DomainInstanceName
+                    Add-Member -Force -InputObject $art -MemberType NoteProperty -Name PublicationName -Value $Publications.Name
 
-                    Select-DefaultView -InputObject $art -Property ComputerName, InstanceName, SqlInstance, Name, ArticleId, Description, Type, VerticalPartition, SourceObjectOwner, SourceObjectName #, DestinationObjectOwner, DestinationObjectName
+                    Select-DefaultView -InputObject $art -Property ComputerName, InstanceName, SqlInstance, PublicationName, Name, ArticleId, Description, Type, VerticalPartition, SourceObjectOwner, SourceObjectName #, DestinationObjectOwner, DestinationObjectName
                 }
             }
         }
