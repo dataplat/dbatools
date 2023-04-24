@@ -19,12 +19,10 @@ function Get-DbaReplArticle {
     .PARAMETER Database
         Specifies one or more database(s) to process. If unspecified, all databases will be processed.
 
-    .PARAMETER PublicationName
-        #TODO change to Name
+    .PARAMETER Publication
         Specifies one or more publication(s) to process. If unspecified, all publications will be processed.
 
-    .PARAMETER PublicationType
-        #TODO change to Type
+    .PARAMETER Type
         Limit by specific type of publication. Valid choices include: Transactional, Merge, Snapshot
 
     .PARAMETER Article
@@ -60,7 +58,7 @@ function Get-DbaReplArticle {
         [object[]]$Database,
         [parameter(ValueFromPipeline)]
         [object[]]$Publication,
-        [String]$PublicationType, # Snapshot, Transactional, Merge
+        [String]$Type, # Snapshot, Transactional, Merge
         [string[]]$Article,
         [switch]$EnableException
     )
@@ -98,23 +96,11 @@ function Get-DbaReplArticle {
                 $publications += $RMOdb.TransPublications
                 $publications += $RMOdb.MergePublications
 
-                #$publications
-                #break
-
-                #if ($PublicationType -in ('Snapshot','Transactional')) {
-                #    $publications = $RMOdb.TransPublications
-                #} elseif ($PublicationType -eq 'Merge') {
-                #    $publications = $RMOdb.MergePublications
-                #} else {
-                #    $RMOdb
-                #    $publications = @($RMOdb.TransPublications + $RMOdb.MergePublications)
-                #}
-
                 if ($Publication) {
                     $publications = $publications | Where-Object Name -in $Publication
                 }
 
-                if ($PublicationType -eq 'Merge') {
+                if ($Type -eq 'Merge') {
                     $articles = $publications.MergeArticles
                 } else {
                     $articles = $publications.TransArticles
@@ -128,7 +114,7 @@ function Get-DbaReplArticle {
                     Add-Member -Force -InputObject $art -MemberType NoteProperty -Name ComputerName -Value $server.ComputerName
                     Add-Member -Force -InputObject $art -MemberType NoteProperty -Name InstanceName -Value $server.ServiceName
                     Add-Member -Force -InputObject $art -MemberType NoteProperty -Name SqlInstance -Value $server.DomainInstanceName
-                    Add-Member -Force -InputObject $art -MemberType NoteProperty -Name PublicationName -Value $Publications.Name
+                    Add-Member -Force -InputObject $art -MemberType NoteProperty -Name PublicationName -Value $publications.Name
 
                     Select-DefaultView -InputObject $art -Property ComputerName, InstanceName, SqlInstance, PublicationName, Name, ArticleId, Description, Type, VerticalPartition, SourceObjectOwner, SourceObjectName #, DestinationObjectOwner, DestinationObjectName
                 }
