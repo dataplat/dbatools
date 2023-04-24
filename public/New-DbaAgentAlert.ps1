@@ -7,7 +7,7 @@ function New-DbaAgentAlert {
         Creates a new SQL Server Agent alert
 
     .PARAMETER SqlInstance
-        The target SQL Server instance or instances.
+        The target SQL Server instance or instances
 
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
@@ -37,6 +37,10 @@ function New-DbaAgentAlert {
     .PARAMETER NotifyMethod
         The method to use to notify the user of the alert. Valid values are 'None', 'NotifyEmail', 'Pager', 'NetSend', 'NotifyAll'. It is NotifyAll by default.
 
+        The Pager and net send options will be removed from SQL Server Agent in a future version of Microsoft SQL Server.
+
+        Avoid using these features in new development work, and plan to modify applications that currently use these features.
+
     .PARAMETER Operator
         The name of the operator to use in the alert
 
@@ -56,7 +60,7 @@ function New-DbaAgentAlert {
         The performance condition for the alert
 
     .PARAMETER Severity
-        The severity level for the alert. Valid values are 'Information', 'Warning', and 'Critical'
+        The severity level for the alert. Valid values are 0-25
 
     .PARAMETER WmiEventNamespace
         The namespace of the WMI event to use in the alert
@@ -87,9 +91,19 @@ function New-DbaAgentAlert {
         https://dbatools.io/New-DbaAgentAlert
 
     .EXAMPLE
-        PS C:\> New-DbaAgentAlert -SqlInstance sql1 -Alert "Severity 018 - Nonfatal Internal Error"
+        PS C:\> $parms = @{
+                SqlInstance           = "sql01"
+                Severity              = 18
+                Alert                 = "Severity 018 - Nonfatal Internal Error"
+                DelayBetweenResponses = 60
+                NotifyMethod          = "NotifyEmail"
+            }
 
-        Creates a new alert with the name Severity 018 - Nonfatal Internal Error.
+        PS C:\> $alert = New-DbaAgentAlert @parms
+
+        Creates a new alert for severity 18 with the name Severity 018 - Nonfatal Internal Error.
+
+        It will send an email to the default operator and wait 60 seconds before sending another email.
 
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low")]
