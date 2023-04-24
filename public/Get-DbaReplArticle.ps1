@@ -98,8 +98,8 @@ function Get-DbaReplArticle {
                 $publications += $RMOdb.TransPublications
                 $publications += $RMOdb.MergePublications
 
-                $publications
-                break
+                #$publications
+                #break
 
                 #if ($PublicationType -in ('Snapshot','Transactional')) {
                 #    $publications = $RMOdb.TransPublications
@@ -111,13 +111,13 @@ function Get-DbaReplArticle {
                 #}
 
                 if ($Publication) {
-                    $publications = $publications | Where-Object PublicationName -in $Publication
+                    $publications = $publications | Where-Object Name -in $Publication
                 }
 
-                if ($PublicationType -eq 'Transactional') {
-                    $articles = $publications.TransArticles
-                } else {
+                if ($PublicationType -eq 'Merge') {
                     $articles = $publications.MergeArticles
+                } else {
+                    $articles = $publications.TransArticles
                 }
 
                 if ($Article) {
