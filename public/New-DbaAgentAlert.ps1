@@ -131,6 +131,10 @@ function New-DbaAgentAlert {
             $null = Set-Variable -Name DatabaseName -Value $Database
         }
 
+        if ($MessageId -gt 0 -and -not $Severity) {
+            $Severity = 0
+        }
+
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential
