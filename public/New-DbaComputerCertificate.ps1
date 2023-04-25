@@ -366,7 +366,7 @@ function New-DbaComputerCertificate {
                 } else {
                     if ($PScmdlet.ShouldProcess("local", "Submitting certificate request for $computer to $CaServer\$CaName")) {
                         Write-ProgressHelper -StepNumber ($stepCounter++) -Message "certreq -submit -config `"$CaServer\$CaName`" -attrib $certTemplate $certCsr $certCrt $certPfx"
-                        $submit = certreq -submit -config ""$CaServer\$CaName"" -attrib $certTemplate $certCsr $certCrt $certPfx
+                        $submit = certreq -submit -config "$CaServer\$CaName" -attrib $certTemplate $certCsr $certCrt $certPfx
                     }
 
                     if ($submit -match "ssued") {
