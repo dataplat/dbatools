@@ -744,6 +744,7 @@ if ($PSVersionTable.PSVersion.Major -lt 5) {
         'Test-DbaDbDataMaskingConfig',
         'Get-DbaAgentAlertCategory',
         'New-DbaAgentAlertCategory',
+        'Install-DbaAgentAdminAlert',
         'Remove-DbaAgentAlert',
         'Remove-DbaAgentAlertCategory',
         'Save-DbaKbUpdate',

@@ -96,7 +96,8 @@ function Install-DbaAgentAdminAlert {
         [PSCredential]$SqlCredential,
         [string]$Category,
         [string]$Database,
-        [string[]]$Operator,
+        [string]$Operator,
+        [string]$OperatorEmail,
         [int]$DelayBetweenResponses,
         [switch]$Disabled,
         [string]$EventDescriptionKeyword,
@@ -134,30 +135,40 @@ function Install-DbaAgentAdminAlert {
             }
 
             if ($Operator) {
-                $newop = Get-DbaOperator -SqlInstance $server
+                $newop = Get-DbaAgentOperator -SqlInstance $server
                 if (-not $newop -and $OperatorEmail) {
-                    Write-Message -Level Verbose -Message "Creating operator $Operator with email $OperatorEmail on $instance"
-                    $parms = @{
-                        SqlInstance = $server
-                        Operator    = $Operator
-                        Email       = $OperatorEmail
-                    }
-                    $newop = New-DbaOperator @parms
+                    if ($PSCmdlet.ShouldProcess($instance, "Creating operator $Operator with email $OperatorEmail")) {
+                        Write-Message -Level Verbose -Message "Creating operator $Operator with email $OperatorEmail on $instance"
+                        $parms = @{
+                            SqlInstance = $server
+                            Operator    = $Operator
+                            Email       = $OperatorEmail
+                        }
+                        $newop = New-DbaAgentOperator @parms
 
-                    if (-not $newop) {
-                        Stop-Function -Message "Failed to create operator $Operator with email $OperatorEmail on $instance" -Target $instance -Continue
+                        if (-not $newop) {
+                            $parms = @{
+                                Message     = "Failed to create operator $Operator with email $OperatorEmail on $instance"
+                                Target      = $instance
+                                Continue    = $true
+                                ErrorRecord = $PSItem
+                            }
+                            Stop-Function @parms
+                        }
                     }
                 }
             }
 
             if (-not $Operator) {
-                $newop = Get-DbaOperator -SqlInstance $server
-                if ($newop.Count -gt 1) {
-                    Stop-Function -Message "More than one operator found on $instance and operator not specified" -Target $instance -Continue
-                }
+                if ($PSCmdlet.ShouldProcess($instance, "Checking for operator $Operator")) {
+                    $newop = Get-DbaAgentOperator -SqlInstance $server
+                    if ($newop.Count -gt 1) {
+                        Stop-Function -Message "More than one operator found on $instance and operator not specified" -Target $instance -Continue
+                    }
 
-                if ($newop.Count -eq 0) {
-                    Stop-Function -Message "No operator found on $instance and operator not specified. You can create a new operator using the Operator and OperatorEmail parameters." -Target $instance -Continue
+                    if ($newop.Count -eq 0) {
+                        Stop-Function -Message "No operator found on $instance and operator not specified. You can create a new operator using the Operator and OperatorEmail parameters." -Target $instance -Continue
+                    }
                 }
             }
 
@@ -190,16 +201,16 @@ function Install-DbaAgentAdminAlert {
                 }
             }
 
-            foreach ($item in $namehash) {
-                $name = $item.Value
+            foreach ($item in $namehash.Keys) {
+                $name = $namehash[$item]
                 $parms.Name = $name
                 $parms.Severity = 0
                 $parms.MessageId = 0
 
-                if ($item.Key -lt 823) {
-                    $parms.Severity = $item.Key
+                if ($item -lt 823) {
+                    $parms.Severity = $item
                 } else {
-                    $parms.MessageId = $item.Key
+                    $parms.MessageId = $item
                 }
 
                 if ($name -in $server.JobServer.Alerts.Name) {
