@@ -52,6 +52,15 @@ function Install-DbaAgentAdminAlert {
     .PARAMETER NotificationMessage
         The message to send when the alert is triggered
 
+    .PARAMETER EventDescriptionKeyword
+        The keyword to search for in the event description
+
+    .PARAMETER JobId
+        The GUID ID of the job to execute when the alert is triggered
+
+    .PARAMETER EventSource
+        The source of the event
+
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
 
@@ -85,9 +94,6 @@ function Install-DbaAgentAdminAlert {
         [parameter(Mandatory, ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [Parameter(Mandatory)]
-        [ValidateNotNullOrEmpty()]
-        [string]$Alert,
         [string]$Category,
         [string]$Database,
         [string[]]$Operator,
