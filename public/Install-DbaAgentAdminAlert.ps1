@@ -103,6 +103,22 @@ function Install-DbaAgentAdminAlert {
         [string]$NotifyMethod = "NotifyAll",
         [switch]$EnableException
     )
+    begin {
+        $namehash = @{
+            17  = 'Severity 017 - Insufficient Resources'
+            18  = 'Severity 018 - Nonfatal Internal Error'
+            19  = 'Severity 019 - SQL Server Error in Resource'
+            20  = 'Severity 020 - SQL Server Fatal Error in Current Process'
+            21  = 'Severity 021 - SQL Server Fatal Error in Database Process'
+            22  = 'Severity 022 - Table Integrity Suspect'
+            23  = 'Severity 023 - Database Integrity Suspect'
+            24  = 'Severity 024 - Hardware Error'
+            25  = 'Severity 025 - Fatal System Error'
+            823 = 'Error Number 823 - Read/Write Error'
+            824 = 'Error Number 824 - Read/Write Error'
+            825 = 'Error Number 825 - Read/Write Error'
+        }
+    }
     process {
         foreach ($instance in $SqlInstance) {
             try {
@@ -111,38 +127,82 @@ function Install-DbaAgentAdminAlert {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
-            foreach ($name in $Alert) {
+            if ($Operator) {
+                $newop = Get-DbaOperator -SqlInstance $server
+                if (-not $newop -and $OperatorEmail) {
+                    Write-Message -Level Verbose -Message "Creating operator $Operator with email $OperatorEmail on $instance"
+                    $parms = @{
+                        SqlInstance = $server
+                        Operator    = $Operator
+                        Email       = $OperatorEmail
+                    }
+                    $newop = New-DbaOperator @parms
+
+                    if (-not $newop) {
+                        Stop-Function -Message "Failed to create operator $Operator with email $OperatorEmail on $instance" -Target $instance -Continue
+                    }
+                }
+            }
+
+            if (-not $Operator) {
+                $newop = Get-DbaOperator -SqlInstance $server
+                if ($newop.Count -gt 1) {
+                    Stop-Function -Message "More than one operator found on $instance and operator not specified" -Target $instance -Continue
+                }
+
+                if ($newop.Count -eq 0) {
+                    Stop-Function -Message "No operator found on $instance and operator not specified. You can create a new operator using the Operator and OperatorEmail parameters." -Target $instance -Continue
+                }
+            }
+
+            $parms = @{
+                SqlInstance             = $server
+                Name                    = $name
+                Database                = $Database
+                DelayBetweenResponses   = $DelayBetweenResponses
+                Disabled                = $Disabled
+                EventDescriptionKeyword = $EventDescriptionKeyword
+                EventSource             = $EventSource
+                JobId                   = $JobId
+                ExcludeSeverity         = $ExcludeSeverity
+                ExcludeMessageId        = $ExcludeMessageId
+                NotificationMessage     = $NotificationMessage
+                NotifyMethod            = $NotifyMethod
+                Operator                = $Operator
+                Category                = $Category
+            }
+
+            if ($ExcludeSeverity) {
+                foreach ($number in $ExcludeSeverity) {
+                    $null = $namehash.Remove($number)
+                }
+            }
+
+            if ($ExcludeMessageId) {
+                foreach ($number in $ExcludeMessageId) {
+                    $null = $namehash.Remove($number)
+                }
+            }
+
+            foreach ($item in $namehash) {
+                $name = $item.Value
+                $parms.Name = $name
+                $parms.Severity = 0
+                $parms.MessageId = 0
+
+                if ($item.Key -lt 823) {
+                    $parms.Severity = $item.Key
+                } else {
+                    $parms.MessageId = $item.Key
+                }
+
                 if ($name -in $server.JobServer.Alerts.Name) {
                     Stop-Function -Message "Alert '$name' already exists on $instance" -Target $instance -Continue
                 } else {
                     if ($PSCmdlet.ShouldProcess($instance, "Adding the alert $name")) {
                         try {
                             # Supply either a non-zero message ID, non-zero severity, non-null performance condition, or non-null WMI namespace and query.
-                            $newalert = New-Object Microsoft.SqlServer.Management.Smo.Agent.Alert($server.JobServer, $name)
-                            $list = "CategoryName", "DatabaseName", "DelayBetweenResponses", "EventDescriptionKeyword", "EventSource", "JobID", "MessageID", "NotificationMessage", "PerformanceCondition", "WmiEventNamespace", "WmiEventQuery", "IncludeEventDescription", "IsEnabled", "Severity"
-
-                            foreach ($item in $list) {
-                                $value = (Get-Variable -Name $item -ErrorAction Ignore).Value
-
-                                if ($value) {
-                                    $newalert.$item = $value
-                                }
-                            }
-
-                            $newalert.Create()
-
-                            if ($Operator -and $NotifyMethod) {
-                                foreach ($op in $Operator) {
-                                    try {
-                                        Write-Message -Level Verbose -Message "Adding notification of type $NotifyMethod for $op to $instance"
-                                        $newalert.AddNotification($op, [Microsoft.SqlServer.Management.Smo.Agent.NotifyMethods]::$NotifyMethod)
-                                        $newalert.Alter()
-                                    } catch {
-                                        Stop-Function -Message "Error adding notification of type $NotifyMethod for $op to $instance" -Target $name -Continue -ErrorRecord $_
-                                    }
-                                }
-                            }
-                            $null = $server.JobServer.Refresh()
+                            New-DbaAgentAlert @parms
                         } catch {
                             Stop-Function -Message "Something went wrong creating the alert $name on $instance" -Target $name -Continue -ErrorRecord $_
                         }
