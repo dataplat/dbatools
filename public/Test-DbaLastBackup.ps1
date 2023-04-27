@@ -484,7 +484,7 @@ function Test-DbaLastBackup {
                         }
 
                         if ($verifyonly) {
-                            $restoreresult = $lastbackup | Restore-DbaDatabase @restoreSplat -VerifyOnly:$VerifyOnly
+                            $restoreresult = $lastbackup | Restore-DbaDatabase @restoreSplat -VerifyOnly
                         } else {
                             $restoreresult = $lastbackup | Restore-DbaDatabase @restoreSplat
                             Write-Message -Level Verbose -Message " Restore-DbaDatabase -SqlInstance $destserver -RestoredDatabaseNamePrefix $prefix -DestinationFilePrefix $Prefix -DestinationDataDirectory $datadirectory -DestinationLogDirectory $logdirectory -IgnoreLogBackup:$IgnoreLogBackup -AzureCredential $AzureCredential -TrustDbBackupHistory"
