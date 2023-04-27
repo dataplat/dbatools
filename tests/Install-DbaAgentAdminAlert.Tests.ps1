@@ -28,7 +28,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         }
 
         It 'Should create a bunch of new alerts' {
-            $alert = New-DbaAgentAlert @parms | Select-Object -First 1
+            $alert = Install-DbaAgentAdminAlert @parms | Select-Object -First 1
 
             # Assert
             $alert.Name | Should -Not -BeNullOrEmpty
@@ -40,7 +40,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         $parms.ExcludeSeverity = 17
 
         It 'Should create a bunch of new alerts' {
-            $alerts = New-DbaAgentAlert @parms
+            $alerts = Install-DbaAgentAdminAlert @parms
 
             # Assert
             $alerts.Severity | Should -No -Contain 17
