@@ -445,7 +445,7 @@ function Restore-DbaDatabase {
             }
             If (Test-Bound "ExecuteAs") {
                 if ((Get-DbaLogin -SqlInstance $RestoreInstance -Login $ExecuteAs).count -eq 0) {
-                    Stop-Function -Category  InvalidArgument -Message "You specified a Login to execute the restore, but the login '$ExecuteAs' does not exist"
+                    Stop-Function -Category InvalidArgument -Message "You specified a Login to execute the restore, but the login '$ExecuteAs' does not exist"
                     return
                 }
             }
@@ -679,7 +679,7 @@ function Restore-DbaDatabase {
             return
         }
         if (($BackupHistory.Database | Sort-Object -Unique).count -gt 1 -and ('' -ne $DatabaseName)) {
-            Stop-Function -Message "Multiple Databases' backups passed in, but only 1 name to restore them under. Stopping as cannot work out how to proceed" -Category  InvalidArgument
+            Stop-Function -Message "Multiple Databases' backups passed in, but only 1 name to restore them under. Stopping as cannot work out how to proceed" -Category InvalidArgument
             return
         }
         if ($PSCmdlet.ParameterSetName -like "Restore*") {
@@ -749,6 +749,7 @@ function Restore-DbaDatabase {
                     EnableException  = $true
                     OutputScriptOnly = $OutputScriptOnly
                 }
+
                 $null = $FilteredBackupHistory | Test-DbaBackupInformation @parms
             } catch {
                 Stop-Function -ErrorRecord $_ -Message "Failure" -Continue

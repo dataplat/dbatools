@@ -335,13 +335,15 @@ function Invoke-DbaAdvancedRestore {
                         } elseif ($VerifyOnly) {
                             Write-Message -Message "VerifyOnly restore" -Level Verbose
                             Write-Progress -id 1 -activity "Verifying $database backup file on $SqlInstance - Backup $BackupCnt of $($Backups.count)" -percentcomplete 0 -status ([System.String]::Format("Progress: {0} %", 0))
-                            $Verify = $restore.SqlVerify($server)
+                            $verify = $restore.SqlVerify($server)
                             Write-Progress -id 1 -activity "Verifying $database backup file on $SqlInstance - Backup $BackupCnt of $($Backups.count)" -status "Complete" -Completed
-                            if ($verify -eq $true) {
+                            if ($verify) {
                                 Write-Message -Message "VerifyOnly restore Succeeded" -Level Verbose
+                                $restoreComplete = $true
                                 return "Verify successful"
                             } else {
-                                Write-Message -Message "VerifyOnly restore Failed" -Level Verbose
+                                Write-Message -Message "VerifyOnly restore Failed" -Level Warning
+                                $restoreComplete = $False
                                 return "Verify failed"
                             }
                         } else {
