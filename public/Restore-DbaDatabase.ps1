@@ -612,7 +612,18 @@ function Restore-DbaDatabase {
                 if ($BackupHistory.GetType().ToString() -eq 'Dataplat.Dbatools.Database.BackupHistory') {
                     $BackupHistory = @($BackupHistory)
                 }
-                $BackupHistory += Get-DbaBackupInformation -SqlInstance $RestoreInstance -SqlCredential $SqlCredential -Path $files -DirectoryRecurse:$DirectoryRecurse -MaintenanceSolution:$MaintenanceSolutionBackup -IgnoreDiffBackup:$IgnoreDiffBackup -IgnoreLogBackup:$IgnoreLogBackup -AzureCredential $AzureCredential -NoXpDirRecurse:$NoXpDirRecurse
+                $parms = @{
+                    SqlInstance         = $RestoreInstance
+                    SqlCredential       = $SqlCredential
+                    Path                = $files
+                    DirectoryRecurse    = $DirectoryRecurse
+                    MaintenanceSolution = $MaintenanceSolutionBackup
+                    IgnoreDiffBackup    = $IgnoreDiffBackup
+                    IgnoreLogBackup     = $IgnoreLogBackup
+                    AzureCredential     = $AzureCredential
+                    NoXpDirRecurse      = $NoXpDirRecurse
+                }
+                $BackupHistory += Get-DbaBackupInformation @parms
             }
             if ($PSCmdlet.ParameterSetName -eq "RestorePage") {
                 if (-not (Test-DbaPath -SqlInstance $RestoreInstance -Path $PageRestoreTailFolder)) {
@@ -686,7 +697,20 @@ function Restore-DbaDatabase {
                 return
             }
             $pathSep = Get-DbaPathSep -Server $RestoreInstance
-            $BackupHistory = $BackupHistory | Format-DbaBackupInformation -DataFileDirectory $DestinationDataDirectory -LogFileDirectory $DestinationLogDirectory -DestinationFileStreamDirectory $DestinationFileStreamDirectory -DatabaseFileSuffix $DestinationFileSuffix -DatabaseFilePrefix $DestinationFilePrefix -DatabaseNamePrefix $RestoredDatabaseNamePrefix -ReplaceDatabaseName $DatabaseName -Continue:$Continue -ReplaceDbNameInFile:$ReplaceDbNameInFile -FileMapping $FileMapping -PathSep $pathSep
+            $parms = @{
+                DataFileDirectory              = $DestinationDataDirectory
+                LogFileDirectory               = $DestinationLogDirectory
+                DestinationFileStreamDirectory = $DestinationFileStreamDirectory
+                DatabaseFileSuffix             = $DestinationFileSuffix
+                DatabaseFilePrefix             = $DestinationFilePrefix
+                DatabaseNamePrefix             = $RestoredDatabaseNamePrefix
+                ReplaceDatabaseName            = $DatabaseName
+                Continue                       = $Continue
+                ReplaceDbNameInFile            = $ReplaceDbNameInFile
+                FileMapping                    = $FileMapping
+                PathSep                        = $pathSep
+            }
+            $BackupHistory = $BackupHistory | Format-DbaBackupInformation @parms
 
             if (Test-Bound -ParameterName FormatBackupInformation) {
                 Set-Variable -Name $FormatBackupInformation -Value $BackupHistory -Scope Global
@@ -697,7 +721,15 @@ function Restore-DbaDatabase {
             if ($VerifyOnly) {
                 $FilteredBackupHistory = $BackupHistory
             } else {
-                $FilteredBackupHistory = $BackupHistory | Select-DbaBackupInformation -RestoreTime $RestoreTime -IgnoreLogs:$IgnoreLogBackups -IgnoreDiffs:$IgnoreDiffBackup -ContinuePoints $ContinuePoints -LastRestoreType $LastRestoreType -DatabaseName $DatabaseName
+                $parms = @{
+                    RestoreTime     = $RestoreTime
+                    IgnoreLogs      = $IgnoreLogBackups
+                    IgnoreDiffs     = $IgnoreDiffBackup
+                    ContinuePoints  = $ContinuePoints
+                    LastRestoreType = $LastRestoreType
+                    DatabaseName    = $DatabaseName
+                }
+                $FilteredBackupHistory = $BackupHistory | Select-DbaBackupInformation @parms
             }
             if (Test-Bound -ParameterName SelectBackupInformation) {
                 Write-Message -Message "Setting $SelectBackupInformation to FilteredBackupHistory" -Level Verbose
@@ -709,7 +741,15 @@ function Restore-DbaDatabase {
             }
             try {
                 Write-Message -Level Verbose -Message "VerifyOnly = $VerifyOnly"
-                $null = $FilteredBackupHistory | Test-DbaBackupInformation -SqlInstance $RestoreInstance -WithReplace:$WithReplace -Continue:$Continue -VerifyOnly:$VerifyOnly -EnableException:$true -OutputScriptOnly:$OutputScriptOnly
+                $parms = @{
+                    SqlInstance      = $RestoreInstance
+                    WithReplace      = $WithReplace
+                    Continue         = $Continue
+                    VerifyOnly       = $VerifyOnly
+                    EnableException  = $true
+                    OutputScriptOnly = $OutputScriptOnly
+                }
+                $null = $FilteredBackupHistory | Test-DbaBackupInformation @parms
             } catch {
                 Stop-Function -ErrorRecord $_ -Message "Failure" -Continue
             }
@@ -740,17 +780,50 @@ function Restore-DbaDatabase {
                 $TailBackup = Backup-DbaDatabase -SqlInstance $RestoreInstance -Database $DatabaseName -Type Log -BackupDirectory $PageRestoreTailFolder -NoRecovery -CopyOnly
             }
             try {
-                $FilteredBackupHistory | Where-Object { $_.IsVerified -eq $true } | Invoke-DbaAdvancedRestore -SqlInstance $RestoreInstance -WithReplace:$WithReplace -RestoreTime $RestoreTime -StandbyDirectory $StandbyDirectory -NoRecovery:$NoRecovery -Continue:$Continue -OutputScriptOnly:$OutputScriptOnly -BlockSize $BlockSize -MaxTransferSize $MaxTransferSize -BufferCount $Buffercount -KeepCDC:$KeepCDC -VerifyOnly:$VerifyOnly -PageRestore $PageRestore -EnableException -AzureCredential $AzureCredential -KeepReplication:$KeepReplication -StopMark:$StopMark -StopAfterDate:$StopAfterDate -StopBefore:$StopBefore -ExecuteAs $ExecuteAs
+                $parms = @{
+                    SqlInstance      = $RestoreInstance
+                    WithReplace      = $WithReplace
+                    RestoreTime      = $RestoreTime
+                    StandbyDirectory = $StandbyDirectory
+                    NoRecovery       = $NoRecovery
+                    Continue         = $Continue
+                    OutputScriptOnly = $OutputScriptOnly
+                    BlockSize        = $BlockSize
+                    MaxTransferSize  = $MaxTransferSize
+                    BufferCount      = $Buffercount
+                    KeepCDC          = $KeepCDC
+                    VerifyOnly       = $VerifyOnly
+                    PageRestore      = $PageRestore
+                    AzureCredential  = $AzureCredential
+                    KeepReplication  = $KeepReplication
+                    StopMark         = $StopMark
+                    StopAfterDate    = $StopAfterDate
+                    StopBefore       = $StopBefore
+                    ExecuteAs        = $ExecuteAs
+                    EnableException  = $true
+                }
+                $FilteredBackupHistory | Where-Object { $_.IsVerified -eq $true } | Invoke-DbaAdvancedRestore @parms
             } catch {
                 Stop-Function -Message "Failure" -ErrorRecord $_ -Continue -Target $RestoreInstance
             }
+
             if ($PSCmdlet.ParameterSetName -eq "RestorePage") {
                 if ($RestoreInstance.Edition -like '*Enterprise*') {
                     Write-Message -Message "Taking Tail log backup for page restore for Enterprise" -Level Verbose
                     $TailBackup = Backup-DbaDatabase -SqlInstance $RestoreInstance -Database $DatabaseName -Type Log -BackupDirectory $PageRestoreTailFolder -NoRecovery -CopyOnly
                 }
                 Write-Message -Message "Restoring Tail log backup for page restore" -Level Verbose
-                $TailBackup | Restore-DbaDatabase -SqlInstance $RestoreInstance -TrustDbBackupHistory -NoRecovery -OutputScriptOnly:$OutputScriptOnly -BlockSize $BlockSize -MaxTransferSize $MaxTransferSize -BufferCount $Buffercount -Continue
+                $parms = @{
+                    SqlInstance          = $RestoreInstance
+                    TrustDbBackupHistory = $true
+                    NoRecovery           = $true
+                    OutputScriptOnly     = $OutputScriptOnly
+                    BlockSize            = $BlockSize
+                    MaxTransferSize      = $MaxTransferSize
+                    BufferCount          = $Buffercount
+                    Continue             = $true
+                }
+                $TailBackup | Restore-DbaDatabase @parms
                 Restore-DbaDatabase -SqlInstance $RestoreInstance -Recover -DatabaseName $DatabaseName -OutputScriptOnly:$OutputScriptOnly
             }
             # refresh the SMO as we probably used T-SQL, but only if we already got a SMO
