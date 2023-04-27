@@ -33,7 +33,7 @@ jobs:
       - name: Set encryption values
         run: |
           Import-Module dbatools
-          Set-DbatoolsInsecureConnection -Register
+          Set-DbatoolsInsecureConnection
           Get-DbatoolsConfigValue -FullName sql.connection.encrypt | Write-Warning
 
       - name:  Setup docker images
