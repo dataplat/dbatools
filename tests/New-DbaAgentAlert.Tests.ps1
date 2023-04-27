@@ -14,6 +14,16 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 }
 
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
+    BeforeEach {
+        if ($Env:appveyor) {
+            Get-DbaAgentAlert -SqlInstance $script:instance2, $script:instance3 | Remove-DbaAgentAlert -Confirm:$false
+        }
+    }
+    AfterAll {
+        if ($Env:appveyor) {
+            Get-DbaAgentAlert -SqlInstance $script:instance2, $script:instance3 | Remove-DbaAgentAlert -Confirm:$false
+        }
+    }
     Context 'Creating a new SQL Server Agent alert' {
         $parms = @{
             SqlInstance           = $script:instance2
