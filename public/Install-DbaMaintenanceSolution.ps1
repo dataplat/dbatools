@@ -180,9 +180,7 @@ function Install-DbaMaintenanceSolution {
             } else {
                 try {
                     $network = [Type]::GetTypeFromCLSID([Guid]"{DCB00C01-570F-4A9B-8D69-199FDBA5723B}")
-                    $script:internet = ([Activator]::CreateInstance($network)).GetNetworkConnections() | ForEach-Object {
-                        $_.GetNetwork().GetConnectivity()
-                    } | Where-Object { ($_ -band 64) -eq 64 }
+                    $script:internet = ([Activator]::CreateInstance($network)).GetNetworkConnections() | ForEach-Object { $_.GetNetwork().GetConnectivity() } | Where-Object { ($_ -band 64) -eq 64 }
                 } catch {
                     # don't care
                 }
