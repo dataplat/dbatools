@@ -117,7 +117,7 @@ function New-DbaAgentAlert {
         [string]$Category,
         [string]$Database,
         [string[]]$Operator,
-        [int]$DelayBetweenResponses,
+        [int]$DelayBetweenResponses = 60,
         [switch]$Disabled,
         [string]$EventDescriptionKeyword,
         [string]$EventSource,
@@ -189,7 +189,7 @@ function New-DbaAgentAlert {
                             }
                             $null = $server.JobServer.Refresh()
                         } catch {
-                            Stop-Function -Message "Something went wrong creating the alert $name on $instance" -Target $name -Continue -ErrorRecord $_
+                            Stop-Function -Message "Something went wrong creating the alert $name on $instance" -Target $name -Continue -ErrorRecord $PSItem
                         }
                     }
                 }

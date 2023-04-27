@@ -125,6 +125,20 @@ function Install-DbaAgentAdminAlert {
             824 = 'Error Number 824 - Read/Write Error'
             825 = 'Error Number 825 - Read/Write Error'
         }
+
+        $defaults = "ComputerName", "SqlInstance", "InstanceName", "Name", "Severity", "MessageId"
+
+        if ($PSBoundParameters.JobId) {
+            $defaults += "JobName"
+        }
+
+        if ($PSBoundParameters.Category) {
+            $defaults += "CategoryName"
+        }
+
+        if ($PSBoundParameters.DelayBetweenResponses) {
+            $defaults += "DelayBetweenResponses"
+        }
     }
     process {
         foreach ($instance in $SqlInstance) {
@@ -135,31 +149,63 @@ function Install-DbaAgentAdminAlert {
             }
 
             if ($Operator) {
-                $newop = Get-DbaAgentOperator -SqlInstance $server
-                if (-not $newop -and $OperatorEmail) {
-                    if ($PSCmdlet.ShouldProcess($instance, "Creating operator $Operator with email $OperatorEmail")) {
-                        Write-Message -Level Verbose -Message "Creating operator $Operator with email $OperatorEmail on $instance"
-                        $parms = @{
-                            SqlInstance = $server
-                            Operator    = $Operator
-                            Email       = $OperatorEmail
-                        }
-                        $newop = New-DbaAgentOperator @parms
-
-                        if (-not $newop) {
+                try {
+                    $newop = Get-DbaAgentOperator -SqlInstance $server
+                    if (-not $newop -and $OperatorEmail) {
+                        if ($PSCmdlet.ShouldProcess($instance, "Creating operator $Operator with email $OperatorEmail")) {
+                            Write-Message -Level Verbose -Message "Creating operator $Operator with email $OperatorEmail on $instance"
                             $parms = @{
-                                Message     = "Failed to create operator $Operator with email $OperatorEmail on $instance"
-                                Target      = $instance
-                                Continue    = $true
-                                ErrorRecord = $PSItem
+                                SqlInstance = $server
+                                Operator    = $Operator
+                                Email       = $OperatorEmail
                             }
-                            Stop-Function @parms
+                            $newop = New-DbaAgentOperator @parms
+
+                            if (-not $newop) {
+                                $parms = @{
+                                    Message     = "Failed to create operator $Operator with email $OperatorEmail on $instance"
+                                    Target      = $instance
+                                    Continue    = $true
+                                    ErrorRecord = $PSItem
+                                }
+                                Stop-Function @parms
+                            }
                         }
                     }
+                } catch {
+                    Stop-Function -Message "Failure" -Category OperatorError -ErrorRecord $PSItem -Target $instance -Continue
                 }
             }
 
-            if (-not $Operator) {
+            if ($Category) {
+                try {
+                    $newcat = Get-DbaAgentAlertCategory -SqlInstance $server -Category $Category
+                    if (-not $newcat) {
+                        if ($PSCmdlet.ShouldProcess($instance, "Creating alert category $Category")) {
+                            Write-Message -Level Verbose -Message "Creating alert category $Category on $instance"
+                            $parms = @{
+                                SqlInstance = $server
+                                Category    = $Category
+                            }
+                            $newcat = New-DbaAgentAlertCategory @parms
+
+                            if (-not $newcat) {
+                                $parms = @{
+                                    Message     = "Failed to create category $Category on $instance"
+                                    Target      = $instance
+                                    Continue    = $true
+                                    ErrorRecord = $PSItem
+                                }
+                                Stop-Function @parms
+                            }
+                        }
+                    }
+                } catch {
+                    Stop-Function -Message "Failure" -Category OperatorError -ErrorRecord $PSItem -Target $instance -Continue
+                }
+            }
+
+            if (-not $PSBoundParameters.Operator) {
                 if ($PSCmdlet.ShouldProcess($instance, "Checking for operator $Operator")) {
                     $newop = Get-DbaAgentOperator -SqlInstance $server
                     if ($newop.Count -gt 1) {
@@ -170,23 +216,46 @@ function Install-DbaAgentAdminAlert {
                         Stop-Function -Message "No operator found on $instance and operator not specified. You can create a new operator using the Operator and OperatorEmail parameters." -Target $instance -Continue
                     }
                 }
+                $Operator = $newop.Name
             }
 
             $parms = @{
-                SqlInstance             = $server
-                Name                    = $name
-                Database                = $Database
-                DelayBetweenResponses   = $DelayBetweenResponses
-                Disabled                = $Disabled
-                EventDescriptionKeyword = $EventDescriptionKeyword
-                EventSource             = $EventSource
-                JobId                   = $JobId
-                ExcludeSeverity         = $ExcludeSeverity
-                ExcludeMessageId        = $ExcludeMessageId
-                NotificationMessage     = $NotificationMessage
-                NotifyMethod            = $NotifyMethod
-                Operator                = $Operator
-                Category                = $Category
+                SqlInstance  = $server
+                Alert        = $name
+                Disabled     = $Disabled
+                NotifyMethod = $NotifyMethod
+            }
+
+            if ($DelayBetweenResponses -gt 0) {
+                $null = $parms.Add("DelayBetweenResponses", $DelayBetweenResponses)
+            }
+
+            if ($Database) {
+                $null = $parms.Add("Database", $Database)
+            }
+
+            if ($EventDescriptionKeyword) {
+                $null = $parms.Add("EventDescriptionKeyword", $EventDescriptionKeyword)
+            }
+
+            if ($EventSource) {
+                $null = $parms.Add("EventSource", $EventSource)
+            }
+
+            if ($JobId) {
+                $null = $parms.Add("JobId", $JobId)
+            }
+
+            if ($NotificationMessage) {
+                $null = $parms.Add("NotificationMessage", $NotificationMessage)
+            }
+
+            if ($Operator) {
+                $null = $parms.Add("Operator", $Operator)
+            }
+
+            if ($Category) {
+                $null = $parms.Add("Category", $Category)
             }
 
             if ($ExcludeSeverity) {
@@ -203,7 +272,7 @@ function Install-DbaAgentAdminAlert {
 
             foreach ($item in $namehash.Keys) {
                 $name = $namehash[$item]
-                $parms.Name = $name
+                $parms.Alert = $name
                 $parms.Severity = 0
                 $parms.MessageId = 0
 
@@ -219,13 +288,13 @@ function Install-DbaAgentAdminAlert {
                     if ($PSCmdlet.ShouldProcess($instance, "Adding the alert $name")) {
                         try {
                             # Supply either a non-zero message ID, non-zero severity, non-null performance condition, or non-null WMI namespace and query.
-                            New-DbaAgentAlert @parms
+                            $null = New-DbaAgentAlert @parms
                         } catch {
                             Stop-Function -Message "Something went wrong creating the alert $name on $instance" -Target $name -Continue -ErrorRecord $_
                         }
                     }
                 }
-                Get-DbaAgentAlert -SqlInstance $server -Alert $name
+                Get-DbaAgentAlert -SqlInstance $server -Alert $name | Select-DefaultView -Property $defaults
             }
         }
     }

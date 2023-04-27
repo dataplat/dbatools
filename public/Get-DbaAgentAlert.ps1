@@ -72,14 +72,14 @@ function Get-DbaAgentAlert {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
-            Write-Message -Level Verbose -Message "Getting Edition from $server"
-            Write-Message -Level Verbose -Message "$server is a $($server.Edition)"
+            Write-Message -Level Debug -Message "Getting Edition from $server"
+            Write-Message -Level Debug -Message "$server is a $($server.Edition)"
 
             if ($server.Edition -like 'Express*') {
                 Stop-Function -Message "There is no SQL Agent on $server, it's a $($server.Edition)" -Continue
             }
 
-            $defaults = "ComputerName", "SqlInstance", "InstanceName", "Name", "ID", "JobName", "AlertType", "CategoryName", "Severity", "IsEnabled", "DelayBetweenResponses", "LastRaised", "OccurrenceCount"
+            $defaults = "ComputerName", "SqlInstance", "InstanceName", "Name", "ID", "JobName", "AlertType", "CategoryName", "Severity", "MessageId", "IsEnabled", "DelayBetweenResponses", "LastRaised", "OccurrenceCount"
 
             $alerts = $server.Jobserver.Alerts
 
