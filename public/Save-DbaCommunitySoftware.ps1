@@ -264,6 +264,10 @@ function Save-DbaCommunitySoftware {
                 }
             }
         } else {
+            if (-not $Url) {
+                Stop-Function -Message "Url not found. Did you specify any -Software?"
+                return
+            }
             # Download and extract.
             if ($PSCmdlet.ShouldProcess($Url, "Downloading to $zipFile")) {
                 try {
@@ -345,6 +349,19 @@ function Save-DbaCommunitySoftware {
                     $sourceDirectoryName = $sourceDirectory.Name
                 }
             }
+
+            if ($sourceDirectoryName -ne $localDirectoryName) {
+                if (Test-Path -PathType Container -Path $LocalDirectory) {
+                    $localDirectoryBase = $LocalDirectory
+                    $localDirectoryName = $LocalDirectory = $sourceDirectoryName
+                } else {
+                    Stop-Function -Message "The archive does not contain the desired directory $localDirectoryName but $sourceDirectoryName, and $LocalDirectory is not a folder."
+                    Remove-Item -Path $zipFile -ErrorAction SilentlyContinue
+                    Remove-Item -Path $zipFolder -Recurse -ErrorAction SilentlyContinue
+                    return
+                }
+            }
+
             if ((Get-ChildItem -Path $zipFolder).Count -gt 1 -or $sourceDirectoryName -ne $localDirectoryName) {
                 Stop-Function -Message "The archive does not contain the desired directory $localDirectoryName but $sourceDirectoryName."
                 Remove-Item -Path $zipFile -ErrorAction SilentlyContinue

@@ -173,15 +173,38 @@ function Install-DbaMaintenanceSolution {
             Write-ProgressHelper -ExcludePercent -Message "If Ola Hallengren's scripts are found, we will drop and recreate them"
         }
 
-        # Do we need a new local cached version of the software?
-        $dbatoolsData = Get-DbatoolsConfigValue -FullName 'Path.DbatoolsData'
-        $localCachedCopy = Join-DbaPath -Path $dbatoolsData -Child 'sql-server-maintenance-solution-master'
-        if ($Force -or $LocalFile -or -not (Test-Path -Path $localCachedCopy)) {
-            if ($PSCmdlet.ShouldProcess('MaintenanceSolution', 'Update local cached copy of the software')) {
+        # does this machine have internet access to download the files if required?
+        if (-not $isLinux -and -not $isMacOs) {
+            if ((Get-Command -Name Get-NetConnectionProfile -ErrorAction SilentlyContinue)) {
+                $script:internet = (Get-NetConnectionProfile).IPv4Connectivity -contains "Internet"
+            } else {
                 try {
-                    Save-DbaCommunitySoftware -Software MaintenanceSolution -LocalFile $LocalFile -EnableException
+                    $network = [Type]::GetTypeFromCLSID([Guid]"{DCB00C01-570F-4A9B-8D69-199FDBA5723B}")
+                    $script:internet = ([Activator]::CreateInstance($network)).GetNetworkConnections() | ForEach-Object { $_.GetNetwork().GetConnectivity() } | Where-Object { ($_ -band 64) -eq 64 }
                 } catch {
-                    Stop-Function -Message 'Failed to update local cached copy' -ErrorRecord $_
+                    # don't care
+                }
+            }
+
+            if (-not $internet) {
+                Write-Message -Level Verbose -Message "No internet connection found, using included copy of Maintenance Solution."
+                $localCachedCopy = [System.IO.Path]::Combine($script:PSModuleRoot, "bin", "maintenancesolution")
+            }
+        }
+
+        if (-not $localCachedCopy) {
+            # Do we need a fresly cached version of the software?
+            $dbatoolsData = Get-DbatoolsConfigValue -FullName 'Path.DbatoolsData'
+            $localCachedCopy = Join-DbaPath -Path $dbatoolsData -Child 'sql-server-maintenance-solution-master'
+            if ($Force -or $LocalFile -or -not (Test-Path -Path $localCachedCopy)) {
+                if ($PSCmdlet.ShouldProcess('MaintenanceSolution', 'Update local cached copy of the software')) {
+                    try {
+                        Save-DbaCommunitySoftware -Software MaintenanceSolution -LocalFile $LocalFile -EnableException
+                    } catch {
+                        # this will help offline Linux machines too
+                        Write-Message -Level Verbose -Message "No internet connection found, using included copy of Maintenance Solution."
+                        $localCachedCopy = [System.IO.Path]::Combine($script:PSModuleRoot, "bin", "maintenancesolution")
+                    }
                 }
             }
         }

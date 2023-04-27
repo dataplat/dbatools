@@ -4,11 +4,11 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
+        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
         [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'BackupLocation', 'CleanupTime', 'OutputFileDirectory', 'ReplaceExisting', 'LogToTable', 'Solution', 'InstallJobs', 'LocalFile', 'Force', 'InstallParallel', 'EnableException'
         $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
         It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
         }
     }
 }
@@ -30,7 +30,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 
         It "Continues the installation on other servers " {
             $results2 = Install-DbaMaintenanceSolution -SqlInstance $script:instance2, $script:instance3 -Database tempdb
-            $sproc = Get-DbaDbModule -SqlInstance $script:instance3 -Database tempdb | Where-Object {$_.Name -eq "CommandExecute"}
+            $sproc = Get-DbaDbModule -SqlInstance $script:instance3 -Database tempdb | Where-Object { $_.Name -eq "CommandExecute" }
             $sproc | Should -Not -BeNullOrEmpty
         }
     }
