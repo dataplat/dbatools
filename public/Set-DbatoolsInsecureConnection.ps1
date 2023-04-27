@@ -12,8 +12,8 @@ function Set-DbatoolsInsecureConnection {
 
         You can read more here: https://dbatools.io/newdefaults
 
-    .PARAMETER Register
-        Registers the settings to persist across sessions so they'll be used even if you close and reopen PowerShell.
+    .PARAMETER SessionOnly
+        Does not persist across sessions so the default will return if you close and reopen PowerShell.
 
     .PARAMETER Scope
         The configuration scope it should be registered under. Defaults to UserDefault.
@@ -30,16 +30,16 @@ function Set-DbatoolsInsecureConnection {
         Sets the default connection settings to trust all server certificates and not require encrypted connections.
 
     .EXAMPLE
-        PS C:\> Set-DbatoolsInsecureConnection -Register
+        PS C:\> Set-DbatoolsInsecureConnection -SessionOnly
 
         Sets the default connection settings to trust all server certificates and not require encrypted connections.
 
-        Registers the settings to persist across sessions so they'll be used even if you close and reopen PowerShell.
+        Does not persist across sessions so the default will return if you close and reopen PowerShell.
     #>
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseShouldProcessForStateChangingFunctions", "")]
     [CmdletBinding()]
     param (
-        [switch]$Register,
+        [switch]$SessionOnly,
         [Dataplat.Dbatools.Configuration.ConfigScope]$Scope = [Dataplat.Dbatools.Configuration.ConfigScope]::UserDefault
     )
     process {
@@ -47,7 +47,7 @@ function Set-DbatoolsInsecureConnection {
         Set-DbatoolsConfig -FullName sql.connection.trustcert -Value $true -Passthru
         Set-DbatoolsConfig -FullName sql.connection.encrypt -Value $false -Passthru
 
-        if ($Register) {
+        if (-not $SessionOnly) {
             Register-DbatoolsConfig -FullName sql.connection.trustcert -Scope $Scope
             Register-DbatoolsConfig -FullName sql.connection.encrypt -Scope $Scope
         }
