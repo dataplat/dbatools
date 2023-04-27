@@ -460,6 +460,7 @@
         'Move-DbaDbFile',
         'Move-DbaRegServer',
         'Move-DbaRegServerGroup',
+        'New-DbaAgentAlert',
         'New-DbaAgentAlertCategory',
         'New-DbaAgentJob',
         'New-DbaAgentJobCategory',
