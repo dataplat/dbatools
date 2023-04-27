@@ -20,6 +20,9 @@ function Set-DbatoolsInsecureConnection {
 
         Configuration scopes are the default locations configurations are being stored at.
 
+    .PARAMETER Register
+        Deprecated.
+
     .LINK
         https://dbatools.io/Set-DbatoolsInsecureConnection
         https://blog.netnerds.net/2023/03/new-defaults-for-sql-server-connections-encryption-trust-certificate/
@@ -40,9 +43,13 @@ function Set-DbatoolsInsecureConnection {
     [CmdletBinding()]
     param (
         [switch]$SessionOnly,
-        [Dataplat.Dbatools.Configuration.ConfigScope]$Scope = [Dataplat.Dbatools.Configuration.ConfigScope]::UserDefault
+        [Dataplat.Dbatools.Configuration.ConfigScope]$Scope = [Dataplat.Dbatools.Configuration.ConfigScope]::UserDefault,
+        [switch]$Register
     )
     process {
+        if ($Register) {
+            Write-Message -Level Warning -Message "The Register parameter is deprecated and will be removed in a future release."
+        }
         # Set these defaults for all future sessions on this machine
         Set-DbatoolsConfig -FullName sql.connection.trustcert -Value $true -Passthru
         Set-DbatoolsConfig -FullName sql.connection.encrypt -Value $false -Passthru
