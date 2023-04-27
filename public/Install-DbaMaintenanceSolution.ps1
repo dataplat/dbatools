@@ -203,7 +203,9 @@ function Install-DbaMaintenanceSolution {
                     try {
                         Save-DbaCommunitySoftware -Software MaintenanceSolution -LocalFile $LocalFile -EnableException
                     } catch {
-                        Stop-Function -Message 'Failed to update local cached copy' -ErrorRecord $_
+                        # this will help offline Linux machines too
+                        Write-Message -Level Verbose -Message "No internet connection found, using included copy of Maintenance Solution."
+                        $localCachedCopy = [System.IO.Path]::Combine($script:PSModuleRoot, "bin", "maintenancesolution")
                     }
                 }
             }
