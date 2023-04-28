@@ -18,9 +18,9 @@ _Need an invite to the SQL Community Slack workspace? Check out the [self-invite
 
 ## Installer
 
-dbatools now works on PowerShell Core. This means that you can run a large majority of our commands on <strong>Linux</strong> and <strong>macOS </strong>🤩👍
+dbatools works on Windows, Linux and macOS (M1 and Intel!) 🤩👍 Windows requires PowerShell v3 and above, while those using dbatools on PowerShell Core will need to be running 7.3 and above.
 
-Run the following to install dbatools from the PowerShell Gallery (to install on a server or for all users, remove the `-Scope` parameter and run in an elevated session):
+Run the following command to install dbatools from the PowerShell Gallery (to install on a server or for all users, remove the `-Scope` parameter and run in an elevated session):
 
 ```powershell
 Install-Module dbatools -Scope CurrentUser
