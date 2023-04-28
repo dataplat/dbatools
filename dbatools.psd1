@@ -11,7 +11,7 @@
     RootModule         = 'dbatools.psm1'
 
     # Version number of this module.
-    ModuleVersion      = '2.0.0'
+    ModuleVersion      = '2.0.1'
 
     # ID used to uniquely identify this module
     GUID               = '9d139310-ce45-41ce-8e8b-d76335aa1789'
@@ -51,6 +51,7 @@
     # Specific functions to export for Core, etc are also found in psm1
     # FunctionsToExport specifically helps with AUTO-LOADING so do not remove
     FunctionsToExport  = @(
+        'Install-DbaAgentAdminAlert',
         'Set-DbatoolsInsecureConnection',
         'Get-DbaDbServiceBrokerQueue',
         'New-DbaLinkedServer',
