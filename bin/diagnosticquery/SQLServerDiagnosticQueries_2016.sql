@@ -1,7 +1,7 @@
 
 -- SQL Server 2016 Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: April 1, 2023
+-- Last Modified: April 27, 2023
 -- https://glennsqlperformance.com/
 -- https://sqlserverperformance.wordpress.com/
 -- YouTube: https://bit.ly/2PkoAM1 
@@ -612,10 +612,15 @@ ORDER BY creation_time DESC OPTION (RECOMPILE);
 
 
 -- Look at Suspect Pages table (Query 22) (Suspect Pages)
-SELECT DB_NAME(database_id) AS [Database Name], [file_id], page_id, 
-       event_type, error_count, last_update_date 
-FROM msdb.dbo.suspect_pages WITH (NOLOCK)
-ORDER BY database_id OPTION (RECOMPILE);
+SELECT DB_NAME(sp.database_id) AS [Database Name], 
+       sp.[file_id], sp.page_id, sp.event_type, 
+	   sp.error_count, sp.last_update_date,
+	   mf.name AS [Logical Name], mf.physical_name AS [File Path]
+FROM msdb.dbo.suspect_pages AS sp WITH (NOLOCK)
+INNER JOIN sys.master_files AS mf WITH (NOLOCK)
+ON mf.database_id = sp.database_id 
+AND mf.file_id = sp.file_id
+ORDER BY sp.database_id OPTION (RECOMPILE);
 ------
 
 -- event_type value descriptions
