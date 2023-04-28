@@ -12,6 +12,8 @@ function Import-DbaCsv {
 
         This importer supports fields spanning multiple lines. The only restriction is that they must be quoted, otherwise it would not be possible to distinguish between malformed data and multi-line values.
 
+        Able to read gzip compressed CSV files if the filename ends with ".csv.gz"
+
     .PARAMETER Path
         Specifies path to the CSV file(s) to be imported. Multiple files may be imported at once.
 
