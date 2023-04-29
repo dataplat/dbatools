@@ -505,7 +505,7 @@ function Backup-DbaDatabase {
             if ($dbRecovery -eq 'Simple' -and $Type -eq 'Log') {
                 $failreason = "$db is in simple recovery mode, cannot take log backup"
                 $failures += $failreason
-                Write-Message -Level Warning -Message "$failreason"
+                Stop-Function -Message "$failreason" -Continue -Target $db
             }
 
             $db.Refresh()
@@ -514,7 +514,7 @@ function Backup-DbaDatabase {
             if ($Type -notin @("Database", "Full") -and $lastfull -eq 1) {
                 $failreason = "$db does not have an existing full backup, cannot take log or differentialbackup"
                 $failures += $failreason
-                Write-Message -Level Warning -Message "$failreason"
+                Stop-Function -Message "$failreason" -Continue -Target $db
             }
 
             if ($CopyOnly -ne $true) {
@@ -555,7 +555,7 @@ function Backup-DbaDatabase {
                         $backup.CompressionOption = 2
                     }
                 } elseif ($server.Edition -like 'Express*' -or ($server.VersionMajor -eq 10 -and $server.VersionMinor -eq 0 -and $server.Edition -notlike '*enterprise*') -or $server.VersionMajor -lt 10) {
-                    Write-Message -Level Warning -Message "Compression is not supported with this version/edition of Sql Server"
+                    Stop-Function -Message "Compression is not supported with this version/edition of Sql Server" -Continue -Target $db
                 } else {
                     Write-Message -Level Verbose -Message "Compression enabled"
                     $backup.CompressionOption = 1
