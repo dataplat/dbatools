@@ -128,7 +128,6 @@ function New-DbaCredential {
     }
 
     process {
-
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential
@@ -155,24 +154,28 @@ function New-DbaCredential {
 
             if ($Pscmdlet.ShouldProcess($SqlInstance, "Creating credential '$Name' on $instance")) {
                 try {
-                    $credential = New-Object Microsoft.SqlServer.Management.Smo.Credential -ArgumentList $server, $Name
-                    $credential.MappedClassType = $mappedClass
-                    $credential.ProviderName = $ProviderName
+                    $instancecredential = New-Object Microsoft.SqlServer.Management.Smo.Credential -ArgumentList $server, $Name
+                    try {
+                        $instancecredential.MappedClassType = $mappedClass
+                    } catch {
+                        Add-Member -Force -InputObject $instancecredential -MemberType NoteProperty -Name MappedClassType -Value $mappedClass
+                    }
+                    $instancecredential.ProviderName = $ProviderName
                     if ($SecurePassword) {
                         Write-Message -Level Verbose -Message "Creating credential with identity '$Identity' with password"
-                        $credential.Create($Identity, $SecurePassword)
+                        $instancecredential.Create($Identity, $SecurePassword)
                     } else {
                         Write-Message -Level Verbose -Message "Password was not provided, creating credential with identity '$Identity' without password"
-                        $credential.Create($Identity)
+                        $instancecredential.Create($Identity)
                     }
 
-                    Add-Member -Force -InputObject $credential -MemberType NoteProperty -Name ComputerName -value $server.ComputerName
-                    Add-Member -Force -InputObject $credential -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
-                    Add-Member -Force -InputObject $credential -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
+                    Add-Member -Force -InputObject $instancecredential -MemberType NoteProperty -Name ComputerName -value $server.ComputerName
+                    Add-Member -Force -InputObject $instancecredential -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
+                    Add-Member -Force -InputObject $instancecredential -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
 
-                    Select-DefaultView -InputObject $credential -Property ComputerName, InstanceName, SqlInstance, Name, Identity, CreateDate, MappedClassType, ProviderName
+                    Select-DefaultView -InputObject $instancecredential -Property ComputerName, InstanceName, SqlInstance, Name, Identity, CreateDate, MappedClassType, ProviderName
                 } catch {
-                    Stop-Function -Message "Failed to create credential in $cred on $instance" -Target $credential -InnerErrorRecord $_ -Continue
+                    Stop-Function -Message "Failed to create credential in $cred on $instance" -Target $instancecredential -InnerErrorRecord $_ -Continue
                 }
             }
         }
