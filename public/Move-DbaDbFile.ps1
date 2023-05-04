@@ -344,11 +344,11 @@ function Move-DbaDbFile {
                         if (-not $failed) {
 
                             $query = "ALTER DATABASE [$Database] MODIFY FILE (name=[$LogicalName], filename='$destination'); "
-                        
+
                             if ($PSCmdlet.ShouldProcess($Database, "Executing ALTER DATABASE query - $query")) {
                                 # Change database file path
                                 $server.Databases["master"].Query($query)
-                            }             
+                            }
                             if ($DeleteAfterMove) {
                                 try {
                                     if ($PSCmdlet.ShouldProcess($database, "Deleting source file $physicalName")) {
@@ -366,18 +366,18 @@ function Move-DbaDbFile {
                                 } catch {
                                     $returnObject.SourceFileDeleted = $false
                                     $returnObject
-                        
+
                                     Stop-Function -Message "ERROR:" -ErrorRecord $_
                                 }
-                            }else{
+                            } else {
                                 $returnObject.SourceFileDeleted = $false
                                 $returnObject
                             }
                         } else {
-                              $returnObject.SourceFileDeleted = "N/A"
-                              $returnObject.DatabaseFileMetadata = "N/A"
-                              $returnObject.Result = "Failed"
-                              $returnObject
+                            $returnObject.SourceFileDeleted = "N/A"
+                            $returnObject.DatabaseFileMetadata = "N/A"
+                            $returnObject.Result = "Failed"
+                            $returnObject
                         }
                     } else {
                         Write-Message -Level Verbose -Message "File $fileName already exists on $destination. Skipping."
