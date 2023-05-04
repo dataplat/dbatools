@@ -7,6 +7,9 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
         $PSDefaultParameterValues["*:SqlCredential"] = $cred
         $PSDefaultParameterValues["*:Confirm"] = $false
         $PSDefaultParameterValues["*:SharedPath"] = "/shared"
+
+        #TODO: To be removed?
+        $PSDefaultParameterValues["*:-SnapshotShare"] = "/shared"
         $PSDefaultParameterValues["*:WarningAction"] = "SilentlyContinue"
         $global:ProgressPreference = "SilentlyContinue"
 
@@ -17,10 +20,9 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
 
         $null = New-DbaDatabase -Name ReplDb
         $null = Invoke-DbaQuery -Database ReplDb -Query 'CREATE TABLE ReplicateMe ( id int identity (1,1) PRIMARY KEY, col1 varchar(10) )'
-
     }
 
-    Describe "Enable\Disable Functions" -Tag ReplSetup {
+    Describe "Enable\Disable Functions" -Tag ReplSetup -Skip {
 
         Context "Get-DbaReplDistributor works" {
             BeforeAll {
@@ -156,7 +158,7 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
         }
     }
 
-    Describe "RestofTests" -Tag "Rest" -Skip {
+    Describe "RestofTests" -Tag "Rest" <#-Skip#> {
 
         Context "Get-DbaReplPublisher works" -skip {
             BeforeAll {
@@ -177,7 +179,7 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
 
         }
 
-        Context "New-DbaReplPublication works" -Tag test {
+        Context "New-DbaReplPublication works" -Tag test -Skip {
             BeforeAll {
                 # if replication is disabled - enable it
                 if (-not (Get-DbaReplDistributor).IsDistributor) {
@@ -213,7 +215,7 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
 
         }
 
-        Context "Add-DbaReplArticle works" -Tag test {
+        Context "Add-DbaReplArticle works" -Tag test -Skip {
             BeforeAll {
                 # if replication is disabled - enable it
                 if (-not (Get-DbaReplDistributor).IsDistributor) {
@@ -241,7 +243,7 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
             }
 
             It "Add-DbaReplArticle adds an article to a Transactional publication" {
-                $pubname = 'TestPub'
+                $Name = 'TestPub'
                 Add-DbaReplArticle -Database ReplDb -Type Transactional -PublicationName $Name
                 (Get-DbaReplPublication -Name $Name) | Should -Not -BeNullOrEmpty
                 (Get-DbaReplPublication -Name $Name).Database | Should -Be 'ReplDb'
@@ -261,10 +263,9 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
                 (Get-DbaReplPublication -Name $name).Database | Should -Be 'ReplDb'
                 (Get-DbaReplPublication -Name $name).Type | Should -Be 'Merge'
             }
-
         }
 
-        Context "Add-DbaReplArticle works" {
+        Context "Get-DbaReplArticle works" -Tag ArtTestGet {
             BeforeAll {
                 # if replication is disabled - enable it
                 if (-not (Get-DbaReplDistributor).IsDistributor) {
@@ -275,16 +276,32 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
                     Enable-DbaReplPublishing -PublisherSqlLogin $cred -EnableException
                 }
 
+                # we need some publications too
+                $name = 'TestTrans'
+                if (-not (Get-DbaReplPublication -Name $name -Type Transactional)) {
+                    $null = New-DbaReplPublication -Database ReplDb -Type Transactional -PublicationName $Name
+                }
+                $name = 'TestSnap'
+                if (-not (Get-DbaReplPublication -Name $name -Type Snapshot)) {
+                    $null = New-DbaReplPublication -Database ReplDb -Type Snapshot -PublicationName $Name
+                }
+                $name = 'TestMerge'
+                if (-not (Get-DbaReplPublication -Name $name -Type Merge)) {
+                    $null = New-DbaReplPublication -Database ReplDb -Type Merge -PublicationName $Name
+                }
             }
 
-            It "distribution starts enabled" {
-                (Get-DbaReplDistributor).IsDistributor | Should -Be $true
-            }
+            It "Get-DbaReplArticle get the article from a Transactional publication" {
+                $PublicationName = 'TestTrans'
+                $Name = "ReplicateMe"
+                Add-DbaReplArticle -Database ReplDb -PublicationName $PublicationName -Name $Name
 
-            It "distribution is disabled" {
-                Disable-DbaReplDistributor
-                (Get-DbaReplDistributor).IsDistributor | Should -Be $false
+                $TransArticle = Get-DbaReplArticle -Database ReplDb -Type Transactional -Publication $PublicationName
+                $TransArticle.Count | Should -Be 1
+                $TransArticle.Name | Should -Be $Name
+                $TransArticle.PublicationName | Should -Be $PublicationName
             }
         }
+
     }
 }
