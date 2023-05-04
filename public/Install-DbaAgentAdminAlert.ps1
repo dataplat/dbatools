@@ -84,9 +84,9 @@ function Install-DbaAgentAdminAlert {
         https://dbatools.io/Install-DbaAgentAdminAlert
 
     .EXAMPLE
-        PS C:\> Install-DbaAgentAdminAlert -SqlInstance sql1 -Alert "Severity 018 - Nonfatal Internal Error"
+        PS C:\> Install-DbaAgentAdminAlert -SqlInstance sql1
 
-        Creates a new alert with the name Severity 018 - Nonfatal Internal Error.
+        Creates alerts for severity 17-25 and messages 823-825 on sql1
 
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low")]
