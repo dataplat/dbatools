@@ -1,8 +1,13 @@
 name: Cross Platform Import
 on: [push]
+defaults:
+  env:
+    SMODefaultModuleName: dbatools
 
 jobs:
   build:
+    env:
+      SMODefaultModuleName: dbatools
     name: Module imports on all platforms
     runs-on: ${{ matrix.os }}
     strategy:
@@ -16,7 +21,7 @@ jobs:
     - name: Install and cache PowerShell modules
       uses: potatoqualitee/psmodulecache@v5.2
       with:
-          modules-to-cache: dbatools.library:2023.4.27
+          modules-to-cache: dbatools.library:2023.5.5
 
     - name: Perform the import
       shell: pwsh
