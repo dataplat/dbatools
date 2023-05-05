@@ -149,7 +149,7 @@ function Move-DbaDbFile {
             if ($dbStatus -ne 'ONLINE') {
                 Write-Message -Level Verbose -Message "Database $Database is not ONLINE. Getting file strucutre from sys.master_files."
                 if ($fileTypeFilter -eq -1) {
-                    $DataFiles = Get-DbaDbPhysicalFile -SqlInstance $server | Where-Object Name -eq $Database | Select-Object LogicalName, PhysicalName
+                    $DataFiles = Get-DbaDbPhysicalFile -SqlInstance $server | Where-Object Name -EQ $Database | Select-Object LogicalName, PhysicalName
                 } else {
                     $DataFiles = Get-DbaDbPhysicalFile -SqlInstance $server | Where-Object { $_.Name -eq $Database -and $_.Type -eq $fileTypeFilter } | Select-Object LogicalName, PhysicalName
                 }
@@ -157,7 +157,7 @@ function Move-DbaDbFile {
                 if ($fileTypeFilter -eq -1) {
                     $DataFiles = Get-DbaDbFile -SqlInstance $server -Database $Database | Select-Object LogicalName, PhysicalName
                 } else {
-                    $DataFiles = Get-DbaDbFile -SqlInstance $server -Database $Database | Where-Object Type -eq $fileTypeFilter | Select-Object LogicalName, PhysicalName
+                    $DataFiles = Get-DbaDbFile -SqlInstance $server -Database $Database | Where-Object Type -EQ $fileTypeFilter | Select-Object LogicalName, PhysicalName
                 }
             }
 
@@ -250,7 +250,7 @@ function Move-DbaDbFile {
                 }
 
                 foreach ($LogicalName in $DataFilesToMove) {
-                    $physicalName = $DataFiles | Where-Object LogicalName -eq $LogicalName | Select-Object -ExpandProperty PhysicalName
+                    $physicalName = $DataFiles | Where-Object LogicalName -EQ $LogicalName | Select-Object -ExpandProperty PhysicalName
 
                     if ($FileDestination) {
                         $destinationPath = $FileDestination
@@ -330,15 +330,25 @@ function Move-DbaDbFile {
 
                             Write-Message -Level Verbose -Message "File $fileName was copied successfully"
                         }
-
+                        # initialize the returnobject first with the values of a successful move
+                        $returnObject = [PSCustomObject]@{
+                            Instance             = $SqlInstance
+                            Database             = $Database
+                            LogicalName          = $LogicalName
+                            Source               = $physicalName
+                            Destination          = $destination
+                            Result               = "Success"
+                            DatabaseFileMetadata = "Updated"
+                            SourceFileDeleted    = $true
+                        }
                         if (-not $failed) {
+
                             $query = "ALTER DATABASE [$Database] MODIFY FILE (name=[$LogicalName], filename='$destination'); "
 
                             if ($PSCmdlet.ShouldProcess($Database, "Executing ALTER DATABASE query - $query")) {
                                 # Change database file path
                                 $server.Databases["master"].Query($query)
                             }
-
                             if ($DeleteAfterMove) {
                                 try {
                                     if ($PSCmdlet.ShouldProcess($database, "Deleting source file $physicalName")) {
@@ -351,57 +361,30 @@ function Move-DbaDbFile {
                                             }
                                             Invoke-Command2 -ComputerName $ComputerName -Credential $SqlCredential -ScriptBlock $scriptBlock -ArgumentList $physicalName
                                         }
+                                        $returnObject
                                     }
                                 } catch {
-                                    [PSCustomObject]@{
-                                        Instance             = $SqlInstance
-                                        Database             = $Database
-                                        LogicalName          = $LogicalName
-                                        Source               = $physicalName
-                                        Destination          = $destination
-                                        Result               = "Success"
-                                        DatabaseFileMetadata = "Updated"
-                                        SourceFileDeleted    = $false
-                                    }
+                                    $returnObject.SourceFileDeleted = $false
+                                    $returnObject
 
                                     Stop-Function -Message "ERROR:" -ErrorRecord $_
                                 }
-                            }
-
-                            [PSCustomObject]@{
-                                Instance             = $SqlInstance
-                                Database             = $Database
-                                LogicalName          = $LogicalName
-                                Source               = $physicalName
-                                Destination          = $destination
-                                Result               = "Success"
-                                DatabaseFileMetadata = "Updated"
-                                SourceFileDeleted    = $true
+                            } else {
+                                $returnObject.SourceFileDeleted = $false
+                                $returnObject
                             }
                         } else {
-                            [PSCustomObject]@{
-                                Instance             = $SqlInstance
-                                Database             = $Database
-                                LogicalName          = $LogicalName
-                                Source               = $physicalName
-                                Destination          = $destination
-                                Result               = "Failed"
-                                DatabaseFileMetadata = "N/A"
-                                SourceFileDeleted    = "N/A"
-                            }
+                            $returnObject.SourceFileDeleted = "N/A"
+                            $returnObject.DatabaseFileMetadata = "N/A"
+                            $returnObject.Result = "Failed"
+                            $returnObject
                         }
                     } else {
                         Write-Message -Level Verbose -Message "File $fileName already exists on $destination. Skipping."
-                        [PSCustomObject]@{
-                            Instance             = $SqlInstance
-                            Database             = $Database
-                            LogicalName          = $LogicalName
-                            Source               = $physicalName
-                            Destination          = $destination
-                            Result               = "Already exists. Skipping"
-                            DatabaseFileMetadata = "N/A"
-                            SourceFileDeleted    = "N/A"
-                        }
+                        $returnObject.SourceFileDeleted = "N/A"
+                        $returnObject.DatabaseFileMetadata = "N/A"
+                        $returnObject.Result = "Already exists. Skipping"
+                        $returnObject
                     }
                 }
 
