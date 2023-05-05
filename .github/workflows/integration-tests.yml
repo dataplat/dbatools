@@ -3,6 +3,10 @@ on: [push]
 defaults:
   run:
     shell: pwsh
+  env:
+    SMODefaultModuleName: dbatools
+    GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
+
 jobs:
   linux-tests:
     runs-on: ${{ matrix.os }}
@@ -10,8 +14,6 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, arm64]
-    env:
-      GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
 
     steps:
       - uses: actions/checkout@v3
@@ -19,7 +21,7 @@ jobs:
       - name: Install and cache PowerShell modules
         uses: potatoqualitee/psmodulecache@v5.2
         with:
-          modules-to-cache: dbatools.library:2023.4.27
+          modules-to-cache: dbatools.library:2023.5.5
 
       - name: Set encryption values
         run: |
@@ -57,8 +59,6 @@ jobs:
 
   windows-tests:
     runs-on: windows-latest
-    env:
-      GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
 
     steps:
       - name: Checkout dbatools repo
@@ -68,7 +68,7 @@ jobs:
         uses: potatoqualitee/psmodulecache@v5.2
         with:
           shell: powershell, pwsh
-          modules-to-cache: dbatools.library:2023.4.27
+          modules-to-cache: dbatools.library:2023.5.5
 
       - name: Install SQL Server localdb
         uses: potatoqualitee/mssqlsuite@v1.3
