@@ -1,8 +1,5 @@
 name: Cross Platform Import
 on: [push]
-defaults:
-  env:
-    SMODefaultModuleName: dbatools
 
 jobs:
   build:

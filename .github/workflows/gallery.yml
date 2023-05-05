@@ -7,11 +7,11 @@ on:
 defaults:
   run:
     shell: pwsh
-  env:
-    SMODefaultModuleName: dbatools
-    GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
 jobs:
   linux-tests:
+    env:
+        SMODefaultModuleName: dbatools
+        GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false

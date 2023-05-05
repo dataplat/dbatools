@@ -3,12 +3,12 @@ on: [push]
 defaults:
   run:
     shell: pwsh
-  env:
-    SMODefaultModuleName: dbatools
-    GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
 
 jobs:
   linux-tests:
+    env:
+        SMODefaultModuleName: dbatools
+        GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -58,6 +58,9 @@ jobs:
           $null = Invoke-Pester ./tests/gh-actions.ps1 -Output Detailed -PassThru
 
   windows-tests:
+    env:
+        SMODefaultModuleName: dbatools
+        GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
     runs-on: windows-latest
 
     steps:
