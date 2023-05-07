@@ -80,6 +80,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 
         It "connects using a connection string without 'Encrypt' and 'Trust Server Certificate'" {
             $trustcertValue = Get-DbatoolsConfigValue -FullName sql.connection.trustcert
+            Set-DbatoolsConfig -FullName sql.connection.trustcert -Value $false
             # Set-DbatoolsConfig -FullName sql.connection.trustcert -Value $true
             $server = Connect-DbaInstance -SqlInstance "Data Source=$script:instance1;Initial Catalog=tempdb;Integrated Security=True;"
             Set-DbatoolsConfig -FullName sql.connection.trustcert -Value $trustcertValue
