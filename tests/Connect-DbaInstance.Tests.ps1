@@ -74,16 +74,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
 
         It "connects using a connection string" {
-            $server = Connect-DbaInstance -SqlInstance "Data Source=$script:instance1;Initial Catalog=tempdb;Integrated Security=True;Encrypt=False;Trust Server Certificate=True;"
-            $server.Databases.Name.Count -gt 0 | Should Be $true
-        }
-
-        It "connects using a connection string without 'Encrypt' and 'Trust Server Certificate'" {
-            $trustcertValue = Get-DbatoolsConfigValue -FullName sql.connection.trustcert
-            Set-DbatoolsConfig -FullName sql.connection.trustcert -Value $false
-            # Set-DbatoolsConfig -FullName sql.connection.trustcert -Value $true
             $server = Connect-DbaInstance -SqlInstance "Data Source=$script:instance1;Initial Catalog=tempdb;Integrated Security=True;"
-            Set-DbatoolsConfig -FullName sql.connection.trustcert -Value $trustcertValue
             $server.Databases.Name.Count -gt 0 | Should Be $true
         }
 
@@ -96,7 +87,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 
         It "connects using a connection object" {
             Set-DbatoolsConfig -FullName commands.connect-dbainstance.smo.computername.source -Value 'instance.ComputerName'
-            [Microsoft.Data.SqlClient.SqlConnection]$sqlconnection = "Data Source=$script:instance1;Initial Catalog=tempdb;Integrated Security=True;Encrypt=False;Trust Server Certificate=True"
+            [Microsoft.Data.SqlClient.SqlConnection]$sqlconnection = "Data Source=$script:instance1;Initial Catalog=tempdb;Integrated Security=True;"
             $server = Connect-DbaInstance -SqlInstance $sqlconnection
             $server.ComputerName | Should Be ([DbaInstance]$script:instance1).ComputerName
             $server.Databases.Name.Count -gt 0 | Should Be $true
@@ -109,13 +100,13 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
 
         It "connects using a connection string - instance2" {
-            $server = Connect-DbaInstance -SqlInstance "Data Source=$script:instance2;Initial Catalog=tempdb;Integrated Security=True;Encrypt=False;Trust Server Certificate=True"
+            $server = Connect-DbaInstance -SqlInstance "Data Source=$script:instance2;Initial Catalog=tempdb;Integrated Security=True;"
             $server.Databases.Name.Count -gt 0 | Should Be $true
         }
 
         It "connects using a connection object - instance2" {
             Set-DbatoolsConfig -FullName commands.connect-dbainstance.smo.computername.source -Value 'instance.ComputerName'
-            [Microsoft.Data.SqlClient.SqlConnection]$sqlconnection = "Data Source=$script:instance2;Initial Catalog=tempdb;Integrated Security=True;Encrypt=False;Trust Server Certificate=True"
+            [Microsoft.Data.SqlClient.SqlConnection]$sqlconnection = "Data Source=$script:instance2;Initial Catalog=tempdb;Integrated Security=True;"
             $server = Connect-DbaInstance -SqlInstance $sqlconnection
             $server.ComputerName | Should Be ([DbaInstance]$script:instance2).ComputerName
             $server.Databases.Name.Count -gt 0 | Should Be $true
