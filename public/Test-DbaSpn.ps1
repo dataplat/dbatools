@@ -179,7 +179,7 @@ function Test-DbaSpn {
                         $ports = $ipAllPort
                     }
 
-                    $ports = $ports | Select-Object -Unique
+                    $ports = $ports.Split(',') | Select-Object -Unique
                     foreach ($port in $ports) {
                         $newspn = $spn.PSObject.Copy()
                         if ($port -like "*d") {
