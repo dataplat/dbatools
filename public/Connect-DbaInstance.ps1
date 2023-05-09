@@ -573,7 +573,10 @@ function Connect-DbaInstance {
                     Write-Message -Level Warning -Message "Additional parameters are passed in, but they will be ignored"
                 }
             } elseif ($inputObjectType -in 'RegisteredServer', 'ConnectionString' ) {
-                if (Test-Bound -ParameterName $ignoredParameters, 'ApplicationIntent', 'StatementTimeout') {
+                # Parameter TrustServerCertificate changes the connection string be allow connections to instances with the default self-signed certificate
+                if (Test-Bound -ParameterName 'TrustServerCertificate') {
+                    Write-Message -Level Verbose -Message "Additional parameter TrustServerCertificate is passed in and will override other settings"
+                } elseif (Test-Bound -ParameterName $ignoredParameters, 'ApplicationIntent', 'StatementTimeout') {
                     Write-Message -Level Warning -Message "Additional parameters are passed in, but they will be ignored"
                 }
             } elseif ($inputObjectType -in 'SqlConnection' ) {
@@ -643,6 +646,13 @@ function Connect-DbaInstance {
                 $server = New-Object -TypeName Microsoft.SqlServer.Management.Smo.Server -ArgumentList $inputObject
             } elseif ($inputObjectType -in 'RegisteredServer', 'ConnectionString') {
                 $server = New-Object -TypeName Microsoft.SqlServer.Management.Smo.Server -ArgumentList $serverName
+                # Parameter TrustServerCertificate changes the connection string be allow connections to instances with the default self-signed certificate
+                if ($TrustServerCertificate) {
+                    Write-Message -Level Verbose -Message "TrustServerCertificate will be set to 'True'"
+                    $csb = New-Object -TypeName Microsoft.Data.SqlClient.SqlConnectionStringBuilder -ArgumentList $connectionString
+                    $csb.TrustServerCertificate = $true
+                    $connectionString = $csb.ConnectionString
+                }
                 $server.ConnectionContext.ConnectionString = $connectionString
             } elseif ($inputObjectType -eq 'String') {
                 # Identify authentication method
