@@ -117,22 +117,22 @@ function Test-DbaSpn {
                     <# DO NOT use Write-Message as this is inside of a script block #>
                     Write-Verbose "Parsing $instanceName"
 
-                    $services = $wmi.Services | Where-Object DisplayName -EQ "SQL Server ($instanceName)"
+                    $services = $wmi.Services | Where-Object { $_.DisplayName -eq "SQL Server ($instanceName)" }
                     $spn.InstanceServiceAccount = $services.ServiceAccount
-                    $spn.Cluster = ($services.advancedproperties | Where-Object Name -EQ 'Clustered').Value
+                    $spn.Cluster = ($services.advancedproperties | Where-Object { $_.Name -eq 'Clustered' }).Value
 
                     if ($spn.Cluster) {
-                        $hostEntry = ($services.advancedproperties | Where-Object Name -EQ 'VSNAME').Value.ToLowerInvariant()
+                        $hostEntry = ($services.advancedproperties | Where-Object { $_.Name -eq 'VSNAME' }).Value.ToLowerInvariant()
                         <# DO NOT use Write-Message as this is inside of a script block #>
                         Write-Verbose "Found cluster $hostEntry"
                         $hostEntry = ([System.Net.Dns]::GetHostEntry($hostEntry)).HostName
                         $spn.ComputerName = $hostEntry
                     }
 
-                    $rawVersion = [version]($services.AdvancedProperties | Where-Object Name -EQ 'VERSION').Value
+                    $rawVersion = [version]($services.AdvancedProperties | Where-Object { $_.Name -eq 'VERSION' }).Value
 
                     $version = $rawVersion
-                    $skuName = ($services.AdvancedProperties | Where-Object Name -EQ 'SKUNAME').Value
+                    $skuName = ($services.AdvancedProperties | Where-Object { $_.Name -eq 'SKUNAME' }).Value
 
                     $spn.SqlProduct = "$version $skuName"
 
@@ -179,7 +179,7 @@ function Test-DbaSpn {
                         $ports = $ipAllPort
                     }
 
-                    $ports = $ports | Select-Object -Unique
+                    $ports = $ports.Split(',') | Select-Object -Unique
                     foreach ($port in $ports) {
                         $newspn = $spn.PSObject.Copy()
                         if ($port -like "*d") {
