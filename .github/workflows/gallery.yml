@@ -9,13 +9,14 @@ defaults:
     shell: pwsh
 jobs:
   linux-tests:
+    env:
+        SMODefaultModuleName: dbatools
+        GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, arm64]
-    env:
-      GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
 
     steps:
       - uses: actions/checkout@v3
@@ -23,7 +24,7 @@ jobs:
       - name: Install and cache PowerShell modules
         uses: potatoqualitee/psmodulecache@v5.2
         with:
-          modules-to-cache: dbatools.library:2023.4.27
+          modules-to-cache: dbatools.library:2023.5.5
 
       - name: Download dbatools from Gallery
         run: |

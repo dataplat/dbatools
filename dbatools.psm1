@@ -175,7 +175,33 @@ if (-not (Test-Path -Path "$script:PSModuleRoot\dbatools.dat") -or $script:seria
 
     Write-ImportTime -Text "Loading external commands via dotsource"
 } else {
-    Import-Command -Path "$script:PSModuleRoot/dbatools.dat"
+    try {
+        Import-Command -Path "$script:PSModuleRoot/dbatools.dat" -ErrorAction Stop
+    } catch {
+        # sometimes the file is in use by another process
+        # not sure why, bc it's opened like this: using (FileStream fs = File.Open(Path, FileMode.Open, FileAccess.Read))
+        function Test-FileInuse {
+            param (
+                [string]$FilePath
+            )
+            try {
+                [IO.File]::OpenWrite($FilePath).Close()
+                $false
+            } catch {
+                $true
+            }
+        }
+
+        $waitsec = 0
+
+        do {
+            Write-Message -Level Verbose -Message "Waiting for dbatools.dat to be released by another process"
+            Start-Sleep -Seconds 2
+            $waitsec++
+        } while ((Test-FileInuse -FilePath "$script:PSModuleRoot/dbatools.dat") -and $waitsec -lt 10)
+
+        Import-Command -Path "$script:PSModuleRoot/dbatools.dat"
+    }
 }
 
 # Load configuration system - Should always go after library and path setting

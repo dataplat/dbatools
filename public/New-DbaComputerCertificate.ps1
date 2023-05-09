@@ -372,8 +372,7 @@ function New-DbaComputerCertificate {
                     if ($submit -match "ssued") {
                         Write-ProgressHelper -StepNumber ($stepCounter++) -Message "certreq -accept -machine $certCrt"
                         $null = certreq -accept -machine $certCrt
-                        $cert = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2
-                        $cert.Import($certCrt, $null, [System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]::DefaultKeySet)
+                        $cert = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2 ($certCrt, $null, [System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]::DefaultKeySet)
                         $storedCert = Get-ChildItem "Cert:\$store\$folder" -Recurse | Where-Object { $_.Thumbprint -eq $cert.Thumbprint }
                     } elseif ($submit) {
                         Write-Message -Level Warning -Message "Something went wrong"
@@ -413,8 +412,7 @@ function New-DbaComputerCertificate {
                     )
                     Write-Verbose -Message "Importing cert to $Folder\$Store using flags: $flags"
 
-                    $cert = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2
-                    $cert.Import($CertificateData, $SecurePassword, $flags)
+                    $cert = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2($CertificateData, $SecurePassword, $flags)
                     $certstore = New-Object System.Security.Cryptography.X509Certificates.X509Store($Folder, $Store)
                     $certstore.Open('ReadWrite')
                     $certstore.Add($cert)

@@ -74,7 +74,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
 
         It "connects using a connection string" {
-            $server = Connect-DbaInstance -SqlInstance "Data Source=$script:instance1;Initial Catalog=tempdb;Integrated Security=True;Encrypt=False;Trust Server Certificate=True;"
+            $server = Connect-DbaInstance -SqlInstance "Data Source=$script:instance1;Initial Catalog=tempdb;Integrated Security=True"
             $server.Databases.Name.Count -gt 0 | Should Be $true
         }
 
@@ -100,7 +100,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
 
         It "connects using a connection string - instance2" {
-            $server = Connect-DbaInstance -SqlInstance "Data Source=$script:instance2;Initial Catalog=tempdb;Integrated Security=True;Encrypt=False;Trust Server Certificate=True"
+            $server = Connect-DbaInstance -SqlInstance "Data Source=$script:instance2;Initial Catalog=tempdb;Integrated Security=True"
             $server.Databases.Name.Count -gt 0 | Should Be $true
         }
 

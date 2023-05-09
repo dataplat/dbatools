@@ -29,7 +29,7 @@
     Description        = "The community module that enables SQL Server Pros to automate database development and server administration"
 
     # Modules that must be imported into the global environment prior to importing this module
-    RequiredModules    = @{ ModuleName = 'dbatools.library'; ModuleVersion = '2023.4.27' }
+    RequiredModules    = @{ ModuleName = 'dbatools.library'; ModuleVersion = '2023.5.5' }
 
     # Assemblies that must be loaded prior to importing this module
     RequiredAssemblies = @()
@@ -51,6 +51,7 @@
     # Specific functions to export for Core, etc are also found in psm1
     # FunctionsToExport specifically helps with AUTO-LOADING so do not remove
     FunctionsToExport  = @(
+        'Test-DbaAgSpn',
         'Install-DbaAgentAdminAlert',
         'Set-DbatoolsInsecureConnection',
         'Get-DbaDbServiceBrokerQueue',
