@@ -76,7 +76,7 @@ function New-DbaDbAsymmetricKey {
         Suppresses all prompts to install but prompts to securely enter your password and creates an asymmetric key in the 'db1' database
 
     .EXAMPLE
-        PS C:\> New-DbaDbAsymmetrickKey -SqlInstance Server1 -Database enctest -KeySourceType File -KeySource c:\keys\NewKey.snk -Name BackupKey -Owner KeyOwner
+        PS C:\> New-DbaDbAsymmetricKey -SqlInstance Server1 -Database enctest -KeySourceType File -KeySource c:\keys\NewKey.snk -Name BackupKey -Owner KeyOwner
 
         Installs the key pair held in NewKey.snk into the enctest database creating an AsymmetricKey called BackupKey, which will be owned by KeyOwner
     #>

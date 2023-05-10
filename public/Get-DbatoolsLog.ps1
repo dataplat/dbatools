@@ -71,7 +71,7 @@ function Get-DbatoolsLog {
         Returns all log entries currently in memory.
 
     .EXAMPLE
-        PS C:\> Get-DbatooolsLog -LastError
+        PS C:\> Get-DbatoolsLog -LastError
 
         Returns the last log entry type of error.
 
