@@ -25,6 +25,9 @@ function Get-DbaAgentJobStep {
     .PARAMETER ExcludeDisabledJobs
         Switch will exclude disabled jobs from the output.
 
+    .PARAMETER InputObject
+        Job objects to process. This can be piped from Get-DbaAgentJob.
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -74,16 +77,16 @@ function Get-DbaAgentJobStep {
     #>
     [CmdletBinding()]
     param (
-        [parameter(Mandatory, ValueFromPipeline)]
+        [parameter(ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
-        [PSCredential]
-        $SqlCredential,
-        [object[]]$Job,
-        [object[]]$ExcludeJob,
+        [PSCredential]$SqlCredential,
+        [string[]]$Job,
+        [string[]]$ExcludeJob,
+        [parameter(ValueFromPipeline)]
+        [Microsoft.SqlServer.Management.Smo.Agent.Job[]]$InputObject,
         [switch]$ExcludeDisabledJobs,
         [switch]$EnableException
     )
-
     process {
         foreach ($instance in $SqlInstance) {
             try {
@@ -92,26 +95,27 @@ function Get-DbaAgentJobStep {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
             Write-Message -Level Verbose -Message "Collecting jobs on $instance"
-            $jobs = $server.JobServer.Jobs
+            $InputObject += $server.JobServer.Jobs
+        }
+    }
+    end {
+        if ($Job) {
+            $InputObject = $InputObject | Where-Object Name -In $Job
+        }
+        if ($ExcludeJob) {
+            $InputObject = $InputObject | Where-Object Name -NotIn $ExcludeJob
+        }
+        if ($ExcludeDisabledJobs) {
+            $InputObject = $InputObject | Where-Object IsEnabled -eq $true
+        }
+        Write-Message -Level Verbose -Message "Collecting job steps on ($server.Name)"
+        foreach ($agentJobStep in $InputObject.jobsteps) {
+            Add-Member -Force -InputObject $agentJobStep -MemberType NoteProperty -Name ComputerName -value $agentJobStep.Parent.Parent.Parent.ComputerName
+            Add-Member -Force -InputObject $agentJobStep -MemberType NoteProperty -Name InstanceName -value $agentJobStep.Parent.Parent.Parent.ServiceName
+            Add-Member -Force -InputObject $agentJobStep -MemberType NoteProperty -Name SqlInstance -value $agentJobStep.Parent.Parent.Parent.DomainInstanceName
+            Add-Member -Force -InputObject $agentJobStep -MemberType NoteProperty -Name AgentJob -value $agentJobStep.Parent.Name
 
-            if ($Job) {
-                $jobs = $jobs | Where-Object Name -In $Job
-            }
-            if ($ExcludeJob) {
-                $jobs = $jobs | Where-Object Name -NotIn $ExcludeJob
-            }
-            if ($ExcludeDisabledJobs) {
-                $jobs = $Jobs | Where-Object IsEnabled -eq $true
-            }
-            Write-Message -Level Verbose -Message "Collecting job steps on $instance"
-            foreach ($agentJobStep in $jobs.jobsteps) {
-                Add-Member -Force -InputObject $agentJobStep -MemberType NoteProperty -Name ComputerName -value $agentJobStep.Parent.Parent.Parent.ComputerName
-                Add-Member -Force -InputObject $agentJobStep -MemberType NoteProperty -Name InstanceName -value $agentJobStep.Parent.Parent.Parent.ServiceName
-                Add-Member -Force -InputObject $agentJobStep -MemberType NoteProperty -Name SqlInstance -value $agentJobStep.Parent.Parent.Parent.DomainInstanceName
-                Add-Member -Force -InputObject $agentJobStep -MemberType NoteProperty -Name AgentJob -value $agentJobStep.Parent.Name
-
-                Select-DefaultView -InputObject $agentJobStep -Property ComputerName, InstanceName, SqlInstance, AgentJob, Name, SubSystem, LastRunDate, LastRunOutcome, State
-            }
+            Select-DefaultView -InputObject $agentJobStep -Property ComputerName, InstanceName, SqlInstance, AgentJob, Name, SubSystem, LastRunDate, LastRunOutcome, State
         }
     }
 }

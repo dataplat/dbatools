@@ -40,6 +40,20 @@ function Install-DbaMaintenanceSolution {
     .PARAMETER InstallJobs
         If this switch is enabled, the corresponding SQL Agent Jobs will be created.
 
+    .PARAMETER AutoScheduleJobs
+        Scheduled jobs during an optimal time.
+
+        WeeklyFull will create weekly full, daily differential and 15 minute log backups.
+
+        To skip diffs, specify NoDiff in the values. To perform log backups each hour instead of every
+        15 minutes, specify HourlyLog in the values.
+
+        Recommendations can be found on Ola's site: https://ola.hallengren.com/frequently-asked-questions.html
+
+    .PARAMETER StartTime
+        When AutoScheduleJobs is used, this time will be used as the start time for the jobs unless a schedule already
+        exists in the same time slot. If so, then it will add an hour until it finds an open time slot. Defaults to 1:15 AM.
+
     .PARAMETER LocalFile
         Specifies the path to a local file to install Ola's solution from. This *should* be the zip file as distributed by the maintainers.
         If this parameter is not specified, the latest version will be downloaded and installed from https://github.com/olahallengren/sql-server-maintenance-solution
@@ -146,6 +160,9 @@ function Install-DbaMaintenanceSolution {
         [ValidateSet('All', 'Backup', 'IntegrityCheck', 'IndexOptimize')]
         [string[]]$Solution = 'All',
         [switch]$InstallJobs,
+        [ValidateSet('WeeklyFull', 'DailyFull', 'NoDiff', 'FifteenMinuteLog', 'HourlyLog')]
+        [string[]]$AutoScheduleJobs,
+        [string]$StartTime = "011500",
         [string]$LocalFile,
         [switch]$Force,
         [switch]$InstallParallel,
@@ -276,6 +293,7 @@ function Install-DbaMaintenanceSolution {
             }
 
             $db = $server.Databases[$Database]
+
             if ($null -eq $db) {
                 Stop-Function -Message "Database $Database not found on $instance. Skipping." -Target $instance -Continue
             }
@@ -393,11 +411,183 @@ function Install-DbaMaintenanceSolution {
                     }
                 }
             }
-            [pscustomobject]@{
-                ComputerName = $server.ComputerName
-                InstanceName = $server.ServiceName
-                SqlInstance  = $server.DomainInstanceName
-                Results      = $result
+
+            if ($PSBoundParameters.AutoScheduleJobs) {
+                Write-ProgressHelper -ExcludePercent -Message "Scheduling jobs"
+
+                <#
+                    WeeklyFull will create weekly full, daily differential and 15 minute log backups.
+
+                    To skip diffs, specify NoDiff in the values. To perform log backups each hour instead of every
+                    15 minutes, specify HourlyLog in the values.
+
+                    To perform full backups each day with no differentials, specify DailyFull in the values.
+
+                    - 'Output File Cleanup'
+                    - 'IndexOptimize - USER_DATABASES'
+                    - 'sp_delete_backuphistory'
+                    - 'DatabaseBackup - USER_DATABASES - LOG'
+                    - 'DatabaseBackup - SYSTEM_DATABASES - FULL'
+                    - 'DatabaseBackup - USER_DATABASES - FULL'
+                    - 'sp_purge_jobhistory'
+                    - 'DatabaseIntegrityCheck - SYSTEM_DATABASES'
+                    - 'CommandLog Cleanup'
+                    - 'DatabaseIntegrityCheck - USER_DATABASES'
+                    - 'DatabaseBackup - USER_DATABASES - DIFF'
+
+                    How should I schedule jobs?
+                    The answer depends on your maintenance window, the size of your databases, the maximum data loss you can tolerate, and many other factors. Here are some guidelines that you can start with, but you will need to adjust these to your environment.
+
+                    User databases:
+
+                    Full backup one day per week
+                    Differential backup all other days of the week
+                    Transaction log backup every hour
+                    Integrity check one day per week
+                    Index maintenance one day per week
+
+                    System databases:
+                    Full backup every day
+                    Integrity check one day per week
+
+                    I recommend that you run a full backup after the index maintenance. The following differential backups will then be small. I also recommend that you perform the full backup after the integrity check. Then you know that the integrity of the backup is okay.
+
+                    Cleanup:
+
+                    sp_delete_backuphistory one day per week
+                    sp_purge_jobhistory one day per week
+                    CommandLog cleanup one day per week
+                    Output file cleanup one day per week
+                #>
+                $null = $server.Refresh()
+                $null = $server.JobServer.Jobs.Refresh()
+
+                $schedules = Get-DbaAgentSchedule -SqlInstance $server
+                $sunday = $schedules | Where-Object FrequencyInterval -eq 1
+                $start = $StartTime
+                $hour = New-TimeSpan -Hours 1
+                $twelvehours = New-TimeSpan -Hours 12
+                $twentyfourhours = New-TimeSpan -Hours 24
+
+                if ($sunday) {
+                    foreach ($time in $sunday) {
+                        if ($time.ActiveStartTimeOfDay) {
+                            if ($time.ActiveStartTimeOfDay.ToString().Replace(":", "") -eq $start) {
+                                $start = $time.ActiveStartTimeOfDay.Add($hour).ToString().Replace(":", "")
+                            }
+                        }
+                    }
+                }
+
+                $fullparams = @{
+                    SqlInstance       = $server
+                    Job               = "DatabaseBackup - SYSTEM_DATABASES - FULL", "DatabaseBackup - USER_DATABASES - FULL"
+                    Schedule          = "Weekly Full Backup"
+                    FrequencyType     = "Weekly"
+                    FrequencyInterval = "Sunday" # 1
+                    StartTime         = $start
+                    Force             = $true
+                }
+
+                $fullschedule = New-DbaAgentSchedule @fullparams
+
+                if ($fullschedule.ActiveStartTimeOfDay) {
+                    $integrity = $fullschedule.ActiveStartTimeOfDay.Subtract($twelvehours) -replace ":|\-", ""
+                } else {
+                    $integrity = "044500"
+                }
+
+                $integrityparams = @{
+                    SqlInstance       = $server
+                    Job               = "DatabaseIntegrityCheck - SYSTEM_DATABASES", "DatabaseIntegrityCheck - USER_DATABASES"
+                    Schedule          = "Weekly Integrity Check"
+                    FrequencyType     = "Weekly"
+                    FrequencyInterval = "Saturday" # 6
+                    StartTime         = $integrity
+                    Force             = $true
+                }
+
+                $null = New-DbaAgentSchedule @integrityparams
+
+                if ($fullschedule.ActiveStartTimeOfDay) {
+                    $indexoptimize = $fullschedule.ActiveStartTimeOfDay.Subtract($twentyfourhours) -replace ":|\-", ""
+                } else {
+                    $indexoptimize = "224500"
+                }
+
+
+                $integrityparams = @{
+                    SqlInstance       = $server
+                    Job               = "IndexOptimize - USER_DATABASES"
+                    Schedule          = "Weekly Index Optimization"
+                    FrequencyType     = "Weekly"
+                    FrequencyInterval = "Saturday" # 6
+                    StartTime         = $indexoptimize
+                    Force             = $true
+                }
+
+                $null = New-DbaAgentSchedule @integrityparams
+
+                if ("NoDiff" -notin $AutoScheduleJobs) {
+                    $diffparams = @{
+                        SqlInstance       = $server
+                        Job               = "DatabaseBackup - USER_DATABASES - DIFF"
+                        Schedule          = "Daily Diff Backup"
+                        FrequencyType     = "Weekly"
+                        FrequencyInterval = 126 # all days but sunday
+                        StartTime         = $start
+                        Force             = $true
+                    }
+
+                    $null = New-DbaAgentSchedule @diffparams
+                }
+
+                if ("HourlyLog" -in $AutoScheduleJobs) {
+                    $logparams = @{
+                        SqlInstance       = $server
+                        Job               = "DatabaseBackup - USER_DATABASES - LOG"
+                        Schedule          = "Hourly Log Backup"
+                        FrequencyType     = "Daily"
+                        FrequencyInterval = 1
+                        StartTime         = "003000"
+                        Force             = $true
+                    }
+                } else {
+                    $logparams = @{
+                        SqlInstance             = $server
+                        Job                     = "DatabaseBackup - USER_DATABASES - LOG"
+                        Schedule                = "15 Minute Log Backup"
+                        FrequencyType           = "Daily"
+                        FrequencyInterval       = 1
+                        FrequencySubDayInterval = 15
+                        FrequencySubDayType     = "Minute"
+                        StartTime               = "000000"
+                        Force                   = $true
+                    }
+                }
+                $null = New-DbaAgentSchedule @logparams
+
+                # You know... why not? These are lightweight tasks.
+                $cleanparams = @{
+                    SqlInstance       = $server
+                    Job               = "Output File Cleanup", "sp_delete_backuphistory", "sp_purge_jobhistory", "CommandLog Cleanup"
+                    Schedule          = "Weekly Clean and Purge"
+                    FrequencyType     = "Weekly"
+                    FrequencyInterval = "Sunday"
+                    StartTime         = "235000" # 11:50 pm
+                    Force             = $true
+                }
+
+                $null = New-DbaAgentSchedule @cleanparams
+            }
+
+            if ($query) { # then whatif wasn't passed
+                [pscustomobject]@{
+                    ComputerName = $server.ComputerName
+                    InstanceName = $server.ServiceName
+                    SqlInstance  = $server.DomainInstanceName
+                    Results      = $result
+                }
             }
 
             # Close non-pooled connection as this is not done automatically. If it is a reused Server SMO, connection will be opened again automatically on next request.
