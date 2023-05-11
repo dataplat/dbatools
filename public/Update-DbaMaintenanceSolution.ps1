@@ -63,11 +63,6 @@ function Update-DbaMaintenanceSolution {
 
         Updates Ola Hallengren's Solution objects on RES14224 in the DBA database.
 
-    .EXAMPLE
-        PS C:\> Install-DbaMaintenanceSolution -SqlInstance RES14224 -Database DBA -Solution Backup
-
-        This will update the stored procedure DatabaseBackup only, even if other parts of the solution are also installed.
-
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Medium")]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseSingularNouns", "", Justification = "Internal functions are ignored")]
