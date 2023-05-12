@@ -80,8 +80,8 @@ function Get-DbaAgentJobStep {
         [parameter(ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [psobject[]]$Job,
-        [psobject[]]$ExcludeJob,
+        [string[]]$Job,
+        [string[]]$ExcludeJob,
         [parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.Agent.Job[]]$InputObject,
         [switch]$ExcludeDisabledJobs,
