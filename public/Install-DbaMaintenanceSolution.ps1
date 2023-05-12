@@ -421,36 +421,11 @@ function Install-DbaMaintenanceSolution {
                     To skip diffs, specify NoDiff in the values. To perform log backups each hour instead of every
                     15 minutes, specify HourlyLog in the values.
 
-                    To perform full backups each day with no differentials, specify DailyFull in the values.
-
-                    - 'Output File Cleanup'
-                    - 'IndexOptimize - USER_DATABASES'
-                    - 'sp_delete_backuphistory'
-                    - 'DatabaseBackup - USER_DATABASES - LOG'
-                    - 'DatabaseBackup - SYSTEM_DATABASES - FULL'
-                    - 'DatabaseBackup - USER_DATABASES - FULL'
-                    - 'sp_purge_jobhistory'
-                    - 'DatabaseIntegrityCheck - SYSTEM_DATABASES'
-                    - 'CommandLog Cleanup'
-                    - 'DatabaseIntegrityCheck - USER_DATABASES'
-                    - 'DatabaseBackup - USER_DATABASES - DIFF'
-
-                    How should I schedule jobs?
-                    The answer depends on your maintenance window, the size of your databases, the maximum data loss you can tolerate, and many other factors. Here are some guidelines that you can start with, but you will need to adjust these to your environment.
-
-                    User databases:
-
-                    Full backup one day per week
-                    Differential backup all other days of the week
-                    Transaction log backup every hour
-                    Integrity check one day per week
-                    Index maintenance one day per week
-
                     System databases:
                     Full backup every day
                     Integrity check one day per week
 
-                    I recommend that you run a full backup after the index maintenance. The following differential backups will then be small. I also recommend that you perform the full backup after the integrity check. Then you know that the integrity of the backup is okay.
+                    I (Ola) recommend that you run a full backup after the index maintenance. The following differential backups will then be small. I also recommend that you perform the full backup after the integrity check. Then you know that the integrity of the backup is okay.
 
                     Cleanup:
 
@@ -466,6 +441,7 @@ function Install-DbaMaintenanceSolution {
                 $sunday = $schedules | Where-Object FrequencyInterval -eq 1
                 $start = $StartTime
                 $hour = New-TimeSpan -Hours 1
+                $twohours = New-TimeSpan -Hours 2
                 $twelvehours = New-TimeSpan -Hours 12
                 $twentyfourhours = New-TimeSpan -Hours 24
 
@@ -481,8 +457,8 @@ function Install-DbaMaintenanceSolution {
 
                 $fullparams = @{
                     SqlInstance       = $server
-                    Job               = "DatabaseBackup - SYSTEM_DATABASES - FULL", "DatabaseBackup - USER_DATABASES - FULL"
-                    Schedule          = "Weekly Full Backup"
+                    Job               = "DatabaseBackup - USER_DATABASES - FULL"
+                    Schedule          = "Weekly Full User Backup"
                     FrequencyType     = "Weekly"
                     FrequencyInterval = "Sunday" # 1
                     StartTime         = $start
@@ -490,6 +466,24 @@ function Install-DbaMaintenanceSolution {
                 }
 
                 $fullschedule = New-DbaAgentSchedule @fullparams
+
+                if ($fullschedule.ActiveStartTimeOfDay) {
+                    $systemdaily = $fullschedule.ActiveStartTimeOfDay.Add($twohours) -replace ":|\-", ""
+                } else {
+                    $systemdaily = "031500"
+                }
+
+                $fullsystemparams = @{
+                    SqlInstance       = $server
+                    Job               = "DatabaseBackup - SYSTEM_DATABASES - FULL"
+                    Schedule          = "Daily Full System Backup"
+                    FrequencyType     = "Daily"
+                    FrequencyInterval = "EveryDay"
+                    StartTime         = $systemdaily
+                    Force             = $true
+                }
+
+                $null = New-DbaAgentSchedule @fullsystemparams
 
                 if ($fullschedule.ActiveStartTimeOfDay) {
                     $integrity = $fullschedule.ActiveStartTimeOfDay.Subtract($twelvehours) -replace ":|\-", ""
