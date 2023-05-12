@@ -48,6 +48,9 @@ function Install-DbaMaintenanceSolution {
         To skip diffs, specify NoDiff in the values. To perform log backups each hour instead of every
         15 minutes, specify HourlyLog in the values.
 
+        When AutoScheduleJobs is used, this time will be used as the start time for the jobs unless a schedule already
+        exists in the same time slot. If so, then it will add an hour until it finds an open time slot. Defaults to 1:15 AM.
+
         Recommendations can be found on Ola's site: https://ola.hallengren.com/frequently-asked-questions.html
 
     .PARAMETER StartTime
@@ -143,6 +146,11 @@ function Install-DbaMaintenanceSolution {
         PS C:\> Install-DbaMaintenanceSolution -SqlInstance RES14224 -Database DBA -InstallParallel
 
         This will create the Queue and QueueDatabase tables for uses when manually changing jobs to use the @DatabasesInParallel = 'Y' flag
+
+    .EXAMPLE
+        PS C:\> Install-DbaMaintenanceSolution -SqlInstance sql01 -InstallJobs -AutoScheduleJobs WeeklyFull
+
+        This will create the Ola Hallengren's Solution objects and the SQL Agent Jobs. The jobs will be scheduled to run weekly full, daily differential and 15 minute log backups.
 
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Medium")]
