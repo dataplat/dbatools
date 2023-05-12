@@ -52,26 +52,5 @@ function Update-Dbatools {
         [switch]$Cleanup,
         [switch]$EnableException
     )
-    $MyModuleBase = [Dataplat.Dbatools.dbaSystem.SystemHost]::ModuleBase
-    $InstallScript = Join-Path -path $MyModuleBase -ChildPath "install.ps1";
-    if ($Development) {
-        Write-Message -Level Verbose -Message "Installing dev/beta channel via $Installscript.";
-        if ($PSCmdlet.ShouldProcess("development branch", "Updating dbatools")) {
-            & $InstallScript -beta;
-        }
-    } else {
-        Write-Message -Level Verbose -Message "Installing release version via $Installscript."
-        if ($PSCmdlet.ShouldProcess("release branch", "Updating dbatools")) {
-            & $InstallScript;
-        }
-    }
-    if ($Cleanup) {
-        Write-Message -Level Verbose -Message "Removing older versions of dbatools"
-        try {
-            $cleanfile = Join-DbaPath -Path $((Get-InstalledModule dbatools).InstalledLocation) -ChildPath "cleanup.ps1" -ErrorAction Stop
-        } catch {
-            $cleanfile = Join-DbaPath -Path $(Split-Path (Get-Module dbatools).Path) -ChildPath "cleanup.ps1"
-        }
-        & $cleanfile
-    }
+    Write-Warning "This command is deprecated. Please use PowerShell's built-in commands, Install-Module and Update-Module, instead."
 }
