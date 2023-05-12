@@ -581,7 +581,8 @@ function Install-DbaMaintenanceSolution {
                 $null = New-DbaAgentSchedule @cleanparams
             }
 
-            if ($query) { # then whatif wasn't passed
+            if ($query) {
+                # then whatif wasn't passed
                 [pscustomobject]@{
                     ComputerName = $server.ComputerName
                     InstanceName = $server.ServiceName
