@@ -91,33 +91,23 @@ function Remove-DbaAgentSchedule {
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "High")]
     param (
-        [Parameter(ParameterSetName = 'NonPipeline', Mandatory = $true, Position = 0)]
         [DbaInstanceParameter[]]$SqlInstance,
-        [Parameter(ParameterSetName = 'NonPipeline')]
         [PSCredential]$SqlCredential,
-        [Parameter(ParameterSetName = 'NonPipeline')]
         [ValidateNotNullOrEmpty()]
         [Alias("Schedules", "Name")]
         [string[]]$Schedule,
-        [Parameter(ParameterSetName = 'NonPipeline')]
         [Alias("Uid")]
         [string[]]$ScheduleUid,
-        [Parameter(ParameterSetName = 'NonPipeline')]
         [int[]]$Id,
-        [parameter(ValueFromPipeline, ParameterSetName = 'Pipeline', Mandatory = $true)]
+        [Parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.Agent.ScheduleBase[]]$InputObject,
-        [Parameter(ParameterSetName = 'NonPipeline')][Parameter(ParameterSetName = 'Pipeline')]
         [switch]$EnableException,
-        [Parameter(ParameterSetName = 'NonPipeline')][Parameter(ParameterSetName = 'Pipeline')]
         [switch]$Force
     )
-
     begin {
         $schedules = @( )
     }
-
     process {
-
         if ($SqlInstance) {
             $params = $PSBoundParameters
             $null = $params.Remove('Force')
@@ -129,6 +119,10 @@ function Remove-DbaAgentSchedule {
         }
     }
     end {
+        if ($InputObject -and ($Sqlinstance -or $Schedule -or $ScheduleUid -or $Id)) {
+            Stop-Function -Message "You cannot use -InputObject with -SqlInstance, -Schedule, -ScheduleUid or -Id"
+            return
+        }
         # We have to delete in the end block to prevent "Collection was modified; enumeration operation may not execute." if directly piped from Get-DbaAgentSchedule.
         foreach ($sched in $schedules) {
             if ($sched.JobCount -ge 1 -and -not $Force) {
