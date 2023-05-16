@@ -105,6 +105,9 @@ function New-DbaReplSubscription {
         foreach ($instance in $SqlInstance) {
 
             try {
+
+                $subReplServer = get-DbaReplServer -SqlInstance $instance -SqlCredential $SqlCredential
+
                 if (-not (Get-DbaDatabase -SqlInstance $instance -SqlCredential $SqlCredential -Database $Database)) {
                     Write-Message -Level Verbose -Message "Subscription database $Database not found on $instance - will create it"
 
@@ -160,11 +163,13 @@ function New-DbaReplSubscription {
 
                             # create the subscription
                             $transSub = New-Object Microsoft.SqlServer.Replication.TransSubscription
-                            $transSub.ConnectionContext = $replServer.ConnectionContext
+                            $transSub.ConnectionContext = $subReplServer.ConnectionContext
                             $transSub.SubscriptionDBName = $Database
                             $transSub.SubscriberName = $instance
                             $transSub.DatabaseName = $PublicationDatabase
                             $transSub.PublicationName = $PublicationName
+
+                            $transSub
 
                             #TODO:
 
