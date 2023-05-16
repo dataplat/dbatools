@@ -82,53 +82,19 @@ function Get-DbaReplSubscription {
 
             # Connect to Publisher
             try {
-                $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
+                $replServer = Get-DbaReplServer -SqlInstance $instance -SqlCredential $PublisherSqlCredential
             } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
-            $databases = $server.Databases | Where-Object { $_.IsAccessible -eq $true -and (-not $_.IsSystemObject) }
-            if ($Database) {
-                $databases = $databases | Where-Object Name -In $Database
-            }
+            # Get all subscriptions
+            $transSub = New-Object Microsoft.SqlServer.Replication.TransSubscription
+            $transSub.ConnectionContext = $replServer.ConnectionContext
+            $transSub.EnumSubscriptions()
 
-            foreach ($db in $databases) {
 
-                if (($db.ReplicationOptions -ne "Published") -and ($db.ReplicationOptions -ne "MergePublished")) {
-                    Write-Message -Level Verbose -Message "Skipping $($db.name). Database is not published."
-                }
+            #TODO: finish this function
 
-                $repDB = Connect-ReplicationDB -Server $server -Database $db
-
-                $pubTypes = $repDB.TransPublications + $repDB.MergePublications
-
-                if ($Type) {
-                    $pubTypes = $pubTypes | Where-Object Type -in $Type
-                }
-
-                if ($Name) {
-                    $pubTypes = $pubTypes | Where-Object Name -in $Name
-                }
-
-                foreach ($pub in $pubTypes) {
-                    if ($pub.Type -eq 'Merge') {
-                        $articles = $pub.MergeArticles
-                    } else {
-                        $articles = $pub.TransArticles
-                    }
-
-                    [PSCustomObject]@{
-                        ComputerName = $server.ComputerName
-                        InstanceName = $server.ServiceName
-                        SqlInstance  = $server.Name
-                        Server       = $server.name
-                        Database     = $db.name
-                        Name         = $pub.Name  #TODO: breaking change from PublicationName to Name
-                        Type         = $pub.Type  #TODO: breaking change from PublicationType to Type
-                        Articles     = $articles
-                    }
-                }
-            }
         }
     }
 }
