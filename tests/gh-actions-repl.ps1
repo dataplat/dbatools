@@ -22,7 +22,7 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
         $null = Invoke-DbaQuery -Database ReplDb -Query 'CREATE TABLE ReplicateMe ( id int identity (1,1) PRIMARY KEY, col1 varchar(10) )'
     }
 
-    Describe "Enable\Disable Functions" -Tag ReplSetup -Skip {
+    Describe "Enable\Disable Functions" -Tag ReplSetup {
 
         Context "Get-DbaReplDistributor works" {
             BeforeAll {
@@ -170,9 +170,9 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
         }
     }
 
-    Describe "RestofTests" -Tag "Rest" <#-Skip#> {
+    Describe "RestofTests" -Tag "Rest" {
 
-        Context "Get-DbaReplPublisher works" -skip {
+        Context "Get-DbaReplPublisher works" {
             BeforeAll {
                 # if distribution is disabled - enable it
                 if (-not (Get-DbaReplDistributor).IsDistributor) {
@@ -191,7 +191,7 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
 
         }
 
-        Context "New-DbaReplPublication works" -Tag test -Skip {
+        Context "New-DbaReplPublication works" {
             BeforeAll {
                 # if replication is disabled - enable it
                 if (-not (Get-DbaReplDistributor).IsDistributor) {
@@ -227,7 +227,7 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
 
         }
 
-        Context "Add-DbaReplArticle works" -Tag test -Skip {
+        Context "Add-DbaReplArticle works" {
             BeforeAll {
                 # if replication is disabled - enable it
                 if (-not (Get-DbaReplDistributor).IsDistributor) {
@@ -277,28 +277,25 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
             if (-not (Get-DbaReplPublication -Name $name -Type Merge)) {
                 $null = New-DbaReplPublication -Database ReplDb -Type Merge -PublicationName $Name
             }
+            $articleName = 'ReplicateMe'
         }
         Context "Add-DbaReplArticle works" {
 
             It "Add-DbaReplArticle adds an article to a Transactional publication" {
-                $Name = 'TestPub'
-                Add-DbaReplArticle -Database ReplDb -Type Transactional -PublicationName $Name
-                (Get-DbaReplPublication -Name $Name) | Should -Not -BeNullOrEmpty
-                (Get-DbaReplPublication -Name $Name).Database | Should -Be 'ReplDb'
-                (Get-DbaReplPublication -Name $Name).Type | Should -Be 'Transactional'
+                $pubName = 'TestPub'
+                Add-DbaReplArticle -Database ReplDb -Name $articleName -PublicationName $pubName
+
+                #TODO: waiting on Get-DbaReplArticle
             }
             It "New-DbaReplPublication creates a Snapshot publication" {
                 $pubname = 'TestSnap'
-                $article = 'ReplicateMe'
-                { Add-DbaReplArticle -SqlInstance mssql1 -Database ReplDb -Name $article -PublicationName $pubname -EnableException } | Should -not -throw
+                { Add-DbaReplArticle -SqlInstance mssql1 -Database ReplDb -Name $articleName -PublicationName $pubname -EnableException } | Should -not -throw
 
                 #TODO: waiting on Get-DbaReplArticle
             }
             It "New-DbaReplPublication creates a Merge publication" {
                 $pubname = 'TestMerge'
-                $article = 'ReplicateMe'
-
-                { Add-DbaReplArticle -SqlInstance mssql1 -Database ReplDb -Name $article -PublicationName $pubname -EnableException } | Should -not -throw
+                { Add-DbaReplArticle -SqlInstance mssql1 -Database ReplDb -Name $articleName -PublicationName $pubname -EnableException } | Should -not -throw
 
                 #TODO: waiting on Get-DbaReplArticle
             }
