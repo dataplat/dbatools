@@ -83,7 +83,7 @@ function Get-DbaReplArticle {
             }
 
             foreach ($db in $databases) {
-                Write-PSFMessage -Level Verbose -Message ('Working on {0}' -f $db)
+                Write-Message -Level Verbose -Message ('Working on {0}' -f $db)
 
                 $RMOdb = Connect-ReplicationDB -Server $server -Database $db
 
