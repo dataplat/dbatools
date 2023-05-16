@@ -76,7 +76,7 @@ function Remove-DbaReplPublication {
             try {
                 if ($PSCmdlet.ShouldProcess($instance, "Removing publication on $instance")) {
 
-                    $pub = Get-DbaReplPublication -SqlInstance $instance -SqlCredential $SqlCredential -Name $Name
+                    $pub = Get-DbaReplPublication -SqlInstance $instance -SqlCredential $SqlCredential -Name $Name -Database $Database
 
                     if (-not $pub) {
                         Write-Warning "Didn't find $Name on $Instance.$Database"
