@@ -15,7 +15,7 @@ jobs:
       - name: Install and cache PowerShell modules
         uses: potatoqualitee/psmodulecache@v5.2
         with:
-          modules-to-cache: dbatools.library:2023.1.29
+          modules-to-cache: dbatools.library:2023.5.5
 
       - name: Set encryption values
         run: |
