@@ -139,7 +139,7 @@
         'Export-DbaLogin',
         'Export-DbaPfDataCollectorSetTemplate',
         'Export-DbaRegServer',
-        'Export-DbaReplServerSetting',
+        'Export-DbaRepServerSetting',
         'Export-DbaScript',
         'Export-DbaServerRole',
         'Export-DbaSpConfigure',
@@ -350,10 +350,9 @@
         'Get-DbaRegServer',
         'Get-DbaRegServerGroup',
         'Get-DbaRegServerStore',
-        'Get-DbaReplDistributor',
-        'Get-DbaReplPublication',
-        'Get-DbaReplPublisher',
-        'Get-DbaReplServer',
+        'Get-DbaRepDistributor',
+        'Get-DbaRepPublication',
+        'Get-DbaRepServer',
         'Get-DbaResourceGovernor',
         'Get-DbaRgClassifierFunction',
         'Get-DbaRgResourcePool',
@@ -694,7 +693,7 @@
         'Test-DbaOptimizeForAdHoc',
         'Test-DbaPath',
         'Test-DbaPowerPlan',
-        'Test-DbaReplLatency',
+        'Test-DbaRepLatency',
         'Test-DbaSpn',
         'Test-DbaTempDbConfig',
         'Test-DbaWindowsLogin',
@@ -729,21 +728,7 @@
         'New-DbaLinkedServerLogin',
         'Remove-DbaLinkedServerLogin',
         'Remove-DbaCredential',
-        'Remove-DbaAgentProxy',
-
-        # NEW REPLICATION STUFF
-        'Disable-DbaReplDistributor',
-        'Enable-DbaReplDistributor',
-        'Disable-DbaReplPublishing',
-        'Enable-DbaReplPublishing',
-        'New-DbaReplPublication',
-        'Get-DbaReplArticle',
-        'Get-DbaReplArticleColumn',
-        'Add-DbaReplArticle',
-        'Remove-DbaReplArticle',
-        'Remove-DbaReplPublication',
-        'New-DbaReplSubscription',
-        'Remove-DbaReplSubscription'
+        'Remove-DbaAgentProxy'
     )
 
     # Cmdlets to export from this module
