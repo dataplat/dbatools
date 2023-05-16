@@ -43,6 +43,25 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
             }
         }
 
+        Context "Get-DbaReplPublisher works" {
+            BeforeAll {
+                # if distribution is disabled - enable it
+                if (-not (Get-DbaReplDistributor).IsDistributor) {
+                    Enable-DbaReplDistributor
+                }
+
+                # if publishing is disabled - enable it
+                if (-not (Get-DbaReplServer).IsPublisher) {
+                    Enable-DbaReplPublishing -PublisherSqlLogin $cred -EnableException
+                }
+            }
+
+            It "gets a publisher" {
+                (Get-DbaReplPublisher).PublisherType | Should -Be "MSSQLSERVER"
+            }
+
+        }
+
         Context "Enable-DbaReplDistributor works" {
             BeforeAll {
                 # if distribution is enabled - disable it
@@ -127,10 +146,6 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
 
         Context "Disable-DbaReplPublishing works" {
             BeforeAll {
-
-                write-output -Message ('I am a distributor {0}' -f (Get-DbaReplServer).IsDistributor)
-                write-output -Message ('I am a publisher {0}' -f (Get-DbaReplServer).IsPublisher)
-
                 # if publishing is disabled - enable it
                 if (-not (Get-DbaReplServer).IsPublisher) {
                     write-output -message 'I should enable publishing'
@@ -142,9 +157,6 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
                     write-output -message 'I should enable distribution'
                     Enable-DbaReplDistributor -EnableException
                 }
-
-                write-output -Message ('I am a distributor {0}' -f (Get-DbaReplServer).IsDistributor)
-                write-output -Message ('I am a publisher {0}' -f (Get-DbaReplServer).IsPublisher)
             }
 
             It "publishing starts enabled" {
@@ -238,9 +250,35 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
                 if (-not (Get-DbaReplPublication -Name $name -Type Merge)) {
                     $null = New-DbaReplPublication -Database ReplDb -Type Merge -PublicationName $Name
                 }
-
-                #$article =
             }
+        }
+    }
+
+    Describe "Article tests" -Tag "ReplArticle" {
+        BeforeAll {
+            # if replication is disabled - enable it
+            if (-not (Get-DbaReplDistributor).IsDistributor) {
+                Enable-DbaReplDistributor
+            }
+            # if publishing is disabled - enable it
+            if (-not (Get-DbaReplServer).IsPublisher) {
+                Enable-DbaReplPublishing -PublisherSqlLogin $cred -EnableException
+            }
+            # we need some publications too
+            $name = 'TestTrans'
+            if (-not (Get-DbaReplPublication -Name $name -Type Transactional )) {
+                $null = New-DbaReplPublication -Database ReplDb -Type Transactional -PublicationName $Name
+            }
+            $name = 'TestSnap'
+            if (-not (Get-DbaReplPublication -Name $name -Type Snapshot)) {
+                $null = New-DbaReplPublication -Database ReplDb -Type Snapshot -PublicationName $Name
+            }
+            $name = 'TestMerge'
+            if (-not (Get-DbaReplPublication -Name $name -Type Merge)) {
+                $null = New-DbaReplPublication -Database ReplDb -Type Merge -PublicationName $Name
+            }
+        }
+        Context "Add-DbaReplArticle works" {
 
             It "Add-DbaReplArticle adds an article to a Transactional publication" {
                 $Name = 'TestPub'
@@ -250,31 +288,26 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
                 (Get-DbaReplPublication -Name $Name).Type | Should -Be 'Transactional'
             }
             It "New-DbaReplPublication creates a Snapshot publication" {
-                $name = 'Snappy'
-                New-DbaReplPublication -Database ReplDb -Type Snapshot -PublicationName $name
-                (Get-DbaReplPublication -Name $name) | Should -Not -BeNullOrEmpty
-                (Get-DbaReplPublication -Name $name).Database | Should -Be 'ReplDb'
-                (Get-DbaReplPublication -Name $name).Type | Should -Be 'Snapshot'
+                $pubname = 'TestSnap'
+                $article = 'ReplicateMe'
+                { Add-DbaReplArticle -SqlInstance mssql1 -Database ReplDb -Name $article -PublicationName $pubname -EnableException } | Should -not -throw
+
+                #TODO: waiting on Get-DbaReplArticle
             }
             It "New-DbaReplPublication creates a Merge publication" {
-                $name = 'Mergey'
-                New-DbaReplPublication -Database ReplDb -Type Merge -PublicationName $name
-                (Get-DbaReplPublication -Name $name) | Should -Not -BeNullOrEmpty
-                (Get-DbaReplPublication -Name $name).Database | Should -Be 'ReplDb'
-                (Get-DbaReplPublication -Name $name).Type | Should -Be 'Merge'
+                $pubname = 'TestMerge'
+                $article = 'ReplicateMe'
+
+                { Add-DbaReplArticle -SqlInstance mssql1 -Database ReplDb -Name $article -PublicationName $pubname -EnableException } | Should -not -throw
+
+                #TODO: waiting on Get-DbaReplArticle
             }
         }
 
         Context "Get-DbaReplArticle works" -Tag ArtTestGet {
             BeforeAll {
-                # if replication is disabled - enable it
-                if (-not (Get-DbaReplDistributor).IsDistributor) {
-                    Enable-DbaReplDistributor
-                }
-                # if publishing is disabled - enable it
-                if (-not (Get-DbaReplServer).IsPublisher) {
-                    Enable-DbaReplPublishing -PublisherSqlLogin $cred -EnableException
-                }
+                # we need some articles too remove
+                $article = 'ReplicateMe'
 
                 # we need some publications too
                 $name = 'TestTrans'
