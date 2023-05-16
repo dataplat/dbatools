@@ -121,6 +121,30 @@ $article = @{
 }
 Add-DbaReplArticle @article
 
+$article = @{
+    SqlInstance     = 'mssql1'
+    Database        = 'pubs'
+    PublicationName = 'testpub'
+    Name            = 'publishers'
+}
+Add-DbaReplArticle @article -EnableException
+
+
+$article = @{
+    SqlInstance     = 'mssql1'
+    Database        = 'ReplDb'
+    PublicationName = 'testtrans'
+    Name            = 'ReplicateMe'
+}
+Add-DbaReplArticle @article -EnableException
+
+$article = @{
+    SqlInstance     = 'mssql1'
+    Database        = 'ReplDb'
+    PublicationName = 'testtrans'
+    Name            = 'ReplicateMe'
+}
+Remove-DbaReplArticle @article
 
 # mergey
 $article = @{
@@ -128,7 +152,7 @@ $article = @{
     Database        = 'pubs'
     PublicationName = 'Mergey'
     Name            = 'publishers'
-    Filter          = "city = 'seattle'"  ## not working?
+    #Filter          = "city = 'seattle'"  ## not working?
 }
 Add-DbaReplArticle @article
 
@@ -185,6 +209,7 @@ $pub = @{
 Remove-DbaReplPublication @pub
 
 
+
 # add subscriptions.
 
 #transactional
@@ -198,7 +223,7 @@ $sub = @{
     SubscriptionSqlCredential = $credential
 
 }
-New-DbaReplSubscription @sub
+New-DbaReplSubscription @sub -enableexception
 
 #merge
 $sub = @{
