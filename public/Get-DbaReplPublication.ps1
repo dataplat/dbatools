@@ -98,6 +98,7 @@ function Get-DbaReplPublication {
             foreach ($db in $databases) {
 
                 if (($db.ReplicationOptions -ne "Published") -and ($db.ReplicationOptions -ne "MergePublished")) {
+                    #TODO: is this right - it doesn't actually skip the database
                     Write-Message -Level Verbose -Message "Skipping $($db.name). Database is not published."
                 }
 
@@ -119,7 +120,7 @@ function Get-DbaReplPublication {
                     } else {
                         $articles = $pub.TransArticles
                     }
-
+                    #TODO: can this return a replication object?
                     [PSCustomObject]@{
                         ComputerName = $server.ComputerName
                         InstanceName = $server.ServiceName
