@@ -104,7 +104,7 @@ https://learn.microsoft.com/en-us/sql/relational-databases/replication/publish/a
 
                     $pub = Get-DbaReplPublication -SqlInstance $instance -SqlCredential $SqlCredential -Name $PublicationName
 
-                    if ($pub.Type -eq 'Transactional') {
+                    if ($pub.Type -in ('Transactional', 'Snapshot')) {
                         $article                    = New-Object Microsoft.SqlServer.Replication.TransArticle
                     } elseif ($pub.Type -eq 'Merge') {
                         $article                    = New-Object Microsoft.SqlServer.Replication.MergeArticle
