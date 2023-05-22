@@ -1,7 +1,7 @@
 
 -- Azure SQL Database Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: April 1, 2023
+-- Last Modified: May 7, 2023
 -- https://glennsqlperformance.com/
 -- https://sqlserverperformance.wordpress.com/
 -- YouTube: https://bit.ly/2PkoAM1 
@@ -21,7 +21,7 @@
 
 
 --******************************************************************************
---*   Copyright (C) 2022 Glenn Berry
+--*   Copyright (C) 2023 Glenn Berry
 --*   All rights reserved. 
 --*
 --*
@@ -163,7 +163,8 @@ ORDER BY ec.client_net_address, es.[program_name] OPTION (RECOMPILE);
 SELECT AVG(current_tasks_count) AS [Avg Task Count], 
 AVG(work_queue_count) AS [Avg Work Queue Count],
 AVG(runnable_tasks_count) AS [Avg Runnable Task Count],
-AVG(pending_disk_io_count) AS [Avg Pending DiskIO Count]
+AVG(pending_disk_io_count) AS [Avg Pending DiskIO Count],
+GETDATE() AS [System Time]
 FROM sys.dm_os_schedulers WITH (NOLOCK)
 WHERE scheduler_id < 255 OPTION (RECOMPILE);
 ------
@@ -445,7 +446,7 @@ ORDER BY end_time DESC OPTION (RECOMPILE);
 
 
 
--- Get recent resource usage (Query 23) (Avg/Max Resource Usage)
+-- Get avg-max resource usage (Query 23) (Avg-Max Resource Usage)
 SELECT CAST(AVG(avg_cpu_percent) AS DECIMAL(10,2)) AS [Average CPU Utilization In Percent],   
        CAST(MAX(avg_cpu_percent) AS DECIMAL(10,2)) AS [Maximum CPU Utilization In Percent],   
        CAST(AVG(avg_data_io_percent) AS DECIMAL(10,2)) AS [Average Data IO In Percent],   
@@ -650,7 +651,7 @@ qs.total_logical_reads/qs.execution_count AS [Avg Logical Reads],
 CASE WHEN CONVERT(nvarchar(max), qp.query_plan) LIKE N'%<MissingIndexes>%' THEN 1 ELSE 0 END AS [Has Missing Index],
 FORMAT(qs.last_execution_time, 'yyyy-MM-dd HH:mm:ss', 'en-US') AS [Last Execution Time], 
 FORMAT(qs.cached_time, 'yyyy-MM-dd HH:mm:ss', 'en-US') AS [Plan Cached Time]
--- ,qp.query_plan AS [Query Plan] -- Uncomment if you want the Query Plan
+ --,qp.query_plan AS [Query Plan] -- Uncomment if you want the Query Plan
 FROM sys.procedures AS p WITH (NOLOCK)
 INNER JOIN sys.dm_exec_procedure_stats AS qs WITH (NOLOCK)
 ON p.[object_id] = qs.[object_id]
@@ -825,19 +826,25 @@ ORDER BY [Difference] DESC, [Total Writes] DESC, [Total Reads] ASC OPTION (RECOM
 
 
 -- Missing Indexes for current database by Index Advantage  (Query 37) (Missing Indexes)
-SELECT DISTINCT CONVERT(decimal(18,2), user_seeks * avg_total_user_cost * (avg_user_impact * 0.01)) AS [index_advantage], 
-migs.last_user_seek, mid.[statement] AS [Database.Schema.Table],
-mid.equality_columns, mid.inequality_columns, mid.included_columns,
-migs.unique_compiles, migs.user_seeks, migs.avg_total_user_cost, migs.avg_user_impact,
+SELECT CONVERT(decimal(18,2), migs.user_seeks * migs.avg_total_user_cost * (migs.avg_user_impact * 0.01)) AS [index_advantage], 
+CONVERT(nvarchar(25), migs.last_user_seek, 20) AS [last_user_seek],
+mid.[statement] AS [Database.Schema.Table], 
+COUNT(1) OVER(PARTITION BY mid.[statement]) AS [missing_indexes_for_table], 
+COUNT(1) OVER(PARTITION BY mid.[statement], mid.equality_columns) AS [similar_missing_indexes_for_table], 
+mid.equality_columns, mid.inequality_columns, mid.included_columns, migs.user_seeks, 
+CONVERT(decimal(18,2), migs.avg_total_user_cost) AS [avg_total_user_,cost], migs.avg_user_impact,
+REPLACE(REPLACE(LEFT(st.[text], 255), CHAR(10),''), CHAR(13),'') AS [Short Query Text],
 OBJECT_NAME(mid.[object_id]) AS [Table Name], p.rows AS [Table Rows]
-FROM sys.dm_db_missing_index_group_stats AS migs WITH (NOLOCK)
-INNER JOIN sys.dm_db_missing_index_groups AS mig WITH (NOLOCK)
-ON migs.group_handle = mig.index_group_handle
-INNER JOIN sys.dm_db_missing_index_details AS mid WITH (NOLOCK)
+FROM sys.dm_db_missing_index_groups AS mig WITH (NOLOCK) 
+INNER JOIN sys.dm_db_missing_index_group_stats_query AS migs WITH(NOLOCK) 
+ON mig.index_group_handle = migs.group_handle 
+CROSS APPLY sys.dm_exec_sql_text(migs.last_sql_handle) AS st 
+INNER JOIN sys.dm_db_missing_index_details AS mid WITH (NOLOCK) 
 ON mig.index_handle = mid.index_handle
 INNER JOIN sys.partitions AS p WITH (NOLOCK)
 ON p.[object_id] = mid.[object_id]
-WHERE mid.database_id = DB_ID() 
+WHERE mid.database_id = DB_ID()
+AND p.index_id < 2 
 ORDER BY index_advantage DESC OPTION (RECOMPILE);
 ------
 
@@ -901,6 +908,7 @@ ON p.object_id = ps.object_id
 WHERE ps.index_id < 2 -- ignore the partitions from the non-clustered indexes if any
 AND p.index_id < 2    -- ignore the partitions from the non-clustered indexes if any
 AND o.type_desc = N'USER_TABLE'
+--AND p.data_compression_desc = N'NONE'
 GROUP BY  SCHEMA_NAME(o.Schema_ID), p.object_id, ps.reserved_page_count, p.data_compression_desc
 ORDER BY SUM(ps.reserved_page_count) DESC, SUM(p.Rows) DESC OPTION (RECOMPILE);
 ------
@@ -912,9 +920,10 @@ ORDER BY SUM(ps.reserved_page_count) DESC, SUM(p.Rows) DESC OPTION (RECOMPILE);
 -- Get some key table properties (Query 41) (Table Properties)
 SELECT OBJECT_NAME(t.[object_id]) AS [ObjectName], p.[rows] AS [Table Rows], p.index_id, 
        p.data_compression_desc AS [Index Data Compression],
-       t.create_date, t.lock_on_bulk_load, t.lock_escalation_desc, 
+       t.create_date, t.lock_on_bulk_load, t.is_replicated, t.has_replication_filter, 
+       t.is_tracked_by_cdc, t.lock_escalation_desc, t.is_filetable, 
 	   t.is_memory_optimized, t.durability_desc, 
-	   t.temporal_type_desc
+	   t.temporal_type_desc, t.is_remote_data_archive_enabled, t.is_external -- new for SQL Server 2016
 FROM sys.tables AS t WITH (NOLOCK)
 INNER JOIN sys.partitions AS p WITH (NOLOCK)
 ON t.[object_id] = p.[object_id]
@@ -934,7 +943,9 @@ ORDER BY OBJECT_NAME(t.[object_id]), p.index_id OPTION (RECOMPILE);
 -- When were Statistics last updated on all indexes?  (Query 42) (Statistics Update)
 SELECT SCHEMA_NAME(o.Schema_ID) + N'.' + o.[NAME] AS [Object Name], o.[type_desc] AS [Object Type],
       i.[name] AS [Index Name], STATS_DATE(i.[object_id], i.index_id) AS [Statistics Date], 
-      s.auto_created, s.no_recompute, s.user_created, s.is_incremental, s.is_temporary,
+      s.auto_created, s.no_recompute, s.user_created, s.is_incremental, s.is_temporary, 
+	  s.has_persisted_sample, sp.persisted_sample_percent, 
+	  (sp.rows_sampled * 100)/sp.rows AS [Actual Sample Percent], sp.modification_counter,
 	  st.row_count, st.used_page_count
 FROM sys.objects AS o WITH (NOLOCK)
 INNER JOIN sys.indexes AS i WITH (NOLOCK)
@@ -945,6 +956,7 @@ AND i.index_id = s.stats_id
 INNER JOIN sys.dm_db_partition_stats AS st WITH (NOLOCK)
 ON o.[object_id] = st.[object_id]
 AND i.[index_id] = st.[index_id]
+CROSS APPLY sys.dm_db_stats_properties(s.object_id, s.stats_id) AS sp
 WHERE o.[type] IN ('U', 'V')
 AND st.row_count > 0
 ORDER BY STATS_DATE(i.[object_id], i.index_id) DESC OPTION (RECOMPILE);
@@ -1040,26 +1052,8 @@ ORDER BY s.user_updates DESC OPTION (RECOMPILE);						 -- Order by writes
 -- Show which indexes in the current database are most active for Writes
 
 
--- Get in-memory OLTP index usage (Query 47) (XTP Index Usage)
-SELECT OBJECT_NAME(i.[object_id]) AS [Object Name], i.index_id, i.[name] AS [Index Name],
-       i.[type_desc], xis.scans_started, xis.scans_retries, 
-	   xis.rows_touched, xis.rows_returned
-FROM sys.dm_db_xtp_index_stats AS xis WITH (NOLOCK)
-INNER JOIN sys.indexes AS i WITH (NOLOCK)
-ON i.[object_id] = xis.[object_id] 
-AND i.index_id = xis.index_id 
-ORDER BY OBJECT_NAME(i.[object_id]) OPTION (RECOMPILE);
-------
 
--- This gives you some index usage statistics for in-memory OLTP
--- Returns no data if you are not using in-memory OLTP
-
--- Guidelines for Using Indexes on Memory-Optimized Tables
--- https://bit.ly/2GCP8lF
-
-
-
--- Look at Columnstore index physical statistics (Query 48) (Columnstore Index Physical Stat)
+-- Look at Columnstore index physical statistics (Query 47) (Columnstore Index Physical Stat)
 SELECT OBJECT_NAME(ps.object_id) AS [TableName],  
 	i.[name] AS [IndexName], ps.index_id, ps.partition_number,
 	ps.delta_store_hobt_id, ps.state_desc, ps.total_rows, ps.size_in_bytes,
@@ -1078,7 +1072,7 @@ ORDER BY ps.object_id, ps.partition_number, ps.row_group_id OPTION (RECOMPILE);
 
 
 
--- Get lock waits for current database (Query 49) (Lock Waits)
+-- Get lock waits for current database (Query 48) (Lock Waits)
 SELECT o.name AS [table_name], i.name AS [index_name], ios.index_id, ios.partition_number,
 		SUM(ios.row_lock_wait_count) AS [total_row_lock_waits], 
 		SUM(ios.row_lock_wait_in_ms) AS [total_row_lock_wait_in_ms],
@@ -1101,7 +1095,7 @@ ORDER BY total_lock_wait_in_ms DESC OPTION (RECOMPILE);
 
 
 
--- Look at UDF execution statistics (Query 50) (UDF Statistics)
+-- Look at UDF execution statistics (Query 49) (UDF Statistics)
 SELECT OBJECT_NAME(object_id) AS [Function Name], total_worker_time,
        execution_count, total_elapsed_time,  
        total_elapsed_time/execution_count AS [avg_elapsed_time],  
@@ -1120,7 +1114,7 @@ ORDER BY total_worker_time DESC OPTION (RECOMPILE);
 
 
 
--- Get QueryStore Options for this database (Query 51) (QueryStore Options)
+-- Get QueryStore Options for this database (Query 50) (QueryStore Options)
 SELECT actual_state_desc, desired_state_desc,
        current_storage_size_mb, [max_storage_size_mb], 
 	   query_capture_mode_desc, size_based_cleanup_mode_desc, 
@@ -1135,7 +1129,7 @@ FROM sys.database_query_store_options WITH (NOLOCK) OPTION (RECOMPILE);
 -- https://bit.ly/1kHSl7w
 
 
--- Get highest aggregate duration queries over last hour (Query 52) (High Aggregate Duration Queries)
+-- Get highest aggregate duration queries over last hour (Query 51) (High Aggregate Duration Queries)
 WITH AggregatedDurationLastHour
 AS
 (SELECT q.query_id, SUM(count_executions * avg_duration) AS total_duration,
@@ -1178,7 +1172,7 @@ ORDER BY total_duration DESC OPTION (RECOMPILE);
 -- Requires that QueryStore is enabled for this database
 
 
--- Get input buffer information for the current database (Query 53) (Input Buffer)
+-- Get input buffer information for the current database (Query 52) (Input Buffer)
 SELECT es.session_id, DB_NAME(es.database_id) AS [Database Name],
        es.login_time, es.cpu_time, es.logical_reads,
        es.[status], ib.event_info AS [Input Buffer]
@@ -1197,7 +1191,7 @@ AND es.session_id <> @@SPID OPTION (RECOMPILE);
 
 
 
--- Get any resumable index rebuild operation information (Query 54) (Resumable Index Rebuild)
+-- Get any resumable index rebuild operation information (Query 53) (Resumable Index Rebuild)
 SELECT OBJECT_NAME(iro.object_id) AS [Object Name], iro.index_id, iro.name AS [Index Name],
        iro.sql_text, iro.last_max_dop_used, iro.partition_number, iro.state_desc, iro.start_time, iro.percent_complete
 FROM  sys.index_resumable_operations AS iro WITH (NOLOCK)
@@ -1208,7 +1202,7 @@ OPTION (RECOMPILE);
 -- https://bit.ly/2pYSWqq
 
 
--- Get database automatic tuning options (Query 55) (Automatic Tuning Options)
+-- Get database automatic tuning options (Query 54) (Automatic Tuning Options)
 SELECT [name], desired_state_desc, actual_state_desc, reason_desc
 FROM sys.database_automatic_tuning_options WITH (NOLOCK)
 OPTION (RECOMPILE);
@@ -1219,7 +1213,7 @@ OPTION (RECOMPILE);
 
 
 
--- Get geo-replication link status for all secondary databases (Query 56) (Geo-Replication Link Status)
+-- Get geo-replication link status for all secondary databases (Query 55) (Geo-Replication Link Status)
 SELECT link_guid, partner_server, partner_database, last_replication, 
        replication_lag_sec, replication_state_desc, role_desc, secondary_allow_connections_desc 
 FROM sys.dm_geo_replication_link_status WITH (NOLOCK) OPTION (RECOMPILE);
@@ -1230,7 +1224,7 @@ FROM sys.dm_geo_replication_link_status WITH (NOLOCK) OPTION (RECOMPILE);
 
 
 
--- Retrieve some Azure SQL Database properties (Query 57) (Azure SQL DB Properties)
+-- Retrieve some Azure SQL Database properties (Query 56) (Azure SQL DB Properties)
 SELECT DATABASEPROPERTYEX (DB_NAME(DB_ID()), 'Edition') AS [Database Edition],
 	   DATABASEPROPERTYEX (DB_NAME(DB_ID()), 'ServiceObjective') AS [Service Objective],
 	   DATABASEPROPERTYEX (DB_NAME(DB_ID()), 'MaxSizeInBytes') AS [Max Size In Bytes],
