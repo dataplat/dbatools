@@ -148,8 +148,7 @@ function New-DbaAgentSchedule {
     param (
         [parameter(Mandatory, ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
-        [System.Management.Automation.PSCredential]
-        $SqlCredential,
+        [System.Management.Automation.PSCredential]$SqlCredential,
         [object[]]$Job,
         [object]$Schedule,
         [switch]$Disabled,
@@ -412,7 +411,7 @@ function New-DbaAgentSchedule {
             Stop-Function -Message "Please enter a start time or use -Force to use defaults." -Target $SqlInstance
             return
         } elseif ($StartTime -notmatch $RegexTime) {
-            Stop-Function -Message "Start time $StartTime needs to match between '000000' and '235959'" -Target $SqlInstance
+            Stop-Function -Message "Start time $StartTime needs to match between '000000' and '235959'. Schedule $Schedule not set." -Target $SqlInstance
             return
         }
 
@@ -424,7 +423,7 @@ function New-DbaAgentSchedule {
             Stop-Function -Message "Please enter an end time or use -Force to use defaults." -Target $SqlInstance
             return
         } elseif ($EndTime -notmatch $RegexTime) {
-            Stop-Function -Message "End time $EndTime needs to match between '000000' and '235959'" -Target $SqlInstance
+            Stop-Function -Message "End time $EndTime needs to match between '000000' and '235959'. Schedule $Schedule not set." -Target $SqlInstance
             return
         }
 

@@ -41,15 +41,16 @@ function Install-DbaMaintenanceSolution {
         If this switch is enabled, the corresponding SQL Agent Jobs will be created.
 
     .PARAMETER AutoScheduleJobs
-        Scheduled jobs during an optimal time.
-
-        WeeklyFull will create weekly full, daily differential and 15 minute log backups.
-
-        To skip diffs, specify NoDiff in the values. To perform log backups each hour instead of every
-        15 minutes, specify HourlyLog in the values.
-
-        When AutoScheduleJobs is used, this time will be used as the start time for the jobs unless a schedule already
+        Scheduled jobs during an optimal time. When AutoScheduleJobs is used, this time will be used as the start time for the jobs unless a schedule already
         exists in the same time slot. If so, then it will add an hour until it finds an open time slot. Defaults to 1:15 AM.
+
+        WeeklyFull will create weekly full, daily differential and 15 minute log backups of _user_ databases.
+
+        _System_ databases will always be backed up daily.
+
+        Differentials will be skipped when NoDiff or DailyFull is specified.
+
+        To perform log backups each hour instead of every 15 minutes, specify HourlyLog in the values.
 
         Recommendations can be found on Ola's site: https://ola.hallengren.com/frequently-asked-questions.html
 
@@ -148,9 +149,44 @@ function Install-DbaMaintenanceSolution {
         This will create the Queue and QueueDatabase tables for uses when manually changing jobs to use the @DatabasesInParallel = 'Y' flag
 
     .EXAMPLE
-        PS C:\> Install-DbaMaintenanceSolution -SqlInstance sql01 -InstallJobs -AutoScheduleJobs WeeklyFull
+        PS C:\> $params = @{
+        >> SqlInstance = "localhost"
+        >> InstallJobs = $true
+        >> CleanupTime = 720
+        >> AutoSchedule = "WeeklyFull"
+        >> }
+        >> Install-DbaMaintenanceSolution @params
 
-        This will create the Ola Hallengren's Solution objects and the SQL Agent Jobs. The jobs will be scheduled to run weekly full, daily differential and 15 minute log backups.
+        This will create the Ola Hallengren's Solution objects and the SQL Agent Jobs.
+
+        WeeklyFull will create weekly full, daily differential and 15 minute log backups of _user_ databases.
+
+        _System_ databases will be backed up daily.
+
+        Databases will be backed up to the default location for the instance, and backups will be deleted after 720 hours (30 days).
+
+        See https://github.com/dataplat/dbatools/pull/8911 for details on job schedules.
+
+    .EXAMPLE
+        PS C:\> $params = @{
+        >> SqlInstance = "localhost"
+        >> InstallJobs = $true
+        >> CleanupTime = 720
+        >> AutoScheduleJobs = "DailyFull", "HourlyLog"
+        >> BackupLocation = "\\sql\backups"
+        >> StartTime = "231500"
+        >> }
+
+        PS C:\> Install-DbaMaintenanceSolution @params
+
+        This will create the Ola Hallengren's Solution objects and the SQL Agent Jobs.
+
+        The jobs will be scheduled to run daily full user backups at 11:15pm, no differential backups will be created and hourly log backups will be made.
+        System databases will be backed up at 1:15 am, two hours after the user databases.
+
+        Databases will be backed up to a fileshare, and the backups will be deleted after 720 hours (30 days).
+
+        See https://blog.netnerds.net/2023/05/install-dbamaintenancesolution-now-supports-auto-scheduling/ for more information.
 
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Medium")]
@@ -159,7 +195,7 @@ function Install-DbaMaintenanceSolution {
         [parameter(Mandatory, ValueFromPipeline)]
         [DbaInstance[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [object]$Database = "master",
+        [string]$Database = "master",
         [string]$BackupLocation,
         [int]$CleanupTime,
         [string]$OutputFileDirectory,
@@ -463,20 +499,32 @@ function Install-DbaMaintenanceSolution {
                     }
                 }
 
-                $fullparams = @{
-                    SqlInstance       = $server
-                    Job               = "DatabaseBackup - USER_DATABASES - FULL"
-                    Schedule          = "Weekly Full User Backup"
-                    FrequencyType     = "Weekly"
-                    FrequencyInterval = "Sunday" # 1
-                    StartTime         = $start
-                    Force             = $true
+                if ("WeeklyFull" -in $AutoScheduleJobs) {
+                    $fullparams = @{
+                        SqlInstance       = $server
+                        Job               = "DatabaseBackup - USER_DATABASES - FULL"
+                        Schedule          = "Weekly Full User Backup"
+                        FrequencyType     = "Weekly"
+                        FrequencyInterval = "Sunday" # 1
+                        StartTime         = $start
+                        Force             = $true
+                    }
+                } elseif ("DailyFull" -in $AutoScheduleJobs) {
+                    $fullparams = @{
+                        SqlInstance       = $server
+                        Job               = "DatabaseBackup - USER_DATABASES - FULL"
+                        Schedule          = "Daily Full User Backup"
+                        FrequencyType     = "Daily"
+                        FrequencyInterval = "EveryDay"
+                        StartTime         = $start
+                        Force             = $true
+                    }
                 }
 
                 $fullschedule = New-DbaAgentSchedule @fullparams
 
                 if ($fullschedule.ActiveStartTimeOfDay) {
-                    $systemdaily = $fullschedule.ActiveStartTimeOfDay.Add($twohours) -replace ":|\-", ""
+                    $systemdaily = $fullschedule.ActiveStartTimeOfDay.Add($twohours) -replace ":|\-|1\.", ""
                 } else {
                     $systemdaily = "031500"
                 }
@@ -494,7 +542,7 @@ function Install-DbaMaintenanceSolution {
                 $null = New-DbaAgentSchedule @fullsystemparams
 
                 if ($fullschedule.ActiveStartTimeOfDay) {
-                    $integrity = $fullschedule.ActiveStartTimeOfDay.Subtract($twelvehours) -replace ":|\-", ""
+                    $integrity = $fullschedule.ActiveStartTimeOfDay.Subtract($twelvehours) -replace ":|\-|1\.", ""
                 } else {
                     $integrity = "044500"
                 }
@@ -512,7 +560,7 @@ function Install-DbaMaintenanceSolution {
                 $null = New-DbaAgentSchedule @integrityparams
 
                 if ($fullschedule.ActiveStartTimeOfDay) {
-                    $indexoptimize = $fullschedule.ActiveStartTimeOfDay.Subtract($twentyfourhours) -replace ":|\-", ""
+                    $indexoptimize = $fullschedule.ActiveStartTimeOfDay.Subtract($twentyfourhours) -replace ":|\-|1\.", ""
                 } else {
                     $indexoptimize = "224500"
                 }
@@ -530,7 +578,7 @@ function Install-DbaMaintenanceSolution {
 
                 $null = New-DbaAgentSchedule @integrityparams
 
-                if ("NoDiff" -notin $AutoScheduleJobs) {
+                if ("NoDiff" -notin $AutoScheduleJobs -and "DailyFull" -notin $AutoScheduleJobs) {
                     $diffparams = @{
                         SqlInstance       = $server
                         Job               = "DatabaseBackup - USER_DATABASES - DIFF"
@@ -540,7 +588,6 @@ function Install-DbaMaintenanceSolution {
                         StartTime         = $start
                         Force             = $true
                     }
-
                     $null = New-DbaAgentSchedule @diffparams
                 }
 
