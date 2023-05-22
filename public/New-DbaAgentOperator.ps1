@@ -172,7 +172,7 @@ function New-DbaAgentOperator {
                 Stop-Function -Message "Please enter Saturday start time or use -Force to use defaults."
                 return
             } elseif ($SaturdayStartTime -notmatch $RegexTime) {
-                Stop-Function -Message "Start time $SaturdayStartTime needs to match between '000000' and '235959'"
+                Stop-Function -Message "Start time $SaturdayStartTime needs to match between '000000' and '235959'. Pager Day not set."
                 return
             }
 
@@ -184,7 +184,7 @@ function New-DbaAgentOperator {
                 Stop-Function -Message "Please enter a Saturday end time or use -Force to use defaults."
                 return
             } elseif ($SaturdayEndTime -notmatch $RegexTime) {
-                Stop-Function -Message "End time $SaturdayEndTime needs to match between '000000' and '235959'"
+                Stop-Function -Message "End time $SaturdayEndTime needs to match between '000000' and '235959'. Pager Day not set."
                 return
             }
         }
@@ -198,7 +198,7 @@ function New-DbaAgentOperator {
                 Stop-Function -Message "Please enter a Sunday start time or use -Force to use defaults."
                 return
             } elseif ($SundayStartTime -notmatch $RegexTime) {
-                Stop-Function -Message "Start time $SundayStartTime needs to match between '000000' and '235959'"
+                Stop-Function -Message "Start time $SundayStartTime needs to match between '000000' and '235959'. Pager Day not set."
                 return
             }
 
@@ -210,7 +210,7 @@ function New-DbaAgentOperator {
                 Stop-Function -Message "Please enter a Sunday End Time or use -Force to use defaults."
                 return
             } elseif ($SundayEndTime -notmatch $RegexTime) {
-                Stop-Function -Message "Sunday End time $SundayEndTime needs to match between '000000' and '235959'"
+                Stop-Function -Message "Sunday End time $SundayEndTime needs to match between '000000' and '235959'. Pager Day not set."
                 return
             }
         }
@@ -224,7 +224,7 @@ function New-DbaAgentOperator {
                 Stop-Function -Message "Please enter Weekday Start Time or use -Force to use defaults."
                 return
             } elseif ($WeekdayStartTime -notmatch $RegexTime) {
-                Stop-Function -Message "Weekday Start time $WeekdayStartTime needs to match between '000000' and '235959'"
+                Stop-Function -Message "Weekday Start time $WeekdayStartTime needs to match between '000000' and '235959'. Pager Day not set."
                 return
             }
 
@@ -236,7 +236,7 @@ function New-DbaAgentOperator {
                 Stop-Function -Message "Please enter a Weekday End Time or use -Force to use defaults."
                 return
             } elseif ($WeekdayEndTime -notmatch $RegexTime) {
-                Stop-Function -Message "Weekday End time $WeekdayEndTime needs to match between '000000' and '235959'"
+                Stop-Function -Message "Weekday End time $WeekdayEndTime needs to match between '000000' and '235959'. Pager Day not set."
                 return
             }
         }

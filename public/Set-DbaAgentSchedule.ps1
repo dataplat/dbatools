@@ -351,13 +351,13 @@ function Set-DbaAgentSchedule {
 
         # Check the start time
         if ($StartTime -and ($StartTime -notmatch $RegexTime)) {
-            Stop-Function -Message "Start time $StartTime needs to match between '000000' and '235959'" -Target $SqlInstance
+            Stop-Function -Message "Start time $StartTime needs to match between '000000' and '235959'. Schedule $ScheduleName not set." -Target $SqlInstance
             return
         }
 
         # Check the end time
         if ($EndTime -and ($EndTime -notmatch $RegexTime)) {
-            Stop-Function -Message "End time $EndTime needs to match between '000000' and '235959'" -Target $SqlInstance
+            Stop-Function -Message "End time $EndTime needs to match between '000000' and '235959'. Schedule $ScheduleName not set." -Target $SqlInstance
             return
         }
 
