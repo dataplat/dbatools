@@ -421,7 +421,7 @@
         'Install-DbaMultiTool',
         'Install-DbaSqlWatch',
         'Install-DbaWhoIsActive',
-        'Invoke-DbaDbAzSqlTips',
+        'Invoke-DbaDbAzSqlTip',
         'Invoke-DbaAdvancedInstall',
         'Invoke-DbaAdvancedRestore',
         'Invoke-DbaAdvancedUpdate',
