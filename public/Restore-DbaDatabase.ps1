@@ -314,10 +314,10 @@ function Restore-DbaDatabase {
         In this example we restore example1 database with no recovery, and then the second call is to set the database to recovery.
 
     .EXAMPLE
-        PS C:\> Get-DbaDbBackupHistory - SqlInstance server\instance1 -Database ProdFinance -Last | Restore-DbaDatabase -PageRestore
-        PS C:\> $SuspectPage -PageRestoreTailFolder c:\temp -TrustDbBackupHistory
+        PS C:\> $SuspectPage = Get-DbaSuspectPage -SqlInstance server\instance1 -Database ProdFinance
+        PS C:\> Get-DbaDbBackupHistory -SqlInstance server\instance1 -Database ProdFinance -Last | Restore-DbaDatabase -PageRestore $SuspectPage -PageRestoreTailFolder c:\temp -TrustDbBackupHistory
 
-        Gets a list of Suspect Pages using Get-DbaSuspectPage. The uses Get-DbaDbBackupHistory and Restore-DbaDatabase to perform a restore of the suspect pages and bring them up to date
+        Gets a list of Suspect Pages using Get-DbaSuspectPage. Then uses Get-DbaDbBackupHistory and Restore-DbaDatabase to perform a restore of the suspect pages and bring them up to date
         If server\instance1 is Enterprise edition this will be done online, if not it will be performed offline
 
     .EXAMPLE
