@@ -46,7 +46,7 @@ function Add-DbaReplArticle {
 
     .NOTES
         Tags: Replication
-        Author: Jess Pomfret (@jpomfret)
+        Author: Jess Pomfret (@jpomfret), jesspomfret.com
 
         Website: https://dbatools.io
         Copyright: (c) 2022 by dbatools, licensed under MIT
@@ -88,9 +88,17 @@ function Add-DbaReplArticle {
 
         [String]$Filter,
 
+        #TODO: Build a New-DbaReplArticleOptions function
+        [Microsoft.SqlServer.Replication.ArticleOptions]$ArticleOptions,
+
         [Switch]$EnableException
     )
     process {
+
+        if (Test-Bound -not ArticleOptions) {
+            $ArticleOptions = New-Object Microsoft.SqlServer.Replication.ArticleOptions
+        }
+
         foreach ($instance in $SqlInstance) {
             try {
                 $replServer = Get-DbaReplServer -SqlInstance $instance -SqlCredential $SqlCredential
@@ -104,7 +112,7 @@ function Add-DbaReplArticle {
 
                     $pub = Get-DbaReplPublication -SqlInstance $instance -SqlCredential $SqlCredential -Name $PublicationName
 
-                    $articleOptions = New-Object Microsoft.SqlServer.Replication.ArticleOptions
+
 
                     if ($pub.Type -in ('Transactional', 'Snapshot')) {
                         $article = New-Object Microsoft.SqlServer.Replication.TransArticle
@@ -133,6 +141,9 @@ function Add-DbaReplArticle {
                     } else {
                         Stop-Function -Message "Article already exists in $PublicationName on $instance" -ErrorRecord $_ -Target $instance -Continue
                     }
+
+                    # need to refresh subscriptions so they know about new articles
+                    $pub.RefreshSubscriptions()
                 }
             } catch {
                 Stop-Function -Message "Unable to add article $Name to $PublicationName on $instance" -ErrorRecord $_ -Target $instance -Continue

@@ -62,9 +62,9 @@ function New-DbaReplPublication {
         https://dbatools.io/New-DbaReplPublication
 
     .EXAMPLE
-        PS C:\> New-DbaReplPublication -SqlInstance mssql1 -Database Northwind -PublicationName PubFromPosh
+        PS C:\> New-DbaReplPublication -SqlInstance mssql1 -Database Northwind -PublicationName PubFromPosh -Type Transactional
 
-        Creates a publication called PubFromPosh for the Northwind database on mssql1
+        Creates a transactional publication called PubFromPosh for the Northwind database on mssql1
 
     #>
     [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess, ConfirmImpact = 'Medium')]
@@ -99,6 +99,7 @@ function New-DbaReplPublication {
             try {
                 if ($PSCmdlet.ShouldProcess($instance, "Creating publication on $instance")) {
 
+                    #TODO: could replace this with call to Connect-ReplicationDB
                     $pubDatabase = New-Object Microsoft.SqlServer.Replication.ReplicationDatabase
                     $pubDatabase.ConnectionContext = $replServer.ConnectionContext
                     $pubDatabase.Name = $Database
@@ -109,12 +110,12 @@ function New-DbaReplPublication {
                     if ($Type -in ('Transactional', 'Snapshot')) {
                         Write-Message -Level Verbose -Message "Enable trans publishing publication on $instance.$Database"
                         $pubDatabase.EnabledTransPublishing = $true
+                        $pubDatabase.CommitPropertyChanges()
                     } elseif ($Type -eq 'Merge') {
                         Write-Message -Level Verbose -Message "Enable merge publishing publication on $instance.$Database"
                         $pubDatabase.EnabledMergePublishing = $true
-                        $pubDatabase.CommitPropertyChanges
+                        $pubDatabase.CommitPropertyChanges()
                     }
-                    #TODO: snapshot repl?
 
                     if (-not $pubDatabase.LogReaderAgentExists) {
                         #TODO: if this needed for merge?

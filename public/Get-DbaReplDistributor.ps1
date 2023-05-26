@@ -6,6 +6,7 @@ function Get-DbaReplDistributor {
     .DESCRIPTION
         This function locates and enumerates distributor information for a given SQL Server instance.
 
+        TODO: I think we can remove this?
         All replication commands need SQL Server Management Studio installed and are therefore currently not supported.
         Have a look at this issue to get more information: https://github.com/dataplat/dbatools/issues/7428
 
@@ -40,6 +41,10 @@ function Get-DbaReplDistributor {
 
         Retrieve distributor information for servers sql2008 and sqlserver2012.
 
+    .EXAMPLE
+        PS C:\> Connect-DbaInstance -SqlInstance mssql1 | Get-DbaReplDistributor
+
+        Pipe a SQL Server instance to Get-DbaReplDistributor to retrieve distributor information.
     #>
     [CmdletBinding()]
     param (
@@ -48,9 +53,6 @@ function Get-DbaReplDistributor {
         [PSCredential]$SqlCredential,
         [switch]$EnableException
     )
-    begin {
-        Add-ReplicationLibrary
-    }
     process {
         if (Test-FunctionInterrupt) { return }
         foreach ($instance in $SqlInstance) {
@@ -59,12 +61,12 @@ function Get-DbaReplDistributor {
             # Connect to the distributor of the instance
             try {
                 $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential
-                $sqlconn = New-SqlConnection -SqlInstance $instance -SqlCredential $SqlCredential
-
-                $distributor = New-Object Microsoft.SqlServer.Replication.ReplicationServer $sqlconn
+                $distributor = Get-DbaReplServer -SqlInstance $instance -SqlCredential $SqlCredential
             } catch {
                 Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
+            Write-Message -Level Verbose -Message "Getting publisher for $server"
+
 
             Add-Member -Force -InputObject $distributor -MemberType NoteProperty -Name ComputerName -Value $server.ComputerName
             Add-Member -Force -InputObject $distributor -MemberType NoteProperty -Name InstanceName -Value $server.ServiceName
