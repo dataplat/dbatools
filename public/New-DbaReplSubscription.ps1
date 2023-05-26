@@ -25,7 +25,6 @@ function New-DbaReplSubscription {
     .PARAMETER Type
         The flavour of the subscription. Push or Pull.
 
-
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -77,7 +76,7 @@ function New-DbaReplSubscription {
         $SubscriptionSqlCredential,
 
         [parameter(Mandatory)]
-        [ValidateSet("Push", "Pull")] #TODO: make this do something :)
+        [ValidateSet("Push", "Pull")]
         [String]$Type,
 
         [Switch]$EnableException
@@ -87,13 +86,15 @@ function New-DbaReplSubscription {
 
         # connect to publisher and get the publication
         try {
-            $replServer = Get-DbaReplServer -SqlInstance $PublisherSqlInstance -SqlCredential $PublisherSqlCredential
+            $pubReplServer = Get-DbaReplServer -SqlInstance $PublisherSqlInstance -SqlCredential $PublisherSqlCredential
         } catch {
             Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
         }
 
         try {
             $pub = Get-DbaReplPublication -SqlInstance $PublisherSqlInstance -SqlCredential $PublisherSqlCredential -Name $PublicationName
+
+
         } catch {
             Stop-Function -Message ("Publication {0} not found on {1}" -f $PublicationName, $instance) -ErrorRecord $_ -Target $instance -Continue
         }
@@ -109,7 +110,7 @@ function New-DbaReplSubscription {
                 $subReplServer = get-DbaReplServer -SqlInstance $instance -SqlCredential $SqlCredential
 
                 if (-not (Get-DbaDatabase -SqlInstance $instance -SqlCredential $SqlCredential -Database $Database)) {
-                    Write-Message -Level Verbose -Message "Subscription database $Database not found on $instance - will create it"
+                    Write-Message -Level Verbose -Message "Subscription database $Database not found on $instance - will create it - but you should check the settings!"
 
                     if ($PSCmdlet.ShouldProcess($instance, "Creating subscription database")) {
 
@@ -133,17 +134,21 @@ function New-DbaReplSubscription {
                     if ($pub.Type -in ('Transactional', 'Snapshot')) {
 
                         $transPub = New-Object Microsoft.SqlServer.Replication.TransPublication
-                        $transPub.ConnectionContext = $replServer.ConnectionContext
+                        $transPub.ConnectionContext = $pubReplServer.ConnectionContext
                         $transPub.DatabaseName = $PublicationDatabase
                         $transPub.Name = $PublicationName
 
                         # if LoadProperties returns then the publication was found
                         if ( $transPub.LoadProperties() ) {
 
-                            if ($type = 'Push') {
+                            if ($type -eq 'Push') {
 
                                 # Perform a bitwise logical AND (& in Visual C# and And in Visual Basic) between the Attributes property and AllowPush.
-                                if ($transPub.Attributes -band 'ALlowPush' -eq 'None' ) {
+                                if (($transPub.Attributes -band [Microsoft.SqlServer.Replication.PublicationAttributes]::ALlowPush) -ne [Microsoft.SqlServer.Replication.PublicationAttributes]::ALlowPush) {
+
+                                    # # Perform a bitwise logical AND (& in Visual C# and And in Visual Basic) between the Attributes property and AllowPush.
+                                    # if ($transPub.Attributes -band 'AllowPush' -eq 'None' ) {
+
                                     # If the result is None, set Attributes to the result of a bitwise logical OR (| in Visual C# and Or in Visual Basic) between Attributes and AllowPush.
                                     $transPub.Attributes = $transPub.Attributes -bor 'AllowPush'
 
@@ -152,7 +157,7 @@ function New-DbaReplSubscription {
                                 }
                             } else {
                                 # Perform a bitwise logical AND (& in Visual C# and And in Visual Basic) between the Attributes property and AllowPull.
-                                if ($transPub.Attributes -band 'ALlowPull' -eq 'None' ) {
+                                if ($transPub.Attributes -band 'AllowPull' -eq 'None' ) {
                                     # If the result is None, set Attributes to the result of a bitwise logical OR (| in Visual C# and Or in Visual Basic) between Attributes and AllowPull.
                                     $transPub.Attributes = $transPub.Attributes -bor 'AllowPull'
 
@@ -163,7 +168,7 @@ function New-DbaReplSubscription {
 
                             # create the subscription
                             $transSub = New-Object Microsoft.SqlServer.Replication.TransSubscription
-                            $transSub.ConnectionContext = $subReplServer.ConnectionContext
+                            $transSub.ConnectionContext = $pubReplServer.ConnectionContext
                             $transSub.SubscriptionDBName = $Database
                             $transSub.SubscriberName = $instance
                             $transSub.DatabaseName = $PublicationDatabase
@@ -201,7 +206,7 @@ function New-DbaReplSubscription {
                     } elseif ($pub.Type -eq 'Merge') {
 
                         $mergePub = New-Object Microsoft.SqlServer.Replication.MergePublication
-                        $mergePub.ConnectionContext = $replServer.ConnectionContext
+                        $mergePub.ConnectionContext = $pubReplServer.ConnectionContext
                         $mergePub.DatabaseName = $PublicationDatabase
                         $mergePub.Name = $PublicationName
 
@@ -235,7 +240,7 @@ function New-DbaReplSubscription {
                                 $mergeSub = New-Object Microsoft.SqlServer.Replication.MergePullSubscription
                             }
 
-                            $mergeSub.ConnectionContext = $replServer.ConnectionContext
+                            $mergeSub.ConnectionContext = $pubReplServer.ConnectionContext
                             $mergeSub.SubscriptionDBName = $Database
                             $mergeSub.SubscriberName = $instance
                             $mergeSub.DatabaseName = $PublicationDatabase

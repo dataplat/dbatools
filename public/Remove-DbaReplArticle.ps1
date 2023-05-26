@@ -15,6 +15,8 @@ If an article is dropped after one or more subscriptions is created, the subscri
 Dropping an article from a publication involves dropping the article and creating a new snapshot for the publication.
 Dropping an article invalidates the current snapshot; therefore a new snapshot must be created.
 
+TODO: WARNING: [16:39:55][Remove-DbaReplArticle] Unable to remove article  from testPub on mssql1 | Could not drop article. A subscription exists on it.
+Need to drop from sub?
 
 https://learn.microsoft.com/en-us/sql/relational-databases/replication/publish/add-articles-to-and-drop-articles-from-existing-publications?view=sql-server-ver16
 
@@ -117,6 +119,12 @@ https://learn.microsoft.com/en-us/sql/relational-databases/replication/publish/a
                     $article.SourceObjectOwner  = $Schema
                     $article.PublicationName    = $PublicationName
                     $article.DatabaseName       = $Database
+
+                    #TODO: Fix this - hard coded subscriber name
+                    # if it has a subscription, we need to drop it first = can't work it out with RMO
+                    # how do we get subscriber name too?
+                    $query = "exec sp_dropsubscription @publication = '{0}', @article= '{1}',@subscriber = '{2}'" -f $PublicationName, $Name, 'mssql2'
+                    Invoke-DbaQuery -SqlInstance $instance -SqlCredential $SqlCredential -Database $Database -query $query
 
                     if (($article.IsExistingObject)) {
                         $article.Remove()

@@ -1,22 +1,17 @@
 function Get-DbaReplPublication {
     <#
     .SYNOPSIS
-        Displays all publications for a server or database.
+        Displays all publications on a server.
 
     .DESCRIPTION
-        Quickly find all transactional, merge, and snapshot publications on a specific server or database.
+        Quickly find all transactional, merge, and snapshot publications on a server or filter by database, name or type.
 
+        TODO: is this still true? remove?
         All replication commands need SQL Server Management Studio installed and are therefore currently not supported.
         Have a look at this issue to get more information: https://github.com/dataplat/dbatools/issues/7428
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.
-
-    .PARAMETER Database
-        The database(s) to process. If unspecified, all databases will be processed.
-
-    .PARAMETER Name
-        The name of the publication.
 
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
@@ -25,8 +20,14 @@ function Get-DbaReplPublication {
 
         For MFA support, please use Connect-DbaInstance.
 
+    .PARAMETER Database
+        The database(s) to process. If unspecified, all databases will be processed.
+
+    .PARAMETER Name
+        The name of the publication.
+
     .PARAMETER Type
-        Limit by specific type of publication. Valid choices include: Transactional, Merge, Snapshot
+        Limit by specific type of publication. Valid choices include: Transactional, Merge, Snapshot.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -57,19 +58,24 @@ function Get-DbaReplPublication {
     .EXAMPLE
         PS C:\> Get-DbaReplPublication -SqlInstance sql2008 -Type Transactional
 
-        Return all publications on server sql2008 for all databases that have Transactional publications
+        Return all transactional publications on server sql2008.
 
     .EXAMPLE
         PS C:\> Get-DbaReplPublication -SqlInstance mssql1 -Name Mergey
 
         Returns the Mergey publications on server mssql1
+
+    .EXAMPLE
+        PS C:\> Connect-DbaInstance -SqlInstance mssql1 | Get-DbaReplPublication
+
+        Returns all publications on server mssql1 using the pipeline.
     #>
     [CmdletBinding()]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
-        [object[]]$Database,
         [PSCredential]$SqlCredential,
+        [object[]]$Database,
         [String]$Name,
         [Alias("PublicationType")]
         [ValidateSet("Transactional", "Merge", "Snapshot")]
@@ -82,7 +88,7 @@ function Get-DbaReplPublication {
     process {
         if (Test-FunctionInterrupt) { return }
         foreach ($instance in $SqlInstance) {
-
+            write-message 'jo'
             # Connect to Publisher
             try {
                 $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
@@ -90,48 +96,58 @@ function Get-DbaReplPublication {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
-            $databases = $server.Databases | Where-Object { $_.IsAccessible -eq $true -and (-not $_.IsSystemObject) }
-            if ($Database) {
-                $databases = $databases | Where-Object Name -In $Database
+            try {
+                $databases = $server.Databases | Where-Object { $_.IsAccessible -eq $true -and (-not $_.IsSystemObject) }
+                if ($Database) {
+                    $databases = $databases | Where-Object Name -In $Database
+                }
+            } catch {
+                Stop-Function -Message "Unable to get databases for" -ErrorRecord $_ -Target $server -Continue
             }
 
-            foreach ($db in $databases) {
+            try {
+                foreach ($db in $databases) {
 
-                if (($db.ReplicationOptions -ne "Published") -and ($db.ReplicationOptions -ne "MergePublished")) {
-                    #TODO: is this right - it doesn't actually skip the database
-                    Write-Message -Level Verbose -Message "Skipping $($db.name). Database is not published."
-                }
-
-                $repDB = Connect-ReplicationDB -Server $server -Database $db
-
-                $pubTypes = $repDB.TransPublications + $repDB.MergePublications
-
-                if ($Type) {
-                    $pubTypes = $pubTypes | Where-Object Type -in $Type
-                }
-
-                if ($Name) {
-                    $pubTypes = $pubTypes | Where-Object Name -in $Name
-                }
-                #TODO: Check why if -Database is not passed, I can't see the articles
-                foreach ($pub in $pubTypes) {
-                    if ($pub.Type -eq 'Merge') {
-                        $articles = $pub.MergeArticles
-                    } else {
-                        $articles = $pub.TransArticles
+                    #test if the database published
+                    if ((($db.ReplicationOptions -band [Microsoft.SqlServer.Management.Smo.ReplicationOptions]::Published) -ne [Microsoft.SqlServer.Management.Smo.ReplicationOptions]::Published) -and
+                        (($db.ReplicationOptions -band [Microsoft.SqlServer.Management.Smo.ReplicationOptions]::MergePublished) -ne [Microsoft.SqlServer.Management.Smo.ReplicationOptions]::MergePublished)) {
+                        # The database is not published
+                        Write-Message -Level Verbose -Message "Skipping $($db.name). Database is not published."
+                        continue
                     }
-                    #TODO: can this return a replication object?
-                    [PSCustomObject]@{
-                        ComputerName = $server.ComputerName
-                        InstanceName = $server.ServiceName
-                        SqlInstance  = $server.Name
-                        Server       = $server.name
-                        Database     = $db.name
-                        Name         = $pub.Name  #TODO: breaking change from PublicationName to Name
-                        Type         = $pub.Type  #TODO: breaking change from PublicationType to Type
-                        Articles     = $articles
+
+                    $repDB = Connect-ReplicationDB -Server $server -Database $db
+
+                    $pubTypes = $repDB.TransPublications + $repDB.MergePublications
+
+                    if ($Type) {
+                        $pubTypes = $pubTypes | Where-Object Type -in $Type
+                    }
+
+                    if ($Name) {
+                        $pubTypes = $pubTypes | Where-Object Name -in $Name
+                    }
+
+                    #TODO: Check why if -Database is not passed, I can't see the articles (JP - this works for me... 🤔)
+                    foreach ($pub in $pubTypes) {
+                        if ($pub.Type -eq 'Merge') {
+                            $articles = $pub.MergeArticles
+                        } else {
+                            $articles = $pub.TransArticles
+                        }
+
+                        Add-Member -Force -InputObject $pub -MemberType NoteProperty -Name ComputerName -Value $server.ComputerName
+                        Add-Member -Force -InputObject $pub -MemberType NoteProperty -Name InstanceName -Value $server.ServiceName
+                        Add-Member -Force -InputObject $pub -MemberType NoteProperty -Name SqlInstance -Value $server.DomainInstanceName
+                        Add-Member -Force -InputObject $pub -MemberType NoteProperty -Name Articles -Value $articles
+
+                        Select-DefaultView -InputObject $pub -Property ComputerName, InstanceName, SqlInstance, DatabaseName, Name, Type, Articles
+                        #TODO: breaking change from PublicationName to Name
+                        #TODO: breaking change from PublicationType to Type
                     }
                 }
+            } catch {
+                Stop-Function -Message "Unable to get publications from " -ErrorRecord $_ -Target $server -Continue
             }
         }
     }
