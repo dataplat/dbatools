@@ -73,6 +73,8 @@ Get-DbaReplPublication -SqlInstance mssql1
 Enable-DbaReplDistributor -SqlInstance mssql1
 Disable-DbaReplDistributor -SqlInstance  mssql1
 
+Get-DbaReplDistributor -SqlInstance
+
 # enable publishing
 Enable-DbaReplPublishing -SqlInstance mssql1
 Disable-DbaReplPublishing -SqlInstance mssql1
@@ -85,7 +87,7 @@ $pub = @{
     Type            = 'Transactional'
 
 }
-New-DbaReplPublication @pub
+New-DbaReplPublication @pub -verbose
 
 
 
@@ -117,34 +119,17 @@ $article = @{
     Database        = 'pubs'
     PublicationName = 'testpub'
     Name            = 'publishers'
-    Filter          = "city = 'seattle'"  ## not working?
+    Filter          = "city = 'seattle'"
 }
 Add-DbaReplArticle @article
 
 $article = @{
     SqlInstance     = 'mssql1'
-    Database        = 'pubs'
-    PublicationName = 'testpub'
-    Name            = 'publishers'
-}
-Add-DbaReplArticle @article -EnableException
-
-
-$article = @{
-    SqlInstance     = 'mssql1'
     Database        = 'ReplDb'
     PublicationName = 'testtrans'
     Name            = 'ReplicateMe'
 }
 Add-DbaReplArticle @article -EnableException
-
-$article = @{
-    SqlInstance     = 'mssql1'
-    Database        = 'ReplDb'
-    PublicationName = 'testtrans'
-    Name            = 'ReplicateMe'
-}
-Remove-DbaReplArticle @article
 
 # mergey
 $article = @{
