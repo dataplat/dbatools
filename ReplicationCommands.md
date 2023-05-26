@@ -56,7 +56,7 @@ Meaning of the checkmarks:
 - [ ] Get-DbaReplSnapshotAgentStatus
 - [ ] Get-DbaReplLogReaderAgentStatus
 - [ ] Test-DbaReplSnapFolder - similar to Test-DbaPath but from replication service account perspective or something similar to check If the share (UNC or Local) is accessible from both, publisher and subscriber side
-
+- [ ] Reinitialise-? - what do we need here
 ## How to run pester tests locally
 
 ```PowerShell
