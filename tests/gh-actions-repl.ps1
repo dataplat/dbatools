@@ -41,6 +41,10 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
             It "distribution database name is correct" {
                 (Get-DbaReplDistributor).DistributionDatabases.Name | Should -Be 'distribution'
             }
+
+            It "can pipe a sql server object to it" {
+                Connect-DbaInstance | Get-DbaReplDistributor | Should -Not -BeNullOrEmpty
+            }
         }
 
         Context "Get-DbaReplPublisher works" {
@@ -58,6 +62,10 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
 
             It "gets a publisher" {
                 (Get-DbaReplPublisher).PublisherType | Should -Be "MSSQLSERVER"
+            }
+
+            It "gets a publisher using piping" {
+                (Connect-DbaInstance | Get-DbaReplPublisher).PublisherType | Should -Be "MSSQLSERVER"
             }
 
         }
@@ -190,6 +198,47 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
             }
 
         }
+
+        Context "Get-DbaReplPublication works" {
+            BeforeAll {
+                # if distribution is disabled - enable it
+                if (-not (Get-DbaReplDistributor).IsDistributor) {
+                    Enable-DbaReplDistributor
+                }
+
+                # if publishing is disabled - enable it
+                if (-not (Get-DbaReplServer).IsPublisher) {
+                    Enable-DbaReplPublishing -PublisherSqlLogin $cred -EnableException
+                }
+
+                # create a publication
+                $name = 'TestPub'
+                New-DbaReplPublication -Database ReplDb -Type Transactional -PublicationName ('{0}-Trans' -f $Name)
+                New-DbaReplPublication -Database ReplDb -Type Merge -PublicationName ('{0}-Merge' -f $Name)
+                $null = New-DbaDatabase -Name Test
+                New-DbaReplPublication -Database Test -Type Snapshot -PublicationName ('{0}-Snapshot' -f $Name)
+            }
+
+            It "gets all publications" {
+                Get-DbaReplPublication | Should -Not -BeNullOrEmpty
+            }
+
+            It "gets publications for a specific database" {
+                Get-DbaReplPublication -Database ReplDb | Should -Not -BeNullOrEmpty
+                (Get-DbaRepPublication -Database ReplDb).Database | ForEach-Object { $_ | Should -Be 'ReplDb' }
+            }
+
+            It "gets publications for a specific type" {
+                Get-DbaReplPublication -Type Transactional | Should -Not -BeNullOrEmpty
+                (Get-DbaRepPublication -Type Transactional).Type | ForEach-Object { $_ | Should -Be 'Transactional' }
+            }
+
+            It "works with piping" {
+                Connect-DbaInstance | Get-DbaReplPublication | Should -Not -BeNullOrEmpty
+            }
+        }
+
+
 
         Context "New-DbaReplPublication works" {
             BeforeAll {
