@@ -534,6 +534,7 @@ function New-DbaAgentSchedule {
                     if ($PSCmdlet.ShouldProcess($instance, "Adding the schedule $schedule to job $($j.Name)")) {
                         Write-Message -Message "Adding schedule $Schedule to job $($j.Name)" -Level Verbose
                         $j.AddSharedSchedule($jobschedule.Id)
+                        $jobschedule.Refresh()
                     }
                 }
             }
