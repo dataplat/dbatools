@@ -60,7 +60,6 @@ function Get-DbaReplServer {
         if (Test-FunctionInterrupt) { return }
         foreach ($instance in $SqlInstance) {
             try {
-                # use System.Data instead of Microsoft.Data
                 $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential
                 $sqlCon = New-SqlConnection -SqlInstance $instance -SqlCredential $SqlCredential
                 $replServer = New-Object Microsoft.SqlServer.Replication.ReplicationServer $sqlCon
