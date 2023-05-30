@@ -328,6 +328,33 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
             }
             $articleName = 'ReplicateMe'
         }
+
+        Context "New-DbaReplCreationScriptOptions works" {
+            It "New-DbaReplCreationScriptOptions creates a Microsoft.SqlServer.Replication.CreationScriptOptions" {
+                $options = New-DbaReplCreationScriptOptions
+                $options | Should -BeOfType Microsoft.SqlServer.Replication.CreationScriptOptions
+            }
+            It "Microsoft.SqlServer.Replication.CreationScriptOptions should include the 11 defaults by default" {
+                ((New-DbaReplCreationScriptOptions).ToString().Split(',').Trim() | Measure-Object).Count | Should -Be 11
+            }
+            It "Microsoft.SqlServer.Replication.CreationScriptOptions should include ClusteredIndexes" {
+                ((New-DbaReplCreationScriptOptions).ToString().Split(',').Trim() | Should -Contain 'ClusteredIndexes')
+            }
+            It "Microsoft.SqlServer.Replication.CreationScriptOptions with option of NonClusteredIndexes should add NonClusteredIndexes" {
+                ((New-DbaReplCreationScriptOptions -Option NonClusteredIndexes).ToString().Split(',').Trim() | Measure-Object).Count | Should -Be 12
+                ((New-DbaReplCreationScriptOptions -Option NonClusteredIndexes).ToString().Split(',').Trim() | Should -Contain 'NonClusteredIndexes')
+            }
+
+            It "NoDefaults should mean Microsoft.SqlServer.Replication.CreationScriptOptions only contains DisableScripting" {
+                ((New-DbaReplCreationScriptOptions -NoDefaults).ToString().Split(',').Trim() | Measure-Object).Count | Should -Be 1
+                ((New-DbaReplCreationScriptOptions -NoDefaults).ToString().Split(',').Trim() | Should -Contain 'DisableScripting')
+            }
+            It "NoDefaults plus option of NonClusteredIndexes should mean Microsoft.SqlServer.Replication.CreationScriptOptions only contains NonClusteredIndexes" {
+                ((New-DbaReplCreationScriptOptions -NoDefaults -Option NonClusteredIndexes).ToString().Split(',').Trim() | Measure-Object).Count | Should -Be 1
+                ((New-DbaReplCreationScriptOptions -NoDefaults -Option NonClusteredIndexes).ToString().Split(',').Trim() | Should -Contain 'NonClusteredIndexes')
+            }
+        }
+
         Context "Add-DbaReplArticle works" {
 
             It "Add-DbaReplArticle adds an article to a Transactional publication" {

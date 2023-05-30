@@ -33,6 +33,10 @@ function Add-DbaReplArticle {
         Horizontal filter for replication, implemented as a where clause, but don't include the word WHERE>
         E.g. City = 'Seattle'
 
+    .PARAMETER CreationScriptOptions
+        Options for the creation script.
+        Use New-DbaReplCreationScriptOptions to create this object.
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -67,6 +71,20 @@ function Add-DbaReplArticle {
         PS C:\> Add-DbaReplArticle -SqlInstance mssql1 -Database Pubs -PublicationName TestPub -Name publishers -Filter "city = 'seattle'"
 
         Adds the publishers table to the TestPub publication from mssql1.Pubs with a horizontal filter of only rows where city = 'seattle.
+
+    .EXAMPLE
+        PS C:\> $cso = New-DbaReplCreationScriptOptions -Options NonClusteredIndexes, Statistics
+        PS C:\> $article = @{
+                    SqlInstance           = 'mssql1'
+                    Database              = 'pubs'
+                    PublicationName       = 'testPub'
+                    Name                  = 'stores'
+                    CreationScriptOptions = $cso
+                }
+                Add-DbaReplArticle @article -EnableException
+
+        Adds the stores table to the testPub publication from mssql1.pubs with the NonClusteredIndexes and Statistics options set
+        includes default options.
     #>
     [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess, ConfirmImpact = 'Medium')]
     param (
@@ -89,15 +107,11 @@ function Add-DbaReplArticle {
         [String]$Filter,
 
         #TODO: Build a New-DbaReplArticleOptions function
-        [Microsoft.SqlServer.Replication.ArticleOptions]$ArticleOptions,
+        [Microsoft.SqlServer.Replication.CreationScriptOptions]$CreationScriptOptions,
 
         [Switch]$EnableException
     )
     process {
-
-        if (Test-Bound -not ArticleOptions) {
-            $ArticleOptions = New-Object Microsoft.SqlServer.Replication.ArticleOptions
-        }
 
         foreach ($instance in $SqlInstance) {
             try {
@@ -112,7 +126,7 @@ function Add-DbaReplArticle {
 
                     $pub = Get-DbaReplPublication -SqlInstance $instance -SqlCredential $SqlCredential -Name $PublicationName
 
-
+                    $articleOptions = New-Object Microsoft.SqlServer.Replication.ArticleOptions
 
                     if ($pub.Type -in ('Transactional', 'Snapshot')) {
                         $article = New-Object Microsoft.SqlServer.Replication.TransArticle
@@ -128,6 +142,10 @@ function Add-DbaReplArticle {
                     $article.SourceObjectName   = $Name
                     $article.SourceObjectOwner  = $Schema
                     $article.PublicationName    = $PublicationName
+
+                    if ($CreationScriptOptions) {
+                        $article.SchemaOption = $CreationScriptOptions
+                    }
 
                     if ($Filter) {
                         if ($Filter -like 'WHERE*') {
