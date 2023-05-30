@@ -82,7 +82,7 @@ function Watch-DbaDbLogin {
     param (
         [DbaInstance]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [object]$Database,
+        [string]$Database,
         [string]$Table = "DbaTools-WatchDbLogins",
         # Central Management Server
         [string]$SqlCms,
