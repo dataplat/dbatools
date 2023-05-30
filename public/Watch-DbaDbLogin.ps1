@@ -125,14 +125,6 @@ function Watch-DbaDbLogin {
             }
         }
 
-        if ($SqlInstance) {
-            if ($servers) {
-                $servers += $SqlInstance
-            } else {
-                $servers = $SqlInstance
-            }
-        }
-
         <#
             Connect each server
         #>
