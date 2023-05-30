@@ -332,7 +332,7 @@ function New-DbaAgentSchedule {
                     "Friday" { $interval += 6 }
                     "Saturday" { $interval += 7 }
                     "Day" { $interval += 8 }
-                    "Weekday" { $interval += 9 }
+                    "Weekdays" { $interval += 9 }
                     "WeekendDay" { $interval += 10 }
                     1 { $interval += 1 }
                     2 { $interval += 2 }
