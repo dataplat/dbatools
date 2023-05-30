@@ -95,6 +95,11 @@ function Watch-DbaDbLogin {
     )
 
     process {
+        if (Test-Bound 'SqlCms', 'ServersFromFile', 'InputObject' -Not) {
+            Stop-Function -Message "You must specify a server list source using -SqlCms or -ServersFromFile or pipe in connected instances. See the command documentation and examples for more details."
+            return
+        }
+
         try {
             $serverDest = Connect-DbaInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
         } catch {
