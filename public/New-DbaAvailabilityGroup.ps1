@@ -668,6 +668,7 @@ function New-DbaAvailabilityGroup {
                 }
             }
         }
+        Write-Progress -Activity "Adding new availability group" -Completed
 
         # Get results
         Get-DbaAvailabilityGroup -SqlInstance $Primary -SqlCredential $PrimarySqlCredential -AvailabilityGroup $Name
