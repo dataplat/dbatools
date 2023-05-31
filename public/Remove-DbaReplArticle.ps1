@@ -9,16 +9,7 @@ function Remove-DbaReplArticle {
         Dropping an article from a publication does not remove the object from the publication database or the corresponding object from the subscription database.
         Use DROP <Object> to remove these objects if necessary. #TODO: add a param for this ClearUpSubObject
 
-For snapshot or transactional publications, articles can be dropped with no special considerations prior to subscriptions being created.
-If an article is dropped after one or more subscriptions is created, the subscriptions must be dropped, recreated, and synchronized.
-
-Dropping an article from a publication involves dropping the article and creating a new snapshot for the publication.
-Dropping an article invalidates the current snapshot; therefore a new snapshot must be created.
-
-TODO: WARNING: [16:39:55][Remove-DbaReplArticle] Unable to remove article  from testPub on mssql1 | Could not drop article. A subscription exists on it.
-Need to drop from sub?
-
-https://learn.microsoft.com/en-us/sql/relational-databases/replication/publish/add-articles-to-and-drop-articles-from-existing-publications?view=sql-server-ver16
+        Dropping an article invalidates the current snapshot; therefore a new snapshot must be created.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.
@@ -41,6 +32,9 @@ https://learn.microsoft.com/en-us/sql/relational-databases/replication/publish/a
 
     .PARAMETER Name
         The name of the article to remove.
+
+    .PARAMETER DropObjectOnSubscriber
+        If this switch is enabled, the object will be dropped from the subscriber database.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -74,7 +68,6 @@ https://learn.microsoft.com/en-us/sql/relational-databases/replication/publish/a
     #>
     [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess, ConfirmImpact = 'Medium')]
     param (
-        [parameter(Mandatory, ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
 
         [PSCredential]$SqlCredential,
@@ -89,6 +82,8 @@ https://learn.microsoft.com/en-us/sql/relational-databases/replication/publish/a
 
         [parameter(Mandatory)]
         [String]$Name,
+
+        [Switch]$DropObjectOnSubscriber,
 
         [Switch]$EnableException
     )
@@ -120,24 +115,26 @@ https://learn.microsoft.com/en-us/sql/relational-databases/replication/publish/a
                     $article.PublicationName    = $PublicationName
                     $article.DatabaseName       = $Database
 
-                    #TODO: Fix this - hard coded subscriber name
-                    # if it has a subscription, we need to drop it first = can't work it out with RMO
-                    # how do we get subscriber name too?
-                    $query = "exec sp_dropsubscription @publication = '{0}', @article= '{1}',@subscriber = '{2}'" -f $PublicationName, $Name, 'mssql2'
-                    Invoke-DbaQuery -SqlInstance $instance -SqlCredential $SqlCredential -Database $Database -query $query
+                    #TODO: change to RMO? if it has a subscription, we need to drop it first = can't work it out with RMO
+                    if ($pub.Subscriptions) {
+                        Write-Message -Level Verbose -Message ("There is a subscription so remove article {0} from subscription on {1}" -f $Name, $pub.Subscriptions.SubscriberName)
+                        $query = "exec sp_dropsubscription @publication = '{0}', @article= '{1}',@subscriber = '{2}'" -f $PublicationName, $Name, $pub.Subscriptions.SubscriberName
+                        Invoke-DbaQuery -SqlInstance $instance -SqlCredential $SqlCredential -Database $Database -query $query
+                    }
 
                     if (($article.IsExistingObject)) {
                         $article.Remove()
                     } else {
                         Stop-Function -Message "Article doesn't exist in $PublicationName on $instance" -ErrorRecord $_ -Target $instance -Continue
                     }
+
+                    if ($DropObjectOnSubscriber) {
+                        #TODO: Drop object on subscriber
+                    }
                 }
             } catch {
                 Stop-Function -Message "Unable to remove article $ArticleName from $PublicationName on $instance" -ErrorRecord $_ -Target $instance -Continue
             }
-
-            #TODO: What should we return anything?
-
         }
     }
 }
