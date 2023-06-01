@@ -325,7 +325,7 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
 
             It "Add-DbaReplArticle adds an article to a Snapshot publication" {
                 $pubname = 'TestSnap'
-                { Add-DbaReplArticle -SqlInstance mssql1 -Database ReplDb -Name $articleName -Publication $pubname -EnableException } | Should -not -throw
+                { Add-DbaReplArticle -Database ReplDb -Name $articleName -Publication $pubname -EnableException } | Should -not -throw
                 $art = Get-DbaReplArticle -Database ReplDb -Name $articleName -Publication $pubName
                 $art | Should -Not -BeNullOrEmpty
                 $art.PublicationName | Should -Be $pubName
@@ -333,7 +333,7 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
             }
             It "Add-DbaReplArticle adds an article to a Merge publication" {
                 $pubname = 'TestMerge'
-                { Add-DbaReplArticle -SqlInstance mssql1 -Database ReplDb -Name $articleName -Publication $pubname -EnableException } | Should -not -throw
+                { Add-DbaReplArticle -Database ReplDb -Name $articleName -Publication $pubname -EnableException } | Should -not -throw
                 $art = Get-DbaReplArticle -Database ReplDb -Name $articleName -Publication $pubName
                 $art | Should -Not -BeNullOrEmpty
                 $art.PublicationName | Should -Be $pubName
@@ -341,7 +341,7 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
             }
         }
 
-        Context "Get-DbaReplArticle works" -Tag ArtTestGet {
+        Context "Get-DbaReplArticle works" {
             BeforeAll {
                 # we need some articles too remove
                 $article = 'ReplicateMe'
@@ -394,7 +394,7 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
             }
         }
 
-        Context "Remove-DbaReplArticle works" -Tag ArtTestGet {
+        Context "Remove-DbaReplArticle works" {
             BeforeAll {
                 # we need some articles too remove
                 $article = 'ReplicateMe'
@@ -459,7 +459,7 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
             }
         }
 
-        Context "Remove-DbaReplArticle works with piping" -Tag ArtTestGet {
+        Context "Remove-DbaReplArticle works with piping" {
             BeforeAll {
                 # we need some articles too remove
                 $article = 'ReplicateMe'
@@ -484,6 +484,10 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
                 $article = Get-DbaReplArticle -Database ReplDb  -Publication $PublicationName -Name $Name
                 $article | Should -BeNullOrEmpty
             }
+        }
+
+        Context "Get-DbaReplArticleColumn works" {
+            # TODO:
         }
     }
 }
