@@ -97,7 +97,7 @@ function Add-DbaReplArticle {
         [String]$Database,
 
         [parameter(Mandatory)]
-        [String]$PublicationName,
+        [String]$Publication,
 
         [String]$Schema = 'dbo',
 
@@ -119,12 +119,12 @@ function Add-DbaReplArticle {
             } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
-            Write-Message -Level Verbose -Message "Adding article $Name to publication $PublicationName on $instance"
+            Write-Message -Level Verbose -Message "Adding article $Name to publication $Publication on $instance"
 
             try {
-                if ($PSCmdlet.ShouldProcess($instance, "Adding an article to $PublicationName")) {
+                if ($PSCmdlet.ShouldProcess($instance, "Adding an article to $Publication")) {
 
-                    $pub = Get-DbaReplPublication -SqlInstance $instance -SqlCredential $SqlCredential -Name $PublicationName
+                    $pub = Get-DbaReplPublication -SqlInstance $instance -SqlCredential $SqlCredential -Name $Publication
 
                     $articleOptions = New-Object Microsoft.SqlServer.Replication.ArticleOptions
 
@@ -141,7 +141,7 @@ function Add-DbaReplArticle {
                     $article.DatabaseName       = $Database
                     $article.SourceObjectName   = $Name
                     $article.SourceObjectOwner  = $Schema
-                    $article.PublicationName    = $PublicationName
+                    $article.PublicationName    = $Publication
 
                     if ($CreationScriptOptions) {
                         $article.SchemaOption = $CreationScriptOptions
@@ -157,17 +157,20 @@ function Add-DbaReplArticle {
                     if (-not ($article.IsExistingObject)) {
                         $article.Create()
                     } else {
-                        Stop-Function -Message "Article already exists in $PublicationName on $instance" -ErrorRecord $_ -Target $instance -Continue
+                        Stop-Function -Message "Article already exists in $Publication on $instance" -ErrorRecord $_ -Target $instance -Continue
                     }
 
                     # need to refresh subscriptions so they know about new articles
-                    $pub.RefreshSubscriptions()
+                    # only on trans\snap publications
+                    # (Method invocation failed because [Microsoft.SqlServer.Replication.MergePublication] does not contain a method named 'RefreshSubscriptions'.)
+                    if ($pub.Type -in ('Transactional', 'Snapshot')) {
+                        $pub.RefreshSubscriptions()
+                    }
                 }
             } catch {
-                Stop-Function -Message "Unable to add article $Name to $PublicationName on $instance" -ErrorRecord $_ -Target $instance -Continue
+                Stop-Function -Message "Unable to add article $Name to $Publication on $instance" -ErrorRecord $_ -Target $instance -Continue
             }
-            #TODO: What should we return
-            Get-DbaReplArticle -SqlInstance $instance -SqlCredential $SqlCredential -Publication $PublicationName -Article $Name
+            Get-DbaReplArticle -SqlInstance $instance -SqlCredential $SqlCredential -Publication $Publication -Name $Name
         }
     }
 }
