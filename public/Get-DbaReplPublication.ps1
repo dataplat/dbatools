@@ -88,7 +88,6 @@ function Get-DbaReplPublication {
     process {
         if (Test-FunctionInterrupt) { return }
         foreach ($instance in $SqlInstance) {
-            write-message 'jo'
             # Connect to Publisher
             try {
                 $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
@@ -132,16 +131,20 @@ function Get-DbaReplPublication {
                     foreach ($pub in $pubTypes) {
                         if ($pub.Type -eq 'Merge') {
                             $articles = $pub.MergeArticles
+                            $subscriptions = $pub.MergeSubscriptions
                         } else {
                             $articles = $pub.TransArticles
+                            $subscriptions = $pub.TransSubscriptions
                         }
+
 
                         Add-Member -Force -InputObject $pub -MemberType NoteProperty -Name ComputerName -Value $server.ComputerName
                         Add-Member -Force -InputObject $pub -MemberType NoteProperty -Name InstanceName -Value $server.ServiceName
                         Add-Member -Force -InputObject $pub -MemberType NoteProperty -Name SqlInstance -Value $server.DomainInstanceName
                         Add-Member -Force -InputObject $pub -MemberType NoteProperty -Name Articles -Value $articles
+                        Add-Member -Force -InputObject $pub -MemberType NoteProperty -Name Subscriptions -Value $subscriptions
 
-                        Select-DefaultView -InputObject $pub -Property ComputerName, InstanceName, SqlInstance, DatabaseName, Name, Type, Articles
+                        Select-DefaultView -InputObject $pub -Property ComputerName, InstanceName, SqlInstance, DatabaseName, Name, Type, Articles, Subscriptions
                         #TODO: breaking change from PublicationName to Name
                         #TODO: breaking change from PublicationType to Type
                     }
