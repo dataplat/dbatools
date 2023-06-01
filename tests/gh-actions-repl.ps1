@@ -409,17 +409,15 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
                 }
 
                 $pubname = 'TestSnap'
-                if (-not (Get-DbaReplPublication -Name $pubname -Type Snapshot -EnableException)) {
-                    write-hose 'creating snapshot publication'
-                    New-DbaReplPublication -Database ReplDb -Type Snapshot -PublicationName $pubname -EnableException
+                if (-not (Get-DbaReplPublication -Name $pubname -Type Snapshot)) {
+                    $null = New-DbaReplPublication -Database ReplDb -Type Snapshot -PublicationName $pubname
                 }
-                if (-not (Get-DbaReplArticle -Database ReplDb -Publication $pubname -Name $article -EnableException)) {
-                    # write-host 'adding article to snapshot publication'
-                    Add-DbaReplArticle -Database ReplDb -Publication $pubname -Name $article -EnableException
+                if (-not (Get-DbaReplArticle -Database ReplDb -Publication $pubname -Name $article)) {
+                    $null = Add-DbaReplArticle -Database ReplDb -Publication $pubname -Name $article
                 }
 
                 $pubname = 'TestMerge'
-                if (-not (Get-DbaReplPublication $pubname $name -Type Merge)) {
+                if (-not (Get-DbaReplPublication -Name $pubname -Type Merge)) {
                     $null = New-DbaReplPublication -Database ReplDb -Type Merge -PublicationName $pubname
                 }
                 if (-not (Get-DbaReplArticle -Database ReplDb -Publication $pubname -Name $article)) {
@@ -439,7 +437,7 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
             }
 
             It "Remove-DbaReplArticle removes an article from a Snapshot publication" {
-                $pubname = 'TestSnap '
+                $pubname = 'TestSnap'
                 $Name = "ReplicateMe"
                 $rm = Remove-DbaReplArticle -Database ReplDb -Publication $pubname -Name $Name
                 $rm.IsRemoved | Should -Be $true
