@@ -38,7 +38,7 @@ function New-DbaReplSubscription {
 
     .NOTES
         Tags: Replication
-        Author: Jess Pomfret (@jpomfret)
+        Author: Jess Pomfret (@jpomfret), jesspomfret.com
 
         Website: https://dbatools.io
         Copyright: (c) 2022 by dbatools, licensed under MIT
