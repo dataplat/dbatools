@@ -464,7 +464,7 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
             $article | Should -BeNullOrEmpty
         }
 
-        It "Remove-DbaReplArticle removes an article from a Transactional publication" {
+        It "Remove-DbaReplArticle removes an article from a Merge publication" {
             $pubname = 'TestMerge'
             $Name = "ReplicateMe"
             $rm = Remove-DbaReplArticle -Database ReplDb -Publication $pubname -Name $Name
