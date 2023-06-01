@@ -24,11 +24,8 @@ function Get-DbaReplArticle {
     .PARAMETER Publication
         Specifies one or more publication(s) to process. If unspecified, all publications will be processed.
 
-    .PARAMETER Type
-        Limit by specific type of publication. Valid choices include: Transactional, Merge, Snapshot.
-
-    .PARAMETER Article
-        Specifies one or more article(s) to process. If unspecified, all articles will be processed.
+    .PARAMETER Name
+        Specify the name of one or more article(s) to process. If unspecified, all articles will be processed.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -61,35 +58,8 @@ function Get-DbaReplArticle {
 
         Retrieve information of all articles from 'PubName' on 'pubs' database for server mssql1.
 
-        #TODO: results publicationname contains all the publication names if article is in more than one ?
-        ComputerName      : mssql1
-        InstanceName      : MSSQLSERVER
-        SqlInstance       : mssql1
-        DatabaseName      : ReplDb
-        PublicationName   : {Snappy, TestPub, TestPub-Trans, TestSnap…}
-        Name              : ReplicateMe
-        ArticleId         : 2
-        Description       :
-        Type              : LogBased
-        VerticalPartition : False
-        SourceObjectOwner : dbo
-        SourceObjectName  : ReplicateMe
-
-        ComputerName      : mssql1
-        InstanceName      : MSSQLSERVER
-        SqlInstance       : mssql1
-        DatabaseName      : ReplDb
-        PublicationName   : {Snappy, TestPub, TestPub-Trans, TestSnap…}
-        Name              : ReplicateMe
-        ArticleId         : 3
-        Description       :
-        Type              : LogBased
-        VerticalPartition : False
-        SourceObjectOwner : dbo
-        SourceObjectName  : ReplicateMe
-
-
-        PS C:\> Get-DbaReplArticle -SqlInstance sqlserver2019 -Database pubs -Publication PubName -PublicationType Transactional -Article sales
+    .EXAMPLE
+        PS C:\> Get-DbaReplArticle -SqlInstance sqlserver2019 -Database pubs -Publication PubName -Name sales
 
         Retrieve information of 'sales' article from 'PubName' on 'pubs' database for server sqlserver2019.
 
@@ -100,11 +70,10 @@ function Get-DbaReplArticle {
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [object[]]$Database,
-        [parameter(ValueFromPipeline)]
         [object[]]$Publication,
         [ValidateSet("Transactional", "Merge", "Snapshot")]
         [String]$Type,
-        [string[]]$Article,
+        [string[]]$Name,
         [switch]$EnableException
     )
     begin {
@@ -117,7 +86,6 @@ function Get-DbaReplArticle {
             # Connect to the distributor of the instance
             try {
                 $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential
-                $replServer = Get-DbaReplServer -SqlInstance $instance -SqlCredential $SqlCredential
             } catch {
                 Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
@@ -135,41 +103,23 @@ function Get-DbaReplArticle {
                 foreach ($db in $databases) {
                     Write-Message -Level Verbose -Message ('Working on {0}' -f $db.Name)
 
-                    $RMOdb = New-Object Microsoft.SqlServer.Replication.ReplicationDatabase
-                    $RMOdb.ConnectionContext = $replServer.ConnectionContext
-                    $RMOdb.Name = $db.Name
-                    if (-not $RMOdb.LoadProperties()) {
-                        Write-Message -Level Verbose -Message "Skipping $($db.name). Database is not published."
-                        continue
-                    }
-
-                    #$RMOdb = Connect-ReplicationDB -Server $server -Database $db
-
-                    $publications = @()
-                    $publications += $RMOdb.TransPublications
-                    $publications += $RMOdb.MergePublications
+                    $publications = Get-DbaReplPublication -SqlInstance $server -Database $db.Name
 
                     if ($Publication) {
                         $publications = $publications | Where-Object Name -in $Publication
                     }
 
-                    if ($Type -eq 'Merge') {
-                        $articles = $publications.MergeArticles
-                    } else {
-                        $articles = $publications.TransArticles
-                    }
-
-                    if ($Article) {
-                        $articles = $articles | Where-Object Name -In $Article
+                    $articles = $publications.Articles
+                    if ($Name) {
+                        $articles = $articles | Where-Object Name -In $Name
                     }
 
                     foreach ($art in $articles) {
                         Add-Member -Force -InputObject $art -MemberType NoteProperty -Name ComputerName -Value $server.ComputerName
                         Add-Member -Force -InputObject $art -MemberType NoteProperty -Name InstanceName -Value $server.ServiceName
                         Add-Member -Force -InputObject $art -MemberType NoteProperty -Name SqlInstance -Value $server.DomainInstanceName
-                        Add-Member -Force -InputObject $art -MemberType NoteProperty -Name PublicationName -Value $publications.Name
 
-                        Select-DefaultView -InputObject $art -Property ComputerName, InstanceName, SqlInstance, DatabaseName, PublicationName, Name, ArticleId, Description, Type, VerticalPartition, SourceObjectOwner, SourceObjectName #, DestinationObjectOwner, DestinationObjectName
+                        Select-DefaultView -InputObject $art -Property ComputerName, InstanceName, SqlInstance, DatabaseName, PublicationName, Name, Type, VerticalPartition, SourceObjectOwner, SourceObjectName #, DestinationObjectOwner, DestinationObjectName
                     }
                 }
             } catch {
