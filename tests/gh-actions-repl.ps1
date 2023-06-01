@@ -22,7 +22,7 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
         $null = Invoke-DbaQuery -Database ReplDb -Query 'CREATE TABLE ReplicateMe ( id int identity (1,1) PRIMARY KEY, col1 varchar(10) )'
     }
 
-    Describe "Enable\Disable Functions" -Tag ReplSetup {
+    Describe "Publishing\Distribution Functions" -Tag ReplSetup {
 
         Context "Get-DbaReplDistributor works" {
             BeforeAll {
@@ -179,24 +179,7 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
     }
 
     Describe "Publication commands" {
-        Context "Get-DbaReplPublisher works" {
-            BeforeAll {
-                # if distribution is disabled - enable it
-                if (-not (Get-DbaReplDistributor).IsDistributor) {
-                    Enable-DbaReplDistributor
-                }
 
-                # if publishing is disabled - enable it
-                if (-not (Get-DbaReplServer).IsPublisher) {
-                    Enable-DbaReplPublishing -PublisherSqlLogin $cred -EnableException
-                }
-            }
-
-            It "gets a publisher" {
-                (Get-DbaReplPublisher).PublisherType | Should -Be "MSSQLSERVER"
-            }
-
-        }
 
         Context "Get-DbaReplPublication works" {
             BeforeAll {
@@ -410,95 +393,97 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
                 Connect-DbaInstance -Database ReplDb | Get-DbaReplArticle | Should -Not -BeNullOrEmpty
             }
         }
-    }
 
-    Context "Remove-DbaReplArticle works" -Tag ArtTestGet {
-        BeforeAll {
-            # we need some articles too remove
-            $article = 'ReplicateMe'
+        Context "Remove-DbaReplArticle works" -Tag ArtTestGet {
+            BeforeAll {
+                # we need some articles too remove
+                $article = 'ReplicateMe'
 
-            # we need some publications with articles too
-            $pubname = 'TestTrans'
-            if (-not (Get-DbaReplPublication -Name $pubname -Type Transactional)) {
-                $null = New-DbaReplPublication -Database ReplDb -Type Transactional -PublicationName $pubname
+                # we need some publications with articles too
+                $pubname = 'TestTrans'
+                if (-not (Get-DbaReplPublication -Name $pubname -Type Transactional)) {
+                    $null = New-DbaReplPublication -Database ReplDb -Type Transactional -PublicationName $pubname
+                }
+                if (-not (Get-DbaReplArticle -Database ReplDb -Publication $pubname -Name $article)) {
+                    $null = Add-DbaReplArticle -Database ReplDb -Publication $pubname -Name $article
+                }
+
+                $pubname = 'TestSnap'
+                if (-not (Get-DbaReplPublication -Name $pubname -Type Snapshot -EnableException)) {
+                    write-hose 'creating snapshot publication'
+                    New-DbaReplPublication -Database ReplDb -Type Snapshot -PublicationName $pubname -EnableException
+                }
+                if (-not (Get-DbaReplArticle -Database ReplDb -Publication $pubname -Name $article -EnableException)) {
+                    # write-host 'adding article to snapshot publication'
+                    Add-DbaReplArticle -Database ReplDb -Publication $pubname -Name $article -EnableException
+                }
+
+                $pubname = 'TestMerge'
+                if (-not (Get-DbaReplPublication $pubname $name -Type Merge)) {
+                    $null = New-DbaReplPublication -Database ReplDb -Type Merge -PublicationName $pubname
+                }
+                if (-not (Get-DbaReplArticle -Database ReplDb -Publication $pubname -Name $article)) {
+                    $null = Add-DbaReplArticle -Database ReplDb -Publication $pubname -Name $article
+                }
+
             }
-            if (-not (Get-DbaReplArticle -Database ReplDb -Publication $pubname -Name $article)) {
-                $null = Add-DbaReplArticle -Database ReplDb -Publication $pubname -Name $article
+
+            It "Remove-DbaReplArticle removes an article from a Transactional publication" {
+                $pubname = 'TestTrans'
+                $Name = "ReplicateMe"
+                $rm = Remove-DbaReplArticle -Database ReplDb -Publication $pubname -Name $Name
+                $rm.IsRemoved | Should -Be $true
+                $rm.Status | Should -Be 'Removed'
+                $article = Get-DbaReplArticle -Database ReplDb -Publication $pubname -Name $Name
+                $article | Should -BeNullOrEmpty
             }
 
-            $pubname = 'TestSnap'
-            if (-not (Get-DbaReplPublication -Name $pubname -Type Snapshot)) {
-                $null = New-DbaReplPublication -Database ReplDb -Type Snapshot -PublicationName $pubname
-            }
-            if (-not (Get-DbaReplArticle -Database ReplDb -Publication $pubname -Name $article)) {
-                $null = Add-DbaReplArticle -Database ReplDb -Publication $pubname -Name $article
-            }
-
-            $pubname = 'TestMerge'
-            if (-not (Get-DbaReplPublication $pubname $name -Type Merge)) {
-                $null = New-DbaReplPublication -Database ReplDb -Type Merge -PublicationName $pubname
-            }
-            if (-not (Get-DbaReplArticle -Database ReplDb -Publication $pubname -Name $article)) {
-                $null = Add-DbaReplArticle -Database ReplDb -Publication $pubname -Name $article
+            It "Remove-DbaReplArticle removes an article from a Snapshot publication" {
+                $pubname = 'TestSnap '
+                $Name = "ReplicateMe"
+                $rm = Remove-DbaReplArticle -Database ReplDb -Publication $pubname -Name $Name
+                $rm.IsRemoved | Should -Be $true
+                $rm.Status | Should -Be 'Removed'
+                $article = Get-DbaReplArticle -Database ReplDb -Publication $pubname -Name $Name
+                $article | Should -BeNullOrEmpty
             }
 
-        }
-
-        It "Remove-DbaReplArticle removes an article from a Transactional publication" {
-            $pubname = 'TestTrans'
-            $Name = "ReplicateMe"
-            $rm = Remove-DbaReplArticle -Database ReplDb -Publication $pubname -Name $Name
-            $rm.IsRemoved | Should -Be $true
-            $rm.Status | Should -Be 'Removed'
-            $article = Get-DbaReplArticle -Database ReplDb -Publication $pubname -Name $Name
-            $article | Should -BeNullOrEmpty
-        }
-
-        It "Remove-DbaReplArticle removes an article from a Snapshot publication" {
-            $pubname = 'TestSnap '
-            $Name = "ReplicateMe"
-            $rm = Remove-DbaReplArticle -Database ReplDb -Publication $pubname -Name $Name
-            $rm.IsRemoved | Should -Be $true
-            $rm.Status | Should -Be 'Removed'
-            $article = Get-DbaReplArticle -Database ReplDb -Publication $pubname -Name $Name
-            $article | Should -BeNullOrEmpty
-        }
-
-        It "Remove-DbaReplArticle removes an article from a Merge publication" {
-            $pubname = 'TestMerge'
-            $Name = "ReplicateMe"
-            $rm = Remove-DbaReplArticle -Database ReplDb -Publication $pubname -Name $Name
-            $rm.IsRemoved | Should -Be $true
-            $rm.Status | Should -Be 'Removed'
-            $article = Get-DbaReplArticle -Database ReplDb -Publication $pubname -Name $Name
-            $article | Should -BeNullOrEmpty
-        }
-    }
-
-    Context "Remove-DbaReplArticle works with piping" -Tag ArtTestGet {
-        BeforeAll {
-            # we need some articles too remove
-            $article = 'ReplicateMe'
-
-            # we need some publications with articles too
-            $pubname = 'TestTrans'
-            if (-not (Get-DbaReplPublication -Name $pubname -Type Transactional)) {
-                $null = New-DbaReplPublication -Database ReplDb -Type Transactional -PublicationName $Name
-            }
-            if (-not (Get-DbaReplArticle -Database ReplDb -Publication $pubname -Name $article)) {
-                $null = Add-DbaReplArticle -Database ReplDb -Publication $pubname -Name $article
+            It "Remove-DbaReplArticle removes an article from a Merge publication" {
+                $pubname = 'TestMerge'
+                $Name = "ReplicateMe"
+                $rm = Remove-DbaReplArticle -Database ReplDb -Publication $pubname -Name $Name
+                $rm.IsRemoved | Should -Be $true
+                $rm.Status | Should -Be 'Removed'
+                $article = Get-DbaReplArticle -Database ReplDb -Publication $pubname -Name $Name
+                $article | Should -BeNullOrEmpty
             }
         }
 
-        It "Remove-DbaReplArticle removes an article from a Transactional publication" {
-            $PublicationName = 'TestTrans'
-            $Name = "ReplicateMe"
+        Context "Remove-DbaReplArticle works with piping" -Tag ArtTestGet {
+            BeforeAll {
+                # we need some articles too remove
+                $article = 'ReplicateMe'
 
-            $rm = Get-DbaReplArticle -Database ReplDb -Publication $PublicationName -Name $Name | Remove-DbaReplArticle -Confirm:$false
-            $rm.IsRemoved | ForEach-Object { $_ | Should -Be $true }
-            $rm.Status | ForEach-Object { $_ | Should -Be 'Removed' }
-            $article = Get-DbaReplArticle -Database ReplDb  -Publication $PublicationName -Name $Name
-            $article | Should -BeNullOrEmpty
+                # we need some publications with articles too
+                $pubname = 'TestTrans'
+                if (-not (Get-DbaReplPublication -Name $pubname -Type Transactional)) {
+                    $null = New-DbaReplPublication -Database ReplDb -Type Transactional -PublicationName $Name
+                }
+                if (-not (Get-DbaReplArticle -Database ReplDb -Publication $pubname -Name $article)) {
+                    $null = Add-DbaReplArticle -Database ReplDb -Publication $pubname -Name $article
+                }
+            }
+
+            It "Remove-DbaReplArticle removes an article from a Transactional publication" {
+                $PublicationName = 'TestTrans'
+                $Name = "ReplicateMe"
+
+                $rm = Get-DbaReplArticle -Database ReplDb -Publication $PublicationName -Name $Name | Remove-DbaReplArticle -Confirm:$false
+                $rm.IsRemoved | ForEach-Object { $_ | Should -Be $true }
+                $rm.Status | ForEach-Object { $_ | Should -Be 'Removed' }
+                $article = Get-DbaReplArticle -Database ReplDb  -Publication $PublicationName -Name $Name
+                $article | Should -BeNullOrEmpty
+            }
         }
     }
 }
