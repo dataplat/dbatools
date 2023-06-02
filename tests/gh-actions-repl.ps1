@@ -23,7 +23,29 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
 
     }
 
-    Describe "Publishing\Distribution Functions" -Tag ReplSetup {
+    Describe "General commands" {
+
+        Context "Get-DbaReplServer works" -tag test {
+
+            It "Doesn't throw errors" {
+                { Get-DbaReplServer -EnableException } | Should -Not -Throw
+            }
+
+            It "Returns a ReplicationObject" {
+                (Get-DbaReplServer).GetType().BaseType | Should -Be "Microsoft.SqlServer.Replication.ReplicationObject"
+            }
+
+            It "Gets a replication server" {
+                (Get-DbaReplServer).SqlInstance | Should -Be 'mssql1'
+                (Get-DbaReplServer).DistributorInstalled | Should -Not -BeNullOrEmpty
+                (Get-DbaReplServer).DistributorAvailable | Should -Not -BeNullOrEmpty
+                (Get-DbaReplServer).IsDistributor | Should -Not -BeNullOrEmpty
+                (Get-DbaReplServer).IsPublisher | Should -Not -BeNullOrEmpty
+            }
+        }
+    }
+
+    Describe "Publishing\Distribution commands" {
 
         Context "Get-DbaReplDistributor works" {
             BeforeAll {
@@ -33,6 +55,10 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
                     Disable-DbaReplDistributor
                 }
                 Enable-DbaReplDistributor
+            }
+
+            It "gets a distributor without error" {
+                { Get-DbaReplDistributor -EnableException } | Should -Not -Throw
             }
 
             It "gets a distributor" {
@@ -148,7 +174,7 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
             }
 
             It "publishing is enabled" {
-                Enable-DbaReplPublishing -EnableException
+                { Enable-DbaReplPublishing -EnableException } | Should -Not -Throw
                 (Get-DbaReplServer).IsPublisher | Should -Be $true
             }
         }
@@ -173,14 +199,13 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
             }
 
             It "publishing is disabled" {
-                Disable-DbaReplPublishing -EnableException
+                { Disable-DbaReplPublishing -EnableException } | Should -Not -Throw
                 (Get-DbaReplServer).IsPublisher | Should -Be $false
             }
         }
     }
 
     Describe "Publication commands" {
-
 
         Context "Get-DbaReplPublication works" {
             BeforeAll {
@@ -235,26 +260,29 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
 
             It "New-DbaReplPublication creates a Transactional publication" {
                 $name = 'TestPub'
-                New-DbaReplPublication -Database ReplDb -Type Transactional -PublicationName $Name
+                { New-DbaReplPublication -Database ReplDb -Type Transactional -PublicationName $Name -EnableException } | Should -Not -Throw
                 (Get-DbaReplPublication -Name $Name) | Should -Not -BeNullOrEmpty
                 (Get-DbaReplPublication -Name $Name).DatabaseName | Should -Be 'ReplDb'
                 (Get-DbaReplPublication -Name $Name).Type | Should -Be 'Transactional'
             }
             It "New-DbaReplPublication creates a Snapshot publication" {
                 $name = 'Snappy'
-                New-DbaReplPublication -Database ReplDb -Type Snapshot -PublicationName $name
+                { New-DbaReplPublication -Database ReplDb -Type Snapshot -PublicationName $name -EnableException } | Should -Not -Throw
                 (Get-DbaReplPublication -Name $name) | Should -Not -BeNullOrEmpty
                 (Get-DbaReplPublication -Name $name).DatabaseName | Should -Be 'ReplDb'
                 (Get-DbaReplPublication -Name $name).Type | Should -Be 'Snapshot'
             }
             It "New-DbaReplPublication creates a Merge publication" {
                 $name = 'Mergey'
-                New-DbaReplPublication -Database ReplDb -Type Merge -PublicationName $name
+                { New-DbaReplPublication -Database ReplDb -Type Merge -PublicationName $name -EnableException } | Should -Not -Throw
                 (Get-DbaReplPublication -Name $name) | Should -Not -BeNullOrEmpty
                 (Get-DbaReplPublication -Name $name).DatabaseName | Should -Be 'ReplDb'
                 (Get-DbaReplPublication -Name $name).Type | Should -Be 'Merge'
             }
+        }
 
+        Context "Remove-DbaReplPublication works" {
+            # TODO:
         }
     }
 
@@ -311,7 +339,7 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
             }
         }
 
-        Context "Add-DbaReplArticle works" -tag test{
+        Context "Add-DbaReplArticle works" {
             BeforeAll {
                 # remove all articles
                 $null = Get-DbaReplArticle -Database ReplDb | Remove-DbaReplArticle -Confirm:$false
@@ -530,5 +558,20 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
         Context "Get-DbaReplArticleColumn works" {
             # TODO:
         }
+    }
+
+    Describe "Subscription commands" {
+        BeforeAll {
+
+        }
+
+        Context "New-DbaReplSubscription works" {
+            # TODO:
+        }
+
+        Context "Remove-DbaReplSubscription works" {
+            # TODO:
+        }
+
     }
 }
