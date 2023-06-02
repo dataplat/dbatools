@@ -19,17 +19,14 @@ function New-DbaReplPublication {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        The database that will be replicated.
+        The database that contains the articles to be replicated.
 
     .PARAMETER PublicationName
-        The name of the replication publication
+        The name of the replication publication.
 
     .PARAMETER Type
         The flavour of replication.
-
-        Currently supported 'Transactional'
-
-        Coming soon 'Snapshot', 'Merge'
+        Options are Transactional, Snapshot, Merge
 
     .PARAMETER LogReaderAgentCredential
         Used to provide the credentials for the Microsoft Windows account under which the Log Reader Agent runs
@@ -37,7 +34,7 @@ function New-DbaReplPublication {
         Setting LogReaderAgentProcessSecurity is not required when the publication is created by a member of the sysadmin fixed server role.
         In this case, the agent will impersonate the SQL Server Agent account. For more information, see Replication Agent Security Model.
 
-        TODO: Implement & test this
+        TODO: test this
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -55,7 +52,7 @@ function New-DbaReplPublication {
         Author: Jess Pomfret (@jpomfret), jesspomfret.com
 
         Website: https://dbatools.io
-        Copyright: (c) 2022 by dbatools, licensed under MIT
+        Copyright: (c) 2023 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
@@ -66,6 +63,15 @@ function New-DbaReplPublication {
 
         Creates a transactional publication called PubFromPosh for the Northwind database on mssql1
 
+    .EXAMPLE
+        PS C:\> New-DbaReplPublication -SqlInstance mssql1 -Database pubs -PublicationName snapPub -Type Snapshot
+
+        Creates a snapshot publication called snapPub for the pubs database on mssql1
+
+    .EXAMPLE
+        PS C:\> New-DbaReplPublication -SqlInstance mssql1 -Database pubs -PublicationName mergePub -Type Merge
+
+        Creates a merge publication called mergePub for the pubs database on mssql1
     #>
     [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess, ConfirmImpact = 'Medium')]
     param (
@@ -74,6 +80,7 @@ function New-DbaReplPublication {
 
         [PSCredential]$SqlCredential,
 
+        [parameter(Mandatory)]
         [String]$Database,
 
         [parameter(Mandatory)]
