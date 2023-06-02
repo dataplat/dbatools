@@ -6,7 +6,7 @@ function Get-DbaReplArticle {
     .DESCRIPTION
         This function locates and enumerates articles' information.
 
-        Can specify a database, publication or article name or publication type.
+        Can specify a database, publication or article name.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.
@@ -71,8 +71,6 @@ function Get-DbaReplArticle {
         [PSCredential]$SqlCredential,
         [object[]]$Database,
         [object[]]$Publication,
-        [ValidateSet("Transactional", "Merge", "Snapshot")]
-        [String]$Type,
         [string[]]$Name,
         [switch]$EnableException
     )

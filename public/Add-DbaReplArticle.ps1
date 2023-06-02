@@ -68,7 +68,14 @@ function Add-DbaReplArticle {
 
 
     .EXAMPLE
-        PS C:\> Add-DbaReplArticle -SqlInstance mssql1 -Database Pubs -PublicationName TestPub -Name publishers -Filter "city = 'seattle'"
+        PS C:\> $article = @{
+                    SqlInstance           = "mssql1"
+                    Database              = "pubs"
+                    PublicationName       = "testPub"
+                    Name                  = "publishers"
+                    Filter                = "city = 'seattle'"
+                }
+        PS C:\> Add-DbaReplArticle @article -EnableException
 
         Adds the publishers table to the TestPub publication from mssql1.Pubs with a horizontal filter of only rows where city = 'seattle.
 
@@ -81,7 +88,7 @@ function Add-DbaReplArticle {
                     Name                  = 'stores'
                     CreationScriptOptions = $cso
                 }
-                Add-DbaReplArticle @article -EnableException
+        PS C:\> Add-DbaReplArticle @article -EnableException
 
         Adds the stores table to the testPub publication from mssql1.pubs with the NonClusteredIndexes and Statistics options set
         includes default options.
@@ -106,7 +113,6 @@ function Add-DbaReplArticle {
 
         [String]$Filter,
 
-        #TODO: Build a New-DbaReplArticleOptions function
         [Microsoft.SqlServer.Replication.CreationScriptOptions]$CreationScriptOptions,
 
         [Switch]$EnableException
