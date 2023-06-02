@@ -5,6 +5,7 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
 
         $PSDefaultParameterValues["*:SqlInstance"] = "mssql1"
         $PSDefaultParameterValues["*:SqlCredential"] = $cred
+        $PSDefaultParameterValues["*:SubscriptionSqlCredential1"] = $cred
         $PSDefaultParameterValues["*:Confirm"] = $false
         $PSDefaultParameterValues["*:SharedPath"] = "/shared"
 
@@ -25,7 +26,7 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
 
     Describe "General commands" {
 
-        Context "Get-DbaReplServer works" -tag test {
+        Context "Get-DbaReplServer works" {
 
             It "Doesn't throw errors" {
                 { Get-DbaReplServer -EnableException } | Should -Not -Throw
@@ -554,23 +555,141 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
                 $article | Should -BeNullOrEmpty
             }
         }
+    }
+    Describe "Article Column commands" {
+        BeforeAll {
+            # if replication is disabled - enable it
+            if (-not (Get-DbaReplDistributor).IsDistributor) {
+                Enable-DbaReplDistributor
+            }
+            # if publishing is disabled - enable it
+            if (-not (Get-DbaReplServer).IsPublisher) {
+                Enable-DbaReplPublishing -PublisherSqlLogin $cred -EnableException
+            }
+            $article = 'ReplicateMe'
+
+            # we need some publications with articles too
+            $pubname = 'TestTrans'
+            if (-not (Get-DbaReplPublication -Name $pubname -Type Transactional)) {
+                $null = New-DbaReplPublication -Database ReplDb -Type Transactional -PublicationName $pubname
+            }
+            if (-not (Get-DbaReplArticle -Database ReplDb -Publication $pubname -Name $article)) {
+                $null = Add-DbaReplArticle -Database ReplDb -Publication $pubname -Name $article
+            }
+
+            $pubname = 'TestSnap'
+            if (-not (Get-DbaReplPublication -Name $pubname -Type Snapshot)) {
+                $null = New-DbaReplPublication -Database ReplDb -Type Snapshot -PublicationName $pubname
+            }
+            if (-not (Get-DbaReplArticle -Database ReplDb -Publication $pubname -Name $article)) {
+                $null = Add-DbaReplArticle -Database ReplDb -Publication $pubname -Name $article
+            }
+
+            $pubname = 'TestMerge'
+            if (-not (Get-DbaReplPublication -Name $pubname -Type Merge)) {
+                $null = New-DbaReplPublication -Database ReplDb -Type Merge -PublicationName $pubname
+            }
+            if (-not (Get-DbaReplArticle -Database ReplDb -Publication $pubname -Name $article)) {
+                $null = Add-DbaReplArticle -Database ReplDb -Publication $pubname -Name $article
+            }
+        }
 
         Context "Get-DbaReplArticleColumn works" {
-            # TODO:
+            It "Gets all column information for a server" {
+                $cols = Get-DbaReplArticleColumn
+                $cols | Should -Not -BeNullOrEmpty
+                $cols.SqlInstance | ForEach-Object { $_ | Should -Be 'mssql1' }
+            }
+
+            It "Gets all column information for specific database on a server" {
+                $cols = Get-DbaReplArticleColumn -Database ReplDb
+                $cols | Should -Not -BeNullOrEmpty
+                $cols.SqlInstance | ForEach-Object { $_ | Should -Be 'mssql1' }
+                $cols.DatabaseName | ForEach-Object { $_ | Should -Be 'ReplDb' }
+            }
+
+            It "Gets all column information for specific publication on a server" {
+                $pubname = 'TestTrans'
+                $cols = Get-DbaReplArticleColumn -Publication $pubname
+                $cols | Should -Not -BeNullOrEmpty
+                $cols.SqlInstance | ForEach-Object { $_ | Should -Be 'mssql1' }
+                $cols.PublicationName | ForEach-Object { $_ | Should -Be $pubname }
+            }
+
+            It "Gets all column information for specific article on a server" {
+                $pubname = 'TestTrans'
+                $cols = Get-DbaReplArticleColumn -Publication $pubname -Article $article
+                $cols | Should -Not -BeNullOrEmpty
+                $cols.SqlInstance | ForEach-Object { $_ | Should -Be 'mssql1' }
+                $cols.ArticleName | ForEach-Object { $_ | Should -Be $article }
+            }
+
+            It "Gets all column information for specific column on a server" {
+                $pubname = 'TestTrans'
+                $cols = Get-DbaReplArticleColumn -Publication $pubname -Column 'col1'
+                $cols | Should -Not -BeNullOrEmpty
+                $cols.SqlInstance | ForEach-Object { $_ | Should -Be 'mssql1' }
+                $cols.ColumnName | ForEach-Object { $_ | Should -Be 'col1' }
+            }
         }
     }
 
     Describe "Subscription commands" {
         BeforeAll {
+            # if replication is disabled - enable it
+            if (-not (Get-DbaReplDistributor).IsDistributor) {
+                Enable-DbaReplDistributor
+            }
+            # if publishing is disabled - enable it
+            if (-not (Get-DbaReplServer).IsPublisher) {
+                Enable-DbaReplPublishing -PublisherSqlLogin $cred -EnableException
+            }
+            $article = 'ReplicateMe'
 
+            # we need some publications with articles too
+            $pubname = 'TestTrans'
+            if (-not (Get-DbaReplPublication -Name $pubname -Type Transactional)) {
+                $null = New-DbaReplPublication -Database ReplDb -Type Transactional -PublicationName $pubname
+            }
+            if (-not (Get-DbaReplArticle -Database ReplDb -Publication $pubname -Name $article)) {
+                $null = Add-DbaReplArticle -Database ReplDb -Publication $pubname -Name $article
+            }
+
+            $pubname = 'TestSnap'
+            if (-not (Get-DbaReplPublication -Name $pubname -Type Snapshot)) {
+                $null = New-DbaReplPublication -Database ReplDb -Type Snapshot -PublicationName $pubname
+            }
+            if (-not (Get-DbaReplArticle -Database ReplDb -Publication $pubname -Name $article)) {
+                $null = Add-DbaReplArticle -Database ReplDb -Publication $pubname -Name $article
+            }
+
+            $pubname = 'TestMerge'
+            if (-not (Get-DbaReplPublication -Name $pubname -Type Merge)) {
+                $null = New-DbaReplPublication -Database ReplDb -Type Merge -PublicationName $pubname
+            }
+            if (-not (Get-DbaReplArticle -Database ReplDb -Publication $pubname -Name $article)) {
+                $null = Add-DbaReplArticle -Database ReplDb -Publication $pubname -Name $article
+            }
         }
 
-        Context "New-DbaReplSubscription works" {
-            # TODO:
+        Context "New-DbaReplSubscription works"  -tag test -skip {
+            It "Adds a subscription" {
+                { New-DbaReplPublication -SqlInstance 'mssql2' -Database ReplDb -PublicationDatabase ReplDb -PublicationName $pubname -Type 'Push' -EnableException } | Should -Not -Throw
+
+                #TODO: waiting on get-dbareplsubscription to be implemented
+            }
         }
 
-        Context "Remove-DbaReplSubscription works" {
-            # TODO:
+        Context "Remove-DbaReplSubscription works" -tag test -skip{
+            BeforeEach {
+                #TODO: check it doesn't exist with get-dbareplsubscription
+                New-DbaReplPublication -SqlInstance 'mssql2' -Database ReplDb -PublicationDatabase ReplDb -PublicationName $pubname -Type 'Push'
+            }
+            It "Removes a subscription" {
+                { Remove-DbaReplPublication -SqlInstance 'mssql2' -Database ReplDb -PublicationDatabase ReplDb -PublicationName $pubname -EnableException } | Should -Not -Throw
+
+                #TODO: waiting on get-dbareplsubscription to be implemented
+            }
         }
 
     }
