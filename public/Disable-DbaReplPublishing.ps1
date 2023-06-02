@@ -1,10 +1,10 @@
 function Disable-DbaReplPublishing {
     <#
     .SYNOPSIS
-        Disables publication for the target SQL instances.
+        Disables publishing for the target SQL instances.
 
     .DESCRIPTION
-        Disables publication for the target SQL instances.
+        Disables publishing for the target SQL instances.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.
@@ -17,13 +17,13 @@ function Disable-DbaReplPublishing {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Force
-        Boolean value that specifies whether or not replication objects are removed from the server,
-        even if a remote Distributor cannot be reached.
+        A Boolean value that specifies whether the Publisher is uninstalled from the Distributor without verifying that
+        Publisher has also uninstalled the Distributor, if the Publisher is on a separate server.
 
-        If true, the publishing and Distributor configuration at the current server is uninstalled regardless of whether or
-        not dependent publishing and distribution objects are uninstalled.
+        If true, all the replication objects associated with the Publisher are dropped even if the Publisher is on a remote server
+        that cannot be reached.
 
-        If false, all dependent publishing and distribution objects are dropped before the Distributor is uninstalled.
+        If false, replication first verifies that the remote Publisher has uninstalled the Distributor.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -41,7 +41,7 @@ function Disable-DbaReplPublishing {
         Author: Jess Pomfret (@jpomfret), jesspomfret.com
 
         Website: https://dbatools.io
-        Copyright: (c) 2022 by dbatools, licensed under MIT
+        Copyright: (c) 2023 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
@@ -57,8 +57,9 @@ function Disable-DbaReplPublishing {
         PS C:\> Disable-DbaReplPublishing -SqlInstance mssql1, mssql2 -SqlCredential $cred -Force
 
         Disables replication distribution for the mssql1 and mssql2 instances using a sql login.
-        Specifies force so the publishing and Distributor configuration at the current server is uninstalled
-        regardless of whether or not dependent publishing and distribution objects are uninstalled.
+
+        Specifies force so all the replication objects associated with the Publisher are dropped even
+        if the Publisher is on a remote server that cannot be reached.
 
     #>
     [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess, ConfirmImpact = 'High')]
@@ -81,7 +82,6 @@ function Disable-DbaReplPublishing {
             if ($replServer.IsPublisher) {
                 try {
                     if ($PSCmdlet.ShouldProcess($instance, "Disabling publishing on $instance")) {
-                        #Get-DbaProcess -SqlInstance $instance -SqlCredential $SqlCredential -Database $replServer.DistributionDatabases.name | Stop-DbaProcess
                         # uninstall distribution
                         $replServer.DistributionPublishers.Remove($Force)
                     }
@@ -95,12 +95,6 @@ function Disable-DbaReplPublishing {
             } else {
                 Stop-Function -Message "$instance isn't currently enabled for publishing." -Continue -ContinueLabel main -Target $instance -Category InvalidData
             }
-
-            #$replServer | Add-Member -Type NoteProperty -Name ComputerName -Value $server.ComputerName -Force
-            #$replServer | Add-Member -Type NoteProperty -Name InstanceName -Value $server.ServiceName -Force
-            #$replServer | Add-Member -Type NoteProperty -Name SqlInstance -Value $server.DomainInstanceName -Force
-            #Select-DefaultView -InputObject $replServer -Property ComputerName, InstanceName, SqlInstance, Status, WorkingDirectory, DistributionDatabase, DistributionPublications, PublisherType, Name
-
         }
     }
 }
