@@ -19,7 +19,8 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
         Import-Module ./dbatools.psd1 -Force
 
         $null = New-DbaDatabase -Name ReplDb
-        $null = Invoke-DbaQuery -Database ReplDb -Query 'CREATE TABLE ReplicateMe ( id int identity (1,1) PRIMARY KEY, col1 varchar(10) )'
+        $null = Invoke-DbaQuery -Database ReplDb -Query 'CREATE TABLE ReplicateMe ( id int identity (1,1) PRIMARY KEY, col1 varchar(10) ); CREATE TABLE ReplicateMeToo ( id int identity (1,1) PRIMARY KEY, col1 varchar(10) );'
+
     }
 
     Describe "Publishing\Distribution Functions" -Tag ReplSetup {
@@ -280,7 +281,8 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
             if (-not (Get-DbaReplPublication -Name $name -Type Merge)) {
                 $null = New-DbaReplPublication -Database ReplDb -Type Merge -PublicationName $Name
             }
-            $articleName = 'ReplicateMe'
+            $article = 'ReplicateMe'
+            $article2 = 'ReplicateMeToo'
         }
 
         Context "New-DbaReplCreationScriptOptions works" {
@@ -309,89 +311,130 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
             }
         }
 
-        Context "Add-DbaReplArticle works" {
+        Context "Add-DbaReplArticle works" -tag test{
             BeforeAll {
-                $articleName = 'ReplicateMe'
+                # remove all articles
+                $null = Get-DbaReplArticle -Database ReplDb | Remove-DbaReplArticle -Confirm:$false
             }
 
             It "Add-DbaReplArticle adds an article to a Transactional publication" {
                 $pubName = 'TestPub'
-                { Add-DbaReplArticle -Database ReplDb -Name $articleName -Publication $pubName } | Should -not -throw
-                $art = Get-DbaReplArticle -Database ReplDb -Name $articleName -Publication $pubName
+                { Add-DbaReplArticle -Database ReplDb -Name $article -Publication $pubName -EnableException } | Should -not -throw
+                $art = Get-DbaReplArticle -Database ReplDb -Name $article -Publication $pubName
                 $art | Should -Not -BeNullOrEmpty
                 $art.PublicationName | Should -Be $pubName
-                $art.Name | Should -Be $articleName
+                $art.Name | Should -Be $article
+            }
+
+            It "Add-DbaReplArticle adds an article to a Snapshot publication and specifies create script options" {
+                $pubname = 'TestPub'
+                $cso = New-DbaReplCreationScriptOptions -Options NonClusteredIndexes, Statistics
+                { Add-DbaReplArticle -Database ReplDb -Name $article2 -Publication $pubname -CreationScriptOptions $cso -EnableException } | Should -not -throw
+                $art = Get-DbaReplArticle -Database ReplDb -Name $article2 -Publication $pubName
+                $art | Should -Not -BeNullOrEmpty
+                $art.PublicationName | Should -Be $pubName
+                $art.Name | Should -Be $article2
             }
 
             It "Add-DbaReplArticle adds an article to a Snapshot publication" {
                 $pubname = 'TestSnap'
-                { Add-DbaReplArticle -Database ReplDb -Name $articleName -Publication $pubname -EnableException } | Should -not -throw
-                $art = Get-DbaReplArticle -Database ReplDb -Name $articleName -Publication $pubName
+                { Add-DbaReplArticle -Database ReplDb -Name $article -Publication $pubname -EnableException } | Should -not -throw
+                $art = Get-DbaReplArticle -Database ReplDb -Name $article -Publication $pubName
                 $art | Should -Not -BeNullOrEmpty
                 $art.PublicationName | Should -Be $pubName
-                $art.Name | Should -Be $articleName
+                $art.Name | Should -Be $article
             }
+
+            It "Add-DbaReplArticle adds an article to a Snapshot publication with a filter" {
+                $pubName = 'TestSnap'
+                { Add-DbaReplArticle -Database ReplDb -Name $article2 -Publication $pubName -Filter "col1 = 'test'" -EnableException } | Should -not -throw
+                $art = Get-DbaReplArticle -Database ReplDb -Name $article2 -Publication $pubName
+                $art | Should -Not -BeNullOrEmpty
+                $art.PublicationName | Should -Be $pubName
+                $art.Name | Should -Be $article2
+                $art.FilterClause | Should -Be "col1 = 'test'"
+            }
+
             It "Add-DbaReplArticle adds an article to a Merge publication" {
                 $pubname = 'TestMerge'
-                { Add-DbaReplArticle -Database ReplDb -Name $articleName -Publication $pubname -EnableException } | Should -not -throw
-                $art = Get-DbaReplArticle -Database ReplDb -Name $articleName -Publication $pubName
+                { Add-DbaReplArticle -Database ReplDb -Name $article -Publication $pubname -EnableException } | Should -not -throw
+                $art = Get-DbaReplArticle -Database ReplDb -Name $article -Publication $pubName
                 $art | Should -Not -BeNullOrEmpty
                 $art.PublicationName | Should -Be $pubName
-                $art.Name | Should -Be $articleName
+                $art.Name | Should -Be $article
             }
         }
 
         Context "Get-DbaReplArticle works" {
             BeforeAll {
-                # we need some articles too remove
+                # we need some articles too get
                 $article = 'ReplicateMe'
+                $article2 = 'ReplicateMeToo'
 
                 # we need some publications too
-                $name = 'TestTrans'
-                if (-not (Get-DbaReplPublication -Name $name -Type Transactional)) {
-                    $null = New-DbaReplPublication -Database ReplDb -Type Transactional -PublicationName $Name
+                $pubName = 'TestTrans'
+                if (-not (Get-DbaReplPublication -Name $pubName -Type Transactional)) {
+                    $null = New-DbaReplPublication -Database ReplDb -Type Transactional -PublicationName $pubName
                 }
-                $name = 'TestSnap'
-                if (-not (Get-DbaReplPublication -Name $name -Type Snapshot)) {
-                    $null = New-DbaReplPublication -Database ReplDb -Type Snapshot -PublicationName $Name
+                if (-not (Get-DbaReplArticle -Database ReplDb -Publication $pubName -Name $article)) {
+                    $null = Add-DbaReplArticle -Database ReplDb -Publication $pubName -Name $article
                 }
-                $name = 'TestMerge'
-                if (-not (Get-DbaReplPublication -Name $name -Type Merge)) {
-                    $null = New-DbaReplPublication -Database ReplDb -Type Merge -PublicationName $Name
+
+                $pubName = 'TestSnap'
+                if (-not (Get-DbaReplPublication -Name $pubName -Type Snapshot)) {
+                    $null = New-DbaReplPublication -Database ReplDb -Type Snapshot -PublicationName $pubName
+                }
+                if (-not (Get-DbaReplArticle -Database ReplDb -Publication $pubname -Name $article)) {
+                    $null = Add-DbaReplArticle -Database ReplDb -Publication $pubname -Name $article
+                    $null = Add-DbaReplArticle -Database ReplDb -Publication $pubname -Name $article2
+                }
+
+                $pubName = 'TestMerge'
+                if (-not (Get-DbaReplPublication -Name $pubName -Type Merge)) {
+                    $null = New-DbaReplPublication -Database ReplDb -Type Merge -PublicationName $pubName
+                }
+                if (-not (Get-DbaReplArticle -Database ReplDb -Publication $pubname -Name $article)) {
+                    $null = Add-DbaReplArticle -Database ReplDb -Publication $pubname -Name $article
                 }
             }
 
-            It "Get-DbaReplArticle gets the article from a Transactional publication" {
-                $PublicationName = 'TestTrans'
-                $Name = "ReplicateMe"
-                Add-DbaReplArticle -Database ReplDb -Publication $PublicationName -Name $Name
+            It "Get-DbaReplArticle gets all the articles from a server" {
+                $getArt = Get-DbaReplArticle
+                $getArt | Should -Not -BeNullOrEmpty
+                $t | ForEach-Object { $_.SqlInstance | Should -Be 'mssql1' }
+            }
 
-                $TransArticle = Get-DbaReplArticle -Database ReplDb -Type Transactional -Publication $PublicationName
-                $TransArticle.Count | Should -Be 1
-                $TransArticle.Name | Should -Be $Name
-                $TransArticle.PublicationName | Should -Be $PublicationName
+            It "Get-DbaReplArticle gets all the articles from a particular database on a server" {
+                $getArt = Get-DbaReplArticle -Database ReplDb
+                $getArt | Should -Not -BeNullOrEmpty
+                $getArt | ForEach-Object { $_.SqlInstance | Should -Be 'mssql1' }
+                $getArt | ForEach-Object { $_.DatabaseName | Should -Be 'ReplDb' }
+            }
+
+            It "Get-DbaReplArticle gets all the articles from a specific publication" {
+                $pubName = 'TestSnap'
+                $arts = $article, $article2
+
+                $getArt = Get-DbaReplArticle -Database ReplDb -Publication $pubName
+                $getArt.Count | Should -Be 2
+                $getArt.Name | Should -Be $arts
+                $getArt | Foreach-Object {$_.PublicationName | Should -Be $pubName }
+            }
+
+            It "Get-DbaReplArticle gets a certain article from a specific publication" {
+                $pubName = 'TestTrans'
+                $Name = "ReplicateMe"
+
+                $getArt = Get-DbaReplArticle -Database ReplDb -Publication $pubName -Name $Name
+                $getArt.Count | Should -Be 1
+                $getArt.Name | Should -Be $Name
+                $getArt.PublicationName | Should -Be $pubName
             }
 
             It "Piping from Connect-DbaInstance works" -skip {
                 Connect-DbaInstance -Database ReplDb | Get-DbaReplArticle | Should -Not -BeNullOrEmpty
             }
 
-
-
-            It "Get-DbaReplArticle gets the article from a Transactional publication" {
-                $PublicationName = 'TestTrans'
-                $Name = "ReplicateMe"
-                Add-DbaReplArticle -Database ReplDb -Publication $PublicationName -Name $Name
-
-                $TransArticle = Get-DbaReplArticle -Database ReplDb -Type Transactional -Publication $PublicationName
-                $TransArticle.Count | Should -Be 1
-                $TransArticle.Name | Should -Be $Name
-                $TransArticle.PublicationName | Should -Be $PublicationName
-            }
-
-            It "Piping from Connect-DbaInstance works" -skip {
-                Connect-DbaInstance -Database ReplDb | Get-DbaReplArticle | Should -Not -BeNullOrEmpty
-            }
         }
 
         Context "Remove-DbaReplArticle works" {
