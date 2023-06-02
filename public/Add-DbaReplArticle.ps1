@@ -53,7 +53,7 @@ function Add-DbaReplArticle {
         Author: Jess Pomfret (@jpomfret), jesspomfret.com
 
         Website: https://dbatools.io
-        Copyright: (c) 2022 by dbatools, licensed under MIT
+        Copyright: (c) 2023 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
         https://learn.microsoft.com/en-us/sql/relational-databases/replication/publish/define-an-article?view=sql-server-ver16#RMOProcedure
@@ -97,24 +97,16 @@ function Add-DbaReplArticle {
     param (
         [parameter(Mandatory, ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
-
         [PSCredential]$SqlCredential,
-
         [parameter(Mandatory)]
         [String]$Database,
-
         [parameter(Mandatory)]
         [String]$Publication,
-
         [String]$Schema = 'dbo',
-
         [parameter(Mandatory)]
         [String]$Name,
-
         [String]$Filter,
-
         [Microsoft.SqlServer.Replication.CreationScriptOptions]$CreationScriptOptions,
-
         [Switch]$EnableException
     )
     process {

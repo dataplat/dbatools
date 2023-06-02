@@ -66,11 +66,8 @@ function Disable-DbaReplPublishing {
     param (
         [parameter(Mandatory, ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
-
         [PSCredential]$SqlCredential,
-
         [switch]$Force,
-
         [switch]$EnableException
     )
     process {

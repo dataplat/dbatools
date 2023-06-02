@@ -32,34 +32,18 @@ function Get-DbaReplSubscription {
 
     .NOTES
         Tags: Replication
-        Author: Colin Douglas
+        Author: Jess Pomfret (@jpomfret), jesspomfret.com
 
         Website: https://dbatools.io
-        Copyright: (c) 2018 by dbatools, licensed under MIT
+        Copyright: (c) 2023 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaReplPublication
+        https://dbatools.io/Get-DbaReplSubscription
 
     .EXAMPLE
-        PS C:\> Get-DbaReplPublication -SqlInstance sql2008, sqlserver2012
+        PS C:\> #TODO: add example
 
-        Return all publications for servers sql2008 and sqlserver2012.
-
-    .EXAMPLE
-        PS C:\> Get-DbaReplPublication -SqlInstance sql2008 -Database TestDB
-
-        Return all publications on server sql2008 for only the TestDB database
-
-    .EXAMPLE
-        PS C:\> Get-DbaReplPublication -SqlInstance sql2008 -Type Transactional
-
-        Return all publications on server sql2008 for all databases that have Transactional publications
-
-    .EXAMPLE
-        PS C:\> Get-DbaReplPublication -SqlInstance mssql1 -Name Mergey
-
-        Returns the Mergey publications on server mssql1
     #>
     [CmdletBinding()]
     param (
@@ -69,20 +53,17 @@ function Get-DbaReplSubscription {
         [PSCredential]$SqlCredential,
         [String]$Name,
         [Alias("PublicationType")]
-        [ValidateSet("Transactional", "Merge", "Snapshot")]
+        [ValidateSet("Push","Pull")]
         [object[]]$Type,
         [switch]$EnableException
     )
-    begin {
-        Add-ReplicationLibrary
-    }
     process {
         if (Test-FunctionInterrupt) { return }
         foreach ($instance in $SqlInstance) {
 
             # Connect to Publisher
             try {
-                $replServer = Get-DbaReplServer -SqlInstance $instance -SqlCredential $PublisherSqlCredential
+                $replServer = Get-DbaReplServer -SqlInstance $instance -SqlCredential $SqlCredential
             } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
@@ -94,6 +75,9 @@ function Get-DbaReplSubscription {
 
 
             #TODO: finish this function
+            # can we get subscriptions by passing in subscription server mssql2 ... or do we need to start at the publisher
+            # get-publications --> subscriptions info is in there
+
 
         }
     }

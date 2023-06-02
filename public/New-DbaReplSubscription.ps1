@@ -41,14 +41,14 @@ function New-DbaReplSubscription {
         Author: Jess Pomfret (@jpomfret), jesspomfret.com
 
         Website: https://dbatools.io
-        Copyright: (c) 2022 by dbatools, licensed under MIT
+        Copyright: (c) 2023 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/New-DbaReplPublication
+        https://dbatools.io/New-DbaReplSubscription
 
     .EXAMPLE
-        PS C:\> New-DbaReplPublication -SqlInstance mssql1 -Database Northwind -PublicationName PubFromPosh
+        PS C:\> New-DbaReplSubscription -SqlInstance mssql1 -Database Northwind -PublicationName PubFromPosh
 
         Creates a publication called PubFromPosh for the Northwind database on mssql1
 
@@ -57,28 +57,19 @@ function New-DbaReplSubscription {
     param (
         [parameter(Mandatory, ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
-
         [PSCredential]$SqlCredential,
-
         [String]$Database,
-
         [parameter(Mandatory)]
         [DbaInstanceParameter]$PublisherSqlInstance,
-
         [PSCredential]$PublisherSqlCredential,
-
         [String]$PublicationDatabase,
-
         [parameter(Mandatory)]
         [String]$PublicationName,
-
         [PSCredential] # this will be saved as the 'subscriber credential' in the subscription properties
         $SubscriptionSqlCredential,
-
         [parameter(Mandatory)]
         [ValidateSet("Push", "Pull")]
         [String]$Type,
-
         [Switch]$EnableException
     )
     begin {
@@ -93,8 +84,6 @@ function New-DbaReplSubscription {
 
         try {
             $pub = Get-DbaReplPublication -SqlInstance $PublisherSqlInstance -SqlCredential $PublisherSqlCredential -Name $PublicationName
-
-
         } catch {
             Stop-Function -Message ("Publication {0} not found on {1}" -f $PublicationName, $instance) -ErrorRecord $_ -Target $instance -Continue
         }
@@ -106,7 +95,6 @@ function New-DbaReplSubscription {
         foreach ($instance in $SqlInstance) {
 
             try {
-
                 $subReplServer = get-DbaReplServer -SqlInstance $instance -SqlCredential $SqlCredential
 
                 if (-not (Get-DbaDatabase -SqlInstance $instance -SqlCredential $SqlCredential -Database $Database)) {
