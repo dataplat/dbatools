@@ -401,7 +401,7 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
             It "Get-DbaReplArticle gets all the articles from a server" {
                 $getArt = Get-DbaReplArticle
                 $getArt | Should -Not -BeNullOrEmpty
-                $t | ForEach-Object { $_.SqlInstance | Should -Be 'mssql1' }
+                $getArt | ForEach-Object { $_.SqlInstance | Should -Be 'mssql1' }
             }
 
             It "Get-DbaReplArticle gets all the articles from a particular database on a server" {
