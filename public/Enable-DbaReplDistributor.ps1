@@ -37,7 +37,7 @@ function Enable-DbaReplDistributor {
         Author: Jess Pomfret (@jpomfret), jesspomfret.com
 
         Website: https://dbatools.io
-        Copyright: (c) 2022 by dbatools, licensed under MIT
+        Copyright: (c) 2023 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
@@ -76,7 +76,8 @@ function Enable-DbaReplDistributor {
                     $distributionDb = New-Object Microsoft.SqlServer.Replication.DistributionDatabase
                     $distributionDb.ConnectionContext = $replServer.ConnectionContext
                     $distributionDb.Name = $DistributionDatabase
-                    # lots more properties to add as params
+
+                    #TODO: lots more properties to add as params
                     $replServer.InstallDistributor($null, $distributionDb)
                 }
             } catch {
