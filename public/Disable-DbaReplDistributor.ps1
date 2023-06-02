@@ -20,10 +20,11 @@ function Disable-DbaReplDistributor {
         Boolean value that specifies whether or not replication objects are removed from the server,
         even if a remote Distributor cannot be reached.
 
-        If true, the publishing and Distributor configuration at the current server is uninstalled regardless of whether or
-        not dependent publishing and distribution objects are uninstalled.
+        If true, the publishing and Distributor configuration at the current server is uninstalled regardless of
+        whether or not dependent publishing and distribution objects are uninstalled.
 
-        If false, all dependent publishing and distribution objects are dropped before the Distributor is uninstalled.
+        If false, the publisher and distribution databases must already be uninstalled, and no local databases
+        are enabled for publishing.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -41,7 +42,7 @@ function Disable-DbaReplDistributor {
         Author: Jess Pomfret (@jpomfret), jesspomfret.com
 
         Website: https://dbatools.io
-        Copyright: (c) 2022 by dbatools, licensed under MIT
+        Copyright: (c) 2023 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
@@ -66,8 +67,7 @@ function Disable-DbaReplDistributor {
         [parameter(Mandatory, ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-
-        [switch]$force,
+        [switch]$Force,
         [switch]$EnableException
     )
     process {
@@ -85,7 +85,7 @@ function Disable-DbaReplDistributor {
                         # remove any connections to the distribution database
                         Get-DbaProcess -SqlInstance $instance -SqlCredential $SqlCredential -Database $replServer.DistributionDatabases.name | Stop-DbaProcess
                         # uninstall distribution
-                        $replServer.UninstallDistributor($force)
+                        $replServer.UninstallDistributor($Force)
                     }
                 } catch {
                     Stop-Function -Message "Unable to disable replication distribution" -ErrorRecord $_ -Target $instance -Continue

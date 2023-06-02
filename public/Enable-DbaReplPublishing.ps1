@@ -21,7 +21,7 @@ function Enable-DbaReplPublishing {
 
     .PARAMETER PublisherSqlLogin
         If this is used the PublisherSecurity will be set to use this.
-        If not specified WindowsAuthentication can will used - this is the default, and recommended method.
+        If not specified WindowsAuthentication will be used - this is the default, and recommended method.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -39,7 +39,7 @@ function Enable-DbaReplPublishing {
         Author: Jess Pomfret (@jpomfret), jesspomfret.com
 
         Website: https://dbatools.io
-        Copyright: (c) 2022 by dbatools, licensed under MIT
+        Copyright: (c) 2023 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
@@ -56,7 +56,7 @@ function Enable-DbaReplPublishing {
         [parameter(Mandatory, ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        $SnapshotShare = '/var/opt/mssql/ReplData', # TODO: default should handle linux\windows?
+        [string]$SnapshotShare = '/var/opt/mssql/ReplData', # TODO: default should handle linux\windows? can we get the default?
         [PSCredential]$PublisherSqlLogin,
         [switch]$EnableException
     )
@@ -93,7 +93,7 @@ function Enable-DbaReplPublishing {
 
                         } else {
                             Write-Message -Level Verbose -Message "Configuring with WindowsAuth for PublisherSecurity"
-                            $distPublisher.PublisherSecurity.WindowsAuthentication = $true  # TODO: test with windows auth
+                            $distPublisher.PublisherSecurity.WindowsAuthentication = $true
                         }
 
                         Write-Message -Level Debug -Message $distPublisher
@@ -108,7 +108,7 @@ function Enable-DbaReplPublishing {
             }
 
             $replServer.Refresh()
-            $replServer # TODO: Standard output
+            $replServer
 
         }
     }

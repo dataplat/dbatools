@@ -109,7 +109,7 @@ function Remove-DbaReplPublication {
                                 $pubDatabase.EnabledTransPublishing = $false
                             }
                         }
-                            # https://learn.microsoft.com/en-us/sql/relational-databases/replication/publish/delete-a-publication?view=sql-server-ver16#RMOProcedure
+                        # https://learn.microsoft.com/en-us/sql/relational-databases/replication/publish/delete-a-publication?view=sql-server-ver16#RMOProcedure
 
                     } elseif ($pub.Type -eq 'Merge') {
                         $mergePub = New-Object Microsoft.SqlServer.Replication.MergePublication
