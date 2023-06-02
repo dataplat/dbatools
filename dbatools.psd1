@@ -744,7 +744,8 @@
         'Remove-DbaReplPublication',
         'New-DbaReplSubscription',
         'Remove-DbaReplSubscription',
-        'New-DbaReplCreationScriptOptions'
+        'New-DbaReplCreationScriptOptions',
+        'Get-DbaReplSubscription'
     )
 
     # Cmdlets to export from this module
