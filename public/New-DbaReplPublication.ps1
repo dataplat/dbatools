@@ -98,6 +98,11 @@ function New-DbaReplPublication {
         foreach ($instance in $SqlInstance) {
             try {
                 $replServer = Get-DbaReplServer -SqlInstance $instance -SqlCredential $SqlCredential
+
+                if (-not $replServer.IsPublisher) {
+                    Stop-Function -Message "Instance $instance is not a publisher, run Enable-DbaReplPublishing to set this up" -Target $instance -Continue
+                }
+
             } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
@@ -106,7 +111,8 @@ function New-DbaReplPublication {
             try {
                 if ($PSCmdlet.ShouldProcess($instance, "Creating publication on $instance")) {
 
-                    #TODO: could replace this with call to Connect-ReplicationDB
+
+
                     $pubDatabase = New-Object Microsoft.SqlServer.Replication.ReplicationDatabase
                     $pubDatabase.ConnectionContext = $replServer.ConnectionContext
                     $pubDatabase.Name = $Database
@@ -118,28 +124,27 @@ function New-DbaReplPublication {
                         Write-Message -Level Verbose -Message "Enable trans publishing publication on $instance.$Database"
                         $pubDatabase.EnabledTransPublishing = $true
                         $pubDatabase.CommitPropertyChanges()
+                        # log reader agent is only needed for transactional and snapshot replication.
+                        if (-not $pubDatabase.LogReaderAgentExists) {
+                            Write-Message -Level Verbose -Message "Create log reader agent job for $Database on $instance"
+                            if ($LogReaderAgentCredential) {
+                                #TODO: Test this
+                                $pubDatabase.LogReaderAgentProcessSecurity.Login = $LogReaderAgentCredential.UserName
+                                $pubDatabase.LogReaderAgentProcessSecurity.Password = $LogReaderAgentCredential.Password
+                            }
+
+                            #(Optional) Set the SqlStandardLogin and SqlStandardPassword or
+                            # SecureSqlStandardPassword fields of LogReaderAgentPublisherSecurity when using SQL Server Authentication to connect to the Publisher.
+
+                            $pubDatabase.CreateLogReaderAgent()
+                        } else {
+                            Write-Message -Level Verbose -Message "Log reader agent job already exists for $Database on $instance"
+                        }
+
                     } elseif ($Type -eq 'Merge') {
                         Write-Message -Level Verbose -Message "Enable merge publishing publication on $instance.$Database"
                         $pubDatabase.EnabledMergePublishing = $true
                         $pubDatabase.CommitPropertyChanges()
-                    }
-
-                    if (-not $pubDatabase.LogReaderAgentExists) {
-                        #TODO: if this needed for merge?
-
-                        Write-Message -Level Verbose -Message "Create Log Read Agent job for $Database on $instance"
-                        if ($LogReaderAgentCredential) {
-                            #TODO: Test this
-                            $pubDatabase.LogReaderAgentProcessSecurity.Login = $LogReaderAgentCredential.UserName
-                            $pubDatabase.LogReaderAgentProcessSecurity.Password = $LogReaderAgentCredential.Password
-                        }
-
-                        #(Optional) Set the SqlStandardLogin and SqlStandardPassword or
-                        # SecureSqlStandardPassword fields of LogReaderAgentPublisherSecurity when using SQL Server Authentication to connect to the Publisher.
-
-                        $pubDatabase.CreateLogReaderAgent()
-                    } else {
-                        Write-Message -Level Verbose -Message "Log Read Agent job already exists for $Database on $instance"
                     }
 
                     if ($Type -in ('Transactional', 'Snapshot')) {
