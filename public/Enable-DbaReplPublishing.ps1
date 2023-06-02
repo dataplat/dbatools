@@ -17,7 +17,9 @@ function Enable-DbaReplPublishing {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER SnapshotShare
-         The share used to access snapshot files.
+        The share used to access snapshot files.
+
+        The default is the ReplData folder within the InstallDataDirectory for the instance.
 
     .PARAMETER PublisherSqlLogin
         If this is used the PublisherSecurity will be set to use this.
@@ -56,7 +58,7 @@ function Enable-DbaReplPublishing {
         [parameter(Mandatory, ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [string]$SnapshotShare = '/var/opt/mssql/ReplData', # TODO: default should handle linux\windows? can we get the default?
+        [string]$SnapshotShare,
         [PSCredential]$PublisherSqlLogin,
         [switch]$EnableException
     )
@@ -79,10 +81,11 @@ function Enable-DbaReplPublishing {
                         $distPublisher.Name = $instance #- name of the Publisher.
                         $distPublisher.DistributionDatabase = $replServer.DistributionDatabases.Name #- the name of the database created in step 5.
 
-                        #TODO: test snapshot path and warn\error?
-                        #if (Test-DbaPath -SqlInstance mssql1 -Path $SnapshotShare) {
-                        #    Stop-Function -Message ("Snapshot path '{0}' does not exist - will attempt to create it" -f $SnapshotShare) -ErrorRecord $_ -Target $instance -Continue
-                        #}
+                        if (-not $PSBoundParameters.SnapshotShare) {
+                            $SnapshotShare = Join-Path (Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential).InstallDataDirectory 'ReplData'
+                            Write-Message -Level Verbose -Message ('No snapshot share specified, using default of {0}' -f $SnapshotShare)
+                        }
+
                         $distPublisher.WorkingDirectory = $SnapshotShare
 
                         if ($PublisherSqlLogin) {
