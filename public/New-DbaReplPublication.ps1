@@ -77,21 +77,15 @@ function New-DbaReplPublication {
     param (
         [parameter(Mandatory, ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
-
         [PSCredential]$SqlCredential,
-
         [parameter(Mandatory)]
         [String]$Database,
-
         [parameter(Mandatory)]
         [String]$PublicationName,
-
         [parameter(Mandatory)]
         [ValidateSet("Snapshot", "Transactional", "Merge")]
         [String]$Type,
-
         [PSCredential]$LogReaderAgentCredential,
-
         [Switch]$EnableException
     )
     process {

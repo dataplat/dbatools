@@ -1,10 +1,10 @@
 function Get-DbaReplArticleColumn {
     <#
     .SYNOPSIS
-        Gets the information about publication article columns.
+        Gets the information about replicated article columns.
 
     .DESCRIPTION
-        This function enumerates columns information for a given articles.
+        This function enumerates column information for given articles.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.
@@ -19,11 +19,8 @@ function Get-DbaReplArticleColumn {
     .PARAMETER Database
         Specifies one or more database(s) to process. If unspecified, all databases will be processed.
 
-    .PARAMETER PublicationName
+    .PARAMETER Publication
         Specifies one or more publication(s) to process. If unspecified, all publications will be processed.
-
-    .PARAMETER PublicationType
-        Limit by specific type of publication. Valid choices include: Transactional, Merge, Snapshot
 
     .PARAMETER Article
         Specifies one or more article(s) to process. If unspecified, all articles will be processed.
@@ -41,16 +38,36 @@ function Get-DbaReplArticleColumn {
         Author: Cláudio Silva (@claudioessilva), claudioessilva.eu
 
         Website: https://dbatools.io
-        Copyright: (c) 2018 by dbatools, licensed under MIT
+        Copyright: (c) 2023 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
         https://dbatools.io/Get-DbaReplArticleColumn
 
     .EXAMPLE
-        PS C:\> Get-DbaReplArticleColumn -SqlInstance sqlserver2019 -Database pubs -Publication PubName -PublicationType Transactional -Article sales
+        PS C:\> Get-DbaReplArticleColumn -SqlInstance sqlserver2019
+
+        Retrieve information of all replicated columns in any publications on server sqlserver2019.
+
+    .EXAMPLE
+        PS C:\> Get-DbaReplArticleColumn -SqlInstance sqlserver2019 -Database pubs
+
+        Retrieve information of all replicated columns in any publications from the pubs database on server sqlserver2019.
+
+    .EXAMPLE
+        PS C:\> Get-DbaReplArticleColumn -SqlInstance sqlserver2019 -Publication test
+
+        Retrieve information of all replicated columns in the test publication on server sqlserver2019.
+
+    .EXAMPLE
+        PS C:\> Get-DbaReplArticleColumn -SqlInstance sqlserver2019 -Database pubs -Publication PubName -Article sales
 
         Retrieve information of 'sales' article from 'PubName' on 'pubs' database for server sqlserver2019.
+
+    .EXAMPLE
+        PS C:\> Get-DbaReplArticleColumn -SqlInstance sqlserver2019 -Column state
+
+        Retrieve information for the state column in any publication from any database on server sqlserver2019.
 
     #>
     [CmdletBinding()]
@@ -61,42 +78,44 @@ function Get-DbaReplArticleColumn {
         [object[]]$Database,
         [parameter(ValueFromPipeline)]
         [object[]]$Publication,
-        [String]$PublicationType, # Snapshot, Transactional, Merge
         [string[]]$Article,
         [string[]]$Column,
         [switch]$EnableException
     )
-    begin {
-        #TODO - Still needed?
-        Add-ReplicationLibrary
-    }
     process {
         if (Test-FunctionInterrupt) { return }
 
-        $articles = Get-DbaReplArticle -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $Database -Publication $Publication -PublicationType $PublicationType -Article $Article
+        $articles = Get-DbaReplArticle -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $Database -Publication $Publication -Name $Article
 
         foreach ($art in $articles) {
-            $columns = $art.ListReplicatedColumns()
+            try {
 
-            if ($Column) {
-                $columns = $columns | Where-Object { $_ -In $Column }
-            }
+                $columns = $art.ListReplicatedColumns()
 
-            foreach ($col in $columns) {
+                if ($Column) {
+                    $columns = $columns | Where-Object { $_ -In $Column }
+                }
 
-                Add-Member -Force -InputObject $art -MemberType NoteProperty -Name ComputerName -Value $art.ComputerName
-                Add-Member -Force -InputObject $art -MemberType NoteProperty -Name InstanceName -Value $art.InstanceName
-                Add-Member -Force -InputObject $art -MemberType NoteProperty -Name SqlInstance -Value $art.SqlInstance
-                Add-Member -Force -InputObject $art -MemberType NoteProperty -Name ArticleName -Value $art.Name
-                Add-Member -Force -InputObject $art -MemberType NoteProperty -Name ArticleId -Value $art.ArticleId
-                Add-Member -Force -InputObject $art -MemberType NoteProperty -Name Description -Value $art.Description
-                Add-Member -Force -InputObject $art -MemberType NoteProperty -Name Type -Value $art.Type
-                Add-Member -Force -InputObject $art -MemberType NoteProperty -Name VerticalPartition -Value $art.VerticalPartition
-                Add-Member -Force -InputObject $art -MemberType NoteProperty -Name SourceObjectOwner -Value $art.SourceObjectOwner
-                Add-Member -Force -InputObject $art -MemberType NoteProperty -Name SourceObjectName -Value $art.SourceObjectName
-                Add-Member -Force -InputObject $art -MemberType NoteProperty -Name ColumnName -Value $col
+                foreach ($col in $columns) {
 
-                Select-DefaultView -InputObject $art -Property ComputerName, InstanceName, SqlInstance, ArticleName, ArticleId, Description, ColumnName #, DestinationObjectOwner, DestinationObjectName
+                    Add-Member -Force -InputObject $art -MemberType NoteProperty -Name ComputerName -Value $art.ComputerName
+                    Add-Member -Force -InputObject $art -MemberType NoteProperty -Name InstanceName -Value $art.InstanceName
+                    Add-Member -Force -InputObject $art -MemberType NoteProperty -Name SqlInstance -Value $art.SqlInstance
+                    Add-Member -Force -InputObject $art -MemberType NoteProperty -Name DatabaseName -Value $art.DatabaseName
+                    Add-Member -Force -InputObject $art -MemberType NoteProperty -Name PublicationName -Value $art.PublicationName
+                    Add-Member -Force -InputObject $art -MemberType NoteProperty -Name ArticleName -Value $art.Name
+                    Add-Member -Force -InputObject $art -MemberType NoteProperty -Name ArticleId -Value $art.ArticleId
+                    Add-Member -Force -InputObject $art -MemberType NoteProperty -Name Description -Value $art.Description
+                    Add-Member -Force -InputObject $art -MemberType NoteProperty -Name Type -Value $art.Type
+                    Add-Member -Force -InputObject $art -MemberType NoteProperty -Name VerticalPartition -Value $art.VerticalPartition
+                    Add-Member -Force -InputObject $art -MemberType NoteProperty -Name SourceObjectOwner -Value $art.SourceObjectOwner
+                    Add-Member -Force -InputObject $art -MemberType NoteProperty -Name SourceObjectName -Value $art.SourceObjectName
+                    Add-Member -Force -InputObject $art -MemberType NoteProperty -Name ColumnName -Value $col
+
+                    Select-DefaultView -InputObject $art -Property ComputerName, InstanceName, SqlInstance, DatabaseName, PublicationName, ArticleName, ArticleId, ColumnName #, DestinationObjectOwner, DestinationObjectName
+                }
+            } catch {
+                Stop-Function -Message "Error occurred while getting article columns from $instance" -ErrorRecord $_ -Target $instance -Continue
             }
         }
     }

@@ -37,7 +37,7 @@ function Get-DbaReplArticle {
         Author: Cláudio Silva (@claudioessilva), claudioessilva.eu
 
         Website: https://dbatools.io
-        Copyright: (c) 2018 by dbatools, licensed under MIT
+        Copyright: (c) 2023 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK

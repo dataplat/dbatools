@@ -40,7 +40,7 @@ function Remove-DbaReplPublication {
         Author: Jess Pomfret (@jpomfret), jesspomfret.com
 
         Website: https://dbatools.io
-        Copyright: (c) 2022 by dbatools, licensed under MIT
+        Copyright: (c) 2023 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
@@ -56,14 +56,10 @@ function Remove-DbaReplPublication {
     param (
         [parameter(Mandatory, ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
-
         [PSCredential]$SqlCredential,
-
         [String]$Database,
-
         [parameter(Mandatory)]
         [String]$Name,
-
         [Switch]$EnableException
     )
     process {

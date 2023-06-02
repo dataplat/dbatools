@@ -63,7 +63,6 @@ function New-DbaReplCreationScriptOptions {
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseShouldProcessForStateChangingFunctions", "")]
     param (
         [String[]]$Options,
-
         [switch]$NoDefaults
     )
 

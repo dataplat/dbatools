@@ -76,27 +76,15 @@ function Remove-DbaReplArticle {
     #>
     [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess, ConfirmImpact = 'High')]
     param (
-        # [parameter(Mandatory, ParameterSetName = "Default")]
         [DbaInstanceParameter[]]$SqlInstance,
-
         [PSCredential]$SqlCredential,
-
-        #[parameter(Mandatory, ParameterSetName = "Default")]
         [String]$Database,
-
-        #[parameter(Mandatory, ParameterSetName = "Default")]
         [String]$Publication,
-
         [String]$Schema = 'dbo',
-
-        #[parameter(Mandatory, ParameterSetName = "Default")]
         [String]$Name,
-
         [Switch]$DropObjectOnSubscriber,
-
-        [Parameter(ValueFromPipeline)]  # , Mandatory, ParameterSetName = "input")]
+        [Parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Replication.Article[]]$InputObject,
-
         [Switch]$EnableException
     )
 

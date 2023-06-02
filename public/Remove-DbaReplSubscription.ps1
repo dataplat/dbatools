@@ -1,7 +1,7 @@
 function Remove-DbaReplSubscription {
     <#
     .SYNOPSIS
-        Removes a subscription for the target SQL instances.
+        Removes a subscription \for the target SQL instances.
 
     .DESCRIPTION
         Removes a subscription for the target SQL instances.
@@ -54,7 +54,7 @@ function Remove-DbaReplSubscription {
         Author: Jess Pomfret (@jpomfret), jesspomfret.com
 
         Website: https://dbatools.io
-        Copyright: (c) 2022 by dbatools, licensed under MIT
+        Copyright: (c) 2023 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
@@ -77,21 +77,14 @@ function Remove-DbaReplSubscription {
     param (
         [parameter(Mandatory, ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
-
         [PSCredential]$SqlCredential,
-
         [parameter(Mandatory)]
         [DbaInstanceParameter]$PublisherSqlInstance,
-
         [PSCredential]$PublisherSqlCredential,
-
         [String]$PublicationDatabase,
-
         [parameter(Mandatory)]
         [String]$PublicationName,
-
         [String]$SubscriptionDatabase,
-
         [Switch]$EnableException
     )
     begin {
