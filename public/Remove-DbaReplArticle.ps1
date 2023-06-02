@@ -109,21 +109,22 @@ function Remove-DbaReplArticle {
             Stop-Function -Message "You must specify either SqlInstance or InputObject"
             return
         }
-        if ($SqlInstance) {
+
+        if ($InputObject) {
+            $articles += $InputObject
+        } else {
             $params = $PSBoundParameters
             $null = $params.Remove('InputObject')
             $null = $params.Remove('WhatIf')
             $null = $params.Remove('Confirm')
             $articles = Get-DbaReplArticle @params
-        } else {
-            $articles += $InputObject
         }
     }
 
     end {
         # We have to delete in the end block to prevent "Collection was modified; enumeration operation may not execute." if directly piped from Get-DbaReplArticle.
         foreach ($art in $articles) {
-            if ($PSCmdlet.ShouldProcess($art.Name, "Removing the article $($art.SourceObjectOwner).$($art.SourceObjectName) from the $($art.PublicationName) publication on $($art.SqlServerName)")) {
+            if ($PSCmdlet.ShouldProcess($art.Name, "Removing the article $($art.SourceObjectOwner).$($art.SourceObjectName) from the $($art.PublicationName) publication on $($art.SqlInstance)")) {
                 $output = [pscustomobject]@{
                     ComputerName = $art.ComputerName
                     InstanceName = $art.InstanceName
