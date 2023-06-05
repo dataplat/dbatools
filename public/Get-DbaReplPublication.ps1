@@ -6,10 +6,6 @@ function Get-DbaReplPublication {
     .DESCRIPTION
         Quickly find all transactional, merge, and snapshot publications on a server or filter by database, name or type.
 
-        TODO: is this still true? remove?
-        All replication commands need SQL Server Management Studio installed and are therefore currently not supported.
-        Have a look at this issue to get more information: https://github.com/dataplat/dbatools/issues/7428
-
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.
 
@@ -127,7 +123,6 @@ function Get-DbaReplPublication {
                         $pubTypes = $pubTypes | Where-Object Name -in $Name
                     }
 
-                    #TODO: Check why if -Database is not passed, I can't see the articles (JP - this works for me... 🤔)
                     foreach ($pub in $pubTypes) {
                         if ($pub.Type -eq 'Merge') {
                             $articles = $pub.MergeArticles
@@ -145,8 +140,7 @@ function Get-DbaReplPublication {
                         Add-Member -Force -InputObject $pub -MemberType NoteProperty -Name Subscriptions -Value $subscriptions
 
                         Select-DefaultView -InputObject $pub -Property ComputerName, InstanceName, SqlInstance, DatabaseName, Name, Type, Articles, Subscriptions
-                        #TODO: breaking change from PublicationName to Name
-                        #TODO: breaking change from PublicationType to Type
+
                     }
                 }
             } catch {

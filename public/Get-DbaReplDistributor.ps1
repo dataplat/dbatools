@@ -6,10 +6,6 @@ function Get-DbaReplDistributor {
     .DESCRIPTION
         This function locates and enumerates distributor information for a given SQL Server instance.
 
-        TODO: I think we can remove this?
-        All replication commands need SQL Server Management Studio installed and are therefore currently not supported.
-        Have a look at this issue to get more information: https://github.com/dataplat/dbatools/issues/7428
-
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.
 

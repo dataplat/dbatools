@@ -7,7 +7,8 @@ function Remove-DbaReplArticle {
         Removes an article from a publication for the database on the target SQL instances.
 
         Dropping an article from a publication does not remove the object from the publication database or the corresponding object from the subscription database.
-        Use DROP <Object> to remove these objects if necessary. #TODO: add a param for this DropObjectOnSubscriber
+        Use DROP <Object> to remove these objects if necessary.
+        #TODO: add a param for this DropObjectOnSubscriber
 
         Dropping an article invalidates the current snapshot; therefore a new snapshot must be created.
 
@@ -82,7 +83,7 @@ function Remove-DbaReplArticle {
         [String]$Publication,
         [String]$Schema = 'dbo',
         [String]$Name,
-        [Switch]$DropObjectOnSubscriber,
+        #[Switch]$DropObjectOnSubscriber,
         [Parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Replication.Article[]]$InputObject,
         [Switch]$EnableException
@@ -148,60 +149,4 @@ function Remove-DbaReplArticle {
             }
         }
     }
-
-    <#
-        foreach ($instance in $SqlInstance) {
-            try {
-                $replServer = Get-DbaReplServer -SqlInstance $instance -SqlCredential $SqlCredential
-            } catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
-            }
-            Write-Message -Level Verbose -Message "Removing article $Name from publication $PublicationName on $instance"
-
-            try {
-                if ($PSCmdlet.ShouldProcess($instance, "Removing an article from $PublicationName")) {
-
-                    $pub = Get-DbaReplPublication -SqlInstance $instance -SqlCredential $SqlCredential -Name $PublicationName
-
-                    if ($pub.Type -in ('Transactional', 'Snapshot')) {
-                        $article                    = New-Object Microsoft.SqlServer.Replication.TransArticle
-                    } elseif ($pub.Type -eq 'Merge') {
-                        $article                    = New-Object Microsoft.SqlServer.Replication.MergeArticle
-                    } else {
-                        Stop-Function -Message "Publication is not a supported type, currently only Transactional and Merge publications are supported" -ErrorRecord $_ -Target $instance -Continue
-                    }
-
-                    $article.ConnectionContext  = $replServer.ConnectionContext
-                    $article.Name               = $Name
-                    $article.SourceObjectOwner  = $Schema
-                    $article.PublicationName    = $PublicationName
-                    $article.DatabaseName       = $Database
-
-                    #TODO: change to RMO? if it has a subscription, we need to drop it first = can't work it out with RMO
-                    if ($pub.Subscriptions) {
-                        Write-Message -Level Verbose -Message ("There is a subscription so remove article {0} from subscription on {1}" -f $Name, $pub.Subscriptions.SubscriberName)
-                        $query = "exec sp_dropsubscription @publication = '{0}', @article= '{1}',@subscriber = '{2}'" -f $PublicationName, $Name, $pub.Subscriptions.SubscriberName
-                        Invoke-DbaQuery -SqlInstance $instance -SqlCredential $SqlCredential -Database $Database -query $query
-                    }
-
-                    if (($article.IsExistingObject)) {
-                        $article.Remove()
-                    } else {
-                        Stop-Function -Message "Article doesn't exist in $PublicationName on $instance" -ErrorRecord $_ -Target $instance -Continue
-                    }
-
-                    if ($DropObjectOnSubscriber) {
-
-                    }
-                }
-            } catch {
-                Stop-Function -Message "Unable to remove article $ArticleName from $PublicationName on $instance" -ErrorRecord $_ -Target $instance -Continue
-            }
-        }
-    }#>
-
-
 }
-
-
-

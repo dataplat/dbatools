@@ -162,8 +162,6 @@ function New-DbaReplSubscription {
                             $transSub.DatabaseName = $PublicationDatabase
                             $transSub.PublicationName = $PublicationName
 
-                            $transSub
-
                             #TODO:
 
                             <#
@@ -202,7 +200,7 @@ function New-DbaReplSubscription {
 
                             if ($type = 'Push') {
                                 # Perform a bitwise logical AND (& in Visual C# and And in Visual Basic) between the Attributes property and AllowPush.
-                                if ($mergePub.Attributes -band 'ALlowPush' -eq 'None' ) {
+                                if ($mergePub.Attributes -band 'AllowPush' -eq 'None' ) {
                                     # If the result is None, set Attributes to the result of a bitwise logical OR (| in Visual C# and Or in Visual Basic) between Attributes and AllowPush.
                                     $mergePub.Attributes = $mergePub.Attributes -bor 'AllowPush'
 
@@ -212,7 +210,7 @@ function New-DbaReplSubscription {
 
                             } else {
                                 # Perform a bitwise logical AND (& in Visual C# and And in Visual Basic) between the Attributes property and AllowPull.
-                                if ($mergePub.Attributes -band 'ALlowPull' -eq 'None' ) {
+                                if ($mergePub.Attributes -band 'AllowPull' -eq 'None' ) {
                                     # If the result is None, set Attributes to the result of a bitwise logical OR (| in Visual C# and Or in Visual Basic) between Attributes and AllowPull.
                                     $mergePub.Attributes = $mergePub.Attributes -bor 'AllowPull'
 
@@ -265,9 +263,7 @@ function New-DbaReplSubscription {
             } catch {
                 Stop-Function -Message ("Unable to create subscription - {0}" -f $_) -ErrorRecord $_ -Target $instance -Continue
             }
-
-            #TODO: What to return
-
+            #TODO: call Get-DbaReplSubscription when it's done
         }
     }
 }

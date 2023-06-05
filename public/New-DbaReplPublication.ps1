@@ -21,7 +21,7 @@ function New-DbaReplPublication {
     .PARAMETER Database
         The database that contains the articles to be replicated.
 
-    .PARAMETER PublicationName
+    .PARAMETER Name
         The name of the replication publication.
 
     .PARAMETER Type
@@ -34,7 +34,7 @@ function New-DbaReplPublication {
         Setting LogReaderAgentProcessSecurity is not required when the publication is created by a member of the sysadmin fixed server role.
         In this case, the agent will impersonate the SQL Server Agent account. For more information, see Replication Agent Security Model.
 
-        TODO: test this
+        TODO: test LogReaderAgentCredential parameters
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -59,17 +59,17 @@ function New-DbaReplPublication {
         https://dbatools.io/New-DbaReplPublication
 
     .EXAMPLE
-        PS C:\> New-DbaReplPublication -SqlInstance mssql1 -Database Northwind -PublicationName PubFromPosh -Type Transactional
+        PS C:\> New-DbaReplPublication -SqlInstance mssql1 -Database Northwind -Name PubFromPosh -Type Transactional
 
         Creates a transactional publication called PubFromPosh for the Northwind database on mssql1
 
     .EXAMPLE
-        PS C:\> New-DbaReplPublication -SqlInstance mssql1 -Database pubs -PublicationName snapPub -Type Snapshot
+        PS C:\> New-DbaReplPublication -SqlInstance mssql1 -Database pubs -Name snapPub -Type Snapshot
 
         Creates a snapshot publication called snapPub for the pubs database on mssql1
 
     .EXAMPLE
-        PS C:\> New-DbaReplPublication -SqlInstance mssql1 -Database pubs -PublicationName mergePub -Type Merge
+        PS C:\> New-DbaReplPublication -SqlInstance mssql1 -Database pubs -Name mergePub -Type Merge
 
         Creates a merge publication called mergePub for the pubs database on mssql1
     #>
@@ -81,7 +81,7 @@ function New-DbaReplPublication {
         [parameter(Mandatory)]
         [String]$Database,
         [parameter(Mandatory)]
-        [String]$PublicationName,
+        [String]$Name,
         [parameter(Mandatory)]
         [ValidateSet("Snapshot", "Transactional", "Merge")]
         [String]$Type,
@@ -122,7 +122,6 @@ function New-DbaReplPublication {
                         if (-not $pubDatabase.LogReaderAgentExists) {
                             Write-Message -Level Verbose -Message "Create log reader agent job for $Database on $instance"
                             if ($LogReaderAgentCredential) {
-                                #TODO: Test this
                                 $pubDatabase.LogReaderAgentProcessSecurity.Login = $LogReaderAgentCredential.UserName
                                 $pubDatabase.LogReaderAgentProcessSecurity.Password = $LogReaderAgentCredential.Password
                             }
@@ -146,7 +145,7 @@ function New-DbaReplPublication {
                         $transPub = New-Object Microsoft.SqlServer.Replication.TransPublication
                         $transPub.ConnectionContext = $replServer.ConnectionContext
                         $transPub.DatabaseName = $Database
-                        $transPub.Name = $PublicationName
+                        $transPub.Name = $Name
                         $transPub.Type = $Type
                         $transPub.Create()
 
@@ -154,7 +153,7 @@ function New-DbaReplPublication {
                         $transPub.CreateSnapshotAgent()
 
                         <#
-                        TODO: add these in?
+                        TODO: add SnapshotGenerationAgentProcessSecurity creds in?
 
                         The Login and Password fields of SnapshotGenerationAgentProcessSecurity to provide the credentials for the Windows account under which the Snapshot Agent runs.
                         This account is also used when the Snapshot Agent makes connections to the local Distributor and for any remote connections when using Windows Authentication.
@@ -170,14 +169,14 @@ function New-DbaReplPublication {
                         $mergePub = New-Object Microsoft.SqlServer.Replication.MergePublication
                         $mergePub.ConnectionContext = $replServer.ConnectionContext
                         $mergePub.DatabaseName = $Database
-                        $mergePub.Name = $PublicationName
+                        $mergePub.Name = $Name
                         $mergePub.Create()
 
                         # create the Snapshot Agent job
                         $mergePub.CreateSnapshotAgent()
 
                         <#
-                        TODO: add these in?
+                        TODO: add SnapshotGenerationAgentProcessSecurity creds in?
 
                         The Login and Password fields of SnapshotGenerationAgentProcessSecurity to provide the credentials for the Windows account under which the Snapshot Agent runs.
                         This account is also used when the Snapshot Agent makes connections to the local Distributor and for any remote connections when using Windows Authentication.
@@ -190,18 +189,12 @@ function New-DbaReplPublication {
                         to set the PublicationAttributes values for the Attributes property.
 
                         #>
-
                     }
-
-
-
                 }
             } catch {
                 Stop-Function -Message ("Unable to create publication - {0}" -f $_) -ErrorRecord $_ -Target $instance -Continue
             }
-
-            #TODO: What to return
-
+            Get-DbaRepPublication -SqlInstance $instance -SqlCredential $SqlCredential -Database $Database -Name $Name
         }
     }
 }
