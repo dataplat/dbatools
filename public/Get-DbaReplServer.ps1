@@ -4,7 +4,10 @@ function Get-DbaReplServer {
         Gets a replication server object
 
     .DESCRIPTION
-        Gets a replication server object
+        Gets a replication server object.
+
+        Note: The ReplicationDatabases property gets the databases enabled for replication in the connected instance of Microsoft SQL Server/.
+        Not necessarily the databases that are actually replicated.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances
@@ -72,5 +75,3 @@ function Get-DbaReplServer {
         }
     }
 }
-
-# TODO: Replication databases are shown even if they have no pubs
