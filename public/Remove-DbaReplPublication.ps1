@@ -54,50 +54,63 @@ function Remove-DbaReplPublication {
     #>
     [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess, ConfirmImpact = 'Medium')]
     param (
-        [parameter(Mandatory, ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [String]$Database,
-        [parameter(Mandatory)]
         [String]$Name,
+        [parameter(ValueFromPipeline)]
+        [Microsoft.SqlServer.Replication.Publication[]]$InputObject,
         [Switch]$EnableException
     )
+    begin {
+        $publications = @( )
+    }
     process {
-        foreach ($instance in $SqlInstance) {
-            try {
-                $replServer = Get-DbaReplServer -SqlInstance $instance -SqlCredential $SqlCredential
-            } catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
-            }
-            try {
-                if ($PSCmdlet.ShouldProcess($instance, "Removing publication on $instance")) {
+        if (-not $PSBoundParameters.SqlInstance -and -not $PSBoundParameters.InputObject) {
+            Stop-Function -Message "You must specify either SqlInstance or InputObject"
+            return
+        }
 
-                    $pub = Get-DbaReplPublication -SqlInstance $instance -SqlCredential $SqlCredential -Name $Name -Database $Database
+        if ($InputObject) {
+            $publications += $InputObject
+        } else {
+            $params = $PSBoundParameters
+            $null = $params.Remove('InputObject')
+            $null = $params.Remove('WhatIf')
+            $null = $params.Remove('Confirm')
+            $publications = Get-DbaReplPublication @params
+        }
+    }
 
-                    if (-not $pub) {
-                        Write-Warning "Didn't find $Name on $Instance.$Database"
-                    }
-
+    end {
+        # We have to delete in the end block to prevent "Collection was modified; enumeration operation may not execute." if directly piped from Get-DbaReplArticle.
+        foreach ($pub in $publications) {
+            if ($PSCmdlet.ShouldProcess($pub.Name, "Removing the publication $($pub.Name) on $($pub.SqlInstance)")) {
+                $output = [PSCustomObject]@{
+                    ComputerName = $pub.ComputerName
+                    InstanceName = $pub.InstanceName
+                    SqlInstance  = $pub.SqlInstance
+                    Database     = $pub.DatabaseName
+                    Name         = $pub.Name
+                    Type         = $pub.Type
+                    Status       = $null
+                    IsRemoved    = $false
+                }
+                try {
                     if ($pub.Type -in ('Transactional', 'Snapshot')) {
 
-                        $transPub = New-Object Microsoft.SqlServer.Replication.TransPublication
-                        $transPub.ConnectionContext = $replServer.ConnectionContext
-                        $transPub.DatabaseName = $Database
-                        $transPub.Name = $Name
-
-                        if ($transPub.IsExistingObject) {
-                            Write-Message -Level Verbose -Message "Removing $Name from $Instance.$Database"
-                            $transPub.Remove()
+                        if ($pub.IsExistingObject) {
+                            Write-Message -Level Verbose -Message "Removing $($pub.Name) from $($pub.SqlInstance).$($pub.DatabaseName)"
+                            $pub.Remove()
                         }
 
                         # If no other transactional publications exist for this database, the database can be disabled for transactional publishing
-                        #TODO: transactional & snapshot.. or just trans?
-                        if(-not (Get-DbaReplPublication -SqlInstance $instance -SqlCredential $SqlCredential -Database $Database -Type Transactional, Snapshot)) {
+                        if (-not (Get-DbaReplPublication -SqlInstance $pub.SqlInstance -SqlCredential $SqlCredential -Database $pub.DatabaseName -Type Transactional, Snapshot)) {
                             $pubDatabase = New-Object Microsoft.SqlServer.Replication.ReplicationDatabase
-                            $pubDatabase.ConnectionContext = $replServer.ConnectionContext
-                            $pubDatabase.Name = $Database
+                            $pubDatabase.ConnectionContext = $pub.ConnectionContext
+                            $pubDatabase.Name = $pub.DatabaseName
                             if (-not $pubDatabase.LoadProperties()) {
-                                throw "Database $Database not found on $instance"
+                                throw "Database $Database not found on $($pub.SqlInstance)"
                             }
 
                             if ($pubDatabase.EnabledTransPublishing) {
@@ -105,44 +118,41 @@ function Remove-DbaReplPublication {
                                 $pubDatabase.EnabledTransPublishing = $false
                             }
                         }
-                        # https://learn.microsoft.com/en-us/sql/relational-databases/replication/publish/delete-a-publication?view=sql-server-ver16#RMOProcedure
 
                     } elseif ($pub.Type -eq 'Merge') {
-                        $mergePub = New-Object Microsoft.SqlServer.Replication.MergePublication
-                        $mergePub.ConnectionContext = $replServer.ConnectionContext
-                        $mergePub.DatabaseName = $Database
-                        $mergePub.Name = $Name
 
-                        if ($mergePub.IsExistingObject) {
-                            Write-Message -Level Verbose -Message "Removing $Name from $Instance.$Database"
-                            $mergePub.Remove()
+                        if ($pub.IsExistingObject) {
+                            Write-Message -Level Verbose -Message "Removing $($pub.Name) from $($pub.SqlInstance).$($pub.DatabaseName)"
+                            $pub.Remove()
                         } else {
-                            Write-Warning "Didn't find $Name on $Instance.$Database"
+                            Write-Warning "Didn't find $($pub.Name) on $($pub.SqlInstance).$($pub.DatabaseName)"
                         }
 
                         # If no other merge publications exist for this database, the database can be disabled for merge publishing
-                        if(-not (Get-DbaReplPublication -SqlInstance $instance -SqlCredential $SqlCredential -Database $Database -Type Merge)) {
+                        if (-not (Get-DbaReplPublication -SqlInstance $pub.SqlInstance -SqlCredential $SqlCredential -Database $pub.DatabaseName -Type Merge)) {
                             $pubDatabase = New-Object Microsoft.SqlServer.Replication.ReplicationDatabase
-                            $pubDatabase.ConnectionContext = $replServer.ConnectionContext
-                            $pubDatabase.Name = $Database
+                            $pubDatabase.ConnectionContext = $pub.ConnectionContext
+                            $pubDatabase.Name = $pub.DatabaseName
 
                             if (-not $pubDatabase.LoadProperties()) {
                                 throw "Database $Database not found on $instance"
                             }
 
-                            if($pubDatabase.EnabledTransPublishing) {
+                            if ($pubDatabase.EnabledTransPublishing) {
                                 Write-Message -Level Verbose -Message "No merge publications on $Instance.$Database so disabling merge publishing"
                                 $pubDatabase.EnabledMergePublishing = $false
                             }
                         }
                     }
+                    $output.Status = "Removed"
+                    $output.IsRemoved = $true
+                } catch {
+                    Stop-Function -Message "Failed to remove the article from publication" -ErrorRecord $_
+                    $output.Status = (Get-ErrorMessage -Record $_)
+                    $output.IsRemoved = $false
                 }
-            } catch {
-                Stop-Function -Message ("Unable to remove publication - {0}" -f $_) -ErrorRecord $_ -Target $instance -Continue
+                $output
             }
         }
     }
 }
-
-
-
