@@ -78,10 +78,9 @@ function Get-DbaDbAssembly {
             }
             foreach ($db in $databases) {
                 try {
+                    $assemblies = $db.assemblies
                     if (Test-Bound 'Name') {
                         $assemblies = $assemblies | Where-Object Name -in $Name
-                    } else {
-                        $assemblies = $db.assemblies
                     }
                     foreach ($assembly in $assemblies) {
 
