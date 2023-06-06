@@ -119,23 +119,8 @@ function Get-DbaProductKey {
                 10 {
                     $key = @("$($instanceReg.Path)\Setup\DigitalProductID")
                 }
-                11 {
-                    $key = @("$($instanceReg.Path)\Setup\DigitalProductID", "$($instanceReg.Path)\ClientSetup\DigitalProductID")
-                }
-                12 {
-                    $key = @("$($instanceReg.Path)\Setup\DigitalProductID", "$($instanceReg.Path)\ClientSetup\DigitalProductID")
-                }
-                13 {
-                    $key = @("$($instanceReg.Path)\Setup\DigitalProductID", "$($instanceReg.Path)\ClientSetup\DigitalProductID")
-                }
-                14 {
-                    $key = @("$($instanceReg.Path)\Setup\DigitalProductID", "$($instanceReg.Path)\ClientSetup\DigitalProductID")
-                }
-                15 {
-                    $key = @("$($instanceReg.Path)\Setup\DigitalProductID", "$($instanceReg.Path)\ClientSetup\DigitalProductID")
-                }
                 default {
-                    Stop-Function -Message "SQL version not currently supported." -Continue
+                    $key = @("$($instanceReg.Path)\Setup\DigitalProductID", "$($instanceReg.Path)\ClientSetup\DigitalProductID")
                 }
             }
             if ($edition -notlike "*Express*") {
