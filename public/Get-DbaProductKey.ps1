@@ -109,7 +109,7 @@ function Get-DbaProductKey {
 
             switch ($versionMajor) {
                 9 {
-                    $sqlversion = "SQL Server 2005 $servicePack"
+                    $sqlversion = "SQL Server 2005"
                     $findkeys = $reg.OpenSubKey("$($instanceReg.Path)\ProductID", $false)
                     foreach ($findkey in $findkeys.GetValueNames()) {
                         if ($findkey -like "DigitalProductID*") {
@@ -118,31 +118,31 @@ function Get-DbaProductKey {
                     }
                 }
                 10 {
-                    $sqlversion = "SQL Server 2008 $servicePack"
+                    $sqlversion = "SQL Server 2008"
                     if ($server.VersionMinor -eq 50) {
-                        $sqlversion = "SQL Server 2008 R2 $servicePack"
+                        $sqlversion = "SQL Server 2008 R2"
                     }
                     $key = @("$($instanceReg.Path)\Setup\DigitalProductID")
                 }
                 11 {
                     $key = @("$($instanceReg.Path)\Setup\DigitalProductID", "$($instanceReg.Path)\ClientSetup\DigitalProductID")
-                    $sqlversion = "SQL Server 2012 $servicePack"
+                    $sqlversion = "SQL Server 2012"
                 }
                 12 {
                     $key = @("$($instanceReg.Path)\Setup\DigitalProductID", "$($instanceReg.Path)\ClientSetup\DigitalProductID")
-                    $sqlversion = "SQL Server 2014 $servicePack"
+                    $sqlversion = "SQL Server 2014"
                 }
                 13 {
                     $key = @("$($instanceReg.Path)\Setup\DigitalProductID", "$($instanceReg.Path)\ClientSetup\DigitalProductID")
-                    $sqlversion = "SQL Server 2016 $servicePack"
+                    $sqlversion = "SQL Server 2016"
                 }
                 14 {
                     $key = @("$($instanceReg.Path)\Setup\DigitalProductID", "$($instanceReg.Path)\ClientSetup\DigitalProductID")
-                    $sqlversion = "SQL Server 2017 $servicePack"
+                    $sqlversion = "SQL Server 2017"
                 }
                 15 {
                     $key = @("$($instanceReg.Path)\Setup\DigitalProductID", "$($instanceReg.Path)\ClientSetup\DigitalProductID")
-                    $sqlversion = "SQL Server 2019 $servicePack"
+                    $sqlversion = "SQL Server 2019"
                 }
                 default {
                     Stop-Function -Message "SQL version not currently supported." -Continue
@@ -202,7 +202,6 @@ function Get-DbaProductKey {
                     Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instanceReg.SqlInstance -Continue
                 }
 
-                $servicePack = $server.ProductLevel
                 $versionMajor = $server.VersionMajor
                 Write-Message -Level Debug -Message "$instance $instanceName version is $($server.VersionMajor)"
 
