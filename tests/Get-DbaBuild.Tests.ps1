@@ -15,7 +15,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 
 Describe "$CommandName Unit Test" -Tags Unittest {
     BeforeAll {
-        $ModuleBase = (Get-Module -Name dbatools | Where-Object ModuleBase -notmatch net).ModuleBase
+        $ModuleBase = (Get-Module -Name dbatools | Where-Object ModuleBase -NotMatch net).ModuleBase
         $idxfile = "$ModuleBase\bin\dbatools-buildref-index.json"
     }
 
@@ -25,13 +25,13 @@ Describe "$CommandName Unit Test" -Tags Unittest {
             $result | Should -Be $true
         }
         It "the json can be parsed" {
-            $IdxRef = Get-Content $idxfile -raw | ConvertFrom-Json
+            $IdxRef = Get-Content $idxfile -Raw | ConvertFrom-Json
             $IdxRef | Should -BeOfType System.Object
         }
     }
     Context 'Validate LastUpdated property' {
         BeforeAll {
-            $IdxRef = Get-Content $idxfile -raw | ConvertFrom-Json
+            $IdxRef = Get-Content $idxfile -Raw | ConvertFrom-Json
         }
         It "Has a proper LastUpdated property" {
             $lastupdate = Get-Date -Date $IdxRef.LastUpdated
@@ -48,7 +48,7 @@ Describe "$CommandName Unit Test" -Tags Unittest {
     }
     Context 'Validate Data property' {
         BeforeAll {
-            $IdxRef = Get-Content $idxfile -raw | ConvertFrom-Json
+            $IdxRef = Get-Content $idxfile -Raw | ConvertFrom-Json
             $Groups = @{ }
             $OrderedKeys = @()
             foreach ($el in $IdxRef.Data) {
@@ -145,7 +145,20 @@ Describe "$CommandName Unit Test" -Tags Unittest {
             $result.Warning | Should -Be 'This version has been officially retired by Microsoft'
         }
     }
+    
+    Context "Recognizes version 'aliases', see #8915" {
+        It 'works with versions with the minor being either not 0 or 50' {
+            $result2016 = Get-DbaBuild -Build '13.3.6300'
+            $result2016.Build | Should -Be '13.3.6300'
+            $result2016.BuildLevel | Should -Be '13.0.6300'
+            $result2016.MatchType | Should -Be 'Exact'
 
+            $result2008R2 = Get-DbaBuild -Build '10.53.6220'
+            $result2008R2.Build | Should -Be '10.53.6220'
+            $result2008R2.BuildLevel | Should -Be '10.50.6220'
+            $result2008R2.MatchType | Should -Be 'Exact'
+        }
+    }
     # These are groups by major release (aka "Name")
     foreach ($g in $OrderedKeys) {
         $Versions = $Groups[$g]

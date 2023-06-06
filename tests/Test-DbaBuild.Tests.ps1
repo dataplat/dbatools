@@ -4,11 +4,11 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
+        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
         [object[]]$knownParameters = 'Build', 'MinimumBuild', 'MaxBehind', 'Latest', 'SqlInstance', 'SqlCredential', 'Update', 'Quiet', 'EnableException'
         $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
         It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
         }
     }
     Context "Retired KBs" {
@@ -21,6 +21,20 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
             $goBackTo = "$($behindforCU7)CU"
             $result = Test-DbaBuild -Build '15.0.4003' -MaxBehind $goBackTo
             $result.CUTarget | Should -Be 'CU6'
+        }
+    }
+
+    Context "Recognizes version 'aliases', see #8915" {
+        It 'works with versions with the minor being either not 0 or 50' {
+            $result2016 = Test-DbaBuild -Build '13.3.6300' -Latest
+            $result2016.Build | Should -Be '13.3.6300'
+            $result2016.BuildLevel | Should -Be '13.0.6300'
+            $result2016.MatchType | Should -Be 'Exact'
+
+            $result2008R2 = Test-DbaBuild -Build '10.53.6220'  -Latest
+            $result2008R2.Build | Should -Be '10.53.6220'
+            $result2008R2.BuildLevel | Should -Be '10.50.6220'
+            $result2008R2.MatchType | Should -Be 'Exact'
         }
     }
 }

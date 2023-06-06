@@ -143,7 +143,7 @@ function Test-DbaBuild {
         }
         if ($MaxBehind) {
             $MaxBehindValidator = [regex]'^(?<howmany>[\d]+)(?<what>SP|CU)$'
-            $pieces = $MaxBehind.Split(' ')	| Where-Object { $_ }
+            $pieces = $MaxBehind.Split(' ') | Where-Object { $_ }
             try {
                 $ParsedMaxBehind = @{ }
                 foreach ($piece in $pieces) {
@@ -210,7 +210,12 @@ function Test-DbaBuild {
                     $compliant = $true
                 }
             } elseif ($MaxBehind -or $Latest) {
-                $IdxVersion = $IdxRef | Where-Object Version -like "$($inputbuild.Major).$($inputbuild.Minor).*"
+                $buildAnchor = "$($inputbuild.Major).$($inputbuild.Minor).*"
+                if ($inputbuild.Minor -notin (0, 50)) {
+                    $buildAnchor = "$($inputbuild.Major).$($inputbuild.Minor - $inputbuild.Minor % 10).*"
+                    Write-Message -Level Debug -Message "Normalized Minor Version to account version aliases"
+                }
+                $IdxVersion = $IdxRef | Where-Object Version -Like $buildAnchor
                 $lastsp = ''
                 $SPsAndCUs = @()
                 foreach ($el in $IdxVersion) {
@@ -245,7 +250,7 @@ function Test-DbaBuild {
                         $targetedBuild = $SPsAndCUs | Where-Object SP -eq $targetSPName | Select-Object -First 1
                     }
                     if ($ParsedMaxBehind.ContainsKey('CU')) {
-                        [string[]]$AllCUs = ($SPsAndCUs | Where-Object VersionObject -gt $targetedBuild.VersionObject | Where-Object Retired -ne $true).CU | Select-Object -Unique
+                        [string[]]$AllCUs = ($SPsAndCUs | Where-Object VersionObject -GT $targetedBuild.VersionObject | Where-Object Retired -ne $true).CU | Select-Object -Unique
                         if ($AllCUs.Length -gt 0) {
                             #CU after the targeted build available
                             $targetCU = $AllCUs.Length - $ParsedMaxBehind['CU'] - 1
