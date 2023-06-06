@@ -150,7 +150,7 @@ function Get-DbaProductKey {
             }
 
             [pscustomobject]@{
-                Key     = $sqlkey
+                Key = $sqlkey
             }
             $reg.Close()
         }
