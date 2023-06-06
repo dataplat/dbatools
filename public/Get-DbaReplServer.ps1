@@ -61,9 +61,8 @@ function Get-DbaReplServer {
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential
-                $sqlCon = New-SqlConnection -SqlInstance $instance -SqlCredential $SqlCredential
-                $replServer = New-Object Microsoft.SqlServer.Replication.ReplicationServer $sqlCon
-
+                $replServer = New-Object Microsoft.SqlServer.Replication.ReplicationServer
+                $replServer.ConnectionContext = $Server.ConnectionContext.SqlConnectionObject
                 $replServer | Add-Member -Type NoteProperty -Name ComputerName -Value $server.ComputerName -Force
                 $replServer | Add-Member -Type NoteProperty -Name InstanceName -Value $server.ServiceName -Force
                 $replServer | Add-Member -Type NoteProperty -Name SqlInstance -Value $server.DomainInstanceName -Force
