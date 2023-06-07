@@ -135,7 +135,7 @@ function Get-DbaAgentSchedule {
                     # Loop through the days
                     while ($frequencyInterval -gt 0) {
 
-                        switch ($FrequenctInterval) {
+                        switch (1) {
                             { ($frequencyInterval - 64) -ge 0 } {
                                 $days[5] = "Saturday"
                                 $frequencyInterval -= 64

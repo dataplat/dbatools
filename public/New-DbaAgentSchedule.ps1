@@ -332,7 +332,7 @@ function New-DbaAgentSchedule {
                     "Friday" { $interval += 6 }
                     "Saturday" { $interval += 7 }
                     "Day" { $interval += 8 }
-                    "Weekday" { $interval += 9 }
+                    "Weekdays" { $interval += 9 }
                     "WeekendDay" { $interval += 10 }
                     1 { $interval += 1 }
                     2 { $interval += 2 }
@@ -534,6 +534,7 @@ function New-DbaAgentSchedule {
                     if ($PSCmdlet.ShouldProcess($instance, "Adding the schedule $schedule to job $($j.Name)")) {
                         Write-Message -Message "Adding schedule $Schedule to job $($j.Name)" -Level Verbose
                         $j.AddSharedSchedule($jobschedule.Id)
+                        $jobschedule.Refresh()
                     }
                 }
             }

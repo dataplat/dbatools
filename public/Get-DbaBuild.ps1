@@ -277,15 +277,19 @@ function Get-DbaBuild {
             )
 
             if ($Build) {
+                if ($Build.Minor -notin (0, 50)) {
+                    Write-Message -Level Debug -Message "Normalized Minor Version to account version aliases"
+                    $Build = New-Object -TypeName System.Version -ArgumentList ($Build.Major , ($Build.Minor - $Build.Minor % 10), $Build.Build)
+                }
                 Write-Message -Level Verbose -Message "Looking for $Build"
 
-                $IdxVersion = $Data | Where-Object Version -like "$($Build.Major).$($Build.Minor).*"
+                $IdxVersion = $Data | Where-Object Version -Like "$($Build.Major).$($Build.Minor).*"
             } elseif ($Kb) {
                 Write-Message -Level Verbose -Message "Looking for KB $Kb"
                 if ($Kb -match '^(KB)?(\d+)$') {
                     $currentKb = $Matches[2]
-                    $kbVersion = $Data | Where-Object KBList -contains $currentKb
-                    $IdxVersion = $Data | Where-Object Version -like "$($kbVersion.VersionObject.Major).$($kbVersion.VersionObject.Minor).*"
+                    $kbVersion = $Data | Where-Object KBList -Contains $currentKb
+                    $IdxVersion = $Data | Where-Object Version -Like "$($kbVersion.VersionObject.Major).$($kbVersion.VersionObject.Minor).*"
                 } else {
                     Stop-Function -Message "Wrong KB name $kb"
                     return
@@ -293,7 +297,7 @@ function Get-DbaBuild {
             } elseif ($MajorVersion) {
                 Write-Message -Level Verbose -Message "Looking for SQL $MajorVersion SP $ServicePack CU $CumulativeUpdate"
                 $kbVersion = $Data | Where-Object Name -eq $MajorVersion
-                $IdxVersion = $Data | Where-Object Version -like "$($kbVersion.VersionObject.Major).$($kbVersion.VersionObject.Minor).*"
+                $IdxVersion = $Data | Where-Object Version -Like "$($kbVersion.VersionObject.Major).$($kbVersion.VersionObject.Minor).*"
             }
 
             $Detected = @{ }
@@ -325,7 +329,7 @@ function Get-DbaBuild {
                     $Detected.CU = $el.CU
                 }
                 if ($null -ne $el.SupportedUntil) {
-                    $Detected.SupportedUntil = (Get-Date -date $el.SupportedUntil)
+                    $Detected.SupportedUntil = (Get-Date -Date $el.SupportedUntil)
                 }
                 $Detected.Build = $el.Version
                 $Detected.KB = $el.KBList

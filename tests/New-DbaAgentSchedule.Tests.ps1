@@ -63,7 +63,8 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $jobId = (Get-DbaAgentJob -SqlInstance $script:instance2 -Job dbatoolsci_newschedule).JobID
             foreach ($key in $results.keys) {
                 $results[$key].EnumJobReferences() | Should -Contain $jobId
-                $results[$key].FrequencyTypes   | Should -BeIn $scheduleOptions
+                $results[$key].FrequencyTypes | Should -BeIn $scheduleOptions
+                $results[$key].JobCount | Should -Be 1
 
                 if ($key -in @('IdleComputer', 'OnIdle')) {
                     $results[$key].FrequencyTypes   | Should -Be "OnIdle"
