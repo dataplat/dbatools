@@ -174,12 +174,13 @@ function Copy-DbaDbTableData {
         >> DestinationDatabase = 'AdventureWorks2017'
         >> DestinationTable = '[AdventureWorks2017].[Person].[EmailPromotion]'
         >> BatchSize = 10000
+        >> Table = '[OtherDb].[Person].[Person]'
         >> Query = "SELECT * FROM [OtherDb].[Person].[Person] where EmailPromotion = 1"
         >> }
         >>
         PS C:\> Copy-DbaDbTableData @params
 
-        Copies data returned from the query on server1 into the AdventureWorks2017 on server1, using a 4-part name for the DestinationTableTable parameter. Copy is processed in BatchSize of 10000 rows.
+        Copies data returned from the query on server1 into the AdventureWorks2017 on server1, using a 3-part name for the DestinationTable parameter. Copy is processed in BatchSize of 10000 rows.
 
         See the Query param documentation for more details.
 
@@ -233,7 +234,7 @@ function Copy-DbaDbTableData {
     }
 
     process {
-        if ((Test-Bound -Not -ParameterName Table, View, SqlInstance) -and (Test-Bound -Not -ParameterName InputObject)) {
+        if ((Test-Bound -Not -ParameterName InputObject) -and ((Test-Bound -Not -ParameterName SqlInstance, Database -And) -or (Test-Bound -Not -ParameterName Table, View))) {
             Stop-Function -Message "You must pipe in a table or specify SqlInstance, Database and [View|Table]."
             return
         }
@@ -248,11 +249,6 @@ function Copy-DbaDbTableData {
         }
 
         if ($SqlInstance) {
-            if ((Test-Bound -Not -ParameterName Database)) {
-                Stop-Function -Message "Database is required when passing a SqlInstance" -Target $SourceObject
-                return
-            }
-
             if ((Test-Bound -Not -ParameterName Destination, DestinationDatabase, DestinationTable)) {
                 Stop-Function -Message "Cannot copy $SourceObject into itself. One of the parameters Destination (Server), DestinationDatabase, or DestinationTable must be specified " -Target $SourceObject
                 return
