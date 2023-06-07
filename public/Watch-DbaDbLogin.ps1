@@ -82,7 +82,7 @@ function Watch-DbaDbLogin {
     param (
         [DbaInstance]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [object]$Database,
+        [string]$Database,
         [string]$Table = "DbaTools-WatchDbLogins",
         # Central Management Server
         [string]$SqlCms,
@@ -95,6 +95,18 @@ function Watch-DbaDbLogin {
     )
 
     process {
+        if (Test-Bound 'SqlCms', 'ServersFromFile', 'InputObject' -Not) {
+            Stop-Function -Message "You must specify a server list source using -SqlCms or -ServersFromFile or pipe in connected instances. See the command documentation and examples for more details."
+            return
+        }
+
+        try {
+            $serverDest = Connect-DbaInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
+        } catch {
+            Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $SqlInstance
+            return
+        }
+
         $systemdbs = "master", "msdb", "model", "tempdb"
         $excludedPrograms = "Microsoft SQL Server Management Studio - Query", "SQL Management"
 
@@ -115,14 +127,6 @@ function Watch-DbaDbLogin {
             } else {
                 Stop-Function -Message "$ServersFromFile was not found." -Target $ServersFromFile
                 return
-            }
-        }
-
-        if ($SqlInstance) {
-            if ($servers) {
-                $servers += $SqlInstance
-            } else {
-                $servers = $SqlInstance
             }
         }
 
@@ -188,7 +192,7 @@ function Watch-DbaDbLogin {
             $procs = $procs | Where-Object { $systemdbs -notcontains $_.Database -and $excludedPrograms -notcontains $_.Program }
 
             if ($procs.Count -gt 0) {
-                $procs | Select-Object @{Label = "ComputerName"; Expression = { $instance.ComputerName } }, @{Label = "InstanceName"; Expression = { $instance.ServiceName } }, @{Label = "SqlInstance"; Expression = { $instance.DomainInstanceName } }, LoginTime, Login, Host, Program, DatabaseId, Database, IsSystem, CaptureTime | ConvertTo-DbaDataTable | Write-DbaDbTableData -SqlInstance $instance -Database $Database -Table $Table -AutoCreateTable
+                $procs | Select-Object @{Label = "ComputerName"; Expression = { $instance.ComputerName } }, @{Label = "InstanceName"; Expression = { $instance.ServiceName } }, @{Label = "SqlInstance"; Expression = { $instance.DomainInstanceName } }, LoginTime, Login, Host, Program, DatabaseId, Database, IsSystem, CaptureTime | ConvertTo-DbaDataTable | Write-DbaDbTableData -SqlInstance $serverDest -Database $Database -Table $Table -AutoCreateTable
 
                 Write-Message -Level Output -Message "Added process information for $instance to datatable."
             } else {
