@@ -18,7 +18,7 @@ function Get-DbaDbAssembly {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        Specify a Database to be checked for assembly. If not specified, all databases in the specified Instance(s) will be checked
+        The database(s) to process. If unspecified, all accessible databases will be processed.
 
     .PARAMETER Name
         Specify an Assembly to be fetched. If not specified all Assemblies will be returned
@@ -60,7 +60,7 @@ function Get-DbaDbAssembly {
         [parameter(Mandatory, ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [Object[]]$Database,
+        [string[]]$Database,
         [string[]]$Name,
         [switch]$EnableException
     )
@@ -78,10 +78,9 @@ function Get-DbaDbAssembly {
             }
             foreach ($db in $databases) {
                 try {
+                    $assemblies = $db.assemblies
                     if (Test-Bound 'Name') {
                         $assemblies = $assemblies | Where-Object Name -in $Name
-                    } else {
-                        $assemblies = $db.assemblies
                     }
                     foreach ($assembly in $assemblies) {
 
