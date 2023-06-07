@@ -645,6 +645,99 @@ function Connect-DbaInstance {
             } elseif ($inputObjectType -eq 'SqlConnection') {
                 $server = New-Object -TypeName Microsoft.SqlServer.Management.Smo.Server -ArgumentList $inputObject
             } elseif ($inputObjectType -in 'RegisteredServer', 'ConnectionString') {
+                $csb = New-Object -TypeName Microsoft.Data.SqlClient.SqlConnectionStringBuilder -ArgumentList $connectionString
+                # I don't see a good way to get the explicitly used keys, so in the meantime I'm using this code.
+                $csbUsedKeys = @( )
+                $csbUsedKeys += ($csb | Format-List | Out-String) -split [Environment]::NewLine | ForEach-Object { if ($_ -match '^Key *: *(.*)$') { $Matches[1] } }
+
+                # Set properties based on the connection string.
+                $sqlConnectionInfo = New-Object -TypeName Microsoft.SqlServer.Management.Common.SqlConnectionInfo
+                foreach ($key in $csbUsedKeys) {
+                    switch ($key) {
+                        'Data Source' {
+                            Write-Message -Level Debug -Message "ServerName will be set to '$($csb.DataSource)'"
+                            $sqlConnectionInfo.ServerName = $csb.DataSource
+                        }
+                        'Application Name' {
+                            Write-Message -Level Debug -Message "ApplicationName will be set to '$($csb.ApplicationName)'"
+                            $sqlConnectionInfo.ApplicationName = $csb.ApplicationName
+                        }
+                        'Initial Catalog' {
+                            Write-Message -Level Debug -Message "Database will be set to '$($csb.InitialCatalog)'"
+                            $sqlConnectionInfo.DatabaseName = $csb.InitialCatalog
+                        }
+                        'Pooling' {
+                            Write-Message -Level Debug -Message "Pooled will be set to '$($csb.Pooling)'"
+                            $sqlConnectionInfo.Pooled = $csb.Pooling
+                        }
+                        'Trust Server Certificate' {
+                            Write-Message -Level Debug -Message "TrustServerCertificate will be set to '$($csb.TrustServerCertificate)'"
+                            $sqlConnectionInfo.TrustServerCertificate = $csb.TrustServerCertificate
+                        }
+                        'User ID' {
+                            Write-Message -Level Debug -Message "UserName will be set to '$($csb.UserID)'"
+                            $sqlConnectionInfo.UserName = $csb.UserID
+                        }
+                        'Password' {
+                            Write-Message -Level Debug -Message "Password will be set"
+                            $sqlConnectionInfo.Password = $csb.Password
+                        }
+                        default {
+                            Write-Message -Level warning -Message "The connection string key '$key' is currently unsupported and ignored. Please open an issue on GitHub to add support for that key."
+                        }
+                    }
+                }
+
+                <# Liste of other possible keys (from $csb.Keys):
+                Data Source
+                Failover Partner
+                AttachDbFilename
+                Integrated Security
+                Persist Security Info
+                Password
+                Enlist
+                Pooling
+                Min Pool Size
+                Max Pool Size
+                Pool Blocking Period
+                Multiple Active Result Sets
+                Replication
+                Connect Timeout
+                Encrypt
+                Host Name In Certificate
+                Server Certificate
+                Load Balance Timeout
+                Packet Size
+                Type System Version
+                Authentication
+                Current Language
+                Workstation ID
+                User Instance
+                Transaction Binding
+                Application Intent
+                Multi Subnet Failover
+                Connect Retry Count
+                Connect Retry Interval
+                Column Encryption Setting
+                Enclave Attestation Url
+                Attestation Protocol
+                Command Timeout
+                IP Address Preference
+                Server SPN
+                Failover Partner SPN
+                #>
+
+                # Set properties based on used parameters.
+                if ($TrustServerCertificate) {
+                    Write-Message -Level Debug -Message "TrustServerCertificate will be set to '$TrustServerCertificate'"
+                    $sqlConnectionInfo.TrustServerCertificate = $TrustServerCertificate
+                }
+
+                # Create the server SMO in the same way as when passing a string.
+                $serverConnection = New-Object -TypeName Microsoft.SqlServer.Management.Common.ServerConnection -ArgumentList $sqlConnectionInfo
+                $server = New-Object -TypeName Microsoft.SqlServer.Management.Smo.Server -ArgumentList $serverConnection
+
+                <# Old code:
                 $server = New-Object -TypeName Microsoft.SqlServer.Management.Smo.Server -ArgumentList $serverName
                 # Parameter TrustServerCertificate changes the connection string be allow connections to instances with the default self-signed certificate
                 if ($TrustServerCertificate) {
@@ -654,6 +747,7 @@ function Connect-DbaInstance {
                     $connectionString = $csb.ConnectionString
                 }
                 $server.ConnectionContext.ConnectionString = $connectionString
+                #>
             } elseif ($inputObjectType -eq 'String') {
                 # Identify authentication method
                 if (Test-Azure -SqlInstance $instance) {
