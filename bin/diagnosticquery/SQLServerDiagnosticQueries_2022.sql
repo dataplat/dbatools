@@ -1,7 +1,7 @@
 
 -- SQL Server 2022 Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: May 11, 2023
+-- Last Modified: June 5, 2023
 -- https://glennsqlperformance.com/ 
 -- https://sqlserverperformance.wordpress.com/
 -- YouTube: https://bit.ly/2PkoAM1 
@@ -1686,9 +1686,9 @@ ORDER BY qs.execution_count DESC OPTION (RECOMPILE);
 -- Top Cached SPs By Execution Count (Query 63) (SP Execution Counts)
 SELECT TOP(100) p.name AS [SP Name], qs.execution_count AS [Execution Count],
 ISNULL(qs.execution_count/DATEDIFF(Minute, qs.cached_time, GETDATE()), 0) AS [Calls/Minute],
-qs.total_elapsed_time/qs.execution_count AS [Avg Elapsed Time],
-qs.total_worker_time/qs.execution_count AS [Avg Worker Time],    
-qs.total_logical_reads/qs.execution_count AS [Avg Logical Reads],
+qs.total_elapsed_time/NULLIF(qs.execution_count, 0) AS [Avg Elapsed Time],
+qs.total_worker_time/NULLIF(qs.execution_count, 0) AS [Avg Worker Time],    
+qs.total_logical_reads/NULLIF(qs.execution_count, 0) AS [Avg Logical Reads],
 CASE WHEN CONVERT(nvarchar(max), qp.query_plan) COLLATE Latin1_General_BIN2 LIKE N'%<MissingIndexes>%' THEN 1 ELSE 0 END AS [Has Missing Index],
 CONVERT(nvarchar(25), qs.last_execution_time, 20) AS [Last Execution Time],
 CONVERT(nvarchar(25), qs.cached_time, 20) AS [Plan Cached Time]
