@@ -171,7 +171,7 @@ function Get-DbaProductKey {
             # Get Product Keys for all instances on the server.
             foreach ($instanceReg in $registryroot) {
                 try {
-                    $server = Connect-DbaInstance -SqlInstance $instanceReg.SqlInstance -SqlCredential $SqlCredential -MinimumVersion 10
+                    $server = Connect-DbaInstance -SqlInstance $instanceReg.SqlInstance -SqlCredential $SqlCredential -MinimumVersion 9
                 } catch {
                     Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instanceReg.SqlInstance -Continue
                 }
