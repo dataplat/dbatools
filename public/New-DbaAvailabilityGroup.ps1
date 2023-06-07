@@ -154,9 +154,6 @@ function New-DbaAvailabilityGroup {
         The default can be changed with:
         Set-DbatoolsConfig -FullName 'AvailabilityGroups.Default.ConnectionModeInSecondaryRole' -Value '...' -Passthru | Register-DbatoolsConfig
 
-    .PARAMETER ReadonlyRoutingConnectionUrl
-        Sets the read only routing connection url for the availability replica.
-
     .PARAMETER SeedingMode
         Specifies how the secondary replica will be initially seeded.
 
@@ -303,7 +300,6 @@ function New-DbaAvailabilityGroup {
         [string]$SeedingMode = 'Manual',
         [string]$Endpoint,
         [string[]]$EndpointUrl,
-        [string]$ReadonlyRoutingConnectionUrl,
         [string]$Certificate,
         [switch]$ConfigureXESession,
         # network
@@ -517,7 +513,6 @@ function New-DbaAvailabilityGroup {
                     ConnectionModeInPrimaryRole   = $ConnectionModeInPrimaryRole
                     ConnectionModeInSecondaryRole = $ConnectionModeInSecondaryRole
                     Endpoint                      = $Endpoint
-                    ReadonlyRoutingConnectionUrl  = $ReadonlyRoutingConnectionUrl
                     Certificate                   = $Certificate
                     ConfigureXESession            = $ConfigureXESession
                 }
