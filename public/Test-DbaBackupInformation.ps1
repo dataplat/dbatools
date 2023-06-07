@@ -109,7 +109,7 @@ function Test-DbaBackupInformation {
             Write-Message -Message "Testing restore for $Database" -Level Verbose
             #Test we're only restoring backups from one database, or hilarity will ensure
             $DbHistory = $InternalHistory | Where-Object { $_.Database -eq $Database }
-            if (( $DbHistory | Select-Object -Property OriginalDatabase -Unique ).Count -gt 1) {
+            if (( $DbHistory | Sort-Object -Property OriginalDatabase -Unique ).Count -gt 1) {
                 Write-Message -Message "Trying to restore $Database from multiple sources databases" -Level Warning
                 $VerificationErrors++
             }
