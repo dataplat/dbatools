@@ -478,11 +478,10 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
 
             It "Get-DbaReplArticle gets a certain article from a specific publication" {
                 $pubName = 'TestTrans'
-                $Name = "ReplicateMe"
 
-                $getArt = Get-DbaReplArticle -Database ReplDb -Publication $pubName -Name $Name
+                $getArt = Get-DbaReplArticle -Database ReplDb -Publication $pubName -Name $articleName
                 $getArt.Count | Should -Be 1
-                $getArt.Name | Should -Be $Name
+                $getArt.Name | Should -Be $ArticleName
                 $getArt.PublicationName | Should -Be $pubName
             }
         }
