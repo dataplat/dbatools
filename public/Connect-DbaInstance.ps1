@@ -657,39 +657,44 @@ function Connect-DbaInstance {
                         'Data Source' {
                             Write-Message -Level Debug -Message "ServerName will be set to '$($csb.DataSource)'"
                             $sqlConnectionInfo.ServerName = $csb.DataSource
+                            $null = $csb.Remove('Data Source')
                         }
                         'Application Name' {
                             Write-Message -Level Debug -Message "ApplicationName will be set to '$($csb.ApplicationName)'"
                             $sqlConnectionInfo.ApplicationName = $csb.ApplicationName
+                            $null = $csb.Remove('Data Source')
                         }
                         'Initial Catalog' {
                             Write-Message -Level Debug -Message "Database will be set to '$($csb.InitialCatalog)'"
                             $sqlConnectionInfo.DatabaseName = $csb.InitialCatalog
+                            $null = $csb.Remove('Initial Catalog')
                         }
                         'Pooling' {
                             Write-Message -Level Debug -Message "Pooled will be set to '$($csb.Pooling)'"
                             $sqlConnectionInfo.Pooled = $csb.Pooling
+                            $null = $csb.Remove('Pooling')
                         }
                         'Trust Server Certificate' {
                             Write-Message -Level Debug -Message "TrustServerCertificate will be set to '$($csb.TrustServerCertificate)'"
                             $sqlConnectionInfo.TrustServerCertificate = $csb.TrustServerCertificate
+                            $null = $csb.Remove('Trust Server Certificate')
                         }
                         'User ID' {
                             Write-Message -Level Debug -Message "UserName will be set to '$($csb.UserID)'"
                             $sqlConnectionInfo.UserName = $csb.UserID
+                            $null = $csb.Remove('User ID')
                         }
                         'Password' {
                             Write-Message -Level Debug -Message "Password will be set"
                             $sqlConnectionInfo.Password = $csb.Password
-                        }
-                        default {
-                            Write-Message -Level warning -Message "The connection string key '$key' is currently unsupported and ignored. Please open an issue on GitHub to add support for that key."
+                            $null = $csb.Remove('Password')
                         }
                     }
                 }
+                # Add all remaining parts of the connection string as additional parameters
+                $sqlConnectionInfo.AdditionalParameters = $csb.ConnectionString
 
-                <# Liste of other possible keys (from $csb.Keys):
-                Data Source
+                <# List of other possible keys (from $csb.Keys):
                 Failover Partner
                 AttachDbFilename
                 Integrated Security
