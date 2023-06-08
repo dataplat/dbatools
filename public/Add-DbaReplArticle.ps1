@@ -19,7 +19,7 @@ function Add-DbaReplArticle {
     .PARAMETER Database
         The database on the publisher that contains the article to be replicated.
 
-    .PARAMETER PublicationName
+    .PARAMETER Publication
         The name of the replication publication.
 
     .PARAMETER Schema
@@ -62,7 +62,7 @@ function Add-DbaReplArticle {
         https://dbatools.io/Add-DbaReplArticle
 
     .EXAMPLE
-        PS C:\> Add-DbaReplArticle -SqlInstance mssql1 -Database Northwind -PublicationName PubFromPosh -Name TableToRepl
+        PS C:\> Add-DbaReplArticle -SqlInstance mssql1 -Database Northwind -Publication PubFromPosh -Name TableToRepl
 
         Adds the TableToRepl table to the PubFromPosh publication from mssql1.Northwind
 
@@ -71,7 +71,7 @@ function Add-DbaReplArticle {
         PS C:\> $article = @{
                     SqlInstance           = "mssql1"
                     Database              = "pubs"
-                    PublicationName       = "testPub"
+                    Publication           = "testPub"
                     Name                  = "publishers"
                     Filter                = "city = 'seattle'"
                 }
@@ -84,7 +84,7 @@ function Add-DbaReplArticle {
         PS C:\> $article = @{
                     SqlInstance           = 'mssql1'
                     Database              = 'pubs'
-                    PublicationName       = 'testPub'
+                    Publication           = 'testPub'
                     Name                  = 'stores'
                     CreationScriptOptions = $cso
                 }

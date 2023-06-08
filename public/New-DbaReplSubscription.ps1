@@ -19,8 +19,24 @@ function New-DbaReplSubscription {
     .PARAMETER Database
         The database that will be replicated.
 
+    .PARAMETER PublisherSqlInstance
+        The publisher SQL instance.
+
+    .PARAMETER PublisherSqlCredential
+        Login to the publisher instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
+
+    .PARAMETER PublicationDatabase
+        The database on the publisher that is replicated.
+
     .PARAMETER PublicationName
         The name of the replication publication
+
+    .PARAMETER SubscriptionSqlCredential
+        Credential object that will be saved as the 'subscriber credential' in the subscription properties.
 
     .PARAMETER Type
         The flavour of the subscription. Push or Pull.
@@ -65,7 +81,7 @@ function New-DbaReplSubscription {
         [String]$PublicationDatabase,
         [parameter(Mandatory)]
         [String]$PublicationName,
-        [PSCredential] # this will be saved as the 'subscriber credential' in the subscription properties
+        [PSCredential]
         $SubscriptionSqlCredential,
         [parameter(Mandatory)]
         [ValidateSet("Push", "Pull")]

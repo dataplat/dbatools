@@ -18,7 +18,9 @@ if ($env:appveyor) {
         'Microsoft.SqlServer.Management.XEvent',
         'Microsoft.SqlServer.Management.XEventDbScoped',
         'Microsoft.SqlServer.Management.XEventDbScopedEnum',
-        'Microsoft.SqlServer.Management.XEventEnum'
+        'Microsoft.SqlServer.Management.XEventEnum',
+        'Microsoft.SqlServer.Replication.dll',
+        'Microsoft.SqlServer.Rmo.dll'
     )
 
     foreach ($name in $names) {
