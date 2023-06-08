@@ -49,8 +49,8 @@ function Get-DbaReplSubscription {
     param (
         [parameter(Mandatory, ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
-        [object[]]$Database,
         [PSCredential]$SqlCredential,
+        [object[]]$Database,
         [String]$Name,
         [Alias("PublicationType")]
         [ValidateSet("Push", "Pull")]
