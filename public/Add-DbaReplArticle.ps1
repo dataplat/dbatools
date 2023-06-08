@@ -134,12 +134,12 @@ function Add-DbaReplArticle {
                         $article.Type = $ArticleOptions::TableBased
                     }
 
-                    $article.ConnectionContext  = $replServer.ConnectionContext
-                    $article.Name               = $Name
-                    $article.DatabaseName       = $Database
-                    $article.SourceObjectName   = $Name
-                    $article.SourceObjectOwner  = $Schema
-                    $article.PublicationName    = $Publication
+                    $article.ConnectionContext = $replServer.ConnectionContext
+                    $article.Name = $Name
+                    $article.DatabaseName = $Database
+                    $article.SourceObjectName = $Name
+                    $article.SourceObjectOwner = $Schema
+                    $article.PublicationName = $Publication
 
                     if ($CreationScriptOptions) {
                         $article.SchemaOption = $CreationScriptOptions
@@ -172,6 +172,3 @@ function Add-DbaReplArticle {
         }
     }
 }
-
-
-

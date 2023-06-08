@@ -53,7 +53,7 @@ function Get-DbaReplSubscription {
         [PSCredential]$SqlCredential,
         [String]$Name,
         [Alias("PublicationType")]
-        [ValidateSet("Push","Pull")]
+        [ValidateSet("Push", "Pull")]
         [object[]]$Type,
         [switch]$EnableException
     )

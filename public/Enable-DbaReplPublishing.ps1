@@ -116,6 +116,3 @@ function Enable-DbaReplPublishing {
         }
     }
 }
-
-
-
