@@ -659,26 +659,6 @@ function Connect-DbaInstance {
                             $sqlConnectionInfo.ServerName = $csb.DataSource
                             $null = $csb.Remove('Data Source')
                         }
-                        'Application Name' {
-                            Write-Message -Level Debug -Message "ApplicationName will be set to '$($csb.ApplicationName)'"
-                            $sqlConnectionInfo.ApplicationName = $csb.ApplicationName
-                            $null = $csb.Remove('Data Source')
-                        }
-                        'Initial Catalog' {
-                            Write-Message -Level Debug -Message "Database will be set to '$($csb.InitialCatalog)'"
-                            $sqlConnectionInfo.DatabaseName = $csb.InitialCatalog
-                            $null = $csb.Remove('Initial Catalog')
-                        }
-                        'Pooling' {
-                            Write-Message -Level Debug -Message "Pooled will be set to '$($csb.Pooling)'"
-                            $sqlConnectionInfo.Pooled = $csb.Pooling
-                            $null = $csb.Remove('Pooling')
-                        }
-                        'Trust Server Certificate' {
-                            Write-Message -Level Debug -Message "TrustServerCertificate will be set to '$($csb.TrustServerCertificate)'"
-                            $sqlConnectionInfo.TrustServerCertificate = $csb.TrustServerCertificate
-                            $null = $csb.Remove('Trust Server Certificate')
-                        }
                         'User ID' {
                             Write-Message -Level Debug -Message "UserName will be set to '$($csb.UserID)'"
                             $sqlConnectionInfo.UserName = $csb.UserID
@@ -691,46 +671,8 @@ function Connect-DbaInstance {
                         }
                     }
                 }
-                # Add all remaining parts of the connection string as additional parameters
+                # Add all remaining parts of the connection string as additional parameters.
                 $sqlConnectionInfo.AdditionalParameters = $csb.ConnectionString
-
-                <# List of other possible keys (from $csb.Keys):
-                Failover Partner
-                AttachDbFilename
-                Integrated Security
-                Persist Security Info
-                Password
-                Enlist
-                Pooling
-                Min Pool Size
-                Max Pool Size
-                Pool Blocking Period
-                Multiple Active Result Sets
-                Replication
-                Connect Timeout
-                Encrypt
-                Host Name In Certificate
-                Server Certificate
-                Load Balance Timeout
-                Packet Size
-                Type System Version
-                Authentication
-                Current Language
-                Workstation ID
-                User Instance
-                Transaction Binding
-                Application Intent
-                Multi Subnet Failover
-                Connect Retry Count
-                Connect Retry Interval
-                Column Encryption Setting
-                Enclave Attestation Url
-                Attestation Protocol
-                Command Timeout
-                IP Address Preference
-                Server SPN
-                Failover Partner SPN
-                #>
 
                 # Set properties based on used parameters.
                 if ($TrustServerCertificate) {
@@ -741,18 +683,6 @@ function Connect-DbaInstance {
                 # Create the server SMO in the same way as when passing a string.
                 $serverConnection = New-Object -TypeName Microsoft.SqlServer.Management.Common.ServerConnection -ArgumentList $sqlConnectionInfo
                 $server = New-Object -TypeName Microsoft.SqlServer.Management.Smo.Server -ArgumentList $serverConnection
-
-                <# Old code:
-                $server = New-Object -TypeName Microsoft.SqlServer.Management.Smo.Server -ArgumentList $serverName
-                # Parameter TrustServerCertificate changes the connection string be allow connections to instances with the default self-signed certificate
-                if ($TrustServerCertificate) {
-                    Write-Message -Level Verbose -Message "TrustServerCertificate will be set to 'True'"
-                    $csb = New-Object -TypeName Microsoft.Data.SqlClient.SqlConnectionStringBuilder -ArgumentList $connectionString
-                    $csb.TrustServerCertificate = $true
-                    $connectionString = $csb.ConnectionString
-                }
-                $server.ConnectionContext.ConnectionString = $connectionString
-                #>
             } elseif ($inputObjectType -eq 'String') {
                 # Identify authentication method
                 if (Test-Azure -SqlInstance $instance) {
