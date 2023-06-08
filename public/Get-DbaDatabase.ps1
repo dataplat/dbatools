@@ -34,7 +34,7 @@ function Get-DbaDatabase {
         This parameter cannot be used with -ExcludeUser.
 
     .PARAMETER Status
-        Specifies one or more database statuses to filter on. Only databases in the status(es) listed will be returned. Valid options for this parameter are 'Emergency', 'Normal', 'Offline', 'Recovering', 'Restoring', 'Standby', and 'Suspect'.
+        Specifies one or more database statuses to filter on. Only databases in the status(es) listed will be returned. Valid options for this parameter are 'EmergencyMode', 'Normal', 'Offline', 'Recovering', 'RecoveryPending', 'Restoring', 'Standby', and 'Suspect'.
 
     .PARAMETER Access
         Filters databases returned by their access type. Valid options for this parameter are 'ReadOnly' and 'ReadWrite'. If omitted, no filtering is performed.
@@ -159,8 +159,8 @@ function Get-DbaDatabase {
         [switch]$ExcludeSystem,
         [string[]]$Owner,
         [switch]$Encrypted,
-        [ValidateSet('EmergencyMode', 'Normal', 'Offline', 'Recovering', 'Restoring', 'Standby', 'Suspect')]
-        [string[]]$Status = @('EmergencyMode', 'Normal', 'Offline', 'Recovering', 'Restoring', 'Standby', 'Suspect'),
+        [ValidateSet('EmergencyMode', 'Normal', 'Offline', 'Recovering', 'RecoveryPending', 'Restoring', 'Standby', 'Suspect')]
+        [string[]]$Status = @('EmergencyMode', 'Normal', 'Offline', 'Recovering', 'RecoveryPending', 'Restoring', 'Standby', 'Suspect'),
         [ValidateSet('ReadOnly', 'ReadWrite')]
         [string]$Access,
         [ValidateSet('Full', 'Simple', 'BulkLogged')]
