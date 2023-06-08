@@ -106,10 +106,15 @@ function Add-DbaReplArticle {
         [parameter(Mandatory)]
         [String]$Name,
         [String]$Filter,
-        [Microsoft.SqlServer.Replication.CreationScriptOptions]$CreationScriptOptions,
+        [PSObject]$CreationScriptOptions,
         [Switch]$EnableException
     )
     process {
+
+        # Check that $CreationScriptOptions is a valid object
+        if ($CreationScriptOptions -and ($CreationScriptOptions -isnot [Microsoft.SqlServer.Replication.CreationScriptOptions])) {
+            Stop-Function -Message "CreationScriptOptions should be the right type. Use New-DbaReplCreationScriptOptions to create the object" -ErrorRecord $_ -Target $instance -Continue
+        }
 
         foreach ($instance in $SqlInstance) {
             try {
