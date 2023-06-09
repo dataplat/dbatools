@@ -69,7 +69,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 
         It "keeps the same database context" {
             $null = $server.Databases['msdb'].Tables.Count
-            $server.Query("select db_name() as dbname").dbname | Should -Be 'master'
+            $server.ConnectionContext.ExecuteScalar("select db_name()") | Should -Be 'master'
         }
 
         It "sets StatementTimeout to 0" {
@@ -87,7 +87,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $server = Connect-DbaInstance -SqlInstance "Data Source=$script:instance1;Initial Catalog=tempdb;Integrated Security=True"
             # Before #8962 this changed the context to msdb
             $null = $server.Databases['msdb'].Tables.Count
-            $server.Query("select db_name() as dbname").dbname | Should -Be 'tempdb'
+            $server.ConnectionContext.ExecuteScalar("select db_name()") | Should -Be 'tempdb'
         }
 
         It "connects using a dot" {
