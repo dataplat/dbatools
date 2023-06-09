@@ -135,7 +135,7 @@ $script:path_typedata = [IO.Path]::Combine($script:AppData, $psVersionName, "dba
 #endregion Paths
 
 # Determine Registry Availability
-$script:NoRegistry = $true
+$script:NoRegistry = $false
 if (($PSVersionTable.PSVersion.Major -ge 6) -and ($PSVersionTable.OS -notlike "*Windows*")) {
     $script:NoRegistry = $true
 }
