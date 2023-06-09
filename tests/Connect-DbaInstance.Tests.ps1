@@ -67,6 +67,11 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $server.ConnectionContext.ConnectionString -match "Intent=ReadOnly" | Should Be $true
         }
 
+        It "keeps the same database context" {
+            $null = $server.Databases['msdb'].Tables.Count
+            $server.Query("select db_name() as dbname").dbname | Should -Be 'master'
+        }
+
         It "sets StatementTimeout to 0" {
             $server = Connect-DbaInstance -SqlInstance $script:instance1 -StatementTimeout 0
 
@@ -76,6 +81,13 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         It "connects using a connection string" {
             $server = Connect-DbaInstance -SqlInstance "Data Source=$script:instance1;Initial Catalog=tempdb;Integrated Security=True"
             $server.Databases.Name.Count -gt 0 | Should Be $true
+        }
+
+        It "keeps the same database context when connected using a connection string" {
+            $server = Connect-DbaInstance -SqlInstance "Data Source=$script:instance1;Initial Catalog=tempdb;Integrated Security=True"
+            # Before #8962 this changed the context to msdb
+            $null = $server.Databases['msdb'].Tables.Count
+            $server.Query("select db_name() as dbname").dbname | Should -Be 'tempdb'
         }
 
         It "connects using a dot" {
