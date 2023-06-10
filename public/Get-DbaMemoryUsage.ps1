@@ -60,23 +60,14 @@ function Get-DbaMemoryUsage {
         [Alias("Host", "cn", "Server")]
         [DbaInstanceParameter[]]$ComputerName = $env:COMPUTERNAME,
         [PSCredential]$Credential,
+        [string]$Memcounters = '(Total Server Memory |Target Server Memory |Connection Memory |Lock Memory |SQL Cache Memory |Optimizer Memory |Granted Workspace Memory |Cursor memory usage|Maximum Workspace)',
+        [string]$Plancounters = '(cache pages|procedure plan|ad hoc sql plan|prepared SQL Plan)',
+        [string]$BufManpagecounters = '(Free pages|Reserved pages|Stolen pages|Total pages|Database pages|target pages|extension .* pages)',
+        [string]$SSAScounters = '(\\memory )',
+        [string]$SSIScounters = '(memory)',
         [switch]$EnableException
     )
     begin {
-        if ($Simple) {
-            $Memcounters = '(Total Server Memory |Target Server Memory |Connection Memory |Lock Memory |SQL Cache Memory |Optimizer Memory |Granted Workspace Memory |Cursor memory usage|Maximum Workspace)'
-            $Plancounters = 'total\)\\cache pages'
-            $BufManpagecounters = 'Total pages'
-            $SSAScounters = '(\\memory usage)'
-            $SSIScounters = '(memory)'
-        } else {
-            $Memcounters = '(Total Server Memory |Target Server Memory |Connection Memory |Lock Memory |SQL Cache Memory |Optimizer Memory |Granted Workspace Memory |Cursor memory usage|Maximum Workspace)'
-            $Plancounters = '(cache pages|procedure plan|ad hoc sql plan|prepared SQL Plan)'
-            $BufManpagecounters = '(Free pages|Reserved pages|Stolen pages|Total pages|Database pages|target pages|extension .* pages)'
-            $SSAScounters = '(\\memory )'
-            $SSIScounters = '(memory)'
-        }
-
         $scriptBlock = {
             param ($Memcounters,
                 $Plancounters,
