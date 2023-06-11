@@ -728,7 +728,8 @@
         'New-DbaLinkedServerLogin',
         'Remove-DbaLinkedServerLogin',
         'Remove-DbaCredential',
-        'Remove-DbaAgentProxy'
+        'Remove-DbaAgentProxy',
+        'Sync-DbaLoginPassword'
     )
 
     # Cmdlets to export from this module

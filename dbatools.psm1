@@ -858,7 +858,8 @@ if ($PSVersionTable.PSVersion.Major -lt 5) {
         'Get-DbaRepPublication',
         'Test-DbaRepLatency',
         'Export-DbaRepServerSetting',
-        'Get-DbaRepServer'
+        'Get-DbaRepServer',
+        'Sync-DbaLoginPassword'
     )
     $script:windowsonly = @(
         # filesystem (\\ related),
