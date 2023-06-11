@@ -21,7 +21,10 @@ function Set-DbaLogin {
         The login that needs to be changed
 
     .PARAMETER SecurePassword
-        The new password for the login This can be either a credential or a secure string.
+        The new password for the login, this can be either a PSCredential or secure string.
+
+    .PARAMETER PasswordHash
+        Set the password for a login based on a hashed value.
 
     .PARAMETER DefaultDatabase
         Default database for the login
@@ -166,7 +169,6 @@ function Set-DbaLogin {
 
         Unlocks the login1 on the sql1 instance using the technique described at https://www.mssqltips.com/sqlservertip/2758/how-to-unlock-a-sql-login-without-resetting-the-password/
     #>
-
     [CmdletBinding(SupportsShouldProcess)]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingPlainTextForPassword", "", Justification = "For Parameter Password")]
     param (
@@ -174,7 +176,8 @@ function Set-DbaLogin {
         [PSCredential]$SqlCredential,
         [string[]]$Login,
         [Alias("Password")]
-        [object]$SecurePassword, #object so that it can accept credential or securestring
+        [object]$SecurePassword,
+        [string]$PasswordHash,
         [Alias("DefaultDB")]
         [string]$DefaultDatabase,
         [switch]$Unlock,
@@ -196,7 +199,6 @@ function Set-DbaLogin {
         [switch]$Force,
         [switch]$EnableException
     )
-
     begin {
         # Check the parameters
         if ((Test-Bound -ParameterName 'SqlInstance') -and (Test-Bound -ParameterName 'Login' -Not)) {
@@ -215,7 +217,7 @@ function Set-DbaLogin {
             Stop-Function -Message 'You cannot use both -GrantLogin and -DenyLogin together' -Target $Login -Continue
         }
 
-        if (Test-bound -ParameterName 'SecurePassword') {
+        if (Test-Bound -ParameterName 'SecurePassword') {
             switch ($SecurePassword.GetType().Name) {
                 'PSCredential' { $NewSecurePassword = $SecurePassword.Password }
                 'SecureString' { $NewSecurePassword = $SecurePassword }
@@ -237,7 +239,6 @@ function Set-DbaLogin {
     process {
         if (Test-FunctionInterrupt) { return }
 
-        $allLogins = @{ }
         foreach ($instance in $SqlInstance) {
             # Try connecting to the instance
             try {
@@ -245,23 +246,22 @@ function Set-DbaLogin {
             } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
-            $allLogins[$instance.ToString()] = Get-DbaLogin -SqlInstance $server
-            $InputObject += $allLogins[$instance.ToString()] | Where-Object { ($_.Name -in $Login) -and ($_.Name -notlike '##*') }
+            $InputObject += Get-DbaLogin -SqlInstance $server -Login $Login | Where-Object Name -NotLike '##*'
         }
 
         # Loop through all the logins
         foreach ($l in $InputObject) {
-            if ($Pscmdlet.ShouldProcess($l, "Setting Changes to Login on $($server.name)")) {
-                $server = $l.Parent
+            $server = $l.Parent
 
-                # Create the notes
-                $notes = @()
+            # Create the notes
+            $notes = @()
 
-                # caller wants to unlock a login without a password and has specified the -Force param
-                if ((Test-Bound Unlock) -and (Test-Bound SecurePassword -Not) -and (Test-Bound Force)) {
-                    if (-not $l.IsLocked) {
-                        Write-Message -Message "Login $l is not locked" -Level Warning
-                    } else {
+            # caller wants to unlock a login without a password and has specified the -Force param
+            if ((Test-Bound Unlock) -and (Test-Bound SecurePassword -Not) -and (Test-Bound Force)) {
+                if (-not $l.IsLocked) {
+                    Write-Message -Message "Login $l is not locked" -Level Warning
+                } else {
+                    if ($PSCmdlet.ShouldProcess($l, "Unlocking login without a password")) {
                         try {
                             # save the current state of the policy options for check_policy and check_expiration
                             $checkPolicy = $l.PasswordPolicyEnforced
@@ -293,28 +293,32 @@ function Set-DbaLogin {
                         }
                     }
                 }
+            }
 
-                # Change the name
-                if (Test-Bound -ParameterName 'NewName') {
-                    # Check if the new name doesn't already exist
-                    if ($allLogins[$server.Name].Name -notcontains $NewName) {
+            # Change the name
+            if (Test-Bound -ParameterName 'NewName') {
+                # Check if the new name doesn't already exist
+                if (-not $server.Logins[$NewName]) {
+                    if ($PSCmdlet.ShouldProcess($l, "Renaming login")) {
                         try {
                             $l.Rename($NewName)
                         } catch {
                             $notes += "Couldn't rename login"
                             Stop-Function -Message "Something went wrong changing the name for $l" -Target $l -ErrorRecord $_ -Continue
                         }
-                    } else {
-                        $notes += 'New login name already exists'
-                        Write-Message -Message "New login name $NewName already exists on $instance" -Level Verbose
                     }
+                } else {
+                    $notes += 'New login name already exists'
+                    Write-Message -Message "New login name $NewName already exists on $instance" -Level Verbose
                 }
+            }
 
-                # Disable the login
-                if (Test-Bound -ParameterName 'Disable') {
-                    if ($l.IsDisabled) {
-                        Write-Message -Message "Login $l is already disabled" -Level Verbose
-                    } else {
+            # Disable the login
+            if (Test-Bound -ParameterName 'Disable') {
+                if ($l.IsDisabled) {
+                    Write-Message -Message "Login $l is already disabled" -Level Verbose
+                } else {
+                    if ($PSCmdlet.ShouldProcess($l, "Disabling login")) {
                         try {
                             $l.Disable()
                         } catch {
@@ -323,12 +327,14 @@ function Set-DbaLogin {
                         }
                     }
                 }
+            }
 
-                # Enable the login
-                if (Test-Bound -ParameterName 'Enable') {
-                    if (-not $l.IsDisabled) {
-                        Write-Message -Message "Login $l is already enabled" -Level Verbose
-                    } else {
+            # Enable the login
+            if (Test-Bound -ParameterName 'Enable') {
+                if (-not $l.IsDisabled) {
+                    Write-Message -Message "Login $l is already enabled" -Level Verbose
+                } else {
+                    if ($PSCmdlet.ShouldProcess($l, "Enabling the login")) {
                         try {
                             $l.Enable()
                         } catch {
@@ -337,53 +343,62 @@ function Set-DbaLogin {
                         }
                     }
                 }
+            }
 
-                # Deny access
-                if (Test-Bound -ParameterName 'DenyLogin') {
-                    if ($l.DenyWindowsLogin) {
-                        Write-Message -Message "Login $l already has login access denied" -Level Verbose
-                    } else {
+            # Deny access
+            if (Test-Bound -ParameterName 'DenyLogin') {
+                if ($l.DenyWindowsLogin) {
+                    Write-Message -Message "Login $l already has login access denied" -Level Verbose
+                } else {
+                    if ($PSCmdlet.ShouldProcess($l, "Denying login access for login")) {
                         $l.DenyWindowsLogin = $true
                     }
                 }
+            }
 
-                # Grant access
-                if (Test-Bound -ParameterName 'GrantLogin') {
-                    if (-not $l.DenyWindowsLogin) {
-                        Write-Message -Message "Login $l already has login access granted" -Level Verbose
-                    } else {
+            # Grant access
+            if (Test-Bound -ParameterName 'GrantLogin') {
+                if (-not $l.DenyWindowsLogin) {
+                    Write-Message -Message "Login $l already has login access granted" -Level Verbose
+                } else {
+                    if ($PSCmdlet.ShouldProcess($l, "Granting login access for login")) {
                         $l.DenyWindowsLogin = $false
                     }
                 }
+            }
 
-                # Enforce password policy
-                if (Test-Bound -ParameterName 'PasswordPolicyEnforced') {
-                    if ($l.PasswordPolicyEnforced -eq $PasswordPolicyEnforced) {
-                        Write-Message -Message "Login $l password policy is already set to $($l.PasswordPolicyEnforced)" -Level Verbose
-                    } else {
+            # Enforce password policy
+            if (Test-Bound -ParameterName 'PasswordPolicyEnforced') {
+                if ($l.PasswordPolicyEnforced -eq $PasswordPolicyEnforced) {
+                    Write-Message -Message "Login $l password policy is already set to $($l.PasswordPolicyEnforced)" -Level Verbose
+                } else {
+                    if ($PSCmdlet.ShouldProcess($l, "Setting Password Policy Enforced to true for login")) {
                         $l.PasswordPolicyEnforced = $PasswordPolicyEnforced
                     }
                 }
+            }
 
-                # Enforce password expiration
-                if (Test-Bound -ParameterName 'PasswordExpirationEnabled') {
+            # Enforce password expiration
+            if (Test-Bound -ParameterName 'PasswordExpirationEnabled') {
+                if ($PasswordExpirationEnabled -and $l.PasswordPolicyEnforced -eq $false) {
+                    $notes += "Couldn't set check_expiration = ON because check_policy = OFF for $l. See the command description for more details on these settings."
+                    Stop-Function -Message "Couldn't set check_expiration = ON because check_policy = OFF for $l. See the command description for more details on these settings." -Target $l -Continue
+                }
 
-                    if ($PasswordExpirationEnabled -and $l.PasswordPolicyEnforced -eq $false) {
-                        $notes += "Couldn't set check_expiration = ON because check_policy = OFF for $l. See the command description for more details on these settings."
-                        Stop-Function -Message "Couldn't set check_expiration = ON because check_policy = OFF for $l. See the command description for more details on these settings." -Target $l -Continue
-                    }
-
-                    if ($l.PasswordExpirationEnabled -eq $PasswordExpirationEnabled) {
-                        Write-Message -Message "Login $l password expiration check is already set to $($l.PasswordExpirationEnabled)" -Level Verbose
-                    } else {
+                if ($l.PasswordExpirationEnabled -eq $PasswordExpirationEnabled) {
+                    Write-Message -Message "Login $l password expiration check is already set to $($l.PasswordExpirationEnabled)" -Level Verbose
+                } else {
+                    if ($PSCmdlet.ShouldProcess($l, "Setting Password Expiration to true for login")) {
                         $l.PasswordExpirationEnabled = $PasswordExpirationEnabled
                     }
                 }
+            }
 
-                # Add server roles to login
-                if ($AddRole) {
-                    # Loop through each of the roles
-                    foreach ($role in $AddRole) {
+            # Add server roles to login
+            if ($AddRole) {
+                # Loop through each of the roles
+                foreach ($role in $AddRole) {
+                    if ($PSCmdlet.ShouldProcess($l, "Adding login to role: $role")) {
                         try {
                             $l.AddToRole($role)
                         } catch {
@@ -392,11 +407,13 @@ function Set-DbaLogin {
                         }
                     }
                 }
+            }
 
-                # Remove server roles from login
-                if ($RemoveRole) {
-                    # Loop through each of the roles
-                    foreach ($role in $RemoveRole) {
+            # Remove server roles from login
+            if ($RemoveRole) {
+                # Loop through each of the roles
+                foreach ($role in $RemoveRole) {
+                    if ($PSCmdlet.ShouldProcess($l, "Removing login from role: $role")) {
                         try {
                             $server.Roles[$role].DropMember($l.Name)
                         } catch {
@@ -405,45 +422,72 @@ function Set-DbaLogin {
                         }
                     }
                 }
+            }
 
-                # Set the default database
-                if (Test-Bound -ParameterName 'DefaultDatabase') {
-                    if ($l.DefaultDatabase -eq $DefaultDatabase) {
-                        Write-Message -Message "Login $l default database is already set to $($l.DefaultDatabase)" -Level Verbose
-                    } else {
+            # Set the default database
+            if (Test-Bound -ParameterName 'DefaultDatabase') {
+                if ($l.DefaultDatabase -eq $DefaultDatabase) {
+                    Write-Message -Message "Login $l default database is already set to $($l.DefaultDatabase)" -Level Verbose
+                } else {
+                    if ($PSCmdlet.ShouldProcess($l, "Setting the default database for the login to: $DefaultDatabase")) {
                         $l.DefaultDatabase = $DefaultDatabase
                     }
                 }
+            }
 
-                # Alter the login to make the changes
-                $l.Alter()
-                $l.Refresh()
+            <# Should only be doing this if anything other than SecurePassword or PasswordHash were provided #>
+            $paramKeys = $PSBoundParameters.Keys | Where-Object { $_ -notin @('Login', 'SecurePassword', 'PasswordHash', 'SqlInstance', 'SqlCredential', 'EnableException', 'Force', 'WhatIf', 'InputObject') }
+            if ($paramKeys) {
+                if ($PSCmdlet.ShouldProcess($l, "Applying any changes to the server for the login")) {
+                    # Alter the login to make the changes
+                    $l.Alter()
+                    $l.Refresh()
+                }
+            }
 
-                # Change the password after the Alter() because the must_change requires the policy settings to be enabled first.
-                if (Test-bound -ParameterName 'SecurePassword') {
-                    if (Test-Bound PasswordMustChange) {
-                        # Validate if the check_policy and check_expiration options are enabled on the login. These are required for the must_change option for alter login.
-                        if ((-not $l.PasswordPolicyEnforced) -or (-not $l.PasswordExpirationEnabled)) {
-                            Stop-Function -Message "Unable to change the password and set the must_change option for $l because check_policy = $($l.PasswordPolicyEnforced) and check_expiration = $($l.PasswordExpirationEnabled). See the command help for additional information on the -MustChange parameter." -Target $l -Continue
-                        }
-                    }
-
+            if (Test-Bound PasswordHash) {
+                if ($PSCmdlet.ShouldProcess($l, "Setting the password for the login using PasswordHash")) {
                     try {
-                        $l.ChangePassword($NewSecurePassword, $Unlock, $PasswordMustChange)
+                        $queryDDL = "ALTER LOGIN [$($l.Name)] WITH PASSWORD = $PasswordHash HASHED"
+                        $server.Query($queryDDL)
                         $passwordChanged = $true
-
-                        if (Test-Bound PasswordMustChange) {
-                            $l.Refresh()  # necessary so that the read only property PasswordMustChange is updated
-                        }
                     } catch {
                         $notes += "Couldn't change password"
                         $passwordChanged = $false
-                        Stop-Function -Message "Something went wrong changing the password for $l" -Target $l -ErrorRecord $_ -Continue
+                        Stop-Function -Message "Something went wrong setting the password hash for $l" -Target $l -ErrorRecord $_ -Continue
                     }
                 }
+            }
 
+            # Change the password after the Alter() because the must_change requires the policy settings to be enabled first.
+            if (Test-Bound -ParameterName 'SecurePassword') {
+                if (Test-Bound PasswordMustChange) {
+                    # Validate if the check_policy and check_expiration options are enabled on the login. These are required for the must_change option for alter login.
+                    if ((-not $l.PasswordPolicyEnforced) -or (-not $l.PasswordExpirationEnabled)) {
+                        Stop-Function -Message "Unable to change the password and set the must_change option for $l because check_policy = $($l.PasswordPolicyEnforced) and check_expiration = $($l.PasswordExpirationEnabled). See the command help for additional information on the -MustChange parameter." -Target $l -Continue
+                    }
+                }
+                if ($PSCmdlet.ShouldProcess($l, "Setting the password for the login using SecurePassword")) {
+                    if ($NewSecurePassword) {
+                        try {
+                            $l.ChangePassword($NewSecurePassword, $Unlock, $PasswordMustChange)
+                            $passwordChanged = $true
+
+                            if (Test-Bound PasswordMustChange) {
+                                $l.Refresh()  # necessary so that the read only property PasswordMustChange is updated
+                            }
+                        } catch {
+                            $notes += "Couldn't change password"
+                            $passwordChanged = $false
+                            Stop-Function -Message "Something went wrong changing the password for $l" -Target $l -ErrorRecord $_ -Continue
+                        }
+                    }
+                }
+            }
+
+            if ($PSCmdlet.ShouldProcess($l, "Outputing dbatools object")) {
                 # Retrieve the server roles for the login
-                $roles = Get-DbaServerRoleMember -SqlInstance $server | Where-Object { $_.Name -eq $l.Name }
+                $roles = Get-DbaServerRoleMember -SqlInstance $server -Login $l.Name
 
                 # Check if there were any notes to include in the results
                 if ($notes) {
