@@ -22,7 +22,6 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
             @{role = 'setupadmin' },
             @{role = 'sysadmin' }
         )
-
         $command = Get-Command $CommandName
 
         It "Validates -AddRole contains <role>" -TestCases $systemRoles {
@@ -56,7 +55,6 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
         }
     }
 }
-
 Describe "$CommandName Integration Tests" -Tag 'IntegrationTests' {
     Context "verify command functions" {
         BeforeAll {
@@ -150,7 +148,7 @@ Describe "$CommandName Integration Tests" -Tag 'IntegrationTests' {
             $result.PasswordPolicyEnforced | Should -Be $true
 
             # violate policy
-            $invalidPassword = ConvertTo-SecureString -String "password1" -AsPlainText -Force
+            $invalidPassword = ConvertTo-SecureString -String "p" -AsPlainText -Force
 
             $result = Set-DbaLogin -SqlInstance $script:instance2 -Login "testlogin1_$random" -Password $invalidPassword -WarningAction 'SilentlyContinue'
             $result | Should -Be $null
