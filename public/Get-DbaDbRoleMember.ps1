@@ -92,7 +92,7 @@ function Get-DbaDbRoleMember {
     #>
     [CmdletBinding()]
     param (
-        [parameter(ValueFromPipeline)]
+        [Parameter(ValueFromPipeline)]
         [DbaInstance[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [string[]]$Database,
@@ -101,7 +101,7 @@ function Get-DbaDbRoleMember {
         [string[]]$ExcludeRole,
         [switch]$ExcludeFixedRole,
         [switch]$IncludeSystemUser,
-        [parameter(ValueFromPipeline)]
+        [Parameter(ValueFromPipeline)]
         [object[]]$InputObject,
         [switch]$EnableException
     )
@@ -118,18 +118,31 @@ function Get-DbaDbRoleMember {
 
         foreach ($input in $InputObject) {
             $inputType = $input.GetType().FullName
+            $dbRoleParams = @{
+                SqlInstance      = $input
+                SqlCredential    = $SqlCredential
+                Database         = $Database
+                ExcludeDatabase  = $ExcludeDatabase
+                Role             = $Role
+                ExcludeRole      = $ExcludeRole
+                ExcludeFixedRole = $ExcludeFixedRole
+                EnableException  = $EnableException
+            }
             switch ($inputType) {
                 'Dataplat.Dbatools.Parameter.DbaInstanceParameter' {
                     Write-Message -Level Verbose -Message "Processing DbaInstanceParameter through InputObject"
-                    $dbRoles = Get-DbaDBRole -SqlInstance $input -SqlCredential $SqlCredential -Database $Database -ExcludeDatabase $ExcludeDatabase -Role $Role -ExcludeRole $ExcludeRole -ExcludeFixedRole:$ExcludeFixedRole
+                    $dbRoles = Get-DbaDbRole @dbRoleParams
                 }
                 'Microsoft.SqlServer.Management.Smo.Server' {
                     Write-Message -Level Verbose -Message "Processing Server through InputObject"
-                    $dbRoles = Get-DbaDBRole -SqlInstance $input -SqlCredential $SqlCredential -Database $Database -ExcludeDatabase $ExcludeDatabase -Role $Role -ExcludeRole $ExcludeRole -ExcludeFixedRole:$ExcludeFixedRole
+                    $dbRoles = Get-DbaDbRole @dbRoleParams
                 }
                 'Microsoft.SqlServer.Management.Smo.Database' {
+                    $dbRoleParams.Remove('SqlInstance')
+                    $dbRoleParams.Remove('SqlCredential')
+                    $dbRoleParams.Remove('Database')
                     Write-Message -Level Verbose -Message "Processing Database through InputObject"
-                    $dbRoles = $input | Get-DbaDBRole -Role $Role -ExcludeRole $ExcludeRole -ExcludeFixedRole:$ExcludeFixedRole
+                    $dbRoles = $input | Get-DbaDbRole @dbRoleParams
                 }
                 'Microsoft.SqlServer.Management.Smo.DatabaseRole' {
                     Write-Message -Level Verbose -Message "Processing DatabaseRole through InputObject"
