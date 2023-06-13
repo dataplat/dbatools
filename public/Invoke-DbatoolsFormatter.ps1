@@ -39,7 +39,7 @@ function Invoke-DbatoolsFormatter {
     begin {
         $invokeFormatterVersion = (Get-Command Invoke-Formatter -ErrorAction SilentlyContinue).Version
         $HasInvokeFormatter = $null -ne $invokeFormatterVersion
-        $ScriptAnalyzerCorrectVersion = '1.18.2'
+        $ScriptAnalyzerCorrectVersion = '1.21.0'
         if (!($HasInvokeFormatter)) {
             Stop-Function -Message "You need PSScriptAnalyzer version $ScriptAnalyzerCorrectVersion installed"
             Write-Message -Level Warning "     Install-Module -Name PSScriptAnalyzer -RequiredVersion '$ScriptAnalyzerCorrectVersion'"
