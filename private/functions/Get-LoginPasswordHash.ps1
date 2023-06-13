@@ -68,7 +68,7 @@ function Get-LoginPasswordHash {
                 SqlParameter = @{ Name = $l }
             }
             Invoke-DbaQuery @invokeParams -EnableException | ForEach-Object {
-                @{$_.Login = $_.PasswordHashValue}
+                @{ $_.Login = $_.PasswordHashValue }
             }
         }
     }
