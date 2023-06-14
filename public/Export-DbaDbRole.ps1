@@ -237,7 +237,8 @@ function Export-DbaDbRole {
                         ON link.member_principal_id = users.principal_id
                     INNER JOIN sys.database_principals roles
                         ON roles.principal_id = link.role_principal_id
-                    WHERE roles.name = N'/*RoleName*/'"
+                    WHERE roles.name = N'/*RoleName*/'
+                    AND users.name != N'dbo'"
 
         if (Test-Bound -Not -ParameterName ScriptingOptionsObject) {
             $ScriptingOptionsObject = New-DbaScriptingOption

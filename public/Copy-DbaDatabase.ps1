@@ -1247,10 +1247,8 @@ function Copy-DbaDatabase {
                             if (-not $NoBackupCleanUp -and $Destination.Count -eq 1) {
                                 foreach ($backupFile in ($backupTmpResult.BackupPath)) {
                                     try {
-                                        if (Test-Path $backupFile -ErrorAction Stop) {
-                                            Write-Message -Level Verbose -Message "Deleting $backupFile."
-                                            Remove-Item $backupFile -ErrorAction Stop
-                                        }
+                                        Write-Message -Level Verbose -Message "Deleting $backupFile."
+                                        Remove-Item $backupFile -ErrorAction Stop
                                     } catch {
                                         try {
                                             Write-Message -Level Verbose -Message "Trying alternate SQL method to delete $backupFile."

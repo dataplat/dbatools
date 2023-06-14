@@ -152,9 +152,14 @@ function New-DbaDbUser {
             $connParam.SqlInstance = $instance
             $getDbParam = $connParam.Clone()
             $getDbParam.OnlyAccessible = $True
-            if ($Database) { $getDbParam.Database = $Database }
-            if ($ExcludeDatabase) { $getDbParam.ExcludeDatabase = $ExcludeDatabase }
-            if (-not ($IncludeSystem)) { $getDbParam.ExcludeSystem = $True }
+            if ($Database) {
+                $getDbParam.Database = $Database
+            } elseif (-not $IncludeSystem) {
+                $getDbParam.ExcludeSystem = $True
+            }
+            if ($ExcludeDatabase) {
+                $getDbParam.ExcludeDatabase = $ExcludeDatabase
+            }
 
             # Is the login exist?
             if ($Login -and (-not(Get-DbaLogin @connParam -Login $Login))) {
