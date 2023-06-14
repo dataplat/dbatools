@@ -82,7 +82,6 @@ function Get-DbaDbFile {
         [switch]$EnableException
     )
     begin {
-        #region Sql Query Generation
         $sql = "select
             fg.name as FileGroupName,
             df.file_id as 'ID',
@@ -144,9 +143,7 @@ function Get-DbaDbFile {
             CAST(fg.status & 0x8 as BIT) as FileGroupReadOnly
             from sysfiles df
             left outer join  sysfilegroups fg on df.groupid=fg.groupid"
-        #endregion Sql Query Generation
     }
-
     process {
         if ($SqlInstance) {
             $InputObject += Get-DbaDatabase -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $Database -ExcludeDatabase $ExcludeDatabase
@@ -186,36 +183,35 @@ function Get-DbaDbFile {
             }
 
             foreach ($result in $results) {
-                $size = [dbasize]($result.Size * 8192)
-                $usedspace = [dbasize]($result.UsedSpace * 8192)
+                $size = [DbaSize]($result.Size * 8192)
+                $usedspace = [DbaSize]($result.UsedSpace * 8192)
                 $maxsize = $result.MaxSize
                 # calculation is done here because for snapshots or sparse files size is not the "virtual" size
                 # (master_files.Size) but the currently allocated one (dm_io_virtual_file_stats.size_on_disk_bytes)
                 $AvailableSpace = $size - $usedspace
                 if ($result.size_on_disk_bytes) {
-                    $size = [dbasize]($result.size_on_disk_bytes)
+                    $size = [DbaSize]($result.size_on_disk_bytes)
                 }
                 if ($maxsize -gt -1) {
-                    $maxsize = [dbasize]($result.MaxSize * 8192)
+                    $maxsize = [DbaSize]($result.MaxSize * 8192)
                 } else {
-                    $maxsize = [dbasize]($result.MaxSize)
+                    $maxsize = [DbaSize]($result.MaxSize)
                 }
 
                 if ($result.VolumeFreeSpace) {
-                    $VolumeFreeSpace = [dbasize]$result.VolumeFreeSpace
+                    $VolumeFreeSpace = [DbaSize]$result.VolumeFreeSpace
                 } else {
                     # to get drive free space for each drive that a database has files on
                     # when database compatibility lower than 110. Lets do this with query2
-                    $query2 = @'
--- to get drive free space for each drive that a database has files on
-DECLARE @FixedDrives TABLE(Drive CHAR(1), MB_Free BIGINT);
-INSERT @FixedDrives EXEC sys.xp_fixeddrives;
+                    $query2 = "-- to get drive free space for each drive that a database has files on
+                        DECLARE @FixedDrives TABLE(Drive CHAR(1), MB_Free BIGINT);
+                        INSERT @FixedDrives EXEC sys.xp_fixeddrives;
 
-SELECT DISTINCT fd.MB_Free, LEFT(df.physical_name, 1) AS [Drive]
-FROM @FixedDrives AS fd
-INNER JOIN sys.database_files AS df
-ON fd.Drive = LEFT(df.physical_name, 1);
-'@
+                        SELECT DISTINCT fd.MB_Free, LEFT(df.physical_name, 1) AS [Drive]
+                        FROM @FixedDrives AS fd
+                        INNER JOIN sys.database_files AS df
+                        ON fd.Drive = LEFT(df.physical_name, 1);"
+
                     # if the server has one drive xp_fixeddrives returns one row, but we still need $disks to be an array.
                     if ($server.VersionMajor -gt 8) {
                         $disks = @($server.Query($query2, $db.Name))
@@ -225,54 +221,54 @@ ON fd.Drive = LEFT(df.physical_name, 1);
                             $_.drive -eq $result.PhysicalName.Substring(0, 1)
                         } | Select-Object $MbFreeColName
 
-                    $VolumeFreeSpace = [dbasize](($free.MB_Free) * 1024 * 1024)
+                        $VolumeFreeSpace = [DbaSize](($free.MB_Free) * 1024 * 1024)
+                    }
                 }
-            }
-            if ($result.GrowthType -eq "Percent") {
-                $nextgrowtheventadd = [dbasize]($result.size * 8 * ($result.Growth * 0.01) * 1024)
-            } else {
-                $nextgrowtheventadd = [dbasize]($result.Growth * 1024)
-            }
-            if (($nextgrowtheventadd.Byte -gt ($MaxSize.Byte - $size.Byte)) -and $maxsize -gt 0) {
-                [dbasize]$nextgrowtheventadd = 0
-            }
+                if ($result.GrowthType -eq "Percent") {
+                    $nextgrowtheventadd = [DbaSize]($result.size * 8 * ($result.Growth * 0.01) * 1024)
+                } else {
+                    $nextgrowtheventadd = [DbaSize]($result.Growth * 1024)
+                }
+                if (($nextgrowtheventadd.Byte -gt ($MaxSize.Byte - $size.Byte)) -and $maxsize -gt 0) {
+                    [DbaSize]$nextgrowtheventadd = 0
+                }
 
-            [PSCustomObject]@{
-                ComputerName             = $server.ComputerName
-                InstanceName             = $server.ServiceName
-                SqlInstance              = $server.DomainInstanceName
-                Database                 = $db.name
-                DatabaseID               = $db.ID
-                FileGroupName            = $result.FileGroupName
-                ID                       = $result.ID
-                Type                     = $result.Type
-                TypeDescription          = $result.TypeDescription
-                LogicalName              = $result.LogicalName.Trim()
-                PhysicalName             = $result.PhysicalName.Trim()
-                State                    = $result.State
-                MaxSize                  = $maxsize
-                Growth                   = $result.Growth
-                GrowthType               = $result.GrowthType
-                NextGrowthEventSize      = $nextgrowtheventadd
-                Size                     = $size
-                UsedSpace                = $usedspace
-                AvailableSpace           = $AvailableSpace
-                IsOffline                = $result.IsOffline
-                IsReadOnly               = $result.IsReadOnly
-                IsReadOnlyMedia          = $result.IsReadOnlyMedia
-                IsSparse                 = $result.IsSparse
-                NumberOfDiskWrites       = $result.NumberOfDiskWrites
-                NumberOfDiskReads        = $result.NumberOfDiskReads
-                ReadFromDisk             = [dbasize]$result.BytesReadFromDisk
-                WrittenToDisk            = [dbasize]$result.BytesWrittenToDisk
-                VolumeFreeSpace          = $VolumeFreeSpace
-                FileGroupDataSpaceId     = $result.FileGroupDataSpaceId
-                FileGroupType            = $result.FileGroupType
-                FileGroupTypeDescription = $result.FileGroupTypeDescription
-                FileGroupDefault         = $result.FileGroupDefault
-                FileGroupReadOnly        = $result.FileGroupReadOnly
+                [PSCustomObject]@{
+                    ComputerName             = $server.ComputerName
+                    InstanceName             = $server.ServiceName
+                    SqlInstance              = $server.DomainInstanceName
+                    Database                 = $db.name
+                    DatabaseID               = $db.ID
+                    FileGroupName            = $result.FileGroupName
+                    ID                       = $result.ID
+                    Type                     = $result.Type
+                    TypeDescription          = $result.TypeDescription
+                    LogicalName              = $result.LogicalName.Trim()
+                    PhysicalName             = $result.PhysicalName.Trim()
+                    State                    = $result.State
+                    MaxSize                  = $maxsize
+                    Growth                   = $result.Growth
+                    GrowthType               = $result.GrowthType
+                    NextGrowthEventSize      = $nextgrowtheventadd
+                    Size                     = $size
+                    UsedSpace                = $usedspace
+                    AvailableSpace           = $AvailableSpace
+                    IsOffline                = $result.IsOffline
+                    IsReadOnly               = $result.IsReadOnly
+                    IsReadOnlyMedia          = $result.IsReadOnlyMedia
+                    IsSparse                 = $result.IsSparse
+                    NumberOfDiskWrites       = $result.NumberOfDiskWrites
+                    NumberOfDiskReads        = $result.NumberOfDiskReads
+                    ReadFromDisk             = [DbaSize]$result.BytesReadFromDisk
+                    WrittenToDisk            = [DbaSize]$result.BytesWrittenToDisk
+                    VolumeFreeSpace          = $VolumeFreeSpace
+                    FileGroupDataSpaceId     = $result.FileGroupDataSpaceId
+                    FileGroupType            = $result.FileGroupType
+                    FileGroupTypeDescription = $result.FileGroupTypeDescription
+                    FileGroupDefault         = $result.FileGroupDefault
+                    FileGroupReadOnly        = $result.FileGroupReadOnly
+                }
             }
         }
     }
-}
 }
