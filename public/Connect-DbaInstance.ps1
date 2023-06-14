@@ -645,15 +645,39 @@ function Connect-DbaInstance {
             } elseif ($inputObjectType -eq 'SqlConnection') {
                 $server = New-Object -TypeName Microsoft.SqlServer.Management.Smo.Server -ArgumentList $inputObject
             } elseif ($inputObjectType -in 'RegisteredServer', 'ConnectionString') {
-                $server = New-Object -TypeName Microsoft.SqlServer.Management.Smo.Server -ArgumentList $serverName
-                # Parameter TrustServerCertificate changes the connection string be allow connections to instances with the default self-signed certificate
-                if ($TrustServerCertificate) {
-                    Write-Message -Level Verbose -Message "TrustServerCertificate will be set to 'True'"
-                    $csb = New-Object -TypeName Microsoft.Data.SqlClient.SqlConnectionStringBuilder -ArgumentList $connectionString
-                    $csb.TrustServerCertificate = $true
-                    $connectionString = $csb.ConnectionString
+                # Create the server SMO in the same way as when passing a string (see #8962 for details).
+                # Best way to get connection pooling to work is to use SqlConnectionInfo -> ServerConnection -> Server
+                $sqlConnectionInfo = New-Object -TypeName Microsoft.SqlServer.Management.Common.SqlConnectionInfo
+
+                # Set properties of SqlConnectionInfo based on the used properties of the connection string.
+                $csb = New-Object -TypeName Microsoft.Data.SqlClient.SqlConnectionStringBuilder -ArgumentList $connectionString
+                if ($csb.ShouldSerialize('Data Source')) {
+                    Write-Message -Level Debug -Message "ServerName will be set to '$($csb.DataSource)'"
+                    $sqlConnectionInfo.ServerName = $csb.DataSource
+                    $null = $csb.Remove('Data Source')
                 }
-                $server.ConnectionContext.ConnectionString = $connectionString
+                if ($csb.ShouldSerialize('User ID')) {
+                    Write-Message -Level Debug -Message "UserName will be set to '$($csb.UserID)'"
+                    $sqlConnectionInfo.UserName = $csb.UserID
+                    $null = $csb.Remove('User ID')
+                }
+                if ($csb.ShouldSerialize('Password')) {
+                    Write-Message -Level Debug -Message "Password will be set"
+                    $sqlConnectionInfo.Password = $csb.Password
+                    $null = $csb.Remove('Password')
+                }
+
+                # Add all remaining parts of the connection string as additional parameters.
+                $sqlConnectionInfo.AdditionalParameters = $csb.ConnectionString
+
+                # Set properties based on used parameters.
+                if ($TrustServerCertificate) {
+                    Write-Message -Level Debug -Message "TrustServerCertificate will be set to '$TrustServerCertificate'"
+                    $sqlConnectionInfo.TrustServerCertificate = $TrustServerCertificate
+                }
+
+                $serverConnection = New-Object -TypeName Microsoft.SqlServer.Management.Common.ServerConnection -ArgumentList $sqlConnectionInfo
+                $server = New-Object -TypeName Microsoft.SqlServer.Management.Smo.Server -ArgumentList $serverConnection
             } elseif ($inputObjectType -eq 'String') {
                 # Identify authentication method
                 if (Test-Azure -SqlInstance $instance) {
