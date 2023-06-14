@@ -815,7 +815,7 @@ function Backup-DbaDatabase {
                         Write-Message -Message "Exception thrown by db going into restoring mode due to recovery" -Leve Verbose
                     } else {
                         Write-Progress -Id $ProgressId -Activity "Backup" -Status "Failed" -Completed
-                        Stop-Function -message "Backup Failed" -ErrorRecord $_ -Continue
+                        Stop-Function -message "Backup of [$dbName] failed" -ErrorRecord $_ -Target $dbName -Continue
                         $BackupComplete = $false
                     }
                 }
