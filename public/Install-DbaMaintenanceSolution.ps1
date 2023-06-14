@@ -93,14 +93,14 @@ function Install-DbaMaintenanceSolution {
          https://dbatools.io/Install-DbaMaintenanceSolution
 
     .EXAMPLE
-        PS C:\> Install-DbaMaintenanceSolution -SqlInstance RES14224 -Database DBA -CleanupTime 72
+        PS C:\> Install-DbaMaintenanceSolution -SqlInstance RES14224 -Database DBA -InstallJobs -CleanupTime 72
 
         Installs Ola Hallengren's Solution objects on RES14224 in the DBA database.
         Backups will default to the default Backup Directory.
         If the Maintenance Solution already exists, the script will be halted.
 
     .EXAMPLE
-        PS C:\> Install-DbaMaintenanceSolution -SqlInstance RES14224 -Database DBA -BackupLocation "Z:\SQLBackup" -CleanupTime 72
+        PS C:\> Install-DbaMaintenanceSolution -SqlInstance RES14224 -Database DBA -InstallJobs -BackupLocation "Z:\SQLBackup" -CleanupTime 72
 
         This will create the Ola Hallengren's Solution objects. Existing objects are not affected in any way.
 
@@ -120,7 +120,7 @@ function Install-DbaMaintenanceSolution {
         Installs Maintenance Solution to myserver in database. Adds Agent Jobs, and if any currently exist, they'll be replaced.
 
     .EXAMPLE
-        PS C:\> Install-DbaMaintenanceSolution -SqlInstance RES14224 -Database DBA -BackupLocation "Z:\SQLBackup" -CleanupTime 72 -ReplaceExisting
+        PS C:\> Install-DbaMaintenanceSolution -SqlInstance RES14224 -Database DBA -InstallJobs -BackupLocation "Z:\SQLBackup" -CleanupTime 72 -ReplaceExisting
 
         This will drop and then recreate the Ola Hallengren's Solution objects
         The cleanup script will drop and recreate:
