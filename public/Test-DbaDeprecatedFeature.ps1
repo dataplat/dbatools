@@ -60,7 +60,6 @@ function Test-DbaDeprecatedFeature {
         PS C:\> Test-DbaDeprecatedFeature -SqlInstance sql2008 -Database TestDB
 
         Check deprecated features on server sql2008 for only the TestDB database
-
     #>
     [CmdletBinding()]
     param (
@@ -68,18 +67,16 @@ function Test-DbaDeprecatedFeature {
         [PSCredential]$SqlCredential,
         [string[]]$Database,
         [string[]]$ExcludeDatabase,
-        [parameter(ValueFromPipeline)]
+        [Parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
         [switch]$EnableException
     )
-
     begin {
         $sql = "SELECT  SERVERPROPERTY('MachineName') AS ComputerName,
             ISNULL(SERVERPROPERTY('InstanceName'), 'MSSQLSERVER') AS InstanceName,
             SERVERPROPERTY('ServerName') AS SqlInstance, object_id as ID, Name, type_desc as Type, Object_Definition (object_id) as Definition FROM sys.all_objects
             Where Type = 'P' AND is_ms_shipped = 0"
     }
-
     process {
         foreach ($instance in $SqlInstance) {
             $InputObject += Get-DbaDatabase -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $Database -ExcludeDatabase $ExcludeDatabase
@@ -96,15 +93,14 @@ function Test-DbaDeprecatedFeature {
                 $results = $db.Query($sql)
                 foreach ($dep in $deps) {
                     $escaped = [Regex]::Escape("$($dep.dep)".Trim())
-                    $matchedep = $results | Where-Object Definition -match $escaped
+                    $matchedep = $results | Where-Object Definition -Match $escaped
                     if ($matchedep) {
-                        $matchedep | Add-Member -NotePropertyName DeprecatedFeature -NotePropertyValue $dep.dep.ToString().Trim() -PassThru -Force |
-                        Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, DeprecatedFeature, ID, Name, Type
+                        $matchedep | Add-Member -NotePropertyName DeprecatedFeature -NotePropertyValue $dep.dep.ToString().Trim() -PassThru -Force | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, DeprecatedFeature, ID, Name, Type
+                    }
                 }
+            } catch {
+                Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
             }
-        } catch {
-            Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
         }
     }
-}
 }
