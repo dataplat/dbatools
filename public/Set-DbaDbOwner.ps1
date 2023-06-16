@@ -87,7 +87,6 @@ function Set-DbaDbOwner {
         [string]$TargetLogin,
         [switch]$EnableException
     )
-
     process {
         if (-not $InputObject -and -not $SqlInstance) {
             Stop-Function -Message "You must pipe in a database or specify a SqlInstance"
@@ -95,7 +94,14 @@ function Set-DbaDbOwner {
         }
 
         if ($SqlInstance) {
-            $InputObject += Get-DbaDatabase -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $Database -ExcludeDatabase $ExcludeDatabase
+            $getDbParams = @{
+                SqlInstance     = $SqlInstance
+                SqlCredential   = $SqlCredential
+                Database        = $Database
+                ExcludeDatabase = $ExcludeDatabase
+                EnableException = $EnableException
+            }
+            $InputObject += Get-DbaDatabase @getDbParams
         }
 
         foreach ($db in $InputObject) {
@@ -103,7 +109,7 @@ function Set-DbaDbOwner {
             if ($db.IsSystemObject) {
                 continue
             }
-            if (!$db.IsAccessible) {
+            if (-not $db.IsAccessible) {
                 Write-Message -Level Warning -Message "Database $db is not accessible. Skipping."
                 continue
             }
@@ -122,7 +128,7 @@ function Set-DbaDbOwner {
             }
 
             #Owner cannot be a group
-            $TargetLoginObject = $server.Logins | Where-Object { $PSItem.Name -eq $TargetLogin } | Select-Object -property  Name, LoginType
+            $TargetLoginObject = $server.Logins | Where-Object { $PSItem.Name -eq $TargetLogin } | Select-Object -Property Name, LoginType
             if ($TargetLoginObject.LoginType -eq 'WindowsGroup') {
                 Stop-Function -Message "$TargetLogin is a group, therefore can't be set as owner. Moving on." -Continue -EnableException $EnableException
             }
