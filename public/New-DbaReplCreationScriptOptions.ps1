@@ -22,7 +22,7 @@ function New-DbaReplCreationScriptOptions {
             MarkReplicatedForeignKeyConstraintsAsNotForReplication, and Schema
 
     .NOTES
-        Tags: Replication, Script
+        Tags: repl, Replication, Script
         Author: Jess Pomfret (@jpomfret), jesspomfret.com
 
         Website: https://dbatools.io

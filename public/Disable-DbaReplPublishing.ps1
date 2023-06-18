@@ -37,7 +37,7 @@ function Disable-DbaReplPublishing {
         If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
     .NOTES
-        Tags: Replication
+        Tags: repl, Replication
         Author: Jess Pomfret (@jpomfret), jesspomfret.com
 
         Website: https://dbatools.io
