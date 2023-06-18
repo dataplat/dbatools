@@ -38,7 +38,7 @@ function Disable-DbaReplDistributor {
         If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
     .NOTES
-        Tags: Replication
+        Tags: repl, Replication
         Author: Jess Pomfret (@jpomfret), jesspomfret.com
 
         Website: https://dbatools.io
@@ -62,9 +62,9 @@ function Disable-DbaReplDistributor {
         regardless of whether or not dependent publishing and distribution objects are uninstalled.
 
     #>
-    [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess, ConfirmImpact = 'High')]
+    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High')]
     param (
-        [parameter(Mandatory, ValueFromPipeline)]
+        [Parameter(Mandatory, ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [switch]$Force,
@@ -73,7 +73,7 @@ function Disable-DbaReplDistributor {
     process {
         foreach ($instance in $SqlInstance) {
             try {
-                $replServer = Get-DbaReplServer -SqlInstance $instance -SqlCredential $SqlCredential
+                $replServer = Get-DbaReplServer -SqlInstance $instance -SqlCredential $SqlCredential -EnableException:$EnableException
             } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
@@ -83,7 +83,7 @@ function Disable-DbaReplDistributor {
                 try {
                     if ($PSCmdlet.ShouldProcess($instance, "Disabling distribution on $instance")) {
                         # remove any connections to the distribution database
-                        Get-DbaProcess -SqlInstance $instance -SqlCredential $SqlCredential -Database $replServer.DistributionDatabases.name | Stop-DbaProcess
+                        Get-DbaProcess -SqlInstance $instance -SqlCredential $SqlCredential -Database $replServer.DistributionDatabases.name -EnableException:$EnableException | Stop-DbaProcess -EnableException:$EnableException
                         # uninstall distribution
                         $replServer.UninstallDistributor($Force)
                     }

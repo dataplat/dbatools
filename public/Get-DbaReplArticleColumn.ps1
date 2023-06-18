@@ -34,7 +34,7 @@ function Get-DbaReplArticleColumn {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: Replication
+        Tags: repl, Replication
         Author: Cláudio Silva (@claudioessilva), claudioessilva.eu
 
         Website: https://dbatools.io

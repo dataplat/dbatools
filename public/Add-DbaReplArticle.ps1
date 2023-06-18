@@ -1,13 +1,13 @@
 function Add-DbaReplArticle {
     <#
     .SYNOPSIS
-        Adds an article to a publication for the database on the target SQL instances.
+        Add an article configuration to a publication in a database on the SQL Server instance(s).
 
     .DESCRIPTION
-        Adds an article to a publication for the database on the target SQL instances.
+        Add an article configuration to a publication in a database on the SQL Server instance(s).
 
     .PARAMETER SqlInstance
-        The target SQL Server instance or instances.
+        The SQL Server instance(s) for the publication.
 
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
@@ -17,13 +17,13 @@ function Add-DbaReplArticle {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        The database on the publisher that contains the article to be replicated.
+        The publication database to apply the article configuration to be replicated.
 
     .PARAMETER Publication
-        The name of the replication publication.
+        The name of the publication.
 
     .PARAMETER Schema
-        The schema name that contains the object to add as an article.
+        Schema where the article to be added is found.
         Default is dbo.
 
     .PARAMETER Name
@@ -49,7 +49,7 @@ function Add-DbaReplArticle {
         If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
     .NOTES
-        Tags: Replication
+        Tags: repl, Replication
         Author: Jess Pomfret (@jpomfret), jesspomfret.com
 
         Website: https://dbatools.io
@@ -93,21 +93,21 @@ function Add-DbaReplArticle {
         Adds the stores table to the testPub publication from mssql1.pubs with the NonClusteredIndexes and Statistics options set
         includes default options.
     #>
-    [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess, ConfirmImpact = 'Medium')]
+    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'Medium')]
     param (
-        [parameter(Mandatory, ValueFromPipeline)]
+        [Parameter(Mandatory, ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [parameter(Mandatory)]
-        [String]$Database,
-        [parameter(Mandatory)]
-        [String]$Publication,
-        [String]$Schema = 'dbo',
-        [parameter(Mandatory)]
-        [String]$Name,
-        [String]$Filter,
+        [string]$Database,
+        [Parameter(Mandatory)]
+        [string]$Publication,
+        [string]$Schema = 'dbo',
+        [Parameter(Mandatory)]
+        [string]$Name,
+        [string]$Filter,
         [PSObject]$CreationScriptOptions,
-        [Switch]$EnableException
+        [switch]$EnableException
     )
     process {
 
@@ -118,7 +118,7 @@ function Add-DbaReplArticle {
 
         foreach ($instance in $SqlInstance) {
             try {
-                $replServer = Get-DbaReplServer -SqlInstance $instance -SqlCredential $SqlCredential
+                $replServer = Get-DbaReplServer -SqlInstance $instance -SqlCredential $SqlCredential -EnableException:$EnableException
             } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
@@ -127,7 +127,7 @@ function Add-DbaReplArticle {
             try {
                 if ($PSCmdlet.ShouldProcess($instance, "Adding an article to $Publication")) {
 
-                    $pub = Get-DbaReplPublication -SqlInstance $instance -SqlCredential $SqlCredential -Name $Publication
+                    $pub = Get-DbaReplPublication -SqlInstance $instance -SqlCredential $SqlCredential -Name $Publication -EnableException:$EnableException
 
                     $articleOptions = New-Object Microsoft.SqlServer.Replication.ArticleOptions
 
@@ -173,7 +173,7 @@ function Add-DbaReplArticle {
             } catch {
                 Stop-Function -Message "Unable to add article $Name to $Publication on $instance" -ErrorRecord $_ -Target $instance -Continue
             }
-            Get-DbaReplArticle -SqlInstance $instance -SqlCredential $SqlCredential -Publication $Publication -Name $Name
+            Get-DbaReplArticle -SqlInstance $instance -SqlCredential $SqlCredential -Publication $Publication -Name $Name -EnableException:$EnableException
         }
     }
 }
