@@ -47,8 +47,6 @@ jobs:
           Import-Module ./dbatools.psd1 -Force
           # need some folders for our repl stuff
           docker exec mssql1 mkdir /shared/data /shared/repldata /var/opt/mssql/ReplData
-          # setup distribution, 1xPublication with 1xSubscription
-          # $null = .\bin\Replication\Invoke-ReplicationSetup.ps1
 
       - name: Run tests
         run: |
