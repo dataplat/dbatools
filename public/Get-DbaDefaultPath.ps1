@@ -7,7 +7,7 @@ function Get-DbaDefaultPath {
         Gets the default SQL Server paths for data, logs and backups
 
     .PARAMETER SqlInstance
-        TThe target SQL Server instance or instances.
+        The target SQL Server instance or instances.
 
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).

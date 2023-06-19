@@ -7,7 +7,7 @@ function Get-DbaDbMail {
         Gets the database mail from SQL Server
 
     .PARAMETER SqlInstance
-        TThe target SQL Server instance or instances.
+        The target SQL Server instance or instances.
 
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
