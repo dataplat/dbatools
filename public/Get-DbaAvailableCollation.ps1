@@ -8,7 +8,7 @@ function Get-DbaAvailableCollation {
         Only the connect permission is required to get this information.
 
     .PARAMETER SqlInstance
-        TThe target SQL Server instance or instances. Only connect permission is required.
+        The target SQL Server instance or instances. Only connect permission is required.
 
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).

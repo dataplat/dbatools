@@ -84,7 +84,7 @@ function Get-DbaDbRole {
     #>
     [CmdletBinding()]
     param (
-        [parameter(ValueFromPipeline)]
+        [Parameter(ValueFromPipeline)]
         [DbaInstance[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [string[]]$Database,
@@ -92,11 +92,10 @@ function Get-DbaDbRole {
         [string[]]$Role,
         [string[]]$ExcludeRole,
         [switch]$ExcludeFixedRole,
-        [parameter(ValueFromPipeline)]
+        [Parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
         [switch]$EnableException
     )
-
     process {
         if (-not $InputObject -and -not $SqlInstance) {
             Stop-Function -Message "You must pipe in a database or specify a SqlInstance"
@@ -104,7 +103,7 @@ function Get-DbaDbRole {
         }
 
         if ($SqlInstance) {
-            $InputObject += Get-DbaDatabase -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $Database -ExcludeDatabase $ExcludeDatabase
+            $InputObject += Get-DbaDatabase -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $Database -ExcludeDatabase $ExcludeDatabase -EnableException:$EnableException
         }
 
         foreach ($db in $InputObject) {
@@ -115,15 +114,12 @@ function Get-DbaDbRole {
             Write-Message -Level 'Verbose' -Message "Getting Database Roles for $db on $server"
 
             $dbRoles = $db.Roles
-
             if ($Role) {
                 $dbRoles = $dbRoles | Where-Object { $_.Name -in $Role }
             }
-
             if ($ExcludeRole) {
                 $dbRoles = $dbRoles | Where-Object { $_.Name -notin $ExcludeRole }
             }
-
             if ($ExcludeFixedRole) {
                 $dbRoles = $dbRoles | Where-Object { $_.IsFixedRole -eq $false -and $_.Name -ne 'public' }
             }
@@ -133,7 +129,6 @@ function Get-DbaDbRole {
                 Add-Member -Force -InputObject $dbRole -MemberType NoteProperty -Name InstanceName -Value $server.ServiceName
                 Add-Member -Force -InputObject $dbRole -MemberType NoteProperty -Name SqlInstance -Value $server.DomainInstanceName
                 Add-Member -Force -InputObject $dbRole -MemberType NoteProperty -Name Database -Value $db.Name
-
                 Select-DefaultView -InputObject $dbRole -Property "ComputerName", "InstanceName", "Database", "Name", "IsFixedRole"
             }
         }

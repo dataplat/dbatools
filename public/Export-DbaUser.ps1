@@ -153,7 +153,7 @@ function Export-DbaUser {
         [string[]]$Database,
         [string[]]$ExcludeDatabase,
         [string[]]$User,
-        [ValidateSet('SQLServer2000', 'SQLServer2005', 'SQLServer2008/2008R2', 'SQLServer2012', 'SQLServer2014', 'SQLServer2016', 'SQLServer2017', 'SQLServer2019')]
+        [ValidateSet('SQLServer2000', 'SQLServer2005', 'SQLServer2008/2008R2', 'SQLServer2012', 'SQLServer2014', 'SQLServer2016', 'SQLServer2017', 'SQLServer2019', 'SQLServer2022')]
         [string]$DestinationVersion,
         [string]$Path = (Get-DbatoolsConfigValue -FullName 'Path.DbatoolsExport'),
         [Alias("OutFile", "FileName")]
@@ -185,6 +185,7 @@ function Export-DbaUser {
             'SQLServer2016'        = 'Version130'
             'SQLServer2017'        = 'Version140'
             'SQLServer2019'        = 'Version150'
+            'SQLServer2022'        = 'Version160'
         }
 
         $versionName = @{
@@ -196,6 +197,7 @@ function Export-DbaUser {
             'Version130' = 'SQLServer2016'
             'Version140' = 'SQLServer2017'
             'Version150' = 'SQLServer2019'
+            'Version160' = 'SQLServer2022'
         }
 
         $eol = [System.Environment]::NewLine

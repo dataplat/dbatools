@@ -83,18 +83,18 @@ function Get-DbaStartupParameter {
                     $masterLog = $params | Where-Object { $_.StartsWith('-l') }
                     $errorLog = $params | Where-Object { $_.StartsWith('-e') }
                     $traceFlags = $params | Where-Object { $_.StartsWith('-T') }
-
-                    $debugflag = $params | Where-Object { $_.StartsWith('-t') }
-
-                    if ($debugflag.length -ne 0) {
-                        Write-Message -Level Warning "$instance is using the lowercase -t trace flag. This is for internal debugging only. Please ensure this was intentional."
-                    }
-                    #>
+                    $debugFlags = $params | Where-Object { $_.StartsWith('-t') }
 
                     if ($traceFlags.length -eq 0) {
                         $traceFlags = "None"
                     } else {
                         [int[]]$traceFlags = $traceFlags.substring(2)
+                    }
+
+                    if ($debugFlags.length -eq 0) {
+                        $debugFlags = "None"
+                    } else {
+                        [int[]]$debugFlags = $debugFlags.substring(2)
                     }
 
                     if ($Simple -eq $true) {
@@ -106,6 +106,7 @@ function Get-DbaStartupParameter {
                             MasterLog       = $masterLog.TrimStart('-l')
                             ErrorLog        = $errorLog.TrimStart('-e')
                             TraceFlags      = $traceFlags
+                            DebugFlags      = $debugFlags
                             ParameterString = $wmisvc.StartupParameters
                         }
                     } else {
@@ -159,6 +160,7 @@ function Get-DbaStartupParameter {
                             MasterLog            = $masterLog -replace '^-[lL]', ''
                             ErrorLog             = $errorLog -replace '^-[eE]', ''
                             TraceFlags           = $traceFlags
+                            DebugFlags           = $debugFlags
                             CommandPromptStart   = $commandPrompt
                             MinimalStart         = $minimalStart
                             MemoryToReserve      = $memoryToReserve
