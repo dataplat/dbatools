@@ -224,7 +224,7 @@ To store credentials to disk, please read more at [Jaap Brasser's blog](https://
 
 #### Servers with custom ports
 
-If you use non-default ports and SQL Browser is disabled, you can access servers using a semicolon (functionality we've added) or a comma (the way Microsoft does it).
+If you use non-default ports and SQL Browser is disabled, you can access servers using a colon (functionality we've added) or a comma (the way Microsoft does it).
 
 ```powershell
 -SqlInstance sql2017:55559
