@@ -164,6 +164,9 @@ function Copy-DbaDatabase {
     .LINK
         https://dbatools.io/Copy-DbaDatabase
 
+	.INPUT
+		A single database may be piped from Get-DbaDatabase.
+
     .EXAMPLE
         PS C:\> Copy-DbaDatabase -Source sql2014a -Destination sql2014b -Database TestDB -BackupRestore -SharedPath \\fileshare\sql\migration
 
@@ -707,8 +710,10 @@ function Copy-DbaDatabase {
         if ($InputObject) {
             $Source = $InputObject[0].Parent
             $Database = $InputObject.Name
-        }
-
+        } elseif (-not $Source) {
+            Stop-Function -Message "With no piped input a -Source must be specified."
+            return
+		}
 
         if ($Database -contains "master" -or $Database -contains "msdb" -or $Database -contains "tempdb") {
             Stop-Function -Message "Migrating system databases is not currently supported." -Continue
