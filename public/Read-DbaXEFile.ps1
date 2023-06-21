@@ -54,83 +54,80 @@ function Read-DbaXEFile {
     )
     process {
         if (Test-FunctionInterrupt) { return }
-        foreach ($file in $path) {
+        foreach ($pathObject in $Path) {
             # in order to ensure CSV gets all fields, all columns will be
             # collected and output in the first (all all subsequent) object
             $columns = @("name", "timestamp")
 
-            if ($file -is [System.String]) {
-                $currentfile = $file
-                #Variable marked as unused by PSScriptAnalyzer
-                #$manualadd = $true
-            } elseif ($file -is [System.IO.FileInfo]) {
-                $currentfile = $file.FullName
-                #Variable marked as unused by PSScriptAnalyzer
-                #$manualadd = $true
-            } else {
-                if ($file -isnot [Microsoft.SqlServer.Management.XEvent.Session]) {
-                    Stop-Function -Message "Unsupported file type."
-                    return
+            if ($pathObject -is [System.String]) {
+                $files = $pathObject
+            } elseif ($pathObject -is [System.IO.FileInfo]) {
+                $files = $pathObject.FullName
+            } elseif ($pathObject -is [Microsoft.SqlServer.Management.XEvent.Session]) {
+                if ($pathObject.TargetFile.Length -eq 0) {
+                    Stop-Function -Message "The session [$pathObject] does not have an associated Target File." -Continue
                 }
 
-                if ($file.TargetFile.Length -eq 0) {
-                    Stop-Function -Message "This session does not have an associated Target File."
-                    return
-                }
-
-                $instance = [dbainstance]$file.ComputerName
-
+                $instance = [dbainstance]$pathObject.ComputerName
                 if ($instance.IsLocalHost) {
-                    $currentfile = $file.TargetFile
+                    $targetFile = $pathObject.TargetFile
                 } else {
-                    $currentfile = $file.RemoteTargetFile
-                }
-            }
-
-            $accessible = Test-Path -Path $currentfile
-            $whoami = whoami
-
-            if (-not $accessible) {
-                if ($file.Status -eq "Stopped") { continue }
-                Stop-Function -Continue -Message "$currentfile cannot be accessed from $($env:COMPUTERNAME). Does $whoami have access?"
-            }
-
-            if ($Raw) {
-                return (SqlServer.XEvent\Read-SqlXEvent -FileName $currentfile)
-            }
-
-            # use the SqlServer.XEvent\Read-SqlXEvent cmdlet from Microsoft
-            # because the underlying Class uses Tasks
-            # which is hard to handle in PowerShell
-
-            $enum = SqlServer.XEvent\Read-SqlXEvent -FileName $currentfile
-            $newcolumns = ($enum.Fields.Name | Select-Object -Unique)
-
-            $actions = ($enum.Actions.Name | Select-Object -Unique)
-            foreach ($action in $actions) {
-                $newcolumns += ($action -Split '\.')[-1]
-            }
-
-            $newcolumns = $newcolumns | Sort-Object
-            $columns = ($columns += $newcolumns) | Select-Object -Unique
-
-            # Make it selectable, otherwise it's a weird enumeration
-            foreach ($event in $enum) {
-                $hash = [ordered]@{ }
-
-                foreach ($column in $columns) {
-                    $null = $hash.Add($column, $event.$column)
+                    $targetFile = $pathObject.RemoteTargetFile
                 }
 
-                foreach ($key in $event.Actions.Keys) {
-                    $hash[$key] = $event.Actions[$key]
+                $targetFile = $targetFile.Replace('.xel', '*.xel').Replace('.xem', '*.xem')
+                $files = Get-ChildItem -Path $targetFile | Where-Object Length -gt 0
+                Write-Message -Level Verbose -Message "Received $($files.Count) files based on [$targetFile]"
+            } else {
+                Stop-Function -Message "The Path [$pathObject] has an unsupported file type of [$($pathObject.GetType().FullName)]."
+            }
+
+            foreach ($file in $files) {
+                $accessible = Test-Path -Path $file
+                $whoami = whoami
+
+                if (-not $accessible) {
+                    if ($pathObject.Status -eq "Stopped") { continue }
+                    Stop-Function -Continue -Message "$file cannot be accessed from $($env:COMPUTERNAME). Does $whoami have access?"
                 }
 
-                foreach ($key in $event.Fields.Keys) {
-                    $hash[$key] = $event.Fields[$key]
-                }
+                # use the SqlServer\Read-SqlXEvent cmdlet from Microsoft
+                # because the underlying Class uses Tasks
+                # which is hard to handle in PowerShell
 
-                [pscustomobject]$hash
+                if ($Raw) {
+                    SqlServer\Read-SqlXEvent -FileName $file
+                } else {
+                    $enum = SqlServer\Read-SqlXEvent -FileName $file
+                    $newcolumns = ($enum.Fields.Name | Select-Object -Unique)
+
+                    $actions = ($enum.Actions.Name | Select-Object -Unique)
+                    foreach ($action in $actions) {
+                        $newcolumns += ($action -Split '\.')[-1]
+                    }
+
+                    $newcolumns = $newcolumns | Sort-Object
+                    $columns = ($columns += $newcolumns) | Select-Object -Unique
+
+                    # Make it selectable, otherwise it's a weird enumeration
+                    foreach ($event in $enum) {
+                        $hash = [ordered]@{ }
+
+                        foreach ($column in $columns) {
+                            $null = $hash.Add($column, $event.$column)
+                        }
+
+                        foreach ($key in $event.Actions.Keys) {
+                            $hash[$key] = $event.Actions[$key]
+                        }
+
+                        foreach ($key in $event.Fields.Keys) {
+                            $hash[$key] = $event.Fields[$key]
+                        }
+
+                        [PSCustomObject]$hash
+                    }
+                }
             }
         }
     }
