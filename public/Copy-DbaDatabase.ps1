@@ -1426,10 +1426,10 @@ function Copy-DbaDatabase {
                         $copyDatabaseStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                     }
 
-                    if ($SetSourceOffline -and $sourceServer.databases[$DestinationdbName].status -notlike '*offline*') {
-                        if ($Pscmdlet.ShouldProcess($source, "Setting $DestinationdbName offline")) {
-                            Stop-DbaProcess -SqlInstance $sourceServer -Database $DestinationdbName
-                            Set-DbaDbState -SqlInstance $sourceServer -SqlCredential $SourceSqlCredential -database $DestinationdbName -Offline
+                    if ($SetSourceOffline -and $sourceServer.databases[$dbName].status -notlike '*offline*') {
+                        if ($Pscmdlet.ShouldProcess($source, "Setting $dbName offline")) {
+                            Stop-DbaProcess -SqlInstance $sourceServer -Database $dbName
+                            Set-DbaDbState -SqlInstance $sourceServer -SqlCredential $SourceSqlCredential -database $dbName -Offline
                         }
                     }
 
