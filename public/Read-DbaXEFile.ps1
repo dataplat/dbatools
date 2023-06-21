@@ -6,8 +6,14 @@ function Read-DbaXEFile {
     .DESCRIPTION
         Read XEvents from a *.xel or *.xem file.
 
+        Uses the command Read-SqlXEvent from the PowerShell module SqlServer by Microsoft.
+
+        The file that the XESession is currently writing to can not be accessed and will be skipped using pipeline input from Get-DbaXESession.
+
     .PARAMETER Path
         The path to the *.xem or *.xem file. This is relative to the computer executing the command. UNC paths are supported.
+
+        Piping from Get-DbaXESession is also supported.
 
     .PARAMETER Raw
         If this switch is enabled, the Microsoft.SqlServer.XEvent.Linq.PublishedEvent enumeration object will be returned.
@@ -39,7 +45,7 @@ function Read-DbaXEFile {
         Returns events from all .xel files in C:\temp\xe.
 
     .EXAMPLE
-        PS C:\> Get-DbaXESession -SqlInstance sql2014 -Session deadlocks | Read-DbaXEFile
+        PS C:\> Get-DbaXESession -SqlInstance sql2019 -Session deadlocks | Read-DbaXEFile
 
         Reads remote XEvents by accessing the file over the admin UNC share.
 
@@ -76,7 +82,10 @@ function Read-DbaXEFile {
                 }
 
                 $targetFile = $targetFile.Replace('.xel', '*.xel').Replace('.xem', '*.xem')
-                $files = Get-ChildItem -Path $targetFile | Where-Object Length -gt 0
+                $files = Get-ChildItem -Path $targetFile | Sort-Object LastWriteTime
+                if ($pathObject.Status -eq 'Running') {
+                    $files = $files | Select-Object -SkipLast 1
+                }
                 Write-Message -Level Verbose -Message "Received $($files.Count) files based on [$targetFile]"
             } else {
                 Stop-Function -Message "The Path [$pathObject] has an unsupported file type of [$($pathObject.GetType().FullName)]."
