@@ -68,7 +68,7 @@ function Read-DbaXEFile {
                     Stop-Function -Message "The session [$pathObject] does not have an associated Target File." -Continue
                 }
 
-                $instance = [dbainstance]$pathObject.ComputerName
+                $instance = [DbaInstance]$pathObject.ComputerName
                 if ($instance.IsLocalHost) {
                     $targetFile = $pathObject.TargetFile
                 } else {
@@ -83,12 +83,8 @@ function Read-DbaXEFile {
             }
 
             foreach ($file in $files) {
-                $accessible = Test-Path -Path $file
-                $whoami = whoami
-
-                if (-not $accessible) {
-                    if ($pathObject.Status -eq "Stopped") { continue }
-                    Stop-Function -Continue -Message "$file cannot be accessed from $($env:COMPUTERNAME). Does $whoami have access?"
+                if (-not (Test-Path -Path $file)) {
+                    Stop-Function -Message "$file cannot be accessed from $($env:COMPUTERNAME)." -Continue
                 }
 
                 # use the SqlServer\Read-SqlXEvent cmdlet from Microsoft
@@ -96,9 +92,17 @@ function Read-DbaXEFile {
                 # which is hard to handle in PowerShell
 
                 if ($Raw) {
-                    SqlServer\Read-SqlXEvent -FileName $file
+                    try {
+                        SqlServer\Read-SqlXEvent -FileName $file
+                    } catch {
+                        Stop-Function -Message "Failure" -ErrorRecord $_ -Target $file -Continue
+                    }
                 } else {
-                    $enum = SqlServer\Read-SqlXEvent -FileName $file
+                    try {
+                        $enum = SqlServer\Read-SqlXEvent -FileName $file
+                    } catch {
+                        Stop-Function -Message "Failure" -ErrorRecord $_ -Target $file -Continue
+                    }
                     $newcolumns = ($enum.Fields.Name | Select-Object -Unique)
 
                     $actions = ($enum.Actions.Name | Select-Object -Unique)
