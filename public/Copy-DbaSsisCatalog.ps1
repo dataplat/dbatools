@@ -273,10 +273,8 @@ function Copy-DbaSsisCatalog {
         }
 
         try {
-            $legacyconnstring = $sourceServer | New-DbaConnectionString -Legacy
-            $sourcesqlconnection = New-Object System.Data.SqlClient.SqlConnection $legacyconnstring
-            $null = $sourcesqlconnection.Open()
-            $sourceSSIS = New-Object Microsoft.SqlServer.Management.IntegrationServices.IntegrationServices $sourcesqlconnection
+            $sourceStoreConnection = New-Object Microsoft.SqlServer.Management.Sdk.Sfc.SqlStoreConnection $sourceServer.ConnectionContext.SqlConnectionObject
+            $sourceSSIS = New-Object Microsoft.SqlServer.Management.IntegrationServices.IntegrationServices $sourceStoreConnection
         } catch {
             Stop-Function -Message "There was an error connecting to the source integration services." -Target $sourceServer -ErrorRecord $_
             return
@@ -309,10 +307,8 @@ function Copy-DbaSsisCatalog {
             }
 
             try {
-                $legacyconnstring = $destinationConnection | New-DbaConnectionString -Legacy
-                $destsqlconnection = New-Object System.Data.SqlClient.SqlConnection $legacyconnstring
-                $null = $destsqlconnection.Open()
-                $destinationSSIS = New-Object Microsoft.SqlServer.Management.IntegrationServices.IntegrationServices $destinationConnection
+                $destinationStoreConnection = New-Object Microsoft.SqlServer.Management.Sdk.Sfc.SqlStoreConnection $destinationConnection.ConnectionContext.SqlConnectionObject
+                $destinationSSIS = New-Object Microsoft.SqlServer.Management.IntegrationServices.IntegrationServices $destinationStoreConnection
             } catch {
                 Stop-Function -Message "There was an error connecting to the destination integration services." -Target $destinationCon -ErrorRecord $_
             }
