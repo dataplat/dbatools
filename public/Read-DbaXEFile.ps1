@@ -6,8 +6,6 @@ function Read-DbaXEFile {
     .DESCRIPTION
         Read XEvents from a *.xel or *.xem file.
 
-        Uses the command Read-SqlXEvent from the PowerShell module SqlServer by Microsoft.
-
         The file that the XESession is currently writing to can not be accessed and will be skipped using pipeline input from Get-DbaXESession.
 
     .PARAMETER Path
@@ -16,7 +14,7 @@ function Read-DbaXEFile {
         Piping from Get-DbaXESession is also supported.
 
     .PARAMETER Raw
-        If this switch is enabled, the Microsoft.SqlServer.XEvent.Linq.PublishedEvent enumeration object will be returned.
+        If this switch is enabled, an array of Microsoft.SqlServer.XEvent.XELite.XEvent objects will be returned.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -102,13 +100,13 @@ function Read-DbaXEFile {
 
                 if ($Raw) {
                     try {
-                        SqlServer\Read-SqlXEvent -FileName $file
+                        Read-XEvent -FileName $file
                     } catch {
                         Stop-Function -Message "Failure" -ErrorRecord $_ -Target $file -Continue
                     }
                 } else {
                     try {
-                        $enum = SqlServer\Read-SqlXEvent -FileName $file
+                        $enum = Read-XEvent -FileName $file
                     } catch {
                         Stop-Function -Message "Failure" -ErrorRecord $_ -Target $file -Continue
                     }
