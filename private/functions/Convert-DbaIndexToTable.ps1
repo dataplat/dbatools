@@ -76,6 +76,10 @@ function Convert-DbaIndexToTable {
                     { $_ -in "bigint", "date", "datetime", "datetime2", "smallint", "time", "tinyint" } {
                         $columnStatements += "[$($columnObject.Name)] [$dataType]"
                     }
+                    { $_ -like "*varcharmax" } {
+                        $columnStatements += "[$($columnObject.Name)] [$($dataType.Replace('max',''))](max)"
+                        break
+                    }
                     { $_ -like "*char*" } {
                         $columnStatements += "[$($columnObject.Name)] [$dataType]($length)"
                     }
