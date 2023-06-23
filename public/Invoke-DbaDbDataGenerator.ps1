@@ -411,7 +411,6 @@ function Invoke-DbaDbDataGenerator {
                                             $randomParams = @{
                                                 RandomizerType    = $columnobject.MaskingType
                                                 RandomizerSubtype = $columnobject.SubType
-                                                DataType          = $columnobject.ColumnType
                                                 CharacterString   = $charstring
                                                 Locale            = $Locale
                                                 Min               = $columnobject.MinValue
