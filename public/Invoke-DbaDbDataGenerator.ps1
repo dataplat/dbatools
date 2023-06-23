@@ -399,9 +399,24 @@ function Invoke-DbaDbDataGenerator {
                                             $columnobject.MaxValue = $MaxValue
                                         }
                                         if ($columnobject.ColumnType -in $supportedDataTypes -and $columnobject.MaskingType -eq 'Random' -and $columnobject.SubType -in 'Bool', 'Number', 'Float', 'Byte', 'String') {
-                                            $columnValue = Get-DbaRandomizedValue -DataType $columnobject.ColumnType -CharacterString $charstring -Locale $Locale -Min $columnobject.MinValue -Max $columnobject.MaxValue
+                                            $randomParams = @{
+                                                DataType        = $columnobject.ColumnType
+                                                CharacterString = $charstring
+                                                Locale          = $Locale
+                                                Min             = $columnobject.MinValue
+                                                Max             = $columnobject.MaxValue
+                                            }
+                                            $columnValue = Get-DbaRandomizedValue @randomParams
                                         } else {
-                                            $columnValue = Get-DbaRandomizedValue -RandomizerType $columnobject.MaskingType -RandomizerSubtype $columnobject.SubType -CharacterString $charstring -Locale $Locale -Min $columnobject.MinValue -Max $columnobject.MaxValue
+                                            $randomParams = @{
+                                                RandomizerType    = $columnobject.MaskingType
+                                                RandomizerSubtype = $columnobject.SubType
+                                                CharacterString   = $charstring
+                                                Locale            = $Locale
+                                                Min               = $columnobject.MinValue
+                                                Max               = $columnobject.MaxValue
+                                            }
+                                            $columnValue = Get-DbaRandomizedValue @randomParams
                                         }
 
                                     } catch {
