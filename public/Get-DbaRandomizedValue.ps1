@@ -189,7 +189,7 @@ function Get-DbaRandomizedValue {
 
         if (Test-FunctionInterrupt) { return }
 
-        if ($DataType) {
+        if ($DataType -and -not $RandomizerSubType) {
 
             switch ($DataType.ToLowerInvariant()) {
                 'bigint' {
@@ -346,6 +346,14 @@ function Get-DbaRandomizedValue {
                     $script:faker.Database.$RandomizerSubType()
                 }
                 'date' {
+                    if ($DataType -eq 'date') {
+                        $formatString = "yyyy-MM-dd"
+                    } elseif ($DataType -eq 'datetime') {
+                        $formatString = "yyyy-MM-dd HH:mm:ss.fff"
+                    } elseif ($DataType -eq 'datetime2') {
+                        $formatString = "yyyy-MM-dd HH:mm:ss.fffffff"
+                    }
+
                     if ($randSubType -eq 'between') {
 
                         if (-not $Min) {
@@ -359,7 +367,7 @@ function Get-DbaRandomizedValue {
                         if ($Min -gt $Max) {
                             Stop-Function -Message "The minimum value for the date cannot be later than maximum value" -Continue -Target $Min
                         } else {
-                            ($script:faker.Date.Between($Min, $Max)).ToString("yyyy-MM-dd HH:mm:ss.fffffff", [System.Globalization.CultureInfo]::InvariantCulture)
+                            ($script:faker.Date.Between($Min, $Max)).ToString($formatString, [System.Globalization.CultureInfo]::InvariantCulture)
                         }
                     } elseif ($randSubType -eq 'past') {
                         if ($Max) {
@@ -369,9 +377,9 @@ function Get-DbaRandomizedValue {
                                 $yearsToGoBack = 1
                             }
 
-                            $script:faker.Date.Past($yearsToGoBack, $Max).ToString("yyyy-MM-dd HH:mm:ss.fffffff", [System.Globalization.CultureInfo]::InvariantCulture)
+                            $script:faker.Date.Past($yearsToGoBack, $Max).ToString($formatString, [System.Globalization.CultureInfo]::InvariantCulture)
                         } else {
-                            $script:faker.Date.Past().ToString("yyyy-MM-dd HH:mm:ss.fffffff", [System.Globalization.CultureInfo]::InvariantCulture)
+                            $script:faker.Date.Past().ToString($formatString, [System.Globalization.CultureInfo]::InvariantCulture)
                         }
                     } elseif ($randSubType -eq 'future') {
                         if ($Min) {
@@ -381,13 +389,12 @@ function Get-DbaRandomizedValue {
                                 $yearsToGoForward = 1
                             }
 
-                            $script:faker.Date.Future($yearsToGoForward, $Min).ToString("yyyy-MM-dd HH:mm:ss.fffffff", [System.Globalization.CultureInfo]::InvariantCulture)
+                            $script:faker.Date.Future($yearsToGoForward, $Min).ToString($formatString, [System.Globalization.CultureInfo]::InvariantCulture)
                         } else {
-                            $script:faker.Date.Future().ToString("yyyy-MM-dd HH:mm:ss.fffffff", [System.Globalization.CultureInfo]::InvariantCulture)
+                            $script:faker.Date.Future().ToString($formatString, [System.Globalization.CultureInfo]::InvariantCulture)
                         }
-
                     } elseif ($randSubType -eq 'recent') {
-                        $script:faker.Date.Recent().ToString("yyyy-MM-dd HH:mm:ss.fffffff", [System.Globalization.CultureInfo]::InvariantCulture)
+                        $script:faker.Date.Recent().ToString($formatString, [System.Globalization.CultureInfo]::InvariantCulture)
                     } elseif ($randSubType -eq 'random') {
                         if ($Min -or $Max) {
                             if (-not $Min) {
@@ -398,9 +405,9 @@ function Get-DbaRandomizedValue {
                                 $Max = (Get-Date).AddYears(1)
                             }
 
-                            ($script:faker.Date.Between($Min, $Max)).ToString("yyyy-MM-dd HH:mm:ss.fffffff", [System.Globalization.CultureInfo]::InvariantCulture)
+                            ($script:faker.Date.Between($Min, $Max)).ToString($formatString, [System.Globalization.CultureInfo]::InvariantCulture)
                         } else {
-                            ($script:faker.Date.Past()).ToString("yyyy-MM-dd HH:mm:ss.fffffff", [System.Globalization.CultureInfo]::InvariantCulture)
+                            ($script:faker.Date.Past()).ToString($formatString, [System.Globalization.CultureInfo]::InvariantCulture)
                         }
                     } else {
                         $script:faker.Date.$RandomizerSubType()
