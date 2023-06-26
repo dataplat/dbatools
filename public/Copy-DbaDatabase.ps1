@@ -44,7 +44,7 @@ function Copy-DbaDatabase {
         If this switch is enabled, all user databases will be migrated. System and support databases will not be migrated. Requires -BackupRestore or -DetachAttach.
 
     .PARAMETER BackupRestore
-        If this switch is enabled, the copy-only backup and restore method will be used to migrate the database(s). This method requires that you specify -SharedPath in a valid UNC format (\\server\share).
+        If this switch is enabled, the copy-only backup and restore method will be used to migrate the database(s). This method requires that you specify either -SharedPath or -UseLastBackup.
 
         Backups will be immediately deleted after use unless -NoBackupCleanup is specified.
 
