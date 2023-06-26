@@ -167,6 +167,7 @@ function Copy-DbaSystemDbUserObject {
                         $transfer = New-Object Microsoft.SqlServer.Management.Smo.Transfer $smodb
                         $null = $transfer.CopyAllObjects = $false
                         $null = $transfer.Options.WithDependencies = $true
+                        $null = $transfer.Options.ScriptOwner = $true
                         $null = $transfer.ObjectList.Add($schema)
                         if ($PSCmdlet.ShouldProcess($destInstance, "Attempting to add schema $($schema.Name) to $systemDb")) {
                             try {
