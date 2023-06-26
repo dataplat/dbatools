@@ -164,9 +164,6 @@ function Copy-DbaDatabase {
     .LINK
         https://dbatools.io/Copy-DbaDatabase
 
-    .INPUT
-        A single database may be piped from Get-DbaDatabase.
-
     .EXAMPLE
         PS C:\> Copy-DbaDatabase -Source sql2014a -Destination sql2014b -Database TestDB -BackupRestore -SharedPath \\fileshare\sql\migration
 
@@ -304,8 +301,6 @@ function Copy-DbaDatabase {
         if ($Force) {
             $ConfirmPreference = 'none'
         }
-
-
 
         function Get-SqlFileStructure {
             $dbcollection = @{
