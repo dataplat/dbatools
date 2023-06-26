@@ -276,6 +276,10 @@ function Copy-DbaDatabase {
     begin {
         $CopyOnly = -not $NoCopyOnly
 
+        if (-not $InputObject -and -not $Source) {
+            Stop-Function -Message "With no piped input a -Source must be specified."
+            return
+        }
         if ($BackupRestore -and (-not $SharedPath -and -not $UseLastBackup)) {
             Stop-Function -Message "When using -BackupRestore, you must specify -SharedPath or -UseLastBackup"
             return
@@ -301,10 +305,6 @@ function Copy-DbaDatabase {
             $ConfirmPreference = 'none'
         }
 
-        if (-not $InputObject -and -not $Source) {
-            Stop-Function -Message "With no piped input a -Source must be specified."
-            return
-        }
 
 
         function Get-SqlFileStructure {
