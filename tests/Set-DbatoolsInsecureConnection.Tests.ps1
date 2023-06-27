@@ -18,19 +18,19 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     BeforeEach {
         # Set defaults just for this session
         Set-DbatoolsConfig -FullName sql.connection.trustcert -Value $false -Register
-        Set-DbatoolsConfig -FullName sql.connection.encrypt -Value $true -Register
+        Set-DbatoolsConfig -FullName sql.connection.encrypt -Value 'Mandatory' -Register
     }
     Context "command actually works" {
         It "Should set the default connection settings to trust all server certificates and not require encrypted connections" {
             $trustcert = Get-DbatoolsConfigValue -FullName sql.connection.trustcert
             $encrypt = Get-DbatoolsConfigValue -FullName sql.connection.encrypt
             $trustcert | Should -BeFalse
-            $encrypt | Should -BeTrue
+            $encrypt | Should -Be 'Mandatory'
 
             $null = Set-DbatoolsInsecureConnection
             Get-DbatoolsConfigValue -FullName sql.connection.trustcert | Should -BeTrue
             # sql.connection.encrypt is a string because it needs to be mandatory, optional, true or false
-            Get-DbatoolsConfigValue -FullName sql.connection.encrypt | Should -Be 'False'
+            Get-DbatoolsConfigValue -FullName sql.connection.encrypt | Should -Be 'Optional'
         }
     }
 }
