@@ -51,8 +51,8 @@ function Set-DbatoolsInsecureConnection {
             Write-Message -Level Warning -Message "The Register parameter is deprecated and will be removed in a future release."
         }
         # Set these defaults for all future sessions on this machine
-        Set-DbatoolsConfig -FullName sql.connection.trustcert -Value $true -Passthru
-        Set-DbatoolsConfig -FullName sql.connection.encrypt -Value $false -Passthru
+        Set-DbatoolsConfig -FullName sql.connection.trustcert -Value $true -PassThru
+        Set-DbatoolsConfig -FullName sql.connection.encrypt -Value 'Optional' -PassThru
 
         if (-not $SessionOnly) {
             Register-DbatoolsConfig -FullName sql.connection.trustcert -Scope $Scope
