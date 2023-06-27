@@ -63,6 +63,8 @@ function New-DbaAgentSchedule {
     .PARAMETER FrequencySubdayInterval
         The number of subday type periods to occur between each execution of a job.
 
+        The interval needs to be at least 10 seconds long.
+
     .PARAMETER FrequencyRelativeInterval
         A job's occurrence of FrequencyInterval in each month, if FrequencyInterval is 32 (monthlyrelative).
 
@@ -244,8 +246,11 @@ function New-DbaAgentSchedule {
         }
 
         # Check the subday interval
-        if (($FrequencySubdayType -in 2, "Seconds", 4, "Minutes") -and (-not ($FrequencySubdayInterval -ge 1 -or $FrequencySubdayInterval -le 59))) {
-            Stop-Function -Message "Subday interval $FrequencySubdayInterval must be between 1 and 59 when subday type is 'Seconds' or 'Minutes'" -Target $SqlInstance
+        if (($FrequencySubdayType -in 2, "Seconds") -and (-not ($FrequencySubdayInterval -ge 10 -or $FrequencySubdayInterval -le 59))) {
+            Stop-Function -Message "Subday interval $FrequencySubdayInterval must be between 10 and 59 when subday type is 'Seconds'" -Target $SqlInstance
+            return
+        } elseif (($FrequencySubdayType -in 4, "Minutes") -and (-not ($FrequencySubdayInterval -ge 1 -or $FrequencySubdayInterval -le 59))) {
+            Stop-Function -Message "Subday interval $FrequencySubdayInterval must be between 1 and 59 when subday type is 'Minutes'" -Target $SqlInstance
             return
         } elseif (($FrequencySubdayType -eq 8, "Hours") -and (-not ($FrequencySubdayInterval -ge 1 -and $FrequencySubdayInterval -le 23))) {
             Stop-Function -Message "Subday interval $FrequencySubdayInterval must be between 1 and 23 when subday type is 'Hours'" -Target $SqlInstance
