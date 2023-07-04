@@ -1035,7 +1035,7 @@ function Get-DbaHelpIndex {
                             $recentlyused = $null
                         }
 
-                        [pscustomobject]@{
+                        [PSCustomObject]@{
                             ComputerName       = $server.ComputerName
                             InstanceName       = $server.ServiceName
                             SqlInstance        = $server.DomainInstanceName
@@ -1071,7 +1071,7 @@ function Get-DbaHelpIndex {
                             $recentlyused = $null
                         }
 
-                        [pscustomobject]@{
+                        [PSCustomObject]@{
                             ComputerName       = $server.ComputerName
                             InstanceName       = $server.ServiceName
                             SqlInstance        = $server.DomainInstanceName

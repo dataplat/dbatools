@@ -130,7 +130,7 @@ function Copy-DbaAgentJob {
                 $jobId = $serverJob.JobId
                 $sourceserver = $serverJob.Parent.Parent
 
-                $copyJobStatus = [pscustomobject]@{
+                $copyJobStatus = [PSCustomObject]@{
                     SourceServer      = $sourceserver.Name
                     DestinationServer = $destServer.Name
                     Name              = $jobName

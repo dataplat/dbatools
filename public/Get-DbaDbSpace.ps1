@@ -185,7 +185,7 @@ function Get-DbaDbSpace {
                         $UnusableSpace = [Math]::Round($row.UnusableSpaceMB)
                     }
 
-                    [pscustomobject]@{
+                    [PSCustomObject]@{
                         ComputerName       = $server.ComputerName
                         InstanceName       = $server.ServiceName
                         SqlInstance        = $server.DomainInstanceName

@@ -471,7 +471,7 @@ function Invoke-DbaDbDataGenerator {
 
                     try {
                         $null = $transaction.Commit()
-                        [pscustomobject]@{
+                        [PSCustomObject]@{
                             ComputerName = $db.Parent.ComputerName
                             InstanceName = $db.Parent.ServiceName
                             SqlInstance  = $db.Parent.DomainInstanceName

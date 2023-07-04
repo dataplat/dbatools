@@ -129,7 +129,7 @@ function Remove-DbaAgentSchedule {
                 Stop-Function -Message "The schedule $($sched.Name) with id $($sched.Id) and uid $($sched.ScheduleUid) is used in one or more jobs. If removal is neccesary use -Force." -Target $sched.Parent.Parent -Continue
             }
             if ($PSCmdlet.ShouldProcess($sched.Parent.Parent.Name, "Removing the schedule $($sched.Name) with id $($sched.Id) and uid $($sched.ScheduleUid) on $($sched.Parent.Parent.Name)")) {
-                $output = [pscustomobject]@{
+                $output = [PSCustomObject]@{
                     ComputerName = $sched.Parent.Parent.ComputerName
                     InstanceName = $sched.Parent.Parent.ServiceName
                     SqlInstance  = $sched.Parent.Parent.DomainInstanceName

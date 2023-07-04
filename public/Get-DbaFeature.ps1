@@ -95,7 +95,7 @@ function Get-DbaFeature {
 
                 $xml = [xml]($text)
                 foreach ($result in $xml.ArrayOfDiscoveryInformation.DiscoveryInformation) {
-                    [pscustomobject]@{
+                    [PSCustomObject]@{
                         ComputerName = $computer
                         Product      = $result.Product
                         Instance     = $result.Instance

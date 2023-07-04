@@ -75,7 +75,7 @@ function Get-DbaPfAvailableCounter {
             Where-Object { $_ -notmatch '[0-90000]' } | Sort-Object | Get-Unique
 
         foreach ($counter in $counters) {
-            [pscustomobject]@{
+            [PSCustomObject]@{
                 ComputerName = $env:COMPUTERNAME
                 Name         = $counter
                 Credential   = $args

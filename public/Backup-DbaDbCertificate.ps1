@@ -211,7 +211,7 @@ function Backup-DbaDbCertificate {
                     # Sleep for a second to avoid another export in the same second
                     Start-Sleep -Seconds 1
 
-                    [pscustomobject]@{
+                    [PSCustomObject]@{
                         ComputerName   = $server.ComputerName
                         InstanceName   = $server.ServiceName
                         SqlInstance    = $server.DomainInstanceName

@@ -125,11 +125,11 @@ function Invoke-DbaQuery {
 
     .EXAMPLE
         PS C:\> $inparam = @()
-        PS C:\> $inparam += [pscustomobject]@{
+        PS C:\> $inparam += [PSCustomObject]@{
         >>     somestring = 'string1'
         >>     somedate = '2021-07-15T01:02:00'
         >> }
-        PS C:\> $inparam += [pscustomobject]@{
+        PS C:\> $inparam += [PSCustomObject]@{
         >>     somestring = 'string2'
         >>     somedate = '2021-07-15T02:03:00'
         >> }
@@ -160,7 +160,7 @@ function Invoke-DbaQuery {
         [Parameter(ParameterSetName = 'File', Position = 0)]
         [Parameter(ParameterSetName = 'SMO', Position = 0)]
         [DbaInstance[]]$SqlInstance,
-        [PsCredential]$SqlCredential,
+        [PSCredential]$SqlCredential,
         [string]$Database,
         [Parameter(Mandatory, ParameterSetName = "Query")]
         [string]$Query,

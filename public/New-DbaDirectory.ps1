@@ -93,7 +93,7 @@ function New-DbaDirectory {
                 Stop-Function -Message "Failure" -ErrorRecord $_
             }
 
-            [pscustomobject]@{
+            [PSCustomObject]@{
                 Server  = $instance
                 Path    = $Path
                 Created = $created

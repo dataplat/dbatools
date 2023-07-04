@@ -241,7 +241,7 @@ function New-DbaComputerCertificate {
 
                 $allCas = @()
                 foreach ($ca in $cas) {
-                    $allCas += [pscustomobject]@{
+                    $allCas += [PSCustomObject]@{
                         CA       = $ca | ForEach-Object { $_.Name }
                         Computer = $ca | ForEach-Object { $_.DNSHostName }
                     }

@@ -189,7 +189,7 @@ function Update-DbaInstance {
         [parameter(ValueFromPipeline, Position = 1)]
         [Alias("cn", "host", "Server")]
         [DbaInstanceParameter[]]$ComputerName = $env:COMPUTERNAME,
-        [pscredential]$Credential,
+        [PSCredential]$Credential,
         [Parameter(ParameterSetName = 'Version')]
         [ValidateNotNullOrEmpty()]
         [string[]]$Version,
@@ -535,7 +535,7 @@ function Update-DbaInstance {
                 Write-ProgressHelper -ExcludePercent -Activity $activity -Message "Preparing installation"
                 $chosenVersions = ($upgrades | ForEach-Object { "$($_.MajorVersion) to $($_.TargetLevel) (KB$($_.KB))" }) -join ', '
                 if ($PSCmdlet.ShouldProcess($resolvedName, "Update $chosenVersions")) {
-                    $installActions += [pscustomobject]@{
+                    $installActions += [PSCustomObject]@{
                         ComputerName = $resolvedName
                         Actions      = $upgrades
                     }

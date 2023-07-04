@@ -116,7 +116,7 @@ function Disable-DbaHideInstance {
                 Set-ItemProperty -Path $regPath -Name HideInstance -Value $false
                 $HideInstance = (Get-ItemProperty -Path $regPath -Name HideInstance).HideInstance
 
-                [pscustomobject]@{
+                [PSCustomObject]@{
                     ComputerName = $env:COMPUTERNAME
                     InstanceName = $args[2]
                     SqlInstance  = $args[1]

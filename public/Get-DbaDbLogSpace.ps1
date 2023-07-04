@@ -107,7 +107,7 @@ Function Get-DbaDbLogSpace {
                     } catch {
                         Stop-Function -Message "Unable to collect log space data on $instance." -ErrorRecord $_ -Target $db -Continue
                     }
-                    [pscustomobject]@{
+                    [PSCustomObject]@{
                         ComputerName        = $server.ComputerName
                         InstanceName        = $server.ServiceName
                         SqlInstance         = $server.DomainInstanceName
@@ -125,7 +125,7 @@ Function Get-DbaDbLogSpace {
                 }
 
                 foreach ($ls in $logspace) {
-                    [pscustomobject]@{
+                    [PSCustomObject]@{
                         ComputerName        = $server.ComputerName
                         InstanceName        = $server.ServiceName
                         SqlInstance         = $server.DomainInstanceName

@@ -224,7 +224,7 @@ function Copy-DbaDbCertificate {
                         $certname = $cert.Name
                         Write-Message -Level VeryVerbose -Message "Processing $certname on $dbName"
 
-                        $copyDbCertificateStatus = [pscustomobject]@{
+                        $copyDbCertificateStatus = [PSCustomObject]@{
                             SourceServer          = $cert.Parent.Parent.Name
                             SourceDatabase        = $dbName
                             SourceDatabaseID      = $cert.Parent.ID
@@ -287,7 +287,7 @@ function Copy-DbaDbCertificate {
                                     $tempKey = Join-DbaPath -SqlInstance $server -Path $SharedPath -ChildPath "$certname.pvk"
 
                                     if ((Test-DbaPath -SqlInstance $server -Path $tempPath) -and (Test-DbaPath -SqlInstance $server -Path $tempKey)) {
-                                        $export = [pscustomobject]@{
+                                        $export = [PSCustomObject]@{
                                             Path = Join-DbaPath -SqlInstance $server -Path $SharedPath -ChildPath "$certname.cer"
                                             Key  = Join-DbaPath -SqlInstance $server -Path $SharedPath -ChildPath "$certname.pvk"
                                         }

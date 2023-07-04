@@ -243,7 +243,7 @@ function Test-DbaLastBackup {
             }
 
             if ($db.LastFullBackup.Year -eq 1) {
-                [pscustomobject]@{
+                [PSCustomObject]@{
                     SourceServer   = $source
                     TestServer     = $destination
                     Database       = $db.name
@@ -346,7 +346,7 @@ function Test-DbaLastBackup {
 
             $totalSizeMB = ($lastbackup.TotalSize.Megabyte | Measure-Object -Sum).Sum
             if ($MaxSize -and $MaxSize -lt $totalSizeMB) {
-                [pscustomobject]@{
+                [PSCustomObject]@{
                     SourceServer   = $source
                     TestServer     = $destination
                     Database       = $db.name
@@ -575,7 +575,7 @@ function Test-DbaLastBackup {
             }
 
             if ($Pscmdlet.ShouldProcess("console", "Showing results")) {
-                [pscustomobject]@{
+                [PSCustomObject]@{
                     SourceServer   = $source
                     TestServer     = $destination
                     Database       = $db.name

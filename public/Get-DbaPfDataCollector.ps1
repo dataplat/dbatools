@@ -110,7 +110,7 @@ function Get-DbaPfDataCollector {
                     $remote = $null
                 }
 
-                [pscustomobject]@{
+                [PSCustomObject]@{
                     ComputerName               = $set.ComputerName
                     DataCollectorSet           = $set.Name
                     Name                       = $col.Name

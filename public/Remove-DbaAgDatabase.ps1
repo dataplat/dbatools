@@ -102,7 +102,7 @@ function Remove-DbaAgDatabase {
                 try {
                     $ag = $db.Parent.Name
                     $db.Parent.AvailabilityDatabases[$db.Name].Drop()
-                    [pscustomobject]@{
+                    [PSCustomObject]@{
                         ComputerName      = $db.ComputerName
                         InstanceName      = $db.InstanceName
                         SqlInstance       = $db.SqlInstance

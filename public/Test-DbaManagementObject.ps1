@@ -56,13 +56,13 @@ function Test-DbaManagementObject {
                 }
 
                 if ($smoList) {
-                    [pscustomobject]@{
+                    [PSCustomObject]@{
                         ComputerName = $env:COMPUTERNAME
                         Version      = $number
                         Exists       = $true
                     }
                 } else {
-                    [pscustomobject]@{
+                    [PSCustomObject]@{
                         ComputerName = $env:COMPUTERNAME
                         Version      = $number
                         Exists       = $false

@@ -167,7 +167,7 @@ function Copy-DbaPolicyManagement {
             foreach ($category in $storeCategories) {
                 $categoryName = $category.Name
 
-                $copyCategoryStatus = [pscustomobject]@{
+                $copyCategoryStatus = [PSCustomObject]@{
                     SourceServer      = $sourceServer.Name
                     DestinationServer = $destServer.Name
                     Name              = $categoryName
@@ -214,7 +214,7 @@ function Copy-DbaPolicyManagement {
             foreach ($condition in $storeConditions) {
                 $conditionName = $condition.Name
 
-                $copyConditionStatus = [pscustomobject]@{
+                $copyConditionStatus = [PSCustomObject]@{
                     SourceServer      = $sourceServer.Name
                     DestinationServer = $destServer.Name
                     Name              = $conditionName
@@ -283,7 +283,7 @@ function Copy-DbaPolicyManagement {
             foreach ($policy in $storePolicies) {
                 $policyName = $policy.Name
 
-                $copyPolicyStatus = [pscustomobject]@{
+                $copyPolicyStatus = [PSCustomObject]@{
                     SourceServer      = $sourceServer.Name
                     DestinationServer = $destServer.Name
                     Name              = $policyName

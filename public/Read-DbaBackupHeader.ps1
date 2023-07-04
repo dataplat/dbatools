@@ -92,7 +92,7 @@ function Read-DbaBackupHeader {
     param (
         [parameter(Mandatory)]
         [DbaInstance]$SqlInstance,
-        [PsCredential]$SqlCredential,
+        [PSCredential]$SqlCredential,
         [parameter(Mandatory, ValueFromPipeline)]
         [object[]]$Path,
         [switch]$Simple,
@@ -222,7 +222,7 @@ function Read-DbaBackupHeader {
                 $thread.AddParameters($argsRunPool) | Out-Null
                 #Start the thread
                 $handle = $thread.BeginInvoke()
-                $threads += [pscustomobject]@{
+                $threads += [PSCustomObject]@{
                     handle      = $handle
                     thread      = $thread
                     file        = $file

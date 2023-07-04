@@ -148,7 +148,7 @@ function New-DbaSsisCatalog {
                     }
                     try {
                         $ssisdb.Create()
-                        [pscustomobject]@{
+                        [PSCustomObject]@{
                             ComputerName = $server.ComputerName
                             InstanceName = $server.ServiceName
                             SqlInstance  = $server.DomainInstanceName

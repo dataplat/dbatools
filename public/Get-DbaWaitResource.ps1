@@ -59,7 +59,7 @@ function Get-DbaWaitResource {
     param (
         [parameter(Mandatory)]
         [DbaInstance]$SqlInstance,
-        [PsCredential]$SqlCredential,
+        [PSCredential]$SqlCredential,
         [parameter(Mandatory, ValueFromPipeline)]
         [string]$WaitResource,
         [switch]$Row,
@@ -110,7 +110,7 @@ function Get-DbaWaitResource {
             if ($null -eq $object) {
                 Write-Message -Warning "Object could not be found. Could have been removed, or could be a transcription error copying the Wait_resource to sowerShell"
             }
-            [PsCustomObject]@{
+            [PSCustomObject]@{
                 DatabaseID   = $dbId
                 DatabaseName = $dbName
                 DataFileName = $dataFile.name
@@ -139,7 +139,7 @@ function Get-DbaWaitResource {
                 Write-Message -Level Warning -Message "Heap or B-Tree with ID $($matches.frodo) can not be found in $dbName on $server"
                 return
             }
-            $output = [PsCustomObject]@{
+            $output = [PSCustomObject]@{
                 DatabaseID   = $dbId
                 DatabaseName = $dbName
                 SchemaName   = $index.SchemaName

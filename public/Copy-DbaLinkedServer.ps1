@@ -114,7 +114,7 @@ function Copy-DbaLinkedServer {
             if ($ExcludePassword) {
                 $sourcelogins = @()
                 foreach ($svr in $sourceServer.LinkedServers) {
-                    $sourcelogins += [pscustomobject]@{
+                    $sourcelogins += [PSCustomObject]@{
                         Name     = $sourcelogin.Name
                         Identity = $sourcelogin.LinkedServerLogins.RemoteUser
                         Password = $null
@@ -147,7 +147,7 @@ function Copy-DbaLinkedServer {
                 $linkedServerProductName = $currentLinkedServer.ProductName
                 $linkedServerDataSource = $currentLinkedServer.DataSource
 
-                $copyLinkedServer = [pscustomobject]@{
+                $copyLinkedServer = [PSCustomObject]@{
                     SourceServer      = $sourceServer.Name
                     DestinationServer = $destServer.Name
                     Name              = $linkedServerName

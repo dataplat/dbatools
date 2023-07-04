@@ -82,7 +82,7 @@ function Remove-DbaDbAsymmetricKey {
                     # Avoids modifying the collection
                     Invoke-DbaQuery -SqlInstance $server -Database $db.Name -Query "DROP ASYMMETRIC KEY $($askey.Name)" -EnableException
                     Write-Message -Level Verbose -Message "Successfully removed asymmetric key named $Name from the $db database on $server"
-                    [pscustomobject]@{
+                    [PSCustomObject]@{
                         ComputerName = $server.ComputerName
                         InstanceName = $server.ServiceName
                         SqlInstance  = $server.DomainInstanceName

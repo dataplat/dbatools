@@ -458,7 +458,7 @@ function Copy-DbaDbTableData {
                         $bulkCopy.Dispose()
                         $reader.Close()
 
-                        [pscustomobject]@{
+                        [PSCustomObject]@{
                             SourceInstance        = $server.Name
                             SourceDatabase        = $Database
                             SourceDatabaseID      = $sqlObject.Parent.ID

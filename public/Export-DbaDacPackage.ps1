@@ -274,7 +274,7 @@ function Export-DbaDacPackage {
                         Stop-Function -Message "Standard output - $stderr"-Continue
                     }
                 }
-                [pscustomobject]@{
+                [PSCustomObject]@{
                     ComputerName = $server.ComputerName
                     InstanceName = $server.ServiceName
                     SqlInstance  = $server.DomainInstanceName

@@ -141,7 +141,7 @@ function Set-DbaDbState {
         [switch]$Force,
         [switch]$EnableException,
         [parameter(Mandatory, ValueFromPipeline, ParameterSetName = "Database")]
-        [PsCustomObject[]]$InputObject
+        [PSCustomObject[]]$InputObject
     )
 
     begin {

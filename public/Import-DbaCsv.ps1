@@ -259,7 +259,7 @@ function Import-DbaCsv {
         [object[]]$Path,
         [Parameter(Mandatory)]
         [DbaInstanceParameter[]]$SqlInstance,
-        [pscredential]$SqlCredential,
+        [PSCredential]$SqlCredential,
         [Parameter(Mandatory)]
         [string]$Database,
         [string]$Table,
@@ -728,7 +728,7 @@ function Import-DbaCsv {
 
                         Write-Message -Level Verbose -Message "$($script:totalRowsCopied) total rows copied"
 
-                        [pscustomobject]@{
+                        [PSCustomObject]@{
                             ComputerName  = $server.ComputerName
                             InstanceName  = $server.ServiceName
                             SqlInstance   = $server.DomainInstanceName

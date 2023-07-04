@@ -169,7 +169,7 @@ function Get-DbaPfDataCollectorCounterSample {
 
                 foreach ($pscounter in $pscounters) {
                     foreach ($sample in $pscounter.CounterSamples) {
-                        [pscustomobject]@{
+                        [PSCustomObject]@{
                             ComputerName           = $counterobject.ComputerName
                             DataCollectorSet       = $counterobject.DataCollectorSet
                             DataCollector          = $counterobject.DataCollector

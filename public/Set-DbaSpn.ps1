@@ -121,7 +121,7 @@ function Set-DbaSpn {
                 $delegate = $false
             }
 
-            [pscustomobject]@{
+            [PSCustomObject]@{
                 Name           = $spn
                 ServiceAccount = $ServiceAccount
                 Property       = "servicePrincipalName"
@@ -147,7 +147,7 @@ function Set-DbaSpn {
                         $status = "Failed to add constrained delegation"
                     }
 
-                    [pscustomobject]@{
+                    [PSCustomObject]@{
                         Name           = $spn
                         ServiceAccount = $ServiceAccount
                         Property       = "msDS-AllowedToDelegateTo"

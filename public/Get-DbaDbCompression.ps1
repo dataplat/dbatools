@@ -106,7 +106,7 @@ function Get-DbaDbCompression {
                     foreach ($obj in $tables) {
                         if ($obj.HasHeapIndex) {
                             foreach ($p in $obj.PhysicalPartitions) {
-                                [pscustomobject]@{
+                                [PSCustomObject]@{
                                     ComputerName    = $server.ComputerName
                                     InstanceName    = $server.ServiceName
                                     SqlInstance     = $server.DomainInstanceName
@@ -127,7 +127,7 @@ function Get-DbaDbCompression {
 
                         foreach ($index in $obj.Indexes) {
                             foreach ($p in $index.PhysicalPartitions) {
-                                [pscustomobject]@{
+                                [PSCustomObject]@{
                                     ComputerName    = $server.ComputerName
                                     InstanceName    = $server.ServiceName
                                     SqlInstance     = $server.DomainInstanceName

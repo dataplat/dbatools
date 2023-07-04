@@ -627,7 +627,7 @@ function Rename-DbaDatabase {
                                 $InstanceFiles[$Server_Id][$FNNameDir].Remove($FNName)
                                 $InstanceFiles[$Server_Id][$FNNameDir][$FinalFNName] = 1
                                 $Entities_Before['FNN'][$FNName] = $FinalFNName
-                                $Pending_Renames += [pscustomobject]@{
+                                $Pending_Renames += [PSCustomObject]@{
                                     Source      = $FNName
                                     Destination = $FinalFNName
                                 }
@@ -677,7 +677,7 @@ function Rename-DbaDatabase {
                                     $InstanceFiles[$Server_Id][$FNNameDir].Remove($FNName)
                                     $InstanceFiles[$Server_Id][$FNNameDir][$FinalFNName] = 1
                                     $Entities_Before['FNN'][$FNName] = $FinalFNName
-                                    $Pending_Renames += [pscustomobject]@{
+                                    $Pending_Renames += [PSCustomObject]@{
                                         Source      = $FNName
                                         Destination = $FinalFNName
                                     }
@@ -725,7 +725,7 @@ function Rename-DbaDatabase {
                 }
                 foreach ($op in $pending_renames) {
                     if ([DbaValidate]::IsLocalhost($server.ComputerName)) {
-                        $null = $Final_Renames.Add([pscustomobject]@{
+                        $null = $Final_Renames.Add([PSCustomObject]@{
                                 Source       = $op.Source
                                 Destination  = $op.Destination
                                 ComputerName = $ComputerName
@@ -734,14 +734,14 @@ function Rename-DbaDatabase {
                         if ($null -eq $ComputerName) {
                             # if we don't have remote access ($ComputerName is null) we can fallback to admin shares if they're available
                             if (Test-Path (Join-AdminUnc -ServerName $server.ComputerName -filepath $op.Source)) {
-                                $null = $Final_Renames.Add([pscustomobject]@{
+                                $null = $Final_Renames.Add([PSCustomObject]@{
                                         Source       = Join-AdminUnc -ServerName $server.ComputerName -filepath $op.Source
                                         Destination  = Join-AdminUnc -ServerName $server.ComputerName -filepath $op.Destination
                                         ComputerName = $server.ComputerName
                                     })
                             } else {
                                 # flag the impossible rename ($ComputerName is $null)
-                                $null = $Final_Renames.Add([pscustomobject]@{
+                                $null = $Final_Renames.Add([PSCustomObject]@{
                                         Source       = $op.Source
                                         Destination  = $op.Destination
                                         ComputerName = $ComputerName
@@ -749,7 +749,7 @@ function Rename-DbaDatabase {
                             }
                         } else {
                             # we can do renames in a remote pssession
-                            $null = $Final_Renames.Add([pscustomobject]@{
+                            $null = $Final_Renames.Add([PSCustomObject]@{
                                     Source       = $op.Source
                                     Destination  = $op.Destination
                                     ComputerName = $ComputerName
@@ -830,7 +830,7 @@ function Rename-DbaDatabase {
                     $Entities_Before[$k].Remove($el)
                 }
             }
-            [pscustomobject]@{
+            [PSCustomObject]@{
                 ComputerName       = $server.ComputerName
                 InstanceName       = $server.ServiceName
                 SqlInstance        = $server.DomainInstanceName

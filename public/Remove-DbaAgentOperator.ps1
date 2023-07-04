@@ -92,7 +92,7 @@ function Remove-DbaAgentOperator {
         # We have to delete in the end block to prevent "Collection was modified; enumeration operation may not execute." if directly piped from Get-DbaAgentOperator.
         foreach ($dbOperator in $dbOperators) {
             if ($PSCmdlet.ShouldProcess($dbOperator.Parent.Parent.Name, "Removing the SQL Agent operator $($dbOperator.Name) on $($dbOperator.Parent.Parent.Name)")) {
-                $output = [pscustomobject]@{
+                $output = [PSCustomObject]@{
                     ComputerName = $dbOperator.Parent.Parent.ComputerName
                     InstanceName = $dbOperator.Parent.Parent.ServiceName
                     SqlInstance  = $dbOperator.Parent.Parent.DomainInstanceName

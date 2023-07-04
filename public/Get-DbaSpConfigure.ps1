@@ -83,7 +83,7 @@ function Get-DbaSpConfigure {
         [switch]$EnableException
     )
     begin {
-        $smoName = [pscustomobject]@{
+        $smoName = [PSCustomObject]@{
             "access check cache bucket count"    = "AccessCheckCacheBucketCount"
             "access check cache quota"           = "AccessCheckCacheQuota"
             "Ad Hoc Distributed Queries"         = "AdHocDistributedQueriesEnabled"
@@ -224,7 +224,7 @@ function Get-DbaSpConfigure {
                 if (!([string]::IsNullOrEmpty($prop.RunValue))) {
 
                     $DisplayName = $prop.DisplayName
-                    [pscustomobject]@{
+                    [PSCustomObject]@{
                         ServerName            = $server.Name
                         ComputerName          = $server.ComputerName
                         InstanceName          = $server.ServiceName

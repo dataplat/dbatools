@@ -98,7 +98,7 @@ function Remove-DbaAgentAlert {
         # We have to delete in the end block to prevent "Collection was modified; enumeration operation may not execute." if directly piped from Get-DbaAgentAlert.
         foreach ($dbAlert in $dbAlerts) {
             if ($PSCmdlet.ShouldProcess($dbAlert.Parent.Parent.Name, "Removing the SQL Agent alert $($dbAlert.Name) on $($dbAlert.Parent.Parent.Name)")) {
-                $output = [pscustomobject]@{
+                $output = [PSCustomObject]@{
                     ComputerName = $dbAlert.Parent.Parent.ComputerName
                     InstanceName = $dbAlert.Parent.Parent.ServiceName
                     SqlInstance  = $dbAlert.Parent.Parent.DomainInstanceName

@@ -110,7 +110,7 @@ function Copy-DbaRegServer {
                 $groupName = $sourceGroup.Name
                 $destinationGroup = $destinationGroup.ServerGroups[$groupName]
 
-                $copyDestinationGroupStatus = [pscustomobject]@{
+                $copyDestinationGroupStatus = [PSCustomObject]@{
                     SourceServer      = $sourceServer.Name
                     DestinationServer = $destServer.Name
                     Name              = $groupName
@@ -167,7 +167,7 @@ function Copy-DbaRegServer {
                 $instanceName = $instance.Name
                 $serverName = $instance.ServerName
                 $destinstance = $destServer.Name
-                $copyInstanceStatus = [pscustomobject]@{
+                $copyInstanceStatus = [PSCustomObject]@{
                     SourceServer      = $sourceServer.Name
                     DestinationServer = $destServer.Name
                     Name              = $instanceName
@@ -253,7 +253,7 @@ function Copy-DbaRegServer {
                 if ($Pscmdlet.ShouldProcess($destinstance, "Copying group $fromSubGroupName")) {
                     $toSubGroup = $destinationGroup.ServerGroups[$fromSubGroupName]
 
-                    $copyGroupStatus = [pscustomobject]@{
+                    $copyGroupStatus = [PSCustomObject]@{
                         SourceServer      = $sourceServer.Name
                         DestinationServer = $destServer.Name
                         Name              = $fromSubGroupName

@@ -75,7 +75,7 @@ function Save-DbaDiagnosticQueryScript {
     $page = Get-WebData -uri $glennberryResources
 
     $glenberrysql += ($page.Links | Where-Object { $_.href -like $DropboxLinkFilter -and $_.outerHTML -like $LinkTitleFilter -and $_.outerHTML -notlike $ExcludeSpreadsheet -and $_.outerHTML -like $FileTypeFilter } | ForEach-Object {
-            [pscustomobject]@{
+            [PSCustomObject]@{
                 URL        = $_.href
                 SQLVersion = $_.outerHTML -replace "<.+`">", "" -replace "</a>", "" -replace " Diagnostic Information Queries", "" -replace "SQL Server ", "" -replace ' ', ''
             }

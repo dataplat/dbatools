@@ -97,7 +97,7 @@ function Remove-DbaTrace {
                     if (Get-DbaTrace -SqlInstance $server -Id $traceid) {
                         $server.Query($removesql)
                     }
-                    [pscustomobject]@{
+                    [PSCustomObject]@{
                         ComputerName = $server.ComputerName
                         InstanceName = $server.ServiceName
                         SqlInstance  = $server.DomainInstanceName

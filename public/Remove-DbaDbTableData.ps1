@@ -333,7 +333,7 @@ function Remove-DbaDbTableData {
 
                     } while ($rowCount -gt 0)
 
-                    [pscustomobject]@{
+                    [PSCustomObject]@{
                         ComputerName     = $db.Parent.ComputerName
                         InstanceName     = $db.Parent.Name
                         Database         = $db.Name

@@ -124,7 +124,7 @@ function Get-DbaAgBackupHistory {
         [parameter(Mandatory, ValueFromPipeline)]
         [DbaInstanceParameter[]]
         $SqlInstance,
-        [PsCredential]$SqlCredential,
+        [PSCredential]$SqlCredential,
         [parameter(Mandatory)]
         [string]$AvailabilityGroup,
         [string[]]$Database,

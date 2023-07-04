@@ -100,7 +100,7 @@ function Remove-DbaAvailabilityGroup {
                 # avoid enumeration issues
                 try {
                     $ag.Parent.Query("DROP AVAILABILITY GROUP $ag")
-                    [pscustomobject]@{
+                    [PSCustomObject]@{
                         ComputerName      = $ag.ComputerName
                         InstanceName      = $ag.InstanceName
                         SqlInstance       = $ag.SqlInstance

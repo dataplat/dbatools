@@ -73,7 +73,7 @@ function Test-DbaOptimizeForAdHoc {
                 $notes = $notesAdHocZero
             }
 
-            [pscustomobject]@{
+            [PSCustomObject]@{
                 ComputerName             = $server.ComputerName
                 InstanceName             = $server.ServiceName
                 SqlInstance              = $server.DomainInstanceName

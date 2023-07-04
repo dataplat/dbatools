@@ -632,7 +632,7 @@ function Install-DbaMaintenanceSolution {
 
             if ($query) {
                 # then whatif wasn't passed
-                [pscustomobject]@{
+                [PSCustomObject]@{
                     ComputerName = $server.ComputerName
                     InstanceName = $server.ServiceName
                     SqlInstance  = $server.DomainInstanceName

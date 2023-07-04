@@ -92,7 +92,7 @@ function Set-DbaMaxDop {
         [object[]]$ExcludeDatabase,
         [int]$MaxDop = -1,
         [Parameter(ValueFromPipeline)]
-        [pscustomobject]$InputObject,
+        [PSCustomObject]$InputObject,
         [Alias("All")]
         [switch]$AllDatabases,
         [switch]$EnableException
@@ -224,7 +224,7 @@ function Set-DbaMaxDop {
                         }
                     }
 
-                    $results = [pscustomobject]@{
+                    $results = [PSCustomObject]@{
                         ComputerName                = $server.ComputerName
                         InstanceName                = $server.ServiceName
                         SqlInstance                 = $server.DomainInstanceName

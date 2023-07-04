@@ -115,7 +115,7 @@ function Get-DbaDbMirrorMonitor {
                 $results = $db.Parent.Query($sql)
 
                 foreach ($result in $results) {
-                    [pscustomobject]@{
+                    [PSCustomObject]@{
                         ComputerName          = $db.Parent.ComputerName
                         InstanceName          = $db.Parent.ServiceName
                         SqlInstance           = $db.Parent.DomainInstanceName

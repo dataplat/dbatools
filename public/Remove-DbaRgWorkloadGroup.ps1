@@ -107,7 +107,7 @@ function Remove-DbaRgWorkloadGroup {
         foreach ($wklGroup in $InputObject) {
             $server = $wklGroup.Parent.Parent.Parent
             if ($Pscmdlet.ShouldProcess($wklGroup, "Dropping workload group")) {
-                $output = [pscustomobject]@{
+                $output = [PSCustomObject]@{
                     ComputerName = $server.ComputerName
                     InstanceName = $server.ServiceName
                     SqlInstance  = $server.DomainInstanceName

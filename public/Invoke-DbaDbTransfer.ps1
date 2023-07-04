@@ -199,7 +199,7 @@ function Invoke-DbaDbTransfer {
                 return
             }
 
-            return [pscustomobject]@{
+            return [PSCustomObject]@{
                 SourceInstance      = $transfer.Database.Parent.Name
                 SourceDatabase      = $transfer.Database.Name
                 DestinationInstance = $transfer.DestinationServer

@@ -122,7 +122,7 @@ function Get-DbaDbExtentDiff {
                         FROM sys.dm_db_file_space_usage
                     "
                     $DBCCPageResults = $server.Query($DBCCPageQueryDMV, $db.Name)
-                    [pscustomobject]@{
+                    [PSCustomObject]@{
                         ComputerName   = $server.ComputerName
                         InstanceName   = $server.ServiceName
                         SqlInstance    = $server.DomainInstanceName
@@ -156,7 +156,7 @@ function Get-DbaDbExtentDiff {
                         }
                     }
                     $extents = Get-DbaExtent $dbExtents.Field
-                    [pscustomobject]@{
+                    [PSCustomObject]@{
                         ComputerName   = $server.ComputerName
                         InstanceName   = $server.ServiceName
                         SqlInstance    = $server.DomainInstanceName

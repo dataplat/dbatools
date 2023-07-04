@@ -206,7 +206,7 @@ function Get-DbaRandomizedValue {
                     $script:faker.Random.Long($Min, $Max)
                 }
 
-                { $psitem -in 'bit', 'bool' } {
+                { $PSItem -in 'bit', 'bool' } {
                     if ($script:faker.Random.Bool()) {
                         1
                     } else {
@@ -234,7 +234,7 @@ function Get-DbaRandomizedValue {
                         ($script:faker.Date.Past()).ToString("yyyy-MM-dd HH:mm:ss.fffffff", [System.Globalization.CultureInfo]::InvariantCulture)
                     }
                 }
-                { $psitem -in 'decimal', 'float', 'money', 'numeric', 'real' } {
+                { $PSItem -in 'decimal', 'float', 'money', 'numeric', 'real' } {
                     $script:faker.Finance.Amount($Min, $Max, $Precision)
                 }
                 'int' {
@@ -287,7 +287,7 @@ function Get-DbaRandomizedValue {
 
                     $script:faker.Random.Int($Min, $Max)
                 }
-                { $psitem -in 'uniqueidentifier', 'guid' } {
+                { $PSItem -in 'uniqueidentifier', 'guid' } {
                     $script:faker.System.Random.Guid().Guid
                 }
                 'userdefineddatatype' {
@@ -301,7 +301,7 @@ function Get-DbaRandomizedValue {
                         $null
                     }
                 }
-                { $psitem -in 'char', 'nchar', 'nvarchar', 'varchar' } {
+                { $PSItem -in 'char', 'nchar', 'nvarchar', 'varchar' } {
                     $script:faker.Random.String2($Min, $Max, $CharacterString)
                 }
 

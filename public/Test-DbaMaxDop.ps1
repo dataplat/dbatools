@@ -161,7 +161,7 @@ function Test-DbaMaxDop {
                 }
             }
 
-            [pscustomobject]@{
+            [PSCustomObject]@{
                 ComputerName          = $server.ComputerName
                 InstanceName          = $server.ServiceName
                 SqlInstance           = $server.DomainInstanceName
@@ -192,7 +192,7 @@ function Test-DbaMaxDop {
 
                     $dbmaxdop = $database.MaxDop
 
-                    [pscustomobject]@{
+                    [PSCustomObject]@{
                         ComputerName          = $server.ComputerName
                         InstanceName          = $server.ServiceName
                         SqlInstance           = $server.DomainInstanceName

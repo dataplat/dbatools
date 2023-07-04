@@ -108,7 +108,7 @@ function Get-DbaDbVirtualLogFile {
                     $data = $db.Query("DBCC LOGINFO")
 
                     foreach ($d in $data) {
-                        [pscustomobject]@{
+                        [PSCustomObject]@{
                             ComputerName   = $server.ComputerName
                             InstanceName   = $server.ServiceName
                             SqlInstance    = $server.DomainInstanceName

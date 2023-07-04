@@ -135,7 +135,7 @@ function Copy-DbaDataCollector {
                     $NoServerReconfig = $true
 
                     <# for future use when this support is added #>
-                    $copyServerConfigStatus = [pscustomobject]@{
+                    $copyServerConfigStatus = [PSCustomObject]@{
                         SourceServer      = $sourceServer.Name
                         DestinationServer = $destServer.Name
                         Name              = $userName
@@ -182,7 +182,7 @@ function Copy-DbaDataCollector {
             foreach ($set in $storeCollectionSets) {
                 $collectionName = $set.Name
 
-                $copyCollectionSetStatus = [pscustomobject]@{
+                $copyCollectionSetStatus = [PSCustomObject]@{
                     SourceServer      = $sourceServer.Name
                     DestinationServer = $destServer.Name
                     Name              = $collectionName

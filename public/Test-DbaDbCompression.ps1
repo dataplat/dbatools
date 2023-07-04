@@ -61,7 +61,7 @@ function Test-DbaDbCompression {
         Accepts a DbaInstanceParameter. Any collection of SQL Server Instance names or SMO objects can be piped to command.
 
     .OUTPUTS
-        Returns a PsCustomObject with following fields: ComputerName, InstanceName, SqlInstance, Database, IndexName, Partition, IndexID, PercentScan, PercentUpdate, RowEstimatePercentOriginal, PageEstimatePercentOriginal, CompressionTypeRecommendation, SizeCurrent, SizeRequested, PercentCompression
+        Returns a PSCustomObject with following fields: ComputerName, InstanceName, SqlInstance, Database, IndexName, Partition, IndexID, PercentScan, PercentUpdate, RowEstimatePercentOriginal, PageEstimatePercentOriginal, CompressionTypeRecommendation, SizeCurrent, SizeRequested, PercentCompression
 
     .NOTES
         Tags: Compression, Table

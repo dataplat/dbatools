@@ -227,7 +227,7 @@ function Set-DbaNetworkCertificate {
 
                 $newThumbprint = (Get-ItemProperty -Path $regPath -Name Certificate).Certificate
 
-                [pscustomobject]@{
+                [PSCustomObject]@{
                     ComputerName          = $env:COMPUTERNAME
                     InstanceName          = $instanceName
                     SqlInstance           = $vsname

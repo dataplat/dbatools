@@ -111,7 +111,7 @@ function Remove-DbaRegServer {
                 }
 
                 try {
-                    [pscustomobject]@{
+                    [PSCustomObject]@{
                         ComputerName = $regserver.ComputerName
                         InstanceName = $regserver.InstanceName
                         SqlInstance  = $regserver.SqlInstance
