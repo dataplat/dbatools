@@ -93,7 +93,7 @@ function Test-DbaAgSpn {
             if (-not $Listener) {
                 $listeners = $ag | Get-DbaAgListener
             } else {
-                write-warning poot
+                Write-Warning poot
                 $listeners = $ag | Get-DbaAgListener -Listener $Listener
             }
 

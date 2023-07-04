@@ -112,15 +112,15 @@ function Remove-DbaDbSynonym {
             switch ($inputType) {
                 'Dataplat.Dbatools.Parameter.DbaInstanceParameter' {
                     Write-Message -Level Verbose -Message "Processing DbaInstanceParameter through InputObject"
-                    $dbSynonyms = Get-DbaDBSynonym -SqlInstance $input -SqlCredential $SqlCredential -Database $Database -ExcludeDatabase $ExcludeDatabase -Schema $Schema -ExcludeSchema $ExcludeSchema -Synonym $Synonym -ExcludeSynonym $ExcludeSynonym
+                    $dbSynonyms = Get-DbaDbSynonym -SqlInstance $input -SqlCredential $SqlCredential -Database $Database -ExcludeDatabase $ExcludeDatabase -Schema $Schema -ExcludeSchema $ExcludeSchema -Synonym $Synonym -ExcludeSynonym $ExcludeSynonym
                 }
                 'Microsoft.SqlServer.Management.Smo.Server' {
                     Write-Message -Level Verbose -Message "Processing Server through InputObject"
-                    $dbSynonyms = Get-DbaDBSynonym -SqlInstance $input -SqlCredential $SqlCredential -Database $Database -ExcludeDatabase $ExcludeDatabase -Schema $Schema -ExcludeSchema $ExcludeSchema -Synonym $Synonym -ExcludeSynonym $ExcludeSynonym
+                    $dbSynonyms = Get-DbaDbSynonym -SqlInstance $input -SqlCredential $SqlCredential -Database $Database -ExcludeDatabase $ExcludeDatabase -Schema $Schema -ExcludeSchema $ExcludeSchema -Synonym $Synonym -ExcludeSynonym $ExcludeSynonym
                 }
                 'Microsoft.SqlServer.Management.Smo.Database' {
                     Write-Message -Level Verbose -Message "Processing Database through InputObject"
-                    $dbSynonyms = Get-DBaDbSynonym -InputObject $input
+                    $dbSynonyms = Get-DbaDbSynonym -InputObject $input
                 }
                 'Microsoft.SqlServer.Management.Smo.Synonym' {
                     Write-Message -Level Verbose -Message "Processing DatabaseSynonym through InputObject"
