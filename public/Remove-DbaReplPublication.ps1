@@ -25,6 +25,7 @@ function Remove-DbaReplPublication {
         The name of the replication publication
 
     .PARAMETER InputObject
+        A publication object retrieved from Get-DbaReplPublication. Enables piping from Get-DbaReplPublication.
 
     .PARAMETER Force
         If this switch is enabled, this command will look for the REPL-LogReader SQL Agent Job for this database and if it's running, stop the job.

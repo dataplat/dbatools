@@ -66,7 +66,6 @@ function Add-DbaReplArticle {
 
         Adds the TableToRepl table to the PubFromPosh publication from mssql1.Northwind
 
-
     .EXAMPLE
         PS C:\> $article = @{
                     SqlInstance           = "mssql1"
@@ -163,9 +162,6 @@ function Add-DbaReplArticle {
                         Stop-Function -Message "Article already exists in $Publication on $instance" -ErrorRecord $_ -Target $instance -Continue
                     }
 
-                    # need to refresh subscriptions so they know about new articles
-                    # only on trans\snap publications
-                    # (Method invocation failed because [Microsoft.SqlServer.Replication.MergePublication] does not contain a method named 'RefreshSubscriptions'.)
                     if ($pub.Type -in ('Transactional', 'Snapshot')) {
                         $pub.RefreshSubscriptions()
                     }

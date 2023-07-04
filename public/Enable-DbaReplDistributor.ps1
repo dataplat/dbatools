@@ -79,14 +79,13 @@ function Enable-DbaReplDistributor {
 
                     #TODO: lots more properties to add as params
                     $replServer.InstallDistributor($null, $distributionDb)
+
+                    $replServer.Refresh()
+                    $replServer
                 }
             } catch {
                 Stop-Function -Message "Unable to enable replication distributor" -ErrorRecord $_ -Target $instance -Continue
             }
-
-            $replServer.Refresh()
-            $replServer
-
         }
     }
 }

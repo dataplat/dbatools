@@ -17,14 +17,11 @@ function Disable-DbaReplDistributor {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Force
-        Boolean value that specifies whether or not replication objects are removed from the server,
-        even if a remote Distributor cannot be reached.
+        Specify whether or not replication objects are removed from the server, even if a remote Distributor cannot be reached.
 
-        If true, the publishing and Distributor configuration at the current server is uninstalled regardless of
-        whether or not dependent publishing and distribution objects are uninstalled.
+        If true, the publishing and Distributor configuration at the current server is uninstalled regardless of whether or not dependent publishing and distribution objects are uninstalled.
 
-        If false, the publisher and distribution databases must already be uninstalled, and no local databases
-        are enabled for publishing.
+        If false, the publisher and distribution databases must already be uninstalled, and no local databases are enabled for publishing.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -57,9 +54,7 @@ function Disable-DbaReplDistributor {
         PS C:\> $cred = Get-Credential sqladmin
         PS C:\> Disable-DbaReplDistributor -SqlInstance mssql1, mssql2 -SqlCredential $cred -Force
 
-        Disables replication distribution for the mssql1 and mssql2 instances using a sql login.
-        Specifies force so the publishing and Distributor configuration at the current server is uninstalled
-        regardless of whether or not dependent publishing and distribution objects are uninstalled.
+        Disables replication distribution for the mssql1 and mssql2 instances using a sql login. Specifies force so the publishing and Distributor configuration at the current server is uninstalled regardless of whether or not dependent publishing and distribution objects are uninstalled.
 
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High')]

@@ -78,8 +78,8 @@ function Enable-DbaReplPublishing {
 
                         $distPublisher = New-Object Microsoft.SqlServer.Replication.DistributionPublisher
                         $distPublisher.ConnectionContext = $replServer.ConnectionContext
-                        $distPublisher.Name = $instance #- name of the Publisher.
-                        $distPublisher.DistributionDatabase = $replServer.DistributionDatabases.Name #- the name of the database created in step 5.
+                        $distPublisher.Name = $instance
+                        $distPublisher.DistributionDatabase = $replServer.DistributionDatabases.Name
 
                         if (-not $PSBoundParameters.SnapshotShare) {
                             $SnapshotShare = Join-Path (Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential).InstallDataDirectory 'ReplData'

@@ -17,12 +17,8 @@ function Disable-DbaReplPublishing {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Force
-        A Boolean value that specifies whether the Publisher is uninstalled from the Distributor without verifying that
-        Publisher has also uninstalled the Distributor, if the Publisher is on a separate server.
-
-        If true, all the replication objects associated with the Publisher are dropped even if the Publisher is on a remote server
-        that cannot be reached.
-
+        Specifies whether the Publisher is uninstalled from the Distributor without verifying that Publisher has also uninstalled the Distributor, if the Publisher is on a separate server.
+        If true, all the replication objects associated with the Publisher are dropped even if the Publisher is on a remote server that cannot be reached.
         If false, replication first verifies that the remote Publisher has uninstalled the Distributor.
 
     .PARAMETER EnableException
@@ -82,16 +78,15 @@ function Disable-DbaReplPublishing {
             if ($replServer.IsPublisher) {
                 try {
                     if ($PSCmdlet.ShouldProcess($instance, "Disabling publishing on $instance")) {
-                        # uninstall distribution
                         $replServer.DistributionPublishers.Remove($Force)
                     }
+
+                    $replServer.Refresh()
+                    $replServer
+
                 } catch {
                     Stop-Function -Message "Unable to disable replication publishing" -ErrorRecord $_ -Target $instance -Continue
                 }
-
-                $replServer.Refresh()
-                $replServer
-
             } else {
                 Stop-Function -Message "$instance isn't currently enabled for publishing." -Continue -ContinueLabel main -Target $instance -Category InvalidData
             }

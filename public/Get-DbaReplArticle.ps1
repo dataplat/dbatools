@@ -81,7 +81,6 @@ function Get-DbaReplArticle {
         if (Test-FunctionInterrupt) { return }
 
         foreach ($instance in $SqlInstance) {
-            # Connect to the distributor of the instance
             try {
                 $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential
             } catch {
@@ -91,7 +90,7 @@ function Get-DbaReplArticle {
             try {
                 $databases = $server.Databases | Where-Object IsAccessible -eq $true
                 if ($Database) {
-                    $databases = $databases | Where-Object Name -In $Database
+                    $databases = $databases | Where-Object Name -in $Database
                 }
             } catch {
                 Stop-Function -Message "Error occurred while getting databases from $instance" -ErrorRecord $_ -Target $instance -Continue
@@ -109,7 +108,7 @@ function Get-DbaReplArticle {
 
                     $articles = $publications.Articles
                     if ($Name) {
-                        $articles = $articles | Where-Object Name -In $Name
+                        $articles = $articles | Where-Object Name -in $Name
                     }
 
                     foreach ($art in $articles) {
