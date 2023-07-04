@@ -148,7 +148,7 @@ function New-DbaReplSubscription {
                             if ($type -eq 'Push') {
 
                                 # Perform a bitwise logical AND (& in Visual C# and And in Visual Basic) between the Attributes property and AllowPush.
-                                if (($transPub.Attributes -band [Microsoft.SqlServer.Replication.PublicationAttributes]::ALlowPush) -ne [Microsoft.SqlServer.Replication.PublicationAttributes]::ALlowPush) {
+                                if (($transPub.Attributes -band [Microsoft.SqlServer.Replication.PublicationAttributes]::AllowPush) -ne [Microsoft.SqlServer.Replication.PublicationAttributes]::AllowPush) {
 
                                     # # Perform a bitwise logical AND (& in Visual C# and And in Visual Basic) between the Attributes property and AllowPush.
                                     # if ($transPub.Attributes -band 'AllowPush' -eq 'None' ) {
@@ -161,7 +161,7 @@ function New-DbaReplSubscription {
                                 }
                             } else {
                                 # Perform a bitwise logical AND (& in Visual C# and And in Visual Basic) between the Attributes property and AllowPull.
-                                if ($transPub.Attributes -band 'AllowPull' -eq 'None' ) {
+                                if (($transPub.Attributes -band [Microsoft.SqlServer.Replication.PublicationAttributes]::AllowPull) -ne [Microsoft.SqlServer.Replication.PublicationAttributes]::AllowPull) {
                                     # If the result is None, set Attributes to the result of a bitwise logical OR (| in Visual C# and Or in Visual Basic) between Attributes and AllowPull.
                                     $transPub.Attributes = $transPub.Attributes -bor 'AllowPull'
 
