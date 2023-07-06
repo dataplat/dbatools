@@ -115,6 +115,10 @@ function Add-DbaReplArticle {
             Stop-Function -Message "CreationScriptOptions should be the right type. Use New-DbaReplCreationScriptOptions to create the object" -ErrorRecord $_ -Target $instance -Continue
         }
 
+        if ($Filter -like 'WHERE*') {
+            Stop-Function -Message "Filter should not include the word 'WHERE'" -ErrorRecord $_ -Target $instance -Continue
+        }
+
         foreach ($instance in $SqlInstance) {
             try {
                 $replServer = Get-DbaReplServer -SqlInstance $instance -SqlCredential $SqlCredential -EnableException:$EnableException
@@ -157,9 +161,6 @@ function Add-DbaReplArticle {
 
                 if ($Filter) {
                     if ($PSCmdlet.ShouldProcess($instance, "Add filter for article: $Name")) {
-                        if ($Filter -like 'WHERE*') {
-                            Stop-Function -Message "Filter should not include the word 'WHERE'" -ErrorRecord $_ -Target $instance -Continue
-                        }
                         $article.FilterClause = $Filter
                     }
                 }
