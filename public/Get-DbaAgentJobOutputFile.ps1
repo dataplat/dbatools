@@ -110,7 +110,7 @@ function Get-DbaAgentJobOutputFile {
             foreach ($j in $Jobs) {
                 foreach ($step in $j.JobSteps) {
                     if ($step.OutputFileName) {
-                        [pscustomobject]@{
+                        [PSCustomObject]@{
                             ComputerName         = $server.ComputerName
                             InstanceName         = $server.ServiceName
                             SqlInstance          = $server.DomainInstanceName

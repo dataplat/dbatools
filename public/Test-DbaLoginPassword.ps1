@@ -84,7 +84,7 @@ function Test-DbaLoginPassword {
     begin {
         $CheckPasses = "''", "'@@Name'"
         if ($Dictionary) {
-            $Dictionary | ForEach-Object { $CheckPasses += "'" + $psitem + "'" }
+            $Dictionary | ForEach-Object { $CheckPasses += "'" + $PSItem + "'" }
         }
 
         foreach ($CheckPass in $CheckPasses) {

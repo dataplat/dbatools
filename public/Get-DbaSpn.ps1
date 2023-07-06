@@ -97,7 +97,7 @@ function Get-DbaSpn {
                         #     $serviceclass = ($spn -Split "\/")[0]
                         # }
                     }
-                    [pscustomobject] @{
+                    [PSCustomObject] @{
                         Input        = $Account
                         AccountName  = $Account
                         ServiceClass = "MSSQLSvc" # $serviceclass
@@ -134,7 +134,7 @@ function Get-DbaSpn {
 
                 if ($accountName) {
                     if ($accountName -eq $spn.InstanceServiceAccount) {
-                        [pscustomobject] @{
+                        [PSCustomObject] @{
                             Input        = $computer
                             AccountName  = $spn.InstanceServiceAccount
                             ServiceClass = "MSSQLSvc"
@@ -143,7 +143,7 @@ function Get-DbaSpn {
                         }
                     }
                 } else {
-                    [pscustomobject] @{
+                    [PSCustomObject] @{
                         Input        = $computer
                         AccountName  = $spn.InstanceServiceAccount
                         ServiceClass = "MSSQLSvc"

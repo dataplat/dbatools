@@ -58,7 +58,7 @@ function Get-DbaMsdtc {
         [Parameter(ValueFromPipeline)]
         [Alias('cn', 'host', 'Server')]
         [DbaInstanceParameter[]]$ComputerName = $env:COMPUTERNAME,
-        [pscredential]$Credential,
+        [PSCredential]$Credential,
         [switch]$EnableException
     )
 

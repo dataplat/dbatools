@@ -119,7 +119,7 @@ function Remove-DbaDbUdf {
         # We have to delete in the end block to prevent "Collection was modified; enumeration operation may not execute." if directly piped from Get-DbaDbUdf.
         foreach ($udfItem in $udfs) {
             if ($PSCmdlet.ShouldProcess($udfItem.Parent.Parent.Name, "Removing the user defined function $($udfItem.Schema).$($udfItem.Name) in the database $($udfItem.Parent.Name) on $($udfItem.Parent.Parent.Name)")) {
-                $output = [pscustomobject]@{
+                $output = [PSCustomObject]@{
                     ComputerName = $udfItem.Parent.Parent.ComputerName
                     InstanceName = $udfItem.Parent.Parent.ServiceName
                     SqlInstance  = $udfItem.Parent.Parent.DomainInstanceName

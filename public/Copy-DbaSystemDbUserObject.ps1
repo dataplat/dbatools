@@ -129,7 +129,7 @@ function Copy-DbaSystemDbUserObject {
                     $schemas = $smodb.Schemas | Where-Object IsSystemObject -ne $true
 
                     foreach ($schema in $schemas) {
-                        $copyobject = [pscustomobject]@{
+                        $copyobject = [PSCustomObject]@{
                             SourceServer      = $sourceServer.Name
                             DestinationServer = $destServer.Name
                             Name              = $schema
@@ -187,7 +187,7 @@ function Copy-DbaSystemDbUserObject {
                     }
 
                     foreach ($table in $tables) {
-                        $copyobject = [pscustomobject]@{
+                        $copyobject = [PSCustomObject]@{
                             SourceServer      = $sourceServer.Name
                             DestinationServer = $destServer.Name
                             Name              = $table
@@ -254,7 +254,7 @@ function Copy-DbaSystemDbUserObject {
                         $sql = $userobject.Definition
                         $schema = $userobject.SchemaName
 
-                        $copyobject = [pscustomobject]@{
+                        $copyobject = [PSCustomObject]@{
                             SourceServer      = $sourceServer.Name
                             DestinationServer = $destServer.Name
                             Name              = $name
@@ -267,7 +267,7 @@ function Copy-DbaSystemDbUserObject {
                         try {
                             Write-Message -Level Verbose -Message "Searching for $name in $db on $destinstance"
                             $result = Get-DbaModule -SqlInstance $destServer -ExcludeSystemObjects -Database $db |
-                                Where-Object { $psitem.Name -eq $userobject.Name -and $psitem.Type -eq $userobject.Type }
+                                Where-Object { $PSItem.Name -eq $userobject.Name -and $PSItem.Type -eq $userobject.Type }
                             if ($result) {
                                 Write-Message -Level Verbose -Message "Found $name in $db on $destinstance"
                                 if (-not $Force) {

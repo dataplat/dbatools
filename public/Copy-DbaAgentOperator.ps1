@@ -118,7 +118,7 @@ function Copy-DbaAgentOperator {
             foreach ($sOperator in $serverOperator) {
                 $operatorName = $sOperator.Name
 
-                $copyOperatorStatus = [pscustomobject]@{
+                $copyOperatorStatus = [PSCustomObject]@{
                     SourceServer      = $sourceServer.Name
                     DestinationServer = $destServer.Name
                     Name              = $operatorName

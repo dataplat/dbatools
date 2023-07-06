@@ -201,7 +201,7 @@ function Sync-DbaAvailabilityGroup {
             }
         }
 
-        $thiscombo = [pscustomobject]@{
+        $thiscombo = [PSCustomObject]@{
             PrimaryServer   = $server
             SecondaryServer = $secondaries
         }

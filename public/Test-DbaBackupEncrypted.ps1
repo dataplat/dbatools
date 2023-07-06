@@ -104,7 +104,7 @@ function Test-DbaBackupEncrypted {
             }
 
             Write-Message -Level Verbose -Message "Checking $file"
-            [pscustomobject]@{
+            [PSCustomObject]@{
                 ComputerName        = $server.ComputerName
                 InstanceName        = $server.ServiceName
                 SqlInstance         = $server.DomainInstanceName

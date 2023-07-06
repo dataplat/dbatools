@@ -125,7 +125,7 @@ function Remove-DbaSpn {
                 $delegate = $false
             }
 
-            [pscustomobject]@{
+            [PSCustomObject]@{
                 Name           = $spn
                 ServiceAccount = $ServiceAccount
                 Property       = "servicePrincipalName"
@@ -139,7 +139,7 @@ function Remove-DbaSpn {
             if ($delegate) {
                 # even if we removed the SPN, delegation could have been not set at all. We should not raise an error
                 if ($adentry.Properties['msDS-AllowedToDelegateTo'] -notcontains $spn) {
-                    [pscustomobject]@{
+                    [PSCustomObject]@{
                         Name           = $spn
                         ServiceAccount = $ServiceAccount
                         Property       = "msDS-AllowedToDelegateTo"
@@ -160,7 +160,7 @@ function Remove-DbaSpn {
                         $status = "Failed to remove delegation"
                     }
 
-                    [pscustomobject]@{
+                    [PSCustomObject]@{
                         Name           = $spn
                         ServiceAccount = $ServiceAccount
                         Property       = "msDS-AllowedToDelegateTo"

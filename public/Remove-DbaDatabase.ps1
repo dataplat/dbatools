@@ -105,7 +105,7 @@ function Remove-DbaDatabase {
                     $server.Refresh()
                     Remove-TeppCacheItem -SqlInstance $server -Type database -Name $db.name
 
-                    [pscustomobject]@{
+                    [PSCustomObject]@{
                         ComputerName = $server.ComputerName
                         InstanceName = $server.ServiceName
                         SqlInstance  = $server.DomainInstanceName
@@ -118,7 +118,7 @@ function Remove-DbaDatabase {
                     if ($Pscmdlet.ShouldProcess("$db on $server", "alter db set single_user with rollback immediate then drop")) {
                         $null = $server.Query("if exists (select * from sys.databases where name = '$($db.name)' and state = 0) alter database $db set single_user with rollback immediate; drop database $db")
 
-                        [pscustomobject]@{
+                        [PSCustomObject]@{
                             ComputerName = $server.ComputerName
                             InstanceName = $server.ServiceName
                             SqlInstance  = $server.DomainInstanceName
@@ -133,7 +133,7 @@ function Remove-DbaDatabase {
                             $db.Parent.databases[$dbName].Drop()
                             $server.Refresh()
 
-                            [pscustomobject]@{
+                            [PSCustomObject]@{
                                 ComputerName = $server.ComputerName
                                 InstanceName = $server.ServiceName
                                 SqlInstance  = $server.DomainInstanceName
@@ -144,7 +144,7 @@ function Remove-DbaDatabase {
                     } catch {
                         Write-Message -Level Verbose -Message "Could not drop database $db on $server"
 
-                        [pscustomobject]@{
+                        [PSCustomObject]@{
                             ComputerName = $server.ComputerName
                             InstanceName = $server.ServiceName
                             SqlInstance  = $server.DomainInstanceName

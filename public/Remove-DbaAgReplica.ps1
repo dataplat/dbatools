@@ -86,7 +86,7 @@ function Remove-DbaAgReplica {
             if ($Pscmdlet.ShouldProcess($agreplica.Parent.Parent.Name, "Removing availability group replica $agreplica")) {
                 try {
                     $agreplica.Drop()
-                    [pscustomobject]@{
+                    [PSCustomObject]@{
                         ComputerName      = $agreplica.ComputerName
                         InstanceName      = $agreplica.InstanceName
                         SqlInstance       = $agreplica.SqlInstance

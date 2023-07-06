@@ -116,7 +116,7 @@ function Copy-DbaBackupDevice {
             foreach ($currentBackupDevice in $serverBackupDevices) {
                 $deviceName = $currentBackupDevice.Name
 
-                $copyBackupDeviceStatus = [pscustomobject]@{
+                $copyBackupDeviceStatus = [PSCustomObject]@{
                     SourceServer      = $sourceServer.Name
                     DestinationServer = $destServer.Name
                     Name              = $deviceName

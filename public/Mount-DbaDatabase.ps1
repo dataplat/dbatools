@@ -133,7 +133,7 @@ function Mount-DbaDatabase {
                     try {
                         $server.AttachDatabase($db, $FileStructure, $DatabaseOwner, [Microsoft.SqlServer.Management.Smo.AttachOptions]::$AttachOption)
 
-                        [pscustomobject]@{
+                        [PSCustomObject]@{
                             ComputerName  = $server.ComputerName
                             InstanceName  = $server.ServiceName
                             SqlInstance   = $server.DomainInstanceName

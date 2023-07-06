@@ -96,7 +96,7 @@ function Find-DbaOrphanedFile {
     param (
         [Parameter(Mandatory, ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
-        [pscredential]$SqlCredential,
+        [PSCredential]$SqlCredential,
         [string[]]$Path,
         [string[]]$FileType,
         [Parameter(ParameterSetName = 'LocalOnly')][switch]$LocalOnly,
@@ -379,7 +379,7 @@ function Find-DbaOrphanedFile {
 
                     if ($filename -in $systemfiles) { continue }
 
-                    $result = [pscustomobject]@{
+                    $result = [PSCustomObject]@{
                         Server         = $server.name
                         ComputerName   = $server.ComputerName
                         InstanceName   = $server.ServiceName

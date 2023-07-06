@@ -100,19 +100,19 @@ function Get-DbaDbSpace {
                     ,CASE is_percent_growth WHEN 1 THEN 'pct' WHEN 0 THEN 'MB' ELSE 'Unknown' END AS [GrowthType]
                     ,CASE f.max_size WHEN -1 THEN 2147483648. ELSE CAST((f.max_size/128.0) AS FLOAT) END AS [MaxSizeMB]
                     ,CAST((f.size/128.0) AS FLOAT) - CAST(CAST(FILEPROPERTY(f.name, 'SpaceUsed') AS int)/128.0 AS FLOAT) AS [SpaceBeforeAutoGrow]
-                    ,CASE f.max_size	WHEN (-1)
+                    ,CASE f.max_size    WHEN (-1)
                                         THEN CAST(((2147483648.) - CAST(FILEPROPERTY(f.name, 'SpaceUsed') AS int))/128.0 AS FLOAT)
                                         ELSE CAST((f.max_size - CAST(FILEPROPERTY(f.name, 'SpaceUsed') AS int))/128.0 AS FLOAT)
                                         END AS [SpaceBeforeMax]
-                    ,CASE f.growth	WHEN 0 THEN 0.00
-                                    ELSE	CASE f.is_percent_growth	WHEN 0
-                                                    THEN	CASE f.max_size
+                    ,CASE f.growth    WHEN 0 THEN 0.00
+                                    ELSE    CASE f.is_percent_growth    WHEN 0
+                                                    THEN    CASE f.max_size
                                                             WHEN (-1)
                                                             THEN CAST(((((2147483648.)-f.Size)/f.Growth)*f.Growth)/128.0 AS FLOAT)
                                                             ELSE CAST((((f.max_size-f.Size)/f.Growth)*f.Growth)/128.0 AS FLOAT)
                                                             END
                                                     WHEN 1
-                                                    THEN	CASE f.max_size
+                                                    THEN    CASE f.max_size
                                                             WHEN (-1)
                                                             THEN CAST(CONVERT([int],f.Size*power((1)+CONVERT([float],f.Growth)/(100),CONVERT([int],log10(CONVERT([float],(2147483648.))/CONVERT([float],f.Size))/log10((1)+CONVERT([float],f.Growth)/(100)))))/128.0 AS FLOAT)
                                                             ELSE CAST(CONVERT([int],f.Size*power((1)+CONVERT([float],f.Growth)/(100),CONVERT([int],log10(CONVERT([float],f.Max_Size)/CONVERT([float],f.Size))/log10((1)+CONVERT([float],f.Growth)/(100)))))/128.0 AS FLOAT)
@@ -120,13 +120,13 @@ function Get-DbaDbSpace {
                                                     ELSE (0)
                                                     END
                                     END AS [PossibleAutoGrowthMB]
-                    , CASE f.max_size	WHEN -1 THEN 0
+                    , CASE f.max_size    WHEN -1 THEN 0
                                         ELSE CASE f.growth
                                                 WHEN 0 THEN (f.max_size - f.size)/128
-                                                ELSE	CASE f.is_percent_growth
+                                                ELSE    CASE f.is_percent_growth
                                                         WHEN 0
-                                                        THEN CAST((f.max_size - f.size - (	CONVERT(FLOAT,FLOOR((f.max_size-f.Size)/f.Growth)*f.Growth)))/128.0 AS FLOAT)
-                                                        ELSE CAST((f.max_size - f.size - (	CONVERT([int],f.Size*power((1)+CONVERT([float],f.Growth)/(100),CONVERT([int],log10(CONVERT([float],f.Max_Size)/CONVERT([float],f.Size))/log10((1)+CONVERT([float],f.Growth)/(100)))))))/128.0 AS FLOAT)
+                                                        THEN CAST((f.max_size - f.size - (    CONVERT(FLOAT,FLOOR((f.max_size-f.Size)/f.Growth)*f.Growth)))/128.0 AS FLOAT)
+                                                        ELSE CAST((f.max_size - f.size - (    CONVERT([int],f.Size*power((1)+CONVERT([float],f.Growth)/(100),CONVERT([int],log10(CONVERT([float],f.Max_Size)/CONVERT([float],f.Size))/log10((1)+CONVERT([float],f.Growth)/(100)))))))/128.0 AS FLOAT)
                                                         END
                                                 END
                                     END AS [UnusableSpaceMB]
@@ -185,7 +185,7 @@ function Get-DbaDbSpace {
                         $UnusableSpace = [Math]::Round($row.UnusableSpaceMB)
                     }
 
-                    [pscustomobject]@{
+                    [PSCustomObject]@{
                         ComputerName       = $server.ComputerName
                         InstanceName       = $server.ServiceName
                         SqlInstance        = $server.DomainInstanceName

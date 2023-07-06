@@ -99,7 +99,7 @@ function Remove-DbaDbCheckConstraint {
         # We have to delete in the end block to prevent "Collection was modified; enumeration operation may not execute." if directly piped from Get-DbaDbUdf.
         foreach ($chkcItem in $chkcs) {
             if ($PSCmdlet.ShouldProcess($chkcItem.Parent.Parent.Parent.Name, "Removing the check constraint [$($chkcItem.Name)] on the table $($chkcItem.Parent) on the database [$($chkcItem.Parent.Parent.Name)]")) {
-                $output = [pscustomobject]@{
+                $output = [PSCustomObject]@{
                     ComputerName = $chkcItem.ComputerName
                     InstanceName = $chkcItem.Parent.Parent.Parent.ServiceName
                     SqlInstance  = $chkcItem.Parent.Parent.Parent.DomainInstanceName

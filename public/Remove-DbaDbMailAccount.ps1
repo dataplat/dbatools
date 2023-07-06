@@ -98,7 +98,7 @@ function Remove-DbaDbMailAccount {
         # We have to delete in the end block to prevent "Collection was modified; enumeration operation may not execute." if directly piped from Get-DbaDbMailAccount.
         foreach ($dbMailAccount in $dbMailAccounts) {
             if ($PSCmdlet.ShouldProcess($dbMailAccount.Parent.Parent.Name, "Removing the database mail account $($dbMailAccount.Name) on $($dbMailAccount.Parent.Parent.Name)")) {
-                $output = [pscustomobject]@{
+                $output = [PSCustomObject]@{
                     ComputerName = $dbMailAccount.Parent.Parent.ComputerName
                     InstanceName = $dbMailAccount.Parent.Parent.ServiceName
                     SqlInstance  = $dbMailAccount.Parent.Parent.DomainInstanceName

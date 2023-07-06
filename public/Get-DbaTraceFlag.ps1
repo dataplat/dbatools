@@ -83,7 +83,7 @@ function Get-DbaTraceFlag {
             }
 
             foreach ($tflag in $tflags) {
-                [pscustomobject]@{
+                [PSCustomObject]@{
                     ComputerName = $server.ComputerName
                     InstanceName = $server.ServiceName
                     SqlInstance  = $server.DomainInstanceName

@@ -102,7 +102,7 @@ function Remove-DbaDbSequence {
         # We have to delete in the end block to prevent "Collection was modified; enumeration operation may not execute." if directly piped from Get-DbaDbSequence.
         foreach ($sequenceItem in $sequences) {
             if ($PSCmdlet.ShouldProcess($sequenceItem.Parent.Parent.Name, "Removing the sequence $($sequenceItem.Schema).$($sequenceItem.Name) in the database $($sequenceItem.Parent.Name) on $($sequenceItem.Parent.Parent.Name)")) {
-                $output = [pscustomobject]@{
+                $output = [PSCustomObject]@{
                     ComputerName   = $sequenceItem.Parent.Parent.ComputerName
                     InstanceName   = $sequenceItem.Parent.Parent.ServiceName
                     SqlInstance    = $sequenceItem.Parent.Parent.DomainInstanceName

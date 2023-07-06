@@ -93,7 +93,7 @@ function Test-DbaSpn {
                 Write-Verbose "Found $instanceCount instances"
 
                 foreach ($instance in $wmi.ServerInstances) {
-                    $spn = [pscustomobject] @{
+                    $spn = [PSCustomObject] @{
                         ComputerName           = $servereName
                         InstanceName           = $instanceName
                         #SKUNAME

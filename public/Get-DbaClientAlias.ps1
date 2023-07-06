@@ -100,7 +100,7 @@ function Get-DbaClientAlias {
                     $value = Get-ItemPropertyValue -Path $connect -Name $entry
                     $clean = $value.Replace('DBNMPNTW,', '').Replace('DBMSSOCN,', '')
                     if ($value.StartsWith('DBMSSOCN')) { $protocol = 'TCP/IP' } else { $protocol = 'Named Pipes' }
-                    [pscustomobject]@{
+                    [PSCustomObject]@{
                         ComputerName   = $env:COMPUTERNAME
                         NetworkLibrary = $protocol
                         ServerName     = $clean

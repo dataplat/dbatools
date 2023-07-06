@@ -131,7 +131,7 @@ function Invoke-DbaDiagnosticQuery {
         Run diagnostic queries targeted at specific database, and only run database level queries against this database.
     #>
     [CmdletBinding(SupportsShouldProcess)]
-    [OutputType([pscustomobject[]])]
+    [OutputType([PSCustomObject[]])]
     param (
         [parameter(Mandatory, ValueFromPipeline, Position = 0)]
         [DbaInstanceParameter[]]$SqlInstance,
@@ -201,7 +201,7 @@ function Invoke-DbaDiagnosticQuery {
             if ($file.BaseName.Split("_")[2] -eq $currentdate) {
                 $parsedscript = Invoke-DbaDiagnosticQueryScriptParser -filename $file.fullname -ExcludeQueryTextColumn:$ExcludeQueryTextColumn -ExcludePlanColumn:$ExcludePlanColumn -NoColumnParsing:$NoColumnParsing
 
-                $newscript = [pscustomobject]@{
+                $newscript = [PSCustomObject]@{
                     Version = $file.Basename.Split("_")[1]
                     Script  = $parsedscript
                 }
@@ -323,7 +323,7 @@ function Invoke-DbaDiagnosticQuery {
                             $result = $server.Query($scriptpart.Text)
                             Write-Message -Level Verbose -Message "Processed $($scriptpart.QueryName) on $instance"
                             if (-not $result) {
-                                [pscustomobject]@{
+                                [PSCustomObject]@{
                                     ComputerName     = $server.ComputerName
                                     InstanceName     = $server.ServiceName
                                     SqlInstance      = $server.DomainInstanceName
@@ -341,7 +341,7 @@ function Invoke-DbaDiagnosticQuery {
                             Write-Message -Level Verbose -Message ('Some error has occurred on Server: {0} - Script: {1}, result unavailable' -f $instance, $scriptpart.QueryName) -Target $instance -ErrorRecord $_
                         }
                         if ($result) {
-                            [pscustomobject]@{
+                            [PSCustomObject]@{
                                 ComputerName     = $server.ComputerName
                                 InstanceName     = $server.ServiceName
                                 SqlInstance      = $server.DomainInstanceName
@@ -360,7 +360,7 @@ function Invoke-DbaDiagnosticQuery {
                     } else {
                         # if running WhatIf, then return the queries that would be run as an object, not just whatif output
 
-                        [pscustomobject]@{
+                        [PSCustomObject]@{
                             ComputerName     = $server.ComputerName
                             InstanceName     = $server.ServiceName
                             SqlInstance      = $server.DomainInstanceName
@@ -398,7 +398,7 @@ function Invoke-DbaDiagnosticQuery {
                             try {
                                 $result = $server.Query($scriptpart.Text, $currentDb)
                                 if (-not $result) {
-                                    [pscustomobject]@{
+                                    [PSCustomObject]@{
                                         ComputerName     = $server.ComputerName
                                         InstanceName     = $server.ServiceName
                                         SqlInstance      = $server.DomainInstanceName
@@ -417,7 +417,7 @@ function Invoke-DbaDiagnosticQuery {
                             }
 
                             if ($result) {
-                                [pscustomobject]@{
+                                [PSCustomObject]@{
                                     ComputerName     = $server.ComputerName
                                     InstanceName     = $server.ServiceName
                                     SqlInstance      = $server.DomainInstanceName
@@ -435,7 +435,7 @@ function Invoke-DbaDiagnosticQuery {
                         } else {
                             # if running WhatIf, then return the queries that would be run as an object, not just whatif output
 
-                            [pscustomobject]@{
+                            [PSCustomObject]@{
                                 ComputerName     = $server.ComputerName
                                 InstanceName     = $server.ServiceName
                                 SqlInstance      = $server.DomainInstanceName

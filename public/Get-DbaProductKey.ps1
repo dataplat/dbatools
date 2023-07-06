@@ -149,7 +149,7 @@ function Get-DbaProductKey {
                 $sqlkey = "SQL Server Express Edition"
             }
 
-            [pscustomobject]@{
+            [PSCustomObject]@{
                 Key = $sqlkey
             }
             $reg.Close()
@@ -185,7 +185,7 @@ function Get-DbaProductKey {
                     Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
                 }
 
-                [pscustomobject]@{
+                [PSCustomObject]@{
                     ComputerName = $server.ComputerName
                     InstanceName = $server.ServiceName
                     SqlInstance  = $server.DomainInstanceName

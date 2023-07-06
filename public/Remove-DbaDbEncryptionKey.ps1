@@ -81,7 +81,7 @@ function Remove-DbaDbEncryptionKey {
                     # Avoids modifying the collection
                     Invoke-DbaQuery -SqlInstance $server -Database $db.Name -Query "DROP DATABASE ENCRYPTION KEY" -EnableException
                     Write-Message -Level Verbose -Message "Successfully removed encryption key from the $db database on $server"
-                    [pscustomobject]@{
+                    [PSCustomObject]@{
                         ComputerName = $server.ComputerName
                         InstanceName = $server.ServiceName
                         SqlInstance  = $server.DomainInstanceName

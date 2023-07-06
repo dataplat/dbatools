@@ -98,7 +98,7 @@ function New-DbaXESmartEmail {
         [string[]]$To,
         [string[]]$Cc,
         [string[]]$Bcc,
-        [pscredential]$Credential,
+        [PSCredential]$Credential,
         [parameter(Mandatory)]
         [string]$Subject,
         [parameter(Mandatory)]

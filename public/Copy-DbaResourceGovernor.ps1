@@ -110,7 +110,7 @@ function Copy-DbaResourceGovernor {
             }
             $destClassifierFunction = Get-DbaRgClassifierFunction -SqlInstance $destServer
 
-            $copyResourceGovSetting = [pscustomobject]@{
+            $copyResourceGovSetting = [PSCustomObject]@{
                 SourceServer      = $sourceServer.Name
                 DestinationServer = $destServer.Name
                 Type              = "Resource Governor Settings"
@@ -120,7 +120,7 @@ function Copy-DbaResourceGovernor {
                 DateTime          = [DbaDateTime](Get-Date)
             }
 
-            $copyResourceGovClassifierFunc = [pscustomobject]@{
+            $copyResourceGovClassifierFunc = [PSCustomObject]@{
                 SourceServer      = $sourceServer.Name
                 DestinationServer = $destServer.Name
                 Type              = "Resource Governor Settings"
@@ -235,7 +235,7 @@ function Copy-DbaResourceGovernor {
             foreach ($pool in $pools) {
                 $poolName = $pool.Name
 
-                $copyResourceGovPool = [pscustomobject]@{
+                $copyResourceGovPool = [PSCustomObject]@{
                     SourceServer      = $sourceServer.Name
                     DestinationServer = $destServer.Name
                     Type              = "Resource Governor Pool"
@@ -298,7 +298,7 @@ function Copy-DbaResourceGovernor {
                         foreach ($workloadGroup in $workloadGroups) {
                             $workgroupName = $workloadGroup.Name
 
-                            $copyResourceGovWorkGroup = [pscustomobject]@{
+                            $copyResourceGovWorkGroup = [PSCustomObject]@{
                                 SourceServer      = $sourceServer.Name
                                 DestinationServer = $destServer.Name
                                 Type              = "Resource Governor Pool Workgroup"
@@ -357,7 +357,7 @@ function Copy-DbaResourceGovernor {
                     }
 
 
-                    $copyResourceGovReconfig = [pscustomobject]@{
+                    $copyResourceGovReconfig = [PSCustomObject]@{
                         SourceServer      = $sourceServer.Name
                         DestinationServer = $destServer.Name
                         Type              = "Reconfigure Resource Governor"

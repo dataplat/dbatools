@@ -124,7 +124,7 @@ function Get-DbaPfDataCollectorSet {
                         $remote = $null
                     }
 
-                    [pscustomobject]@{
+                    [PSCustomObject]@{
                         ComputerName               = $env:COMPUTERNAME
                         Name                       = $setname
                         LatestOutputLocation       = $set.LatestOutputLocation

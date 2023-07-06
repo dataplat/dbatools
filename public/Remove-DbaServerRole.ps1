@@ -73,7 +73,7 @@ function Remove-DbaServerRole {
                 try {
                     $srvrole.Drop()
 
-                    [pscustomobject]@{
+                    [PSCustomObject]@{
                         ComputerName = $srvrole.ComputerName
                         InstanceName = $srvrole.InstanceName
                         SqlInstance  = $srvrole.SqlInstance
@@ -83,7 +83,7 @@ function Remove-DbaServerRole {
                 } catch {
                     Stop-Function -Message "Failed to drop server-role named $($srvrole.Name) on $($srvrole.Name)." -Target $srvrole -ErrorRecord $_ -Continue
 
-                    [pscustomobject]@{
+                    [PSCustomObject]@{
                         ComputerName = $srvrole.ComputerName
                         InstanceName = $srvrole.InstanceName
                         SqlInstance  = $srvrole.SqlInstance

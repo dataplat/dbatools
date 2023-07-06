@@ -162,7 +162,7 @@ function New-DbaDacProfile {
                         $publishProfile = Join-Path $Path "$($instanceName.Replace('--','-'))-$db-publish.xml" -ErrorAction Stop
                         Write-Message -Level Verbose -Message "Writing to $publishProfile"
                         $profileTemplate | Out-File $publishProfile -ErrorAction Stop
-                        [pscustomobject]@{
+                        [PSCustomObject]@{
                             ComputerName     = $server.ComputerName
                             InstanceName     = $server.InstanceName
                             SqlInstance      = $server.FullName

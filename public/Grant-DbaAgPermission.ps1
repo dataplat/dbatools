@@ -170,7 +170,7 @@ function Grant-DbaAgPermission {
                         try {
                             $bigperms = New-Object Microsoft.SqlServer.Management.Smo.ObjectPermissionSet([Microsoft.SqlServer.Management.Smo.ObjectPermission]::$perm)
                             $endpoint.Grant($bigperms, $account.Name)
-                            [pscustomobject]@{
+                            [PSCustomObject]@{
                                 ComputerName = $account.ComputerName
                                 InstanceName = $account.InstanceName
                                 SqlInstance  = $account.SqlInstance
@@ -197,7 +197,7 @@ function Grant-DbaAgPermission {
                             try {
                                 $bigperms = New-Object Microsoft.SqlServer.Management.Smo.ObjectPermissionSet([Microsoft.SqlServer.Management.Smo.ObjectPermission]::$perm)
                                 $ag.Grant($bigperms, $account.Name)
-                                [pscustomobject]@{
+                                [PSCustomObject]@{
                                     ComputerName = $account.ComputerName
                                     InstanceName = $account.InstanceName
                                     SqlInstance  = $account.SqlInstance

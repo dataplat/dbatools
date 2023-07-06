@@ -167,7 +167,7 @@ function Copy-DbaCredential {
             foreach ($cred in $credentialList) {
                 $credentialName = $cred.Name
 
-                $copyCredentialStatus = [pscustomobject]@{
+                $copyCredentialStatus = [PSCustomObject]@{
                     SourceServer      = $sourceServer.DomainInstanceName
                     DestinationServer = $destServer.DomainInstanceName
                     Type              = "Credential"

@@ -64,7 +64,7 @@ function Disable-DbaTraceFlag {
             $current = Get-DbaTraceFlag -SqlInstance $server -EnableException
 
             foreach ($tf in $TraceFlag) {
-                $TraceFlagInfo = [pscustomobject]@{
+                $TraceFlagInfo = [PSCustomObject]@{
                     SourceServer = $server.ComputerName
                     InstanceName = $server.ServiceName
                     SqlInstance  = $server.DomainInstanceName

@@ -296,13 +296,13 @@ function Install-DbaInstance {
         [string]$ProductID,
         [string]$AsCollation,
         [string]$SqlCollation,
-        [pscredential]$EngineCredential,
-        [pscredential]$AgentCredential,
-        [pscredential]$ASCredential,
-        [pscredential]$ISCredential,
-        [pscredential]$RSCredential,
-        [pscredential]$FTCredential,
-        [pscredential]$PBEngineCredential,
+        [PSCredential]$EngineCredential,
+        [PSCredential]$AgentCredential,
+        [PSCredential]$ASCredential,
+        [PSCredential]$ISCredential,
+        [PSCredential]$RSCredential,
+        [PSCredential]$FTCredential,
+        [PSCredential]$PBEngineCredential,
         [string]$SaveConfiguration,
         [switch]$PerformVolumeMaintenanceTasks,
         [switch]$Restart,
@@ -374,7 +374,7 @@ function Install-DbaInstance {
             # updates a service account entry and returns the password as a command line argument
             Param (
                 $Node,
-                [pscredential]$Credential,
+                [PSCredential]$Credential,
                 [string]$AccountName,
                 [string]$PasswordName = $AccountName.Replace('SVCACCOUNT', 'SVCPASSWORD')
             )

@@ -130,7 +130,7 @@ function Copy-DbaInstanceAuditSpecification {
             foreach ($auditSpec in $AuditSpecifications) {
                 $auditSpecName = $auditSpec.Name
 
-                $copyAuditSpecStatus = [pscustomobject]@{
+                $copyAuditSpecStatus = [PSCustomObject]@{
                     SourceServer      = $sourceServer.Name
                     DestinationServer = $destServer.Name
                     Type              = "Server Audit Specification"

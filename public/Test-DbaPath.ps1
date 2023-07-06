@@ -64,7 +64,7 @@ function Test-DbaPath {
             } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
-            $counter = [pscustomobject] @{ Value = 0 }
+            $counter = [PSCustomObject] @{ Value = 0 }
             $groupSize = 100
             $RawPath = $Path
             $Path = [string[]]$Path
@@ -87,7 +87,7 @@ function Test-DbaPath {
                     $i = 0
                     foreach ($r in $batchresult.tables.rows) {
                         $DoesPass = $r[0] -eq $true -or $r[1] -eq $true
-                        [pscustomobject]@{
+                        [PSCustomObject]@{
                             SqlInstance  = $server.Name
                             InstanceName = $server.ServiceName
                             ComputerName = $server.ComputerName

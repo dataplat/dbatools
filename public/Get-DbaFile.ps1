@@ -193,7 +193,7 @@ function Get-DbaFile {
                             $fullpath = $row.fullpath.Replace("\", $separator)
                             $fullpath = $fullpath.Replace("\\", "\")
                             $fullpath = $fullpath.Replace("//", "/")
-                            [pscustomobject]@{
+                            [PSCustomObject]@{
                                 ComputerName   = $server.ComputerName
                                 InstanceName   = $server.ServiceName
                                 SqlInstance    = $server.DomainInstanceName
@@ -209,7 +209,7 @@ function Get-DbaFile {
                     $fullpath = $fullpath.Replace("\", $separator)
                     $fullpath = $fullpath.Replace("\\", "\")
                     $fullpath = $fullpath.Replace("//", "/")
-                    [pscustomobject]@{
+                    [PSCustomObject]@{
                         ComputerName   = $server.ComputerName
                         InstanceName   = $server.ServiceName
                         SqlInstance    = $server.DomainInstanceName

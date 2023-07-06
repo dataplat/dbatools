@@ -98,7 +98,7 @@ function Copy-DbaDbMail {
             param ()
 
             Write-Message -Message "Migrating mail server configuration values." -Level Verbose
-            $copyMailConfigStatus = [pscustomobject]@{
+            $copyMailConfigStatus = [PSCustomObject]@{
                 SourceServer      = $sourceServer.Name
                 DestinationServer = $destServer.Name
                 Name              = "Server Configuration"
@@ -135,7 +135,7 @@ function Copy-DbaDbMail {
                 $accountName = $account.name
                 $newAccountName = $accountName -replace [Regex]::Escape($source), $destinstance
                 Write-Message -Message "Updating account name from '$accountName' to '$newAccountName'." -Level Verbose
-                $copyMailAccountStatus = [pscustomobject]@{
+                $copyMailAccountStatus = [PSCustomObject]@{
                     SourceServer      = $sourceServer.Name
                     DestinationServer = $destServer.Name
                     Name              = $accountName
@@ -204,7 +204,7 @@ function Copy-DbaDbMail {
                 $profileName = $profile.name
                 $newProfileName = $profileName -replace [Regex]::Escape($source), $destinstance
                 Write-Message -Message "Updating profile name from '$profileName' to '$newProfileName'." -Level Verbose
-                $copyMailProfileStatus = [pscustomobject]@{
+                $copyMailProfileStatus = [PSCustomObject]@{
                     SourceServer      = $sourceServer.Name
                     DestinationServer = $destServer.Name
                     Name              = $profileName
@@ -279,7 +279,7 @@ function Copy-DbaDbMail {
             Write-Message -Message "Migrating mail servers." -Level Verbose
             foreach ($mailServer in $sourceMailServers) {
                 $mailServerName = $mailServer.name
-                $copyMailServerStatus = [pscustomobject]@{
+                $copyMailServerStatus = [PSCustomObject]@{
                     SourceServer      = $sourceServer.Name
                     DestinationServer = $destServer.Name
                     Name              = $mailServerName
@@ -432,7 +432,7 @@ function Copy-DbaDbMail {
 
                     $destDbMailEnabled = ($destServer.Configuration.DatabaseMailEnabled).ConfigValue
                     Write-Message -Message "$destServer DBMail configuration value: $destDbMailEnabled." -Level Verbose
-                    $enableDBMailStatus = [pscustomobject]@{
+                    $enableDBMailStatus = [PSCustomObject]@{
                         SourceServer      = $sourceServer.name
                         DestinationServer = $destServer.name
                         Name              = "Enabled on Destination"

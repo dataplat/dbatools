@@ -94,7 +94,7 @@ function Remove-DbaDbView {
         # We have to delete in the end block to prevent "Collection was modified; enumeration operation may not execute." if directly piped from Get-DbaDbView.
         foreach ($viewItem in $views) {
             if ($PSCmdlet.ShouldProcess($viewItem.Parent.Parent.Name, "Removing the view $($viewItem.Schema).$($viewItem.Name) in the database $($viewItem.Parent.Name) on $($viewItem.Parent.Parent.Name)")) {
-                $output = [pscustomobject]@{
+                $output = [PSCustomObject]@{
                     ComputerName = $viewItem.Parent.Parent.ComputerName
                     InstanceName = $viewItem.Parent.Parent.ServiceName
                     SqlInstance  = $viewItem.Parent.Parent.DomainInstanceName

@@ -125,7 +125,7 @@ function Copy-DbaCustomError {
                 $customErrorId = $currentCustomError.ID
                 $language = $currentCustomError.Language.ToString()
 
-                $copyCustomErrorStatus = [pscustomobject]@{
+                $copyCustomErrorStatus = [PSCustomObject]@{
                     SourceServer      = $sourceServer.Name
                     DestinationServer = $destServer.Name
                     Type              = "Custom error"

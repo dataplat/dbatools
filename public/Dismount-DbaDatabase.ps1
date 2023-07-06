@@ -197,7 +197,7 @@ function Dismount-DbaDatabase {
                     $dbID = $db.ID
                     $server.DetachDatabase($db.Name, $UpdateStatistics)
 
-                    [pscustomobject]@{
+                    [PSCustomObject]@{
                         ComputerName = $server.ComputerName
                         InstanceName = $server.ServiceName
                         SqlInstance  = $server.DomainInstanceName

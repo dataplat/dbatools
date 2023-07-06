@@ -218,36 +218,36 @@ function Get-DbaPermission {
                     AND dp.is_fixed_role=1
                 UNION ALL -- include the dbo user
                 SELECT
-                    [ComputerName]		= SERVERPROPERTY('MachineName')
-                ,	[InstanceName]		= ISNULL(SERVERPROPERTY('InstanceName'), 'MSSQLSERVER')
-                ,	[SqlInstance]		= SERVERPROPERTY('ServerName')
-                ,	[database]			= DB_NAME()
-                ,	[PermState]			= ''
-                ,	[PermissionName]	= 'CONTROL'
-                ,	[SecurableType]		= 'DATABASE'
-                ,	[Securable]			= DB_NAME()
-                ,	[Grantee]			= SUSER_SNAME(owner_sid)
-                ,	[GranteeType]		= 'DATABASE OWNER (dbo user)'
-                ,	[revokestatement]	= ''
-                ,	[grantstatement]	= ''
+                    [ComputerName]        = SERVERPROPERTY('MachineName')
+                ,    [InstanceName]        = ISNULL(SERVERPROPERTY('InstanceName'), 'MSSQLSERVER')
+                ,    [SqlInstance]        = SERVERPROPERTY('ServerName')
+                ,    [database]            = DB_NAME()
+                ,    [PermState]            = ''
+                ,    [PermissionName]    = 'CONTROL'
+                ,    [SecurableType]        = 'DATABASE'
+                ,    [Securable]            = DB_NAME()
+                ,    [Grantee]            = SUSER_SNAME(owner_sid)
+                ,    [GranteeType]        = 'DATABASE OWNER (dbo user)'
+                ,    [revokestatement]    = ''
+                ,    [grantstatement]    = ''
                 FROM
                     sys.databases
                 WHERE
                     name = DB_NAME()
                 UNION ALL -- include the users with the db_owner role
                 SELECT
-                    [ComputerName]		= SERVERPROPERTY('MachineName')
-                ,	[InstanceName]		= ISNULL(SERVERPROPERTY('InstanceName'), 'MSSQLSERVER')
-                ,	[SqlInstance]		= SERVERPROPERTY('ServerName')
-                ,	[database]			= DB_NAME()
-                ,	[PermState]			= ''
-                ,	[PermissionName]	= 'CONTROL'
-                ,	[SecurableType]		= 'DATABASE'
-                ,	[Securable]			= DB_NAME()
-                ,	[Grantee]			= databaseUser.name
-                ,	[GranteeType]		= 'DATABASE OWNER (db_owner role)'
-                ,	[revokestatement]	= ''
-                ,	[grantstatement]	= ''
+                    [ComputerName]        = SERVERPROPERTY('MachineName')
+                ,    [InstanceName]        = ISNULL(SERVERPROPERTY('InstanceName'), 'MSSQLSERVER')
+                ,    [SqlInstance]        = SERVERPROPERTY('ServerName')
+                ,    [database]            = DB_NAME()
+                ,    [PermState]            = ''
+                ,    [PermissionName]    = 'CONTROL'
+                ,    [SecurableType]        = 'DATABASE'
+                ,    [Securable]            = DB_NAME()
+                ,    [Grantee]            = databaseUser.name
+                ,    [GranteeType]        = 'DATABASE OWNER (db_owner role)'
+                ,    [revokestatement]    = ''
+                ,    [grantstatement]    = ''
                 FROM
                 (
                     SELECT
@@ -266,18 +266,18 @@ function Get-DbaPermission {
                     databaseUser.name <> 'dbo'
                 UNION ALL -- include the schema owners
                 SELECT
-                    [ComputerName]		= SERVERPROPERTY('MachineName')
-                ,	[InstanceName]		= ISNULL(SERVERPROPERTY('InstanceName'), 'MSSQLSERVER')
-                ,	[SqlInstance]		= SERVERPROPERTY('ServerName')
-                ,	[database]			= DB_NAME()
-                ,	[PermState]			= ''
-                ,	[PermissionName]	= 'CONTROL'
-                ,	[SecurableType]		= 'SCHEMA'
-                ,	[Securable]			= name
-                ,	[Grantee]			= USER_NAME(principal_id)
-                ,	[GranteeType]		= 'SCHEMA OWNER'
-                ,	[revokestatement]	= ''
-                ,	[grantstatement]	= ''
+                    [ComputerName]        = SERVERPROPERTY('MachineName')
+                ,    [InstanceName]        = ISNULL(SERVERPROPERTY('InstanceName'), 'MSSQLSERVER')
+                ,    [SqlInstance]        = SERVERPROPERTY('ServerName')
+                ,    [database]            = DB_NAME()
+                ,    [PermState]            = ''
+                ,    [PermissionName]    = 'CONTROL'
+                ,    [SecurableType]        = 'SCHEMA'
+                ,    [Securable]            = name
+                ,    [Grantee]            = USER_NAME(principal_id)
+                ,    [GranteeType]        = 'SCHEMA OWNER'
+                ,    [revokestatement]    = ''
+                ,    [grantstatement]    = ''
                 FROM
                     sys.schemas
                 WHERE

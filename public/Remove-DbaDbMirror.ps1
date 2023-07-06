@@ -97,7 +97,7 @@ function Remove-DbaDbMirror {
                             }
                         }
                     }
-                    [pscustomobject]@{
+                    [PSCustomObject]@{
                         ComputerName = $db.ComputerName
                         InstanceName = $db.InstanceName
                         SqlInstance  = $db.SqlInstance

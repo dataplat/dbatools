@@ -128,7 +128,7 @@ function Copy-DbaAgentSchedule {
             foreach ($currentschedule in $InputObject) {
                 $scheduleName = $currentschedule.Name
                 $sourceServer = $currentschedule.Parent.Parent
-                $copySharedScheduleStatus = [pscustomobject]@{
+                $copySharedScheduleStatus = [PSCustomObject]@{
                     SourceServer      = $sourceServer.Name
                     DestinationServer = $destServer.Name
                     Type              = "Agent Schedule"

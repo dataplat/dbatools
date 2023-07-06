@@ -90,7 +90,7 @@ function Remove-DbaDbPartitionScheme {
         # We have to delete in the end block to prevent "Collection was modified; enumeration operation may not execute." if directly piped from Get-DbaDbPartitionScheme.
         foreach ($partschItem in $partschs) {
             if ($PSCmdlet.ShouldProcess($partschItem.Parent.Parent.Name, "Removing the partition scheme [$($partschItem.Name)] in the database [$($partschItem.Parent.Name)] on [$($partschItem.Parent.Parent.Name)]")) {
-                $output = [pscustomobject]@{
+                $output = [PSCustomObject]@{
                     ComputerName        = $partschItem.Parent.Parent.ComputerName
                     InstanceName        = $partschItem.Parent.Parent.ServiceName
                     SqlInstance         = $partschItem.Parent.Parent.DomainInstanceName

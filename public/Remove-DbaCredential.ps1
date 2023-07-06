@@ -103,7 +103,7 @@ function Remove-DbaCredential {
         # We have to delete in the end block to prevent "Collection was modified; enumeration operation may not execute." if directly piped from Get-DbaCredential.
         foreach ($dbCredential in $dbCredentials) {
             if ($PSCmdlet.ShouldProcess($dbCredential.Parent.Parent.Name, "Removing the SQL credential $($dbCredential.Name) on $($dbCredential.Parent.Parent.Name)")) {
-                $output = [pscustomobject]@{
+                $output = [PSCustomObject]@{
                     ComputerName = $dbCredential.ComputerName
                     InstanceName = $dbCredential.InstanceName
                     SqlInstance  = $dbCredential.SqlInstance

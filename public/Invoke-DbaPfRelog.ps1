@@ -245,7 +245,7 @@ function Invoke-DbaPfRelog {
             if ($args) {
                 $file = $args
             } else {
-                $file = $psitem
+                $file = $PSItem
             }
             $item = Get-ChildItem -Path $file -ErrorAction SilentlyContinue
 

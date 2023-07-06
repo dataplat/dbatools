@@ -76,7 +76,7 @@ function Get-DbaCpuUsage {
     )
     begin {
         # This can likely be enumerated but I don't know hows
-        $threadstates = [pscustomobject]@{
+        $threadstates = [PSCustomObject]@{
             0 = 'Initialized. It is recognized by the microkernel.'
             1 = 'Ready. It is prepared to run on the next available processor.'
             2 = 'Running. It is executing.'
@@ -87,7 +87,7 @@ function Get-DbaCpuUsage {
             7 = 'Unknown. The thread state is unknown.'
         }
 
-        $threadwaitreasons = [pscustomobject]@{
+        $threadwaitreasons = [PSCustomObject]@{
             0  = 'Executive'
             1  = 'FreePage'
             2  = 'PageIn'

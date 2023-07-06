@@ -106,7 +106,7 @@ function Remove-DbaAgentJobCategory {
         # We have to delete in the end block to prevent "Collection was modified; enumeration operation may not execute." if directly piped from Get-DbaAgentJobCategory.
         foreach ($jobCategory in $jobCategories) {
             if ($PSCmdlet.ShouldProcess($jobCategory.Parent.Parent.Name, "Removing the SQL Agent category(-ies) $($jobCategory.Name) on $($jobCategory.Parent.Parent.Name)")) {
-                $output = [pscustomobject]@{
+                $output = [PSCustomObject]@{
                     ComputerName = $jobCategory.Parent.Parent.ComputerName
                     InstanceName = $jobCategory.Parent.Parent.ServiceName
                     SqlInstance  = $jobCategory.Parent.Parent.DomainInstanceName

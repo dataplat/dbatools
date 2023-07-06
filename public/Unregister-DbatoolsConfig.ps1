@@ -102,7 +102,7 @@ function Unregister-DbatoolsConfig {
             $fileUserLocalSettings = @()
             if (Test-Path (Join-Path $script:path_FileUserLocal "psf_config.json")) { $fileUserLocalSettings = Get-Content (Join-Path $script:path_FileUserLocal "psf_config.json") -Encoding UTF8 | ConvertFrom-Json }
             if ($fileUserLocalSettings) {
-                $pathProperties += [pscustomobject]@{
+                $pathProperties += [PSCustomObject]@{
                     Path       = (Join-Path $script:path_FileUserLocal "psf_config.json")
                     Properties = $fileUserLocalSettings
                     Changed    = $false
@@ -113,7 +113,7 @@ function Unregister-DbatoolsConfig {
             $fileUserSharedSettings = @()
             if (Test-Path (Join-Path $script:path_FileUserShared "psf_config.json")) { $fileUserSharedSettings = Get-Content (Join-Path $script:path_FileUserShared "psf_config.json") -Encoding UTF8 | ConvertFrom-Json }
             if ($fileUserSharedSettings) {
-                $pathProperties += [pscustomobject]@{
+                $pathProperties += [PSCustomObject]@{
                     Path       = (Join-Path $script:path_FileUserShared "psf_config.json")
                     Properties = $fileUserSharedSettings
                     Changed    = $false
@@ -124,7 +124,7 @@ function Unregister-DbatoolsConfig {
             $fileSystemSettings = @()
             if (Test-Path (Join-Path $script:path_FileSystem "psf_config.json")) { $fileSystemSettings = Get-Content (Join-Path $script:path_FileSystem "psf_config.json") -Encoding UTF8 | ConvertFrom-Json }
             if ($fileSystemSettings) {
-                $pathProperties += [pscustomobject]@{
+                $pathProperties += [PSCustomObject]@{
                     Path       = (Join-Path $script:path_FileSystem "psf_config.json")
                     Properties = $fileSystemSettings
                     Changed    = $false

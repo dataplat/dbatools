@@ -86,7 +86,7 @@ function Remove-DbaEndpoint {
                 try {
                     # avoid enumeration issues
                     $ep.Parent.Query("DROP ENDPOINT $ep")
-                    [pscustomobject]@{
+                    [PSCustomObject]@{
                         ComputerName = $ep.ComputerName
                         InstanceName = $ep.InstanceName
                         SqlInstance  = $ep.SqlInstance

@@ -190,7 +190,7 @@ function Test-DbaMigrationConstraint {
                             $fileStreamDestination = Get-DbaSpConfigure -SqlInstance $destServer -ConfigName FilestreamAccessLevel
 
                             if ($fileStreamSource.RunningValue -ne $fileStreamDestination.RunningValue) {
-                                [pscustomobject]@{
+                                [PSCustomObject]@{
                                     SourceInstance      = $sourceServer.Name
                                     DestinationInstance = $destServer.Name
                                     SourceVersion       = $sourceVersion
@@ -229,7 +229,7 @@ function Test-DbaMigrationConstraint {
                                 This means that database cannot be migrated because Express edition doesn't have SQL Server Agent
                             #>
                             if ($editions.Item($destServer.Edition.ToString().Split(" ")[0]) -eq 1 -and $dbFeatures.Contains("ChangeCapture")) {
-                                [pscustomobject]@{
+                                [PSCustomObject]@{
                                     SourceInstance      = $sourceServer.Name
                                     DestinationInstance = $destServer.Name
                                     SourceVersion       = $sourceVersion
@@ -240,7 +240,7 @@ function Test-DbaMigrationConstraint {
                                     Notes               = "$notesCannotMigrate. Destination server edition is EXPRESS which does not support 'ChangeCapture' feature that is in use."
                                 }
                             } else {
-                                [pscustomobject]@{
+                                [PSCustomObject]@{
                                     SourceInstance      = $sourceServer.Name
                                     DestinationInstance = $destServer.Name
                                     SourceVersion       = $sourceVersion
@@ -259,7 +259,7 @@ function Test-DbaMigrationConstraint {
 
                             #Check for editions. If destination edition is lower than source edition and exists features in use
                             if (($editions.Item($destServer.Edition.ToString().Split(" ")[0]) -lt $editions.Item($sourceServer.Edition.ToString().Split(" ")[0])) -and (!([string]::IsNullOrEmpty($dbFeatures)))) {
-                                [pscustomobject]@{
+                                [PSCustomObject]@{
                                     SourceInstance      = $sourceServer.Name
                                     DestinationInstance = $destServer.Name
                                     SourceVersion       = $sourceVersion
@@ -272,7 +272,7 @@ function Test-DbaMigrationConstraint {
                             }
                             #
                             else {
-                                [pscustomobject]@{
+                                [PSCustomObject]@{
                                     SourceInstance      = $sourceServer.Name
                                     DestinationInstance = $destServer.Name
                                     SourceVersion       = $sourceVersion

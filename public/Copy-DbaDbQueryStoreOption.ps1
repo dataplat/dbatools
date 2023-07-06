@@ -143,7 +143,7 @@ function Copy-DbaDbQueryStoreOption {
                     continue
                 }
                 Write-Message -Message "Processing destination database: $destDB on $destServer." -Level Verbose
-                $copyQueryStoreStatus = [pscustomobject]@{
+                $copyQueryStoreStatus = [PSCustomObject]@{
                     SourceServer          = $sourceServer.name
                     SourceDatabase        = $SourceDatabase
                     SourceDatabaseID      = $sourceDB.ID

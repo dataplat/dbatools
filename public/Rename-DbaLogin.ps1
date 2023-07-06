@@ -103,7 +103,7 @@ function Rename-DbaLogin {
                 try {
                     $dbMappings = $currentLogin.EnumDatabaseMappings()
                     $null = $currentLogin.Rename($NewLogin)
-                    $output += [pscustomobject]@{
+                    $output += [PSCustomObject]@{
                         ComputerName  = $server.ComputerName
                         InstanceName  = $server.ServiceName
                         SqlInstance   = $server.DomainInstanceName
@@ -116,7 +116,7 @@ function Rename-DbaLogin {
                     }
                 } catch {
                     $dbMappings = $null
-                    [pscustomobject]@{
+                    [PSCustomObject]@{
                         ComputerName  = $server.ComputerName
                         InstanceName  = $server.ServiceName
                         SqlInstance   = $server.DomainInstanceName
@@ -142,7 +142,7 @@ function Rename-DbaLogin {
                             try {
                                 $oldname = $user.name
                                 $null = $user.Rename($NewLogin)
-                                $output += [pscustomobject]@{
+                                $output += [PSCustomObject]@{
                                     ComputerName  = $server.ComputerName
                                     InstanceName  = $server.ServiceName
                                     SqlInstance   = $server.DomainInstanceName
@@ -157,7 +157,7 @@ function Rename-DbaLogin {
                                 Write-Message -Level Warning -Message "Rolling back update to login: $Login"
                                 $null = $currentLogin.Rename($Login)
 
-                                [pscustomobject]@{
+                                [PSCustomObject]@{
                                     ComputerName  = $server.ComputerName
                                     InstanceName  = $server.ServiceName
                                     SqlInstance   = $server.DomainInstanceName

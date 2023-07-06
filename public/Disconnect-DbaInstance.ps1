@@ -75,7 +75,7 @@ function Disconnect-DbaInstance {
                                 Write-Message -Level Verbose -Message "removing from connection hash"
                                 $null = $script:connectionhash.Remove($server.ConnectionContext.ConnectionString)
                             }
-                            [pscustomobject]@{
+                            [PSCustomObject]@{
                                 SqlInstance      = $server.Name
                                 ConnectionString = (Hide-ConnectionString -ConnectionString $server.ConnectionContext.ConnectionString)
                                 ConnectionType   = $server.GetType().FullName
@@ -94,7 +94,7 @@ function Disconnect-DbaInstance {
                                 $null = $script:connectionhash.Remove($server.ConnectionString)
                             }
 
-                            [pscustomobject]@{
+                            [PSCustomObject]@{
                                 SqlInstance      = $server.DataSource
                                 ConnectionString = (Hide-ConnectionString -ConnectionString $server.ConnectionString)
                                 ConnectionType   = $server.GetType().FullName

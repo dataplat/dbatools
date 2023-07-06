@@ -452,7 +452,7 @@ function Copy-DbaDatabase {
                 $dbcollection.Add($($db.Name), $location)
             }
 
-            $fileStructure = [pscustomobject]@{
+            $fileStructure = [PSCustomObject]@{
                 "databases" = $dbcollection
             }
             Write-Progress -Id 1 -Activity "Processing database file structure" -Status "Completed" -Completed
@@ -997,7 +997,7 @@ function Copy-DbaDatabase {
                         $filestructure.databases[$dbName].Destination.$key.physical = Join-DbaPath -Path $SplitPath -ChildPath $splitFileName
                     }
 
-                    $copyDatabaseStatus = [pscustomobject]@{
+                    $copyDatabaseStatus = [PSCustomObject]@{
                         SourceServer        = $sourceServer.Name
                         DestinationServer   = $destServer.Name
                         Name                = $dbName

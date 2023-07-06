@@ -103,7 +103,7 @@ function Remove-DbaRegServerGroup {
                 }
 
                 try {
-                    [pscustomobject]@{
+                    [PSCustomObject]@{
                         ComputerName = $parentserver.ComputerName
                         InstanceName = $parentserver.InstanceName
                         SqlInstance  = $parentserver.SqlInstance

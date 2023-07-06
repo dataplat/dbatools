@@ -123,7 +123,7 @@ function Copy-DbaInstanceTrigger {
             foreach ($trigger in $serverTriggers) {
                 $triggerName = $trigger.Name
 
-                $copyTriggerStatus = [pscustomobject]@{
+                $copyTriggerStatus = [PSCustomObject]@{
                     SourceServer      = $sourceServer.Name
                     DestinationServer = $destServer.Name
                     Name              = $triggerName

@@ -172,7 +172,7 @@ function Get-DbaExecutionPlan {
                         $planHandle = "0x"; $row.planhandle | ForEach-Object { $planHandle += ("{0:X}" -f $_).PadLeft(2, "0") }
                         $planWarnings = $simple.QueryPlan.Warnings.PlanAffectingConvert;
 
-                        [pscustomobject]@{
+                        [PSCustomObject]@{
                             ComputerName                      = $server.ComputerName
                             InstanceName                      = $server.ServiceName
                             SqlInstance                       = $server.DomainInstanceName

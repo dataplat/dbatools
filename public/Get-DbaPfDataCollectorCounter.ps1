@@ -108,7 +108,7 @@ function Get-DbaPfDataCollectorCounter {
         foreach ($counterobject in $InputObject) {
             foreach ($countername in $counterobject.Counters) {
                 if ($Counter -and $Counter -notcontains $countername) { continue }
-                [pscustomobject]@{
+                [PSCustomObject]@{
                     ComputerName        = $counterobject.ComputerName
                     DataCollectorSet    = $counterobject.DataCollectorSet
                     DataCollector       = $counterobject.Name

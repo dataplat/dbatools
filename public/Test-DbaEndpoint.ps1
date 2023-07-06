@@ -113,7 +113,7 @@ function Test-DbaEndpoint {
                     $sslconnect = $_
                 }
 
-                [pscustomobject]@{
+                [PSCustomObject]@{
                     ComputerName  = $end.ComputerName
                     InstanceName  = $end.InstanceName
                     SqlInstance   = $end.SqlInstance

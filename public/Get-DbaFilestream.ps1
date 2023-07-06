@@ -126,7 +126,7 @@ function Get-DbaFilestream {
         $runvalue = (Get-DbaSpConfigure -SqlInstance $server -Name FilestreamAccessLevel | Select-Object RunningValue).RunningValue
         $servicelevel = [int]$serviceFS.AccessLevel
 
-        [PsCustomObject]@{
+        [PSCustomObject]@{
             ComputerName        = $server.ComputerName
             InstanceName        = $server.ServiceName
             SqlInstance         = $server.DomainInstanceName

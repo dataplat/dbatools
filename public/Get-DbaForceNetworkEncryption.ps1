@@ -114,7 +114,7 @@ function Get-DbaForceNetworkEncryption {
                 $cert = (Get-ItemProperty -Path $regPath -Name Certificate).Certificate
                 $forceencryption = (Get-ItemProperty -Path $regPath -Name ForceEncryption).ForceEncryption
 
-                # [pscustomobject] doesn't always work, unsure why. so return hashtable then turn it into  pscustomobject on client
+                # [PSCustomObject] doesn't always work, unsure why. so return hashtable then turn it into  PSCustomObject on client
                 @{
                     ComputerName          = $env:COMPUTERNAME
                     InstanceName          = $args[2]
@@ -127,7 +127,7 @@ function Get-DbaForceNetworkEncryption {
             try {
                 $results = Invoke-Command2 -ComputerName $resolved.FullComputerName -Credential $Credential -ArgumentList $regRoot, $vsname, $instanceName -ScriptBlock $scriptBlock -ErrorAction Stop -Raw
                 foreach ($result in $results) {
-                    [pscustomobject]$result
+                    [PSCustomObject]$result
                 }
             } catch {
                 Stop-Function -Message "Failed to connect to $($resolved.FullComputerName) using PowerShell remoting" -ErrorRecord $_ -Target $instance -Continue

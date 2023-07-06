@@ -169,7 +169,7 @@ Ideally start a new console, perform the minimal steps required to reproduce the
                 $hash["Variables"] = $Variables | Get-Variable -ErrorAction Ignore
             }
 
-            $data = [pscustomobject]$hash
+            $data = [PSCustomObject]$hash
 
             try {
                 $data | Export-Clixml -Path $filePathXml -ErrorAction Stop

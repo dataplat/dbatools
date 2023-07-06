@@ -114,7 +114,7 @@ function Copy-DbaSpConfigure {
                 $sConfiguredValue = $sourceProp.ConfiguredValue
                 $requiresRestart = $sourceProp.IsDynamic
 
-                $copySpConfigStatus = [pscustomobject]@{
+                $copySpConfigStatus = [PSCustomObject]@{
                     SourceServer      = $sourceServer.Name
                     DestinationServer = $destServer.Name
                     Name              = $sConfigName

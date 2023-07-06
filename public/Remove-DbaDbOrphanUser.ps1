@@ -210,7 +210,7 @@ function Remove-DbaDbOrphanUser {
                                                     if ($Pscmdlet.ShouldProcess($db.Name, "Changing schema '$($sch.Name)' owner to 'dbo'. -Force used.")) {
                                                         $AlterSchemaOwner += "ALTER AUTHORIZATION ON SCHEMA::[$($sch.Name)] TO [dbo]$eol"
 
-                                                        [pscustomobject]@{
+                                                        [PSCustomObject]@{
                                                             ComputerName      = $server.ComputerName
                                                             InstanceName      = $server.ServiceName
                                                             SqlInstance       = $server.DomainInstanceName
@@ -233,7 +233,7 @@ function Remove-DbaDbOrphanUser {
                                                     if ($Pscmdlet.ShouldProcess($db.Name, "Dropping schema '$($sch.Name)'.")) {
                                                         $DropSchema += "DROP SCHEMA [$($sch.Name)]"
 
-                                                        [pscustomobject]@{
+                                                        [PSCustomObject]@{
                                                             ComputerName      = $server.ComputerName
                                                             InstanceName      = $server.ServiceName
                                                             SqlInstance       = $server.DomainInstanceName
@@ -250,7 +250,7 @@ function Remove-DbaDbOrphanUser {
                                                     if ($Pscmdlet.ShouldProcess($db.Name, "Changing schema '$($sch.Name)' owner to 'dbo'.")) {
                                                         $AlterSchemaOwner += "ALTER AUTHORIZATION ON SCHEMA::[$($sch.Name)] TO [dbo]$eol"
 
-                                                        [pscustomobject]@{
+                                                        [PSCustomObject]@{
                                                             ComputerName      = $server.ComputerName
                                                             InstanceName      = $server.ServiceName
                                                             SqlInstance       = $server.DomainInstanceName

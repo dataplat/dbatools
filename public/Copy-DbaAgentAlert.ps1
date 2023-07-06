@@ -116,7 +116,7 @@ function Copy-DbaAgentAlert {
 
             if ($IncludeDefaults -eq $true) {
                 if ($PSCmdlet.ShouldProcess($destinstance, "Creating Alert Defaults")) {
-                    $copyAgentAlertStatus = [pscustomobject]@{
+                    $copyAgentAlertStatus = [PSCustomObject]@{
                         SourceServer      = $sourceServer.Name
                         DestinationServer = $destServer.Name
                         Name              = "Alert Defaults"
@@ -137,7 +137,7 @@ function Copy-DbaAgentAlert {
                     } catch {
                         $copyAgentAlertStatus.Status = "Failed"
                         $copyAgentAlertStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                        Write-Message -Level Verbose -Message "Issue creating alert defaults on $destinstance | $PSitem"
+                        Write-Message -Level Verbose -Message "Issue creating alert defaults on $destinstance | $PSItem"
                     }
                 }
             }
@@ -146,7 +146,7 @@ function Copy-DbaAgentAlert {
 
             foreach ($serverAlert in $serverAlerts) {
                 $alertName = $serverAlert.name
-                $copyAgentAlertStatus = [pscustomobject]@{
+                $copyAgentAlertStatus = [PSCustomObject]@{
                     SourceServer      = $sourceServer.Name
                     DestinationServer = $destServer.Name
                     Name              = $alertName
@@ -255,7 +255,7 @@ function Copy-DbaAgentAlert {
 
                 # JobId = 00000000-0000-0000-0000-000 means the Alert does not execute/is attached to a SQL Agent Job.
                 if ($serverAlert.JobId -ne '00000000-0000-0000-0000-000000000000') {
-                    $copyAgentAlertStatus = [pscustomobject]@{
+                    $copyAgentAlertStatus = [PSCustomObject]@{
                         SourceServer      = $sourceServer.Name
                         DestinationServer = $destServer.Name
                         Name              = $alertName
@@ -289,7 +289,7 @@ function Copy-DbaAgentAlert {
 
                 if ($PSCmdlet.ShouldProcess($destinstance, "Moving Notifications $alertName")) {
                     try {
-                        $copyAgentAlertStatus = [pscustomobject]@{
+                        $copyAgentAlertStatus = [PSCustomObject]@{
                             SourceServer      = $sourceServer.Name
                             DestinationServer = $destServer.Name
                             Name              = $alertName

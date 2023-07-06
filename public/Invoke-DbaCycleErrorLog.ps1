@@ -108,7 +108,7 @@ function Invoke-DbaCycleErrorLog {
                 $logs = $logToCycle -join ','
                 if ($Pscmdlet.ShouldProcess($server, "Cycle the log(s): $logs")) {
                     $null = $server.Query($sql)
-                    [pscustomobject]@{
+                    [PSCustomObject]@{
                         ComputerName = $server.ComputerName
                         InstanceName = $server.ServiceName
                         SqlInstance  = $server.DomainInstanceName
@@ -118,7 +118,7 @@ function Invoke-DbaCycleErrorLog {
                     }
                 }
             } catch {
-                [pscustomobject]@{
+                [PSCustomObject]@{
                     ComputerName = $server.ComputerName
                     InstanceName = $server.ServiceName
                     SqlInstance  = $server.DomainInstanceName

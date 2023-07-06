@@ -83,7 +83,7 @@ function Get-DbaPfDataCollectorSetTemplate {
                             ($dataset.Name -match $Pattern) -or
                             ($dataset.Description -match $Pattern)
                         ) {
-                            [pscustomobject]@{
+                            [PSCustomObject]@{
                                 Name        = $dataset.name
                                 Source      = $meta.Source
                                 UserAccount = $dataset.useraccount
@@ -93,7 +93,7 @@ function Get-DbaPfDataCollectorSetTemplate {
                             } | Select-DefaultView -ExcludeProperty File, Path
                         }
                     } else {
-                        [pscustomobject]@{
+                        [PSCustomObject]@{
                             Name        = $dataset.name
                             Source      = $meta.Source
                             UserAccount = $dataset.useraccount

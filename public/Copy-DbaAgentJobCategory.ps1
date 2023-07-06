@@ -128,7 +128,7 @@ function Copy-DbaAgentJobCategory {
                 foreach ($jobCategory in $serverJobCategories) {
                     $categoryName = $jobCategory.Name
 
-                    $copyJobCategoryStatus = [pscustomobject]@{
+                    $copyJobCategoryStatus = [PSCustomObject]@{
                         SourceServer      = $sourceServer.Name
                         DestinationServer = $destServer.Name
                         Name              = $categoryName
@@ -206,7 +206,7 @@ function Copy-DbaAgentJobCategory {
                 foreach ($operatorCategory in $serverOperatorCategories) {
                     $categoryName = $operatorCategory.Name
 
-                    $copyOperatorCategoryStatus = [pscustomobject]@{
+                    $copyOperatorCategoryStatus = [PSCustomObject]@{
                         SourceServer      = $sourceServer.Name
                         DestinationServer = $destServer.Name
                         Type              = "Agent Operator Category"
@@ -294,7 +294,7 @@ function Copy-DbaAgentJobCategory {
                 foreach ($alertCategory in $serverAlertCategories) {
                     $categoryName = $alertCategory.Name
 
-                    $copyAlertCategoryStatus = [pscustomobject]@{
+                    $copyAlertCategoryStatus = [PSCustomObject]@{
                         SourceServer      = $sourceServer.Name
                         DestinationServer = $destServer.Name
                         Type              = "Agent Alert Category"

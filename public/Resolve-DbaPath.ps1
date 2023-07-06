@@ -48,7 +48,7 @@ function Resolve-DbaPath {
         PS C:\> Resolve-DbaPath -Path ..\*
 
         This will resolve all items in the parent folder, whatever the current path or drive might be.
-#>
+    #>
     [CmdletBinding()]
     param (
         [Parameter(Mandatory = $true, ValueFromPipeline = $true)]

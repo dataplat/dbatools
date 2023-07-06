@@ -138,7 +138,7 @@ function Set-DbaExtendedProtection {
                 Set-ItemProperty -Path $regPath -Name ExtendedProtection -Value $Value
                 $extendedProtection = (Get-ItemProperty -Path $regPath -Name ExtendedProtection).ExtendedProtection
 
-                [pscustomobject]@{
+                [PSCustomObject]@{
                     ComputerName       = $env:COMPUTERNAME
                     InstanceName       = $args[2]
                     SqlInstance        = $args[1]
