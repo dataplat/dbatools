@@ -70,11 +70,11 @@ function Disable-DbaReplPublishing {
 
             $replServer = Get-DbaReplServer -SqlInstance $instance -SqlCredential $SqlCredential
 
-            Write-Message -Level Verbose -Message "Disabling publishing for $instance"
+            Write-Message -Level Verbose -Message "Disabling and removing publishing for $instance"
 
             if ($replServer.IsPublisher) {
                 try {
-                    if ($PSCmdlet.ShouldProcess($instance, "Disabling publishing on $instance")) {
+                    if ($PSCmdlet.ShouldProcess($instance, "Disabling and removing publishing on $instance")) {
                         $replServer.DistributionPublishers.Remove($Force)
                     }
 
