@@ -53,9 +53,9 @@ function Enable-DbaReplPublishing {
         Attempts to set the procedure '[dbo].[StartUpProc1]' in the master database of SqlBox1\Instance2 for automatic execution when the instance is started.
 
     #>
-    [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess, ConfirmImpact = 'Medium')]
+    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'Medium')]
     param (
-        [parameter(Mandatory, ValueFromPipeline)]
+        [Parameter(Mandatory, ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [string]$SnapshotShare,
@@ -64,30 +64,29 @@ function Enable-DbaReplPublishing {
     )
     process {
         foreach ($instance in $SqlInstance) {
-            try {
-                $replServer = Get-DbaReplServer -SqlInstance $instance -SqlCredential $SqlCredential
-            } catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
-            }
+
+            $replServer = Get-DbaReplServer -SqlInstance $instance -SqlCredential $SqlCredential
+
             Write-Message -Level Verbose -Message "Enabling replication publishing for $instance"
 
-            try {
-                if ($PSCmdlet.ShouldProcess($instance, "Enabling publishing on $instance")) {
-
-                    if ($replServer.IsDistributor) {
+            if ($replServer.IsDistributor) {
+                try {
+                    if ($PSCmdlet.ShouldProcess($instance, "Getting distribution information on $instance")) {
 
                         $distPublisher = New-Object Microsoft.SqlServer.Replication.DistributionPublisher
                         $distPublisher.ConnectionContext = $replServer.ConnectionContext
                         $distPublisher.Name = $instance
                         $distPublisher.DistributionDatabase = $replServer.DistributionDatabases.Name
 
-                        if (-not $PSBoundParameters.SnapshotShare) {
+                        if (Test-Bound SnapshotShare -Not) {
                             $SnapshotShare = Join-Path (Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential).InstallDataDirectory 'ReplData'
                             Write-Message -Level Verbose -Message ('No snapshot share specified, using default of {0}' -f $SnapshotShare)
                         }
 
                         $distPublisher.WorkingDirectory = $SnapshotShare
+                    }
 
+                    if ($PSCmdlet.ShouldProcess($instance, "Configuring PublisherSecurity on $instance")) {
                         if ($PublisherSqlLogin) {
                             Write-Message -Level Verbose -Message "Configuring with a SQLLogin for PublisherSecurity"
                             $distPublisher.PublisherSecurity.WindowsAuthentication = $false
@@ -98,21 +97,23 @@ function Enable-DbaReplPublishing {
                             Write-Message -Level Verbose -Message "Configuring with WindowsAuth for PublisherSecurity"
                             $distPublisher.PublisherSecurity.WindowsAuthentication = $true
                         }
+                    }
 
+                    if ($PSCmdlet.ShouldProcess($instance, "Enable publishing on $instance")) {
                         Write-Message -Level Debug -Message $distPublisher
                         # lots more properties to add as params
                         $distPublisher.Create()
-                    } else {
-                        Stop-Function -Message "$instance isn't currently enabled for distributing. Please enable that first." -ErrorRecord $_ -Target $instance -Continue
+
+                        $replServer.Refresh()
+                        $replServer
                     }
+
+                } catch {
+                    Stop-Function -Message "Unable to enable replication publishing" -ErrorRecord $_ -Target $instance -Continue
                 }
-            } catch {
-                Stop-Function -Message "Unable to enable replication publishing" -ErrorRecord $_ -Target $instance -Continue
+            } else {
+                Stop-Function -Message "$instance isn't currently enabled for distributing. Please enable that first." -ErrorRecord $_ -Target $instance -Continue
             }
-
-            $replServer.Refresh()
-            $replServer
-
         }
     }
 }
