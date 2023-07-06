@@ -54,9 +54,9 @@ function Enable-DbaReplDistributor {
         Enables distribution for the mssql1 instance and names the distribution database repDatabase.
 
     #>
-    [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess, ConfirmImpact = 'Medium')]
+    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'Medium')]
     param (
-        [parameter(Mandatory, ValueFromPipeline)]
+        [Parameter(Mandatory, ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [string]$DistributionDatabase = 'distribution',
@@ -64,11 +64,9 @@ function Enable-DbaReplDistributor {
     )
     process {
         foreach ($instance in $SqlInstance) {
-            try {
-                $replServer = Get-DbaReplServer -SqlInstance $instance -SqlCredential $SqlCredential
-            } catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
-            }
+
+            $replServer = Get-DbaReplServer -SqlInstance $instance -SqlCredential $SqlCredential
+
             Write-Message -Level Verbose -Message "Enabling replication distribution for $instance"
 
             try {
