@@ -88,7 +88,7 @@ function Disable-DbaReplDistributor {
                 $replServer
 
             } else {
-                Stop-Function -Message "$instance isn't currently enabled for distributing." -ErrorRecord $_ -Target $instance -Continue
+                Stop-Function -Message "$instance isn't currently enabled for distributing." -Target $instance -Continue
             }
         }
     }

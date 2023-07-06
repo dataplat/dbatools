@@ -56,11 +56,10 @@ function Disable-DbaReplPublishing {
 
         Specifies force so all the replication objects associated with the Publisher are dropped even
         if the Publisher is on a remote server that cannot be reached.
-
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High')]
     param (
-        [parameter(Mandatory, ValueFromPipeline)]
+        [Parameter(Mandatory, ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [switch]$Force,
@@ -68,11 +67,9 @@ function Disable-DbaReplPublishing {
     )
     process {
         foreach ($instance in $SqlInstance) {
-            try {
-                $replServer = Get-DbaReplServer -SqlInstance $instance -SqlCredential $SqlCredential
-            } catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
-            }
+
+            $replServer = Get-DbaReplServer -SqlInstance $instance -SqlCredential $SqlCredential
+
             Write-Message -Level Verbose -Message "Disabling publishing for $instance"
 
             if ($replServer.IsPublisher) {
@@ -88,7 +85,7 @@ function Disable-DbaReplPublishing {
                     Stop-Function -Message "Unable to disable replication publishing" -ErrorRecord $_ -Target $instance -Continue
                 }
             } else {
-                Stop-Function -Message "$instance isn't currently enabled for publishing." -Continue -ContinueLabel main -Target $instance -Category InvalidData
+                Stop-Function -Message "$instance isn't currently enabled for publishing." -Continue -ContinueLabel main -Target $instance -Category ObjectNotFound
             }
         }
     }
