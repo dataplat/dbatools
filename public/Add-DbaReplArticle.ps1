@@ -30,7 +30,7 @@ function Add-DbaReplArticle {
         The name of the object to add as an article.
 
     .PARAMETER Filter
-        Horizontal filter for replication, implemented as a where clause, but don't include the word WHERE>
+        Sets the where clause used to filter the article horizontally, e.g., DiscontinuedDate IS NULL
         E.g. City = 'Seattle'
 
     .PARAMETER CreationScriptOptions
