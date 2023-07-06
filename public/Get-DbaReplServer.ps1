@@ -69,7 +69,7 @@ function Get-DbaReplServer {
 
                 Select-DefaultView -InputObject $replServer -Property ComputerName, InstanceName, SqlInstance, IsDistributor, IsPublisher, DistributionServer, DistributionDatabase
             } catch {
-                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
         }
     }
