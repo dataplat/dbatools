@@ -132,7 +132,11 @@ function Add-DbaReplArticle {
 
                     $pub = Get-DbaReplPublication -SqlInstance $instance -SqlCredential $SqlCredential -Name $Publication -EnableException:$EnableException
                 }
+            } catch {
+                Stop-Function -Message "Unable to get publication $Publication on $instance" -ErrorRecord $_ -Target $instance -Continue
+            }
 
+            try {
                 if ($PSCmdlet.ShouldProcess($instance, "Create an article object for $Publication which is a $($pub.Type) publication")) {
 
                     $articleOptions = New-Object Microsoft.SqlServer.Replication.ArticleOptions
@@ -152,7 +156,11 @@ function Add-DbaReplArticle {
                     $article.SourceObjectOwner = $Schema
                     $article.PublicationName = $Publication
                 }
+            } catch {
+                Stop-Function -Message "Unable to create article object for $Name to add to $Publication on $instance" -ErrorRecord $_ -Target $instance -Continue
+            }
 
+            try {
                 if ($CreationScriptOptions) {
                     if ($PSCmdlet.ShouldProcess($instance, "Add creation options for article: $Name")) {
                         $article.SchemaOption = $CreationScriptOptions
