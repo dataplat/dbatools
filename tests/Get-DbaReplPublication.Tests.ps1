@@ -19,8 +19,9 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
                 [object]@{
                     Name              = 'TestDB'
                     TransPublications = @{
-                        Name = 'TestDB_pub'
-                        Type = 'Transactional'
+                        Name         = 'TestDB_pub'
+                        Type         = 'Transactional'
+                        DatabaseName = 'TestDB'
                     }
                     MergePublications = @{}
                 }
@@ -28,16 +29,20 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
 
             Mock Connect-DbaInstance -MockWith {
                 [object]@{
-                    Name              = "MockServerName"
-                    ComputerName      = 'MockComputerName'
-                    Databases         = @{
+                    Name               = "MockServerName"
+                    ServiceName        = 'MSSQLSERVER'
+                    DomainInstanceName = 'MockServerName'
+                    ComputerName       = 'MockComputerName'
+                    Databases          = @{
                         Name               = 'TestDB'
                         #state
                         #status
                         ID                 = 5
                         ReplicationOptions = 'Published'
+                        IsAccessible       = $true
+                        IsSystemObject     = $false
                     }
-                    ConnectionContext = @{
+                    ConnectionContext  = @{
                         SqlConnectionObject = 'FakeConnectionContext'
                     }
                 }
@@ -45,12 +50,12 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
 
             It "Honors the SQLInstance parameter" {
                 $Results = Get-DbaReplPublication -SqlInstance MockServerName
-                $Results.Server | Should Be "MockServerName"
+                $Results.SqlInstance | Should Be "MockServerName"
             }
 
             It "Honors the Database parameter" {
                 $Results = Get-DbaReplPublication -SqlInstance MockServerName -Database TestDB
-                $Results.Database | Should Be "TestDB"
+                $Results.DatabaseName | Should Be "TestDB"
             }
 
             It "Honors the Type parameter" {
