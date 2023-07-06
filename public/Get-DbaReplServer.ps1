@@ -67,7 +67,7 @@ function Get-DbaReplServer {
                 $replServer | Add-Member -Type NoteProperty -Name InstanceName -Value $server.ServiceName -Force
                 $replServer | Add-Member -Type NoteProperty -Name SqlInstance -Value $server.DomainInstanceName -Force
 
-                Select-DefaultView -InputObject $replServer -Property ComputerName, InstanceName, SqlInstance, DistributorInstalled, DistributorAvailable, IsDistributor, IsPublisher, HasRemotePublisher, DistributionServer, DistributionDatabase, WorkingDirectory, AgentCheckupInterval, DistributionDatabases, DistributionPublishers, ReplicationDatabases, RegisteredSubscribers
+                Select-DefaultView -InputObject $replServer -Property ComputerName, InstanceName, SqlInstance, IsDistributor, IsPublisher, DistributionServer, DistributionDatabase
             } catch {
                 Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
