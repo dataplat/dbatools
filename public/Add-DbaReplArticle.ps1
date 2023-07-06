@@ -124,9 +124,12 @@ function Add-DbaReplArticle {
             Write-Message -Level Verbose -Message "Adding article $Name to publication $Publication on $instance"
 
             try {
-                if ($PSCmdlet.ShouldProcess($instance, "Adding an article to $Publication")) {
+                if ($PSCmdlet.ShouldProcess($instance, "Get the publication details for $Publication")) {
 
                     $pub = Get-DbaReplPublication -SqlInstance $instance -SqlCredential $SqlCredential -Name $Publication -EnableException:$EnableException
+                }
+
+                if ($PSCmdlet.ShouldProcess($instance, "Create an article object for $Publication which is a $($pub.Type) publication")) {
 
                     $articleOptions = New-Object Microsoft.SqlServer.Replication.ArticleOptions
 
@@ -144,18 +147,24 @@ function Add-DbaReplArticle {
                     $article.SourceObjectName = $Name
                     $article.SourceObjectOwner = $Schema
                     $article.PublicationName = $Publication
+                }
 
-                    if ($CreationScriptOptions) {
+                if ($CreationScriptOptions) {
+                    if ($PSCmdlet.ShouldProcess($instance, "Add creation options for article: $Name")) {
                         $article.SchemaOption = $CreationScriptOptions
                     }
+                }
 
-                    if ($Filter) {
+                if ($Filter) {
+                    if ($PSCmdlet.ShouldProcess($instance, "Add filter for article: $Name")) {
                         if ($Filter -like 'WHERE*') {
                             Stop-Function -Message "Filter should not include the word 'WHERE'" -ErrorRecord $_ -Target $instance -Continue
                         }
                         $article.FilterClause = $Filter
                     }
+                }
 
+                if ($PSCmdlet.ShouldProcess($instance, "Create article: $Name")) {
                     if (-not ($article.IsExistingObject)) {
                         $article.Create()
                     } else {
