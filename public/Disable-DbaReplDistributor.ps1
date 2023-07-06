@@ -67,11 +67,9 @@ function Disable-DbaReplDistributor {
     )
     process {
         foreach ($instance in $SqlInstance) {
-            try {
-                $replServer = Get-DbaReplServer -SqlInstance $instance -SqlCredential $SqlCredential -EnableException:$EnableException
-            } catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
-            }
+
+            $replServer = Get-DbaReplServer -SqlInstance $instance -SqlCredential $SqlCredential -EnableException:$EnableException
+
             Write-Message -Level Verbose -Message "Disabling replication distribution for $instance"
 
             if ($replServer.IsDistributor) {
