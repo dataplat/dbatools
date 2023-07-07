@@ -73,16 +73,16 @@ function Remove-DbaReplSubscription {
         Removes a subscription for the testPub publication on mssql2.pubs.
 
     #>
-    [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess, ConfirmImpact = 'Medium')]
+    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'Medium')]
     param (
-        [parameter(Mandatory, ValueFromPipeline)]
+        [Parameter(Mandatory, ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [parameter(Mandatory)]
+        [Parameter(Mandatory)]
         [DbaInstanceParameter]$PublisherSqlInstance,
         [PSCredential]$PublisherSqlCredential,
         [String]$PublicationDatabase,
-        [parameter(Mandatory)]
+        [Parameter(Mandatory)]
         [String]$PublicationName,
         [String]$SubscriptionDatabase,
         [Switch]$EnableException
@@ -95,12 +95,6 @@ function Remove-DbaReplSubscription {
             Write-Warning "Didn't find a subscription to $PublicationName on $Instance.$Database"
         }
 
-        try {
-            $replServer = Get-DbaReplServer -SqlInstance $PublisherSqlInstance -SqlCredential $PublisherSqlCredential
-        } catch {
-            Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
-        }
-
     }
     process {
         foreach ($instance in $SqlInstance) {
@@ -108,17 +102,16 @@ function Remove-DbaReplSubscription {
             try {
                 if ($PSCmdlet.ShouldProcess($instance, "Removing subscription to $PublicationName from $instance.$SubscriptionDatabase")) {
 
-
                     if ($pub.Type -in ('Transactional', 'Snapshot')) {
 
                         #TODO: Only handles push subscriptions at the moment - need to add pull subscriptions
                         # https://learn.microsoft.com/en-us/sql/relational-databases/replication/delete-a-pull-subscription?view=sql-server-ver16
                         $transSub = New-Object Microsoft.SqlServer.Replication.TransSubscription
-                        $transSub.ConnectionContext = $replServer.ConnectionContext
+                        $transSub.ConnectionContext = $pub.ConnectionContext
                         $transSub.DatabaseName = $PublicationDatabase
                         $transSub.PublicationName = $PublicationName
                         $transSub.SubscriptionDBName = $SubscriptionDatabase
-                        $transSub.SubscriberName = $instance
+                        $transSub.SubscriberName = $instance.Name
 
                         if ($transSub.IsExistingObject) {
                             Write-Message -Level Verbose -Message "Removing the subscription"
@@ -127,22 +120,22 @@ function Remove-DbaReplSubscription {
 
                     } elseif ($pub.Type -eq 'Merge') {
                         $mergeSub = New-Object Microsoft.SqlServer.Replication.MergeSubscription
-                        $mergeSub.ConnectionContext = $replServer.ConnectionContext
+                        $mergeSub.ConnectionContext = $pub.ConnectionContext
                         $mergeSub.DatabaseName = $PublicationDatabase
                         $mergeSub.PublicationName = $PublicationName
                         $mergeSub.SubscriptionDBName = $SubscriptionDatabase
-                        $mergeSub.SubscriberName = $instance
+                        $mergeSub.SubscriberName = $instance.Name
 
                         if ($mergeSub.IsExistingObject) {
                             Write-Message -Level Verbose -Message "Removing the merge subscription"
                             $mergeSub.Remove()
                         } else {
-                            Write-Warning "Didn't find a subscription to $PublicationName on $Instance.$SubscriptionDatabase"
+                            Write-Warning "Didn't find a subscription to $PublicationName on $($Instance.Name).$SubscriptionDatabase"
                         }
                     }
                 }
             } catch {
-                Stop-Function -Message ("Unable to remove subscription - {0}" -f $_) -ErrorRecord $_ -Target $instance -Continue
+                Stop-Function -Message ("Unable to remove subscription - {0}" -f $_) -ErrorRecord $_ -Target $instance.Name -Continue
             }
         }
     }
