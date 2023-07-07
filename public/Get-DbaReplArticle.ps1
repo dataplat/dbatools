@@ -114,7 +114,7 @@ function Get-DbaReplArticle {
                     foreach ($art in $articles) {
                         Add-Member -Force -InputObject $art -MemberType NoteProperty -Name ComputerName -Value $server.ComputerName
                         Add-Member -Force -InputObject $art -MemberType NoteProperty -Name InstanceName -Value $server.ServiceName
-                        Add-Member -Force -InputObject $art -MemberType NoteProperty -Name SqlInstance -Value $server.DomainInstanceName
+                        Add-Member -Force -InputObject $art -MemberType NoteProperty -Name SqlInstance -Value $server
 
                         Select-DefaultView -InputObject $art -Property ComputerName, InstanceName, SqlInstance, DatabaseName, PublicationName, Name, Type, VerticalPartition, SourceObjectOwner, SourceObjectName #, DestinationObjectOwner, DestinationObjectName
                     }

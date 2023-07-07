@@ -135,7 +135,7 @@ function Get-DbaReplPublication {
 
                         Add-Member -Force -InputObject $pub -MemberType NoteProperty -Name ComputerName -Value $server.ComputerName
                         Add-Member -Force -InputObject $pub -MemberType NoteProperty -Name InstanceName -Value $server.ServiceName
-                        Add-Member -Force -InputObject $pub -MemberType NoteProperty -Name SQLInstance -Value $server.DomainInstanceName
+                        Add-Member -Force -InputObject $pub -MemberType NoteProperty -Name SQLInstance -Value $server
                         Add-Member -Force -InputObject $pub -MemberType NoteProperty -Name Articles -Value $articles
                         Add-Member -Force -InputObject $pub -MemberType NoteProperty -Name Subscriptions -Value $subscriptions
 
