@@ -128,7 +128,7 @@ function Remove-DbaReplArticle {
 
                     $pub = Get-DbaReplPublication -SqlInstance $art.SqlInstance -SqlCredential $SqlCredential -Database $art.DatabaseName -Name $art.PublicationName
 
-                    if ($pub.Subscriptions) {
+                    if (($pub.Subscriptions | Measure-Object).count -gt 0 ) {
                         Write-Message -Level Verbose -Message ("There is a subscription so remove article {0} from subscription on {1}" -f $art.Name, $pub.Subscriptions.SubscriberName)
                         $query = "exec sp_dropsubscription @publication = '{0}', @article= '{1}',@subscriber = '{2}'" -f $art.PublicationName, $art.Name, $pub.Subscriptions.SubscriberName
                         Invoke-DbaQuery -SqlInstance $art.SqlInstance -SqlCredential $SqlCredential -Database $art.DatabaseName -query $query
