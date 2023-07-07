@@ -42,7 +42,24 @@ function Get-DbaReplSubscription {
         https://dbatools.io/Get-DbaReplSubscription
 
     .EXAMPLE
-        PS C:\> #TODO: add example
+        PS C:\> Get-DbaReplSubscription -SqlInstance mssql1
+
+        Return all subscriptions for all publications on server mssql1.
+
+    .EXAMPLE
+        PS C:\> Get-DbaReplSubscription -SqlInstance mssql1 -Database TestDB
+
+        Return all subscriptions for all publications on server mssql1 for only the TestDB database.
+
+    .EXAMPLE
+        PS C:\> Get-DbaReplSubscription -SqlInstance mssql1 -Name Mergey
+
+        Return all subscriptions for the publication Mergey on server mssql1.
+
+    .EXAMPLE
+        PS C:\> Get-DbaReplSubscription -SqlInstance mssql1 -Type Transactional
+
+        Return all subscriptions for all transactional publications on server mssql1.
 
     #>
     [CmdletBinding()]
@@ -51,7 +68,7 @@ function Get-DbaReplSubscription {
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [object[]]$Database,
-        [String]$Name,
+        [String[]]$Name,
         [Alias("PublicationType")]
         [ValidateSet("Push", "Pull")]
         [object[]]$Type,
@@ -59,26 +76,44 @@ function Get-DbaReplSubscription {
     )
     process {
         if (Test-FunctionInterrupt) { return }
-        foreach ($instance in $SqlInstance) {
 
-            # Connect to Publisher
+        foreach ($instance in $SqlInstance) {
             try {
-                $replServer = Get-DbaReplServer -SqlInstance $instance -SqlCredential $SqlCredential
+                $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential
             } catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
-            # Get all subscriptions
-            $transSub = New-Object Microsoft.SqlServer.Replication.TransSubscription
-            $transSub.ConnectionContext = $replServer.ConnectionContext
-            $transSub.EnumSubscriptions()
+            try {
+                $publications = Get-DbaReplPublication -SqlInstance $server
 
+                if ($Database) {
+                    $publications = $publications | Where-Object DatabaseName -in $Database
+                }
 
-            #TODO: finish this function
-            # can we get subscriptions by passing in subscription server mssql2 ... or do we need to start at the publisher
-            # get-publications --> subscriptions info is in there
+                if ($Name) {
+                    $publications = $publications | Where-Object Name -in $Name
+                }
 
+            } catch {
+                Stop-Function -Message "Error occurred while getting publications from $instance" -ErrorRecord $_ -Target $instance -Continue
+            }
 
+            try {
+                foreach ($subs in $publications.Subscriptions) {
+                    Write-Message -Level Verbose -Message ('Get subscriptions for {0}' -f $sub.PublicationName)
+
+                    foreach ($sub in $subs) {
+                        Add-Member -Force -InputObject $sub -MemberType NoteProperty -Name ComputerName -Value $server.ComputerName
+                        Add-Member -Force -InputObject $sub -MemberType NoteProperty -Name InstanceName -Value $server.ServiceName
+                        Add-Member -Force -InputObject $sub -MemberType NoteProperty -Name SqlInstance -Value $server.DomainInstanceName
+
+                        Select-DefaultView -InputObject $sub -Property ComputerName, InstanceName, SqlInstance, DatabaseName, PublicationName, Name, SubscriberName, SubscriptionDBName, SubscriptionType
+                    }
+                }
+            } catch {
+                Stop-Function -Message "Error occurred while getting subscriptions from $instance" -ErrorRecord $_ -Target $instance -Continue
+            }
         }
     }
 }
