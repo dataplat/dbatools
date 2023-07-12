@@ -9,18 +9,24 @@ function Get-DbaReplSubscription {
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.
 
-    .PARAMETER Database
-        The database(s) to process. If unspecified, all databases will be processed.
-
-    .PARAMETER Name
-        The name of the publication.
-
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
 
         Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
 
         For MFA support, please use Connect-DbaInstance.
+
+    .PARAMETER Database
+        The database(s) to process. If unspecified, all databases will be processed.
+
+    .PARAMETER Name
+        The name of the publication.
+
+    .PARAMETER SubscriberName
+        The subscriber SQL Server instance name.
+
+    .PARAMETER SubscriptionDatabase
+        The name of the subscription database.
 
     .PARAMETER Type
         Limit by specific type of publication. Valid choices include: Transactional, Merge, Snapshot
@@ -61,18 +67,30 @@ function Get-DbaReplSubscription {
 
         Return all subscriptions for all transactional publications on server mssql1.
 
+    .EXAMPLE
+        PS C:\> Get-DbaReplSubscription -SqlInstance mssql1 -SubscriberName mssql2
+
+        Return all subscriptions for all publications on server mssql1 where the subscriber is mssql2.
+
+    .EXAMPLE
+        PS C:\> Get-DbaReplSubscription -SqlInstance mssql1 -SubscriptionDatabase TestDB
+
+        Return all subscriptions for all publications on server mssql1 where the subscription database is TestDB.
+
     #>
     [CmdletBinding()]
     param (
-        [parameter(Mandatory, ValueFromPipeline)]
+        [Parameter(Mandatory, ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [object[]]$Database,
-        [string[]]$Name,
+        [Object[]]$Database,
+        [String[]]$Name,
+        [DbaInstanceParameter[]]$SubscriberName,
+        [Object[]]$SubscriptionDatabase,
         [Alias("PublicationType")]
         [ValidateSet("Push", "Pull")]
-        [object[]]$Type,
-        [switch]$EnableException
+        [Object[]]$Type,
+        [Switch]$EnableException
     )
     process {
         if (Test-FunctionInterrupt) { return }
@@ -102,6 +120,14 @@ function Get-DbaReplSubscription {
             try {
                 foreach ($subs in $publications.Subscriptions) {
                     Write-Message -Level Verbose -Message ('Get subscriptions for {0}' -f $sub.PublicationName)
+
+                    if ($SubscriberName) {
+                        $subs = $subs | Where-Object SubscriberName -eq $SubscriberName
+                    }
+
+                    if ($SubscriptionDatabase) {
+                        $subs = $subs | Where-Object SubscriptionDBName -eq $SubscriptionDatabase
+                    }
 
                     foreach ($sub in $subs) {
                         Add-Member -Force -InputObject $sub -MemberType NoteProperty -Name ComputerName -Value $server.ComputerName
