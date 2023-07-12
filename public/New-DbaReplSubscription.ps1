@@ -64,9 +64,14 @@ function New-DbaReplSubscription {
         https://dbatools.io/New-DbaReplSubscription
 
     .EXAMPLE
-        PS C:\> New-DbaReplSubscription -SqlInstance mssql1 -Database Northwind -PublicationName PubFromPosh
+        PS C:\> New-DbaReplicationSubscription -SqlInstance sql2017 -Database pubs -PublisherSqlInstance sql2016 -PublicationDatabase pubs -PublicationName testPub -Type Push
 
-        Creates a publication called PubFromPosh for the Northwind database on mssql1
+        Creates a push subscription for the pubs database on sql2017 to the testPub publication on sql2016
+
+    .EXAMPLE
+        PS C:\> New-DbaReplicationSubscription -SqlInstance sql2017 -Database pubs -PublisherSqlInstance sql2016 -PublicationDatabase pubs -PublicationName testPub -Type Pull
+
+        Creates a pull subscription for the pubs database on sql2017 to the testPub publication on sql2016
 
     #>
     [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess, ConfirmImpact = 'Medium')]
