@@ -76,19 +76,19 @@ function New-DbaReplSubscription {
     #>
     [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess, ConfirmImpact = 'Medium')]
     param (
-        [parameter(Mandatory, ValueFromPipeline)]
+        [Parameter(Mandatory, ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [String]$Database,
-        [parameter(Mandatory)]
+        [Parameter(Mandatory)]
         [DbaInstanceParameter]$PublisherSqlInstance,
         [PSCredential]$PublisherSqlCredential,
         [String]$PublicationDatabase,
-        [parameter(Mandatory)]
+        [Parameter(Mandatory)]
         [String]$PublicationName,
         [PSCredential]
         $SubscriptionSqlCredential,
-        [parameter(Mandatory)]
+        [Parameter(Mandatory)]
         [ValidateSet("Push", "Pull")]
         [String]$Type,
         [Switch]$EnableException
@@ -100,13 +100,13 @@ function New-DbaReplSubscription {
         try {
             $pubReplServer = Get-DbaReplServer -SqlInstance $PublisherSqlInstance -SqlCredential $PublisherSqlCredential
         } catch {
-            Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+            Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $PublisherSqlInstance -Continue
         }
 
         try {
-            $pub = Get-DbaReplPublication -SqlInstance $PublisherSqlInstance -SqlCredential $PublisherSqlCredential -Name $PublicationName
+            $pub = Get-DbaReplPublication -SqlInstance $PublisherSqlInstance -SqlCredential $PublisherSqlCredential -Name $PublicationName -EnableException
         } catch {
-            Stop-Function -Message ("Publication {0} not found on {1}" -f $PublicationName, $instance) -ErrorRecord $_ -Target $instance -Continue
+            Stop-Function -Message ("Publication {0} not found on {1}" -f $PublicationName, $PublisherSqlInstance) -ErrorRecord $_ -Target $PublisherSqlInstance -Continue
         }
     }
 
