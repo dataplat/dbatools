@@ -116,7 +116,7 @@ function New-DbaReplSubscription {
         foreach ($instance in $SqlInstance) {
 
             try {
-                $subReplServer = get-DbaReplServer -SqlInstance $instance -SqlCredential $SqlCredential
+                $subReplServer = Get-DbaReplServer -SqlInstance $instance -SqlCredential $SqlCredential
 
                 if (-not (Get-DbaDatabase -SqlInstance $instance -SqlCredential $SqlCredential -Database $Database)) {
                     Write-Message -Level Verbose -Message "Subscription database $Database not found on $instance - will create it - but you should check the settings!"

@@ -456,13 +456,13 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
             It "Get-DbaReplArticle gets all the articles from a server" {
                 $getArt = Get-DbaReplArticle
                 $getArt | Should -Not -BeNullOrEmpty
-                $getArt | ForEach-Object { $_.SqlInstance | Should -Be 'mssql1' }
+                $getArt | ForEach-Object { $_.SqlInstance.name | Should -Be 'mssql1' }
             }
 
             It "Get-DbaReplArticle gets all the articles from a particular database on a server" {
                 $getArt = Get-DbaReplArticle -Database ReplDb
                 $getArt | Should -Not -BeNullOrEmpty
-                $getArt | ForEach-Object { $_.SqlInstance | Should -Be 'mssql1' }
+                $getArt | ForEach-Object { $_.SqlInstance.Name | Should -Be 'mssql1' }
                 $getArt | ForEach-Object { $_.DatabaseName | Should -Be 'ReplDb' }
             }
 
@@ -594,13 +594,13 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
             It "Gets all column information for a server" {
                 $cols = Get-DbaReplArticleColumn
                 $cols | Should -Not -BeNullOrEmpty
-                $cols.SqlInstance | ForEach-Object { $_ | Should -Be 'mssql1' }
+                $cols.SqlInstance | ForEach-Object { $_.Name | Should -Be 'mssql1' }
             }
 
             It "Gets all column information for specific database on a server" {
                 $cols = Get-DbaReplArticleColumn -Database ReplDb
                 $cols | Should -Not -BeNullOrEmpty
-                $cols.SqlInstance | ForEach-Object { $_ | Should -Be 'mssql1' }
+                $cols.SqlInstance | ForEach-Object { $_.Name | Should -Be 'mssql1' }
                 $cols.DatabaseName | ForEach-Object { $_ | Should -Be 'ReplDb' }
             }
 
@@ -608,7 +608,7 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
                 $pubname = 'TestTrans'
                 $cols = Get-DbaReplArticleColumn -Publication $pubname
                 $cols | Should -Not -BeNullOrEmpty
-                $cols.SqlInstance | ForEach-Object { $_ | Should -Be 'mssql1' }
+                $cols.SqlInstance | ForEach-Object { $_.Name | Should -Be 'mssql1' }
                 $cols.PublicationName | ForEach-Object { $_ | Should -Be $pubname }
             }
 
@@ -616,7 +616,7 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
                 $pubname = 'TestTrans'
                 $cols = Get-DbaReplArticleColumn -Publication $pubname -Article $articleName
                 $cols | Should -Not -BeNullOrEmpty
-                $cols.SqlInstance | ForEach-Object { $_ | Should -Be 'mssql1' }
+                $cols.SqlInstance | ForEach-Object { $_.Name | Should -Be 'mssql1' }
                 $cols.ArticleName | ForEach-Object { $_ | Should -Be $articleName }
             }
 
@@ -624,7 +624,7 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
                 $pubname = 'TestTrans'
                 $cols = Get-DbaReplArticleColumn -Publication $pubname -Column 'col1'
                 $cols | Should -Not -BeNullOrEmpty
-                $cols.SqlInstance | ForEach-Object { $_ | Should -Be 'mssql1' }
+                $cols.SqlInstance | ForEach-Object { $_.Name | Should -Be 'mssql1' }
                 $cols.ColumnName | ForEach-Object { $_ | Should -Be 'col1' }
             }
         }
@@ -663,35 +663,101 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
             if (-not (Get-DbaReplPublication -Name $pubname -Type Merge)) {
                 $null = New-DbaReplPublication -Database ReplDb -Type Merge -Name $pubname
             }
-            if (-not (Get-DbaReplArticle -Database ReplDb -Publication $pubname -Name $articleName)) {
-                $null = Add-DbaReplArticle -Database ReplDb -Publication $pubname -Name $articleName
-            }
         }
 
-        Context "New-DbaReplSubscription works" -skip {
+        Context "New-DbaReplSubscription works"  -tag sub {
+            BeforeAll {
+                if (Get-DbaReplSubscription -SqlInstance mssql1 -Name TestTrans -Database ReplDb -SubscriberName mssql2 -SubscriptionDatabase ReplDbTrans) {
+                    Remove-DbaReplSubscription -SqlInstance mssql2 -SubscriptionDatabase ReplDbTrans -PublisherSqlInstance mssql1  -PublicationDatabase ReplDb -PublicationName TestTrans -Confirm:$false -EnableException
+                }
+                if (Get-DbaReplSubscription -SqlInstance mssql1 -Name TestSnap -Database ReplDb -SubscriberName mssql2 -SubscriptionDatabase ReplDbSnap) {
+                    Remove-DbaReplSubscription -SqlInstance mssql2 -SubscriptionDatabase ReplDbSnap -PublisherSqlInstance mssql1  -PublicationDatabase ReplDb -PublicationName TestSnap -Confirm:$false -EnableException
+                }
+            }
             It "Adds a subscription" {
-                { New-DbaReplPublication -SqlInstance 'mssql2' -Database ReplDb -PublicationDatabase ReplDb -Name $pubname -Type 'Push' -EnableException } | Should -Not -Throw
+                #TODO: we are here and broke
+                $pubName = 'TestTrans'
+                #transactional
+                { New-DbaReplSubscription -SqlInstance mssql2 -Database ReplDbTrans -PublisherSqlInstance mssql1 -PublicationDatabase ReplDb -PublicationName $pubName -Type Push -EnableException } | Should -Not -Throw
 
-                #TODO: waiting on get-dbareplsubscription to be implemented
+                $sub = Get-DbaReplSubscription -SqlInstance mssql1 -Name $pubname
+                $sub | Should -Not -BeNullOrEmpty
+                $sub.SqlInstance | ForEach-Object { $_ | Should -Be 'mssql1' }
+                $sub.SubscriberName | ForEach-Object { $_ | Should -Be 'mssql2' }
+                $sub.PublicationName | ForEach-Object { $_ | Should -Be $pubname }
+                $sub.SubscriptionType | ForEach-Object { $_ | Should -Be 'Push' }
+            }
+
+            It "Adds a pull subscription" -tag sub {
+                $pubName = 'TestSnap'
+                { New-DbaReplSubscription -SqlInstance mssql2 -Database ReplDbSnap -PublisherSqlInstance mssql1 -PublicationDatabase ReplDb -PublicationName $pubName -Type Pull -EnableException } | Should -Not -Throw
+
+                $sub = Get-DbaReplSubscription -SqlInstance mssql1 -Name $pubname
+                $sub | Should -Not -BeNullOrEmpty
+                $sub.SqlInstance | ForEach-Object { $_ | Should -Be 'mssql1' }
+                $sub.SubscriberName | ForEach-Object { $_ | Should -Be 'mssql2' }
+                $sub.PublicationName | ForEach-Object { $_ | Should -Be $pubname }
+                $sub.SubscriptionType | ForEach-Object { $_ | Should -Be 'Pull' }
+            }
+
+            It "Throws an error if there are no articles in the publication" {
+                $pubName = 'TestMerge'
+                { New-DbaReplSubscription -SqlInstance mssql2 -Database ReplDb -PublisherSqlInstance mssql1 -PublicationDatabase ReplDb -PublicationName $pubName -Type Pull -EnableException } | Should -Throw
             }
         }
 
-        Context "Remove-DbaReplSubscription works" -skip{
+        Context "Remove-DbaReplSubscription works"{
             BeforeEach {
-                #TODO: check it doesn't exist with get-dbareplsubscription
-                New-DbaReplPublication -SqlInstance 'mssql2' -Database ReplDb -PublicationDatabase ReplDb -Name $pubname -Type 'Push'
+                $pubName = 'TestTrans'
+                if (-not (Get-DbaReplSubscription -SqlInstance mssql1 -Database ReplDb -SubscriptionDatabase ReplDb -Name $pubname -Type Push | Where-Object SubscriberName -eq mssql2)) {
+                    New-DbaReplSubscription -SqlInstance mssql2 -Database ReplDb -PublisherSqlInstance mssql1 -PublicationDatabase ReplDb -PublicationName $pubname -Type Push
+                }
             }
             It "Removes a subscription" {
-                { Remove-DbaReplPublication -SqlInstance 'mssql2' -Database ReplDb -PublicationDatabase ReplDb -Name $pubname -EnableException } | Should -Not -Throw
-
-                #TODO: waiting on get-dbareplsubscription to be implemented
+                Get-DbaReplSubscription -SqlInstance mssql1 -Database ReplDb -SubscriptionDatabase ReplDb -Name $pubname -Type Push | Should -Not -BeNullOrEmpty
+                { Remove-DbaReplSubscription -SqlInstance mssql2 -SubscriptionDatabase ReplDb -PublisherSqlInstance mssql1  -PublicationDatabase ReplDb -PublicationName $pubname -EnableException } | Should -Not -Throw
+                Get-DbaReplSubscription -SqlInstance mssql1 -Database ReplDb -SubscriptionDatabase ReplDb -Name $pubname -Type Push | Where-Object SubscriberName -eq mssql2 | Should -BeNullOrEmpty
             }
+        }
+
+
+        Context "Get-DbaReplSubscription works" {
+            BeforeAll {
+                $pubName = 'TestTrans'
+                if (-not (Get-DbaReplSubscription -Name $pubname -Type Push | Where-Object SubscriberName -eq mssql2)) {
+                    New-DbaReplSubscription -SqlInstance mssql2 -Database ReplDb -PublisherSqlInstance mssql1 -PublicationDatabase ReplDb -PublicationName $pubname -Type Push -enableException
+                }
+                $pubName = 'TestSnap'
+                if (-not (Get-DbaReplSubscription -Name $pubname -Type Push | Where-Object SubscriberName -eq mssql2)) {
+                    New-DbaReplSubscription -SqlInstance mssql2 -Database ReplDb -PublisherSqlInstance mssql1 -PublicationDatabase ReplDb -PublicationName $pubname -Type Push -enableException
+                }
+            }
+
+            It "Gets subscriptions" {
+                $sub = Get-DbaReplSubscription -SqlInstance mssql1
+                $sub | Should -Not -BeNullOrEmpty
+                $sub.SqlInstance | ForEach-Object { $_ | Should -Be 'mssql1' }
+            }
+
+            It "Gets subscriptions to a particular instance" {
+
+            }
+
         }
 
     }
 
-    Describe "Piping" -tag test {
+    Describe "Piping" {
         BeforeAll {
+            # if replication is disabled - enable it
+            if (-not (Get-DbaReplDistributor).IsDistributor) {
+                Enable-DbaReplDistributor
+            }
+            # if publishing is disabled - enable it
+            if (-not (Get-DbaReplServer).IsPublisher) {
+                Enable-DbaReplPublishing -PublisherSqlLogin $cred -EnableException
+            }
+
             # we need some articles too get
             $articleName = 'ReplicateMe'
             $articleName2 = 'ReplicateMeToo'
@@ -699,32 +765,30 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
             # we need some publications too
             $pubName = 'TestTrans'
             if (-not (Get-DbaReplPublication -Name $pubName -Type Transactional)) {
-                $null = New-DbaReplPublication -Database ReplDb -Type Transactional -Name $pubName
+                $null = New-DbaReplPublication -Database ReplDb -Type Transactional -Name $pubName -EnableException
             }
             if (-not (Get-DbaReplArticle -Database ReplDb -Publication $pubName -Name $articleName)) {
-                $null = Add-DbaReplArticle -Database ReplDb -Publication $pubName -Name $articleName
+                $null = Add-DbaReplArticle -Database ReplDb -Publication $pubName -Name $articleName -EnableException
             }
 
             $pubName = 'TestSnap'
             if (-not (Get-DbaReplPublication -Name $pubName -Type Snapshot)) {
-                $null = New-DbaReplPublication -Database ReplDb -Type Snapshot -Name $pubName
+                $null = New-DbaReplPublication -Database ReplDb -Type Snapshot -Name $pubName -EnableException
             }
             if (-not (Get-DbaReplArticle -Database ReplDb -Publication $pubname -Name $articleName)) {
-                $null = Add-DbaReplArticle -Database ReplDb -Publication $pubname -Name $articleName
-                $null = Add-DbaReplArticle -Database ReplDb -Publication $pubname -Name $articleName2
+                $null = Add-DbaReplArticle -Database ReplDb -Publication $pubname -Name $articleName -EnableException
+                $null = Add-DbaReplArticle -Database ReplDb -Publication $pubname -Name $articleName2 -EnableException
             }
 
             $pubName = 'TestMerge'
             if (-not (Get-DbaReplPublication -Name $pubName -Type Merge)) {
-                $null = New-DbaReplPublication -Database ReplDb -Type Merge -Name $pubName
+                $null = New-DbaReplPublication -Database ReplDb -Type Merge -Name $pubName -EnableException
             }
             if (-not (Get-DbaReplArticle -Database ReplDb -Publication $pubname -Name $articleName)) {
-                $null = Add-DbaReplArticle -Database ReplDb -Publication $pubname -Name $articleName
+                $null = Add-DbaReplArticle -Database ReplDb -Publication $pubname -Name $articleName -EnableException
             }
-
             # piping doesn't work well if there are PSDefaultParameterValues set
             $PSDefaultParameterValues = $null
-
         }
 
         Context "Get-DbaReplPublisher works with piping" {
@@ -759,16 +823,16 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
                 $rm = Get-DbaReplArticle -SqlInstance 'mssql1' -SqlCredential $cred -Database ReplDb -Publication $pubName -Name $Name | Remove-DbaReplArticle -Confirm:$false
                 $rm.IsRemoved | ForEach-Object { $_ | Should -Be $true }
                 $rm.Status | ForEach-Object { $_ | Should -Be 'Removed' }
-                #$articleName = Get-DbaReplArticle  -SqlInstance 'mssql1' -SqlCredential $cred -Database ReplDb -Publication $pubName -Name $Name
-                #$articleName | Should -BeNullOrEmpty
+                $articleName = Get-DbaReplArticle  -SqlInstance 'mssql1' -SqlCredential $cred -Database ReplDb -Publication $pubName -Name $Name
+                $articleName | Should -BeNullOrEmpty
             }
         }
 
         Context "Remove-DbaReplPublication works with piping" {
             It "Remove-DbaReplPublication removes a publication using piping" {
                 $name = 'TestMerge'
-                { Get-DbaReplPublication -SqlInstance 'mssql1' -SqlCredential $cred -Name $name | Remove-DbaReplPublication -EnableException } | Should -Not -Throw
-                #(Get-DbaReplPublication -SqlInstance 'mssql1' -SqlCredential $cred -Name $name) | Should -BeNullOrEmpty
+                { Get-DbaReplPublication -SqlInstance 'mssql1' -SqlCredential $cred -Name $name -EnableException | Remove-DbaReplPublication -EnableException } | Should -Not -Throw
+                (Get-DbaReplPublication -SqlInstance 'mssql1' -SqlCredential $cred -Name $name -EnableException) | Should -BeNullOrEmpty
             }
         }
     }

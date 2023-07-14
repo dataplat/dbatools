@@ -81,6 +81,7 @@ function Remove-DbaReplSubscription {
         [Parameter(Mandatory)]
         [DbaInstanceParameter]$PublisherSqlInstance,
         [PSCredential]$PublisherSqlCredential,
+        [Parameter(Mandatory)]
         [String]$PublicationDatabase,
         [Parameter(Mandatory)]
         [String]$PublicationName,
@@ -92,7 +93,7 @@ function Remove-DbaReplSubscription {
         $pub = Get-DbaReplPublication -SqlInstance $PublisherSqlInstance -SqlCredential $PublisherSqlCredential -Name $PublicationName
 
         if (-not $pub) {
-            Write-Warning "Didn't find a subscription to $PublicationName on $Instance.$Database"
+            Write-Warning "Didn't find a subscription to the $PublicationName publication on $PublisherSqlInstance.$Database"
         }
 
     }
@@ -111,7 +112,7 @@ function Remove-DbaReplSubscription {
                         $transSub.DatabaseName = $PublicationDatabase
                         $transSub.PublicationName = $PublicationName
                         $transSub.SubscriptionDBName = $SubscriptionDatabase
-                        $transSub.SubscriberName = $instance.Name
+                        $transSub.SubscriberName = $instance
 
                         if ($transSub.IsExistingObject) {
                             Write-Message -Level Verbose -Message "Removing the subscription"
@@ -124,18 +125,18 @@ function Remove-DbaReplSubscription {
                         $mergeSub.DatabaseName = $PublicationDatabase
                         $mergeSub.PublicationName = $PublicationName
                         $mergeSub.SubscriptionDBName = $SubscriptionDatabase
-                        $mergeSub.SubscriberName = $instance.Name
+                        $mergeSub.SubscriberName = $instance
 
                         if ($mergeSub.IsExistingObject) {
                             Write-Message -Level Verbose -Message "Removing the merge subscription"
                             $mergeSub.Remove()
                         } else {
-                            Write-Warning "Didn't find a subscription to $PublicationName on $($Instance.Name).$SubscriptionDatabase"
+                            Write-Warning "Didn't find a subscription to $PublicationName on $($instance).$SubscriptionDatabase"
                         }
                     }
                 }
             } catch {
-                Stop-Function -Message ("Unable to remove subscription - {0}" -f $_) -ErrorRecord $_ -Target $instance.Name -Continue
+                Stop-Function -Message ("Unable to remove subscription - {0}" -f $_) -ErrorRecord $_ -Target $instance -Continue
             }
         }
     }
