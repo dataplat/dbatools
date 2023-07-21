@@ -10,27 +10,27 @@ function Remove-DbaReplSubscription {
         https://learn.microsoft.com/en-us/sql/relational-databases/replication/delete-a-pull-subscription?view=sql-server-ver16
 
     .PARAMETER SqlInstance
-        The target SQL Server instance or instances.
+        The target publisher SQL Server instance or instances.
 
     .PARAMETER SqlCredential
-        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+        Login to the target publisher instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
 
         Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
 
         For MFA support, please use Connect-DbaInstance.
 
-    .PARAMETER PublisherSqlInstance
-        The publisher SQL Server instance.
-
-    .PARAMETER PublisherSqlCredential
-        Login to the publisher instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
-
-        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
-
-        For MFA support, please use Connect-DbaInstance.
-
-    .PARAMETER PublicationDatabase
+    .PARAMETER Database
         The database where the publication is located.
+
+    .PARAMETER SubscriberSqlInstance
+        The subscriber SQL Server instance.
+
+    .PARAMETER SubscriberSqlCredential
+        Login to the subscriber instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER PublicationName
         The name of the publication.
@@ -62,11 +62,11 @@ function Remove-DbaReplSubscription {
 
     .EXAMPLE
         PS C:\> $sub = @{
-                    SqlInstance          = 'mssql2'
-                    SubscriptionDatabase = 'pubs'
-                    PublisherSqlInstance = 'mssql1'
-                    PublicationDatabase  = 'pubs'
-                    PublicationName      = 'testPub'
+                    SqlInstance           = 'mssql1'
+                    Database              = 'pubs'
+                    PublicationName       = 'testPub'
+                    SubscriberSqlInstance = 'mssql2'
+                    SubscriptionDatabase  = 'pubs'
                     }
         PS C:\> Remove-DbaReplSubscription @sub
 
@@ -79,29 +79,30 @@ function Remove-DbaReplSubscription {
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [Parameter(Mandatory)]
-        [DbaInstanceParameter]$PublisherSqlInstance,
-        [PSCredential]$PublisherSqlCredential,
-        [Parameter(Mandatory)]
-        [String]$PublicationDatabase,
+        [String]$Database,
         [Parameter(Mandatory)]
         [String]$PublicationName,
+        [Parameter(Mandatory)]
+        [DbaInstanceParameter]$SubscriberSqlInstance,
+        [PSCredential]$SubscriberSqlCredential,
+        [Parameter(Mandatory)]
         [String]$SubscriptionDatabase,
         [Switch]$EnableException
     )
     begin {
 
-        $pub = Get-DbaReplPublication -SqlInstance $PublisherSqlInstance -SqlCredential $PublisherSqlCredential -Name $PublicationName
+        $pub = Get-DbaReplPublication -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Name $PublicationName
 
         if (-not $pub) {
-            Write-Warning "Didn't find a subscription to the $PublicationName publication on $PublisherSqlInstance.$Database"
+            Write-Warning "Didn't find a subscription to the $PublicationName publication on $SqlInstance.$Database"
         }
 
     }
     process {
-        foreach ($instance in $SqlInstance) {
+        foreach ($instance in $SubscriberSqlInstance) {
 
             try {
-                if ($PSCmdlet.ShouldProcess($instance, "Removing subscription to $PublicationName from $instance.$SubscriptionDatabase")) {
+                if ($PSCmdlet.ShouldProcess($instance, "Removing subscription to $PublicationName from $SqlInstance.$SubscriptionDatabase")) {
 
                     if ($pub.Type -in ('Transactional', 'Snapshot')) {
 
@@ -109,7 +110,7 @@ function Remove-DbaReplSubscription {
                         # https://learn.microsoft.com/en-us/sql/relational-databases/replication/delete-a-pull-subscription?view=sql-server-ver16
                         $transSub = New-Object Microsoft.SqlServer.Replication.TransSubscription
                         $transSub.ConnectionContext = $pub.ConnectionContext
-                        $transSub.DatabaseName = $PublicationDatabase
+                        $transSub.DatabaseName = $Database
                         $transSub.PublicationName = $PublicationName
                         $transSub.SubscriptionDBName = $SubscriptionDatabase
                         $transSub.SubscriberName = $instance
@@ -122,7 +123,7 @@ function Remove-DbaReplSubscription {
                     } elseif ($pub.Type -eq 'Merge') {
                         $mergeSub = New-Object Microsoft.SqlServer.Replication.MergeSubscription
                         $mergeSub.ConnectionContext = $pub.ConnectionContext
-                        $mergeSub.DatabaseName = $PublicationDatabase
+                        $mergeSub.DatabaseName = $Database
                         $mergeSub.PublicationName = $PublicationName
                         $mergeSub.SubscriptionDBName = $SubscriptionDatabase
                         $mergeSub.SubscriberName = $instance

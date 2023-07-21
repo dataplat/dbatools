@@ -7,30 +7,30 @@ function New-DbaReplSubscription {
         Creates a subscription for the database on the target SQL instances.
 
     .PARAMETER SqlInstance
-        The target SQL Server instance or instances.
+        The target publishing SQL Server instance or instances.
 
     .PARAMETER SqlCredential
-        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+        Login to the target publishing instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
 
         Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
 
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
-        The database that will be replicated.
+        The database on the publisher that will be replicated.
 
-    .PARAMETER PublisherSqlInstance
-        The publisher SQL instance.
+    .PARAMETER SubscriberSqlInstance
+        The subscriber SQL instance.
 
-    .PARAMETER PublisherSqlCredential
-        Login to the publisher instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
+    .PARAMETER SubscriberSqlCredential
+        Login to the subscriber instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
 
         Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
 
         For MFA support, please use Connect-DbaInstance.
 
-    .PARAMETER PublicationDatabase
-        The database on the publisher that is replicated.
+    .PARAMETER SubscriptionDatabase
+        The database on the subscriber that will be the target of the replicated data.
 
     .PARAMETER PublicationName
         The name of the replication publication
@@ -64,26 +64,25 @@ function New-DbaReplSubscription {
         https://dbatools.io/New-DbaReplSubscription
 
     .EXAMPLE
-        PS C:\> New-DbaReplicationSubscription -SqlInstance sql2017 -Database pubs -PublisherSqlInstance sql2016 -PublicationDatabase pubs -PublicationName testPub -Type Push
+        PS C:\> New-DbaReplSubscription -SqlInstance sql2017 -Database pubs -SubscriberSqlInstance sql2019 -SubscriptionDatabase pubs -PublicationName testPub -Type Push
 
-        Creates a push subscription for the pubs database on sql2017 to the testPub publication on sql2016
+        Creates a push subscription from sql2017 to sql2019 for the pubs database.
 
     .EXAMPLE
-        PS C:\> New-DbaReplicationSubscription -SqlInstance sql2017 -Database pubs -PublisherSqlInstance sql2016 -PublicationDatabase pubs -PublicationName testPub -Type Pull
+        PS C:\> New-DbaReplSubscription -SqlInstance sql2017 -Database pubs -SubscriberSqlInstance sql2019 -SubscriptionDatabase pubs -PublicationName testPub -Type Pull
 
-        Creates a pull subscription for the pubs database on sql2017 to the testPub publication on sql2016
-
+        Creates a pull subscription from sql2017 to sql2019 for the pubs database.
     #>
     [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess, ConfirmImpact = 'Medium')]
     param (
         [Parameter(Mandatory, ValueFromPipeline)]
-        [DbaInstanceParameter[]]$SqlInstance,
+        [DbaInstanceParameter]$SqlInstance,
         [PSCredential]$SqlCredential,
         [String]$Database,
         [Parameter(Mandatory)]
-        [DbaInstanceParameter]$PublisherSqlInstance,
-        [PSCredential]$PublisherSqlCredential,
-        [String]$PublicationDatabase,
+        [DbaInstanceParameter[]]$SubscriberSqlInstance,
+        [PSCredential]$SubscriberSqlCredential,
+        [String]$SubscriptionDatabase,
         [Parameter(Mandatory)]
         [String]$PublicationName,
         [PSCredential]
@@ -94,46 +93,46 @@ function New-DbaReplSubscription {
         [Switch]$EnableException
     )
     begin {
-        Write-Message -Level Verbose -Message "Connecting to publisher: $PublisherSqlInstance"
+        Write-Message -Level Verbose -Message "Connecting to publisher: $SqlInstance"
 
         # connect to publisher and get the publication
         try {
-            $pubReplServer = Get-DbaReplServer -SqlInstance $PublisherSqlInstance -SqlCredential $PublisherSqlCredential
+            $pubReplServer = Get-DbaReplServer -SqlInstance $SqlInstance -SqlCredential $SqlCredential
         } catch {
-            Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $PublisherSqlInstance -Continue
+            Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $SqlInstance -Continue
         }
 
         try {
-            $pub = Get-DbaReplPublication -SqlInstance $PublisherSqlInstance -SqlCredential $PublisherSqlCredential -Name $PublicationName -EnableException
+            $pub = Get-DbaReplPublication -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Name $PublicationName -EnableException
         } catch {
-            Stop-Function -Message ("Publication {0} not found on {1}" -f $PublicationName, $PublisherSqlInstance) -ErrorRecord $_ -Target $PublisherSqlInstance -Continue
+            Stop-Function -Message ("Publication {0} not found on {1}" -f $PublicationName, $SqlInstance) -ErrorRecord $_ -Target $SqlInstance -Continue
         }
     }
 
     process {
 
         # for each subscription SqlInstance we need to create a subscription
-        foreach ($instance in $SqlInstance) {
+        foreach ($instance in $SubscriberSqlInstance) {
 
             try {
-                $subReplServer = Get-DbaReplServer -SqlInstance $instance -SqlCredential $SqlCredential
+                $subReplServer = Get-DbaReplServer -SqlInstance $instance -SqlCredential $SubscriberSqlCredential
 
-                if (-not (Get-DbaDatabase -SqlInstance $instance -SqlCredential $SqlCredential -Database $Database)) {
-                    Write-Message -Level Verbose -Message "Subscription database $Database not found on $instance - will create it - but you should check the settings!"
+                if (-not (Get-DbaDatabase -SqlInstance $instance -SqlCredential $SubscriberSqlCredential -Database $SubscriptionDatabase)) {
+                    Write-Message -Level Verbose -Message "Subscription database $SubscriptionDatabase not found on $instance - will create it - but you should check the settings!"
 
                     if ($PSCmdlet.ShouldProcess($instance, "Creating subscription database")) {
 
                         $newSubDb = @{
                             SqlInstance     = $instance
-                            SqlCredential   = $SqlCredential
-                            Name            = $Database
+                            SqlCredential   = $SubscriberSqlCredential
+                            Name            = $SubscriptionDatabase
                             EnableException = $EnableException
                         }
                         $null = New-DbaDatabase @newSubDb
                     }
                 }
             } catch {
-                Stop-Function -Message ("Couldn't create the subscription database {0}.{1}" -f $instance, $Database) -ErrorRecord $_ -Target $instance -Continue
+                Stop-Function -Message ("Couldn't create the subscription database {0}.{1}" -f $instance, $SubscriptionDatabase) -ErrorRecord $_ -Target $instance -Continue
             }
 
             try {
@@ -144,7 +143,7 @@ function New-DbaReplSubscription {
 
                         $transPub = New-Object Microsoft.SqlServer.Replication.TransPublication
                         $transPub.ConnectionContext = $pubReplServer.ConnectionContext
-                        $transPub.DatabaseName = $PublicationDatabase
+                        $transPub.DatabaseName = $Database
                         $transPub.Name = $PublicationName
 
                         # if LoadProperties returns then the publication was found
@@ -178,9 +177,9 @@ function New-DbaReplSubscription {
                             # create the subscription
                             $transSub = New-Object Microsoft.SqlServer.Replication.TransSubscription
                             $transSub.ConnectionContext = $pubReplServer.ConnectionContext
-                            $transSub.SubscriptionDBName = $Database
+                            $transSub.SubscriptionDBName = $SubscriptionDatabase
                             $transSub.SubscriberName = $instance
-                            $transSub.DatabaseName = $PublicationDatabase
+                            $transSub.DatabaseName = $Database
                             $transSub.PublicationName = $PublicationName
 
                             #TODO:
@@ -214,7 +213,7 @@ function New-DbaReplSubscription {
 
                         $mergePub = New-Object Microsoft.SqlServer.Replication.MergePublication
                         $mergePub.ConnectionContext = $pubReplServer.ConnectionContext
-                        $mergePub.DatabaseName = $PublicationDatabase
+                        $mergePub.DatabaseName = $Database
                         $mergePub.Name = $PublicationName
 
                         if ( $mergePub.LoadProperties() ) {
@@ -248,9 +247,9 @@ function New-DbaReplSubscription {
                             }
 
                             $mergeSub.ConnectionContext = $pubReplServer.ConnectionContext
-                            $mergeSub.SubscriptionDBName = $Database
+                            $mergeSub.SubscriptionDBName = $SubscriptionDatabase
                             $mergeSub.SubscriberName = $instance
-                            $mergeSub.DatabaseName = $PublicationDatabase
+                            $mergeSub.DatabaseName = $Database
                             $mergeSub.PublicationName = $PublicationName
 
                             #TODO:

@@ -19,7 +19,7 @@ function Get-DbaReplSubscription {
     .PARAMETER Database
         The database(s) to process. If unspecified, all databases will be processed.
 
-    .PARAMETER Name
+    .PARAMETER PublicationName
         The name of the publication.
 
     .PARAMETER SubscriberName
@@ -58,12 +58,12 @@ function Get-DbaReplSubscription {
         Return all subscriptions for all publications on server mssql1 for only the TestDB database.
 
     .EXAMPLE
-        PS C:\> Get-DbaReplSubscription -SqlInstance mssql1 -Name Mergey
+        PS C:\> Get-DbaReplSubscription -SqlInstance mssql1 -PublicationName Mergey
 
         Return all subscriptions for the publication Mergey on server mssql1.
 
     .EXAMPLE
-        PS C:\> Get-DbaReplSubscription -SqlInstance mssql1 -Type Transactional
+        PS C:\> Get-DbaReplSubscription -SqlInstance mssql1 -Type Push
 
         Return all subscriptions for all transactional publications on server mssql1.
 
@@ -84,7 +84,7 @@ function Get-DbaReplSubscription {
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [Object[]]$Database,
-        [String[]]$Name,
+        [String[]]$PublicationName,
         [DbaInstanceParameter[]]$SubscriberName,
         [Object[]]$SubscriptionDatabase,
         [Alias("PublicationType")]
@@ -109,8 +109,8 @@ function Get-DbaReplSubscription {
                     $publications = $publications | Where-Object DatabaseName -in $Database
                 }
 
-                if ($Name) {
-                    $publications = $publications | Where-Object Name -in $Name
+                if ($PublicationName) {
+                    $publications = $publications | Where-Object Name -in $PublicationName
                 }
 
             } catch {
@@ -127,6 +127,10 @@ function Get-DbaReplSubscription {
 
                     if ($SubscriptionDatabase) {
                         $subs = $subs | Where-Object SubscriptionDBName -eq $SubscriptionDatabase
+                    }
+
+                    if($Type) {
+                        $subs = $subs | Where-Object SubscriptionType -eq $Type
                     }
 
                     foreach ($sub in $subs) {
