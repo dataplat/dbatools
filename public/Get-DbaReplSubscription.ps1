@@ -129,7 +129,7 @@ function Get-DbaReplSubscription {
                         $subs = $subs | Where-Object SubscriptionDBName -eq $SubscriptionDatabase
                     }
 
-                    if($Type) {
+                    if ($Type) {
                         $subs = $subs | Where-Object SubscriptionType -eq $Type
                     }
 
