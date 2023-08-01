@@ -164,6 +164,8 @@ function New-DbaReplSubscription {
                                     $transPub.CommitPropertyChanges()
                                 }
                             } else {
+                                #TODO: Fix pull subscriptions in New-DbaReplSubscription command - this still creates a PUSH
+
                                 # Perform a bitwise logical AND (& in Visual C# and And in Visual Basic) between the Attributes property and AllowPull.
                                 if (($transPub.Attributes -band [Microsoft.SqlServer.Replication.PublicationAttributes]::AllowPull) -ne [Microsoft.SqlServer.Replication.PublicationAttributes]::AllowPull) {
                                     # If the result is None, set Attributes to the result of a bitwise logical OR (| in Visual C# and Or in Visual Basic) between Attributes and AllowPull.
