@@ -50,7 +50,7 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
 
             It "Honors the SQLInstance parameter" {
                 $Results = Get-DbaReplPublication -SqlInstance MockServerName
-                $Results.SqlInstance | Should Be "MockServerName"
+                $Results.SqlInstance.Name | Should Be "MockServerName"
             }
 
             It "Honors the Database parameter" {
