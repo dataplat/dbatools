@@ -24,6 +24,9 @@ function Get-DbaReplArticle {
     .PARAMETER Publication
         Specifies one or more publication(s) to process. If unspecified, all publications will be processed.
 
+   .PARAMETER Schema
+        Specifies one or more schema(s) to process. If unspecified, all schemas will be processed.
+
     .PARAMETER Name
         Specify the name of one or more article(s) to process. If unspecified, all articles will be processed.
 
@@ -59,9 +62,14 @@ function Get-DbaReplArticle {
         Retrieve information of all articles from 'PubName' on 'pubs' database for server mssql1.
 
     .EXAMPLE
-        PS C:\> Get-DbaReplArticle -SqlInstance sqlserver2019 -Database pubs -Publication PubName -Name sales
+        PS C:\> Get-DbaReplArticle -SqlInstance mssql1 -Database pubs -Schema sales
 
-        Retrieve information of 'sales' article from 'PubName' on 'pubs' database for server sqlserver2019.
+        Retrieve information of articles in the 'sales' schema on 'pubs' database for server mssql1.
+
+    .EXAMPLE
+        PS C:\> Get-DbaReplArticle -SqlInstance mssql1 -Database pubs -Publication PubName -Name sales
+
+        Retrieve information of 'sales' article from 'PubName' on 'pubs' database for server mssql1.
 
     #>
     [CmdletBinding()]
@@ -71,6 +79,7 @@ function Get-DbaReplArticle {
         [PSCredential]$SqlCredential,
         [object[]]$Database,
         [object[]]$Publication,
+        [string[]]$Schema,
         [string[]]$Name,
         [switch]$EnableException
     )
@@ -107,6 +116,10 @@ function Get-DbaReplArticle {
                     }
 
                     $articles = $publications.Articles
+
+                    if ($Schema) {
+                        $articles = $articles | Where-Object SourceObjectOwner -in $Schema
+                    }
                     if ($Name) {
                         $articles = $articles | Where-Object Name -in $Name
                     }
