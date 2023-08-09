@@ -143,7 +143,7 @@ function New-DbaReplSubscription {
                     foreach ($schema in $pub.articles.DestinationObjectOwner) {
                         if (-not (Get-DbaDbSchema -SqlInstance $instance -SqlCredential $SubscriberSqlCredential -Database $SubscriptionDatabase -Schema $schema)) {
                             Write-Message -Level Verbose -Message "Subscription database $SubscriptionDatabase does not contain the $schema schema on $instance - will create it!"
-                            New-DbaDbSchema -SqlInstance $instance -SqlCredential $SubscriberSqlCredential -Database $SubscriptionDatabase -Name $schema -EnableException
+                            New-DbaDbSchema -SqlInstance $instance -SqlCredential $SubscriberSqlCredential -Database $SubscriptionDatabase -Schema $schema -EnableException
                         }
                     }
 
