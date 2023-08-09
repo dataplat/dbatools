@@ -104,17 +104,26 @@ function Remove-DbaReplPublication {
                     Status       = $null
                     IsRemoved    = $false
                 }
-                try {
-                    if ($pub.Type -in ('Transactional', 'Snapshot')) {
 
+                if ($pub.Type -in ('Transactional', 'Snapshot')) {
+                    try {
                         if ($pub.IsExistingObject) {
                             Write-Message -Level Verbose -Message "Removing $($pub.Name) from $($pub.SqlInstance).$($pub.DatabaseName)"
                             if ($Force) {
                                 $null = Get-DbaAgentJob -SqlInstance $pub.SqlInstance -SqlCredential $SqlCredential -Category REPL-LogReader | Where-Object { $_.Name -like ('*{0}*' -f $pub.DatabaseName) } | Stop-DbaAgentJob
                             }
                             $pub.Remove()
-                        }
 
+                            $output.Status = "Removed"
+                            $output.IsRemoved = $true
+                        }
+                    } catch {
+                        Stop-Function -Message "Failed to remove the publication from $($pub.SqlInstance)" -ErrorRecord $_
+                        $output.Status = (Get-ErrorMessage -Record $_)
+                        $output.IsRemoved = $false
+                    }
+
+                    try {
                         # If no other transactional publications exist for this database, the database can be disabled for transactional publishing
                         if (-not (Get-DbaReplPublication -SqlInstance $pub.SqlInstance -SqlCredential $SqlCredential -Database $pub.DatabaseName -Type Transactional, Snapshot)) {
                             $pubDatabase = New-Object Microsoft.SqlServer.Replication.ReplicationDatabase
@@ -129,19 +138,31 @@ function Remove-DbaReplPublication {
                                 $pubDatabase.EnabledTransPublishing = $false
                             }
                         }
+                    } catch {
+                        Stop-Function -Message "Failed to disable transactional publishing on $($pub.SqlInstance)" -ErrorRecord $_
+                    }
 
-                    } elseif ($pub.Type -eq 'Merge') {
-
+                } elseif ($pub.Type -eq 'Merge') {
+                    try {
                         if ($pub.IsExistingObject) {
                             Write-Message -Level Verbose -Message "Removing $($pub.Name) from $($pub.SqlInstance).$($pub.DatabaseName)"
                             if ($Force) {
                                 $null = Get-DbaAgentJob -SqlInstance $pub.SqlInstance -SqlCredential $SqlCredential -Category REPL-LogReader | Where-Object { $_.Name -like ('*{0}*' -f $pub.DatabaseName) } | Stop-DbaAgentJob
                             }
                             $pub.Remove()
+
+                            $output.Status = "Removed"
+                            $output.IsRemoved = $true
                         } else {
                             Write-Warning "Didn't find $($pub.Name) on $($pub.SqlInstance).$($pub.DatabaseName)"
                         }
+                    } catch {
+                        Stop-Function -Message "Failed to remove the publication from $($pub.SqlInstance)" -ErrorRecord $_
+                        $output.Status = (Get-ErrorMessage -Record $_)
+                        $output.IsRemoved = $false
+                    }
 
+                    try {
                         # If no other merge publications exist for this database, the database can be disabled for merge publishing
                         if (-not (Get-DbaReplPublication -SqlInstance $pub.SqlInstance -SqlCredential $SqlCredential -Database $pub.DatabaseName -Type Merge)) {
                             $pubDatabase = New-Object Microsoft.SqlServer.Replication.ReplicationDatabase
@@ -157,14 +178,11 @@ function Remove-DbaReplPublication {
                                 $pubDatabase.EnabledMergePublishing = $false
                             }
                         }
+                    } catch {
+                        Stop-Function -Message "Failed to disable transactional publishing on $($pub.SqlInstance)" -ErrorRecord $_
                     }
-                    $output.Status = "Removed"
-                    $output.IsRemoved = $true
-                } catch {
-                    Stop-Function -Message "Failed to remove the article from publication" -ErrorRecord $_
-                    $output.Status = (Get-ErrorMessage -Record $_)
-                    $output.IsRemoved = $false
                 }
+
                 $output
             }
         }
