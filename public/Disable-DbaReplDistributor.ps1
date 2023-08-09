@@ -76,7 +76,7 @@ function Disable-DbaReplDistributor {
                 try {
                     if ($PSCmdlet.ShouldProcess($instance, "Disabling and removing distribution on $instance")) {
                         # remove any connections to the distribution database
-                        Get-DbaProcess -SqlInstance $instance -SqlCredential $SqlCredential -Database $replServer.DistributionDatabases.name -EnableException:$EnableException | Stop-DbaProcess -EnableException:$EnableException
+                        $null = Get-DbaProcess -SqlInstance $instance -SqlCredential $SqlCredential -Database $replServer.DistributionDatabases.name -EnableException:$EnableException | Stop-DbaProcess -EnableException:$EnableException
                         # uninstall distribution
                         $replServer.UninstallDistributor($Force)
                     }
