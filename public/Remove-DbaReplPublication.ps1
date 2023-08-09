@@ -27,9 +27,6 @@ function Remove-DbaReplPublication {
     .PARAMETER InputObject
         A publication object retrieved from Get-DbaReplPublication. Enables piping from Get-DbaReplPublication.
 
-    .PARAMETER Force
-        If this switch is enabled, this command will look for the REPL-LogReader SQL Agent Job for this database and if it's running, stop the job.
-
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -66,7 +63,6 @@ function Remove-DbaReplPublication {
         [String]$Name,
         [parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Replication.Publication[]]$InputObject,
-        [Switch]$Force,
         [Switch]$EnableException
     )
     begin {
@@ -84,7 +80,6 @@ function Remove-DbaReplPublication {
             $params = $PSBoundParameters
             $null = $params.Remove('InputObject')
             $null = $params.Remove('WhatIf')
-            $null = $params.Remove('Force')
             $null = $params.Remove('Confirm')
             $publications = Get-DbaReplPublication @params
         }
@@ -109,7 +104,8 @@ function Remove-DbaReplPublication {
                     try {
                         if ($pub.IsExistingObject) {
                             Write-Message -Level Verbose -Message "Removing $($pub.Name) from $($pub.SqlInstance).$($pub.DatabaseName)"
-                            if ($Force) {
+
+                            if ($PSCmdlet.ShouldProcess($pub.Name, "Stopping the REPL-LogReader job for the database $($pub.DatabaseName) on $($pub.SqlInstance)")) {
                                 $null = Get-DbaAgentJob -SqlInstance $pub.SqlInstance -SqlCredential $SqlCredential -Category REPL-LogReader | Where-Object { $_.Name -like ('*{0}*' -f $pub.DatabaseName) } | Stop-DbaAgentJob
                             }
                             $pub.Remove()
@@ -146,7 +142,7 @@ function Remove-DbaReplPublication {
                     try {
                         if ($pub.IsExistingObject) {
                             Write-Message -Level Verbose -Message "Removing $($pub.Name) from $($pub.SqlInstance).$($pub.DatabaseName)"
-                            if ($Force) {
+                            if ($PSCmdlet.ShouldProcess($pub.Name, "Stopping the REPL-LogReader job for the database $($pub.DatabaseName) on $($pub.SqlInstance)")) {
                                 $null = Get-DbaAgentJob -SqlInstance $pub.SqlInstance -SqlCredential $SqlCredential -Category REPL-LogReader | Where-Object { $_.Name -like ('*{0}*' -f $pub.DatabaseName) } | Stop-DbaAgentJob
                             }
                             $pub.Remove()
