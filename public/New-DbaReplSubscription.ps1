@@ -139,6 +139,14 @@ function New-DbaReplSubscription {
                 Write-Message -Level Verbose -Message "Creating subscription on $instance"
                 if ($PSCmdlet.ShouldProcess($instance, "Creating subscription on $instance")) {
 
+                    # check if needed schemas exist
+                    foreach ($schema in $pub.articles.DestinationObjectOwner) {
+                        if (-not (Get-DbaDbSchema -SqlInstance $instance -SqlCredential $SubscriberSqlCredential -Database $SubscriptionDatabase -Schema $schema)) {
+                            Write-Message -Level Verbose -Message "Subscription database $SubscriptionDatabase does not contain the $schema schema on $instance - will create it!"
+                            New-DbaDbSchema -SqlInstance $instance -SqlCredential $SubscriberSqlCredential -Database $SubscriptionDatabase -Name $schema -EnableException
+                        }
+                    }
+
                     if ($pub.Type -in ('Transactional', 'Snapshot')) {
 
                         $transPub = New-Object Microsoft.SqlServer.Replication.TransPublication
