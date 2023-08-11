@@ -49,7 +49,7 @@ function Get-DecryptedObject {
             return $serviceKey
         }
     } catch {
-        Stop-Function -Message "Can't unprotect registry data on $sourceName. Do you have administrative access to the Windows registry on $sourceName? Otherwise, we're out of ideas." -Target $sourceName
+        Stop-Function -Message "Can't unprotect registry data on $sourceName. Do you have administrative access to the Windows registry on $sourceName ? Otherwise, we're out of ideas." -Target $sourceName
         return
     }
 
@@ -59,7 +59,7 @@ function Get-DecryptedObject {
 
     if (($serviceKey.Length -ne 16) -and ($serviceKey.Length -ne 32)) {
         Write-Message -Level Verbose -Message "ServiceKey found: $serviceKey.Length"
-        Stop-Function -Message "Unknown key size. Do you have administrative access to the Windows registry on $sourceName? Otherwise, we're out of ideas." -Target $sourceName
+        Stop-Function -Message "Unknown key size. Do you have administrative access to the Windows registry on $sourceName ? Otherwise, we're out of ideas." -Target $sourceName
         return
     }
 
