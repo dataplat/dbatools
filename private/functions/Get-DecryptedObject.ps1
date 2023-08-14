@@ -49,7 +49,7 @@ function Get-DecryptedObject {
             return $serviceKey
         }
     } catch {
-        Stop-Function -Message "Can't unprotect registry data on $sourceName. Do you have administrative access to the Windows registry on $sourceName ? Otherwise, we're out of ideas." -Target $sourceName
+        Stop-Function -Message "Can't unprotect registry data on $sourceName. Do you have administrative access to the Windows registry on $($sourceName)? Otherwise, we're out of ideas." -Target $sourceName
         return
     }
 
