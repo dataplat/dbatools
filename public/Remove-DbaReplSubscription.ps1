@@ -73,7 +73,7 @@ function Remove-DbaReplSubscription {
         Removes a subscription for the testPub publication on mssql2.pubs.
 
     #>
-    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'Medium')]
+    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High')]
     param (
         [Parameter(Mandatory, ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
@@ -91,7 +91,7 @@ function Remove-DbaReplSubscription {
     )
     begin {
 
-        $pub = Get-DbaReplPublication -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Name $PublicationName
+        $pub = Get-DbaReplPublication -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Name $PublicationName -EnableException:$EnableException
 
         if (-not $pub) {
             Write-Warning "Didn't find a subscription to the $PublicationName publication on $SqlInstance.$Database"

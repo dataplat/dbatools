@@ -91,7 +91,7 @@ function New-DbaReplPublication {
     process {
         foreach ($instance in $SqlInstance) {
             try {
-                $replServer = Get-DbaReplServer -SqlInstance $instance -SqlCredential $SqlCredential
+                $replServer = Get-DbaReplServer -SqlInstance $instance -SqlCredential $SqlCredential -EnableException:$EnableException
 
                 if (-not $replServer.IsPublisher) {
                     Stop-Function -Message "Instance $instance is not a publisher, run Enable-DbaReplPublishing to set this up" -Target $instance -Continue

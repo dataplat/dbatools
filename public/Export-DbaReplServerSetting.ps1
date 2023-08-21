@@ -104,7 +104,7 @@ function Export-DbaReplServerSetting {
     process {
         if (Test-FunctionInterrupt) { return }
         foreach ($instance in $SqlInstance) {
-            $InputObject += Get-DbaReplServer -SqlInstance $instance -SqlCredential $SqlCredential
+            $InputObject += Get-DbaReplServer -SqlInstance $instance -SqlCredential $SqlCredential -EnableException:$EnableException
         }
 
         foreach ($repserver in $InputObject) {

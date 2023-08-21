@@ -56,7 +56,7 @@ function Get-DbaReplDistributor {
 
             # Connect to the distributor of the instance
             try {
-                $distributor = Get-DbaReplServer -SqlInstance $instance -SqlCredential $SqlCredential
+                $distributor = Get-DbaReplServer -SqlInstance $instance -SqlCredential $SqlCredential -EnableException:$EnableException
             } catch {
                 Stop-Function -Message "Error occurred getting information about $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }

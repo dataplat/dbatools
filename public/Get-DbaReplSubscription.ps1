@@ -103,7 +103,7 @@ function Get-DbaReplSubscription {
             }
 
             try {
-                $publications = Get-DbaReplPublication -SqlInstance $server
+                $publications = Get-DbaReplPublication -SqlInstance $server -EnableException:$EnableException
 
                 if ($Database) {
                     $publications = $publications | Where-Object DatabaseName -in $Database

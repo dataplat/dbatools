@@ -111,7 +111,8 @@ function Get-DbaReplPublication {
                         continue
                     }
 
-                    $repDB = Connect-ReplicationDB -Server $server -Database $db
+
+                    $repDB = Connect-ReplicationDB -Server $server -Database $db -EnableException:$EnableException
 
                     $pubTypes = $repDB.TransPublications + $repDB.MergePublications
 

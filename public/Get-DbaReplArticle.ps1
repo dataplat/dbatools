@@ -109,7 +109,7 @@ function Get-DbaReplArticle {
                 foreach ($db in $databases) {
                     Write-Message -Level Verbose -Message ('Working on {0}' -f $db.Name)
 
-                    $publications = Get-DbaReplPublication -SqlInstance $server -Database $db.Name
+                    $publications = Get-DbaReplPublication -SqlInstance $server -Database $db.Name -EnableException:$EnableException
 
                     if ($Publication) {
                         $publications = $publications | Where-Object Name -in $Publication

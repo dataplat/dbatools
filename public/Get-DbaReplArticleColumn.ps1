@@ -85,7 +85,7 @@ function Get-DbaReplArticleColumn {
     process {
         if (Test-FunctionInterrupt) { return }
 
-        $articles = Get-DbaReplArticle -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $Database -Publication $Publication -Name $Article
+        $articles = Get-DbaReplArticle -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $Database -Publication $Publication -Name $Article -EnableException:$EnableException
 
         foreach ($art in $articles) {
             try {

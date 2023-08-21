@@ -106,7 +106,7 @@ function Remove-DbaReplPublication {
                             Write-Message -Level Verbose -Message "Removing $($pub.Name) from $($pub.SqlInstance).$($pub.DatabaseName)"
 
                             if ($PSCmdlet.ShouldProcess($pub.Name, "Stopping the REPL-LogReader job for the database $($pub.DatabaseName) on $($pub.SqlInstance)")) {
-                                $null = Get-DbaAgentJob -SqlInstance $pub.SqlInstance -SqlCredential $SqlCredential -Category REPL-LogReader | Where-Object { $_.Name -like ('*{0}*' -f $pub.DatabaseName) } | Stop-DbaAgentJob
+                                $null = Get-DbaAgentJob -SqlInstance $pub.SqlInstance -SqlCredential $SqlCredential -Category REPL-LogReader -EnableException:$EnableException | Where-Object { $_.Name -like ('*{0}*' -f $pub.DatabaseName) } | Stop-DbaAgentJob -EnableException:$EnableException
                             }
                             $pub.Remove()
 
@@ -121,7 +121,7 @@ function Remove-DbaReplPublication {
 
                     try {
                         # If no other transactional publications exist for this database, the database can be disabled for transactional publishing
-                        if (-not (Get-DbaReplPublication -SqlInstance $pub.SqlInstance -SqlCredential $SqlCredential -Database $pub.DatabaseName -Type Transactional, Snapshot)) {
+                        if (-not (Get-DbaReplPublication -SqlInstance $pub.SqlInstance -SqlCredential $SqlCredential -Database $pub.DatabaseName -Type Transactional, Snapshot -EnableException:$EnableException)) {
                             $pubDatabase = New-Object Microsoft.SqlServer.Replication.ReplicationDatabase
                             $pubDatabase.ConnectionContext = $pub.ConnectionContext
                             $pubDatabase.Name = $pub.DatabaseName
@@ -143,7 +143,7 @@ function Remove-DbaReplPublication {
                         if ($pub.IsExistingObject) {
                             Write-Message -Level Verbose -Message "Removing $($pub.Name) from $($pub.SqlInstance).$($pub.DatabaseName)"
                             if ($PSCmdlet.ShouldProcess($pub.Name, "Stopping the REPL-LogReader job for the database $($pub.DatabaseName) on $($pub.SqlInstance)")) {
-                                $null = Get-DbaAgentJob -SqlInstance $pub.SqlInstance -SqlCredential $SqlCredential -Category REPL-LogReader | Where-Object { $_.Name -like ('*{0}*' -f $pub.DatabaseName) } | Stop-DbaAgentJob
+                                $null = Get-DbaAgentJob -SqlInstance $pub.SqlInstance -SqlCredential $SqlCredential -Category REPL-LogReader -EnableException:$EnableException| Where-Object { $_.Name -like ('*{0}*' -f $pub.DatabaseName) } | Stop-DbaAgentJob -EnableException:$EnableException
                             }
                             $pub.Remove()
 
@@ -160,7 +160,7 @@ function Remove-DbaReplPublication {
 
                     try {
                         # If no other merge publications exist for this database, the database can be disabled for merge publishing
-                        if (-not (Get-DbaReplPublication -SqlInstance $pub.SqlInstance -SqlCredential $SqlCredential -Database $pub.DatabaseName -Type Merge)) {
+                        if (-not (Get-DbaReplPublication -SqlInstance $pub.SqlInstance -SqlCredential $SqlCredential -Database $pub.DatabaseName -Type Merge -EnableException:$EnableException)) {
                             $pubDatabase = New-Object Microsoft.SqlServer.Replication.ReplicationDatabase
                             $pubDatabase.ConnectionContext = $pub.ConnectionContext
                             $pubDatabase.Name = $pub.DatabaseName

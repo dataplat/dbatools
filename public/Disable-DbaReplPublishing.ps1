@@ -68,7 +68,7 @@ function Disable-DbaReplPublishing {
     process {
         foreach ($instance in $SqlInstance) {
 
-            $replServer = Get-DbaReplServer -SqlInstance $instance -SqlCredential $SqlCredential
+            $replServer = Get-DbaReplServer -SqlInstance $instance -SqlCredential $SqlCredential -EnableException:$EnableException
 
             Write-Message -Level Verbose -Message "Disabling and removing publishing for $instance"
 

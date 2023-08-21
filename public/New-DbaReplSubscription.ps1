@@ -97,13 +97,13 @@ function New-DbaReplSubscription {
 
         # connect to publisher and get the publication
         try {
-            $pubReplServer = Get-DbaReplServer -SqlInstance $SqlInstance -SqlCredential $SqlCredential
+            $pubReplServer = Get-DbaReplServer -SqlInstance $SqlInstance -SqlCredential $SqlCredential -EnableException:$EnableException
         } catch {
             Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $SqlInstance -Continue
         }
 
         try {
-            $pub = Get-DbaReplPublication -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Name $PublicationName -EnableException
+            $pub = Get-DbaReplPublication -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Name $PublicationName -EnableException:$EnableException
         } catch {
             Stop-Function -Message ("Publication {0} not found on {1}" -f $PublicationName, $SqlInstance) -ErrorRecord $_ -Target $SqlInstance -Continue
         }
@@ -115,9 +115,9 @@ function New-DbaReplSubscription {
         foreach ($instance in $SubscriberSqlInstance) {
 
             try {
-                $subReplServer = Get-DbaReplServer -SqlInstance $instance -SqlCredential $SubscriberSqlCredential
+                $subReplServer = Get-DbaReplServer -SqlInstance $instance -SqlCredential $SubscriberSqlCredential -EnableException:$EnableException
 
-                if (-not (Get-DbaDatabase -SqlInstance $instance -SqlCredential $SubscriberSqlCredential -Database $SubscriptionDatabase)) {
+                if (-not (Get-DbaDatabase -SqlInstance $instance -SqlCredential $SubscriberSqlCredential -Database $SubscriptionDatabase -EnableException:$EnableException)) {
                     Write-Message -Level Verbose -Message "Subscription database $SubscriptionDatabase not found on $instance - will create it - but you should check the settings!"
 
                     if ($PSCmdlet.ShouldProcess($instance, "Creating subscription database")) {
@@ -143,7 +143,7 @@ function New-DbaReplSubscription {
                     foreach ($schema in $pub.articles.DestinationObjectOwner) {
                         if ($schema -ne 'dbo' -and -not (Get-DbaDbSchema -SqlInstance $instance -SqlCredential $SubscriberSqlCredential -Database $SubscriptionDatabase -Schema $schema)) {
                             Write-Message -Level Verbose -Message "Subscription database $SubscriptionDatabase does not contain the $schema schema on $instance - will create it!"
-                            $null = New-DbaDbSchema -SqlInstance $instance -SqlCredential $SubscriberSqlCredential -Database $SubscriptionDatabase -Schema $schema -EnableException
+                            $null = New-DbaDbSchema -SqlInstance $instance -SqlCredential $SubscriberSqlCredential -Database $SubscriptionDatabase -Schema $schema -EnableException:$EnableException
                         }
                     }
 

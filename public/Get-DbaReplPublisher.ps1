@@ -53,7 +53,7 @@ function Get-DbaReplPublisher {
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential
-                $replServer = Get-DbaReplServer -SqlInstance $server
+                $replServer = Get-DbaReplServer -SqlInstance $server -EnableException:$EnableException
             } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $server -Continue
             }
