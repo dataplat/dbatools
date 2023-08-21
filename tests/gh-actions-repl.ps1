@@ -5,7 +5,7 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
 
         $PSDefaultParameterValues["*:SqlInstance"] = "mssql1"
         $PSDefaultParameterValues["*:SqlCredential"] = $cred
-        $PSDefaultParameterValues["*:SubscriberSqlCredential1"] = $cred
+        $PSDefaultParameterValues["*:SubscriberSqlCredential"] = $cred
         $PSDefaultParameterValues["*:Confirm"] = $false
         $PSDefaultParameterValues["*:SharedPath"] = "/shared"
         $PSDefaultParameterValues["*:WarningAction"] = "SilentlyContinue"
@@ -17,7 +17,7 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
         $null = Invoke-DbaQuery -Database ReplDb -Query 'CREATE TABLE ReplicateMe ( id int identity (1,1) PRIMARY KEY, col1 varchar(10) ); CREATE TABLE ReplicateMeToo ( id int identity (1,1) PRIMARY KEY, col1 varchar(10) );'
     }
 
-    Describe "General commands" {
+    Describe "General commands" -Tag general {
 
         Context "Get-DbaReplServer works" {
 
@@ -39,7 +39,7 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
         }
     }
 
-    Describe "Publishing\Distribution commands" {
+    Describe "Publishing\Distribution commands" -tag pub  {
 
         Context "Get-DbaReplDistributor works" {
             BeforeAll {
@@ -194,7 +194,7 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
         }
     }
 
-    Describe "Publication commands" {
+    Describe "Publication commands" -tag pub {
 
         Context "Get-DbaReplPublication works" {
             BeforeAll {
@@ -313,7 +313,7 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
         }
     }
 
-    Describe "Article commands" {
+    Describe "Article commands" -tag art {
         BeforeAll {
             # if replication is disabled - enable it
             if (-not (Get-DbaReplDistributor).IsDistributor) {
@@ -552,7 +552,7 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
 
     }
 
-    Describe "Article Column commands" {
+    Describe "Article Column commands" -tag art {
         BeforeAll {
             # if replication is disabled - enable it
             if (-not (Get-DbaReplDistributor).IsDistributor) {
@@ -785,7 +785,7 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
         }
     }
 
-    Describe "Piping" {
+    Describe "Piping" -tag pipe {
         BeforeAll {
             # if replication is disabled - enable it
             if (-not (Get-DbaReplDistributor).IsDistributor) {
@@ -869,7 +869,7 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
         Context "Remove-DbaReplPublication works with piping" {
             It "Remove-DbaReplPublication removes a publication using piping" {
                 $name = 'TestMerge'
-                { Get-DbaReplPublication -SqlInstance 'mssql1' -SqlCredential $cred -Name $name -EnableException | Remove-DbaReplPublication -EnableException } | Should -Not -Throw
+                { Get-DbaReplPublication -SqlInstance 'mssql1' -SqlCredential $cred -Name $name -EnableException | Remove-DbaReplPublication -Confirm:$false -EnableException } | Should -Not -Throw
                 (Get-DbaReplPublication -SqlInstance 'mssql1' -SqlCredential $cred -Name $name -EnableException) | Should -BeNullOrEmpty
             }
         }
