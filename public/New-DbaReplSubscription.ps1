@@ -118,6 +118,7 @@ function New-DbaReplSubscription {
                 $subReplServer = Get-DbaReplServer -SqlInstance $instance -SqlCredential $SubscriberSqlCredential -EnableException:$EnableException
 
                 if (-not (Get-DbaDatabase -SqlInstance $instance -SqlCredential $SubscriberSqlCredential -Database $SubscriptionDatabase -EnableException:$EnableException)) {
+
                     Write-Message -Level Verbose -Message "Subscription database $SubscriptionDatabase not found on $instance - will create it - but you should check the settings!"
 
                     if ($PSCmdlet.ShouldProcess($instance, "Creating subscription database")) {
@@ -143,7 +144,7 @@ function New-DbaReplSubscription {
                     foreach ($schema in $pub.articles.DestinationObjectOwner) {
                         if ($schema -ne 'dbo' -and -not (Get-DbaDbSchema -SqlInstance $instance -SqlCredential $SubscriberSqlCredential -Database $SubscriptionDatabase -Schema $schema)) {
                             Write-Message -Level Verbose -Message "Subscription database $SubscriptionDatabase does not contain the $schema schema on $instance - will create it!"
-                            $null = New-DbaDbSchema -SqlInstance $instance -SqlCredential $SubscriberSqlCredential -Database $SubscriptionDatabase -Schema $schema -EnableException:$EnableException
+                            $null = New-DbaDbSchema -SqlInstance $instance -SqlCredential $SubscriberSqlCredential -Database $SubscriptionDatabase -Schema $schema -EnableException
                         }
                     }
 
