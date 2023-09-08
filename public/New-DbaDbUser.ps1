@@ -154,7 +154,8 @@ function New-DbaDbUser {
             $getDbParam.OnlyAccessible = $True
             if ($Database) {
                 $getDbParam.Database = $Database
-            } elseif (-not $IncludeSystem) {
+            }
+            if (-not $IncludeSystem) {
                 $getDbParam.ExcludeSystem = $True
             }
             if ($ExcludeDatabase) {
@@ -168,6 +169,11 @@ function New-DbaDbUser {
 
             $databases = Get-DbaDatabase @getDbParam
             $getValidSchema = Get-DbaDbSchema -InputObject $databases -Schema $DefaultSchema -IncludeSystemSchemas
+
+            #This block is required so that correct error message can be returned to the user when incorrect database name is given or the database doesn't exists in the server.
+            if (-not $Database) {
+                $Database = $databases
+            }
 
             foreach ($db in $Database) {
                 $dbSmo = $databases | Where-Object Name -eq $db

@@ -85,5 +85,11 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             $results.Name | Should -Be $loginName, $loginName, $loginName
             $results.DefaultSchema | Should -Be dbo, dbo, dbo
         }
+
+        It "Should add user to all user databases" {
+            $results = New-DbaDbUser -SqlInstance $script:instance2 -Login $loginName -Force -EnableException
+            $results.Count | Should -Be 3
+            $results.Name | Get-Unique | Should -Be $loginName
+        }
     }
 }
