@@ -172,7 +172,7 @@ function New-DbaDbUser {
 
             #This block is required so that correct error message can be returned to the user when incorrect database name is given or the database doesn't exists in the server.
             if (-not $Database) {
-                $Database = $databases
+                $Database = $databases.Name
             }
 
             foreach ($db in $Database) {
