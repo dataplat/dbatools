@@ -74,6 +74,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             $securePassword = ConvertTo-SecureString $password -AsPlainText -Force
             $null = New-DbaLogin -SqlInstance $script:instance2 -Login $loginName -Password $securePassword -Force
             $null = New-DbaDatabase -SqlInstance $script:instance2 -Name $dbs
+            $accessibleDbCount = (Get-DbaDatabase -SqlInstance $script:instance2 -ExcludeSystem -OnlyAccessible).count
         }
         AfterAll {
             $null = Remove-DbaDatabase -SqlInstance $script:instance2 -Database $dbs -Confirm:$false
@@ -88,7 +89,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
 
         It "Should add user to all user databases" {
             $results = New-DbaDbUser -SqlInstance $script:instance2 -Login $loginName -Force -EnableException
-            $results.Count | Should -Be 3
+            $results.Count | Should -Be $accessibleDbCount
             $results.Name | Get-Unique | Should -Be $loginName
         }
     }
