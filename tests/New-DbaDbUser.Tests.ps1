@@ -44,7 +44,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         It "Creates the user and get it" {
             New-DbaDbUser -SqlInstance $script:instance2 -Database $dbname -Login $userName -DefaultSchema guest
             $newDbUser = Get-DbaDbUser -SqlInstance $script:instance2 -Database $dbname | Where-Object Name -eq $userName
-            $newDbUser.Name | Should Be $userName
+            $newDbUser.Name | Should -Be $userName
             $newDbUser.DefaultSchema | Should -Be 'guest'
         }
     }
@@ -60,7 +60,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         It "Creates the user and get it. Login property is empty" {
             New-DbaDbUser -SqlInstance $script:instance2 -Database $dbname -User $userNameWithoutLogin -DefaultSchema guest
             $results = Get-DbaDbUser -SqlInstance $script:instance2 -Database $dbname | Where-Object Name -eq $userNameWithoutLogin
-            $results.Name | Should Be $userNameWithoutLogin
+            $results.Name | Should -Be $userNameWithoutLogin
             $results.DefaultSchema | Should -Be 'guest'
             $results.Login | Should -BeNullOrEmpty
         }

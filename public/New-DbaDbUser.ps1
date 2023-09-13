@@ -186,6 +186,7 @@ function New-DbaDbUser {
                 $userParam = $connParam.Clone()
                 $userParam.Database = $dbSmo.name
                 $userParam.User = $Username
+                $userParam.EnableException = $True
 
                 #check if the schema exists
                 if ($dbSmo.Name -in ($getValidSchema).Parent.Name) {
@@ -207,7 +208,7 @@ function New-DbaDbUser {
                         } elseif ($userExists -and $Force) {
                             try {
                                 Write-Message -Level Verbose -Message "FORCE is used, user [$Username] will be dropped in the database $dbSmo on [$instance]"
-                                Remove-DbaDbUser @userParam -Force
+                                $null = Remove-DbaDbUser @userParam -Force
                             } catch {
                                 Stop-Function -Message "Could not remove existing user [$Username] in the database $dbSmo on [$instance], skipping." -Target $User -ErrorRecord $_ -Continue
                             }
