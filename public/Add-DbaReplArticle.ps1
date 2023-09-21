@@ -131,6 +131,9 @@ function Add-DbaReplArticle {
                 if ($PSCmdlet.ShouldProcess($instance, "Get the publication details for $Publication")) {
 
                     $pub = Get-DbaReplPublication -SqlInstance $instance -SqlCredential $SqlCredential -Name $Publication -EnableException:$EnableException
+                    if (-not $pub) {
+                        Stop-Function -Message "Publication $Publication does not exist on $instance" -ErrorRecord $_ -Target $instance -Continue
+                    }
                 }
             } catch {
                 Stop-Function -Message "Unable to get publication $Publication on $instance" -ErrorRecord $_ -Target $instance -Continue

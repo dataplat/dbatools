@@ -77,7 +77,7 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
             }
 
             It "Add-DbaReplArticle adds an article to a Transactional publication" {
-                $pubName = 'TestPub'
+                $pubName = 'TestTrans'
                 { Add-DbaReplArticle -Database ReplDb -Name $articleName -Publication $pubName -EnableException } | Should -not -throw
                 $art = Get-DbaReplArticle -Database ReplDb -Name $articleName -Publication $pubName
                 $art | Should -Not -BeNullOrEmpty
@@ -86,7 +86,7 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
             }
 
             It "Add-DbaReplArticle adds an article to a Snapshot publication and specifies create script options" {
-                $pubname = 'TestPub'
+                $pubname = 'TestTrans'
                 $cso = New-DbaReplCreationScriptOptions -Options NonClusteredIndexes, Statistics
                 { Add-DbaReplArticle -Database ReplDb -Name $articleName2 -Publication $pubname -CreationScriptOptions $cso -EnableException } | Should -not -throw
                 $art = Get-DbaReplArticle -Database ReplDb -Name $articleName2 -Publication $pubName
@@ -381,6 +381,7 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
                         Remove-DbaReplSubscription -SqlInstance $psitem.SqlInstance -SubscriptionDatabase $psitem.SubscriptionDBName -SubscriberSqlInstance $psitem.SubscriberName -Database $psitem.DatabaseName -PublicationName $psitem.PublicationName -Confirm:$false -EnableException
                     }
                 }
+                Get-DbaReplArticle -Publication TestSnap | Remove-DbaReplArticle -Confirm:$false
             }
             It "Adds a subscription" {
                 $pubName = 'TestTrans'
@@ -396,7 +397,7 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
 
             It "Adds a pull subscription" -skip {
                 #TODO: Fix pull subscriptions in New-DbaReplSubscription command
-                $pubName = 'TestSnap'
+                $pubName = 'TestMerge'
                 { New-DbaReplSubscription -SqlInstance mssql1 -Database ReplDb -SubscriberSqlInstance mssql2 -SubscriptionDatabase ReplDbSnap -PublicationName $pubName -Type Pull -EnableException } | Should -Not -Throw
 
                 $sub = Get-DbaReplSubscription -SqlInstance mssql1 -PublicationName $pubname
@@ -408,12 +409,12 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
             }
 
             It "Throws an error if there are no articles in the publication" {
-                $pubName = 'TestMerge'
+                $pubName = 'TestSnap'
                 { New-DbaReplSubscription -SqlInstance mssql1 -Database ReplDb -SubscriberSqlInstance mssql2 -SubscriptionDatabase ReplDb -PublicationName $pubName -Type Pull -EnableException } | Should -Throw
             }
         }
 
-        Context "Remove-DbaReplSubscription works"{
+        Context "Remove-DbaReplSubscription works" {
             BeforeEach {
                 $pubName = 'TestTrans'
                 if (-not (Get-DbaReplSubscription -SqlInstance mssql1 -Database ReplDb -SubscriptionDatabase ReplDb -PublicationName $pubname -Type Push | Where-Object SubscriberName -eq mssql2)) {
@@ -436,11 +437,24 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
 
         Context "Get-DbaReplSubscription works" {
             BeforeAll {
-                $pubName = 'TestTrans'
+                $pubname = 'TestTrans'
+                if (-not (Get-DbaReplPublication -Name $pubname -Type Transactional)) {
+                    $null = New-DbaReplPublication -Database ReplDb -Type Transactional -Name $pubname
+                }
+                if (-not (Get-DbaReplArticle -Database ReplDb -Publication $pubname -Name $articleName)) {
+                    $null = Add-DbaReplArticle -Database ReplDb -Publication $pubname -Name $articleName
+                }
                 if (-not (Get-DbaReplSubscription -PublicationName $pubname -Type Push | Where-Object SubscriberName -eq mssql2)) {
                     New-DbaReplSubscription -SqlInstance mssql1 -Database ReplDb -SubscriberSqlInstance mssql2 -SubscriptionDatabase ReplDb -PublicationName $pubname -Type Push -enableException
                 }
+
                 $pubName = 'TestSnap'
+                if (-not (Get-DbaReplPublication -Name $pubname -Type Snapshot)) {
+                    $null = New-DbaReplPublication -Database ReplDb -Type Snapshot -Name $pubname
+                }
+                if (-not (Get-DbaReplArticle -Database ReplDb -Publication $pubname -Name $articleName)) {
+                    $null = Add-DbaReplArticle -Database ReplDb -Publication $pubname -Name $articleName
+                }
                 if (-not (Get-DbaReplSubscription -PublicationName $pubname -Type Push | Where-Object SubscriberName -eq mssql2)) {
                     New-DbaReplSubscription -SqlInstance mssql1 -Database ReplDb -SubscriberSqlInstance mssql2 -SubscriptionDatabase ReplDb -PublicationName $pubname -Type Push -enableException
                 }
