@@ -44,7 +44,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         It "Creates the user and get it" {
             New-DbaDbUser -SqlInstance $script:instance2 -Database $dbname -Login $userName -DefaultSchema guest
             $newDbUser = Get-DbaDbUser -SqlInstance $script:instance2 -Database $dbname | Where-Object Name -eq $userName
-            $newDbUser.Name | Should Be $userName
+            $newDbUser.Name | Should -Be $userName
             $newDbUser.DefaultSchema | Should -Be 'guest'
         }
     }
@@ -60,7 +60,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         It "Creates the user and get it. Login property is empty" {
             New-DbaDbUser -SqlInstance $script:instance2 -Database $dbname -User $userNameWithoutLogin -DefaultSchema guest
             $results = Get-DbaDbUser -SqlInstance $script:instance2 -Database $dbname | Where-Object Name -eq $userNameWithoutLogin
-            $results.Name | Should Be $userNameWithoutLogin
+            $results.Name | Should -Be $userNameWithoutLogin
             $results.DefaultSchema | Should -Be 'guest'
             $results.Login | Should -BeNullOrEmpty
         }
@@ -74,6 +74,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             $securePassword = ConvertTo-SecureString $password -AsPlainText -Force
             $null = New-DbaLogin -SqlInstance $script:instance2 -Login $loginName -Password $securePassword -Force
             $null = New-DbaDatabase -SqlInstance $script:instance2 -Name $dbs
+            $accessibleDbCount = (Get-DbaDatabase -SqlInstance $script:instance2 -ExcludeSystem -OnlyAccessible).count
         }
         AfterAll {
             $null = Remove-DbaDatabase -SqlInstance $script:instance2 -Database $dbs -Confirm:$false
@@ -84,6 +85,12 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             $results.Count | Should -Be 3
             $results.Name | Should -Be $loginName, $loginName, $loginName
             $results.DefaultSchema | Should -Be dbo, dbo, dbo
+        }
+
+        It "Should add user to all user databases" {
+            $results = New-DbaDbUser -SqlInstance $script:instance2 -Login $loginName -Force -EnableException
+            $results.Count | Should -Be $accessibleDbCount
+            $results.Name | Get-Unique | Should -Be $loginName
         }
     }
 }
