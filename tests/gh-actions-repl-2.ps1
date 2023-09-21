@@ -418,7 +418,7 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
             BeforeEach {
                 $pubName = 'TestTrans'
                 if (-not (Get-DbaReplSubscription -SqlInstance mssql1 -Database ReplDb -SubscriptionDatabase ReplDb -PublicationName $pubname -Type Push | Where-Object SubscriberName -eq mssql2)) {
-                    New-DbaReplSubscription -SqlInstance mssql1 -Database ReplDb -SubscriberSqlInstance mssql1 -SubscriptionDatabase ReplDb -PublicationName $pubname -Type Push
+                    New-DbaReplSubscription -SqlInstance mssql1 -Database ReplDb -SubscriberSqlInstance mssql2 -SubscriptionDatabase ReplDb -PublicationName $pubname -Type Push
                 }
             }
             It "Removes a push subscription" {
