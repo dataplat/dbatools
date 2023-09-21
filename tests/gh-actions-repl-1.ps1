@@ -300,7 +300,7 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
 
             It "Remove-DbaReplPublication removes a publication that has articles" {
                 $name = 'TestTrans'
-                { Remove-DbaReplPublication -Name $name -EnableException -Force } | Should -Not -Throw
+                { Remove-DbaReplPublication -Name $name -EnableException } | Should -Not -Throw
                 (Get-DbaReplPublication -Name $name) | Should -BeNullOrEmpty
             }
 
