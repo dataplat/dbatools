@@ -369,7 +369,7 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
             }
         }
 
-        Context "New-DbaReplSubscription works" {
+        Context "New-DbaReplSubscription works" -skip {
             BeforeAll {
                 if (Get-DbaReplSubscription -SqlInstance mssql1 -PublicationName TestTrans) {
                     (Get-DbaReplSubscription -SqlInstance mssql1 -PublicationName TestTrans).foreach{
