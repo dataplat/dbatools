@@ -727,7 +727,7 @@ function Find-DbaInstance {
                         #endregion Connect to browser service and receive response
 
                         #region Parse Output
-                        $Response | Select-String "(ServerName;(\w+);InstanceName;(\w+);IsClustered;(\w+);Version;(\d+\.\d+\.\d+\.\d+);(tcp;(\d+)){0,1})" -AllMatches | Select-Object -ExpandProperty Matches | ForEach-Object {
+                        $Response | Select-String "(ServerName;([a-zA-Z0-9_-]+);InstanceName;(\w+);IsClustered;(\w+);Version;(\d+\.\d+\.\d+\.\d+);(tcp;(\d+)){0,1})" -AllMatches | Select-Object -ExpandProperty Matches | ForEach-Object {
                             $obj = New-Object Dataplat.Dbatools.Discovery.DbaBrowserReply -Property @{
                                 MachineName  = $computer.ComputerName
                                 ComputerName = $_.Groups[2].Value
