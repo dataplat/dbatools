@@ -1,7 +1,7 @@
 
 -- SQL Server 2019 Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: June 5, 2023
+-- Last Modified: September 1, 2023
 -- https://glennsqlperformance.com/ 
 -- https://sqlserverperformance.wordpress.com/
 -- YouTube: https://bit.ly/2PkoAM1 
@@ -92,8 +92,9 @@ SELECT @@SERVERNAME AS [Server Name], @@VERSION AS [SQL Server and OS Version In
 -- 15.0.4261.1		CU18								9/28/2022		https://support.microsoft.com/en-us/topic/kb5017593-cumulative-update-18-for-sql-server-2019-5fa00c36-edeb-446c-94e3-c4882b7526bc
 -- 15.0.4280.7		CU18 GDR							2/14/2023		https://support.microsoft.com/en-us/topic/kb5021124-description-of-the-security-update-for-sql-server-2019-cu18-february-14-2023-cfb75a0a-33dc-4e05-8645-4cf16fcec049
 -- 15.0.4298.1		CU19								2/16/2023		https://support.microsoft.com/en-us/topic/kb5023049-cumulative-update-19-for-sql-server-2019-b63d7163-e2e7-46f7-b50a-c3d1f2913219
--- 14.0.4312.2		CU20								4/13/2023		https://support.microsoft.com/en-us/topic/kb5024276-cumulative-update-20-for-sql-server-2019-4b282be9-b559-46ac-9b6a-badbd44785d2
-
+-- 15.0.4312.2		CU20								4/13/2023		https://support.microsoft.com/en-us/topic/kb5024276-cumulative-update-20-for-sql-server-2019-4b282be9-b559-46ac-9b6a-badbd44785d2
+-- 15.0.4316.3		CU21								6/15/2022		https://learn.microsoft.com/en-us/troubleshoot/sql/releases/sqlserver-2019/cumulativeupdate21
+-- 15.0.4322.2		CU22								8/14/2023		https://learn.microsoft.com/en-us/troubleshoot/sql/releases/sqlserver-2019/cumulativeupdate22
 
 -- How to determine the version, edition and update level of SQL Server and its components 
 -- https://bit.ly/2oAjKgW	
@@ -225,6 +226,11 @@ DBCC TRACESTATUS (-1);
 
 -- TF 7745 - Prevents Query Store data from being written to disk in case of a failover or shutdown command
 --           https://bit.ly/2GU69Km
+
+-- TF 8121 - Fixes a system-wide low memory issue that occurs when SQL Server commits memory above the maximum server memory under the memory model with the Lock Pages In Memory (added in CU15)
+--           https://learn.microsoft.com/en-US/troubleshoot/sql/releases/sqlserver-2019/cumulativeupdate15#bkmk_14421838
+
+
 
 
 -- DBCC TRACEON - Trace Flags (Transact-SQL)
@@ -1109,6 +1115,7 @@ AS (SELECT wait_type, wait_time_ms/ 1000.0 AS [WaitS],
 		N'MEMORY_ALLOCATION_EXT', N'ONDEMAND_TASK_QUEUE',
 		N'PARALLEL_REDO_DRAIN_WORKER', N'PARALLEL_REDO_LOG_CACHE', N'PARALLEL_REDO_TRAN_LIST',
 		N'PARALLEL_REDO_WORKER_SYNC', N'PARALLEL_REDO_WORKER_WAIT_WORK',
+		N'PREEMPTIVE_COM_GETDATA', N'PREEMPTIVE_COM_QUERYINTERFACE',
 		N'PREEMPTIVE_HADR_LEASE_MECHANISM', N'PREEMPTIVE_SP_SERVER_DIAGNOSTICS',
 		N'PREEMPTIVE_OS_LIBRARYOPS', N'PREEMPTIVE_OS_COMOPS', N'PREEMPTIVE_OS_CRYPTOPS',
 		N'PREEMPTIVE_OS_PIPEOPS', N'PREEMPTIVE_OS_AUTHENTICATIONOPS',

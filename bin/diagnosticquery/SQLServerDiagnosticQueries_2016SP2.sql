@@ -1,7 +1,7 @@
 
 -- SQL Server 2016 SP2 Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: June 5, 2023
+-- Last Modified: September 1, 2023
 -- https://glennsqlperformance.com/
 -- https://sqlserverperformance.wordpress.com/
 -- YouTube: https://bit.ly/2PkoAM1 
@@ -1754,10 +1754,10 @@ ORDER BY cp.usecounts DESC OPTION (RECOMPILE);
 
 -- Breaks down buffers used by current database by object (table, index) in the buffer cache  (Query 69) (Buffer Usage)
 -- Note: This query could take some time on a busy instance
-SELECT fg.name AS [Filegroup Name], SCHEMA_NAME(o.Schema_ID) AS [Schema Name],
+SELECT fg.name AS [Filegroup Name], SCHEMA_NAME(o.schema_id) AS [Schema Name],
 OBJECT_NAME(p.[object_id]) AS [Object Name], p.index_id, 
 CAST(COUNT(*)/128.0 AS DECIMAL(10, 2)) AS [Buffer size(MB)],  
-COUNT(*) AS [BufferCount], p.[Rows] AS [Row Count],
+COUNT(*) AS [BufferCount], p.[rows] AS [Row Count],
 p.data_compression_desc AS [Compression Type]
 FROM sys.allocation_units AS a WITH (NOLOCK)
 INNER JOIN sys.dm_os_buffer_descriptors AS b WITH (NOLOCK)
@@ -1775,8 +1775,8 @@ AND p.[object_id] > 100
 AND OBJECT_NAME(p.[object_id]) NOT LIKE N'plan_%'
 AND OBJECT_NAME(p.[object_id]) NOT LIKE N'sys%'
 AND OBJECT_NAME(p.[object_id]) NOT LIKE N'xml_index_nodes%'
-GROUP BY fg.name, o.Schema_ID, p.[object_id], p.index_id, 
-         p.data_compression_desc, p.[Rows]
+GROUP BY fg.name, o.schema_id, p.[object_id], p.index_id, 
+         p.data_compression_desc, p.[rows]
 ORDER BY [BufferCount] DESC OPTION (RECOMPILE);
 ------
 
@@ -1785,10 +1785,10 @@ ORDER BY [BufferCount] DESC OPTION (RECOMPILE);
 
 
 -- Get Schema names, Table names, object size, row counts, and compression status for clustered index or heap  (Query 70) (Table Sizes)
-SELECT DB_NAME(DB_ID()) AS [Database Name], SCHEMA_NAME(o.Schema_ID) AS [Schema Name], 
+SELECT DB_NAME(DB_ID()) AS [Database Name], SCHEMA_NAME(o.schema_id) AS [Schema Name], 
 OBJECT_NAME(p.object_id) AS [Table Name],
 CAST(SUM(ps.reserved_page_count) * 8.0 / 1024 AS DECIMAL(19,2)) AS [Object Size (MB)],
-SUM(p.Rows) AS [Row Count], 
+SUM(p.rows) AS [Row Count], 
 p.data_compression_desc AS [Compression Type]
 FROM sys.objects AS o WITH (NOLOCK)
 INNER JOIN sys.partitions AS p WITH (NOLOCK)
@@ -1798,8 +1798,8 @@ ON p.object_id = ps.object_id
 WHERE ps.index_id < 2 -- ignore the partitions from the non-clustered indexes if any
 AND p.index_id < 2    -- ignore the partitions from the non-clustered indexes if any
 AND o.type_desc = N'USER_TABLE'
-GROUP BY  SCHEMA_NAME(o.Schema_ID), p.object_id, ps.reserved_page_count, p.data_compression_desc
-ORDER BY SUM(ps.reserved_page_count) DESC, SUM(p.Rows) DESC OPTION (RECOMPILE);
+GROUP BY  SCHEMA_NAME(o.schema_id), p.object_id, ps.reserved_page_count, p.data_compression_desc
+ORDER BY SUM(ps.reserved_page_count) DESC, SUM(p.rows) DESC OPTION (RECOMPILE);
 ------
 
 -- Gives you an idea of table sizes, and possible data compression opportunities
@@ -1830,7 +1830,7 @@ ORDER BY OBJECT_NAME(t.[object_id]), p.index_id OPTION (RECOMPILE);
 
 
 -- When were Statistics last updated on all indexes?  (Query 72) (Statistics Update)
-SELECT SCHEMA_NAME(o.Schema_ID) + N'.' + o.[NAME] AS [Object Name], o.[type_desc] AS [Object Type],
+SELECT SCHEMA_NAME(o.schema_id) + N'.' + o.[name] AS [Object Name], o.[type_desc] AS [Object Type],
       i.[name] AS [Index Name], STATS_DATE(i.[object_id], i.index_id) AS [Statistics Date], 
       s.auto_created, s.no_recompute, s.user_created, s.is_incremental, s.is_temporary, 
 	  sp.persisted_sample_percent, 
@@ -1884,7 +1884,7 @@ ORDER BY sp.modification_counter DESC, o.name OPTION (RECOMPILE);
 -- Get fragmentation info for all indexes above a certain size in the current database  (Query 74) (Index Fragmentation)
 -- Note: This query could take some time on a very large database
 SELECT DB_NAME(ps.database_id) AS [Database Name], SCHEMA_NAME(o.[schema_id]) AS [Schema Name],
-OBJECT_NAME(ps.OBJECT_ID) AS [Object Name], i.[name] AS [Index Name], ps.index_id, ps.index_type_desc, 
+OBJECT_NAME(ps.object_id) AS [Object Name], i.[name] AS [Index Name], ps.index_id, ps.index_type_desc, 
 CAST(ps.avg_fragmentation_in_percent AS DECIMAL (15,3)) AS [Avg Fragmentation in Pct], 
 ps.fragment_count, ps.page_count, i.fill_factor, i.has_filter, i.filter_definition, i.[allow_page_locks]
 FROM sys.dm_db_index_physical_stats(DB_ID(),NULL, NULL, NULL , N'LIMITED') AS ps
