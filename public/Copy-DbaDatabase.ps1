@@ -1001,7 +1001,7 @@ function Copy-DbaDatabase {
                         SourceServer        = $sourceServer.Name
                         DestinationServer   = $destServer.Name
                         Name                = $dbName
-                        DestinationDatabase = $DestinationDbname
+                        DestinationDatabase = $destinationDbName
                         Type                = "Database"
                         Status              = $null
                         Notes               = $null
@@ -1100,26 +1100,26 @@ function Copy-DbaDatabase {
                         continue
                     }
 
-                    if (($null -ne $destServer.Databases[$DestinationdbName]) -and !$force -and !$WithReplace -and !$Continue) {
-                        if ($Pscmdlet.ShouldProcess($destinstance, "$DestinationdbName exists at destination. Use -Force to drop and migrate. Aborting routine for this database.")) {
-                            Write-Message -Level Verbose -Message "$DestinationdbName exists at destination. Use -Force to drop and migrate. Aborting routine for this database."
+                    if (($null -ne $destServer.Databases[$destinationDbName]) -and !$force -and !$WithReplace -and !$Continue) {
+                        if ($Pscmdlet.ShouldProcess($destinstance, "$destinationDbName exists at destination. Use -Force to drop and migrate. Aborting routine for this database.")) {
+                            Write-Message -Level Verbose -Message "$destinationDbName exists at destination. Use -Force to drop and migrate. Aborting routine for this database."
 
                             $copyDatabaseStatus.Status = "Skipped"
                             $copyDatabaseStatus.Notes = "Already exists on destination"
                             $copyDatabaseStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                         }
                         continue
-                    } elseif ($null -ne $destServer.Databases[$DestinationdbName] -and $force) {
-                        if ($sourceServer.Name -eq $destServer.Name -and $sourceServer.Databases[$DestinationdbName].Name -eq $destServer.Databases[$DestinationdbName].Name) {
+                    } elseif ($null -ne $destServer.Databases[$destinationDbName] -and $force) {
+                        if ($sourceServer.Name -eq $destServer.Name -and $dbName -eq $destinationDbName) {
                             Write-Message -Level Verbose -Message "Source and destination database are the same. Aborting routine for this database."
                             $copyDatabaseStatus.Status = "Failed"
                             $copyDatabaseStatus.Notes = "Source and destination database are the same."
                             $copyDatabaseStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                             continue
                         }
-                        if ($Pscmdlet.ShouldProcess($destinstance, "DROP DATABASE $DestinationdbName")) {
-                            Write-Message -Level Verbose -Message "$DestinationdbName already exists. -Force was specified. Dropping $DestinationdbName on $destinstance."
-                            $removeresult = Remove-DbaDatabase -SqlInstance $destserver -Database $DestinationdbName -Confirm:$false
+                        if ($Pscmdlet.ShouldProcess($destinstance, "DROP DATABASE $destinationDbName")) {
+                            Write-Message -Level Verbose -Message "$destinationDbName already exists. -Force was specified. Dropping $destinationDbName on $destinstance."
+                            $removeresult = Remove-DbaDatabase -SqlInstance $destserver -Database $destinationDbName -Confirm:$false
                             $dropResult = $removeresult.Status -eq 'Dropped'
 
                             if ($dropResult -eq $false) {
@@ -1213,9 +1213,9 @@ function Copy-DbaDatabase {
                             try {
                                 $msg = $null
                                 if ($miRestore) {
-                                    $restoreResultTmp = $backupTmpResult | Restore-DbaDatabase -SqlInstance $destServer -DatabaseName $DestinationdbName -TrustDbBackupHistory -WithReplace:$WithReplace -EnableException -AzureCredential $AzureCredential
+                                    $restoreResultTmp = $backupTmpResult | Restore-DbaDatabase -SqlInstance $destServer -DatabaseName $destinationDbName -TrustDbBackupHistory -WithReplace:$WithReplace -EnableException -AzureCredential $AzureCredential
                                 } else {
-                                    $restoreResultTmp = $backupTmpResult | Restore-DbaDatabase -SqlInstance $destServer -DatabaseName $DestinationdbName -ReuseSourceFolderStructure:$ReuseSourceFolderStructure -NoRecovery:$NoRecovery -TrustDbBackupHistory -WithReplace:$WithReplace -Continue:$Continue -EnableException -ReplaceDbNameInFile -AzureCredential $AzureCredential -KeepCDC:$KeepCDC -KeepReplication:$KeepReplication
+                                    $restoreResultTmp = $backupTmpResult | Restore-DbaDatabase -SqlInstance $destServer -DatabaseName $destinationDbName -ReuseSourceFolderStructure:$ReuseSourceFolderStructure -NoRecovery:$NoRecovery -TrustDbBackupHistory -WithReplace:$WithReplace -Continue:$Continue -EnableException -ReplaceDbNameInFile -AzureCredential $AzureCredential -KeepCDC:$KeepCDC -KeepReplication:$KeepReplication
                                 }
                             } catch {
                                 $msg = $_.Exception.InnerException.InnerException.InnerException.InnerException.Message
@@ -1358,46 +1358,46 @@ function Copy-DbaDatabase {
                             }
                         }
                     }
-                    $NewDatabase = Get-DbaDatabase -SqlInstance $destServer -database $DestinationdbName
+                    $NewDatabase = Get-DbaDatabase -SqlInstance $destServer -database $destinationDbName
 
                     $propfailures = @()
 
                     # restore potentially lost settings
                     if ($destServer.VersionMajor -ge 9 -and $NoRecovery -eq $false) {
                         if ($sourceDbOwnerChaining -ne $NewDatabase.DatabaseOwnershipChaining) {
-                            if ($Pscmdlet.ShouldProcess($destinstance, "Updating DatabaseOwnershipChaining on $DestinationdbName")) {
+                            if ($Pscmdlet.ShouldProcess($destinstance, "Updating DatabaseOwnershipChaining on $destinationDbName")) {
                                 try {
                                     $NewDatabase.DatabaseOwnershipChaining = $sourceDbOwnerChaining
                                     $NewDatabase.Alter()
-                                    Write-Message -Level Verbose -Message "Successfully updated DatabaseOwnershipChaining for $sourceDbOwnerChaining on $DestinationdbName on $destinstance."
+                                    Write-Message -Level Verbose -Message "Successfully updated DatabaseOwnershipChaining for $sourceDbOwnerChaining on $destinationDbName on $destinstance."
                                 } catch {
-                                    Write-Message -Level Warning -Message "Failed to update DatabaseOwnershipChaining for $sourceDbOwnerChaining on $DestinationdbName on $destinstance."
+                                    Write-Message -Level Warning -Message "Failed to update DatabaseOwnershipChaining for $sourceDbOwnerChaining on $destinationDbName on $destinstance."
                                     $propfailures += "Ownership chaining"
                                 }
                             }
                         }
 
                         if ($sourceDbTrustworthy -ne $NewDatabase.Trustworthy) {
-                            if ($Pscmdlet.ShouldProcess($destinstance, "Updating Trustworthy on $DestinationdbName")) {
+                            if ($Pscmdlet.ShouldProcess($destinstance, "Updating Trustworthy on $destinationDbName")) {
                                 try {
                                     $NewDatabase.Trustworthy = $sourceDbTrustworthy
                                     $NewDatabase.Alter()
-                                    Write-Message -Level Verbose -Message "Successfully updated Trustworthy to $sourceDbTrustworthy for $DestinationdbName on $destinstance"
+                                    Write-Message -Level Verbose -Message "Successfully updated Trustworthy to $sourceDbTrustworthy for $destinationDbName on $destinstance"
                                 } catch {
-                                    Write-Message -Level Warning -Message "Failed to update Trustworthy to $sourceDbTrustworthy for $DestinationdbName on $destinstance."
+                                    Write-Message -Level Warning -Message "Failed to update Trustworthy to $sourceDbTrustworthy for $destinationDbName on $destinstance."
                                     $propfailures += "Trustworthy"
                                 }
                             }
                         }
 
                         if ($sourceDbBrokerEnabled -ne $NewDatabase.BrokerEnabled) {
-                            if ($Pscmdlet.ShouldProcess($destinstance, "Updating BrokerEnabled on $DestinationDbName")) {
+                            if ($Pscmdlet.ShouldProcess($destinstance, "Updating BrokerEnabled on $destinationDbName")) {
                                 try {
                                     $NewDatabase.BrokerEnabled = $sourceDbBrokerEnabled
                                     $NewDatabase.Alter()
-                                    Write-Message -Level Verbose -Message "Successfully updated BrokerEnabled to $sourceDbBrokerEnabled for $DestinationdbName on $destinstance."
+                                    Write-Message -Level Verbose -Message "Successfully updated BrokerEnabled to $sourceDbBrokerEnabled for $destinationDbName on $destinstance."
                                 } catch {
-                                    Write-Message -Level Warning -Message "Failed to update BrokerEnabled to $sourceDbBrokerEnabled for $DestinationdbName on $destinstance."
+                                    Write-Message -Level Warning -Message "Failed to update BrokerEnabled to $sourceDbBrokerEnabled for $destinationDbName on $destinstance."
 
                                     $propfailures += "Message broker"
                                 }
@@ -1406,15 +1406,15 @@ function Copy-DbaDatabase {
                     }
 
                     if ($sourceDbReadOnly -ne $NewDatabase.ReadOnly -and -not $NoRecovery) {
-                        if ($Pscmdlet.ShouldProcess($destinstance, "Updating ReadOnly status on $DestinationdbName")) {
+                        if ($Pscmdlet.ShouldProcess($destinstance, "Updating ReadOnly status on $destinationDbName")) {
                             try {
                                 if ($sourceDbReadOnly) {
-                                    $result = Set-DbaDbState -SqlInstance $destserver -Database $DestinationdbName -ReadOnly -EnableException
+                                    $result = Set-DbaDbState -SqlInstance $destserver -Database $destinationDbName -ReadOnly -EnableException
                                 } else {
-                                    $result = Set-DbaDbState -SqlInstance $destserver -Database $DestinationdbName -ReadWrite -EnableException
+                                    $result = Set-DbaDbState -SqlInstance $destserver -Database $destinationDbName -ReadWrite -EnableException
                                 }
                             } catch {
-                                Write-Message -Level Verbose -Message "Failed to update ReadOnly status on $DestinationdbName."
+                                Write-Message -Level Verbose -Message "Failed to update ReadOnly status on $destinationDbName."
                                 $propfailures = "Read only"
                             }
                         }
