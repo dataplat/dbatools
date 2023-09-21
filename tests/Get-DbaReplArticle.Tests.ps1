@@ -16,5 +16,5 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     }
 }
 <#
-    Integration tests for replication are in GitHub Actions and run from \tests\gh-actions-repl.ps1
+    Integration tests for replication are in GitHub Actions and run from \tests\gh-actions-repl-*.ps1.ps1
 #>
