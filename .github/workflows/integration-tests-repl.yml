@@ -54,7 +54,7 @@ jobs:
           $null = Invoke-Pester ./tests/gh-actions-repl-1.ps1 -Output Detailed -PassThru -Verbose
 
   repl-tests-part2:
-runs-on: ubuntu-latest
+    runs-on: ubuntu-latest
     env:
       GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
 
