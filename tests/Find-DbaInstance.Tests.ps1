@@ -24,9 +24,9 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     Context "Command finds SQL Server instances" {
         BeforeAll {
             if ($env:APPVEYOR) {
-                $results = Find-DbaInstance -ComputerName $script:instance3 -ScanType Browser, SqlConnect
+                $results = Find-DbaInstance -ComputerName $script:instance3 -ScanType Browser, SqlConnect | Select-Object -First 1
             } else {
-                $results = Find-DbaInstance -ComputerName $TestServer -ScanType Browser, SqlConnect
+                $results = Find-DbaInstance -ComputerName $TestServer -ScanType Browser, SqlConnect | Select-Object -First 1
             }
         }
         It "Returns an object type of [Dataplat.Dbatools.Discovery.DbaInstanceReport]" {
