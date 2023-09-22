@@ -30,6 +30,7 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
             }
             $articleName = 'ReplicateMe'
 
+            <#
             # we need some publications with articles too
             $pubname = 'TestTrans'
             if (-not (Get-DbaReplPublication -Name $pubname -Type Transactional)) {
@@ -51,6 +52,7 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
             if (-not (Get-DbaReplPublication -Name $pubname -Type Merge)) {
                 $null = New-DbaReplPublication -Database ReplDb -Type Merge -Name $pubname
             }
+            #>
         }
 
         Context "New-DbaReplSubscription works" -skip {
