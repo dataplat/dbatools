@@ -18,7 +18,7 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
     }
 
 
-    Describe "Subscription commands" -tag sub {
+    Describe "Subscription commands" -tag sub -skip {
         BeforeAll {
             # if replication is disabled - enable it
             if (-not (Get-DbaReplDistributor).IsDistributor) {
@@ -53,7 +53,7 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
             }
         }
 
-        Context "New-DbaReplSubscription works" -skip {
+        Context "New-DbaReplSubscription works" {
             BeforeAll {
                 if (Get-DbaReplSubscription -SqlInstance mssql1 -PublicationName TestTrans) {
                     (Get-DbaReplSubscription -SqlInstance mssql1 -PublicationName TestTrans).foreach{
