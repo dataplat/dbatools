@@ -29,6 +29,11 @@ function Get-DbaAgDatabase {
     .PARAMETER InputObject
         Enables piped input from Get-DbaAvailabilityGroup.
 
+    .PARAMETER Refresh
+        If provided, the function will refresh the cached list of databases for each availability group.
+        When replicaAgDb is null we have issues with a stale cache.
+        For some reason when multiple databases are restored using the same pair of node listeners.
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -68,6 +73,7 @@ function Get-DbaAgDatabase {
         [string[]]$Database,
         [parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.AvailabilityGroup[]]$InputObject,
+        [switch]$Refresh,
         [switch]$EnableException
     )
     process {
@@ -78,6 +84,12 @@ function Get-DbaAgDatabase {
 
         if ($SqlInstance) {
             $InputObject += Get-DbaAvailabilityGroup -SqlInstance $SqlInstance -SqlCredential $SqlCredential -AvailabilityGroup $AvailabilityGroup
+        }
+
+        if ($Refresh) {
+            foreach($ag in $InputObject) {
+                $ag.Refresh()
+            }
         }
 
         foreach ($db in $InputObject.AvailabilityDatabases) {
