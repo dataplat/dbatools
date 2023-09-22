@@ -18,7 +18,7 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
     }
 
 
-    Describe "Subscription commands" -tag sub -skip {
+    Describe "Subscription commands" -tag sub {
         BeforeAll {
             # if replication is disabled - enable it
             if (-not (Get-DbaReplDistributor).IsDistributor) {
@@ -53,7 +53,7 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
             }
         }
 
-        Context "New-DbaReplSubscription works" {
+        Context "New-DbaReplSubscription works" -skip {
             BeforeAll {
                 if (Get-DbaReplSubscription -SqlInstance mssql1 -PublicationName TestTrans) {
                     (Get-DbaReplSubscription -SqlInstance mssql1 -PublicationName TestTrans).foreach{
@@ -67,7 +67,7 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
                 }
                 Get-DbaReplArticle -Publication TestSnap | Remove-DbaReplArticle -Confirm:$false
             }
-            It "Adds a subscription" {
+            It "Adds a subscription" -skip {
                 $pubName = 'TestTrans'
                 { New-DbaReplSubscription -SqlInstance mssql1 -Database ReplDb -SubscriberSqlInstance mssql2 -SubscriptionDatabase ReplDbTrans -PublicationName $pubName -Type Push -EnableException } | Should -Not -Throw
 
@@ -92,7 +92,7 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
                 $sub.SubscriptionType | ForEach-Object { $_ | Should -Be 'Pull' }
             }
 
-            It "Throws an error if there are no articles in the publication" {
+            It "Throws an error if there are no articles in the publication" -skip {
                 $pubName = 'TestSnap'
                 { New-DbaReplSubscription -SqlInstance mssql1 -Database ReplDb -SubscriberSqlInstance mssql2 -SubscriptionDatabase ReplDb -PublicationName $pubName -Type Pull -EnableException } | Should -Throw
             }
