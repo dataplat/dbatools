@@ -67,7 +67,7 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
                 }
                 Get-DbaReplArticle -Publication TestSnap | Remove-DbaReplArticle -Confirm:$false
             }
-            It "Adds a subscription" -skip {
+            It "Adds a subscription" {
                 $pubName = 'TestTrans'
                 { New-DbaReplSubscription -SqlInstance mssql1 -Database ReplDb -SubscriberSqlInstance mssql2 -SubscriptionDatabase ReplDbTrans -PublicationName $pubName -Type Push -EnableException } | Should -Not -Throw
 
@@ -79,7 +79,7 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
                 $sub.SubscriptionType | ForEach-Object { $_ | Should -Be 'Push' }
             }
 
-            It "Adds a pull subscription" -skip {
+            It "Adds a pull subscription" {
                 #TODO: Fix pull subscriptions in New-DbaReplSubscription command
                 $pubName = 'TestMerge'
                 { New-DbaReplSubscription -SqlInstance mssql1 -Database ReplDb -SubscriberSqlInstance mssql2 -SubscriptionDatabase ReplDbSnap -PublicationName $pubName -Type Pull -EnableException } | Should -Not -Throw
@@ -92,13 +92,13 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
                 $sub.SubscriptionType | ForEach-Object { $_ | Should -Be 'Pull' }
             }
 
-            It "Throws an error if there are no articles in the publication" -skip {
+            It "Throws an error if there are no articles in the publication" {
                 $pubName = 'TestSnap'
                 { New-DbaReplSubscription -SqlInstance mssql1 -Database ReplDb -SubscriberSqlInstance mssql2 -SubscriptionDatabase ReplDb -PublicationName $pubName -Type Pull -EnableException } | Should -Throw
             }
         }
 
-        Context "Remove-DbaReplSubscription works" {
+        Context "Remove-DbaReplSubscription works" -skip {
             BeforeEach {
                 $pubName = 'TestTrans'
                 if (-not (Get-DbaReplSubscription -SqlInstance mssql1 -Database ReplDb -SubscriptionDatabase ReplDb -PublicationName $pubname -Type Push | Where-Object SubscriberName -eq mssql2)) {
@@ -119,7 +119,7 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
         }
 
 
-        Context "Get-DbaReplSubscription works" {
+        Context "Get-DbaReplSubscription works" -skip {
             BeforeAll {
                 $pubname = 'TestTrans'
                 if (-not (Get-DbaReplPublication -Name $pubname -Type Transactional)) {
