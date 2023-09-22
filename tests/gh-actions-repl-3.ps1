@@ -124,6 +124,7 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
         Context "Get-DbaReplSubscription works" {
             BeforeAll {
                 $pubname = 'TestTrans'
+                $articleName = 'ReplicateMe'
                 if (-not (Get-DbaReplPublication -Name $pubname -Type Transactional)) {
                     $null = New-DbaReplPublication -Database ReplDb -Type Transactional -Name $pubname
                 }
