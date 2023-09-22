@@ -119,7 +119,7 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
         }
 
 
-        Context "Get-DbaReplSubscription works" -skip {
+        Context "Get-DbaReplSubscription works" {
             BeforeAll {
                 $pubname = 'TestTrans'
                 if (-not (Get-DbaReplPublication -Name $pubname -Type Transactional)) {
