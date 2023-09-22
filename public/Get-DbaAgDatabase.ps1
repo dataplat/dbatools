@@ -89,6 +89,10 @@ function Get-DbaAgDatabase {
         if ($Refresh) {
             foreach($ag in $InputObject) {
                 $ag.Refresh()
+                # Calling AvilabilityReplica.Refresh() has the side effct of updating AvailabilityDatabases.
+                # calling AvailabilityDatabases.Refresh() alone is not enough
+                $ag.AvailabilityReplicas.Refresh()
+                $ag.AvailabilityDatabases.Refresh()
             }
         }
 

@@ -380,9 +380,12 @@ function Add-DbaAgDatabase {
 
                     try {
                         $replicaAgDb = Get-DbaAgDatabase -SqlInstance $replicaServerSMO[$replicaName] -AvailabilityGroup $AvailabilityGroup -Database $db.Name -EnableException
-                        if ($null -eq $replicaAgDb){
+                        if ($null -eq $replicaAgDb) {
                             # We know the database has to exist by now, so we refresh the AvailabilityGroup object to update the cache that claims it doesn't.
                             $replicaAgDb = Get-DbaAgDatabase -Refresh -SqlInstance $replicaServerSMO[$replicaName] -AvailabilityGroup $AvailabilityGroup -Database $db.Name -EnableException
+                            if ($null -eq $replicaAgDb) {
+                                throw [System.Management.Automation.ItemNotFoundException]::New()
+                            }
                         }
                     } catch {
                         $failure = $true
