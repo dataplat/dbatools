@@ -21,14 +21,14 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
     Describe "Subscription commands" -tag sub {
         BeforeAll {
             # if replication is disabled - enable it
-            if (-not (Get-DbaReplDistributor).IsDistributor) {
-                Enable-DbaReplDistributor
-            }
-            # if publishing is disabled - enable it
-            if (-not (Get-DbaReplServer).IsPublisher) {
-                Enable-DbaReplPublishing -PublisherSqlLogin $cred -EnableException
-            }
-            $articleName = 'ReplicateMe'
+            #if (-not (Get-DbaReplDistributor).IsDistributor) {
+            #    Enable-DbaReplDistributor
+            #}
+            ## if publishing is disabled - enable it
+            #if (-not (Get-DbaReplServer).IsPublisher) {
+            #    Enable-DbaReplPublishing -PublisherSqlLogin $cred -EnableException
+            #}
+            #$articleName = 'ReplicateMe'
 
             <#
             # we need some publications with articles too
