@@ -83,16 +83,18 @@ function Test-DbaLoginPassword {
 
     begin {
 
-        function Split-ArrayInParts($array, [int]$parts) {
-            #splits an array in "equal" parts
-            $size = $array.Length / $parts
-            $counter = [pscustomobject] @{ Value = 0 }
-            $groups = $array | Group-Object -Property { [math]::Floor($counter.Value++ / $size) }
-            $rtn = @()
-            foreach ($g in $groups) {
-                $rtn += , @($g.Group)
+        function Split-ArrayInChunks {
+            param(
+                [object[]] $source,
+                [int] $size = 1
+            )
+            $chunkCount = [Math]::Ceiling($source.Count / $size)
+            0 .. ($chunkCount - 1) `
+            | ForEach-Object {
+                $startIndex = $_ * $size
+                $endIndex = [Math]::Min(($_ + 1) * $size, $source.Count)
+                ,$source[$startIndex .. ($endIndex - 1)]
             }
-            $rtn
         }
 		
 		$maxBatch = 200
@@ -120,7 +122,8 @@ function Test-DbaLoginPassword {
                 SysLogins.modify_date as ModifiedDate,
                 SysLogins.default_database_name as DefaultDatabase
             FROM sys.sql_logins SysLogins
-            INNER JOIN @WeakPwdList WeakPassword ON PWDCOMPARE(WeakPassword.WeakPwd, password_hash) = 1
+            INNER JOIN @WeakPwdList WeakPassword 
+            ON PWDCOMPARE(REPLACE(WeakPassword.WeakPwd,'@@Name',SysLogins.name),password_hash) = 1
             "
     }
     process {
@@ -142,7 +145,7 @@ function Test-DbaLoginPassword {
             Write-Message -Level Verbose -Message "Testing: same username as Password"
             Write-Message -Level Verbose -Message "Testing: the following Passwords $CheckPasses"
             try {
-                $checkParts = Split-ArrayInParts -array $CheckPasses -parts $maxBatch
+                $checkParts = ,(Split-ArrayInChunks -source $CheckPasses -size $maxBatch)
                 
                 $loopIndex = 0
 
