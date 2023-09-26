@@ -89,8 +89,7 @@ function Test-DbaLoginPassword {
                 [int] $size = 1
             )
             $chunkCount = [Math]::Ceiling($source.Count / $size)
-            0 .. ($chunkCount - 1) `
-            | ForEach-Object {
+            0 .. ($chunkCount - 1) | ForEach-Object {
                 $startIndex = $_ * $size
                 $endIndex = [Math]::Min(($_ + 1) * $size, $source.Count)
                 , $source[$startIndex .. ($endIndex - 1)]
