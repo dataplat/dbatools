@@ -93,11 +93,11 @@ function Test-DbaLoginPassword {
             | ForEach-Object {
                 $startIndex = $_ * $size
                 $endIndex = [Math]::Min(($_ + 1) * $size, $source.Count)
-                ,$source[$startIndex .. ($endIndex - 1)]
+                , $source[$startIndex .. ($endIndex - 1)]
             }
         }
-		
-		$maxBatch = 200
+
+        $maxBatch = 200
 
         $CheckPasses = "", "@@Name"
         if ($Dictionary) {
@@ -105,26 +105,26 @@ function Test-DbaLoginPassword {
         }
 
         $sqlStart = "DECLARE @WeakPwdList TABLE(WeakPwd NVARCHAR(255))
-            --Define weak password list
-            --Use @@Name if users password contain their name
-            INSERT INTO @WeakPwdList(WeakPwd)
-            VALUES (NULL)"
+                --Define weak password list
+                --Use @@Name if users password contain their name
+                INSERT INTO @WeakPwdList(WeakPwd)
+                VALUES (NULL)"
 
         $sqlEnd = "
-            SELECT SERVERPROPERTY('MachineName') AS [ComputerName],
-                ISNULL(SERVERPROPERTY('InstanceName'), 'MSSQLSERVER') AS InstanceName,
-                SERVERPROPERTY('ServerName') AS [SqlInstance],
-                SysLogins.name as SqlLogin,
-                WeakPassword = 'True',
-                REPLACE(WeakPassword.WeakPwd,'@@Name',SysLogins.name) As [Password],
-                SysLogins.is_disabled as Disabled,
-                SysLogins.create_date as CreatedDate,
-                SysLogins.modify_date as ModifiedDate,
-                SysLogins.default_database_name as DefaultDatabase
-            FROM sys.sql_logins SysLogins
-            INNER JOIN @WeakPwdList WeakPassword 
-            ON PWDCOMPARE(REPLACE(WeakPassword.WeakPwd,'@@Name',SysLogins.name),password_hash) = 1
-            "
+                SELECT SERVERPROPERTY('MachineName') AS [ComputerName],
+                    ISNULL(SERVERPROPERTY('InstanceName'), 'MSSQLSERVER') AS InstanceName,
+                    SERVERPROPERTY('ServerName') AS [SqlInstance],
+                    SysLogins.name as SqlLogin,
+                    WeakPassword = 'True',
+                    REPLACE(WeakPassword.WeakPwd,'@@Name',SysLogins.name) As [Password],
+                    SysLogins.is_disabled as Disabled,
+                    SysLogins.create_date as CreatedDate,
+                    SysLogins.modify_date as ModifiedDate,
+                    SysLogins.default_database_name as DefaultDatabase
+                FROM sys.sql_logins SysLogins
+                INNER JOIN @WeakPwdList WeakPassword
+                ON PWDCOMPARE(REPLACE(WeakPassword.WeakPwd,'@@Name',SysLogins.name),password_hash) = 1
+                "
     }
     process {
         foreach ($instance in $SqlInstance) {
@@ -145,13 +145,13 @@ function Test-DbaLoginPassword {
             Write-Message -Level Verbose -Message "Testing: same username as Password"
             Write-Message -Level Verbose -Message "Testing: the following Passwords $CheckPasses"
             try {
-                $checkParts = ,(Split-ArrayInChunks -source $CheckPasses -size $maxBatch)
-                
+                $checkParts = , (Split-ArrayInChunks -source $CheckPasses -size $maxBatch)
+
                 $loopIndex = 0
 
                 foreach ($batch in $checkParts) {
                     $thisBatch = $sqlStart
-                    $sqlParams = @{}
+                    $sqlParams = @{ }
                     foreach ($piece in $batch) {
                         $loopIndex += 1
                         $paramKey = "@p_$loopIndex"
