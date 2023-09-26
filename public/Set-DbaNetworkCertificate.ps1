@@ -66,7 +66,7 @@ function Set-DbaNetworkCertificate {
     param (
         [Parameter(ValueFromPipelineByPropertyName)]
         [Alias("ComputerName")]
-        [DbaInstanceParameter[]]$SqlInstance,
+        [DbaInstanceParameter[]]$SqlInstance = $env:COMPUTERNAME,
         [Parameter(ValueFromPipelineByPropertyName)]
         [PSCredential]$Credential,
         [parameter(Mandatory, ParameterSetName = "Certificate", ValueFromPipeline)]
