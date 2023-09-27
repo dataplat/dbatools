@@ -4,11 +4,11 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 
 Describe "$commandname Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'Database', 'SqlCredential', 'PublicationType', 'EnableException'
+        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
+        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'Name', 'Type', 'EnableException'
         $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
         It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
         }
     }
 
@@ -19,8 +19,9 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
                 [object]@{
                     Name              = 'TestDB'
                     TransPublications = @{
-                        Name = 'TestDB_pub'
-                        Type = 'Transactional'
+                        Name         = 'TestDB_pub'
+                        Type         = 'Transactional'
+                        DatabaseName = 'TestDB'
                     }
                     MergePublications = @{}
                 }
@@ -28,32 +29,36 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
 
             Mock Connect-DbaInstance -MockWith {
                 [object]@{
-                    Name              = "MockServerName"
-                    ComputerName      = 'MockComputerName'
-                    Databases         = @{
+                    Name               = "MockServerName"
+                    ServiceName        = 'MSSQLSERVER'
+                    DomainInstanceName = 'MockServerName'
+                    ComputerName       = 'MockComputerName'
+                    Databases          = @{
                         Name               = 'TestDB'
                         #state
                         #status
                         ID                 = 5
                         ReplicationOptions = 'Published'
+                        IsAccessible       = $true
+                        IsSystemObject     = $false
                     }
-                    ConnectionContext = @{
+                    ConnectionContext  = @{
                         SqlConnectionObject = 'FakeConnectionContext'
                     }
                 }
             }
 
             It "Honors the SQLInstance parameter" {
-                $Results = Get-DbaRepPublication -SqlInstance MockServerName
-                $Results.Server | Should Be "MockServerName"
+                $Results = Get-DbaReplPublication -SqlInstance MockServerName
+                $Results.SqlInstance.Name | Should Be "MockServerName"
             }
 
             It "Honors the Database parameter" {
-                $Results = Get-DbaRepPublication -SqlInstance MockServerName -Database TestDB
-                $Results.Database | Should Be "TestDB"
+                $Results = Get-DbaReplPublication -SqlInstance MockServerName -Database TestDB
+                $Results.DatabaseName | Should Be "TestDB"
             }
 
-            It "Honors the PublicationType parameter" {
+            It "Honors the Type parameter" {
 
                 Mock Connect-ReplicationDB -MockWith {
                     [object]@{
@@ -66,13 +71,13 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
                     }
                 }
 
-                $Results = Get-DbaRepPublication -SqlInstance MockServerName -Database TestDB -PublicationType Snapshot
-                $Results.PublicationType | Should Be "Snapshot"
+                $Results = Get-DbaReplPublication -SqlInstance MockServerName -Database TestDB -Type Snapshot
+                $Results.Type | Should Be "Snapshot"
             }
 
-            It "Stops if validate set for PublicationType is not met" {
+            It "Stops if validate set for Type is not met" {
 
-                { Get-DbaRepPublication -SqlInstance MockServerName -PublicationType NotAPubType } | should Throw
+                { Get-DbaReplPublication -SqlInstance MockServerName -Type NotAPubType } | should Throw
 
             }
         }

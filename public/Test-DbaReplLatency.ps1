@@ -1,4 +1,4 @@
-function Test-DbaRepLatency {
+function Test-DbaReplLatency {
     <#
     .SYNOPSIS
         Displays replication latency for all transactional publications for a server or database.
@@ -50,20 +50,20 @@ function Test-DbaRepLatency {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Test-DbaRepLatency
+        https://dbatools.io/Test-DbaReplLatency
 
     .EXAMPLE
-        PS C:\> Test-DbaRepLatency -SqlInstance sql2008, sqlserver2012
+        PS C:\> Test-DbaReplLatency -SqlInstance sql2008, sqlserver2012
 
         Return replication latency for all transactional publications for servers sql2008 and sqlserver2012.
 
     .EXAMPLE
-        PS C:\> Test-DbaRepLatency -SqlInstance sql2008 -Database TestDB
+        PS C:\> Test-DbaReplLatency -SqlInstance sql2008 -Database TestDB
 
         Return replication latency for all transactional publications on server sql2008 for only the TestDB database
 
     .EXAMPLE
-        PS C:\> Test-DbaRepLatency -SqlInstance sql2008 -Database TestDB -PublicationName TestDB_Pub
+        PS C:\> Test-DbaReplLatency -SqlInstance sql2008 -Database TestDB -PublicationName TestDB_Pub
 
         Return replication latency for the TestDB_Pub publication for the TestDB database located on the server sql2008.
 
@@ -94,7 +94,7 @@ function Test-DbaRepLatency {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
-            $publicationNames = Get-DbaRepPublication -SqlInstance $server -Database $Database -SqlCredential $SqlCredentials -PublicationType "Transactional"
+            $publicationNames = Get-DbaReplPublication -SqlInstance $server -Database $Database -SqlCredential $SqlCredentials -Type "Transactional"
 
             if ($PublicationName) {
                 $publicationNames = $publicationNames | Where-Object PublicationName -in $PublicationName
@@ -205,7 +205,7 @@ function Test-DbaRepLatency {
                             PublicationServer              = $publication.Server
                             PublicationDB                  = $publication.Database
                             PublicationName                = $publication.PublicationName
-                            PublicationType                = $publication.PublicationType
+                            PublicationType                = $publication.Type
                             DistributionServer             = $distributionServer
                             DistributionDB                 = $distributionDatabase
                             SubscriberServer               = $info.subscriber
@@ -213,7 +213,7 @@ function Test-DbaRepLatency {
                             PublisherToDistributorLatency  = $info.distributor_latency
                             DistributorToSubscriberLatency = $info.subscriber_latency
                             TotalLatency                   = $totalLatency
-                        } | Select-DefaultView -ExcludeProperty PublicationType
+                        } | Select-DefaultView -ExcludeProperty Type
 
 
                         if (!$RetainToken) {
