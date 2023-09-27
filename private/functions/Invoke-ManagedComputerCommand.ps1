@@ -90,68 +90,37 @@ function Invoke-ManagedComputerCommand {
         Credential   = $Credential
         ErrorAction  = 'Stop'
     }
+
     try {
+        # Attempt to execute the command directly
         Invoke-Command2 @parms
     } catch {
+        # Log the failure and prepare to connect remotely
         Write-Message -Level Verbose -Message "Local connection attempt to $computer failed | $PSItem. Connecting remotely."
         $hostname = $resolved.FullComputerName
 
-        # For surely resolve stuff, and going by default with kerberos, this needs to match FullComputerName
+        # For securely resolving and using Kerberos by default, the ComputerName should match FullComputerName
+        # Now, we will attempt to connect remotely with different versions
 
-        try {
-            Invoke-Command2 @parms -ComputerName $hostname
-        } catch {
+        # Set the maximum and minimum versions for the loop
+        $MaxVersion = 16
+        $MinVersion = 8
+
+        # Iterate through versions from maximum to minimum
+        foreach ($version in ($MaxVersion..$MinVersion)) {
             try {
-                $ArgumentList[$ArgumentList.GetUpperBound(0)].version = 16
+                # Set the desired version in the ArgumentList
+                $ArgumentList[$ArgumentList.GetUpperBound(0)].version = $version
                 $parms.ArgumentList = $ArgumentList
+
+                # Attempt to execute the command remotely
                 Invoke-Command2 @parms -ComputerName $hostname
+
+                # Operation succeeded, exit the loop
+                break
             } catch {
-                # lol I'm not sure how to catch the last error so...
-                try {
-                    $ArgumentList[$ArgumentList.GetUpperBound(0)].version = 15
-                    $parms.ArgumentList = $ArgumentList
-                    Invoke-Command2 @parms -ComputerName $hostname
-                } catch {
-                    try {
-                        $ArgumentList[$ArgumentList.GetUpperBound(0)].version = 14
-                        $parms.ArgumentList = $ArgumentList
-                        Invoke-Command2 @parms -ComputerName $hostname
-                    } catch {
-                        try {
-                            $ArgumentList[$ArgumentList.GetUpperBound(0)].version = 13
-                            $parms.ArgumentList = $ArgumentList
-                            Invoke-Command2 @parms -ComputerName $hostname
-                        } catch {
-                            try {
-                                $ArgumentList[$ArgumentList.GetUpperBound(0)].version = 12
-                                $parms.ArgumentList = $ArgumentList
-                                Invoke-Command2 @parms -ComputerName $hostname
-                            } catch {
-                                try {
-                                    $ArgumentList[$ArgumentList.GetUpperBound(0)].version = 11
-                                    $parms.ArgumentList = $ArgumentList
-                                    Invoke-Command2 @parms -ComputerName $hostname
-                                } catch {
-                                    try {
-                                        $ArgumentList[$ArgumentList.GetUpperBound(0)].version = 10
-                                        $parms.ArgumentList = $ArgumentList
-                                        Invoke-Command2 @parms -ComputerName $hostname
-                                    } catch {
-                                        try {
-                                            $ArgumentList[$ArgumentList.GetUpperBound(0)].version = 9
-                                            $parms.ArgumentList = $ArgumentList
-                                            Invoke-Command2 @parms -ComputerName $hostname
-                                        } catch {
-                                            $ArgumentList[$ArgumentList.GetUpperBound(0)].version = 8
-                                            $parms.ArgumentList = $ArgumentList
-                                            Invoke-Command2 @parms -ComputerName $hostname
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
+                # Log the failure and proceed to the next version
+                Write-Message -Level Verbose -Message "Local connection attempt to $computer failed | $PSItem. Connecting remotely (Version $version)."
             }
         }
     }
