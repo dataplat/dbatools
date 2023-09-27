@@ -120,7 +120,7 @@ function Invoke-ManagedComputerCommand {
                 break
             } catch {
                 # Log the failure and proceed to the next version
-                Write-Message -Level Verbose -Message "Local connection attempt to $computer failed | $PSItem. Connecting remotely (Version $version)."
+                Write-Message -Level Verbose -Message "Connecting remotely to: '$computer' using version: '$version' failed. | $PSItem"
             }
         }
     }
