@@ -1,13 +1,10 @@
-function Get-DbaRepDistributor {
+function Get-DbaReplDistributor {
     <#
     .SYNOPSIS
         Gets the information about a replication distributor for a given SQL Server instance.
 
     .DESCRIPTION
         This function locates and enumerates distributor information for a given SQL Server instance.
-
-        All replication commands need SQL Server Management Studio installed and are therefore currently not supported.
-        Have a look at this issue to get more information: https://github.com/dataplat/dbatools/issues/7428
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.
@@ -33,13 +30,17 @@ function Get-DbaRepDistributor {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaRepDistributor
+        https://dbatools.io/Get-DbaReplDistributor
 
     .EXAMPLE
-        PS C:\> Get-DbaRepDistributor -SqlInstance sql2008, sqlserver2012
+        PS C:\> Get-DbaReplDistributor -SqlInstance sql2008, sqlserver2012
 
         Retrieve distributor information for servers sql2008 and sqlserver2012.
 
+    .EXAMPLE
+        PS C:\> Connect-DbaInstance -SqlInstance mssql1 | Get-DbaReplDistributor
+
+        Pipe a SQL Server instance to Get-DbaReplDistributor to retrieve distributor information.
     #>
     [CmdletBinding()]
     param (
@@ -48,9 +49,6 @@ function Get-DbaRepDistributor {
         [PSCredential]$SqlCredential,
         [switch]$EnableException
     )
-    begin {
-        Add-ReplicationLibrary
-    }
     process {
         if (Test-FunctionInterrupt) { return }
         foreach ($instance in $SqlInstance) {
@@ -58,17 +56,11 @@ function Get-DbaRepDistributor {
 
             # Connect to the distributor of the instance
             try {
-                $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential
-                $sqlconn = New-SqlConnection -SqlInstance $instance -SqlCredential $SqlCredential
-
-                $distributor = New-Object Microsoft.SqlServer.Replication.ReplicationServer $sqlconn
+                $distributor = Get-DbaReplServer -SqlInstance $instance -SqlCredential $SqlCredential -EnableException:$EnableException
             } catch {
-                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+                Stop-Function -Message "Error occurred getting information about $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
-
-            Add-Member -Force -InputObject $distributor -MemberType NoteProperty -Name ComputerName -Value $server.ComputerName
-            Add-Member -Force -InputObject $distributor -MemberType NoteProperty -Name InstanceName -Value $server.ServiceName
-            Add-Member -Force -InputObject $distributor -MemberType NoteProperty -Name SqlInstance -Value $server.DomainInstanceName
+            Write-Message -Level Verbose -Message "Getting publisher for $server"
 
             Select-DefaultView -InputObject $distributor -Property ComputerName, InstanceName, SqlInstance, IsPublisher, IsDistributor, DistributionServer, DistributionDatabase, DistributorInstalled, DistributorAvailable, HasRemotePublisher
         }

@@ -1,13 +1,13 @@
-function Get-DbaRepServer {
+function Get-DbaReplServer {
     <#
     .SYNOPSIS
         Gets a replication server object
 
     .DESCRIPTION
-        Gets a replication server object
+        Gets a replication server object.
 
-        All replication commands need SQL Server Management Studio installed and are therefore currently not supported.
-        Have a look at this issue to get more information: https://github.com/dataplat/dbatools/issues/7428
+        Note: The ReplicationDatabases property gets the databases enabled for replication in the connected instance of Microsoft SQL Server/.
+        Not necessarily the databases that are actually replicated.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances
@@ -33,15 +33,15 @@ function Get-DbaRepServer {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaRepServer
+        https://dbatools.io/Get-DbaReplServer
 
     .EXAMPLE
-        PS C:\> Get-DbaRepServer -SqlInstance sql2016
+        PS C:\> Get-DbaReplServer -SqlInstance sql2016
 
         Gets the replication server object for sql2016 using Windows authentication
 
     .EXAMPLE
-        PS C:\> Get-DbaRepServer -SqlInstance sql2016 -SqlCredential repadmin
+        PS C:\> Get-DbaReplServer -SqlInstance sql2016 -SqlCredential repadmin
 
         Gets the replication server object for sql2016 using SQL authentication
 
@@ -60,11 +60,16 @@ function Get-DbaRepServer {
         if (Test-FunctionInterrupt) { return }
         foreach ($instance in $SqlInstance) {
             try {
-                # use System.Data instead of Microsoft.Data
-                $sqlconn = New-SqlConnection -SqlInstance $instance -SqlCredential $SqlCredential
-                New-Object Microsoft.SqlServer.Replication.ReplicationServer $sqlconn
+                $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential
+                $replServer = New-Object Microsoft.SqlServer.Replication.ReplicationServer
+                $replServer.ConnectionContext = $Server.ConnectionContext.SqlConnectionObject
+                $replServer | Add-Member -Type NoteProperty -Name ComputerName -Value $server.ComputerName -Force
+                $replServer | Add-Member -Type NoteProperty -Name InstanceName -Value $server.ServiceName -Force
+                $replServer | Add-Member -Type NoteProperty -Name SqlInstance -Value $server.DomainInstanceName -Force
+
+                Select-DefaultView -InputObject $replServer -Property ComputerName, InstanceName, SqlInstance, IsDistributor, IsPublisher, DistributionServer, DistributionDatabase
             } catch {
-                Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
         }
     }
