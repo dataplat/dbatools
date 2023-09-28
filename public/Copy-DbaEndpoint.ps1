@@ -117,7 +117,7 @@ function Copy-DbaEndpoint {
             foreach ($currentEndpoint in $serverEndpoints) {
                 $endpointName = $currentEndpoint.Name
 
-                $copyEndpointStatus = [pscustomobject]@{
+                $copyEndpointStatus = [PSCustomObject]@{
                     SourceServer      = $sourceServer.Name
                     DestinationServer = $destServer.Name
                     Name              = $endpointName

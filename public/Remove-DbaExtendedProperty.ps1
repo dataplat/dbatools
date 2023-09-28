@@ -54,7 +54,7 @@ function Remove-DbaExtendedProperty {
                 $db = $object | Get-ConnectionParent -Database
                 try {
                     $null = $db.Invoke("EXEC sp_dropextendedproperty @name = N'$($object.Name)'; ")
-                    [pscustomobject]@{
+                    [PSCustomObject]@{
                         ComputerName = $object.ComputerName
                         InstanceName = $object.InstanceName
                         SqlInstance  = $object.SqlInstance

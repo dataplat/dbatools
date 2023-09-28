@@ -43,7 +43,7 @@ function Get-DbaConnectedInstance {
             } else {
                 $pooling = $true
             }
-            [pscustomobject]@{
+            [PSCustomObject]@{
                 SqlInstance      = $instance
                 ConnectionObject = $script:connectionhash[$key]
                 ConnectionType   = $value.GetType().FullName

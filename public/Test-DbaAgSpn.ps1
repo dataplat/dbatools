@@ -93,7 +93,7 @@ function Test-DbaAgSpn {
             if (-not $Listener) {
                 $listeners = $ag | Get-DbaAgListener
             } else {
-                write-warning poot
+                Write-Warning poot
                 $listeners = $ag | Get-DbaAgListener -Listener $Listener
             }
 
@@ -115,7 +115,7 @@ function Test-DbaAgSpn {
                     $required = "MSSQLSvc/" + $hostEntry + ":" + $aglistener.InstanceName
                 }
 
-                $spns += [pscustomobject] @{
+                $spns += [PSCustomObject] @{
                     ComputerName           = $server.Information.FullyQualifiedNetName
                     SqlInstance            = $aglistener.SqlInstance
                     InstanceName           = $aglistener.InstanceName
@@ -132,7 +132,7 @@ function Test-DbaAgSpn {
                     Credential             = $Credential
                 }
 
-                $spns += [pscustomobject] @{
+                $spns += [PSCustomObject] @{
                     ComputerName           = $server.Information.FullyQualifiedNetName
                     SqlInstance            = $aglistener.SqlInstance
                     InstanceName           = $aglistener.InstanceName

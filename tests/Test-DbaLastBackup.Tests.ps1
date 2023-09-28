@@ -57,6 +57,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         It "Should return success" {
             $results.RestoreResult | Should Be "Success"
             $results.DbccResult | Should Be "Success"
+            $results.BackupDates | ForEach-Object { $_ | Should BeOfType DbaDateTime }
         }
     }
 
@@ -84,7 +85,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $results.RestoreResult | Should Be "Success"
         }
 
-        It "Should tno contain a diff backup" {
+        It "Should not contain a diff backup" {
             ($results.BackupFiles | Where-Object { $_ -like '*diff*' }).count | Should -Be 0
         }
     }

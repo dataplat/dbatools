@@ -82,7 +82,7 @@ function Remove-DbaDbCertificate {
                     # Avoids modifying the collection
                     Invoke-DbaQuery -SqlInstance $server -Database $db.Name -Query "DROP CERTIFICATE $cert" -EnableException
                     Write-Message -Level Verbose -Message "Successfully removed certificate named $cert from the $db database on $server"
-                    [pscustomobject]@{
+                    [PSCustomObject]@{
                         ComputerName = $server.ComputerName
                         InstanceName = $server.ServiceName
                         SqlInstance  = $server.DomainInstanceName

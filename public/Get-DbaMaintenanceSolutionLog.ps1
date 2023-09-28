@@ -250,7 +250,7 @@ function Get-DbaMaintenanceSolutionLog {
                             $remember['StartTime'] = [dbadatetime]([DateTime]::ParseExact($remember['Date and time'] , "yyyy-MM-dd HH:mm:ss", $null))
                             $remember.Remove('Date and time')
                             $remember['Duration'] = ($remember['Duration'] -as [timespan])
-                            [pscustomobject]$remember
+                            [PSCustomObject]$remember
                         }
                         $block = New-Object System.Collections.ArrayList
                     } else {

@@ -101,7 +101,7 @@ function Remove-DbaDbMailProfile {
         # We have to delete in the end block to prevent "Collection was modified; enumeration operation may not execute." if directly piped from Get-DbaDbMailProfile.
         foreach ($dbMailProfile in $dbMailProfiles) {
             if ($PSCmdlet.ShouldProcess($dbMailProfile.Parent.Parent.Name, "Removing the database mail profile $($dbMailProfile.Name) on $($dbMailProfile.Parent.Parent.Name)")) {
-                $output = [pscustomobject]@{
+                $output = [PSCustomObject]@{
                     ComputerName = $dbMailProfile.Parent.Parent.ComputerName
                     InstanceName = $dbMailProfile.Parent.Parent.ServiceName
                     SqlInstance  = $dbMailProfile.Parent.Parent.DomainInstanceName

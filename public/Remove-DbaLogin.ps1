@@ -102,7 +102,7 @@ function Remove-DbaLogin {
 
                     Remove-TeppCacheItem -SqlInstance $server -Type login -Name $currentlogin.name
 
-                    [pscustomobject]@{
+                    [PSCustomObject]@{
                         ComputerName = $server.ComputerName
                         InstanceName = $server.ServiceName
                         SqlInstance  = $server.DomainInstanceName
@@ -111,7 +111,7 @@ function Remove-DbaLogin {
                     }
                 }
             } catch {
-                [pscustomobject]@{
+                [PSCustomObject]@{
                     ComputerName = $server.ComputerName
                     InstanceName = $server.ServiceName
                     SqlInstance  = $server.DomainInstanceName

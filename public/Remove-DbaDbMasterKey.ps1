@@ -100,7 +100,7 @@ function Remove-DbaDbMasterKey {
                 # avoid enumeration issues
                 try {
                     $masterkey.Parent.Query("DROP MASTER KEY")
-                    [pscustomobject]@{
+                    [PSCustomObject]@{
                         ComputerName = $server.ComputerName
                         InstanceName = $server.ServiceName
                         SqlInstance  = $server.DomainInstanceName

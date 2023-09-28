@@ -101,7 +101,7 @@ function Get-DbaBuild {
         [DbaInstanceParameter[]]
         $SqlInstance,
 
-        [PsCredential]
+        [PSCredential]
         $SqlCredential,
 
         [switch]

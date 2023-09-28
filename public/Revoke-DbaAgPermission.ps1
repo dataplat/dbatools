@@ -167,7 +167,7 @@ function Revoke-DbaAgPermission {
                         try {
                             $bigperms = New-Object Microsoft.SqlServer.Management.Smo.ObjectPermissionSet([Microsoft.SqlServer.Management.Smo.ObjectPermission]::$perm)
                             $endpoint.Revoke($bigperms, $account.Name)
-                            [pscustomobject]@{
+                            [PSCustomObject]@{
                                 ComputerName = $account.ComputerName
                                 InstanceName = $account.InstanceName
                                 SqlInstance  = $account.SqlInstance
@@ -194,7 +194,7 @@ function Revoke-DbaAgPermission {
                             try {
                                 $bigperms = New-Object Microsoft.SqlServer.Management.Smo.ObjectPermissionSet([Microsoft.SqlServer.Management.Smo.ObjectPermission]::$perm)
                                 $ag.Revoke($bigperms, $account.Name)
-                                [pscustomobject]@{
+                                [PSCustomObject]@{
                                     ComputerName = $account.ComputerName
                                     InstanceName = $account.InstanceName
                                     SqlInstance  = $account.SqlInstance

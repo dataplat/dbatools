@@ -486,7 +486,7 @@ function Expand-DbaDbLogFile {
                 #Get the number of VLFs
                 $currentVLFCount = Measure-DbaDbVirtualLogFile -SqlInstance $server -Database $db
 
-                [pscustomobject]@{
+                [PSCustomObject]@{
                     ComputerName    = $server.ComputerName
                     InstanceName    = $server.ServiceName
                     SqlInstance     = $server.DomainInstanceName

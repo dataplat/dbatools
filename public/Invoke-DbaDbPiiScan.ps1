@@ -273,7 +273,7 @@ function Invoke-DbaDbPiiScan {
 
                         if ($columnobject.DataType.Name -eq "geography") {
                             # Add the results
-                            $piiScanResults += [pscustomobject]@{
+                            $piiScanResults += [PSCustomObject]@{
                                 ComputerName   = $db.Parent.ComputerName
                                 InstanceName   = $db.Parent.ServiceName
                                 SqlInstance    = $db.Parent.DomainInstanceName
@@ -309,7 +309,7 @@ function Invoke-DbaDbPiiScan {
                                                         $_.MaskingType -eq $knownName.MaskingType -and
                                                         $_.MaskingSubType -eq $knownName.MaskingSubType })) {
 
-                                                $piiScanResults += [pscustomobject]@{
+                                                $piiScanResults += [PSCustomObject]@{
                                                     ComputerName   = $db.Parent.ComputerName
                                                     InstanceName   = $db.Parent.ServiceName
                                                     SqlInstance    = $db.Parent.DomainInstanceName
@@ -379,7 +379,7 @@ function Invoke-DbaDbPiiScan {
                                                         $_.Country -eq $patternobject.Country -and
                                                         $_.CountryCode -eq $patternobject.CountryCode })) {
 
-                                                $piiScanResults += [pscustomobject]@{
+                                                $piiScanResults += [PSCustomObject]@{
                                                     ComputerName   = $db.Parent.ComputerName
                                                     InstanceName   = $db.Parent.ServiceName
                                                     SqlInstance    = $db.Parent.DomainInstanceName

@@ -84,7 +84,7 @@ function Test-DbaLastBackup {
         If this switch is enabled, transaction log backups will be ignored. The restore will stop at the latest full or differential backup point.
 
     .PARAMETER IgnoreDiffBackup
-        If this switch is enabled, differential backuys will be ignored. The restore will only use Full and Log backups, so will take longer to complete
+        If this switch is enabled, differential backups will be ignored. The restore will only use Full and Log backups, so will take longer to complete
 
     .PARAMETER Prefix
         The database is restored as "dbatools-testrestore-$databaseName" by default. You can change dbatools-testrestore to whatever you would like using this parameter.
@@ -100,12 +100,12 @@ function Test-DbaLastBackup {
 
     .PARAMETER MaxTransferSize
         Parameter to set the unit of transfer. Values must be a multiple of 64kb and a max of 4GB
-        Parameter is used as passtrough for Restore-DbaDatabase.
+        Parameter is used as passthrough for Restore-DbaDatabase.
 
     .PARAMETER BufferCount
         Number of I/O buffers to use to perform the operation.
-        Refererence: https://msdn.microsoft.com/en-us/library/ms178615.aspx#data-transfer-options
-        Parameter is used as passtrough for Restore-DbaDatabase.
+        Reference: https://msdn.microsoft.com/en-us/library/ms178615.aspx#data-transfer-options
+        Parameter is used as passthrough for Restore-DbaDatabase.
 
     .PARAMETER ReuseSourceFolderStructure
         By default, databases will be migrated to the destination Sql Server's default data and log directories. You can override this by specifying -ReuseSourceFolderStructure.
@@ -178,7 +178,7 @@ function Test-DbaLastBackup {
 
         Determines the last full backup for ALL databases, attempts to restore all databases (with a different name and file structure).
         The Restore will use more memory for reading the backup files. Do not set these values to high or you can get an Out of Memory error!!!
-        When running the restore with these additional parameters and there is other server activity it could affect server OLTP performance. Please use with causion.
+        When running the restore with these additional parameters and there is other server activity it could affect server OLTP performance. Please use with caution.
         Prior to running, you should check memory and server resources before configure it to run automatically.
         More information:
         https://www.mssqltips.com/sqlservertip/4935/optimize-sql-server-database-restore-performance/
@@ -243,7 +243,7 @@ function Test-DbaLastBackup {
             }
 
             if ($db.LastFullBackup.Year -eq 1) {
-                [pscustomobject]@{
+                [PSCustomObject]@{
                     SourceServer   = $source
                     TestServer     = $destination
                     Database       = $db.name
@@ -346,7 +346,7 @@ function Test-DbaLastBackup {
 
             $totalSizeMB = ($lastbackup.TotalSize.Megabyte | Measure-Object -Sum).Sum
             if ($MaxSize -and $MaxSize -lt $totalSizeMB) {
-                [pscustomobject]@{
+                [PSCustomObject]@{
                     SourceServer   = $source
                     TestServer     = $destination
                     Database       = $db.name
@@ -361,7 +361,7 @@ function Test-DbaLastBackup {
                     DbccStart      = $null
                     DbccEnd        = $null
                     DbccElapsed    = $null
-                    BackupDates    = [String[]]($lastbackup.Start)
+                    BackupDates    = [dbadatetime[]]($lastbackup.Start)
                     BackupFiles    = $lastbackup.FullName
                 }
                 continue
@@ -540,7 +540,7 @@ function Test-DbaLastBackup {
                 }
 
                 if (-not $NoDrop -and $null -ne $destserver.databases[$dbName]) {
-                    if ($Pscmdlet.ShouldProcess($dbName, "Dropping Database $dbName on $destination")) {
+                    if ($PSCmdlet.ShouldProcess($dbName, "Dropping Database $dbName on $destination")) {
                         Write-Message -Level Verbose -Message "Dropping database."
 
                         ## Drop the database
@@ -575,7 +575,7 @@ function Test-DbaLastBackup {
             }
 
             if ($Pscmdlet.ShouldProcess("console", "Showing results")) {
-                [pscustomobject]@{
+                [PSCustomObject]@{
                     SourceServer   = $source
                     TestServer     = $destination
                     Database       = $db.name
@@ -590,7 +590,7 @@ function Test-DbaLastBackup {
                     DbccStart      = [dbadatetime]$startDbcc
                     DbccEnd        = [dbadatetime]$endDbcc
                     DbccElapsed    = $dbccElapsed
-                    BackupDates    = [String[]]($lastbackup.Start)
+                    BackupDates    = [dbadatetime[]]($lastbackup.Start)
                     BackupFiles    = $lastbackup.FullName
                 }
             }

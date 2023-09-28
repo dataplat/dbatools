@@ -118,7 +118,7 @@ function Remove-DbaNetworkCertificate {
                 $thumbprint = (Get-ItemProperty -Path $regPath -Name Certificate).Certificate
                 Set-ItemProperty -Path $regPath -Name Certificate -Value $null
 
-                [pscustomobject]@{
+                [PSCustomObject]@{
                     ComputerName      = $env:COMPUTERNAME
                     InstanceName      = $instanceName
                     SqlInstance       = $vsname

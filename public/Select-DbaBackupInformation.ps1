@@ -181,7 +181,7 @@ function Select-DbaBackupInformation {
             } elseif ($true -eq $IgnoreFull -and $false -eq $IgnoreDiffs) {
                 #Fake the Full backup
                 Write-Message -Message "Continuing, so setting a fake full backup from the existing database"
-                $Full = [PsCustomObject]@{
+                $Full = [PSCustomObject]@{
                     CheckpointLSN = ($ContinuePoints | Where-Object { $_.Database -eq $DatabaseFilter }).differential_base_lsn
                 }
             }

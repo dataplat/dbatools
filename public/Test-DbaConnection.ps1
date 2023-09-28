@@ -108,9 +108,14 @@ function Test-DbaConnection {
     )
     process {
         foreach ($instance in $SqlInstance) {
+            # Clear loop variables assigned after connection test - https://github.com/dataplat/dbatools/issues/9066
+            $authType = $null
+            $tcpport = $null
+            $authscheme = $null
+
             # Get local environment
             Write-Message -Level Verbose -Message "Getting local environment information"
-            $localInfo = [pscustomobject]@{
+            $localInfo = [PSCustomObject]@{
                 Windows    = [environment]::OSVersion.Version.ToString()
                 Edition    = $PSVersionTable.PSEdition
                 PowerShell = $PSVersionTable.PSVersion.ToString()

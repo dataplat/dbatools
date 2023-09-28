@@ -154,7 +154,8 @@ function New-DbaDbUser {
             $getDbParam.OnlyAccessible = $True
             if ($Database) {
                 $getDbParam.Database = $Database
-            } elseif (-not $IncludeSystem) {
+            }
+            if (-not $IncludeSystem) {
                 $getDbParam.ExcludeSystem = $True
             }
             if ($ExcludeDatabase) {
@@ -169,6 +170,11 @@ function New-DbaDbUser {
             $databases = Get-DbaDatabase @getDbParam
             $getValidSchema = Get-DbaDbSchema -InputObject $databases -Schema $DefaultSchema -IncludeSystemSchemas
 
+            #This block is required so that correct error message can be returned to the user when incorrect database name is given or the database doesn't exists in the server.
+            if (-not $Database) {
+                $Database = $databases.Name
+            }
+
             foreach ($db in $Database) {
                 $dbSmo = $databases | Where-Object Name -eq $db
 
@@ -180,6 +186,7 @@ function New-DbaDbUser {
                 $userParam = $connParam.Clone()
                 $userParam.Database = $dbSmo.name
                 $userParam.User = $Username
+                $userParam.EnableException = $True
 
                 #check if the schema exists
                 if ($dbSmo.Name -in ($getValidSchema).Parent.Name) {
@@ -201,7 +208,7 @@ function New-DbaDbUser {
                         } elseif ($userExists -and $Force) {
                             try {
                                 Write-Message -Level Verbose -Message "FORCE is used, user [$Username] will be dropped in the database $dbSmo on [$instance]"
-                                Remove-DbaDbUser @userParam -Force
+                                $null = Remove-DbaDbUser @userParam -Force
                             } catch {
                                 Stop-Function -Message "Could not remove existing user [$Username] in the database $dbSmo on [$instance], skipping." -Target $User -ErrorRecord $_ -Continue
                             }

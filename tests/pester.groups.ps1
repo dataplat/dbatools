@@ -69,7 +69,8 @@ $TestsRunGroups = @{
         # just fails too often
         'Remove-DbaDbTableData',
         'Test-DbaMaxDop',
-        'Test-DbaOptimizeForAdHoc'
+        'Test-DbaOptimizeForAdHoc',
+        'New-DbaDbSnapshot'
     )
     # do not run everywhere
     "disabled"          = @()

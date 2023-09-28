@@ -120,7 +120,7 @@ function Copy-DbaAgentProxy {
             foreach ($account in $serverProxyAccounts) {
                 $proxyName = $account.Name
 
-                $copyAgentProxyAccountStatus = [pscustomobject]@{
+                $copyAgentProxyAccountStatus = [PSCustomObject]@{
                     SourceServer      = $sourceServer.Name
                     DestinationServer = $destServer.Name
                     Name              = $null

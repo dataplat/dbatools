@@ -74,12 +74,12 @@ function Get-DbaSpinLockStatistic {
     BEGIN {
 
         $sql = "SELECT
-                	name,
-                	collisions,
-                	spins,
-                	spins_per_collision,
-                	sleep_time,
-                	backoffs
+                    name,
+                    collisions,
+                    spins,
+                    spins_per_collision,
+                    sleep_time,
+                    backoffs
                 FROM sys.dm_os_spinlock_stats;"
 
         Write-Message -Level Debug -Message $sql

@@ -135,7 +135,7 @@ function Copy-DbaXESession {
             foreach ($session in $storeSessions) {
                 $sessionName = $session.Name
 
-                $copyXeSessionStatus = [pscustomobject]@{
+                $copyXeSessionStatus = [PSCustomObject]@{
                     SourceServer      = $sourceServer.Name
                     DestinationServer = $destServer.Name
                     Name              = $sessionName

@@ -291,7 +291,7 @@ function New-DbaDbMaskingConfig {
                         continue
                     }
 
-                    $searchObject = [pscustomobject]@{
+                    $searchObject = [PSCustomObject]@{
                         ComputerName = $db.Parent.ComputerName
                         InstanceName = $db.Parent.ServiceName
                         SqlInstance  = $db.Parent.DomainInstanceName
@@ -392,7 +392,7 @@ function New-DbaDbMaskingConfig {
 
                         if ($columnobject.DataType.Name -eq "geography") {
                             # Add the results
-                            $result = [pscustomobject]@{
+                            $result = [PSCustomObject]@{
                                 ComputerName   = $db.Parent.ComputerName
                                 InstanceName   = $db.Parent.ServiceName
                                 SqlInstance    = $db.Parent.DomainInstanceName
@@ -413,7 +413,7 @@ function New-DbaDbMaskingConfig {
                                     foreach ($pattern in $knownName.Pattern) {
                                         if ($null -eq $result -and $columnobject.Name -match $pattern ) {
                                             # Add the results
-                                            $result = [pscustomobject]@{
+                                            $result = [PSCustomObject]@{
                                                 ComputerName   = $db.Parent.ComputerName
                                                 InstanceName   = $db.Parent.ServiceName
                                                 SqlInstance    = $db.Parent.DomainInstanceName
@@ -460,7 +460,7 @@ function New-DbaDbMaskingConfig {
                                             # If there is a result from the match
                                             if ($null -eq $result -and $dataset.$($columnobject.Name) -match $patternobject.Pattern) {
                                                 # Add the results
-                                                $result = [pscustomobject]@{
+                                                $result = [PSCustomObject]@{
                                                     ComputerName   = $db.Parent.ComputerName
                                                     InstanceName   = $db.Parent.ServiceName
                                                     SqlInstance    = $db.Parent.DomainInstanceName

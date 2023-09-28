@@ -90,7 +90,7 @@ function Remove-DbaDbPartitionFunction {
         # We have to delete in the end block to prevent "Collection was modified; enumeration operation may not execute." if directly piped from Get-DbaDbPartitionFunction.
         foreach ($partfunItem in $partfuns) {
             if ($PSCmdlet.ShouldProcess($partfunItem.Parent.Parent.Name, "Removing the partition function [$($partfunItem.Name)] in the database [$($partfunItem.Parent.Name)] on [$($partfunItem.Parent.Parent.Name)]")) {
-                $output = [pscustomobject]@{
+                $output = [PSCustomObject]@{
                     ComputerName          = $partfunItem.Parent.Parent.ComputerName
                     InstanceName          = $partfunItem.Parent.Parent.ServiceName
                     SqlInstance           = $partfunItem.Parent.Parent.DomainInstanceName

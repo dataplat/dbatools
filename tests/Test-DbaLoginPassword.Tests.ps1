@@ -38,5 +38,9 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
             $results = Test-DbaLoginPassword -SqlInstance $script:instance1 -Login $weaksauce
             $results.SqlLogin | Should -Be $weaksauce
         }
+        It "handles passwords with quotes, see #9095" {
+            $results = Test-DbaLoginPassword -SqlInstance $script:instance1 -Login $weaksauce -Dictionary "&é`"'(-", "hello"
+            $results.SqlLogin | Should -Be $weaksauce
+        }
     }
 }

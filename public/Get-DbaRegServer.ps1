@@ -174,7 +174,7 @@ function Get-DbaRegServer {
                         $tempgroup.Description = $azuregroup.Description
 
                         foreach ($server in ($store.AzureDataStudioConnectionStore.Connections | Where-Object GroupId -eq $azuregroup.Id)) {
-                            $azureids += [pscustomobject]@{ id = $server.Id; group = $groupname }
+                            $azureids += [PSCustomObject]@{ id = $server.Id; group = $groupname }
                             $connname = $server.Options['connectionName']
                             if (-not $connname) {
                                 $connname = $server.Options['server']

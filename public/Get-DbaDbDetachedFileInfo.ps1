@@ -124,7 +124,7 @@ function Get-DbaDbDetachedFileInfo {
             } catch {
                 Stop-Function -Message "$servername unable to enumerate database or log structure information for $filepath" -Continue
             }
-            [pscustomobject]@{
+            [PSCustomObject]@{
                 ComputerName = $SqlInstance.ComputerName
                 InstanceName = $SqlInstance.InstanceName
                 SqlInstance  = $SqlInstance.InputObject

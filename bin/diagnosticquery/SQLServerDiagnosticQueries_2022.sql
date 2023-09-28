@@ -1,7 +1,7 @@
 
 -- SQL Server 2022 Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: June 5, 2023
+-- Last Modified: September 19, 2023
 -- https://glennsqlperformance.com/ 
 -- https://sqlserverperformance.wordpress.com/
 -- YouTube: https://bit.ly/2PkoAM1 
@@ -68,6 +68,10 @@ SELECT @@SERVERNAME AS [Server Name], @@VERSION AS [SQL Server and OS Version In
 -- 16.0.4015.1		CU2									3/15/2023		https://learn.microsoft.com/en-US/troubleshoot/sql/releases/sqlserver-2022/cumulativeupdate2
 -- 16.0.4025.1		CU3									4/13/2023		https://support.microsoft.com/en-us/topic/kb5024396-cumulative-update-3-for-sql-server-2022-db3fcc1d-c788-4180-8afe-0a742cd77026
 -- 16.0.4035.4		CU4									5/11/2023		https://support.microsoft.com/en-us/topic/kb5026717-cumulative-update-4-for-sql-server-2022-48798a25-5c8c-4f3e-b608-7484dd2be091
+-- 16.0.4045.3		CU5									6/15/2023		https://learn.microsoft.com/en-us/troubleshoot/sql/releases/sqlserver-2022/cumulativeupdate5
+-- 16.0.4055.4		CU6									7/13/2023		https://learn.microsoft.com/en-us/troubleshoot/sql/releases/sqlserver-2022/cumulativeupdate6
+-- 16.0.4065.3		CU7									8/10/2023		https://learn.microsoft.com/en-us/troubleshoot/sql/releases/sqlserver-2022/cumulativeupdate7	
+-- 16.0.4075.1		CU8									9/14/2023		https://learn.microsoft.com/en-us/troubleshoot/sql/releases/sqlserver-2022/cumulativeupdate8	
 
 -- What's new in SQL Server 2022 (16.x)
 -- https://bit.ly/3MJEjR1
@@ -1968,10 +1972,10 @@ ORDER BY [BufferCount] DESC OPTION (RECOMPILE);
 
 
 -- Get Schema names, Table names, object size, row counts, and compression status for clustered index or heap  (Query 75) (Table Sizes)
-SELECT DB_NAME(DB_ID()) AS [Database Name], SCHEMA_NAME(o.Schema_ID) AS [Schema Name], 
+SELECT DB_NAME(DB_ID()) AS [Database Name], SCHEMA_NAME(o.schema_id) AS [Schema Name], 
 OBJECT_NAME(p.object_id) AS [Table Name],
 CAST(SUM(ps.reserved_page_count) * 8.0 / 1024 AS DECIMAL(19,2)) AS [Object Size (MB)],
-SUM(p.Rows) AS [Row Count], 
+SUM(p.rows) AS [Row Count], 
 p.data_compression_desc AS [Compression Type]
 FROM sys.objects AS o WITH (NOLOCK)
 INNER JOIN sys.partitions AS p WITH (NOLOCK)
@@ -1981,8 +1985,8 @@ ON p.object_id = ps.object_id
 WHERE ps.index_id < 2 -- ignore the partitions from the non-clustered indexes if any
 AND p.index_id < 2    -- ignore the partitions from the non-clustered indexes if any
 AND o.type_desc = N'USER_TABLE'
-GROUP BY  SCHEMA_NAME(o.Schema_ID), p.object_id, ps.reserved_page_count, p.data_compression_desc
-ORDER BY SUM(ps.reserved_page_count) DESC, SUM(p.Rows) DESC OPTION (RECOMPILE);
+GROUP BY  SCHEMA_NAME(o.schema_id), p.object_id, ps.reserved_page_count, p.data_compression_desc
+ORDER BY SUM(ps.reserved_page_count) DESC, SUM(p.rows) DESC OPTION (RECOMPILE);
 ------
 
 -- Gives you an idea of table sizes, and possible data compression opportunities

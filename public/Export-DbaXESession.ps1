@@ -160,7 +160,7 @@ function Export-DbaXESession {
         }
 
         if ($SqlInstance) {
-            $InputObject = Get-DbaXeSession -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Session $Session
+            $InputObject = Get-DbaXESession -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Session $Session
         }
 
         foreach ($xe in $InputObject) {

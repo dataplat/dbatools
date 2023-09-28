@@ -214,7 +214,7 @@ function Set-DbaDbCompression {
                                 } catch {
                                     Stop-Function -Message "Compression failed for $instance - $db - table $($obj.Schema).$($obj.Name) - partition $($p.PartitionNumber)" -Target $db -ErrorRecord $_ -Continue
                                 }
-                                [pscustomobject]@{
+                                [PSCustomObject]@{
                                     ComputerName                  = $server.ComputerName
                                     InstanceName                  = $server.ServiceName
                                     SqlInstance                   = $server.DomainInstanceName
@@ -258,7 +258,7 @@ function Set-DbaDbCompression {
                                     } catch {
                                         Stop-Function -Message "Compression failed for $instance - $db - table $($obj.Schema).$($obj.Name) - index $($index.Name) - partition $($p.PartitionNumber)" -Target $db -ErrorRecord $_ -Continue
                                     }
-                                    [pscustomobject]@{
+                                    [PSCustomObject]@{
                                         ComputerName                  = $server.ComputerName
                                         InstanceName                  = $server.ServiceName
                                         SqlInstance                   = $server.DomainInstanceName
@@ -300,7 +300,7 @@ function Set-DbaDbCompression {
                                 } catch {
                                     Stop-Function -Message "Compression failed for $instance - $db - table $($obj.Schema).$($obj.Name) - index $($index.Name) - partition $($p.PartitionNumber)" -Target $db -ErrorRecord $_ -Continue
                                 }
-                                [pscustomobject]@{
+                                [PSCustomObject]@{
                                     ComputerName                  = $server.ComputerName
                                     InstanceName                  = $server.ServiceName
                                     SqlInstance                   = $server.DomainInstanceName

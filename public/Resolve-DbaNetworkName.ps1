@@ -117,7 +117,7 @@ function Resolve-DbaNetworkName {
     process {
         if ((Get-DbatoolsConfigValue -FullName commands.resolve-dbanetworkname.bypass)) {
             foreach ($computer in $ComputerName) {
-                [pscustomobject]@{
+                [PSCustomObject]@{
                     InputName        = $computer
                     ComputerName     = $computer
                     IPAddress        = $computer

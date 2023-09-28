@@ -89,7 +89,7 @@ function Remove-DbaAgListener {
                 try {
                     $ag = $aglistener.Parent.Name
                     $aglistener.Parent.AvailabilityGroupListeners[$aglistener.Name].Drop()
-                    [pscustomobject]@{
+                    [PSCustomObject]@{
                         ComputerName      = $aglistener.ComputerName
                         InstanceName      = $aglistener.InstanceName
                         SqlInstance       = $aglistener.SqlInstance

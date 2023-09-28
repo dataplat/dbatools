@@ -122,7 +122,7 @@ function Enable-DbaForceNetworkEncryption {
                 Set-ItemProperty -Path $regPath -Name ForceEncryption -Value $true
                 $forceencryption = (Get-ItemProperty -Path $regPath -Name ForceEncryption).ForceEncryption
 
-                [pscustomobject]@{
+                [PSCustomObject]@{
                     ComputerName          = $env:COMPUTERNAME
                     InstanceName          = $args[2]
                     SqlInstance           = $args[1]

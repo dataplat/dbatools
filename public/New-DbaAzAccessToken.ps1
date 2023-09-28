@@ -91,7 +91,7 @@ function New-DbaAzAccessToken {
         [ValidateSet("AzureSqlDb", "ResourceManager", "DataLake", "EventHubs", "KeyVault", "ResourceManager", "ServiceBus", "Storage")]
         [string]$Subtype = "AzureSqlDb",
         [object]$Config,
-        [pscredential]$Credential,
+        [PSCredential]$Credential,
         [string]$Tenant = (Get-DbatoolsConfigValue -FullName 'azure.tenantid'),
         [string]$Thumbprint = (Get-DbatoolsConfigValue -FullName 'azure.certificate.thumbprint'),
         [ValidateSet('CurrentUser', 'LocalMachine')]

@@ -124,7 +124,7 @@ function Copy-DbaInstanceAudit {
             foreach ($currentAudit in $serverAudits) {
                 $auditName = $currentAudit.Name
 
-                $copyAuditStatus = [pscustomobject]@{
+                $copyAuditStatus = [PSCustomObject]@{
                     SourceServer      = $sourceServer.Name
                     DestinationServer = $destServer.Name
                     Name              = $auditName

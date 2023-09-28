@@ -284,7 +284,7 @@ function Get-DbaKbUpdate {
                             $properties = $properties | Where-Object { $PSItem -notin "LastModified", "Description", "Size", "Classification", "SupportedProducts", "MSRCNumber", "MSRCSeverity", "RebootBehavior", "RequestsUserInput", "ExclusiveInstall", "NetworkRequired", "UninstallNotes", "UninstallSteps", "SupersededBy", "Supersedes" }
                         }
 
-                        [pscustomobject]@{
+                        [PSCustomObject]@{
                             Title             = $title
                             NameLevel         = $build.NameLevel
                             SPLevel           = $build.SPLevel

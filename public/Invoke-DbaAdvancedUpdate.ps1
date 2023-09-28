@@ -78,7 +78,7 @@ Function Invoke-DbaAdvancedUpdate {
         [bool]$Restart,
         [ValidateSet('Default', 'Basic', 'Negotiate', 'NegotiateWithImplicitCredential', 'Credssp', 'Digest', 'Kerberos')]
         [string]$Authentication = 'Credssp',
-        [pscredential]$Credential,
+        [PSCredential]$Credential,
         [string]$ExtractPath,
         [string[]]$ArgumentList,
         [switch]$NoPendingRenameCheck,

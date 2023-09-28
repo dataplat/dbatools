@@ -85,7 +85,7 @@ function Set-DbaDbFileGrowth {
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Medium")]
     param (
         [DbaInstanceParameter[]]$SqlInstance,
-        [PsCredential]$SqlCredential,
+        [PSCredential]$SqlCredential,
         [string[]]$Database,
         [ValidateSet("KB", "MB", "GB", "TB")]
         [string]$GrowthType = "MB",

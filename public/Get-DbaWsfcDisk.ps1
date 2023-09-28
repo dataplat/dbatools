@@ -49,7 +49,7 @@ function Get-DbaWsfcDisk {
                 $disks = $resource | Get-CimAssociatedInstance -ResultClassName MSCluster_Disk
                 foreach ($disk in $disks) {
                     $diskpart = $disk | Get-CimAssociatedInstance -ResultClassName MSCluster_DiskPartition
-                    [pscustomobject]@{
+                    [PSCustomObject]@{
                         ClusterName     = $resource.ClusterName
                         ClusterFqdn     = $resource.ClusterFqdn
                         ResourceGroup   = $resource.OwnerGroup

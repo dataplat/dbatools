@@ -94,7 +94,7 @@ function Remove-DbaAgentProxy {
         # We have to delete in the end block to prevent "Collection was modified; enumeration operation may not execute." if directly piped from Get-DbaAgentProxy.
         foreach ($dbProxy in $dbProxies) {
             if ($PSCmdlet.ShouldProcess($dbProxy.Parent.Parent.Name, "Removing the SQL Agent proxy $($dbProxy.Name) on $($dbProxy.Parent.Parent.Name)")) {
-                $output = [pscustomobject]@{
+                $output = [PSCustomObject]@{
                     ComputerName = $dbProxy.Parent.Parent.ComputerName
                     InstanceName = $dbProxy.Parent.Parent.ServiceName
                     SqlInstance  = $dbProxy.Parent.Parent.DomainInstanceName

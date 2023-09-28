@@ -6,6 +6,8 @@ function Update-DbaServiceAccount {
     .DESCRIPTION
         Reconfigure the service account or update the password of the specified SQL Server service. The service will be restarted in the event of changing the account.
 
+        The command is only supported for SQL Server engine and agent service of supported versions of SQL Server. It might fail for older versions or other services.
+
     .PARAMETER ComputerName
         The target SQL Server instance or instances.
 

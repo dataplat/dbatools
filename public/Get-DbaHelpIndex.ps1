@@ -557,24 +557,24 @@ function Get-DbaHelpIndex {
         DECLARE @AllResults TABLE
             (
                 RowNum INT ,
-                FullObjectName	NVARCHAR(300) ,
-                IndexType	NVARCHAR(256) ,
-                IndexName	NVARCHAR(256) ,
-                KeyColumns	NVARCHAR(2000) ,
-                IncludeColumns	NVARCHAR(2000) ,
-                FilterDefinition	NVARCHAR(100) ,
-                [FillFactor]	TINYINT ,
-                DataCompression	CHAR(4) ,
-                IndexReads	BIGINT ,
-                IndexUpdates	BIGINT ,
-                SizeKB	BIGINT ,
-                IndexRows	BIGINT ,
-                IndexLookups	BIGINT ,
-                MostRecentlyUsed	DATETIME ,
-                StatsSampleRows	BIGINT ,
-                StatsRowMods	BIGINT ,
-                HistogramSteps	INT	,
-                StatsLastUpdated	DATETIME ,
+                FullObjectName    NVARCHAR(300) ,
+                IndexType    NVARCHAR(256) ,
+                IndexName    NVARCHAR(256) ,
+                KeyColumns    NVARCHAR(2000) ,
+                IncludeColumns    NVARCHAR(2000) ,
+                FilterDefinition    NVARCHAR(100) ,
+                [FillFactor]    TINYINT ,
+                DataCompression    CHAR(4) ,
+                IndexReads    BIGINT ,
+                IndexUpdates    BIGINT ,
+                SizeKB    BIGINT ,
+                IndexRows    BIGINT ,
+                IndexLookups    BIGINT ,
+                MostRecentlyUsed    DATETIME ,
+                StatsSampleRows    BIGINT ,
+                StatsRowMods    BIGINT ,
+                HistogramSteps    INT    ,
+                StatsLastUpdated    DATETIME ,
                 object_id BIGINT ,
                 index_id BIGINT
             );
@@ -859,7 +859,7 @@ function Get-DbaHelpIndex {
                                 ci.IndexRows ,
                                 ci.FullObjectName
                     ), AllResults AS
-                        (		 SELECT   c.FullObjectName ,
+                        (         SELECT   c.FullObjectName ,
                                 ISNULL(IndexType, 'STATISTICS') AS IndexType ,
                                 ISNULL(IndexName, '') AS IndexName ,
                                 ISNULL(KeyColumns, '') AS KeyColumns ,
@@ -972,7 +972,7 @@ function Get-DbaHelpIndex {
         FROM @AllResults a
             JOIN sys.sysindexes i ON a.object_id = i.id AND a.index_id = i.indid;
 
-        SELECT	FullObjectName ,
+        SELECT    FullObjectName ,
                 IndexType ,
                 IndexName ,
                 KeyColumns ,
@@ -1035,7 +1035,7 @@ function Get-DbaHelpIndex {
                             $recentlyused = $null
                         }
 
-                        [pscustomobject]@{
+                        [PSCustomObject]@{
                             ComputerName       = $server.ComputerName
                             InstanceName       = $server.ServiceName
                             SqlInstance        = $server.DomainInstanceName
@@ -1071,7 +1071,7 @@ function Get-DbaHelpIndex {
                             $recentlyused = $null
                         }
 
-                        [pscustomobject]@{
+                        [PSCustomObject]@{
                             ComputerName       = $server.ComputerName
                             InstanceName       = $server.ServiceName
                             SqlInstance        = $server.DomainInstanceName

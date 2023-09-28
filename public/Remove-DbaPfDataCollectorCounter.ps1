@@ -124,7 +124,7 @@ function Remove-DbaPfDataCollectorCounter {
                 try {
                     $results = Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock $setscript -ArgumentList $setname, $plainxml -ErrorAction Stop -Raw
                     Write-Message -Level Verbose -Message " $results"
-                    [pscustomobject]@{
+                    [PSCustomObject]@{
                         ComputerName     = $computer
                         DataCollectorSet = $setname
                         DataCollector    = $collectorname

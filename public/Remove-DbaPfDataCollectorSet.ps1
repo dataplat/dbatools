@@ -124,7 +124,7 @@ function Remove-DbaPfDataCollectorSet {
             if ($Pscmdlet.ShouldProcess("$computer", "Removing collector set $setname")) {
                 try {
                     Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock $setscript -ArgumentList $setname -ErrorAction Stop
-                    [pscustomobject]@{
+                    [PSCustomObject]@{
                         ComputerName = $computer
                         Name         = $setname
                         Status       = "Removed"

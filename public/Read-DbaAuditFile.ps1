@@ -125,7 +125,7 @@ function Read-DbaAuditFile {
                     $hash[$key] = $event.Fields[$key]
                 }
 
-                [pscustomobject]$hash
+                [PSCustomObject]$hash
             }
         }
     }

@@ -119,7 +119,7 @@ FROM sys.databases
             # "normal" hashtable doesn't account for case sensitivity
             $dbStatesHash = New-Object -TypeName System.Collections.Hashtable
             foreach ($db in $dbStates) {
-                $dbStatesHash.Add($db.Name, [pscustomobject]@{
+                $dbStatesHash.Add($db.Name, [PSCustomObject]@{
                         Access = $db.Access
                         Status = $db.Status
                         RW     = $db.RW

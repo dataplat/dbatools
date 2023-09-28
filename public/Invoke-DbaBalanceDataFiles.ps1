@@ -352,7 +352,7 @@ function Invoke-DbaBalanceDataFiles {
                 Write-Message -Message "Retrieving data files after data move" -Level Verbose
                 $dataFilesEnding = Get-DbaDbFile -SqlInstance $server -Database $db.Name | Where-Object { $_.TypeDescription -eq 'ROWS' } | Select-Object ID, LogicalName, PhysicalName, Size, UsedSpace, AvailableSpace | Sort-Object ID
 
-                [pscustomobject]@{
+                [PSCustomObject]@{
                     ComputerName   = $server.ComputerName
                     InstanceName   = $server.ServiceName
                     SqlInstance    = $server.DomainInstanceName

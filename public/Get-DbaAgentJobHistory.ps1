@@ -243,7 +243,7 @@ function Get-DbaAgentJobHistory {
                         $outmap[$out.Job][$out.StepId] = $out.OutputFileName
                     }
                 }
-                $outcome = [pscustomobject]@{ }
+                $outcome = [PSCustomObject]@{ }
                 foreach ($execution in $executions) {
                     $status = switch ($execution.RunStatus) {
                         0 { "Failed" }

@@ -218,11 +218,11 @@ function Invoke-DbaAzSqlDbTip {
                             InstanceName        = $connection.Name
                             SqlInstance         = $connection.DomainInstanceName
                             Database            = $db
-                            tip_id              = $PsItem.tip_id
-                            description         = $PsItem.description
-                            confidence_percent  = $PsItem.confidence_percent
-                            additional_info_url = $PsItem.additional_info_url
-                            details             = $PsItem.details
+                            tip_id              = $PSItem.tip_id
+                            description         = $PSItem.description
+                            confidence_percent  = $PSItem.confidence_percent
+                            additional_info_url = $PSItem.additional_info_url
+                            details             = $PSItem.details
                         }
                     }
                 } catch {

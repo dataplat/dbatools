@@ -64,7 +64,7 @@ function Get-DbaInstalledPatch {
             }
 
             foreach ($patch in $patches) {
-                [pscustomobject]@{
+                [PSCustomObject]@{
                     ComputerName = $computer
                     Name         = $patch.DisplayName
                     Version      = $patch.DisplayVersion

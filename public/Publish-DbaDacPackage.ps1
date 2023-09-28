@@ -331,7 +331,7 @@ function Publish-DbaDacPackage {
 
                         $server = [dbainstance]$instance
                         if ($Type -eq 'Dacpac') {
-                            $output = [pscustomobject]@{
+                            $output = [PSCustomObject]@{
                                 ComputerName         = $server.ComputerName
                                 InstanceName         = $server.InstanceName
                                 SqlInstance          = $server.FullName
@@ -347,7 +347,7 @@ function Publish-DbaDacPackage {
                                 SqlCmdVariableValues = $options.DeployOptions.SqlCommandVariableValues.Keys
                             }
                         } elseif ($Type -eq 'Bacpac') {
-                            $output = [pscustomobject]@{
+                            $output = [PSCustomObject]@{
                                 ComputerName     = $server.ComputerName
                                 InstanceName     = $server.InstanceName
                                 SqlInstance      = $server.FullName

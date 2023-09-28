@@ -131,7 +131,7 @@ function Sync-DbaLoginPermission {
                 }
 
 
-                $copyLoginPermissionStatus = [pscustomobject]@{
+                $copyLoginPermissionStatus = [PSCustomObject]@{
                     SourceServer      = $sourceserver.Name
                     DestinationServer = $destServer.Name
                     Name              = $loginName

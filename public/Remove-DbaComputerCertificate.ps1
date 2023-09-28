@@ -144,7 +144,7 @@ function Remove-DbaComputerCertificate {
                 $status = "Certificate not found in Cert:\$Store\$Folder"
             }
 
-            [pscustomobject]@{
+            [PSCustomObject]@{
                 ComputerName = $env:COMPUTERNAME
                 Store        = $Store
                 Folder       = $Folder

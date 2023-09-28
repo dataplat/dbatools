@@ -154,7 +154,7 @@ function Copy-DbaAgentServer {
             #>
 
             <# Here are the properties which must be migrated separately #>
-            $copyAgentPropStatus = [pscustomobject]@{
+            $copyAgentPropStatus = [PSCustomObject]@{
                 SourceServer      = $sourceServer.Name
                 DestinationServer = $destServer.Name
                 Name              = "Server level properties"

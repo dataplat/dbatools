@@ -262,7 +262,7 @@ function Export-DbaLogin {
                     }
                     $dbmap = $db.EnumLoginMappings()
                     foreach ($el in $dbmap) {
-                        $DbMapping += [pscustomobject]@{
+                        $DbMapping += [PSCustomObject]@{
                             Database  = $db.Name
                             UserName  = $el.Username
                             LoginName = $el.LoginName

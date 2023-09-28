@@ -105,8 +105,8 @@ function Invoke-DbaAdvancedInstall {
         [string]$SaveConfiguration,
         [ValidateSet('Default', 'Basic', 'Negotiate', 'NegotiateWithImplicitCredential', 'Credssp', 'Digest', 'Kerberos')]
         [string]$Authentication = 'Credssp',
-        [pscredential]$Credential,
-        [pscredential]$SaCredential,
+        [PSCredential]$Credential,
+        [PSCredential]$SaCredential,
         [switch]$NoPendingRenameCheck,
         [switch]$EnableException
     )
@@ -114,7 +114,7 @@ function Invoke-DbaAdvancedInstall {
         # Reads Summary.txt from the SQL Server Installation Log folder
         Param (
             [DbaInstanceParameter]$ComputerName,
-            [pscredential]$Credential,
+            [PSCredential]$Credential,
             [parameter(Mandatory)]
             [version]$Version
         )
@@ -155,7 +155,7 @@ function Invoke-DbaAdvancedInstall {
         return Invoke-Command2 @params
     }
     $isLocalHost = ([DbaInstanceParameter]$ComputerName).IsLocalHost
-    $output = [pscustomobject]@{
+    $output = [PSCustomObject]@{
         ComputerName      = $ComputerName
         Version           = $Version
         SACredential      = $SaCredential

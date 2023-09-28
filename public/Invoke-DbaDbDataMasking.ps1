@@ -1274,7 +1274,7 @@ function Invoke-DbaDbDataMasking {
                             $maskingStatus = "Successful"
                         }
 
-                        [pscustomobject]@{
+                        [PSCustomObject]@{
                             ComputerName = $db.Parent.ComputerName
                             InstanceName = $db.Parent.ServiceName
                             SqlInstance  = $db.Parent.DomainInstanceName

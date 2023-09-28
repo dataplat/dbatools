@@ -155,7 +155,7 @@ function Get-DbaDbBackupHistory {
         [parameter(Mandatory, ValueFromPipeline)]
         [DbaInstanceParameter[]]
         $SqlInstance,
-        [PsCredential]$SqlCredential,
+        [PSCredential]$SqlCredential,
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
         [switch]$IncludeCopyOnly,
@@ -547,6 +547,7 @@ function Get-DbaDbBackupHistory {
                 } else {
                     $select = "
                     SELECT
+                        '' as AvailabilityGroupName,
                         backupset.database_name AS [Database],
                         (SELECT database_id FROM sys.databases WHERE name = backupset.database_name) AS DatabaseId,
                         backupset.user_name AS Username,

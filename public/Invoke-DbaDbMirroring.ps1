@@ -383,7 +383,7 @@ function Invoke-DbaDbMirroring {
 
 
                 if ($Pscmdlet.ShouldProcess("console", "Showing results")) {
-                    $results = [pscustomobject]@{
+                    $results = [PSCustomObject]@{
                         Primary        = $Primary
                         Mirror         = $currentmirror
                         Witness        = $Witness

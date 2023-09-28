@@ -140,7 +140,7 @@ function Stop-DbaProcess {
             if ($Pscmdlet.ShouldProcess($sourceserver, "Killing spid $currentspid")) {
                 try {
                     $sourceserver.KillProcess($currentspid)
-                    [pscustomobject]@{
+                    [PSCustomObject]@{
                         SqlInstance = $sourceserver.name
                         Spid        = $session.Spid
                         Login       = $session.Login

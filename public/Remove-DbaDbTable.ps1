@@ -93,7 +93,7 @@ function Remove-DbaDbTable {
         # We have to delete in the end block to prevent "Collection was modified; enumeration operation may not execute." if directly piped from Get-DbaDbTable.
         foreach ($tableItem in $tables) {
             if ($PSCmdlet.ShouldProcess($tableItem.Parent.Parent.Name, "Removing the table $($tableItem.Schema).$($tableItem.Name) in the database $($tableItem.Parent.Name) on $($tableItem.Parent.Parent.Name)")) {
-                $output = [pscustomobject]@{
+                $output = [PSCustomObject]@{
                     ComputerName = $tableItem.Parent.Parent.ComputerName
                     InstanceName = $tableItem.Parent.Parent.ServiceName
                     SqlInstance  = $tableItem.Parent.Parent.DomainInstanceName

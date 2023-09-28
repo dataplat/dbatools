@@ -21,6 +21,41 @@ function Get-DbaMemoryUsage {
 
         For MFA support, please use Connect-DbaInstance.
 
+    .PARAMETER MemoryCounterRegex
+        Regular expression that is applied to the paths of the counters returned for the counter list set '*sql*:Memory Manager*' to display relevant Memory Manager counters.
+
+        Default: '(Total Server Memory |Target Server Memory |Connection Memory |Lock Memory |SQL Cache Memory |Optimizer Memory |Granted Workspace Memory |Cursor memory usage|Maximum Workspace)'
+
+        The default works for English language systems and has to be adapted for other languages.
+
+    .PARAMETER PlanCounterRegex
+        Regular expression that is applied to the paths of the counters returned for the counter list set '*sql*:Plan Cache*' to display relevant Plan Cache counters.
+
+        Default: '(cache pages|procedure plan|ad hoc sql plan|prepared SQL Plan)'
+
+        The default works for English language systems and has to be adapted for other languages.
+
+    .PARAMETER BufferCounterRegex
+        Regular expression that is applied to the paths of the counters returned for the counter list set '*Buffer Manager*' to display relevant Buffer Manager counters.
+
+        Default: '(Free pages|Reserved pages|Stolen pages|Total pages|Database pages|target pages|extension .* pages)'
+
+        The default works for English language systems and has to be adapted for other languages.
+
+    .PARAMETER SSASCounterRegex
+        Regular expression that is applied to the paths of the counters returned for the counter list set 'MSAS*:Memory' to display relevant SSAS counters.
+
+        Default: '(\\memory )'
+
+        The default works for English language systems and has to be adapted for other languages.
+
+    .PARAMETER SSISCounterRegex
+        Regular expression that is applied to the paths of the counters returned for the counter list set '*SSIS*' to display relevant SSIS counters.
+
+        Default: '(memory)'
+
+        The default works for English language systems and has to be adapted for other languages.
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -60,34 +95,27 @@ function Get-DbaMemoryUsage {
         [Alias("Host", "cn", "Server")]
         [DbaInstanceParameter[]]$ComputerName = $env:COMPUTERNAME,
         [PSCredential]$Credential,
+        [string]$MemoryCounterRegex = '(Total Server Memory |Target Server Memory |Connection Memory |Lock Memory |SQL Cache Memory |Optimizer Memory |Granted Workspace Memory |Cursor memory usage|Maximum Workspace)',
+        [string]$PlanCounterRegex = '(cache pages|procedure plan|ad hoc sql plan|prepared SQL Plan)',
+        [string]$BufferCounterRegex = '(Free pages|Reserved pages|Stolen pages|Total pages|Database pages|target pages|extension .* pages)',
+        [string]$SSASCounterRegex = '(\\memory )',
+        [string]$SSISCounterRegex = '(memory)',
         [switch]$EnableException
     )
     begin {
-        if ($Simple) {
-            $Memcounters = '(Total Server Memory |Target Server Memory |Connection Memory |Lock Memory |SQL Cache Memory |Optimizer Memory |Granted Workspace Memory |Cursor memory usage|Maximum Workspace)'
-            $Plancounters = 'total\)\\cache pages'
-            $BufManpagecounters = 'Total pages'
-            $SSAScounters = '(\\memory usage)'
-            $SSIScounters = '(memory)'
-        } else {
-            $Memcounters = '(Total Server Memory |Target Server Memory |Connection Memory |Lock Memory |SQL Cache Memory |Optimizer Memory |Granted Workspace Memory |Cursor memory usage|Maximum Workspace)'
-            $Plancounters = '(cache pages|procedure plan|ad hoc sql plan|prepared SQL Plan)'
-            $BufManpagecounters = '(Free pages|Reserved pages|Stolen pages|Total pages|Database pages|target pages|extension .* pages)'
-            $SSAScounters = '(\\memory )'
-            $SSIScounters = '(memory)'
-        }
-
         $scriptBlock = {
-            param ($Memcounters,
-                $Plancounters,
-                $BufManpagecounters,
-                $SSAScounters,
-                $SSIScounters)
+            param (
+                $MemoryCounterRegex,
+                $PlanCounterRegex,
+                $BufferCounterRegex,
+                $SSASCounterRegex,
+                $SSISCounterRegex
+            )
             <# DO NOT use Write-Message as this is inside of a script block #>
             Write-Verbose -Message "Searching for Memory Manager Counters on $Computer"
             try {
-                $availablecounters = (Get-Counter -ListSet '*sql*:Memory Manager*' -ErrorAction SilentlyContinue).paths
-                (Get-Counter -Counter $availablecounters -ErrorAction SilentlyContinue).countersamples | Where-Object { $_.Path -match $Memcounters } | ForEach-Object {
+                $availableCounters = (Get-Counter -ListSet '*sql*:Memory Manager*' -ErrorAction SilentlyContinue).paths
+                (Get-Counter -Counter $availableCounters -ErrorAction SilentlyContinue).countersamples | Where-Object { $_.Path -match $MemoryCounterRegex } | ForEach-Object {
                     $instance = (($_.Path.split("\")[-2]).replace("mssql`$", "")).split(':')[0]
                     if ($instance -eq 'sqlserver') { $instance = 'mssqlserver' }
                     [PSCustomObject]@{
@@ -106,8 +134,8 @@ function Get-DbaMemoryUsage {
             <# DO NOT use Write-Message as this is inside of a script block #>
             Write-Verbose -Message "Searching for Plan Cache Counters on $Computer"
             try {
-                $availablecounters = (Get-Counter -ListSet '*sql*:Plan Cache*' -ErrorAction SilentlyContinue).paths
-                (Get-Counter -Counter $availablecounters -ErrorAction SilentlyContinue).countersamples | Where-Object { $_.Path -match $Plancounters } | ForEach-Object {
+                $availableCounters = (Get-Counter -ListSet '*sql*:Plan Cache*' -ErrorAction SilentlyContinue).paths
+                (Get-Counter -Counter $availableCounters -ErrorAction SilentlyContinue).countersamples | Where-Object { $_.Path -match $PlanCounterRegex } | ForEach-Object {
                     $instance = (($_.Path.split("\")[-2]).replace("mssql`$", "")).split(':')[0]
                     if ($instance -eq 'sqlserver') { $instance = 'mssqlserver' }
                     [PSCustomObject]@{
@@ -126,8 +154,8 @@ function Get-DbaMemoryUsage {
             <# DO NOT use Write-Message as this is inside of a script block #>
             Write-Verbose -Message "Searching for Buffer Manager Counters on $Computer"
             try {
-                $availablecounters = (Get-Counter -ListSet "*Buffer Manager*" -ErrorAction SilentlyContinue).paths
-                (Get-Counter -Counter $availablecounters -ErrorAction SilentlyContinue).countersamples | Where-Object { $_.Path -match $BufManpagecounters } | ForEach-Object {
+                $availableCounters = (Get-Counter -ListSet "*Buffer Manager*" -ErrorAction SilentlyContinue).paths
+                (Get-Counter -Counter $availableCounters -ErrorAction SilentlyContinue).countersamples | Where-Object { $_.Path -match $BufferCounterRegex } | ForEach-Object {
                     $instance = (($_.Path.split("\")[-2]).replace("mssql`$", "")).split(':')[0]
                     if ($instance -eq 'sqlserver') { $instance = 'mssqlserver' }
                     [PSCustomObject]@{
@@ -146,8 +174,8 @@ function Get-DbaMemoryUsage {
             <# DO NOT use Write-Message as this is inside of a script block #>
             Write-Verbose -Message "Searching for SSAS Counters on $Computer"
             try {
-                $availablecounters = (Get-Counter -ListSet "MSAS*:Memory" -ErrorAction SilentlyContinue).paths
-                (Get-Counter -Counter $availablecounters -ErrorAction SilentlyContinue).countersamples | Where-Object { $_.Path -match $SSAScounters } | ForEach-Object {
+                $availableCounters = (Get-Counter -ListSet "MSAS*:Memory" -ErrorAction SilentlyContinue).paths
+                (Get-Counter -Counter $availableCounters -ErrorAction SilentlyContinue).countersamples | Where-Object { $_.Path -match $SSASCounterRegex } | ForEach-Object {
                     $instance = (($_.Path.split("\")[-2]).replace("mssql`$", "")).split(':')[0]
                     if ($instance -eq 'sqlserver') { $instance = 'mssqlserver' }
                     [PSCustomObject]@{
@@ -166,8 +194,8 @@ function Get-DbaMemoryUsage {
             <# DO NOT use Write-Message as this is inside of a script block #>
             Write-Verbose -Message "Searching for SSIS Counters on $Computer"
             try {
-                $availablecounters = (Get-Counter -ListSet "*SSIS*" -ErrorAction SilentlyContinue).paths
-                (Get-Counter -Counter $availablecounters -ErrorAction SilentlyContinue).countersamples | Where-Object { $_.Path -match $SSIScounters } | ForEach-Object {
+                $availableCounters = (Get-Counter -ListSet "*SSIS*" -ErrorAction SilentlyContinue).paths
+                (Get-Counter -Counter $availableCounters -ErrorAction SilentlyContinue).countersamples | Where-Object { $_.Path -match $SSISCounterRegex } | ForEach-Object {
                     $instance = (($_.Path.split("\")[-2]).replace("mssql`$", "")).split(':')[0]
                     if ($instance -eq 'sqlserver') { $instance = 'mssqlserver' }
                     [PSCustomObject]@{
@@ -191,7 +219,7 @@ function Get-DbaMemoryUsage {
             if ($reply.FullComputerName) {
                 $Computer = $reply.FullComputerName
                 try {
-                    foreach ($result in (Invoke-Command2 -ComputerName $Computer -Credential $Credential -ScriptBlock $scriptBlock -argumentlist $Memcounters, $Plancounters, $BufManpagecounters, $SSAScounters, $SSIScounters)) {
+                    foreach ($result in (Invoke-Command2 -ComputerName $Computer -Credential $Credential -ScriptBlock $scriptBlock -argumentlist $MemoryCounterRegex, $PlanCounterRegex, $BufferCounterRegex, $SSASCounterRegex, $SSISCounterRegex)) {
                         [PSCustomObject]@{
                             ComputerName    = $result.ComputerName
                             SqlInstance     = $result.SqlInstance

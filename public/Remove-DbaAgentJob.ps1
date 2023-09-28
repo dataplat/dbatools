@@ -133,7 +133,7 @@ function Remove-DbaAgentJob {
                     $server.Databases['msdb'].ExecuteNonQuery($dropJobQuery)
                     $server.JobServer.Jobs.Refresh()
                     Remove-TeppCacheItem -SqlInstance $server -Type job -Name $currentJob.Name
-                    [pscustomobject]@{
+                    [PSCustomObject]@{
                         ComputerName = $server.ComputerName
                         InstanceName = $server.ServiceName
                         SqlInstance  = $server.DomainInstanceName
@@ -143,7 +143,7 @@ function Remove-DbaAgentJob {
                 } catch {
                     Write-Message -Level Verbose -Message "Could not drop job $job on $server"
 
-                    [pscustomobject]@{
+                    [PSCustomObject]@{
                         ComputerName = $server.ComputerName
                         InstanceName = $server.ServiceName
                         SqlInstance  = $server.DomainInstanceName

@@ -101,7 +101,7 @@ function Remove-DbaXESession {
                 if ($Pscmdlet.ShouldProcess("$instance", "Removing XEvent Session $session")) {
                     try {
                         $xe.Drop()
-                        [pscustomobject]@{
+                        [PSCustomObject]@{
                             ComputerName = $xe.Parent.ComputerName
                             InstanceName = $xe.Parent.ServiceName
                             SqlInstance  = $xe.Parent.DomainInstanceName

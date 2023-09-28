@@ -112,7 +112,7 @@ function Set-DbaSpConfigure {
                     $configobject.Property.ConfigValue = $value
                     $server.Configuration.Alter()
 
-                    [pscustomobject]@{
+                    [PSCustomObject]@{
                         ComputerName  = $server.ComputerName
                         InstanceName  = $server.ServiceName
                         SqlInstance   = $server.DomainInstanceName

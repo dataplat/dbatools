@@ -194,7 +194,7 @@ function Copy-DbaLogin {
                 $newUserName = $Login.name
             }
 
-            $copyLoginStatus = [pscustomobject]@{
+            $copyLoginStatus = [PSCustomObject]@{
                 SourceServer      = $sourceServer.Name
                 DestinationServer = $destServer.Name
                 Type              = "Login - $($Login.LoginType)"
