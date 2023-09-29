@@ -93,6 +93,9 @@ function Get-DbaAvailabilityGroup {
             }
 
             foreach ($ag in $ags) {
+                # Refresh list of databases to fix #9094
+                $ag.AvailabilityDatabases.Refresh()
+
                 Add-Member -Force -InputObject $ag -MemberType NoteProperty -Name ComputerName -value $server.ComputerName
                 Add-Member -Force -InputObject $ag -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
                 Add-Member -Force -InputObject $ag -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
