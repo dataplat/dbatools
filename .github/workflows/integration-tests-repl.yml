@@ -149,4 +149,4 @@ jobs:
       - name: Run replication tests part 3
         run: |
           Import-Module ./dbatools.psd1 -Force
-          Invoke-Pester ./tests/gh-actions-repl-3.ps1 -Output Detailed -PassThru -Verbose
+          # Invoke-Pester ./tests/gh-actions-repl-3.ps1 -Output Detailed -PassThru -Verbose

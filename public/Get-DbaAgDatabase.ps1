@@ -80,14 +80,6 @@ function Get-DbaAgDatabase {
             $InputObject += Get-DbaAvailabilityGroup -SqlInstance $SqlInstance -SqlCredential $SqlCredential -AvailabilityGroup $AvailabilityGroup
         }
 
-        foreach ($ag in $InputObject) {
-            $null = $ag.Refresh()
-            # Calling AvilabilityReplica.Refresh() has the side effct of updating AvailabilityDatabases.
-            # calling AvailabilityDatabases.Refresh() alone is not enough
-            $null = $ag.AvailabilityReplicas.Refresh()
-            $null = $ag.AvailabilityDatabases.Refresh()
-        }
-
         foreach ($db in $InputObject.AvailabilityDatabases) {
             if ($Database) {
                 if ($db.Name -notin $Database) { continue }
