@@ -76,19 +76,20 @@ function Get-DbaAgListener {
             $InputObject += Get-DbaAvailabilityGroup -SqlInstance $SqlInstance -SqlCredential $SqlCredential -AvailabilityGroup $AvailabilityGroup
         }
 
+        $agListeners = $InputObject.AvailabilityGroupListeners
         if (Test-Bound -ParameterName Listener) {
-            $InputObject = $InputObject | Where-Object { $_.AvailabilityGroupListeners.Name -contains $Listener }
+            $agListeners = $agListeners | Where-Object { $Listener -contains $_.Name }
         }
 
         $defaults = 'ComputerName', 'InstanceName', 'SqlInstance', 'AvailabilityGroup', 'Name', 'PortNumber', 'ClusterIPConfiguration'
 
-        foreach ($aglistener in $InputObject.AvailabilityGroupListeners) {
-            $server = $aglistener.Parent.Parent
-            Add-Member -Force -InputObject $aglistener -MemberType NoteProperty -Name ComputerName -value $server.ComputerName
-            Add-Member -Force -InputObject $aglistener -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
-            Add-Member -Force -InputObject $aglistener -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
-            Add-Member -Force -InputObject $aglistener -MemberType NoteProperty -Name AvailabilityGroup -value $aglistener.Parent.Name
-            Select-DefaultView -InputObject $aglistener -Property $defaults
+        foreach ($agListener in $agListeners) {
+            $server = $agListener.Parent.Parent
+            Add-Member -Force -InputObject $agListener -MemberType NoteProperty -Name ComputerName -value $server.ComputerName
+            Add-Member -Force -InputObject $agListener -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
+            Add-Member -Force -InputObject $agListener -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
+            Add-Member -Force -InputObject $agListener -MemberType NoteProperty -Name AvailabilityGroup -value $agListener.Parent.Name
+            Select-DefaultView -InputObject $agListener -Property $defaults
         }
     }
 }
