@@ -171,7 +171,7 @@ function Get-DbaCmObject {
 
             $badConnection = $false
             $badCredentials = $false
-            $code = $ErrorRecord.Exception.InnerException.StatusCode
+            $code = $ErrorRecord.Exception.InnerException.StatusCode -as [int]
             $message = $messages[$code]
 
             #region 1 = Generic runtime error
@@ -220,6 +220,7 @@ function Get-DbaCmObject {
                 Message        = $message
                 BadConnection  = $badConnection
                 BadCredentials = $badCredentials
+                Error          = $ErrorRecord
             }
         }
         #endregion Utility Functions
