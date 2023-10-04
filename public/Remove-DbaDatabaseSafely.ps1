@@ -143,7 +143,7 @@ function Remove-DbaDatabaseSafely {
         if ($Force) { $ConfirmPreference = 'none' }
 
         if (!$AllDatabases -and !$Database) {
-            Stop-Function -Message "You must specify at least one database. Use -Database or -AllDatabases." -ErrorRecord $_
+            Stop-Function -Message "You must specify at least one database. Use -Database or -AllDatabases."
             return
         }
 
@@ -151,6 +151,7 @@ function Remove-DbaDatabaseSafely {
             $sourceserver = Connect-DbaInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
         } catch {
             Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $SqlInstance
+            return
         }
 
         if (-not $Destination) {
@@ -159,18 +160,18 @@ function Remove-DbaDatabaseSafely {
         }
 
         if ($SqlInstance -ne $Destination) {
-
             try {
                 $destserver = Connect-DbaInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
             } catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $Destination -Continue
+                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $Destination
+                return
             }
 
             $sourcenb = $sourceserver.ComputerName
             $destnb = $destserver.ComputerName
 
             if ($BackupFolder.StartsWith("\\") -eq $false -and $sourcenb -ne $destnb) {
-                Stop-Function -Message "Backup folder must be a network share if the source and destination servers are not the same." -ErrorRecord $_ -Target $backupFolder
+                Stop-Function -Message "Backup folder must be a network share if the source and destination servers are not the same." -Target $backupFolder
                 return
             }
         } else {
@@ -190,7 +191,8 @@ function Remove-DbaDatabaseSafely {
 
         if (!(Test-DbaPath -SqlInstance $destserver -Path $backupFolder)) {
             $serviceAccount = $destserver.ServiceAccount
-            Stop-Function -Message "Can't access $backupFolder Please check if $serviceAccount has permissions." -ErrorRecord $_ -Target $backupFolder
+            Stop-Function -Message "Can't access $backupFolder Please check if $serviceAccount has permissions." -Target $backupFolder
+            return
         }
 
         #TODO: Test
@@ -198,7 +200,8 @@ function Remove-DbaDatabaseSafely {
         $jobStepName = "Restore the $dbName database from Final Backup"
 
         if (!($destserver.Logins | Where-Object { $_.Name -eq $jobowner })) {
-            Stop-Function -Message "$destination does not contain the login $jobowner - Please fix and try again - Aborting." -ErrorRecord $_ -Target $jobowner
+            Stop-Function -Message "$destination does not contain the login $jobowner - Please fix and try again - Aborting." -Target $jobowner
+            return
         }
     }
     process {
@@ -222,7 +225,8 @@ function Remove-DbaDatabaseSafely {
             $agentService = Get-DbaService -ComputerName $destserver.ComputerName -InstanceName $destInstanceName -Type Agent
 
             if ($agentService.State -ne 'Running') {
-                Stop-Function -Message "SQL Server Agent is not running. Please start the service." -ErrorAction $agentService.Name
+                Stop-Function -Message "SQL Server Agent is not running. Please start the service."
+                return
             } else {
                 Write-Message -Level Verbose -Message "SQL Server Agent $($agentService.Name) is running."
             }
@@ -261,8 +265,7 @@ function Remove-DbaDatabaseSafely {
                     $choice = $host.UI.PromptForChoice($Title, $Info, $Options, $Defaultchoice)
                     # Check the given option
                     if ($choice -eq 1) {
-                        Stop-Function -Message "You have chosen skipping the database $dbName because of last known backup time ($lastFullBckDurationMin minutes)." -ErrorRecord $_ -Target $dbName -Continue
-                        Continue
+                        Stop-Function -Message "You have chosen skipping the database $dbName because of last known backup time ($lastFullBckDurationMin minutes)." -Target $dbName -Continue
                     }
                 }
             } else {
