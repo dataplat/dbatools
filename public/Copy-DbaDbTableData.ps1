@@ -333,11 +333,15 @@ function Copy-DbaDbTableData {
                             # need these for generating the script of the table and then replacing the schema and name
                             $schemaNameToReplace = $tempTable.Schema
                             $tableNameToReplace = $tempTable.Name
-                            $tablescript = $tempTable | Export-DbaScript -Passthru | Out-String
+                            $tablescript = $tempTable |
+                                Export-DbaScript -Passthru |
+                                Out-String
                             # cleanup
                             Invoke-DbaQuery -SqlInstance $server -Database $Database -Query "DROP TABLE tempdb..$tempTableName" -EnableException
                         } else {
-                            $tablescript = $sqlObject | Export-DbaScript -Passthru | Out-String
+                            $tablescript = $sqlObject |
+                                Export-DbaScript -Passthru |
+                                Out-String
                             $schemaNameToReplace = $sqlObject.Schema
                             $tableNameToReplace = $sqlObject.Name
                         }
