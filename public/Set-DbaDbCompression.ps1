@@ -217,7 +217,7 @@ function Set-DbaDbCompression {
                                     $underlyingObj = $server.Databases[$obj.Database].Tables[$obj.TableName, $obj.Schema].Indexes[$obj.IndexName]
                                     ($underlyingObj.PhysicalPartitions | Where-Object { $_.PartitionNumber -eq $obj.Partition }).DataCompression = $obj.CompressionTypeRecommendation
                                     $underlyingObj.OnlineIndexOperation = $CanDoOnlineOperation
-                                    $server.Databases[$obj.Database].Tables[$obj.TableName, $obj.Schema].Indexes[$obj.IndexName].Rebuild()
+                                    $underlyingObj.Rebuild()
                                 } catch {
                                     Stop-Function -Message "Compression failed for $instance - $db - table $($obj.Schema).$($obj.TableName) - index $($obj.IndexName) - partition $($obj.Partition)" -Target $db -ErrorRecord $_ -Continue
                                 }
@@ -279,7 +279,7 @@ function Set-DbaDbCompression {
                                     Write-Message -Level Verbose -Message "Compressing $($Index.IndexType) $($Index.Name) Partition $($p.PartitionNumber)"
                                     try {
                                         $($index.PhysicalPartitions | Where-Object { $_.PartitionNumber -eq $P.PartitionNumber }).DataCompression = $CompressionType
-                                        $obj.OnlineIndexOperation = $CanDoOnlineOperation
+                                        $index.OnlineIndexOperation = $CanDoOnlineOperation
                                         $index.Rebuild()
                                     } catch {
                                         Stop-Function -Message "Compression failed for $instance - $db - table $($obj.Schema).$($obj.Name) - index $($index.Name) - partition $($p.PartitionNumber)" -Target $db -ErrorRecord $_ -Continue
@@ -313,7 +313,7 @@ function Set-DbaDbCompression {
                                 Write-Message -Level Verbose -Message "Compressing $($index.IndexType) $($index.Name) Partition $($p.PartitionNumber)"
                                 try {
                                     $($index.PhysicalPartitions | Where-Object { $_.PartitionNumber -eq $P.PartitionNumber }).DataCompression = $CompressionType
-                                    $obj.OnlineIndexOperation = $CanDoOnlineOperation
+                                    $index.OnlineIndexOperation = $CanDoOnlineOperation
                                     $index.Rebuild()
                                 } catch {
                                     Stop-Function -Message "Compression failed for $instance - $db - table $($obj.Schema).$($obj.Name) - index $($index.Name) - partition $($p.PartitionNumber)" -Target $db -ErrorRecord $_ -Continue
