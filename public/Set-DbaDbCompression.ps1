@@ -278,9 +278,23 @@ function Set-DbaDbCompression {
                                 foreach ($p in $($index.PhysicalPartitions | Where-Object { $_.DataCompression -ne $CompressionType })) {
                                     Write-Message -Level Verbose -Message "Compressing $($Index.IndexType) $($Index.Name) Partition $($p.PartitionNumber)"
                                     try {
-                                        $($index.PhysicalPartitions | Where-Object { $_.PartitionNumber -eq $P.PartitionNumber }).DataCompression = $CompressionType
-                                        $index.OnlineIndexOperation = $CanDoOnlineOperation
-                                        $index.Rebuild()
+                                        ## There is a bug in SMO where setting compression to None at the index level doesn't work
+                                        ## Once this UserVoice item is fixed the workaround can be removed
+                                        ## https://feedback.azure.com/forums/908035-sql-server/suggestions/34080112-data-compression-smo-bug
+                                        if ($CompressionType -eq "None") {
+                                            $query = "ALTER INDEX [$($index.Name)] ON $($index.Parent) REBUILD PARTITION = ALL WITH"
+                                            if ($CanDoOnlineOperation)
+                                            {
+                                                $query += "(DATA_COMPRESSION = $CompressionType, ONLINE = ON)"
+                                            } else {
+                                                $query += "(DATA_COMPRESSION = $CompressionType)"
+                                            }
+                                            $Server.Query($query, $db.Name)
+                                        } else {
+                                            $($index.PhysicalPartitions | Where-Object { $_.PartitionNumber -eq $P.PartitionNumber }).DataCompression = $CompressionType
+                                            $index.OnlineIndexOperation = $CanDoOnlineOperation
+                                            $index.Rebuild()
+                                        }
                                     } catch {
                                         Stop-Function -Message "Compression failed for $instance - $db - table $($obj.Schema).$($obj.Name) - index $($index.Name) - partition $($p.PartitionNumber)" -Target $db -ErrorRecord $_ -Continue
                                     }
@@ -312,9 +326,22 @@ function Set-DbaDbCompression {
                             foreach ($p in $($index.PhysicalPartitions | Where-Object { $_.DataCompression -ne $CompressionType })) {
                                 Write-Message -Level Verbose -Message "Compressing $($index.IndexType) $($index.Name) Partition $($p.PartitionNumber)"
                                 try {
-                                    $($index.PhysicalPartitions | Where-Object { $_.PartitionNumber -eq $P.PartitionNumber }).DataCompression = $CompressionType
-                                    $index.OnlineIndexOperation = $CanDoOnlineOperation
-                                    $index.Rebuild()
+                                    ## There is a bug in SMO where setting compression to None at the index level doesn't work
+                                    ## Once this UserVoice item is fixed the workaround can be removed
+                                    ## https://feedback.azure.com/forums/908035-sql-server/suggestions/34080112-data-compression-smo-bug
+                                    if ($CompressionType -eq "None") {
+                                        if ($CanDoOnlineOperation)
+                                        {
+                                            $query += "(DATA_COMPRESSION = $CompressionType, ONLINE = ON)"
+                                        } else {
+                                            $query += "(DATA_COMPRESSION = $CompressionType)"
+                                        }
+                                        $Server.Query($query, $db.Name)
+                                    } else {
+                                        $($index.PhysicalPartitions | Where-Object { $_.PartitionNumber -eq $P.PartitionNumber }).DataCompression = $CompressionType
+                                        $index.OnlineIndexOperation = $CanDoOnlineOperation
+                                        $index.Rebuild()
+                                    }
                                 } catch {
                                     Stop-Function -Message "Compression failed for $instance - $db - table $($obj.Schema).$($obj.Name) - index $($index.Name) - partition $($p.PartitionNumber)" -Target $db -ErrorRecord $_ -Continue
                                 }
