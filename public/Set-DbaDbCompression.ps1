@@ -41,7 +41,7 @@ function Set-DbaDbCompression {
         Will only work on the tables/indexes that have the calculated savings at and higher for the given number provided.
 
     .PARAMETER ForceOfflineRebuilds
-        By default, this function prefers online rebuilds over offline ones. 
+        By default, this function prefers online rebuilds over offline ones.
         If you are on a supported version of SQL Server but still prefer to do offline rebuilds, enable this flag
 
     .PARAMETER InputObject
@@ -163,8 +163,7 @@ function Set-DbaDbCompression {
                         break
                     }
                     foreach ($index in $($obj.Indexes | Where-Object { !$_.IsMemoryOptimized -and $_.IndexType -notmatch 'Columnstore' })) {
-                        if ($index.IsOnlineRebuildSupported -or $isAzure)
-                        {
+                        if ($index.IsOnlineRebuildSupported -or $isAzure) {
                             $isOnlineRebuildSupported = $true
                             $onlineRebuildScanCompleted = $true
                             break
@@ -173,8 +172,7 @@ function Set-DbaDbCompression {
                 }
                 Write-Message -Level Verbose -Message "Are Online Rebuilds supported ? $isOnlineRebuildSupported"
                 $CanDoOnlineOperation = $false
-                if ($IsOnlineRebuildSupported -and !$ForceOfflineRebuilds)
-                {
+                if ($IsOnlineRebuildSupported -and !$ForceOfflineRebuilds) {
                     $CanDoOnlineOperation = $true
                     Write-Message -Level Verbose -Message "Using Online Rebuilds where possible"
                 }
@@ -283,8 +281,7 @@ function Set-DbaDbCompression {
                                         ## https://feedback.azure.com/forums/908035-sql-server/suggestions/34080112-data-compression-smo-bug
                                         if ($CompressionType -eq "None") {
                                             $query = "ALTER INDEX [$($index.Name)] ON $($index.Parent) REBUILD PARTITION = ALL WITH"
-                                            if ($CanDoOnlineOperation)
-                                            {
+                                            if ($CanDoOnlineOperation) {
                                                 $query += "(DATA_COMPRESSION = $CompressionType, ONLINE = ON)"
                                             } else {
                                                 $query += "(DATA_COMPRESSION = $CompressionType)"
@@ -330,8 +327,7 @@ function Set-DbaDbCompression {
                                     ## Once this UserVoice item is fixed the workaround can be removed
                                     ## https://feedback.azure.com/forums/908035-sql-server/suggestions/34080112-data-compression-smo-bug
                                     if ($CompressionType -eq "None") {
-                                        if ($CanDoOnlineOperation)
-                                        {
+                                        if ($CanDoOnlineOperation) {
                                             $query += "(DATA_COMPRESSION = $CompressionType, ONLINE = ON)"
                                         } else {
                                             $query += "(DATA_COMPRESSION = $CompressionType)"
