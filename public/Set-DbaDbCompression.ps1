@@ -137,7 +137,6 @@ function Set-DbaDbCompression {
             if ($server.EngineEdition -notmatch 'Enterprise' -and $server.VersionMajor -lt '13') {
                 Stop-Function -Message "Only SQL Server Enterprise Edition supports compression on $server" -Target $server -Continue
             }
-            $isAzure = $server.DatabaseEngineType -match "Azure"
             $dbs = $server.Databases | Where-Object { $_.IsAccessible -and $_.IsSystemObject -eq 0 }
             if ($Database) {
                 $dbs = $dbs | Where-Object { $_.Name -in $Database }
@@ -163,7 +162,7 @@ function Set-DbaDbCompression {
                         break
                     }
                     foreach ($index in $($obj.Indexes | Where-Object { !$_.IsMemoryOptimized -and $_.IndexType -notmatch 'Columnstore' })) {
-                        if ($index.IsOnlineRebuildSupported -or $isAzure) {
+                        if ($index.IsOnlineRebuildSupported -or $server.isAzure) {
                             $isOnlineRebuildSupported = $true
                             $onlineRebuildScanCompleted = $true
                             break
