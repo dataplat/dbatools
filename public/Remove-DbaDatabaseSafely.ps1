@@ -222,7 +222,7 @@ function Remove-DbaDatabaseSafely {
             if ($destInstanceName -eq '') {
                 $destInstanceName = "MSSQLSERVER"
             }
-            $agentService = Get-DbaService -ComputerName $destserver.ComputerName -InstanceName $destInstanceName -Type Agent
+            $agentService = Get-DbaService -ComputerName $destserver.ComputerName -InstanceName $destInstanceName -Type Agent -EnableException
 
             if ($agentService.State -ne 'Running') {
                 Stop-Function -Message "SQL Server Agent is not running. Please start the service."
@@ -321,20 +321,22 @@ function Remove-DbaDatabaseSafely {
 
                     $DefaultCompression = $sourceserver.Configuration.DefaultBackupCompression.ConfigValue
                     $backupWithCompressionParams = @{
-                        SqlInstance    = $SqlInstance
-                        SqlCredential  = $SqlCredential
-                        Database       = $dbName
-                        BackupFileName = $filename
-                        CompressBackup = $true
-                        Checksum       = $true
+                        SqlInstance     = $SqlInstance
+                        SqlCredential   = $SqlCredential
+                        Database        = $dbName
+                        BackupFileName  = $filename
+                        CompressBackup  = $true
+                        Checksum        = $true
+                        EnableException = $true
                     }
 
                     $backupWithoutCompressionParams = @{
-                        SqlInstance    = $SqlInstance
-                        SqlCredential  = $SqlCredential
-                        Database       = $dbName
-                        BackupFileName = $filename
-                        Checksum       = $true
+                        SqlInstance     = $SqlInstance
+                        SqlCredential   = $SqlCredential
+                        Database        = $dbName
+                        BackupFileName  = $filename
+                        Checksum        = $true
+                        EnableException = $true
                     }
                     if ($BackupCompression -eq "Default") {
                         if ($DefaultCompression -eq 1) {
@@ -362,18 +364,19 @@ function Remove-DbaDatabaseSafely {
 
                     ## Create a Job Category
                     if (!(Get-DbaAgentJobCategory -SqlInstance $destination -SqlCredential $DestinationSqlCredential -Category $categoryname)) {
-                        New-DbaAgentJobCategory -SqlInstance $destination -SqlCredential $DestinationSqlCredential -Category $categoryname
+                        New-DbaAgentJobCategory -SqlInstance $destination -SqlCredential $DestinationSqlCredential -Category $categoryname -EnableException
                     }
 
                     try {
                         if ($Pscmdlet.ShouldProcess($destination, "Creating Agent Job $jobname on $destination")) {
                             $jobParams = @{
-                                SqlInstance   = $destination
-                                SqlCredential = $DestinationSqlCredential
-                                Job           = $jobname
-                                Category      = $categoryname
-                                Description   = "This job will restore the $dbName database using the final backup located at $filename."
-                                Owner         = $jobowner
+                                SqlInstance     = $destination
+                                SqlCredential   = $DestinationSqlCredential
+                                Job             = $jobname
+                                Category        = $categoryname
+                                Description     = "This job will restore the $dbName database using the final backup located at $filename."
+                                Owner           = $jobowner
+                                EnableException = $true
                             }
                             $job = New-DbaAgentJob @jobParams
 
@@ -388,7 +391,7 @@ function Remove-DbaDatabaseSafely {
                     ## Suggestion check for disk space before restore
                     ## Create Restore Script
                     try {
-                        $jobStepCommand = Restore-DbaDatabase -SqlInstance $destserver -Path $filename -OutputScriptOnly -WithReplace
+                        $jobStepCommand = Restore-DbaDatabase -SqlInstance $destserver -Path $filename -OutputScriptOnly -WithReplace -EnableException
 
                         $jobStepParams = @{
                             SqlInstance     = $destination
@@ -401,6 +404,7 @@ function Remove-DbaDatabaseSafely {
                             OnSuccessAction = 'QuitWithSuccess'
                             OnFailAction    = 'QuitWithFailure'
                             StepId          = 1
+                            EnableException = $true
                         }
                         if ($Pscmdlet.ShouldProcess($destination, "Creating Agent JobStep on $destination")) {
                             $jobStep = New-DbaAgentJobStep @jobStepParams
@@ -422,7 +426,7 @@ function Remove-DbaDatabaseSafely {
             if ($Pscmdlet.ShouldProcess($destination, "Dropping Database $dbName on $sourceserver")) {
                 ## Drop the database
                 try {
-                    $null = Remove-DbaDatabase -SqlInstance $sourceserver -Database $dbName -Confirm:$false
+                    $null = Remove-DbaDatabase -SqlInstance $sourceserver -Database $dbName -Confirm:$false -EnableException
                     Write-Message -Level Verbose -Message "Dropped $dbName Database on $source prior to running the Agent Job"
                 } catch {
                     Stop-Function -Message "FAILED : To Drop database $dbName on $server - aborting routine for $dbName. Exception: $_" -Continue
@@ -491,7 +495,7 @@ function Remove-DbaDatabaseSafely {
             if ($Pscmdlet.ShouldProcess($dbName, "Dropping Database $dbName on $destination")) {
                 ## Drop the database
                 try {
-                    $null = Remove-DbaDatabase -SqlInstance $destserver -Database $dbName -Confirm:$false
+                    $null = Remove-DbaDatabase -SqlInstance $destserver -Database $dbName -Confirm:$false -EnableException
                     Write-Message -Level Verbose -Message "Dropped $dbName database on $destination."
                 } catch {
                     Stop-Function -Message "FAILED : To Drop database $dbName on $destination - Aborting. Exception: $_" -Target $dbName -ErrorRecord $_ -Continue
