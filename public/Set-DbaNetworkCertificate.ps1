@@ -229,14 +229,14 @@ function Set-DbaNetworkCertificate {
 
             if ($PScmdlet.ShouldProcess("local", "Connecting to $instanceName to import new cert")) {
                 try {
-                    Invoke-Command2 -Raw -ComputerName $resolved.fqdn -Credential $Credential -ArgumentList $regRoot, $serviceAccount, $instanceName, $vsname, $Thumbprint -ScriptBlock $scriptBlock -ErrorAction Stop
+                    Invoke-Command2 -Raw -ComputerName $computerName -Credential $Credential -ArgumentList $regRoot, $serviceAccount, $instanceName, $vsname, $Thumbprint -ScriptBlock $scriptBlock -ErrorAction Stop
                     if ($RestartService) {
                         $null = Restart-DbaService -SqlInstance $instance -Force
                     } else {
                         Write-Message -Level Warning -Message "New certificate will not take effect until SQL Server services are restarted for $instance"
                     }
                 } catch {
-                    Stop-Function -Message "Failed to connect to $($resolved.fqdn) using PowerShell remoting." -ErrorRecord $_ -Target $instance -Continue
+                    Stop-Function -Message "Failed to connect to $computerName using PowerShell remoting." -ErrorRecord $_ -Target $instance -Continue
                 }
             }
         }
