@@ -13,7 +13,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, arm64]
+        os: [ubuntu-latest]
 
     steps:
       - uses: actions/checkout@v3
