@@ -111,6 +111,11 @@ function Copy-DbaDbTableData {
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
+    .PARAMETER UseDefaultFileGroup
+        By default, this command will use a filegroup of the same name between
+        source and target. Use this flag if you'd instead like to use the
+        default filegroup in the target database.
+
     .NOTES
         Tags: Table, Data
         Author: Simone Bizzotto (@niphlod)
@@ -212,6 +217,7 @@ function Copy-DbaDbTableData {
         [switch]$Truncate,
         [int]$BulkCopyTimeout = 5000,
         [int]$CommandTimeout = 0,
+        [switch]$UseDefaultFileGroup,
         [Parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.TableViewBase[]]$InputObject,
         [switch]$EnableException
@@ -230,6 +236,14 @@ function Copy-DbaDbTableData {
             if ($optionValue -eq $true) {
                 $bulkCopyOptions += $([Microsoft.Data.SqlClient.SqlBulkCopyOptions]::$option).value__
             }
+        }
+
+        $defaultFGScriptingOption = @{
+            ScriptingOptionsObject = $(
+                $so = New-DbaScriptingOption
+                $so.NoFileGroup = $UseDefaultFileGroup
+                $so
+            )
         }
     }
 
@@ -333,11 +347,15 @@ function Copy-DbaDbTableData {
                             # need these for generating the script of the table and then replacing the schema and name
                             $schemaNameToReplace = $tempTable.Schema
                             $tableNameToReplace = $tempTable.Name
-                            $tablescript = $tempTable | Export-DbaScript -Passthru | Out-String
+                            $tablescript = $tempTable |
+                                Export-DbaScript @defaultFGScriptingOption -Passthru |
+                                Out-String
                             # cleanup
                             Invoke-DbaQuery -SqlInstance $server -Database $Database -Query "DROP TABLE tempdb..$tempTableName" -EnableException
                         } else {
-                            $tablescript = $sqlObject | Export-DbaScript -Passthru | Out-String
+                            $tablescript = $sqlObject |
+                                Export-DbaScript @defaultFGScriptingOption -Passthru |
+                                Out-String
                             $schemaNameToReplace = $sqlObject.Schema
                             $tableNameToReplace = $sqlObject.Name
                         }
