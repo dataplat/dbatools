@@ -579,7 +579,7 @@ function Invoke-DbaDbDataMasking {
                                         $null = $server.Databases['tempdb'].Query($insertQuery)
                                         $insertFailed = $false
                                     } catch {
-                                        Write-PSFMessage -Level Verbose -Message "Could not insert value"
+                                        Write-Message -Level Verbose -Message "Could not insert value"
                                         $insertFailed = $true
                                     }
 
@@ -702,7 +702,7 @@ function Invoke-DbaDbDataMasking {
                                             $null = $server.Databases['tempdb'].Query($insertQuery)
                                             $insertFailed = $false
                                         } catch {
-                                            Write-PSFMessage -Level Verbose -Message "Could not insert value"
+                                            Write-Message -Level Verbose -Message "Could not insert value"
                                             $insertFailed = $true
                                             $retryCount++
                                         }
@@ -717,7 +717,7 @@ function Invoke-DbaDbDataMasking {
                                     Stop-Function -Message "Could not add masking index for [$($indexToTable.TempTableName)]" -ErrorRecord $_
                                 }
                             } else {
-                                Write-PSFMessage -Level Verbose -Message "Table [$($tableobject.Schema)].[$($tableobject.Name)] does not contain any masking index columns to process"
+                                Write-Message -Level Verbose -Message "Table [$($tableobject.Schema)].[$($tableobject.Name)] does not contain any masking index columns to process"
                             }
                         } else {
                             Stop-Function -Message "The table does not have any indexes"
@@ -776,7 +776,7 @@ function Invoke-DbaDbDataMasking {
                                     $newValue = $columnobject.StaticValue
 
                                     if ($null -eq $newValue -and -not $columnobject.Nullable) {
-                                        Write-PSFMessage -Message "Column '$($columnobject.Name)' static value cannot null when column is set not to be nullable."
+                                        Write-Message -Message "Column '$($columnobject.Name)' static value cannot null when column is set not to be nullable."
                                     } else {
                                         try {
                                             $convertedValue = Convert-DbaMaskingValue -Value $newValue -DataType $columnobject.ColumnType -Nullable:$columnobject.Nullable -EnableException
