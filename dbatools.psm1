@@ -854,11 +854,27 @@ if ($PSVersionTable.PSVersion.Major -lt 5) {
         'New-DbaLinkedServerLogin',
         'Remove-DbaLinkedServerLogin',
         'Remove-DbaCredential',
-        'Remove-DbaAgentProxy'
+        'Remove-DbaAgentProxy',
+        'Disable-DbaReplDistributor',
+        'Enable-DbaReplDistributor',
+        'Disable-DbaReplPublishing',
+        'Enable-DbaReplPublishing',
+        'New-DbaReplPublication',
+        'Get-DbaReplArticle',
+        'Get-DbaReplArticleColumn',
+        'Add-DbaReplArticle',
+        'Remove-DbaReplArticle',
+        'Remove-DbaReplPublication',
+        'New-DbaReplSubscription',
+        'Remove-DbaReplSubscription',
+        'New-DbaReplCreationScriptOptions',
+        'Get-DbaReplSubscription',
+        'Get-DbaReplDistributor',
+        'Get-DbaReplPublication',
+        'Get-DbaReplServer'
     )
     $script:noncoresmo = @(
         # SMO issues
-        'Get-DbaReplDistributor',
         'Copy-DbaPolicyManagement',
         'Copy-DbaDataCollector',
         'Get-DbaPbmCategory',
@@ -867,10 +883,8 @@ if ($PSVersionTable.PSVersion.Major -lt 5) {
         'Get-DbaPbmObjectSet',
         'Get-DbaPbmPolicy',
         'Get-DbaPbmStore',
-        'Get-DbaReplPublication',
         'Test-DbaReplLatency',
-        'Export-DbaReplServerSetting',
-        'Get-DbaReplServer'
+        'Export-DbaReplServerSetting'
     )
     $script:windowsonly = @(
         # filesystem (\\ related),
