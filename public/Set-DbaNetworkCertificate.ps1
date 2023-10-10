@@ -66,7 +66,7 @@ function Set-DbaNetworkCertificate {
     param (
         [Parameter(ValueFromPipelineByPropertyName)]
         [Alias("ComputerName")]
-        [DbaInstanceParameter[]]$SqlInstance,
+        [DbaInstanceParameter[]]$SqlInstance = $env:COMPUTERNAME,
         [Parameter(ValueFromPipelineByPropertyName)]
         [PSCredential]$Credential,
         [parameter(Mandatory, ParameterSetName = "Certificate", ValueFromPipeline)]
@@ -97,23 +97,13 @@ function Set-DbaNetworkCertificate {
             Write-Message -Level VeryVerbose -Message "Processing $instance" -Target $instance
             $null = Test-ElevationRequirement -ComputerName $instance -Continue
 
-            try {
-                Write-Message -Level Verbose -Message "Resolving hostname."
-                $resolved = $null
-                $resolved = Resolve-DbaNetworkName -ComputerName $instance -Credential $Credential -EnableException
-            } catch {
-                $resolved = Resolve-DbaNetworkName -ComputerName $instance -Credential $Credential -Turbo
-            }
-
-            if ($null -eq $resolved) {
-                Stop-Function -Message "Can't resolve $instance" -Target $instance -Continue -Category InvalidArgument
-            }
 
             $computerName = $instance.ComputerName
             $instanceName = $instance.instancename
 
             try {
-                $sqlwmi = Invoke-ManagedComputerCommand -ComputerName $resolved.FQDN -ScriptBlock { $wmi.Services } -Credential $Credential -ErrorAction Stop | Where-Object DisplayName -eq "SQL Server ($instanceName)"
+                # removed: Resolve-DbaNetworkName command as it is used in the Invoke-ManagedComputerCommand anyway
+                $sqlwmi = Invoke-ManagedComputerCommand -ComputerName $computerName -ScriptBlock { $wmi.Services } -Credential $Credential -ErrorAction Stop | Where-Object DisplayName -eq "SQL Server ($instanceName)"
             } catch {
                 Stop-Function -Message "Failed to access $instance" -Target $instance -Continue -ErrorRecord $_
             }
