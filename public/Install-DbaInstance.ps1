@@ -435,7 +435,7 @@ function Install-DbaInstance {
 
         # auto generate a random password if mixed is chosen and a credential is not provided
         if ($AuthenticationMode -eq "Mixed" -and -not $SaCredential) {
-            $secpasswd = Get-RandomPassword -Length 15
+            $secpasswd = Get-RandomPassword -Length 128
             $SaCredential = New-Object System.Management.Automation.PSCredential ("sa", $secpasswd)
         }
 
