@@ -335,7 +335,7 @@ function Get-DbaDbBackupHistory {
                     $allBackups = @()
                     $allBackups += $fullDb = Get-DbaDbBackupHistory -SqlInstance $server -Database $db.Name -LastFull -raw:$Raw -DeviceType $DeviceType -IncludeCopyOnly:$IncludeCopyOnly -Since:$since -RecoveryFork $RecoveryFork
                     if ($null -eq $fullDb) {
-                        Write-Message -Level Verbose -Message "No Backup found for database $($db.Name), skipping"
+                        Write-Message -Level Verbose -Message "No Full Backup found for database $($db.Name), skipping"
                         continue
                     }
                     if (-not $IgnoreDiffBackup) {
