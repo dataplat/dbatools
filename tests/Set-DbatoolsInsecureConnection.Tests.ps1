@@ -29,8 +29,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 
             $null = Set-DbatoolsInsecureConnection
             Get-DbatoolsConfigValue -FullName sql.connection.trustcert | Should -BeTrue
-            # sql.connection.encrypt is a string because it needs to be mandatory, optional, true or false
-            Get-DbatoolsConfigValue -FullName sql.connection.encrypt | Should -Be 'False'
+            Get-DbatoolsConfigValue -FullName sql.connection.encrypt | Should -BeFalse
         }
     }
 }

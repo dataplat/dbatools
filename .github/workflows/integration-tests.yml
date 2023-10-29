@@ -27,7 +27,7 @@ jobs:
         run: |
           Import-Module ./dbatools.psd1 -Force
           Set-DbatoolsConfig -FullName sql.connection.trustcert -Value $true -Register
-          Set-DbatoolsConfig -FullName sql.connection.encrypt -Value Optional -Register
+          Set-DbatoolsConfig -FullName sql.connection.encrypt -Value $false -Register
           Get-DbatoolsConfigValue -FullName sql.connection.encrypt | Write-Warning
 
       - name:  Setup docker images
@@ -83,7 +83,7 @@ jobs:
         run: |
           Import-Module ./dbatools -Force
           Set-DbatoolsConfig -FullName sql.connection.trustcert -Value $true -PassThru | Register-DbatoolsConfig -Scope FileUserShared
-          Set-DbatoolsConfig -FullName sql.connection.encrypt -Value Optional -PassThru | Register-DbatoolsConfig -Scope FileUserShared
+          Set-DbatoolsConfig -FullName sql.connection.encrypt -Value $false -PassThru | Register-DbatoolsConfig -Scope FileUserShared
           Connect-DbaInstance -SqlInstance "(localdb)\MSSQLLocalDB"
 
       - name: Connect to localdb instance pwsh
@@ -91,7 +91,7 @@ jobs:
         run: |
           Import-Module ./dbatools -Force
           Set-DbatoolsConfig -FullName sql.connection.trustcert -Value $true -PassThru | Register-DbatoolsConfig -Scope FileUserShared
-          Set-DbatoolsConfig -FullName sql.connection.encrypt -Value Optional -PassThru | Register-DbatoolsConfig -Scope FileUserShared
+          Set-DbatoolsConfig -FullName sql.connection.encrypt -Value $false -PassThru | Register-DbatoolsConfig -Scope FileUserShared
           Connect-DbaInstance -SqlInstance "(localdb)\MSSQLLocalDB"
 
       - name: Run pwsh tests
