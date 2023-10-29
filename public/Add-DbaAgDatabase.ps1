@@ -310,7 +310,25 @@ function Add-DbaAgDatabase {
                     if ($Pscmdlet.ShouldProcess($replicaServerSMO[$replicaName], "Restore database $($db.Name) to replica $replicaName")) {
                         try {
                             Write-Message -Level Verbose -Message "Restore database $($db.Name) to replica $replicaName."
-                            $null = $backups | Restore-DbaDatabase -SqlInstance $replicaServerSMO[$replicaName] -NoRecovery -TrustDbBackupHistory -ReuseSourceFolderStructure -EnableException
+                            $restoreParams = @{
+                                SqlInstance                = $replicaServerSMO[$replicaName]
+                                NoRecovery                 = $true
+                                TrustDbBackupHistory       = $true
+                                ReuseSourceFolderStructure = $true
+                                EnableException            = $true
+                            }
+                            $sourceOwner = $db.Owner
+                            $replicaOwner = $replicaServerSMO[$replicaName].ConnectedAs
+                            if ($sourceOwner -ne $replicaOwner) {
+                                Write-Message -Level Verbose -Message "Source database owner is $sourceOwner, replica database owner would be $replicaOwner."
+                                if ($replicaServerSMO[$replicaName].Logins[$db.Owner]) {
+                                    Write-Message -Level Verbose -Message "Source database owner is found on replica, so using ExecuteAs with Restore-DbaDatabase to set correct owner."
+                                    $restoreParams['ExecuteAs'] = $db.Owner
+                                } else {
+                                    Write-Message -Level Verbose -Message "Source database owner is not found on replica, so there is nothing we can do."
+                                }
+                            }
+                            $null = $backups | Restore-DbaDatabase @restoreParams
                         } catch {
                             $failure = $true
                             Stop-Function -Message "Failed to restore database $($db.Name) to replica $replicaName." -ErrorRecord $_ -Continue
