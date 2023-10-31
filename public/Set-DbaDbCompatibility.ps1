@@ -87,24 +87,18 @@ function Set-DbaDbCompatibility {
             $InputObject += Get-DbaDatabase -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $Database
         }
 
-        if (Test-Bound -ParameterName 'Compatibility') {
-            $targetCompatibility = $Compatibility
-        } else {
-            $targetCompatibility =
-            try {
-                (Get-DbaDbCompatibility -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database master -EnableException).Compatibility
-            } catch {
-                Stop-Function -Message 'Unable to detect instance level compatibility level' -ErrorRecord $_ -Target $SqlInstance
-            }
-
-            Write-Message -Level Verbose -Message "No Compatibility value provided, setting databases to match the SQL Server Instance version: $targetCompatibility"
-        }
-        Write-Message -Level Verbose -Message "SQL Server instance Compatibility Level: $targetCompatibility"
-
         foreach ($db in $InputObject) {
             $server = $db.Parent
             $dbLevel = $db.CompatibilityLevel
             Write-Message -Level Verbose -Message "Database $db current Compatibility Level: $dbLevel"
+
+            if (Test-Bound -ParameterName 'Compatibility') {
+                $targetCompatibility = $Compatibility
+            } else {
+                $serverVersion = $server.VersionMajor
+                $targetCompatibility = [Microsoft.SqlServer.Management.Smo.CompatibilityLevel]"Version$($serverVersion)0"
+                Write-Message -Level Verbose -Message "No Compatibility value provided, setting databases to match the SQL Server Instance version: $targetCompatibility"
+            }
 
             if ($dbLevel -ne $targetCompatibility) {
                 if ($PSCmdlet.ShouldProcess($server.Name, "Setting $db Compatibility Level to $targetCompatibility")) {
@@ -125,7 +119,7 @@ function Set-DbaDbCompatibility {
                     }
                 }
             } else {
-                Write-Message -Level Verbose -Message "Database $db current Compatibility Level matches instance level [$targetCompatibility]"
+                Write-Message -Level Verbose -Message "Database $db current Compatibility Level matches target level [$targetCompatibility]"
             }
         }
     }
