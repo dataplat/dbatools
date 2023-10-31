@@ -33,7 +33,7 @@ Describe "$CommandName Integration Tests" -Tag 'IntegrationTests' {
         $sqlCn.Refresh()
         $sqlCn.Databases.Refresh()
         $resultMatches = Set-DbaDbCompatibility -SqlInstance $sqlCn -Database 'master' -Verbose 4>&1
-        $verboseMsg = '*current Compatibility Level matches instance level*'
+        $verboseMsg = '*current Compatibility Level matches target level*'
 
         $sqlCn.Refresh()
         $sqlCn.Databases.Refresh()
