@@ -549,16 +549,16 @@ function Backup-DbaDatabase {
                     $flagCorrectMaxTransferSize = ($MaxTransferSize -gt 64kb)
                     if ($flagTDESQLVersion -and $flagCorrectMaxTransferSize) {
                         Write-Message -Level Verbose -Message "$dbName is enabled for encryption but will compress"
-                        $backup.CompressionOption = 1
+                        $backup.CompressionOption = [Microsoft.SqlServer.Management.Smo.BackupCompressionOptions]::On
                     } else {
                         Write-Message -Level Warning -Message "$dbName is enabled for encryption, will not compress"
-                        $backup.CompressionOption = 2
+                        $backup.CompressionOption = [Microsoft.SqlServer.Management.Smo.BackupCompressionOptions]::Off
                     }
                 } elseif ($server.Edition -like 'Express*' -or ($server.VersionMajor -eq 10 -and $server.VersionMinor -eq 0 -and $server.Edition -notlike '*enterprise*') -or $server.VersionMajor -lt 10) {
                     Stop-Function -Message "Compression is not supported with this version/edition of Sql Server" -Continue -Target $db
                 } else {
                     Write-Message -Level Verbose -Message "Compression enabled"
-                    $backup.CompressionOption = 1
+                    $backup.CompressionOption = [Microsoft.SqlServer.Management.Smo.BackupCompressionOptions]::On
                 }
             }
 
