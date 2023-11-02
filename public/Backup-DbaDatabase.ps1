@@ -71,6 +71,8 @@ function Backup-DbaDatabase {
     .PARAMETER CompressBackup
         If this switch is enabled, the function will try to perform a compressed backup if supported by the version and edition of SQL Server. Otherwise, this function will use the server(s) default setting for compression.
 
+        NOTE: Explicitly providing a value of false will disable backup compression.
+
     .PARAMETER MaxTransferSize
         Sets the size of the unit of transfer. Values must be a multiple of 64kb.
 
@@ -537,29 +539,39 @@ function Backup-DbaDatabase {
                 $backup.EncryptionOption = $encryptionOptions
             }
 
-            if ($CompressBackup) {
-                if ($db.EncryptionEnabled) {
-                    # Newer versions of SQL Server automatically set the MAXTRANSFERSIZE to 128k
-                    # so let's do that for people as well
-                    $minVerForTDECompression = [version]'13.0.4446.0' #SQL Server 2016 CU 4
-                    $flagTDESQLVersion = $minVerForTDECompression -le $Server.version
-                    if (-not (Test-Bound 'MaxTransferSize')) {
-                        $MaxTransferSize = 128kb
-                    }
-                    $flagCorrectMaxTransferSize = ($MaxTransferSize -gt 64kb)
-                    if ($flagTDESQLVersion -and $flagCorrectMaxTransferSize) {
-                        Write-Message -Level Verbose -Message "$dbName is enabled for encryption but will compress"
-                        $backup.CompressionOption = [Microsoft.SqlServer.Management.Smo.BackupCompressionOptions]::On
+            if ($PSBoundParameters.ContainsKey('CompressBackup')) {
+                if ($CompressBackup) {
+                    if ($db.EncryptionEnabled) {
+                        # Newer versions of SQL Server automatically set the MAXTRANSFERSIZE to 128k
+                        # so let's do that for people as well
+                        $minVerForTDECompression = [version]'13.0.4446.0' #SQL Server 2016 CU 4
+                        $flagTDESQLVersion = $minVerForTDECompression -le $Server.version
+                        if (-not (Test-Bound 'MaxTransferSize')) {
+                            $MaxTransferSize = 128kb
+                        }
+                        $flagCorrectMaxTransferSize = ($MaxTransferSize -gt 64kb)
+                        if ($flagTDESQLVersion -and $flagCorrectMaxTransferSize) {
+                            Write-Message -Level Verbose -Message "$dbName is enabled for encryption but will compress"
+                            $backup.CompressionOption = [Microsoft.SqlServer.Management.Smo.BackupCompressionOptions]::On
+                        } else {
+                            Write-Message -Level Warning -Message "$dbName is enabled for encryption, will not compress"
+                            $backup.CompressionOption = [Microsoft.SqlServer.Management.Smo.BackupCompressionOptions]::Off
+                        }
+                    } elseif ($server.Edition -like 'Express*' -or ($server.VersionMajor -eq 10 -and $server.VersionMinor -eq 0 -and $server.Edition -notlike '*enterprise*') -or $server.VersionMajor -lt 10) {
+                        Stop-Function -Message "Compression is not supported with this version/edition of Sql Server" -Continue -Target $db
                     } else {
-                        Write-Message -Level Warning -Message "$dbName is enabled for encryption, will not compress"
-                        $backup.CompressionOption = [Microsoft.SqlServer.Management.Smo.BackupCompressionOptions]::Off
+                        Write-Message -Level Verbose -Message "Compression enabled"
+                        $backup.CompressionOption = [Microsoft.SqlServer.Management.Smo.BackupCompressionOptions]::On
                     }
-                } elseif ($server.Edition -like 'Express*' -or ($server.VersionMajor -eq 10 -and $server.VersionMinor -eq 0 -and $server.Edition -notlike '*enterprise*') -or $server.VersionMajor -lt 10) {
-                    Stop-Function -Message "Compression is not supported with this version/edition of Sql Server" -Continue -Target $db
-                } else {
-                    Write-Message -Level Verbose -Message "Compression enabled"
-                    $backup.CompressionOption = [Microsoft.SqlServer.Management.Smo.BackupCompressionOptions]::On
                 }
+                else {
+                    Write-Message -Level Verbose -Message "Compression disabled"
+                    $backup.CompressionOption = [Microsoft.SqlServer.Management.Smo.BackupCompressionOptions]::Off
+                }
+            }
+            else {
+                Write-Message -Level Verbose -Message "Using instance default backup compression setting"
+                $backup.CompressionOption = [Microsoft.SqlServer.Management.Smo.BackupCompressionOptions]::Default
             }
 
             if ($Checksum) {
