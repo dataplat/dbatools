@@ -341,12 +341,12 @@ function Set-DbaAgentJobStep {
                         }
                     }
 
-                    if ($RetryAttempts) {
+                    if ($null -ne $RetryAttempts) {
                         Write-Message -Message "Setting job step retry attempts to $RetryAttempts" -Level Verbose
                         $jobStep.RetryAttempts = $RetryAttempts
                     }
 
-                    if ($RetryInterval) {
+                    if ($null -ne $RetryInterval) {
                         Write-Message -Message "Setting job step retry interval to $RetryInterval" -Level Verbose
                         $jobStep.RetryInterval = $RetryInterval
                     }
