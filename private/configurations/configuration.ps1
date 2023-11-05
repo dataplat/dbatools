@@ -179,7 +179,7 @@ if (-not $script:dbatools_ImportFromRegistryDone) {
                     } else {
                         Set-DbatoolsConfig -FullName $value.FullName -Value $true -EnableException
                     }
-                } else {
+                } elseif ($null -ne $value.Value) {
                     Set-DbatoolsConfig -FullName $value.FullName -Value $value.Value -EnableException
                 }
             } else {

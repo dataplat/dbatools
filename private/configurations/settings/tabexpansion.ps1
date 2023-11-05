@@ -8,9 +8,15 @@ Set-DbatoolsConfig -FullName 'TabExpansion.Disable' -Value $false -Initialize -V
 
     # Disable Async TEPP runspace if not needed
     if ([Dataplat.Dbatools.TabExpansion.TabExpansionHost]::TeppAsyncDisabled -or [Dataplat.Dbatools.TabExpansion.TabExpansionHost]::TeppDisabled) {
-        [Dataplat.Dbatools.Runspace.RunspaceHost]::Runspaces["dbatools-teppasynccache"].Stop()
+        $stoptepp = [Dataplat.Dbatools.Runspace.RunspaceHost]::Runspaces["dbatools-teppasynccache"]
+        if ($stoptepp) {
+            $stoptepp.Stop()
+        }
     } else {
-        [Dataplat.Dbatools.Runspace.RunspaceHost]::Runspaces["dbatools-teppasynccache"].Start()
+        $starttepp = [Dataplat.Dbatools.Runspace.RunspaceHost]::Runspaces["dbatools-teppasynccache"]
+        if ($starttepp) {
+            $starttepp.Start()
+        }
     }
 } -Description 'Globally disables all TEPP functionality by dbatools'
 Set-DbatoolsConfig -FullName 'TabExpansion.Disable.Asynchronous' -Value $false -Initialize -Validation bool -Handler {
@@ -18,9 +24,15 @@ Set-DbatoolsConfig -FullName 'TabExpansion.Disable.Asynchronous' -Value $false -
 
     # Disable Async TEPP runspace if not needed
     if ([Dataplat.Dbatools.TabExpansion.TabExpansionHost]::TeppAsyncDisabled -or [Dataplat.Dbatools.TabExpansion.TabExpansionHost]::TeppDisabled) {
-        [Dataplat.Dbatools.Runspace.RunspaceHost]::Runspaces["dbatools-teppasynccache"].Stop()
+        $stoptapp = [Dataplat.Dbatools.Runspace.RunspaceHost]::Runspaces["dbatools-teppasynccache"]
+        if ($stoptapp) {
+            $stoptapp.Stop()
+        }
     } else {
-        [Dataplat.Dbatools.Runspace.RunspaceHost]::Runspaces["dbatools-teppasynccache"].Start()
+        $starttapp = [Dataplat.Dbatools.Runspace.RunspaceHost]::Runspaces["dbatools-teppasynccache"]
+        if ($starttapp) {
+            $starttapp.Start()
+        }
     }
 } -Description 'Globally disables asynchronous TEPP updates in the background'
 Set-DbatoolsConfig -FullName 'TabExpansion.Disable.Synchronous' -Value $true -Initialize -Validation bool -Handler { [Dataplat.Dbatools.TabExpansion.TabExpansionHost]::TeppSyncDisabled = $args[0] } -Description 'Globally disables synchronous TEPP updates, performed whenever connecting o the server. If this is not disabled, it will only perform updates that are fast to perform, in order to minimize performance impact. This may lead to some TEPP functionality loss if asynchronous updates are disabled.'

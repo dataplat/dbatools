@@ -26,12 +26,6 @@ function Remove-DbaAgentJob {
         Specifies to keep the schedules attached to this job if they are not attached to any other job.
         By default the unused schedule is deleted.
 
-    .PARAMETER Mode
-        Default: Strict
-        How strict does the command take lesser issues?
-        Strict: Interrupt if the job specified doesn't exist.
-        Lazy:   Silently skip over jobs that don't exist.
-
     .PARAMETER InputObject
         Accepts piped input from Get-DbaAgentJob
 
@@ -85,7 +79,6 @@ function Remove-DbaAgentJob {
         [object[]]$Job,
         [switch]$KeepHistory,
         [switch]$KeepUnusedSchedule,
-        [DbaMode]$Mode = (Get-DbatoolsConfigValue -FullName 'message.mode.default' -Fallback "Strict"),
         [parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.Agent.Job[]]$InputObject,
         [switch]$EnableException
@@ -100,14 +93,7 @@ function Remove-DbaAgentJob {
 
             foreach ($j in $Job) {
                 if ($Server.JobServer.Jobs.Name -notcontains $j) {
-                    switch ($Mode) {
-                        'Lazy' {
-                            Write-Message -Level Verbose -Message "Job $j doesn't exists on $instance." -Target $instance
-                        }
-                        'Strict' {
-                            Stop-Function -Message "Job $j doesn't exist on $instance." -Continue -ContinueLabel main -Target $instance -Category InvalidData
-                        }
-                    }
+                    Stop-Function -Message "Job $j doesn't exist on $instance." -Continue -ContinueLabel main -Target $instance -Category InvalidData
                 }
                 $InputObject += ($Server.JobServer.Jobs | Where-Object Name -eq $j)
             }

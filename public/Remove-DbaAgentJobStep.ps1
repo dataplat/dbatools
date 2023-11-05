@@ -22,12 +22,6 @@ function Remove-DbaAgentJobStep {
     .PARAMETER StepName
         The name of the job step.
 
-    .PARAMETER Mode
-        Default: Strict
-        How strict does the command take lesser issues?
-        Strict: Interrupt if the configuration already has the same value as the one specified.
-        Lazy:   Silently skip over instances that already have this configuration at the specified value.
-
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
 
@@ -82,7 +76,6 @@ function Remove-DbaAgentJobStep {
         [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [string]$StepName,
-        [DbaMode]$Mode = (Get-DbatoolsConfigValue -Name 'message.mode.default' -Fallback "Strict"),
         [switch]$EnableException
     )
 
@@ -99,25 +92,11 @@ function Remove-DbaAgentJobStep {
                 Write-Message -Level Verbose -Message "Processing job $j"
                 # Check if the job exists
                 if ($Server.JobServer.Jobs.Name -notcontains $j) {
-                    switch ($Mode) {
-                        'Lazy' {
-                            Write-Message -Level Verbose -Message "Job $j doesn't exists on $instance." -Target $instance
-                        }
-                        'Strict' {
-                            Stop-Function -Message "Job $j doesnn't exist on $instance." -Continue -ContinueLabel main -Target $instance -Category InvalidData
-                        }
-                    }
+                    Stop-Function -Message "Job $j doesnn't exist on $instance." -Continue -ContinueLabel main -Target $instance -Category InvalidData
                 } else {
                     # Check if the job step exists
                     if ($Server.JobServer.Jobs[$j].JobSteps.Name -notcontains $StepName) {
-                        switch ($Mode) {
-                            'Lazy' {
-                                Write-Message -Level Verbose -Message "Step $StepName doesn't exist for $job on $instance." -Target $instance
-                            }
-                            'Strict' {
-                                Stop-Function -Message "Step $StepName doesn't exist for $job on $instance." -Continue -ContinueLabel main -Target $instance -Category InvalidData
-                            }
-                        }
+                        Stop-Function -Message "Step $StepName doesn't exist for $job on $instance." -Continue -ContinueLabel main -Target $instance -Category InvalidData
                     } else {
                         # Execute
                         if ($PSCmdlet.ShouldProcess($instance, "Removing the job step $StepName for job $j")) {
