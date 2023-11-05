@@ -172,7 +172,16 @@ if (-not $script:dbatools_ImportFromRegistryDone) {
     foreach ($value in $config_hash.Values) {
         try {
             if (-not $value.KeepPersisted) {
-                Set-DbatoolsConfig -FullName $value.FullName -Value $value.Value -EnableException
+                if ($value.FullName -eq "sql.connection.encrypt") {
+                    # Conversion from older string settings. needs actual bool.
+                    if ($value.Value -eq $false) {
+                        Set-DbatoolsConfig -FullName $value.FullName -Value $false -EnableException
+                    } else {
+                        Set-DbatoolsConfig -FullName $value.FullName -Value $true -EnableException
+                    }
+                } else {
+                    Set-DbatoolsConfig -FullName $value.FullName -Value $value.Value -EnableException
+                }
             } else {
                 Set-DbatoolsConfig -FullName $value.FullName -PersistedValue $value.Value -PersistedType $value.Type -EnableException
             }
