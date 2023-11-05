@@ -57,8 +57,8 @@ function Get-DbatoolsConfigValue {
     if ($null -eq $temp) { $temp = $Fallback }
 
     # Prevent some potential [switch] parse issues
-    if ($temp -eq "Mandatory") { $temp = $true }
-    if ($temp -eq "Optional") { $temp = $false }
+    if ($temp.ToString() -eq "Mandatory") { $temp = $true }
+    if ($temp.ToString() -eq "Optional") { $temp = $false }
 
     if ($NotNull -and ($null -eq $temp)) {
         Stop-Function -Message "No Configuration Value available for $Name" -EnableException $true -Category InvalidData -Target $FullName
