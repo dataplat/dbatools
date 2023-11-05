@@ -49,11 +49,9 @@ function Connect-DbaInstance {
         When opening a connection to a Azure SQL Database, set the connection timeout to 30 seconds.
 
     .PARAMETER EncryptConnection
-        If this switch is enabled, SQL Server uses SSL encryption for all data sent between the client and server if the server has a certificate installed.
+        If this switch is enabled, SQL Server uses SSL encryption for all data sent between the client and server.
 
-        For more information, see Connection String Syntax. https://docs.microsoft.com/en-us/dotnet/framework/data/adonet/connection-string-syntax
-
-        Beginning in .NET Framework 4.5, when TrustServerCertificate is false and Encrypt is true, the server name (or IP address) in a SQL Server SSL certificate must exactly match the server name (or IP address) specified in the connection string. Otherwise, the connection attempt will fail. For information about support for certificates whose subject starts with a wildcard character (*), see Accepted wildcards used by server certificates for server authentication. https://support.microsoft.com/en-us/help/258858/accepted-wildcards-used-by-server-certificates-for-server-authenticati
+        Beginning in .NET Framework 4.5, when TrustServerCertificate is false and EncryptConnection is true, the server name (or IP address) in a SQL Server SSL certificate must exactly match the server name (or IP address) specified in the connection string. Otherwise, the connection attempt will fail. For information about support for certificates whose subject starts with a wildcard character (*), see Accepted wildcards used by server certificates for server authentication. https://support.microsoft.com/en-us/help/258858/accepted-wildcards-used-by-server-certificates-for-server-authenticati
 
     .PARAMETER FailoverPartner
         The name of the failover partner server where database mirroring is configured.
@@ -301,7 +299,7 @@ function Connect-DbaInstance {
         [string]$BatchSeparator,
         [string]$ClientName = (Get-DbatoolsConfigValue -FullName 'sql.connection.clientname'),
         [int]$ConnectTimeout = ([Dataplat.Dbatools.Connection.ConnectionHost]::SqlConnectionTimeout),
-        [string]$EncryptConnection = (Get-DbatoolsConfigValue -FullName 'sql.connection.encrypt'),
+        [switch]$EncryptConnection = (Get-DbatoolsConfigValue -FullName 'sql.connection.encrypt'),
         [string]$FailoverPartner,
         [int]$LockTimeout,
         [int]$MaxPoolSize,
@@ -785,10 +783,8 @@ function Connect-DbaInstance {
 
                 if ($instance -notmatch "localdb") {
                     #EncryptConnection      Property   bool EncryptConnection {get;set;}
-                    if ($EncryptConnection) {
-                        Write-Message -Level Debug -Message "EncryptConnection will be set to '$EncryptConnection'"
-                        $sqlConnectionInfo.EncryptConnection = $EncryptConnection
-                    }
+                    Write-Message -Level Debug -Message "EncryptConnection will be set to '$EncryptConnection'"
+                    $sqlConnectionInfo.EncryptConnection = $EncryptConnection
                 } else {
                     Write-Message -Level Verbose -Message "localdb detected, skipping unsupported keyword 'Encryption'"
                 }
@@ -851,10 +847,8 @@ function Connect-DbaInstance {
                 # We can set that? No, we don't want to...
 
                 #TrustServerCertificate Property   bool TrustServerCertificate {get;set;}
-                if ($TrustServerCertificate) {
-                    Write-Message -Level Debug -Message "TrustServerCertificate will be set to '$TrustServerCertificate'"
-                    $sqlConnectionInfo.TrustServerCertificate = $TrustServerCertificate
-                }
+                Write-Message -Level Debug -Message "TrustServerCertificate will be set to '$TrustServerCertificate'"
+                $sqlConnectionInfo.TrustServerCertificate = $TrustServerCertificate
 
                 #UseIntegratedSecurity  Property   bool UseIntegratedSecurity {get;set;}
                 # $true is the default and it is automatically set to $false if we set a UserName, so we don't touch

@@ -18,7 +18,7 @@ Set-DbatoolsConfig -FullName 'sql.execution.timeout' -Value 0 -Initialize -Valid
 
 # Force encryption on the client
 # Mandatory per Microsoft's defaults https://learn.microsoft.com/en-us/dotnet/api/microsoft.data.sqlclient.sqlconnectionstringbuilder.encrypt
-Set-DbatoolsConfig -FullName 'sql.connection.encrypt' -Value 'Mandatory' -Initialize -Validation string -Handler { } -Description "Encrypt connection to server"
+Set-DbatoolsConfig -FullName 'sql.connection.encrypt' -Value $true -Initialize -Validation bool -Handler { } -Description "Encrypt connection to server"
 
 # Trust server certificate
 Set-DbatoolsConfig -FullName 'sql.connection.trustcert' -Value $false -Initialize -Validation bool -Handler { } -Description "Trust SQL Server certificate"
