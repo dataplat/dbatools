@@ -563,13 +563,11 @@ function Backup-DbaDatabase {
                         Write-Message -Level Verbose -Message "Compression enabled"
                         $backup.CompressionOption = [Microsoft.SqlServer.Management.Smo.BackupCompressionOptions]::On
                     }
-                }
-                else {
+                } else {
                     Write-Message -Level Verbose -Message "Compression disabled"
                     $backup.CompressionOption = [Microsoft.SqlServer.Management.Smo.BackupCompressionOptions]::Off
                 }
-            }
-            else {
+            } else {
                 Write-Message -Level Verbose -Message "Using instance default backup compression setting"
                 $backup.CompressionOption = [Microsoft.SqlServer.Management.Smo.BackupCompressionOptions]::Default
             }
