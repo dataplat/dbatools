@@ -197,7 +197,7 @@ function New-DbaConnectionString {
         [int]$ConnectTimeout,
         [string]$Database,
         [ValidateSet('Mandatory', 'Optional', 'Strict', 'True', 'False')]
-        [string]$EncryptConnection = (Get-DbatoolsConfigValue -FullName 'sql.connection.encrypt'),
+        [switch]$EncryptConnection = (Get-DbatoolsConfigValue -FullName 'sql.connection.encrypt'),
         [string]$FailoverPartner,
         [switch]$IsActiveDirectoryUniversalAuth,
         [int]$LockTimeout,
