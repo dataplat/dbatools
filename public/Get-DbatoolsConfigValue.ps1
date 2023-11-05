@@ -59,7 +59,7 @@ function Get-DbatoolsConfigValue {
     } else {
         # Prevent some potential [switch] parse issues
         if ($temp.ToString() -eq "Mandatory") { $temp = $true }
-        if ($temp.ToString(0) -eq "Optional") { $temp = $false }
+        if ($temp.ToString() -eq "Optional") { $temp = $false }
     }
 
     if ($NotNull -and ($null -eq $temp)) {
