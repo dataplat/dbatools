@@ -58,6 +58,21 @@ function New-DbaEndpoint {
         RC4
         RC4Aes
 
+    .PARAMETER AuthenticationOrder
+        The type of connection authentication required for connections to this endpoint. Defaults to Negotiate.
+
+        Options are:
+        Certificate
+        CertificateKerberos
+        CertificateNegotiate
+        CertificateNtlm
+        Kerberos
+        KerberosCertificate
+        Negotiate
+        NegotiateCertificate
+        Ntlm
+        NtlmCertificate
+
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
 
@@ -115,6 +130,8 @@ function New-DbaEndpoint {
         [string]$EndpointEncryption = 'Required',
         [ValidateSet('Aes', 'AesRC4', 'None', 'RC4', 'RC4Aes')]
         [string]$EncryptionAlgorithm = 'Aes',
+        [ValidateSet('Certificate', 'CertificateKerberos', 'CertificateNegotiate', 'CertificateNtlm', 'Kerberos', 'KerberosCertificate', 'Negotiate', 'NegotiateCertificate', 'Ntlm', 'NtlmCertificate')]
+        [string]$AuthenticationOrder = 'Negotiate',
         [string]$Certificate,
         [System.Net.IPAddress]$IPAddress = '0.0.0.0',
         [int]$Port,
@@ -185,6 +202,7 @@ function New-DbaEndpoint {
                         }
                         $endpoint.Payload.DatabaseMirroring.EndpointEncryption = [Microsoft.SqlServer.Management.Smo.EndpointEncryption]::$EndpointEncryption
                         $endpoint.Payload.DatabaseMirroring.EndpointEncryptionAlgorithm = [Microsoft.SqlServer.Management.Smo.EndpointEncryptionAlgorithm]::$EncryptionAlgorithm
+                        $endpoint.Payload.DatabaseMirroring.EndpointAuthenticationOrder = [Microsoft.SqlServer.Management.Smo.EndpointAuthenticationOrder]::$AuthenticationOrder
                     }
                     if ($Certificate) {
                         $outscript = $endpoint.Script()
