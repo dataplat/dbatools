@@ -1,7 +1,7 @@
 
 -- SQL Server 2014 Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: October 1, 2023
+-- Last Modified: November 2, 2023
 -- https://glennsqlperformance.com/
 -- https://sqlserverperformance.wordpress.com/
 -- YouTube: https://bit.ly/2PkoAM1 
@@ -96,11 +96,13 @@ SELECT @@SERVERNAME AS [Server Name], @@VERSION AS [SQL Server and OS Version In
 --																													12.0.5605		SP2 CU15		12/12/2018 ---->	12.0.6205	 SP3 CU1					12/12/2018
 --																													12.0.5626		SP2 CU16		 2/19/2019 ---->    12.0.6214	 SP3 CU2					2/19/2019
 --																													12.0.5632		SP2 CU17		 4/16/2019 ---->    12.0.6259    SP3 CU3					4/16/2019
---																													12.0.5687		SP2 CU18		 7/29/2019 ---->	12.0.6329	 SP3	CU4					7/29/2019
---																																										12.0.6372.1	 SP3 CU4 + Security Update	2/11/2020	
---																																										12.0.6433.1	 SP3 CU4 + Security Update	1/12/2021
---																																										12.0.6439.10 SP3 CU4 + Security Update	6/14/2022
---																																										12.0.6444.4	 SP3 CU4 + Security Update	2/14/2023
+--																													12.0.5687		SP2 CU18		 7/29/2019 ---->	12.0.6329	 SP3 CU4					7/29/2019
+--																																										12.0.6372.1	 SP3 CU4 + GDR				2/11/2020	
+--																																										12.0.6433.1	 SP3 CU4 + GDR				1/12/2021
+--																																										12.0.6439.10 SP3 CU4 + GDR				6/14/2022
+--																																										12.0.6444.4	 SP3 CU4 + GDR				2/14/2023
+--                                                                                                                                                                      12.0.6449.1  SP3 CU4 + GDR				10/10/2023
+
 
 -- KB5021045 - Description of the security update for SQL Server 2014 SP3 CU4: February 14, 2023
 -- https://support.microsoft.com/en-us/topic/kb5021045-description-of-the-security-update-for-sql-server-2014-sp3-cu4-february-14-2023-6c769b6c-beb7-4b65-ae22-29f3bbc2dd31
