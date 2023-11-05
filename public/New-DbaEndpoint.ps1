@@ -202,7 +202,7 @@ function New-DbaEndpoint {
                         }
                         $endpoint.Payload.DatabaseMirroring.EndpointEncryption = [Microsoft.SqlServer.Management.Smo.EndpointEncryption]::$EndpointEncryption
                         $endpoint.Payload.DatabaseMirroring.EndpointEncryptionAlgorithm = [Microsoft.SqlServer.Management.Smo.EndpointEncryptionAlgorithm]::$EncryptionAlgorithm
-                        $endpoint.Payload.DatabaseMirroring.EndpointAuthenticationOrder = [Microsoft.SqlServer.Management.Smo.EndpointAuthenticationOrder]::$AuthenticationOrder
+                        #$endpoint.Payload.DatabaseMirroring.EndpointAuthenticationOrder = [Microsoft.SqlServer.Management.Smo.EndpointAuthenticationOrder]::$AuthenticationOrder
                     }
                     if ($Certificate) {
                         $outscript = $endpoint.Script()
