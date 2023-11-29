@@ -11,6 +11,13 @@ function Update-DbaBuildReference {
     .PARAMETER LocalFile
         Specifies the path to a local file to install from instead of downloading from Github.
 
+    .PARAMETER Proxy
+        Specifies the URI for the proxy to be used. By default, a connection without a proxy is made. If it fails, a retry using default proxy
+        settings is made.
+
+    .PARAMETER ProxyCredential
+        Specifies Credential for the proxy, when parameter "Proxy" is supplied. Only required if the proxy needs authentication.
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -33,6 +40,11 @@ function Update-DbaBuildReference {
         Looks online if there is a newer version of the build reference
 
     .EXAMPLE
+        PS C:\> Update-DbaBuildReference -Proxy $ProxyURI -ProxyCredential $ProxyCred
+
+        Looks online if there is a newer version of the build reference using the proxy supplied.
+
+    .EXAMPLE
         PS C:\> Update-DbaBuildReference -LocalFile \\fileserver\Software\dbatools\dbatools-buildref-index.json
 
         Uses the given file instead of downloading the file to update the build reference
@@ -42,7 +54,12 @@ function Update-DbaBuildReference {
     [CmdletBinding(DefaultParameterSetName = 'Build')]
     param (
         [string]$LocalFile,
-        [switch]$EnableException
+        [switch]$EnableException,
+        [Parameter(ParameterSetName = 'Build')]
+        [Parameter(Mandatory, ParameterSetName = 'CustomProxy')]
+        [URI]$Proxy,
+        [Parameter(ParameterSetName = 'CustomProxy')]
+        [pscredential]$ProxyCredential
     )
 
     begin {
@@ -50,11 +67,15 @@ function Update-DbaBuildReference {
             [CmdletBinding()]
             param (
                 [bool]
-                $EnableException
+                $EnableException,
+                [URI]
+                $Proxy,
+                [pscredential]
+                $ProxyCredential
             )
             $url = Get-DbatoolsConfigValue -Name 'assets.sqlbuildreference'
             try {
-                $webContent = Invoke-TlsWebRequest $url -UseBasicParsing -ErrorAction Stop
+                $webContent = Invoke-TlsWebRequest $url -Proxy:$Proxy -ProxyCredential:$ProxyCredential -UseBasicParsing -ErrorAction Stop
             } catch {
                 try {
                     Write-Message -Level Verbose -Message "Probably using a proxy for internet access, trying default proxy settings"
@@ -113,7 +134,7 @@ function Update-DbaBuildReference {
                 Stop-Function -Message "Unable to read content from $LocalFile"
             }
         } else {
-            $newContent = Get-DbaBuildReferenceIndexOnline -EnableException $EnableException
+            $newContent = Get-DbaBuildReferenceIndexOnline -Proxy:$Proxy -ProxyCredential:$ProxyCredential -EnableException $EnableException
         }
 
         # If new data was sucessful read, compare LastUpdated and copy if newer
@@ -124,6 +145,5 @@ function Update-DbaBuildReference {
                 $newContent | Out-File $writable_idxfile -Encoding utf8 -ErrorAction Stop
             }
         }
-
     }
 }
