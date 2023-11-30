@@ -18,6 +18,10 @@ function Update-DbaBuildReference {
     .PARAMETER ProxyCredential
         Specifies Credential for the proxy, when parameter "Proxy" is supplied. Only required if the proxy needs authentication.
 
+    .PARAMETER ProxyUseDefaultCredentials
+        Uses the credentials of the current user to access the proxy server. Requires Proxy parameter to be supplied.
+        ProxyCredential and ProxyUseDefaultCredentials can't be used at the same time.
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -56,10 +60,13 @@ function Update-DbaBuildReference {
         [string]$LocalFile,
         [switch]$EnableException,
         [Parameter(ParameterSetName = 'Build')]
-        [Parameter(Mandatory, ParameterSetName = 'CustomProxy')]
+        [Parameter(Mandatory, ParameterSetName = 'Proxy')]
+        [Parameter(ParameterSetName = 'ProxyDefaultCredential')]
         [URI]$Proxy,
-        [Parameter(ParameterSetName = 'CustomProxy')]
-        [pscredential]$ProxyCredential
+        [Parameter(ParameterSetName = 'Proxy')]
+        [pscredential]$ProxyCredential,
+        [Parameter(ParameterSetName = 'ProxyDefaultCredential')]
+        [switch]$ProxyUseDefaultCredentials
     )
 
     begin {
@@ -71,9 +78,14 @@ function Update-DbaBuildReference {
                 [URI]
                 $Proxy,
                 [pscredential]
-                $ProxyCredential
+                $ProxyCredential,
+                [switch]
+                $ProxyUseDefaultCredentials
             )
             $url = Get-DbatoolsConfigValue -Name 'assets.sqlbuildreference'
+            if ($ProxyUseDefaultCredentials) {
+                $ProxyCredential = [System.Net.CredentialCache]::DefaultNetworkCredentials
+            }
             try {
                 $webContent = Invoke-TlsWebRequest $url -Proxy:$Proxy -ProxyCredential:$ProxyCredential -UseBasicParsing -ErrorAction Stop
             } catch {
@@ -134,7 +146,7 @@ function Update-DbaBuildReference {
                 Stop-Function -Message "Unable to read content from $LocalFile"
             }
         } else {
-            $newContent = Get-DbaBuildReferenceIndexOnline -Proxy:$Proxy -ProxyCredential:$ProxyCredential -EnableException $EnableException
+            $newContent = Get-DbaBuildReferenceIndexOnline -Proxy:$Proxy -ProxyCredential:$ProxyCredential -ProxyUseDefaultCredentials:$ProxyUseDefaultCredentials -EnableException $EnableException
         }
 
         # If new data was sucessful read, compare LastUpdated and copy if newer
