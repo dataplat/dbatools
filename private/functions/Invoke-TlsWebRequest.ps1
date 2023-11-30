@@ -1,5 +1,5 @@
 function Invoke-TlsWebRequest {
-
+    Param ([switch]$UseBasicParsing)
     <#
     Internal utility that mimics invoke-webrequest
     but enables all tls available version
@@ -14,7 +14,7 @@ function Invoke-TlsWebRequest {
         [Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor $_
     }
 
-    Invoke-WebRequest @Args
+    Invoke-WebRequest @Args -UseBasicParsing:$UseBasicParsing
 
     [Net.ServicePointManager]::SecurityProtocol = $currentVersionTls
 }
