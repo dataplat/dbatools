@@ -97,10 +97,13 @@ function Get-DbaPermission {
                         , [PermState] = state_desc
                         , [PermissionName] = permission_name
                         , [SecurableType] = COALESCE(o.type_desc,sp.class_desc)
-                        , [Securable] = CASE    WHEN class = 100 THEN @@SERVERNAME
-                                                WHEN class = 105 THEN OBJECT_NAME(major_id)
-                                                ELSE OBJECT_NAME(major_id)
-                                                END
+                        , [Securable] = CASE
+                            WHEN class = 100 THEN @@SERVERNAME
+                            WHEN class = 101 THEN SUSER_NAME(major_id)
+                            WHEN class = 105 THEN (SELECT TOP (1) name FROM sys.endpoints WHERE endpoint_id = major_id)
+                            WHEN class = 108 THEN (SELECT TOP (1) ag.name FROM sys.availability_replicas ar JOIN sys.availability_groups ag ON ar.group_id = ag.group_id WHERE ar.replica_metadata_id = major_id)
+                            ELSE CONVERT(NVARCHAR, major_id)
+                            END
                         , [Grantee] = SUSER_NAME(grantee_principal_id)
                         , [GranteeType] = pr.type_desc
                         , [revokeStatement] = 'REVOKE ' + permission_name + ' ' + COALESCE(OBJECT_NAME(major_id),'') + ' FROM [' + SUSER_NAME(grantee_principal_id) + ']'
