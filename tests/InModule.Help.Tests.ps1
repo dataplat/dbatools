@@ -37,6 +37,52 @@ if ($SkipHelpTest) { return }
 $includedNames = (Get-ChildItem "$PSScriptRoot\..\public" | Where-Object Name -like "*.ps1" ).BaseName
 $commands = Get-Command -Module (Get-Module dbatools) -CommandType Cmdlet, Function, Workflow | Where-Object Name -in $includedNames
 
+function Get-ParametersDefaultFirst
+{
+    param
+    (
+        [Parameter(Mandatory = $true,
+                   ValueFromPipeline = $true)]
+        [System.Management.Automation.CommandInfo]
+        $Command
+    )
+    
+    begin
+    {
+        $Common = 'Debug', 'ErrorAction', 'ErrorVariable', 'InformationAction', 'InformationVariable', 'OutBuffer', 'OutVariable', 'PipelineVariable', 'Verbose', 'WarningAction', 'WarningVariable'
+        $parameters = @()
+    }
+    process
+    {
+        if ($defaultPSetName = $Command.DefaultParameterSet)
+        {
+            $defaultParameters = ($Command.ParameterSets | Where-Object Name -eq $defaultPSetName).parameters | Where-Object Name -NotIn $common
+            $otherParameters = ($Command.ParameterSets | Where-Object Name -ne $defaultPSetName).parameters | Where-Object Name -NotIn $common
+            
+            $parameters += $defaultParameters
+            if ($parameters -and $otherParameters)
+            {
+                $otherParameters | ForEach-Object {
+                    if ($_.Name -notin $parameters.Name)
+                    {
+                        $parameters += $_
+                    }
+                }
+                $parameters = $parameters | Sort-Object Name
+            }
+        }
+        else
+        {
+            $parameters = $Command.ParameterSets.Parameters | Where-Object Name -NotIn $common | Sort-Object Name -Unique
+        }
+        
+        
+        return $parameters
+    }
+    end { }
+}
+
+
 ## When testing help, remember that help is cached at the beginning of each session.
 ## To test, restart session.
 
@@ -120,7 +166,8 @@ foreach ($command in $commands) {
             $Common = 'Debug', 'ErrorAction', 'ErrorVariable', 'InformationAction', 'InformationVariable', 'OutBuffer', 'OutVariable',
             'PipelineVariable', 'Verbose', 'WarningAction', 'WarningVariable'
 
-            $parameters = $command.ParameterSets.Parameters | Sort-Object -Property Name -Unique | Where-Object Name -notin $common
+            $parameters = Get-ParametersDefaultFirst -Command $command | Sort-Object -Property Name -Unique | Where-Object Name -notin $common
+            #$parameters = $command.ParameterSets.Parameters | Sort-Object -Property Name -Unique | Where-Object Name -notin $common
             $parameterNames = $parameters.Name
             $HelpParameterNames = $Help.Parameters.Parameter.Name | Sort-Object -Unique
             foreach ($parameter in $parameters) {

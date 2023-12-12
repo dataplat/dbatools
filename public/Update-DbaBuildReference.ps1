@@ -64,7 +64,7 @@ function Update-DbaBuildReference {
         [Parameter(ParameterSetName = 'ProxyDefaultCredential')]
         [URI]$Proxy,
         [Parameter(ParameterSetName = 'Proxy')]
-        [pscredential]$ProxyCredential,
+        [PSCredential]$ProxyCredential,
         [Parameter(ParameterSetName = 'ProxyDefaultCredential')]
         [switch]$ProxyUseDefaultCredentials
     )
@@ -77,14 +77,14 @@ function Update-DbaBuildReference {
                 $EnableException,
                 [URI]
                 $Proxy,
-                [pscredential]
+                [PSCredential]
                 $ProxyCredential,
                 [switch]
                 $ProxyUseDefaultCredentials
             )
             $url = Get-DbatoolsConfigValue -Name 'assets.sqlbuildreference'
             $webRequestParams = @{
-                Uri = $url
+                Uri             = $url
                 UseBasicParsing = $true
             }
             if ($Proxy) {
