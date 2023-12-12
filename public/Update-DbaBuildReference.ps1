@@ -29,7 +29,7 @@ function Update-DbaBuildReference {
 
     .NOTES
         Tags: Utility, SqlBuild
-        Author: Simone Bizzotto (@niphold) | Friedrich Weinmann (@FredWeinmann)
+        Author: Simone Bizzotto (@niphlod) | Friedrich Weinmann (@FredWeinmann)
 
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
@@ -83,11 +83,21 @@ function Update-DbaBuildReference {
                 $ProxyUseDefaultCredentials
             )
             $url = Get-DbatoolsConfigValue -Name 'assets.sqlbuildreference'
+            $webRequestParams = @{
+                Uri = $url
+                UseBasicParsing = $true
+            }
+            if ($Proxy) {
+                $webRequestParams['Proxy'] = $Proxy
+            }
+            if ($ProxyCredential) {
+                $webRequestParams['ProxyCredential'] = $ProxyCredential
+            }
             if ($ProxyUseDefaultCredentials) {
-                $ProxyCredential = [System.Net.CredentialCache]::DefaultNetworkCredentials
+                $webRequestParams['ProxyUseDefaultCredentials'] = $ProxyUseDefaultCredentials
             }
             try {
-                $webContent = Invoke-TlsWebRequest $url -Proxy:$Proxy -ProxyCredential:$ProxyCredential -UseBasicParsing -ErrorAction Stop
+                $webContent = Invoke-TlsWebRequest @webRequestParams -ErrorAction Stop
             } catch {
                 try {
                     Write-Message -Level Verbose -Message "Probably using a proxy for internet access, trying default proxy settings"

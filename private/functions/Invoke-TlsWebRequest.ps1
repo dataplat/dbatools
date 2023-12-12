@@ -1,5 +1,8 @@
 function Invoke-TlsWebRequest {
-    Param ([switch]$UseBasicParsing)
+    Param (
+        [switch]$UseBasicParsing,
+        [switch]$ProxyUseDefaultCredentials
+    )
     <#
     Internal utility that mimics invoke-webrequest
     but enables all tls available version
@@ -14,7 +17,7 @@ function Invoke-TlsWebRequest {
         [Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor $_
     }
 
-    Invoke-WebRequest @Args -UseBasicParsing:$UseBasicParsing
+    Invoke-WebRequest @Args -UseBasicParsing:$UseBasicParsing -ProxyUseDefaultCredentials:$ProxyUseDefaultCredentials
 
     [Net.ServicePointManager]::SecurityProtocol = $currentVersionTls
 }
