@@ -23,7 +23,7 @@ function Grant-DbaAgPermission {
         Only modify specific availability groups.
 
     .PARAMETER Type
-        Specifies the type of object to which permissions will be granted. Acceptable values are "Endpoint" or "AvailabilityGroup". If "Endpoint" is specified, permissions will be granted to the Database Mirroring endpoint.
+        Specify the object type to grant the provided Permission. Values accepted are Endpoint and/or AvailabilityGroup. Endpoint type will update the DatabaseMirroring object type found on the instance.
 
     .PARAMETER Permission
         Grants one or more permissions:
