@@ -304,7 +304,7 @@ function Invoke-DbaAsync {
                     }
                 }
             }
-
+            $cmd.Parameters.Clear()
             switch ($As) {
                 'DataSet' {
                     $ds
