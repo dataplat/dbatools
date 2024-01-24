@@ -1,7 +1,7 @@
 
 -- SQL Server 2022 Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: December 3, 2023
+-- Last Modified: January 11, 2024
 -- https://glennsqlperformance.com/ 
 -- https://sqlserverperformance.wordpress.com/
 -- YouTube: https://bit.ly/2PkoAM1 
@@ -25,7 +25,7 @@
 
 
 --******************************************************************************
---*   Copyright (C) 2023 Glenn Berry
+--*   Copyright (C) 2024 Glenn Berry
 --*   All rights reserved. 
 --*
 --*
@@ -75,6 +75,8 @@ SELECT @@SERVERNAME AS [Server Name], @@VERSION AS [SQL Server and OS Version In
 -- 16.0.4080.1		CU8 + GDR							10/10/2023		https://support.microsoft.com/en-us/topic/kb5029503-description-of-the-security-update-for-sql-server-2022-cu8-october-10-2023-c9c267e2-adb6-47f1-b7e9-d99d3c9fb081
 -- 16.0.4085.2		CU9									10/12/2023		https://learn.microsoft.com/en-us/troubleshoot/sql/releases/sqlserver-2022/cumulativeupdate9
 -- 16.0.4095.4		CU10								11/16/2023		https://learn.microsoft.com/en-us/troubleshoot/sql/releases/sqlserver-2022/cumulativeupdate10	
+-- 16.0.4100.1		CU10 + GDR							1/9/2024		https://support.microsoft.com/en-us/topic/kb5033592-description-of-the-security-update-for-sql-server-2022-cu10-january-9-2024-0d807f8e-fa6a-4d42-88d3-71b101e71d18
+-- 16.0.4105.2		CU11								1/11/2024		https://learn.microsoft.com/en-us/troubleshoot/sql/releases/sqlserver-2022/cumulativeupdate11
 
 -- What's new in SQL Server 2022 (16.x)
 -- https://bit.ly/3MJEjR1

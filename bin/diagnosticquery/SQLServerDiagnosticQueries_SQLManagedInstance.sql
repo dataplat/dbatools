@@ -1,7 +1,7 @@
 
 -- SQL Managed Instance Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: December 3, 2023
+-- Last Modified: January 3, 2024
 -- https://glennsqlperformance.com/
 -- https://sqlserverperformance.wordpress.com/
 -- YouTube: https://bit.ly/2PkoAM1 
@@ -19,7 +19,7 @@
 
 
 --******************************************************************************
---*   Copyright (C) 2022 Glenn Berry
+--*   Copyright (C) 2024 Glenn Berry
 --*   All rights reserved. 
 --*
 --*
