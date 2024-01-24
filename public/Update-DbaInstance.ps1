@@ -405,7 +405,7 @@ function Update-DbaInstance {
         foreach ($computer in $ComputerName) {
             $null = Test-ElevationRequirement -ComputerName $computer -Continue
             if (-not $computer.IsLocalHost -and -not $notifiedCredentials -and -not $Credential -and $pathIsNetwork) {
-                Write-Message -Level Warning -Message "Explicit -Credential might be required when running agains remote hosts and -Path is a network folder"
+                Write-Message -Level Warning -Message "Explicit -Credential might be required when running against remote hosts and -Path is a network folder"
                 $notifiedCredentials = $true
             }
             if ($resolvedComputer = Resolve-DbaNetworkName -ComputerName $computer.ComputerName -Credential $Credential) {
