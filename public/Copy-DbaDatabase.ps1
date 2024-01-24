@@ -172,7 +172,7 @@ function Copy-DbaDatabase {
     .EXAMPLE
         PS C:\> Copy-DbaDatabase -Source sql2012 -Destination sql2014, sql2016 -DetachAttach -Reattach
 
-        Databases will be migrated from sql2012 to both sql2014 and sql2016 using the detach/copy files/attach method.The following will be performed: kick all users out of the database, detach all data/log files, move files across the network over an admin share (\\SqlSERVER\M$\MSSql...), attach file on destination server, reattach at source. If the database files (*.mdf, *.ndf, *.ldf) on *destination* exist and aren't in use, they will be overwritten.
+        Databases will be migrated from sql2012 to both sql2014 and sql2016 using the detach/copy files/attach method. The following will be performed: kick all users out of the database, detach all data/log files, files copied to the admin share (\\SqlSERVER\M$\MSSql...) of destination server, attach file on destination server, reattach at source. If the database files (*.mdf, *.ndf, *.ldf) on *destination* exist and aren't in use, they will be overwritten.
 
     .EXAMPLE
         PS C:\> Copy-DbaDatabase -Source sql2014a -Destination sqlcluster, sql2016 -BackupRestore -UseLastBackup -Force
