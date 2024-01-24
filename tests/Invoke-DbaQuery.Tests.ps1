@@ -249,6 +249,32 @@ SELECT @@servername as dbname
         $result.somevalue | Should -Be 'fixedval'
     }
 
+    It "supports using the same parameters multiple times (#9217)" {
+        $null = Invoke-DbaQuery -SqlInstance $script:instance2 -Database tempdb -Query "CREATE OR ALTER PROCEDURE usp_Insertsomething
+    @somevalue varchar(10),
+    @newid varchar(50) OUTPUT
+        AS
+        BEGIN
+            SELECT 'fixedval' as somevalue, @somevalue as 'input param'
+            SELECT @newid = '12345'
+        END"
+        $inparam = New-DbaSqlParameter -ParameterName 'somevalue' -SqlDbType VarChar -Value 'example'
+        $outparam = New-DbaSqlParameter -Direction Output -Size -1
+        $sqlparams = @{
+            'newid' = $outparam
+            'somevalue' = $inparam
+        }
+        $result1 = Invoke-DbaQuery -SqlInstance $script:instance2 -Database tempdb -Query "EXEC usp_Insertsomething @somevalue, @newid output" -SqlParameters $sqlparams
+        $outparam.Value | Should -Be '12345'
+        $result1.'input param' | Should -Be 'example'
+        $result1.somevalue | Should -Be 'fixedval'
+
+        $result2 = Invoke-DbaQuery -SqlInstance $script:instance2 -Database tempdb -Query "EXEC usp_Insertsomething @somevalue, @newid output" -SqlParameters $sqlparams
+        $outparam.Value | Should -Be '12345'
+        $result2.'input param' | Should -Be 'example'
+        $result2.somevalue | Should -Be 'fixedval'
+    }
+
     It "supports complex types, such as datatables (#7434)" {
         $null = Invoke-DbaQuery -SqlInstance $script:instance2 -Database tempdb -Query "
 IF NOT EXISTS (SELECT * FROM sys.types WHERE name = N'dbatools_tabletype')
