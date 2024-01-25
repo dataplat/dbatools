@@ -2,7 +2,7 @@
 
 ## Getting Started
 
-<img align="left" src=bin/dbatools.png alt="dbatools logo">  dbatools is PowerShell module that you may think of like a command-line SQL Server Management Studio. The project initially started out as just `Start-SqlMigration.ps1`, but has now grown into a collection of [over 500 commands](https://dbatools.io/commands) that help automate SQL Server tasks and encourage best practices.
+<img align="left" src=bin/dbatools.png alt="dbatools logo">  dbatools is PowerShell module that you may think of like a command-line SQL Server Management Studio. The project initially started out as just `Start-SqlMigration.ps1`, but has now grown into a collection of [over 700 commands](https://dbatools.io/commands) that help automate SQL Server tasks and encourage best practices.
 
 Want to contribute to the project? We'd love to have you! Visit our [contributing.md](contributing.md) for a jump start.
 
@@ -39,7 +39,7 @@ In addition to the simple things you can do in SSMS (e.g. starting a job, backin
 
 ## Usage examples
 
-As previously mentioned, dbatools now offers [over 500 commands](https://dbatools.io/commands)! [Here are some of the ones we highlight at conferences](https://gist.github.com/potatoqualitee/e8932b64aeb6ef404e252d656b6318a2).
+As previously mentioned, dbatools now offers [over 700 commands](https://dbatools.io/commands)! [Here are some of the ones we highlight at conferences](https://gist.github.com/potatoqualitee/e8932b64aeb6ef404e252d656b6318a2).
 
 PowerShell v3 and above required. (See below for important information about alternative logins and specifying SQL Server ports).
 
