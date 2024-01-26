@@ -141,7 +141,7 @@ function Save-DbaCommunitySoftware {
                 }
                 $latestRelease = ($releasesJson | ConvertFrom-Json) | Where-Object prerelease -eq $preRelease | Select-Object -First 1
                 if ($null -eq $latestRelease) {
-                    Stop-Function -Message "No release found." -ErrorRecord $_
+                    Stop-Function -Message "No release found."
                     return
                 }
                 $Url = $latestRelease.assets[0].browser_download_url
@@ -171,7 +171,7 @@ function Save-DbaCommunitySoftware {
                 }
                 $latestRelease = ($releasesJson | ConvertFrom-Json) | Select-Object -First 1
                 if ($null -eq $latestRelease) {
-                    Stop-Function -Message "No release found." -ErrorRecord $_
+                    Stop-Function -Message "No release found."
                     return
                 }
                 $Url = $latestRelease.zipball_url
@@ -207,7 +207,7 @@ function Save-DbaCommunitySoftware {
                 }
                 $latestRelease = ($releasesJson | ConvertFrom-Json) | Select-Object -First 1
                 if ($null -eq $latestRelease) {
-                    Stop-Function -Message "No release found." -ErrorRecord $_
+                    Stop-Function -Message "No release found."
                     return
                 }
                 $Url = $latestRelease.zipball_url

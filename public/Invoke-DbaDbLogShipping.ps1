@@ -1122,7 +1122,7 @@ function Invoke-DbaDbLogShipping {
                     $setupResult = "Failed"
                     $comment = "Secondary database already exists on instance"
 
-                    Stop-Function -Message "Secondary database already exists on instance $destInstance." -ErrorRecord $_ -Target $destInstance -Continue
+                    Stop-Function -Message "Secondary database already exists on instance $destInstance." -Target $destInstance -Continue
                 }
 
                 # Check if the secondary database needs to be initialized
@@ -1231,7 +1231,7 @@ function Invoke-DbaDbLogShipping {
                             if ((Test-DbaPath -Path $FullBackupPath -SqlInstance $destInstance -SqlCredential $DestinationCredential) -ne $true) {
                                 $setupResult = "Failed"
                                 $comment = "The path to the full backup could not be reached"
-                                Stop-Function -Message ("The path to the full backup could not be reached. Check the path and/or the crdential") -ErrorRecord $_ -Target $destInstance -Continue
+                                Stop-Function -Message ("The path to the full backup could not be reached. Check the path and/or the crdential") -Target $destInstance -Continue
                             }
 
                             $BackupPath = $FullBackupPath
@@ -1240,7 +1240,7 @@ function Invoke-DbaDbLogShipping {
                             if ((Test-DbaPath -Path $UseBackupFolder -SqlInstance $destInstance -SqlCredential $DestinationCredential) -ne $true) {
                                 $setupResult = "Failed"
                                 $comment = "The path to the backup folder could not be reached"
-                                Stop-Function -Message ("The path to the backup folder could not be reached. Check the path and/or the crdential") -ErrorRecord $_ -Target $destInstance -Continue
+                                Stop-Function -Message ("The path to the backup folder could not be reached. Check the path and/or the crdential") -Target $destInstance -Continue
                             }
 
                             $BackupPath = $UseBackupFolder
@@ -1257,13 +1257,13 @@ function Invoke-DbaDbLogShipping {
                                 if ((Test-DbaPath -Path ($LastBackup[-1]).Path[-1] -SqlInstance $SourceSqlInstance -SqlCredential $SourceCredential) -ne $true) {
                                     $setupResult = "Failed"
                                     $comment = "The full backup could not be found"
-                                    Stop-Function -Message "The full backup could not be found on $($LastBackup.Path). Check path and/or credentials" -ErrorRecord $_ -Target $destInstance -Continue
+                                    Stop-Function -Message "The full backup could not be found on $($LastBackup.Path). Check path and/or credentials" -Target $destInstance -Continue
                                 }
                                 # Check if the source for the last full backup is remote and the backup is on a shared location
                                 elseif (($LastBackup.Computername -ne $SourceServerName) -and (($LastBackup[-1]).Path[-1].StartsWith('\\') -eq $false)) {
                                     $setupResult = "Failed"
                                     $comment = "The last full backup is not located on shared location"
-                                    Stop-Function -Message "The last full backup is not located on shared location. `n$($_.Exception.Message)" -ErrorRecord $_ -Target $destInstance -Continue
+                                    Stop-Function -Message "The last full backup is not located on shared location. `n$($_.Exception.Message)" -Target $destInstance -Continue
                                 } else {
                                     #$FullBackupPath = $LastBackup.Path
                                     $BackupPath = $LastBackup.Path

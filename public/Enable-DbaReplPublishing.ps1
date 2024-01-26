@@ -112,7 +112,7 @@ function Enable-DbaReplPublishing {
                     Stop-Function -Message "Unable to enable replication publishing" -ErrorRecord $_ -Target $instance -Continue
                 }
             } else {
-                Stop-Function -Message "$instance isn't currently enabled for distributing. Please enable that first." -ErrorRecord $_ -Target $instance -Continue
+                Stop-Function -Message "$instance isn't currently enabled for distributing. Please enable that first." -Target $instance -Continue
             }
         }
     }
