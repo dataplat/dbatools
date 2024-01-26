@@ -184,7 +184,7 @@ function Invoke-DbaDiagnosticQuery {
 
             $scriptfiles = Get-ChildItem "$base\bin\diagnosticquery\SQLServerDiagnosticQueries_*.sql"
             if (!$scriptfiles) {
-                Stop-Function -Message "Unable to download scripts, do you have an internet connection? $_" -ErrorRecord $_
+                Stop-Function -Message "Unable to download scripts, do you have an internet connection? $_"
                 return
             }
         }

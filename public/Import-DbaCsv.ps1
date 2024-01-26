@@ -741,7 +741,7 @@ function Import-DbaCsv {
                             Path          = $file
                         }
                     } else {
-                        Stop-Function -Message "Transaction rolled back. Was the proper delimiter specified? Is the first row the column name?" -ErrorRecord $_
+                        Stop-Function -Message "Transaction rolled back. Was the proper delimiter specified? Is the first row the column name?"
                         return
                     }
                 }

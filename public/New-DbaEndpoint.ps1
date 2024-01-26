@@ -163,7 +163,7 @@ function New-DbaEndpoint {
             if ($Certificate) {
                 $cert = Get-DbaDbCertificate -SqlInstance $server -Certificate $Certificate
                 if (-not $cert) {
-                    Stop-Function -Message "Certificate $Certificate does not exist on $instance" -ErrorRecord $_ -Target $Certificate -Continue
+                    Stop-Function -Message "Certificate $Certificate does not exist on $instance" -Target $Certificate -Continue
                 }
             }
 

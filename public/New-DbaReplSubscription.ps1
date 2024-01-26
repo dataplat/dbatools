@@ -217,7 +217,7 @@ function New-DbaReplSubscription {
 
                             $transSub.Create()
                         } else {
-                            Stop-Function -Message ("Publication {0} not found on {1}" -f $PublicationName, $instance) -ErrorRecord $_ -Target $instance -Continue
+                            Stop-Function -Message ("Publication {0} not found on {1}" -f $PublicationName, $instance) -Target $instance -Continue
                         }
 
                     } elseif ($pub.Type -eq 'Merge') {
@@ -288,7 +288,7 @@ function New-DbaReplSubscription {
                         }
 
                     } else {
-                        Stop-Function -Message ("Publication {0} not found on {1}" -f $PublicationName, $instance) -ErrorRecord $_ -Target $instance -Continue
+                        Stop-Function -Message ("Publication {0} not found on {1}" -f $PublicationName, $instance) -Target $instance -Continue
                     }
                 }
             } catch {

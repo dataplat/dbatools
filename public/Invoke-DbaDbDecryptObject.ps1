@@ -282,7 +282,7 @@ function Invoke-DbaDbDecryptObject {
                                 Stop-Function -Message "Couldn't convert the known plain to binary" -ErrorRecord $_ -Target $instance -Continue
                             }
                         } else {
-                            Stop-Function -Message "Something went wrong setting up the known plain" -ErrorRecord $_ -Target $instance -Continue
+                            Stop-Function -Message "Something went wrong setting up the known plain" -Target $instance -Continue
                         }
 
                         # Setup the query to change the object in SQL Server and roll it back getting the encrypted version

@@ -141,7 +141,7 @@ function Publish-DbaDacPackage {
             }
         } elseif ($Type -eq 'Bacpac') {
             if ($ScriptOnly -or $GenerateDeploymentReport) {
-                Stop-Function -Message "ScriptOnly and GenerateDeploymentReport cannot be used in a Bacpac scenario." -ErrorRecord $_
+                Stop-Function -Message "ScriptOnly and GenerateDeploymentReport cannot be used in a Bacpac scenario."
                 return
             }
             $defaultColumns = 'ComputerName', 'InstanceName', 'SqlInstance', 'Database', 'Bacpac', 'Result', 'DeployOptions'
