@@ -652,7 +652,7 @@ function Restore-DbaDatabase {
                 }
 
                 if (@("Restoring", "Normal, Standby") -notcontains $RestoreInstance.Databases[$Database].Status) {
-                    Write-Message -Message "$Database on $RestoreInstance is not in a Restoring State" -Level Warning
+                    Write-Message -Message "$Database on $RestoreInstance is not in Restoring or Standby State" -Level Warning
                     continue
                 }
                 $RestoreComplete = $true
