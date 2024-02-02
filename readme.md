@@ -2,7 +2,7 @@
 
 ## Getting Started
 
-<img align="left" src=bin/dbatools.png alt="dbatools logo">  dbatools is PowerShell module that you may think of like a command-line SQL Server Management Studio. The project initially started out as just `Start-SqlMigration.ps1`, but has now grown into a collection of [over 700 commands](https://dbatools.io/commands) that help automate SQL Server tasks and encourage best practices.
+<img align="left" src=bin/dbatools.png alt="dbatools logo">  dbatools is PowerShell module that you may think of like a command-line SQL Server Management Studio. The project initially started out as just `Start-SqlMigration.ps1`, but as of our 2.0 version release has grown into a collection of [over 700 commands](https://dbatools.io/commands) that help automate SQL Server tasks and encourage best practices.
 
 Want to contribute to the project? We'd love to have you! Visit our [contributing.md](contributing.md) for a jump start.
 
