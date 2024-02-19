@@ -481,7 +481,6 @@ function Get-DbaWaitStatistic {
             PREEMPTIVE_OS_FLUSHFILEBUFFERS                  = 'Preemptive'
             PREEMPTIVE_OS_FILEOPS                           = 'Preemptive'
             PREEMPTIVE_OS_FINDFILE                          = 'Preemptive'
-            PREEMPTIVE_OS_FLUSHFILEBUFFERS                  = 'Preemptive'
             PREEMPTIVE_OS_FORMATMESSAGE                     = 'Preemptive'
             PREEMPTIVE_OS_FREECREDENTIALSHANDLE             = 'Preemptive'
             PREEMPTIVE_OS_FREELIBRARY                       = 'Preemptive'
