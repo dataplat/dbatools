@@ -172,6 +172,7 @@ function Get-DbaWaitStatistic {
             CLRHOST_STATE_ACCESS                            = 'SQL CLR'
             CMEMPARTITIONED                                 = 'Memory'
             CMEMTHREAD                                      = 'Memory'
+            CXCONSUMER                                      = 'Parallelism'
             CXPACKET                                        = 'Parallelism'
             DBMIRROR_DBM_EVENT                              = 'Mirroring'
             DBMIRROR_DBM_MUTEX                              = 'Mirroring'
@@ -477,6 +478,7 @@ function Get-DbaWaitStatistic {
             PREEMPTIVE_OS_DSGETDCNAME                       = 'Preemptive'
             PREEMPTIVE_OS_DTCOPS                            = 'Preemptive'
             PREEMPTIVE_OS_ENCRYPTMESSAGE                    = 'Preemptive'
+            PREEMPTIVE_OS_FLUSHFILEBUFFERS                  = 'Preemptive'
             PREEMPTIVE_OS_FILEOPS                           = 'Preemptive'
             PREEMPTIVE_OS_FINDFILE                          = 'Preemptive'
             PREEMPTIVE_OS_FLUSHFILEBUFFERS                  = 'Preemptive'
@@ -567,6 +569,7 @@ function Get-DbaWaitStatistic {
             PREEMPTIVE_XE_TARGETINIT                        = 'Preemptive'
             PREEMPTIVE_XE_TIMERRUN                          = 'Preemptive'
             PREEMPTIVE_XETESTING                            = 'Preemptive'
+            PWAIT_EXTENSIBILITY_CLEANUP_TASK                = 'Other'
             PWAIT_HADR_ACTION_COMPLETED                     = 'Replication'
             PWAIT_HADR_CHANGE_NOTIFIER_TERMINATION_SYNC     = 'Replication'
             PWAIT_HADR_CLUSTER_INTEGRATION                  = 'Replication'
@@ -579,6 +582,7 @@ function Get-DbaWaitStatistic {
             PWAIT_HADR_WORKITEM_COMPLETED                   = 'Replication'
             PWAIT_HADRSIM                                   = 'Replication'
             PWAIT_RESOURCE_SEMAPHORE_FT_PARALLEL_QUERY_SYNC = 'Full Text Search'
+            PVS_PREALLOCATE                                 = 'Other'
             QUERY_TRACEOUT                                  = 'Tracing'
             REPL_CACHE_ACCESS                               = 'Replication'
             REPL_HISTORYCACHE_ACCESS                        = 'Replication'
@@ -696,7 +700,12 @@ function Get-DbaWaitStatistic {
             MSQL_XP                                         = 'Other'
             OLEDB                                           = 'Network I/O'
             PARALLEL_BACKUP_QUEUE                           = 'Other'
+            PARALLEL_REDO_DRAIN_WORKER                      = 'Other'
+            PARALLEL_REDO_LOG_CACHE                         = 'Other'
+            PARALLEL_REDO_TRAN_LIST                         = 'Other'
+            PARALLEL_REDO_WORKER_SYNC                       = 'Other'
             PRINT_ROLLBACK_PROGRESS                         = 'Other'
+            QDS_SHUTDOWN_QUEUE                              = 'Other'
             QNMANAGER_ACQUIRE                               = 'Other'
             QPJOB_KILL                                      = 'Other'
             QPJOB_WAITFOR_ABORT                             = 'Other'
@@ -710,6 +719,7 @@ function Get-DbaWaitStatistic {
             QUERY_OPTIMIZER_PRINT_MUTEX                     = 'Other'
             QUERY_REMOTE_BRICKS_DONE                        = 'Other'
             RECOVER_CHANGEDB                                = 'Other'
+            REDO_THREAD_PENDING_WORK                        = 'Other'
             REQUEST_DISPENSER_PAUSE                         = 'Other'
             RESOURCE_QUEUE                                  = 'Idle'
             RESOURCE_SEMAPHORE_MUTEX                        = 'Compilation'
@@ -734,6 +744,7 @@ function Get-DbaWaitStatistic {
             SOS_STACKSTORE_INIT_MUTEX                       = 'Other'
             SOS_SYNC_TASK_ENQUEUE_EVENT                     = 'Other'
             SOS_VIRTUALMEMORY_LOW                           = 'Memory'
+            SOS_WORK_DISPATCHER                             = 'Other'
             SOSHOST_EVENT                                   = 'Other'
             SOSHOST_INTERNAL                                = 'Other'
             SOSHOST_MUTEX                                   = 'Other'
@@ -750,6 +761,7 @@ function Get-DbaWaitStatistic {
             TIMEPRIV_TIMEPERIOD                             = 'Other'
             UTIL_PAGE_ALLOC                                 = 'Memory'
             VIA_ACCEPT                                      = 'Other'
+            VDI_CLIENT_OTHER                                = 'Other'
             VIEW_DEFINITION_MUTEX                           = 'Latch'
             WAITFOR_TASKSHUTDOWN                            = 'Idle'
             WAITSTAT_MUTEX                                  = 'Other'
@@ -783,11 +795,12 @@ function Get-DbaWaitStatistic {
         'PARALLEL_REDO_WORKER_WAIT_WORK', 'PREEMPTIVE_HADR_LEASE_MECHANISM',
         'PREEMPTIVE_OS_LIBRARYOPS', 'PREEMPTIVE_OS_COMOPS', 'PREEMPTIVE_OS_CRYPTOPS',
         'PREEMPTIVE_OS_PIPEOPS', 'PREEMPTIVE_OS_AUTHENTICATIONOPS',
-        'PREEMPTIVE_OS_GENERICOPS', 'PREEMPTIVE_OS_VERIFYTRUST',
+        'PREEMPTIVE_OS_GENERICOPS', 'PREEMPTIVE_OS_FLUSHFILEBUFFERS', 'PREEMPTIVE_OS_VERIFYTRUST',
         'PREEMPTIVE_OS_FILEOPS', 'PREEMPTIVE_OS_DEVICEOPS', 'PREEMPTIVE_OS_QUERYREGISTRY',
         'PREEMPTIVE_OS_WRITEFILE', 'PREEMPTIVE_XE_CALLBACKEXECUTE', 'PREEMPTIVE_XE_DISPATCHER',
         'PREEMPTIVE_XE_GETTARGETSTATE', 'PREEMPTIVE_XE_SESSIONCOMMIT',
         'PREEMPTIVE_XE_TARGETINIT', 'PREEMPTIVE_XE_TARGETFINALIZE',
+        'PVS_PREALLOCATE',
         'PWAIT_ALL_COMPONENTS_INITIALIZED', 'PWAIT_DIRECTLOGCONSUMER_GETNEXT', 'PWAIT_EXTENSIBILITY_CLEANUP_TASK',
         'QDS_PERSIST_TASK_MAIN_LOOP_SLEEP', 'QDS_ASYNC_QUEUE',
         'QDS_CLEANUP_STALE_QUERIES_TASK_MAIN_LOOP_SLEEP', 'REDO_THREAD_PENDING_WORK',
@@ -797,6 +810,7 @@ function Get-DbaWaitStatistic {
         'SLEEP_MASTERUPGRADED', 'SLEEP_MSDBSTARTUP', 'SLEEP_SYSTEMTASK', 'SLEEP_TASK',
         'SLEEP_TEMPDBSTARTUP', 'SNI_HTTP_ACCEPT', 'SOS_WORK_DISPATCHER', 'SP_SERVER_DIAGNOSTICS_SLEEP',
         'SQLTRACE_BUFFER_FLUSH', 'SQLTRACE_INCREMENTAL_FLUSH_SLEEP', 'SQLTRACE_WAIT_ENTRIES',
+        'VDI_CLIENT_OTHER',
         'WAIT_FOR_RESULTS', 'WAITFOR', 'WAITFOR_TASKSHUTDOWN', 'WAIT_XTP_HOST_WAIT',
         'WAIT_XTP_OFFLINE_CKPT_NEW_LOG', 'WAIT_XTP_CKPT_CLOSE', 'WAIT_XTP_RECOVERY',
         'XE_BUFFERMGR_ALLPROCESSED_EVENT', 'XE_DISPATCHER_JOIN',
