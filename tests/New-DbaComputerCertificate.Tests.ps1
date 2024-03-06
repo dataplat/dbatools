@@ -45,7 +45,7 @@ if (-not $env:appveyor) {
     Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         Context "Can generate a new certificate with correct settings" {
             BeforeAll {
-                $cert = New-DbaComputerCertificate -SelfSigned -EnableException -HashAlgorithm "Sha256" -MonthsValid 60
+                $cert = New-DbaComputerCertificate -SelfSigned -HashAlgorithm "Sha256" -MonthsValid 60 -EnableException
             }
             AfterAll {
                 Remove-DbaComputerCertificate -Thumbprint $cert.Thumbprint -Confirm:$false
