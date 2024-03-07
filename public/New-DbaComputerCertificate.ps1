@@ -78,6 +78,12 @@ function New-DbaComputerCertificate {
     .PARAMETER SelfSigned
         Creates a self-signed certificate. All other parameters can still apply except CaServer and CaName because the command does not go and get the certificate signed.
 
+    .PARAMETER HashAlgorithm
+        Specifies hashing algorithm for self-signed certificate.  Must be one of the values Sha256, sha384, sha512, sha1, md5, md4, md2.
+
+    .PARAMETER MonthsValid
+        Allows you to specify the number of months a self-signed certificate will be valid for.  e.g a value of 60 will generate a certificate vaild until 5 years (60 months) time.
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -129,6 +135,11 @@ function New-DbaComputerCertificate {
 
         Creates a self-signed certificate
 
+    .EXAMPLE
+        PS C:\> New-DbaComputerCertificate -SelfSigned -HashAlgorithm Sha256 -MonthsValid 60
+
+        Creates a self-signed certificate using the SHA256 hashing algorithm that does not expire for 5 years
+
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low")]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseOutputTypeCorrectly", "", Justification = "PSSA Rule Ignored by BOH")]
@@ -150,7 +161,10 @@ function New-DbaComputerCertificate {
         [string[]]$Flag = @("Exportable", "PersistKeySet"),
         [string[]]$Dns,
         [switch]$SelfSigned,
-        [switch]$EnableException
+        [switch]$EnableException,
+        [ValidateSet("Sha256", "sha384", "sha512", "sha1", "md5", "md4", "md2")]
+        [string]$HashAlgorithm = "sha1",
+        [int]$MonthsValid = 12
     )
     begin {
         if ("NonExportable" -in $Flag) {
@@ -338,13 +352,15 @@ function New-DbaComputerCertificate {
                 } else {
                     Add-Content $certCfg "RequestType = PKCS10"
                 }
+                Add-Content $certCfg "NotBefore = $((get-date).ToShortDateString())"
+                Add-Content $certCfg "NotAfter = $((get-date).AddMonths($MonthsValid).ToShortDateString())"
+                Add-Content $certCfg "HashAlgorithm = $HashAlgorithm"
                 Add-Content $certCfg "KeyUsage = 0xa0"
                 Add-Content $certCfg "[EnhancedKeyUsageExtension]"
                 Add-Content $certCfg "OID=1.3.6.1.5.5.7.3.1"
                 Add-Content $certCfg "[Extensions]"
                 Add-Content $certCfg $san
                 Add-Content $certCfg "Critical=2.5.29.17"
-
 
                 if ($PScmdlet.ShouldProcess("local", "Creating certificate for $computer")) {
                     Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Running: certreq -new $certCfg $certCsr"
