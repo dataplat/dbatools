@@ -111,7 +111,7 @@ function Backup-DbaDbMasterKey {
             }
 
             if (-not (Test-DbaPath -SqlInstance $server -Path $Path)) {
-                Stop-Function -Message "$instance cannot access $Path" -Target $server -ErrorRecord $_ -Continue
+                Stop-Function -Message "$instance cannot access $Path" -Target $server -Continue
             }
 
             $actualPath = "$Path".TrimEnd('\').TrimEnd('/')

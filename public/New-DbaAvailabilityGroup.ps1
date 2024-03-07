@@ -418,7 +418,7 @@ function New-DbaAvailabilityGroup {
         if ($Certificate) {
             $cert = Get-DbaDbCertificate -SqlInstance $Primary -SqlCredential $PrimarySqlCredential -Certificate $Certificate
             if (-not $cert) {
-                Stop-Function -Message "Certificate $Certificate does not exist on $Primary" -ErrorRecord $_ -Target $Primary
+                Stop-Function -Message "Certificate $Certificate does not exist on $Primary" -Target $Primary
                 return
             }
         }

@@ -279,7 +279,7 @@ function Invoke-DbaDbDataMasking {
                             Stop-Function -Message "Could not import csv data from file '$file'" -ErrorRecord $_ -Target $file
                         }
                     } else {
-                        Stop-Function -Message "Could not import dictionary file '$file'" -ErrorRecord $_ -Target $file
+                        Stop-Function -Message "Could not import dictionary file '$file'" -Target $file
                     }
                 }
             }

@@ -97,7 +97,7 @@ function Backup-DbaServiceMasterKey {
             }
 
             if (!(Test-DbaPath -SqlInstance $server -Path $Path)) {
-                Stop-Function -Message "$instance cannot access $Path" -Target $server -ErrorRecord $_ -Continue
+                Stop-Function -Message "$instance cannot access $Path" -Target $server -Continue
             }
 
 

@@ -95,7 +95,7 @@ function Rename-DbaLogin {
             $currentLogin = $server.Logins[$Login]
 
             if ( -not $currentLogin) {
-                Stop-Function -Message "Login '$login' not found on $instance" -ErrorRecord $_ -Target login -Continue
+                Stop-Function -Message "Login '$login' not found on $instance" -Target login -Continue
             }
 
             if ($Pscmdlet.ShouldProcess($SqlInstance, "Changing Login name from  [$Login] to [$NewLogin]")) {

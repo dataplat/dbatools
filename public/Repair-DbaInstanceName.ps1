@@ -123,7 +123,7 @@ function Repair-DbaInstanceName {
                                 $result = $host.ui.PromptForChoice($title, $message, $options, 1)
 
                                 if ($result -eq 1) {
-                                    Stop-Function -Message "Failure" -Target $server -ErrorRecord $_ -Continue
+                                    Stop-Function -Message "Failure" -Target $server -Continue
                                 } else {
                                     Write-Message -Level Output -Message "`nPerforming sp_dropdistributor @no_checks = 1."
                                     $sql = "sp_dropdistributor @no_checks = 1"

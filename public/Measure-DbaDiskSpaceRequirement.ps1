@@ -209,7 +209,7 @@ function Measure-DbaDiskSpaceRequirement {
 
         $sourceDb = Get-DbaDatabase -SqlInstance $sourceServer -Database $Database -SqlCredential $SourceSqlCredential
         if (Test-Bound 'Database' -not) {
-            Stop-Function -Message "Database [$Database] MUST exist on Source Instance $Source." -ErrorRecord $_
+            Stop-Function -Message "Database [$Database] MUST exist on Source Instance $Source."
         }
         $sourceFiles = @($sourceDb.FileGroups.Files | Select-Object Name, FileName, Size, @{n = 'Type'; e = { 'Data' } })
         $sourceFiles += @($sourceDb.LogFiles | Select-Object Name, FileName, Size, @{n = 'Type'; e = { 'Log' } })

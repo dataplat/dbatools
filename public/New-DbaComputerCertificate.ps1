@@ -389,7 +389,7 @@ function New-DbaComputerCertificate {
                         Write-Message -Level Warning -Message "Something went wrong"
                         Write-Message -Level Warning -Message "$create"
                         Write-Message -Level Warning -Message "$submit"
-                        Stop-Function -Message "Failure when attempting to create the cert on $computer. Exception: $_" -ErrorRecord $_ -Target $computer -Continue
+                        Stop-Function -Message "Failure when attempting to create the cert on $computer. Exception: $_" -Target $computer -Continue
                     }
 
                     if ($Computer.IsLocalHost) {
