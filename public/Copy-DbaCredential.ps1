@@ -202,7 +202,7 @@ function Copy-DbaCredential {
                 Write-Message -Level Verbose -Message "Attempting to migrate $credentialName"
                 try {
                     $decryptedCred = $decryptedCredentials | Where-Object { $_.Name -eq $credentialName }
-                    $sqlcredentialName = $credentialName.Replace("'", "''")
+                    $sqlcredentialName = $decryptedCred.Quotename
                     $identity = $decryptedCred.Identity.Replace("'", "''")
                     $password = $decryptedCred.Password.Replace("'", "''")
 
@@ -217,7 +217,7 @@ function Copy-DbaCredential {
                     }
 
                     if ($Pscmdlet.ShouldProcess($destinstance, "Copying $identity ($credentialName)")) {
-                        $destServer.Query("CREATE CREDENTIAL [$sqlcredentialName] WITH IDENTITY = N'$identity', SECRET = N'$password' $cryptoSQL")
+                        $destServer.Query("CREATE CREDENTIAL $sqlcredentialName WITH IDENTITY = N'$identity', SECRET = N'$password' $cryptoSQL")
                         $destServer.Credentials.Refresh()
                         Write-Message -Level Verbose -Message "$credentialName successfully copied"
                         $copyCredentialStatus.Status = "Successful"
