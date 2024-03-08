@@ -6,6 +6,8 @@ function Get-DbaDbQueryStoreOption {
     .DESCRIPTION
         Retrieves and returns the Query Store configuration for every database that has the Query Store feature enabled.
 
+        Due to SMO limitations, the model database is not checked.
+
     .OUTPUTS
         Microsoft.SqlServer.Management.Smo.QueryStoreOptions
 
@@ -17,7 +19,7 @@ function Get-DbaDbQueryStoreOption {
 
         Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
 
-        For MFA support, please use Connect-DbaInstance..
+        For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Database
         The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
@@ -68,6 +70,7 @@ function Get-DbaDbQueryStoreOption {
         [switch]$EnableException
     )
     begin {
+        # We exclude model because SMO cannot tell if Query Store is enabled there
         $ExcludeDatabase += 'master', 'tempdb', "model"
     }
     process {
@@ -78,7 +81,7 @@ function Get-DbaDbQueryStoreOption {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
-            # We have to exclude all the system databases since they cannot have the Query Store feature enabled
+            # We have to exclude system databases since they cannot have the Query Store feature enabled
             $dbs = Get-DbaDatabase -SqlInstance $server -ExcludeDatabase $ExcludeDatabase -Database $Database | Where-Object IsAccessible
 
             foreach ($db in $dbs) {
