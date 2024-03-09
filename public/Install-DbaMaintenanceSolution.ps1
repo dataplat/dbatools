@@ -234,6 +234,27 @@ function Install-DbaMaintenanceSolution {
             Write-ProgressHelper -ExcludePercent -Message "If Ola Hallengren's scripts are found, we will drop and recreate them"
         }
 
+
+        # does this machine have internet access to download the files if required?
+        if (-not $isLinux -and -not $isMacOs) {
+            if ((Get-Command -Name Get-NetConnectionProfile -ErrorAction SilentlyContinue)) {
+                $script:internet = (Get-NetConnectionProfile -ErrorAction SilentlyContinue).IPv4Connectivity -contains "Internet"
+            } else {
+                try {
+                    $network = [Type]::GetTypeFromCLSID([Guid]"{DCB00C01-570F-4A9B-8D69-199FDBA5723B}")
+                    $script:internet = ([Activator]::CreateInstance($network)).GetNetworkConnections() | ForEach-Object { $_.GetNetwork().GetConnectivity() } | Where-Object { ($_ -band 64) -eq 64 }
+                } catch {
+                    # probably a container with internet
+                    $script:internet = $true
+                }
+            }
+
+            if (-not $internet) {
+                Write-Message -Level Verbose -Message "No internet connection found, using included copy of Maintenance Solution."
+                $localCachedCopy = [System.IO.Path]::Combine($script:PSModuleRoot, "bin", "maintenancesolution")
+            }
+        }
+
         if (-not $localCachedCopy) {
             # Do we need a fresly cached version of the software?
             $dbatoolsData = Get-DbatoolsConfigValue -FullName 'Path.DbatoolsData'
