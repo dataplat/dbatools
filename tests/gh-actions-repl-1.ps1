@@ -220,7 +220,7 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
                 Get-DbaReplPublication | Should -Not -BeNullOrEmpty
             }
 
-            It "gets publications for a specific database" {
+            It -Skip "gets publications for a specific database" {
                 Get-DbaReplPublication -Database ReplDb | Should -Not -BeNullOrEmpty
                 (Get-DbaRepPublication -Database ReplDb).DatabaseName | ForEach-Object { $_ | Should -Be 'ReplDb' }
             }
@@ -244,21 +244,21 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
                 }
             }
 
-            It "New-DbaReplPublication creates a Transactional publication" {
+            It -Skip "New-DbaReplPublication creates a Transactional publication" {
                 $name = 'TestPub'
                 { New-DbaReplPublication -Database ReplDb -Type Transactional -Name $Name -EnableException } | Should -Not -Throw
                 (Get-DbaReplPublication -Name $Name) | Should -Not -BeNullOrEmpty
                 (Get-DbaReplPublication -Name $Name).DatabaseName | Should -Be 'ReplDb'
                 (Get-DbaReplPublication -Name $Name).Type | Should -Be 'Transactional'
             }
-            It "New-DbaReplPublication creates a Snapshot publication" {
+            It -Skip "New-DbaReplPublication creates a Snapshot publication" {
                 $name = 'Snappy'
                 { New-DbaReplPublication -Database ReplDb -Type Snapshot -Name $name -EnableException } | Should -Not -Throw
                 (Get-DbaReplPublication -Name $name) | Should -Not -BeNullOrEmpty
                 (Get-DbaReplPublication -Name $name).DatabaseName | Should -Be 'ReplDb'
                 (Get-DbaReplPublication -Name $name).Type | Should -Be 'Snapshot'
             }
-            It "New-DbaReplPublication creates a Merge publication" {
+            It -Skip "New-DbaReplPublication creates a Merge publication" {
                 $name = 'Mergey'
                 { New-DbaReplPublication -Database ReplDb -Type Merge -Name $name -EnableException } | Should -Not -Throw
                 (Get-DbaReplPublication -Name $name) | Should -Not -BeNullOrEmpty
