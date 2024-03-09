@@ -11,7 +11,7 @@
     RootModule         = 'dbatools.psm1'
 
     # Version number of this module.
-    ModuleVersion      = '2.1.9'
+    ModuleVersion      = '2.1.10'
 
     # ID used to uniquely identify this module
     GUID               = '9d139310-ce45-41ce-8e8b-d76335aa1789'
@@ -29,7 +29,7 @@
     Description        = "The community module that enables SQL Server Pros to automate database development and server administration"
 
     # Modules that must be imported into the global environment prior to importing this module
-    RequiredModules    = @{ ModuleName = 'dbatools.library'; ModuleVersion = '2023.9.21' }
+    RequiredModules    = @{ ModuleName = 'dbatools.library'; ModuleVersion = '2024.3.9' }
 
     # Assemblies that must be loaded prior to importing this module
     RequiredAssemblies = @()
