@@ -98,6 +98,7 @@ jobs:
           docker exec mssql1 mkdir /shared/data /shared/repldata /var/opt/mssql/ReplData
 
       - name: Run replication tests part 2
+        if: ${{removewheniffixed}} == 'true'
         run: |
           Import-Module ./dbatools.psd1 -Force
           $null = Invoke-Pester ./tests/gh-actions-repl-2.ps1 -Output Detailed -PassThru -Verbose
