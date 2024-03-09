@@ -220,12 +220,12 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
                 Get-DbaReplPublication | Should -Not -BeNullOrEmpty
             }
 
-            It -Skip "gets publications for a specific database" {
+            It "gets publications for a specific database" {
                 Get-DbaReplPublication -Database ReplDb | Should -Not -BeNullOrEmpty
                 (Get-DbaRepPublication -Database ReplDb).DatabaseName | ForEach-Object { $_ | Should -Be 'ReplDb' }
             }
 
-            It "gets publications for a specific type" {
+            It -Skip "gets publications for a specific type" {
                 Get-DbaReplPublication -Type Transactional | Should -Not -BeNullOrEmpty
                 (Get-DbaRepPublication -Type Transactional).Type | ForEach-Object { $_ | Should -Be 'Transactional' }
             }
