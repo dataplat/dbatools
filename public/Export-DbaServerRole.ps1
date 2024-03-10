@@ -164,38 +164,38 @@ function Export-DbaServerRole {
         $commandName = $MyInvocation.MyCommand.Name
 
         $roleSQL = "SELECT
-                    CASE SPerm.state
+                    CASE sperm.state
                         WHEN 'D' THEN 'DENY'
                         WHEN 'G' THEN 'GRANT'
                         WHEN 'R' THEN 'REVOKE'
                         WHEN 'W' THEN 'GRANT'
                     END as GrantState,
-                    SPerm.permission_name as Permission,
+                    sperm.permission_name as Permission,
                     Case
-                        WHEN SPerm.class = 100 THEN ''
-                        WHEN SPerm.class = 101 AND sp2.type = 'S' THEN 'ON LOGIN::' + QuoteName(sp2.name)
-                        WHEN SPerm.class = 101 AND sp2.type = 'R' THEN 'ON SERVER ROLE::' + QuoteName(sp2.name)
-                        WHEN SPerm.class = 101 AND sp2.type = 'U' THEN 'ON LOGIN::' + QuoteName(sp2.name)
-                        WHEN SPerm.class = 105 THEN 'ON ENDPOINT::' + QuoteName(ep.name)
-                        WHEN SPerm.class = 108 THEN 'ON AVAILABILITY GROUP::' + QUOTENAME(ag.name)
+                        WHEN sperm.class = 100 THEN ''
+                        WHEN sperm.class = 101 AND sp2.type = 'S' THEN 'ON LOGIN::' + QuoteName(sp2.name)
+                        WHEN sperm.class = 101 AND sp2.type = 'R' THEN 'ON SERVER ROLE::' + QuoteName(sp2.name)
+                        WHEN sperm.class = 101 AND sp2.type = 'U' THEN 'ON LOGIN::' + QuoteName(sp2.name)
+                        WHEN sperm.class = 105 THEN 'ON ENDPOINT::' + QuoteName(ep.name)
+                        WHEN sperm.class = 108 THEN 'ON AVAILABILITY GROUP::' + QUOTENAME(ag.name)
                         ELSE ''
                     END as OnClause,
-                    QuoteName(SP.name) as RoleName,
+                    QuoteName(sp.name) as RoleName,
                     Case
-                        WHEN SPerm.state = 'W' THEN 'WITH GRANT OPTION AS ' + QUOTENAME(gsp.Name)
+                        WHEN sperm.state = 'W' THEN 'WITH GRANT OPTION AS ' + QUOTENAME(gsp.Name)
                         ELSE ''
                     END as GrantOption
-                FROM sys.server_permissions SPerm
-                INNER JOIN sys.server_principals SP
-                    ON SP.principal_id = SPerm.grantee_principal_id
+                FROM sys.server_permissions sperm
+                INNER JOIN sys.server_principals sp
+                    ON sp.principal_id = sperm.grantee_principal_id
                 INNER JOIN sys.server_principals gsp
-                    ON gsp.principal_id = SPerm.grantor_principal_id
+                    ON gsp.principal_id = sperm.grantor_principal_id
                 LEFT JOIN sys.endpoints ep
-                    ON ep.endpoint_id = SPerm.major_id
-                    AND SPerm.class = 105
+                    ON ep.endpoint_id = sperm.major_id
+                    AND sperm.class = 105
                 LEFT JOIN sys.server_principals sp2
-                    ON sp2.principal_id = SPerm.major_id
-                    AND SPerm.class = 101
+                    ON sp2.principal_id = sperm.major_id
+                    AND sperm.class = 101
                 LEFT JOIN
                 (
                     Select
@@ -205,8 +205,8 @@ function Export-DbaServerRole {
                     INNER JOIN sys.availability_replicas ar
                         ON ag.group_id = ar.group_id
                 ) ag
-                    ON ag.replica_metadata_id = SPerm.major_id
-                    AND SPerm.class = 108
+                    ON ag.replica_metadata_id = sperm.major_id
+                    AND sperm.class = 108
                 where sp.type='R'
                 and sp.name=N'/*RoleName*/'"
 
