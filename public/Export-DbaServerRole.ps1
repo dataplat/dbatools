@@ -170,7 +170,7 @@ function Export-DbaServerRole {
                         WHEN 'R' THEN 'REVOKE'
                         WHEN 'W' THEN 'GRANT'
                     END as GrantState,
-                    sPerm.permission_name as Permission,
+                    SPerm.permission_name as Permission,
                     Case
                         WHEN SPerm.class = 100 THEN ''
                         WHEN SPerm.class = 101 AND sp2.type = 'S' THEN 'ON LOGIN::' + QuoteName(sp2.name)
