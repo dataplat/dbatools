@@ -57,7 +57,7 @@ function Get-DbaReplPublication {
         Return all transactional publications on server sql2008.
 
     .EXAMPLE
-        PS C:\> Get-DbaReplPublication -SqlInstance mssql1 -Name Mergey
+        PS C:\> Get-DbaReplPublication -SqlInstance mssql1 -Name Merge
 
         Returns the Mergey publications on server mssql1
 
