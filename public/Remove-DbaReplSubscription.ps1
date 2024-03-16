@@ -1,7 +1,7 @@
 function Remove-DbaReplSubscription {
     <#
     .SYNOPSIS
-        Removes a subscription \for the target SQL instances.
+        Removes a subscription for the target SQL instances.
 
     .DESCRIPTION
         Removes a subscription for the target SQL instances.
