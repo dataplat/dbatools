@@ -185,7 +185,7 @@ $errorCodes = Get-DbaServiceErrorMessage
 
 process {
     #Group services for each computer
-    $serviceComputerGroup = $InputObject | Group-Object -Property ComputerName
+    $serviceComputerGroup = $InputObject | Group-Object -Property PSComputerName
     foreach ($group in $serviceComputerGroup) {
         Write-Message -Message "Getting CIM objects from computer $($group.Name)"
         $serviceNames = $group.Group.ServiceName -join "' OR name = '"
