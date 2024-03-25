@@ -278,7 +278,7 @@ function Get-DbaBackupInformation {
                         $storageAccountName = $uri.Host.Split('.')[0];
                         $pathSegments = $uri.AbsolutePath.Trim('/').Split('/');
                         $containerName = $pathSegments[0];
-                        $prefix = if ($pathSegments.Length -gt 1) { $pathSegments[1] } else { "" }
+                        $prefix = if ($pathSegments.Length -gt 1) { ($pathSegments | Select-Object -Skip 1) -join "/" } else { "" }
                         $sasToken = $uri.Query.TrimStart('?')
                         $ctx = New-AzStorageContext -StorageAccountName $storageAccountName -SasToken "$sasToken";
                         # Get blobs avoiding Archive tier (which needs rehydration before download)
