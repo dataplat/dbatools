@@ -287,9 +287,9 @@ function Get-DbaBackupInformation {
                         # the full path
                         $baseUrl = "$($uri.Scheme)://$($uri.Host)/$containerName/"
                         $blobs = Get-AzStorageBlob -Container $containerName -Context $ctx -Prefix $prefix |
-                            Where-Object { ($_.AccessTier -ne 'Archive') -and ($_.Length > 0) };
+                            Where-Object { ($_.AccessTier -ne 'Archive') -and ($_.Length -gt 0) };
                         foreach ($blob in $blobs) {
-                            $blobUrl = $baseUrl + $_.Name + "?" + $sasToken
+                            $blobUrl = $baseUrl + $blob.Name + "?" + $sasToken
                             $Files += $blobUrl;
                         }
                     } else {
