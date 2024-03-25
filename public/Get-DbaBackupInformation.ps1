@@ -273,7 +273,7 @@ function Get-DbaBackupInformation {
                             Write-Message -Level VeryVerbose -Message "File"
                             $Files += $f.FullName
                         }
-                    } elseif ($f -match "^http") {
+                    } elseif ($f -match "^http.*\?.+$") {
                         $uri = [System.Uri]$f;
                         $storageAccountName = $uri.Host.Split('.')[0];
                         $pathSegments = $uri.AbsolutePath.Trim('/').Split('/');
