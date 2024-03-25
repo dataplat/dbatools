@@ -257,6 +257,7 @@ function Get-DbaBackupInformation {
             } else {
                 ForEach ($f in $path) {
                     Write-Message -Level VeryVerbose -Message "Not using sql for $f"
+
                     if ($f -is [System.IO.FileSystemInfo]) {
                         if ($f.PsIsContainer -eq $true -and $true -ne $MaintenanceSolution) {
                             Write-Message -Level VeryVerbose -Message "folder $($f.FullName)"
@@ -273,14 +274,29 @@ function Get-DbaBackupInformation {
                             Write-Message -Level VeryVerbose -Message "File"
                             $Files += $f.FullName
                         }
+                    } elseif ($f -match "^http") {
+                        $uri = [System.Uri]$f;
+                        $storageAccountName = $uri.Host.Split('.')[0];
+                        $pathSegments = $uri.AbsolutePath.Trim('/').Split('/');
+                        $containerName = $pathSegments[0];
+                        $prefix = if ($pathSegments.Length -gt 1) { $pathSegments[1] } else { "" }
+                        $sasToken = $uri.Query.TrimStart('?')
+                        $ctx = New-AzStorageContext -StorageAccountName $storageAccountName -SasToken "$sasToken";
+                        # Get blobs avoiding Archive tier (which needs rehydration before download)
+                        # we could easily filter here by folder, extension, etc. the blob Name contains
+                        # the full path
+                        $baseUrl = "$($uri.Scheme)://$($uri.Host)/$containerName/"
+                        $blobs = Get-AzStorageBlob -Container $containerName -Context $ctx -Prefix $prefix |
+                            Where-Object { ($_.AccessTier -ne 'Archive') -and ($_.Length > 0) };
+                        foreach ($blob in $blobs) {
+                            $blobUrl = $baseUrl + $_.Name + "?" + $sasToken
+                            $Files += $blobUrl;
+                        }
                     } else {
                         if ($true -eq $MaintenanceSolution) {
                             $Files += Get-XpDirTreeRestoreFile -Path $f\FULL -SqlInstance $server -NoRecurse
                             $Files += Get-XpDirTreeRestoreFile -Path $f\DIFF -SqlInstance $server -NoRecurse
                             $Files += Get-XpDirTreeRestoreFile -Path $f\LOG -SqlInstance $server -NoRecurse
-                        } else {
-                            Write-Message -Level VeryVerbose -Message "File"
-                            $Files += $f
                         }
                     }
                 }
