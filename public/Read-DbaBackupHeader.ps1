@@ -128,7 +128,15 @@ function Read-DbaBackupHeader {
             $restore = New-Object Microsoft.SqlServer.Management.Smo.Restore
 
             if ($DeviceType -eq 'URL') {
-                $restore.CredentialName = $AzureCredential
+                if (-not [String]::IsNullOrWhiteSpace($AzureCredential)) {
+                    $restore.CredentialName = $AzureCredential
+                } else {
+                    # If we are restoring with an SAS (Shared Access Signature) the only way to get MSSQL
+                    # to read the headers is to REMOVE the SAS from the URL and register the SHARED ACCESS SIGNATURE credential in MSSQL
+                    # but we cannot rely on this command doing so, so just get rid of the Query String.
+                    # If the SAS crendential is no there the error we get is " Operating system error 86(The specified network password is not correct.)."
+                    $Path = $Path -replace '\?.*'
+                }
             }
 
             $device = New-Object Microsoft.SqlServer.Management.Smo.BackupDeviceItem $Path, $DeviceType
