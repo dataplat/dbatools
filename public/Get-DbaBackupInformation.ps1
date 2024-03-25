@@ -297,6 +297,9 @@ function Get-DbaBackupInformation {
                             $Files += Get-XpDirTreeRestoreFile -Path $f\FULL -SqlInstance $server -NoRecurse
                             $Files += Get-XpDirTreeRestoreFile -Path $f\DIFF -SqlInstance $server -NoRecurse
                             $Files += Get-XpDirTreeRestoreFile -Path $f\LOG -SqlInstance $server -NoRecurse
+                        } else {
+                            Write-Message -Level VeryVerbose -Message "File"
+                            $Files += $f
                         }
                     }
                 }
