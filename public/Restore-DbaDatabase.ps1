@@ -577,12 +577,6 @@ function Restore-DbaDatabase {
                     if ("BackupSetGUID" -notin $f.PSObject.Properties.Name) {
                         $f = $f | Select-Object *, @{ Name = "BackupSetGUID"; Expression = { $_.BackupSetID } }
                     }
-                    if ("BackupStartDate" -notin $f.PSObject.Properties.Name) {
-                        $f = $f | Select-Object *, @{ Name = "BackupStartDate"; Expression = { $_.Start -as [DateTime] } }
-                    }
-                    if ("ServerName" -notin $f.PSObject.Properties.Name) {
-                        $f = $f | Select-Object *, @{ Name = "ServerName"; Expression = { $_.SqlInstance} }
-                    }
                     if ($f.BackupPath -like 'http*') {
                         if ('' -ne $AzureCredential) {
                             Write-Message -Message "At least one Azure backup passed in with a credential, assume correct" -Level Verbose
@@ -603,7 +597,7 @@ function Restore-DbaDatabase {
                     }
                     # Fix #5036 by implementing a deep copy of the FileList
                     $f.FileList = $f.FileList | Select-Object *
-                    $BackupHistory += $f
+                    $BackupHistory += $f | Select-Object *, @{ Name = "ServerName"; Expression = { $_.SqlInstance } }, @{ Name = "BackupStartDate"; Expression = { $_.Start -as [DateTime] } }
                 }
             } else {
                 $files = @()
