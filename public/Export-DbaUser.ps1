@@ -250,8 +250,6 @@ function Export-DbaUser {
                 $FilePath = Get-ExportFilePath -Path $PSBoundParameters.Path -FilePath $PSBoundParameters.FilePath -Type sql -ServerName $db.Parent.Name -Unique
             }
 
-            # Store roles between users so if we hit the same one we don't create it again
-            $roles = @()
             $stepCounter = 0
             foreach ($dbuser in $users) {
 
@@ -274,14 +272,69 @@ function Export-DbaUser {
                 }
 
                 try {
+                    <#
+                    In this approach, we do not maintain a variable to track the roles that have been scripted. Our method involves a
+                    consistent verification process for each user against the complete list of roles. This ensures that we dynamically
+                    include only the roles to which a user belongs. For example, consider two users: user1 is associated with role1 and
+                    role2, while user2 is associated with role1 and role3.
+
+                    Attempting to memorize the scripted roles could result in Transact-SQL (T-SQL) statements such as:
+
+                    IF NOT EXISTS (role1)
+                      CREATE ROLE role1
+                    IF NOT EXISTS (role2)
+                      CREATE ROLE role2
+                    IF NOT EXISTS (user1)
+                      CREATE USER user1
+                    ADD user1 TO role1
+                    ADD user1 TO role2
+
+                    -- And for another user:
+
+                    IF NOT EXISTS (role3)
+                      CREATE ROLE role3
+                    IF NOT EXISTS (user2)
+                      CREATE USER user2
+                    ADD user2 TO role1
+                    ADD user2 TO role3
+
+                    However, this script inadvertently introduces a dependency issue. To ensure user2 is properly configured, the script
+                    segment for user1 must be executed first due to the shared role1. To circumvent this issue and remove interdependencies,
+                    we opt to match each user against all potential roles. Consequently, roles are scripted per user membership, resulting
+                    in T-SQL like:
+
+                    IF NOT EXISTS (role1)
+                      CREATE ROLE role1
+                    IF NOT EXISTS (role2)
+                      CREATE ROLE role2
+                    IF NOT EXISTS (user1)
+                      CREATE USER user1
+                    ADD user1 TO role1
+                    ADD user1 TO role2
+
+                    -- And for another user:
+
+                    IF NOT EXISTS (role1)
+                      CREATE ROLE role1
+                    IF NOT EXISTS (role3)
+                      CREATE ROLE role3
+                    IF NOT EXISTS (user2)
+                      CREATE USER user2
+                    ADD user2 TO role1
+                    ADD user2 TO role3
+
+                    While this method may produce some redundant code (e.g., checking and creating role1 twice), it guarantees that each
+                    portion of the script is self-sufficient and can be executed independently of others. Therefore, users can selectively
+                    execute any segment of the script without concern for execution order or dependencies.
+                    #>
                     #Fixed Roles #Dependency Issue. Create Role, before add to role.
-                    foreach ($rolePermission in ($db.Roles | Where-Object { $_.IsFixedRole -eq $false })) {
-                        foreach ($rolePermissionScript in $rolePermission.Script($ScriptingOptionsObject)) {
-                            if ($rolePermission.ToString() -notin $roles) {
-                                $roles += , $rolePermission.ToString()
+                    foreach ($role in ($db.Roles | Where-Object { $_.IsFixedRole -eq $false })) {
+                        # Check if the user is a member of the role
+                        $isUserMember = $role.EnumMembers() | Where-Object { $_ -eq $dbuser.Name }
+                        if ($isUserMember) {
+                            foreach ($rolePermissionScript in $role.Script($ScriptingOptionsObject)) {
                                 $outsql += "$($rolePermissionScript.ToString())"
                             }
-
                         }
                     }
 
