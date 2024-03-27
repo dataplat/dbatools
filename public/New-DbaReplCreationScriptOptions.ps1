@@ -35,13 +35,13 @@ function New-DbaReplCreationScriptOptions {
     .EXAMPLE
         PS C:\> $cso = New-DbaReplCreationScriptOptions -Options NonClusteredIndexes, Statistics
         PS C:\> $article = @{
-                    SqlInstance           = 'mssql1'
-                    Database              = 'pubs'
-                    PublicationName       = 'testPub'
-                    Name                  = 'stores'
-                    CreationScriptOptions = $cso
-                }
-                Add-DbaReplArticle @article -EnableException
+        >> SqlInstance           = 'mssql1'
+        >> Database              = 'pubs'
+        >> PublicationName       = 'testPub'
+        >> Name                  = 'stores'
+        >> CreationScriptOptions = $cso
+        >> }
+        PS C:\> Add-DbaReplArticle @article -EnableException
 
         Adds the stores table to the testPub publication from mssql1.pubs with the NonClusteredIndexes and Statistics options set
         includes default options.
@@ -50,13 +50,13 @@ function New-DbaReplCreationScriptOptions {
     .EXAMPLE
         PS C:\> $cso = New-DbaReplCreationScriptOptions -Options ClusteredIndexes, Identity -NoDefaults
         PS C:\> $article = @{
-                    SqlInstance           = 'mssql1'
-                    Database              = 'pubs'
-                    PublicationName       = 'testPub'
-                    Name                  = 'stores'
-                    CreationScriptOptions = $cso
-                }
-                Add-DbaReplArticle @article -EnableException
+        >> SqlInstance           = 'mssql1'
+        >> Database              = 'pubs'
+        >> PublicationName       = 'testPub'
+        >> Name                  = 'stores'
+        >> CreationScriptOptions = $cso
+        >> }
+        PS C:\> Add-DbaReplArticle @article -EnableException
 
         Adds the stores table to the testPub publication from mssql1.pubs with the ClusteredIndexes and Identity options set, excludes default options.
     #>

@@ -62,12 +62,12 @@ function Remove-DbaReplSubscription {
 
     .EXAMPLE
         PS C:\> $sub = @{
-                    SqlInstance           = 'mssql1'
-                    Database              = 'pubs'
-                    PublicationName       = 'testPub'
-                    SubscriberSqlInstance = 'mssql2'
-                    SubscriptionDatabase  = 'pubs'
-                    }
+        >> SqlInstance           = 'mssql1'
+        >> Database              = 'pubs'
+        >> PublicationName       = 'testPub'
+        >> SubscriberSqlInstance = 'mssql2'
+        >> SubscriptionDatabase  = 'pubs'
+        >> }
         PS C:\> Remove-DbaReplSubscription @sub
 
         Removes a subscription for the testPub publication on mssql2.pubs.
