@@ -352,6 +352,7 @@ function Get-DbaBackupInformation {
                 $historyObject.LastLsn = $group.Group[0].LastLsn
                 $historyObject.SoftwareVersionMajor = $group.Group[0].SoftwareVersionMajor
                 $historyObject.RecoveryModel = $group.Group.RecoveryModel
+                $historyObject.IsCopyOnly = $group.Group[0].IsCopyOnly
                 $groupResults += $historyObject
             }
         }
