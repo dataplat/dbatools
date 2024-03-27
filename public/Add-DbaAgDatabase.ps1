@@ -122,9 +122,9 @@ function Add-DbaAgDatabase {
         Adds SharePoint databases as found in SharePoint_Config_2019 on sqlcluster to ag1 on sqlcluster
 
     .EXAMPLE
-        PS C:\> $adv_param = @{ 
+        PS C:\> $adv_param = @{
         >>    CompressBackup = $true
-        >>    FileCount = 3 
+        >>    FileCount = 3
         >> }
         PS C:\> $splat = @{
         >>   SqlInstance = 'sql2017a'
@@ -132,7 +132,7 @@ function Add-DbaAgDatabase {
         >>   Database = 'db1'
         >>   Secondary = 'sql2017b'
         >>   SeedingMode = 'Manual'
-        >>   SharedPath = '\\FS\Backup'  
+        >>   SharedPath = '\\FS\Backup'
         >> }
         PS C:\> Add-DbaAgDatabase @splat -AdvancedBackupParams $adv_param
 
