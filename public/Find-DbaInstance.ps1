@@ -38,86 +38,85 @@ function Find-DbaInstance {
         - SQL Instance Enumeration ('DataSourceEnumeration'; same as SSMS uses)
         - IP Address range ('IPRange'; all IP Addresses will be scanned)
         - Domain Server lookup ('DomainServer'; from Active Directory)
+        
+        ---
 
-        SPN Lookup:
-        The function tries to connect active directory to look up all computers with registered SQL Instances.
-        Not all instances need to be registered properly, making this not 100% reliable.
-        By default, your nearest Domain Controller is contacted for this scan.
-        However it is possible to explicitly state the DC to contact using its DistinguishedName and the '-DomainController' parameter.
-        If credentials were specified using the '-Credential' parameter, those same credentials are used to perform this lookup, allowing the scan of other domains.
-
-        SQL Instance Enumeration:
-        This uses the default UDP Broadcast based instance enumeration used by SSMS to detect instances.
-        Note that the result from this is not used in the actual scan, but only to compile a list of computers to scan.
-        To enable the same results for the scan, ensure that the 'Browser' scan is enabled.
-
-        IP Address range:
-        This 'Discovery' uses a range of IPAddresses and simply passes them on to be tested.
-        See the 'Description' part of help on security issues of network scanning.
-        By default, it will enumerate all ethernet network adapters on the local computer and scan the entire subnet they are on.
-        By using the '-IpAddress' parameter, custom network ranges can be specified.
-
-        Domain Server:
-        This will discover every single computer in Active Directory that is a Windows Server and enabled.
-        By default, your nearest Domain Controller is contacted for this scan.
-        However it is possible to explicitly state the DC to contact using its DistinguishedName and the '-DomainController' parameter.
-        If credentials were specified using the '-Credential' parameter, those same credentials are used to perform this lookup, allowing the scan of other domains.
+        - SPN Lookup
+            
+            The function tries to connect active directory to look up all computers with registered SQL Instances.  
+            Not all instances need to be registered properly, making this not 100% reliable.  
+            By default, your nearest Domain Controller is contacted for this scan.  
+            However it is possible to explicitly state the DC to contact using its DistinguishedName and the '-DomainController' parameter.  
+            If credentials were specified using the '-Credential' parameter, those same credentials are used to perform this lookup, allowing the scan of other domains.  
+        
+        - SQL Instance Enumeration
+            
+            This uses the default UDP Broadcast based instance enumeration used by SSMS to detect instances.  
+            Note that the result from this is not used in the actual scan, but only to compile a list of computers to scan.  
+            To enable the same results for the scan, ensure that the 'Browser' scan is enabled.  
+        
+        - IP Address range:
+            
+            This 'Discovery' uses a range of IPAddresses and simply passes them on to be tested.  
+            See the 'Description' part of help on security issues of network scanning.  
+            By default, it will enumerate all ethernet network adapters on the local computer and scan the entire subnet they are on.  
+            By using the '-IpAddress' parameter, custom network ranges can be specified.  
+        
+        - Domain Server:
+            
+            This will discover every single computer in Active Directory that is a Windows Server and enabled.  
+            By default, your nearest Domain Controller is contacted for this scan.  
+            However it is possible to explicitly state the DC to contact using its DistinguishedName and the '-DomainController' parameter.  
+            If credentials were specified using the '-Credential' parameter, those same credentials are used to perform this lookup, allowing the scan of other domains.  
 
     .PARAMETER Credential
-        The credentials to use on windows network connection.
+        The credentials to use on windows network connection.  
         These credentials are used for:
         - Contact to domain controllers for SPN lookups (only if explicit Domain Controller is specified)
         - CIM/WMI contact to the scanned computers during the scan phase (see the '-ScanType' parameter documentation on affected scans).
 
     .PARAMETER SqlCredential
-        The credentials used to connect to SqlInstances to during the scan phase.
+        The credentials used to connect to SqlInstances to during the scan phase.  
         See the '-ScanType' parameter documentation on affected scans.
 
     .PARAMETER ScanType
 
-        The scans are the individual methods used to retrieve information about the scanned computer and any potentially installed instances.
-        This parameter is optional, by default all scans except for establishing an actual SQL connection are performed.
-        Scans can be specified in any arbitrary combination, however at least one instance detecting scan needs to be specified in order for data to be returned.
-
+        The scans are the individual methods used to retrieve information about the scanned computer and any potentially installed instances.  
+        This parameter is optional, by default all scans except for establishing an actual SQL connection are performed.  
+        Scans can be specified in any arbitrary combination, however at least one instance detecting scan needs to be specified in order for data to be returned.  
+        
         Scans:
-        Browser
-        - Tries discovering all instances via the browser service
-        - This scan detects instances.
-
-        SQLService
-        - Tries listing all SQL Services using CIM/WMI
-        - This scan uses credentials specified in the '-Credential' parameter if any.
-        - This scan detects instances.
-        - Success in this scan guarantees high confidence (See parameter '-MinimumConfidence' for details).
-
-        SPN
-        - Tries looking up the Service Principal Names for each instance
-        - Will use the nearest Domain Controller by default
-        - Target a specific domain controller using the '-DomainController' parameter
-        - If using the '-DomainController' parameter, use the '-Credential' parameter to specify the credentials used to connect
-
-        TCPPort
-        - Tries connecting to the TCP Ports.
-        - By default, port 1433 is connected to.
-        - The parameter '-TCPPort' can be used to provide a list of port numbers to scan.
-        - This scan detects possible instances. Since other services might bind to a given port, this is not the most reliable test.
-        - This scan is also used to validate found SPNs if both scans are used in combination
-
-        DNSResolve
-        - Tries resolving the computername in DNS
-
-        Ping
-        - Tries pinging the computer. Failure will NOT terminate scans.
-
-        SqlConnect
-        - Tries to establish a SQL connection to the server
-        - Uses windows credentials by default
-        - Specify custom credentials using the '-SqlCredential' parameter
-        - This scan is not used by default
-        - Success in this scan guarantees high confidence (See parameter '-MinimumConfidence' for details).
-
-        All
-        - All of the above
+        - Browser
+          - Tries discovering all instances via the browser service
+          - This scan detects instances.
+        - SQLService
+          - Tries listing all SQL Services using CIM/WMI
+          - This scan uses credentials specified in the '-Credential' parameter if any.
+          - This scan detects instances.
+          - Success in this scan guarantees high confidence (See parameter '-MinimumConfidence' for details).
+        - SPN
+          - Tries looking up the Service Principal Names for each instance
+          - Will use the nearest Domain Controller by default
+          - Target a specific domain controller using the '-DomainController' parameter
+          - If using the '-DomainController' parameter, use the '-Credential' parameter to specify the credentials used to connect
+        - TCPPort
+          - Tries connecting to the TCP Ports.
+          - By default, port 1433 is connected to.
+          - The parameter '-TCPPort' can be used to provide a list of port numbers to scan.
+          - This scan detects possible instances. Since other services might bind to a given port, this is not the most reliable test.
+          - This scan is also used to validate found SPNs if both scans are used in combination
+        - DNSResolve
+          - Tries resolving the computername in DNS
+        - Ping
+          - Tries pinging the computer. Failure will NOT terminate scans.
+        - SqlConnect
+          - Tries to establish a SQL connection to the server
+          - Uses windows credentials by default
+          - Specify custom credentials using the '-SqlCredential' parameter
+          - This scan is not used by default
+          - Success in this scan guarantees high confidence (See parameter '-MinimumConfidence' for details).
+        - All
+          - All of the above
 
     .PARAMETER IpAddress
         This parameter can be used to override the defaults for the IPRange discovery.
