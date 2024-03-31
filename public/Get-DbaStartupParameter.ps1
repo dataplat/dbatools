@@ -88,13 +88,13 @@ function Get-DbaStartupParameter {
                     if ($traceFlags.length -eq 0) {
                         $traceFlags = "None"
                     } else {
-                        [int[]]$traceFlags = $traceFlags.substring(2)
+                        $traceFlags = [int[]]$traceFlags.substring(2)
                     }
 
                     if ($debugFlags.length -eq 0) {
                         $debugFlags = "None"
                     } else {
-                        [int[]]$debugFlags = $debugFlags.substring(2)
+                        $debugFlags = [int[]]$debugFlags.substring(2)
                     }
 
                     if ($Simple -eq $true) {
