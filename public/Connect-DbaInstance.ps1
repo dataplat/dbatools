@@ -594,6 +594,8 @@ function Connect-DbaInstance {
                 # Test if we have to copy the connection context
                 # Currently only if we have a different Database or have to switch to a NonPooledConnection or using a specific StatementTimeout or using ApplicationIntent
                 # We do not test for SqlCredential as this would change the behavior compared to the legacy code path
+                # Pooled connections are automatically closed, so we need to open the connection to get the ConnectionContext.CurrentDatabase
+                $null = $inputObject.ConnectionContext.ProcessID
                 $copyContext = $false
                 if ($Database -and $inputObject.ConnectionContext.CurrentDatabase -ne $Database) {
                     Write-Message -Level Verbose -Message "Database provided. Does not match ConnectionContext.CurrentDatabase, copying ConnectionContext and setting the CurrentDatabase"
