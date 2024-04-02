@@ -1,7 +1,7 @@
 
 -- SQL Server 2019 Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: November 2, 2023
+-- Last Modified: March 6, 2024
 -- https://glennsqlperformance.com/ 
 -- https://sqlserverperformance.wordpress.com/
 -- YouTube: https://bit.ly/2PkoAM1 
@@ -25,7 +25,7 @@
 
 
 --******************************************************************************
---*   Copyright (C) 2023 Glenn Berry
+--*   Copyright (C) 2024 Glenn Berry
 --*   All rights reserved. 
 --*
 --*
@@ -97,6 +97,8 @@ SELECT @@SERVERNAME AS [Server Name], @@VERSION AS [SQL Server and OS Version In
 -- 15.0.4322.2		CU22								8/14/2023		https://learn.microsoft.com/en-us/troubleshoot/sql/releases/sqlserver-2019/cumulativeupdate22
 -- 15.0.4326.1		CU22 + GDR							10/10/2023		https://support.microsoft.com/en-us/topic/kb5029378-description-of-the-security-update-for-sql-server-2019-cu22-october-10-2023-f4b5c5fb-b4cd-4599-8e5b-2a54dab85a33
 -- 15.0.4335.1		CU23								10/12/2023		https://learn.microsoft.com/en-us/troubleshoot/sql/releases/sqlserver-2019/cumulativeupdate23		
+-- 15.0.4345.5		CU24								12/14/2023		https://learn.microsoft.com/en-us/troubleshoot/sql/releases/sqlserver-2019/cumulativeupdate24	
+-- 15.0.4355.3		CU25								2/15/2024		https://learn.microsoft.com/en-us/troubleshoot/sql/releases/sqlserver-2019/cumulativeupdate25
 
 -- How to determine the version, edition and update level of SQL Server and its components 
 -- https://bit.ly/2oAjKgW	
@@ -329,14 +331,14 @@ sj.notify_email_operator_id, sj.notify_level_email, h.run_status,
 RIGHT(STUFF(STUFF(REPLACE(STR(h.run_duration, 7, 0), ' ', '0'), 4, 0, ':'), 7, 0, ':'),8) AS [Last Duration - HHMMSS],
 CONVERT(DATETIME, RTRIM(h.run_date) + ' ' + STUFF(STUFF(REPLACE(STR(RTRIM(h.run_time),6,0),' ','0'),3,0,':'),6,0,':')) AS [Last Start Date]
 FROM msdb.dbo.sysjobs AS sj WITH (NOLOCK)
-INNER JOIN
+LEFT OUTER JOIN
     (SELECT job_id, instance_id = MAX(instance_id)
      FROM msdb.dbo.sysjobhistory WITH (NOLOCK)
      GROUP BY job_id) AS l
 ON sj.job_id = l.job_id
-INNER JOIN msdb.dbo.syscategories AS sc WITH (NOLOCK)
+LEFT OUTER JOIN msdb.dbo.syscategories AS sc WITH (NOLOCK)
 ON sj.category_id = sc.category_id
-INNER JOIN msdb.dbo.sysjobhistory AS h WITH (NOLOCK)
+LEFT OUTER JOIN msdb.dbo.sysjobhistory AS h WITH (NOLOCK)
 ON h.job_id = l.job_id
 AND h.instance_id = l.instance_id
 ORDER BY CONVERT(INT, h.run_duration) DESC, [Last Start Date] DESC OPTION (RECOMPILE);

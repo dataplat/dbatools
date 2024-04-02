@@ -356,6 +356,9 @@ function Install-DbaInstance {
                         } else {
                             if ($origVal -is [int]) {
                                 $origVal = "$origVal"
+                            } elseif ($origVal -match '[^\\]\\$') {
+                                # In case a value ends with a single backslash, add a second backslash to prevent escaping the following double quotation mark.
+                                $origVal = "$origVal\"
                             }
                             if ($origVal -ne $origVal.Trim('"')) {
                                 $output += "$sectionKey=$origVal"

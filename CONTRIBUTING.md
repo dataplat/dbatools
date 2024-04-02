@@ -74,7 +74,7 @@ We strive to have all of our documentation as accurate as possible so a few area
 
 > **NOTE** Please ensure you have an issue to work on and any discussions on the fix you will implement are done in that issue. This helps keep the background on the change in one place and removes any guesswork.
 
-We have a [step-by-step guide](https://dbatools.io/firstpull) if your new to Github or need a refresh.
+We have a [step-by-step guide](https://dbatools.io/firstpull) if you're new to Github or need a refresh.
 
 [Open a PR](https://github.com/dataplat/dbatools/pulls) targeting ideally just one ps1 file (the PR needs to target the _development_ branch), with the name of the function being fixed as a title. Everyone will chime in reviewing the code and either approve the PR or request changes. The more targeted and focused the PR, the easier to merge, the fastest to go into the next release. Keep them as simple as possible to speed up the process.
 

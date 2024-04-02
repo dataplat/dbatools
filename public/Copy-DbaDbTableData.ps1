@@ -320,7 +320,7 @@ function Copy-DbaDbTableData {
 
             foreach ($destinstance in $Destination) {
                 try {
-                    $destServer = Connect-DbaInstance -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential
+                    $destServer = Connect-DbaInstance -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential -Database $DestinationDatabase
                 } catch {
                     Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
                 }

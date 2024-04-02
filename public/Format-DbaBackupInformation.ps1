@@ -73,7 +73,7 @@ function Format-DbaBackupInformation {
         https://dbatools.io/Format-DbaBackupInformation
 
     .EXAMPLE
-        PS C:\> $History | Format-DbaBackupInformation -ReplaceDatabaseName NewDb
+        PS C:\> $History | Format-DbaBackupInformation -ReplaceDatabaseName NewDb -ReplaceDbNameInFile
 
         Changes as database name references to NewDb, both in the database name and any restore paths. Note, this will fail if the BackupHistory object contains backups for more than 1 database
 

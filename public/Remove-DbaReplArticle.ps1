@@ -136,7 +136,7 @@ function Remove-DbaReplArticle {
                     if (($art.IsExistingObject)) {
                         $art.Remove()
                     } else {
-                        Stop-Function -Message "Article doesn't exist in $PublicationName on $instance" -ErrorRecord $_ -Target $instance -Continue
+                        Stop-Function -Message "Article doesn't exist in $PublicationName on $instance" -Target $instance -Continue
                     }
                     $output.Status = "Removed"
                     $output.IsRemoved = $true

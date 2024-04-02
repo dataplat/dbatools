@@ -221,7 +221,7 @@ function Get-DbaAgentSchedule {
             if ($currentschedule.FrequencyTypes -notin 64, 128) {
 
                 # Check the subday types for minutes or hours i.e.
-                if ($currentschedule.FrequencySubDayInterval -in 0, 1) {
+                if ($currentschedule.FrequencySubDayTypes -in 0, 1) {
                     $description += "at $startTime. "
                 } else {
 

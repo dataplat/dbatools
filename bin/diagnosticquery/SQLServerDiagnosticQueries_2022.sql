@@ -1,7 +1,7 @@
 
 -- SQL Server 2022 Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: November 2, 2023
+-- Last Modified: March 15, 2024
 -- https://glennsqlperformance.com/ 
 -- https://sqlserverperformance.wordpress.com/
 -- YouTube: https://bit.ly/2PkoAM1 
@@ -25,7 +25,7 @@
 
 
 --******************************************************************************
---*   Copyright (C) 2023 Glenn Berry
+--*   Copyright (C) 2024 Glenn Berry
 --*   All rights reserved. 
 --*
 --*
@@ -74,6 +74,10 @@ SELECT @@SERVERNAME AS [Server Name], @@VERSION AS [SQL Server and OS Version In
 -- 16.0.4075.1		CU8									9/14/2023		https://learn.microsoft.com/en-us/troubleshoot/sql/releases/sqlserver-2022/cumulativeupdate8
 -- 16.0.4080.1		CU8 + GDR							10/10/2023		https://support.microsoft.com/en-us/topic/kb5029503-description-of-the-security-update-for-sql-server-2022-cu8-october-10-2023-c9c267e2-adb6-47f1-b7e9-d99d3c9fb081
 -- 16.0.4085.2		CU9									10/12/2023		https://learn.microsoft.com/en-us/troubleshoot/sql/releases/sqlserver-2022/cumulativeupdate9
+-- 16.0.4095.4		CU10								11/16/2023		https://learn.microsoft.com/en-us/troubleshoot/sql/releases/sqlserver-2022/cumulativeupdate10	
+-- 16.0.4100.1		CU10 + GDR							1/9/2024		https://support.microsoft.com/en-us/topic/kb5033592-description-of-the-security-update-for-sql-server-2022-cu10-january-9-2024-0d807f8e-fa6a-4d42-88d3-71b101e71d18
+-- 16.0.4105.2		CU11								1/11/2024		https://learn.microsoft.com/en-us/troubleshoot/sql/releases/sqlserver-2022/cumulativeupdate11
+-- 16.0.4115.5		CU12								3/14/2024		https://learn.microsoft.com/en-us/troubleshoot/sql/releases/sqlserver-2022/cumulativeupdate12
 
 -- What's new in SQL Server 2022 (16.x)
 -- https://bit.ly/3MJEjR1
@@ -326,14 +330,14 @@ sj.notify_email_operator_id, sj.notify_level_email, h.run_status,
 RIGHT(STUFF(STUFF(REPLACE(STR(h.run_duration, 7, 0), ' ', '0'), 4, 0, ':'), 7, 0, ':'),8) AS [Last Duration - HHMMSS],
 CONVERT(DATETIME, RTRIM(h.run_date) + ' ' + STUFF(STUFF(REPLACE(STR(RTRIM(h.run_time),6,0),' ','0'),3,0,':'),6,0,':')) AS [Last Start Date]
 FROM msdb.dbo.sysjobs AS sj WITH (NOLOCK)
-INNER JOIN
+LEFT OUTER JOIN
     (SELECT job_id, instance_id = MAX(instance_id)
      FROM msdb.dbo.sysjobhistory WITH (NOLOCK)
      GROUP BY job_id) AS l
 ON sj.job_id = l.job_id
-INNER JOIN msdb.dbo.syscategories AS sc WITH (NOLOCK)
+LEFT OUTER JOIN msdb.dbo.syscategories AS sc WITH (NOLOCK)
 ON sj.category_id = sc.category_id
-INNER JOIN msdb.dbo.sysjobhistory AS h WITH (NOLOCK)
+LEFT OUTER JOIN msdb.dbo.sysjobhistory AS h WITH (NOLOCK)
 ON h.job_id = l.job_id
 AND h.instance_id = l.instance_id
 ORDER BY CONVERT(INT, h.run_duration) DESC, [Last Start Date] DESC OPTION (RECOMPILE);

@@ -70,7 +70,7 @@ function Select-DbaBackupInformation {
         PS C:\> $Backups = Get-DbaBackupInformation -SqlInstance Server1 -Path \\server1\backups$
         PS C:\> $FilteredBackups = $Backups | Select-DbaBackupInformation -RestoreTime (Get-Date).AddHours(-1) -IgnoreDiffs
 
-        Returns all the backups in \\server1\backups$ to restore to 1 hour ago using only Full and Diff backups.
+        Returns all the backups in \\server1\backups$ to restore to 1 hour ago using only Full and Log backups.
 
     #>
     [CmdletBinding()]

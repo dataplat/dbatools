@@ -344,7 +344,7 @@ function Set-DbaAgentSchedule {
         if ($EndDate -and ($EndDate -notmatch $RegexDate)) {
             Stop-Function -Message "End date $EndDate needs to be a valid date with format yyyyMMdd" -Target $SqlInstance
             return
-        } elseif ($EndDate -lt $StartDate) {
+        } elseif ($EndDate -and ($EndDate -lt $StartDate)) {
             Stop-Function -Message "End date $EndDate cannot be before start date $StartDate" -Target $SqlInstance
             return
         }
