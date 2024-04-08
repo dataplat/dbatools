@@ -79,7 +79,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             Add-DbaDbRoleMember -SqlInstance $script:instance2 -Role db_datawriter -Member $role -Database $dbname -confirm:$false
             $roleDBAfter = Get-DbaDbRoleMember -SqlInstance $server -Database $dbname -Role db_datawriter
 
-            $roleDBAfter.UserName | Should Be $role
+            $roleDBAfter.MemberRole | Should Be $role
         }
     }
 }
