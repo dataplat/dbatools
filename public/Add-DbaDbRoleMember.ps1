@@ -23,7 +23,7 @@ function Add-DbaDbRoleMember {
         The role(s) to process.
 
     .PARAMETER Member
-        The user(s) or role(s) to add to role(s) specified.
+        The member(s) (user or role) to add to the Roles specified.
 
     .PARAMETER InputObject
         Enables piped input from Get-DbaDbRole or Get-DbaDatabase
