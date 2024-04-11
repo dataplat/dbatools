@@ -9,7 +9,9 @@ function Copy-DbaCredential {
         Credit: https://blog.netspi.com/decrypting-mssql-database-link-server-passwords/
 
     .PARAMETER Source
-        Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2000 or higher.
+        Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2005 or higher.
+
+        You must be able to open a dedicated admin connection (DAC) to the source SQL Server.
 
     .PARAMETER SourceSqlCredential
         Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
@@ -19,7 +21,7 @@ function Copy-DbaCredential {
         For MFA support, please use Connect-DbaInstance.
 
     .PARAMETER Destination
-        Destination SQL Server. You must have sysadmin access and the server must be SQL Server 2000 or higher.
+        Destination SQL Server. You must have sysadmin access and the server must be SQL Server 2005 or higher.
 
     .PARAMETER DestinationSqlCredential
         Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
@@ -123,13 +125,8 @@ function Copy-DbaCredential {
         if ($Force) { $ConfirmPreference = 'none' }
 
         try {
-            try {
-                Write-Message -Level Verbose -Message "We will try to use a dedicated admin connection."
-                $sourceServer = Connect-DbaInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential -MinimumVersion 9 -DedicatedAdminConnection -WarningAction SilentlyContinue
-            } catch {
-                Write-Message -Level Verbose -Message "Failed to open a dedicated admin connection. We will fallback to a normal connection."
-                $sourceServer = Connect-DbaInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential -MinimumVersion 9
-            }
+            Write-Message -Level Verbose -Message "We will try to open a dedicated admin connection."
+            $sourceServer = Connect-DbaInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential -MinimumVersion 9 -DedicatedAdminConnection -WarningAction SilentlyContinue
         } catch {
             Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $Source
             return
@@ -234,7 +231,7 @@ function Copy-DbaCredential {
         }
     }
     end {
-        # Disconnect is important because it might be a DAC
+        # Disconnect is important because it is a DAC
         # Disconnect in case of WhatIf, as we opened the connection
         $null = $sourceServer | Disconnect-DbaInstance -WhatIf:$false
     }
