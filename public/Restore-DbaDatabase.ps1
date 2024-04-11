@@ -765,7 +765,7 @@ function Restore-DbaDatabase {
             Write-Message -Message "$DbVerfied passed testing" -Level Verbose
             if ((@($FilteredBackupHistory | Where-Object { $_.IsVerified -eq $True })).count -lt $FilteredBackupHistory.count) {
                 $DbUnVerified = ($FilteredBackupHistory | Where-Object { $_.IsVerified -eq $False } | Sort-Object -Property Database -Unique).Database -join ','
-                Write-Message -Level Warning -Message "Database $DbUnverified failed testing,  skipping"
+                Stop-Function -Message "Database $DbUnverified unable to be restored, see warnings for details"
             }
             If ($PSCmdlet.ParameterSetName -eq "RestorePage") {
                 if (($FilteredBackupHistory.Database | Sort-Object -Unique | Measure-Object).count -ne 1) {
