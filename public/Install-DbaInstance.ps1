@@ -426,7 +426,8 @@ function Install-DbaInstance {
             foreach ($fd in $featureDef) {
                 if (($fd.MinimumVersion -and $canonicVersion -lt [version]$fd.MinimumVersion) -or ($fd.MaximumVersion -and $canonicVersion -gt [version]$fd.MaximumVersion)) {
                     # exclude Default, All, and Tools, as they are expected to have SSMS components in some cases
-                    if ($f -notin 'Default', 'All', 'Tools') {
+                    # exclude MachineLearning, as not all components are needed based on version
+                    if ($f -notin 'Default', 'All', 'Tools', 'MachineLearning') {
                         Stop-Function -Message "Feature $f($($fd.Feature)) is not supported on SQL$Version"
                         return
                     }

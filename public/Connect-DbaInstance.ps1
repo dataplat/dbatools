@@ -950,14 +950,12 @@ function Connect-DbaInstance {
             # But ConnectionContext.IsOpen does not tell the truth if the instance was just shut down
             # And we don't use $server.ConnectionContext.Connect() as this would create a non pooled connection
             # Instead we run a real T-SQL command and just SELECT something to be sure we have a valid connection and let the SMO handle the connection
-            if (-not $DedicatedAdminConnection) {
-                try {
-                    Write-Message -Level Debug -Message "We connect to the instance by running SELECT 'dbatools is opening a new connection'"
-                    $null = $server.ConnectionContext.ExecuteWithResults("SELECT 'dbatools is opening a new connection'")
-                    Write-Message -Level Debug -Message "We have a connected server object"
-                } catch {
-                    Stop-Function -Target $instance -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Continue
-                }
+            try {
+                Write-Message -Level Debug -Message "We connect to the instance by running SELECT 'dbatools is opening a new connection'"
+                $null = $server.ConnectionContext.ExecuteWithResults("SELECT 'dbatools is opening a new connection'")
+                Write-Message -Level Debug -Message "We have a connected server object"
+            } catch {
+                Stop-Function -Target $instance -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Continue
             }
 
             if ($AzureUnsupported -and $server.DatabaseEngineType -eq "SqlAzureDatabase") {
