@@ -595,9 +595,17 @@ function Connect-DbaInstance {
                 # Currently only if we have a different Database or have to switch to a NonPooledConnection or using a specific StatementTimeout or using ApplicationIntent
                 # We do not test for SqlCredential as this would change the behavior compared to the legacy code path
                 $copyContext = $false
-                if ($Database -and $inputObject.ConnectionContext.CurrentDatabase -ne $Database) {
-                    Write-Message -Level Verbose -Message "Database provided. Does not match ConnectionContext.CurrentDatabase, copying ConnectionContext and setting the CurrentDatabase"
-                    $copyContext = $true
+                if ($Database) {
+                    Write-Message -Level Debug -Message "Database [$Database] provided."
+                    if (-not $inputObject.ConnectionContext.CurrentDatabase) {
+                        Write-Message -Level Debug -Message "ConnectionContext.CurrentDatabase is empty, so connection will be opened to get the value"
+                        $inputObject.ConnectionContext.Connect()
+                        Write-Message -Level Debug -Message "ConnectionContext.CurrentDatabase is now [$($inputObject.ConnectionContext.CurrentDatabase)]"
+                    }
+                    if ($inputObject.ConnectionContext.CurrentDatabase -ne $Database) {
+                        Write-Message -Level Verbose -Message "Database [$Database] provided. Does not match ConnectionContext.CurrentDatabase [$($inputObject.ConnectionContext.CurrentDatabase)], copying ConnectionContext and setting the CurrentDatabase"
+                        $copyContext = $true
+                    }
                 }
                 if ($ApplicationIntent -and $inputObject.ConnectionContext.ApplicationIntent -ne $ApplicationIntent) {
                     Write-Message -Level Verbose -Message "ApplicationIntent provided. Does not match ConnectionContext.ApplicationIntent, copying ConnectionContext and setting the ApplicationIntent"
