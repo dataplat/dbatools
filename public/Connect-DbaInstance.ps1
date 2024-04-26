@@ -595,9 +595,17 @@ function Connect-DbaInstance {
                 # Currently only if we have a different Database or have to switch to a NonPooledConnection or using a specific StatementTimeout or using ApplicationIntent
                 # We do not test for SqlCredential as this would change the behavior compared to the legacy code path
                 $copyContext = $false
-                if ($Database -and $inputObject.ConnectionContext.CurrentDatabase -ne $Database) {
-                    Write-Message -Level Verbose -Message "Database provided. Does not match ConnectionContext.CurrentDatabase, copying ConnectionContext and setting the CurrentDatabase"
-                    $copyContext = $true
+                if ($Database) {
+                    Write-Message -Level Debug -Message "Database [$Database] provided."
+                    if (-not $inputObject.ConnectionContext.CurrentDatabase) {
+                        Write-Message -Level Debug -Message "ConnectionContext.CurrentDatabase is empty, so connection will be opened to get the value"
+                        $inputObject.ConnectionContext.Connect()
+                        Write-Message -Level Debug -Message "ConnectionContext.CurrentDatabase is now [$($inputObject.ConnectionContext.CurrentDatabase)]"
+                    }
+                    if ($inputObject.ConnectionContext.CurrentDatabase -ne $Database) {
+                        Write-Message -Level Verbose -Message "Database [$Database] provided. Does not match ConnectionContext.CurrentDatabase [$($inputObject.ConnectionContext.CurrentDatabase)], copying ConnectionContext and setting the CurrentDatabase"
+                        $copyContext = $true
+                    }
                 }
                 if ($ApplicationIntent -and $inputObject.ConnectionContext.ApplicationIntent -ne $ApplicationIntent) {
                     Write-Message -Level Verbose -Message "ApplicationIntent provided. Does not match ConnectionContext.ApplicationIntent, copying ConnectionContext and setting the ApplicationIntent"
@@ -948,14 +956,12 @@ function Connect-DbaInstance {
             # But ConnectionContext.IsOpen does not tell the truth if the instance was just shut down
             # And we don't use $server.ConnectionContext.Connect() as this would create a non pooled connection
             # Instead we run a real T-SQL command and just SELECT something to be sure we have a valid connection and let the SMO handle the connection
-            if (-not $DedicatedAdminConnection) {
-                try {
-                    Write-Message -Level Debug -Message "We connect to the instance by running SELECT 'dbatools is opening a new connection'"
-                    $null = $server.ConnectionContext.ExecuteWithResults("SELECT 'dbatools is opening a new connection'")
-                    Write-Message -Level Debug -Message "We have a connected server object"
-                } catch {
-                    Stop-Function -Target $instance -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Continue
-                }
+            try {
+                Write-Message -Level Debug -Message "We connect to the instance by running SELECT 'dbatools is opening a new connection'"
+                $null = $server.ConnectionContext.ExecuteWithResults("SELECT 'dbatools is opening a new connection'")
+                Write-Message -Level Debug -Message "We have a connected server object"
+            } catch {
+                Stop-Function -Target $instance -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Continue
             }
 
             if ($AzureUnsupported -and $server.DatabaseEngineType -eq "SqlAzureDatabase") {

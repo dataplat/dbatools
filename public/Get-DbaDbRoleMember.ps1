@@ -160,23 +160,40 @@ function Get-DbaDbRoleMember {
 
                 $members = $dbRole.EnumMembers()
                 foreach ($member in $members) {
-                    $user = $db.Users | Where-Object { $_.Name -eq $member }
+                    $memberUser = $db.Users | Where-Object { $_.Name -eq $member }
+                    $memberRole = $db.Roles | Where-Object { $_.Name -eq $member }
 
                     if (Test-Bound -Not -ParameterName 'IncludeSystemUser') {
-                        $user = $user | Where-Object { $_.IsSystemObject -eq $false }
+                        $memberUser = $memberUser | Where-Object { $_.IsSystemObject -eq $false }
                     }
 
-                    if ($user) {
+                    if ($memberUser) {
                         [PSCustomObject]@{
-                            ComputerName = $server.ComputerName
-                            InstanceName = $server.ServiceName
-                            SqlInstance  = $server.DomainInstanceName
-                            Database     = $db.Name
-                            Role         = $dbRole.Name
-                            UserName     = $user.Name
-                            Login        = $user.Login
-                            SmoRole      = $dbRole
-                            SmoUser      = $user
+                            ComputerName  = $server.ComputerName
+                            InstanceName  = $server.ServiceName
+                            SqlInstance   = $server.DomainInstanceName
+                            Database      = $db.Name
+                            Role          = $dbRole.Name
+                            UserName      = $memberUser.Name
+                            Login         = $memberUser.Login
+                            MemberRole    = $null
+                            SmoRole       = $dbRole
+                            SmoUser       = $memberUser
+                            SmoMemberRole = $null
+                        }
+                    } elseif ($memberRole) {
+                        [PSCustomObject]@{
+                            ComputerName  = $server.ComputerName
+                            InstanceName  = $server.ServiceName
+                            SqlInstance   = $server.DomainInstanceName
+                            Database      = $db.Name
+                            Role          = $dbRole.Name
+                            UserName      = $null
+                            Login         = $memberUser.Login
+                            MemberRole    = $memberRole.Name
+                            SmoRole       = $dbRole
+                            SmoUser       = $null
+                            SmoMemberRole = $memberRole
                         }
                     }
                 }

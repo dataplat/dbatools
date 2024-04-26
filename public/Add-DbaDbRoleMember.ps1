@@ -22,8 +22,8 @@ function Add-DbaDbRoleMember {
     .PARAMETER Role
         The role(s) to process.
 
-    .PARAMETER User
-        The user(s) to add to role(s) specified.
+    .PARAMETER Member
+        The member(s) (user or role) to add to the Roles specified.
 
     .PARAMETER InputObject
         Enables piped input from Get-DbaDbRole or Get-DbaDatabase
@@ -51,29 +51,29 @@ function Add-DbaDbRoleMember {
         https://dbatools.io/Add-DbaDbRoleMember
 
     .EXAMPLE
-        PS C:\> Add-DbaDbRoleMember -SqlInstance localhost -Database mydb -Role db_owner -User user1
+        PS C:\> Add-DbaDbRoleMember -SqlInstance localhost -Database mydb -Role db_owner -Member user1
 
         Adds user1 to the role db_owner in the database mydb on the local default SQL Server instance
 
     .EXAMPLE
-        PS C:\> Add-DbaDbRoleMember -SqlInstance localhost, sql2016 -Role SqlAgentOperatorRole -User user1 -Database msdb
+        PS C:\> Add-DbaDbRoleMember -SqlInstance localhost, sql2016 -Role SqlAgentOperatorRole -Member user1 -Database msdb
 
         Adds user1 in servers localhost and sql2016 in the msdb database to the SqlAgentOperatorRole
 
     .EXAMPLE
         PS C:\> $servers = Get-Content C:\servers.txt
-        PS C:\> $servers | Add-DbaDbRoleMember -Role SqlAgentOperatorRole -User user1 -Database msdb
+        PS C:\> $servers | Add-DbaDbRoleMember -Role SqlAgentOperatorRole -Member user1 -Database msdb
 
         Adds user1 to the SqlAgentOperatorROle in the msdb database in every server in C:\servers.txt
 
     .EXAMPLE
-        PS C:\> Add-DbaDbRoleMember -SqlInstance localhost -Role "db_datareader","db_datawriter" -User user1 -Database DEMODB
+        PS C:\> Add-DbaDbRoleMember -SqlInstance localhost -Role "db_datareader","db_datawriter" -Member user1 -Database DEMODB
 
         Adds user1 in the database DEMODB on the server localhost to the roles db_datareader and db_datawriter
 
    .EXAMPLE
         PS C:\> $roles = Get-DbaDbRole -SqlInstance localhost -Role "db_datareader","db_datawriter" -Database DEMODB
-        PS C:\> $roles | Add-DbaDbRoleMember -User user1
+        PS C:\> $roles | Add-DbaDbRoleMember -Member user1
 
         Adds user1 in the database DEMODB on the server localhost to the roles db_datareader and db_datawriter
 
@@ -86,7 +86,8 @@ function Add-DbaDbRoleMember {
         [string[]]$Database,
         [string[]]$Role,
         [parameter(Mandatory)]
-        [string[]]$User,
+        [Alias("User")]
+        [string[]]$Member,
         [parameter(ValueFromPipeline)]
         [object[]]$InputObject,
         [switch]$EnableException
@@ -139,16 +140,23 @@ function Add-DbaDbRoleMember {
 
                 $members = $dbRole.EnumMembers()
 
-                foreach ($username in $User) {
-                    if ($db.Users.Name -contains $username) {
-                        if ($members -notcontains $username) {
-                            if ($PSCmdlet.ShouldProcess($instance, "Adding User $username to role: $dbRole in database $db")) {
-                                Write-Message -Level 'Verbose' -Message "Adding User $username to role: $dbRole in database $db on $instance"
-                                $dbRole.AddMember($username)
+                foreach ($newMember in $Member) {
+                    if ($db.Users.Name -contains $newMember) {
+                        if ($members -notcontains $newMember) {
+                            if ($PSCmdlet.ShouldProcess($instance, "Adding user $newMember to role: $dbRole in database $db")) {
+                                Write-Message -Level 'Verbose' -Message "Adding user $newMember to role: $dbRole in database $db on $instance"
+                                $dbRole.AddMember($newMember)
+                            }
+                        }
+                    } elseif ($db.Roles.Name -contains $newMember) {
+                        if ($members -notcontains $newMember) {
+                            if ($PSCmdlet.ShouldProcess($instance, "Adding role $newMember to role: $dbRole in database $db")) {
+                                Write-Message -Level 'Verbose' -Message "Adding role $newMember to role: $dbRole in database $db on $instance"
+                                $dbRole.AddMember($newMember)
                             }
                         }
                     } else {
-                        Write-Message -Level 'Warning' -Message "User $username does not exist in $db on $instance"
+                        Write-Message -Level 'Warning' -Message "User or role $newMember does not exist in $db on $instance"
                     }
                 }
             }

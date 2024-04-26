@@ -71,7 +71,7 @@ function Set-DbaTcpPort {
         [PSCredential]$Credential,
         [parameter(Mandatory)]
         [ValidateRange(1, 65535)]
-        [int]$Port,
+        [int[]]$Port,
         [IpAddress[]]$IpAddress,
         [switch]$Force,
         [switch]$EnableException
@@ -95,7 +95,7 @@ function Set-DbaTcpPort {
             $computerFullName = $instance.ComputerName
             $instanceName = $instance.InstanceName
             if (-not $IpAddress) {
-                if ($Pscmdlet.ShouldProcess($instance, "Setting port to $Port for IPAll of $instance")) {
+                if ($Pscmdlet.ShouldProcess($instance, "Setting port to $($Port -join ',') for IPAll of $instance")) {
                     Set-DbaNetworkConfiguration -SqlInstance $instance -Credential $Credential -StaticPortForIPAll $Port -EnableException:$EnableException -Confirm:$false
                 }
             } else {
@@ -113,13 +113,13 @@ function Set-DbaTcpPort {
                     if ($ipConf) {
                         $ipConf.Enabled = $true
                         $ipConf.TcpDynamicPorts = ''
-                        $ipConf.TcpPort = "$Port"  # change if [int[]]: $Port -join ','
+                        $ipConf.TcpPort = $Port -join ','
                     } else {
                         Write-Message -Level Warning -Message "IP address $ip not found, skipping."
                     }
                 }
 
-                if ($Pscmdlet.ShouldProcess($instance, "Setting port to $Port for IP address $IpAddress of $instance")) {
+                if ($Pscmdlet.ShouldProcess($instance, "Setting port to $($Port -join ',') for IP address $IpAddress of $instance")) {
                     $netConf | Set-DbaNetworkConfiguration -Credential $Credential -EnableException:$EnableException -Confirm:$false
                 }
 
