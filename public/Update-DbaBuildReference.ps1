@@ -11,17 +11,6 @@ function Update-DbaBuildReference {
     .PARAMETER LocalFile
         Specifies the path to a local file to install from instead of downloading from Github.
 
-    .PARAMETER Proxy
-        Specifies the URI for the proxy to be used. By default, a connection without a proxy is made. If it fails, a retry using default proxy
-        settings is made.
-
-    .PARAMETER ProxyCredential
-        Specifies Credential for the proxy, when parameter "Proxy" is supplied. Only required if the proxy needs authentication.
-
-    .PARAMETER ProxyUseDefaultCredentials
-        Uses the credentials of the current user to access the proxy server. Requires Proxy parameter to be supplied.
-        ProxyCredential and ProxyUseDefaultCredentials can't be used at the same time.
-
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -29,7 +18,7 @@ function Update-DbaBuildReference {
 
     .NOTES
         Tags: Utility, SqlBuild
-        Author: Simone Bizzotto (@niphlod) | Friedrich Weinmann (@FredWeinmann)
+        Author: Simone Bizzotto (@niphold) | Friedrich Weinmann (@FredWeinmann)
 
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
@@ -44,11 +33,6 @@ function Update-DbaBuildReference {
         Looks online if there is a newer version of the build reference
 
     .EXAMPLE
-        PS C:\> Update-DbaBuildReference -Proxy $ProxyURI -ProxyCredential $ProxyCred
-
-        Looks online if there is a newer version of the build reference using the proxy supplied.
-
-    .EXAMPLE
         PS C:\> Update-DbaBuildReference -LocalFile \\fileserver\Software\dbatools\dbatools-buildref-index.json
 
         Uses the given file instead of downloading the file to update the build reference
@@ -58,15 +42,7 @@ function Update-DbaBuildReference {
     [CmdletBinding(DefaultParameterSetName = 'Build')]
     param (
         [string]$LocalFile,
-        [switch]$EnableException,
-        [Parameter(ParameterSetName = 'Build')]
-        [Parameter(Mandatory, ParameterSetName = 'Proxy')]
-        [Parameter(ParameterSetName = 'ProxyDefaultCredential')]
-        [URI]$Proxy,
-        [Parameter(ParameterSetName = 'Proxy')]
-        [PSCredential]$ProxyCredential,
-        [Parameter(ParameterSetName = 'ProxyDefaultCredential')]
-        [switch]$ProxyUseDefaultCredentials
+        [switch]$EnableException
     )
 
     begin {
@@ -74,38 +50,31 @@ function Update-DbaBuildReference {
             [CmdletBinding()]
             param (
                 [bool]
-                $EnableException,
-                [URI]
-                $Proxy,
-                [PSCredential]
-                $ProxyCredential,
-                [switch]
-                $ProxyUseDefaultCredentials
+                $EnableException
             )
             $url = Get-DbatoolsConfigValue -Name 'assets.sqlbuildreference'
-            $webRequestParams = @{
-                Uri             = $url
-                UseBasicParsing = $true
+            $proxyUrl = Get-DbatoolsConfigValue -FullName network.proxy.url
+            $proxyUsername = Get-DbatoolsConfigValue -FullName network.proxy.username
+            $proxySecurePassword = Get-DbatoolsConfigValue -FullName network.proxy.securepassword
+            if ($proxyUsername) {
+                $proxyCredential = New-Object System.Management.Automation.PSCredential ($proxyUsername, $proxySecurePassword)
             }
-            if ($Proxy) {
-                $webRequestParams['Proxy'] = $Proxy
-            }
-            if ($ProxyCredential) {
-                $webRequestParams['ProxyCredential'] = $ProxyCredential
-            }
-            if ($ProxyUseDefaultCredentials) {
-                $webRequestParams['ProxyUseDefaultCredentials'] = $ProxyUseDefaultCredentials
-            }
+
             try {
-                $webContent = Invoke-TlsWebRequest @webRequestParams -ErrorAction Stop
+                $webContent = Invoke-TlsWebRequest $url -UseBasicParsing -ErrorAction Stop
             } catch {
                 try {
-                    Write-Message -Level Verbose -Message "Probably using a proxy for internet access, trying default proxy settings"
-                    (New-Object System.Net.WebClient).Proxy.Credentials = [System.Net.CredentialCache]::DefaultNetworkCredentials
-                    $webContent = Invoke-TlsWebRequest $url -UseBasicParsing -ErrorAction Stop
+                    Write-Message -Level Verbose -Message "Probably using a proxy for internet access, trying dbatools proxy settings"
+                    $webContent = Invoke-TlsWebRequest $url -Proxy:$proxyUrl -ProxyCredential:$proxyCredential -UseBasicParsing -ErrorAction Stop
                 } catch {
-                    Write-Message -Level Warning -Message "Couldn't download updated index from $url"
-                    return
+                    try {
+                        Write-Message -Level Verbose -Message "Probably using a proxy for internet access, trying default proxy settings"
+                        (New-Object System.Net.WebClient).Proxy.Credentials = [System.Net.CredentialCache]::DefaultNetworkCredentials
+                        $webContent = Invoke-TlsWebRequest $url -UseBasicParsing -ErrorAction Stop
+                    } catch {
+                        Write-Message -Level Warning -Message "Couldn't download updated index from $url"
+                        return
+                    }
                 }
             }
             return $webContent.Content
@@ -156,7 +125,7 @@ function Update-DbaBuildReference {
                 Stop-Function -Message "Unable to read content from $LocalFile"
             }
         } else {
-            $newContent = Get-DbaBuildReferenceIndexOnline -Proxy:$Proxy -ProxyCredential:$ProxyCredential -ProxyUseDefaultCredentials:$ProxyUseDefaultCredentials -EnableException $EnableException
+            $newContent = Get-DbaBuildReferenceIndexOnline -EnableException $EnableException
         }
 
         # If new data was sucessful read, compare LastUpdated and copy if newer
@@ -167,5 +136,6 @@ function Update-DbaBuildReference {
                 $newContent | Out-File $writable_idxfile -Encoding utf8 -ErrorAction Stop
             }
         }
+
     }
 }
