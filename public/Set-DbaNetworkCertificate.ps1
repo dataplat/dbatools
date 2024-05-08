@@ -168,7 +168,11 @@ function Set-DbaNetworkCertificate {
 
                 if ($null -ne $cert.PrivateKey) {
                     $keyPath = $env:ProgramData + "\Microsoft\Crypto\RSA\MachineKeys\"
-                    $keyName = $cert.PrivateKey.CspKeyContainerInfo.UniqueKeyContainerName
+                    $keyName = switch ($PSEdition) {
+                        Core { $cert.PrivateKey.Key.UniqueName }
+                        Desktop { $cert.PrivateKey.CspKeyContainerInfo.UniqueKeyContainerName }
+                        default { $cert.PrivateKey.CspKeyContainerInfo.UniqueKeyContainerName }
+                    }
                     $keyFullPath = $keyPath + $keyName
                 } else {
                     $keyPath = $env:ProgramData + '\Microsoft\Crypto\Keys\'
