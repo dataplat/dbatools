@@ -171,7 +171,7 @@ function Set-DbaNetworkCertificate {
                     $keyName = switch ($PSEdition) {
                         Core { $cert.PrivateKey.Key.UniqueName }
                         Desktop { $cert.PrivateKey.CspKeyContainerInfo.UniqueKeyContainerName }
-                        default { $cert.PrivateKey.CspKeyContainerInfo.UniqueKeyContainerName }
+                        default { $cert.PrivateKey.CspKeyContainerInfo.UniqueKeyContainerName }  # for PowerShell v3 and earlier which does not return $PSEdition
                     }
                     $keyFullPath = $keyPath + $keyName
                 } else {
