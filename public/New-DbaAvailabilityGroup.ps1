@@ -1,4 +1,4 @@
-function New-DbaAvailabilityGroup {
+﻿function New-DbaAvailabilityGroup {
     <#
     .SYNOPSIS
         Automates the creation of availability groups.
@@ -55,6 +55,12 @@ function New-DbaAvailabilityGroup {
 
     .PARAMETER Name
         The name of the Availability Group.
+
+    .PARAMETER IsContained
+        Builds the Availability Group as contained. Only supported in SQL Server 2022 or higher.
+
+    .PARAMETER ResuseSystemDatabases
+        Used when rebuilding a cluster where system databases already exist for the contained availability group. 
 
     .PARAMETER DtcSupport
         Indicates whether the DtcSupport is enabled
@@ -220,6 +226,11 @@ function New-DbaAvailabilityGroup {
         Creates a basic availability group named BAG1 on sql2016std and does not confirm when setting up
 
     .EXAMPLE
+        PS C:\> New-DbaAvailabilityGroup -Primary sql2022n01 -Secondary sql2022n02 -Name AgContained -IsContained  
+
+        Creates a contained availability group named AgContained on sql2022
+
+    .EXAMPLE
         PS C:\> New-DbaAvailabilityGroup -Primary sql2016b -Name AG1 -Dhcp -Database db1 -UseLastBackup
 
         Creates an availability group on sql2016b with the name ag1. Uses the last backups available to add the database db1 to the AG.
@@ -268,6 +279,8 @@ function New-DbaAvailabilityGroup {
 
         [parameter(Mandatory)]
         [string]$Name,
+        [switch]$IsContained,
+        [switch]$ReuseSystemDatabases,
         [switch]$DtcSupport,
         [ValidateSet('Wsfc', 'External', 'None')]
         [string]$ClusterType = (Get-DbatoolsConfigValue -FullName 'AvailabilityGroups.Default.ClusterType' -Fallback 'Wsfc'),
@@ -364,6 +377,14 @@ function New-DbaAvailabilityGroup {
         if ($Basic -and $server.VersionMajor -lt 13) {
             Stop-Function -Message "Basic availability groups are only supported in SQL Server 2016 and above" -Target $Primary
             return
+        }
+        
+        if ($IsContained -and $server.VersionMajor -lt 16) {
+           Stop-Function -Level Warning -Message "Contained availability groups are only supported in SQL Server 2022 and above"
+        }
+
+        if ($ReuseSystemDatabases -and $IsContained -eq $false) {
+           Write-Message -Level Warning -Message "Reuse system databases is only applicable in contained availability groups test "
         }
 
         Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Checking requirements"
@@ -488,6 +509,8 @@ function New-DbaAvailabilityGroup {
                 $ag.AutomatedBackupPreference = [Microsoft.SqlServer.Management.Smo.AvailabilityGroupAutomatedBackupPreference]::$AutomatedBackupPreference
                 $ag.FailureConditionLevel = [Microsoft.SqlServer.Management.Smo.AvailabilityGroupFailureConditionLevel]::$FailureConditionLevel
                 $ag.HealthCheckTimeout = $HealthCheckTimeout
+                $ag.IsContained = $IsContained
+                $ag.ReuseSystemDatabases = $ReuseSystemDatabases
 
                 if ($server.VersionMajor -ge 13) {
                     $ag.BasicAvailabilityGroup = $Basic
