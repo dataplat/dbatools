@@ -59,8 +59,10 @@
     .PARAMETER IsContained
         Builds the Availability Group as contained. Only supported in SQL Server 2022 or higher.
 
+        https://learn.microsoft.com/en-us/sql/database-engine/availability-groups/windows/contained-availability-groups-overview?view=sql-server-ver16
+
     .PARAMETER ResuseSystemDatabases
-        Used when rebuilding a cluster where system databases already exist for the contained availability group. 
+        Used when rebuilding a cluster where system databases already exist for the contained availability group.
 
     .PARAMETER DtcSupport
         Indicates whether the DtcSupport is enabled
@@ -226,7 +228,7 @@
         Creates a basic availability group named BAG1 on sql2016std and does not confirm when setting up
 
     .EXAMPLE
-        PS C:\> New-DbaAvailabilityGroup -Primary sql2022n01 -Secondary sql2022n02 -Name AgContained -IsContained  
+        PS C:\> New-DbaAvailabilityGroup -Primary sql2022n01 -Secondary sql2022n02 -Name AgContained -IsContained
 
         Creates a contained availability group named AgContained on sql2022
 
@@ -378,7 +380,7 @@
             Stop-Function -Message "Basic availability groups are only supported in SQL Server 2016 and above" -Target $Primary
             return
         }
-        
+
         if ($IsContained -and $server.VersionMajor -lt 16) {
            Stop-Function -Level Warning -Message "Contained availability groups are only supported in SQL Server 2022 and above"
         }
@@ -509,7 +511,6 @@
                 $ag.AutomatedBackupPreference = [Microsoft.SqlServer.Management.Smo.AvailabilityGroupAutomatedBackupPreference]::$AutomatedBackupPreference
                 $ag.FailureConditionLevel = [Microsoft.SqlServer.Management.Smo.AvailabilityGroupFailureConditionLevel]::$FailureConditionLevel
                 $ag.HealthCheckTimeout = $HealthCheckTimeout
-                $ag.IsContained = $IsContained
                 $ag.ReuseSystemDatabases = $ReuseSystemDatabases
 
                 if ($server.VersionMajor -ge 13) {
@@ -520,6 +521,10 @@
 
                 if ($server.VersionMajor -ge 14) {
                     $ag.ClusterType = $ClusterType
+                }
+
+                if ($server.VersionMajor -ge 16) {
+                    $ag.IsContained = $IsContained
                 }
 
                 if ($PassThru) {
