@@ -61,7 +61,7 @@
 
         https://learn.microsoft.com/en-us/sql/database-engine/availability-groups/windows/contained-availability-groups-overview?view=sql-server-ver16
 
-    .PARAMETER ResuseSystemDatabases
+    .PARAMETER ReuseSystemDatabases
         Used when rebuilding a cluster where system databases already exist for the contained availability group.
 
     .PARAMETER DtcSupport
