@@ -54,6 +54,9 @@ function Backup-DbaDatabase {
             timestamp - will be replaced with the timestamp (either the default, or the format provided)
             backuptype - will be replaced with Full, Log or Differential as appropriate
 
+    .PARAMETER NoAppendDbNameInPath
+        A switch that will prevent to systematically appended dbname to the path when creating the backup file path
+
     .PARAMETER CopyOnly
         If this switch is enabled, CopyOnly backups will be taken. By default function performs a normal backup, these backups interfere with the restore chain of the database. CopyOnly backups will not interfere with the restore chain of the database.
 
@@ -217,6 +220,7 @@ function Backup-DbaDatabase {
         [string]$FilePath,
         [switch]$IncrementPrefix,
         [switch]$ReplaceInName,
+        [switch]$NoAppendDbNameInPath,
         [switch]$CopyOnly,
         [ValidateSet('Full', 'Log', 'Differential', 'Diff', 'Database')]
         [string]$Type = 'Database',
@@ -661,7 +665,11 @@ function Backup-DbaDatabase {
                 for ($i = 0; $i -lt $FinalBackupPath.Count; $i++) {
                     $parent = [IO.Path]::GetDirectoryName($FinalBackupPath[$i])
                     $leaf = [IO.Path]::GetFileName($FinalBackupPath[$i])
+                    if ($NoAppendDbNameInPath) {
+                        $FinalBackupPath[$i] = [IO.Path]::Combine($parent, $leaf)
+                    } else {
                     $FinalBackupPath[$i] = [IO.Path]::Combine($parent, $dbName, $leaf)
+                    }
                 }
             }
 
