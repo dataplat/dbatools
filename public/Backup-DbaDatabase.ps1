@@ -668,7 +668,7 @@ function Backup-DbaDatabase {
                     if ($NoAppendDbNameInPath) {
                         $FinalBackupPath[$i] = [IO.Path]::Combine($parent, $leaf)
                     } else {
-                    $FinalBackupPath[$i] = [IO.Path]::Combine($parent, $dbName, $leaf)
+                        $FinalBackupPath[$i] = [IO.Path]::Combine($parent, $dbName, $leaf)
                     }
                 }
             }
