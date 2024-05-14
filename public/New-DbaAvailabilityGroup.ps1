@@ -59,7 +59,7 @@
     .PARAMETER IsContained
         Builds the Availability Group as contained. Only supported in SQL Server 2022 or higher.
 
-        https://learn.microsoft.com/en-us/sql/database-engine/availability-groups/windows/contained-availability-groups-overview?view=sql-server-ver16
+        https://learn.microsoft.com/en-us/sql/database-engine/availability-groups/windows/contained-availability-groups-overview
 
     .PARAMETER ReuseSystemDatabases
         Used when rebuilding a cluster where system databases already exist for the contained availability group.
