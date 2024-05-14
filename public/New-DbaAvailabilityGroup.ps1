@@ -230,7 +230,7 @@
     .EXAMPLE
         PS C:\> New-DbaAvailabilityGroup -Primary sql2022n01 -Secondary sql2022n02 -Name AgContained -IsContained
 
-        Creates a contained availability group named AgContained on sql2022
+        Creates a contained availability group named AgContained on nodes sql2022n01 and sql2022n02
 
     .EXAMPLE
         PS C:\> New-DbaAvailabilityGroup -Primary sql2016b -Name AG1 -Dhcp -Database db1 -UseLastBackup
