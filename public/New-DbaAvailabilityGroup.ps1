@@ -62,7 +62,7 @@
         https://learn.microsoft.com/en-us/sql/database-engine/availability-groups/windows/contained-availability-groups-overview
 
     .PARAMETER ReuseSystemDatabases
-        Used when rebuilding a cluster where system databases already exist for the contained availability group.
+        Used when rebuilding an availability group with the same name, where system databases already exist for the contained availability group.
 
     .PARAMETER DtcSupport
         Indicates whether the DtcSupport is enabled
