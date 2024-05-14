@@ -386,7 +386,7 @@
         }
 
         if ($ReuseSystemDatabases -and $IsContained -eq $false) {
-           Write-Message -Level Warning -Message "Reuse system databases is only applicable in contained availability groups test "
+           Write-Message -Level Warning -Message "Reuse system databases is only applicable in contained availability groups"
         }
 
         Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Checking requirements"
