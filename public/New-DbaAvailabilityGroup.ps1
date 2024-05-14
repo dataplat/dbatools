@@ -511,7 +511,6 @@
                 $ag.AutomatedBackupPreference = [Microsoft.SqlServer.Management.Smo.AvailabilityGroupAutomatedBackupPreference]::$AutomatedBackupPreference
                 $ag.FailureConditionLevel = [Microsoft.SqlServer.Management.Smo.AvailabilityGroupFailureConditionLevel]::$FailureConditionLevel
                 $ag.HealthCheckTimeout = $HealthCheckTimeout
-                $ag.ReuseSystemDatabases = $ReuseSystemDatabases
 
                 if ($server.VersionMajor -ge 13) {
                     $ag.BasicAvailabilityGroup = $Basic
@@ -525,6 +524,7 @@
 
                 if ($server.VersionMajor -ge 16) {
                     $ag.IsContained = $IsContained
+                    $ag.ReuseSystemDatabases = $ReuseSystemDatabases
                 }
 
                 if ($PassThru) {
