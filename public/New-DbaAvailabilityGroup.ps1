@@ -59,10 +59,10 @@
     .PARAMETER IsContained
         Builds the Availability Group as contained. Only supported in SQL Server 2022 or higher.
 
-        https://learn.microsoft.com/en-us/sql/database-engine/availability-groups/windows/contained-availability-groups-overview?view=sql-server-ver16
+        https://learn.microsoft.com/en-us/sql/database-engine/availability-groups/windows/contained-availability-groups-overview
 
     .PARAMETER ReuseSystemDatabases
-        Used when rebuilding a cluster where system databases already exist for the contained availability group.
+        Used when rebuilding an availability group with the same name, where system databases already exist for the contained availability group.
 
     .PARAMETER DtcSupport
         Indicates whether the DtcSupport is enabled
@@ -230,7 +230,7 @@
     .EXAMPLE
         PS C:\> New-DbaAvailabilityGroup -Primary sql2022n01 -Secondary sql2022n02 -Name AgContained -IsContained
 
-        Creates a contained availability group named AgContained on sql2022
+        Creates a contained availability group named AgContained on nodes sql2022n01 and sql2022n02
 
     .EXAMPLE
         PS C:\> New-DbaAvailabilityGroup -Primary sql2016b -Name AG1 -Dhcp -Database db1 -UseLastBackup
@@ -386,7 +386,7 @@
         }
 
         if ($ReuseSystemDatabases -and $IsContained -eq $false) {
-           Write-Message -Level Warning -Message "Reuse system databases is only applicable in contained availability groups test "
+           Write-Message -Level Warning -Message "Reuse system databases is only applicable in contained availability groups"
         }
 
         Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Checking requirements"
@@ -511,7 +511,6 @@
                 $ag.AutomatedBackupPreference = [Microsoft.SqlServer.Management.Smo.AvailabilityGroupAutomatedBackupPreference]::$AutomatedBackupPreference
                 $ag.FailureConditionLevel = [Microsoft.SqlServer.Management.Smo.AvailabilityGroupFailureConditionLevel]::$FailureConditionLevel
                 $ag.HealthCheckTimeout = $HealthCheckTimeout
-                $ag.ReuseSystemDatabases = $ReuseSystemDatabases
 
                 if ($server.VersionMajor -ge 13) {
                     $ag.BasicAvailabilityGroup = $Basic
@@ -525,6 +524,7 @@
 
                 if ($server.VersionMajor -ge 16) {
                     $ag.IsContained = $IsContained
+                    $ag.ReuseSystemDatabases = $ReuseSystemDatabases
                 }
 
                 if ($PassThru) {
