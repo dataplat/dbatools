@@ -382,12 +382,12 @@
         }
 
         if ($IsContained -and $server.VersionMajor -lt 16) {
-           Stop-Function -Level Warning -Message "Contained availability groups are only supported in SQL Server 2022 and above"
+           Stop-Function -Message "Contained availability groups are only supported in SQL Server 2022 and above" -Target $Primary
            return
         }
 
         if ($ReuseSystemDatabases -and $IsContained -eq $false) {
-           Stop-Function -Level Warning -Message "Reuse system databases is only applicable in contained availability groups"
+           Stop-Function -Message "Reuse system databases is only applicable in contained availability groups" -Target $Primary
            return
         }
 
