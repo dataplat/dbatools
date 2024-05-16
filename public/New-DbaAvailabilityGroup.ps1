@@ -1,4 +1,4 @@
-﻿function New-DbaAvailabilityGroup {
+function New-DbaAvailabilityGroup {
     <#
     .SYNOPSIS
         Automates the creation of availability groups.
@@ -382,13 +382,13 @@
         }
 
         if ($IsContained -and $server.VersionMajor -lt 16) {
-           Stop-Function -Level Warning -Message "Contained availability groups are only supported in SQL Server 2022 and above"
-           return
+            Stop-Function -Message "Contained availability groups are only supported in SQL Server 2022 and above" -Target $Primary
+            return
         }
 
         if ($ReuseSystemDatabases -and $IsContained -eq $false) {
-           Stop-Function -Level Warning -Message "Reuse system databases is only applicable in contained availability groups"
-           return
+            Stop-Function -Message "Reuse system databases is only applicable in contained availability groups" -Target $Primary
+            return
         }
 
         Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Checking requirements"
