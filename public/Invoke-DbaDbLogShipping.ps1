@@ -928,20 +928,20 @@ function Invoke-DbaDbLogShipping {
                                     if (-not $IsDestinationLocal -and $DestinationCredential) {
                                         Invoke-Command2 -ComputerName $DestinationServerName -Credential $DestinationCredential -ScriptBlock {
                                             Write-Message -Message "Creating copy destination folder $CopyDestinationFolder" -Level Verbose
-                                            New-Item -Path $CopyDestinationFolder -ItemType Directory -Credential $DestinationCredential -Force:$Force | Out-Null
+                                            $null = New-Item -Path $CopyDestinationFolder -ItemType Directory -Force:$Force
                                         }
                                     }
                                     # If the server is local and the credential is set
                                     elseif ($DestinationCredential) {
                                         Invoke-Command2 -Credential $DestinationCredential -ScriptBlock {
                                             Write-Message -Message "Creating copy destination folder $CopyDestinationFolder" -Level Verbose
-                                            New-Item -Path $CopyDestinationFolder -ItemType Directory -Credential $DestinationCredential -Force:$Force | Out-Null
+                                            $null = New-Item -Path $CopyDestinationFolder -ItemType Directory -Force:$Force
                                         }
                                     }
                                     # If the server is local and the credential is not set
                                     else {
                                         Write-Message -Message "Creating copy destination folder $CopyDestinationFolder" -Level Verbose
-                                        New-Item -Path $CopyDestinationFolder -Force:$Force -ItemType Directory | Out-Null
+                                        $null = New-Item -Path $CopyDestinationFolder -ItemType Directory -Force:$Force
                                     }
                                     Write-Message -Message "Copy destination $CopyDestinationFolder created." -Level Verbose
                                 } catch {
@@ -963,7 +963,7 @@ function Invoke-DbaDbLogShipping {
                         # Try to create the copy destination on the local server
                         try {
                             Write-Message -Message "Creating copy destination folder $CopyDestinationFolder" -Level Verbose
-                            New-Item $CopyDestinationFolder -ItemType Directory -Credential $DestinationCredential -Force:$Force | Out-Null
+                            $null = New-Item -Path $CopyDestinationFolder -ItemType Directory -Force:$Force
                             Write-Message -Message "Copy destination $CopyDestinationFolder created." -Level Verbose
                         } catch {
                             $setupResult = "Failed"
@@ -1090,7 +1090,7 @@ function Invoke-DbaDbLogShipping {
 
                             Invoke-Command2 -Credential $SourceCredential -ScriptBlock {
                                 Write-Message -Message "Creating backup folder $DatabaseSharedPath" -Level Verbose
-                                $null = New-Item -Path $DatabaseSharedPath -ItemType Directory -Credential $SourceCredential -Force:$Force
+                                $null = New-Item -Path $DatabaseSharedPath -ItemType Directory -Force:$Force
                             }
                         } catch {
                             $setupResult = "Failed"
@@ -1193,7 +1193,7 @@ function Invoke-DbaDbLogShipping {
                                 try {
                                     Invoke-Command2 -Credential $DestinationCredential -ScriptBlock {
                                         Write-Message -Message "Creating data folder $DatabaseRestoreDataFolder" -Level Verbose
-                                        $null = New-Item -Path $DatabaseRestoreDataFolder -ItemType Directory -Credential $DestinationCredential -Force:$Force
+                                        $null = New-Item -Path $DatabaseRestoreDataFolder -ItemType Directory -Force:$Force
                                     }
                                 } catch {
                                     $setupResult = "Failed"
@@ -1213,7 +1213,7 @@ function Invoke-DbaDbLogShipping {
 
                                     Invoke-Command2 -Credential $DestinationCredential -ScriptBlock {
                                         Write-Message -Message "Restore log folder $DatabaseRestoreLogFolder not found. Trying to create it.." -Level Verbose
-                                        $null = New-Item -Path $DatabaseRestoreLogFolder -ItemType Directory -Credential $DestinationCredential -Force:$Force
+                                        $null = New-Item -Path $DatabaseRestoreLogFolder -ItemType Directory -Force:$Force
                                     }
                                 } catch {
                                     $setupResult = "Failed"
@@ -1308,7 +1308,7 @@ function Invoke-DbaDbLogShipping {
                             try {
                                 Invoke-Command2 -Credential $DestinationCredential -ScriptBlock {
                                     Write-Message -Message "Copy destination folder $DatabaseCopyDestinationFolder not found. Trying to create it.. ." -Level Verbose
-                                    $null = New-Item -Path $DatabaseCopyDestinationFolder -ItemType Directory -Credential $DestinationCredential -Force:$Force
+                                    $null = New-Item -Path $DatabaseCopyDestinationFolder -ItemType Directory -Force:$Force
                                 }
                             } catch {
                                 $setupResult = "Failed"
