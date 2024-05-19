@@ -144,16 +144,16 @@ function Backup-DbaDbMasterKey {
             }
 
             $fileinstance = $instance.ToString().Replace('\', '$')
-            $fullKeyName = Join-DbaPath -SqlInstance $server -Path $actualPath -ChildPath "$fileinstance-$dbname-masterkey"
+            $filename = Join-DbaPath -SqlInstance $server -Path $actualPath -ChildPath "$fileinstance-$dbname-masterkey.key"
 
             # if the base file name exists, then default to old style of appending a timestamp
-            if (Test-DbaPath -SqlInstance $server -Path "$fullKeyName.key") {
-                $fullKeyName = "$fullKeyName-$time"
+            if (Test-DbaPath -SqlInstance $server -Path $filename) {
+                $filename = Join-DbaPath -SqlInstance $server -Path $actualPath -ChildPath "$fileinstance-$dbname-masterkey-$time.key"
             }
 
-            if ($Pscmdlet.ShouldProcess($instance, "Backing up master key to $fullKeyName")) {
+            if ($Pscmdlet.ShouldProcess($instance, "Backing up master key to $filename")) {
                 try {
-                    $masterkey.Export("$fullKeyName.key", ($SecurePassword | ConvertFrom-SecurePass))
+                    $masterkey.Export($filename, ($SecurePassword | ConvertFrom-SecurePass))
                     $status = "Success"
                 } catch {
                     $status = "Failure"
@@ -168,7 +168,7 @@ function Backup-DbaDbMasterKey {
                 Add-Member -Force -InputObject $masterkey -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
                 Add-Member -Force -InputObject $masterkey -MemberType NoteProperty -Name Database -value $dbName
                 Add-Member -Force -InputObject $masterkey -MemberType NoteProperty -Name DatabaseID -value $db.ID
-                Add-Member -Force -InputObject $masterkey -MemberType NoteProperty -Name Filename -value $fullKeyName
+                Add-Member -Force -InputObject $masterkey -MemberType NoteProperty -Name Filename -value $filename
                 Add-Member -Force -InputObject $masterkey -MemberType NoteProperty -Name Status -value $status
 
                 Select-DefaultView -InputObject $masterkey -Property ComputerName, InstanceName, SqlInstance, Database, 'Filename as Path', Status
