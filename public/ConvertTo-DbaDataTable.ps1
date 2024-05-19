@@ -166,12 +166,12 @@ function ConvertTo-DbaDataTable {
                     }
                 }
                 $specialType = 'Size'
-            } elseif ($type -eq 'Dataplat.Dbatools.Utility.DbaDateTime') {
-                if (-not ($null -eq $value.DateTime)) {
+            } elseif ($type -eq 'Dataplat.Dbatools.Utility.DbaDateTime[]') {
+                if (-not ($null -eq $value)) {
                     $special = $true
-                    $value = [System.DateTime]$value.DateTime
-                    $type = 'System.DateTime'
-                    $specialType = 'DateTime'
+                    $value = $value
+                    $type = 'System.String'
+                    $specialType = 'String'
                 }
             } elseif (-not ($type -in $types)) {
                 # All types which are not found in the array will be converted into strings.
@@ -206,7 +206,7 @@ function ConvertTo-DbaDataTable {
             [CmdletBinding()]
             param (
                 $Value,
-                [ValidateSet('Timespan', 'Size','DateTime')]
+                [ValidateSet('Timespan', 'Size', 'DateTime', 'String')]
                 [string]$Type,
                 [string]$SizeType,
                 [string]$TimeSpanType
@@ -226,6 +226,9 @@ function ConvertTo-DbaDataTable {
                 }
                 'DateTime' {
                     return [System.DateTime]$Value.DateTime
+                }
+                'String' {
+                    return ($Value | Foreach-Object { $_.ToString()}) -join ', '
                 }
             }
         }
