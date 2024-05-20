@@ -15,15 +15,17 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 
 Describe "Testing data table output when using a complex object" {
     $obj = New-Object -TypeName psobject -Property @{
-        guid     = [system.guid]'32ccd4c4-282a-4c0d-997c-7b5deb97f9e0'
-        timespan = New-TimeSpan -Start 2016-10-30 -End 2017-04-30
-        datetime = Get-Date -Year 2016 -Month 10 -Day 30 -Hour 5 -Minute 52 -Second 0 -Millisecond 0
-        char     = [System.Char]'T'
-        true     = $true
-        false    = $false
-        null     = [bool]$null
-        string   = "it's a boy."
-        UInt64   = [System.UInt64]123456
+        guid             = [system.guid]'32ccd4c4-282a-4c0d-997c-7b5deb97f9e0'
+        timespan         = New-TimeSpan -Start 2016-10-30 -End 2017-04-30
+        datetime         = Get-Date -Year 2016 -Month 10 -Day 30 -Hour 5 -Minute 52 -Second 0 -Millisecond 0
+        char             = [System.Char]'T'
+        true             = $true
+        false            = $false
+        null             = [bool]$null
+        string           = "it's a boy."
+        UInt64           = [System.UInt64]123456
+        dbadatetime      = [dbadatetime[]]$(Get-Date -Year 2024 -Month 05 -Day 19 -Hour 5 -Minute 52 -Second 0 -Millisecond 0)
+        dbadatetimeArray = [dbadatetime[]]($(Get-Date -Year 2024 -Month 05 -Day 19 -Hour 5 -Minute 52 -Second 0 -Millisecond 0), $(Get-Date -Year 2024 -Month 05 -Day 19 -Hour 5 -Minute 52 -Second 0 -Millisecond 0).AddHours(1))
     }
 
     $innedobj = New-Object -TypeName psobject -Property @{
@@ -152,6 +154,32 @@ Describe "Testing data table output when using a complex object" {
         It "Has no value" {
             # not sure if this is a feaure. Should probably be changed in the future
             $result.myobject.GetType().FullName | Should Be "System.DBNull"
+        }
+    }
+
+    Context "Property: dbadatetime" {
+        It 'Has a column called "dbadatetime"' {
+            $result.Columns.ColumnName.Contains('dbadatetime') | Should Be $true
+        }
+        It 'Has a [dbadatetime] data type on the column "myobject"' {
+            $result.Columns | Where-Object -Property 'ColumnName' -eq 'dbadatetime' | Select-Object -ExpandProperty 'DataType' | Select-Object -ExpandProperty Name | Should Be 'string'
+        }
+        It "Has the following dbadatetime: 2024-05-19 05:52:00.000" {
+            $date = Get-Date -Year 2024 -Month 5 -Day 19 -Hour 5 -Minute 52 -Second 0 -Millisecond 0
+            [datetime]$result.dbadatetime -eq $date | Should Be $true
+        }
+    }
+
+    Context "Property: dbadatetimeArray" {
+        It 'Has a column called "myobject"' {
+            $result.Columns.ColumnName.Contains('myobject') | Should Be $true
+        }
+        It 'Has a [string] data type on the column "myobject"' {
+            $result.Columns | Where-Object -Property 'ColumnName' -eq 'myobject' | Select-Object -ExpandProperty 'DataType' | Select-Object -ExpandProperty Name | Should Be 'String'
+        }
+        It "Has the following dbadatetimes converted to strings: 2024-05-19 05:52:00.000, 2024-05-19 06:52:00.000" {
+            $string = '2024-05-19 05:52:00.000, 2024-05-19 06:52:00.000'
+            $result.dbadatetimeArray -eq $string | Should Be $true
         }
     }
 
