@@ -342,6 +342,11 @@ function Write-DbaDbTableData {
                 $columns = $DataTable.Table.Columns
             }
 
+            if ($null -eq $columns) {
+                Stop-Function -Message "Unable to get column definition from input data, so AutoCreateTable is not possible"
+                return
+            }
+
             foreach ($column in $columns) {
                 $sqlColumnName = $column.ColumnName
 
