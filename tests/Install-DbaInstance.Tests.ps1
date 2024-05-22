@@ -128,7 +128,12 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
                 Assert-MockCalled -CommandName Invoke-Program -Exactly 1 -Scope It -ModuleName dbatools
                 Assert-MockCalled -CommandName Find-SqlInstanceSetup -Exactly 1 -Scope It -ModuleName dbatools
                 Assert-MockCalled -CommandName Test-PendingReboot -Exactly 3 -Scope It -ModuleName dbatools
-                Assert-MockCalled -CommandName Set-DbaPrivilege -Exactly 1 -Scope It -ModuleName dbatools
+                if ($version -in '2008', '2008R2', '2012', '2014') {
+                    Assert-MockCalled -CommandName Set-DbaPrivilege -Exactly 1 -Scope It -ModuleName dbatools
+                } else {
+                    # SQLSVCINSTANTFILEINIT is used for version 2016 and later
+                    Assert-MockCalled -CommandName Set-DbaPrivilege -Exactly 0 -Scope It -ModuleName dbatools
+                }
                 Assert-MockCalled -CommandName Set-DbaTcpPort -Exactly 1 -Scope It -ModuleName dbatools
 
                 $result | Should -Not -BeNullOrEmpty
