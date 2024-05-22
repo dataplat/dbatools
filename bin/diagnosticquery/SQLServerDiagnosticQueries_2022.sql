@@ -1,7 +1,7 @@
 
 -- SQL Server 2022 Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: May 2, 2024
+-- Last Modified: May 17, 2024
 -- https://glennsqlperformance.com/ 
 -- https://sqlserverperformance.wordpress.com/
 -- YouTube: https://bit.ly/2PkoAM1 
@@ -79,6 +79,7 @@ SELECT @@SERVERNAME AS [Server Name], @@VERSION AS [SQL Server and OS Version In
 -- 16.0.4105.2		CU11								1/11/2024		https://learn.microsoft.com/en-us/troubleshoot/sql/releases/sqlserver-2022/cumulativeupdate11
 -- 16.0.4115.5		CU12								3/14/2024		https://learn.microsoft.com/en-us/troubleshoot/sql/releases/sqlserver-2022/cumulativeupdate12
 -- 16.0.4120.1		CU12 + GDR							 4/9/2024		https://support.microsoft.com/en-us/topic/kb5036343-description-of-the-security-update-for-sql-server-2022-cu12-april-9-2024-e11a0715-435f-42be-89ff-4b3d8f9734fc
+-- 16.0.4125.3		CU13								5/16/2024		https://learn.microsoft.com/en-us/troubleshoot/sql/releases/sqlserver-2022/cumulativeupdate13
 
 -- What's new in SQL Server 2022 (16.x)
 -- https://bit.ly/3MJEjR1
@@ -195,6 +196,7 @@ ORDER BY name OPTION (RECOMPILE);
 -- Data processed monthly limit in TB			SQL On-demand data processed monthly limit in TB
 -- Data processed weekly limit in TB			SQL On-demand data processed weekly limit in TB
 -- hardware offload config						Offload processing to specialized hardware
+-- max RPC request params (KB)					Maximum memory for RPC request parameters (kBytes) (added in CU13)
 -- openrowset auto_create_statistics			Enable or disable auto create statistics for openrowset sources.
 -- suppress recovery model errors				Return warning instead of error for unsupported ALTER DATABASE SET RECOVERY command
 

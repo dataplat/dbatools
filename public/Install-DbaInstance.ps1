@@ -304,6 +304,7 @@ function Install-DbaInstance {
         [PSCredential]$FTCredential,
         [PSCredential]$PBEngineCredential,
         [string]$SaveConfiguration,
+        [Alias('InstantFileInitialization', 'IFI')]
         [switch]$PerformVolumeMaintenanceTasks,
         [switch]$Restart,
         [switch]$NoPendingRenameCheck = (Get-DbatoolsConfigValue -Name 'OS.PendingRename' -Fallback $false),
@@ -700,6 +701,10 @@ function Install-DbaInstance {
                 if ($cores) {
                     $configNode.SQLTEMPDBFILECOUNT = $cores
                 }
+            }
+            if ($canonicVersion -ge '13.0' -and $PerformVolumeMaintenanceTasks) {
+                $configNode.SQLSVCINSTANTFILEINIT = 'True'
+                $PerformVolumeMaintenanceTasks = $false
             }
             if ($canonicVersion -ge '16.0') {
                 $null = $configNode.Remove('X86')

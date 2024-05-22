@@ -4,7 +4,7 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
+        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('WhatIf', 'Confirm') }
         [object[]]$knownParameters = 'InputObject', 'TimeSpanType', 'SizeType', 'IgnoreNull', 'Raw', 'EnableException'
         $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
         It "Should only contain our specific parameters" {
@@ -15,30 +15,32 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 
 Describe "Testing data table output when using a complex object" {
     $obj = New-Object -TypeName psobject -Property @{
-        guid     = [system.guid]'32ccd4c4-282a-4c0d-997c-7b5deb97f9e0'
-        timespan = New-TimeSpan -Start 2016-10-30 -End 2017-04-30
-        datetime = Get-Date -Year 2016 -Month 10 -Day 30 -Hour 5 -Minute 52 -Second 0 -Millisecond 0
-        char     = [System.Char]'T'
-        true     = $true
-        false    = $false
-        null     = [bool]$null
-        string   = "it's a boy."
-        UInt64   = [System.UInt64]123456
+        guid             = [system.guid]'32ccd4c4-282a-4c0d-997c-7b5deb97f9e0'
+        timespan         = New-TimeSpan -Start 2016-10-30 -End 2017-04-30
+        datetime         = Get-Date -Year 2016 -Month 10 -Day 30 -Hour 5 -Minute 52 -Second 0 -Millisecond 0
+        char             = [System.Char]'T'
+        true             = $true
+        false            = $false
+        null             = $null
+        string           = "it's a boy."
+        UInt64           = [System.UInt64]123456
+        dbadatetime      = [dbadatetime[]]$(Get-Date -Year 2024 -Month 05 -Day 19 -Hour 5 -Minute 52 -Second 0 -Millisecond 0)
+        dbadatetimeArray = [dbadatetime[]]($(Get-Date -Year 2024 -Month 05 -Day 19 -Hour 5 -Minute 52 -Second 0 -Millisecond 0), $(Get-Date -Year 2024 -Month 05 -Day 19 -Hour 5 -Minute 52 -Second 0 -Millisecond 0).AddHours(1))
     }
 
     $innedobj = New-Object -TypeName psobject -Property @{
         Mission = 'Keep Hank alive'
     }
 
-    Add-Member -Force -InputObject $obj -MemberType NoteProperty -Name myobject -Value $innedobj
+    Add-Member -Force -InputObject $obj -MemberType NoteProperty -Name myObject -Value $innedobj
     $result = ConvertTo-DbaDataTable -InputObject $obj
 
     Context "Property: guid" {
         It 'Has a column called "guid"' {
-            $result.Columns.ColumnName.Contains('guid') | Should Be $true
+            $result.Columns.ColumnName | Should -Contain 'guid'
         }
         It 'Has a [guid] data type on the column "guid"' {
-            $result.Columns | Where-Object -Property 'ColumnName' -eq 'guid' | Select-Object -ExpandProperty 'DataType' | Select-Object -ExpandProperty Name | Should Be 'guid'
+            $result.guid | Should -BeOfType [System.guid]
         }
         It 'Has the following guid: "32ccd4c4-282a-4c0d-997c-7b5deb97f9e0"' {
             $result.guid | Should Be '32ccd4c4-282a-4c0d-997c-7b5deb97f9e0'
@@ -47,10 +49,11 @@ Describe "Testing data table output when using a complex object" {
 
     Context "Property: timespan" {
         It 'Has a column called "timespan"' {
-            $result.Columns.ColumnName.Contains('timespan') | Should Be $true
+            $result.Columns.ColumnName | Should -Contain 'timespan'
         }
         It 'Has a [long] data type on the column "timespan"' {
-            $result.Columns | Where-Object -Property 'ColumnName' -eq 'timespan' | Select-Object -ExpandProperty 'DataType' | Select-Object -ExpandProperty Name | Should Be 'Int64'
+            $result.timespan | Should -BeOfType [System.Int64]
+
         }
         It "Has the following timespan: 15724800000" {
             $result.timespan | Should Be 15724800000
@@ -59,10 +62,10 @@ Describe "Testing data table output when using a complex object" {
 
     Context "Property: datetime" {
         It 'Has a column called "datetime"' {
-            $result.Columns.ColumnName.Contains('datetime') | Should Be $true
+            $result.Columns.ColumnName | Should -Contain 'datetime'
         }
         It 'Has a [datetime] data type on the column "datetime"' {
-            $result.Columns | Where-Object -Property 'ColumnName' -eq 'datetime' | Select-Object -ExpandProperty 'DataType' | Select-Object -ExpandProperty Name | Should Be 'datetime'
+            $result.datetime | Should -BeOfType [System.DateTime]
         }
         It "Has the following datetime: 2016-10-30 05:52:00.000" {
             $date = Get-Date -Year 2016 -Month 10 -Day 30 -Hour 5 -Minute 52 -Second 0 -Millisecond 0
@@ -72,10 +75,10 @@ Describe "Testing data table output when using a complex object" {
 
     Context "Property: char" {
         It 'Has a column called "char"' {
-            $result.Columns.ColumnName.Contains('char') | Should Be $true
+            $result.Columns.ColumnName | Should -Contain 'char'
         }
         It 'Has a [char] data type on the column "char"' {
-            $result.Columns | Where-Object -Property 'ColumnName' -eq 'char' | Select-Object -ExpandProperty 'DataType' | Select-Object -ExpandProperty Name | Should Be 'char'
+            $result.char | Should -BeOfType [System.Char]
         }
         It "Has the following char: T" {
             $result.char | Should Be "T"
@@ -84,10 +87,10 @@ Describe "Testing data table output when using a complex object" {
 
     Context "Property: true" {
         It 'Has a column called "true"' {
-            $result.Columns.ColumnName.Contains('true') | Should Be $true
+            $result.Columns.ColumnName | Should -Contain 'true'
         }
         It 'Has a [bool] data type on the column "true"' {
-            $result.Columns | Where-Object -Property 'ColumnName' -eq 'true' | Select-Object -ExpandProperty 'DataType' | Select-Object -ExpandProperty Name | Should Be 'boolean'
+            $result.true | Should -BeOfType [System.Boolean]
         }
         It "Has the following bool: true" {
             $result.true | Should Be $true
@@ -96,10 +99,10 @@ Describe "Testing data table output when using a complex object" {
 
     Context "Property: false" {
         It 'Has a column called "false"' {
-            $result.Columns.ColumnName.Contains('false') | Should Be $true
+            $result.Columns.ColumnName | Should -Contain 'false'
         }
         It 'Has a [bool] data type on the column "false"' {
-            $result.Columns | Where-Object -Property 'ColumnName' -eq 'false' | Select-Object -ExpandProperty 'DataType' | Select-Object -ExpandProperty Name | Should Be 'boolean'
+            $result.false | Should -BeOfType [System.Boolean]
         }
         It "Has the following bool: false" {
             $result.false | Should Be $false
@@ -108,22 +111,22 @@ Describe "Testing data table output when using a complex object" {
 
     Context "Property: null" {
         It 'Has a column called "null"' {
-            $result.Columns.ColumnName.Contains('null') | Should Be $true
+            $result.Columns.ColumnName | Should -Contain 'null'
         }
-        It 'Has a [bool] data type on the column "null"' {
-            $result.Columns | Where-Object -Property 'ColumnName' -eq 'null' | Select-Object -ExpandProperty 'DataType' | Select-Object -ExpandProperty Name | Should Be 'boolean'
+        It 'Has a [null] data type on the column "null"' {
+            $result.null | Should -BeOfType [System.DBNull]
         }
-        It "Has the following bool: false" {
-            $result.null | Should Be $false #should actually be $null but its hard to compare :)
+        It "Has no value" {
+            $result.null | Should -BeNullOrEmpty
         }
     }
 
     Context "Property: string" {
         It 'Has a column called "string"' {
-            $result.Columns.ColumnName.Contains('string') | Should Be $true
+            $result.Columns.ColumnName | Should -Contain 'string'
         }
         It 'Has a [string] data type on the column "string"' {
-            $result.Columns | Where-Object -Property 'ColumnName' -eq 'string' | Select-Object -ExpandProperty 'DataType' | Select-Object -ExpandProperty Name | Should Be 'string'
+            $result.string | Should -BeOfType [System.String]
         }
         It "Has the following string: it's a boy." {
             $result.string | Should Be "it's a boy."
@@ -132,29 +135,50 @@ Describe "Testing data table output when using a complex object" {
 
     Context "Property: UInt64" {
         It 'Has a column called "UInt64"' {
-            $result.Columns.ColumnName.Contains('UInt64') | Should Be $true
+            $result.Columns.ColumnName | Should -Contain 'UInt64'
         }
         It 'Has a [UInt64] data type on the column "UInt64"' {
-            $result.Columns | Where-Object -Property 'ColumnName' -eq 'UInt64' | Select-Object -ExpandProperty 'DataType' | Select-Object -ExpandProperty Name | Should Be 'UInt64'
+            $result.UInt64 | Should -BeOfType [System.UInt64]
         }
         It "Has the following number: 123456" {
             $result.UInt64 | Should Be 123456
         }
     }
 
-    Context "Property: myobject" {
-        It 'Has a column called "myobject"' {
-            $result.Columns.ColumnName.Contains('myobject') | Should Be $true
+    Context "Property: myObject" {
+        It 'Has a column called "myObject"' {
+            $result.Columns.ColumnName | Should -Contain 'myObject'
         }
-        It 'Has a [string] data type on the column "myobject"' {
-            $result.Columns | Where-Object -Property 'ColumnName' -eq 'myobject' | Select-Object -ExpandProperty 'DataType' | Select-Object -ExpandProperty Name | Should Be 'String'
-        }
-        It "Has no value" {
-            # not sure if this is a feaure. Should probably be changed in the future
-            $result.myobject.GetType().FullName | Should Be "System.DBNull"
+        It 'Has a [string] data type on the column "myObject"' {
+            $result.myObject | Should -BeOfType [System.String]
         }
     }
 
+    Context "Property: dbadatetime" {
+        It 'Has a column called "dbadatetime"' {
+            $result.Columns.ColumnName | Should -Contain 'dbadatetime'
+        }
+        It 'Has a [dbadatetime] data type on the column "myObject"' {
+            $result.dbadatetime | Should -BeOfType [System.String]
+        }
+        It "Has the following dbadatetime: 2024-05-19 05:52:00.000" {
+            $date = Get-Date -Year 2024 -Month 5 -Day 19 -Hour 5 -Minute 52 -Second 0 -Millisecond 0
+            [datetime]$result.dbadatetime -eq $date | Should Be $true
+        }
+    }
+
+    Context "Property: dbadatetimeArray" {
+        It 'Has a column called "dbadatetimeArray"' {
+            $result.Columns.ColumnName | Should -Contain 'dbadatetimeArray'
+        }
+        It 'Has a [dbadatetimeArray] data type on the column "myObject"' {
+            $result.dbadatetimeArray | Should -BeOfType [System.String]
+        }
+        It "Has the following dbadatetimeArray converted to strings: 2024-05-19 05:52:00.000, 2024-05-19 06:52:00.000" {
+            $string = '2024-05-19 05:52:00.000, 2024-05-19 06:52:00.000'
+            $result.dbadatetimeArray -eq $string | Should Be $true
+        }
+    }
 }
 
 Describe "Testing input parameters" {
