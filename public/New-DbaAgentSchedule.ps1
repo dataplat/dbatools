@@ -528,7 +528,7 @@ function New-DbaAgentSchedule {
                     }
 
                     if ($OwnerLoginName) {
-                        $jobschedule.OwnerLoginName = $OwnerLoginName:
+                        $jobschedule.OwnerLoginName = $OwnerLoginName;
                     }
 
                     $jobschedule.Create()
