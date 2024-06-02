@@ -99,8 +99,8 @@ function New-DbaAgentSchedule {
 
         If force is used the start time will be '23:59:59'
 
-    .PARAMETER OwnerLoginName
-        The name of the login that owns the job. login is sysname, with a default of NULL, which is interpreted as the current login name.
+    .PARAMETER Owner
+        Login to own the job, defaults to login running the command.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
@@ -170,7 +170,7 @@ function New-DbaAgentSchedule {
         [string]$EndDate,
         [string]$StartTime,
         [string]$EndTime,
-        [string]$OwnerLoginName,
+        [string]$Owner,
         [switch]$Force,
         [switch]$EnableException
     )
@@ -527,8 +527,8 @@ function New-DbaAgentSchedule {
                         $jobschedule.ActiveEndTimeOfDay = $EndTime
                     }
 
-                    if ($OwnerLoginName) {
-                        $jobschedule.OwnerLoginName = $OwnerLoginName;
+                    if ($Owner) {
+                        $jobschedule.OwnerLoginName = $Owner
                     }
 
                     $jobschedule.Create()
