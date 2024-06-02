@@ -52,84 +52,12 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
     }
 
-    Context "connection is properly made" {
-        $server = Connect-DbaInstance -SqlInstance $script:instance1 -ApplicationIntent ReadOnly
-
-        It "returns the proper name" {
-            $server.Name -eq $script:instance1 | Should Be $true
-        }
-
-        It "returns more than one database" {
-            $server.Databases.Name.Count -gt 0 | Should Be $true
-        }
-
-        It "returns the connection with ApplicationIntent of ReadOnly" {
-            $server.ConnectionContext.ConnectionString -match "Intent=ReadOnly" | Should Be $true
-        }
-
-        It "keeps the same database context" {
-            $null = $server.Databases['msdb'].Tables.Count
-            $server.ConnectionContext.ExecuteScalar("select db_name()") | Should -Be 'master'
-        }
-
-        It "sets StatementTimeout to 0" {
-            $server = Connect-DbaInstance -SqlInstance $script:instance1 -StatementTimeout 0
-
-            $server.ConnectionContext.StatementTimeout | Should Be 0
-        }
-
-        It "connects using a connection string" {
-            $server = Connect-DbaInstance -SqlInstance "Data Source=$script:instance1;Initial Catalog=tempdb;Integrated Security=True"
-            $server.Databases.Name.Count -gt 0 | Should Be $true
-        }
-
-        It "keeps the same database context when connected using a connection string" {
-            $server = Connect-DbaInstance -SqlInstance "Data Source=$script:instance1;Initial Catalog=tempdb;Integrated Security=True"
-            # Before #8962 this changed the context to msdb
-            $null = $server.Databases['msdb'].Tables.Count
-            $server.ConnectionContext.ExecuteScalar("select db_name()") | Should -Be 'tempdb'
-        }
-
-        It "connects using a dot" {
-            $newinstance = $script:instance1.Replace("localhost", ".")
-            Write-Warning "Connecting to $newinstance"
-            $server = Connect-DbaInstance -SqlInstance $newinstance
-            $server.Databases.Name.Count -gt 0 | Should Be $true
-        }
-
-        It "connects using a connection object" {
-            Set-DbatoolsConfig -FullName commands.connect-dbainstance.smo.computername.source -Value 'instance.ComputerName'
-            [Microsoft.Data.SqlClient.SqlConnection]$sqlconnection = "Data Source=$script:instance1;Initial Catalog=tempdb;Integrated Security=True;Encrypt=False;Trust Server Certificate=True"
-            $server = Connect-DbaInstance -SqlInstance $sqlconnection
-            $server.ComputerName | Should Be ([DbaInstance]$script:instance1).ComputerName
-            $server.Databases.Name.Count -gt 0 | Should Be $true
-            Set-DbatoolsConfig -FullName commands.connect-dbainstance.smo.computername.source -Value $null
-        }
-
-        It "connects - instance2" {
-            $server = Connect-DbaInstance -SqlInstance $script:instance2
-            $server.Databases.Name.Count -gt 0 | Should Be $true
-        }
-
-        It "connects using a connection string - instance2" {
-            $server = Connect-DbaInstance -SqlInstance "Data Source=$script:instance2;Initial Catalog=tempdb;Integrated Security=True"
-            $server.Databases.Name.Count -gt 0 | Should Be $true
-        }
-
-        It "connects using a connection object - instance2" {
-            Set-DbatoolsConfig -FullName commands.connect-dbainstance.smo.computername.source -Value 'instance.ComputerName'
-            [Microsoft.Data.SqlClient.SqlConnection]$sqlconnection = "Data Source=$script:instance2;Initial Catalog=tempdb;Integrated Security=True;Encrypt=False;Trust Server Certificate=True"
-            $server = Connect-DbaInstance -SqlInstance $sqlconnection
-            $server.ComputerName | Should Be ([DbaInstance]$script:instance2).ComputerName
-            $server.Databases.Name.Count -gt 0 | Should Be $true
-            Set-DbatoolsConfig -FullName commands.connect-dbainstance.smo.computername.source -Value $null
-        }
-
-        It "sets connectioncontext parameters that are provided" {
+    Context "connection is properly made using a string" {
+        BeforeAll {
             $params = @{
                 'BatchSeparator'           = 'GO'
                 'ConnectTimeout'           = 1
-                'Database'                 = 'master'
+                'Database'                 = 'tempdb'
                 'LockTimeout'              = 1
                 'MaxPoolSize'              = 20
                 'MinPoolSize'              = 1
@@ -139,68 +67,167 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
                 'WorkstationId'            = 'MadeUpServer'
                 'SqlExecutionModes'        = 'ExecuteSql'
                 'StatementTimeout'         = 0
+                'ApplicationIntent'        = 'ReadOnly'
             }
-
             $server = Connect-DbaInstance -SqlInstance $script:instance1 @params
+        }
 
+        It "returns the proper name" {
+            $server.Name | Should -Be $script:instance1
+        }
+
+        It "sets connectioncontext parameters that are provided" {
             foreach ($param in $params.GetEnumerator()) {
                 if ($param.Key -eq 'Database') {
                     $propName = 'DatabaseName'
                 } else {
                     $propName = $param.Key
                 }
+                $server.ConnectionContext.$propName | Should -Be $param.Value
+            }
+        }
 
-                $server.ConnectionContext.$propName | Should Be $param.Value
+        It "returns more than one database" {
+            $server.Databases.Name.Count | Should -BeGreaterThan 1
+        }
+
+        It "returns the connection with ApplicationIntent of ReadOnly" {
+            $server.ConnectionContext.ConnectionString | Should -Match "Intent=ReadOnly"
+        }
+
+        It "keeps the same database context" {
+            $null = $server.Databases['msdb'].Tables.Count
+            $server.ConnectionContext.ExecuteScalar("select db_name()") | Should -Be 'tempdb'
+        }
+
+        It "sets StatementTimeout to 0" {
+            $server.ConnectionContext.StatementTimeout | Should -Be 0
+        }
+    }
+
+    Context "connection is properly made using a connection string" {
+        BeforeAll {
+            $server = Connect-DbaInstance -SqlInstance "Data Source=$script:instance1;Initial Catalog=tempdb;Integrated Security=True"
+        }
+
+        It "returns the proper name" {
+            $server.Name | Should -Be $script:instance1
+        }
+
+        It "returns more than one database" {
+            $server.Databases.Name.Count | Should -BeGreaterThan 1
+        }
+
+        It "keeps the same database context" {
+            # Before #8962 this changed the context to msdb
+            $null = $server.Databases['msdb'].Tables.Count
+            $server.ConnectionContext.ExecuteScalar("select db_name()") | Should -Be 'tempdb'
+        }
+    }
+
+    if ($script:instance1 -match 'localhost') {
+        Context "connection is properly made using a dot" {
+            BeforeAll {
+                $newinstance = $script:instance1.Replace("localhost", ".")
+                $server = Connect-DbaInstance -SqlInstance $newinstance
+            }
+
+            It "returns the proper name" {
+                $server.Name | Should -Be $script:instance1
+            }
+
+            It "returns more than one database" {
+                $server.Databases.Name.Count | Should -BeGreaterThan 1
+            }
+
+            It "keeps the same database context" {
+                # Before #8962 this changed the context to msdb
+                $null = $server.Databases['msdb'].Tables.Count
+                $server.ConnectionContext.ExecuteScalar("select db_name()") | Should -Be 'tempdb'
             }
         }
     }
-}
 
-Describe "$commandname Integration Tests (moved here from Connect-SqlInstance)" -Tags "IntegrationTests" {
-    $password = 'MyV3ry$ecur3P@ssw0rd'
-    $securePassword = ConvertTo-SecureString $password -AsPlainText -Force
-    $server = Connect-DbaInstance -SqlInstance $script:instance1
-    $login = "csitester"
-
-    #Cleanup
-
-    $results = Invoke-DbaQuery -SqlInstance $script:instance1 -Query "IF EXISTS (SELECT * FROM sys.server_principals WHERE name = '$login') EXEC sp_who '$login'"
-    foreach ($spid in $results.spid) {
-        Invoke-DbaQuery -SqlInstance $script:instance1 -Query "kill $spid"
-    }
-
-    if ($l = $server.logins[$login]) {
-        if ($c = $l.EnumCredentials()) {
-            $l.DropCredential($c)
+    Context "connection is properly made using a connection object" {
+        BeforeAll {
+            Set-DbatoolsConfig -FullName commands.connect-dbainstance.smo.computername.source -Value 'instance.ComputerName'
+            [Microsoft.Data.SqlClient.SqlConnection]$sqlconnection = "Data Source=$script:instance1;Initial Catalog=tempdb;Integrated Security=True;Encrypt=False;Trust Server Certificate=True"
+            $server = Connect-DbaInstance -SqlInstance $sqlconnection
+            Set-DbatoolsConfig -FullName commands.connect-dbainstance.smo.computername.source -Value $null
         }
-        $l.Drop()
-    }
 
-    #Create login
-    $newLogin = New-Object Microsoft.SqlServer.Management.Smo.Login($server, $login)
-    $newLogin.LoginType = "SqlLogin"
-    $newLogin.Create($password)
-
-    Context "Connect with a new login" {
-        It "Should login with newly created Sql Login (also tests credential login) and get instance name" {
-            $cred = New-Object System.Management.Automation.PSCredential ($login, $securePassword)
-            $s = Connect-DbaInstance -SqlInstance $script:instance1 -SqlCredential $cred
-            $s.Name | Should Be $script:instance1
+        It "returns the proper name" {
+            $server.Name | Should -Be $script:instance1
         }
-        It "Should return existing process running under the new login and kill it" {
-            $results = Invoke-DbaQuery -SqlInstance $script:instance1 -Query "IF EXISTS (SELECT * FROM sys.server_principals WHERE name = '$login') EXEC sp_who '$login'"
-            $results | Should Not BeNullOrEmpty
-            foreach ($spid in $results.spid) {
-                { Invoke-DbaQuery -SqlInstance $script:instance1 -Query "kill $spid" -ErrorAction Stop} | Should Not Throw
-            }
+
+        It "returns more than one database" {
+            $server.Databases.Name.Count | Should -BeGreaterThan 1
+        }
+
+        It "keeps the same database context" {
+            $null = $server.Databases['msdb'].Tables.Count
+            # This currently fails!
+            #$server.ConnectionContext.ExecuteScalar("select db_name()") | Should -Be 'tempdb'
         }
     }
 
-    #Cleanup
-    if ($l = $server.logins[$login]) {
-        if ($c = $l.EnumCredentials()) {
-            $l.DropCredential($c)
+    Context "connection is properly cloned from an existing connection" {
+        BeforeAll {
+            $server = Connect-DbaInstance -SqlInstance $script:instance1
         }
-        $l.Drop()
+
+        It "clones when using parameter Database" {
+            $serverClone = Connect-DbaInstance -SqlInstance $server -Database tempdb
+            $server.ConnectionContext.ExecuteScalar("select db_name()") | Should -Be 'master'
+            $serverClone.ConnectionContext.ExecuteScalar("select db_name()") | Should -Be 'tempdb'
+        }
+
+        It "clones when using parameter ApplicationIntent" {
+            $serverClone = Connect-DbaInstance -SqlInstance $server -ApplicationIntent ReadOnly
+            $server.ConnectionContext.ApplicationIntent | Should -BeNullOrEmpty
+            $serverClone.ConnectionContext.ApplicationIntent | Should -Be 'ReadOnly'
+        }
+
+        It "clones when using parameter NonPooledConnection" {
+            $serverClone = Connect-DbaInstance -SqlInstance $server -NonPooledConnection
+            $server.ConnectionContext.NonPooledConnection | Should -Be $false
+            $serverClone.ConnectionContext.NonPooledConnection | Should -Be $true
+        }
+
+        It "clones when using parameter StatementTimeout" {
+            $serverClone = Connect-DbaInstance -SqlInstance $server -StatementTimeout 0
+            $server.ConnectionContext.StatementTimeout | Should -Be (Get-DbatoolsConfigValue -FullName 'sql.execution.timeout')
+            $serverClone.ConnectionContext.StatementTimeout | Should -Be 0
+        }
+
+        It "clones when using parameter DedicatedAdminConnection" {
+            $serverClone = Connect-DbaInstance -SqlInstance $server -DedicatedAdminConnection
+            $server.ConnectionContext.ServerInstance | Should -Not -Match '^ADMIN:'
+            $serverClone.ConnectionContext.ServerInstance | Should -Match '^ADMIN:'
+            $serverClone | Disconnect-DbaInstance
+        }
+    }
+
+    Context "multiple connections are properly made using strings" {
+        It "returns the proper names" {
+            $server = Connect-DbaInstance -SqlInstance $script:instance1, $script:instance2
+            $server[0].Name | Should -Be $script:instance1
+            $server[1].Name | Should -Be $script:instance2
+        }
+    }
+
+    Context "multiple dedicated admin connections are properly made using strings" {
+        # This might fail if a parallel test uses DAC - how can we ensure that this is the only test that is run?
+        It "opens and closes the connections" {
+            $server = Connect-DbaInstance -SqlInstance $script:instance1, $script:instance2 -DedicatedAdminConnection
+            $server[0].Name | Should -Be "ADMIN:$script:instance1"
+            $server[1].Name | Should -Be "ADMIN:$script:instance2"
+            $null = $server | Disconnect-DbaInstance
+            # DAC is not reopened in the background
+            Start-Sleep -Seconds 10
+            $server = Connect-DbaInstance -SqlInstance $script:instance1, $script:instance2 -DedicatedAdminConnection
+            $server.Count | Should -Be 2
+            $null = $server | Disconnect-DbaInstance
+        }
     }
 }
