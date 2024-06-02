@@ -133,7 +133,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             }
 
             It "returns the proper name" {
-                $server.Name | Should -Be $newinstance
+                $server.Name | Should -Be "NP:$newinstance"
             }
 
             It "returns more than one database" {
