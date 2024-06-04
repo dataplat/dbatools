@@ -6,7 +6,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
         It "Should only contain our specific parameters" {
             [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-            [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Job', 'Schedule', 'Disabled', 'FrequencyType', 'FrequencyInterval', 'FrequencySubdayType', 'FrequencySubdayInterval', 'FrequencyRelativeInterval', 'FrequencyRecurrenceFactor', 'StartDate', 'EndDate', 'StartTime', 'EndTime', 'Force', 'EnableException'
+            [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Job', 'Schedule', 'Disabled', 'FrequencyType', 'FrequencyInterval', 'FrequencySubdayType', 'FrequencySubdayInterval', 'FrequencyRelativeInterval', 'FrequencyRecurrenceFactor', 'StartDate', 'EndDate', 'StartTime', 'EndTime', 'Owner', 'Force', 'EnableException'
             $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
             (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should -Be 0
         }
