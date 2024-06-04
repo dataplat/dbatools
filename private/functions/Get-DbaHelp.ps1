@@ -89,8 +89,7 @@ function Get-DbaHelp {
             $null = $rtn.Add($doc_to_render.Synopsis.Replace("`n", "  `n"))
             $null = $rtn.Add('')
             $null = $rtn.Add('## Description')
-            if ($doc_to_render.Description)
-            {
+            if ($doc_to_render.Description) {
                 $null = $rtn.Add($doc_to_render.Description.Replace("`n", "  `n"))
             }
             $null = $rtn.Add('')
@@ -106,26 +105,24 @@ function Get-DbaHelp {
                 foreach ($syntax in $splitted_paramsets) {
                     $x = 0
                     foreach ($val in ($syntax.Replace("`r", '').Replace("`n", '') -split ' \[')) {
-                    if ($x -eq 0) {
-                        $null = $rtn.Add($val)
-                    } else {
-                        $xx = 0
-                        foreach($subparam in ($val -split ' -'))
-                        {
-                            if ($xx -eq 0)
-                            {
-                                $null = $rtn.Add('    [' + $subparam.replace("`n", '').replace("`n", ''))
-                            } else {
-                                $null = $rtn.Add('    -' + $subparam.replace("`n", '').replace("`n", ''))
+                        if ($x -eq 0) {
+                            $null = $rtn.Add($val)
+                        } else {
+                            $xx = 0
+                            foreach ($subparam in ($val -split ' -')) {
+                                if ($xx -eq 0) {
+                                    $null = $rtn.Add('    [' + $subparam.replace("`n", '').replace("`n", ''))
+                                } else {
+                                    $null = $rtn.Add('    -' + $subparam.replace("`n", '').replace("`n", ''))
+                                }
+                                $xx += 1
                             }
-                            $xx += 1
                         }
+                        $x += 1
                     }
-                    $x += 1
-                }
                     $null = $rtn.Add('')
                 }
-    
+
                 $null = $rtn.Add('```')
                 $null = $rtn.Add("`n" + '&nbsp;' + "`n")
             }
@@ -144,7 +141,7 @@ function Get-DbaHelp {
                     $null = $rtn.Add(($row.Trim() -replace 'PS C:\\>\s*', "PS C:\> "))
                     $inside = 1
                 } elseif ($row.Trim() -eq '' -or $row.Trim() -eq 'Description') {
-    
+
                 } else {
                     if ($inside -eq 1) {
                         $inside = 0
@@ -197,7 +194,7 @@ function Get-DbaHelp {
                         $dotitle = 1
                         $null = $rtn.Add('### Optional Parameters')
                     }
-    
+
                     $null = $rtn.Add('##### -' + $el[0])
                     $null = $rtn.Add($el[1].Replace("`r", "").Replace("`n", "  `n") + '<br>')
                     $null = $rtn.Add('')
@@ -213,11 +210,11 @@ function Get-DbaHelp {
                     $null = $rtn.Add('')
                 }
             }
-    
+
             $null = $rtn.Add('')
             $null = $rtn.Add("`n" + '&nbsp;' + "`n")
             $null = $rtn.Add('')
-    
+
             return $rtn
         }
 
@@ -385,7 +382,7 @@ function Get-DbaHelp {
             [-ModuleExport] [-PassThru] [-AllowDelete] [<CommonParameters>]'
         }
         if ($OutputAs -eq "PSObject") {
-            [pscustomobject]$thebase
+            [PSCustomObject]$thebase
         } elseif ($OutputAs -eq "MDString") {
             Get-DbaDocsMD -doc_to_render $thebase
         }
