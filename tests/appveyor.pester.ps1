@@ -189,6 +189,7 @@ if (-not $Finalize) {
 #Make things faster by removing most output
 if (-not $Finalize) {
     Import-Module Pester
+    Write-Host -Object "appveyor.prep: Running with Pester Version $((Get-Module Pester).Version.ToString())" -ForegroundColor DarkGreen
     Set-Variable ProgressPreference -Value SilentlyContinue
     if ($AllScenarioTests.Count -eq 0) {
         Write-Host -ForegroundColor DarkGreen "Nothing to do in this scenario"
