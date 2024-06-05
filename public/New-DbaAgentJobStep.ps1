@@ -171,7 +171,7 @@ function New-DbaAgentJobStep {
         [ValidateSet('QuitWithSuccess', 'QuitWithFailure', 'GoToNextStep', 'GoToStep')]
         [string]$OnFailAction = 'QuitWithFailure',
         [int]$OnFailStepId = 0,
-        [object]$Database,
+        [string]$Database,
         [string]$DatabaseUser,
         [int]$RetryAttempts,
         [int]$RetryInterval,
