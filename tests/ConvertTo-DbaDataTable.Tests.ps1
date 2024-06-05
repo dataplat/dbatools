@@ -150,6 +150,8 @@ Describe "Testing data table output when using a complex object" {
             $result.Columns.ColumnName | Should -Contain 'myObject'
         }
         It 'Has a [string] data type on the column "myObject"' {
+            Write-Host -Fore Magenta "type dump $($result.myObject.GetType() | Format-Table | Out-String)"
+            Write-Host -Fore Magenta "obj dump $($result.myObject | ConvertTo-Json | Out-String)"
             $result.myObject | Should -BeOfType [System.String]
         }
     }
