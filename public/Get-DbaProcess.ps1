@@ -121,7 +121,7 @@ function Get-DbaProcess {
                 on c.session_id = s.session_id
             JOIN sys.endpoints e
                 ON c.endpoint_id = e.endpoint_id
-            CROSS APPLY sys.dm_exec_sql_text(c.most_recent_sql_handle) t"
+            OUTER APPLY sys.dm_exec_sql_text(c.most_recent_sql_handle) t"
 
             if ($server.VersionMajor -gt 8) {
                 $results = $server.Query($sql)
