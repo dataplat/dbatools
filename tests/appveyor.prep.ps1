@@ -56,3 +56,5 @@ Set-DbatoolsConfig -FullName sql.connection.trustcert -Value $true -Register
 Set-DbatoolsConfig -FullName sql.connection.encrypt -Value $false -Register
 $sw.Stop()
 Update-AppveyorTest -Name "appveyor.prep" -Framework NUnit -FileName "appveyor.prep.ps1" -Outcome Passed -Duration $sw.ElapsedMilliseconds
+
+Write-Host -Object "appveyor.prep: Running with Pester Version $((Get-Module Pester).Version.ToString())" -ForegroundColor DarkGreen
