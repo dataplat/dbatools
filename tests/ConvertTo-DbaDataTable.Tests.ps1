@@ -154,8 +154,8 @@ Describe "Testing data table output when using a complex object" {
             Write-Host -Fore Magenta "type dump $($result.myObject.GetType() | Format-Table | Out-String)"
             Write-Host -Fore Magenta "type dump2 $($firstRow.myObject.GetType() | Format-Table | Out-String)"
             Write-Host -Fore Magenta "obj dump $($firstRow.myObject | ConvertTo-Json | Out-String)"
-            Write-Host -Fore Magenta "row dump $($firstRow | ConvertTo-Json -Depth 5 | Out-String)"
-            Write-Host -Fore Magenta "orig dump $($obj | ConvertTo-Json -Depth 5 | Out-String)"
+            Write-Host -Fore Magenta "row dump $($firstRow[0] | ConvertTo-Json -Depth 2 | Out-String)"
+            Write-Host -Fore Magenta "orig dump $($obj | ConvertTo-Json -Depth 2 | Out-String)"
             $firstRow.myObject | Should -BeOfType [System.String]
         }
     }
